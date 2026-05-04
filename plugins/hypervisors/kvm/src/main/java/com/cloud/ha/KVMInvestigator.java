@@ -19,10 +19,7 @@
 package com.cloud.ha;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.CheckOnHostCommand;
 import com.cloud.host.Host;
-import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
@@ -34,11 +31,12 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.ha.HAManager;
+import org.apache.cloudstack.kvm.ha.KVMHostActivityChecker;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import javax.inject.Inject;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class KVMInvestigator extends AdapterBase implements Investigator {
@@ -54,13 +52,15 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
     private HAManager haManager;
     @Inject
     private DataStoreProviderManager dataStoreProviderMgr;
+    @Inject
+    private KVMHostActivityChecker hostActivityChecker;
 
     @Override
     public boolean isVmAlive(com.cloud.vm.VirtualMachine vm, Host host) throws UnknownVM {
         if (haManager.isHAEligible(host)) {
             return haManager.isVMAliveOnHost(host);
         }
-        Status status = isAgentAlive(host);
+        Status status = getHostAgentStatus(host);
         logger.debug("HA: HOST is ineligible legacy state {} for host {}", status, host);
         if (status == null) {
             throw new UnknownVM();
@@ -73,86 +73,41 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
     }
 
     @Override
-    public Status isAgentAlive(Host agent) {
-        if (agent.getHypervisorType() != Hypervisor.HypervisorType.KVM && agent.getHypervisorType() != Hypervisor.HypervisorType.LXC) {
+    public Status getHostAgentStatus(Host host) {
+        if (host.getHypervisorType() != Hypervisor.HypervisorType.KVM && host.getHypervisorType() != Hypervisor.HypervisorType.LXC) {
             return null;
         }
 
-        if (haManager.isHAEligible(agent)) {
-            return haManager.getHostStatus(agent);
+        if (haManager.isHAEligible(host)) {
+            return haManager.getHostStatus(host);
         }
 
-        List<StoragePoolVO> clusterPools = _storagePoolDao.findPoolsInClusters(Arrays.asList(agent.getClusterId()), null);
-        boolean storageSupportHA = storageSupportHa(clusterPools);
-        if (!storageSupportHA) {
-            List<StoragePoolVO> zonePools = _storagePoolDao.findZoneWideStoragePoolsByHypervisor(agent.getDataCenterId(), agent.getHypervisorType());
-            storageSupportHA = storageSupportHa(zonePools);
+        List<StoragePoolVO> clusterPools = _storagePoolDao.findPoolsInClusters(Collections.singletonList(host.getClusterId()), null);
+        boolean storageSupportsHA = storageSupportsHA(clusterPools);
+        if (!storageSupportsHA) {
+            List<StoragePoolVO> zonePools = _storagePoolDao.findZoneWideStoragePoolsByHypervisor(host.getDataCenterId(), host.getHypervisorType());
+            storageSupportsHA = storageSupportsHA(zonePools);
         }
-        if (!storageSupportHA) {
-            logger.warn("Agent investigation was requested on host {}, but host does not support investigation because it has no NFS storage. Skipping investigation.", agent);
+        if (!storageSupportsHA) {
+            logger.warn("Agent investigation was requested on host {}, but host does not support investigation" +
+                    " because it has no HA supported storage. Skipping investigation.", host);
             return null;
         }
 
-        Status hostStatus = null;
-        Status neighbourStatus = null;
-        boolean reportFailureIfOneStorageIsDown = HighAvailabilityManager.KvmHAFenceHostIfHeartbeatFailsOnStorage.value();
-        CheckOnHostCommand cmd = new CheckOnHostCommand(agent, reportFailureIfOneStorageIsDown);
-
-        try {
-            Answer answer = _agentMgr.easySend(agent.getId(), cmd);
-            if (answer != null) {
-                hostStatus = answer.getResult() ? Status.Down : Status.Up;
-            }
-        } catch (Exception e) {
-            logger.debug("Failed to send command to host: {}", agent);
-        }
-        if (hostStatus == null) {
-            hostStatus = Status.Disconnected;
-        }
-
-        List<HostVO> neighbors = _resourceMgr.listHostsInClusterByStatus(agent.getClusterId(), Status.Up);
-        for (HostVO neighbor : neighbors) {
-            if (neighbor.getId() == agent.getId()
-                    || (neighbor.getHypervisorType() != Hypervisor.HypervisorType.KVM && neighbor.getHypervisorType() != Hypervisor.HypervisorType.LXC)) {
-                continue;
-            }
-            logger.debug("Investigating host:{} via neighbouring host:{}", agent, neighbor);
-            try {
-                Answer answer = _agentMgr.easySend(neighbor.getId(), cmd);
-                if (answer != null) {
-                    neighbourStatus = answer.getResult() ? Status.Down : Status.Up;
-                    logger.debug("Neighbouring host:{} returned status:{} for the investigated host:{}", neighbor, neighbourStatus, agent);
-                    if (neighbourStatus == Status.Up) {
-                        break;
-                    }
-                }
-            } catch (Exception e) {
-                logger.debug("Failed to send command to host: {}", neighbor);
-            }
-        }
-        if (neighbourStatus == Status.Up && (hostStatus == Status.Disconnected || hostStatus == Status.Down)) {
-            hostStatus = Status.Disconnected;
-        }
-        if (neighbourStatus == Status.Down && (hostStatus == Status.Disconnected || hostStatus == Status.Down)) {
-            hostStatus = Status.Down;
-        }
-        logger.debug("HA: HOST is ineligible legacy state {} for host {}", hostStatus, agent);
-        return hostStatus;
+        return hostActivityChecker.getHostAgentStatus(host);
     }
 
-    private boolean storageSupportHa(List<StoragePoolVO> pools) {
-        boolean storageSupportHA = false;
+    private boolean storageSupportsHA(List<StoragePoolVO> pools) {
         for (StoragePoolVO pool : pools) {
             DataStoreProvider storeProvider = dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
             DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
             if (storeDriver instanceof PrimaryDataStoreDriver) {
                 PrimaryDataStoreDriver primaryStoreDriver = (PrimaryDataStoreDriver)storeDriver;
                 if (primaryStoreDriver.isStorageSupportHA(pool.getPoolType())) {
-                    storageSupportHA = true;
-                    break;
+                    return true;
                 }
             }
         }
-        return storageSupportHA;
+        return false;
     }
 }
