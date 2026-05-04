@@ -1083,7 +1083,7 @@ public class ReconcileCommandServiceImpl extends ManagerBase implements Reconcil
             volumeDao.update(newVolume.getId(), newVolume);
 
             logger.debug(String.format("Deleting the dummy volume %s on pool %s", newVolume, destDataStore.getId()));
-            volumeApiService.destroyVolume(newVolume.getId(), accountManager.getAccount(Account.ACCOUNT_ID_SYSTEM), true, true);
+            volumeApiService.destroyVolume(newVolume.getId(), accountManager.getAccount(Account.ACCOUNT_ID_SYSTEM), true, true, null);
         }
     }
 

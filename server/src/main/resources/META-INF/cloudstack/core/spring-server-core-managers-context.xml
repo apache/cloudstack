@@ -402,4 +402,9 @@
     <bean id="ExternalOrchestratorDetailDaoImpl" class="org.apache.cloudstack.hypervisor.external.provisioner.dao.ExternalOrchestratorDetailDaoImpl" />
     <bean id="ExtensionResourceMapDaoImpl" class="org.apache.cloudstack.hypervisor.external.provisioner.dao.ExtensionResourceMapDaoImpl" />
     <bean id="ExtensionResourceMapDetailsDaoImpl" class="org.apache.cloudstack.hypervisor.external.provisioner.dao.ExtensionResourceMapDetailsDaoImpl" />
+    <bean id="internalBackupServiceImpl" class="org.apache.cloudstack.backup.InternalBackupServiceImpl" >
+        <property name="internalBackupProviders" value="#{internalBackupProvidersRegistry.registered}" />
+    </bean>
+    <bean id="backupCompressionService" class="org.apache.cloudstack.backup.BackupCompressionServiceJobController" />
+    <bean id="backupValidationService" class="org.apache.cloudstack.backup.BackupValidationServiceController" />
 </beans>

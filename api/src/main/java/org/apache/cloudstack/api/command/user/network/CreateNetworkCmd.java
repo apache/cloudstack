@@ -410,6 +410,27 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
+
+    public CreateNetworkCmd() {
+    }
+
+    public CreateNetworkCmd(long networkOfferingId, String name, String displayText, String gateway, String netmask, String startIp, String endIp, long domainId,
+            String accountName, long zoneId, String aclType, boolean subdomainAccess, boolean displayNetwork) {
+        this.networkOfferingId = networkOfferingId;
+        this.name = name;
+        this.displayText = displayText;
+        this.gateway = gateway;
+        this.netmask = netmask;
+        this.startIp = startIp;
+        this.endIp = endIp;
+        this.domainId = domainId;
+        this.accountName = accountName;
+        this.zoneId = zoneId;
+        this.aclType = aclType;
+        this.subdomainAccess = subdomainAccess;
+        this.displayNetwork = displayNetwork;
+    }
+
     @Override
     public String getCommandName() {
         return s_name;

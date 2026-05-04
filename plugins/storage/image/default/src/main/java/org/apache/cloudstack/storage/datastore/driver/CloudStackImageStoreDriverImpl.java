@@ -66,15 +66,15 @@ public class CloudStackImageStoreDriverImpl extends NfsImageStoreDriverImpl {
     }
 
     private String createObjectNameForExtractUrl(String installPath, ImageFormat format, DataObject dataObject) {
-        String objectNameInUrl = dataObject.getName();
+        String objectNameInUrl;
         try {
-            objectNameInUrl = cleanObjectName(objectNameInUrl);
+            objectNameInUrl = cleanObjectName(dataObject.getName());
         } catch (Exception e) {
             objectNameInUrl = UUID.randomUUID().toString();
         }
 
         if (format != null) {
-            if (dataObject.getTO() != null
+            if (dataObject != null && dataObject.getTO() != null
                     && DataObjectType.VOLUME.equals(dataObject.getTO().getObjectType())
                     && HypervisorType.KVM.equals(dataObject.getTO().getHypervisorType())) {
                 // Fix: The format of KVM volumes on image store is qcow2

@@ -156,7 +156,8 @@ public class AgentProperties{
     public static final Property<Integer> CMDS_TIMEOUT = new Property<>("cmds.timeout", 7200);
 
     /**
-     * The timeout (in seconds) for the snapshot merge operation, mainly used for classic volume snapshots and disk-only VM snapshots on file-based storage.<br>
+     * The timeout (in seconds) for QCOW2 delta merge operations, mainly used for classic volume snapshots, disk-only VM snapshots on file-based storage, and the KBOSS plugin.
+     * If a value of 0 or less is informed, the default will be used.<br>
      * This configuration is only considered if libvirt.events.enabled is also true. <br>
      * Data type: Integer.<br>
      * Default value: <code>259200</code>
@@ -914,6 +915,18 @@ public class AgentProperties{
      * */
     public static final Property<Integer> INCREMENTAL_SNAPSHOT_RETRY_REBASE_WAIT = new Property<>("incremental.snapshot.retry.rebase.wait", 60);
 
+
+    /**
+     * Maximum number of backup validation jobs that can be executed at the same time. Values lower than 0 remove the limit, meaning that as many validations as possible will be done at
+     * the same time.
+     */
+    public static final Property<Integer> BACKUP_VALIDATION_MAX_CONCURRENT_OPERATIONS_PER_HOST = new Property<>("backup.validation.max.concurrent.operations.per.host", null, Integer.class);
+
+    /**
+     * Maximum number of backup compression jobs that can be executed at the same time. Values lower than 0 remove the limit, meaning that as many compressions as possible will be
+     * done at the same time.
+     */
+    public static final Property<Integer> BACKUP_COMPRESSION_MAX_CONCURRENT_OPERATIONS_PER_HOST = new Property<>("backup.compression.max.concurrent.operations.per.host", null, Integer.class);
 
     public static class Property <T>{
         private String name;

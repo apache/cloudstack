@@ -32,6 +32,7 @@ import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.GuestOSHypervisorDao;
@@ -44,6 +45,8 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.backup.BackupManagerImpl;
+import org.apache.cloudstack.backup.BackupProvider;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
@@ -71,6 +74,9 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
     VolumeDao _volumeDao;
     @Inject
     HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
+
+    @Inject
+    private VolumeApiService volumeApiService;
 
 
     @Override
@@ -349,13 +355,17 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
     }
 
     @Override
-    public VirtualMachine importVirtualMachineFromBackup(long zoneId, long domainId, long accountId, long userId, String vmInternalName, Backup backup)  {
+    public VirtualMachine importVirtualMachineFromBackup(long zoneId, long domainId, long accountId, long userId, String vmInternalName, Backup backup,
+            BackupProvider backupProvider)  {
         logger.debug(String.format("Trying to import VM [vmInternalName: %s] from Backup [%s].", vmInternalName,
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(backup, "id", "uuid", "vmId", "externalId", "backupType")));
 
         VMInstanceVO vm = _instanceDao.findVMByInstanceNameIncludingRemoved(vmInternalName);
         if (vm == null) {
             throw new CloudRuntimeException("Cannot find VM: " + vmInternalName);
+        }
+        if (backupProvider.getName().equals(BackupManagerImpl.KBOSS_BACKUP_PROVIDER)) {
+            return vm;
         }
         try {
             if (vm.getRemoved() == null) {
@@ -384,11 +394,16 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
     return vm;
     }
 
-    @Override public boolean attachRestoredVolumeToVirtualMachine(long zoneId, String location, Backup.VolumeInfo volumeInfo, VirtualMachine vm, long poolId, Backup backup) {
+    @Override
+    public boolean attachRestoredVolumeToVirtualMachine(long zoneId, String location, Backup.VolumeInfo volumeInfo, VirtualMachine vm, long poolId, Backup backup,
+            BackupProvider backupProvider) {
 
         VMInstanceVO targetVM = _instanceDao.findVMByInstanceNameIncludingRemoved(vm.getName());
         List<VolumeVO> vmVolumes = _volumeDao.findByInstance(targetVM.getId());
         VolumeVO restoredVolume = _volumeDao.findByUuid(location);
+        if (backupProvider.getName().equals(BackupManagerImpl.KBOSS_BACKUP_PROVIDER)) {
+            return true;
+        }
         if (restoredVolume != null) {
             try {
                 _volumeDao.attachVolume(restoredVolume.getId(), vm.getId(), getNextAvailableDeviceId(vmVolumes));
@@ -405,6 +420,6 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
                 throw new RuntimeException("Unable to attach volume " + restoredVolume.getName() + " to VM" + vm.getName() + " due to : " + e.getMessage());
             }
         }
-    return false;
+        return false;
     }
 }

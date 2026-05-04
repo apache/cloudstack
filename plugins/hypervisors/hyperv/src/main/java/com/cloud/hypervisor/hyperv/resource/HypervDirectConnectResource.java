@@ -455,7 +455,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
                     if (s_hypervMgr != null) {
                         final String secondary = s_hypervMgr.prepareSecondaryStorageStore(Long.parseLong(zoneId));
                         if (secondary != null) {
-                            ((StartCommand)cmd).setSecondaryStorage(secondary);
+                            ((StartCommand)cmd).setSecondaryStorages(List.of(secondary));
                         }
                     } else {
                         logger.error("Hyperv manager isn't available. Couldn't check and copy the System VM ISO.");

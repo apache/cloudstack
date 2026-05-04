@@ -26,6 +26,7 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.backup.BackupManager;
@@ -38,6 +39,7 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.commons.lang3.BooleanUtils;
 
 @APICommand(name = "restoreBackup",
         description = "Restores an existing stopped or deleted Instance using an Instance backup",
@@ -59,12 +61,28 @@ public class RestoreBackupCmd extends BaseAsyncCmd {
             description = "ID of the backup")
     private Long backupId;
 
+    @Parameter(name = ApiConstants.QUICK_RESTORE, type = CommandType.BOOLEAN, entityType = BackupResponse.class, description = "Whether to use the quick restore process or not. " +
+            "Currently this parameter is only supported by the KBOSS provider.", since = "4.23.0")
+    private Boolean quickRestore;
+
+    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, description = "If quickrestore is true, which host to start the VM on;" +
+            " otherwise, ignored. Currently this parameter is only supported by the KBOSS provider.", since = "4.23.0")
+    private Long hostId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
     public Long getBackupId() {
         return backupId;
+    }
+
+    public boolean isQuickRestore() {
+        return BooleanUtils.isTrue(quickRestore);
+    }
+
+    public Long getHostId() {
+        return hostId;
     }
 
     /////////////////////////////////////////////////////
@@ -74,7 +92,7 @@ public class RestoreBackupCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            boolean result = backupManager.restoreBackup(backupId);
+            boolean result = backupManager.restoreBackup(backupId, isQuickRestore(), getHostId());
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 response.setResponseName(getCommandName());

@@ -107,7 +107,7 @@ public interface VolumeApiService {
 
     Volume attachVolumeToVM(AttachVolumeCmd command);
 
-    Volume attachVolumeToVM(Long vmId, Long volumeId, Long deviceId, Boolean allowAttachForSharedFS);
+    Volume attachVolumeToVM(Long vmId, Long volumeId, Long deviceId, Boolean allowAttachForSharedFS, boolean allowAttachOnRestoring);
 
     Volume detachVolumeViaDestroyVM(long vmId, long volumeId);
 
@@ -182,7 +182,7 @@ public interface VolumeApiService {
 
     boolean validateConditionsToReplaceDiskOfferingOfVolume(Volume volume, DiskOffering newDiskOffering, StoragePool destPool);
 
-    Volume destroyVolume(long volumeId, Account caller, boolean expunge, boolean forceExpunge);
+    Volume destroyVolume(long volumeId, Account caller, boolean expunge, boolean forceExpunge, Boolean countDisplayFalseInResourceCount);
 
     void destroyVolume(long volumeId);
 

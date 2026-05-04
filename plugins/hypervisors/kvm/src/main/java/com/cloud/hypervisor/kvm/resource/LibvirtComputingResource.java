@@ -35,6 +35,7 @@ import java.net.NetworkInterface;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -50,8 +51,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -73,6 +72,9 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
 import com.cloud.agent.api.to.VirtualMachineMetadataTO;
+import com.cloud.utils.exception.BackupException;
+import org.apache.cloudstack.storage.to.DeltaMergeTreeTO;
+import com.cloud.agent.api.to.DataObjectType;
 import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.command.CommandInfo;
 import org.apache.cloudstack.command.ReconcileCommandService;
@@ -386,6 +388,20 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public static final String CHECKPOINT_DELETE_COMMAND = "virsh checkpoint-delete --domain %s --checkpointname %s  --metadata";
 
+    private static final String BLOCK_PULL_COMMAND = "virsh blockpull --domain %s --path %s";
+
+    private static final String SNAPSHOT_XML = "<domainsnapshot>\n" +
+            "<name>%s</name>\n" +
+            "<memory snapshot='no'/>\n" +
+            "<disks> \n" +
+            "%s" +
+            "</disks> \n" +
+            "</domainsnapshot>";
+
+    private static final String TAG_DISK_SNAPSHOT = "<disk name='%s' snapshot='external'>\n" +
+            "<source file='%s'/>\n" +
+            "</disk>\n";
+
     protected int qcow2DeltaMergeTimeout;
 
     private String modifyVlanPath;
@@ -583,6 +599,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public static final String CGROUP_V2 = "cgroup2fs";
 
+    public static final String AGENT_IS_NOT_CONNECTED = "QEMU guest agent is not connected";
+
     /**
      * Virsh command to merge (blockcommit) snapshot into the base file.<br><br>
      * 1st parameter: VM's name;<br>
@@ -601,7 +619,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     @Override
     public synchronized void registerStatusUpdater(AgentStatusUpdater updater) {
-        if (AgentPropertiesFileHandler.getPropertyValue(AgentProperties.LIBVIRT_EVENTS_ENABLED)) {
+        if (isLibvirtEventsEnabled()) {
             try {
                 Connect conn = LibvirtConnection.getConnection();
                 if (libvirtDomainListener != null) {
@@ -2307,7 +2325,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public boolean stop() {
         try {
             final Connect conn = LibvirtConnection.getConnection();
-            if (AgentPropertiesFileHandler.getPropertyValue(AgentProperties.LIBVIRT_EVENTS_ENABLED) && libvirtDomainListener != null) {
+            if (isLibvirtEventsEnabled() && libvirtDomainListener != null) {
                 LOGGER.debug("Clearing old domain listener");
                 conn.removeLifecycleListener(libvirtDomainListener);
             }
@@ -4298,6 +4316,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (hostSupportsOvfExport()) {
             cmd.getHostDetails().put(HOST_OVFTOOL_VERSION, getHostOvfToolVersion());
         }
+        addBackupJobDetails(cmd.getHostDetails());
         HealthCheckResult healthCheckResult = getHostHealthCheckResult();
         if (healthCheckResult != HealthCheckResult.IGNORE) {
             cmd.setHostHealthCheckResult(healthCheckResult == HealthCheckResult.SUCCESS);
@@ -4329,6 +4348,18 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             i++;
         }
         return startupCommandsArray;
+    }
+
+    private void addBackupJobDetails(Map<String, String> details) {
+        Integer maxCompressionOperations = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.BACKUP_COMPRESSION_MAX_CONCURRENT_OPERATIONS_PER_HOST);
+        if (maxCompressionOperations != null) {
+            details.put(AgentProperties.BACKUP_COMPRESSION_MAX_CONCURRENT_OPERATIONS_PER_HOST.getName(), maxCompressionOperations.toString());
+        }
+
+        Integer maxValidationOperations = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.BACKUP_VALIDATION_MAX_CONCURRENT_OPERATIONS_PER_HOST);
+        if (maxValidationOperations != null) {
+            details.put(AgentProperties.BACKUP_VALIDATION_MAX_CONCURRENT_OPERATIONS_PER_HOST.getName(), maxValidationOperations.toString());
+        }
     }
 
     protected List<String> getHostTags() {
@@ -5036,7 +5067,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return disks.stream()
                 .filter(diskDef -> diskDef.getDiskPath() != null && diskDef.getDiskPath().contains(vol.getPath()))
                 .findFirst()
-                .orElseThrow(() -> new CloudRuntimeException(String.format("Unable to find volume [%s].", vol.getUuid())));
+                .orElseThrow(() -> new CloudRuntimeException(String.format("Unable to find volume [%s] with path [%s].", vol.getUuid(), vol.getPath())));
     }
 
     protected String getDiskPathFromDiskDef(DiskDef disk) {
@@ -6357,7 +6388,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     /**
-     * Merges the snapshot into base file.
+     * Merges the delta into a base file.
      *
      * @param vm           Domain of the VM;
      * @param diskLabel    Disk label to manage snapshot and base file;
@@ -6369,13 +6400,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * @param conn Libvirt connection;
      * @throws LibvirtException
      */
-    public void mergeSnapshotIntoBaseFile(Domain vm, String diskLabel, String baseFilePath, String topFilePath, boolean active, String snapshotName, VolumeObjectTO volume,
+    public void mergeDeltaIntoBaseFile(Domain vm, String diskLabel, String baseFilePath, String topFilePath, boolean active, String snapshotName, VolumeObjectTO volume,
             Connect conn) throws LibvirtException {
-        if (AgentPropertiesFileHandler.getPropertyValue(AgentProperties.LIBVIRT_EVENTS_ENABLED)) {
+        if (isLibvirtEventsEnabled()) {
             mergeSnapshotIntoBaseFileWithEventsAndConfigurableTimeout(vm, diskLabel, baseFilePath, topFilePath, active, snapshotName, volume, conn);
         } else {
             mergeSnapshotIntoBaseFileWithoutEvents(vm, diskLabel, baseFilePath, topFilePath, active, snapshotName, volume, conn);
         }
+    }
+
+    protected Boolean isLibvirtEventsEnabled() {
+        return AgentPropertiesFileHandler.getPropertyValue(AgentProperties.LIBVIRT_EVENTS_ENABLED);
     }
 
     /**
@@ -6394,40 +6429,26 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             commitFlags |= Domain.BlockCommitFlags.ACTIVE;
         }
 
-        Semaphore semaphore = getSemaphoreToWaitForMerge();
-        BlockCommitListener blockCommitListener = getBlockCommitListener(semaphore, vmName);
-        vm.addBlockJobListener(blockCommitListener);
-
-        logger.info("Starting block commit of snapshot [{}] of VM [{}]. Using parameters: diskLabel [{}]; baseFilePath [{}]; topFilePath [{}]; commitFlags [{}]", snapshotName,
-                vmName, diskLabel, baseFilePath, topFilePath, commitFlags);
-
-        vm.blockCommit(diskLabel, baseFilePath, topFilePath, 0, commitFlags);
-
-        Thread checkProgressThread = new Thread(() -> checkBlockCommitProgress(vm, diskLabel, vmName, snapshotName, topFilePath, baseFilePath));
-        checkProgressThread.start();
-
-        String errorMessage = String.format("the block commit of top file [%s] into base file [%s] for snapshot [%s] of VM [%s]." +
-                " The job will be left running to avoid data corruption, but ACS will return an error and volume [%s] will need to be normalized manually. If the commit" +
-                " involved the active image, the pivot will need to be manually done.", topFilePath, baseFilePath, snapshotName, vmName, volume);
+        BlockCommitListener blockCommitListener = getBlockCommitListener(vmName);
         try {
-            if (!semaphore.tryAcquire(qcow2DeltaMergeTimeout, TimeUnit.SECONDS)) {
-                throw new CloudRuntimeException("Timed out while waiting for " + errorMessage);
-            }
-        } catch (InterruptedException e) {
-            throw new CloudRuntimeException("Interrupted while waiting for " + errorMessage);
+            vm.addBlockJobListener(blockCommitListener);
+
+            logger.info("Starting block commit of QCOW2 delta [{}] of VM [{}]. Using parameters: diskLabel [{}]; baseFilePath [{}]; topFilePath [{}]; commitFlags [{}]",
+                    snapshotName,
+                    vmName, diskLabel, baseFilePath, topFilePath, commitFlags);
+
+            vm.blockCommit(diskLabel, baseFilePath, topFilePath, 0, commitFlags);
+
+            checkBlockCommitProgress(vm, diskLabel, vmName, snapshotName, topFilePath, baseFilePath);
         } finally {
             vm.removeBlockJobListener(blockCommitListener);
         }
 
         String mergeResult = blockCommitListener.getResult();
-        try {
-            checkProgressThread.join();
-        } catch (InterruptedException ex) {
-            throw new CloudRuntimeException(String.format("Exception while running wait block commit task of snapshot [%s] and VM [%s].", snapshotName, vmName));
-        }
-
         if (mergeResult != null) {
-            String commitError = String.format("Failed %s The failure occurred due to [%s].", errorMessage, mergeResult);
+            String commitError = String.format("Failed the block commit of top file [%s] into base file [%s] for snapshot [%s] of VM [%s]. The job will be left running to avoid" +
+                    " data corruption, but ACS will return an error and volume [%s] will need to be normalized manually. If the commit involved the active image, the pivot will" +
+                    " need to be manually done. The failure occurred due to [%s].", topFilePath, baseFilePath, snapshotName, vmName, volume, mergeResult);
             logger.error(commitError);
             throw new CloudRuntimeException(commitError);
         }
@@ -6484,15 +6505,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     /**
      * This was created to facilitate testing.
      * */
-    protected BlockCommitListener getBlockCommitListener(Semaphore semaphore, String vmName) {
-        return new BlockCommitListener(semaphore, vmName, ThreadContext.get("logcontextid"));
-    }
-
-    /**
-     * This was created to facilitate testing.
-     * */
-    protected Semaphore getSemaphoreToWaitForMerge() {
-        return new Semaphore(0);
+    protected BlockCommitListener getBlockCommitListener(String vmName) {
+        return new BlockCommitListener(vmName, ThreadContext.get("logcontextid"));
     }
 
     protected void checkBlockCommitProgress(Domain vm, String diskLabel, String vmName, String snapshotName, String topFilePath, String baseFilePath) {
@@ -6508,8 +6522,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException ex) {
-                logger.debug("Thread that was tracking the progress {} was interrupted.", partialLog, ex);
-                return;
+                logger.trace("Thread that was tracking the progress for the block commit job {} was interrupted. Ignoring.", partialLog, ex);
+                continue;
             }
 
             try {
@@ -6686,4 +6700,257 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public String getGuestCpuArch() {
         return guestCpuArch;
     }
+
+    public Map<String, Long> createDiskOnlyVmSnapshotForRunningVm(List<Pair<VolumeObjectTO, String>> volumeTosAndNewPaths, String vmName, String snapshotName,
+            boolean quiesceVm) throws BackupException {
+        logger.info("Taking disk-only VM snapshot of running VM [{}].", vmName);
+
+        Domain dm = null;
+        try {
+            LibvirtUtilitiesHelper libvirtUtilitiesHelper = getLibvirtUtilitiesHelper();
+            Connect conn = libvirtUtilitiesHelper.getConnection();
+            List<LibvirtVMDef.DiskDef> disks = getDisks(conn, vmName);
+
+            dm = getDomain(conn, vmName);
+
+            if (dm == null) {
+                throw new BackupException(String.format("Creation of disk-only VM snapshot failed as we could not find the VM [%s].", vmName), true);
+            }
+
+            Pair<String, Map<String, Long>> snapshotXmlAndVolumeToNewPathMap = createSnapshotXmlAndNewVolumePathMap(volumeTosAndNewPaths, disks, snapshotName);
+
+            int flagsToUseForRunningVmSnapshotCreation = getFlagsToUseForRunningVmSnapshotCreation(quiesceVm);
+            String snapshotXml = snapshotXmlAndVolumeToNewPathMap.first();
+
+            logger.info("Creating disk-only VM snapshot for VM [{}] using parameters: snapshotXml [{}]; flags [{}].", vmName, snapshotXml, flagsToUseForRunningVmSnapshotCreation);
+
+            dm.snapshotCreateXML(snapshotXml, flagsToUseForRunningVmSnapshotCreation);
+
+            return snapshotXmlAndVolumeToNewPathMap.second();
+        } catch (LibvirtException e) {
+            String errorMsg = String.format("Creation of disk-only VM snapshot for VM [%s] failed due to %s.", vmName, e.getMessage());
+            boolean isVmConsistent = false;
+            if (e.getMessage().contains(AGENT_IS_NOT_CONNECTED)) {
+                errorMsg = "QEMU guest agent is not connected. If the VM has been recently started, it might connect soon. Otherwise the VM does not have the" +
+                        " guest agent installed; thus the QuiesceVM parameter is not supported.";
+                isVmConsistent = true;
+            }
+            logger.error(errorMsg, e);
+            throw new BackupException(errorMsg, isVmConsistent);
+        } finally {
+            if (dm != null) {
+                try {
+                    dm.free();
+                } catch (LibvirtException l) {
+                    logger.trace("Ignoring libvirt error.", l);
+                }
+            }
+        }
+    }
+
+    public Map<String, Long> createDiskOnlyVMSnapshotOfStoppedVm(List<Pair<VolumeObjectTO, String>> volumeTosAndNewPaths, String vmName) {
+        logger.info("Creating volume deltas for stopped VM [{}].", vmName);
+
+        Map<String, Long> mapVolumeToSnapshotSize = new HashMap<>();
+        try {
+            for (Pair<VolumeObjectTO, String> volumeObjectTOAndNewPath : volumeTosAndNewPaths) {
+                VolumeObjectTO volumeObjectTO = volumeObjectTOAndNewPath.first();
+                PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO) volumeObjectTO.getDataStore();
+                KVMStoragePool kvmStoragePool = getStoragePoolMgr().getStoragePool(primaryDataStoreTO.getPoolType(), primaryDataStoreTO.getUuid());
+
+                String snapshotPath = volumeObjectTOAndNewPath.second();
+                String snapshotFullPath = kvmStoragePool.getLocalPathFor(snapshotPath);
+                QemuImgFile newDelta = new QemuImgFile(snapshotFullPath, QemuImg.PhysicalDiskFormat.QCOW2);
+
+                String currentDeltaFullPath = kvmStoragePool.getLocalPathFor(volumeObjectTO.getPath());
+                QemuImgFile currentDelta = new QemuImgFile(currentDeltaFullPath, QemuImg.PhysicalDiskFormat.QCOW2);
+
+                QemuImg qemuImg = new QemuImg(0);
+
+                logger.debug("Creating new delta [{}] for volume [{}] as part of the delta creation process for VM [{}].", newDelta, volumeObjectTO.getUuid(), vmName);
+                qemuImg.create(newDelta, currentDelta);
+
+                mapVolumeToSnapshotSize.put(volumeObjectTO.getUuid(), getFileSize(currentDeltaFullPath));
+            }
+        } catch (LibvirtException | QemuImgException e) {
+            logger.error("Exception while creating volume delta for VM [{}]. Deleting leftover deltas.", vmName, e);
+            for (Pair<VolumeObjectTO, String> volumeObjectTOAndNewPath : volumeTosAndNewPaths) {
+                VolumeObjectTO volumeObjectTO = volumeObjectTOAndNewPath.first();
+                Long volSize = mapVolumeToSnapshotSize.get(volumeObjectTO.getUuid());
+                if (volSize == null) {
+                    continue;
+                }
+                PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO) volumeObjectTO.getDataStore();
+                KVMStoragePool kvmStoragePool = getStoragePoolMgr().getStoragePool(primaryDataStoreTO.getPoolType(), primaryDataStoreTO.getUuid());
+                try {
+                    Files.deleteIfExists(Path.of(kvmStoragePool.getLocalPathFor(volumeObjectTOAndNewPath.second())));
+                } catch (IOException ex) {
+                    logger.warn("Tried to delete leftover delta at [{}]. Failed.", volumeObjectTOAndNewPath.second(), ex);
+                }
+            }
+            throw new BackupException(String.format("An exception was caught during the delta creation for VM [%s]. The leftover deltas have been deleted.", vmName), true);
+        }
+
+        return mapVolumeToSnapshotSize;
+    }
+
+    public void mergeDeltaForStoppedVm(DeltaMergeTreeTO deltaMergeTreeTO) throws QemuImgException, IOException, LibvirtException {
+        logger.debug("Merging delta [{}] for stopped VM.", deltaMergeTreeTO);
+
+        QemuImg qemuImg = new QemuImg(qcow2DeltaMergeTimeout * 1000);
+        DataTO parentTo = deltaMergeTreeTO.getParent();
+        PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO) parentTo.getDataStore();
+        KVMStoragePool storagePool = storagePoolManager.getStoragePool(primaryDataStoreTO.getPoolType(), primaryDataStoreTO.getUuid());
+        String childLocalPath = storagePool.getLocalPathFor(deltaMergeTreeTO.getChild().getPath());
+
+        QemuImgFile parent = new QemuImgFile(storagePool.getLocalPathFor(parentTo.getPath()), QemuImg.PhysicalDiskFormat.QCOW2);
+        QemuImgFile child = new QemuImgFile(childLocalPath, QemuImg.PhysicalDiskFormat.QCOW2);
+
+        logger.debug("Committing child delta [{}] into parent delta [{}].", parentTo, deltaMergeTreeTO.getChild());
+        qemuImg.commit(child, parent, true);
+
+        List<QemuImgFile> grandChildren = deltaMergeTreeTO.getGrandChildren().stream()
+                .map(deltaTo -> new QemuImgFile(storagePool.getLocalPathFor(deltaTo.getPath()), QemuImg.PhysicalDiskFormat.QCOW2))
+                .collect(Collectors.toList());
+
+        logger.debug("Rebasing grand-children [{}] into parent at [{}].", grandChildren, parent.getFileName());
+        for (QemuImgFile grandChild : grandChildren) {
+            qemuImg.rebase(grandChild, parent, parent.getFormat().toString(), false);
+        }
+
+        logger.debug("Deleting child at [{}] as it is useless.", childLocalPath);
+
+        Files.deleteIfExists(Path.of(childLocalPath));
+    }
+
+    public void mergeDeltaForRunningVm(DeltaMergeTreeTO mergeTreeTO, String vmName, VolumeObjectTO volumeObjectTO) throws LibvirtException, QemuImgException {
+        logger.debug("Merging delta [{}] for running VM [{}].", mergeTreeTO, vmName);
+
+        QemuImg qemuImg = new QemuImg(qcow2DeltaMergeTimeout * 1000);
+        Connect conn = libvirtUtilitiesHelper.getConnection();
+        Domain domain = getDomain(conn, vmName);
+        List<LibvirtVMDef.DiskDef> disks = getDisks(conn, vmName);
+
+        DataTO childTO = mergeTreeTO.getChild();
+        DataTO parentSnapshotTO = mergeTreeTO.getParent();
+        KVMStoragePool storagePool = libvirtUtilitiesHelper.getPrimaryPoolFromDataTo(volumeObjectTO, storagePoolManager);
+
+        boolean active = DataObjectType.VOLUME.equals(childTO.getObjectType());
+        String label = getDiskWithPathOfVolumeObjectTO(disks, volumeObjectTO).getDiskLabel();
+        String parentSnapshotLocalPath = storagePool.getLocalPathFor(parentSnapshotTO.getPath());
+        String childDeltaPath = storagePool.getLocalPathFor(childTO.getPath());
+
+        logger.debug("Found label [{}] for [{}]. Will merge delta at [{}] into delta at [{}].", label, volumeObjectTO, parentSnapshotLocalPath, childDeltaPath);
+
+        mergeDeltaIntoBaseFile(domain, label, parentSnapshotLocalPath, childDeltaPath, active, childTO.getPath(), volumeObjectTO, conn);
+
+        QemuImgFile parent = new QemuImgFile(parentSnapshotLocalPath, QemuImg.PhysicalDiskFormat.QCOW2);
+
+        logger.debug("Rebasing grand-children [{}] into parent at [{}].", mergeTreeTO.getGrandChildren(), parentSnapshotLocalPath);
+        for (DataTO grandChildTo : mergeTreeTO.getGrandChildren()) {
+            if (checkIfFileIsInActiveChainForVm(domain, grandChildTo)) {
+                logger.debug("Grand-child [{}] is on the active chain of VM [{}], thus libvirt has already rebased it, will ignore it.", grandChildTo, vmName);
+                continue;
+            }
+            QemuImgFile grandChild = new QemuImgFile(storagePool.getLocalPathFor(grandChildTo.getPath()), QemuImg.PhysicalDiskFormat.QCOW2);
+            qemuImg.rebase(grandChild, parent, parent.getFormat().toString(), false);
+        }
+    }
+
+    private boolean checkIfFileIsInActiveChainForVm(Domain vm, DataTO dataTO) throws LibvirtException {
+        String xml = vm.getXMLDesc(0);
+        KVMStoragePool storagePool = libvirtUtilitiesHelper.getPrimaryPoolFromDataTo(dataTO, storagePoolManager);
+        return xml.contains(storagePool.getLocalPathFor(dataTO.getPath()));
+    }
+
+    public int getFlagsToUseForRunningVmSnapshotCreation(boolean quiesceVm) {
+        int flags = quiesceVm ? Domain.SnapshotCreateFlags.QUIESCE : 0;
+        flags += Domain.SnapshotCreateFlags.DISK_ONLY +
+                Domain.SnapshotCreateFlags.ATOMIC +
+                Domain.SnapshotCreateFlags.NO_METADATA;
+        return flags;
+    }
+
+    public Pair<String, Map<String, Long>> createSnapshotXmlAndNewVolumePathMap(List<Pair<VolumeObjectTO, String>> volumeTosAndNewPaths, List<LibvirtVMDef.DiskDef> disks, String snapshotName) {
+        StringBuilder stringBuilder = new StringBuilder();
+        Map<String, Long> volumeObjectToNewPathMap = new HashMap<>();
+
+        for (Pair<VolumeObjectTO, String> volumeObjectTOAndPath : volumeTosAndNewPaths) {
+            LibvirtVMDef.DiskDef diskdef = getDiskWithPathOfVolumeObjectTO(disks, volumeObjectTOAndPath.first());
+            String newPath = volumeObjectTOAndPath.second();
+            stringBuilder.append(String.format(TAG_DISK_SNAPSHOT, diskdef.getDiskLabel(), getSnapshotTemporaryPath(diskdef.getDiskPath(), newPath)));
+
+            long snapSize = getFileSize(diskdef.getDiskPath());
+
+            volumeObjectToNewPathMap.put(volumeObjectTOAndPath.first().getUuid(), snapSize);
+        }
+
+        String snapshotXml = String.format(SNAPSHOT_XML, snapshotName, stringBuilder);
+        return new Pair<>(snapshotXml, volumeObjectToNewPathMap);
+    }
+
+    public long getFileSize(String path) {
+        return new File(path).length();
+    }
+
+    public boolean pullVolumeBackingFile(VolumeObjectTO volumeObjectTO, String vmName) throws LibvirtException {
+        Connect conn = libvirtUtilitiesHelper.getConnection();
+
+        Domain vm = getDomain(conn, vmName);
+        List<LibvirtVMDef.DiskDef> disks = getDisks(conn, vmName);
+        DiskDef diskDef = getDiskWithPathOfVolumeObjectTO(disks, volumeObjectTO);
+
+        String diskLabel = diskDef.getDiskLabel();
+        Script.runSimpleBashScript(String.format(BLOCK_PULL_COMMAND, vmName, diskLabel));
+
+        boolean result = checkBlockPullProgress(vm, diskLabel, vmName, volumeObjectTO.getUuid());
+
+        if (!result) {
+            logger.warn("Failed to block pull volume [{}] of VM [{}], aborting.", volumeObjectTO, vmName);
+            vm.blockJobAbort(diskLabel, Domain.BlockJobAbortFlags.ASYNC);
+        }
+        return result;
+    }
+
+    protected Boolean checkBlockPullProgress(Domain vm, String diskLabel, String vmName, String volumeUuid) {
+        int timeout = qcow2DeltaMergeTimeout;
+        DomainBlockJobInfo result;
+        long lastCommittedBytes = 0;
+        long endBytes = 0;
+        String partialLog = String.format("for volume [%s] of VM [%s]", volumeUuid, vmName);
+        while (timeout > 0) {
+            timeout -= 1;
+
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException ex) {
+                logger.trace(String.format("Thread that was tracking the block pull progress %s was interrupted. Ignoring.", partialLog), ex);
+                continue;
+            }
+
+            try {
+                result = vm.getBlockJobInfo(diskLabel, 0);
+            } catch (LibvirtException ex) {
+                logger.warn(String.format("Exception while getting block job info %s: [%s].", partialLog, ex.getMessage()), ex);
+                return false;
+            }
+
+            if (result == null || result.type == 0 && result.end == 0 && result.cur == 0) {
+                logger.debug(String.format("Block pull job %s has finished.", partialLog));
+                return true;
+            }
+
+            long currentCommittedBytes = result.cur;
+            if (currentCommittedBytes > lastCommittedBytes) {
+                logger.debug(String.format("The block pull %s is at [%s] of [%s].", partialLog, currentCommittedBytes, result.end));
+            }
+            lastCommittedBytes = currentCommittedBytes;
+            endBytes = result.end;
+        }
+        logger.warn(String.format("Block pull %s has timed out after waiting at least %s seconds. The progress of the operation was [%s] of [%s].", partialLog,
+                qcow2DeltaMergeTimeout, lastCommittedBytes, endBytes));
+        return false;
+    }
+
+
 }

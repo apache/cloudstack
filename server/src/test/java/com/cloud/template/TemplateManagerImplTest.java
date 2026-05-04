@@ -79,6 +79,7 @@ import org.apache.cloudstack.api.command.user.template.RegisterVnfTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateVnfTemplateCmd;
 import org.apache.cloudstack.api.command.user.userdata.LinkUserDataToTemplateCmd;
+import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -990,6 +991,11 @@ public class TemplateManagerImplTest extends TestCase {
             return Mockito.mock(SnapshotJoinDao.class);
         }
 
+
+        @Bean
+        public BackupOfferingDao backupOfferingDao() {
+            return Mockito.mock(BackupOfferingDao.class);
+        }
 
         public static class Library implements TypeFilter {
             @Override

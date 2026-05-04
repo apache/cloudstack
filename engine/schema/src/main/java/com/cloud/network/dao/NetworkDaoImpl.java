@@ -908,4 +908,15 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
 
         return overlappingNetworks;
     }
+
+    @Override
+    public NetworkVO findByZoneIdAndAccountIdAndGuestType(long zoneId, long accountId, GuestType guestType) {
+        SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
+
+        sc.setParameters("datacenter", zoneId);
+        sc.setParameters("account", accountId);
+        sc.setParameters("guestType", guestType);
+
+        return findOneBy(sc);
+    }
 }

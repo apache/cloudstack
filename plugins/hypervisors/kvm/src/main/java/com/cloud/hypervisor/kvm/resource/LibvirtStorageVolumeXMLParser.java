@@ -61,6 +61,28 @@ public class LibvirtStorageVolumeXMLParser {
         return null;
     }
 
+
+    public String getBackingFileNameIfExists(String volXML) {
+        try {
+            DocumentBuilder builder = ParserUtils.getSaferDocumentBuilderFactory().newDocumentBuilder();
+
+            InputSource is = new InputSource();
+            is.setCharacterStream(new StringReader(volXML));
+            Document doc = builder.parse(is);
+
+            Element rootElement = doc.getDocumentElement();
+            Element backingStore = (Element)rootElement.getElementsByTagName("backingStore").item(0);
+            if (backingStore != null) {
+                String[] paths = getTagValue("path", backingStore).split("/");
+                return paths[paths.length-1];
+            }
+        } catch (ParserConfigurationException | SAXException | IOException e) {
+            logger.error(e.toString(), e);
+        }
+        return null;
+    }
+
+
     private static String getTagValue(String tag, Element eElement) {
         NodeList nlList = eElement.getElementsByTagName(tag).item(0).getChildNodes();
         Node nValue = nlList.item(0);

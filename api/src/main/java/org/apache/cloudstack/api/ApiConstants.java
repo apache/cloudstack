@@ -63,6 +63,7 @@ public class ApiConstants {
     public static final String BACKUP_LIMIT = "backuplimit";
     public static final String BACKUP_OFFERING_NAME = "backupofferingname";
     public static final String BACKUP_OFFERING_ID = "backupofferingid";
+    public static final String BACKUP_OFFERING_DETAILS = "backupofferingdetails";
     public static final String BACKUP_STORAGE_AVAILABLE = "backupstorageavailable";
     public static final String BACKUP_STORAGE_LIMIT = "backupstoragelimit";
     public static final String BACKUP_STORAGE_TOTAL = "backupstoragetotal";
@@ -524,6 +525,7 @@ public class ApiConstants {
     public static final String QUALIFIERS = "qualifiers";
     public static final String QUERY_FILTER = "queryfilter";
     public static final String QUIESCE_VM = "quiescevm";
+    public static final String QUICK_RESTORE = "quickrestore";
     public static final String SCHEDULE = "schedule";
     public static final String SCHEDULE_ID = "scheduleid";
     public static final String SCOPE = "scope";
@@ -574,6 +576,8 @@ public class ApiConstants {
     public static final String STATE = "state";
     public static final String STATS = "stats";
     public static final String STATUS = "status";
+    public static final String COMPRESSION_STATUS = "compressionstatus";
+    public static final String VALIDATION_STATUS = "validationstatus";
     public static final String STORAGE_TYPE = "storagetype";
     public static final String STORAGE_POLICY = "storagepolicy";
     public static final String STORAGE_MOTION_ENABLED = "storagemotionenabled";
@@ -668,6 +672,7 @@ public class ApiConstants {
     public static final String ETCD_SERVICE_OFFERING_NAME = "etcdofferingname";
     public static final String REMOVE_VLAN = "removevlan";
     public static final String VLAN_ID = "vlanid";
+    public static final String ISOLATED = "isolated";
     public static final String ISOLATED_PVLAN = "isolatedpvlan";
     public static final String ISOLATED_PVLAN_TYPE = "isolatedpvlantype";
     public static final String ISOLATION_URI = "isolationuri";
@@ -1184,6 +1189,7 @@ public class ApiConstants {
     public static final String CLEAN_UP_EXTRA_CONFIG = "cleanupextraconfig";
     public static final String CLEAN_UP_PARAMETERS = "cleanupparameters";
     public static final String VIRTUAL_SIZE = "virtualsize";
+    public static final String UNCOMPRESSED_SIZE = "uncompressedsize";
     public static final String NETSCALER_CONTROLCENTER_ID = "netscalercontrolcenterid";
     public static final String NETSCALER_SERVICEPACKAGE_ID = "netscalerservicepackageid";
     public static final String FETCH_ROUTER_HEALTH_CHECK_RESULTS = "fetchhealthcheckresults";
@@ -1375,6 +1381,10 @@ public class ApiConstants {
 
     public static final String VMWARE_DC = "vmwaredc";
 
+    public static final String PARAMETER_DESCRIPTION_ISOLATED_BACKUPS = "Whether the backup will be isolated, defaults to false. " +
+            "Isolated backups are always created as full backups in independent chains. Therefore, they will never depend on any existing backup chain " +
+            "and no backup chain will depend on them. Currently only supported for the KBOSS provider.";
+
     public static final String CSS = "css";
 
     public static final String JSON_CONFIGURATION = "jsonconfiguration";
@@ -1394,6 +1404,27 @@ public class ApiConstants {
     public static final String VPN_CUSTOMER_GATEWAY_PARAMETERS = "vpncustomergatewayparameters";
     public static final String OBSOLETE_PARAMETERS = "obsoleteparameters";
     public static final String EXCLUDED_PARAMETERS = "excludedparameters";
+
+    public static final String COMPRESS = "compress";
+
+    public static final String VALIDATE = "validate";
+
+    public static final String VALIDATION_STEPS = "validationsteps";
+
+    public static final String ALLOW_QUICK_RESTORE = "allowquickrestore";
+
+    public static final String ALLOW_EXTRACT_FILE = "allowextractfile";
+
+    public static final String BACKUP_CHAIN_SIZE = "backupchainsize";
+
+    public static final String COMPRESSION_LIBRARY = "compressionlibrary";
+    public static final String ATTEMPTS = "attempts";
+
+    public static final String EXECUTING = "executing";
+
+    public static final String SCHEDULED = "scheduled";
+    public static final String SCHEDULED_DATE = "scheduleddate";
+    public static final String LAST_KNOWN_STATE = "last_known_state";
 
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.

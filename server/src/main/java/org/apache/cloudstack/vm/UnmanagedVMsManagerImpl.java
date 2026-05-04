@@ -1026,7 +1026,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             cleanupFailedImportVM(userVm);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM import failed for unmanaged vm %s during publishing usage records", userVm.getInstanceName()));
         }
-        resourceLimitService.incrementVmResourceCount(userVm.getAccountId(), userVm.isDisplayVm(), serviceOfferingVO, templateVO);
+        resourceLimitService.incrementVmResourceCount(userVm.getAccountId(), userVm.isDisplayVm(), serviceOfferingVO, templateVO, null);
         // Save usage event and update resource count for user vm volumes
         List<VolumeVO> volumes = volumeDao.findByInstance(userVm.getId());
         for (VolumeVO volume : volumes) {
@@ -2911,7 +2911,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             }
 
             DiskOfferingVO diskOffering = diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
-            List<String> resourceLimitStorageTags = resourceLimitService.getResourceLimitStorageTagsForResourceCountOperation(true, diskOffering);
+            List<String> resourceLimitStorageTags = resourceLimitService.getResourceLimitStorageTagsForResourceCountOperation(true, diskOffering, null);
             CheckedReservation volumeReservation = new CheckedReservation(owner, Resource.ResourceType.volume, resourceLimitStorageTags,
                     CollectionUtils.isNotEmpty(resourceLimitStorageTags) ? 1L : 0L, reservationDao, resourceLimitService);
             reservations.add(volumeReservation);

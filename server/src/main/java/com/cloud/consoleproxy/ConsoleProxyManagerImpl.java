@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -252,7 +251,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
     protected Gson jsonParser = new GsonBuilder().setVersion(1.3).create();
 
-    protected Set<State> availableVmStateOnAssignProxy = new HashSet<>(Arrays.asList(State.Starting, State.Running, State.Stopping, State.Migrating));
+    protected Set<State> availableVmStateOnAssignProxy = Set.of(State.Starting, State.Running, State.Stopping, State.Migrating, State.BackingUp, State.BackupError);
 
     @Inject
     private KeystoreDao _ksDao;
@@ -353,9 +352,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         ConsoleProxyVO proxy = null;
 
         if (!availableVmStateOnAssignProxy.contains(vm.getState())) {
-            if (logger.isInfoEnabled()) {
-                logger.info(String.format("Detected that %s is not currently in \"Starting\", \"Running\", \"Stopping\" or \"Migrating\" state, it will fail the proxy assignment.", vm.toString()));
-            }
+            logger.info("Detected that {} is not currently in any of the following states: {}. Therefore, it is not possible to assign a console to the VM.", vm, availableVmStateOnAssignProxy);
             return null;
         }
 

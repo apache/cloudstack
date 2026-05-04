@@ -58,6 +58,7 @@ import javax.naming.ConfigurationException;
 import com.cloud.agent.api.ConvertSnapshotCommand;
 import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
 import org.apache.cloudstack.storage.NfsMountManagerImpl.PathParser;
+import org.apache.cloudstack.storage.command.BackupDeleteAnswer;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
@@ -79,6 +80,7 @@ import org.apache.cloudstack.storage.template.DownloadManagerImpl;
 import org.apache.cloudstack.storage.template.UploadEntity;
 import org.apache.cloudstack.storage.template.UploadManager;
 import org.apache.cloudstack.storage.template.UploadManagerImpl;
+import org.apache.cloudstack.storage.to.BackupDeltaTO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -2142,6 +2144,74 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     }
 
+    protected Answer deleteBackup(DeleteCommand cmd) {
+        BackupDeltaTO deltaTo = (BackupDeltaTO) cmd.getData();
+        NfsTO nfs = (NfsTO)deltaTo.getDataStore();
+        String parent = getRootDir(nfs.getUrl(), _nfsVersion);
+        if (!parent.endsWith(File.separator)) {
+            parent += File.separator;
+        }
+        String backupRelativePath = deltaTo.getPath();
+        if (backupRelativePath.startsWith(File.separator)) {
+            backupRelativePath = backupRelativePath.substring(1);
+        }
+
+        String fullDeltaPath = parent + backupRelativePath;
+        File deltaFile = new File(fullDeltaPath);
+        logger.debug("Deleting backup at [{}].", fullDeltaPath);
+        String deltaDeleteResult = deleteLocalFile(fullDeltaPath);
+
+        String details;
+        if (deltaDeleteResult != null) {
+            details = String.format("Failed to delete backup delta [%s] with result [%s]. ", fullDeltaPath, deltaDeleteResult);
+            logger.warn(details);
+            return new BackupDeleteAnswer(cmd, false, details);
+        }
+
+        String screenshotRelativePath = deltaTo.getScreenshotPath();
+        BackupDeleteAnswer answer = deleteScreenshot(cmd, screenshotRelativePath, parent);
+        if (answer != null) {
+            return answer;
+        }
+
+        File deltaDir = deltaFile.getParentFile();
+        if (!deleteEmptyDirectory(deltaDir)) {
+            details = String.format("Unable to delete directory [%s] at path [%s].", deltaDir.getName(), deltaDir.getPath());
+            logger.debug(details);
+            return new BackupDeleteAnswer(cmd, false, details);
+        }
+
+        return new Answer(cmd, true, null);
+    }
+
+    protected BackupDeleteAnswer deleteScreenshot(DeleteCommand cmd, String screenshotRelativePath, String parent) {
+        if (screenshotRelativePath == null) {
+            return null;
+        }
+        if (screenshotRelativePath.startsWith(File.separator)) {
+            screenshotRelativePath = screenshotRelativePath.substring(1);
+        }
+        String fullScreenshotPath = parent + screenshotRelativePath;
+        logger.debug("Deleting screenshot at [{}].", fullScreenshotPath);
+        String screenshotDeleteResult = deleteLocalFile(fullScreenshotPath);
+        if (screenshotDeleteResult != null) {
+            String details = String.format("Failed to delete backup validation screenshot [%s] with result [%s]. ", fullScreenshotPath, screenshotDeleteResult);
+            logger.warn(details);
+            return new BackupDeleteAnswer(cmd, false, details);
+        }
+        return null;
+    }
+
+    protected boolean deleteEmptyDirectory(File dir) {
+        if (dir == null || !dir.isDirectory()) {
+            return true;
+        }
+        if (dir.list().length > 0) {
+            return true;
+        }
+        return dir.delete();
+    }
+
     private String deleteCheckpointIfExists(DataTO obj, String parent) {
         SnapshotObjectTO snapshotObjectTO = (SnapshotObjectTO) obj;
         String checkpointPath = snapshotObjectTO.getCheckpointPath();
@@ -2333,7 +2403,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     }
 
-    private String deleteLocalFile(String fullPath) {
+    protected String deleteLocalFile(String fullPath) {
         Script command = new Script("/bin/bash", logger);
         command.add("-c");
         command.add("rm -rf " + fullPath);
@@ -2468,6 +2538,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return deleteVolume(cmd);
         case SNAPSHOT:
             return deleteSnapshot(cmd);
+        case BACKUP:
+            return deleteBackup(cmd);
         }
         return Answer.createUnsupportedCommandAnswer(cmd);
     }
