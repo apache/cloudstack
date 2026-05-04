@@ -202,6 +202,15 @@
             v-model:value="form.sourcenatipaddress"
             :placeholder="apiParams.sourcenatipaddress?.description"/>
         </a-form-item>
+        <a-form-item name="keepMacAddressOnPublicNic" ref="keepMacAddressOnPublicNic" v-if="isAdmin()">
+          <template #label>
+            <tooltip-label
+              :title="$t('label.keep.mac.address.on.public.nic')"
+              :tooltip="apiParams.keepmacaddressonpublicnic?.description"
+            />
+          </template>
+          <a-switch v-model:checked="form.keepMacAddressOnPublicNic" />
+        </a-form-item>
         <a-form-item name="start" ref="start">
           <template #label>
             <tooltip-label :title="$t('label.start')" :tooltip="apiParams.start.description"/>
@@ -287,7 +296,8 @@ export default {
     initForm () {
       this.formRef = ref()
       this.form = reactive({
-        start: true
+        start: true,
+        keepMacAddressOnPublicNic: true
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.required.input') }],
@@ -447,7 +457,7 @@ export default {
       if (this.loading) return
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
-        var params = {}
+        const params = {}
         if (this.owner?.account) {
           params.account = this.owner.account
           params.domainid = this.owner.domainid
@@ -460,7 +470,11 @@ export default {
           if (input === '' || input === null || input === undefined) {
             continue
           }
-          params[key] = input
+          if (key === 'keepMacAddressOnPublicNic') {
+            params.keepmacaddressonpublicnic = input
+          } else {
+            params[key] = input
+          }
         }
         if (this.selectedVpcOffering.networkmode === 'ROUTED') {
           if ((values.cidr === undefined || values.cidr === '') && (values.cidrsize === undefined || values.cidrsize === '')) {
