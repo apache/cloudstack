@@ -3462,7 +3462,6 @@
   "message.error.zone.name": "\u8BF7\u8F93\u5165\u533A\u57DF\u540D\u79F0",
   "message.error.zone.type": "\u8BF7\u9009\u62E9\u533A\u57DF\u7C7B\u578B",
   "message.error.linstor.resourcegroup": "\u8BF7\u8F93\u5165 Linstor \u8D44\u6E90\u7EC4",
-  "message.error.fixed.offering.kvm": "\u4E0D\u53EF\u80FD\u901A\u8FC7\u56FA\u5B9A\u7684\u8BA1\u7B97\u65B9\u6848\u6765\u6269\u5C55KVM\u865A\u62DF\u673A\u3002",
   "message.fail.to.delete": "\u5220\u9664\u5931\u8D25\u3002",
   "message.failed.to.add": "\u6DFB\u52A0\u5931\u8D25",
   "message.failed.to.assign.vms": "\u672A\u80FD\u5206\u914D\u865A\u62DF\u673A",

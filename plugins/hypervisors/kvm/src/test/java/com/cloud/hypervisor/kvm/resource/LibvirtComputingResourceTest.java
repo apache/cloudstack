@@ -5642,35 +5642,45 @@ public class LibvirtComputingResourceTest {
         Mockito.verify(vmDef, times(1)).addComp(any());
     }
 
-    public void validateGetCurrentMemAccordingToMemBallooningWithoutMemBalooning(){
+    @Test
+    public void getCurrentMemAccordingToMemBallooningTestValidateCurrentMemoryWithoutMemBallooning(){
         VirtualMachineTO vmTo = Mockito.mock(VirtualMachineTO.class);
-        Mockito.when(vmTo.getType()).thenReturn(Type.User);
         LibvirtComputingResource libvirtComputingResource = new LibvirtComputingResource();
         libvirtComputingResource.noMemBalloon = true;
-        long maxMemory = 2048;
+        long requestedMemory = 1024 * 1024;
+        long minMemory = 512 * 1024;
 
-        long currentMemory = libvirtComputingResource.getCurrentMemAccordingToMemBallooning(vmTo, maxMemory);
-        Assert.assertEquals(maxMemory, currentMemory);
-        Mockito.verify(vmTo, Mockito.times(0)).getMinRam();
+        long currentMemory = libvirtComputingResource.getCurrentMemAccordingToMemBallooning(vmTo, requestedMemory, minMemory);
+        Assert.assertEquals(requestedMemory, currentMemory);
     }
 
     @Test
-    public void validateGetCurrentMemAccordingToMemBallooningWithtMemBalooning(){
+    public void getCurrentMemAccordingToMemBallooningTestValidateCurrentMemoryWithMemoryBallooning(){
         LibvirtComputingResource libvirtComputingResource = new LibvirtComputingResource();
         libvirtComputingResource.noMemBalloon = false;
 
-        long maxMemory = 2048;
-        long minMemory = ByteScaleUtils.mebibytesToBytes(64);
-
         VirtualMachineTO vmTo = Mockito.mock(VirtualMachineTO.class);
         Mockito.when(vmTo.getType()).thenReturn(Type.User);
-        Mockito.when(vmTo.getMinRam()).thenReturn(minMemory);
+        long requestedMemory = 1024 * 1024;
+        long minMemory = 512 * 1024;
 
-        long currentMemory = libvirtComputingResource.getCurrentMemAccordingToMemBallooning(vmTo, maxMemory);
-        Assert.assertEquals(ByteScaleUtils.bytesToKibibytes(minMemory), currentMemory);
-        Mockito.verify(vmTo).getMinRam();
+        long currentMemory = libvirtComputingResource.getCurrentMemAccordingToMemBallooning(vmTo, requestedMemory, minMemory);
+        Assert.assertEquals(minMemory, currentMemory);
     }
 
+    @Test
+    public void getCurrentMemAccordingToMemBallooningTestValidateCurrentMemoryForSystemVms() {
+        LibvirtComputingResource libvirtComputingResource = new LibvirtComputingResource();
+        libvirtComputingResource.noMemBalloon = false;
+
+        VirtualMachineTO vmTo = Mockito.mock(VirtualMachineTO.class);
+        Mockito.when(vmTo.getType()).thenReturn(Type.SecondaryStorageVm);
+        long requestedMemory = 1024 * 1024;
+        long minMemory = 512 * 1024;
+
+        long currentMemory = libvirtComputingResource.getCurrentMemAccordingToMemBallooning(vmTo, requestedMemory, minMemory);
+        Assert.assertEquals(requestedMemory, currentMemory);
+    }
     @Test
     public void validateCreateGuestResourceDefWithVcpuMaxLimit(){
         LibvirtComputingResource libvirtComputingResource = new LibvirtComputingResource();
@@ -7233,5 +7243,83 @@ public class LibvirtComputingResourceTest {
         Mockito.doReturn(interfaces).when(libvirtComputingResourceSpy).getInterfaces(Mockito.any(), Mockito.anyString());
 
         libvirtComputingResourceSpy.getInterface(connMock, vmName, invalidMacAddress);
+    }
+
+    @Test
+    public void updateCpuQuotaAndPeriodTestAssertPeriodAndQuotaAreNotUpdatedWhenLibvirtVersionIsLessThanTheMinimum() throws LibvirtException {
+        libvirtComputingResourceSpy.hypervisorLibvirtVersion = 8999;
+        libvirtComputingResourceSpy.updateCpuQuotaAndPeriod(domainMock, null, false);
+        Mockito.verify(domainMock, Mockito.never()).setSchedulerParameters(Mockito.any());
+    }
+
+    @Test
+    public void updateCpuQuotaAndPeriodTestAssertPeriodAndQuotaAreNotUpdatedWhenThereIsNoCapCapChangeAndNoCpuLimitationIsApplied() throws LibvirtException {
+        Mockito.when(vmTO.isLimitCpuUse()).thenReturn(false);
+        libvirtComputingResourceSpy.hypervisorLibvirtVersion = 9000;
+        libvirtComputingResourceSpy.updateCpuQuotaAndPeriod(domainMock, vmTO, false);
+        Mockito.verify(domainMock, Mockito.never()).setSchedulerParameters(Mockito.any());
+    }
+
+    @Test
+    public void updateCpuQuotaAndPeriodTestAssertQuotaIsRemovedWhenThereIsCpuCapChangeAndNoCpuLimitationIsApplied() throws LibvirtException {
+        Mockito.when(vmTO.isLimitCpuUse()).thenReturn(false);
+        Mockito.when(domainMock.getName()).thenReturn("i-2-10-VM");
+        libvirtComputingResourceSpy.hypervisorLibvirtVersion = 9000;
+        libvirtComputingResourceSpy.updateCpuQuotaAndPeriod(domainMock, vmTO, true);
+        Mockito.verify(domainMock, Mockito.times(1)).setSchedulerParameters(Mockito.any());
+    }
+
+    @Test
+    public void updateCpuQuotaAndPeriodTestAssertPeriodAndQuotaAreUpdatedWhenThereIsNotCpuCapChangeAndCpuLimitationIsApplied() throws LibvirtException {
+        Mockito.when(vmTO.isLimitCpuUse()).thenReturn(true);
+        double cpuQuotaPercentage = 0.03;
+        Mockito.when(vmTO.getCpuQuotaPercentage()).thenReturn(cpuQuotaPercentage);
+        Mockito.doReturn(new Pair<>(1000, 300L)).when(libvirtComputingResourceSpy).getPeriodAndQuota(cpuQuotaPercentage);
+        Mockito.when(domainMock.getName()).thenReturn("i-2-10-VM");
+        libvirtComputingResourceSpy.hypervisorLibvirtVersion = 9000;
+        libvirtComputingResourceSpy.updateCpuQuotaAndPeriod(domainMock, vmTO, false);
+        Mockito.verify(domainMock, Mockito.times(2)).setSchedulerParameters(Mockito.any());
+    }
+
+    @Test
+    public void updateCpuQuotaAndPeriodTestAssertPeriodAndQuotaAreUpdatedWhenThereIsCpuCapChangeAndCpuLimitationIsApplied() throws LibvirtException {
+        Mockito.when(vmTO.isLimitCpuUse()).thenReturn(true);
+        double cpuQuotaPercentage = 0.03;
+        Mockito.when(vmTO.getCpuQuotaPercentage()).thenReturn(cpuQuotaPercentage);
+        Mockito.doReturn(new Pair<>(1000, 300L)).when(libvirtComputingResourceSpy).getPeriodAndQuota(cpuQuotaPercentage);
+        Mockito.when(domainMock.getName()).thenReturn("i-2-10-VM");
+        libvirtComputingResourceSpy.hypervisorLibvirtVersion = 9000;
+        libvirtComputingResourceSpy.updateCpuQuotaAndPeriod(domainMock, vmTO, true);
+        Mockito.verify(domainMock, Mockito.times(2)).setSchedulerParameters(Mockito.any());
+    }
+
+    @Test
+    public void getPeriodAndQuotaTestAssertQuotaIsEqualToPeriodMultipliedByQuotaPercentage() {
+        double cpuQuotaPercentage = 0.3;
+        int expectedPeriod = CpuTuneDef.DEFAULT_PERIOD;
+        long expectedQuota = (long) (expectedPeriod * cpuQuotaPercentage);
+        Pair<Integer, Long> expectedResult = new Pair<>(expectedPeriod, expectedQuota);
+        Pair<Integer, Long> result = libvirtComputingResourceSpy.getPeriodAndQuota(cpuQuotaPercentage);
+        Assert.assertEquals(expectedResult, result);
+    }
+
+    @Test
+    public void getPeriodAndQuotaTestQuotaIsEqualToMinimumWhenRequired() {
+        double cpuQuotaPercentage = 0.03;
+        long expectedQuota = CpuTuneDef.MIN_QUOTA;
+        int expectedPeriod = (int) ((double) expectedQuota / cpuQuotaPercentage);
+        Pair<Integer, Long> expectedResult = new Pair<>(expectedPeriod, expectedQuota);
+        Pair<Integer, Long> result = libvirtComputingResourceSpy.getPeriodAndQuota(cpuQuotaPercentage);
+        Assert.assertEquals(expectedResult, result);
+    }
+
+    @Test
+    public void getPeriodAndQuotaTestPeriodIsEqualToMaximumWhenRequired() {
+        double cpuQuotaPercentage = 0.0003;
+        long expectedQuota = CpuTuneDef.MIN_QUOTA;
+        int expectedPeriod = CpuTuneDef.MAX_PERIOD;
+        Pair<Integer, Long> expectedResult = new Pair<>(expectedPeriod, expectedQuota);
+        Pair<Integer, Long> result = libvirtComputingResourceSpy.getPeriodAndQuota(cpuQuotaPercentage);
+        Assert.assertEquals(expectedResult, result);
     }
 }

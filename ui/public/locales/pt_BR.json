@@ -2225,7 +2225,6 @@
 "message.error.zone.name": "Por favor, insira o nome da zona",
 "message.error.zone.type": "Por favor, selecione o tipo de zona",
 "message.error.linstor.resourcegroup": "Por favor, insira o Linstor Resource-Group",
-"message.error.fixed.offering.kvm": "N\u00e3o \u00e9 poss\u00edvel escalar VMs que utilizam o virtualizador KVM com uma oferta de computa\u00e7\u00e3o fixa.",
 "message.fail.to.delete": "Falha ao deletar.",
 "message.failed.to.add": "Falha ao adicionar",
 "message.failed.to.assign.vms": "Falha ao atribuir VMs",

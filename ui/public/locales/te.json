@@ -3169,7 +3169,6 @@
   "message.error.zone.name": "దయచేసి జోన్ పేరును నమోదు చేయండి.",
   "message.error.zone.type": "దయచేసి జోన్ రకాన్ని ఎంచుకోండి.",
   "message.error.linstor.resourcegroup": "దయచేసి Linstor Resource-Groupని నమోదు చేయండి.",
-  "message.error.fixed.offering.kvm": "ఫిక్స్‌డ్ కంప్యూట్ ఆఫర్‌తో KVM హైపర్‌వైజర్‌ను ఉపయోగించుకునే సందర్భాలను స్కేల్ చేయడం సాధ్యం కాదు.",
   "message.error.create.webhook.local.account": "స్థానిక స్కోప్‌తో వెబ్‌హుక్‌ని సృష్టించడానికి తప్పనిసరిగా ఖాతా అందించబడాలి.",
   "message.error.create.webhook.name": "వెబ్‌హుక్‌ని సృష్టించడానికి తప్పనిసరిగా పేరు అందించాలి.",
   "message.error.create.webhook.payloadurl": "Webhookని సృష్టించడానికి పేలోడ్ URL తప్పనిసరిగా అందించబడాలి.",
