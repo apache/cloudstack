@@ -32,7 +32,6 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.backup.CreateImageTransferCmd;
 import org.apache.cloudstack.api.command.admin.backup.DeleteVmCheckpointCmd;
 import org.apache.cloudstack.api.command.admin.backup.FinalizeBackupCmd;
@@ -59,18 +58,14 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
-import com.cloud.api.ApiDBUtils;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.storage.ScopeType;
-import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeDetailVO;
-import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -949,31 +944,6 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
                 }
             }
         }
-
-    private long getVolumeTotalSize(VolumeVO volume) {
-        VolumeDetailVO detail = volumeDetailsDao.findDetail(volume.getId(), ApiConstants.VIRTUAL_SIZE);
-        if (detail != null) {
-            long size = NumbersUtil.parseLong(detail.getValue(), 0L);
-            if (size > 0) {
-                return size;
-            }
-        }
-        ApiDBUtils.getVolumeStatistics(volume.getPath());
-        VolumeStats vs = null;
-        if (List.of(Storage.ImageFormat.VHD, Storage.ImageFormat.QCOW2, Storage.ImageFormat.RAW).contains(volume.getFormat())) {
-            if (volume.getPath() != null) {
-                vs = ApiDBUtils.getVolumeStatistics(volume.getPath());
-            }
-        } else if (volume.getFormat() == Storage.ImageFormat.OVA) {
-            if (volume.getChainInfo() != null) {
-                vs = ApiDBUtils.getVolumeStatistics(volume.getChainInfo());
-            }
-        }
-        if (vs != null && vs.getPhysicalSize() > 0) {
-            return vs.getPhysicalSize();
-        }
-        return volume.getSize();
-    }
 
     @Override
     public String getConfigComponentName() {
