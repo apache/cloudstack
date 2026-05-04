@@ -207,6 +207,13 @@
           </div>
         </div>
       </a-list-item>
+      <a-list-item v-else-if="item === 'provider' && $route.path.includes('/dnsserver')">
+        <div>
+          <strong>{{ $t('label.provider') }}</strong>
+          <br/>
+          <div>{{ dataResource[item] }}</div>
+        </div>
+      </a-list-item>
       <external-configuration-details
         v-else-if="item === 'externaldetails' && (['host', 'computeoffering'].includes($route.meta.name) || (['cluster'].includes($route.meta.name) && dataResource.extensionid))"
         :resource="dataResource" />

@@ -32,21 +32,22 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
+import org.apache.cloudstack.util.HypervisorTypeConverter;
+
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.ResourceState;
 import com.cloud.storage.Storage;
-import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 import com.cloud.util.StoragePoolTypeConverter;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
-import org.apache.cloudstack.util.HypervisorTypeConverter;
 
 @Entity
 @Table(name = "user_vm_view")
@@ -403,6 +404,9 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     @Column(name = "public_ip_address")
     private String publicIpAddress;
+
+    @Column(name = "nic_dns_name")
+    private String nicDnsName;
 
     @Column(name = "user_data", updatable = true, nullable = true, length = 2048)
     private String userData;
@@ -1102,5 +1106,9 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     public boolean isNicEnabled() {
         return isNicEnabled;
+    }
+
+    public String getNicDnsName() {
+        return nicDnsName;
     }
 }

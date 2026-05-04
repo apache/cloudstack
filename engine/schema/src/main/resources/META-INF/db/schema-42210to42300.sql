@@ -127,3 +127,81 @@ CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_tariff_usage` (
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_quota_tariff_usage__tariff_id` FOREIGN KEY (`tariff_id`) REFERENCES `cloud_usage`.`quota_tariff` (`id`),
     CONSTRAINT `fk_quota_tariff_usage__quota_usage_id` FOREIGN KEY (`quota_usage_id`) REFERENCES `cloud_usage`.`quota_usage` (`id`));
+
+-- ======================================================================
+-- DNS Framework Schema
+-- ======================================================================
+
+-- DNS Server Table (Stores DNS Server Configurations)
+CREATE TABLE IF NOT EXISTS `cloud`.`dns_server` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id of the dns server',
+    `uuid` varchar(40) COMMENT 'uuid of the dns server',
+    `name` varchar(255) NOT NULL COMMENT 'display name of the dns server',
+    `provider_type` varchar(255) NOT NULL COMMENT 'Provider type such as PowerDns',
+    `url` varchar(1024) NOT NULL COMMENT 'dns server url',
+    `dns_username` varchar(255) COMMENT 'username or email for dns server credentials',
+    `dns_api_key` varchar(255) NOT NULL COMMENT 'api key or token for the dns server ',
+    `port` int(11) DEFAULT NULL COMMENT 'optional dns server port',
+    `name_servers` varchar(1024) DEFAULT NULL COMMENT 'Comma separated list of name servers',
+    `is_public` tinyint(1) NOT NULL DEFAULT '0',
+    `public_domain_suffix` VARCHAR(255),
+    `state` ENUM('Enabled', 'Disabled') NOT NULL DEFAULT 'Disabled',
+    `domain_id` bigint unsigned COMMENT 'for domain-specific ownership',
+    `account_id` bigint(20) unsigned NOT NULL,
+    `created` datetime NOT NULL COMMENT 'date created',
+    `removed` datetime DEFAULT NULL COMMENT 'Date removed (soft delete)',
+    PRIMARY KEY (`id`),
+    KEY `i_dns_server__account_id` (`account_id`),
+    CONSTRAINT `fk_dns_server__account_id` FOREIGN KEY (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- DNS Server Details Table
+CREATE TABLE IF NOT EXISTS `cloud`.`dns_server_details` (
+  `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `dns_server_id` bigint unsigned NOT NULL COMMENT 'dns_server the detail is related to',
+  `name` varchar(255) NOT NULL COMMENT 'name of the detail',
+  `value` varchar(255) NOT NULL COMMENT 'value of the detail',
+  `display` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Should detail be displayed to the end user',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_dns_server_details__dns_server_id` FOREIGN KEY (`dns_server_id`) REFERENCES `dns_server`(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- DNS Zone Table (Stores DNS Zone Metadata)
+CREATE TABLE IF NOT EXISTS `cloud`.`dns_zone` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id of the dns zone',
+    `uuid` varchar(40) COMMENT 'uuid of the dns zone',
+    `name` varchar(255) NOT NULL COMMENT 'dns zone name (e.g. example.com)',
+    `dns_server_id` bigint unsigned NOT NULL COMMENT 'fk to dns_server.id',
+    `external_reference` VARCHAR(255) COMMENT 'id of external provider resource',
+    `domain_id` bigint unsigned COMMENT 'for domain-specific ownership',
+    `account_id` bigint unsigned COMMENT 'account id. foreign key to account table',
+    `description` varchar(1024) DEFAULT NULL,
+    `type` ENUM('Private', 'Public') NOT NULL DEFAULT 'Public',
+    `state` ENUM('Active', 'Inactive') NOT NULL DEFAULT 'Inactive',
+    `created` datetime NOT NULL COMMENT 'date created',
+    `removed` datetime DEFAULT NULL COMMENT 'Date removed (soft delete)',
+    PRIMARY KEY (`id`),
+    CONSTRAINT `uc_dns_zone__uuid` UNIQUE (`uuid`),
+    KEY `i_dns_zone__dns_server` (`dns_server_id`),
+    KEY `i_dns_zone__account_id` (`account_id`),
+    CONSTRAINT `fk_dns_zone__dns_server_id` FOREIGN KEY (`dns_server_id`) REFERENCES `dns_server` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_dns_zone__account_id` FOREIGN KEY (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_dns_zone__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- DNS Zone Network Map (One-to-Many Link)
+CREATE TABLE IF NOT EXISTS `cloud`.`dns_zone_network_map` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id of the dns zone to network mapping',
+  `uuid` varchar(40),
+  `dns_zone_id` bigint(20) unsigned NOT NULL,
+  `network_id` bigint(20) unsigned NOT NULL COMMENT 'network to which dns zone is associated to',
+  `sub_domain` varchar(255) DEFAULT NULL COMMENT 'Subdomain for auto-registration',
+  `created` datetime NOT NULL COMMENT 'date created',
+  `removed` datetime DEFAULT NULL COMMENT 'Date removed (soft delete)',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `uc_dns_zone__uuid` UNIQUE (`uuid`),
+  KEY `fk_dns_map__zone_id` (`dns_zone_id`),
+  KEY `fk_dns_map__network_id` (`network_id`),
+  CONSTRAINT `fk_dns_map__zone_id` FOREIGN KEY (`dns_zone_id`) REFERENCES `dns_zone` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_dns_map__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

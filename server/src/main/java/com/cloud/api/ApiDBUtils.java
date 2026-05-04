@@ -80,6 +80,10 @@ import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.backup.dao.BackupRepositoryDao;
 import org.apache.cloudstack.backup.dao.BackupScheduleDao;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.dns.dao.DnsZoneDao;
+import org.apache.cloudstack.dns.dao.DnsZoneNetworkMapDao;
+import org.apache.cloudstack.dns.vo.DnsZoneNetworkMapVO;
+import org.apache.cloudstack.dns.vo.DnsZoneVO;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -363,6 +367,7 @@ import org.apache.cloudstack.acl.dao.ApiKeyPairDao;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.util.Strings;
 
 public class ApiDBUtils {
     private static final Logger log = LogManager.getLogger(ApiDBUtils.class);
@@ -504,6 +509,8 @@ public class ApiDBUtils {
     static SharedFSJoinDao s_sharedFSJoinDao;
 
     static BucketDao s_bucketDao;
+    static DnsZoneDao s_dnsZoneDao;
+    static DnsZoneNetworkMapDao s_dnsZoneNetworkMapDao;
     static VirtualMachineManager s_virtualMachineManager;
 
     @Inject
@@ -776,6 +783,10 @@ public class ApiDBUtils {
     private VirtualMachineManager virtualMachineManager;
     @Inject
     private SharedFSJoinDao sharedFSJoinDao;
+    @Inject
+    private DnsZoneDao dnsZoneDao;
+    @Inject
+    private DnsZoneNetworkMapDao dnsZoneNetworkMapDao;
 
     @PostConstruct
     void init() {
@@ -914,6 +925,8 @@ public class ApiDBUtils {
         s_bucketDao = bucketDao;
         s_virtualMachineManager = virtualMachineManager;
         s_sharedFSJoinDao = sharedFSJoinDao;
+        s_dnsZoneDao = dnsZoneDao;
+        s_dnsZoneNetworkMapDao = dnsZoneNetworkMapDao;
     }
 
     // ///////////////////////////////////////////////////////////
@@ -2294,6 +2307,17 @@ public class ApiDBUtils {
             details = s_resourceDetailsService.getDetailsMap(resourceId, resourceType, true);
         }
         return details.isEmpty() ? null : details;
+    }
+
+    public static Pair<String, String> findDnsZoneByNetworkId(long networkId) {
+        DnsZoneNetworkMapVO dnsNetworkMapVO = s_dnsZoneNetworkMapDao.findByNetworkId(networkId);
+        if (dnsNetworkMapVO != null) {
+            DnsZoneVO dnsZoneVO = s_dnsZoneDao.findById(dnsNetworkMapVO.getDnsZoneId());
+            if (Strings.isNotBlank(dnsZoneVO.getName())) {
+                return new Pair<> (dnsZoneVO.getName(), dnsNetworkMapVO.getSubDomain());
+            }
+        }
+        return new Pair<>(null, null);
     }
 
     public static boolean isAdmin(Account account) {
