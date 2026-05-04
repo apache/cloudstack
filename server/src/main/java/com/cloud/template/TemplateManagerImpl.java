@@ -718,11 +718,13 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             DiskTO disk = new DiskTO(iso, 3L, null, Volume.Type.ISO);
             profile.addDisk(disk);
         }
-        // FR283: pre-allocate an additional empty cdrom slot at diskSeq=4 (hdd).
-        // Hardcoded second slot for now; commit 2 makes this configurable.
-        TemplateObjectTO extraIso = new TemplateObjectTO();
-        extraIso.setFormat(ImageFormat.ISO);
-        profile.addDisk(new DiskTO(extraIso, 4L, null, Volume.Type.ISO));
+        // Empty ISO DiskTOs pre-allocate cdrom drives at boot so runtime attachIso can media-swap into them.
+        int cap = VmCdromMaxCount.value();
+        for (int slot = 1; slot < cap; slot++) {
+            TemplateObjectTO extraIso = new TemplateObjectTO();
+            extraIso.setFormat(ImageFormat.ISO);
+            profile.addDisk(new DiskTO(extraIso, 3L + slot, null, Volume.Type.ISO));
+        }
     }
 
     private void prepareTemplateInOneStoragePool(final VMTemplateVO template, final StoragePoolVO pool) {
@@ -2543,7 +2545,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         return new ConfigKey<?>[] {AllowPublicUserTemplates,
                 TemplatePreloaderPoolSize,
                 ValidateUrlIsResolvableBeforeRegisteringTemplate,
-                TemplateDeleteFromPrimaryStorage};
+                TemplateDeleteFromPrimaryStorage,
+                VmCdromMaxCount};
     }
 
     public List<TemplateAdapter> getTemplateAdapters() {

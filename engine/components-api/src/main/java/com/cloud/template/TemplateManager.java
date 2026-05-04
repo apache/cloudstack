@@ -64,6 +64,13 @@ public interface TemplateManager {
             true,
             ConfigKey.Scope.Global);
 
+    ConfigKey<Integer> VmCdromMaxCount = new ConfigKey<Integer>("Advanced",
+            Integer.class,
+            "vm.cdrom.max.count", "1",
+            "Maximum number of CD-ROM drives per VM.",
+            true,
+            ConfigKey.Scope.Global);
+
     static final String VMWARE_TOOLS_ISO = "vmware-tools.iso";
     static final String XS_TOOLS_ISO = "xs-tools.iso";
 
