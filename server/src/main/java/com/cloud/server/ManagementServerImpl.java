@@ -1082,8 +1082,6 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
 
     protected List<DeploymentPlanner> _planners;
 
-    private boolean jsInterpretationEnabled = false;
-
     private final List<HypervisorType> supportedHypervisors = new ArrayList<>();
 
     public List<DeploymentPlanner> getPlanners() {
@@ -1163,8 +1161,6 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
 
         supportedHypervisors.add(HypervisorType.KVM);
         supportedHypervisors.add(HypervisorType.XenServer);
-
-        jsInterpretationEnabled = JsInterpretationEnabled.value();
 
         return true;
     }
@@ -1700,11 +1696,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         List<Host> suitableHosts = new ArrayList<>();
 
         for (final HostAllocator allocator : hostAllocators) {
-            if (CollectionUtils.isNotEmpty(compatibleHosts)) {
-                suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, compatibleHosts, HostAllocator.RETURN_UPTO_ALL, false);
-            } else {
-                suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, HostAllocator.RETURN_UPTO_ALL, false);
-            }
+            suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, compatibleHosts, HostAllocator.RETURN_UPTO_ALL, false);
 
             if (CollectionUtils.isNotEmpty(suitableHosts)) {
                 break;
@@ -1713,10 +1705,10 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
 
         _dpMgr.reorderHostsByPriority(plan.getHostPriorities(), suitableHosts);
 
-        if (suitableHosts.isEmpty()) {
+        if (CollectionUtils.isEmpty(suitableHosts)) {
             logger.warn("No suitable hosts found.");
         } else {
-            logger.debug("Hosts having capacity and suitable for migration: {}", suitableHosts);
+            logger.debug("Hosts having capacity and are suitable for migration: {}", suitableHosts);
         }
 
         // Only list hosts of the same architecture as the source Host in a multi-arch zone
@@ -4374,10 +4366,8 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         cmdList.add(ListGuestVlansCmd.class);
         cmdList.add(AssignVolumeCmd.class);
         cmdList.add(ListSecondaryStorageSelectorsCmd.class);
-        if (jsInterpretationEnabled) {
-            cmdList.add(CreateSecondaryStorageSelectorCmd.class);
-            cmdList.add(UpdateSecondaryStorageSelectorCmd.class);
-        }
+        cmdList.add(CreateSecondaryStorageSelectorCmd.class);
+        cmdList.add(UpdateSecondaryStorageSelectorCmd.class);
         cmdList.add(RemoveSecondaryStorageSelectorCmd.class);
         cmdList.add(ListAffectedVmsForStorageScopeChangeCmd.class);
         cmdList.add(ListGuiThemesCmd.class);
@@ -4435,8 +4425,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {exposeCloudStackVersionInApiXmlResponse, exposeCloudStackVersionInApiListCapabilities, vmPasswordLength, sshKeyLength, humanReadableSizes, customCsIdentifier,
-        JsInterpretationEnabled};
+        return new ConfigKey<?>[] {exposeCloudStackVersionInApiXmlResponse, exposeCloudStackVersionInApiListCapabilities, vmPasswordLength, sshKeyLength, humanReadableSizes, customCsIdentifier};
     }
 
     protected class EventPurgeTask extends ManagedContextRunnable {
@@ -6002,13 +5991,5 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
     public Answer getExternalVmConsole(VirtualMachine vm, Host host) {
         return extensionsManager.getInstanceConsole(vm, host);
     }
-    @Override
-    public void checkJsInterpretationAllowedIfNeededForParameterValue(String paramName, boolean paramValue) {
-        if (!paramValue || jsInterpretationEnabled) {
-            return;
-        }
-        throw new InvalidParameterValueException(String.format(
-                "The parameter %s cannot be set to true as JS interpretation is disabled",
-                paramName));
-    }
+
 }

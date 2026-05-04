@@ -157,6 +157,7 @@ public class ApiConstants {
     public static final String CUSTOM_ID = "customid";
     public static final String CUSTOM_ACTION_ID = "customactionid";
     public static final String CUSTOM_JOB_ID = "customjobid";
+    public static final String CURRENCY = "currency";
     public static final String CURRENT_START_IP = "currentstartip";
     public static final String CURRENT_END_IP = "currentendip";
     public static final String ENCRYPT = "encrypt";
@@ -509,6 +510,7 @@ public class ApiConstants {
     public static final String REPAIR = "repair";
     public static final String REPETITION_ALLOWED = "repetitionallowed";
     public static final String REQUIRES_HVM = "requireshvm";
+    public static final String RESERVED_RESOURCE_DETAILS = "reservedresourcedetails";
     public static final String RESOURCES = "resources";
     public static final String RESOURCE_COUNT = "resourcecount";
     public static final String RESOURCE_NAME = "resourcename";
@@ -525,7 +527,6 @@ public class ApiConstants {
     public static final String SCHEDULE = "schedule";
     public static final String SCHEDULE_ID = "scheduleid";
     public static final String SCOPE = "scope";
-    public static final String USER_SECRET_KEY = "usersecretkey";
     public static final String SEARCH_BASE = "searchbase";
     public static final String SECONDARY_IP = "secondaryip";
     public static final String SECURITY_GROUP_IDS = "securitygroupids";
@@ -541,6 +542,7 @@ public class ApiConstants {
     public static final String SESSIONKEY = "sessionkey";
     public static final String SHOW_CAPACITIES = "showcapacities";
     public static final String SHOW_REMOVED = "showremoved";
+    public static final String SHOW_RESOURCES = "showresources";
     public static final String SHOW_RESOURCE_ICON = "showicon";
     public static final String SHOW_INACTIVE = "showinactive";
     public static final String SHOW_UNIQUE = "showunique";
@@ -606,9 +608,11 @@ public class ApiConstants {
     public static final String TENANT_NAME = "tenantname";
     public static final String TOTAL = "total";
     public static final String TOTAL_SUBNETS = "totalsubnets";
+    public static final String TOTAL_QUOTA = "totalquota";
     public static final String TYPE = "type";
     public static final String TRUST_STORE = "truststore";
     public static final String TRUST_STORE_PASSWORD = "truststorepass";
+    public static final String UNIT = "unit";
     public static final String URL = "url";
     public static final String USAGE_INTERFACE = "usageinterface";
     public static final String USED = "used";
@@ -629,6 +633,8 @@ public class ApiConstants {
     public static final String USERNAME = "username";
     public static final String USER_CONFIGURABLE = "userconfigurable";
     public static final String USER_SECURITY_GROUP_LIST = "usersecuritygrouplist";
+    public static final String USER_SECRET_KEY = "usersecretkey";
+    public static final String USE_VDDK = "usevddk";
     public static final String USE_VIRTUAL_NETWORK = "usevirtualnetwork";
     public static final String USE_VIRTUAL_ROUTER_IP_RESOLVER = "userouteripresolver";
     public static final String UPDATE_IN_SEQUENCE = "updateinsequence";
@@ -1298,6 +1304,8 @@ public class ApiConstants {
     public static final String OBJECT_LOCKING = "objectlocking";
     public static final String ENCRYPTION = "encryption";
     public static final String QUOTA = "quota";
+    public static final String QUOTA_CONSUMED = "quotaconsumed";
+    public static final String QUOTA_USAGE = "quotausage";
     public static final String ACCESS_KEY = "accesskey";
 
     public static final String SOURCE_NAT_IP = "sourcenatipaddress";

@@ -25,11 +25,13 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
@@ -106,6 +108,8 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected SearchBuilder<VMInstanceVO> IdsPowerStateSelectSearch;
     GenericSearchBuilder<VMInstanceVO, Integer> CountByOfferingId;
     GenericSearchBuilder<VMInstanceVO, Integer> CountUserVmNotInDomain;
+    SearchBuilder<VMInstanceVO> DeleteProtectedVmSearchByAccount;
+    SearchBuilder<VMInstanceVO> DeleteProtectedVmSearchByDomainIds;
 
     @Inject
     ResourceTagDao tagsDao;
@@ -354,7 +358,8 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
                 IdsPowerStateSelectSearch.entity().getPowerHostId(),
                 IdsPowerStateSelectSearch.entity().getPowerState(),
                 IdsPowerStateSelectSearch.entity().getPowerStateUpdateCount(),
-                IdsPowerStateSelectSearch.entity().getPowerStateUpdateTime());
+                IdsPowerStateSelectSearch.entity().getPowerStateUpdateTime(),
+                IdsPowerStateSelectSearch.entity().getState());
         IdsPowerStateSelectSearch.done();
 
         CountByOfferingId = createSearchBuilder(Integer.class);
@@ -368,6 +373,19 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         CountUserVmNotInDomain.and("domainIdsNotIn", CountUserVmNotInDomain.entity().getDomainId(), Op.NIN);
         CountUserVmNotInDomain.done();
 
+        DeleteProtectedVmSearchByAccount = createSearchBuilder();
+        DeleteProtectedVmSearchByAccount.selectFields(DeleteProtectedVmSearchByAccount.entity().getUuid());
+        DeleteProtectedVmSearchByAccount.and(ApiConstants.ACCOUNT_ID, DeleteProtectedVmSearchByAccount.entity().getAccountId(), Op.EQ);
+        DeleteProtectedVmSearchByAccount.and(ApiConstants.DELETE_PROTECTION, DeleteProtectedVmSearchByAccount.entity().isDeleteProtection(), Op.EQ);
+        DeleteProtectedVmSearchByAccount.and(ApiConstants.REMOVED, DeleteProtectedVmSearchByAccount.entity().getRemoved(), Op.NULL);
+        DeleteProtectedVmSearchByAccount.done();
+
+        DeleteProtectedVmSearchByDomainIds = createSearchBuilder();
+        DeleteProtectedVmSearchByDomainIds.selectFields(DeleteProtectedVmSearchByDomainIds.entity().getUuid());
+        DeleteProtectedVmSearchByDomainIds.and(ApiConstants.DOMAIN_IDS, DeleteProtectedVmSearchByDomainIds.entity().getDomainId(), Op.IN);
+        DeleteProtectedVmSearchByDomainIds.and(ApiConstants.DELETE_PROTECTION, DeleteProtectedVmSearchByDomainIds.entity().isDeleteProtection(), Op.EQ);
+        DeleteProtectedVmSearchByDomainIds.and(ApiConstants.REMOVED, DeleteProtectedVmSearchByDomainIds.entity().getRemoved(), Op.NULL);
+        DeleteProtectedVmSearchByDomainIds.done();
     }
 
     @Override
@@ -1088,10 +1106,14 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
 
     private boolean isPowerStateInSyncWithInstanceState(final VirtualMachine.PowerState powerState, final long powerHostId, final VMInstanceVO instance) {
         State instanceState = instance.getState();
+        if (instanceState == null) {
+            logger.warn("VM {} has null instance state during power state sync check, treating as out of sync", instance);
+            return false;
+        }
         if ((powerState == VirtualMachine.PowerState.PowerOff && instanceState == State.Running)
                 || (powerState == VirtualMachine.PowerState.PowerOn && instanceState == State.Stopped)) {
             HostVO instanceHost = hostDao.findById(instance.getHostId());
-            HostVO powerHost = powerHostId == instance.getHostId() ? instanceHost : hostDao.findById(powerHostId);
+            HostVO powerHost = instance.getHostId() != null && powerHostId == instance.getHostId() ? instanceHost : hostDao.findById(powerHostId);
             logger.debug("VM: {} on host: {} and power host : {} is in {} state, but power state is {}",
                     instance, instanceHost, powerHost, instanceState, powerState);
             return false;
@@ -1295,5 +1317,23 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         SearchCriteria<VMInstanceVO> sc = idsSearch.create();
         sc.setParameters("ids", ids.toArray());
         return listIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public List<VMInstanceVO> listDeleteProtectedVmsByAccountId(long accountId)  {
+        SearchCriteria<VMInstanceVO> sc = DeleteProtectedVmSearchByAccount.create();
+        sc.setParameters(ApiConstants.ACCOUNT_ID, accountId);
+        sc.setParameters(ApiConstants.DELETE_PROTECTION, true);
+        Filter filter = new Filter(VMInstanceVO.class, null, false, 0L, 10L);
+        return listBy(sc, filter);
+    }
+
+    @Override
+    public List<VMInstanceVO> listDeleteProtectedVmsByDomainIds(Set<Long> domainIds)  {
+        SearchCriteria<VMInstanceVO> sc = DeleteProtectedVmSearchByDomainIds.create();
+        sc.setParameters(ApiConstants.DOMAIN_IDS, domainIds.toArray());
+        sc.setParameters(ApiConstants.DELETE_PROTECTION, true);
+        Filter filter = new Filter(VMInstanceVO.class, null, false, 0L, 10L);
+        return listBy(sc, filter);
     }
 }
