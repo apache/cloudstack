@@ -25,6 +25,7 @@ public class VolumeStatsEntry implements VolumeStats {
     String volumeUuid;
     long physicalsize = 0;
     long virtualSize = 0;
+    Long totalPhysicalSize = null;
 
     public VolumeStatsEntry(String volumeUuid, long physicalsize, long virtualSize) {
         this.volumeUuid = volumeUuid;
@@ -54,6 +55,23 @@ public class VolumeStatsEntry implements VolumeStats {
 
     public void setVirtualSize(long virtualSize) {
         this.virtualSize = virtualSize;
+    }
+
+    public long getPhysicalsize() {
+        return physicalsize;
+    }
+
+    public void setPhysicalsize(long physicalsize) {
+        this.physicalsize = physicalsize;
+    }
+
+    @Override
+    public Long getTotalPhysicalSize() {
+        return totalPhysicalSize;
+    }
+
+    public void setTotalPhysicalSize(Long totalPhysicalSize) {
+        this.totalPhysicalSize = totalPhysicalSize;
     }
 
     @Override

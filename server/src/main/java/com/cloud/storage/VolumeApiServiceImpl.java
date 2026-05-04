@@ -5434,8 +5434,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return workJob;
     }
 
-    @Override
-    public Long getVolumePhysicalSize(ImageFormat format, String path, String chainInfo) {
+    protected VolumeStats getVolumeStats(ImageFormat format, String path, String chainInfo) {
         VolumeStats vs = null;
         if (format == ImageFormat.VHD || format == ImageFormat.QCOW2 || format == ImageFormat.RAW) {
             if (path != null) {
@@ -5446,7 +5445,25 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 vs = statsCollector.getVolumeStats(chainInfo);
             }
         }
+        return vs;
+    }
+
+    @Override
+    public Long getVolumePhysicalSize(ImageFormat format, String path, String chainInfo) {
+        VolumeStats vs = getVolumeStats(format, path, chainInfo);
         return (vs == null) ? null : vs.getPhysicalSize();
+    }
+
+    @Override
+    public Long getVolumeTotalPhysicalSize(ImageFormat format, String path, String chainInfo) {
+        VolumeStats vs = getVolumeStats(format, path, chainInfo);
+        if (vs == null) {
+            return null;
+        }
+        if (vs.getTotalPhysicalSize() == null) {
+            return vs.getPhysicalSize();
+        }
+        return vs.getTotalPhysicalSize();
     }
 
     @Override
