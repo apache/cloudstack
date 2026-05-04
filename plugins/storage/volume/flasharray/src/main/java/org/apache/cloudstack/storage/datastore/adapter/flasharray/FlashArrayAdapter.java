@@ -61,6 +61,7 @@ import org.apache.http.ssl.SSLContextBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -591,9 +592,11 @@ public class FlashArrayAdapter implements ProviderAdapter {
         }
 
         apiVersion = connectionDetails.get(FlashArrayAdapter.API_VERSION);
-        if (apiVersion == null) {
+        boolean apiVersionExplicit = apiVersion != null;
+        if (!apiVersionExplicit) {
             apiVersion = queryParms.get(FlashArrayAdapter.API_VERSION);
-            if (apiVersion == null) {
+            apiVersionExplicit = apiVersion != null;
+            if (!apiVersionExplicit) {
                 apiVersion = API_VERSION_DEFAULT;
             }
         }
@@ -660,72 +663,125 @@ public class FlashArrayAdapter implements ProviderAdapter {
             skipTlsValidation = true;
         }
 
+        // Resolve the long-lived API token. Prefer a pre-minted api_token (Purity REST 2.x flow);
+        // fall back to legacy username/password auth via Purity REST 1.x for backward compatibility.
+        String apiToken = connectionDetails.get(ProviderAdapter.API_TOKEN_KEY);
+        if (apiToken != null && apiToken.isEmpty()) {
+            apiToken = null;
+        }
+        boolean usingLegacyUserPass = apiToken == null;
+        if (usingLegacyUserPass && (username == null || password == null)) {
+            throw new CloudRuntimeException("FlashArray adapter requires either " + ProviderAdapter.API_TOKEN_KEY
+                    + " (preferred) or both " + ProviderAdapter.API_USERNAME_KEY + " and "
+                    + ProviderAdapter.API_PASSWORD_KEY + " in the connection details");
+        }
+
+        CloseableHttpClient client = getClient();
         CloseableHttpResponse response = null;
         try {
-            HttpPost request = new HttpPost(url + "/" + apiLoginVersion + "/auth/apitoken");
-            // request.addHeader("Content-Type", "application/json");
-            // request.addHeader("Accept", "application/json");
-            ArrayList<NameValuePair> postParms = new ArrayList<NameValuePair>();
-            postParms.add(new BasicNameValuePair("username", username));
-            postParms.add(new BasicNameValuePair("password", password));
-            request.setEntity(new UrlEncodedFormEntity(postParms, "UTF-8"));
-            CloseableHttpClient client = getClient();
-            response = (CloseableHttpResponse) client.execute(request);
-
-            int statusCode = response.getStatusLine().getStatusCode();
-            FlashArrayApiToken apitoken = null;
-            if (statusCode == 200 | statusCode == 201) {
-                apitoken = mapper.readValue(response.getEntity().getContent(), FlashArrayApiToken.class);
-                if (apitoken == null) {
-                    throw new CloudRuntimeException(
-                            "Authentication responded successfully but no api token was returned");
+            // Discover the latest supported API version from the array unless one was explicitly configured.
+            // GET /api/api_version is unauthenticated and returns {"version":["1.0",...,"2.36"]}.
+            if (!apiVersionExplicit) {
+                HttpGet vReq = new HttpGet(url + "/api_version");
+                CloseableHttpResponse vResp = null;
+                try {
+                    vResp = (CloseableHttpResponse) client.execute(vReq);
+                    if (vResp.getStatusLine().getStatusCode() == 200) {
+                        JsonNode root = mapper.readTree(vResp.getEntity().getContent());
+                        JsonNode versions = root.get("version");
+                        if (versions != null && versions.isArray() && versions.size() > 0) {
+                            apiVersion = versions.get(versions.size() - 1).asText();
+                        }
+                    } else {
+                        logger.warn("Unexpected HTTP " + vResp.getStatusLine().getStatusCode()
+                                + " from FlashArray [" + url + "] /api_version, falling back to default "
+                                + API_VERSION_DEFAULT);
+                    }
+                } catch (Exception e) {
+                    logger.warn("Failed to discover Purity REST API version from " + url
+                            + "/api_version, falling back to default " + API_VERSION_DEFAULT, e);
+                } finally {
+                    if (vResp != null) {
+                        try {
+                            vResp.close();
+                        } catch (IOException e) {
+                            logger.debug("Error closing /api_version response from FlashArray [" + url + "]", e);
+                        }
+                    }
                 }
-            } else if (statusCode == 401 || statusCode == 403) {
-                throw new CloudRuntimeException(
-                        "Authentication or Authorization to FlashArray [" + url + "] with user [" + username
-                                + "] failed, unable to retrieve session token");
-            } else {
-                throw new CloudRuntimeException(
-                        "Unexpected HTTP response code from FlashArray [" + url + "] - [" + statusCode
-                                + "] - " + response.getStatusLine().getReasonPhrase());
             }
 
-            // now we need to get the access token
-            request = new HttpPost(url + "/" + apiVersion + "/login");
-            request.addHeader("api-token", apitoken.getApiToken());
-            response = (CloseableHttpResponse) client.execute(request);
+            if (usingLegacyUserPass) {
+                logger.warn("FlashArray adapter at [" + url + "] is using deprecated username/password "
+                        + "login against Purity REST 1.x. Replace with a pre-minted "
+                        + ProviderAdapter.API_TOKEN_KEY + " detail; the username/password code path will be "
+                        + "removed in a future release.");
+                HttpPost request = new HttpPost(url + "/" + apiLoginVersion + "/auth/apitoken");
+                ArrayList<NameValuePair> postParms = new ArrayList<NameValuePair>();
+                postParms.add(new BasicNameValuePair("username", username));
+                postParms.add(new BasicNameValuePair("password", password));
+                request.setEntity(new UrlEncodedFormEntity(postParms, "UTF-8"));
+                response = (CloseableHttpResponse) client.execute(request);
+                int statusCode = response.getStatusLine().getStatusCode();
+                if (statusCode == 200 || statusCode == 201) {
+                    FlashArrayApiToken legacyToken = mapper.readValue(response.getEntity().getContent(),
+                            FlashArrayApiToken.class);
+                    if (legacyToken == null || legacyToken.getApiToken() == null) {
+                        throw new CloudRuntimeException(
+                                "Authentication responded successfully but no api token was returned");
+                    }
+                    apiToken = legacyToken.getApiToken();
+                } else if (statusCode == 401 || statusCode == 403) {
+                    throw new CloudRuntimeException(
+                            "Authentication or Authorization to FlashArray [" + url + "] with user [" + username
+                                    + "] failed, unable to retrieve session token");
+                } else {
+                    throw new CloudRuntimeException(
+                            "Unexpected HTTP response code from FlashArray [" + url + "] - [" + statusCode
+                                    + "] - " + response.getStatusLine().getReasonPhrase());
+                }
+                try {
+                    response.close();
+                } catch (IOException e) {
+                    logger.debug("Error closing legacy auth/apitoken response from FlashArray [" + url + "]", e);
+                }
+                response = null;
+            }
 
-            statusCode = response.getStatusLine().getStatusCode();
-            if (statusCode == 200 | statusCode == 201) {
+            // Exchange the long-lived api-token for a short-lived x-auth-token (REST 2.x).
+            HttpPost request = new HttpPost(url + "/" + apiVersion + "/login");
+            request.addHeader("api-token", apiToken);
+            response = (CloseableHttpResponse) client.execute(request);
+            int statusCode = response.getStatusLine().getStatusCode();
+            if (statusCode == 200 || statusCode == 201) {
                 Header[] headers = response.getHeaders("x-auth-token");
                 if (headers == null || headers.length == 0) {
                     throw new CloudRuntimeException(
-                            "Getting access token responded successfully but access token was not available");
+                            "FlashArray /login responded successfully but no x-auth-token header was returned");
                 }
                 accessToken = headers[0].getValue();
             } else if (statusCode == 401 || statusCode == 403) {
                 throw new CloudRuntimeException(
-                        "Authentication or Authorization to FlashArray [" + url + "] with user [" + username
-                                + "] failed, unable to retrieve session token");
+                        "FlashArray [" + url + "] rejected the api-token at /" + apiVersion + "/login");
             } else {
                 throw new CloudRuntimeException(
-                        "Unexpected HTTP response code from FlashArray [" + url + "] - [" + statusCode
-                                + "] - " + response.getStatusLine().getReasonPhrase());
+                        "Unexpected HTTP response code from FlashArray [" + url + "] /" + apiVersion
+                                + "/login - [" + statusCode + "] - "
+                                + response.getStatusLine().getReasonPhrase());
             }
-
         } catch (UnsupportedEncodingException e) {
-            throw new CloudRuntimeException("Error creating input for login, check username/password encoding");
+            throw new CloudRuntimeException("Error encoding login form for FlashArray [" + url + "]", e);
         } catch (UnsupportedOperationException e) {
             throw new CloudRuntimeException("Error processing login response from FlashArray [" + url + "]", e);
         } catch (IOException e) {
             throw new CloudRuntimeException("Error sending login request to FlashArray [" + url + "]", e);
         } finally {
-            try {
-                if (response != null) {
+            if (response != null) {
+                try {
                     response.close();
+                } catch (IOException e) {
+                    logger.debug("Error closing response from login attempt to FlashArray", e);
                 }
-            } catch (IOException e) {
-                logger.debug("Error closing response from login attempt to FlashArray", e);
             }
         }
     }
