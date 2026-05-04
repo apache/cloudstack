@@ -784,7 +784,6 @@ public class TemplateManagerImplTest extends TestCase {
         Mockito.when(vmTemplateDao.findById(42L)).thenReturn(iso);
         Mockito.when(iso.getId()).thenReturn(42L);
         Mockito.when(vm.getIsoId()).thenReturn(null);
-        Mockito.when(_vmIsoMapDao.listByVmId(1L)).thenReturn(new ArrayList<>());
 
         boolean result = templateManager.attachISOToVM(1L, 1L, 42L, true, false, false);
 
