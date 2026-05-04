@@ -52,6 +52,8 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
 import com.cloud.network.dao.NetworkDetailVO;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.PhysicalNetworkServiceProvider;
@@ -245,6 +247,8 @@ public class NetworkExtensionElement extends AdapterBase implements
     @Inject
     private ExtensionDetailsDao extensionDetailsDao;
     @Inject
+    private NetworkDao networkDao;
+    @Inject
     private DataCenterDao dataCenterDao;
     @Inject
     private VlanDao vlanDao;
@@ -311,6 +315,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         copy.ipAddressManager               = this.ipAddressManager;
         copy.physicalNetworkDao             = this.physicalNetworkDao;
         copy.extensionDetailsDao            = this.extensionDetailsDao;
+        copy.networkDao                     = this.networkDao;
         copy.dataCenterDao                  = this.dataCenterDao;
         copy.vlanDao                        = this.vlanDao;
         copy.guestOSCategoryDao             = this.guestOSCategoryDao;
@@ -464,6 +469,27 @@ public class NetworkExtensionElement extends AdapterBase implements
 
         if (!result) {
             return false;
+        }
+
+        // When the extension declares vif.binding=lswitch, also update the
+        // Network row itself so listNetworks / DB queries advertise the
+        // OVN-flavoured identifier instead of the cosmetic VLAN URI the
+        // GuestNetworkGuru allocated at design-time.  Format follows the
+        // legacy ovn-plugin convention: ``ovn://cs-net-<networkId>``.
+        if (isLswitchVifBinding(network)) {
+            try {
+                NetworkVO networkVo = networkDao.findById(network.getId());
+                if (networkVo != null) {
+                    java.net.URI ovnUri = java.net.URI.create("ovn://cs-net-" + network.getId());
+                    networkVo.setBroadcastDomainType(Networks.BroadcastDomainType.Lswitch);
+                    networkVo.setBroadcastUri(ovnUri);
+                    networkDao.update(networkVo.getId(), networkVo);
+                    logger.debug("implement: applied Lswitch broadcast type and ovn:// URI to network {} per extension vif.binding hint",
+                            network.getId());
+                }
+            } catch (Exception e) {
+                logger.warn("Failed to persist OVN URI on network {}: {}", network.getId(), e.getMessage());
+            }
         }
 
         // Step 3: Configure source NAT for both VPC and non-VPC networks for
