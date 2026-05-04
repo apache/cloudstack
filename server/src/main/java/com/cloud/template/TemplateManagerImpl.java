@@ -704,7 +704,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         // Empty ISO DiskTOs pre-allocate cdrom drives at boot so runtime attachIso can media-swap into them.
-        int cap = VmCdromMaxCount.value();
+        int cap = effectiveMaxCdroms(vm);
         int neededForAttached = slotToIsoId.isEmpty() ? 0 : slotToIsoId.keySet().stream().max(Integer::compare).get() - 2;
         int totalSlots = Math.max(cap, neededForAttached);
         for (int slot = 0; slot < totalSlots; slot++) {
@@ -1333,6 +1333,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (VMWARE_TOOLS_ISO.equals(iso.getUniqueName()) && vm.getHypervisorType() != Hypervisor.HypervisorType.VMware) {
             throw new InvalidParameterValueException("Cannot attach VMware tools drivers to incompatible hypervisor " + vm.getHypervisorType());
         }
+        if (!isVirtualRouter) {
+            int effectiveMax = effectiveMaxCdroms(vm);
+            int attached = (((UserVm) vm).getIsoId() != null ? 1 : 0) + _vmIsoMapDao.listByVmId(vmId).size();
+            if (attached >= effectiveMax) {
+                throw new InvalidParameterValueException(String.format(
+                        "Instance has reached the maximum of %d attached CD-ROM(s); detach one before attaching another.", effectiveMax));
+            }
+        }
         boolean result = attachISOToVM(vmId, userId, isoId, true, forced, isVirtualRouter);
         if (result) {
             return result;
@@ -1455,6 +1463,13 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             }
         }
         return highest;
+    }
+
+    private int effectiveMaxCdroms(VirtualMachine vm) {
+        int globalCap = VmCdromMaxCount.value();
+        // i440fx/IDE: hda is root, our slot scheme puts cdroms at hdc/hdd → 2 max on KVM.
+        int hypervisorCap = (vm.getHypervisorType() == HypervisorType.KVM) ? 2 : 1;
+        return Math.min(globalCap, hypervisorCap);
     }
 
     @Override
