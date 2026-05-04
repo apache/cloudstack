@@ -44,6 +44,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
@@ -126,6 +127,8 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     AgentManager agentMgr;
     @Inject
     DataStoreManager dataStoreManager;
+    @Inject
+    ImageStoreDao dataStoreDao;
 
     protected String _proxy = null;
 
@@ -175,10 +178,13 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         AsyncCallbackDispatcher<BaseImageStoreDriverImpl, DownloadAnswer> caller = AsyncCallbackDispatcher.create(this);
         caller.setContext(context);
         if (data.getType() == DataObjectType.TEMPLATE) {
-            caller.setCallback(caller.getTarget().createTemplateAsyncCallback(null, null));
-            if (logger.isDebugEnabled()) {
-                logger.debug("Downloading template to data store {}", dataStore);
+            if (dataStoreDao.findById(dataStore.getId()).isReadonly()) {
+                logger.debug("Template [{}] will not be downloaded to image store [{}] because this store is marked as read-only.", data.getName(),
+                        dataStore.getName());
+                return;
             }
+            caller.setCallback(caller.getTarget().createTemplateAsyncCallback(null, null));
+            logger.debug("Downloading template [{}] to data store [{}].", data.getName(), dataStore.getName());
             _downloadMonitor.downloadTemplateToStorage(data, caller);
         } else if (data.getType() == DataObjectType.VOLUME) {
             caller.setCallback(caller.getTarget().createVolumeAsyncCallback(null, null));

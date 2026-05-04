@@ -49,6 +49,8 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.Event;
 import org.apache.cloudstack.framework.events.EventDistributor;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.heuristics.HeuristicRuleHelper;
@@ -136,6 +138,9 @@ public class HypervisorTemplateAdapterTest {
 
     @Mock
     StatsCollector statsCollectorMock;
+
+    @Mock
+    ImageStoreDao _imgStoreDao;
 
     @Mock
     Logger loggerMock;
@@ -458,11 +463,13 @@ public class HypervisorTemplateAdapterTest {
     @Test
     public void isZoneAndImageStoreAvailableTestImageStoreDoesNotHaveEnoughCapacityShouldReturnFalse() {
         DataStore dataStoreMock = Mockito.mock(DataStore.class);
+        ImageStoreVO ImageStoreVOMock = Mockito.mock(ImageStoreVO.class);
         Long zoneId = 1L;
         Set<Long> zoneSet = null;
         boolean isTemplatePrivate = false;
         DataCenterVO dataCenterVOMock = Mockito.mock(DataCenterVO.class);
 
+        Mockito.when(_imgStoreDao.findById(Mockito.anyLong())).thenReturn(ImageStoreVOMock);
         Mockito.when(_dcDao.findById(Mockito.anyLong())).thenReturn(dataCenterVOMock);
         Mockito.when(dataCenterVOMock.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
         Mockito.when(statsCollectorMock.imageStoreHasEnoughCapacity(any(DataStore.class))).thenReturn(false);
@@ -477,11 +484,13 @@ public class HypervisorTemplateAdapterTest {
     @Test
     public void isZoneAndImageStoreAvailableTestImageStoreHasEnoughCapacityAndZoneSetIsNullShouldReturnTrue() {
         DataStore dataStoreMock = Mockito.mock(DataStore.class);
+        ImageStoreVO ImageStoreVOMock = Mockito.mock(ImageStoreVO.class);
         Long zoneId = 1L;
         Set<Long> zoneSet = null;
         boolean isTemplatePrivate = false;
         DataCenterVO dataCenterVOMock = Mockito.mock(DataCenterVO.class);
 
+        Mockito.when(_imgStoreDao.findById(Mockito.anyLong())).thenReturn(ImageStoreVOMock);
         Mockito.when(_dcDao.findById(Mockito.anyLong())).thenReturn(dataCenterVOMock);
         Mockito.when(dataCenterVOMock.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
         Mockito.when(statsCollectorMock.imageStoreHasEnoughCapacity(any(DataStore.class))).thenReturn(true);
@@ -496,11 +505,13 @@ public class HypervisorTemplateAdapterTest {
     @Test
     public void isZoneAndImageStoreAvailableTestTemplateIsPrivateAndItIsAlreadyAllocatedToTheSameZoneShouldReturnFalse() {
         DataStore dataStoreMock = Mockito.mock(DataStore.class);
+        ImageStoreVO ImageStoreVOMock = Mockito.mock(ImageStoreVO.class);
         Long zoneId = 1L;
         Set<Long> zoneSet = Set.of(1L);
         boolean isTemplatePrivate = true;
         DataCenterVO dataCenterVOMock = Mockito.mock(DataCenterVO.class);
 
+        Mockito.when(_imgStoreDao.findById(Mockito.anyLong())).thenReturn(ImageStoreVOMock);
         Mockito.when(_dcDao.findById(Mockito.anyLong())).thenReturn(dataCenterVOMock);
         Mockito.when(dataCenterVOMock.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
         Mockito.when(statsCollectorMock.imageStoreHasEnoughCapacity(any(DataStore.class))).thenReturn(true);
@@ -515,11 +526,13 @@ public class HypervisorTemplateAdapterTest {
     @Test
     public void isZoneAndImageStoreAvailableTestTemplateIsPrivateAndItIsNotAlreadyAllocatedToTheSameZoneShouldReturnTrue() {
         DataStore dataStoreMock = Mockito.mock(DataStore.class);
+        ImageStoreVO ImageStoreVOMock = Mockito.mock(ImageStoreVO.class);
         Long zoneId = 1L;
         Set<Long> zoneSet = new HashSet<>();
         boolean isTemplatePrivate = true;
         DataCenterVO dataCenterVOMock = Mockito.mock(DataCenterVO.class);
 
+        Mockito.when(_imgStoreDao.findById(Mockito.anyLong())).thenReturn(ImageStoreVOMock);
         Mockito.when(_dcDao.findById(Mockito.anyLong())).thenReturn(dataCenterVOMock);
         Mockito.when(dataCenterVOMock.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
         Mockito.when(statsCollectorMock.imageStoreHasEnoughCapacity(any(DataStore.class))).thenReturn(true);
