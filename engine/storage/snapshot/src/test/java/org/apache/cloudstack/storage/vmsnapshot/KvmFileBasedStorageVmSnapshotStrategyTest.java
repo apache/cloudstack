@@ -27,6 +27,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -49,6 +50,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.Mockito;
 
 import com.cloud.agent.AgentManager;
@@ -383,6 +385,36 @@ public class KvmFileBasedStorageVmSnapshotStrategyTest {
         when(hostDetailsDao.findDetail(hostId, Host.HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM)).thenReturn(null);
 
         strategy.takeVmSnapshotInternal(vmSnapshot, Collections.emptyMap());
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testTakeVMSnapshotMarksSnapshotFailedWhenHostCapabilityValidationFails() throws Exception {
+        long vmId = 10L;
+        long hostId = 40L;
+
+        UserVmVO userVm = mock(UserVmVO.class);
+        VMSnapshotVO vmSnapshot = mock(VMSnapshotVO.class);
+
+        when(vmSnapshot.getVmId()).thenReturn(vmId);
+        when(userVm.getId()).thenReturn(vmId);
+        when(userVm.getUuid()).thenReturn("vm-uuid");
+        when(userVm.getState()).thenReturn(VirtualMachine.State.Running);
+        when(strategy.userVmDao.findById(vmId)).thenReturn(userVm);
+        when(vmSnapshotHelper.pickRunningHost(vmId)).thenReturn(hostId);
+        when(strategy.vmInstanceDetailsDao.findDetail(vmId, ApiConstants.BootType.UEFI.toString()))
+                .thenReturn(new VMInstanceDetailVO(vmId, ApiConstants.BootType.UEFI.toString(), "SECURE", true));
+        when(hostDetailsDao.findDetail(hostId, Host.HOST_UEFI_ENABLE))
+                .thenReturn(new DetailVO(hostId, Host.HOST_UEFI_ENABLE, Boolean.TRUE.toString()));
+        when(hostDetailsDao.findDetail(hostId, Host.HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM)).thenReturn(null);
+
+        try {
+            strategy.takeVMSnapshot(vmSnapshot);
+        } finally {
+            InOrder inOrder = inOrder(vmSnapshotHelper);
+            inOrder.verify(vmSnapshotHelper).vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.CreateRequested);
+            inOrder.verify(vmSnapshotHelper).vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationFailed);
+            verify(agentMgr, never()).easySend(eq(hostId), any());
+        }
     }
 
     @Test(expected = CloudRuntimeException.class)
