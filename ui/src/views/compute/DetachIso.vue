@@ -91,7 +91,6 @@ export default {
       })
     },
     populateAttached () {
-      // Prefer the multi-ISO array from listVirtualMachines (FR283); fall back to the legacy single isoid.
       if (this.resource.isos && this.resource.isos.length > 0) {
         this.attached = [...this.resource.isos].sort((a, b) => (a.deviceseq || 0) - (b.deviceseq || 0))
       } else if (this.resource.isoid) {
@@ -102,17 +101,14 @@ export default {
           deviceseq: 3
         }]
       }
-      // If only one is attached, pre-select it so the user just clicks OK.
       if (this.attached.length === 1) {
         this.form.ids = [this.attached[0].id]
       }
     },
     slotLabel (deviceseq) {
-      // Map device_seq to its libvirt label so users can see which drive they're detaching.
-      // 3 -> hdc, 4 -> hdd, 5 -> hde ... matches LibvirtVMDef.getDevLabel for IDE bus.
+      // 3 -> hdc, 4 -> hdd, ... matches LibvirtVMDef.getDevLabel for the IDE bus on KVM.
       if (typeof deviceseq !== 'number') return ''
-      const offset = deviceseq - 1
-      return 'hd' + String.fromCharCode('a'.charCodeAt(0) + offset)
+      return 'hd' + String.fromCharCode('a'.charCodeAt(0) + deviceseq - 1)
     },
     closeAction () {
       this.$emit('close-action')
@@ -127,19 +123,13 @@ export default {
 
         this.loading = true
         const title = this.$t('label.action.detach.iso')
-        // CloudStack's detachIso API is single-ISO. We fan out one call per selected ISO and
-        // surface the first error if any.
+        // detachIso is single-ISO server-side; fan out one call per selection.
         const sendOne = (isoId) => {
           const params = {
             virtualmachineid: this.resource.id
           }
-          // Always send id when we have it (multi-attached VMs require it server-side; single-attached
-          // tolerates it just fine).
+          // Single-attached: omit id so older servers (without the id parameter) still accept the call.
           if (this.attached.length > 1 || ids.length > 1) {
-            params.id = isoId
-          } else if (this.attached.length === 1) {
-            // Single attached and the user picked it: omit id for back-compat with older servers.
-          } else {
             params.id = isoId
           }
           if (values.forced) {

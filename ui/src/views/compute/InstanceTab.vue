@@ -232,7 +232,6 @@ export default {
   },
   computed: {
     attachedIsos () {
-      // Prefer the multi-ISO array (FR283); fall back to the legacy single-ISO fields.
       if (this.vm.isos && this.vm.isos.length > 0) {
         return [...this.vm.isos].sort((a, b) => (a.deviceseq || 0) - (b.deviceseq || 0))
       }

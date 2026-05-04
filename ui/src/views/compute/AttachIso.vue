@@ -86,8 +86,7 @@ export default {
       loading: false,
       isos: [],
       maxSelections: 1,
-      // Until listConfigurations resolves, assume "no extra cap" so we don't artificially limit.
-      // The hypervisor cap still applies via computeMaxSelections.
+      // Sentinel so the hypervisor cap alone gates the UI until listConfigurations resolves.
       globalCdromCap: Number.MAX_SAFE_INTEGER
     }
   },
@@ -98,9 +97,6 @@ export default {
   },
   watch: {
     'form.ids' (newVal) {
-      // Cap the multi-select at maxSelections — server-side cap enforcement still applies, but
-      // this prevents the user from picking more than the VM can hold and getting a partial-success
-      // response.
       if (newVal && newVal.length > this.maxSelections) {
         this.form.ids = newVal.slice(0, this.maxSelections)
         this.$message.warning(this.$t('label.iso.name') + ': max ' + this.maxSelections)
@@ -118,15 +114,12 @@ export default {
               this.globalCdromCap = parsed
             }
           }
-        }).catch(() => {
-          // If the config can't be fetched (permissions, transient error), fall through with the
-          // initial sentinel so the hypervisor cap alone gates the UI.
-        }).finally(resolve)
+        }).catch(() => { /* Sentinel cap remains; hypervisor cap still applies. */ })
+          .finally(resolve)
       })
     },
     computeMaxSelections () {
-      // Mirrors the server-side effectiveMaxCdroms: min(global vm.cdrom.max.count, hypervisor cap).
-      // KVM caps at 2 cdrom slots (IDE bus reality), other hypervisors at 1.
+      // Mirrors server-side effectiveMaxCdroms: min(vm.cdrom.max.count, hypervisor cap).
       const hypervisorCap = this.resource.hypervisor === 'KVM' ? 2 : 1
       const effectiveCap = Math.min(this.globalCdromCap, hypervisorCap)
       const alreadyAttached = (this.resource.isos && this.resource.isos.length) ||
@@ -190,8 +183,7 @@ export default {
 
         this.loading = true
         const title = this.$t('label.action.attach.iso')
-        // CloudStack's attachIso API is single-ISO. We fan out one call per selected ISO and
-        // surface the first error if any. The server-side cap already prevents over-attachment.
+        // attachIso is single-ISO server-side; fan out one call per selection.
         const sendOne = (isoId) => {
           const params = {
             id: isoId,

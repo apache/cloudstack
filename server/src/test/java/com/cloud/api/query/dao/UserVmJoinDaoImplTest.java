@@ -16,10 +16,12 @@
 // under the License.
 package com.cloud.api.query.dao;
 
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.MockitoAnnotations.openMocks;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumSet;
 
 import com.cloud.storage.dao.VMTemplateDao;
@@ -52,6 +54,7 @@ import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
+import com.cloud.vm.dao.VmIsoMapDao;
 
 @RunWith(MockitoJUnitRunner.class)
 public class UserVmJoinDaoImplTest extends GenericDaoBaseWithTagInformationBaseTest<UserVmJoinVO, UserVmResponse> {
@@ -84,7 +87,7 @@ public class UserVmJoinDaoImplTest extends GenericDaoBaseWithTagInformationBaseT
     private VMTemplateDao vmTemplateDao;
 
     @Mock
-    private com.cloud.vm.dao.VmIsoMapDao vmIsoMapDao;
+    private VmIsoMapDao vmIsoMapDao;
 
     @Mock
     ExtensionHelper extensionHelper;
@@ -106,8 +109,7 @@ public class UserVmJoinDaoImplTest extends GenericDaoBaseWithTagInformationBaseT
     @Before
     public void setup() {
         closeable = openMocks(this);
-        org.mockito.Mockito.lenient().when(vmIsoMapDao.listByVmId(org.mockito.ArgumentMatchers.anyLong()))
-                .thenReturn(java.util.Collections.emptyList());
+        Mockito.lenient().when(vmIsoMapDao.listByVmId(anyLong())).thenReturn(Collections.emptyList());
         prepareSetup();
     }
 
