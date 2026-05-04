@@ -28,6 +28,7 @@ import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ExceptionResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.context.ErrorMessageResolver;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
@@ -39,6 +40,7 @@ import com.cloud.user.User;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -131,6 +133,9 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
             ExceptionResponse response = new ExceptionResponse();
             response.setErrorCode(errorCode);
             response.setErrorText(errorMsg);
+            if (e instanceof CloudRuntimeException) {
+                ErrorMessageResolver.updateExceptionResponse(response, (CloudRuntimeException) e);
+            }
             response.setResponseName((cmdObj == null) ? "unknowncommandresponse" : cmdObj.getCommandName());
 
             _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.FAILED, errorCode, ApiSerializerHelper.toSerializedString(response));
