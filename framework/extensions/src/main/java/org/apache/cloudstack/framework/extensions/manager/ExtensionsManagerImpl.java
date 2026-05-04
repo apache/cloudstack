@@ -104,8 +104,10 @@ import org.apache.commons.lang3.StringUtils;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.GetExternalConsoleCommand;
 import com.cloud.agent.api.RunCustomActionAnswer;
 import com.cloud.agent.api.RunCustomActionCommand;
+import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ManagementServerHostVO;
@@ -127,6 +129,7 @@ import com.cloud.org.Cluster;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
+import com.cloud.user.AccountService;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
@@ -141,6 +144,8 @@ import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -148,7 +153,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
 
     ConfigKey<Integer> PathStateCheckInterval = new ConfigKey<>("Advanced", Integer.class,
             "extension.path.state.check.interval", "300",
-            "Interval (in seconds) for checking entry-point state of extensions",
+            "Interval (in seconds) for checking state of extensions path",
             false, ConfigKey.Scope.Global);
 
     @Inject
@@ -208,6 +213,14 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     @Inject
     RoleService roleService;
 
+    @Inject
+    AccountService accountService;
+
+    // Map of in-built extension names and their reserved resource details that shouldn't be accessible to end-users
+    protected static final Map<String, List<String>> INBUILT_RESERVED_RESOURCE_DETAILS = Map.of(
+            "proxmox", List.of("proxmox_vmid")
+    );
+
     private ScheduledExecutorService extensionPathStateCheckExecutor;
 
     protected String getDefaultExtensionRelativePath(String name) {
@@ -260,11 +273,11 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
 
     protected boolean prepareExtensionPathOnMSPeer(Extension extension, ManagementServerHostVO msHost) {
         final String msPeer = Long.toString(msHost.getMsid());
-        logger.debug("Sending prepare extension entry-point for {} command to MS: {}", extension, msPeer);
+        logger.debug("Sending prepare extension path for {} command to MS: {}", extension, msPeer);
         final Command[] commands = new Command[1];
         commands[0] = new PrepareExtensionPathCommand(ManagementServerNode.getManagementServerId(), extension);
         String answersStr = clusterManager.execute(msPeer, 0L, GsonHelper.getGson().toJson(commands), true);
-        return getResultFromAnswersString(answersStr, extension, msHost, "prepare entry-point").first();
+        return getResultFromAnswersString(answersStr, extension, msHost, "prepare path").first();
     }
 
     protected Pair<Boolean, String> prepareExtensionPathOnCurrentServer(String name, boolean userDefined,
@@ -272,7 +285,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         try {
             externalProvisioner.prepareExtensionPath(name, userDefined, relativePath);
         } catch (CloudRuntimeException e) {
-            logger.error("Failed to prepare entry-point for Extension [name: {}, userDefined: {}, relativePath: {}] on this server",
+            logger.error("Failed to prepare path for Extension [name: {}, userDefined: {}, relativePath: {}] on this server",
                     name, userDefined, relativePath, e);
             return new Pair<>(false, e.getMessage());
         }
@@ -281,11 +294,11 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
 
     protected boolean cleanupExtensionFilesOnMSPeer(Extension extension, ManagementServerHostVO msHost) {
         final String msPeer = Long.toString(msHost.getMsid());
-        logger.debug("Sending cleanup extension entry-point for {} command to MS: {}", extension, msPeer);
+        logger.debug("Sending cleanup extension files for {} command to MS: {}", extension, msPeer);
         final Command[] commands = new Command[1];
         commands[0] = new CleanupExtensionFilesCommand(ManagementServerNode.getManagementServerId(), extension);
         String answersStr = clusterManager.execute(msPeer, 0L, GsonHelper.getGson().toJson(commands), true);
-        return getResultFromAnswersString(answersStr, extension, msHost, "cleanup entry-point").first();
+        return getResultFromAnswersString(answersStr, extension, msHost, "cleanup files").first();
     }
 
     protected Pair<Boolean, String> cleanupExtensionFilesOnCurrentServer(String name, String relativePath) {
@@ -293,7 +306,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             externalProvisioner.cleanupExtensionPath(name, relativePath);
             externalProvisioner.cleanupExtensionData(name, 0, true);
         } catch (CloudRuntimeException e) {
-            logger.error("Failed to cleanup entry-point files for Extension [name: {}, relativePath: {}] on this server",
+            logger.error("Failed to cleanup files for Extension [name: {}, relativePath: {}] on this server",
                     name, relativePath, e);
             return new Pair<>(false, e.getMessage());
         }
@@ -301,18 +314,18 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     }
 
     protected void cleanupExtensionFilesAcrossServers(Extension extension) {
-        boolean cleanup = true;
+        boolean cleanedUp = true;
         List<ManagementServerHostVO> msHosts = managementServerHostDao.listBy(ManagementServerHost.State.Up);
         for (ManagementServerHostVO msHost : msHosts) {
             if (msHost.getMsid() == ManagementServerNode.getManagementServerId()) {
-                cleanup = cleanup && cleanupExtensionFilesOnCurrentServer(extension.getName(),
+                cleanedUp = cleanedUp && cleanupExtensionFilesOnCurrentServer(extension.getName(),
                         extension.getRelativePath()).first();
                 continue;
             }
-            cleanup = cleanup && cleanupExtensionFilesOnMSPeer(extension, msHost);
+            cleanedUp = cleanedUp && cleanupExtensionFilesOnMSPeer(extension, msHost);
         }
-        if (!cleanup) {
-            throw new CloudRuntimeException("Extension is deleted but its entry-point files are not cleaned up across servers");
+        if (!cleanedUp) {
+            throw new CloudRuntimeException("Extension is deleted but its files are not cleaned up across servers");
         }
     }
 
@@ -323,7 +336,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         cmds[0] = new GetExtensionPathChecksumCommand(ManagementServerNode.getManagementServerId(),
                 extension);
         String answersStr = clusterManager.execute(msPeer, 0L, GsonHelper.getGson().toJson(cmds), true);
-        return getResultFromAnswersString(answersStr, extension, msHost, "prepare entry-point");
+        return getResultFromAnswersString(answersStr, extension, msHost, "get path checksum");
     }
 
     protected List<ExtensionCustomAction.Parameter> getParametersListFromMap(String actionName, Map parametersMap) {
@@ -472,6 +485,29 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         executorService.shutdown();
     }
 
+    protected Map<String, String> getCallerDetails() {
+        Account caller = CallContext.current().getCallingAccount();
+        if (caller == null) {
+            return null;
+        }
+        Map<String, String> callerDetails = new HashMap<>();
+        callerDetails.put(ApiConstants.ID, caller.getUuid());
+        callerDetails.put(ApiConstants.NAME, caller.getAccountName());
+        if (caller.getType() != null) {
+            callerDetails.put(ApiConstants.TYPE, caller.getType().name());
+        }
+        Role role = roleService.findRole(caller.getRoleId());
+        if (role == null) {
+            return callerDetails;
+        }
+        callerDetails.put(ApiConstants.ROLE_ID, role.getUuid());
+        callerDetails.put(ApiConstants.ROLE_NAME, role.getName());
+        if (role.getRoleType() != null) {
+            callerDetails.put(ApiConstants.ROLE_TYPE, role.getRoleType().name());
+        }
+        return callerDetails;
+    }
+
     protected Map<String, Map<String, String>> getExternalAccessDetails(Map<String, String> actionDetails, long hostId,
                            ExtensionResourceMap resourceMap) {
         Map<String, Map<String, String>> externalDetails = new HashMap<>();
@@ -492,6 +528,10 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         Map<String, String> extensionDetails = extensionDetailsDao.listDetailsKeyPairs(resourceMap.getExtensionId(), true);
         if (MapUtils.isNotEmpty(extensionDetails)) {
             externalDetails.put(ApiConstants.EXTENSION, extensionDetails);
+        }
+        Map<String, String> callerDetails = getCallerDetails();
+        if (MapUtils.isNotEmpty(callerDetails)) {
+            externalDetails.put(ApiConstants.CALLER, callerDetails);
         }
         return externalDetails;
     }
@@ -518,7 +558,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             final Pair<Boolean, String> msPeerChecksumResult = getChecksumForExtensionPathOnMSPeer(extension,
                     msHost);
             if (!msPeerChecksumResult.first() || !checksum.equals(msPeerChecksumResult.second())) {
-                logger.error("Entry-point checksum for {} is different [msid: {}, checksum: {}] and [msid: {}, checksum: {}]",
+                logger.error("Path checksum for {} is different [msid: {}, checksum: {}] and [msid: {}, checksum: {}]",
                         extension, ManagementServerNode.getManagementServerId(), checksum, msHost.getMsid(),
                         (msPeerChecksumResult.first() ? msPeerChecksumResult.second() : "unknown"));
                 updateExtensionPathReady(extension, false);
@@ -526,6 +566,25 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             }
         }
         updateExtensionPathReady(extension, true);
+    }
+
+    protected void addInbuiltExtensionReservedResourceDetails(long extensionId, List<String> reservedResourceDetails) {
+        ExtensionVO vo = extensionDao.findById(extensionId);
+        if (vo == null || vo.isUserDefined()) {
+            return;
+        }
+        String lowerName = StringUtils.defaultString(vo.getName()).toLowerCase();
+        Optional<Map.Entry<String, List<String>>> match = INBUILT_RESERVED_RESOURCE_DETAILS.entrySet().stream()
+                .filter(e -> lowerName.contains(e.getKey().toLowerCase()))
+                .findFirst();
+        if (match.isPresent()) {
+            Set<String> existing = new HashSet<>(reservedResourceDetails);
+            for (String detailKey : match.get().getValue()) {
+                if (existing.add(detailKey)) {
+                    reservedResourceDetails.add(detailKey);
+                }
+            }
+        }
     }
 
     @Override
@@ -542,6 +601,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         String relativePath = cmd.getPath();
         final Boolean orchestratorRequiresPrepareVm = cmd.isOrchestratorRequiresPrepareVm();
         final String stateStr = cmd.getState();
+        final String reservedResourceDetails = cmd.getReservedResourceDetails();
         ExtensionVO extensionByName = extensionDao.findByName(name);
         if (extensionByName != null) {
             throw new CloudRuntimeException("Extension by name already exists");
@@ -589,6 +649,10 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                         ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM, String.valueOf(orchestratorRequiresPrepareVm),
                         false));
             }
+            if (StringUtils.isNotBlank(reservedResourceDetails)) {
+                detailsVOList.add(new ExtensionDetailsVO(extension.getId(),
+                        ApiConstants.RESERVED_RESOURCE_DETAILS, reservedResourceDetails, false));
+            }
             if (CollectionUtils.isNotEmpty(detailsVOList)) {
                 extensionDetailsDao.saveDetails(detailsVOList);
             }
@@ -599,7 +663,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                 !prepareExtensionPathAcrossServers(extensionVO)) {
             disableExtension(extensionVO.getId());
             throw new CloudRuntimeException(String.format(
-                    "Failed to enable extension: %s as it entry-point is not ready",
+                    "Failed to enable extension: %s as its path is not ready",
                     extensionVO.getName()));
         }
         return extensionVO;
@@ -669,6 +733,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         final String stateStr = cmd.getState();
         final Map<String, String> details = cmd.getDetails();
         final Boolean cleanupDetails = cmd.isCleanupDetails();
+        final String reservedResourceDetails = cmd.getReservedResourceDetails();
         final ExtensionVO extensionVO = extensionDao.findById(id);
         if (extensionVO == null) {
             throw new InvalidParameterValueException("Failed to find the extension");
@@ -697,7 +762,8 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                 throw new CloudRuntimeException(String.format("Failed to updated the extension: %s",
                         extensionVO.getName()));
             }
-            updateExtensionsDetails(cleanupDetails, details, orchestratorRequiresPrepareVm, id);
+            updateExtensionsDetails(cleanupDetails, details, orchestratorRequiresPrepareVm, reservedResourceDetails,
+                    id);
             return extensionVO;
         });
         if (StringUtils.isNotBlank(stateStr)) {
@@ -705,7 +771,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                 !prepareExtensionPathAcrossServers(result)) {
                 disableExtension(result.getId());
                 throw new CloudRuntimeException(String.format(
-                        "Failed to enable extension: %s as it entry-point is not ready",
+                        "Failed to enable extension: %s as it path is not ready",
                         extensionVO.getName()));
             }
             updateAllExtensionHosts(extensionVO, null, false);
@@ -713,9 +779,11 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         return result;
     }
 
-    protected void updateExtensionsDetails(Boolean cleanupDetails, Map<String, String> details, Boolean orchestratorRequiresPrepareVm, long id) {
+    protected void updateExtensionsDetails(Boolean cleanupDetails, Map<String, String> details,
+               Boolean orchestratorRequiresPrepareVm, String reservedResourceDetails, long id) {
         final boolean needToUpdateAllDetails = Boolean.TRUE.equals(cleanupDetails) || MapUtils.isNotEmpty(details);
-        if (!needToUpdateAllDetails && orchestratorRequiresPrepareVm == null) {
+        if (!needToUpdateAllDetails && orchestratorRequiresPrepareVm == null &&
+                StringUtils.isBlank(reservedResourceDetails)) {
             return;
         }
         if (needToUpdateAllDetails) {
@@ -725,6 +793,9 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             if (orchestratorRequiresPrepareVm != null) {
                 hiddenDetails.put(ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM,
                         String.valueOf(orchestratorRequiresPrepareVm));
+            }
+            if (StringUtils.isNotBlank(reservedResourceDetails)) {
+                hiddenDetails.put(ApiConstants.RESERVED_RESOURCE_DETAILS, reservedResourceDetails);
             }
             if (MapUtils.isNotEmpty(hiddenDetails)) {
                 hiddenDetails.forEach((key, value) -> detailsVOList.add(
@@ -740,15 +811,29 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                 extensionDetailsDao.removeDetails(id);
             }
         } else {
-            ExtensionDetailsVO detailsVO = extensionDetailsDao.findDetail(id,
-                    ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM);
-            if (detailsVO == null) {
-                extensionDetailsDao.persist(new ExtensionDetailsVO(id,
-                        ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM,
-                        String.valueOf(orchestratorRequiresPrepareVm), false));
-            } else if (Boolean.parseBoolean(detailsVO.getValue()) != orchestratorRequiresPrepareVm) {
-                detailsVO.setValue(String.valueOf(orchestratorRequiresPrepareVm));
-                extensionDetailsDao.update(detailsVO.getId(), detailsVO);
+            if (orchestratorRequiresPrepareVm != null) {
+                ExtensionDetailsVO detailsVO = extensionDetailsDao.findDetail(id,
+                        ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM);
+                if (detailsVO == null) {
+                    extensionDetailsDao.persist(new ExtensionDetailsVO(id,
+                            ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM,
+                            String.valueOf(orchestratorRequiresPrepareVm), false));
+                } else if (Boolean.parseBoolean(detailsVO.getValue()) != orchestratorRequiresPrepareVm) {
+                    detailsVO.setValue(String.valueOf(orchestratorRequiresPrepareVm));
+                    extensionDetailsDao.update(detailsVO.getId(), detailsVO);
+                }
+            }
+            if (StringUtils.isNotBlank(reservedResourceDetails)) {
+                ExtensionDetailsVO detailsVO = extensionDetailsDao.findDetail(id,
+                        ApiConstants.RESERVED_RESOURCE_DETAILS);
+                if (detailsVO == null) {
+                    extensionDetailsDao.persist(new ExtensionDetailsVO(id,
+                            ApiConstants.RESERVED_RESOURCE_DETAILS,
+                            reservedResourceDetails, false));
+                } else if (!reservedResourceDetails.equals(detailsVO.getValue())) {
+                    detailsVO.setValue(reservedResourceDetails);
+                    extensionDetailsDao.update(detailsVO.getId(), detailsVO);
+                }
             }
         }
     }
@@ -926,11 +1011,15 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             hiddenDetails = extensionDetails.second();
         } else {
             hiddenDetails = extensionDetailsDao.listDetailsKeyPairs(extension.getId(),
-                    List.of(ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM));
+                    List.of(ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM,
+                            ApiConstants.RESERVED_RESOURCE_DETAILS));
         }
         if (hiddenDetails.containsKey(ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM)) {
             response.setOrchestratorRequiresPrepareVm(Boolean.parseBoolean(
                     hiddenDetails.get(ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM)));
+        }
+        if (hiddenDetails.containsKey(ApiConstants.RESERVED_RESOURCE_DETAILS)) {
+            response.setReservedResourceDetails(hiddenDetails.get(ApiConstants.RESERVED_RESOURCE_DETAILS));
         }
         response.setObjectName(Extension.class.getSimpleName().toLowerCase());
         return response;
@@ -1323,11 +1412,14 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             clusterId = host.getClusterId();
         } else if (entity instanceof VirtualMachine) {
             VirtualMachine virtualMachine = (VirtualMachine)entity;
-            runCustomActionCommand.setVmId(virtualMachine.getId());
+            accountService.checkAccess(caller, null, true, virtualMachine);
             if (!Hypervisor.HypervisorType.External.equals(virtualMachine.getHypervisorType())) {
                 logger.error("Invalid {} specified as VM resource for running {}", entity, customActionVO);
                 throw new InvalidParameterValueException(error);
             }
+            VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(virtualMachine);
+            VirtualMachineTO virtualMachineTO = virtualMachineManager.toVmTO(vmProfile);
+            runCustomActionCommand.setVmTO(virtualMachineTO);
             Pair<Long, Long> clusterAndHostId = virtualMachineManager.findClusterAndHostIdForVm(virtualMachine, false);
             clusterId = clusterAndHostId.first();
             hostId = clusterAndHostId.second();
@@ -1369,6 +1461,13 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                 actionResourceType, entity));
         Map<String, Map<String, String>> externalDetails =
                 getExternalAccessDetails(allDetails.first(), hostId, extensionResource);
+        Map<String, String> vmExternalDetails = null;
+        if (runCustomActionCommand.getVmTO() != null) {
+            vmExternalDetails = runCustomActionCommand.getVmTO().getExternalDetails();
+        }
+        if (MapUtils.isNotEmpty(vmExternalDetails)) {
+            externalDetails.put(ApiConstants.VIRTUAL_MACHINE, vmExternalDetails);
+        }
         runCustomActionCommand.setParameters(parameters);
         runCustomActionCommand.setExternalDetails(externalDetails);
         runCustomActionCommand.setWait(customActionVO.getTimeout());
@@ -1518,6 +1617,25 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     }
 
     @Override
+    public Answer getInstanceConsole(VirtualMachine vm, Host host) {
+        Extension extension = getExtensionForCluster(host.getClusterId());
+        if (extension == null || !Extension.Type.Orchestrator.equals(extension.getType()) ||
+                !Extension.State.Enabled.equals(extension.getState())) {
+            logger.error("No enabled orchestrator {} found for the {} while trying to get console for {}",
+                    extension == null ? "extension" : extension, host, vm);
+            return new Answer(null, false,
+                    String.format("No enabled orchestrator extension found for the host: %s", host.getName()));
+        }
+        VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(vm);
+        VirtualMachineTO virtualMachineTO = virtualMachineManager.toVmTO(vmProfile);
+        GetExternalConsoleCommand cmd = new GetExternalConsoleCommand(vm.getInstanceName(), virtualMachineTO);
+        Map<String, Map<String, String>> externalAccessDetails =
+                getExternalAccessDetails(host, virtualMachineTO.getExternalDetails());
+        cmd.setExternalDetails(externalAccessDetails);
+        return agentMgr.easySend(host.getId(), cmd);
+    }
+
+    @Override
     public Long getExtensionIdForCluster(long clusterId) {
         ExtensionResourceMapVO map = extensionResourceMapDao.findByResourceIdAndType(clusterId,
                 ExtensionResourceMap.ResourceType.Cluster);
@@ -1539,6 +1657,24 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             return null;
         }
         return extensionDao.findById(extensionId);
+    }
+
+    @Override
+    public List<String> getExtensionReservedResourceDetails(long extensionId) {
+        ExtensionDetailsVO detailsVO = extensionDetailsDao.findDetail(extensionId,
+                ApiConstants.RESERVED_RESOURCE_DETAILS);
+        if (detailsVO == null || !StringUtils.isNotBlank(detailsVO.getValue())) {
+            return Collections.emptyList();
+        }
+        List<String> reservedDetails = new ArrayList<>();
+        String[] parts = detailsVO.getValue().split(",");
+        for (String part : parts) {
+            if (StringUtils.isNotBlank(part)) {
+                reservedDetails.add(part.trim());
+            }
+        }
+        addInbuiltExtensionReservedResourceDetails(extensionId, reservedDetails);
+        return reservedDetails;
     }
 
     @Override

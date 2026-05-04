@@ -106,6 +106,9 @@ public interface VirtualMachineManager extends Manager {
     ConfigKey<Boolean> VmSyncPowerStateTransitioning = new ConfigKey<>("Advanced", Boolean.class, "vm.sync.power.state.transitioning", "true",
             "Whether to sync power states of the transitioning and stalled VMs while processing VM power reports.", false);
 
+    ConfigKey<Boolean> SystemVmEnableUserData = new ConfigKey<>(Boolean.class, "systemvm.userdata.enabled", "Advanced", "false",
+            "Enable user data for system VMs. When enabled, the CPVM, SSVM, and Router system VMs will use the values from the global settings console.proxy.vm.userdata, secstorage.vm.userdata, and virtual.router.userdata, respectively, to provide cloud-init user data to the VM.",
+            true, ConfigKey.Scope.Zone, null);
 
     interface Topics {
         String VM_POWER_STATE = "vm.powerstate";
@@ -178,15 +181,6 @@ public interface VirtualMachineManager extends Manager {
     void advanceReboot(String vmUuid, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException,
         ConcurrentOperationException, OperationTimedoutException;
 
-    /**
-     * Check to see if a virtual machine can be upgraded to the given service offering
-     *
-     * @param vm
-     * @param offering
-     * @return true if the host can handle the upgrade, false otherwise
-     */
-    boolean isVirtualMachineUpgradable(final VirtualMachine vm, final ServiceOffering offering);
-
     VirtualMachine findById(long vmId);
 
     void storageMigration(String vmUuid, Map<Long, Long> volumeToPool);
@@ -226,6 +220,8 @@ public interface VirtualMachineManager extends Manager {
     boolean removeNicFromVm(VirtualMachine vm, Nic nic) throws ConcurrentOperationException, ResourceUnavailableException;
 
     Boolean updateDefaultNicForVM(VirtualMachine vm, Nic nic, Nic defaultNic);
+
+    boolean updateVmNic(VirtualMachine vm, Nic nic, Boolean enabled) throws ResourceUnavailableException;
 
     /**
      * @param vm
@@ -274,7 +270,7 @@ public interface VirtualMachineManager extends Manager {
      * - Remove the references of the VM and its volumes, nics, IPs from database
      * - Keep the VM as it is on the hypervisor
      */
-    boolean unmanage(String vmUuid);
+    Pair<Boolean, String> unmanage(String vmUuid, Long paramHostId);
 
     UserVm restoreVirtualMachine(long vmId, Long newTemplateId, Long rootDiskOfferingId, boolean expunge, Map<String, String> details) throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException;
 

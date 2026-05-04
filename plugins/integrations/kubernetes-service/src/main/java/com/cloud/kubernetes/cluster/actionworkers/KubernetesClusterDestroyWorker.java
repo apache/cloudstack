@@ -106,6 +106,9 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
                         ApiCommandResourceType.VirtualMachine);
                 vmContext.setEventResourceId(vmID);
                 try {
+                    if (clusterVM.isControlNode() && kubernetesCluster.isCsiEnabled()) {
+                        deletePVsWithReclaimPolicyDelete();
+                    }
                     UserVm vm = userVmService.destroyVm(vmID, true);
                     if (!userVmManager.expunge(userVM)) {
                         logger.warn("Unable to expunge VM {}, destroying Kubernetes cluster will probably fail", vm);
@@ -345,6 +348,7 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
         annotationDao.removeByEntityType(AnnotationService.EntityType.KUBERNETES_CLUSTER.name(), kubernetesCluster.getUuid());
         kubernetesClusterDetailsDao.removeDetails(kubernetesCluster.getId());
+        kubernetesClusterAffinityGroupMapDao.removeByClusterId(kubernetesCluster.getId());
         boolean deleted = kubernetesClusterDao.remove(kubernetesCluster.getId());
         if (!deleted) {
             logMessage(Level.WARN, String.format("Failed to delete Kubernetes cluster: %s", kubernetesCluster), null);

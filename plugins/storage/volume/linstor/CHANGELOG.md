@@ -1,3 +1,22 @@
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+ -->
+
 # Changelog
 
 All notable changes to Linstor CloudStack plugin will be documented in this file.
@@ -5,16 +24,30 @@ All notable changes to Linstor CloudStack plugin will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2026-01-17]
+
+### Added
+
+- Support live migrate from other primary storage
+
+## [2025-12-18]
+
+### Changed
+- Provide /dev/drbd/by-res/ resource paths to CloudStack for usage.
+
+## [2025-10-03]
+
+### Changed
+- Revert qcow2 snapshot now use sparse/discard options to convert on thin devices.
+
 ## [2025-08-05]
 
 ### Fixed
-
 - getVolumeStats wasn't correctly working if multiple Linstor clusters/primary storages are used.
 
 ## [2025-07-01]
 
 ### Fixed
-
 - Regression in 4.19.3 and 4.21.0 with templates from snapshots
 
 ## [2025-05-07]
@@ -25,25 +58,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2025-03-13]
 
 ### Fixed
-
 - Implemented missing delete datastore, to correctly cleanup on datastore removal
 
 ## [2025-02-21]
 
 ### Fixed
-
 - Always try to delete cs-...-rst resource before doing a snapshot backup
 
 ## [2025-01-27]
 
 ### Fixed
-
 - Use of multiple primary storages on the same linstor controller
 
 ## [2025-01-20]
 
 ### Fixed
-
 - Volume snapshots on zfs used the wrong dataset path to hide/unhide snapdev
 
 ## [2024-12-19]
@@ -54,13 +83,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2024-12-13]
 
 ### Fixed
-
 - Linstor heartbeat check now also ask linstor-controller if there is no connection between nodes
 
 ## [2024-12-11]
 
 ### Fixed
-
 - Only set allow-two-primaries if a live migration is performed
 
 ## [2024-10-28]
@@ -73,17 +100,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2024-10-14]
 
 ### Added
-
 - Support for ISO direct download to primary storage
 
 ## [2024-10-04]
 
 ### Added
-
 - Enable qemu discard="unmap" for Linstor block disks
 
 ## [2024-08-27]
 
 ### Changed
-
 - Allow two primaries(+protocol c) is now set on resource-connection level instead of rd

@@ -30,6 +30,8 @@ import java.util.Set;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.dao.VpcOfferingDao;
 import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.stereotype.Component;
 
@@ -159,6 +161,8 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     IpAddressManager _ipAddrMgr;
     @Inject
     RoutedIpv4Manager routedIpv4Manager;
+    @Inject
+    VpcOfferingDao vpcOfferingDao;
 
     private boolean _elbEnabled = false;
     static Boolean rulesContinueOnErrFlag = true;
@@ -267,7 +271,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
                 if (!_firewallDao.setStateToAdd(newRule)) {
                     throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
                 }
-                CallContext.current().setEventDetails("Rule Id: " + newRule.getId());
+                CallContext.current().setEventDetails("Rule ID: " + newRule.getUuid());
                 CallContext.current().putContextParameter(FirewallRule.class, newRule.getId());
 
                 return newRule;
@@ -395,6 +399,10 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
             assert (rules.size() >= 1);
         }
 
+        NetworkVO newRuleNetwork = getNewRuleNetwork(newRule);
+        boolean newRuleIsOnVpcNetwork = newRuleNetwork.getVpcId() != null;
+        boolean vpcConserveModeEnabled = _vpcMgr.isNetworkOnVpcEnabledConserveMode(newRuleNetwork);
+
         for (FirewallRuleVO rule : rules) {
             if (rule.getId() == newRule.getId()) {
                 continue; // Skips my own rule.
@@ -443,8 +451,15 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
             }
 
             // Checking if the rule applied is to the same network that is passed in the rule.
-            if (rule.getNetworkId() != newRule.getNetworkId() && rule.getState() != State.Revoke) {
-                throw new NetworkRuleConflictException("New rule is for a different network than what's specified in rule " + rule.getXid());
+            // (except for VPCs with conserve mode = true)
+            if ((!newRuleIsOnVpcNetwork || !vpcConserveModeEnabled)
+                    && rule.getNetworkId() != newRule.getNetworkId() && rule.getState() != State.Revoke) {
+                String errMsg = String.format("New rule is for a different network than what's specified in rule %s", rule.getXid());
+                if (newRuleIsOnVpcNetwork) {
+                    Vpc vpc = _vpcMgr.getActiveVpc(newRuleNetwork.getVpcId());
+                    errMsg += String.format(" - VPC id=%s is not using conserve mode", vpc.getUuid());
+                }
+                throw new NetworkRuleConflictException(errMsg);
             }
 
             //Check for the ICMP protocol. This has to be done separately from other protocols as we need to check the ICMP codes and ICMP type also.
@@ -491,6 +506,14 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         if (logger.isDebugEnabled()) {
             logger.debug("No network rule conflicts detected for " + newRule + " against " + (rules.size() - 1) + " existing rules");
         }
+    }
+
+    protected NetworkVO getNewRuleNetwork(FirewallRule newRule) {
+        NetworkVO newRuleNetwork = _networkDao.findById(newRule.getNetworkId());
+        if (newRuleNetwork == null) {
+            throw new InvalidParameterValueException("Unable to create firewall rule as cannot find network by id=" + newRule.getNetworkId());
+        }
+        return newRuleNetwork;
     }
 
     protected boolean checkIfRulesHaveConflictingPortRanges(FirewallRule newRule, FirewallRule rule, boolean oneOfRulesIsFirewall, boolean bothRulesFirewall, boolean bothRulesPortForwarding, boolean duplicatedCidrs) {

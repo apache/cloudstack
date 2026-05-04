@@ -17,8 +17,7 @@ specific language governing permissions and limitations
 under the License.
 -->
 
-about
-=====
+# about
 
 This document talks about the *evolving* continuous test infrastructure used to setup, deploy, configure and test Apache CloudStack. Information here is useful for anyone involved in build, test, continuous integration even operators of CloudStack.
 
@@ -96,22 +95,19 @@ b. multiple cluster
 c. inter-zone tests
 d. multi-pod tests
 
-marvin integration
-==================
+## marvin integration
 
 once cloudstack has been installed and the hypervisors prepared we are ready to use marvin to stitch together zones, pods, clusters and compute and storage to put together a 'cloud'.  once configured - we perform a cursory health check to see if we have all systemVMs running in all zones and that built-in templates are downloaded in all zones. Subsequently, we are able to launch tests on this environment
 
 Only the latest tests from git are run on the setup. This allows us to test in a pseudo-continuous fashion with a nightly build deployed on the environment. Each test run takes a few hours to finish.
 
-control via github
-==================
+## control via github
 
 there are two GitHub repositories controlling the test infrastructure.
 a. The puppet recipes at gh:acs-infra-test
 b. The gh:cloud-autodeploy repo that has the scripts to orchestrate the overall workflow
 
-workflow
-========
+## workflow
 
 When jenkins triggers the job following sequence of actions occur on the test infrastructure
 
@@ -149,11 +145,10 @@ The $distro argument chooses the hostOS of the mgmt server - this can be ubuntu 
 
 12. Tests are run using the nose test runner with the marvin plugin and reports are recorded by jenkins.
 
-limitations
-===========
+## limitations
 
-enhancements
-============
+## enhancements
+
 - packaging tests
 - puppetize the cobbler appliance
 - dogfooding
@@ -164,14 +159,12 @@ enhancements
 - external devices (LB, VPX, FW)
 - mcollective?
 
-future
-======
+## future
+
 - not everyone deploys cloudstack the same
 - multiple hv environments with multiple hv configurations
 - multiple storage configurations
 
-troubleshooting
-===============
+## troubleshooting
 
-acknowledgements
-================
+## acknowledgements

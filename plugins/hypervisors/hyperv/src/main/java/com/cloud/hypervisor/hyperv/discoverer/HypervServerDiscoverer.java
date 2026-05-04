@@ -24,7 +24,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -64,6 +63,7 @@ import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.storage.StorageLayer;
+import com.cloud.utils.UuidUtils;
 
 /**
  * Methods to discover and managem a Hyper-V agent. Prepares a
@@ -264,7 +264,7 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
             // pool in the database
             // This GUID may change.
             if (cluster.getGuid() == null) {
-                cluster.setGuid(UUID.nameUUIDFromBytes(String.valueOf(clusterId).getBytes(Charset.forName("UTF-8"))).toString());
+                cluster.setGuid(UuidUtils.nameUUIDFromBytes(String.valueOf(clusterId).getBytes(Charset.forName("UTF-8"))).toString());
                 _clusterDao.update(clusterId, cluster);
             }
 
@@ -322,7 +322,7 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
     /**
      * Encapsulate GUID calculation in public method to allow access to test
      * programs. Works by converting a string to a GUID using
-     * UUID.nameUUIDFromBytes
+     * UuidUtils.nameUUIDFromBytes
      *
      * @param uuidSeed
      *            string to use to generate GUID
@@ -330,7 +330,7 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
      * @return GUID in form of a string.
      */
     public static String calcServerResourceGuid(final String uuidSeed) {
-        String guid = UUID.nameUUIDFromBytes(uuidSeed.getBytes(Charset.forName("UTF-8"))).toString();
+        String guid = UuidUtils.nameUUIDFromBytes(uuidSeed.getBytes(Charset.forName("UTF-8"))).toString();
         return guid;
     }
 

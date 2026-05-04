@@ -1569,10 +1569,10 @@ export default {
         }
         path += '/' + this.prefillContent.primaryStorageVmfsDatastore
         if (protocol === 'vmfs') {
-          url = this.vmfsURL('dummy', path)
+          url = this.vmfsURL(server, path)
         }
         if (protocol === 'datastorecluster') {
-          url = this.datastoreclusterURL('dummy', path)
+          url = this.datastoreclusterURL(server, path)
         }
       } else if (protocol === 'iscsi') {
         let iqn = this.prefillContent?.primaryStorageTargetIQN || ''
@@ -1609,7 +1609,7 @@ export default {
 
       try {
         if (!this.stepData.stepMove.includes('createStoragePool')) {
-          this.stepData.primaryStorageRetunred = await this.createStoragePool(params)
+          this.stepData.primaryStorageReturned = await this.createStoragePool(params)
           this.stepData.stepMove.push('createStoragePool')
         }
         await this.stepAddSecondaryStorage()
@@ -1639,6 +1639,11 @@ export default {
         params.provider = this.prefillContent.secondaryStorageProvider
         params.zoneid = this.stepData.zoneReturned.id
         params.url = url
+        if (this.prefillContent.copyTemplatesFromOtherSecondaryStorages !== undefined) {
+          params['details[0].key'] = 'copytemplatesfromothersecondarystorages'
+          params['details[0].value'] =
+            this.prefillContent.copyTemplatesFromOtherSecondaryStorages
+        }
       } else if (this.prefillContent.secondaryStorageProvider === 'SMB') {
         const nfsServer = this.prefillContent.secondaryStorageServer
         const path = this.prefillContent.secondaryStoragePath

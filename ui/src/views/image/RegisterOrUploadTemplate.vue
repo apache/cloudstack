@@ -677,14 +677,13 @@ export default {
         this.$emit('refresh-data')
         this.closeAction()
       }).catch(e => {
-        this.$notification.error({
-          message: this.$t('message.upload.failed'),
-          description: `${this.$t('message.upload.template.failed.description')} -  ${e}`,
-          duration: 0
-        })
+        this.$notifyError(e)
       })
     },
     fetchCustomHypervisorName () {
+      if (!('listConfigurations' in store.getters.apis)) {
+        return
+      }
       const params = {
         name: 'hypervisor.custom.display.name'
       }
@@ -702,6 +701,9 @@ export default {
       })
     },
     fetchExtensionsList () {
+      if (!this.isAdminRole) {
+        return
+      }
       this.loading = true
       getAPI('listExtensions', {
       }).then(response => {
@@ -757,6 +759,9 @@ export default {
           listhyperVisors.push({
             name: 'Simulator'
           })
+        }
+        if (!this.isAdminRole) {
+          listhyperVisors = listhyperVisors.filter(hv => hv.name !== 'External')
         }
         this.hyperVisor.opts = listhyperVisors
       }).finally(() => {

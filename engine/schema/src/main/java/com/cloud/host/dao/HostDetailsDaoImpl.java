@@ -39,6 +39,7 @@ public class HostDetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implement
     protected final SearchBuilder<DetailVO> HostSearch;
     protected final SearchBuilder<DetailVO> DetailSearch;
     protected final SearchBuilder<DetailVO> DetailNameSearch;
+    protected final SearchBuilder<DetailVO> ExternalDetailSearch;
 
     public HostDetailsDaoImpl() {
         HostSearch = createSearchBuilder();
@@ -53,6 +54,11 @@ public class HostDetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implement
         DetailNameSearch = createSearchBuilder();
         DetailNameSearch.and("name", DetailNameSearch.entity().getName(), SearchCriteria.Op.EQ);
         DetailNameSearch.done();
+
+        ExternalDetailSearch = createSearchBuilder();
+        ExternalDetailSearch.and("hostId", ExternalDetailSearch.entity().getHostId(), SearchCriteria.Op.EQ);
+        ExternalDetailSearch.and("name", ExternalDetailSearch.entity().getName(), SearchCriteria.Op.LIKE);
+        ExternalDetailSearch.done();
     }
 
     @Override
@@ -134,6 +140,17 @@ public class HostDetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implement
     }
 
     @Override
+    public void removeExternalDetails(long hostId) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        txn.start();
+        SearchCriteria<DetailVO> sc = ExternalDetailSearch.create();
+        sc.setParameters("hostId", hostId);
+        sc.setParameters("name", VmDetailConstants.EXTERNAL_DETAIL_PREFIX + "%");
+        remove(sc);
+        txn.commit();
+    }
+
+    @Override
     public void replaceExternalDetails(long hostId, Map<String, String> details) {
         if (details.isEmpty()) {
             return;
@@ -149,11 +166,7 @@ public class HostDetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implement
             }
             detailVOs.add(new DetailVO(hostId, name, value));
         }
-        SearchBuilder<DetailVO> sb = createSearchBuilder();
-        sb.and("hostId", sb.entity().getHostId(), SearchCriteria.Op.EQ);
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
-        sb.done();
-        SearchCriteria<DetailVO> sc = sb.create();
+        SearchCriteria<DetailVO> sc = ExternalDetailSearch.create();
         sc.setParameters("hostId", hostId);
         sc.setParameters("name", VmDetailConstants.EXTERNAL_DETAIL_PREFIX + "%");
         remove(sc);

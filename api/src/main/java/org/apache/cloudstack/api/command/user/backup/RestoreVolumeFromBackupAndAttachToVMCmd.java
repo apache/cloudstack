@@ -20,6 +20,7 @@ package org.apache.cloudstack.api.command.user.backup;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -41,7 +42,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "restoreVolumeFromBackupAndAttachToVM",
-        description = "Restore and attach a backed up volume to VM",
+        description = "Restore and attach a backed up volume to Instance",
         responseObject = SuccessResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class RestoreVolumeFromBackupAndAttachToVMCmd extends BaseAsyncCmd {
@@ -53,24 +54,27 @@ public class RestoreVolumeFromBackupAndAttachToVMCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
+    @ACL
     @Parameter(name = ApiConstants.BACKUP_ID,
             type = CommandType.UUID,
             entityType = BackupResponse.class,
             required = true,
-            description = "ID of the VM backup")
+            description = "ID of the Instance backup")
     private Long backupId;
 
+    @ACL
     @Parameter(name = ApiConstants.VOLUME_ID,
             type = CommandType.STRING,
             required = true,
             description = "ID of the volume backed up")
     private String volumeUuid;
 
+    @ACL
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
             type = CommandType.UUID,
             entityType = UserVmResponse.class,
             required = true,
-            description = "id of the VM where to attach the restored volume")
+            description = "ID of the Instance where to attach the restored volume")
     private Long vmId;
 
     /////////////////////////////////////////////////////
@@ -107,7 +111,7 @@ public class RestoreVolumeFromBackupAndAttachToVMCmd extends BaseAsyncCmd {
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
             } else {
-                throw new CloudRuntimeException("Error restoring volume and attaching to VM");
+                throw new CloudRuntimeException("Error restoring volume and attaching to Instance");
             }
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
@@ -121,6 +125,6 @@ public class RestoreVolumeFromBackupAndAttachToVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Restoring volume "+ volumeUuid + " from backup " + backupId + " and attaching it to VM " + vmId;
+        return "Restoring volume "+ volumeUuid + " from backup " + getResourceUuid(ApiConstants.BACKUP_ID) + " and attaching it to Instance " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID);
     }
 }

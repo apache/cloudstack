@@ -26,6 +26,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 
+import com.cloud.utils.storage.TemplateDownloaderUtil;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -528,30 +529,13 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
 
     private String extractTemplate(String templateFilePath, File sourceFile, String srcTemplateFilePath,
                                    String templateName) {
-        if (isTemplateExtractable(templateFilePath)) {
+        if (TemplateDownloaderUtil.isTemplateExtractable(templateFilePath)) {
             srcTemplateFilePath = sourceFile.getParent() + "/" + templateName;
-            String extractCommand = getExtractCommandForDownloadedFile(templateFilePath, srcTemplateFilePath);
+            String extractCommand = TemplateDownloaderUtil.getExtractCommandForDownloadedFile(templateFilePath, srcTemplateFilePath);
             Script.runSimpleBashScript(extractCommand);
             Script.runSimpleBashScript("rm -f " + templateFilePath);
         }
         return srcTemplateFilePath;
-    }
-
-    private boolean isTemplateExtractable(String templatePath) {
-        String type = Script.runSimpleBashScript("file " + templatePath + " | awk -F' ' '{print $2}'");
-        return type.equalsIgnoreCase("bzip2") || type.equalsIgnoreCase("gzip") || type.equalsIgnoreCase("zip");
-    }
-
-    private String getExtractCommandForDownloadedFile(String downloadedTemplateFile, String templateFile) {
-        if (downloadedTemplateFile.endsWith(".zip")) {
-            return "unzip -p " + downloadedTemplateFile + " | cat > " + templateFile;
-        } else if (downloadedTemplateFile.endsWith(".bz2")) {
-            return "bunzip2 -c " + downloadedTemplateFile + " > " + templateFile;
-        } else if (downloadedTemplateFile.endsWith(".gz")) {
-            return "gunzip -c " + downloadedTemplateFile + " > " + templateFile;
-        } else {
-            throw new CloudRuntimeException("Unable to extract template " + downloadedTemplateFile);
-        }
     }
 
     private String getNameFromResponse(String resp, boolean tildeNeeded, boolean isSnapshot) {

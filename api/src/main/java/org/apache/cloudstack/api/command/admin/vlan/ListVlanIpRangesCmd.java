@@ -47,41 +47,41 @@ public class ListVlanIpRangesCmd extends BaseListCmd {
 
     @Parameter(name = ApiConstants.ACCOUNT,
                type = CommandType.STRING,
-               description = "the account with which the VLAN IP range is associated. Must be used with the domainId parameter.")
+               description = "The account with which the VLAN IP range is associated. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "project who will own the VLAN")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "Project who will own the VLAN")
     private Long projectId;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
                type = CommandType.UUID,
                entityType = DomainResponse.class,
-               description = "the domain ID with which the VLAN IP range is associated.  If used with the account parameter, " +
+               description = "The domain ID with which the VLAN IP range is associated.  If used with the account parameter, " +
                    "returns all VLAN IP ranges for that account in the specified domain.")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VlanIpRangeResponse.class, required = false, description = "the ID of the VLAN IP range")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VlanIpRangeResponse.class, required = false, description = "The ID of the VLAN IP range")
     private Long id;
 
-    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, description = "the Pod ID of the VLAN IP range")
+    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, description = "The Pod ID of the VLAN IP range")
     private Long podId;
 
-    @Parameter(name = ApiConstants.VLAN, type = CommandType.STRING, description = "the ID or VID of the VLAN. Default is an \"untagged\" VLAN.")
+    @Parameter(name = ApiConstants.VLAN, type = CommandType.STRING, description = "The ID or VID of the VLAN. Default is an \"untagged\" VLAN.")
     private String vlan;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the Zone ID of the VLAN IP range")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The Zone ID of the VLAN IP range")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "network id of the VLAN IP range")
+    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "Network ID of the VLAN IP range")
     private Long networkId;
 
-    @Parameter(name = ApiConstants.FOR_VIRTUAL_NETWORK, type = CommandType.BOOLEAN, description = "true if VLAN is of Virtual type, false if Direct")
+    @Parameter(name = ApiConstants.FOR_VIRTUAL_NETWORK, type = CommandType.BOOLEAN, description = "True if VLAN is of Virtual type, false if Direct")
     private Boolean forVirtualNetwork;
 
     @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID,
                type = CommandType.UUID,
                entityType = PhysicalNetworkResponse.class,
-               description = "physical network id of the VLAN IP range")
+               description = "Physical Network ID of the VLAN IP range")
     private Long physicalNetworkId;
 
     /////////////////////////////////////////////////////

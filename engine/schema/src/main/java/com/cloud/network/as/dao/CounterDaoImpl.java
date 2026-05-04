@@ -32,6 +32,7 @@ import com.cloud.utils.db.SearchCriteria.Op;
 @Component
 public class CounterDaoImpl extends GenericDaoBase<CounterVO, Long> implements CounterDao {
     final SearchBuilder<CounterVO> AllFieldsSearch;
+    final SearchBuilder<CounterVO> CounterValueSearch;
 
     protected CounterDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
@@ -40,6 +41,21 @@ public class CounterDaoImpl extends GenericDaoBase<CounterVO, Long> implements C
         AllFieldsSearch.and("source", AllFieldsSearch.entity().getSource(), Op.EQ);
         AllFieldsSearch.and("provider", AllFieldsSearch.entity().getProvider(), Op.EQ);
         AllFieldsSearch.done();
+
+        CounterValueSearch = createSearchBuilder();
+        CounterValueSearch.and("name", CounterValueSearch.entity().getName(), Op.EQ);
+        CounterValueSearch.and("value", CounterValueSearch.entity().getValue(), Op.EQ);
+        CounterValueSearch.and("provider", CounterValueSearch.entity().getProvider(), Op.EQ);
+        CounterValueSearch.done();
+    }
+
+    @Override
+    public CounterVO findByNameProviderValue(String name, String value, String provider) {
+        SearchCriteria<CounterVO> sc = CounterValueSearch.create();
+        sc.setParameters("name", name);
+        sc.setParameters("value", value);
+        sc.setParameters("provider", provider);
+        return findOneBy(sc);
     }
 
     @Override

@@ -19,8 +19,8 @@
 set -e
 
 if [ $# -lt 6 ]; then
-    echo "Invalid input. Valid usage: ./create-kubernetes-binaries-iso.sh OUTPUT_PATH KUBERNETES_VERSION CNI_VERSION CRICTL_VERSION WEAVENET_NETWORK_YAML_CONFIG DASHBOARD_YAML_CONFIG BUILD_NAME [ARCH] [ETCD_VERSION]"
-    echo "eg: ./create-kubernetes-binaries-iso.sh ./ 1.11.4 0.7.1 1.11.1 https://github.com/weaveworks/weave/releases/download/latest_release/weave-daemonset-k8s-1.11.yaml https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.0/src/deploy/recommended/kubernetes-dashboard.yaml setup-v1.11.4 amd64"
+    echo "Invalid input. Valid usage: ./create-kubernetes-binaries-iso.sh OUTPUT_PATH KUBERNETES_VERSION CNI_VERSION CRICTL_VERSION WEAVENET_NETWORK_YAML_CONFIG HEADLAMP_DASHBOARD_VERSION BUILD_NAME [ARCH] [ETCD_VERSION]"
+    echo "eg: ./create-kubernetes-binaries-iso.sh ./ 1.11.4 0.7.1 1.11.1 https://github.com/weaveworks/weave/releases/download/latest_release/weave-daemonset-k8s-1.11.yaml 0.40.1 setup-v1.11.4 amd64"
     exit 1
 fi
 
@@ -96,10 +96,11 @@ echo "Downloading network config ${NETWORK_CONFIG_URL}"
 network_conf_file="${working_dir}/network.yaml"
 curl -sSL ${NETWORK_CONFIG_URL} -o ${network_conf_file}
 
-DASHBORAD_CONFIG_URL="${6}"
-echo "Downloading dashboard config ${DASHBORAD_CONFIG_URL}"
-dashboard_conf_file="${working_dir}/dashboard.yaml"
-curl -sSL ${DASHBORAD_CONFIG_URL} -o ${dashboard_conf_file}
+HEADLAMP_DASHBOARD_VERSION="${6}"
+HEADLAMP_DASHBOARD_URL="https://raw.githubusercontent.com/kubernetes-sigs/headlamp/v${HEADLAMP_DASHBOARD_VERSION}/kubernetes-headlamp.yaml"
+echo "Downloading Headlamp manifest from ${HEADLAMP_DASHBOARD_URL}"
+headlamp_conf_file="${working_dir}/headlamp.yaml"
+curl -sSL ${HEADLAMP_DASHBOARD_URL} -o ${headlamp_conf_file}
 
 # TODO : Change the url once merged
 AUTOSCALER_URL="https://raw.githubusercontent.com/kubernetes/autoscaler/master/cluster-autoscaler/cloudprovider/cloudstack/examples/cluster-autoscaler-standard.yaml"
@@ -111,6 +112,11 @@ PROVIDER_URL="https://raw.githubusercontent.com/apache/cloudstack-kubernetes-pro
 echo "Downloading kubernetes cluster provider ${PROVIDER_URL}"
 provider_conf_file="${working_dir}/provider.yaml"
 curl -sSL ${PROVIDER_URL} -o ${provider_conf_file}
+
+csi_conf_file="${working_dir}/manifest.yaml"
+echo "Including CloudStack CSI Driver manifest"
+wget https://github.com/cloudstack/cloudstack-csi-driver/releases/download/v3.0.0/snapshot-crds.yaml -O ${working_dir}/snapshot-crds.yaml
+wget https://github.com/cloudstack/cloudstack-csi-driver/releases/download/v3.0.0/manifest.yaml -O ${csi_conf_file}
 
 echo "Fetching k8s docker images..."
 ctr -v
@@ -130,7 +136,7 @@ mkdir -p "${working_dir}/docker"
 output=`${k8s_dir}/kubeadm config images list --kubernetes-version=${RELEASE}`
 
 # Don't forget about the yaml images !
-for i in ${network_conf_file} ${dashboard_conf_file}
+for i in ${network_conf_file} ${headlamp_conf_file}
 do
   images=`grep "image:" $i | cut -d ':' -f2- | tr -d ' ' | tr -d "'"`
   output=`printf "%s\n" ${output} ${images}`
@@ -142,6 +148,10 @@ output=`printf "%s\n" ${output} ${autoscaler_image}`
 
 provider_image=`grep "image:" ${provider_conf_file} | cut -d ':' -f2- | tr -d ' '`
 output=`printf "%s\n" ${output} ${provider_image}`
+
+# Extract images from manifest.yaml and add to output
+csi_images=`grep "image:" "${csi_conf_file}" | cut -d ':' -f2- | tr -d ' ' | tr -d "'"`
+output=`printf "%s\n%s" "${output}" "${csi_images}"`
 
 while read -r line; do
     echo "Downloading image $line ---"

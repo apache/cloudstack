@@ -17,12 +17,45 @@
 package org.apache.cloudstack.acl;
 
 import com.cloud.exception.InvalidParameterValueException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
+import org.apache.cloudstack.api.APICommand;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.Arrays;
+import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
+import org.springframework.core.type.filter.AnnotationTypeFilter;
 
 public class RuleTest {
+
+    private static List<String> apiNames;
+    private static List<Rule> apiRules;
+    private static ClassPathScanningCandidateComponentProvider provider = new ClassPathScanningCandidateComponentProvider(false);
+
+    @BeforeClass
+    public static void setup() {
+        provider.addIncludeFilter(new AnnotationTypeFilter(APICommand.class));
+        Set<BeanDefinition> beanDefinitions = provider.findCandidateComponents("org.apache.cloudstack.api");
+
+        apiNames = new ArrayList<>();
+        apiRules = new ArrayList<>();
+        for(BeanDefinition bd : beanDefinitions) {
+            if (bd instanceof AnnotatedBeanDefinition) {
+                Map<String, Object> annotationAttributeMap = ((AnnotatedBeanDefinition) bd).getMetadata()
+                        .getAnnotationAttributes(APICommand.class.getName());
+                String apiName = annotationAttributeMap.get("name").toString();
+                apiNames.add(apiName);
+                apiRules.add(new Rule(apiName));
+            }
+        }
+    }
 
     @Test
     public void testToString() throws Exception {
@@ -31,21 +64,89 @@ public class RuleTest {
     }
 
     @Test
-    public void testMatchesEmpty() throws Exception {
-        Rule rule = new Rule("someString");
-        Assert.assertFalse(rule.matches(""));
+    public void ruleMatchesTestNoMatchesOnEmptyString() throws Exception {
+        String testCmd = "";
+        List<String> matches = new ArrayList<>();
+        for (Rule rule : apiRules) {
+            if (rule.matches(testCmd)) {
+                matches.add(rule.getRuleString());
+            }
+        }
+
+        Assert.assertEquals(matches.size(), 0);
     }
 
     @Test
-    public void testMatchesNull() throws Exception {
-        Rule rule = new Rule("someString");
-        Assert.assertFalse(rule.matches(null));
+    public void ruleMatchesTestNoMatchesOnNull() throws Exception {
+        List<String> matches = new ArrayList<>();
+        for (Rule rule : apiRules) {
+            if (rule.matches(null)) {
+                matches.add(rule.getRuleString());
+            }
+        }
+
+        Assert.assertTrue(matches.isEmpty());
     }
 
     @Test
-    public void testMatchesSpace() throws Exception {
-        Rule rule = new Rule("someString");
-        Assert.assertFalse(rule.matches(" "));
+    public void ruleMatchesTestNoMatchesOnSpaceCharacter() throws Exception {
+        String testCmd = " ";
+        List<String> matches = new ArrayList<>();
+        for (Rule rule : apiRules) {
+            if (rule.matches(testCmd)) {
+                matches.add(rule.getRuleString());
+            }
+        }
+
+        Assert.assertTrue(matches.isEmpty());
+    }
+
+    @Test
+    public void ruleMatchesTestWildCardOnEndWorksAsNormalRegex() {
+        setup();
+        Pattern regexPattern = Pattern.compile("list.*");
+        Rule acsRegexRule = new Rule("list*");
+
+        List<String> nonMatches = new ArrayList<>();
+        for (String apiName : apiNames) {
+            if (acsRegexRule.matches(apiName) != regexPattern.matcher(apiName).matches()) {
+                nonMatches.add(apiName);
+            }
+        }
+
+        Assert.assertTrue(nonMatches.isEmpty());
+    }
+
+    @Test
+    public void ruleMatchesTestWildCardOnMiddleWorksAsNormalRegex() {
+        setup();
+        Pattern regexPattern = Pattern.compile("list.*s");
+        Rule acsRegexRule = new Rule("list*s");
+
+        List<String> nonMatches = new ArrayList<>();
+        for (String apiName : apiNames) {
+            if (acsRegexRule.matches(apiName) != regexPattern.matcher(apiName).matches()) {
+                nonMatches.add(apiName);
+            }
+        }
+
+        Assert.assertTrue(nonMatches.isEmpty());
+    }
+
+    @Test
+    public void ruleMatchesTestWildCardOnStartWorksAsNormalRegex() {
+        setup();
+        Pattern regexPattern = Pattern.compile(".*User");
+        Rule acsRegexRule = new Rule("*User");
+
+        List<String> nonMatches = new ArrayList<>();
+        for (String apiName : apiNames) {
+            if (acsRegexRule.matches(apiName) != regexPattern.matcher(apiName).matches()) {
+                nonMatches.add(apiName);
+            }
+        }
+
+        Assert.assertTrue(nonMatches.isEmpty());
     }
 
     @Test
@@ -73,7 +174,25 @@ public class RuleTest {
     }
 
     @Test
-    public void testValidateRuleWithValidData() throws Exception {
+    public void ruleMatchesTestWildcardOnRuleAndCommand() throws Exception {
+        Rule rule = new Rule("*");
+        Assert.assertTrue(rule.matches("list*"));
+    }
+
+    @Test
+    public void ruleMatchesTestWildcardOnRuleAndCommandNotAllowed() throws Exception {
+        Rule rule = new Rule("list*");
+        Assert.assertFalse(rule.matches("*"));
+    }
+
+    @Test
+    public void ruleMatchesTestWithMultipleStars() throws Exception {
+        Rule rule = new Rule("list***");
+        Assert.assertFalse(rule.matches("api"));
+    }
+
+    @Test
+    public void testRuleToStringWithValidStrings() throws Exception {
         for (String rule : Arrays.asList("a", "1", "someApi", "someApi321", "123SomeApi",
                 "prefix*", "*middle*", "*Suffix",
                 "*", "**", "f***", "m0nk3yMa**g1c*")) {
@@ -82,7 +201,7 @@ public class RuleTest {
     }
 
     @Test
-    public void testValidateRuleWithInvalidData() throws Exception {
+    public void testRuleToStringWithInvalidStrings() throws Exception {
         for (String rule : Arrays.asList(null, "", " ", "  ", "\n", "\t", "\r", "\"", "\'",
                 "^someApi$", "^someApi", "some$", "some-Api;", "some,Api",
                 "^", "$", "^$", ".*", "\\w+", "r**l3rd0@Kr3", "j@s1n|+|0ȷ",

@@ -29,6 +29,8 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.backup.BackupManager;
+import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
@@ -153,7 +155,7 @@ public class VMSnapshotStrategyKVMTest extends TestCase{
     @Test
     public void testCreateDiskSnapshotBasedOnStrategy() throws Exception {
         VMSnapshotVO vmSnapshot = Mockito.mock(VMSnapshotVO.class);
-        List<SnapshotInfo> forRollback = new ArrayList<>();
+        List<SnapshotInfo> snapshotsForRollback = new ArrayList<>();
         VolumeInfo vol = Mockito.mock(VolumeInfo.class);
         SnapshotInfo snapshotInfo = Mockito.mock(SnapshotInfo.class);
         SnapshotStrategy strategy = Mockito.mock(SnapshotStrategy.class);
@@ -177,7 +179,7 @@ public class VMSnapshotStrategyKVMTest extends TestCase{
         VMSnapshotDetailsVO vmDetails = new VMSnapshotDetailsVO(vmSnapshot.getId(), volUuid, String.valueOf(snapshot.getId()), false);
         when(vmSnapshotDetailsDao.persist(any())).thenReturn(vmDetails);
 
-        info =  vmStrategy.createDiskSnapshot(vmSnapshot, forRollback, vol);
+        info =  vmStrategy.createDiskSnapshot(vmSnapshot, snapshotsForRollback, vol);
         assertNotNull(info);
     }
 
@@ -235,7 +237,6 @@ public class VMSnapshotStrategyKVMTest extends TestCase{
         when(vol.getDataStore()).thenReturn(dataStore);
         when(snapshotVO.getId()).thenReturn(1L);
         when(_snapshotService.revertSnapshot(snapshotVO.getId())).thenReturn(snap);
-    //    testFindSnapshotByName(name);
         vmStrategy.revertDiskSnapshot(vmSnapshot);
     }
 
@@ -430,6 +431,16 @@ public class VMSnapshotStrategyKVMTest extends TestCase{
         @Bean
         public VMSnapshotDetailsDao vmSnapshotDetailsDao () {
             return Mockito.mock(VMSnapshotDetailsDao.class);
+        }
+
+        @Bean
+        public BackupOfferingDao backupOfferingDao() {
+            return Mockito.mock(BackupOfferingDao.class);
+        }
+
+        @Bean
+        public BackupManager backupManager() {
+            return Mockito.mock(BackupManager.class);
         }
     }
 }

@@ -152,6 +152,18 @@
                   </a-row>
                 </a-radio-group>
               </a-form-item>
+              <a-form-item name="usevddk" ref="usevddk" v-if="selectedVmwareVcenter">
+                <template #label>
+                  <tooltip-label :title="$t('label.use.vddk')" :tooltip="apiParams.usevddk ? apiParams.usevddk.description : ''"/>
+                </template>
+                <a-switch v-model:checked="form.usevddk" @change="onUseVddkChange" />
+              </a-form-item>
+              <a-form-item name="forceconverttopool" ref="forceconverttopool" v-if="selectedVmwareVcenter">
+                <template #label>
+                  <tooltip-label :title="$t('label.force.convert.to.pool')" :tooltip="apiParams.forceconverttopool.description"/>
+                </template>
+                <a-switch v-model:checked="form.forceconverttopool" @change="onForceConvertToPoolChange" />
+              </a-form-item>
               <a-form-item name="converthostid" ref="converthostid">
                 <check-box-select-pair
                   layout="vertical"
@@ -164,7 +176,7 @@
                   @handle-checkselectpair-change="updateSelectedKvmHostForConversion"
                 />
               </a-form-item>
-              <a-form-item name="importhostid" ref="importhostid">
+              <a-form-item name="importhostid" ref="importhostid" v-if="!form.usevddk">
                 <check-box-select-pair
                   layout="vertical"
                   v-if="cluster.hypervisortype === 'KVM' && selectedVmwareVcenter"
@@ -178,18 +190,23 @@
               </a-form-item>
               <a-form-item name="convertstorageoption" ref="convertstorageoption">
                 <check-box-select-pair
+                  :key="`convertstorageoption-${form.usevddk ? 'vddk' : 'default'}-${switches.forceConvertToPool ? 'pool' : 'tmp'}`"
                   layout="vertical"
-                  style="margin-bottom: 5px"
                   v-if="cluster.hypervisortype === 'KVM' && selectedVmwareVcenter"
                   :resourceKey="cluster.id"
                   :selectOptions="storageOptionsForConversion"
-                  :checkBoxLabel="$t('message.select.temporary.storage.instance.conversion')"
-                  :defaultCheckBoxValue="false"
+                  :checkBoxLabel="switches.forceConvertToPool ? $t('message.select.destination.storage.instance.conversion') : $t('message.select.temporary.storage.instance.conversion')"
+                  :defaultCheckBoxValue="switches.forceConvertToPool"
                   :reversed="false"
                   @handle-checkselectpair-change="updateSelectedStorageOptionForConversion"
                 />
               </a-form-item>
-              <a-form-item v-if="showStoragePoolsForConversion" name="convertstoragepool" ref="convertstoragepool" :label="$t('label.storagepool')">
+              <a-form-item
+                v-if="showStoragePoolsForConversion"
+                name="convertstoragepool"
+                ref="convertstoragepool"
+                :label="$t('label.storagepool')"
+              >
                 <a-select
                   v-model:value="form.convertstoragepoolid"
                   defaultActiveFirstOption
@@ -204,11 +221,46 @@
                   </a-select-option>
                 </a-select>
               </a-form-item>
-              <a-form-item name="forcemstoimportvmfiles" ref="forcemstoimportvmfiles" v-if="selectedVmwareVcenter">
+              <a-form-item name="extraparams" ref="extraparams">
+                <a-checkbox
+                  v-if="cluster.hypervisortype === 'KVM' && selectedVmwareVcenter && vmwareToKvmExtraParamsAllowed"
+                  v-model:checked="vmwareToKvmExtraParamsSelected">
+                  {{ $t('message.select.extra.parameters.for.instance.conversion') }}
+                </a-checkbox>
+                <a-input
+                  v-if="vmwareToKvmExtraParamsSelected"
+                  v-model:value="vmwareToKvmExtraParams"
+                  :placeholder="$t('label.extra')"
+                />
+              </a-form-item>
+              <a-form-item name="forcemstoimportvmfiles" ref="forcemstoimportvmfiles" v-if="selectedVmwareVcenter && !form.usevddk">
                 <template #label>
                   <tooltip-label :title="$t('label.force.ms.to.import.vm.files')" :tooltip="apiParams.forcemstoimportvmfiles.description"/>
                 </template>
                 <a-switch v-model:checked="form.forcemstoimportvmfiles" @change="val => { switches.forceMsToImportVmFiles = val }" />
+              </a-form-item>
+              <a-form-item name="osid" ref="osid" v-if="selectedVmwareVcenter">
+                <template #label>
+                  <tooltip-label :title="$t('label.guest.os')" :tooltip="$t('label.select.guest.os.type')"/>
+                </template>
+                <a-spin v-if="loadingGuestOsMappings" />
+                <template v-else>
+                  <a-select
+                    v-if="resource.guestOsMappings && resource.guestOsMappings.length > 0"
+                    v-model:value="form.osid"
+                    showSearch
+                    optionFilterProp="label"
+                    :filterOption="(input, option) => {
+                      return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    }">
+                    <a-select-option v-for="mapping in resource.guestOsMappings" :key="mapping.ostypeid" :label="mapping.osdisplayname">
+                      <span>
+                        {{ mapping.osdisplayname }}
+                      </span>
+                    </a-select-option>
+                  </a-select>
+                  <a-span v-else>{{ $t('label.no.matching.guest.os.vmware.import') }}</a-span>
+                </template>
               </a-form-item>
               <a-form-item name="serviceofferingid" ref="serviceofferingid">
                 <template #label>
@@ -468,6 +520,10 @@ export default {
     selectedVmwareVcenter: {
       type: Array,
       required: false
+    },
+    loadingGuestOsMappings: {
+      type: Boolean,
+      required: false
     }
   },
   data () {
@@ -529,7 +585,11 @@ export default {
           title: this.$t('label.rootdisk')
         }
       ],
-      selectedRootDiskSources: []
+      selectedRootDiskSources: [],
+      vmwareToKvmExtraParamsAllowed: false,
+      vmwareToKvmExtraParamsSelected: false,
+      vmwareToKvmExtraParams: '',
+      userModifiedVddkSetting: false
     }
   },
   beforeCreate () {
@@ -714,6 +774,11 @@ export default {
         this.$refs.displayname.focus()
         this.selectMatchingComputeOffering()
       }
+    },
+    'resource.guestOsMappings' (mappings) {
+      if (mappings && mappings.length > 0) {
+        this.form.osid = mappings[0].ostypeid
+      }
     }
   },
   methods: {
@@ -721,11 +786,14 @@ export default {
       this.formRef = ref()
       this.form = reactive({
         rootdiskid: 0,
+        usevddk: false,
         migrateallowed: this.switches.migrateAllowed,
         forced: this.switches.forced,
         forcemstoimportvmfiles: this.switches.forceMsToImportVmFiles,
+        forceconverttopool: this.switches.forceConvertToPool,
         domainid: null,
-        account: null
+        account: null,
+        osid: null
       })
       this.rules = reactive({
         displayname: [{ required: true, message: this.$t('message.error.input.value') }],
@@ -749,6 +817,20 @@ export default {
       if (this.resource?.disk?.length > 1) {
         this.updateSelectedRootDisk()
       }
+      this.fetchVmwareToKVMExtraConfigsSetting()
+    },
+    fetchVmwareToKVMExtraConfigsSetting () {
+      const params = {
+        name: 'convert.vmware.instance.to.kvm.extra.params.allowed'
+      }
+      getAPI('listConfigurations', params).then(json => {
+        if (json.listconfigurationsresponse.configuration !== null) {
+          const config = json.listconfigurationsresponse.configuration[0]
+          if (config && config.name === params.name) {
+            this.vmwareToKvmExtraParamsAllowed = config.value === 'true'
+          }
+        }
+      })
     },
     getMeta (obj, metaKeys) {
       var meta = []
@@ -938,6 +1020,8 @@ export default {
       }).then(json => {
         this.kvmHostsForConversion = json.listhostsresponse.host || []
         this.kvmHostsForConversion = this.kvmHostsForConversion.filter(host => ['Enabled', 'Disabled'].includes(host.resourcestate))
+        // Check if any host has VDDK support
+        let hasVddkSupport = false
         this.kvmHostsForConversion.map(host => {
           host.name = host.name + ' [Pod=' + host.podname + '] [Cluster=' + host.clustername + ']'
           if (host.instanceconversionsupported !== null && host.instanceconversionsupported !== undefined && host.instanceconversionsupported) {
@@ -951,7 +1035,29 @@ export default {
           if (host.details['host.ovftool.version']) {
             host.name = host.name + ' (ovftool=' + host.details['host.ovftool.version'] + ')'
           }
+          // Check for VDDK support
+          if (host.details['host.vddk.support'] === 'true' || host.details['host.vddk.support'] === true) {
+            hasVddkSupport = true
+          }
+
+          if (this.form.usevddk) {
+            if (host.details['host.vddk.support'] === 'true' || host.details['host.vddk.support'] === true) {
+              host.name = host.name + ' (VDDK=' + this.$t('label.supported') + ')'
+            } else {
+              host.name = host.name + ' (VDDK=' + this.$t('label.not.supported') + ')'
+            }
+            if (host.details['host.vddk.version']) {
+              host.name = host.name + ' (vddk=' + host.details['host.vddk.version'] + ')'
+            }
+          }
         })
+
+        // Enable usevddk by default if at least one host has VDDK support
+        // Only auto-enable if user hasn't manually modified the setting
+        if (hasVddkSupport && !this.form.usevddk && !this.userModifiedVddkSetting) {
+          this.form.usevddk = true
+          this.onUseVddkChange(true, false)
+        }
       })
     },
     fetchKvmHostsForImporting () {
@@ -979,6 +1085,11 @@ export default {
         }
         getAPI('listStoragePools', params).then(json => {
           this.storagePoolsForConversion = json.liststoragepoolsresponse.storagepool || []
+          // Keep selected pool state aligned when the value is auto-populated by v-model.
+          if (this.form.convertstoragepoolid) {
+            const poolExists = this.storagePoolsForConversion.some(pool => pool.id === this.form.convertstoragepoolid)
+            this.selectedStoragePoolForConversion = poolExists ? this.form.convertstoragepoolid : null
+          }
         })
       } else if (this.selectedStorageOptionForConversion === 'local') {
         const kvmHost = this.kvmHostsForConversion.filter(x => x.id === this.selectedKvmHostForConversion)[0]
@@ -988,6 +1099,10 @@ export default {
           status: 'Up'
         }).then(json => {
           this.storagePoolsForConversion = json.liststoragepoolsresponse.storagepool || []
+          if (this.form.convertstoragepoolid) {
+            const poolExists = this.storagePoolsForConversion.some(pool => pool.id === this.form.convertstoragepoolid)
+            this.selectedStoragePoolForConversion = poolExists ? this.form.convertstoragepoolid : null
+          }
         })
       }
     },
@@ -1027,19 +1142,50 @@ export default {
       }
     },
     resetStorageOptionsForConversion () {
-      this.storageOptionsForConversion = [
-        {
-          id: 'secondary',
-          name: 'Secondary Storage'
-        }, {
-          id: 'primary',
-          name: 'Primary Storage'
-        }
-      ]
+      this.storageOptionsForConversion = this.switches.forceConvertToPool ? [] : [{
+        id: 'secondary',
+        name: 'Secondary Storage'
+      }]
+      this.storageOptionsForConversion.push({
+        id: 'primary',
+        name: 'Primary Storage'
+      })
     },
     onSelectRootDisk (val) {
       this.selectedRootDiskIndex = val
       this.updateSelectedRootDisk()
+    },
+    onForceConvertToPoolChange (val) {
+      this.switches.forceConvertToPool = val
+      this.form.forceconverttopool = val
+      this.selectedStorageOptionForConversion = null
+      this.selectedStoragePoolForConversion = null
+      this.showStoragePoolsForConversion = false
+      this.resetStorageOptionsForConversion()
+    },
+    onUseVddkChange (val, isUserChange = true) {
+      if (isUserChange) {
+        this.userModifiedVddkSetting = true
+      }
+      if (val) {
+        this.form.forceconverttopool = true
+        this.form.forcemstoimportvmfiles = false
+        this.switches.forceConvertToPool = true
+        this.switches.forceMsToImportVmFiles = false
+        // Reset import host selection when VDDK is enabled
+        this.selectedKvmHostForImporting = null
+        // Refresh host list to show VDDK support details
+        this.fetchKvmHostsForConversion()
+      } else {
+        this.form.forceconverttopool = false
+        this.switches.forceConvertToPool = false
+        this.selectedStorageOptionForConversion = null
+        this.selectedStoragePoolForConversion = null
+        this.showStoragePoolsForConversion = false
+        // Refresh host list to remove VDDK support details
+        this.fetchKvmHostsForConversion()
+      }
+      this.resetStorageOptionsForConversion()
     },
     updateSelectedRootDisk () {
       var rootDisk = this.resource.disk[this.selectedRootDiskIndex]
@@ -1153,12 +1299,25 @@ export default {
           if (this.selectedKvmHostForImporting) {
             params.importinstancehostid = this.selectedKvmHostForImporting
           }
-          if (this.selectedStoragePoolForConversion) {
-            params.convertinstancepoolid = this.selectedStoragePoolForConversion
+          const selectedPoolForConversion = values.convertstoragepoolid || this.selectedStoragePoolForConversion
+          if (selectedPoolForConversion) {
+            params.convertinstancepoolid = selectedPoolForConversion
           }
-          params.forcemstoimportvmfiles = values.forcemstoimportvmfiles
+          if (this.vmwareToKvmExtraParams) {
+            params.extraparams = this.vmwareToKvmExtraParams
+          }
+          if (values.usevddk) {
+            params.usevddk = true
+            params.forcemstoimportvmfiles = false
+          } else {
+            params.usevddk = false
+            params.forcemstoimportvmfiles = values.forcemstoimportvmfiles
+          }
+          if (values.forceconverttopool !== undefined) {
+            params.forceconverttopool = values.forceconverttopool
+          }
         }
-        var keys = ['hostname', 'domainid', 'projectid', 'account', 'migrateallowed', 'forced', 'forcemstoimportvmfiles']
+        var keys = ['hostname', 'domainid', 'projectid', 'account', 'migrateallowed', 'forced', 'osid']
         if (this.templateType !== 'auto') {
           keys.push('templateid')
         }
@@ -1272,6 +1431,11 @@ export default {
       this.templateType = this.defaultTemplateType()
       this.updateComputeOffering(undefined)
       this.switches = {}
+      this.form.usevddk = false
+      this.form.forceconverttopool = false
+      this.form.forcemstoimportvmfiles = false
+      this.userModifiedVddkSetting = false
+      this.resetStorageOptionsForConversion()
     },
     closeAction () {
       this.$emit('close-action')

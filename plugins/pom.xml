@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack</artifactId>
-        <version>4.21.0.0</version>
+        <version>4.23.0.0-SNAPSHOT</version>
     </parent>
     <build>
         <plugins>
@@ -84,8 +84,6 @@
 
         <module>ha-planners/skip-heurestics</module>
 
-        <module>host-allocators/random</module>
-
         <module>hypervisors/baremetal</module>
         <module>hypervisors/external</module>
         <module>hypervisors/hyperv</module>
@@ -129,6 +127,7 @@
         <module>storage/volume/default</module>
         <module>storage/volume/nexenta</module>
         <module>storage/volume/sample</module>
+        <module>storage/volume/ontap</module>
         <module>storage/volume/solidfire</module>
         <module>storage/volume/scaleio</module>
         <module>storage/volume/linstor</module>

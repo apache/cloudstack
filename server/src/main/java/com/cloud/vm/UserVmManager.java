@@ -83,6 +83,34 @@ public interface UserVmManager extends UserVmService {
             "If set to true, tags specified in `resource.limit.host.tags` are also included in vm.strict.host.tags.",
             true);
 
+    ConfigKey<String> VmDistinctHostNameScope = new ConfigKey<>(String.class, "vm.distinct.hostname.scope", ConfigKey.CATEGORY_ADVANCED,
+            "network",
+            "Defines the scope for enforcing unique VM hostnames which determines the resource boundary within which VM hostnames must be unique. Possible values: global, domain, subdomain, account, network.",
+            true, ConfigKey.Scope.Global, null, "VM distinct hostname scope", null, null, null, ConfigKey.Kind.Select,
+            "global,domain,subdomain,account,network");
+
+    ConfigKey<Boolean> EnableAdditionalVmConfig = new ConfigKey<>(
+            "Advanced",
+            Boolean.class,
+            "enable.additional.vm.configuration",
+            "false",
+            "allow additional arbitrary configuration to vm",
+            true,
+            ConfigKey.Scope.Account);
+
+
+    ConfigKey<Boolean> VmwareAdditionalDetailsFromOvaEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class,
+            "vmware.additional.details.from.ova.enabled", "false",
+            "If true, allow users to add additional VM settings if VM instance settings are read from OVA.", true, ConfigKey.Scope.Zone);
+
+    ConfigKey<String> VmwareAllowedAdditionalDetailsFromOva = new ConfigKey<>(String.class,
+            "vmware.allowed.additional.details.from.ova", "Advanced", "",
+            "Comma separated list of allowed additional VM settings if VM instance settings are read from OVA.",
+            true, ConfigKey.Scope.Zone, null, null, null, null, null, ConfigKey.Kind.CSV, null);
+
+    ConfigKey<Boolean> AllowDifferentHostTagsOfferingsForVmScale = new ConfigKey<>("Advanced", Boolean.class, "allow.different.host.tags.offerings.for.vm.scale", "false",
+            "Enables/Disable allowing to change a VM offering to offerings with different host tags", true);
+
     static final int MAX_USER_DATA_LENGTH_BYTES = 2048;
 
     public  static  final String CKS_NODE = "cksnode";
@@ -173,5 +201,10 @@ public interface UserVmManager extends UserVmService {
     boolean checkIfDynamicScalingCanBeEnabled(VirtualMachine vm, ServiceOffering offering, VirtualMachineTemplate template, Long zoneId);
 
     Boolean getDestroyRootVolumeOnVmDestruction(Long domainId);
+
+    /**
+     * @return true if the VM is part of a CKS cluster, false otherwise.
+     */
+    boolean isVMPartOfAnyCKSCluster(VMInstanceVO vm);
 
 }

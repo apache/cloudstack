@@ -26,6 +26,7 @@ import java.util.List;
 import javax.inject.Inject;
 import javax.persistence.EntityExistsException;
 
+import com.cloud.offering.DiskOffering;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.springframework.stereotype.Component;
 
@@ -45,6 +46,8 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
     protected DiskOfferingDetailsDao detailsDao;
 
     protected final SearchBuilder<DiskOfferingVO> UniqueNameSearch;
+    protected final SearchBuilder<DiskOfferingVO> ActiveAndNonComputeSearch;
+
     private final String SizeDiskOfferingSearch = "SELECT * FROM disk_offering WHERE " +
             "disk_size = ? AND provisioning_type = ? AND removed IS NULL";
 
@@ -55,6 +58,11 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
         UniqueNameSearch = createSearchBuilder();
         UniqueNameSearch.and("name", UniqueNameSearch.entity().getUniqueName(), SearchCriteria.Op.EQ);
         UniqueNameSearch.done();
+
+        ActiveAndNonComputeSearch = createSearchBuilder();
+        ActiveAndNonComputeSearch.and("state", ActiveAndNonComputeSearch.entity().getState(), SearchCriteria.Op.EQ);
+        ActiveAndNonComputeSearch.and("computeOnly", ActiveAndNonComputeSearch.entity().isComputeOnly(), SearchCriteria.Op.EQ);
+        ActiveAndNonComputeSearch.done();
 
         _computeOnlyAttr = _allAttributes.get("computeOnly");
     }
@@ -162,6 +170,14 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
         sc.setParameters("tagStartLike", tag + ",%");
         sc.setParameters("tagMidLike", "%," + tag + ",%");
         sc.setParameters("tagEndLike",   "%," + tag);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<DiskOfferingVO> listAllActiveAndNonComputeDiskOfferings() {
+        SearchCriteria<DiskOfferingVO> sc = ActiveAndNonComputeSearch.create();
+        sc.setParameters("state", DiskOffering.State.Active);
+        sc.setParameters("computeOnly", false);
         return listBy(sc);
     }
 }

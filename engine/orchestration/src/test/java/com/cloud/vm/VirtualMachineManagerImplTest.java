@@ -19,14 +19,18 @@ package com.cloud.vm;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -36,6 +40,8 @@ import static org.mockito.Mockito.when;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,15 +49,29 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import com.cloud.agent.api.UnmanageInstanceAnswer;
+import com.cloud.agent.api.UnmanageInstanceCommand;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DiskTO;
+import com.cloud.api.ApiDBUtils;
+import com.cloud.event.ActionEventUtils;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.ha.HighAvailabilityManager;
+import com.cloud.network.Network;
+import com.cloud.network.NetworkModel;
 import com.cloud.resource.ResourceManager;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionDetailsDao;
 import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 import org.apache.cloudstack.framework.extensions.vo.ExtensionDetailsVO;
+import org.apache.cloudstack.framework.jobs.dao.VmWorkJobDao;
+import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -61,6 +81,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -167,6 +188,9 @@ public class VirtualMachineManagerImplTest {
     private PrimaryDataStoreDao storagePoolDaoMock;
     @Mock
     private VMInstanceVO vmInstanceMock;
+    @Mock
+    private VmWorkJobDao _workJobDao;
+
     private long vmInstanceVoMockId = 1L;
 
     @Mock
@@ -181,6 +205,9 @@ public class VirtualMachineManagerImplTest {
     private long hostMockId = 1L;
     private long clusterMockId = 2L;
     private long zoneMockId = 3L;
+    private final String vmMockUuid = UUID.randomUUID().toString();
+    private final String hostUuid = UUID.randomUUID().toString();
+
     @Mock
     private HostVO hostMock;
     @Mock
@@ -192,6 +219,7 @@ public class VirtualMachineManagerImplTest {
     private StoragePoolVO storagePoolVoMock;
     private long storagePoolVoMockId = 11L;
     private long storagePoolVoMockClusterId = 234L;
+    private String vmName = "vm1";
 
     @Mock
     private VolumeVO volumeVoMock;
@@ -254,6 +282,16 @@ public class VirtualMachineManagerImplTest {
     NicDao _nicsDao;
     @Mock
     NetworkService networkService;
+    @Mock
+    NetworkModel networkModel;
+    @Mock
+    VolumeDataFactory volumeDataFactoryMock;
+    @Mock
+    StorageManager storageManager;
+    @Mock
+    private HighAvailabilityManager _haMgr;
+    @Mock
+    VirtualMachineGuru guru;
 
     private ConfigDepotImpl configDepotImpl;
     private boolean updatedConfigKeyDepot = false;
@@ -263,6 +301,7 @@ public class VirtualMachineManagerImplTest {
         ReflectionTestUtils.getField(VirtualMachineManager.VmMetadataManufacturer, "s_depot");
         virtualMachineManagerImpl.setHostAllocators(new ArrayList<>());
 
+        when(vmInstanceMock.getName()).thenReturn(vmName);
         when(vmInstanceMock.getId()).thenReturn(vmInstanceVoMockId);
         when(vmInstanceMock.getServiceOfferingId()).thenReturn(2L);
         when(hostMock.getId()).thenReturn(hostMockId);
@@ -1361,7 +1400,7 @@ public class VirtualMachineManagerImplTest {
         Mockito.doReturn(HypervisorType.KVM).when(vmInstanceMock).getHypervisorType();
         Mockito.doReturn(List.of(new VolumeObjectTO())).when(virtualMachineManagerImpl).getVmVolumesWithCheckpointsToRecreate(Mockito.any());
 
-        Mockito.doThrow(new AgentUnavailableException(0)).when(agentManagerMock).send(Mockito.anyLong(), (Command) any());
+        doThrow(new AgentUnavailableException(0)).when(agentManagerMock).send(Mockito.anyLong(), (Command) any());
         Mockito.doNothing().when(snapshotManagerMock).endSnapshotChainForVolume(Mockito.anyLong(), Mockito.any());
 
         virtualMachineManagerImpl.recreateCheckpointsKvmOnVmAfterMigration(vmInstanceMock, 0);
@@ -1374,7 +1413,7 @@ public class VirtualMachineManagerImplTest {
         Mockito.doReturn(HypervisorType.KVM).when(vmInstanceMock).getHypervisorType();
         Mockito.doReturn(List.of(new VolumeObjectTO())).when(virtualMachineManagerImpl).getVmVolumesWithCheckpointsToRecreate(Mockito.any());
 
-        Mockito.doThrow(new OperationTimedoutException(null, 0, 0, 0, false)).when(agentManagerMock).send(Mockito.anyLong(), (Command) any());
+        doThrow(new OperationTimedoutException(null, 0, 0, 0, false)).when(agentManagerMock).send(Mockito.anyLong(), (Command) any());
         Mockito.doNothing().when(snapshotManagerMock).endSnapshotChainForVolume(Mockito.anyLong(), Mockito.any());
 
         virtualMachineManagerImpl.recreateCheckpointsKvmOnVmAfterMigration(vmInstanceMock, 0);
@@ -1641,4 +1680,278 @@ public class VirtualMachineManagerImplTest {
         virtualMachineManagerImpl.processPrepareExternalProvisioning(true, host, vmProfile, mock(DataCenter.class));
         verify(agentManagerMock).send(anyLong(), any(Command.class));
     }
+
+    @Test
+    public void testPrepVMSpecForUnmanageInstance() {
+        // Arrange
+        final Long accountId = 1L;
+        final Long offeringId = 1L;
+        final Long templateId = 1L;
+
+        // Mock vm
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        when(vm.getId()).thenReturn(vmInstanceVoMockId);
+        when(vm.getAccountId()).thenReturn(accountId);
+        when(vm.getServiceOfferingId()).thenReturn(offeringId);
+        when(vm.getTemplateId()).thenReturn(templateId);
+        when(vm.getHypervisorType()).thenReturn(HypervisorType.KVM);
+        when(vmInstanceDaoMock.findById(vmInstanceVoMockId)).thenReturn(vm);
+
+        // Mock owner
+        AccountVO owner = Mockito.mock(AccountVO.class);
+        when(_entityMgr.findById(Account.class, accountId)).thenReturn(owner);
+
+        ServiceOfferingVO offering = Mockito.mock(ServiceOfferingVO.class);
+        when(serviceOfferingDaoMock.findById(vmInstanceVoMockId, offeringId)).thenReturn(offering);
+
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        when(_entityMgr.findByIdIncludingRemoved(VirtualMachineTemplate.class, templateId)).thenReturn(template);
+
+        when(hostMock.getClusterId()).thenReturn(clusterMockId);
+
+        // Mock cpuOvercommitRatio and ramOvercommitRatio
+        ClusterDetailsVO cpuOvercommitRatio = Mockito.mock(ClusterDetailsVO.class);
+        when(cpuOvercommitRatio.getValue()).thenReturn("1.0");
+        when(_clusterDetailsDao.findDetail(clusterMockId, VmDetailConstants.CPU_OVER_COMMIT_RATIO)).thenReturn(cpuOvercommitRatio);
+        ClusterDetailsVO ramOvercommitRatio = Mockito.mock(ClusterDetailsVO.class);
+        when(ramOvercommitRatio.getValue()).thenReturn("1.0");
+        when(_clusterDetailsDao.findDetail(clusterMockId, VmDetailConstants.MEMORY_OVER_COMMIT_RATIO)).thenReturn(ramOvercommitRatio);
+
+        // Mock NICs
+        List<NicVO> nics = new ArrayList<>();
+        NicVO nic1 = Mockito.mock(NicVO.class);
+        when(nic1.getDeviceId()).thenReturn(1);
+        nics.add(nic1);
+        NicVO nic2 = Mockito.mock(NicVO.class);
+        when(nic2.getDeviceId()).thenReturn(0);
+        nics.add(nic2);
+        when(_nicsDao.listByVmId(vmInstanceVoMockId)).thenReturn(nics);
+
+        Network networkMock = Mockito.mock(Network.class);
+        when(networkModel.getNetwork(anyLong())).thenReturn(networkMock);
+
+        when(volumeVoMock.getVolumeType()).thenReturn(Volume.Type.ROOT);
+        when(volumeVoMock.getDeviceId()).thenReturn(0L);
+        when(volumeVoMock.getPath()).thenReturn("/");
+        when(volumeVoMock.getDiskOfferingId()).thenReturn(1L);
+        when(volumeDaoMock.findUsableVolumesForInstance(vmInstanceVoMockId)).thenReturn(List.of(volumeVoMock));
+
+        VolumeInfo volumeInfo = mock(VolumeInfo.class);
+        DataTO dataTO = mock(DataTO.class);
+        when(volumeInfo.getTO()).thenReturn(dataTO);
+        when(volumeDataFactoryMock.getVolume(anyLong())).thenReturn(volumeInfo);
+        when(storageManager.getDiskWithThrottling(any(), any(), anyLong(), anyString(), anyLong(), anyLong())).thenReturn(Mockito.mock(DiskTO.class));
+
+        Map<String, String> details = new HashMap<>();
+        details.put(VirtualMachineProfile.Param.BootType.getName(), "BIOS");
+        details.put(VirtualMachineProfile.Param.BootMode.getName(), "LEGACY");
+        details.put(VirtualMachineProfile.Param.UefiFlag.getName(), "Yes");
+        when(vmInstanceDetailsDao.listDetailsKeyPairs(anyLong(), anyList())).thenReturn(details);
+
+        com.cloud.hypervisor.HypervisorGuru guru = Mockito.mock(com.cloud.hypervisor.HypervisorGuru.class);
+        when(_hvGuruMgr.getGuru(HypervisorType.KVM)).thenReturn(guru);
+        VirtualMachineTO vmTO = new VirtualMachineTO() {};
+        when(guru.implement(any(VirtualMachineProfile.class))).thenAnswer((Answer<VirtualMachineTO>) invocation -> {
+            VirtualMachineProfile profile = invocation.getArgument(0);
+            assertEquals("BIOS", profile.getParameter(VirtualMachineProfile.Param.BootType));
+            return vmTO;
+        });
+
+        // Act
+        VirtualMachineTO result = virtualMachineManagerImpl.prepVmSpecForUnmanageCmd(vmInstanceVoMockId, hostMockId);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(vmTO, result);
+        verify(_clusterDetailsDao, times(2)).findDetail(eq(clusterMockId), anyString());
+        verify(vmInstanceDetailsDao).listDetailsKeyPairs(anyLong(), anyList());
+    }
+
+    @Test
+    public void testPersistDomainForKvmForRunningVmSuccess() throws AgentUnavailableException, OperationTimedoutException {
+        when(vmInstanceMock.getState()).thenReturn(VirtualMachine.State.Running);
+        when(vmInstanceMock.getHostId()).thenReturn(hostMockId);
+        UnmanageInstanceAnswer successAnswer = new UnmanageInstanceAnswer(null, true, "success");
+        when(agentManagerMock.send(anyLong(), any(Command.class))).thenReturn(successAnswer);
+        virtualMachineManagerImpl.persistDomainForKVM(vmInstanceMock, null);
+        ArgumentCaptor<Long> hostIdCaptor = ArgumentCaptor.forClass(Long.class);
+        ArgumentCaptor<UnmanageInstanceCommand> commandCaptor = ArgumentCaptor.forClass(UnmanageInstanceCommand.class);
+        verify(agentManagerMock).send(hostIdCaptor.capture(), commandCaptor.capture());
+        assertEquals(hostMockId, hostIdCaptor.getValue().longValue());
+    }
+
+    @Test
+    public void testPersistDomainForKvmForStoppedVmSuccess() throws AgentUnavailableException, OperationTimedoutException {
+        when(vmInstanceMock.getState()).thenReturn(VirtualMachine.State.Stopped);
+        VirtualMachineTO vmTO = new VirtualMachineTO() {};
+        vmTO.setName(vmName);
+        doReturn(vmTO).when(virtualMachineManagerImpl).prepVmSpecForUnmanageCmd(vmInstanceVoMockId, 1L);
+        UnmanageInstanceAnswer successAnswer = new UnmanageInstanceAnswer(null, true, "success");
+        when(agentManagerMock.send(anyLong(), any(UnmanageInstanceCommand.class))).thenReturn(successAnswer);
+        when(virtualMachineManagerImpl.findClusterAndHostIdForVm(vmInstanceMock, false)).thenReturn(new Pair<>(clusterMockId, hostMockId));
+        virtualMachineManagerImpl.persistDomainForKVM(vmInstanceMock, null);
+        ArgumentCaptor<Long> hostIdCaptor = ArgumentCaptor.forClass(Long.class);
+        ArgumentCaptor<UnmanageInstanceCommand> commandCaptor = ArgumentCaptor.forClass(UnmanageInstanceCommand.class);
+        verify(agentManagerMock).send(hostIdCaptor.capture(), commandCaptor.capture());
+        assertEquals(1L, hostIdCaptor.getValue().longValue());
+        UnmanageInstanceCommand sentCommand = commandCaptor.getValue();
+        assertNotNull(sentCommand.getVm());
+        assertEquals(vmTO, sentCommand.getVm());
+        assertEquals(vmName, sentCommand.getInstanceName());
+        verify(virtualMachineManagerImpl).prepVmSpecForUnmanageCmd(vmInstanceVoMockId, 1L);
+    }
+
+
+    @Test
+    public void testPersistDomainForKvmForStoppedVmNoHost() {
+        when(vmInstanceMock.getState()).thenReturn(VirtualMachine.State.Stopped);
+        VirtualMachineTO vmTO = new VirtualMachineTO() {};
+        vmTO.setName(vmName);
+        when(virtualMachineManagerImpl.findClusterAndHostIdForVm(vmInstanceMock, false)).thenReturn(new Pair<>(clusterMockId, null));
+        CloudRuntimeException exception = assertThrows(CloudRuntimeException.class, () -> virtualMachineManagerImpl.persistDomainForKVM(vmInstanceMock, null));
+        assertEquals("No available host to persist domain XML for Instance: " + vmName, exception.getMessage());
+    }
+
+    @Test
+    public void testPersistDomainForKvmForRunningVmAgentFailure() throws AgentUnavailableException, OperationTimedoutException {
+        when(vmInstanceMock.getState()).thenReturn(VirtualMachine.State.Running);
+        when(vmInstanceMock.getHostId()).thenReturn(hostMockId);
+        UnmanageInstanceAnswer failureAnswer = new UnmanageInstanceAnswer(null, false, "failure");
+        when(agentManagerMock.send(anyLong(), any(UnmanageInstanceCommand.class))).thenReturn(failureAnswer);
+        CloudRuntimeException exception = assertThrows(CloudRuntimeException.class, () -> virtualMachineManagerImpl.persistDomainForKVM(vmInstanceMock, null));
+        assertEquals("Failed to persist domain XML for Instance: " + vmName + " on host ID: " + hostMockId, exception.getMessage());
+    }
+
+    @Test
+    public void testPersistDomainForKvmAgentUnavailable() throws AgentUnavailableException, OperationTimedoutException {
+        when(vmInstanceMock.getState()).thenReturn(VirtualMachine.State.Running);
+        when(vmInstanceMock.getHostId()).thenReturn(hostMockId);
+        doThrow(new AgentUnavailableException("Agent down", hostMockId)).when(agentManagerMock).send(anyLong(), any(UnmanageInstanceCommand.class));
+        CloudRuntimeException exception = assertThrows(CloudRuntimeException.class, () -> virtualMachineManagerImpl.persistDomainForKVM(vmInstanceMock, null));
+        assertEquals("Failed to send command to persist domain XML for Instance: " + vmName + " on host ID: " + hostMockId, exception.getMessage());
+    }
+
+    @Test(expected = ConcurrentOperationException.class)
+    public void testUnmanagePendingHaWork() {
+        when(vmInstanceDaoMock.findByUuid(vmMockUuid)).thenReturn(vmInstanceMock);
+        when(_workJobDao.listPendingWorkJobs(VirtualMachine.Type.Instance, vmInstanceVoMockId)).thenReturn(Collections.emptyList());
+        when(_haMgr.hasPendingHaWork(vmInstanceVoMockId)).thenReturn(true);
+        virtualMachineManagerImpl.unmanage(vmMockUuid, null);
+    }
+
+    @Test
+    public void testPersistDomainForKvmOperationTimedOut() throws AgentUnavailableException, OperationTimedoutException {
+        when(vmInstanceMock.getState()).thenReturn(VirtualMachine.State.Running);
+        when(vmInstanceMock.getHostId()).thenReturn(hostMockId);
+        doThrow(new OperationTimedoutException(null, hostMockId, 123L, 60, false)).when(agentManagerMock).send(anyLong(), any(UnmanageInstanceCommand.class));
+        CloudRuntimeException exception = assertThrows(CloudRuntimeException.class, () -> virtualMachineManagerImpl.persistDomainForKVM(vmInstanceMock, null));
+        assertEquals("Failed to send command to persist domain XML for Instance: " + vmName + " on host ID: " + hostMockId, exception.getMessage());
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testUnmanageVmRemoved() {
+        when(vmInstanceMock.getRemoved()).thenReturn(new Date());
+        when(vmInstanceDaoMock.findByUuid(vmMockUuid)).thenReturn(vmInstanceMock);
+        virtualMachineManagerImpl.unmanage(vmMockUuid, null);
+    }
+
+    @Test(expected = ConcurrentOperationException.class)
+    public void testUnmanagePendingWorkJobs() {
+        when(vmInstanceDaoMock.findByUuid(vmMockUuid)).thenReturn(vmInstanceMock);
+        List<VmWorkJobVO> pendingJobs = new ArrayList<>();
+        VmWorkJobVO vmWorkJobVO = mock(VmWorkJobVO.class);
+        pendingJobs.add(vmWorkJobVO);
+        when(_workJobDao.listPendingWorkJobs(VirtualMachine.Type.Instance, vmInstanceVoMockId)).thenReturn(pendingJobs);
+        virtualMachineManagerImpl.unmanage(vmMockUuid, null);
+    }
+
+    @Test
+    public void testUnmanageHostNotFoundAfterTransaction() {
+        when(vmInstanceMock.getHostId()).thenReturn(hostMockId);
+        when(vmInstanceDaoMock.findByUuid(vmMockUuid)).thenReturn(vmInstanceMock);
+        when(_workJobDao.listPendingWorkJobs(any(), anyLong())).thenReturn(Collections.emptyList());
+        when(_haMgr.hasPendingHaWork(anyLong())).thenReturn(false);
+        doReturn(guru).when(virtualMachineManagerImpl).getVmGuru(vmInstanceMock);
+        doNothing().when(virtualMachineManagerImpl).unmanageVMSnapshots(vmInstanceMock);
+        doNothing().when(virtualMachineManagerImpl).unmanageVMNics(any(VirtualMachineProfile.class), any(VMInstanceVO.class));
+        doNothing().when(virtualMachineManagerImpl).unmanageVMVolumes(vmInstanceMock);
+        doNothing().when(guru).finalizeUnmanage(vmInstanceMock);
+        try (MockedStatic<ApiDBUtils> ignored = Mockito.mockStatic(ApiDBUtils.class)) {
+            when(ApiDBUtils.findHostById(hostMockId)).thenReturn(null);
+            Pair<Boolean, String> result = virtualMachineManagerImpl.unmanage(vmMockUuid, null);
+            assertNull(result.second());
+        }
+    }
+
+    @Test
+    public void testUnmanageSuccessNonKvm() {
+        when(vmInstanceMock.getHostId()).thenReturn(hostMockId);
+        when(hostMock.getUuid()).thenReturn(hostUuid);
+        when(vmInstanceDaoMock.findByUuid(vmMockUuid)).thenReturn(vmInstanceMock);
+        when(_workJobDao.listPendingWorkJobs(any(), anyLong())).thenReturn(Collections.emptyList());
+        when(_haMgr.hasPendingHaWork(anyLong())).thenReturn(false);
+        doReturn(guru).when(virtualMachineManagerImpl).getVmGuru(vmInstanceMock);
+        doNothing().when(virtualMachineManagerImpl).unmanageVMSnapshots(vmInstanceMock);
+        doNothing().when(virtualMachineManagerImpl).unmanageVMNics(any(VirtualMachineProfile.class), any(VMInstanceVO.class));
+        doNothing().when(virtualMachineManagerImpl).unmanageVMVolumes(vmInstanceMock);
+        doNothing().when(guru).finalizeUnmanage(vmInstanceMock);
+        try (MockedStatic<ApiDBUtils> ignored = Mockito.mockStatic(ApiDBUtils.class)) {
+            when(ApiDBUtils.findHostById(hostMockId)).thenReturn(hostMock);
+            try (MockedStatic<ActionEventUtils> actionUtil = Mockito.mockStatic(ActionEventUtils.class)) {
+                actionUtil.when(() -> ActionEventUtils.onActionEvent(
+                        anyLong(), anyLong(), anyLong(),
+                        anyString(), anyString(),
+                        anyLong(), anyString()
+                )).thenReturn(1L);
+
+                Pair<Boolean, String> result = virtualMachineManagerImpl.unmanage(vmMockUuid, null);
+                assertNotNull(result);
+                assertTrue(result.first());
+                assertEquals(hostUuid, result.second());
+
+                verify(virtualMachineManagerImpl, never()).persistDomainForKVM(any(VMInstanceVO.class), anyLong());
+                verify(virtualMachineManagerImpl, times(1)).unmanageVMSnapshots(vmInstanceMock);
+                verify(virtualMachineManagerImpl, times(1)).unmanageVMNics(any(VirtualMachineProfile.class), any(VMInstanceVO.class));
+                verify(virtualMachineManagerImpl, times(1)).unmanageVMVolumes(vmInstanceMock);
+                verify(guru, times(1)).finalizeUnmanage(vmInstanceMock);
+            }
+        }
+    }
+
+    @Test
+    public void testUnmanageSuccessKvm() throws Exception {
+        when(vmInstanceMock.getHostId()).thenReturn(hostMockId);
+        when(hostMock.getUuid()).thenReturn(hostUuid);
+        when(vmInstanceMock.getHypervisorType()).thenReturn(HypervisorType.KVM);
+        when(vmInstanceDaoMock.findByUuid(vmMockUuid)).thenReturn(vmInstanceMock);
+        when(_workJobDao.listPendingWorkJobs(any(), anyLong())).thenReturn(Collections.emptyList());
+        when(_haMgr.hasPendingHaWork(anyLong())).thenReturn(false);
+        doReturn(guru).when(virtualMachineManagerImpl).getVmGuru(vmInstanceMock);
+        doNothing().when(virtualMachineManagerImpl).unmanageVMSnapshots(vmInstanceMock);
+        doNothing().when(virtualMachineManagerImpl).unmanageVMNics(any(VirtualMachineProfile.class), any(VMInstanceVO.class));
+        doNothing().when(virtualMachineManagerImpl).unmanageVMVolumes(vmInstanceMock);
+        doNothing().when(guru).finalizeUnmanage(vmInstanceMock);
+        try (MockedStatic<ApiDBUtils> ignored = Mockito.mockStatic(ApiDBUtils.class)) {
+            when(ApiDBUtils.findHostById(hostMockId)).thenReturn(hostMock);
+            try (MockedStatic<ActionEventUtils> actionUtil = Mockito.mockStatic(ActionEventUtils.class)) {
+                actionUtil.when(() -> ActionEventUtils.onActionEvent(
+                        anyLong(), anyLong(), anyLong(),
+                        anyString(), anyString(),
+                        anyLong(), anyString()
+                )).thenReturn(1L);
+                UnmanageInstanceAnswer successAnswer = new UnmanageInstanceAnswer(null, true, "success");
+                when(agentManagerMock.send(anyLong(), any(UnmanageInstanceCommand.class))).thenReturn(successAnswer);
+                Pair<Boolean, String> result = virtualMachineManagerImpl.unmanage(vmMockUuid, null);
+                assertNotNull(result);
+                assertTrue(result.first());
+                assertEquals(hostUuid, result.second());
+                verify(virtualMachineManagerImpl, times(1)).persistDomainForKVM(vmInstanceMock, null);
+                verify(virtualMachineManagerImpl, times(1)).unmanageVMSnapshots(vmInstanceMock);
+                verify(virtualMachineManagerImpl, times(1)).unmanageVMNics(any(VirtualMachineProfile.class), any(VMInstanceVO.class));
+                verify(virtualMachineManagerImpl, times(1)).unmanageVMVolumes(vmInstanceMock);
+                verify(guru, times(1)).finalizeUnmanage(vmInstanceMock);
+            }
+        }
+    }
+
 }

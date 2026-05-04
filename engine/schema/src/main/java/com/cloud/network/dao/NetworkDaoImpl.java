@@ -86,6 +86,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
 
     GenericSearchBuilder<NetworkVO, Long> GarbageCollectedSearch;
     SearchBuilder<NetworkVO> PrivateNetworkSearch;
+    SearchBuilder<NetworkVO> NetworkDomainSearch;
 
     @Inject
     ResourceTagDao _tagsDao;
@@ -192,11 +193,18 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
         PersistentNetworkSearch.and("id", PersistentNetworkSearch.entity().getId(), Op.NEQ);
         PersistentNetworkSearch.and("guestType", PersistentNetworkSearch.entity().getGuestType(), Op.IN);
         PersistentNetworkSearch.and("broadcastUri", PersistentNetworkSearch.entity().getBroadcastUri(), Op.EQ);
+        PersistentNetworkSearch.and("dc", PersistentNetworkSearch.entity().getDataCenterId(), Op.EQ);
         PersistentNetworkSearch.and("removed", PersistentNetworkSearch.entity().getRemoved(), Op.NULL);
         final SearchBuilder<NetworkOfferingVO> persistentNtwkOffJoin = _ntwkOffDao.createSearchBuilder();
         persistentNtwkOffJoin.and("persistent", persistentNtwkOffJoin.entity().isPersistent(), Op.EQ);
         PersistentNetworkSearch.join("persistent", persistentNtwkOffJoin, PersistentNetworkSearch.entity().getNetworkOfferingId(), persistentNtwkOffJoin.entity().getId(), JoinType.INNER);
         PersistentNetworkSearch.done();
+
+        NetworkDomainSearch = createSearchBuilder();
+        NetworkDomainSearch.and("networkDomains", NetworkDomainSearch.entity().getNetworkDomain(), Op.IN);
+        NetworkDomainSearch.and("accounts", NetworkDomainSearch.entity().getAccountId(), Op.IN);
+        NetworkDomainSearch.and("domains", NetworkDomainSearch.entity().getDomainId(), Op.IN);
+        NetworkDomainSearch.done();
 
         PhysicalNetworkSearch = createSearchBuilder();
         PhysicalNetworkSearch.and("physicalNetworkId", PhysicalNetworkSearch.entity().getPhysicalNetworkId(), Op.EQ);
@@ -429,11 +437,34 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
     }
 
     @Override
+    public List<NetworkVO> listByNetworkDomains(Set<String> uniqueNtwkDomains) {
+        SearchCriteria<NetworkVO> sc = NetworkDomainSearch.create();
+        sc.setParameters("networkDomains", uniqueNtwkDomains.toArray());
+        return search(sc, null);
+    }
+
+    @Override
+    public List<NetworkVO> listByNetworkDomainsAndAccountIds(Set<String> uniqueNtwkDomains, Set<Long> accountIds) {
+        SearchCriteria<NetworkVO> sc = NetworkDomainSearch.create();
+        sc.setParameters("networkDomains", uniqueNtwkDomains.toArray());
+        sc.setParameters("accounts", accountIds.toArray());
+        return search(sc, null);
+    }
+
+    @Override
+    public List<NetworkVO> listByNetworkDomainsAndDomainIds(Set<String> uniqueNtwkDomains, Set<Long> domainIds) {
+        SearchCriteria<NetworkVO> sc = NetworkDomainSearch.create();
+        sc.setParameters("networkDomains", uniqueNtwkDomains.toArray());
+        sc.setParameters("domains", domainIds.toArray());
+        return search(sc, null);
+    }
+
+    @Override
     public String getNextAvailableMacAddress(final long networkConfigId, Integer zoneMacIdentifier) {
         final SequenceFetcher fetch = SequenceFetcher.getInstance();
         long seq = fetch.getNextSequence(Long.class, _tgMacAddress, networkConfigId);
-        if(zoneMacIdentifier != null && zoneMacIdentifier.intValue() != 0 ){
-            seq = seq | _prefix << 40 | (long)zoneMacIdentifier << 32 | networkConfigId << 16 & 0x00000000ffff0000l;
+        if (zoneMacIdentifier != null && zoneMacIdentifier != 0) {
+            seq = seq | _prefix << 40 | (long)zoneMacIdentifier << 32 | networkConfigId << 16 & 0x00000000ffff0000L;
         }
         return NetUtils.long2Mac(seq);
     }
@@ -568,7 +599,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
     public List<NetworkVO> listByPhysicalNetworkTrafficType(final long physicalNetworkId, final TrafficType trafficType) {
         final SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
         sc.setParameters("trafficType", trafficType);
-        sc.setParameters("physicalNetwork", physicalNetworkId);
+        sc.setParameters("physicalNetworkId", physicalNetworkId);
         return listBy(sc);
     }
 

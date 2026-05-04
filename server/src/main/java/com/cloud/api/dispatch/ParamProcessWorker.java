@@ -43,6 +43,7 @@ import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.EntityReference;
+import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -312,20 +313,7 @@ public class ParamProcessWorker implements DispatchWorker {
 
     protected void doAccessChecks(BaseCmd cmd, Map<Object, AccessType> entitiesToAccess) {
         Account caller = CallContext.current().getCallingAccount();
-        List<Long> entityOwners = cmd.getEntityOwnerIds();
-        Account[] owners = null;
-        if (entityOwners != null) {
-            owners = entityOwners.stream().map(id -> _accountMgr.getAccount(id)).toArray(Account[]::new);
-        } else {
-            if (cmd.getEntityOwnerId() == Account.ACCOUNT_ID_SYSTEM && cmd instanceof BaseAsyncCmd && ((BaseAsyncCmd)cmd).getApiResourceType() == ApiCommandResourceType.Network) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Skipping access check on the network owner if the owner is ROOT/system.");
-                }
-                owners = new Account[]{};
-            } else {
-                owners = new Account[]{_accountMgr.getAccount(cmd.getEntityOwnerId())};
-            }
-        }
+        Account[] owners = getEntityOwners(cmd);
 
         if (cmd instanceof BaseAsyncCreateCmd) {
             // check that caller can access the owner account.
@@ -528,10 +516,16 @@ public class ParamProcessWorker implements DispatchWorker {
             } catch (final NumberFormatException e) {
                 internalId = null;
             }
-            if (internalId != null){
+            if (internalId != null) {
                 // Populate CallContext for each of the entity.
                 for (final Class<?> entity : entities) {
                     CallContext.current().putContextParameter(entity, internalId);
+                    final Object objVO = _entityMgr.findByIdIncludingRemoved(entity, internalId);
+                    if (!(objVO instanceof Identity)) {
+                        continue;
+                    }
+                    String entityUuid = ((Identity) objVO).getUuid();
+                    CallContext.current().putApiResourceUuid(annotation.name(), entityUuid);
                 }
                 validateNaturalNumber(internalId, annotation.name());
                 return internalId;
@@ -556,6 +550,7 @@ public class ParamProcessWorker implements DispatchWorker {
             }
             // Return on first non-null Id for the uuid entity
             if (internalId != null){
+                CallContext.current().putApiResourceUuid(annotation.name(), uuid);
                 CallContext.current().putContextParameter(entity, uuid);
                 break;
             }

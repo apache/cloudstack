@@ -41,7 +41,7 @@ export default {
       permission: ['listLdapConfigurations'],
       searchFilters: ['domainid', 'hostname', 'port'],
       columns: ['hostname', 'port', 'domainid'],
-      details: ['hostname', 'port', 'domainid'],
+      details: ['id', 'hostname', 'port', 'domainid'],
       actions: [
         {
           api: 'addLdapConfiguration',
@@ -128,43 +128,6 @@ export default {
           icon: 'delete-outlined',
           label: 'label.action.delete.oauth.provider',
           message: 'message.action.delete.guest.os',
-          dataView: true,
-          popup: true
-        }
-      ]
-    },
-    {
-      name: 'backuprepository',
-      title: 'label.backup.repository',
-      icon: 'inbox-outlined',
-      docHelp: 'adminguide/backup_and_recovery.html',
-      permission: ['listBackupRepositories'],
-      searchFilters: ['zoneid'],
-      columns: ['name', 'provider', 'type', 'address', 'zonename'],
-      details: ['name', 'type', 'address', 'provider', 'zonename'],
-      actions: [
-        {
-          api: 'addBackupRepository',
-          icon: 'plus-outlined',
-          label: 'label.backup.repository.add',
-          listView: true,
-          args: [
-            'name', 'provider', 'address', 'type', 'mountopts', 'zoneid'
-          ],
-          mapping: {
-            type: {
-              options: ['nfs', 'cifs', 'ceph']
-            },
-            provider: {
-              value: (record) => { return 'nas' }
-            }
-          }
-        },
-        {
-          api: 'deleteBackupRepository',
-          icon: 'delete-outlined',
-          label: 'label.backup.repository.remove',
-          message: 'message.action.delete.backup.repository',
           dataView: true,
           popup: true
         }

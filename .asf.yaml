@@ -50,20 +50,15 @@ github:
     rebase: false
 
   collaborators:
-    - acs-robot
     - gpordeus
-    - hsato03
-    - FelipeM525
-    - lucas-a-martins
-    - nicoschmdt
-    - abh1sar
-    - rosi-shapeblue
-    - sudo87
+    - erikbocks
+    - Imvedansh
+    - Damans227
 
   protected_branches: ~
 
 notifications:
-  commits:      commits@cloudstack.apache.org
-  issues:       commits@cloudstack.apache.org
+  commits: commits@cloudstack.apache.org
+  issues: commits@cloudstack.apache.org
   pullrequests: commits@cloudstack.apache.org
-  discussions:  users@cloudstack.apache.org
+  discussions: users@cloudstack.apache.org

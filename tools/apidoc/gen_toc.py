@@ -174,6 +174,7 @@ known_categories = {
     'removeIpFromNic': 'Nic',
     'updateVmNicIp': 'Nic',
     'listNics':'Nic',
+    'updateVmNic': 'Nic',
     'AffinityGroup': 'Affinity Group',
     'ImageStore': 'Image Store',
     'addImageStore': 'Image Store',
@@ -272,7 +273,8 @@ known_categories = {
     'Extension' : 'Extension',
     'Extensions' : 'Extension',
     'CustomAction' : 'Extension',
-    'CustomActions' : 'Extension'
+    'CustomActions' : 'Extension',
+    'ImportVmTask': 'Import VM Task'
 }
 
 

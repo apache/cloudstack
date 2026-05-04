@@ -23,11 +23,13 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyBoolean;
 import static org.mockito.Mockito.anyLong;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -40,6 +42,7 @@ import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.security.InvalidParameterException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -83,16 +86,17 @@ import org.apache.cloudstack.framework.extensions.dao.ExtensionResourceMapDao;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionResourceMapDetailsDao;
 import org.apache.cloudstack.framework.extensions.vo.ExtensionCustomActionDetailsVO;
 import org.apache.cloudstack.framework.extensions.vo.ExtensionCustomActionVO;
+import org.apache.cloudstack.framework.extensions.vo.ExtensionDetailsVO;
 import org.apache.cloudstack.framework.extensions.vo.ExtensionResourceMapVO;
 import org.apache.cloudstack.framework.extensions.vo.ExtensionVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.commons.collections.CollectionUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -102,6 +106,7 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.RunCustomActionAnswer;
+import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ManagementServerHostVO;
@@ -111,6 +116,8 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.host.Host;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.ExternalProvisioner;
@@ -119,7 +126,9 @@ import com.cloud.org.Cluster;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
+import com.cloud.user.AccountService;
 import com.cloud.utils.Pair;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -174,6 +183,8 @@ public class ExtensionsManagerImplTest {
     private VMTemplateDao templateDao;
     @Mock
     private RoleService roleService;
+    @Mock
+    private AccountService accountService;
 
     @Before
     public void setUp() {
@@ -524,11 +535,15 @@ public class ExtensionsManagerImplTest {
         when(hostDetailsDao.findDetails(hostId)).thenReturn(null);
         when(extensionResourceMapDetailsDao.listDetailsKeyPairs(2L, true)).thenReturn(Collections.emptyMap());
         when(extensionDetailsDao.listDetailsKeyPairs(3L, true)).thenReturn(map);
-        Map<String, Map<String, String>> result = extensionsManager.getExternalAccessDetails(map, hostId, resourceMap);
-        assertTrue(result.containsKey(ApiConstants.ACTION));
-        assertFalse(result.containsKey(ApiConstants.HOST));
-        assertFalse(result.containsKey(ApiConstants.RESOURCE_MAP));
-        assertTrue(result.containsKey(ApiConstants.EXTENSION));
+        try (MockedStatic<CallContext> ignored = mockStatic(CallContext.class)) {
+            mockCallerRole(RoleType.Admin);
+            Map<String, Map<String, String>> result = extensionsManager.getExternalAccessDetails(map, hostId, resourceMap);
+            assertTrue(result.containsKey(ApiConstants.ACTION));
+            assertFalse(result.containsKey(ApiConstants.HOST));
+            assertFalse(result.containsKey(ApiConstants.RESOURCE_MAP));
+            assertTrue(result.containsKey(ApiConstants.EXTENSION));
+            assertTrue(result.containsKey(ApiConstants.CALLER));
+        }
     }
 
     @Test(expected = CloudRuntimeException.class)
@@ -654,6 +669,8 @@ public class ExtensionsManagerImplTest {
         when(cmd.getPath()).thenReturn(null);
         when(cmd.isOrchestratorRequiresPrepareVm()).thenReturn(null);
         when(cmd.getState()).thenReturn(null);
+        String reservedResourceDetails = "abc,xyz";
+        when(cmd.getReservedResourceDetails()).thenReturn(reservedResourceDetails);
         when(extensionDao.findByName("ext1")).thenReturn(null);
         when(extensionDao.persist(any())).thenAnswer(inv -> {
             ExtensionVO extensionVO = inv.getArgument(0);
@@ -661,11 +678,20 @@ public class ExtensionsManagerImplTest {
             return extensionVO;
         });
         when(managementServerHostDao.listBy(any())).thenReturn(Collections.emptyList());
-
+        List<ExtensionDetailsVO> detailsList = new ArrayList<>();
+        doAnswer(inv -> {
+            List<ExtensionDetailsVO> detailsVO = inv.getArgument(0);
+            detailsList.addAll(detailsVO);
+            return null;
+        }).when(extensionDetailsDao).saveDetails(anyList());
         Extension ext = extensionsManager.createExtension(cmd);
 
         assertEquals("ext1", ext.getName());
         verify(extensionDao).persist(any());
+        assertTrue(CollectionUtils.isNotEmpty(detailsList));
+        assertTrue(detailsList.stream()
+                .anyMatch(detail -> ApiConstants.RESERVED_RESOURCE_DETAILS.equals(detail.getName())
+                    && reservedResourceDetails.equals(detail.getValue())));
     }
 
     @Test
@@ -928,14 +954,32 @@ public class ExtensionsManagerImplTest {
     public void updateExtensionsDetails_SavesDetails_WhenDetailsProvided() {
         long extensionId = 10L;
         Map<String, String> details = Map.of("foo", "bar", "baz", "qux");
-        extensionsManager.updateExtensionsDetails(false, details, null, extensionId);
+        extensionsManager.updateExtensionsDetails(false, details, null, null, extensionId);
         verify(extensionDetailsDao).saveDetails(any());
+    }
+
+    @Test
+    public void updateExtensionsDetails_PersistReservedDetail_WhenProvided() {
+        long extensionId = 10L;
+        when(extensionDetailsDao.persist(any())).thenReturn(mock(ExtensionDetailsVO.class));
+        extensionsManager.updateExtensionsDetails(false, null, null, "abc,xyz", extensionId);
+        verify(extensionDetailsDao).persist(any());
+    }
+
+    @Test
+    public void updateExtensionsDetails_UpdateReservedDetail_WhenProvided() {
+        long extensionId = 10L;
+        when(extensionDetailsDao.findDetail(anyLong(), eq(ApiConstants.RESERVED_RESOURCE_DETAILS)))
+                .thenReturn(mock(ExtensionDetailsVO.class));
+        when(extensionDetailsDao.update(anyLong(), any())).thenReturn(true);
+        extensionsManager.updateExtensionsDetails(false, null, null, "abc,xyz", extensionId);
+        verify(extensionDetailsDao).update(anyLong(), any());
     }
 
     @Test
     public void updateExtensionsDetails_DoesNothing_WhenDetailsAndCleanupAreNull() {
         long extensionId = 11L;
-        extensionsManager.updateExtensionsDetails(null, null, null, extensionId);
+        extensionsManager.updateExtensionsDetails(null, null, null, null, extensionId);
         verify(extensionDetailsDao, never()).removeDetails(anyLong());
         verify(extensionDetailsDao, never()).saveDetails(any());
     }
@@ -943,7 +987,7 @@ public class ExtensionsManagerImplTest {
     @Test
     public void updateExtensionsDetails_RemovesDetailsOnly_WhenCleanupIsTrue() {
         long extensionId = 12L;
-        extensionsManager.updateExtensionsDetails(true, null, null, extensionId);
+        extensionsManager.updateExtensionsDetails(true, null, null, null, extensionId);
         verify(extensionDetailsDao).removeDetails(extensionId);
         verify(extensionDetailsDao, never()).saveDetails(any());
     }
@@ -951,7 +995,7 @@ public class ExtensionsManagerImplTest {
     @Test
     public void updateExtensionsDetails_PersistsOrchestratorFlag_WhenFlagIsNotNull() {
         long extensionId = 13L;
-        extensionsManager.updateExtensionsDetails(false, null, true, extensionId);
+        extensionsManager.updateExtensionsDetails(false, null, true, null, extensionId);
         verify(extensionDetailsDao).persist(any());
     }
 
@@ -960,7 +1004,7 @@ public class ExtensionsManagerImplTest {
         long extensionId = 14L;
         Map<String, String> details = Map.of("foo", "bar");
         doThrow(CloudRuntimeException.class).when(extensionDetailsDao).saveDetails(any());
-        extensionsManager.updateExtensionsDetails(false, details, null, extensionId);
+        extensionsManager.updateExtensionsDetails(false, details, null, null, extensionId);
     }
 
     @Test
@@ -1151,7 +1195,8 @@ public class ExtensionsManagerImplTest {
         when(externalProvisioner.getExtensionPath("entry2.sh")).thenReturn("/some/path/entry2.sh");
 
         Map<String, String> hiddenDetails = Map.of(ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM, "false");
-        when(extensionDetailsDao.listDetailsKeyPairs(2L, List.of(ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM)))
+        when(extensionDetailsDao.listDetailsKeyPairs(2L, List.of(
+                ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM, ApiConstants.RESERVED_RESOURCE_DETAILS)))
                 .thenReturn(hiddenDetails);
 
         EnumSet<ApiConstants.ExtensionDetails> viewDetails = EnumSet.noneOf(ApiConstants.ExtensionDetails.class);
@@ -1281,12 +1326,17 @@ public class ExtensionsManagerImplTest {
     }
 
     private void mockCallerRole(RoleType roleType) {
-        CallContext callContextMock = Mockito.mock(CallContext.class);
+        CallContext callContextMock = mock(CallContext.class);
         when(CallContext.current()).thenReturn(callContextMock);
         Account accountMock = mock(Account.class);
+        when(accountMock.getAccountName()).thenReturn("testAccount");
+        when(accountMock.getUuid()).thenReturn(UUID.randomUUID().toString());
+        when(accountMock.getType()).thenReturn(RoleType.Admin.equals(roleType) ? Account.Type.ADMIN : Account.Type.NORMAL);
         when(accountMock.getRoleId()).thenReturn(1L);
         Role role = mock(Role.class);
         when(role.getRoleType()).thenReturn(roleType);
+        when(role.getUuid()).thenReturn("role-uuid-1");
+        when(role.getName()).thenReturn(roleType.name() + "Role");
         when(roleService.findRole(1L)).thenReturn(role);
         when(callContextMock.getCallingAccount()).thenReturn(accountMock);
     }
@@ -1629,6 +1679,35 @@ public class ExtensionsManagerImplTest {
         }
     }
 
+    @Test(expected = PermissionDeniedException.class)
+    public void runCustomAction_CheckAccessThrowsException() throws Exception {
+        RunCustomActionCmd cmd = mock(RunCustomActionCmd.class);
+        when(cmd.getCustomActionId()).thenReturn(1L);
+        when(cmd.getResourceId()).thenReturn("vm-123");
+        when(cmd.getParameters()).thenReturn(Map.of("param1", "value1"));
+
+        ExtensionCustomActionVO actionVO = mock(ExtensionCustomActionVO.class);
+        when(extensionCustomActionDao.findById(1L)).thenReturn(actionVO);
+        when(actionVO.isEnabled()).thenReturn(true);
+        when(actionVO.getResourceType()).thenReturn(ExtensionCustomAction.ResourceType.VirtualMachine);
+        when(actionVO.getAllowedRoleTypes()).thenReturn(RoleType.toCombinedMask(List.of(RoleType.Admin, RoleType.DomainAdmin, RoleType.User)));
+
+        ExtensionVO extensionVO = mock(ExtensionVO.class);
+        when(extensionDao.findById(anyLong())).thenReturn(extensionVO);
+        when(extensionVO.getState()).thenReturn(Extension.State.Enabled);
+
+        VirtualMachine vm = mock(VirtualMachine.class);
+        when(entityManager.findByUuid(eq(VirtualMachine.class), anyString())).thenReturn(vm);
+        doThrow(PermissionDeniedException.class).when(accountService).checkAccess(any(Account.class), eq(null), eq(true), eq(vm));
+
+        try (MockedStatic<CallContext> ignored = mockStatic(CallContext.class)) {
+            mockCallerRole(RoleType.User);
+            CustomActionResultResponse result = extensionsManager.runCustomAction(cmd);
+
+            assertFalse(result.getSuccess());
+        }
+    }
+
     @Test
     public void createCustomActionResponse_SetsBasicFields() {
         ExtensionCustomAction action = mock(ExtensionCustomAction.class);
@@ -1881,5 +1960,262 @@ public class ExtensionsManagerImplTest {
         when(extensionsManager.getExtensionIdForCluster(clusterId)).thenReturn(null);
         Extension result = extensionsManager.getExtensionForCluster(clusterId);
         assertNull(result);
+    }
+
+    @Test
+    public void getInstanceConsole_whenValid() {
+        Extension extension = mock(Extension.class);
+        when(extension.getType()).thenReturn(Extension.Type.Orchestrator);
+        when(extension.getState()).thenReturn(Extension.State.Enabled);
+        when(extensionsManager.getExtensionForCluster(anyLong())).thenReturn(extension);
+        VirtualMachine vm = mock(VirtualMachine.class);
+        Host host = mock(Host.class);
+        when(host.getClusterId()).thenReturn(1L);
+        Answer expectedAnswer = mock(Answer.class);
+        when(virtualMachineManager.toVmTO(any())).thenReturn(mock(VirtualMachineTO.class));
+        when(agentMgr.easySend(anyLong(), any())).thenReturn(expectedAnswer);
+        Answer result = extensionsManager.getInstanceConsole(vm, host);
+        assertNotNull(result);
+        assertEquals(expectedAnswer, result);
+    }
+
+    @Test
+    public void getInstanceConsole_whenNullExtension() {
+        when(extensionsManager.getExtensionForCluster(anyLong())).thenReturn(null);
+        VirtualMachine vm = mock(VirtualMachine.class);
+        Host host = mock(Host.class);
+        when(host.getClusterId()).thenReturn(1L);
+        Answer result = extensionsManager.getInstanceConsole(vm, host);
+        assertNotNull(result);
+        assertFalse(result.getResult());
+    }
+
+    @Test
+    public void getInstanceConsole_whenNullExtensionNotOrchestrator() {
+        Extension extension = mock(Extension.class);
+        when(extensionsManager.getExtensionForCluster(anyLong())).thenReturn(extension);
+        VirtualMachine vm = mock(VirtualMachine.class);
+        Host host = mock(Host.class);
+        when(host.getClusterId()).thenReturn(1L);
+        Answer result = extensionsManager.getInstanceConsole(vm, host);
+        assertNotNull(result);
+        assertFalse(result.getResult());
+    }
+
+    @Test
+    public void getInstanceConsole_whenNullExtensionNotEnabled() {
+        Extension extension = mock(Extension.class);
+        when(extension.getType()).thenReturn(Extension.Type.Orchestrator);
+        when(extension.getState()).thenReturn(Extension.State.Disabled);
+        when(extensionsManager.getExtensionForCluster(anyLong())).thenReturn(extension);
+        VirtualMachine vm = mock(VirtualMachine.class);
+        Host host = mock(Host.class);
+        when(host.getClusterId()).thenReturn(1L);
+        Answer result = extensionsManager.getInstanceConsole(vm, host);
+        assertNotNull(result);
+        assertFalse(result.getResult());
+    }
+
+    @Test
+    public void getInstanceConsole_whenAgentManagerFails() {
+        Extension extension = mock(Extension.class);
+        when(extension.getType()).thenReturn(Extension.Type.Orchestrator);
+        when(extension.getState()).thenReturn(Extension.State.Enabled);
+        when(extensionsManager.getExtensionForCluster(anyLong())).thenReturn(extension);
+        VirtualMachine vm = mock(VirtualMachine.class);
+        Host host = mock(Host.class);
+        when(host.getClusterId()).thenReturn(1L);
+        when(virtualMachineManager.toVmTO(any())).thenReturn(mock(VirtualMachineTO.class));
+        when(agentMgr.easySend(anyLong(), any())).thenReturn(null);
+        Answer result = extensionsManager.getInstanceConsole(vm, host);
+        assertNull(result);
+    }
+
+    @Test
+    public void getExternalAccessDetailsReturnsExpectedDetails() {
+        Host host = mock(Host.class);
+        when(host.getId()).thenReturn(100L);
+        when(host.getClusterId()).thenReturn(1L);
+        Map<String, String> vmDetails = Map.of("key1", "value1", "key2", "value2");
+        ExtensionResourceMapVO resourceMapVO = mock(ExtensionResourceMapVO.class);
+        when(extensionResourceMapDao.findByResourceIdAndType(1L, ExtensionResourceMap.ResourceType.Cluster))
+                .thenReturn(resourceMapVO);
+        doReturn(new HashMap<>()).when(extensionsManager).getExternalAccessDetails(null, 100L, resourceMapVO);
+        Map<String, Map<String, String>> result = extensionsManager.getExternalAccessDetails(host, vmDetails);
+        assertNotNull(result);
+        assertNotNull(result.get(ApiConstants.VIRTUAL_MACHINE));
+        assertEquals(vmDetails, result.get(ApiConstants.VIRTUAL_MACHINE));
+    }
+
+    @Test
+    public void getExternalAccessDetailsReturnsExpectedNullDetails() {
+        Host host = mock(Host.class);
+        when(host.getId()).thenReturn(101L);
+        when(host.getClusterId()).thenReturn(1L);
+        Map<String, String> vmDetails = null;
+        ExtensionResourceMapVO resourceMapVO = mock(ExtensionResourceMapVO.class);
+        when(extensionResourceMapDao.findByResourceIdAndType(1L, ExtensionResourceMap.ResourceType.Cluster))
+                .thenReturn(resourceMapVO);
+        doReturn(new HashMap<>()).when(extensionsManager).getExternalAccessDetails(null, 101L, resourceMapVO);
+        Map<String, Map<String, String>> result = extensionsManager.getExternalAccessDetails(host, vmDetails);
+        assertNotNull(result);
+        assertNull(result.get(ApiConstants.VIRTUAL_MACHINE));
+    }
+
+    @Test
+    public void getCallerDetailsReturnsExpectedDetailsForValidCaller() {
+        try (MockedStatic<CallContext> ignored = mockStatic(CallContext.class)) {
+            mockCallerRole(RoleType.Admin);
+            Map<String, String> result = extensionsManager.getCallerDetails();
+            assertNotNull(result);
+            assertTrue(UuidUtils.isUuid(result.get(ApiConstants.ID)));
+            assertEquals("testAccount", result.get(ApiConstants.NAME));
+            assertEquals("ADMIN", result.get(ApiConstants.TYPE));
+            assertEquals("role-uuid-1", result.get(ApiConstants.ROLE_ID));
+            assertEquals("AdminRole", result.get(ApiConstants.ROLE_NAME));
+            assertEquals("Admin", result.get(ApiConstants.ROLE_TYPE));
+        }
+    }
+
+    @Test
+    public void getCallerDetailsReturnsNullWhenCallerIsNull() {
+        CallContext callContext = mock(CallContext.class);
+        when(callContext.getCallingAccount()).thenReturn(null);
+        try (MockedStatic<CallContext> mockedCallContext = mockStatic(CallContext.class)) {
+            mockedCallContext.when(CallContext::current).thenReturn(callContext);
+            Map<String, String> result = extensionsManager.getCallerDetails();
+            assertNull(result);
+        }
+    }
+
+    @Test
+    public void getCallerDetailsReturnsDetailsWithoutRoleWhenRoleIsNull() {
+        try (MockedStatic<CallContext> ignored = mockStatic(CallContext.class)) {
+            mockCallerRole(RoleType.User);
+            when(roleService.findRole(1L)).thenReturn(null);
+            Map<String, String> result = extensionsManager.getCallerDetails();
+            assertNotNull(result);
+            assertTrue(UuidUtils.isUuid(result.get(ApiConstants.ID)));
+            assertEquals("testAccount", result.get(ApiConstants.NAME));
+            assertEquals("NORMAL", result.get(ApiConstants.TYPE));
+            assertNull(result.get(ApiConstants.ROLE_ID));
+            assertNull(result.get(ApiConstants.ROLE_NAME));
+            assertNull(result.get(ApiConstants.ROLE_TYPE));
+        }
+    }
+
+    @Test
+    public void getExtensionReservedResourceDetailsReturnsEmptyListWhenDetailsNotFound() {
+        long extensionId = 1L;
+        when(extensionDetailsDao.findDetail(extensionId, ApiConstants.RESERVED_RESOURCE_DETAILS)).thenReturn(null);
+
+        List<String> result = extensionsManager.getExtensionReservedResourceDetails(extensionId);
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void getExtensionReservedResourceDetailsReturnsEmptyListWhenValueIsBlank() {
+        long extensionId = 2L;
+        ExtensionDetailsVO detailsVO = mock(ExtensionDetailsVO.class);
+        when(detailsVO.getValue()).thenReturn("   ");
+        when(extensionDetailsDao.findDetail(extensionId, ApiConstants.RESERVED_RESOURCE_DETAILS)).thenReturn(detailsVO);
+
+        List<String> result = extensionsManager.getExtensionReservedResourceDetails(extensionId);
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void getExtensionReservedResourceDetailsReturnsListOfTrimmedDetails() {
+        long extensionId = 3L;
+        ExtensionDetailsVO detailsVO = mock(ExtensionDetailsVO.class);
+        when(detailsVO.getValue()).thenReturn(" detail1 , detail2,detail3 ");
+        when(extensionDetailsDao.findDetail(extensionId, ApiConstants.RESERVED_RESOURCE_DETAILS)).thenReturn(detailsVO);
+
+        List<String> result = extensionsManager.getExtensionReservedResourceDetails(extensionId);
+
+        assertNotNull(result);
+        assertEquals(3, result.size());
+        assertEquals("detail1", result.get(0));
+        assertEquals("detail2", result.get(1));
+        assertEquals("detail3", result.get(2));
+    }
+
+    @Test
+    public void getExtensionReservedResourceDetailsHandlesEmptyPartsGracefully() {
+        long extensionId = 4L;
+        ExtensionDetailsVO detailsVO = mock(ExtensionDetailsVO.class);
+        when(detailsVO.getValue()).thenReturn("detail1,,detail2, ,detail3");
+        when(extensionDetailsDao.findDetail(extensionId, ApiConstants.RESERVED_RESOURCE_DETAILS)).thenReturn(detailsVO);
+
+        List<String> result = extensionsManager.getExtensionReservedResourceDetails(extensionId);
+
+        assertNotNull(result);
+        assertEquals(3, result.size());
+        assertEquals("detail1", result.get(0));
+        assertEquals("detail2", result.get(1));
+        assertEquals("detail3", result.get(2));
+    }
+
+    @Test
+    public void getExtensionReservedResourceDetailsReturnsEmptyListWhenSplitResultsInNoParts() {
+        long extensionId = 5L;
+        ExtensionDetailsVO detailsVO = mock(ExtensionDetailsVO.class);
+        when(detailsVO.getValue()).thenReturn(",");
+        when(extensionDetailsDao.findDetail(extensionId, ApiConstants.RESERVED_RESOURCE_DETAILS)).thenReturn(detailsVO);
+
+        List<String> result = extensionsManager.getExtensionReservedResourceDetails(extensionId);
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void addInbuiltExtensionReservedResourceDetailsDoesNothingWhenExtensionNotFound() {
+        when(extensionDao.findById(1L)).thenReturn(null);
+        List<String> reservedResourceDetails = new ArrayList<>();
+        extensionsManager.addInbuiltExtensionReservedResourceDetails(1L, reservedResourceDetails);
+        assertTrue(reservedResourceDetails.isEmpty());
+    }
+
+    @Test
+    public void addInbuiltExtensionReservedResourceDetailsDoesNothingForUserDefinedExtension() {
+        ExtensionVO extension = mock(ExtensionVO.class);
+        when(extension.isUserDefined()).thenReturn(true);
+        when(extensionDao.findById(2L)).thenReturn(extension);
+        List<String> reservedResourceDetails = new ArrayList<>();
+        reservedResourceDetails.add("existing-detail");
+        extensionsManager.addInbuiltExtensionReservedResourceDetails(2L, reservedResourceDetails);
+        assertEquals(1, reservedResourceDetails.size());
+        assertTrue(reservedResourceDetails.contains("existing-detail"));
+    }
+
+    @Test
+    public void addInbuiltExtensionReservedResourceDetailsDoesNothingWhenNoMatchFound() {
+        ExtensionVO extension = mock(ExtensionVO.class);
+        when(extension.isUserDefined()).thenReturn(false);
+        when(extension.getName()).thenReturn("no-such-inbuilt-key-expected");
+        when(extensionDao.findById(3L)).thenReturn(extension);
+        List<String> reservedResourceDetails = new ArrayList<>();
+        extensionsManager.addInbuiltExtensionReservedResourceDetails(3L, reservedResourceDetails);
+        assertTrue(reservedResourceDetails.isEmpty());
+    }
+
+    @Test
+    public void addInbuiltExtensionReservedResourceDetailsAddedDetails() {
+        ExtensionVO extension = mock(ExtensionVO.class);
+        when(extension.isUserDefined()).thenReturn(false);
+        Map.Entry<String, List<String>> entry =
+                ExtensionsManagerImpl.INBUILT_RESERVED_RESOURCE_DETAILS.entrySet().iterator().next();
+        when(extension.getName()).thenReturn(entry.getKey());
+        when(extensionDao.findById(3L)).thenReturn(extension);
+        List<String> reservedResourceDetails = new ArrayList<>();
+        extensionsManager.addInbuiltExtensionReservedResourceDetails(3L, reservedResourceDetails);
+        assertFalse(reservedResourceDetails.isEmpty());
+        assertEquals(reservedResourceDetails.size(), entry.getValue().size());
+        assertTrue(reservedResourceDetails.containsAll(entry.getValue()));
     }
 }

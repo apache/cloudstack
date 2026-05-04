@@ -41,13 +41,13 @@ public class ReplaceNetworkACLListCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ACL_ID, type = CommandType.UUID, entityType = NetworkACLResponse.class, required = true, description = "the ID of the network ACL")
+    @Parameter(name = ApiConstants.ACL_ID, type = CommandType.UUID, entityType = NetworkACLResponse.class, required = true, description = "The ID of the network ACL")
     private long aclId;
 
-    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "the ID of the network")
+    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "The ID of the network")
     private Long networkId;
 
-    @Parameter(name = ApiConstants.GATEWAY_ID, type = CommandType.UUID, entityType = PrivateGatewayResponse.class, description = "the ID of the private gateway")
+    @Parameter(name = ApiConstants.GATEWAY_ID, type = CommandType.UUID, entityType = PrivateGatewayResponse.class, description = "The ID of the private gateway")
     private Long privateGatewayId;
 
     /////////////////////////////////////////////////////
@@ -76,7 +76,13 @@ public class ReplaceNetworkACLListCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return ("Associating network ACL ID=" + aclId + " with network ID=" + networkId);
+        String description = "Associating Network ACL with ID:" + getResourceUuid(ApiConstants.ACL_ID);
+
+        if (getNetworkId() != null) {
+            description += " to Network with ID:" + getResourceUuid(ApiConstants.NETWORK_ID);
+        }
+
+        return description;
     }
 
     @Override
@@ -95,7 +101,7 @@ public class ReplaceNetworkACLListCmd extends BaseAsyncCmd {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Network ID and private gateway can't be passed at the same time");
         }
 
-        CallContext.current().setEventDetails("Network ACL ID: " + aclId);
+        CallContext.current().setEventDetails("Network ACL ID: " + getResourceUuid(ApiConstants.ACL_ID));
         boolean result = false;
         if (getPrivateGatewayId() != null) {
             result = _networkACLService.replaceNetworkACLonPrivateGw(aclId, privateGatewayId);

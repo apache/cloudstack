@@ -238,7 +238,7 @@ public class VMSchedulerImplTest {
         Date expectedScheduledTime = Date.from(zonedDateTime.toInstant());
 
         if (expectedScheduledTime.before(startDate)) {
-            expectedScheduledTime = DateUtils.addDays(expectedScheduledTime, 1);
+            expectedScheduledTime = Date.from(zonedDateTime.plusDays(1).toInstant());
         }
 
         Date actualScheduledTime = vmScheduler.scheduleNextJob(vmSchedule, new Date());

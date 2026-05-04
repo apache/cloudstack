@@ -16,13 +16,16 @@
 # specific language governing permissions and limitations
 # under the License.
 
+import warnings
+warnings.filterwarnings('ignore')
+
 import json
 import sys
 import winrm
 
 
 def fail(message):
-    print(json.dumps({"error": message}))
+    print(json.dumps({"status": "error", "error": message}))
     sys.exit(1)
 
 
@@ -200,12 +203,34 @@ class HyperVManager:
     def status(self):
         command = f'(Get-VM -Name "{self.data["vmname"]}").State'
         state = self.run_ps(command)
-        if state.lower() == "running":
+        power_state = "unknown"
+        if state.strip().lower() == "running":
             power_state = "poweron"
-        elif state.lower() == "off":
+        elif state.strip().lower() == "off":
             power_state = "poweroff"
+        succeed({"status": "success", "power_state": power_state})
+
+    def statuses(self):
+        command = 'Get-VM | Select-Object Name, State | ConvertTo-Json'
+        output = self.run_ps(command)
+        if not output or output.strip() in ("", "null"):
+            vms = []
         else:
-            power_state = "unknown"
+            try:
+                vms = json.loads(output)
+            except json.JSONDecodeError:
+                fail("Failed to parse VM status output: " + output)
+        power_state = {}
+        if isinstance(vms, dict):
+            vms = [vms]
+        for vm in vms:
+            state = vm["State"].strip().lower()
+            if state == "running":
+                power_state[vm["Name"]] = "poweron"
+            elif state == "off":
+                power_state[vm["Name"]] = "poweroff"
+            else:
+                power_state[vm["Name"]] = "unknown"
         succeed({"status": "success", "power_state": power_state})
 
     def delete(self):
@@ -217,6 +242,9 @@ class HyperVManager:
             else:
                 fail(str(e))
         succeed({"status": "success", "message": "Instance deleted"})
+
+    def get_console(self):
+        fail("Operation not supported")
 
     def suspend(self):
         self.run_ps(f'Suspend-VM -Name "{self.data["vmname"]}"')
@@ -281,6 +309,8 @@ def main():
         "reboot": manager.reboot,
         "delete": manager.delete,
         "status": manager.status,
+        "statuses": manager.statuses,
+        "getconsole": manager.get_console,
         "suspend": manager.suspend,
         "resume": manager.resume,
         "listsnapshots": manager.list_snapshots,

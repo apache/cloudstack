@@ -584,6 +584,37 @@ class CsIP:
                                 "-A PREROUTING -m state --state NEW -i %s -s %s ! -d %s/32 -j ACL_OUTBOUND_%s" %
                                 (self.dev, guestNetworkCidr, self.address['gateway'], self.dev)])
 
+        # Process static routes for this interface
+        static_routes = CsStaticRoutes("staticroutes", self.config)
+        if static_routes:
+            for item in static_routes.get_bag():
+                if item == "id":
+                    continue
+                static_route = static_routes.get_bag()[item]
+                if static_route['revoke']:
+                    continue
+
+                # Check if this static route applies to this interface
+                # Old style: ip_address field matches this interface's public_ip
+                # New style (nexthop): gateway is in this interface's subnet
+                applies_to_interface = False
+                if 'ip_address' in static_route and static_route['ip_address'] == self.address['public_ip']:
+                    applies_to_interface = True
+                elif 'gateway' in static_route:
+                    device = CsHelper.find_device_for_gateway(self.config, static_route['gateway'])
+                    if device == self.dev:
+                        applies_to_interface = True
+
+                if applies_to_interface:
+                    self.fw.append(["mangle", "",
+                                    "-A PREROUTING -m state --state NEW -i %s -s %s ! -d %s/32 -j ACL_OUTBOUND_%s" %
+                                    (self.dev, static_route['network'], self.address['public_ip'], self.dev)])
+                    self.fw.append(["filter", "front", "-A FORWARD -d %s -o %s -j ACL_INBOUND_%s" %
+                                    (static_route['network'], self.dev, self.dev)])
+                    self.fw.append(["filter", "front",
+                                    "-A FORWARD -d %s -o %s -m state --state RELATED,ESTABLISHED -j ACCEPT" %
+                                    (static_route['network'], self.dev)])
+
         if self.is_private_gateway():
             self.fw.append(["filter", "front", "-A FORWARD -d %s -o %s -j ACL_INBOUND_%s" %
                             (self.address['network'], self.dev, self.dev)])
@@ -596,22 +627,6 @@ class CsIP:
             self.fw.append(["mangle", "front",
                             "-A PREROUTING -s %s -d %s -m state --state NEW -j MARK --set-xmark %s/0xffffffff" %
                             (self.cl.get_vpccidr(), self.address['network'], hex(100 + int(self.dev[3:])))])
-
-            static_routes = CsStaticRoutes("staticroutes", self.config)
-            if static_routes:
-                for item in static_routes.get_bag():
-                    if item == "id":
-                        continue
-                    static_route = static_routes.get_bag()[item]
-                    if static_route['ip_address'] == self.address['public_ip'] and not static_route['revoke']:
-                        self.fw.append(["mangle", "",
-                                        "-A PREROUTING -m state --state NEW -i %s -s %s ! -d %s/32 -j ACL_OUTBOUND_%s" %
-                                        (self.dev, static_route['network'], static_route['ip_address'], self.dev)])
-                        self.fw.append(["filter", "front", "-A FORWARD -d %s -o %s -j ACL_INBOUND_%s" %
-                                        (static_route['network'], self.dev, self.dev)])
-                        self.fw.append(["filter", "front",
-                                        "-A FORWARD -d %s -o %s -m state --state RELATED,ESTABLISHED -j ACCEPT" %
-                                        (static_route['network'], self.dev)])
 
             if self.address["source_nat"]:
                 self.fw.append(["nat", "front",

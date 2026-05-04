@@ -56,10 +56,10 @@ import com.cloud.utils.net.NetUtils;
  */
 public interface ConfigurationManager {
 
-    public static final String MESSAGE_CREATE_POD_IP_RANGE_EVENT = "Message.CreatePodIpRange.Event";
-    public static final String MESSAGE_DELETE_POD_IP_RANGE_EVENT = "Message.DeletePodIpRange.Event";
-    public static final String MESSAGE_CREATE_VLAN_IP_RANGE_EVENT = "Message.CreateVlanIpRange.Event";
-    public static final String MESSAGE_DELETE_VLAN_IP_RANGE_EVENT = "Message.DeleteVlanIpRange.Event";
+    String MESSAGE_CREATE_POD_IP_RANGE_EVENT = "Message.CreatePodIpRange.Event";
+    String MESSAGE_DELETE_POD_IP_RANGE_EVENT = "Message.DeletePodIpRange.Event";
+    String MESSAGE_CREATE_VLAN_IP_RANGE_EVENT = "Message.CreateVlanIpRange.Event";
+    String MESSAGE_DELETE_VLAN_IP_RANGE_EVENT = "Message.DeleteVlanIpRange.Event";
 
     public static final ConfigKey<Boolean> AllowNonRFC1918CompliantIPs = new ConfigKey<>(Boolean.class,
             "allow.non.rfc1918.compliant.ips", "Advanced", "false",
@@ -72,8 +72,9 @@ public interface ConfigurationManager {
             true, ConfigKey.Scope.Global);
 
     /**
-     * @param offering
-     * @return
+     * Is this for a VPC
+     * @param offering the offering to check
+     * @return true or false
      */
     boolean isOfferingForVpc(NetworkOffering offering);
 
@@ -83,80 +84,12 @@ public interface ConfigurationManager {
 
     /**
      * Updates a configuration entry with a new value
-     * @param userId
-     * @param name
-     * @param category
-     * @param value
-     * @param scope
-     * @param id
      */
     String updateConfiguration(long userId, String name, String category, String value, ConfigKey.Scope scope, Long id);
 
-//    /**
-//     * Creates a new service offering
-//     *
-//     * @param name
-//     * @param cpu
-//     * @param ramSize
-//     * @param speed
-//     * @param displayText
-//     * @param localStorageRequired
-//     * @param offerHA
-//     * @param domainId
-//     * @param volatileVm
-//     * @param hostTag
-//     * @param networkRate
-//     * @param id
-//     * @param useVirtualNetwork
-//     * @param deploymentPlanner
-//     * @param details
-//     * @param bytesReadRate
-//     * @param bytesWriteRate
-//     * @param iopsReadRate
-//     * @param iopsWriteRate
-//     * @return ID
-//     */
-//    ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, VirtualMachine.Type vm_typeType, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired,
-//            boolean offerHA, boolean limitResourceUse, boolean volatileVm, String tags, Long domainId, String hostTag, Integer networkRate, String deploymentPlanner, Map<String, String> details,
-//            Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate);
-
-//    /**
-//     * Creates a new disk offering
-//     *
-//     * @param domainId
-//     * @param name
-//     * @param description
-//     * @param numGibibytes
-//     * @param tags
-//     * @param isCustomized
-//     * @param localStorageRequired
-//     * @param isDisplayOfferingEnabled
-//     * @param isCustomizedIops (is admin allowing users to set custom iops?)
-//     * @param minIops
-//     * @param maxIops
-//     * @param bytesReadRate
-//     * @param bytesWriteRate
-//     * @param iopsReadRate
-//     * @param iopsWriteRate
-//     * @return newly created disk offering
-//     */
-//    DiskOfferingVO createDiskOffering(Long domainId, String name, String description, Long numGibibytes, String tags, boolean isCustomized,
-//            boolean localStorageRequired, boolean isDisplayOfferingEnabled, Boolean isCustomizedIops, Long minIops, Long maxIops,
-//            Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate);
-
     /**
      * Creates a new pod
-     *
-     * @param userId
-     * @param podName
-     * @param zone
-     * @param gateway
-     * @param cidr
-     * @param startIp
-     * @param endIp
-     * @param allocationState
      * @param skipGatewayOverlapCheck (true if it is ok to not validate that gateway IP address overlap with Start/End IP of the POD)
-     * @param storageAccessGroups
      * @return Pod
      */
     HostPodVO createPod(long userId, String podName, DataCenter zone, String gateway, String cidr, String startIp, String endIp, String allocationState,
@@ -164,7 +97,6 @@ public interface ConfigurationManager {
 
     /**
      * Creates a new zone
-     *
      * @param userId
      * @param zoneName
      * @param dns1
@@ -172,16 +104,18 @@ public interface ConfigurationManager {
      * @param internalDns1
      * @param internalDns2
      * @param guestCidr
+     * @param domain
+     * @param domainId
      * @param zoneType
      * @param allocationState
      * @param networkDomain
      * @param isSecurityGroupEnabled
+     * @param isLocalStorageEnabled
      * @param ip6Dns1
      * @param ip6Dns2
+     * @param isEdge
      * @param storageAccessGroups
      * @return
-     * @throws
-     * @throws
      */
     DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String guestCidr, String domain,
         Long domainId, NetworkType zoneType, String allocationState, String networkDomain, boolean isSecurityGroupEnabled, boolean isLocalStorageEnabled, String ip6Dns1,
@@ -191,9 +125,7 @@ public interface ConfigurationManager {
      * Deletes a VLAN from the database, along with all of its IP addresses. Will not delete VLANs that have allocated
      * IP addresses.
      *
-     * @param userId
-     * @param vlanDbId
-     * @param caller
+     * @param caller TODO
      * @return success/failure
      */
     VlanVO deleteVlanAndPublicIpRange(long userId, long vlanDbId, Account caller);
@@ -204,31 +136,39 @@ public interface ConfigurationManager {
 
     /**
      * Creates a new network offering
-     *
      * @param name
      * @param displayText
      * @param trafficType
      * @param tags
      * @param specifyVlan
+     * @param availability
      * @param networkRate
      * @param serviceProviderMap
      * @param isDefault
      * @param type
      * @param systemOnly
      * @param serviceOfferingId
-     * @param conserveMode       ;
+     * @param conserveMode
+     * @param serviceCapabilityMap
      * @param specifyIpRanges
-     * @param isPersistent       ;
+     * @param isPersistent
      * @param details
+     * @param egressDefaultPolicy
+     * @param maxconn
+     * @param enableKeepAlive
      * @param forVpc
      * @param forTungsten
      * @param forNsx
      * @param forNetris
+     * @param networkMode
      * @param domainIds
      * @param zoneIds
-     * @return network offering object
+     * @param enableOffering
+     * @param internetProtocol
+     * @param routingMode
+     * @param specifyAsNumber
+     * @return the network offering
      */
-
     NetworkOfferingVO createNetworkOffering(String name, String displayText, TrafficType trafficType, String tags, boolean specifyVlan, Availability availability,
                                             Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, Network.GuestType type, boolean systemOnly, Long serviceOfferingId,
                                             boolean conserveMode, Map<Service, Map<Capability, String>> serviceCapabilityMap, boolean specifyIpRanges, boolean isPersistent,
@@ -245,7 +185,6 @@ public interface ConfigurationManager {
     /**
      * Release dedicated virtual ip ranges of a domain.
      *
-     * @param domainId
      * @return success/failure
      */
     boolean releaseDomainSpecificVirtualRanges(Domain domain);
@@ -253,7 +192,6 @@ public interface ConfigurationManager {
     /**
      * Release dedicated virtual ip ranges of an account.
      *
-     * @param accountId
      * @return success/failure
      */
     boolean releaseAccountSpecificVirtualRanges(Account account);
@@ -261,16 +199,7 @@ public interface ConfigurationManager {
     /**
      * Edits a pod in the database. Will not allow you to edit pods that are being used anywhere in the system.
      *
-     * @param id
-     * @param name
-     * @param startIp
-     * @param endIp
-     * @param gateway
-     * @param netmask
-     * @param allocationState
      * @return Pod
-     * @throws
-     * @throws
      */
     Pod editPod(long id, String name, String startIp, String endIp, String gateway, String netmask, String allocationState);
 

@@ -22,7 +22,7 @@ import com.google.gson.annotations.SerializedName;
 public abstract class BaseResponseWithAnnotations extends BaseResponse {
 
     @SerializedName(ApiConstants.HAS_ANNOTATIONS)
-    @Param(description = "true if the entity/resource has annotations")
+    @Param(description = "True if the entity/resource has annotations")
     private Boolean hasAnnotation;
 
     public Boolean hasAnnotation() {

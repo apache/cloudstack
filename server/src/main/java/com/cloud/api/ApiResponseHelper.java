@@ -32,6 +32,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.function.Consumer;
@@ -39,24 +40,17 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.cloud.bgp.ASNumber;
-import com.cloud.bgp.ASNumberRange;
-import com.cloud.configuration.ConfigurationService;
-import com.cloud.dc.ASNumberRangeVO;
-import com.cloud.dc.ASNumberVO;
-import com.cloud.dc.VlanDetailsVO;
-import com.cloud.dc.dao.ASNumberDao;
-import com.cloud.dc.dao.ASNumberRangeDao;
-import com.cloud.dc.dao.VlanDetailsDao;
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.network.vpc.VpcGateway;
-import com.cloud.storage.BucketVO;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.acl.RoleVO;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPair;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPairPermission;
+import org.apache.cloudstack.acl.dao.RoleDao;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.DomainDetails;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
@@ -78,6 +72,7 @@ import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
 import org.apache.cloudstack.api.response.BackupOfferingResponse;
 import org.apache.cloudstack.api.response.BackupRepositoryResponse;
 import org.apache.cloudstack.api.response.BackupScheduleResponse;
+import org.apache.cloudstack.api.response.BaseRolePermissionResponse;
 import org.apache.cloudstack.api.response.BgpPeerResponse;
 import org.apache.cloudstack.api.response.BucketResponse;
 import org.apache.cloudstack.api.response.CapabilityResponse;
@@ -125,6 +120,7 @@ import org.apache.cloudstack.api.response.IpRangeResponse;
 import org.apache.cloudstack.api.response.Ipv4RouteResponse;
 import org.apache.cloudstack.api.response.Ipv6RouteResponse;
 import org.apache.cloudstack.api.response.IsolationMethodResponse;
+import org.apache.cloudstack.api.response.ApiKeyPairResponse;
 import org.apache.cloudstack.api.response.LBHealthCheckPolicyResponse;
 import org.apache.cloudstack.api.response.LBHealthCheckResponse;
 import org.apache.cloudstack.api.response.LBStickinessPolicyResponse;
@@ -219,6 +215,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
 import org.apache.cloudstack.gui.theme.GuiThemeJoin;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.network.BgpPeerVO;
@@ -266,6 +263,7 @@ import com.cloud.api.query.vo.NetworkOfferingJoinVO;
 import com.cloud.api.query.vo.ProjectAccountJoinVO;
 import com.cloud.api.query.vo.ProjectInvitationJoinVO;
 import com.cloud.api.query.vo.ProjectJoinVO;
+import com.cloud.api.query.ResourceIdSupport;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.SecurityGroupJoinVO;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
@@ -276,14 +274,19 @@ import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
 import com.cloud.api.query.vo.VpcOfferingJoinVO;
 import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.bgp.ASNumber;
+import com.cloud.bgp.ASNumberRange;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
 import com.cloud.configuration.ConfigurationManager;
+import com.cloud.configuration.ConfigurationService;
 import com.cloud.configuration.Resource.ResourceOwnerType;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.ResourceCount;
 import com.cloud.configuration.ResourceLimit;
+import com.cloud.dc.ASNumberRangeVO;
+import com.cloud.dc.ASNumberVO;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
@@ -294,15 +297,21 @@ import com.cloud.dc.Pod;
 import com.cloud.dc.StorageNetworkIpRange;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanDetailsVO;
 import com.cloud.dc.VlanVO;
+import com.cloud.dc.dao.ASNumberDao;
+import com.cloud.dc.dao.ASNumberRangeDao;
+import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.Event;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.ControlState;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.HypervisorCapabilities;
 import com.cloud.network.GuestVlan;
 import com.cloud.network.GuestVlanRange;
@@ -366,9 +375,11 @@ import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcGateway;
 import com.cloud.network.vpc.VpcOffering;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
+import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Detail;
@@ -387,6 +398,7 @@ import com.cloud.server.ResourceIconManager;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.service.ServiceOfferingVO;
+import com.cloud.storage.BucketVO;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
@@ -410,11 +422,14 @@ import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
+import com.cloud.user.ApiKeyPairState;
 import com.cloud.user.SSHKeyPair;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserData;
 import com.cloud.user.UserStatisticsVO;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDataDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
@@ -447,7 +462,7 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 import sun.security.x509.X509CertImpl;
 
-public class ApiResponseHelper implements ResponseGenerator {
+public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
 
     protected Logger logger = LogManager.getLogger(ApiResponseHelper.class);
     private static final DecimalFormat s_percentFormat = new DecimalFormat("##.##");
@@ -528,7 +543,29 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Inject
     RoutedIpv4Manager routedIpv4Manager;
     @Inject
+    Site2SiteVpnManager site2SiteVpnManager;
+    @Inject
     ResourceIconManager resourceIconManager;
+    @Inject
+    AsyncJobDao asyncJobDao;
+
+    public static String getPrettyDomainPath(String path) {
+        if (path == null) {
+            return null;
+        }
+        StringBuilder domainPath = new StringBuilder("ROOT");
+        (domainPath.append(path)).deleteCharAt(domainPath.length() - 1);
+        return domainPath.toString();
+    }
+
+    @Inject
+    private RoleDao roleDao;
+
+    @Inject
+    private AccountDao accountDao;
+
+    @Inject
+    private DomainDao domainDao;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -567,15 +604,14 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (parentDomain != null) {
             domainResponse.setParentDomainId(parentDomain.getUuid());
         }
-        StringBuilder domainPath = new StringBuilder("ROOT");
-        (domainPath.append(domain.getPath())).deleteCharAt(domainPath.length() - 1);
-        domainResponse.setPath(domainPath.toString());
+        domainResponse.setPath(getPrettyDomainPath(domain.getPath()));
         if (domain.getParent() != null) {
             domainResponse.setParentDomainName(ApiDBUtils.findDomainById(domain.getParent()).getName());
         }
         if (domain.getChildCount() > 0) {
             domainResponse.setHasChild(true);
         }
+        populateDomainTags(domain.getUuid(), domainResponse);
         domainResponse.setObjectName("domain");
         return domainResponse;
     }
@@ -784,7 +820,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         if (mapCapabilities != null) {
             String value = mapCapabilities.get(DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString());
-            Boolean supportsStorageSystemSnapshots = new Boolean(value);
+            boolean supportsStorageSystemSnapshots = Boolean.getBoolean(value);
 
             if (supportsStorageSystemSnapshots) {
                 return DataStoreRole.Primary;
@@ -822,21 +858,6 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         }
         populateOwner(vmSnapshotResponse, vmSnapshot);
-        Project project = ApiDBUtils.findProjectByProjectAccountId(vmSnapshot.getAccountId());
-        if (project != null) {
-            vmSnapshotResponse.setProjectId(project.getUuid());
-            vmSnapshotResponse.setProjectName(project.getName());
-        }
-        Account account = ApiDBUtils.findAccountById(vmSnapshot.getAccountId());
-        if (account != null) {
-            vmSnapshotResponse.setAccountName(account.getAccountName());
-        }
-        DomainVO domain = ApiDBUtils.findDomainById(vmSnapshot.getDomainId());
-        if (domain != null) {
-            vmSnapshotResponse.setDomainId(domain.getUuid());
-            vmSnapshotResponse.setDomainName(domain.getName());
-            vmSnapshotResponse.setDomainPath(domain.getPath());
-        }
 
         List<? extends ResourceTag> tags = _resourceTagDao.listBy(vmSnapshot.getId(), ResourceObjectType.VMSnapshot);
         List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
@@ -861,6 +882,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         Volume vol = ApiDBUtils.findVolumeById(policy.getVolumeId());
         if (vol != null) {
             policyResponse.setVolumeId(vol.getUuid());
+            policyResponse.setVolumeName(vol.getName());
         }
         policyResponse.setSchedule(policy.getSchedule());
         policyResponse.setIntervalType(policy.getInterval());
@@ -1659,7 +1681,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         Network guestNtwk = ApiDBUtils.findNetworkById(fwRule.getNetworkId());
         response.setNetworkId(guestNtwk.getUuid());
-
+        response.setNetworkName(guestNtwk.getName());
 
         IpAddress ip = ApiDBUtils.findIpAddressById(fwRule.getSourceIpAddressId());
 
@@ -1887,6 +1909,8 @@ public class ApiResponseHelper implements ResponseGenerator {
                             vmResponse.setPublicNetmask(singleNicProfile.getIPv4Netmask());
                             vmResponse.setGateway(singleNicProfile.getIPv4Gateway());
                         }
+                    } else if (network.getTrafficType() == TrafficType.Storage) {
+                        vmResponse.setStorageIp(singleNicProfile.getIPv4Address());
                     }
                 }
             }
@@ -1909,6 +1933,12 @@ public class ApiResponseHelper implements ResponseGenerator {
     public UserVm findUserVmById(Long vmId) {
         return ApiDBUtils.findUserVmById(vmId);
 
+    }
+
+    @Override
+    public UserVm findUserVmByNicId(Long nicId) {
+        NicVO nic = ApiDBUtils.findNicById(nicId);
+        return ApiDBUtils.findUserVmById(nic.getInstanceId());
     }
 
     @Override
@@ -2311,16 +2341,26 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public AsyncJobResponse queryJobResult(final QueryAsyncJobResultCmd cmd) {
-        final Account caller = CallContext.current().getCallingAccount();
+        ApiCommandResourceType resourceType = getResourceType(cmd.getResourceType());
+        String resourceTypeName = Optional.ofNullable(resourceType).map(ApiCommandResourceType::name).orElse(null);
 
-        final AsyncJob job = _entityMgr.findByIdIncludingRemoved(AsyncJob.class, cmd.getId());
-        if (job == null) {
-            throw new InvalidParameterValueException("Unable to find a job by id " + cmd.getId());
+        Long resourceId = getResourceId(resourceType, cmd.getResourceId());
+        Long jobId = cmd.getId();
+        if (jobId == null && resourceId == null) {
+            throw new InvalidParameterValueException("Expected parameter job id or parameters resource type and resource id");
         }
+
+        final AsyncJob job = asyncJobDao.findJob(jobId, resourceId, resourceTypeName);
+        if (job == null) {
+            throw new InvalidParameterValueException("Unable to find a job by id " + jobId + " resource type "
+                    + cmd.getResourceType() + " resource id " + cmd.getResourceId());
+        }
+        jobId = job.getId();
 
         final User userJobOwner = _accountMgr.getUserIncludingRemoved(job.getUserId());
         final Account jobOwner = _accountMgr.getAccount(userJobOwner.getAccountId());
 
+        final Account caller = CallContext.current().getCallingAccount();
         //check permissions
         if (_accountMgr.isNormalUser(caller.getId())) {
             //regular users can see only jobs they own
@@ -2331,7 +2371,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             _accountMgr.checkAccess(caller, null, true, jobOwner);
         }
 
-        return createAsyncJobResponse(_jobMgr.queryJob(cmd.getId(), true));
+        return createAsyncJobResponse(_jobMgr.queryJob(jobId, true));
     }
 
     public AsyncJobResponse createAsyncJobResponse(AsyncJob job) {
@@ -2350,18 +2390,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setName(securityGroup.getName());
             response.setDescription(securityGroup.getDescription());
 
-            Account account = securiytGroupAccounts.get(securityGroup.getAccountId());
-
-            if (securityGroup.getAccountType() == Account.Type.PROJECT) {
-                response.setProjectId(securityGroup.getProjectUuid());
-                response.setProjectName(securityGroup.getProjectName());
-            } else {
-                response.setAccountName(securityGroup.getAccountName());
-            }
-
-            response.setDomainId(securityGroup.getDomainUuid());
-            response.setDomainName(securityGroup.getDomainName());
-            response.setDomainPath(securityGroup.getDomainPath());
+            populateOwner(response, securityGroup);
 
             for (SecurityRule securityRule : securityRules) {
                 SecurityGroupRuleResponse securityGroupData = new SecurityGroupRuleResponse();
@@ -2758,31 +2787,17 @@ public class ApiResponseHelper implements ResponseGenerator {
             // get domain from network_domain table
             Pair<Long, Boolean> domainNetworkDetails = ApiDBUtils.getDomainNetworkDetails(network.getId());
             if (domainNetworkDetails.first() != null) {
-                Domain domain = ApiDBUtils.findDomainById(domainNetworkDetails.first());
-                if (domain != null) {
-                    response.setDomainId(domain.getUuid());
-
-                    StringBuilder domainPath = new StringBuilder("ROOT");
-                    (domainPath.append(domain.getPath())).deleteCharAt(domainPath.length() - 1);
-                    response.setDomainPath(domainPath.toString());
-                }
+                populateDomain(response, domainNetworkDetails.first());
             }
             response.setSubdomainAccess(domainNetworkDetails.second());
         }
 
         Long dedicatedDomainId = ApiDBUtils.getDedicatedNetworkDomain(network.getId());
         if (dedicatedDomainId != null) {
-            Domain domain = ApiDBUtils.findDomainById(dedicatedDomainId);
-            if (domain != null) {
-                response.setDomainId(domain.getUuid());
-                response.setDomainName(domain.getName());
-                response.setDomainPath(domain.getPath());
-            }
-
+            populateDomain(response, dedicatedDomainId);
         }
 
         response.setSpecifyIpRanges(network.getSpecifyIpRanges());
-
 
         setVpcIdInResponse(network.getVpcId(), response::setVpcId, response::setVpcName);
 
@@ -3045,14 +3060,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         } else {
             response.setAccountName(account.getAccountName());
         }
-
-        Domain domain = ApiDBUtils.findDomainById(object.getDomainId());
-        response.setDomainId(domain.getUuid());
-        response.setDomainName(domain.getName());
-        response.setDomainPath(domain.getPath());
+        populateDomain(response, object.getDomainId());
     }
 
-    private void populateOwner(ControlledViewEntityResponse response, ControlledEntity object) {
+    public static void populateOwner(ControlledViewEntityResponse response, ControlledEntity object) {
         Account account = ApiDBUtils.findAccountById(object.getAccountId());
 
         if (account.getType() == Account.Type.PROJECT) {
@@ -3064,10 +3075,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setAccountName(account.getAccountName());
         }
 
-        Domain domain = ApiDBUtils.findDomainById(object.getDomainId());
-        response.setDomainId(domain.getUuid());
-        response.setDomainName(domain.getName());
-        response.setDomainPath(domain.getPath());
+        populateDomain(response, object.getDomainId());
     }
 
     public static void populateOwner(ControlledViewEntityResponse response, ControlledViewEntity object) {
@@ -3081,7 +3089,21 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         response.setDomainId(object.getDomainUuid());
         response.setDomainName(object.getDomainName());
-        response.setDomainPath(object.getDomainPath());
+        response.setDomainPath(getPrettyDomainPath(object.getDomainPath()));
+    }
+
+    public static void populateDomainTags(String domainUuid, DomainResponse domainResponse) {
+        List<ResourceTagJoinVO> tags = ApiDBUtils.listResourceTagViewByResourceUUID(domainUuid,
+                ResourceTag.ResourceObjectType.Domain);
+        if (CollectionUtils.isEmpty(tags)) {
+            return;
+        }
+        Set<ResourceTagResponse> tagResponses = new HashSet<>();
+        for (ResourceTagJoinVO tag : tags) {
+            ResourceTagResponse tagResponse = ApiDBUtils.newResourceTagResponse(tag, true);
+            tagResponses.add(tagResponse);
+        }
+        domainResponse.setTags(tagResponses);
     }
 
     private void populateAccount(ControlledEntityResponse response, long accountId) {
@@ -3105,10 +3127,22 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     private void populateDomain(ControlledEntityResponse response, long domainId) {
         Domain domain = ApiDBUtils.findDomainById(domainId);
-
+        if (domain == null) {
+            return;
+        }
         response.setDomainId(domain.getUuid());
         response.setDomainName(domain.getName());
-        response.setDomainPath(domain.getPath());
+        response.setDomainPath(getPrettyDomainPath(domain.getPath()));
+    }
+
+    private static void populateDomain(ControlledViewEntityResponse response, long domainId) {
+        Domain domain = ApiDBUtils.findDomainById(domainId);
+        if (domain == null) {
+            return;
+        }
+        response.setDomainId(domain.getUuid());
+        response.setDomainName(domain.getName());
+        response.setDomainPath(getPrettyDomainPath(domain.getPath()));
     }
 
     @Override
@@ -3283,6 +3317,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         PhysicalNetwork pnet = ApiDBUtils.findPhysicalNetworkById(result.getPhysicalNetworkId());
         if (pnet != null) {
             response.setPhysicalNetworkId(pnet.getUuid());
+            if (!pnet.getIsolationMethods().isEmpty()) {
+                response.setIsolationMethods(String.join(",", pnet.getIsolationMethods()));
+            }
         }
         if (result.getTrafficType() != null) {
             response.setTrafficType(result.getTrafficType().toString());
@@ -3293,6 +3330,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setVmwareLabel(result.getVmwareNetworkLabel());
         response.setHypervLabel(result.getHypervNetworkLabel());
         response.setOvm3Label(result.getOvm3NetworkLabel());
+        response.setVlan(result.getVlan());
 
         response.setObjectName("traffictype");
         return response;
@@ -3519,6 +3557,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (voff != null) {
             response.setVpcOfferingId(voff.getUuid());
             response.setVpcOfferingName(voff.getName());
+            response.setVpcOfferingConserveMode(voff.isConserveMode());
         }
         response.setCidr(vpc.getCidr());
         response.setRestartRequired(vpc.isRestartRequired());
@@ -3907,6 +3946,16 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setRemoved(result.getRemoved());
         response.setIkeVersion(result.getIkeVersion());
         response.setSplitConnections(result.getSplitConnections());
+
+        Set<String> obsoleteParameters = site2SiteVpnManager.getObsoleteVpnGatewayParameters(result);
+        if (CollectionUtils.isNotEmpty(obsoleteParameters)) {
+            response.setContainsObsoleteParameters(obsoleteParameters.toString());
+        }
+        Set<String> excludedParameters = site2SiteVpnManager.getExcludedVpnGatewayParameters(result);
+        if (CollectionUtils.isNotEmpty(excludedParameters)) {
+            response.setContainsExcludedParameters(excludedParameters.toString());
+        }
+
         response.setObjectName("vpncustomergateway");
         response.setHasAnnotation(annotationDao.hasAnnotations(result.getUuid(), AnnotationService.EntityType.VPN_CUSTOMER_GATEWAY.name(),
                 _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
@@ -4100,12 +4149,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             usageRecResponse.setAccountName(account.getAccountName());
         }
 
-        Domain domain = ApiDBUtils.findDomainById(usageRecord.getDomainId());
-        if (domain != null) {
-            usageRecResponse.setDomainId(domain.getUuid());
-            usageRecResponse.setDomainName(domain.getName());
-            usageRecResponse.setDomainPath(domain.getPath());
-        }
+        populateDomain(usageRecResponse, account.getDomainId());
 
         if (usageRecord.getZoneId() != null) {
             DataCenter zone = ApiDBUtils.findZoneById(usageRecord.getZoneId());
@@ -4330,6 +4374,9 @@ public class ApiResponseHelper implements ResponseGenerator {
                 if (volume != null) {
                     builder.append("for ").append(volume.getName()).append(" (").append(volume.getUuid()).append(")");
                 }
+                if (vmInstance != null) {
+                    builder.append(" attached to VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(")");
+                }
                 if (diskOff != null) {
                     builder.append(" with disk offering ").append(diskOff.getName()).append(" (").append(diskOff.getUuid()).append(")");
                 }
@@ -4474,7 +4521,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         } else if (usageRecord.getUsageType() == UsageTypes.BACKUP) {
             resourceType = ResourceObjectType.Backup;
             final StringBuilder builder = new StringBuilder();
-            builder.append("Backup usage of size ").append(usageRecord.getUsageDisplay());
+            builder.append("Backup usage");
             if (vmInstance != null) {
                 resourceId = vmInstance.getId();
                 usageRecResponse.setResourceName(vmInstance.getInstanceName());
@@ -4487,9 +4534,12 @@ public class ApiResponseHelper implements ResponseGenerator {
                             .append(" (").append(backupOffering.getUuid()).append(", user ad-hoc/scheduled backup allowed: ")
                             .append(backupOffering.isUserDrivenBackupAllowed()).append(")");
                 }
-
             }
+            builder.append(" with size ").append(toHumanReadableSize(usageRecord.getSize()));
+            builder.append(" and with virtual size ").append(toHumanReadableSize(usageRecord.getVirtualSize()));
             usageRecResponse.setDescription(builder.toString());
+            usageRecResponse.setSize(usageRecord.getSize());
+            usageRecResponse.setVirtualSize(usageRecord.getVirtualSize());
         } else if (usageRecord.getUsageType() == UsageTypes.VM_SNAPSHOT) {
             resourceType = ResourceObjectType.VMSnapshot;
             VMSnapshotVO vmSnapshotVO = null;
@@ -4816,6 +4866,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             VpcVO vpc = _entityMgr.findByUuidIncludingRemoved(VpcVO.class, userVm.getVpcUuid());
             response.setVpcName(vpc.getName());
         }
+
+        response.setEnabled(result.isEnabled());
         return response;
     }
 
@@ -4892,18 +4944,11 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         AffinityGroupResponse response = new AffinityGroupResponse();
 
-        Account account = ApiDBUtils.findAccountById(group.getAccountId());
         response.setId(group.getUuid());
-        response.setAccountName(account.getAccountName());
         response.setName(group.getName());
         response.setType(group.getType());
         response.setDescription(group.getDescription());
-        Domain domain = ApiDBUtils.findDomainById(account.getDomainId());
-        if (domain != null) {
-            response.setDomainId(domain.getUuid());
-            response.setDomainName(domain.getName());
-            response.setDomainPath(domain.getPath());
-        }
+        populateOwner(response, group);
 
         response.setObjectName("affinitygroup");
         return response;
@@ -5033,7 +5078,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         for (Long jobId : jobIds) {
             UpgradeRouterTemplateResponse routerResponse = new UpgradeRouterTemplateResponse();
             AsyncJob job = _entityMgr.findById(AsyncJob.class, jobId);
-            routerResponse.setAsyncJobId((job.getUuid()));
+            routerResponse.setJobId((job.getUuid()));
             routerResponse.setObjectName("asyncjobs");
             responses.add(routerResponse);
         }
@@ -5075,12 +5120,30 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public BackupScheduleResponse createBackupScheduleResponse(BackupSchedule schedule) {
-        return ApiDBUtils.newBackupScheduleResponse(schedule);
+        BackupScheduleResponse response = new BackupScheduleResponse();
+        response.setId(schedule.getUuid());
+        response.setIntervalType(schedule.getScheduleType());
+        response.setSchedule(schedule.getSchedule());
+        response.setTimezone(schedule.getTimezone());
+        response.setMaxBackups(schedule.getMaxBackups());
+
+        if (schedule.getQuiesceVM() != null) {
+            response.setQuiesceVM(schedule.getQuiesceVM());
+        }
+
+        VMInstanceVO vm = ApiDBUtils.findVMInstanceById(schedule.getVmId());
+        if (vm != null) {
+            response.setVmId(vm.getUuid());
+            response.setVmName(vm.getHostName());
+        }
+
+        response.setObjectName("backupschedule");
+        return response;
     }
 
     @Override
-    public BackupOfferingResponse createBackupOfferingResponse(BackupOffering policy) {
-        return ApiDBUtils.newBackupOfferingResponse(policy);
+    public BackupOfferingResponse createBackupOfferingResponse(BackupOffering offering) {
+        return ApiDBUtils.newBackupOfferingResponse(offering);
     }
 
     public ManagementServerResponse createManagementResponse(ManagementServerHost mgmt) {
@@ -5100,7 +5163,17 @@ public class ApiResponseHelper implements ResponseGenerator {
             healthCheckResponse.setObjectName("routerhealthchecks");
             healthCheckResponse.setCheckName(hcResult.getCheckName());
             healthCheckResponse.setCheckType(hcResult.getCheckType());
-            healthCheckResponse.setResult(hcResult.getCheckResult());
+            switch (hcResult.getCheckResult()) {
+                case SUCCESS:
+                    healthCheckResponse.setResult(true);
+                    break;
+                case FAILED:
+                    healthCheckResponse.setResult(false);
+                    break;
+                default:
+                    // no result if not definite
+            }
+            healthCheckResponse.setState(hcResult.getCheckResult());
             healthCheckResponse.setLastUpdated(hcResult.getLastUpdateTime());
             healthCheckResponse.setDetails(hcResult.getParsedCheckDetails());
             responses.add(healthCheckResponse);
@@ -5362,8 +5435,21 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (host != null) {
             response.setHostId(host.getUuid());
             response.setHostName(host.getName());
-        } else if (instance.getHostName() != null) {
-            response.setHostName(instance.getHostName());
+            if (host.getHypervisorType() != null) {
+                response.setHypervisor(host.getHypervisorType().name());
+            }
+            response.setHypervisorVersion(host.getHypervisorVersion());
+        } else {
+            // In case the unmanaged instance is on an external host
+            if (instance.getHostName() != null) {
+                response.setHostName(instance.getHostName());
+            }
+            if (instance.getHypervisorType() != null) {
+                response.setHypervisor(instance.getHypervisorType());
+            }
+            if (instance.getHostHypervisorVersion() != null) {
+                response.setHypervisorVersion(instance.getHostHypervisorVersion());
+            }
         }
         response.setPowerState((instance.getPowerState() != null)? instance.getPowerState().toString() : UnmanagedInstanceTO.PowerState.PowerUnknown.toString());
         response.setCpuCores(instance.getCpuCores());
@@ -5552,7 +5638,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setAddress(backupRepository.getAddress());
         response.setProviderName(backupRepository.getProvider());
         response.setType(backupRepository.getType());
+        if (StringUtils.isNotBlank(backupRepository.getMountOptions())) {
+            response.setMountOptions(backupRepository.getMountOptions());
+        }
         response.setCapacityBytes(backupRepository.getCapacityBytes());
+        response.setCrossZoneInstanceCreation(backupRepository.crossZoneInstanceCreationEnabled());
         response.setObjectName("backuprepository");
         DataCenter zone = ApiDBUtils.findZoneById(backupRepository.getZoneId());
         if (zone != null) {
@@ -5691,5 +5781,90 @@ protected Map<String, ResourceIcon> getResourceIconsUsingOsCategory(List<Templat
 
         consoleSessionResponse.setObjectName("consolesession");
         return consoleSessionResponse;
+    }
+
+    @Override
+    public ApiKeyPairResponse createKeyPairResponse(ApiKeyPair keyPair) {
+        ApiKeyPairResponse apiKeyPairResponse = new ApiKeyPairResponse();
+
+        populateApiKeyPairInApiKeyPairResponse(keyPair, apiKeyPairResponse);
+        populateUserInApiKeyPairResponse(keyPair, apiKeyPairResponse);
+
+        AccountVO account = accountDao.findByIdIncludingRemoved(keyPair.getAccountId());
+        apiKeyPairResponse.setAccountId(account.getUuid());
+        apiKeyPairResponse.setAccountName(account.getAccountName());
+        apiKeyPairResponse.setAccountType(account.getType().toString());
+
+        populateDomainInApiKeyPairResponse(account.getDomainId(), apiKeyPairResponse);
+        populateRoleInApiKeyPairResponse(account.getRoleId(), apiKeyPairResponse);
+
+        return apiKeyPairResponse;
+    }
+
+    protected void populateRoleInApiKeyPairResponse(Long roleId, ApiKeyPairResponse apiKeyPairResponse) {
+        RoleVO roleVO = roleDao.findById(roleId);
+        apiKeyPairResponse.setRoleId(roleVO.getUuid());
+        apiKeyPairResponse.setRoleName(roleVO.getName());
+        apiKeyPairResponse.setRoleType(roleVO.getRoleType().name());
+    }
+
+    protected static void populateApiKeyPairInApiKeyPairResponse(ApiKeyPair keyPair, ApiKeyPairResponse apiKeyPairResponse) {
+        apiKeyPairResponse.setName(keyPair.getName());
+        apiKeyPairResponse.setApiKey(keyPair.getApiKey());
+        apiKeyPairResponse.setSecretKey(keyPair.getSecretKey());
+        apiKeyPairResponse.setDescription(keyPair.getDescription());
+        apiKeyPairResponse.setId(keyPair.getUuid());
+        apiKeyPairResponse.setCreated(keyPair.getCreated());
+        apiKeyPairResponse.setStartDate(keyPair.getStartDate());
+        apiKeyPairResponse.setEndDate(keyPair.getEndDate());
+
+        ApiKeyPairState state = ApiKeyPairState.ENABLED;
+        if (keyPair.getRemoved() != null) {
+            state = ApiKeyPairState.REMOVED;
+        } else if (keyPair.hasEndDatePassed()) {
+            state = ApiKeyPairState.EXPIRED;
+        }
+        apiKeyPairResponse.setState(state);
+    }
+
+    protected void populateUserInApiKeyPairResponse(ApiKeyPair keyPair, ApiKeyPairResponse apiKeyPairResponse) {
+        User user = ApiDBUtils.findUserById(keyPair.getUserId());
+        apiKeyPairResponse.setUserId(user.getUuid());
+        apiKeyPairResponse.setUsername(user.getUsername());
+    }
+
+    protected void populateDomainInApiKeyPairResponse(Long domainId, ApiKeyPairResponse apiKeyPairResponse) {
+        DomainVO domainVO = domainDao.findById(domainId);
+        apiKeyPairResponse.setDomainId(domainVO.getUuid());
+        apiKeyPairResponse.setDomainName(domainVO.getName());
+        StringBuilder domainPath = new StringBuilder("ROOT");
+        (domainPath.append(domainVO.getPath())).deleteCharAt(domainPath.length() - 1);
+        apiKeyPairResponse.setDomainPath(domainPath.toString());
+    }
+
+    @Override
+    public ListResponse<BaseRolePermissionResponse> createKeypairPermissionsResponse(final List<ApiKeyPairPermission> permissions) {
+        final ListResponse<BaseRolePermissionResponse> response = new ListResponse<>();
+        final List<BaseRolePermissionResponse> permissionResponses = new ArrayList<>();
+        for (final ApiKeyPairPermission permission : permissions) {
+            BaseRolePermissionResponse permissionResponse = new BaseRolePermissionResponse();
+            permissionResponse.setRule(permission.getRule());
+            permissionResponse.setRulePermission(permission.getPermission());
+            permissionResponse.setDescription(permission.getDescription());
+            permissionResponse.setObjectName("keypermission");
+            permissionResponses.add(permissionResponse);
+        }
+        response.setResponses(permissionResponses);
+        return response;
+    }
+
+    @Override
+    public EntityManager getEntityManager() {
+        return _entityMgr;
+    }
+
+    @Override
+    public AccountManager getAccountManager() {
+        return _accountMgr;
     }
 }

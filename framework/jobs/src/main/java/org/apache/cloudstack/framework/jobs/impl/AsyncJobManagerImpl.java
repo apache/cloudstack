@@ -35,6 +35,11 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.SnapshotVO;
+import com.cloud.vm.snapshot.VMSnapshot;
+import com.cloud.vm.snapshot.VMSnapshotService;
+import com.cloud.vm.snapshot.VMSnapshotVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.command.ReconcileCommandService;
@@ -155,11 +160,15 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     @Inject
     private SnapshotDao _snapshotDao;
     @Inject
+    private VMSnapshotDao _vmSnapshotDao;
+    @Inject
     private SnapshotService snapshotSrv;
     @Inject
     private SnapshotDataFactory snapshotFactory;
     @Inject
     private SnapshotDetailsDao _snapshotDetailsDao;
+    @Inject
+    private VMSnapshotService _vmSnapshotService;
 
     @Inject
     private VolumeDataFactory volFactory;
@@ -1186,6 +1195,10 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     return cleanupVirtualMachine(job.getInstanceId());
                 case Network:
                     return cleanupNetwork(job.getInstanceId());
+                case Snapshot:
+                    return cleanupSnapshot(job.getInstanceId());
+                case VmSnapshot:
+                    return cleanupVmSnapshot(job.getInstanceId());
             }
         } catch (Exception e) {
             logger.warn("Error while cleaning up resource: [" + job.getInstanceType().toString()  + "] with Id: " + job.getInstanceId(), e);
@@ -1253,7 +1266,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         return true;
     }
 
-    private boolean cleanupNetwork(final long networkId) throws Exception {
+    private boolean cleanupNetwork(final long networkId) {
         NetworkVO networkVO = networkDao.findById(networkId);
         if (networkVO == null) {
             logger.warn("Network not found. Skip Cleanup. NetworkId: " + networkId);
@@ -1269,6 +1282,46 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             }
         }
         logger.debug("Network not in transition state. Skip cleanup. NetworkId: " + networkId);
+        return true;
+    }
+
+    private boolean cleanupSnapshot(final long snapshotId) {
+        SnapshotVO snapshotVO = _snapshotDao.findById(snapshotId);
+        if (snapshotVO == null) {
+            logger.warn("Snapshot not found. Skip Cleanup. SnapshotId: " + snapshotId);
+            return true;
+        }
+        if (Snapshot.State.Allocated.equals(snapshotVO.getState())) {
+            _snapshotDao.remove(snapshotId);
+        }
+        if (Snapshot.State.Creating.equals(snapshotVO.getState())) {
+            try {
+                snapshotFactory.updateOperationFailed(snapshotId);
+            } catch (NoTransitionException e) {
+                snapshotVO.setState(Snapshot.State.Error);
+                _snapshotDao.update(snapshotVO.getId(), snapshotVO);
+            }
+        }
+        return true;
+    }
+
+    private boolean cleanupVmSnapshot(final long vmSnapshotId) {
+        VMSnapshotVO vmSnapshotVO = _vmSnapshotDao.findById(vmSnapshotId);
+        if (vmSnapshotVO == null) {
+            logger.warn("VM Snapshot not found. Skip Cleanup. VMSnapshotId: " + vmSnapshotId);
+            return true;
+        }
+        if (VMSnapshot.State.Allocated.equals(vmSnapshotVO.getState())) {
+            _vmSnapshotDao.remove(vmSnapshotId);
+        }
+        if (VMSnapshot.State.Creating.equals(vmSnapshotVO.getState())) {
+            try {
+                _vmSnapshotService.updateOperationFailed(vmSnapshotVO);
+            } catch (NoTransitionException e) {
+                vmSnapshotVO.setState(VMSnapshot.State.Error);
+                _vmSnapshotDao.update(vmSnapshotVO.getId(), vmSnapshotVO);
+            }
+        }
         return true;
     }
 

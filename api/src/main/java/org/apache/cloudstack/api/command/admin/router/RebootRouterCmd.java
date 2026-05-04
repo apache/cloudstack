@@ -43,7 +43,7 @@ public class RebootRouterCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DomainRouterResponse.class, required = true, description = "the ID of the router")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DomainRouterResponse.class, required = true, description = "The ID of the router")
     private Long id;
 
     @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force reboot the router (Router is force Stopped and then Started)", since = "4.16.0")
@@ -78,7 +78,7 @@ public class RebootRouterCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "rebooting router: " + this._uuidMgr.getUuid(VirtualMachine.class,getId());
+        return "Rebooting router with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
@@ -97,7 +97,7 @@ public class RebootRouterCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-        CallContext.current().setEventDetails("Router Id: " + this._uuidMgr.getUuid(VirtualMachine.class,getId()));
+        CallContext.current().setEventDetails("Router ID: " + getResourceUuid(ApiConstants.ID));
         VirtualRouter result = _routerService.rebootRouter(getId(), true, isForced());
         if (result != null) {
             DomainRouterResponse response = _responseGenerator.createDomainRouterResponse(result);

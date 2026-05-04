@@ -539,7 +539,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                         ch1.close();
                         throw new IOException("SSL: Fail to init SSL! " + e);
                     }
-                    logger.debug("Connection to peer opened: {}, ip: {}", peerName, ip);
+                    logger.debug("Connection to peer opened: {}, IP: {}", peerName, ip);
                     _peers.put(peerName, ch1);
                     _sslEngines.put(peerName, sslEngine);
                     return ch1;
@@ -551,7 +551,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                             logger.error("failed to close failed peer socket: {}",  ex);
                         }
                     }
-                    logger.warn("Unable to connect to peer management server: {}, ip {} due to {}", peerName, ip, e.getMessage(), e);
+                    logger.warn("Unable to connect to peer management server: {}, IP {} due to {}", peerName, ip, e.getMessage(), e);
                     return null;
                 }
             }
@@ -965,7 +965,6 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                     synchronized (_agentToTransferIds) {
                         if (!_agentToTransferIds.isEmpty()) {
                             logger.debug("Found {} agents to transfer", _agentToTransferIds.size());
-                            // for (Long hostId : _agentToTransferIds) {
                             for (final Iterator<Long> iterator = _agentToTransferIds.iterator(); iterator.hasNext(); ) {
                                 final Long hostId = iterator.next();
                                 final AgentAttache attache = findAttache(hostId);
@@ -1307,11 +1306,20 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
                 boolean result;
                 try {
-                    result = _resourceMgr.executeUserRequest(cmd.getHostId(), cmd.getEvent());
+                    result = _resourceMgr.executeUserRequest(cmd.getHostId(), cmd.getEvent(), cmd.isForced(), cmd.isForceDeleteStorage());
                     logger.debug("Result is {}", result);
                 } catch (final AgentUnavailableException ex) {
                     logger.warn("Agent is unavailable", ex);
                     return null;
+                } catch (final RuntimeException ex) {
+                    logger.error(String.format("Failed to execute propagated event %s for host %d", cmd.getEvent().name(), cmd.getHostId()), ex);
+                    final Answer[] answers = new Answer[1];
+                    String details = ex.getMessage();
+                    if (details == null || details.isEmpty()) {
+                        details = ex.toString();
+                    }
+                    answers[0] = new Answer(cmd, false, details);
+                    return _gson.toJson(answers);
                 }
 
                 final Answer[] answers = new Answer[1];

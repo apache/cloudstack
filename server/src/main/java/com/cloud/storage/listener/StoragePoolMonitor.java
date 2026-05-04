@@ -27,6 +27,7 @@ import com.cloud.exception.StorageConflictException;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.Profiler;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
@@ -200,12 +201,13 @@ public class StoragePoolMonitor implements Listener {
     }
 
     @Override
-    public synchronized boolean processDisconnect(long agentId, Status state) {
+    public boolean processDisconnect(long agentId, Status state) {
         return processDisconnect(agentId, null, null, state);
     }
 
     @Override
-    public synchronized boolean processDisconnect(long agentId, String uuid, String name, Status state) {
+    public boolean processDisconnect(long agentId, String uuid, String name, Status state) {
+        logger.debug("Starting disconnect for Agent [id: {}, uuid: {}, name: {}]", agentId, uuid, name);
         Host host = _storageManager.getHost(agentId);
         if (host == null) {
             logger.warn("Agent [id: {}, uuid: {}, name: {}] not found, not disconnecting pools", agentId, uuid, name);
@@ -213,38 +215,52 @@ public class StoragePoolMonitor implements Listener {
         }
 
         if (host.getType() != Host.Type.Routing) {
+            logger.debug("Host [id: {}, uuid: {}, name: {}] is not of type {}, skip", agentId, uuid, name, Host.Type.Routing);
             return false;
         }
 
+        logger.debug("Looking for connected Storage Pools for Host [id: {}, uuid: {}, name: {}]", agentId, uuid, name);
         List<StoragePoolHostVO> storagePoolHosts = _storageManager.findStoragePoolsConnectedToHost(host.getId());
         if (storagePoolHosts == null) {
-            if (logger.isTraceEnabled()) {
-                logger.trace("No pools to disconnect for host: {}", host);
-            }
+            logger.debug("No pools to disconnect for host: {}", host);
             return true;
         }
 
+        logger.debug("Found {} pools to disconnect for host: {}", storagePoolHosts.size(), host);
         boolean disconnectResult = true;
-        for (StoragePoolHostVO storagePoolHost : storagePoolHosts) {
+        int storagePoolHostsSize = storagePoolHosts.size();
+        for (int i = 0; i < storagePoolHostsSize; i++) {
+            StoragePoolHostVO storagePoolHost = storagePoolHosts.get(i);
+            logger.debug("Processing disconnect from Storage Pool {} ({} of {}) for host: {}", storagePoolHost.getPoolId(), i, storagePoolHostsSize, host);
             StoragePoolVO pool = _poolDao.findById(storagePoolHost.getPoolId());
             if (pool == null) {
+                logger.debug("No Storage Pool found with id {} ({} of {}) for host: {}", storagePoolHost.getPoolId(), i, storagePoolHostsSize, host);
                 continue;
             }
 
             if (!pool.isShared()) {
+                logger.debug("Storage Pool {} ({}) ({} of {}) is not shared for host: {}, ignore disconnect", pool.getName(), pool.getUuid(), i, storagePoolHostsSize, host);
                 continue;
             }
 
             // Handle only PowerFlex pool for now, not to impact other pools behavior
             if (pool.getPoolType() != StoragePoolType.PowerFlex) {
+                logger.debug("Storage Pool {} ({}) ({} of {}) is not of type {} for host: {}, ignore disconnect", pool.getName(), pool.getUuid(), i, storagePoolHostsSize, pool.getPoolType(), host);
                 continue;
             }
 
+            logger.debug("Sending disconnect to Storage Pool {} ({}) ({} of {}) for host: {}", pool.getName(), pool.getUuid(), i, storagePoolHostsSize, host);
+            Profiler disconnectProfiler = new Profiler();
             try {
+                disconnectProfiler.start();
                 _storageManager.disconnectHostFromSharedPool(host, pool);
             } catch (Exception e) {
                 logger.error("Unable to disconnect host {} from storage pool {} due to {}", host, pool, e.toString());
                 disconnectResult = false;
+            } finally {
+                disconnectProfiler.stop();
+                long disconnectDuration = disconnectProfiler.getDurationInMillis() / 1000;
+                logger.debug("Finished disconnect with result {} from Storage Pool {} ({}) ({} of {}) for host: {}, duration: {} secs", disconnectResult, pool.getName(), pool.getUuid(), i, storagePoolHostsSize, host, disconnectDuration);
             }
         }
 

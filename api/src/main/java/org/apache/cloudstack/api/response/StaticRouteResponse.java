@@ -31,11 +31,11 @@ import com.cloud.serializer.Param;
 @SuppressWarnings("unused")
 public class StaticRouteResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of static route")
+    @Param(description = "The ID of static route")
     private String id;
 
     @SerializedName(ApiConstants.STATE)
-    @Param(description = "the state of the static route")
+    @Param(description = "The state of the static route")
     private String state;
 
     @SerializedName(ApiConstants.VPC_ID)
@@ -55,27 +55,27 @@ public class StaticRouteResponse extends BaseResponse implements ControlledEntit
     private String nextHop;
 
     @SerializedName(ApiConstants.CIDR)
-    @Param(description = "static route CIDR")
+    @Param(description = "Static route CIDR")
     private String cidr;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the account associated with the static route")
+    @Param(description = "The Account associated with the static route")
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project id of the static route")
+    @Param(description = "The project ID of the static route")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project name of the static route")
+    @Param(description = "The project name of the static route")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the ID of the domain associated with the static route")
+    @Param(description = "The ID of the domain associated with the static route")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain associated with the static route")
+    @Param(description = "The domain associated with the static route")
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
@@ -83,7 +83,7 @@ public class StaticRouteResponse extends BaseResponse implements ControlledEntit
     private String domainPath;
 
     @SerializedName(ApiConstants.TAGS)
-    @Param(description = "the list of resource tags associated with static route", responseObject = ResourceTagResponse.class)
+    @Param(description = "The list of resource tags associated with static route", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
 
     @Override

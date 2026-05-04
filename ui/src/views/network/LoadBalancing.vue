@@ -67,6 +67,7 @@
             <a-select-option v-if="lbProvider !== 'Netris'" value="tcp-proxy" :label="$t('label.tcp.proxy')">{{ $t('label.tcp.proxy') }}</a-select-option>
             <a-select-option value="tcp" :label="$t('label.tcp')">{{ $t('label.tcp') }}</a-select-option>
             <a-select-option value="udp" :label="$t('label.udp')">{{ $t('label.udp') }}</a-select-option>
+            <a-select-option value="ssl" :label="$t('label.ssl')">{{ $t('label.ssl') }}</a-select-option>
           </a-select>
         </div>
         <div class="form__item">
@@ -83,6 +84,12 @@
             <a-select-option value="yes">{{ $t('label.yes') }}</a-select-option>
             <a-select-option value="no">{{ $t('label.no') }}</a-select-option>
           </a-select>
+        </div>
+        <div class="form__item" v-if="newRule.protocol === 'ssl'" >
+          <div class="form__label">{{ $t('label.sslcertificate') }}</div>
+          <a-button :disabled="!('createLoadBalancerRule' in $store.getters.apis)" type="primary" @click="handleOpenAddSslCertModal(null)">
+            {{ this.selectedSsl.id != null ? this.selectedSsl.name : $t('label.add') }}
+          </a-button>
         </div>
         <div class="form__item" v-if="!newRule.autoscale || newRule.autoscale === 'no'">
           <div class="form__label" style="white-space: nowrap;">{{ $t('label.add.vms') }}</div>
@@ -139,6 +146,12 @@
             {{ returnStickinessLabel(record.id) }}
           </a-button>
         </template>
+        <template v-if="column.key === 'sslcert'">
+          <a-button :disabled="record.protocol !== 'ssl'" @click="() => { selectedRule = record; handleOpenAddSslCertModal(record) }">
+            <template #icon><plus-outlined /></template>
+            {{ $t('label.manage') }}
+          </a-button>
+        </template>
         <template v-if="column.key === 'autoscale'">
           <div>
             <router-link :to="{ path: '/autoscalevmgroup/' + record.autoscalevmgroup.id }" v-if='record.autoscalevmgroup'>
@@ -189,6 +202,11 @@
                 <desktop-outlined />
                 <router-link :to="{ path: '/vm/' + instance.loadbalancerruleinstance.id }">
                   {{ instance.loadbalancerruleinstance.displayname }}
+                </router-link>
+              </div>
+              <div v-if="this.vpcConserveMode">
+                <router-link :to="{ path: '/guestnetwork/' + instance.loadbalancerruleinstance.nic[0].networkid }">
+                  {{ instance.loadbalancerruleinstance.nic[0].networkname }}
                 </router-link>
               </div>
               <div>{{ ip }}</div>
@@ -435,7 +453,24 @@
             <a-select-option value="tcp-proxy" :label="$t('label.tcp.proxy')">{{ $t('label.tcp.proxy') }}</a-select-option>
             <a-select-option value="tcp" :label="$t('label.tcp')">{{ $t('label.tcp') }}</a-select-option>
             <a-select-option value="udp" :label="$t('label.udp')">{{ $t('label.udp') }}</a-select-option>
+            <a-select-option value="ssl" :label="$t('label.ssl')">{{ $t('label.ssl') }}</a-select-option>
           </a-select>
+        </div>
+        <div v-if="lbProvider !== 'Netris'" class="edit-rule__item">
+          <p class="edit-rule__label">
+            {{ $t('label.sourcecidrlist') }}
+            <tooltip-label
+              :title="''"
+              bold
+              :tooltip="createLoadBalancerRuleParams.cidrlist.description || 'Enter a comma-separated list of CIDR blocks.'"
+              :tooltip-placement="'right'"
+              style="display: inline; margin-left: 5px;"
+            />
+          </p>
+          <a-input
+            v-model:value="editRuleDetails.cidrlist"
+            :placeholder="$t('label.sourcecidrlist')"
+          />
         </div>
         <div :span="24" class="action-button">
           <a-button @click="() => editRuleModalVisible = false">{{ $t('label.cancel') }}</a-button>
@@ -457,10 +492,10 @@
     >
       <div @keyup.ctrl.enter="handleAddNewRule">
         <span
-          v-if="'vpcid' in resource && !('associatednetworkid' in resource)">
+          v-if="'vpcid' in resource && (!('associatednetworkid' in resource) || vpcConserveMode)">
           <strong>{{ $t('label.select.tier') }} </strong>
           <a-select
-            v-focus="'vpcid' in resource && !('associatednetworkid' in resource)"
+            v-focus="'vpcid' in resource && (!('associatednetworkid' in resource) || vpcConserveMode)"
             v-model:value="selectedTier"
             @change="fetchVirtualMachines()"
             :placeholder="$t('label.select.tier')"
@@ -550,6 +585,60 @@
           <a-button :disabled="newRule.virtualmachineid === []" type="primary" ref="submit" @click="handleAddNewRule">{{ $t('label.ok') }}</a-button>
         </div>
       </div>
+    </a-modal>
+
+    <a-modal
+      :title="$t('label.manage.ssl.cert')"
+      :maskClosable="false"
+      :closable="true"
+      v-if="addSslCertModalVisible"
+      :visible="addSslCertModalVisible"
+      width="30vw"
+      @cancel="addSslCertModalVisible = false"
+      @ok="addSslCertModalVisible = false"
+      :cancelButtonProps="{ style: { display: 'none' } }"
+    >
+      <a-row v-show="showAssignedSsl && assignedSslCert !== 'None'">
+        <a-col :span="8">
+          <div class="form__label">{{ $t("label.current") + ' ' + $t('label.sslcertificate') }}</div>
+        </a-col>
+        <a-col :span="10">
+          <div>{{ assignedSslCert }}</div>
+        </a-col>
+        <a-col :span="6">
+          <a-button :disabled="!deleteSslButtonVisible" type="danger" @click="removeSslFromLbRule()">
+            <template #icon><delete-outlined /></template>
+            {{ $t('label.remove') }}
+          </a-button>
+        </a-col>
+      </a-row>
+      <a-row style="margin-top: 16px">
+        <a-col :span="8">
+          <div class="form__label">{{ $t("label.new") + ' ' + $t('label.sslcertificate') }}</div>
+        </a-col>
+        <a-col :span="10">
+          <div class="form__item">
+            <a-select v-model:value="selectedSsl.name" style="width: 80%;" @change="selectssl">
+              <a-select-option
+                v-for="sslcert in sslcerts.data"
+                :key="sslcert.id">{{ sslcert.name }}
+              </a-select-option>
+            </a-select>
+          </div>
+        </a-col>
+        <a-col :span="6">
+          <div>
+            <a-button v-show="addSslButtonVisible && assignedSslCert !== 'None'" type="primary" @click="addSslTolbRule()">
+              <template #icon><swap-outlined /></template>
+              {{ $t('label.replace') }}
+            </a-button>
+            <a-button v-show="addSslButtonVisible && assignedSslCert === 'None'" type="primary" @click="addSslTolbRule()">
+              <template #icon><plus-outlined /></template>
+              {{ $t('label.assign') }}
+            </a-button>
+          </div>
+        </a-col>
+      </a-row>
     </a-modal>
 
     <a-modal
@@ -769,7 +858,8 @@ export default {
       editRuleDetails: {
         name: '',
         algorithm: '',
-        protocol: ''
+        protocol: '',
+        cidrlist: ''
       },
       newRule: {
         algorithm: 'roundrobin',
@@ -791,6 +881,20 @@ export default {
       totalCount: 0,
       page: 1,
       pageSize: 10,
+      sslcerts: {
+        loading: false,
+        data: []
+      },
+      selectedSsl: {
+        name: '',
+        id: null
+      },
+      addSslCertModalVisible: false,
+      showAssignedSsl: false,
+      currentAccountId: null,
+      assignedSslCert: 'None',
+      deleteSslButtonVisible: true,
+      addSslButtonVisible: true,
       columns: [
         {
           title: this.$t('label.name'),
@@ -823,6 +927,10 @@ export default {
         {
           key: 'add',
           title: this.$t('label.add.vms')
+        },
+        {
+          key: 'sslcert',
+          title: this.$t('label.sslcertificate')
         },
         {
           key: 'autoscale',
@@ -919,7 +1027,8 @@ export default {
         urlpath: '/'
       },
       healthMonitorLoading: false,
-      isNetrisZone: false
+      isNetrisZone: false,
+      vpcConserveMode: false
     }
   },
   computed: {
@@ -976,9 +1085,23 @@ export default {
       })
     },
     fetchData () {
+      this.fetchVpc()
       this.fetchListTiers()
       this.fetchLBRules()
       this.fetchZone()
+    },
+    fetchVpc () {
+      if (!this.resource.vpcid) {
+        return
+      }
+      this.vpcConserveMode = false
+      getAPI('listVPCs', {
+        id: this.resource.vpcid
+      }).then(json => {
+        this.vpcConserveMode = json.listvpcsresponse?.vpc?.[0].vpcofferingconservemode || false
+      }).catch(error => {
+        this.$notifyError(error)
+      })
     },
     fetchListTiers () {
       this.tiers.loading = true
@@ -1091,6 +1214,147 @@ export default {
           })
         }
       })
+    },
+    fetchSslCerts () {
+      this.sslcerts.loading = true
+      this.sslcerts.data = []
+      // First get the account id
+      getAPI('listAccounts', {
+        name: this.resource.account,
+        domainid: this.resource.domainid
+      }).then(json => {
+        const accounts = json.listaccountsresponse.account || []
+        if (accounts.length > 0) {
+          // Now fetch all the ssl certs for this account
+          this.currentAccountId = accounts[0].id
+          getAPI('listSslCerts', {
+            accountid: this.currentAccountId
+          }).then(json => {
+            json.listsslcertsresponse.sslcert.forEach(entry => this.sslcerts.data.push(entry))
+            if (json.listsslcertsresponse.sslcert && json.listsslcertsresponse.sslcert.length > 0 && this.selectedSsl.id == null) {
+              this.selectedSsl.name = json.listsslcertsresponse.sslcert[0].name
+              this.selectedSsl.id = json.listsslcertsresponse.sslcert[0].id
+            }
+          }).catch(error => {
+            this.$notifyError(error)
+          })
+        }
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.sslcerts.loading = false
+      })
+      if (this.selectedRule !== null) {
+        this.getCurrentAssignedSslCert()
+      }
+    },
+    getCurrentAssignedSslCert () {
+      getAPI('listSslCerts', {
+        accountid: this.currentAccountId,
+        lbruleid: this.selectedRule.id
+      }).then(json => {
+        if (json.listsslcertsresponse.sslcert && json.listsslcertsresponse.sslcert.length > 0) {
+          this.assignedSslCert = json.listsslcertsresponse.sslcert[0].name
+          this.deleteSslButtonVisible = true
+        } else {
+          this.assignedSslCert = 'None'
+          this.deleteSslButtonVisible = false
+        }
+      }).catch(error => {
+        this.$notifyError(error)
+      })
+    },
+    selectssl (e) {
+      this.selectedSsl.id = e
+      const sslcert = this.sslcerts.data.find(entry => entry.id === this.selectedSsl.id)
+      if (sslcert) {
+        this.selectedSsl.name = sslcert.name
+      }
+    },
+    handleAddSslCert (data) {
+      this.addSslCert(data, this.selectedSsl.id)
+    },
+    addSslTolbRule () {
+      this.visible = false
+      this.addSslCert(this.selectedRule.id, this.selectedSsl.id)
+    },
+    addSslCert (lbRuleId, certId) {
+      this.disableSslAddDeleteButtons()
+      getAPI('assignCertToLoadBalancer', {
+        lbruleid: lbRuleId,
+        certid: certId,
+        forced: true
+      }).then(response => {
+        this.$pollJob({
+          jobId: response.assigncerttoloadbalancerresponse.jobid,
+          successMessage: this.$t('message.success.assign.sslcert'),
+          successMethod: () => {
+            if (this.selectedRule !== null) {
+              this.getCurrentAssignedSslCert()
+            }
+            this.enableSslAddDeleteButtons()
+          },
+          errorMessage: this.$t('message.assign.sslcert.failed'),
+          errorMethod: () => {
+          },
+          loadingMessage: this.$t('message.assign.sslcert.processing'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
+          catchMethod: (e) => {
+            this.closeModal()
+          }
+        })
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+      })
+    },
+    removeSslFromLbRule () {
+      this.disableSslAddDeleteButtons()
+      getAPI('removeCertFromLoadBalancer', {
+        lbruleid: this.selectedRule.id
+      }).then(response => {
+        this.$pollJob({
+          jobId: response.removecertfromloadbalancerresponse.jobid,
+          successMessage: this.$t('message.success.remove.sslcert'),
+          successMethod: () => {
+            this.visible = true
+            this.getCurrentAssignedSslCert()
+            this.enableSslAddDeleteButtons()
+          },
+          errorMessage: this.$t('message.remove.sslcert.failed'),
+          errorMethod: () => {
+            this.visible = true
+          },
+          loadingMessage: this.$t('message.remove.sslcert.processing'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
+          catchMethod: () => {
+            this.closeModal()
+          }
+        })
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+      })
+    },
+    enableSslAddDeleteButtons () {
+      this.deleteSslButtonVisible = true
+      this.addSslButtonVisible = true
+    },
+    disableSslAddDeleteButtons () {
+      this.addSslButtonVisible = false
+      this.deleteSslButtonVisible = false
+    },
+    handleOpenAddSslCertModal (record) {
+      this.addSslCertModalVisible = true
+      if (record) {
+        this.showAssignedSsl = true
+        this.addSslButtonVisible = true
+        this.selectedSsl = {}
+      } else {
+        this.showAssignedSsl = false
+        this.addSslButtonVisible = false
+      }
+      this.fetchSslCerts()
     },
     returnAlgorithmName (name) {
       switch (name) {
@@ -1398,14 +1662,28 @@ export default {
       this.editRuleDetails.name = this.selectedRule.name
       this.editRuleDetails.algorithm = this.lbProvider !== 'Netris' ? this.selectedRule.algorithm : undefined
       this.editRuleDetails.protocol = this.selectedRule.protocol
+      // Normalize cidrlist: replace spaces with commas and clean up
+      this.editRuleDetails.cidrlist = (this.selectedRule.cidrlist || '')
+        .split(/[\s,]+/) // Split on spaces or commas
+        .map(c => c.trim())
+        .filter(c => c)
+        .join(',') || ''
     },
     handleSubmitEditForm () {
       if (this.editRuleModalLoading) return
       this.loading = true
       this.editRuleModalLoading = true
+      const payload = {
+        ...this.editRuleDetails,
+        id: this.selectedRule.id,
+        ...(this.editRuleDetails.cidrlist && {
+          cidrList: (this.editRuleDetails.cidrlist || '').split(',').map(c => c.trim()).filter(c => c)
+        })
+      }
       postAPI('updateLoadBalancerRule', {
         ...this.editRuleDetails,
-        id: this.selectedRule.id
+        id: this.selectedRule.id,
+        ...payload
       }).then(response => {
         this.$pollJob({
           jobId: response.updateloadbalancerruleresponse.jobid,
@@ -1572,7 +1850,7 @@ export default {
 
       getAPI('listNics', {
         virtualmachineid: e.target.value,
-        networkid: ('vpcid' in this.resource && !('associatednetworkid' in this.resource)) ? this.selectedTier : this.resource.associatednetworkid
+        networkid: ('vpcid' in this.resource && (!('associatednetworkid' in this.resource) || this.vpcConserveMode)) ? this.selectedTier : this.resource.associatednetworkid
       }).then(response => {
         if (!response || !response.listnicsresponse || !response.listnicsresponse.nic[0]) return
         const newItem = []
@@ -1592,7 +1870,7 @@ export default {
       this.vmCount = 0
       this.vms = []
       this.addVmModalLoading = true
-      const networkId = ('vpcid' in this.resource && !('associatednetworkid' in this.resource)) ? this.selectedTier : this.resource.associatednetworkid
+      const networkId = ('vpcid' in this.resource && (!('associatednetworkid' in this.resource) || this.vpcConserveMode)) ? this.selectedTier : this.resource.associatednetworkid
       if (!networkId) {
         this.addVmModalLoading = false
         return
@@ -1677,11 +1955,17 @@ export default {
           ip.forEach(i => {
             vmIDIpMap[`vmidipmap[${innerCount}].vmid`] = this.newRule.virtualmachineid[count]
             vmIDIpMap[`vmidipmap[${innerCount}].vmip`] = i
+            if (this.vpcConserveMode) {
+              vmIDIpMap[`vmidipmap[${innerCount}].vmnetworkid`] = this.selectedTier
+            }
             innerCount++
           })
         } else {
           vmIDIpMap[`vmidipmap[${innerCount}].vmid`] = this.newRule.virtualmachineid[count]
           vmIDIpMap[`vmidipmap[${innerCount}].vmip`] = ip
+          if (this.vpcConserveMode && ip != null) {
+            vmIDIpMap[`vmidipmap[${innerCount}].vmnetworkid`] = this.selectedTier
+          }
           innerCount++
         }
         if (this.newRule.virtualmachineid[count]) {
@@ -1705,6 +1989,9 @@ export default {
           successMessage: this.$t('message.success.assign.vm'),
           successMethod: () => {
             this.parentToggleLoading()
+            if (this.newRule.protocol === 'ssl' && this.selectedSsl.id !== null) {
+              this.handleAddSslCert(data)
+            }
             this.fetchData()
             this.closeModal()
           },
@@ -1780,6 +2067,7 @@ export default {
       this.addNetworkModalLoading = false
       this.addNetworkModalVisible = false
       this.selectedTierForAutoScaling = null
+      this.addSslCertModalVisible = null
     },
     handleChangePage (page, pageSize) {
       this.page = page

@@ -23,28 +23,39 @@ import com.cloud.hypervisor.Hypervisor;
 public class ConvertInstanceCommand extends Command {
 
     private RemoteInstanceTO sourceInstance;
+    private String originalVMName;
     private Hypervisor.HypervisorType destinationHypervisorType;
     private DataStoreTO conversionTemporaryLocation;
     private String templateDirOnConversionLocation;
     private boolean checkConversionSupport;
     private boolean exportOvfToConversionLocation;
     private int threadsCountToExportOvf = 0;
+    private String extraParams;
+    private boolean useVddk;
+    private String vddkLibDir;
+    private String vddkTransports;
+    private String vddkThumbprint;
 
     public ConvertInstanceCommand() {
     }
 
     public ConvertInstanceCommand(RemoteInstanceTO sourceInstance, Hypervisor.HypervisorType destinationHypervisorType, DataStoreTO conversionTemporaryLocation,
-                                  String templateDirOnConversionLocation, boolean checkConversionSupport, boolean exportOvfToConversionLocation) {
+                                  String templateDirOnConversionLocation, boolean checkConversionSupport, boolean exportOvfToConversionLocation, String sourceVMName) {
         this.sourceInstance = sourceInstance;
         this.destinationHypervisorType = destinationHypervisorType;
         this.conversionTemporaryLocation = conversionTemporaryLocation;
         this.templateDirOnConversionLocation = templateDirOnConversionLocation;
         this.checkConversionSupport = checkConversionSupport;
         this.exportOvfToConversionLocation = exportOvfToConversionLocation;
+        this.originalVMName = sourceVMName;
     }
 
     public RemoteInstanceTO getSourceInstance() {
         return sourceInstance;
+    }
+
+    public String getOriginalVMName() {
+        return originalVMName;
     }
 
     public Hypervisor.HypervisorType getDestinationHypervisorType() {
@@ -73,6 +84,46 @@ public class ConvertInstanceCommand extends Command {
 
     public void setThreadsCountToExportOvf(int threadsCountToExportOvf) {
         this.threadsCountToExportOvf = threadsCountToExportOvf;
+    }
+
+    public String getExtraParams() {
+        return extraParams;
+    }
+
+    public void setExtraParams(String extraParams) {
+        this.extraParams = extraParams;
+    }
+
+    public boolean isUseVddk() {
+        return useVddk;
+    }
+
+    public void setUseVddk(boolean useVddk) {
+        this.useVddk = useVddk;
+    }
+
+    public String getVddkLibDir() {
+        return vddkLibDir;
+    }
+
+    public void setVddkLibDir(String vddkLibDir) {
+        this.vddkLibDir = vddkLibDir;
+    }
+
+    public String getVddkTransports() {
+        return vddkTransports;
+    }
+
+    public void setVddkTransports(String vddkTransports) {
+        this.vddkTransports = vddkTransports;
+    }
+
+    public String getVddkThumbprint() {
+        return vddkThumbprint;
+    }
+
+    public void setVddkThumbprint(String vddkThumbprint) {
+        this.vddkThumbprint = vddkThumbprint;
     }
 
     @Override

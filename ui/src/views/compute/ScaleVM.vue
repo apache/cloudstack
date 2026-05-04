@@ -228,8 +228,8 @@ export default {
         getAPI('listDiskOfferings', {
           id: this.selectedOffering.diskofferingid
         }).then(response => {
-          const diskOfferings = response.listdiskofferingsresponse.diskoffering || []
-          if (this.diskOfferings) {
+          const diskOfferings = response?.listdiskofferingsresponse?.diskoffering || []
+          if (diskOfferings?.length > 0) {
             this.selectedDiskOffering = diskOfferings[0]
           }
         }).catch(error => {

@@ -33,10 +33,10 @@ public class UpdateLBStickinessPolicyCmd extends BaseAsyncCustomIdCmd{
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = LBStickinessResponse.class, required = true, description = "id of lb stickiness policy")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = LBStickinessResponse.class, required = true, description = "ID of lb stickiness policy")
     private Long id;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the policy to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "An optional field, whether to the display the policy to the end user or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
     /////////////////////////////////////////////////////
@@ -62,7 +62,7 @@ public class UpdateLBStickinessPolicyCmd extends BaseAsyncCustomIdCmd{
 
     @Override
     public String getEventDescription() {
-        return "Update load balancer stickiness policy ID= " + id;
+        return "Update load balancer stickiness policy ID = " + id;
     }
 
     @Override

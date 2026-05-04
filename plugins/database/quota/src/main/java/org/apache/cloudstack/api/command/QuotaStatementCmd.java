@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api.command;
 
 import java.util.Date;
-import java.util.List;
 
 import javax.inject.Inject;
 
@@ -28,23 +27,25 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.QuotaResponseBuilder;
 import org.apache.cloudstack.api.response.QuotaStatementItemResponse;
 import org.apache.cloudstack.api.response.QuotaStatementResponse;
-import org.apache.cloudstack.quota.vo.QuotaUsageVO;
 
-import com.cloud.user.Account;
+import org.apache.commons.lang3.ObjectUtils;
 
-@APICommand(name = "quotaStatement", responseObject = QuotaStatementItemResponse.class, description = "Create a quota statement", since = "4.7.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "quotaStatement", responseObject = QuotaStatementItemResponse.class, description = "Create a Quota statement for the provided Account, Project, or Domain.",
+        since = "4.7.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, httpMethod = "GET")
 public class QuotaStatementCmd extends BaseCmd {
 
-
-
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, required = true, description = "Optional, Account Id for which statement needs to be generated")
+    @ACL
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING,
+            description = "Name of the Account for which the Quota statement will be generated. Deprecated, please use accountid instead.")
     private String accountName;
 
     @ACL
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = true, entityType = DomainResponse.class, description = "Optional, If domain Id is given and the caller is domain admin then the statement is generated for domain.")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class,
+            description = "ID of the Domain for which the Quota statement will be generated. May be used individually or with account.")
     private Long domainId;
 
     @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, required = true, description = "End of the period of the Quota statement. " +
@@ -55,15 +56,25 @@ public class QuotaStatementCmd extends BaseCmd {
             ApiConstants.PARAMETER_DESCRIPTION_START_DATE_POSSIBLE_FORMATS)
     private Date startDate;
 
-    @Parameter(name = ApiConstants.TYPE, type = CommandType.INTEGER, description = "List quota usage records for the specified usage type")
+    @Parameter(name = ApiConstants.TYPE, type = CommandType.INTEGER,
+            description = "Consider only Quota usage records for the specified usage type in the statement.")
     private Integer usageType;
 
     @ACL
-    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "List usage records for the specified account")
+    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class,
+            description = "ID of the Account for which the Quota statement will be generated. Can not be specified with projectid.")
     private Long accountId;
 
+    @ACL
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class,
+            description = "ID of the Project for which the Quota statement will be generated. Can not be specified with accountid.", since = "4.23.0")
+    private Long projectId;
+
+    @Parameter(name = ApiConstants.SHOW_RESOURCES, type = CommandType.BOOLEAN, description = "List the resources of each Quota type in the period.", since = "4.23.0")
+    private boolean showResources;
+
     @Inject
-    private QuotaResponseBuilder _responseBuilder;
+    QuotaResponseBuilder responseBuilder;
 
     public Long getAccountId() {
         return accountId;
@@ -98,43 +109,47 @@ public class QuotaStatementCmd extends BaseCmd {
     }
 
     public Date getEndDate() {
-        return _responseBuilder.startOfNextDay(endDate == null ? new Date() : new Date(endDate.getTime()));
+        return endDate;
     }
 
     public void setEndDate(Date endDate) {
-        this.endDate = endDate == null ? null : new Date(endDate.getTime());
+        this.endDate = endDate;
     }
 
     public Date getStartDate() {
-        return startDate == null ? null : new Date(startDate.getTime());
+        return startDate;
     }
 
     public void setStartDate(Date startDate) {
-        this.startDate = startDate == null ? null : new Date(startDate.getTime());
+        this.startDate = startDate;
+    }
+
+    public boolean isShowResources() {
+        return showResources;
+    }
+
+    public void setShowResources(boolean showResources) {
+        this.showResources = showResources;
+    }
+
+    public Long getProjectId() {
+        return projectId;
     }
 
     @Override
     public long getEntityOwnerId() {
-        if (accountId != null) {
-            return accountId;
+        if (ObjectUtils.allNull(accountId, accountName, projectId)) {
+            return -1;
         }
-        Account activeAccountByName = _accountService.getActiveAccountByName(accountName, domainId);
-        if (activeAccountByName != null) {
-            return activeAccountByName.getAccountId();
-        }
-        return Account.ACCOUNT_ID_SYSTEM;
+        return _accountService.finalizeAccountId(accountId, accountName, domainId, projectId);
     }
 
     @Override
     public void execute() {
-        List<QuotaUsageVO> quotaUsage = _responseBuilder.getQuotaUsage(this);
-
-        QuotaStatementResponse response = _responseBuilder.createQuotaStatementResponse(quotaUsage);
-        response.setStartDate(startDate == null ? null : new Date(startDate.getTime()));
-        response.setEndDate(endDate == null ? null : new Date(endDate.getTime()));
-
+        QuotaStatementResponse response = responseBuilder.createQuotaStatementResponse(this);
+        response.setStartDate(startDate);
+        response.setEndDate(endDate);
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }
-
 }

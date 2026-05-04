@@ -25,6 +25,8 @@ import java.util.Set;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -41,6 +43,8 @@ import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
+import com.cloud.kubernetes.cluster.KubernetesServiceHelper;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.hypervisor.Hypervisor;
@@ -286,7 +290,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
         if(account == null && domainId != null){
             group = _affinityGroupDao.findDomainLevelGroupByName(domainId, affinityGroupName);
         }else{
-            Long accountId = _accountMgr.finalyzeAccountId(account, domainId, projectId, true);
+            Long accountId = _accountMgr.finalizeAccountId(account, domainId, projectId, true);
             if(accountId == null){
                 Account caller = CallContext.current().getCallingAccount();
                 group = _affinityGroupDao.findByAccountAndName(caller.getAccountId(), affinityGroupName);
@@ -434,6 +438,13 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
         }
         if (UserVmManager.SHAREDFSVM.equals(vmInstance.getUserVmType())) {
             throw new InvalidParameterValueException("Operation not supported on Shared FileSystem Instance");
+        }
+        try {
+            KubernetesServiceHelper kubernetesServiceHelper =
+                    ComponentContext.getDelegateComponentOfType(KubernetesServiceHelper.class);
+            kubernetesServiceHelper.checkVmAffinityGroupsCanBeUpdated(vmInstance);
+        } catch (NoSuchBeanDefinitionException ignored) {
+            logger.debug("No KubernetesServiceHelper bean found");
         }
         if (Hypervisor.HypervisorType.External.equals(vmInstance.getHypervisorType())) {
             logger.error("Update VM Affinity Group not supported for {} as it is {} hypervisor instance",
