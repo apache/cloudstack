@@ -1372,7 +1372,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
     }
 
-    private boolean attachISOToVM(long vmId, long isoId, boolean attach, boolean forced, boolean isVirtualRouter) {
+    private boolean attachISOToVM(long vmId, long isoId, int deviceSeq, boolean attach, boolean forced, boolean isVirtualRouter) {
         VirtualMachine vm = !isVirtualRouter ? _userVmDao.findById(vmId) : _vmInstanceDao.findById(vmId);
 
         if (vm == null || (isVirtualRouter && vm.getType() != VirtualMachine.Type.DomainRouter)) {
@@ -1396,7 +1396,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         DataTO isoTO = tmplt.getTO();
-        DiskTO disk = new DiskTO(isoTO, null, null, Volume.Type.ISO);
+        DiskTO disk = new DiskTO(isoTO, (long) deviceSeq, null, Volume.Type.ISO);
 
         HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
         VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
@@ -1418,42 +1418,43 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         UserVmVO vm = _userVmDao.findById(vmId);
         VMTemplateVO iso = _tmpltDao.findById(isoId);
 
-        boolean success = attachISOToVM(vmId, isoId, attach, forced, isVirtualRouter);
+        VmIsoMapVO highestExtra = highestCdromMapEntry(vmId);
+        int targetSlot;
+        if (attach) {
+            targetSlot = vm.getIsoId() == null ? 3 : (highestExtra == null ? 4 : highestExtra.getDeviceSeq() + 1);
+        } else {
+            targetSlot = highestExtra != null ? highestExtra.getDeviceSeq() : 3;
+        }
+
+        boolean success = attachISOToVM(vmId, isoId, targetSlot, attach, forced, isVirtualRouter);
+
         if (success && attach && !isVirtualRouter) {
-            if (vm.getIsoId() == null) {
+            if (targetSlot == 3) {
                 vm.setIsoId(iso.getId());
                 _userVmDao.update(vmId, vm);
             } else {
-                int nextDeviceSeq = nextFreeCdromDeviceSeq(vmId);
-                _vmIsoMapDao.persist(new VmIsoMapVO(vmId, iso.getId(), nextDeviceSeq));
+                _vmIsoMapDao.persist(new VmIsoMapVO(vmId, iso.getId(), targetSlot));
             }
         }
         if (success && !attach && !isVirtualRouter) {
-            List<VmIsoMapVO> extras = _vmIsoMapDao.listByVmId(vmId);
-            if (!extras.isEmpty()) {
-                VmIsoMapVO last = extras.get(extras.size() - 1);
-                for (VmIsoMapVO entry : extras) {
-                    if (entry.getDeviceSeq() > last.getDeviceSeq()) {
-                        last = entry;
-                    }
-                }
-                _vmIsoMapDao.remove(last.getId());
-            } else {
+            if (targetSlot == 3) {
                 vm.setIsoId(null);
                 _userVmDao.update(vmId, vm);
+            } else if (highestExtra != null) {
+                _vmIsoMapDao.remove(highestExtra.getId());
             }
         }
         return success;
     }
 
-    private int nextFreeCdromDeviceSeq(long vmId) {
-        int max = 3; // iso_id occupies device_seq=3
+    private VmIsoMapVO highestCdromMapEntry(long vmId) {
+        VmIsoMapVO highest = null;
         for (VmIsoMapVO row : _vmIsoMapDao.listByVmId(vmId)) {
-            if (row.getDeviceSeq() > max) {
-                max = row.getDeviceSeq();
+            if (highest == null || row.getDeviceSeq() > highest.getDeviceSeq()) {
+                highest = row;
             }
         }
-        return max + 1;
+        return highest;
     }
 
     @Override
