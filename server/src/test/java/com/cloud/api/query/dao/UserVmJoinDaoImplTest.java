@@ -84,6 +84,9 @@ public class UserVmJoinDaoImplTest extends GenericDaoBaseWithTagInformationBaseT
     private VMTemplateDao vmTemplateDao;
 
     @Mock
+    private com.cloud.vm.dao.VmIsoMapDao vmIsoMapDao;
+
+    @Mock
     ExtensionHelper extensionHelper;
 
     private UserVmJoinVO userVm = new UserVmJoinVO();
@@ -103,6 +106,8 @@ public class UserVmJoinDaoImplTest extends GenericDaoBaseWithTagInformationBaseT
     @Before
     public void setup() {
         closeable = openMocks(this);
+        org.mockito.Mockito.lenient().when(vmIsoMapDao.listByVmId(org.mockito.ArgumentMatchers.anyLong()))
+                .thenReturn(java.util.Collections.emptyList());
         prepareSetup();
     }
 
