@@ -17,12 +17,6 @@
 <template>
   <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
-      <a-alert
-        v-if="!loading && maxSelections === 0"
-        type="warning"
-        showIcon
-        :message="$t('label.iso.name') + ': max reached'"
-        style="margin-bottom: 12px;" />
       <a-form
         :ref="formRef"
         :model="form"
@@ -30,26 +24,19 @@
         layout="vertical"
         @finish="handleSubmit">
         <a-form-item
-          :label="$t('label.iso.name') + ' (' + form.ids.length + ' / ' + maxSelections + ')'"
+          :label="$t('label.iso.name') + ' (' + form.ids.length + ' / ' + attached.length + ')'"
           ref="ids"
           name="ids">
           <a-select
             mode="multiple"
             :loading="loading"
             v-model:value="form.ids"
-            v-focus="true"
-            :disabled="maxSelections === 0"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }">
+            v-focus="true">
             <a-select-option
-              v-for="iso in isos"
+              v-for="iso in attached"
               :key="iso.id"
-              :label="iso.displaytext || iso.name"
-              :disabled="form.ids.length >= maxSelections && !form.ids.includes(iso.id)">
-              {{ iso.displaytext || iso.name }}
+              :label="iso.displaytext || iso.name">
+              {{ (iso.displaytext || iso.name) + ' (' + slotLabel(iso.deviceseq) + ')' }}
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -70,11 +57,10 @@
 </template>
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { getAPI, postAPI } from '@/api'
-import _ from 'lodash'
+import { postAPI } from '@/api'
 
 export default {
-  name: 'AttachIso',
+  name: 'DetachIso',
   props: {
     resource: {
       type: Object,
@@ -84,48 +70,14 @@ export default {
   data () {
     return {
       loading: false,
-      isos: [],
-      maxSelections: 1,
-      // Sentinel so the hypervisor cap alone gates the UI until listConfigurations resolves.
-      globalCdromCap: Number.MAX_SAFE_INTEGER
+      attached: []
     }
   },
   created () {
     this.initForm()
-    this.fetchGlobalCap().then(() => this.computeMaxSelections())
-    this.fetchData()
-  },
-  watch: {
-    'form.ids' (newVal) {
-      if (newVal && newVal.length > this.maxSelections) {
-        this.form.ids = newVal.slice(0, this.maxSelections)
-        this.$message.warning(this.$t('label.iso.name') + ': max ' + this.maxSelections)
-      }
-    }
+    this.populateAttached()
   },
   methods: {
-    fetchGlobalCap () {
-      return new Promise((resolve) => {
-        getAPI('listConfigurations', { name: 'vm.cdrom.max.count' }).then(json => {
-          const cfg = json && json.listconfigurationsresponse && json.listconfigurationsresponse.configuration
-          if (cfg && cfg.length > 0 && cfg[0].value !== undefined && cfg[0].value !== null) {
-            const parsed = parseInt(cfg[0].value, 10)
-            if (!isNaN(parsed)) {
-              this.globalCdromCap = parsed
-            }
-          }
-        }).catch(() => { /* Sentinel cap remains; hypervisor cap still applies. */ })
-          .finally(resolve)
-      })
-    },
-    computeMaxSelections () {
-      // Mirrors server-side effectiveMaxCdroms: min(vm.cdrom.max.count, hypervisor cap).
-      const hypervisorCap = this.resource.hypervisor === 'KVM' ? 2 : 1
-      const effectiveCap = Math.min(this.globalCdromCap, hypervisorCap)
-      const alreadyAttached = (this.resource.isos && this.resource.isos.length) ||
-        (this.resource.isoid ? 1 : 0)
-      this.maxSelections = Math.max(0, effectiveCap - alreadyAttached)
-    },
     initForm () {
       this.formRef = ref()
       this.form = reactive({ ids: [] })
@@ -138,37 +90,25 @@ export default {
         }]
       })
     },
-    fetchData () {
-      const isoFilters = ['featured', 'community', 'selfexecutable']
-      this.loading = true
-      const promises = []
-      isoFilters.forEach((filter) => {
-        promises.push(this.fetchIsos(filter))
-      })
-      Promise.all(promises).then(() => {
-        this.isos = _.uniqBy(this.isos, 'id')
-      }).catch((error) => {
-        console.log(error)
-      }).finally(() => {
-        this.loading = false
-      })
-    },
-    fetchIsos (isoFilter) {
-      const params = {
-        listall: true,
-        zoneid: this.resource.zoneid,
-        isofilter: isoFilter,
-        isready: true
+    populateAttached () {
+      if (this.resource.isos && this.resource.isos.length > 0) {
+        this.attached = [...this.resource.isos].sort((a, b) => (a.deviceseq || 0) - (b.deviceseq || 0))
+      } else if (this.resource.isoid) {
+        this.attached = [{
+          id: this.resource.isoid,
+          name: this.resource.isoname,
+          displaytext: this.resource.isodisplaytext,
+          deviceseq: 3
+        }]
       }
-      return new Promise((resolve, reject) => {
-        getAPI('listIsos', params).then((response) => {
-          const isos = response.listisosresponse.iso || []
-          this.isos.push(...isos)
-          resolve(response)
-        }).catch((error) => {
-          reject(error)
-        })
-      })
+      if (this.attached.length === 1) {
+        this.form.ids = [this.attached[0].id]
+      }
+    },
+    slotLabel (deviceseq) {
+      // 3 -> hdc, 4 -> hdd, ... matches LibvirtVMDef.getDevLabel for the IDE bus on KVM.
+      if (typeof deviceseq !== 'number') return ''
+      return 'hd' + String.fromCharCode('a'.charCodeAt(0) + deviceseq - 1)
     },
     closeAction () {
       this.$emit('close-action')
@@ -182,25 +122,28 @@ export default {
         if (ids.length === 0) return
 
         this.loading = true
-        const title = this.$t('label.action.attach.iso')
-        // attachIso is single-ISO server-side; fan out one call per selection.
+        const title = this.$t('label.action.detach.iso')
+        // detachIso is single-ISO server-side; fan out one call per selection.
         const sendOne = (isoId) => {
           const params = {
-            id: isoId,
             virtualmachineid: this.resource.id
+          }
+          // Single-attached: omit id so older servers (without the id parameter) still accept the call.
+          if (this.attached.length > 1 || ids.length > 1) {
+            params.id = isoId
           }
           if (values.forced) {
             params.forced = values.forced
           }
           return new Promise((resolve, reject) => {
-            postAPI('attachIso', params).then(json => {
-              const jobId = json.attachisoresponse && json.attachisoresponse.jobid
+            postAPI('detachIso', params).then(json => {
+              const jobId = json.detachisoresponse && json.detachisoresponse.jobid
               if (jobId) {
                 this.$pollJob({
                   jobId,
                   title,
                   description: isoId,
-                  successMessage: `${this.$t('label.action.attach.iso')} ${this.$t('label.success')}`,
+                  successMessage: `${this.$t('label.action.detach.iso')} ${this.$t('label.success')}`,
                   loadingMessage: `${title} ${this.$t('label.in.progress')}`,
                   catchMessage: this.$t('error.fetching.async.job.result')
                 })

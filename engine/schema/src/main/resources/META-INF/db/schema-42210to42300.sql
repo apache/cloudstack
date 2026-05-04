@@ -127,3 +127,17 @@ CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_tariff_usage` (
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_quota_tariff_usage__tariff_id` FOREIGN KEY (`tariff_id`) REFERENCES `cloud_usage`.`quota_tariff` (`id`),
     CONSTRAINT `fk_quota_tariff_usage__quota_usage_id` FOREIGN KEY (`quota_usage_id`) REFERENCES `cloud_usage`.`quota_usage` (`id`));
+
+--- Per-VM ISO attachments. user_vm.iso_id remains as the primary/bootable ISO pointer.
+CREATE TABLE IF NOT EXISTS `cloud`.`vm_iso_map` (
+    `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+    `vm_id` bigint(20) unsigned NOT NULL COMMENT 'foreign key to user_vm',
+    `iso_id` bigint(20) unsigned NOT NULL COMMENT 'foreign key to vm_template (ISOs are templates of format ISO)',
+    `device_seq` int(10) unsigned NOT NULL COMMENT 'cdrom slot index used to derive the libvirt device label (3=hdc, 4=hdd)',
+    `created` datetime NOT NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uc_vm_iso_map__vm_iso` (`vm_id`, `iso_id`),
+    UNIQUE KEY `uc_vm_iso_map__vm_seq` (`vm_id`, `device_seq`),
+    CONSTRAINT `fk_vm_iso_map__vm_id` FOREIGN KEY (`vm_id`) REFERENCES `cloud`.`user_vm` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_vm_iso_map__iso_id` FOREIGN KEY (`iso_id`) REFERENCES `cloud`.`vm_template` (`id`)
+);

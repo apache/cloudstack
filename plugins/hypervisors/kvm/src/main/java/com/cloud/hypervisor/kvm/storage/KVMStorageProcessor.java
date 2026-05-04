@@ -21,6 +21,8 @@ package com.cloud.hypervisor.kvm.storage;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 import static com.cloud.utils.storage.S3.S3Utils.putFile;
 
+import com.cloud.template.TemplateManager;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -1184,10 +1186,11 @@ public class KVMStorageProcessor implements StorageProcessor {
         }
     }
 
-    protected synchronized void attachOrDetachISO(final Connect conn, final String vmName, String isoPath, final boolean isAttach, Map<String, String> params, DataStoreTO store) throws
+    protected synchronized void attachOrDetachISO(final Connect conn, final String vmName, String isoPath, final boolean isAttach, Map<String, String> params, DataStoreTO store, Integer deviceSeq) throws
             LibvirtException, InternalErrorException {
         DiskDef iso = new DiskDef();
         boolean isUefiEnabled = MapUtils.isNotEmpty(params) && params.containsKey("UEFI");
+        Integer devId = (deviceSeq != null) ? deviceSeq : TemplateManager.CDROM_PRIMARY_DEVICE_SEQ;
         if (isoPath != null && isAttach) {
             final int index = isoPath.lastIndexOf("/");
             final String path = isoPath.substring(0, index);
@@ -1203,9 +1206,9 @@ public class KVMStorageProcessor implements StorageProcessor {
             final DiskDef.DiskType isoDiskType = LibvirtComputingResource.getDiskType(isoVol);
             isoPath = isoVol.getPath();
 
-            iso.defISODisk(isoPath, isUefiEnabled, isoDiskType);
+            iso.defISODisk(isoPath, devId, isUefiEnabled, isoDiskType);
         } else {
-            iso.defISODisk(null, isUefiEnabled, DiskDef.DiskType.FILE);
+            iso.defISODisk(null, devId, isUefiEnabled, DiskDef.DiskType.FILE);
         }
 
         final List<DiskDef> disks = resource.getDisks(conn, vmName);
@@ -1225,11 +1228,12 @@ public class KVMStorageProcessor implements StorageProcessor {
         final DiskTO disk = cmd.getDisk();
         final TemplateObjectTO isoTO = (TemplateObjectTO)disk.getData();
         final DataStoreTO store = isoTO.getDataStore();
+        final Integer deviceSeq = (disk.getDiskSeq() != null) ? disk.getDiskSeq().intValue() : null;
 
         try {
             String dataStoreUrl = getDataStoreUrlFromStore(store);
             final Connect conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
-            attachOrDetachISO(conn, cmd.getVmName(), dataStoreUrl + File.separator + isoTO.getPath(), true, cmd.getControllerInfo(), store);
+            attachOrDetachISO(conn, cmd.getVmName(), dataStoreUrl + File.separator + isoTO.getPath(), true, cmd.getControllerInfo(), store, deviceSeq);
         } catch (final LibvirtException e) {
             return new Answer(cmd, false, e.toString());
         } catch (final InternalErrorException e) {
@@ -1246,11 +1250,12 @@ public class KVMStorageProcessor implements StorageProcessor {
         final DiskTO disk = cmd.getDisk();
         final TemplateObjectTO isoTO = (TemplateObjectTO)disk.getData();
         final DataStoreTO store = isoTO.getDataStore();
+        final Integer deviceSeq = (disk.getDiskSeq() != null) ? disk.getDiskSeq().intValue() : null;
 
         try {
             String dataStoreUrl = getDataStoreUrlFromStore(store);
             final Connect conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
-            attachOrDetachISO(conn, cmd.getVmName(), dataStoreUrl + File.separator + isoTO.getPath(), false, cmd.getParams(), store);
+            attachOrDetachISO(conn, cmd.getVmName(), dataStoreUrl + File.separator + isoTO.getPath(), false, cmd.getParams(), store, deviceSeq);
         } catch (final LibvirtException e) {
             return new Answer(cmd, false, e.toString());
         } catch (final InternalErrorException e) {

@@ -21,6 +21,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -222,7 +223,9 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.VmDetailConstants;
+import com.cloud.vm.VmIsoMapVO;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.VmIsoMapDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -255,6 +258,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     private DataCenterDao _dcDao;
     @Inject
     private UserVmDao _userVmDao;
+    @Inject
+    private VmIsoMapDao _vmIsoMapDao;
     @Inject
     private VolumeDao _volumeDao;
     @Inject
@@ -679,45 +684,73 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @Override
     public void prepareIsoForVmProfile(VirtualMachineProfile profile, DeployDestination dest) {
         UserVmVO vm = _userVmDao.findById(profile.getId());
-        if (vm.getIsoId() != null) {
-            Map<Volume, StoragePool> storageForDisks = dest.getStorageForDisks();
-            Long poolId = null;
-            TemplateInfo template;
-            if (MapUtils.isNotEmpty(storageForDisks)) {
-                for (StoragePool storagePool : storageForDisks.values()) {
-                    if (poolId != null && storagePool.getId() != poolId) {
-                        throw new CloudRuntimeException("Cannot determine where to download ISO");
-                    }
-                    poolId = storagePool.getId();
-                }
-            }
-            template = prepareIso(vm.getIsoId(), vm.getDataCenterId(), dest.getHost().getId(), poolId);
+        Long poolId = singleStoragePoolId(dest);
+        Map<Integer, Long> slotToIsoId = loadAttachedIsoSlots(vm);
 
-            if (template == null){
-                logger.error("Failed to prepare ISO on secondary or cache storage");
-                throw new CloudRuntimeException("Failed to prepare ISO on secondary or cache storage");
-            }
-            if (template.isBootable()) {
-                profile.setBootLoaderType(BootloaderType.CD);
-            }
-
-            GuestOSVO guestOS = _guestOSDao.findById(template.getGuestOSId());
-            String displayName = null;
-            if (guestOS != null) {
-                displayName = guestOS.getDisplayName();
-            }
-
-            TemplateObjectTO iso = (TemplateObjectTO)template.getTO();
-            iso.setDirectDownload(template.isDirectDownload());
-            iso.setGuestOsType(displayName);
-            DiskTO disk = new DiskTO(iso, 3L, null, Volume.Type.ISO);
-            profile.addDisk(disk);
-        } else {
-            TemplateObjectTO iso = new TemplateObjectTO();
-            iso.setFormat(ImageFormat.ISO);
-            DiskTO disk = new DiskTO(iso, 3L, null, Volume.Type.ISO);
-            profile.addDisk(disk);
+        // Pre-allocate every cdrom slot at boot. QEMU/IDE refuses to hot-add new cdrom drives, so
+        // runtime attachIso can only media-swap into a slot the domain already owns.
+        int totalSlots = Math.max(effectiveMaxCdroms(vm), slotsNeededFor(slotToIsoId));
+        for (int i = 0; i < totalSlots; i++) {
+            int diskSeq = CDROM_PRIMARY_DEVICE_SEQ + i;
+            Long isoId = slotToIsoId.get(diskSeq);
+            profile.addDisk(isoId != null
+                    ? buildIsoDisk(profile, vm, dest, poolId, diskSeq, isoId)
+                    : buildEmptyCdromDisk(diskSeq));
         }
+    }
+
+    private Long singleStoragePoolId(DeployDestination dest) {
+        Long poolId = null;
+        Map<Volume, StoragePool> storageForDisks = dest.getStorageForDisks();
+        if (MapUtils.isNotEmpty(storageForDisks)) {
+            for (StoragePool pool : storageForDisks.values()) {
+                if (poolId != null && pool.getId() != poolId) {
+                    throw new CloudRuntimeException("Cannot determine where to download ISO");
+                }
+                poolId = pool.getId();
+            }
+        }
+        return poolId;
+    }
+
+    private Map<Integer, Long> loadAttachedIsoSlots(UserVmVO vm) {
+        Map<Integer, Long> slots = new HashMap<>();
+        if (vm.getIsoId() != null) {
+            slots.put(CDROM_PRIMARY_DEVICE_SEQ, vm.getIsoId());
+        }
+        for (VmIsoMapVO row : _vmIsoMapDao.listByVmId(vm.getId())) {
+            slots.put(row.getDeviceSeq(), row.getIsoId());
+        }
+        return slots;
+    }
+
+    private int slotsNeededFor(Map<Integer, Long> slotToIsoId) {
+        if (slotToIsoId.isEmpty()) {
+            return 0;
+        }
+        return Collections.max(slotToIsoId.keySet()) - CDROM_PRIMARY_DEVICE_SEQ + 1;
+    }
+
+    private DiskTO buildIsoDisk(VirtualMachineProfile profile, UserVmVO vm, DeployDestination dest, Long poolId, int diskSeq, long isoId) {
+        TemplateInfo template = prepareIso(isoId, vm.getDataCenterId(), dest.getHost().getId(), poolId);
+        if (template == null) {
+            logger.error("Failed to prepare ISO on secondary or cache storage");
+            throw new CloudRuntimeException("Failed to prepare ISO on secondary or cache storage");
+        }
+        if (diskSeq == CDROM_PRIMARY_DEVICE_SEQ && template.isBootable()) {
+            profile.setBootLoaderType(BootloaderType.CD);
+        }
+        GuestOSVO guestOS = _guestOSDao.findById(template.getGuestOSId());
+        TemplateObjectTO iso = (TemplateObjectTO) template.getTO();
+        iso.setDirectDownload(template.isDirectDownload());
+        iso.setGuestOsType(guestOS != null ? guestOS.getDisplayName() : null);
+        return new DiskTO(iso, (long) diskSeq, null, Volume.Type.ISO);
+    }
+
+    private DiskTO buildEmptyCdromDisk(int diskSeq) {
+        TemplateObjectTO empty = new TemplateObjectTO();
+        empty.setFormat(ImageFormat.ISO);
+        return new DiskTO(empty, (long) diskSeq, null, Volume.Type.ISO);
     }
 
     private void prepareTemplateInOneStoragePool(final VMTemplateVO template, final StoragePoolVO pool) {
@@ -1237,7 +1270,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         _accountMgr.checkAccess(caller, null, true, virtualMachine);
 
-        Long isoId = !isVirtualRouter ? ((UserVm) virtualMachine).getIsoId() : isoParamId;
+        Long isoId;
+        if (isVirtualRouter) {
+            isoId = isoParamId;
+        } else {
+            Long primaryIsoId = ((UserVm) virtualMachine).getIsoId();
+            List<VmIsoMapVO> extras = _vmIsoMapDao.listByVmId(vmId);
+            isoId = resolveIsoIdForDetach(primaryIsoId, extras, isoParamId);
+        }
         if (isoId == null) {
             throw new InvalidParameterValueException("The specified instance has no ISO attached to it.");
         }
@@ -1321,6 +1361,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (VMWARE_TOOLS_ISO.equals(iso.getUniqueName()) && vm.getHypervisorType() != Hypervisor.HypervisorType.VMware) {
             throw new InvalidParameterValueException("Cannot attach VMware tools drivers to incompatible hypervisor " + vm.getHypervisorType());
         }
+        if (!isVirtualRouter) {
+            enforceCdromAttachLimits(vmId, (UserVm) vm, isoId);
+        }
         boolean result = attachISOToVM(vmId, userId, isoId, true, forced, isVirtualRouter);
         if (result) {
             return result;
@@ -1360,7 +1403,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
     }
 
-    private boolean attachISOToVM(long vmId, long isoId, boolean attach, boolean forced, boolean isVirtualRouter) {
+    private boolean attachISOToVM(long vmId, long isoId, int deviceSeq, boolean attach, boolean forced, boolean isVirtualRouter) {
         VirtualMachine vm = !isVirtualRouter ? _userVmDao.findById(vmId) : _vmInstanceDao.findById(vmId);
 
         if (vm == null || (isVirtualRouter && vm.getType() != VirtualMachine.Type.DomainRouter)) {
@@ -1384,7 +1427,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         DataTO isoTO = tmplt.getTO();
-        DiskTO disk = new DiskTO(isoTO, null, null, Volume.Type.ISO);
+        DiskTO disk = new DiskTO(isoTO, (long) deviceSeq, null, Volume.Type.ISO);
 
         HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
         VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
@@ -1402,20 +1445,114 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         return (a != null && a.getResult());
     }
 
-    private boolean attachISOToVM(long vmId, long userId, long isoId, boolean attach, boolean forced, boolean isVirtualRouter) {
+    boolean attachISOToVM(long vmId, long userId, long isoId, boolean attach, boolean forced, boolean isVirtualRouter) {
         UserVmVO vm = _userVmDao.findById(vmId);
         VMTemplateVO iso = _tmpltDao.findById(isoId);
 
-        boolean success = attachISOToVM(vmId, isoId, attach, forced, isVirtualRouter);
-        if (success && attach && !isVirtualRouter) {
-            vm.setIsoId(iso.getId());
-            _userVmDao.update(vmId, vm);
+        int targetSlot = attach ? chooseAttachSlot(vmId, vm) : findAttachedSlot(vmId, vm, isoId);
+        boolean success = attachISOToVM(vmId, isoId, targetSlot, attach, forced, isVirtualRouter);
+        if (!success || isVirtualRouter) {
+            return success;
         }
-        if (success && !attach && !isVirtualRouter) {
-            vm.setIsoId(null);
-            _userVmDao.update(vmId, vm);
+        if (attach) {
+            persistIsoAttachment(vmId, vm, iso, targetSlot);
+        } else {
+            persistIsoDetachment(vmId, vm, isoId, targetSlot);
         }
         return success;
+    }
+
+    private int chooseAttachSlot(long vmId, UserVmVO vm) {
+        if (vm.getIsoId() == null) {
+            return CDROM_PRIMARY_DEVICE_SEQ;
+        }
+        VmIsoMapVO highest = highestCdromMapEntry(vmId);
+        return highest == null ? CDROM_PRIMARY_DEVICE_SEQ + 1 : highest.getDeviceSeq() + 1;
+    }
+
+    private int findAttachedSlot(long vmId, UserVmVO vm, long isoId) {
+        if (vm.getIsoId() != null && vm.getIsoId() == isoId) {
+            return CDROM_PRIMARY_DEVICE_SEQ;
+        }
+        VmIsoMapVO entry = _vmIsoMapDao.findByVmIdIsoId(vmId, isoId);
+        return entry != null ? entry.getDeviceSeq() : CDROM_PRIMARY_DEVICE_SEQ;
+    }
+
+    private void persistIsoAttachment(long vmId, UserVmVO vm, VMTemplateVO iso, int slot) {
+        if (slot == CDROM_PRIMARY_DEVICE_SEQ) {
+            vm.setIsoId(iso.getId());
+            _userVmDao.update(vmId, vm);
+        } else {
+            _vmIsoMapDao.persist(new VmIsoMapVO(vmId, iso.getId(), slot));
+        }
+    }
+
+    private void persistIsoDetachment(long vmId, UserVmVO vm, long isoId, int slot) {
+        if (slot == CDROM_PRIMARY_DEVICE_SEQ) {
+            vm.setIsoId(null);
+            _userVmDao.update(vmId, vm);
+            return;
+        }
+        VmIsoMapVO entry = _vmIsoMapDao.findByVmIdIsoId(vmId, isoId);
+        if (entry != null) {
+            _vmIsoMapDao.remove(entry.getId());
+        }
+    }
+
+    VmIsoMapVO highestCdromMapEntry(long vmId) {
+        VmIsoMapVO highest = null;
+        for (VmIsoMapVO row : _vmIsoMapDao.listByVmId(vmId)) {
+            if (highest == null || row.getDeviceSeq() > highest.getDeviceSeq()) {
+                highest = row;
+            }
+        }
+        return highest;
+    }
+
+    Long resolveIsoIdForDetach(Long primaryIsoId, List<VmIsoMapVO> extras, Long isoParamId) {
+        if (isoParamId != null) {
+            boolean attached = (primaryIsoId != null && primaryIsoId.equals(isoParamId))
+                    || extras.stream().anyMatch(r -> r.getIsoId() == isoParamId);
+            if (!attached) {
+                throw new InvalidParameterValueException("The specified ISO is not attached to this Instance.");
+            }
+            return isoParamId;
+        }
+        int totalAttached = (primaryIsoId != null ? 1 : 0) + extras.size();
+        if (totalAttached == 0) {
+            throw new InvalidParameterValueException("The specified instance has no ISO attached to it.");
+        }
+        if (totalAttached > 1) {
+            throw new InvalidParameterValueException("Instance has more than one ISO attached; specify the 'id' parameter to choose which to detach.");
+        }
+        return primaryIsoId != null ? primaryIsoId : extras.get(0).getIsoId();
+    }
+
+    boolean isIsoAlreadyAttached(long vmId, Long primaryIsoId, long isoId) {
+        if (primaryIsoId != null && primaryIsoId.equals(isoId)) {
+            return true;
+        }
+        return _vmIsoMapDao.findByVmIdIsoId(vmId, isoId) != null;
+    }
+
+    private void enforceCdromAttachLimits(long vmId, UserVm vm, long isoId) {
+        Long primaryIsoId = vm.getIsoId();
+        if (isIsoAlreadyAttached(vmId, primaryIsoId, isoId)) {
+            throw new InvalidParameterValueException("The specified ISO is already attached to this Instance.");
+        }
+        int effectiveMax = effectiveMaxCdroms(vm);
+        int attached = (primaryIsoId != null ? 1 : 0) + _vmIsoMapDao.listByVmId(vmId).size();
+        if (attached >= effectiveMax) {
+            throw new InvalidParameterValueException(String.format(
+                    "Instance has reached the maximum of %d attached CD-ROM(s); detach one before attaching another.", effectiveMax));
+        }
+    }
+
+    private int effectiveMaxCdroms(VirtualMachine vm) {
+        int globalCap = VmCdromMaxCount.value();
+        // hda is root on i440fx/IDE, leaving hdc/hdd available for cdroms.
+        int hypervisorCap = (vm.getHypervisorType() == HypervisorType.KVM) ? 2 : 1;
+        return Math.min(globalCap, hypervisorCap);
     }
 
     @Override
@@ -2538,7 +2675,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         return new ConfigKey<?>[] {AllowPublicUserTemplates,
                 TemplatePreloaderPoolSize,
                 ValidateUrlIsResolvableBeforeRegisteringTemplate,
-                TemplateDeleteFromPrimaryStorage};
+                TemplateDeleteFromPrimaryStorage,
+                VmCdromMaxCount};
     }
 
     public List<TemplateAdapter> getTemplateAdapters() {

@@ -39,6 +39,7 @@ import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.response.AttachedIsoResponse;
 import org.apache.cloudstack.api.response.NicExtraDhcpOptionResponse;
 import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
@@ -71,6 +72,7 @@ import com.cloud.storage.GuestOS;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VnfTemplateDetailVO;
+import com.cloud.template.TemplateManager;
 import com.cloud.storage.VnfTemplateNicVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -91,10 +93,12 @@ import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VmIsoMapVO;
 import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.NicExtraDhcpOptionDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
+import com.cloud.vm.dao.VmIsoMapDao;
 
 @Component
 public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJoinVO, UserVmResponse> implements UserVmJoinDao {
@@ -127,6 +131,8 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
     private VgpuProfileDao vgpuProfileDao;
     @Inject
     VMTemplateDao vmTemplateDao;
+    @Inject
+    VmIsoMapDao vmIsoMapDao;
     @Inject
     ExtensionHelper extensionHelper;
 
@@ -244,6 +250,20 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             userVmResponse.setIsoId(userVm.getIsoUuid());
             userVmResponse.setIsoName(userVm.getIsoName());
             userVmResponse.setIsoDisplayText(userVm.getIsoDisplayText());
+
+            List<AttachedIsoResponse> attachedIsos = new ArrayList<>();
+            if (userVm.getIsoUuid() != null) {
+                attachedIsos.add(new AttachedIsoResponse(userVm.getIsoUuid(), userVm.getIsoName(),
+                        userVm.getIsoDisplayText(), TemplateManager.CDROM_PRIMARY_DEVICE_SEQ));
+            }
+            for (VmIsoMapVO row : vmIsoMapDao.listByVmId(userVm.getId())) {
+                VMTemplateVO tmpl = vmTemplateDao.findById(row.getIsoId());
+                if (tmpl != null) {
+                    attachedIsos.add(new AttachedIsoResponse(tmpl.getUuid(), tmpl.getName(),
+                            tmpl.getDisplayText(), row.getDeviceSeq()));
+                }
+            }
+            userVmResponse.setIsos(attachedIsos);
         }
         if (details.contains(VMDetails.all) || details.contains(VMDetails.servoff)) {
             userVmResponse.setServiceOfferingId(userVm.getServiceOfferingUuid());

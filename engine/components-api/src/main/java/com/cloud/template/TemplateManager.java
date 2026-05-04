@@ -64,6 +64,17 @@ public interface TemplateManager {
             true,
             ConfigKey.Scope.Global);
 
+    ConfigKey<Integer> VmCdromMaxCount = new ConfigKey<Integer>("Advanced",
+            Integer.class,
+            "vm.cdrom.max.count", "1",
+            "Maximum number of CD-ROM drives per VM.",
+            true,
+            ConfigKey.Scope.Global);
+
+    // KVM/libvirt maps deviceSeq=3 to hdc (hda/hdb are taken by the root volume on i440fx/IDE).
+    // user_vm.iso_id has always pointed at this slot; additional cdroms live in vm_iso_map.
+    int CDROM_PRIMARY_DEVICE_SEQ = 3;
+
     static final String VMWARE_TOOLS_ISO = "vmware-tools.iso";
     static final String XS_TOOLS_ISO = "xs-tools.iso";
 

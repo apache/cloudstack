@@ -66,9 +66,12 @@ import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VmIsoMapVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.dao.VmIsoMapDao;
 
 import junit.framework.TestCase;
 
@@ -133,6 +136,7 @@ import org.springframework.core.type.filter.TypeFilter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
@@ -219,6 +223,12 @@ public class TemplateManagerImplTest extends TestCase {
 
     @Mock
     HeuristicRuleHelper heuristicRuleHelperMock;
+
+    @Mock
+    UserVmDao _userVmDao;
+
+    @Mock
+    VmIsoMapDao _vmIsoMapDao;
 
     public class CustomThreadPoolExecutor extends ThreadPoolExecutor {
         AtomicInteger ai = new AtomicInteger(0);
@@ -748,6 +758,104 @@ public class TemplateManagerImplTest extends TestCase {
         templateManager.verifyHeuristicRulesForZone(vmTemplateVOMock, 1L);
 
         Mockito.verify(heuristicRuleHelperMock, Mockito.times(1)).getImageStoreIfThereIsHeuristicRule(1L, HeuristicType.TEMPLATE, vmTemplateVOMock);
+    }
+
+    @Test
+    public void highestCdromMapEntryReturnsNullWhenMapIsEmpty() {
+        Mockito.when(_vmIsoMapDao.listByVmId(1L)).thenReturn(new ArrayList<>());
+        Assert.assertNull(templateManager.highestCdromMapEntry(1L));
+    }
+
+    @Test
+    public void highestCdromMapEntryReturnsEntryWithMaxDeviceSeq() {
+        VmIsoMapVO low = new VmIsoMapVO(1L, 100L, 4);
+        VmIsoMapVO high = new VmIsoMapVO(1L, 200L, 5);
+        Mockito.when(_vmIsoMapDao.listByVmId(1L)).thenReturn(Arrays.asList(low, high));
+        VmIsoMapVO result = templateManager.highestCdromMapEntry(1L);
+        Assert.assertNotNull(result);
+        Assert.assertEquals(5, result.getDeviceSeq());
+    }
+
+    @Test
+    public void attachISOToVMAttachWritesToIsoIdWhenPrimarySlotEmpty() {
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        VMTemplateVO iso = Mockito.mock(VMTemplateVO.class);
+        Mockito.when(_userVmDao.findById(1L)).thenReturn(vm);
+        Mockito.when(vmTemplateDao.findById(42L)).thenReturn(iso);
+        Mockito.when(iso.getId()).thenReturn(42L);
+        Mockito.when(vm.getIsoId()).thenReturn(null);
+
+        boolean result = templateManager.attachISOToVM(1L, 1L, 42L, true, false, false);
+
+        Assert.assertTrue(result);
+        Mockito.verify(vm).setIsoId(42L);
+        Mockito.verify(_userVmDao).update(eq(1L), eq(vm));
+        Mockito.verify(_vmIsoMapDao, Mockito.never()).persist(any(VmIsoMapVO.class));
+    }
+
+    @Test
+    public void resolveIsoIdForDetachReturnsPrimaryWhenOnlyPrimaryIsAttached() {
+        Long resolved = templateManager.resolveIsoIdForDetach(99L, new ArrayList<>(), null);
+        Assert.assertEquals(Long.valueOf(99L), resolved);
+    }
+
+    @Test
+    public void resolveIsoIdForDetachReturnsMapEntryWhenOnlyMapHasOne() {
+        VmIsoMapVO row = new VmIsoMapVO(1L, 100L, 4);
+        Long resolved = templateManager.resolveIsoIdForDetach(null, Arrays.asList(row), null);
+        Assert.assertEquals(Long.valueOf(100L), resolved);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void resolveIsoIdForDetachThrowsWhenMultipleAttachedAndNoIdGiven() {
+        VmIsoMapVO row = new VmIsoMapVO(1L, 100L, 4);
+        templateManager.resolveIsoIdForDetach(99L, Arrays.asList(row), null);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void resolveIsoIdForDetachThrowsWhenNothingAttached() {
+        templateManager.resolveIsoIdForDetach(null, new ArrayList<>(), null);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void resolveIsoIdForDetachThrowsWhenIdNotAttached() {
+        templateManager.resolveIsoIdForDetach(99L, new ArrayList<>(), 42L);
+    }
+
+    @Test
+    public void isIsoAlreadyAttachedReturnsTrueWhenPrimaryMatches() {
+        Assert.assertTrue(templateManager.isIsoAlreadyAttached(1L, 42L, 42L));
+    }
+
+    @Test
+    public void isIsoAlreadyAttachedReturnsTrueWhenInMap() {
+        Mockito.when(_vmIsoMapDao.findByVmIdIsoId(1L, 42L)).thenReturn(new VmIsoMapVO(1L, 42L, 4));
+        Assert.assertTrue(templateManager.isIsoAlreadyAttached(1L, 99L, 42L));
+    }
+
+    @Test
+    public void isIsoAlreadyAttachedReturnsFalseWhenNotAttached() {
+        Mockito.when(_vmIsoMapDao.findByVmIdIsoId(1L, 42L)).thenReturn(null);
+        Assert.assertFalse(templateManager.isIsoAlreadyAttached(1L, null, 42L));
+    }
+
+    @Test
+    public void attachISOToVMAttachWritesToVmIsoMapWhenPrimarySlotOccupied() {
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        VMTemplateVO iso = Mockito.mock(VMTemplateVO.class);
+        Mockito.when(_userVmDao.findById(1L)).thenReturn(vm);
+        Mockito.when(vmTemplateDao.findById(42L)).thenReturn(iso);
+        Mockito.when(iso.getId()).thenReturn(42L);
+        Mockito.when(vm.getIsoId()).thenReturn(99L);
+        Mockito.when(_vmIsoMapDao.listByVmId(1L)).thenReturn(new ArrayList<>());
+
+        boolean result = templateManager.attachISOToVM(1L, 1L, 42L, true, false, false);
+
+        Assert.assertTrue(result);
+        Mockito.verify(_vmIsoMapDao).persist(Mockito.argThat(row ->
+                row.getVmId() == 1L && row.getIsoId() == 42L
+                        && row.getDeviceSeq() == TemplateManager.CDROM_PRIMARY_DEVICE_SEQ + 1));
+        Mockito.verify(vm, Mockito.never()).setIsoId(anyLong());
     }
 
     @Configuration
