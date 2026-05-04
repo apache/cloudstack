@@ -27,6 +27,7 @@ import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
+import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 
 import com.cloud.event.EventTypes;
@@ -50,6 +51,10 @@ public class DetachIsoCmd extends BaseAsyncCmd implements UserCmd {
     @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN,
             description = "If true, ejects the ISO before detaching on VMware. Default: false", since = "4.15.1")
     protected Boolean forced;
+
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TemplateResponse.class,
+            description = "The ID of the ISO to detach. Required when the Instance has more than one ISO attached.")
+    protected Long id;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -104,7 +109,7 @@ public class DetachIsoCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public void execute() {
-        boolean result = _templateService.detachIso(virtualMachineId, null, isForced());
+        boolean result = _templateService.detachIso(virtualMachineId, id, isForced());
         if (result) {
             UserVm userVm = _entityMgr.findById(UserVm.class, virtualMachineId);
             UserVmResponse response = _responseGenerator.createUserVmResponse(getResponseView(), "virtualmachine", userVm).get(0);

@@ -1249,7 +1249,27 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         _accountMgr.checkAccess(caller, null, true, virtualMachine);
 
-        Long isoId = !isVirtualRouter ? ((UserVm) virtualMachine).getIsoId() : isoParamId;
+        Long isoId;
+        if (isVirtualRouter) {
+            isoId = isoParamId;
+        } else {
+            Long primaryIsoId = ((UserVm) virtualMachine).getIsoId();
+            List<VmIsoMapVO> extras = _vmIsoMapDao.listByVmId(vmId);
+            if (isoParamId != null) {
+                boolean attached = (primaryIsoId != null && primaryIsoId.equals(isoParamId))
+                        || extras.stream().anyMatch(r -> r.getIsoId() == isoParamId);
+                if (!attached) {
+                    throw new InvalidParameterValueException("The specified ISO is not attached to this Instance.");
+                }
+                isoId = isoParamId;
+            } else if (primaryIsoId == null && extras.isEmpty()) {
+                throw new InvalidParameterValueException("The specified instance has no ISO attached to it.");
+            } else if (!extras.isEmpty()) {
+                throw new InvalidParameterValueException("Instance has more than one ISO attached; specify the 'id' parameter to choose which to detach.");
+            } else {
+                isoId = primaryIsoId;
+            }
+        }
         if (isoId == null) {
             throw new InvalidParameterValueException("The specified instance has no ISO attached to it.");
         }
@@ -1426,12 +1446,18 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         UserVmVO vm = _userVmDao.findById(vmId);
         VMTemplateVO iso = _tmpltDao.findById(isoId);
 
-        VmIsoMapVO highestExtra = highestCdromMapEntry(vmId);
         int targetSlot;
+        VmIsoMapVO mapEntry = null;
         if (attach) {
+            VmIsoMapVO highestExtra = highestCdromMapEntry(vmId);
             targetSlot = vm.getIsoId() == null ? 3 : (highestExtra == null ? 4 : highestExtra.getDeviceSeq() + 1);
         } else {
-            targetSlot = highestExtra != null ? highestExtra.getDeviceSeq() : 3;
+            if (vm.getIsoId() != null && vm.getIsoId() == isoId) {
+                targetSlot = 3;
+            } else {
+                mapEntry = _vmIsoMapDao.findByVmIdIsoId(vmId, isoId);
+                targetSlot = mapEntry != null ? mapEntry.getDeviceSeq() : 3;
+            }
         }
 
         boolean success = attachISOToVM(vmId, isoId, targetSlot, attach, forced, isVirtualRouter);
@@ -1448,8 +1474,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             if (targetSlot == 3) {
                 vm.setIsoId(null);
                 _userVmDao.update(vmId, vm);
-            } else if (highestExtra != null) {
-                _vmIsoMapDao.remove(highestExtra.getId());
+            } else if (mapEntry != null) {
+                _vmIsoMapDao.remove(mapEntry.getId());
             }
         }
         return success;
