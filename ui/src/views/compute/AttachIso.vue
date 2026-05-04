@@ -17,6 +17,12 @@
 <template>
   <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
+      <a-alert
+        v-if="!loading && maxSelections === 0"
+        type="warning"
+        showIcon
+        :message="$t('label.iso.name') + ': max reached'"
+        style="margin-bottom: 12px;" />
       <a-form
         :ref="formRef"
         :model="form"
@@ -32,6 +38,7 @@
             :loading="loading"
             v-model:value="form.ids"
             v-focus="true"
+            :disabled="maxSelections === 0"
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
@@ -78,12 +85,15 @@ export default {
     return {
       loading: false,
       isos: [],
-      maxSelections: 1
+      maxSelections: 1,
+      // Until listConfigurations resolves, assume "no extra cap" so we don't artificially limit.
+      // The hypervisor cap still applies via computeMaxSelections.
+      globalCdromCap: Number.MAX_SAFE_INTEGER
     }
   },
   created () {
-    this.computeMaxSelections()
     this.initForm()
+    this.fetchGlobalCap().then(() => this.computeMaxSelections())
     this.fetchData()
   },
   watch: {
@@ -98,14 +108,30 @@ export default {
     }
   },
   methods: {
+    fetchGlobalCap () {
+      return new Promise((resolve) => {
+        getAPI('listConfigurations', { name: 'vm.cdrom.max.count' }).then(json => {
+          const cfg = json && json.listconfigurationsresponse && json.listconfigurationsresponse.configuration
+          if (cfg && cfg.length > 0 && cfg[0].value !== undefined && cfg[0].value !== null) {
+            const parsed = parseInt(cfg[0].value, 10)
+            if (!isNaN(parsed)) {
+              this.globalCdromCap = parsed
+            }
+          }
+        }).catch(() => {
+          // If the config can't be fetched (permissions, transient error), fall through with the
+          // initial sentinel so the hypervisor cap alone gates the UI.
+        }).finally(resolve)
+      })
+    },
     computeMaxSelections () {
-      // Mirrors the server-side effectiveMaxCdroms: KVM caps at 2 cdrom slots (IDE bus reality),
-      // other hypervisors at 1. Subtract whatever's already attached to know how many MORE
-      // can be added in this dialog.
+      // Mirrors the server-side effectiveMaxCdroms: min(global vm.cdrom.max.count, hypervisor cap).
+      // KVM caps at 2 cdrom slots (IDE bus reality), other hypervisors at 1.
       const hypervisorCap = this.resource.hypervisor === 'KVM' ? 2 : 1
+      const effectiveCap = Math.min(this.globalCdromCap, hypervisorCap)
       const alreadyAttached = (this.resource.isos && this.resource.isos.length) ||
         (this.resource.isoid ? 1 : 0)
-      this.maxSelections = Math.max(1, hypervisorCap - alreadyAttached)
+      this.maxSelections = Math.max(0, effectiveCap - alreadyAttached)
     },
     initForm () {
       this.formRef = ref()
