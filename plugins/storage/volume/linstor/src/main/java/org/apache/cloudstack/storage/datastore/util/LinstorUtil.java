@@ -352,12 +352,12 @@ public class LinstorUtil {
                 null,
                 null);
         for (ResourceWithVolumes rsc : resources) {
-            if (!rsc.getVolumes().isEmpty()) {
+            if (!rsc.getVolumes().isEmpty() && rsc.getVolumes().get(0).getDevicePath() != null) {
                 return LinstorUtil.getDevicePathFromResource(rsc);
             }
         }
 
-        final String errMsg = "viewResources didn't return resources or volumes for " + rscName;
+        final String errMsg = "viewResources didn't return resources or volumes for " + rscName + " with a device path";
         LOGGER.error(errMsg);
         throw new CloudRuntimeException("Linstor: " + errMsg);
     }
@@ -695,7 +695,7 @@ public class LinstorUtil {
      * @param isTemplate indicates if the resource is a template
      * @return true if a new resource was created, false if it already existed or was reused.
      */
-    public static boolean createResourceBase(
+    public static Pair<String, Boolean> createResourceBase(
             String rscName, long sizeInBytes, String volName, String vmName,
             @Nullable Long passPhraseId, @Nullable byte[] passPhrase, DevelopersApi api,
             String rscGrp, long poolId, boolean isTemplate, boolean exactSize)
@@ -711,14 +711,14 @@ public class LinstorUtil {
                     existingRDs.stream().anyMatch(p -> p.first().getProps().containsKey(LinstorUtil.getTemplateForAuxPropKey(rscGrp)));
             if (!alreadyCreated) {
                 boolean createNewRsc = !foundShareableTemplate(api, rscName, rscGrp, existingRDs);
+                String newRscName = existingRDs.isEmpty() ? rscName : fullRscName;
                 if (createNewRsc) {
-                    String newRscName = existingRDs.isEmpty() ? rscName : fullRscName;
                     spawnResource(api, newRscName, sizeInBytes, isTemplate, rscGrp,
                             volName, vmName, passPhraseId, passPhrase, exactSize);
                 }
-                return createNewRsc;
+                return new Pair<>(newRscName, createNewRsc);
             }
-            return false;
+            return new Pair<>(rscName, false);
         } catch (ApiException apiEx)
         {
             LOGGER.error("Linstor: ApiEx - {}", apiEx.getMessage());

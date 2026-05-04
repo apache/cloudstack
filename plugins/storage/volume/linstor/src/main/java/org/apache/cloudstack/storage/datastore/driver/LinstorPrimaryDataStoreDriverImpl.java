@@ -921,8 +921,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         TemplateInfo tInfo = (TemplateInfo) dstData;
         final StoragePoolVO pool = _storagePoolDao.findById(dstData.getDataStore().getId());
         final DevelopersApi api = getLinstorAPI(pool);
-        final String rscName = LinstorUtil.RSC_PREFIX + dstData.getUuid();
-        boolean newCreated = LinstorUtil.createResourceBase(
+        Pair<String, Boolean> crResult = LinstorUtil.createResourceBase(
             LinstorUtil.RSC_PREFIX + dstData.getUuid(),
             tInfo.getSize(),
             tInfo.getName(),
@@ -936,7 +935,9 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             false);
 
         Answer answer;
-        if (newCreated) {
+        boolean newRscCreated = crResult.second();
+        if (newRscCreated) {
+            String newRscName = crResult.first();
             int nMaxExecutionMinutes = NumbersUtil.parseInt(
                     _configDao.getValue(Config.SecStorageCmdExecutionTimeMax.key()), 30);
             CopyCommand cmd = new CopyCommand(
@@ -946,16 +947,16 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                     VirtualMachineManager.ExecuteInSequence.value());
 
             try {
-                Optional<RemoteHostEndPoint> optEP = getLinstorEP(api, pool, rscName);
+                Optional<RemoteHostEndPoint> optEP = getLinstorEP(api, pool, newRscName);
                 if (optEP.isPresent()) {
                     answer = optEP.get().sendMessage(cmd);
                 } else {
-                    deleteResourceDefinition(pool, rscName);
+                    deleteResourceDefinition(pool, newRscName);
                     throw new CloudRuntimeException("Unable to get matching Linstor endpoint.");
                 }
             } catch (ApiException exc) {
                 logger.error("copy template failed: ", exc);
-                deleteResourceDefinition(pool, rscName);
+                deleteResourceDefinition(pool, newRscName);
                 throw new CloudRuntimeException(exc.getBestMessage());
             }
         } else {

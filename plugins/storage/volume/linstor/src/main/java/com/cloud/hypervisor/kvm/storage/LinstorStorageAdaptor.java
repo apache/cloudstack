@@ -51,6 +51,7 @@ import com.linbit.linstor.api.model.Properties;
 import com.linbit.linstor.api.model.ProviderKind;
 import com.linbit.linstor.api.model.Resource;
 import com.linbit.linstor.api.model.ResourceConnectionModify;
+import com.linbit.linstor.api.model.ResourceCreate;
 import com.linbit.linstor.api.model.ResourceDefinition;
 import com.linbit.linstor.api.model.ResourceDefinitionModify;
 import com.linbit.linstor.api.model.ResourceGroupSpawn;
@@ -239,21 +240,22 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
 
             String foundRscName = resourceDefinition != null ? resourceDefinition.getName() : rscName;
 
+            makeResourceAvailable(api, foundRscName, false);
+
             // query linstor for the device path
             List<ResourceWithVolumes> resources = api.viewResources(
-                Collections.emptyList(),
+                Collections.singletonList(localNodeName),
                 Collections.singletonList(foundRscName),
                 Collections.emptyList(),
                 null,
                 null,
                 null);
 
-            makeResourceAvailable(api, foundRscName, false);
-
             if (!resources.isEmpty() && !resources.get(0).getVolumes().isEmpty()) {
                 final String devPath = LinstorUtil.getDevicePathFromResource(resources.get(0));
                 logger.info("Linstor: Created drbd device: " + devPath);
-                final KVMPhysicalDisk kvmDisk = new KVMPhysicalDisk(devPath, name, pool);
+                final String diskName = foundRscName.substring(LinstorUtil.RSC_PREFIX.length());
+                final KVMPhysicalDisk kvmDisk = new KVMPhysicalDisk(devPath, diskName, pool);
                 kvmDisk.setFormat(QemuImg.PhysicalDiskFormat.RAW);
                 long allocatedKib = resources.get(0).getVolumes().get(0).getAllocatedSizeKib() != null ?
                         resources.get(0).getVolumes().get(0).getAllocatedSizeKib() : 0;
@@ -321,6 +323,37 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         }
     }
 
+    private boolean usesDrbd(DevelopersApi api, String rscName) throws ApiException {
+        List<ResourceWithVolumes> rscs = api.viewResources(
+                Collections.emptyList(),
+                Collections.singletonList(rscName),
+                null,
+                null,
+                null,
+                null);
+
+        for (ResourceWithVolumes rsc : rscs) {
+            if (rsc.getLayerObject().getDrbd() != null) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    private String findCorrectTemplateName(DevelopersApi api, String rscName, KVMStoragePool pool ) {
+        String templateName = rscName;
+        LinstorStoragePool lpool = (LinstorStoragePool) pool;
+        try {
+            ResourceDefinition resourceDefinition = LinstorUtil.findResourceDefinition(
+                    api, rscName, lpool.getResourceGroup());
+            templateName = resourceDefinition != null ? resourceDefinition.getName() : rscName;
+        } catch (ApiException e) {
+            logger.error("Error finding resource definition for {}", rscName);
+        }
+        return templateName;
+    }
+
     @Override
     public boolean connectPhysicalDisk(
             String volumePath, KVMStoragePool pool, Map<String, String> details, boolean isVMMigration)
@@ -333,20 +366,36 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
 
         final DevelopersApi api = getLinstorAPI(pool);
         String rscName;
+        boolean usesDrbd;
         try
         {
-            rscName = getLinstorRscName(volumePath);
+            rscName = findCorrectTemplateName(api, getLinstorRscName(volumePath), pool);
+            usesDrbd = usesDrbd(api, rscName);
 
-            ResourceMakeAvailable rma = new ResourceMakeAvailable();
-            ApiCallRcList answers = api.resourceMakeAvailableOnNode(rscName, localNodeName, rma);
-            checkLinstorAnswersThrow(answers);
+            if (isVMMigration && !usesDrbd) {
+                // create the resource on the new node, noop if already exists
+                ResourceCreate rc = new ResourceCreate();
+                Resource rsc = new Resource();
+                rsc.setNodeName(localNodeName);
+                rc.setResource(rsc);
+                ApiCallRcList answers = api.resourceCreateOnNode(rscName, localNodeName, rc);
+                checkLinstorAnswersThrow(answers);
+                // activate resource if there already was an inactive resource here
+                answers = api.activateRsc(rscName, localNodeName);
+                checkLinstorAnswersThrow(answers);
+            } else {
+                // DRBD resources just work with a diskless and don't have the activate/deactivate concept
+                ResourceMakeAvailable rma = new ResourceMakeAvailable();
+                ApiCallRcList answers = api.resourceMakeAvailableOnNode(rscName, localNodeName, rma);
+                checkLinstorAnswersThrow(answers);
+            }
 
         } catch (ApiException apiEx) {
             logger.error(apiEx);
             throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
         }
 
-        if (isVMMigration) {
+        if (isVMMigration && usesDrbd) {
             try {
                 allow2PrimariesIfInUse(api, rscName);
             } catch (ApiException apiEx) {
@@ -393,13 +442,26 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         removeTwoPrimariesRcProps(api, rscName, inUseNode, deleteProps);
     }
 
+    private void deleteUnusedSharedResources(DevelopersApi api, Resource nodeRsc) {
+        try {
+            List<Resource> rscs = api.resourceList(nodeRsc.getName(), null, null);
+            if (rscs != null && rscs.stream()
+                    .filter(rsc -> rsc.getFlags() == null || !rsc.getFlags().contains(ApiConsts.FLAG_RSC_INACTIVE))
+                    .count() > 1) {
+                api.resourceDelete(nodeRsc.getName(), localNodeName, true);
+            }
+        } catch (ApiException apiEx) {
+            logger.error(apiEx.getBestMessage());
+        }
+    }
+
     private boolean tryDisconnectLinstor(String volumePath, KVMStoragePool pool)
     {
         if (volumePath == null) {
             return false;
         }
 
-        logger.debug("Linstor: Using storage pool: " + pool.getUuid());
+        logger.debug("Linstor: Using storage pool: {}", pool.getUuid());
         final DevelopersApi api = getLinstorAPI(pool);
 
         Optional<ResourceWithVolumes> optRsc;
@@ -423,33 +485,40 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
 
         if (optRsc.isPresent()) {
             Resource rsc = optRsc.get();
-            try {
-                String inUseNode = LinstorUtil.isResourceInUse(api, rsc.getName());
-                if (inUseNode != null && !inUseNode.equalsIgnoreCase(localNodeName)) {
-                    removeTwoPrimariesProps(api, inUseNode, rsc.getName());
-                }
-            } catch (ApiException apiEx) {
-                logger.error(apiEx.getBestMessage());
-                // do not fail here as removing allow-two-primaries property or deleting diskless isn't fatal
-            }
 
-            try {
-                // if diskless resource remove it, in the worst case it will be transformed to a tiebreaker
-                if (rsc.getFlags() != null &&
-                        rsc.getFlags().contains(ApiConsts.FLAG_DRBD_DISKLESS) &&
-                        !rsc.getFlags().contains(ApiConsts.FLAG_TIE_BREAKER)) {
-                    ApiCallRcList delAnswers = api.resourceDelete(rsc.getName(), localNodeName, true);
-                    logLinstorAnswers(delAnswers);
+            // if it is a non DRBD resource(shared) we need to check if we are the last active one
+            // on live migrate, we can have 2 active resources at the same time
+            if (rsc.getLayerObject().getDrbd() == null) {
+                deleteUnusedSharedResources(api, rsc);
+            } else {
+                try {
+                    String inUseNode = LinstorUtil.isResourceInUse(api, rsc.getName());
+                    if (inUseNode != null && !inUseNode.equalsIgnoreCase(localNodeName)) {
+                        removeTwoPrimariesProps(api, inUseNode, rsc.getName());
+                    }
+                } catch (ApiException apiEx) {
+                    logger.error(apiEx.getBestMessage());
+                    // do not fail here as removing allow-two-primaries property or deleting diskless isn't fatal
                 }
-            } catch (ApiException apiEx) {
-                logger.error(apiEx.getBestMessage());
-                // do not fail here as removing allow-two-primaries property or deleting diskless isn't fatal
+
+                try {
+                    // if diskless resource remove it, in the worst case it will be transformed to a tiebreaker
+                    if (rsc.getFlags() != null &&
+                            rsc.getFlags().contains(ApiConsts.FLAG_DRBD_DISKLESS) &&
+                            !rsc.getFlags().contains(ApiConsts.FLAG_TIE_BREAKER)) {
+                        ApiCallRcList delAnswers = api.resourceDelete(rsc.getName(), localNodeName, true);
+                        logLinstorAnswers(delAnswers);
+                    }
+                } catch (ApiException apiEx) {
+                    logger.error(apiEx.getBestMessage());
+                    // do not fail here as removing allow-two-primaries property or deleting diskless isn't fatal
+                }
             }
 
             return true;
         }
 
-        logger.warn("Linstor: Couldn't find resource for this path: " + volumePath);
+        logger.warn("Linstor: Couldn't find resource for this path: {}", volumePath);
         return false;
     }
 
@@ -654,14 +723,14 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
             name, QemuImg.PhysicalDiskFormat.RAW, provisioningType, disk.getVirtualSize(), null);
 
         final DevelopersApi api = getLinstorAPI(destPools);
-        setRscDfnAuxProperties(api, disk, destPools, name);
+        setRscDfnAuxProperties(api, disk, destPools, dstDisk.getName());
 
         logger.debug("Linstor.copyPhysicalDisk: dstPath: {}", dstDisk.getPath());
         final QemuImgFile destFile = new QemuImgFile(dstDisk.getPath());
         destFile.setFormat(dstDisk.getFormat());
         destFile.setSize(disk.getVirtualSize());
 
-        boolean zeroedDevice = LinstorUtil.resourceSupportZeroBlocks(destPools, getLinstorRscName(name));
+        boolean zeroedDevice = LinstorUtil.resourceSupportZeroBlocks(destPools, getLinstorRscName(dstDisk.getName()));
         try {
             final QemuImg qemu = new QemuImg(timeout, zeroedDevice, true);
             qemu.convert(srcFile, destFile);
