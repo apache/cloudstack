@@ -1362,7 +1362,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("Cannot attach VMware tools drivers to incompatible hypervisor " + vm.getHypervisorType());
         }
         if (!isVirtualRouter) {
-            enforceCdromAttachLimits((UserVm) vm, isoId);
+            enforceCdromAttachLimits(vmId, (UserVm) vm, isoId);
         }
         boolean result = attachISOToVM(vmId, userId, isoId, true, forced, isVirtualRouter);
         if (result) {
@@ -1449,51 +1449,51 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         UserVmVO vm = _userVmDao.findById(vmId);
         VMTemplateVO iso = _tmpltDao.findById(isoId);
 
-        int targetSlot = attach ? chooseAttachSlot(vm) : findAttachedSlot(vm, isoId);
+        int targetSlot = attach ? chooseAttachSlot(vmId, vm) : findAttachedSlot(vmId, vm, isoId);
         boolean success = attachISOToVM(vmId, isoId, targetSlot, attach, forced, isVirtualRouter);
         if (!success || isVirtualRouter) {
             return success;
         }
         if (attach) {
-            persistIsoAttachment(vm, iso, targetSlot);
+            persistIsoAttachment(vmId, vm, iso, targetSlot);
         } else {
-            persistIsoDetachment(vm, isoId, targetSlot);
+            persistIsoDetachment(vmId, vm, isoId, targetSlot);
         }
         return success;
     }
 
-    private int chooseAttachSlot(UserVmVO vm) {
+    private int chooseAttachSlot(long vmId, UserVmVO vm) {
         if (vm.getIsoId() == null) {
             return CDROM_PRIMARY_DEVICE_SEQ;
         }
-        VmIsoMapVO highest = highestCdromMapEntry(vm.getId());
+        VmIsoMapVO highest = highestCdromMapEntry(vmId);
         return highest == null ? CDROM_PRIMARY_DEVICE_SEQ + 1 : highest.getDeviceSeq() + 1;
     }
 
-    private int findAttachedSlot(UserVmVO vm, long isoId) {
+    private int findAttachedSlot(long vmId, UserVmVO vm, long isoId) {
         if (vm.getIsoId() != null && vm.getIsoId() == isoId) {
             return CDROM_PRIMARY_DEVICE_SEQ;
         }
-        VmIsoMapVO entry = _vmIsoMapDao.findByVmIdIsoId(vm.getId(), isoId);
+        VmIsoMapVO entry = _vmIsoMapDao.findByVmIdIsoId(vmId, isoId);
         return entry != null ? entry.getDeviceSeq() : CDROM_PRIMARY_DEVICE_SEQ;
     }
 
-    private void persistIsoAttachment(UserVmVO vm, VMTemplateVO iso, int slot) {
+    private void persistIsoAttachment(long vmId, UserVmVO vm, VMTemplateVO iso, int slot) {
         if (slot == CDROM_PRIMARY_DEVICE_SEQ) {
             vm.setIsoId(iso.getId());
-            _userVmDao.update(vm.getId(), vm);
+            _userVmDao.update(vmId, vm);
         } else {
-            _vmIsoMapDao.persist(new VmIsoMapVO(vm.getId(), iso.getId(), slot));
+            _vmIsoMapDao.persist(new VmIsoMapVO(vmId, iso.getId(), slot));
         }
     }
 
-    private void persistIsoDetachment(UserVmVO vm, long isoId, int slot) {
+    private void persistIsoDetachment(long vmId, UserVmVO vm, long isoId, int slot) {
         if (slot == CDROM_PRIMARY_DEVICE_SEQ) {
             vm.setIsoId(null);
-            _userVmDao.update(vm.getId(), vm);
+            _userVmDao.update(vmId, vm);
             return;
         }
-        VmIsoMapVO entry = _vmIsoMapDao.findByVmIdIsoId(vm.getId(), isoId);
+        VmIsoMapVO entry = _vmIsoMapDao.findByVmIdIsoId(vmId, isoId);
         if (entry != null) {
             _vmIsoMapDao.remove(entry.getId());
         }
@@ -1535,13 +1535,13 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         return _vmIsoMapDao.findByVmIdIsoId(vmId, isoId) != null;
     }
 
-    private void enforceCdromAttachLimits(UserVm vm, long isoId) {
+    private void enforceCdromAttachLimits(long vmId, UserVm vm, long isoId) {
         Long primaryIsoId = vm.getIsoId();
-        if (isIsoAlreadyAttached(vm.getId(), primaryIsoId, isoId)) {
+        if (isIsoAlreadyAttached(vmId, primaryIsoId, isoId)) {
             throw new InvalidParameterValueException("The specified ISO is already attached to this Instance.");
         }
         int effectiveMax = effectiveMaxCdroms(vm);
-        int attached = (primaryIsoId != null ? 1 : 0) + _vmIsoMapDao.listByVmId(vm.getId()).size();
+        int attached = (primaryIsoId != null ? 1 : 0) + _vmIsoMapDao.listByVmId(vmId).size();
         if (attached >= effectiveMax) {
             throw new InvalidParameterValueException(String.format(
                     "Instance has reached the maximum of %d attached CD-ROM(s); detach one before attaching another.", effectiveMax));
