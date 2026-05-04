@@ -63,8 +63,7 @@ public class LibvirtDeleteVmCheckpointCommandWrapper extends CommandWrapper<Dele
         }
         for (Map.Entry<String, String> entry : diskPathUuidMap.entrySet()) {
             String diskPath = entry.getKey();
-            Script script = new Script("sudo");
-            script.add("qemu-img");
+            Script script = new Script("qemu-img");
             script.add("bitmap");
             script.add("--remove");
             script.add(diskPath);

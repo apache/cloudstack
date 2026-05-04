@@ -42,7 +42,7 @@ public class BackupVOToBackupConverterTest {
         when(backupVO.getName()).thenReturn("backup-1");
         when(backupVO.getDescription()).thenReturn("desc-1");
         when(backupVO.getDate()).thenReturn(new Date(1000L));
-        when(backupVO.getStatus()).thenReturn(Backup.Status.ReadyForTransfer);
+        when(backupVO.getStatus()).thenReturn(Backup.Status.ReadyForImageTransfer);
         when(backupVO.getFromCheckpointId()).thenReturn("cp-1");
         when(backupVO.getToCheckpointId()).thenReturn("cp-2");
         when(backupVO.getVmId()).thenReturn(101L);
@@ -83,7 +83,7 @@ public class BackupVOToBackupConverterTest {
         final BackupVO finalizing = mock(BackupVO.class);
         when(finalizing.getUuid()).thenReturn("b2");
         when(finalizing.getDate()).thenReturn(new Date(2L));
-        when(finalizing.getStatus()).thenReturn(Backup.Status.FinalizingTransfer);
+        when(finalizing.getStatus()).thenReturn(Backup.Status.FinalizingImageTransfer);
         when(finalizing.getVmId()).thenReturn(2L);
 
         final BackupVO failed = mock(BackupVO.class);
