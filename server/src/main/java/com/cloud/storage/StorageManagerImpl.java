@@ -2149,6 +2149,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                         }
 
                         try {
+                            cleanupSnapshotRecordsInPrimaryStorageOnly(vol);
                             VolumeInfo volumeInfo = volFactory.getVolume(vol.getId());
                             if (volumeInfo != null) {
                                 volService.ensureVolumeIsExpungeReady(vol.getId());
@@ -2293,6 +2294,34 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             }
         } catch (Exception e) {
             logger.error("Failed to delete snapshot [{}] from storage due to: [{}].", snapshot, e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Cleans up snapshot DB records for snapshots that exist only on primary storage (no secondary copy).
+     * This handles the case where snapshot.backup.to.secondary=false and the volume
+     * is being deleted during VM expunge — the RBD snapshots will be destroyed along with the image,
+     * so the DB records need to be cleaned up to avoid orphaned entries.
+     */
+    protected void cleanupSnapshotRecordsInPrimaryStorageOnly(VolumeVO volume) {
+        List<SnapshotVO> snapshots = _snapshotDao.listByVolumeId(volume.getId());
+        if (CollectionUtils.isEmpty(snapshots)) {
+            return;
+        }
+        for (SnapshotVO snapshot : snapshots) {
+            if (Snapshot.State.Destroyed.equals(snapshot.getState())) {
+                continue;
+            }
+            List<SnapshotDataStoreVO> snapshotsOnPrimaryStorage = _snapshotStoreDao.listBySnapshotAndDataStoreRole(snapshot.getId(), DataStoreRole.Primary);
+            List<SnapshotDataStoreVO> snapshotsOnSecondaryStorage = _snapshotStoreDao.listBySnapshotAndDataStoreRole(snapshot.getId(), DataStoreRole.Image);
+            if (CollectionUtils.isNotEmpty(snapshotsOnPrimaryStorage) && CollectionUtils.isEmpty(snapshotsOnSecondaryStorage)) {
+                logger.info("Cleaning up snapshot {} (primary-only, no secondary copy) as volume {} is being deleted", snapshot, volume);
+                for (SnapshotDataStoreVO snapshotOnPrimaryStorage : snapshotsOnPrimaryStorage) {
+                    _snapshotStoreDao.expunge(snapshotOnPrimaryStorage.getId());
+                }
+                snapshot.setState(Snapshot.State.Destroyed);
+                _snapshotDao.update(snapshot.getId(), snapshot);
+            }
         }
     }
 
