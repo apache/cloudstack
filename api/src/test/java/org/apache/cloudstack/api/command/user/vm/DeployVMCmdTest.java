@@ -623,11 +623,5 @@ public class DeployVMCmdTest {
     @Test
     public void testIsBlankInstance() {
         assertFalse(cmd.isBlankInstance());
-
-        cmd.setBlankInstance(true);
-        assertTrue(cmd.isBlankInstance());
-
-        cmd.setBlankInstance(false);
-        assertFalse(cmd.isBlankInstance());
     }
 }

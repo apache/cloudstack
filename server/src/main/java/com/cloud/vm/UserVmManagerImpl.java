@@ -426,7 +426,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     private static final long GiB_TO_BYTES = 1024 * 1024 * 1024;
 
-    private static final String KVM_VM_DUMMY_TEMPLATE_NAME = "kvm-vm-dummy-template";
+    private static final String KVM_BLANK_VM_TEMPLATE_NAME = "kvm-blank-vm-template";
 
 
     @Inject
@@ -10115,7 +10115,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     protected boolean isBlankInstanceDefaultTemplate(VirtualMachineTemplate template) {
-        return KVM_VM_DUMMY_TEMPLATE_NAME.equals(template.getUniqueName());
+        return KVM_BLANK_VM_TEMPLATE_NAME.equals(template.getUniqueName());
     }
 
     @Override
@@ -10128,18 +10128,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     VMTemplateVO getBlankInstanceTemplate() {
-        VMTemplateVO template = _templateDao.findByName(KVM_VM_DUMMY_TEMPLATE_NAME);
+        VMTemplateVO template = _templateDao.findByName(KVM_BLANK_VM_TEMPLATE_NAME);
         if (template != null) {
             return template;
         }
         template = VMTemplateVO.createSystemIso(_templateDao.getNextInSequence(Long.class, "id"),
-                KVM_VM_DUMMY_TEMPLATE_NAME, KVM_VM_DUMMY_TEMPLATE_NAME, true,
+                KVM_BLANK_VM_TEMPLATE_NAME, KVM_BLANK_VM_TEMPLATE_NAME, true,
                 "", true, 64, Account.ACCOUNT_ID_SYSTEM, "",
-                "Dummy Template for KVM VM", false, 1);
+                "Blank Template for KVM VM", false, 1);
         template.setState(VirtualMachineTemplate.State.Active);
         template.setFormat(ImageFormat.QCOW2);
         template = _templateDao.persist(template);
-//        _templateDao.remove(template.getId());
         return template;
     }
 }

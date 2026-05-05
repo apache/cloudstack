@@ -85,6 +85,7 @@ public class AssignVMCmd extends BaseCmd  {
                    "In case no security groups are provided the Instance is part of the default security group.")
     private List<Long> securityGroupIdList;
 
+    // Internal flag to allow assignment without adding a network
     private boolean  skipNetwork = false;
 
     /////////////////////////////////////////////////////

@@ -66,10 +66,6 @@ public class DeployVMCmd extends BaseDeployVMCmd {
     @Parameter(name = ApiConstants.SNAPSHOT_ID, type = CommandType.UUID, entityType = SnapshotResponse.class, since = "4.21")
     private Long snapshotId;
 
-    @Parameter(name = "blank", type = CommandType.BOOLEAN, since = "4.23.0")
-    private Boolean blankInstance;
-
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -95,7 +91,7 @@ public class DeployVMCmd extends BaseDeployVMCmd {
     }
 
     public boolean isBlankInstance() {
-        return Boolean.TRUE.equals(blankInstance);
+        return false;
     }
 
 
@@ -189,10 +185,6 @@ public class DeployVMCmd extends BaseDeployVMCmd {
 
     public void setSnapshotId(Long snapshotId) {
         this.snapshotId = snapshotId;
-    }
-
-    public void setBlankInstance(boolean blankInstance) {
-        this.blankInstance = blankInstance;
     }
 
     @Override

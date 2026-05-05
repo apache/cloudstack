@@ -115,7 +115,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd implements UserC
             entityType = StoragePoolResponse.class,
             description = "Storage pool ID to create the volume in. Cannot be used with the snapshotid parameter.",
             authorized = {RoleType.Admin},
-            since = "4.23.0")
+            since = "4.22.1")
     private Long storageId;
 
     /////////////////////////////////////////////////////
