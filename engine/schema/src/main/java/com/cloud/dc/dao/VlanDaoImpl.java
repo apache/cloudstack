@@ -392,6 +392,16 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
         return listBy(sc);
     }
 
+    @Override
+    public List<VlanVO> listVlansByNetworkIds(List<Long> networkIds) {
+        SearchBuilder<VlanVO> sb = createSearchBuilder();
+        sb.and("networkId", sb.entity().getNetworkId(), SearchCriteria.Op.IN);
+        sb.done();
+        SearchCriteria<VlanVO> sc = sb.create();
+        sc.setParameters("networkId", networkIds.toArray());
+        return listBy(sc);
+    }
+
     @Override public List<VlanVO> listVlansByNetworkIdIncludingRemoved(long networkId) {
         SearchCriteria<VlanVO> sc = NetworkVlanSearch.create();
         sc.setParameters("networkId", networkId);

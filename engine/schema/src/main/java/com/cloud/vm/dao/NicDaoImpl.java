@@ -428,6 +428,16 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
     }
 
     @Override
+    public List<NicVO> listByMacAddresses(List<String> macAddresses) {
+        SearchBuilder<NicVO> sb = createSearchBuilder();
+        sb.and("macAddress", sb.entity().getMacAddress(), Op.IN);
+        sb.done();
+        SearchCriteria<NicVO> sc = sb.create();
+        sc.setParameters("macAddress", macAddresses.toArray());
+        return listBy(sc);
+    }
+
+    @Override
     public List<NicVO> findNicsByIpv6GatewayIpv6CidrAndReserver(String ipv6Gateway, String ipv6Cidr, String reserverName) {
         SearchCriteria<NicVO> sc = AllFieldsSearch.create();
         sc.setParameters("ipv6Gateway", ipv6Gateway);
