@@ -54,7 +54,6 @@ import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.exception.StorageUnavailableException;
 import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -112,7 +111,7 @@ public interface UserVmService {
 
     UserVm resetVMUserData(ResetVMUserDataCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException;
 
-    UserVm startVirtualMachine(StartVMCmd cmd) throws StorageUnavailableException, ExecutionException, ConcurrentOperationException, ResourceUnavailableException,
+    UserVm startVirtualMachine(StartVMCmd cmd) throws ExecutionException, ConcurrentOperationException, ResourceUnavailableException,
         InsufficientCapacityException, ResourceAllocationException;
 
     UserVm rebootVirtualMachine(RebootVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ResourceAllocationException;
@@ -229,8 +228,8 @@ public interface UserVmService {
                                                   String userData, Long userDataId, String userDataDetails, List<String> sshKeyPairs, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIp, Boolean displayVm, String keyboard,
                                                   List<Long> affinityGroupIdList, Map<String, String> customParameter, String customId, Map<String, Map<Integer, String>> dhcpOptionMap,
                                                   Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap,
-                                                  Map<String, String> userVmOVFProperties, boolean dynamicScalingEnabled, Long overrideDiskOfferingId, Volume volume, Snapshot snapshot) throws InsufficientCapacityException,
-        ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
+                                                  Map<String, String> userVmOVFProperties, boolean dynamicScalingEnabled, Long overrideDiskOfferingId, Volume volume, Snapshot snapshot)
+            throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, ResourceAllocationException;
 
     /**
      * Creates a User VM in Advanced Zone (Security Group feature is enabled) in
@@ -305,7 +304,8 @@ public interface UserVmService {
                                                      List<Long> securityGroupIdList, Account owner, String hostName, String displayName, Long diskOfferingId, Long diskSize, List<VmDiskInfo> dataDiskInfoList, String group, HypervisorType hypervisor,
                                                      HTTPMethod httpmethod, String userData, Long userDataId, String userDataDetails, List<String> sshKeyPairs, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean displayVm, String keyboard,
                                                      List<Long> affinityGroupIdList, Map<String, String> customParameters, String customId, Map<String, Map<Integer, String>> dhcpOptionMap,
-                                                     Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap, Map<String, String> userVmOVFProperties, boolean dynamicScalingEnabled, Long overrideDiskOfferingId, String vmType, Volume volume, Snapshot snapshot) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
+                                                     Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap, Map<String, String> userVmOVFProperties, boolean dynamicScalingEnabled, Long overrideDiskOfferingId, String vmType, Volume volume, Snapshot snapshot)
+            throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, ResourceAllocationException;
 
     /**
      * Creates a User VM in Advanced Zone (Security Group feature is disabled)
@@ -379,7 +379,7 @@ public interface UserVmService {
                                         Map<String, String> customParameters, String customId, Map<String, Map<Integer, String>> dhcpOptionMap, Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap,
                                         Map<String, String> templateOvfPropertiesMap, boolean dynamicScalingEnabled, String vmType, Long overrideDiskOfferingId, Volume volume, Snapshot snapshot)
 
-        throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
+        throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, ResourceAllocationException;
 
     /**
      * Starts the virtual machine created from createVirtualMachine.
@@ -421,8 +421,7 @@ public interface UserVmService {
 
     HypervisorType getHypervisorTypeOfUserVM(long vmid);
 
-    UserVm createVirtualMachine(DeployVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException,
-        StorageUnavailableException, ResourceAllocationException;
+    UserVm createVirtualMachine(DeployVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, ResourceAllocationException;
 
     /**
      * This API is mostly to trigger VM.CREATE event for deployVirtualMachine with startvm=false, because there is no code in "execute" part of VM creation.
@@ -505,7 +504,7 @@ public interface UserVmService {
      * determine whether the uservm should be visible to the end user
      * @return  value of the display flag
      */
-    public boolean isDisplayResourceEnabled(Long vmId);
+    boolean isDisplayResourceEnabled(Long vmId);
 
     void collectVmDiskStatistics(UserVm userVm);
 
