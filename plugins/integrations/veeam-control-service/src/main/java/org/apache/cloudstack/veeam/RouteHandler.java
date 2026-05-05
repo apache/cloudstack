@@ -45,7 +45,9 @@ public interface RouteHandler extends Adapter {
 
     static String getRequestData(HttpServletRequest req, Logger logger) {
         String data = RouteHandler.getRequestData(req);
-        logger.info("Received method: {} request. Request-data: {}", req.getMethod(), data);
+        if (VeeamControlService.DeveloperLogs.value()) {
+            logger.debug("Received method: {} request. Request-data: {}", req.getMethod(), data);
+        }
         return data;
     }
 
