@@ -29,6 +29,7 @@ import com.cloud.vm.VmIsoMapVO;
 public class VmIsoMapDaoImpl extends GenericDaoBase<VmIsoMapVO, Long> implements VmIsoMapDao {
 
     private SearchBuilder<VmIsoMapVO> ListByVmId;
+    private SearchBuilder<VmIsoMapVO> ListByIsoId;
     private SearchBuilder<VmIsoMapVO> ByVmIdDeviceSeq;
     private SearchBuilder<VmIsoMapVO> ByVmIdIsoId;
 
@@ -36,6 +37,10 @@ public class VmIsoMapDaoImpl extends GenericDaoBase<VmIsoMapVO, Long> implements
         ListByVmId = createSearchBuilder();
         ListByVmId.and("vmId", ListByVmId.entity().getVmId(), SearchCriteria.Op.EQ);
         ListByVmId.done();
+
+        ListByIsoId = createSearchBuilder();
+        ListByIsoId.and("isoId", ListByIsoId.entity().getIsoId(), SearchCriteria.Op.EQ);
+        ListByIsoId.done();
 
         ByVmIdDeviceSeq = createSearchBuilder();
         ByVmIdDeviceSeq.and("vmId", ByVmIdDeviceSeq.entity().getVmId(), SearchCriteria.Op.EQ);
@@ -52,6 +57,13 @@ public class VmIsoMapDaoImpl extends GenericDaoBase<VmIsoMapVO, Long> implements
     public List<VmIsoMapVO> listByVmId(long vmId) {
         SearchCriteria<VmIsoMapVO> sc = ListByVmId.create();
         sc.setParameters("vmId", vmId);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<VmIsoMapVO> listByIsoId(long isoId) {
+        SearchCriteria<VmIsoMapVO> sc = ListByIsoId.create();
+        sc.setParameters("isoId", isoId);
         return listBy(sc);
     }
 

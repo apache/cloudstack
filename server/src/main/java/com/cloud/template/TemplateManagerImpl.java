@@ -1244,17 +1244,20 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Override
     public boolean templateIsDeleteable(long templateId) {
+        // ISO can only be referenced by user_vm.iso_id (primary cdrom slot) or vm_iso_map (extra slots).
+        // Templates always live on primary storage and aren't tracked here.
         List<UserVmJoinVO> userVmUsingIso = _userVmJoinDao.listActiveByIsoId(templateId);
-        // check if there is any Vm using this ISO. We only need to check the
-        // case where templateId is an ISO since
-        // VM can be launched from ISO in secondary storage, while template will
-        // always be copied to
-        // primary storage before deploying VM.
         if (!userVmUsingIso.isEmpty()) {
             logger.debug("ISO " + templateId + " is not deleteable because it is attached to " + userVmUsingIso.size() + " Instances");
             return false;
         }
-
+        for (VmIsoMapVO row : _vmIsoMapDao.listByIsoId(templateId)) {
+            UserVmVO vm = _userVmDao.findById(row.getVmId());
+            if (vm != null && vm.getState() != State.Error && vm.getState() != State.Expunging) {
+                logger.debug("ISO " + templateId + " is not deleteable because it is attached to Instance " + vm.getUuid() + " at slot " + row.getDeviceSeq());
+                return false;
+            }
+        }
         return true;
     }
 

@@ -24,6 +24,8 @@ import com.cloud.vm.VmIsoMapVO;
 public interface VmIsoMapDao extends GenericDao<VmIsoMapVO, Long> {
     List<VmIsoMapVO> listByVmId(long vmId);
 
+    List<VmIsoMapVO> listByIsoId(long isoId);
+
     VmIsoMapVO findByVmIdDeviceSeq(long vmId, int deviceSeq);
 
     VmIsoMapVO findByVmIdIsoId(long vmId, long isoId);
