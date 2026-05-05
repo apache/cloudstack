@@ -48,6 +48,7 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
 
 
 import org.apache.cloudstack.backup.dao.BackupDao;
+import org.apache.cloudstack.backup.dao.BackupDetailsDao;
 import org.apache.cloudstack.backup.dao.BackupRepositoryDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -83,6 +84,16 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             "30",
             "Timeout in seconds after which backup repository mount for restore fails.",
             true,
+            BackupFrameworkEnabled.key());
+
+    ConfigKey<Integer> NASBackupFullEvery = new ConfigKey<>("Advanced", Integer.class,
+            "nas.backup.full.every",
+            "10",
+            "Take a full NAS backup every Nth backup; remaining backups in between are incremental. " +
+                    "Counts backups, not days, so it works for hourly, daily, and ad-hoc schedules. " +
+                    "Set to 1 to disable incrementals (every backup is full).",
+            true,
+            ConfigKey.Scope.Zone,
             BackupFrameworkEnabled.key());
 
     @Inject
@@ -130,6 +141,9 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     @Inject
     private DiskOfferingDao diskOfferingDao;
 
+    @Inject
+    private BackupDetailsDao backupDetailsDao;
+
     private Long getClusterIdFromRootVolume(VirtualMachine vm) {
         VolumeVO rootVolume = volumeDao.getInstanceRootVolume(vm.getId());
         StoragePoolVO rootDiskPool = primaryDataStoreDao.findById(rootVolume.getPoolId());
@@ -166,6 +180,168 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
         // Try to find any Host in the zone
         return resourceManager.findOneRandomRunningHostByHypervisor(Hypervisor.HypervisorType.KVM, vm.getDataCenterId());
+    }
+
+    /**
+     * Returned by {@link #decideChain(VirtualMachine)} to describe the next backup's place in
+     * the chain: full vs incremental, the bitmap name to create, and (for incrementals) the
+     * parent bitmap and parent file path.
+     */
+    static final class ChainDecision {
+        final String mode;          // "full" or "incremental"
+        final String bitmapNew;
+        final String bitmapParent;  // null for full
+        final String parentPath;    // null for full
+        final String chainId;       // chain identifier this backup belongs to
+        final int chainPosition;    // 0 for full, N for the Nth incremental in the chain
+
+        private ChainDecision(String mode, String bitmapNew, String bitmapParent, String parentPath,
+                              String chainId, int chainPosition) {
+            this.mode = mode;
+            this.bitmapNew = bitmapNew;
+            this.bitmapParent = bitmapParent;
+            this.parentPath = parentPath;
+            this.chainId = chainId;
+            this.chainPosition = chainPosition;
+        }
+
+        static ChainDecision fullStart(String bitmapName) {
+            return new ChainDecision(NASBackupChainKeys.TYPE_FULL, bitmapName, null, null,
+                    UUID.randomUUID().toString(), 0);
+        }
+
+        static ChainDecision incremental(String bitmapNew, String bitmapParent, String parentPath,
+                                         String chainId, int chainPosition) {
+            return new ChainDecision(NASBackupChainKeys.TYPE_INCREMENTAL, bitmapNew, bitmapParent,
+                    parentPath, chainId, chainPosition);
+        }
+
+        boolean isIncremental() {
+            return NASBackupChainKeys.TYPE_INCREMENTAL.equals(mode);
+        }
+    }
+
+    /**
+     * Decides whether the next backup for {@code vm} should be a fresh full or an incremental
+     * appended to the existing chain. Stopped VMs are always full (libvirt {@code backup-begin}
+     * requires a running QEMU process). The {@code nas.backup.full.every} ConfigKey controls
+     * how many backups (full + incrementals) form one chain before a new full is forced.
+     */
+    protected ChainDecision decideChain(VirtualMachine vm) {
+        final String newBitmap = "backup-" + System.currentTimeMillis() / 1000L;
+
+        // Stopped VMs cannot do incrementals — script will also fall back, but we make the
+        // decision here so we register the right type up-front.
+        if (VirtualMachine.State.Stopped.equals(vm.getState())) {
+            return ChainDecision.fullStart(newBitmap);
+        }
+
+        Integer fullEvery = NASBackupFullEvery.valueIn(vm.getDataCenterId());
+        if (fullEvery == null || fullEvery <= 1) {
+            // Disabled or every-backup-is-full mode.
+            return ChainDecision.fullStart(newBitmap);
+        }
+
+        // Walk this VM's backups newest→oldest, find the most recent BackedUp backup that has a
+        // bitmap stored. If we don't find one, this is the first backup in a chain — start full.
+        List<Backup> history = backupDao.listByVmId(vm.getDataCenterId(), vm.getId());
+        if (history == null || history.isEmpty()) {
+            return ChainDecision.fullStart(newBitmap);
+        }
+        history.sort(Comparator.comparing(Backup::getDate).reversed());
+
+        Backup parent = null;
+        String parentBitmap = null;
+        String parentChainId = null;
+        int parentChainPosition = -1;
+        for (Backup b : history) {
+            if (!Backup.Status.BackedUp.equals(b.getStatus())) {
+                continue;
+            }
+            String bm = readDetail(b, NASBackupChainKeys.BITMAP_NAME);
+            if (bm == null) {
+                continue;
+            }
+            parent = b;
+            parentBitmap = bm;
+            parentChainId = readDetail(b, NASBackupChainKeys.CHAIN_ID);
+            String posStr = readDetail(b, NASBackupChainKeys.CHAIN_POSITION);
+            try {
+                parentChainPosition = posStr == null ? 0 : Integer.parseInt(posStr);
+            } catch (NumberFormatException e) {
+                parentChainPosition = 0;
+            }
+            break;
+        }
+        if (parent == null || parentBitmap == null || parentChainId == null) {
+            return ChainDecision.fullStart(newBitmap);
+        }
+
+        // Force a fresh full when the chain has reached the configured length.
+        if (parentChainPosition + 1 >= fullEvery) {
+            return ChainDecision.fullStart(newBitmap);
+        }
+
+        // The script needs the parent backup's on-NAS file path so it can rebase the new
+        // qcow2 onto it. The path is stored relative to the NAS mount point — the script
+        // resolves it inside its mount session.
+        String parentPath = composeParentBackupPath(parent);
+        return ChainDecision.incremental(newBitmap, parentBitmap, parentPath,
+                parentChainId, parentChainPosition + 1);
+    }
+
+    private String readDetail(Backup backup, String key) {
+        BackupDetailVO d = backupDetailsDao.findDetail(backup.getId(), key);
+        return d == null ? null : d.getValue();
+    }
+
+    /**
+     * Compose the on-NAS path of a parent backup's root-disk qcow2. Relative to the NAS mount,
+     * matches the layout written by {@code nasbackup.sh} ({@code <backupPath>/root.<volUuid>.qcow2}).
+     */
+    private String composeParentBackupPath(Backup parent) {
+        // backupPath is stored as externalId by createBackupObject — e.g. "i-2-1234-VM/2026.04.27.13.45.00".
+        // Volume UUID for the root volume is what the script keys backup files on.
+        VolumeVO rootVolume = volumeDao.getInstanceRootVolume(parent.getVmId());
+        String volUuid = rootVolume == null ? "root" : rootVolume.getUuid();
+        return parent.getExternalId() + "/root." + volUuid + ".qcow2";
+    }
+
+    /**
+     * Persist chain metadata under backup_details. Stored here (not on the backups table) so
+     * other providers can implement their own chain semantics without schema changes.
+     */
+    private void persistChainMetadata(Backup backup, ChainDecision decision, String bitmapFromAgent) {
+        // Prefer the bitmap name confirmed by the agent (BITMAP_CREATED= line). Fall back to
+        // what we asked it to create — they should match.
+        String bitmap = bitmapFromAgent != null ? bitmapFromAgent : decision.bitmapNew;
+        if (bitmap != null) {
+            backupDetailsDao.persist(new BackupDetailVO(backup.getId(), NASBackupChainKeys.BITMAP_NAME, bitmap, true));
+        }
+        backupDetailsDao.persist(new BackupDetailVO(backup.getId(), NASBackupChainKeys.CHAIN_ID, decision.chainId, true));
+        backupDetailsDao.persist(new BackupDetailVO(backup.getId(), NASBackupChainKeys.CHAIN_POSITION,
+                String.valueOf(decision.chainPosition), true));
+        backupDetailsDao.persist(new BackupDetailVO(backup.getId(), NASBackupChainKeys.TYPE, decision.mode, true));
+        if (decision.isIncremental()) {
+            // Resolve the parent backup's UUID so restore can walk the chain by id, not by path.
+            String parentUuid = lookupParentBackupUuid(backup.getVmId(), decision.bitmapParent);
+            if (parentUuid != null) {
+                backupDetailsDao.persist(new BackupDetailVO(backup.getId(), NASBackupChainKeys.PARENT_BACKUP_ID, parentUuid, true));
+            }
+        }
+    }
+
+    private String lookupParentBackupUuid(long vmId, String parentBitmap) {
+        if (parentBitmap == null) {
+            return null;
+        }
+        for (Backup b : backupDao.listByVmId(null, vmId)) {
+            String bm = readDetail(b, NASBackupChainKeys.BITMAP_NAME);
+            if (parentBitmap.equals(bm)) {
+                return b.getUuid();
+            }
+        }
+        return null;
     }
 
     protected Host getVMHypervisorHostForBackup(VirtualMachine vm) {
@@ -205,12 +381,20 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         final String backupPath = String.format("%s/%s", vm.getInstanceName(),
                 new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(creationDate));
 
-        BackupVO backupVO = createBackupObject(vm, backupPath);
+        // Decide full vs incremental for this backup. Stopped VMs are always full
+        // (libvirt backup-begin requires a running QEMU process).
+        ChainDecision decision = decideChain(vm);
+
+        BackupVO backupVO = createBackupObject(vm, backupPath, decision.isIncremental() ? "INCREMENTAL" : "FULL");
         TakeBackupCommand command = new TakeBackupCommand(vm.getInstanceName(), backupPath);
         command.setBackupRepoType(backupRepository.getType());
         command.setBackupRepoAddress(backupRepository.getAddress());
         command.setMountOptions(backupRepository.getMountOptions());
         command.setQuiesce(quiesceVM);
+        command.setMode(decision.mode);
+        command.setBitmapNew(decision.bitmapNew);
+        command.setBitmapParent(decision.bitmapParent);
+        command.setParentPath(decision.parentPath);
 
         if (VirtualMachine.State.Stopped.equals(vm.getState())) {
             List<VolumeVO> vmVolumes = volumeDao.findByInstance(vm.getId());
@@ -239,9 +423,23 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             backupVO.setDate(new Date());
             backupVO.setSize(answer.getSize());
             backupVO.setStatus(Backup.Status.BackedUp);
+            // If the agent fell back to full (stopped VM mid-incremental cycle), record this
+            // backup as a full and start a new chain.
+            ChainDecision effective = decision;
+            if (answer.getIncrementalFallback()) {
+                effective = ChainDecision.fullStart(decision.bitmapNew);
+                backupVO.setType("FULL");
+            }
             List<Volume> volumes = new ArrayList<>(volumeDao.findByInstance(vm.getId()));
             backupVO.setBackedUpVolumes(backupManager.createVolumeInfoFromVolumes(volumes));
             if (backupDao.update(backupVO.getId(), backupVO)) {
+                persistChainMetadata(backupVO, effective, answer.getBitmapCreated());
+                if (answer.getBitmapRecreated() != null) {
+                    backupDetailsDao.persist(new BackupDetailVO(backupVO.getId(),
+                            NASBackupChainKeys.BITMAP_RECREATED, answer.getBitmapRecreated(), true));
+                    logger.info("NAS incremental for VM {} recreated parent bitmap {} (likely VM was restarted since last backup)",
+                            vm.getInstanceName(), answer.getBitmapRecreated());
+                }
                 return new Pair<>(true, backupVO);
             } else {
                 throw new CloudRuntimeException("Failed to update backup");
@@ -260,11 +458,11 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         }
     }
 
-    private BackupVO createBackupObject(VirtualMachine vm, String backupPath) {
+    private BackupVO createBackupObject(VirtualMachine vm, String backupPath, String type) {
         BackupVO backup = new BackupVO();
         backup.setVmId(vm.getId());
         backup.setExternalId(backupPath);
-        backup.setType("FULL");
+        backup.setType(type);
         backup.setDate(new Date());
         long virtualSize = 0L;
         for (final Volume volume: volumeDao.findByInstance(vm.getId())) {
@@ -495,24 +693,244 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             throw new CloudRuntimeException(String.format("Unable to find a running KVM host in zone %d to delete backup %s", backup.getZoneId(), backup.getUuid()));
         }
 
-        DeleteBackupCommand command = new DeleteBackupCommand(backup.getExternalId(), backupRepository.getType(),
-                backupRepository.getAddress(), backupRepository.getMountOptions());
+        // Repair the chain (if any) before removing the backup file. For chained backups,
+        // children that point at this backup must be re-pointed at this backup's parent
+        // (with their blocks merged via qemu-img rebase). For a full at the head of a chain
+        // with surviving children, refuse unless forced — `forced=true` then deletes the
+        // full plus every descendant.
+        ChainRepairPlan plan = computeChainRepair(backup, forced);
+        if (!plan.proceed) {
+            throw new CloudRuntimeException(plan.reason);
+        }
 
-        BackupAnswer answer;
+        // Issue rebase commands for each child that needs re-pointing (ordered so each rebase
+        // operates on a chain that still resolves: children first if there are nested ones).
+        for (RebaseStep step : plan.rebaseSteps) {
+            RebaseBackupCommand rebase = new RebaseBackupCommand(step.targetMountRelativePath,
+                    step.newBackingMountRelativePath, backupRepository.getType(),
+                    backupRepository.getAddress(), backupRepository.getMountOptions());
+            BackupAnswer rebaseAnswer;
+            try {
+                rebaseAnswer = (BackupAnswer) agentManager.send(host.getId(), rebase);
+            } catch (AgentUnavailableException e) {
+                throw new CloudRuntimeException("Unable to contact backend control plane to repair backup chain");
+            } catch (OperationTimedoutException e) {
+                throw new CloudRuntimeException("Backup chain repair (rebase) timed out, please try again");
+            }
+            if (rebaseAnswer == null || !rebaseAnswer.getResult()) {
+                throw new CloudRuntimeException(String.format(
+                        "Backup chain repair failed: rebase of %s onto %s returned %s",
+                        step.targetMountRelativePath, step.newBackingMountRelativePath,
+                        rebaseAnswer == null ? "no answer" : rebaseAnswer.getDetails()));
+            }
+            // Update the rebased child's parent reference + position in backup_details.
+            BackupDetailVO parentDetail = backupDetailsDao.findDetail(step.childBackupId, NASBackupChainKeys.PARENT_BACKUP_ID);
+            if (parentDetail != null) {
+                parentDetail.setValue(step.newParentUuid == null ? "" : step.newParentUuid);
+                backupDetailsDao.update(parentDetail.getId(), parentDetail);
+            } else if (step.newParentUuid != null) {
+                backupDetailsDao.persist(new BackupDetailVO(step.childBackupId,
+                        NASBackupChainKeys.PARENT_BACKUP_ID, step.newParentUuid, true));
+            }
+            BackupDetailVO posDetail = backupDetailsDao.findDetail(step.childBackupId, NASBackupChainKeys.CHAIN_POSITION);
+            if (posDetail != null) {
+                posDetail.setValue(String.valueOf(step.newChainPosition));
+                backupDetailsDao.update(posDetail.getId(), posDetail);
+            }
+        }
+
+        // Now delete this backup's files. For a forced delete of a full with descendants we
+        // also delete all descendants' files (newest first so each rm targets a leaf).
+        for (Backup victim : plan.toDelete) {
+            DeleteBackupCommand command = new DeleteBackupCommand(victim.getExternalId(), backupRepository.getType(),
+                    backupRepository.getAddress(), backupRepository.getMountOptions());
+            BackupAnswer answer;
+            try {
+                answer = (BackupAnswer) agentManager.send(host.getId(), command);
+            } catch (AgentUnavailableException e) {
+                throw new CloudRuntimeException("Unable to contact backend control plane to initiate backup");
+            } catch (OperationTimedoutException e) {
+                throw new CloudRuntimeException("Operation to delete backup timed out, please try again");
+            }
+            if (answer == null || !answer.getResult()) {
+                logger.warn("Failed to delete backup file for {} ({}); leaving DB row intact", victim.getUuid(), victim.getExternalId());
+                return false;
+            }
+            backupDao.remove(victim.getId());
+        }
+
+        // Shift chain_position down by 1 for any survivors deeper in the chain than the
+        // backup we just removed (their direct parent reference is unchanged, but their
+        // numeric position needs to stay consistent so future full-every cadence math works).
+        if (plan.shiftPositionsBelow != null) {
+            for (Backup b : backupDao.listByVmId(null, backup.getVmId())) {
+                if (!plan.shiftPositionsBelow.chainId.equals(readDetail(b, NASBackupChainKeys.CHAIN_ID))) {
+                    continue;
+                }
+                int pos = chainPosition(b);
+                if (pos > plan.shiftPositionsBelow.afterPosition && pos != Integer.MAX_VALUE) {
+                    BackupDetailVO posDetail = backupDetailsDao.findDetail(b.getId(), NASBackupChainKeys.CHAIN_POSITION);
+                    if (posDetail != null) {
+                        posDetail.setValue(String.valueOf(pos - 1));
+                        backupDetailsDao.update(posDetail.getId(), posDetail);
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private static final class PositionShift {
+        final String chainId;
+        final int afterPosition; // shift positions strictly greater than this by -1
+        PositionShift(String chainId, int afterPosition) {
+            this.chainId = chainId;
+            this.afterPosition = afterPosition;
+        }
+    }
+
+    /**
+     * Result of {@link #computeChainRepair}: whether to proceed, what to rebase, what to delete.
+     */
+    private static final class ChainRepairPlan {
+        final boolean proceed;
+        final String reason;
+        final List<RebaseStep> rebaseSteps;
+        final List<Backup> toDelete;
+        final PositionShift shiftPositionsBelow;
+
+        private ChainRepairPlan(boolean proceed, String reason, List<RebaseStep> rebaseSteps, List<Backup> toDelete,
+                                PositionShift shiftPositionsBelow) {
+            this.proceed = proceed;
+            this.reason = reason;
+            this.rebaseSteps = rebaseSteps;
+            this.toDelete = toDelete;
+            this.shiftPositionsBelow = shiftPositionsBelow;
+        }
+
+        static ChainRepairPlan refuse(String reason) {
+            return new ChainRepairPlan(false, reason, Collections.emptyList(), Collections.emptyList(), null);
+        }
+
+        static ChainRepairPlan proceed(List<RebaseStep> rebaseSteps, List<Backup> toDelete) {
+            return new ChainRepairPlan(true, null, rebaseSteps, toDelete, null);
+        }
+
+        static ChainRepairPlan proceed(List<RebaseStep> rebaseSteps, List<Backup> toDelete, PositionShift shift) {
+            return new ChainRepairPlan(true, null, rebaseSteps, toDelete, shift);
+        }
+    }
+
+    private static final class RebaseStep {
+        final long childBackupId;
+        final String targetMountRelativePath;
+        final String newBackingMountRelativePath;
+        final String newParentUuid;        // null when re-pointed onto an existing full's UUID is desired but unavailable
+        final int newChainPosition;
+
+        RebaseStep(long childBackupId, String targetMountRelativePath, String newBackingMountRelativePath,
+                   String newParentUuid, int newChainPosition) {
+            this.childBackupId = childBackupId;
+            this.targetMountRelativePath = targetMountRelativePath;
+            this.newBackingMountRelativePath = newBackingMountRelativePath;
+            this.newParentUuid = newParentUuid;
+            this.newChainPosition = newChainPosition;
+        }
+    }
+
+    /**
+     * Compute the chain-repair plan for deleting {@code backup}. Conservative semantics:
+     *   - Backups outside any tracked chain (no NAS chain metadata) are deleted as-is.
+     *   - A standalone backup with no children is deleted as-is.
+     *   - A middle incremental: rebase its immediate child onto its own parent, then delete it.
+     *     Descendants of that child are unaffected (their backing chain still resolves).
+     *   - A full with surviving descendants: refuse unless {@code forced=true}; then delete
+     *     full + every descendant (newest first).
+     */
+    private ChainRepairPlan computeChainRepair(Backup backup, boolean forced) {
+        String chainId = readDetail(backup, NASBackupChainKeys.CHAIN_ID);
+        if (chainId == null) {
+            // Pre-incremental backups (or callers that never wrote chain metadata) — single delete.
+            return ChainRepairPlan.proceed(Collections.emptyList(), Collections.singletonList(backup));
+        }
+
+        // Gather every backup in the same chain for this VM.
+        List<Backup> chain = new ArrayList<>();
+        for (Backup b : backupDao.listByVmId(null, backup.getVmId())) {
+            if (chainId.equals(readDetail(b, NASBackupChainKeys.CHAIN_ID))) {
+                chain.add(b);
+            }
+        }
+        chain.sort(Comparator.comparingInt(b -> chainPosition(b)));
+
+        int targetPos = chainPosition(backup);
+        boolean isFull = targetPos == 0;
+        List<Backup> descendants = chain.stream()
+                .filter(b -> chainPosition(b) > targetPos)
+                .collect(Collectors.toList());
+
+        if (isFull) {
+            if (descendants.isEmpty()) {
+                return ChainRepairPlan.proceed(Collections.emptyList(), Collections.singletonList(backup));
+            }
+            if (!forced) {
+                return ChainRepairPlan.refuse(String.format(
+                        "Backup %s is the full anchor of a chain with %d incremental(s). Delete the incrementals first, " +
+                                "or pass forced=true to remove the entire chain.",
+                        backup.getUuid(), descendants.size()));
+            }
+            // Forced delete: remove descendants newest first, then the full.
+            List<Backup> victims = new ArrayList<>(descendants);
+            victims.sort(Comparator.comparingInt((Backup b) -> chainPosition(b)).reversed());
+            victims.add(backup);
+            return ChainRepairPlan.proceed(Collections.emptyList(), victims);
+        }
+
+        // Middle (or tail) incremental.
+        if (descendants.isEmpty()) {
+            // Tail: nothing to rebase, just delete.
+            return ChainRepairPlan.proceed(Collections.emptyList(), Collections.singletonList(backup));
+        }
+
+        // Middle: only the immediate child needs to absorb our blocks and rebase onto our parent.
+        Backup immediateChild = descendants.stream()
+                .min(Comparator.comparingInt(b -> chainPosition(b)))
+                .orElseThrow(() -> new CloudRuntimeException("Internal error: no immediate child found for chain repair"));
+        Backup ourParent = chain.stream()
+                .filter(b -> chainPosition(b) == targetPos - 1)
+                .findFirst()
+                .orElseThrow(() -> new CloudRuntimeException(String.format(
+                        "Cannot delete %s: its parent (chain_position=%d) is missing from the chain",
+                        backup.getUuid(), targetPos - 1)));
+
+        VolumeVO rootVolume = volumeDao.getInstanceRootVolume(backup.getVmId());
+        String volUuid = rootVolume == null ? "root" : rootVolume.getUuid();
+        String childPath = immediateChild.getExternalId() + "/root." + volUuid + ".qcow2";
+        String parentPath = ourParent.getExternalId() + "/root." + volUuid + ".qcow2";
+
+        RebaseStep step = new RebaseStep(immediateChild.getId(), childPath, parentPath,
+                ourParent.getUuid(), chainPosition(immediateChild) - 1);
+
+        // After we delete the middle backup, every descendant's numeric chain_position
+        // becomes stale (off by one). Their backing-file pointers don't need re-writing
+        // (only the immediate child changed parents) but their position metadata does.
+        return ChainRepairPlan.proceed(
+                Collections.singletonList(step),
+                Collections.singletonList(backup),
+                new PositionShift(chainId, targetPos));
+    }
+
+    private int chainPosition(Backup b) {
+        String s = readDetail(b, NASBackupChainKeys.CHAIN_POSITION);
+        if (s == null) {
+            return Integer.MAX_VALUE; // no metadata => sort to end
+        }
         try {
-            answer = (BackupAnswer) agentManager.send(host.getId(), command);
-        } catch (AgentUnavailableException e) {
-            throw new CloudRuntimeException("Unable to contact backend control plane to initiate backup");
-        } catch (OperationTimedoutException e) {
-            throw new CloudRuntimeException("Operation to delete backup timed out, please try again");
+            return Integer.parseInt(s);
+        } catch (NumberFormatException e) {
+            return Integer.MAX_VALUE;
         }
-
-        if (answer != null && answer.getResult()) {
-            return backupDao.remove(backup.getId());
-        }
-
-        logger.debug("There was an error removing the backup with id {}", backup.getId());
-        return false;
     }
 
     public void syncBackupMetrics(Long zoneId) {
@@ -629,7 +1047,8 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey[]{
-                NASBackupRestoreMountTimeout
+                NASBackupRestoreMountTimeout,
+                NASBackupFullEvery
         };
     }
 

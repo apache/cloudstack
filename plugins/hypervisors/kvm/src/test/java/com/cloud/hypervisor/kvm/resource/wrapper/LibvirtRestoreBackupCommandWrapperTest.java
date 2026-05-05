@@ -407,6 +407,8 @@ public class LibvirtRestoreBackupCommandWrapperTest {
                                 return 0; // File exists
                             } else if (command.contains("qemu-img check")) {
                                 return 0; // File is valid
+                            } else if (command.contains("qemu-img info") && command.contains("backing-filename")) {
+                                return 1; // No backing chain — exercise the rsync path (full backups)
                             }
                             return 0; // Other commands success
                         });
