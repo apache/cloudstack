@@ -60,9 +60,11 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.gpu.GPU;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.gpu.dao.VgpuProfileDao;
 import com.cloud.host.ControlState;
+import com.cloud.host.DetailVO;
+import com.cloud.host.Host;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.IpAddress;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
@@ -134,6 +136,8 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
     VMTemplateDao vmTemplateDao;
     @Inject
     VmIsoMapDao vmIsoMapDao;
+    @Inject
+    HostDetailsDao hostDetailsDao;
     @Inject
     ExtensionHelper extensionHelper;
 
@@ -561,9 +565,25 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
 
     private int effectiveCdromMaxCount(UserVmJoinVO userVm) {
         int configuredCap = TemplateManager.VmCdromMaxCount.valueIn(userVm.getClusterId());
-        // hda is root on i440fx/IDE, leaving hdc/hdd available for cdroms.
-        int hypervisorCap = (userVm.getHypervisorType() == HypervisorType.KVM) ? 2 : 1;
+        int hypervisorCap = advertisedCdromCap(userVm.getHostId() != null ? userVm.getHostId() : userVm.getLastHostId());
+        // List endpoint clamps for display robustness; the action paths in TemplateManagerImpl
+        // throw on misconfiguration so operators still see the loud error when they try to attach.
         return Math.min(configuredCap, hypervisorCap);
+    }
+
+    private int advertisedCdromCap(Long hostId) {
+        if (hostId == null) {
+            return TemplateManager.DEFAULT_CDROM_MAX_PER_VM;
+        }
+        DetailVO detail = hostDetailsDao.findDetail(hostId, Host.HOST_CDROM_MAX_COUNT);
+        if (detail == null || detail.getValue() == null) {
+            return TemplateManager.DEFAULT_CDROM_MAX_PER_VM;
+        }
+        try {
+            return Integer.parseInt(detail.getValue());
+        } catch (NumberFormatException e) {
+            return TemplateManager.DEFAULT_CDROM_MAX_PER_VM;
+        }
     }
 
     private void addVnfInfoToserVmResponse(UserVmJoinVO userVm, UserVmResponse userVmResponse) {

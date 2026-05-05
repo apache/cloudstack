@@ -146,8 +146,11 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.host.DetailVO;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuru;
@@ -254,6 +257,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     private AccountManager _accountMgr;
     @Inject
     private HostDao _hostDao;
+    @Inject
+    private HostDetailsDao _hostDetailsDao;
     @Inject
     private DataCenterDao _dcDao;
     @Inject
@@ -689,7 +694,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         // Pre-allocate every cdrom slot at boot. QEMU/IDE refuses to hot-add new cdrom drives, so
         // runtime attachIso can only media-swap into a slot the domain already owns.
-        int totalSlots = Math.max(effectiveMaxCdroms(vm, dest.getHost().getClusterId()), slotsNeededFor(slotToIsoId));
+        int totalSlots = Math.max(effectiveMaxCdroms(vm, dest.getHost().getId()), slotsNeededFor(slotToIsoId));
         for (int i = 0; i < totalSlots; i++) {
             int diskSeq = CDROM_PRIMARY_DEVICE_SEQ + i;
             Long isoId = slotToIsoId.get(diskSeq);
@@ -1540,7 +1545,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (isIsoAlreadyAttached(vmId, primaryIsoId, isoId)) {
             throw new InvalidParameterValueException("The specified ISO is already attached to this Instance.");
         }
-        int effectiveMax = effectiveMaxCdroms(vm, clusterIdForVm(vm));
+        int effectiveMax = effectiveMaxCdroms(vm, hostIdForVm(vm));
         int attached = (primaryIsoId != null ? 1 : 0) + _vmIsoMapDao.listByVmId(vmId).size();
         if (attached >= effectiveMax) {
             throw new InvalidParameterValueException(String.format(
@@ -1548,20 +1553,40 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
     }
 
-    private int effectiveMaxCdroms(VirtualMachine vm, Long clusterId) {
+    private int effectiveMaxCdroms(VirtualMachine vm, Long hostId) {
+        HostVO host = hostId != null ? _hostDao.findById(hostId) : null;
+        Long clusterId = host != null ? host.getClusterId() : null;
         int configuredCap = VmCdromMaxCount.valueIn(clusterId);
-        // hda is root on i440fx/IDE, leaving hdc/hdd available for cdroms.
-        int hypervisorCap = (vm.getHypervisorType() == HypervisorType.KVM) ? 2 : 1;
-        return Math.min(configuredCap, hypervisorCap);
+        int hypervisorCap = advertisedCdromCap(hostId);
+        if (configuredCap > hypervisorCap) {
+            String message = String.format(
+                    "%s is set to %d but the placement host supports a maximum of %d CD-ROM(s) per Instance; lower %s to %d or less.",
+                    VmCdromMaxCount.key(), configuredCap, hypervisorCap, VmCdromMaxCount.key(), hypervisorCap);
+            logger.error(message);
+            throw new InvalidParameterValueException(message);
+        }
+        return configuredCap;
     }
 
-    private Long clusterIdForVm(VirtualMachine vm) {
-        Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
+    private int advertisedCdromCap(Long hostId) {
         if (hostId == null) {
-            return null;
+            return DEFAULT_CDROM_MAX_PER_VM;
         }
-        HostVO host = _hostDao.findById(hostId);
-        return host != null ? host.getClusterId() : null;
+        DetailVO detail = _hostDetailsDao.findDetail(hostId, Host.HOST_CDROM_MAX_COUNT);
+        if (detail == null || detail.getValue() == null) {
+            return DEFAULT_CDROM_MAX_PER_VM;
+        }
+        try {
+            return Integer.parseInt(detail.getValue());
+        } catch (NumberFormatException e) {
+            logger.warn("Invalid {} value '{}' for host {}; using default {}.",
+                    Host.HOST_CDROM_MAX_COUNT, detail.getValue(), hostId, DEFAULT_CDROM_MAX_PER_VM);
+            return DEFAULT_CDROM_MAX_PER_VM;
+        }
+    }
+
+    private Long hostIdForVm(VirtualMachine vm) {
+        return vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
     }
 
     @Override
