@@ -53,7 +53,7 @@ public class DetachIsoCmd extends BaseAsyncCmd implements UserCmd {
     protected Boolean forced;
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TemplateResponse.class,
-            description = "The ID of the ISO to detach. Required when the Instance has more than one ISO attached.")
+            description = "The ID of the ISO to detach. Required when the Instance has more than one ISO attached.", since = "4.23.0")
     protected Long id;
 
     /////////////////////////////////////////////////////
