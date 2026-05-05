@@ -852,9 +852,7 @@ public class UserVmManagerImplTest {
 
     private void prepareAndRunConfigureCustomRootDiskSizeTest(Map<String, String> customParameters, long expectedRootDiskSize, int timesVerifyIfHypervisorSupports, Long offeringRootDiskSize) {
         VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
-        Mockito.when(template.getId()).thenReturn(1l);
         Mockito.when(template.getSize()).thenReturn(99L * GiB_TO_BYTES);
-        Mockito.when(templateDao.findById(Mockito.anyLong())).thenReturn(template);
 
         DiskOfferingVO diskfferingVo = Mockito.mock(DiskOfferingVO.class);
 

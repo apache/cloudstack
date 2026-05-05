@@ -601,26 +601,22 @@ public class VolumeApiServiceImplTest {
 
     @Test
     public void testNullGetVolumeNameFromCmd() {
-        when(createVol.getVolumeName()).thenReturn(null);
-        Assert.assertNotNull(volumeApiServiceImpl.getVolumeNameFromCommand(createVol));
+        Assert.assertNotNull(volumeApiServiceImpl.getVolumeNameFromCommand(null));
     }
 
     @Test
     public void testEmptyGetVolumeNameFromCmd() {
-        when(createVol.getVolumeName()).thenReturn("");
-        Assert.assertNotNull(volumeApiServiceImpl.getVolumeNameFromCommand(createVol));
+        Assert.assertNotNull(volumeApiServiceImpl.getVolumeNameFromCommand(""));
     }
 
     @Test
     public void testBlankGetVolumeNameFromCmd() {
-        when(createVol.getVolumeName()).thenReturn("   ");
-        Assert.assertNotNull(volumeApiServiceImpl.getVolumeNameFromCommand(createVol));
+        Assert.assertNotNull(volumeApiServiceImpl.getVolumeNameFromCommand("   "));
     }
 
     @Test
     public void testNonEmptyGetVolumeNameFromCmd() {
-        when(createVol.getVolumeName()).thenReturn("abc");
-        Assert.assertSame(volumeApiServiceImpl.getVolumeNameFromCommand(createVol), "abc");
+        Assert.assertSame(volumeApiServiceImpl.getVolumeNameFromCommand("abc"), "abc");
     }
 
     @Test

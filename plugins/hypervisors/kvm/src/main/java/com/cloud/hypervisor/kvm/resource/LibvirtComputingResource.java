@@ -386,6 +386,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public static final String CHECKPOINT_DELETE_COMMAND = "virsh checkpoint-delete --domain %s --checkpointname %s  --metadata";
 
+    public static final int IMAGE_SERVER_DEFAULT_PORT = 54322;
+    public static final String IMAGE_SERVER_SYSTEMD_UNIT_NAME = "cloudstack-image-server";
+
     protected int qcow2DeltaMergeTimeout;
 
     private String modifyVlanPath;
@@ -399,6 +402,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private String heartBeatPath;
     private String vmActivityCheckPath;
     private String nasBackupPath;
+    private String imageServerPath;
+    private boolean imageServerTlsEnabled = false;
+    private String imageServerListenAddress;
     private String securityGroupPath;
     private String ovsPvlanDhcpHostPath;
     private String ovsPvlanVmPath;
@@ -813,6 +819,18 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return nasBackupPath;
     }
 
+    public String getImageServerPath() {
+        return imageServerPath;
+    }
+
+    public boolean isImageServerTlsEnabled() {
+        return imageServerTlsEnabled;
+    }
+
+    public String getImageServerListenAddress() {
+        return imageServerListenAddress;
+    }
+
     public String getOvsPvlanDhcpHostPath() {
         return ovsPvlanDhcpHostPath;
     }
@@ -1057,6 +1075,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         cachePath = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HOST_CACHE_LOCATION);
 
+        imageServerTlsEnabled = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.IMAGE_SERVER_TLS_ENABLED);
+        imageServerListenAddress = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.IMAGE_SERVER_LISTEN_ADDRESS);
+
         params.put("domr.scripts.dir", domrScriptsDir);
 
         virtRouterResource = new VirtualRoutingResource(this);
@@ -1119,6 +1140,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (nasBackupPath == null) {
             throw new ConfigurationException("Unable to find nasbackup.sh");
         }
+
+        String imageServerMain = Script.findScript(kvmScriptsDir, "imageserver/__main__.py");
+        if (imageServerMain == null) {
+            throw new ConfigurationException("Unable to find imageserver package");
+        }
+        imageServerPath = new File(imageServerMain).getParent();
 
         createTmplPath = Script.findScript(storageScriptsDir, "createtmplt.sh");
         if (createTmplPath == null) {
@@ -5288,6 +5315,24 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             Script.runSimpleBashScript(String.format(CHECKPOINT_DELETE_COMMAND, vmName, checkpointName));
         }
         logger.debug("Removed all checkpoints of volume [{}] on VM [{}].", volumeUuid, vmName);
+    }
+
+    public Map<String, String> getDiskPathLabelMap(String vmName) {
+        try {
+            Connect conn = LibvirtConnection.getConnectionByVmName(vmName);
+            List<DiskDef> disks = getDisks(conn, vmName);
+            Map<String, String> diskPathLabelMap = new HashMap<>();
+            for (DiskDef disk : disks) {
+                if (disk.getDeviceType() != DeviceType.DISK) {
+                    continue;
+                }
+                diskPathLabelMap.put(disk.getDiskPath(), disk.getDiskLabel());
+            }
+            return diskPathLabelMap;
+        } catch (LibvirtException e) {
+            logger.error("Failed to get disk path label map for VM [{}] due to: [{}].", vmName, e.getMessage(), e);
+            throw new CloudRuntimeException(e);
+        }
     }
 
     public boolean recreateCheckpointsOnVm(List<VolumeObjectTO> volumes, String vmName, Connect conn) {

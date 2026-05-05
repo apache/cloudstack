@@ -1,0 +1,129 @@
+//Licensed to the Apache Software Foundation (ASF) under one
+//or more contributor license agreements.  See the NOTICE file
+//distributed with this work for additional information
+//regarding copyright ownership.  The ASF licenses this file
+//to you under the Apache License, Version 2.0 (the
+//"License"); you may not use this file except in compliance
+//the License.  You may obtain a copy of the License at
+//
+//http://www.apache.org/licenses/LICENSE-2.0
+//
+//Unless required by applicable law or agreed to in writing,
+//software distributed under the License is distributed on an
+//"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+//KIND, either express or implied.  See the License for the
+//specific language governing permissions and limitations
+//under the License.
+
+package org.apache.cloudstack.backup.dao;
+
+import java.util.List;
+
+import javax.annotation.PostConstruct;
+
+import org.apache.cloudstack.backup.ImageTransfer;
+import org.apache.cloudstack.backup.ImageTransferVO;
+import org.apache.commons.collections.CollectionUtils;
+import org.springframework.stereotype.Component;
+
+import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
+
+@Component
+public class ImageTransferDaoImpl extends GenericDaoBase<ImageTransferVO, Long> implements ImageTransferDao {
+
+    private SearchBuilder<ImageTransferVO> backupIdSearch;
+    private SearchBuilder<ImageTransferVO> uuidSearch;
+    private SearchBuilder<ImageTransferVO> volumeSearch;
+    private SearchBuilder<ImageTransferVO> volumeUnfinishedSearch;
+    private SearchBuilder<ImageTransferVO> phaseDirectionSearch;
+
+    public ImageTransferDaoImpl() {
+    }
+
+    @PostConstruct
+    protected void init() {
+        backupIdSearch = createSearchBuilder();
+        backupIdSearch.and("backupId", backupIdSearch.entity().getBackupId(), SearchCriteria.Op.EQ);
+        backupIdSearch.done();
+
+        uuidSearch = createSearchBuilder();
+        uuidSearch.and("uuid", uuidSearch.entity().getUuid(), SearchCriteria.Op.EQ);
+        uuidSearch.done();
+
+        volumeSearch = createSearchBuilder();
+        volumeSearch.and("volumeId", volumeSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
+        volumeSearch.done();
+
+        volumeUnfinishedSearch = createSearchBuilder();
+        volumeUnfinishedSearch.and("volumeId", volumeUnfinishedSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
+        volumeUnfinishedSearch.and("phase", volumeUnfinishedSearch.entity().getPhase(), SearchCriteria.Op.NEQ);
+        volumeUnfinishedSearch.done();
+
+        phaseDirectionSearch = createSearchBuilder();
+        phaseDirectionSearch.and("phase", phaseDirectionSearch.entity().getPhase(), SearchCriteria.Op.EQ);
+        phaseDirectionSearch.and("direction", phaseDirectionSearch.entity().getDirection(), SearchCriteria.Op.EQ);
+        phaseDirectionSearch.done();
+    }
+
+    @Override
+    public List<ImageTransferVO> listByBackupId(Long backupId) {
+        SearchCriteria<ImageTransferVO> sc = backupIdSearch.create();
+        sc.setParameters("backupId", backupId);
+        return listBy(sc);
+    }
+
+    @Override
+    public ImageTransferVO findByUuid(String uuid) {
+        SearchCriteria<ImageTransferVO> sc = uuidSearch.create();
+        sc.setParameters("uuid", uuid);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public ImageTransferVO findByVolume(Long volumeId) {
+        SearchCriteria<ImageTransferVO> sc = volumeSearch.create();
+        sc.setParameters("volumeId", volumeId);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public ImageTransferVO findUnfinishedByVolume(Long volumeId) {
+        SearchCriteria<ImageTransferVO> sc = volumeUnfinishedSearch.create();
+        sc.setParameters("volumeId", volumeId);
+        sc.setParameters("phase", ImageTransferVO.Phase.finished.toString());
+        return findOneBy(sc);
+    }
+
+    @Override
+    public List<ImageTransferVO> listByPhaseAndDirection(ImageTransfer.Phase phase, ImageTransfer.Direction direction) {
+        SearchCriteria<ImageTransferVO> sc = phaseDirectionSearch.create();
+        sc.setParameters("phase", phase);
+        sc.setParameters("direction", direction);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<ImageTransferVO> listByOwners(List<Long> accountIds, List<Long> domainIds, Filter filter) {
+        SearchBuilder<ImageTransferVO> sb = createSearchBuilder();
+        boolean accountIdsNotEmpty = CollectionUtils.isNotEmpty(accountIds);
+        boolean domainIdsNotEmpty = CollectionUtils.isNotEmpty(domainIds);
+        if (accountIdsNotEmpty || domainIdsNotEmpty) {
+            sb.and().op("account", sb.entity().getAccountId(), SearchCriteria.Op.IN);
+            sb.or("domain", sb.entity().getDomainId(), SearchCriteria.Op.IN);
+            sb.cp();
+        }
+        sb.done();
+        final SearchCriteria<ImageTransferVO> sc = sb.create();
+        if (accountIdsNotEmpty) {
+            sc.setParameters("account", accountIds.toArray());
+        }
+        if (domainIdsNotEmpty) {
+            sc.setParameters("domain", domainIds.toArray());
+        }
+
+        return listBy(sc, filter);
+    }
+}

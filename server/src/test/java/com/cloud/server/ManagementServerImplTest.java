@@ -766,6 +766,7 @@ public class ManagementServerImplTest {
         Mockito.when(cmd.getAccountId()).thenReturn(null);
         Mockito.when(cmd.getDomainId()).thenReturn(null);
         Mockito.when(cmd.getImageStoreId()).thenReturn(null);
+        Mockito.when(cmd.getManagementServerId()).thenReturn(null);
 
         SearchCriteria<ConfigurationVO> sc = Mockito.mock(SearchCriteria.class);
         Mockito.when(configDao.createSearchCriteria()).thenReturn(sc);

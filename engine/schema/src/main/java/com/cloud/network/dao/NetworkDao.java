@@ -24,6 +24,7 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.State;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.fsm.StateDao;
@@ -96,7 +97,12 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long>, StateDao<State,
 
     boolean update(Long networkId, NetworkVO network, Map<String, String> serviceProviderMap);
 
+    List<NetworkVO> listByZoneAndTrafficType(long zoneId, TrafficType trafficType, Filter filter);
+
     List<NetworkVO> listByZoneAndTrafficType(long zoneId, TrafficType trafficType);
+
+    List<NetworkVO> listByTrafficTypeAndOwners(final TrafficType trafficType, List<Long> accountIds,
+                           List<Long> domainIds, Filter filter);
 
     void setCheckForGc(long networkId);
 

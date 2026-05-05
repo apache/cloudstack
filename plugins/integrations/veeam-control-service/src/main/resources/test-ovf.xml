@@ -1,0 +1,198 @@
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+<?xml version="1.0" encoding="UTF-8"?>
+<ovf:Envelope
+        xmlns:ovf="http://schemas.dmtf.org/ovf/envelope/1/"
+        xmlns:rasd="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData"
+        xmlns:vssd="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_VirtualSystemSettingData"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ovf:version="4.4.0.0">
+    <References>
+        <File ovf:href="22e65515-04e6-374e-95e0-981dab9e7fe2/5b08702c-3e4b-45fc-ba1c-425c54e69498" ovf:id="5b08702c-3e4b-45fc-ba1c-425c54e69498" ovf:size="4096" ovf:description="Active VM" ovf:disk_storage_type="IMAGE" ovf:cinder_volume_type=""></File>
+    </References>
+    <NetworkSection>
+        <Info>List of networks</Info>
+        <Network ovf:name="Network-07e8e63c-13b5-4a01-9b41-6f97847d2534">
+            <Description></Description>
+        </Network>
+    </NetworkSection>
+    <Section xsi:type="ovf:DiskSection_Type">
+        <Info>List of Virtual Disks</Info>
+        <Disk ovf:diskId="5b08702c-3e4b-45fc-ba1c-425c54e69498" ovf:size="1" ovf:actual_size="1" ovf:vm_snapshot_id="6ad1a046-11c9-3a9c-ae76-b1136cefc35e" ovf:parentRef="" ovf:fileRef="22e65515-04e6-374e-95e0-981dab9e7fe2/5b08702c-3e4b-45fc-ba1c-425c54e69498" ovf:format="http://www.vmware.com/specifications/vmdk.html#sparse" ovf:volume-format="COW" ovf:volume-type="Sparse" ovf:disk-interface="VirtIO_SCSI" ovf:read-only="false" ovf:shareable="false" ovf:boot="true" ovf:pass-discard="false" ovf:incremental-backup="false" ovf:disk-alias="ROOT-139" ovf:disk-description="ROOT-139" ovf:wipe-after-delete="false"></Disk>
+    </Section>
+    <Section xsi:type="ovf:CloudStackMetadata_Type">
+        <Info>CloudStack specific metadata</Info>
+        <CloudStack>
+            <AccountId>644c6f0d-f6f9-11f0-9061-5254002b5a70</AccountId>
+            <DomainId>425cf134-f6f9-11f0-9061-5254002b5a70</DomainId>
+            <ProjectId></ProjectId>
+            <ServiceOfferingId>731da585-5259-46f3-bf2d-a71f62178acf</ServiceOfferingId>
+            <DataDiskOfferingIdMap>
+                <Entry>
+                    <DiskId>5b08702c-3e4b-45fc-ba1c-425c54e69498</DiskId>
+                    <OfferingId>9468baee-f467-4806-9520-d313d7362694</OfferingId>
+                </Entry>
+            </DataDiskOfferingIdMap>
+        </CloudStack>
+    </Section>
+    <Content ovf:id="out" xsi:type="ovf:VirtualSystem_Type">
+        <Name>adm-v10</Name>
+        <Description>adm-v10</Description>
+        <Comment></Comment>
+        <CreationDate>2026/02/26 05:36:58</CreationDate>
+        <ExportDate>2026/03/11 07:25:03</ExportDate>
+        <DeleteProtected>false</DeleteProtected>
+        <SsoMethod>guest_agent</SsoMethod>
+        <IsSmartcardEnabled>false</IsSmartcardEnabled>
+        <NumOfIoThreads>1</NumOfIoThreads>
+        <TimeZone>Etc/GMT</TimeZone>
+        <default_boot_sequence>0</default_boot_sequence>
+        <Generation>11</Generation>
+        <ClusterCompatibilityVersion>4.8</ClusterCompatibilityVersion>
+        <VmType>1</VmType>
+        <ResumeBehavior>AUTO_RESUME</ResumeBehavior>
+        <MinAllocatedMem>512</MinAllocatedMem>
+        <IsStateless>false</IsStateless>
+        <IsRunAndPause>false</IsRunAndPause>
+        <AutoStartup>false</AutoStartup>
+        <Priority>0</Priority>
+        <CreatedByUserId>644c6f0d-f6f9-11f0-9061-5254002b5a70</CreatedByUserId>
+        <MigrationSupport>0</MigrationSupport>
+        <IsBootMenuEnabled>false</IsBootMenuEnabled>
+        <IsSpiceFileTransferEnabled>true</IsSpiceFileTransferEnabled>
+        <IsSpiceCopyPasteEnabled>true</IsSpiceCopyPasteEnabled>
+        <AllowConsoleReconnect>false</AllowConsoleReconnect>
+        <ConsoleDisconnectAction>LOCK_SCREEN</ConsoleDisconnectAction>
+        <ConsoleDisconnectActionDelay>0</ConsoleDisconnectActionDelay>
+        <CustomEmulatedMachine></CustomEmulatedMachine>
+        <BiosType>2</BiosType>
+        <CustomCpuName></CustomCpuName>
+        <PredefinedProperties></PredefinedProperties>
+        <UserDefinedProperties></UserDefinedProperties>
+        <MaxMemorySizeMb>512</MaxMemorySizeMb>
+        <MultiQueuesEnabled>true</MultiQueuesEnabled>
+        <VirtioScsiMultiQueuesEnabled>false</VirtioScsiMultiQueuesEnabled>
+        <UseHostCpu>false</UseHostCpu>
+        <BalloonEnabled>false</BalloonEnabled>
+        <CpuPinningPolicy>0</CpuPinningPolicy>
+        <ClusterName></ClusterName>
+        <TemplateId>e1a8db34-6eb4-41e0-97b8-898420437df8</TemplateId>
+        <TemplateName>e1a8db34-6eb4-41e0-97b8-898420437df8</TemplateName>
+        <IsInitilized>true</IsInitilized>
+        <Origin>3</Origin>
+        <quota_id>00000000-0000-0000-0000-000000000000</quota_id>
+        <DefaultDisplayType>2</DefaultDisplayType>
+        <TrustedService>false</TrustedService>
+        <OriginalTemplateId>e1a8db34-6eb4-41e0-97b8-898420437df8</OriginalTemplateId>
+        <OriginalTemplateName>e1a8db34-6eb4-41e0-97b8-898420437df8</OriginalTemplateName>
+        <UseLatestVersion>false</UseLatestVersion>
+        <StopTime>2026/03/10 05:05:50</StopTime>
+        <BootTime>2026/02/26 05:36:58</BootTime>
+        <Downtime>0</Downtime>
+        <Section ovf:id="001c3113-348d-41ba-82af-065f154d7549" ovf:required="false" xsi:type="ovf:OperatingSystemSection_Type">
+            <Info>Guest Operating System</Info>
+            <Description>linux</Description>
+        </Section>
+        <Section xsi:type="ovf:VirtualHardwareSection_Type">
+            <Info>1 CPU, 512 Memory</Info>
+            <System>
+                <vssd:VirtualSystemType>ENGINE 4.4.0.0</vssd:VirtualSystemType>
+            </System>
+            <Item>
+                <rasd:Caption>1 virtual cpu</rasd:Caption>
+                <rasd:Description>Number of virtual CPU</rasd:Description>
+                <rasd:InstanceId>1</rasd:InstanceId>
+                <rasd:ResourceType>3</rasd:ResourceType>
+                <rasd:num_of_sockets>1</rasd:num_of_sockets>
+                <rasd:cpu_per_socket>1</rasd:cpu_per_socket>
+                <rasd:threads_per_cpu>1</rasd:threads_per_cpu>
+                <rasd:max_num_of_vcpus>1</rasd:max_num_of_vcpus>
+                <rasd:VirtualQuantity>1</rasd:VirtualQuantity>
+            </Item>
+            <Item>
+                <rasd:Caption>512 MB of memory</rasd:Caption>
+                <rasd:Description>Memory Size</rasd:Description>
+                <rasd:InstanceId>2</rasd:InstanceId>
+                <rasd:ResourceType>4</rasd:ResourceType>
+                <rasd:AllocationUnits>MegaBytes</rasd:AllocationUnits>
+                <rasd:VirtualQuantity>512</rasd:VirtualQuantity>
+            </Item>
+            <Item>
+                <rasd:Caption>ROOT-139</rasd:Caption>
+                <rasd:InstanceId>5b08702c-3e4b-45fc-ba1c-425c54e69498</rasd:InstanceId>
+                <rasd:ResourceType>17</rasd:ResourceType>
+                <rasd:HostResource>22e65515-04e6-374e-95e0-981dab9e7fe2/5b08702c-3e4b-45fc-ba1c-425c54e69498</rasd:HostResource>
+                <rasd:Parent>00000000-0000-0000-0000-000000000000</rasd:Parent>
+                <rasd:Template>e1a8db34-6eb4-41e0-97b8-898420437df8</rasd:Template>
+                <rasd:ApplicationList></rasd:ApplicationList>
+                <rasd:StorageId>22e65515-04e6-374e-95e0-981dab9e7fe2</rasd:StorageId>
+                <rasd:StoragePoolId>00000000-0000-0000-0000-000000000000</rasd:StoragePoolId>
+                <rasd:CreationDate>2026/02/26 05:36:58</rasd:CreationDate>
+                <rasd:LastModified>2026/03/11 07:25:03</rasd:LastModified>
+                <rasd:last_modified_date>2026/03/11 07:25:03</rasd:last_modified_date>
+                <Type>disk</Type>
+                <Device>disk</Device>
+                <rasd:Address>{type=drive, bus=0, controller=0, target=0, unit=0}</rasd:Address>
+                <BootOrder>1</BootOrder>
+                <IsPlugged>true</IsPlugged>
+                <IsReadOnly>false</IsReadOnly>
+                <Alias>ua-22e65515-04e6-374e-95e0-981dab9e7fe2/5b08702c-3e4b-45fc-ba1c-425c54e69498</Alias>
+            </Item>
+            <Item>
+                <rasd:Caption>Ethernet adapter on [No Network]</rasd:Caption>
+                <rasd:InstanceId>07e8e63c-13b5-4a01-9b41-6f97847d2534</rasd:InstanceId>
+                <rasd:ResourceType>10</rasd:ResourceType>
+                <rasd:OtherResourceType></rasd:OtherResourceType>
+                <rasd:ResourceSubType>3</rasd:ResourceSubType>
+                <rasd:Connection>Network-07e8e63c-13b5-4a01-9b41-6f97847d2534</rasd:Connection>
+                <rasd:Linked>true</rasd:Linked>
+                <rasd:Name>ExternalGuestNetworkGuru</rasd:Name>
+                <rasd:ElementName>ExternalGuestNetworkGuru</rasd:ElementName>
+                <rasd:MACAddress>02:01:00:dd:00:0c</rasd:MACAddress>
+                <rasd:speed>10000</rasd:speed>
+                <Type>interface</Type>
+                <Device>bridge</Device>
+                <rasd:Address>{type=pci, slot=0x00, bus=0x01, domain=0x0000, function=0x0}</rasd:Address>
+                <BootOrder>0</BootOrder>
+                <IsPlugged>true</IsPlugged>
+                <IsReadOnly>false</IsReadOnly>
+                <Alias>ua-07e8e63c-13b5-4a01-9b41-6f97847d2534</Alias>
+            </Item>
+            <Item>
+                <rasd:Caption>USB Controller</rasd:Caption>
+                <rasd:InstanceId>3</rasd:InstanceId>
+                <rasd:ResourceType>23</rasd:ResourceType>
+                <rasd:UsbPolicy>DISABLED</rasd:UsbPolicy>
+            </Item>
+            <Item>
+                <rasd:ResourceType>0</rasd:ResourceType>
+                <rasd:InstanceId>a41e097e-329a-3be5-a9e8-9bc112fe5fac</rasd:InstanceId>
+                <Type>rng</Type>
+                <Device>virtio</Device>
+                <rasd:Address>{type=pci, slot=0x00, bus=0x06, domain=0x0000, function=0x0}</rasd:Address>
+                <BootOrder>0</BootOrder>
+                <IsPlugged>true</IsPlugged>
+                <IsReadOnly>false</IsReadOnly>
+                <Alias></Alias>
+                <SpecParams>
+                    <source>urandom</source>
+                </SpecParams>
+            </Item>
+        </Section>
+    </Content>
+</ovf:Envelope>

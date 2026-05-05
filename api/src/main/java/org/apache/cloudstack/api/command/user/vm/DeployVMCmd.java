@@ -16,10 +16,11 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -40,6 +41,7 @@ import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "deployVirtualMachine", description = "Creates and automatically starts an Instance based on a service offering, disk offering, and Template.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
@@ -88,6 +90,103 @@ public class DeployVMCmd extends BaseDeployVMCmd {
         return volumeId != null || snapshotId != null;
     }
 
+    public boolean isBlankInstance() {
+        return false;
+    }
+
+
+
+    /////////////////////////////////////////////////////
+    ////////////////// Setters //////////////////////////
+    /////////////////////////////////////////////////////
+    public void setZoneId(Long zoneId) {
+        this.zoneId = zoneId;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public void setAccountName(String accountName) {
+        this.accountName = accountName;
+    }
+
+    public void setDomainId(Long domainId) {
+        this.domainId = domainId;
+    }
+
+    public void setNetworkIds(List<Long> networkIds) {
+        this.networkIds = networkIds;
+    }
+
+    public void setBootType(String bootType) {
+        this.bootType = bootType;
+    }
+
+    public void setBootMode(String bootMode) {
+        this.bootMode = bootMode;
+    }
+
+    public void setHypervisor(String hypervisor) {
+        this.hypervisor = hypervisor;
+    }
+
+    public void setUserData(String userData) {
+        this.userData = userData;
+    }
+
+    public void setKeyboard(String keyboard) {
+        this.keyboard = keyboard;
+    }
+
+    public void setProjectId(Long projectId) {
+        this.projectId = projectId;
+    }
+
+    public void setDisplayVm(Boolean displayVm) {
+        this.displayVm = displayVm;
+    }
+
+    public void setUserDataId(Long userDataId) {
+        this.userdataId = userDataId;
+    }
+
+    public void setAffinityGroupIds(List<Long> ids) {
+        this.affinityGroupIdList = ids;
+    }
+
+    public void setDetails(Map details) {
+        this.details = details;
+    }
+
+    public void setExtraConfig(String extraConfig) {
+        this.extraConfig = extraConfig;
+    }
+
+    public void setDynamicScalingEnabled(Boolean dynamicScalingEnabled) {
+        this.dynamicScalingEnabled = dynamicScalingEnabled;
+    }
+
+    public void setServiceOfferingId(Long serviceOfferingId) {
+        this.serviceOfferingId = serviceOfferingId;
+    }
+
+    public void setTemplateId(Long templateId) {
+        this.templateId = templateId;
+    }
+
+    public void setVolumeId(Long volumeId) {
+        this.volumeId = volumeId;
+    }
+
+    public void setSnapshotId(Long snapshotId) {
+        this.snapshotId = snapshotId;
+    }
+
     @Override
     public void execute() {
         UserVm result;
@@ -132,7 +231,7 @@ public class DeployVMCmd extends BaseDeployVMCmd {
 
     @Override
     public void create() throws ResourceAllocationException {
-        if (Stream.of(templateId, snapshotId, volumeId).filter(Objects::nonNull).count() != 1) {
+        if (!isBlankInstance() && Stream.of(templateId, snapshotId, volumeId).filter(Objects::nonNull).count() != 1) {
             throw new CloudRuntimeException("Please provide only one of the following parameters - template ID, volume ID or snapshot ID");
         }
 

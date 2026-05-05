@@ -1,0 +1,196 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
+package org.apache.cloudstack.veeam.api.converter;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.veeam.VeeamControlService;
+import org.apache.cloudstack.veeam.api.ApiRouteHandler;
+import org.apache.cloudstack.veeam.api.DisksRouteHandler;
+import org.apache.cloudstack.veeam.api.VmsRouteHandler;
+import org.apache.cloudstack.veeam.api.dto.Disk;
+import org.apache.cloudstack.veeam.api.dto.DiskAttachment;
+import org.apache.cloudstack.veeam.api.dto.Link;
+import org.apache.cloudstack.veeam.api.dto.NamedList;
+import org.apache.cloudstack.veeam.api.dto.Ref;
+import org.apache.cloudstack.veeam.api.dto.StorageDomain;
+import org.apache.cloudstack.veeam.api.dto.Vm;
+
+import com.cloud.api.query.vo.VolumeJoinVO;
+import com.cloud.storage.Storage;
+import com.cloud.storage.Volume;
+
+public class VolumeJoinVOToDiskConverter {
+    public static Disk toDisk(final VolumeJoinVO vol, final Function<VolumeJoinVO, Long> physicalSizeResolver) {
+        final Disk disk = new Disk();
+        final String basePath = VeeamControlService.ContextPath.value();
+        final String apiBasePath = basePath + ApiRouteHandler.BASE_ROUTE;
+        final String diskId = vol.getUuid();
+        final String diskHref = basePath + DisksRouteHandler.BASE_ROUTE + "/" + diskId;
+
+        disk.setId(diskId);
+        disk.setHref(diskHref);
+        disk.setBootable(String.valueOf(Volume.Type.ROOT.equals(vol.getVolumeType())));
+
+        // Names
+        disk.setName(vol.getName());
+        disk.setAlias(vol.getName());
+        disk.setDescription(vol.getName());
+
+        // Sizes (bytes)
+        final long size = vol.getSize();
+        final long actualSize = vol.getVolumeStoreSize();
+
+        disk.setProvisionedSize(String.valueOf(size));
+        disk.setActualSize(String.valueOf(actualSize));
+        disk.setTotalSize(String.valueOf(size));
+        Long physicalSize = null;
+        if (physicalSizeResolver != null) {
+            physicalSize = physicalSizeResolver.apply(vol);
+        }
+        if (physicalSize != null) {
+            disk.setActualSize(String.valueOf(physicalSize));
+        }
+
+        // Disk format
+        disk.setFormat(mapFormat(vol.getFormat()));
+        disk.setQcowVersion("qcow2_v3");
+
+        // Content & storage
+        disk.setContentType("data");
+        disk.setStorageType("image");
+        disk.setSparse("true");
+        disk.setShareable("false");
+
+        // Status
+        disk.setStatus(mapStatus(vol.getState()));
+
+        // Backup-related flags (safe defaults)
+        disk.setBackup("none");
+        disk.setPropagateErrors("false");
+        disk.setWipeAfterDelete("false");
+
+        // Image ID (best-effort)
+        disk.setImageId(vol.getPath()); // acceptable placeholder
+
+        // Disk profile (optional)
+        disk.setDiskProfile(Ref.of(
+                apiBasePath + "/diskprofiles/" + vol.getDiskOfferingUuid(),
+                String.valueOf(vol.getDiskOfferingUuid())
+        ));
+
+        // Storage domains
+        if (vol.getPoolUuid() != null) {
+            StorageDomain sd = new StorageDomain();
+            sd.setHref(apiBasePath + "/storagedomains/" + vol.getPoolUuid());
+            sd.setId(vol.getPoolUuid());
+            disk.setStorageDomains(NamedList.of("storage_domain", List.of(sd)));
+        }
+
+        // Links
+        disk.setLink(List.of(
+                Link.of("disksnapshots", diskHref + "/disksnapshots")
+        ));
+
+        return disk;
+    }
+
+    public static List<Disk> toDiskList(final List<VolumeJoinVO> srcList,
+                        final Function<VolumeJoinVO, Long> physicalSizeResolver) {
+        return srcList.stream()
+                .map(vo -> toDisk(vo, physicalSizeResolver))
+                .collect(Collectors.toList());
+    }
+
+    public static List<Disk> toDiskListFromVolumeInfos(final List<Backup.VolumeInfo> volumeInfos) {
+        List<Disk> disks = new ArrayList<>();
+        for (Backup.VolumeInfo volumeInfo : volumeInfos) {
+            Disk disk = new Disk();
+            disk.setId(volumeInfo.getUuid());
+            disk.setName(volumeInfo.getUuid());
+            disk.setProvisionedSize(String.valueOf(volumeInfo.getSize()));
+            disk.setActualSize(String.valueOf(volumeInfo.getSize()));
+            disk.setTotalSize(String.valueOf(volumeInfo.getSize()));
+            disk.setBootable(String.valueOf(Volume.Type.ROOT.equals(volumeInfo.getType())));
+            disks.add(disk);
+        }
+        return disks;
+    }
+
+    public static  DiskAttachment toDiskAttachment(final VolumeJoinVO vol,
+                           final Function<VolumeJoinVO, Long> physicalSizeResolver) {
+        final DiskAttachment da = new DiskAttachment();
+        final String basePath = VeeamControlService.ContextPath.value();
+
+        final String diskAttachmentId = vol.getUuid();
+        da.setVm(Vm.of(basePath + VmsRouteHandler.BASE_ROUTE + "/" + vol.getVmUuid(), vol.getVmUuid()));
+
+        da.setId(diskAttachmentId);
+        da.setHref(da.getVm().getHref() + "/diskattachments/" + diskAttachmentId);;
+
+        // Links
+        da.setDisk(toDisk(vol, physicalSizeResolver));
+
+        // Properties
+        da.setActive("true");
+        da.setBootable(String.valueOf(Volume.Type.ROOT.equals(vol.getVolumeType())));
+        da.setIface("virtio_scsi");
+        da.setLogicalName(vol.getName());
+        da.setReadOnly("false");
+        da.setPassDiscard("false");
+
+        return da;
+    }
+
+    public static List<DiskAttachment> toDiskAttachmentList(final List<VolumeJoinVO> srcList,
+                            final Function<VolumeJoinVO, Long> physicalSizeResolver) {
+        return srcList.stream()
+                .map(vo -> toDiskAttachment(vo, physicalSizeResolver))
+                .collect(Collectors.toList());
+    }
+
+    private static String mapFormat(final Storage.ImageFormat format) {
+        if (format == null) {
+            return "cow";
+        }
+        switch (format) {
+            case RAW:
+                return "raw";
+            case QCOW2:
+            default:
+                return "cow";
+        }
+    }
+
+    private static String mapStatus(final Volume.State state) {
+        if (state == null) {
+            return "ok";
+        }
+        switch (state) {
+            case Ready:
+            case Allocated:
+                return "ok";
+            default:
+                return "locked";
+        }
+    }
+}

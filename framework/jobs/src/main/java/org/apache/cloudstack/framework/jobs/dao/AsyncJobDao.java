@@ -68,4 +68,6 @@ public interface AsyncJobDao extends GenericDao<AsyncJobVO, Long> {
     // Returns the number of pending jobs for the given Management server msids.
     // NOTE: This is the msid and NOT the id
     long countPendingNonPseudoJobs(Long... msIds);
+
+    List<Long> listPendingJobIdsForAccount(long accountId);
 }

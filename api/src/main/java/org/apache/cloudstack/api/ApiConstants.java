@@ -77,6 +77,7 @@ public class ApiConstants {
     public static final String BOOTABLE = "bootable";
     public static final String BIND_DN = "binddn";
     public static final String BIND_PASSWORD = "bindpass";
+    public static final String BLANK_INSTANCE = "blankinstance";
     public static final String BUS_ADDRESS = "busaddress";
     public static final String BYTES_READ_RATE = "bytesreadrate";
     public static final String BYTES_READ_RATE_MAX = "bytesreadratemax";
@@ -217,6 +218,7 @@ public class ApiConstants {
     public static final String DOMAIN_PATH = "domainpath";
     public static final String DOMAIN_ID = "domainid";
     public static final String DOMAIN__ID = "domainId";
+    public static final String DUMMY = "dummy";
     public static final String DURATION = "duration";
     public static final String ELIGIBLE = "eligible";
     public static final String EMAIL = "email";
@@ -260,6 +262,7 @@ public class ApiConstants {
     public static final String FOR_VIRTUAL_NETWORK = "forvirtualnetwork";
     public static final String FOR_SYSTEM_VMS = "forsystemvms";
     public static final String FOR_PROVIDER = "forprovider";
+    public static final String FROM_CHECKPOINT_ID = "fromcheckpointid";
     public static final String FULL_PATH = "fullpath";
     public static final String GATEWAY = "gateway";
     public static final String IP6_GATEWAY = "ip6gateway";
@@ -332,6 +335,7 @@ public class ApiConstants {
     public static final String IS_2FA_VERIFIED = "is2faverified";
 
     public static final String IS_2FA_MANDATED = "is2famandated";
+    public static final String IS_ACTIVE = "isactive";
     public static final String IS_ASYNC = "isasync";
     public static final String IP_AVAILABLE = "ipavailable";
     public static final String IP_LIMIT = "iplimit";
@@ -608,6 +612,7 @@ public class ApiConstants {
     public static final String TENANT_NAME = "tenantname";
     public static final String TOTAL = "total";
     public static final String TOTAL_SUBNETS = "totalsubnets";
+    public static final String TO_CHECKPOINT_ID = "tocheckpointid";
     public static final String TOTAL_QUOTA = "totalquota";
     public static final String TYPE = "type";
     public static final String TRUST_STORE = "truststore";

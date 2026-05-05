@@ -16,6 +16,11 @@
 // under the License.
 package com.cloud.vpc.dao;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Networks.TrafficType;
@@ -23,13 +28,9 @@ import com.cloud.network.dao.NetworkAccountVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 @DB()
 public class MockNetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements NetworkDao {
@@ -161,7 +162,18 @@ public class MockNetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implemen
     }
 
     @Override
+    public List<NetworkVO> listByZoneAndTrafficType(final long zoneId, final TrafficType trafficType, Filter filter) {
+        return null;
+    }
+
+    @Override
     public List<NetworkVO> listByZoneAndTrafficType(final long zoneId, final TrafficType trafficType) {
+        return null;
+    }
+
+    @Override
+    public List<NetworkVO> listByTrafficTypeAndOwners(final TrafficType trafficType, List<Long> accountIds,
+                                                      List<Long> domainIds, Filter filter) {
         return null;
     }
 

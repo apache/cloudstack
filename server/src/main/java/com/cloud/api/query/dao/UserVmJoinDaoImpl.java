@@ -61,6 +61,7 @@ import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.gpu.GPU;
 import com.cloud.gpu.dao.VgpuProfileDao;
 import com.cloud.host.ControlState;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.IpAddress;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
@@ -83,6 +84,7 @@ import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
@@ -507,7 +509,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         }
 
         if (userVm.getUserDataId() != null) {
-            userVmResponse.setUserDataId(userVm.getUserDataUUid());
+            userVmResponse.setUserDataId(userVm.getUserDataUuid());
             userVmResponse.setUserDataName(userVm.getUserDataName());
             userVmResponse.setUserDataDetails(userVm.getUserDataDetails());
             userVmResponse.setUserDataPolicy(userVm.getUserDataPolicy());
@@ -840,5 +842,29 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             sc.setParameters("leaseExpiryEndDate", nextDate);
         }
         return listBy(sc);
+    }
+
+    @Override
+    public List<UserVmJoinVO> listByHypervisorTypeAndOwners(Hypervisor.HypervisorType hypervisorType,
+                    List<Long> accountIds, String domainPath, Filter filter) {
+        SearchBuilder<UserVmJoinVO> sb = createSearchBuilder();
+        sb.and("hypervisorType", sb.entity().getHypervisorType(), Op.EQ);
+        boolean accountIdsNotEmpty = CollectionUtils.isNotEmpty(accountIds);
+        boolean domainPathNotBlank = StringUtils.isNotBlank(domainPath);
+        if (accountIdsNotEmpty || domainPathNotBlank) {
+            sb.and().op("account", sb.entity().getAccountId(), Op.IN);
+            sb.or("domainPath", sb.entity().getDomainPath(), Op.LIKE);
+            sb.cp();
+        }
+        sb.done();
+        SearchCriteria<UserVmJoinVO> sc = sb.create();
+        sc.setParameters("hypervisorType", hypervisorType);
+        if (accountIdsNotEmpty) {
+            sc.setParameters("account", accountIds.toArray());
+        }
+        if (domainPathNotBlank) {
+            sc.setParameters("domainPath", domainPath + "%");
+        }
+        return listBy(sc, filter);
     }
 }

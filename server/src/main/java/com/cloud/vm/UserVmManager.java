@@ -16,13 +16,14 @@
 // under the License.
 package com.cloud.vm;
 
+import static com.cloud.user.ResourceLimitService.ResourceLimitHostTags;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
@@ -40,8 +41,7 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
-
-import static com.cloud.user.ResourceLimitService.ResourceLimitHostTags;
+import com.cloud.utils.StringUtils;
 
 /**
  *
@@ -207,4 +207,5 @@ public interface UserVmManager extends UserVmService {
      */
     boolean isVMPartOfAnyCKSCluster(VMInstanceVO vm);
 
+    boolean isBlankInstance(VirtualMachineTemplate template);
 }

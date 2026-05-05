@@ -23,6 +23,7 @@ import com.cloud.cpu.CPU;
 import com.cloud.dc.ClusterVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.Pair;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
 
 public interface ClusterDao extends GenericDao<ClusterVO, Long> {
@@ -61,4 +62,6 @@ public interface ClusterDao extends GenericDao<ClusterVO, Long> {
     List<String> listDistinctStorageAccessGroups(String name, String keyword);
 
     List<Long> listEnabledClusterIdsByZoneHypervisorArch(Long zoneId, HypervisorType hypervisorType, CPU.CPUArch arch);
+
+    List<ClusterVO> listByHypervisorType(HypervisorType hypervisorType, Filter filter);
 }

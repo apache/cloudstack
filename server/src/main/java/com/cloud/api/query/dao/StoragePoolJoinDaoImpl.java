@@ -35,11 +35,13 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.jsinterpreter.TagAsRuleHelper;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.capacity.CapacityManager;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.server.ResourceTag;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
@@ -49,6 +51,7 @@ import com.cloud.storage.StorageStats;
 import com.cloud.storage.VolumeApiServiceImpl;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -410,4 +413,21 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         return filteredPools;
     }
 
+    public List<StoragePoolJoinVO> listByZoneHypervisorAndType(long zoneId, Hypervisor.HypervisorType hypervisorType, List<Storage.StoragePoolType> types, Filter filter) {
+        SearchBuilder<StoragePoolJoinVO> sb = createSearchBuilder();
+        sb.and("zoneId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
+        sb.and("hypervisors", sb.entity().getHypervisor(), SearchCriteria.Op.IN);
+        sb.and("types", sb.entity().getPoolType(), SearchCriteria.Op.IN);
+        sb.done();
+        SearchCriteria<StoragePoolJoinVO> sc = sb.create();
+        sc.setParameters("zoneId", zoneId);
+        List<Hypervisor.HypervisorType> hypervisors = new ArrayList<>();
+        hypervisors.add(Hypervisor.HypervisorType.Any);
+        hypervisors.add(hypervisorType);
+        sc.setParameters("hypervisors", hypervisors.toArray());
+        if (CollectionUtils.isNotEmpty(types)) {
+            sc.setParameters("types", types.toArray());
+        }
+        return listBy(sc, filter);
+    }
 }

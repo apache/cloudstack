@@ -41,11 +41,34 @@ public class DeployVMCmdByAdmin extends DeployVMCmd implements AdminCmd {
     @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class, description = "Destination Cluster ID to deploy the Instance to - parameter available for root admin only", since = "4.13")
     private Long clusterId;
 
+    @Parameter(name = ApiConstants.BLANK_INSTANCE,
+            type = CommandType.BOOLEAN,
+            description = "Whether to create a blank instance without storage and network",
+            since = "4.23.0")
+    private Boolean blankInstance;
+
     public Long getPodId() {
         return podId;
     }
 
     public Long getClusterId() {
         return clusterId;
+    }
+
+    @Override
+    public boolean isBlankInstance() {
+        return Boolean.TRUE.equals(blankInstance);
+    }
+
+    /////////////////////////////////////////////////////
+    ////////////////// Setters //////////////////////////
+    /////////////////////////////////////////////////////
+
+    public void setClusterId(Long clusterId) {
+        this.clusterId = clusterId;
+    }
+
+    public void setBlankInstance(boolean blankInstance) {
+        this.blankInstance = blankInstance;
     }
 }

@@ -61,10 +61,10 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.IpAddresses;
 import com.cloud.offering.DiskOffering;
 import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.utils.net.Dhcp;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.VmDiskInfo;
-import com.cloud.utils.net.Dhcp;
 
 public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityGroupAction, UserCmd {
 
@@ -75,13 +75,13 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "availability zone for the virtual machine")
-    private Long zoneId;
+    protected Long zoneId;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "host name for the virtual machine", validations = {ApiArgValidator.RFCComplianceDomainName})
-    private String name;
+    protected String name;
 
     @Parameter(name = ApiConstants.DISPLAY_NAME, type = CommandType.STRING, description = "an optional user generated name for the virtual machine")
-    private String displayName;
+    protected String displayName;
 
     @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, description="The password of the virtual machine. If null, a random password will be generated for the VM.",
             since="4.19.0.0")
@@ -89,21 +89,21 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
 
     //Owner information
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account for the virtual machine. Must be used with domainId.")
-    private String accountName;
+    protected String accountName;
 
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "an optional domainId for the virtual machine. If the account parameter is used, domainId must also be used. If account is NOT provided then virtual machine will be assigned to the caller account and domain.")
-    private Long domainId;
+    protected Long domainId;
 
     //Network information
     //@ACL(accessType = AccessType.UseEntry)
     @Parameter(name = ApiConstants.NETWORK_IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = NetworkResponse.class, description = "list of network ids used by virtual machine. Can't be specified with ipToNetworkList parameter")
-    private List<Long> networkIds;
+    protected List<Long> networkIds;
 
     @Parameter(name = ApiConstants.BOOT_TYPE, type = CommandType.STRING, required = false, description = "Guest VM Boot option either custom[UEFI] or default boot [BIOS]. Not applicable with VMware if the template is marked as deploy-as-is, as we honour what is defined in the template.", since = "4.14.0.0")
-    private String bootType;
+    protected String bootType;
 
     @Parameter(name = ApiConstants.BOOT_MODE, type = CommandType.STRING, required = false, description = "Boot Mode [Legacy] or [Secure] Applicable when Boot Type Selected is UEFI, otherwise Legacy only for BIOS. Not applicable with VMware if the template is marked as deploy-as-is, as we honour what is defined in the template.", since = "4.14.0.0")
-    private String bootMode;
+    protected String bootMode;
 
     @Parameter(name = ApiConstants.BOOT_INTO_SETUP, type = CommandType.BOOLEAN, required = false, description = "Boot into hardware setup or not (ignored if startVm = false, only valid for vmware)", since = "4.15.0.0")
     private Boolean bootIntoSetup;
@@ -138,7 +138,7 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
 
     @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, description = "the hypervisor on which to deploy the virtual machine. "
             + "The parameter is required and respected only when hypervisor info is not set on the ISO/Template passed to the call")
-    private String hypervisor;
+    protected String hypervisor;
 
     @Parameter(name = ApiConstants.USER_DATA, type = CommandType.STRING,
             description = "an optional binary data that can be sent to the virtual machine upon a successful deployment. " +
@@ -147,10 +147,10 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
                     "Using HTTP POST (via POST body), you can send up to 1MB of data after base64 encoding. " +
                     "You also need to change vm.userdata.max.length value",
             length = 1048576)
-    private String userData;
+    protected String userData;
 
     @Parameter(name = ApiConstants.USER_DATA_ID, type = CommandType.UUID, entityType = UserDataResponse.class, description = "the ID of the Userdata", since = "4.18")
-    private Long userdataId;
+    protected Long userdataId;
 
     @Parameter(name = ApiConstants.USER_DATA_DETAILS, type = CommandType.MAP, description = "used to specify the parameters values for the variables in userdata.", since = "4.18")
     private Map userdataDetails;
@@ -189,10 +189,10 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
     private String macAddress;
 
     @Parameter(name = ApiConstants.KEYBOARD, type = CommandType.STRING, description = "an optional keyboard device type for the virtual machine. valid value can be one of de,de-ch,es,es-latam,fi,fr,fr-be,fr-ch,is,it,jp,nl-be,no,pt,uk,us")
-    private String keyboard;
+    protected String keyboard;
 
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "Deploy vm for the project")
-    private Long projectId;
+    protected Long projectId;
 
     @Parameter(name = ApiConstants.START_VM, type = CommandType.BOOLEAN, description = "true if start vm after creating; defaulted to true if not specified")
     private Boolean startVm;
@@ -200,7 +200,7 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
     @ACL
     @Parameter(name = ApiConstants.AFFINITY_GROUP_IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = AffinityGroupResponse.class, description = "comma separated list of affinity groups id that are going to be applied to the virtual machine."
             + " Mutually exclusive with affinitygroupnames parameter")
-    private List<Long> affinityGroupIdList;
+    protected List<Long> affinityGroupIdList;
 
     @ACL
     @Parameter(name = ApiConstants.AFFINITY_GROUP_NAMES, type = CommandType.LIST, collectionType = CommandType.STRING, entityType = AffinityGroupResponse.class, description = "comma separated list of affinity groups names that are going to be applied to the virtual machine."
@@ -208,10 +208,10 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
     private List<String> affinityGroupNameList;
 
     @Parameter(name = ApiConstants.DISPLAY_VM, type = CommandType.BOOLEAN, since = "4.2", description = "an optional field, whether to the display the vm to the end user or not.", authorized = {RoleType.Admin})
-    private Boolean displayVm;
+    protected Boolean displayVm;
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, since = "4.3", description = "used to specify the custom parameters. 'extraconfig' is not allowed to be passed in details")
-    private Map details;
+    protected Map details;
 
     @Parameter(name = ApiConstants.DEPLOYMENT_PLANNER, type = CommandType.STRING, description = "Deployment planner to use for vm allocation. Available to ROOT admin only", since = "4.4", authorized = { RoleType.Admin })
     private String deploymentPlanner;
@@ -225,7 +225,7 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
     private Map dataDiskTemplateToDiskOfferingList;
 
     @Parameter(name = ApiConstants.EXTRA_CONFIG, type = CommandType.STRING, since = "4.12", description = "an optional URL encoded string that can be passed to the virtual machine upon successful deployment", length = 5120)
-    private String extraConfig;
+    protected String extraConfig;
 
     @Parameter(name = ApiConstants.COPY_IMAGE_TAGS, type = CommandType.BOOLEAN, since = "4.13", description = "if true the image tags (if any) will be copied to the VM, default value is false")
     private Boolean copyImageTags;
@@ -798,6 +798,7 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
         }
         return null;
     }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

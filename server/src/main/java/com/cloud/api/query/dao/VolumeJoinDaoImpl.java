@@ -21,8 +21,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.offering.DiskOffering;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
@@ -31,11 +29,15 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.VolumeJoinVO;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
@@ -43,8 +45,10 @@ import com.cloud.storage.Volume;
 import com.cloud.user.AccountManager;
 import com.cloud.user.VmDiskStatisticsVO;
 import com.cloud.user.dao.VmDiskStatisticsDao;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.vm.VirtualMachine;
 
 @Component
 public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJoinVO, VolumeResponse> implements VolumeJoinDao {
@@ -370,6 +374,39 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
             }
         }
         return uvList;
+    }
+
+    @Override
+    public List<VolumeJoinVO> listByInstanceId(long instanceId) {
+        SearchCriteria<VolumeJoinVO> sc = createSearchCriteria();
+        sc.addAnd("vmId", SearchCriteria.Op.EQ, instanceId);
+        return search(sc, null);
+    }
+
+    @Override
+    public List<VolumeJoinVO> listByHypervisorTypeAndOwners(Hypervisor.HypervisorType hypervisorType,
+                    List<Long> accountIds, String domainPath, Filter filter) {
+        SearchBuilder<VolumeJoinVO> sb = createSearchBuilder();
+        sb.and("vmType", sb.entity().getVmType(), SearchCriteria.Op.EQ);
+        sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
+        boolean accountIdsNotEmpty = CollectionUtils.isNotEmpty(accountIds);
+        boolean domainPathNotBlank = StringUtils.isNotBlank(domainPath);
+        if (accountIdsNotEmpty || domainPathNotBlank) {
+            sb.and().op("account", sb.entity().getAccountId(), SearchCriteria.Op.IN);
+            sb.or("domainPath", sb.entity().getDomainPath(), SearchCriteria.Op.LIKE);
+            sb.cp();
+        }
+        sb.done();
+        SearchCriteria<VolumeJoinVO> sc = sb.create();
+        sc.setParameters("vmType", VirtualMachine.Type.User);
+        sc.setParameters("hypervisorType", hypervisorType);
+        if (accountIdsNotEmpty) {
+            sc.setParameters("account", accountIds.toArray());
+        }
+        if (domainPathNotBlank) {
+            sc.setParameters("domainPath", domainPath + "%");
+        }
+        return search(sc, filter);
     }
 
 }
