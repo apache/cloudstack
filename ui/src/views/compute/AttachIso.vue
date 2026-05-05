@@ -85,14 +85,12 @@ export default {
     return {
       loading: false,
       isos: [],
-      maxSelections: 1,
-      // Sentinel so the hypervisor cap alone gates the UI until listConfigurations resolves.
-      globalCdromCap: Number.MAX_SAFE_INTEGER
+      maxSelections: 1
     }
   },
   created () {
     this.initForm()
-    this.fetchGlobalCap().then(() => this.computeMaxSelections())
+    this.computeMaxSelections()
     this.fetchData()
   },
   watch: {
@@ -104,24 +102,12 @@ export default {
     }
   },
   methods: {
-    fetchGlobalCap () {
-      return new Promise((resolve) => {
-        getAPI('listConfigurations', { name: 'vm.cdrom.max.count' }).then(json => {
-          const cfg = json && json.listconfigurationsresponse && json.listconfigurationsresponse.configuration
-          if (cfg && cfg.length > 0 && cfg[0].value !== undefined && cfg[0].value !== null) {
-            const parsed = parseInt(cfg[0].value, 10)
-            if (!isNaN(parsed)) {
-              this.globalCdromCap = parsed
-            }
-          }
-        }).catch(() => { /* Sentinel cap remains; hypervisor cap still applies. */ })
-          .finally(resolve)
-      })
-    },
     computeMaxSelections () {
-      // Mirrors server-side effectiveMaxCdroms: min(vm.cdrom.max.count, hypervisor cap).
-      const hypervisorCap = this.resource.hypervisor === 'KVM' ? 2 : 1
-      const effectiveCap = Math.min(this.globalCdromCap, hypervisorCap)
+      // Server pre-computes the effective cap (cluster-scoped vm.cdrom.max.count clamped to
+      // the hypervisor's own limit) and exposes it on the VM as cdrommaxcount.
+      const effectiveCap = this.resource.cdrommaxcount != null
+        ? this.resource.cdrommaxcount
+        : (this.resource.hypervisor === 'KVM' ? 2 : 1)
       const alreadyAttached = (this.resource.isos && this.resource.isos.length) ||
         (this.resource.isoid ? 1 : 0)
       this.maxSelections = Math.max(0, effectiveCap - alreadyAttached)

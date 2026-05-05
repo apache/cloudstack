@@ -23,7 +23,11 @@ import { getLatestKubernetesIsoParams } from '@/utils/acsrepo'
 import kubernetesIcon from '@/assets/icons/kubernetes.svg?inline'
 
 const attachedIsoCount = (record) => (record.isos && record.isos.length) || (record.isoid ? 1 : 0)
-const cdromHypervisorCap = (record) => (record.hypervisor === 'KVM' ? 2 : 1)
+// Server pre-computes the effective cap (cluster-scoped vm.cdrom.max.count clamped to the
+// hypervisor's own limit). Fall back to the hypervisor floor for older servers.
+const cdromMaxCount = (record) => record.cdrommaxcount != null
+  ? record.cdrommaxcount
+  : (record.hypervisor === 'KVM' ? 2 : 1)
 const isoActionAvailable = (record) =>
   record.hypervisor !== 'External' && ['Running', 'Stopped'].includes(record.state) && record.vmtype !== 'sharedfsvm'
 
@@ -304,7 +308,7 @@ export default {
           docHelp: 'adminguide/templates.html#attaching-an-iso-to-a-vm',
           dataView: true,
           popup: true,
-          show: (record) => isoActionAvailable(record) && attachedIsoCount(record) < cdromHypervisorCap(record),
+          show: (record) => isoActionAvailable(record) && attachedIsoCount(record) < cdromMaxCount(record),
           disabled: (record) => { return record.hostcontrolstate === 'Offline' || record.hostcontrolstate === 'Maintenance' },
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/AttachIso.vue')))
         },

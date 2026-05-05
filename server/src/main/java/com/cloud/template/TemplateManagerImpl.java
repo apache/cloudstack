@@ -689,7 +689,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         // Pre-allocate every cdrom slot at boot. QEMU/IDE refuses to hot-add new cdrom drives, so
         // runtime attachIso can only media-swap into a slot the domain already owns.
-        int totalSlots = Math.max(effectiveMaxCdroms(vm), slotsNeededFor(slotToIsoId));
+        int totalSlots = Math.max(effectiveMaxCdroms(vm, dest.getHost().getClusterId()), slotsNeededFor(slotToIsoId));
         for (int i = 0; i < totalSlots; i++) {
             int diskSeq = CDROM_PRIMARY_DEVICE_SEQ + i;
             Long isoId = slotToIsoId.get(diskSeq);
@@ -1540,7 +1540,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (isIsoAlreadyAttached(vmId, primaryIsoId, isoId)) {
             throw new InvalidParameterValueException("The specified ISO is already attached to this Instance.");
         }
-        int effectiveMax = effectiveMaxCdroms(vm);
+        int effectiveMax = effectiveMaxCdroms(vm, clusterIdForVm(vm));
         int attached = (primaryIsoId != null ? 1 : 0) + _vmIsoMapDao.listByVmId(vmId).size();
         if (attached >= effectiveMax) {
             throw new InvalidParameterValueException(String.format(
@@ -1548,11 +1548,20 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
     }
 
-    private int effectiveMaxCdroms(VirtualMachine vm) {
-        int globalCap = VmCdromMaxCount.value();
+    private int effectiveMaxCdroms(VirtualMachine vm, Long clusterId) {
+        int configuredCap = VmCdromMaxCount.valueIn(clusterId);
         // hda is root on i440fx/IDE, leaving hdc/hdd available for cdroms.
         int hypervisorCap = (vm.getHypervisorType() == HypervisorType.KVM) ? 2 : 1;
-        return Math.min(globalCap, hypervisorCap);
+        return Math.min(configuredCap, hypervisorCap);
+    }
+
+    private Long clusterIdForVm(VirtualMachine vm) {
+        Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
+        if (hostId == null) {
+            return null;
+        }
+        HostVO host = _hostDao.findById(hostId);
+        return host != null ? host.getClusterId() : null;
     }
 
     @Override

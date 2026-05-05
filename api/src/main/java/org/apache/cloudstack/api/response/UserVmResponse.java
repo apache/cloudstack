@@ -170,6 +170,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "All ISOs attached to the Instance, keyed by cdrom slot. The first entry mirrors isoid/isoname for back-compat.", responseObject = AttachedIsoResponse.class, since = "4.23.0")
     private List<AttachedIsoResponse> isos;
 
+    @SerializedName("cdrommaxcount")
+    @Param(description = "Maximum number of CD-ROM drives this Instance may have, after applying the cluster-scoped vm.cdrom.max.count and the hypervisor's own cap.", since = "4.23.0")
+    private Integer cdromMaxCount;
+
     @SerializedName(ApiConstants.SERVICE_OFFERING_ID)
     @Param(description = "The ID of the service offering of the Instance")
     private String serviceOfferingId;
@@ -881,6 +885,14 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public List<AttachedIsoResponse> getIsos() {
         return isos;
+    }
+
+    public void setCdromMaxCount(Integer cdromMaxCount) {
+        this.cdromMaxCount = cdromMaxCount;
+    }
+
+    public Integer getCdromMaxCount() {
+        return cdromMaxCount;
     }
 
     public void setIsoName(String isoName) {

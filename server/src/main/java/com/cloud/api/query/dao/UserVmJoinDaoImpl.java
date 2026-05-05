@@ -60,6 +60,7 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.gpu.GPU;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.gpu.dao.VgpuProfileDao;
 import com.cloud.host.ControlState;
 import com.cloud.network.IpAddress;
@@ -264,6 +265,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
                 }
             }
             userVmResponse.setIsos(attachedIsos);
+            userVmResponse.setCdromMaxCount(effectiveCdromMaxCount(userVm));
         }
         if (details.contains(VMDetails.all) || details.contains(VMDetails.servoff)) {
             userVmResponse.setServiceOfferingId(userVm.getServiceOfferingUuid());
@@ -555,6 +557,13 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         LocalDate createdDate = created.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
         LocalDate expiryDate = leaseExpiryDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
         return ChronoUnit.DAYS.between(createdDate, expiryDate);
+    }
+
+    private int effectiveCdromMaxCount(UserVmJoinVO userVm) {
+        int configuredCap = TemplateManager.VmCdromMaxCount.valueIn(userVm.getClusterId());
+        // hda is root on i440fx/IDE, leaving hdc/hdd available for cdroms.
+        int hypervisorCap = (userVm.getHypervisorType() == HypervisorType.KVM) ? 2 : 1;
+        return Math.min(configuredCap, hypervisorCap);
     }
 
     private void addVnfInfoToserVmResponse(UserVmJoinVO userVm, UserVmResponse userVmResponse) {

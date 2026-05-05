@@ -69,7 +69,7 @@ public interface TemplateManager {
             "vm.cdrom.max.count", "1",
             "Maximum number of CD-ROM drives per VM.",
             true,
-            ConfigKey.Scope.Global);
+            ConfigKey.Scope.Cluster);
 
     // KVM/libvirt maps deviceSeq=3 to hdc (hda/hdb are taken by the root volume on i440fx/IDE).
     // user_vm.iso_id has always pointed at this slot; additional cdroms live in vm_iso_map.
