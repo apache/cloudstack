@@ -1238,7 +1238,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         InternalBackupJoinVO backupJoinVO = internalBackupJoinDao.findById(backupVO.getId());
         if (backupJoinVO.getCurrent() || (!backupChildren.isEmpty() && backupChildren.get(backupChildren.size() - 1).getCurrent())) {
             logger.info("As [{}] is true, we are ending the backup chain for VM [{}]. The next backup will be a full backup.",
-                    BackupValidationServiceController.backupValidationEndChainOnFail.toString());
+                    BackupValidationServiceJobController.backupValidationEndChainOnFail.toString());
             endBackupChain(userVmDao.findById(backupVO.getVmId()));
         }
     }
@@ -1247,7 +1247,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
      * This method was created to facilitate testing
      * */
     protected Boolean getValidationEndChainOnFail(BackupVO backupVO) {
-        return BackupValidationServiceController.backupValidationEndChainOnFail.valueIn(backupVO.getAccountId());
+        return BackupValidationServiceJobController.backupValidationEndChainOnFail.valueIn(backupVO.getAccountId());
     }
 
     protected boolean normalizeBackupErrorAndFinishChain(UserVmVO userVmVO) {
@@ -2557,13 +2557,13 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
                     cmd.setTakeScreenshot(true);
                     VMInstanceDetailVO screenshotWait = vmInstanceDetailsDao.findDetail(backup.getVmId(), VmDetailConstants.VALIDATION_SCREENSHOT_WAIT);
                     cmd.setScreenshotWait(screenshotWait != null ? Integer.valueOf(screenshotWait.getValue()) :
-                            BackupValidationServiceController.backupValidationScreenshotDefaultWait.valueIn(backup.getAccountId()));
+                            BackupValidationServiceJobController.backupValidationScreenshotDefaultWait.valueIn(backup.getAccountId()));
                     break;
                 case wait_for_boot:
                     cmd.setWaitForBoot(true);
                     VMInstanceDetailVO bootTimeout = vmInstanceDetailsDao.findDetail(backup.getVmId(), VmDetailConstants.VALIDATION_BOOT_TIMEOUT);
                     cmd.setBootTimeout(bootTimeout != null ? Integer.valueOf(bootTimeout.getValue()) :
-                            BackupValidationServiceController.backupValidationBootDefaultTimeout.valueIn(backup.getAccountId()));
+                            BackupValidationServiceJobController.backupValidationBootDefaultTimeout.valueIn(backup.getAccountId()));
                     break;
                 case execute_command:
                     configureValidationScript(cmd, backup);
@@ -2587,7 +2587,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         cmd.setExpectedResult(scriptExpectedResult != null ? scriptExpectedResult.getValue() : "0");
         VMInstanceDetailVO scriptTimeout = vmInstanceDetailsDao.findDetail(vmId, VmDetailConstants.VALIDATION_COMMAND_TIMEOUT);
         cmd.setScriptTimeout(scriptTimeout != null ? Integer.valueOf(scriptTimeout.getValue()) :
-                BackupValidationServiceController.backupValidationScriptDefaultTimeout.valueIn(backupVO.getId()));
+                BackupValidationServiceJobController.backupValidationScriptDefaultTimeout.valueIn(backupVO.getId()));
     }
 
     protected void createBasicBackupDetails(Long imageStoreId, Long parentId, BackupVO backupVO) {

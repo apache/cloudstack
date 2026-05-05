@@ -201,11 +201,17 @@ public abstract class InternalBackupServiceJobController extends ManagerBase {
         }
         logger.debug("Since [{}] is set to [{}]. We will only execute up to [{}] at the same time. We already have [{}] executing jobs.",
                 jobsPerZoneConfiguration.toString(), maxConcurrentJobsInTheZone, maxConcurrentJobsInTheZone, totalExecutingJobs);
+
         if (maxConcurrentJobsInTheZone <= totalExecutingJobs) {
             logger.debug("We are already executing the maximum amount of jobs in this zone, we will not execute any new jobs.");
             return List.of();
         }
-        return jobsToStart.subList(0, maxConcurrentJobsInTheZone - totalExecutingJobs);
+
+        int maxAllowedJobsToStart = maxConcurrentJobsInTheZone - totalExecutingJobs;
+        if (jobsToStart.size() > maxAllowedJobsToStart) {
+            return jobsToStart.subList(0, maxAllowedJobsToStart);
+        }
+        return jobsToStart;
     }
 
     protected List<Pair<HostVO, Long>> filterHostsWithTooManyJobs(HashMap<HostVO, Long> hostToNumberOfExecutingJobs, ConfigKey<Integer> jobsPerHostConfiguration) {

@@ -168,10 +168,11 @@ CREATE TABLE IF NOT EXISTS `cloud`.`internal_backup_service_job` (
     `start_time` datetime,
     `removed` datetime,
     PRIMARY KEY (`id`),
-    CONSTRAINT `fk_backup_compression_job__backup_id` FOREIGN KEY (`backup_id`) REFERENCES `backups`(`id`),
-    CONSTRAINT `fk_backup_compression_job__instance_id` FOREIGN KEY (`instance_id`) REFERENCES `vm_instance`(`id`),
-    CONSTRAINT `fk_backup_compression_job__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`),
-    CONSTRAINT `fk_backup_compression_job__zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center`(`id`)
+    CONSTRAINT `fk_internal_backup_service_job__backup_id` FOREIGN KEY (`backup_id`) REFERENCES `backups`(`id`),
+    CONSTRAINT `fk_internal_backup_service_job__instance_id` FOREIGN KEY (`instance_id`) REFERENCES `vm_instance`(`id`),
+    CONSTRAINT `fk_internal_backup_service_job__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`),
+    CONSTRAINT `fk_internal_backup_service_job__zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center`(`id`)
+    CONSTRAINT `fk_internal_backup_service_job__account_id` FOREIGN KEY (`account_id`) REFERENCES `account`(`id`)
     );
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'uncompressed_size', 'bigint unsigned');

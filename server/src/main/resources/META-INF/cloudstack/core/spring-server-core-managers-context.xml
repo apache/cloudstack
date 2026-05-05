@@ -406,5 +406,5 @@
         <property name="internalBackupProviders" value="#{internalBackupProvidersRegistry.registered}" />
     </bean>
     <bean id="backupCompressionService" class="org.apache.cloudstack.backup.BackupCompressionServiceJobController" />
-    <bean id="backupValidationService" class="org.apache.cloudstack.backup.BackupValidationServiceController" />
+    <bean id="backupValidationService" class="org.apache.cloudstack.backup.BackupValidationServiceJobController" />
 </beans>

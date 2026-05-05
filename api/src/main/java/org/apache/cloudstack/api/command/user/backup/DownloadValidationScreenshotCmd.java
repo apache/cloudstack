@@ -69,7 +69,7 @@ public class DownloadValidationScreenshotCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         Backup backup = _entityMgr.findById(Backup.class, getBackupId());
         if (backup == null) {
-            throw new InvalidParameterValueException(String.format("Unable to find backup with ID [%s]", getBackupId()));
+            throw new InvalidParameterValueException(String.format("Unable to find backup with ID [%s].", getBackupId()));
         }
         return "Downloading validation screenshot of backup " + backup.getUuid();
     }

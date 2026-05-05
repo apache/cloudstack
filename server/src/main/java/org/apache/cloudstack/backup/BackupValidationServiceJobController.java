@@ -39,7 +39,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-public class BackupValidationServiceController extends InternalBackupServiceJobController implements Configurable {
+public class BackupValidationServiceJobController extends InternalBackupServiceJobController implements Configurable {
 
     private static final String LOCK = "validation_lock";
 
@@ -195,7 +195,7 @@ public class BackupValidationServiceController extends InternalBackupServiceJobC
 
     @Override
     public String getConfigComponentName() {
-        return BackupValidationServiceController.class.getSimpleName();
+        return BackupValidationServiceJobController.class.getSimpleName();
     }
 
     @Override

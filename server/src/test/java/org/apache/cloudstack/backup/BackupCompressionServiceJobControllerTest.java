@@ -328,6 +328,21 @@ public class BackupCompressionServiceJobControllerTest {
     }
 
     @Test
+    public void thinJobsToStartListTestNoCurrentExecutingJobsAndNewJobsLowerThanMax() {
+        doReturn(datacenterId).when(dataCenterVoMock).getId();
+        doReturn(6).when(maxConcurrentJobsConfigKey).valueIn(datacenterId);
+        ArrayList<InternalBackupServiceJobVO> originalJobs = new ArrayList<>();
+        for (int i = 0; i < 4; i++) {
+            originalJobs.add(Mockito.mock(InternalBackupServiceJobVO.class));
+        }
+
+        List<InternalBackupServiceJobVO> result = backupCompressionServiceJobControllerSpy.thinJobsToStartList(dataCenterVoMock, new ArrayList<>(originalJobs), 0,
+                maxConcurrentJobsConfigKey);
+
+        assertEquals(originalJobs, result);
+    }
+
+    @Test
     public void filterHostsWithTooManyJobsTestUnlimitedCompressionPerHost() {
         doReturn(0).when(backupCompressionServiceJobControllerSpy).getMaxConcurrentCompressionsPerHost(maxConcurrentJobsConfigKey, hostVO);
 

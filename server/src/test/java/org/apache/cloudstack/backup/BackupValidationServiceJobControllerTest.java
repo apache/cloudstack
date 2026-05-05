@@ -43,7 +43,7 @@ import com.cloud.host.HostVO;
 import com.cloud.utils.Pair;
 
 @RunWith(MockitoJUnitRunner.class)
-public class BackupValidationServiceControllerTest {
+public class BackupValidationServiceJobControllerTest {
 
     @Mock
     private DataCenterDao dataCenterDaoMock;
@@ -65,7 +65,7 @@ public class BackupValidationServiceControllerTest {
 
     @Spy
     @InjectMocks
-    private BackupValidationServiceController backupValidationServiceControllerSpy;
+    private BackupValidationServiceJobController backupValidationServiceJobControllerSpy;
 
     long datacenterId = 1L;
 
@@ -74,10 +74,10 @@ public class BackupValidationServiceControllerTest {
         doReturn(List.of(dataCenterVoMock)).when(dataCenterDaoMock).listEnabledZones();
         doReturn(false).when(internalBackupServiceJobDaoMock).lockInLockTable("validation_lock", 300);
 
-        backupValidationServiceControllerSpy.searchAndDispatchJobs();
+        backupValidationServiceJobControllerSpy.searchAndDispatchJobs();
 
         verify(internalBackupServiceJobDaoMock).unlockFromLockTable(any());
-        verify(backupValidationServiceControllerSpy, never()).rescheduleLostJobs();
+        verify(backupValidationServiceJobControllerSpy, never()).rescheduleLostJobs();
         verify(internalBackupServiceJobDaoMock, never()).listWaitingJobsAndScheduledToBeforeNow(anyLong(), any());
     }
 
@@ -85,12 +85,12 @@ public class BackupValidationServiceControllerTest {
     public void searchAndDispatchJobsTestTaskDisabledReturnsAfterReschedule() {
         doReturn(List.of(dataCenterVoMock)).when(dataCenterDaoMock).listEnabledZones();
         doReturn(true).when(internalBackupServiceJobDaoMock).lockInLockTable("validation_lock", 300);
-        doNothing().when(backupValidationServiceControllerSpy).rescheduleLostJobs();
+        doNothing().when(backupValidationServiceJobControllerSpy).rescheduleLostJobs();
         doReturn(false).when(backupValidationTaskEnabledMock).value();
 
-        backupValidationServiceControllerSpy.searchAndDispatchJobs();
+        backupValidationServiceJobControllerSpy.searchAndDispatchJobs();
 
-        verify(backupValidationServiceControllerSpy).rescheduleLostJobs();
+        verify(backupValidationServiceJobControllerSpy).rescheduleLostJobs();
         verify(internalBackupServiceJobDaoMock, never()).listWaitingJobsAndScheduledToBeforeNow(anyLong(), any());
         verify(internalBackupServiceJobDaoMock).unlockFromLockTable("validation_lock");
     }
@@ -99,11 +99,11 @@ public class BackupValidationServiceControllerTest {
     public void searchAndDispatchJobsTestZoneWithoutBackupFrameworkIsSkipped() {
         doReturn(List.of(dataCenterVoMock)).when(dataCenterDaoMock).listEnabledZones();
         doReturn(true).when(internalBackupServiceJobDaoMock).lockInLockTable("validation_lock", 300);
-        doNothing().when(backupValidationServiceControllerSpy).rescheduleLostJobs();
+        doNothing().when(backupValidationServiceJobControllerSpy).rescheduleLostJobs();
         doReturn(true).when(backupValidationTaskEnabledMock).value();
-        doReturn(false).when(backupValidationServiceControllerSpy).isFrameworkEnabledForZone(dataCenterVoMock);
+        doReturn(false).when(backupValidationServiceJobControllerSpy).isFrameworkEnabledForZone(dataCenterVoMock);
 
-        backupValidationServiceControllerSpy.searchAndDispatchJobs();
+        backupValidationServiceJobControllerSpy.searchAndDispatchJobs();
 
         verify(internalBackupServiceJobDaoMock, never()).listWaitingJobsAndScheduledToBeforeNow(anyLong(), any());
         verify(internalBackupServiceJobDaoMock).unlockFromLockTable("validation_lock");
@@ -113,15 +113,15 @@ public class BackupValidationServiceControllerTest {
     public void searchAndDispatchJobsTestEmptyWaitingJobsSkipsDispatch() {
         doReturn(List.of(dataCenterVoMock)).when(dataCenterDaoMock).listEnabledZones();
         doReturn(true).when(internalBackupServiceJobDaoMock).lockInLockTable("validation_lock", 300);
-        doNothing().when(backupValidationServiceControllerSpy).rescheduleLostJobs();
+        doNothing().when(backupValidationServiceJobControllerSpy).rescheduleLostJobs();
         doReturn(true).when(backupValidationTaskEnabledMock).value();
         doReturn(datacenterId).when(dataCenterVoMock).getId();
-        doReturn(true).when(backupValidationServiceControllerSpy).isFrameworkEnabledForZone(dataCenterVoMock);
+        doReturn(true).when(backupValidationServiceJobControllerSpy).isFrameworkEnabledForZone(dataCenterVoMock);
 
-        backupValidationServiceControllerSpy.searchAndDispatchJobs();
+        backupValidationServiceJobControllerSpy.searchAndDispatchJobs();
 
-        verify(backupValidationServiceControllerSpy, never()).getHostToNumberOfExecutingJobsAndTotalExecutingJobs(any(), any());
-        verify(backupValidationServiceControllerSpy, never()).submitQueuedJobsForExecution(any(), any(), any(), any(), anyLong());
+        verify(backupValidationServiceJobControllerSpy, never()).getHostToNumberOfExecutingJobsAndTotalExecutingJobs(any(), any());
+        verify(backupValidationServiceJobControllerSpy, never()).submitQueuedJobsForExecution(any(), any(), any(), any(), anyLong());
         verify(internalBackupServiceJobDaoMock).unlockFromLockTable("validation_lock");
     }
 
@@ -131,20 +131,20 @@ public class BackupValidationServiceControllerTest {
 
         doReturn(List.of(dataCenterVoMock)).when(dataCenterDaoMock).listEnabledZones();
         doReturn(true).when(internalBackupServiceJobDaoMock).lockInLockTable("validation_lock", 300);
-        doNothing().when(backupValidationServiceControllerSpy).rescheduleLostJobs();
+        doNothing().when(backupValidationServiceJobControllerSpy).rescheduleLostJobs();
         doReturn(true).when(backupValidationTaskEnabledMock).value();
         doReturn(datacenterId).when(dataCenterVoMock).getId();
-        doReturn(true).when(backupValidationServiceControllerSpy).isFrameworkEnabledForZone(dataCenterVoMock);
-        doReturn(List.of(internalBackupServiceJobVoMock)).when(backupValidationServiceControllerSpy).filterJobsOfDomainsAndAccountsWithDisabledValidationTask(any());
-        doReturn(executingJobsPair).when(backupValidationServiceControllerSpy).getHostToNumberOfExecutingJobsAndTotalExecutingJobs(eq(dataCenterVoMock), any());
-        doReturn(List.of(new Pair<>(hostVO, 0L))).when(backupValidationServiceControllerSpy).filterHostsWithTooManyJobs(any(), any());
-        doReturn(List.of(internalBackupServiceJobVoMock)).when(backupValidationServiceControllerSpy).thinJobsToStartList(eq(dataCenterVoMock), any(), anyInt(), any());
-        doNothing().when(backupValidationServiceControllerSpy).submitQueuedJobsForExecution(any(), any(), any(), any(), eq(datacenterId));
+        doReturn(true).when(backupValidationServiceJobControllerSpy).isFrameworkEnabledForZone(dataCenterVoMock);
+        doReturn(List.of(internalBackupServiceJobVoMock)).when(backupValidationServiceJobControllerSpy).filterJobsOfDomainsAndAccountsWithDisabledValidationTask(any());
+        doReturn(executingJobsPair).when(backupValidationServiceJobControllerSpy).getHostToNumberOfExecutingJobsAndTotalExecutingJobs(eq(dataCenterVoMock), any());
+        doReturn(List.of(new Pair<>(hostVO, 0L))).when(backupValidationServiceJobControllerSpy).filterHostsWithTooManyJobs(any(), any());
+        doReturn(List.of(internalBackupServiceJobVoMock)).when(backupValidationServiceJobControllerSpy).thinJobsToStartList(eq(dataCenterVoMock), any(), anyInt(), any());
+        doNothing().when(backupValidationServiceJobControllerSpy).submitQueuedJobsForExecution(any(), any(), any(), any(), eq(datacenterId));
 
-        backupValidationServiceControllerSpy.searchAndDispatchJobs();
+        backupValidationServiceJobControllerSpy.searchAndDispatchJobs();
 
 
-        verify(backupValidationServiceControllerSpy).submitQueuedJobsForExecution(any(), any(), any(), any(), eq(datacenterId));
+        verify(backupValidationServiceJobControllerSpy).submitQueuedJobsForExecution(any(), any(), any(), any(), eq(datacenterId));
         verify(internalBackupServiceJobDaoMock).unlockFromLockTable("validation_lock");
     }
 }
