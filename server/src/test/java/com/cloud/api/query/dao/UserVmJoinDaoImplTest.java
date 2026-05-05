@@ -51,6 +51,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
@@ -88,6 +89,9 @@ public class UserVmJoinDaoImplTest extends GenericDaoBaseWithTagInformationBaseT
 
     @Mock
     private VmIsoMapDao vmIsoMapDao;
+
+    @Mock
+    private HostDetailsDao hostDetailsDao;
 
     @Mock
     ExtensionHelper extensionHelper;
