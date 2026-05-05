@@ -305,6 +305,15 @@ public class AgentProperties{
     public static final Property<String> NETWORK_BRIDGE_TYPE = new Property<>("network.bridge.type", "native");
 
     /**
+     * Sets the VXLAN networking mode used by the BridgeVifDriver.<br>
+     * Possible values: multicast | evpn <br>
+     * When set to <code>evpn</code>, the driver will use modifyvxlan-evpn.sh instead of modifyvxlan.sh.<br>
+     * Data type: String.<br>
+     * Default value: <code>multicast</code>
+     */
+    public static final Property<String> NETWORK_VXLAN_MODE = new Property<>("network.vxlan.mode", "multicast");
+
+    /**
      * Sets the driver used to plug and unplug NICs from the bridges.<br>
      * A sensible default value will be selected based on the network.bridge.type but can be overridden here.<br>
      * Value for native = com.cloud.hypervisor.kvm.resource.BridgeVifDriver<br>
