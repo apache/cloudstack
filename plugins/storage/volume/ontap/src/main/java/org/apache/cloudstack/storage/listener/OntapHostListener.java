@@ -37,8 +37,11 @@ import com.cloud.storage.StoragePool;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import com.cloud.host.dao.HostDao;
+
+import java.util.Map;
 
 public class OntapHostListener implements HypervisorHostListener {
     protected Logger logger = LogManager.getLogger(getClass());
@@ -53,6 +56,9 @@ public class OntapHostListener implements HypervisorHostListener {
     private HostDao _hostDao;
     @Inject
     private StoragePoolHostDao storagePoolHostDao;
+    @Inject
+    private StoragePoolDetailsDao _storagePoolDetailsDao;
+
 
     @Override
     public boolean hostConnect(long hostId, long poolId)  {
@@ -63,6 +69,7 @@ public class OntapHostListener implements HypervisorHostListener {
             return false;
         }
 
+        // TODO add host type check also since we support only KVM for now, host.getHypervisorType().equals(HypervisorType.KVM)
         StoragePool pool = _storagePoolDao.findById(poolId);
         if (pool == null) {
             logger.error("Failed to connect host - storage pool not found with id: {}", poolId);
@@ -70,7 +77,12 @@ public class OntapHostListener implements HypervisorHostListener {
         }
         logger.info("Connecting host {} to ONTAP storage pool {}", host.getName(), pool.getName());
         try {
-            ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(true, pool);
+            // Load storage pool details from database to pass mount options and other config to agent
+            Map<String, String> detailsMap = _storagePoolDetailsDao.listDetailsKeyPairs(poolId);
+            // Create the ModifyStoragePoolCommand to send to the agent
+            // Note: Always send command even if database entry exists, because agent may have restarted
+            // and lost in-memory pool registration. The command handler is idempotent.
+            ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(true, pool, detailsMap);
 
             Answer answer = _agentMgr.easySend(hostId, cmd);
 
@@ -87,9 +99,12 @@ public class OntapHostListener implements HypervisorHostListener {
                         "Unable to establish a connection from agent to storage pool %s due to %s", pool, answer.getDetails()));
             }
 
+            // Get the mount path from the answer
+
             if (!(answer instanceof ModifyStoragePoolAnswer)) {
-                logger.error("Received unexpected answer type {} for storage pool {}", answer.getClass().getName(), pool.getName());
-                throw new CloudRuntimeException("Failed to connect to storage pool. Please check agent logs for details.");
+                throw new CloudRuntimeException(String.format(
+                        "Unexpected answer type %s returned for modify storage pool command for pool %s on host %d",
+                        answer.getClass().getName(), pool, hostId));
             }
 
             ModifyStoragePoolAnswer mspAnswer = (ModifyStoragePoolAnswer) answer;
@@ -101,6 +116,7 @@ public class OntapHostListener implements HypervisorHostListener {
             String localPath = poolInfo.getLocalPath();
             logger.info("Storage pool {} successfully mounted at: {}", pool.getName(), localPath);
 
+            // Update or create the storage_pool_host_ref entry with the correct local_path
             StoragePoolHostVO storagePoolHost = storagePoolHostDao.findByPoolHost(poolId, hostId);
 
             if (storagePoolHost == null) {
@@ -113,6 +129,7 @@ public class OntapHostListener implements HypervisorHostListener {
                 logger.info("Updated storage_pool_host_ref entry with local_path: {}", localPath);
             }
 
+            // Update pool capacity/usage information
             StoragePoolVO poolVO = _storagePoolDao.findById(poolId);
             if (poolVO != null && poolInfo.getCapacityBytes() > 0) {
                 poolVO.setCapacityBytes(poolInfo.getCapacityBytes());
@@ -123,6 +140,8 @@ public class OntapHostListener implements HypervisorHostListener {
 
         } catch (Exception e) {
             logger.error("Exception while connecting host {} to storage pool {}", host.getName(), pool.getName(), e);
+            // CRITICAL: Don't throw exception - it crashes the agent and causes restart loops
+            // Return false to indicate failure without crashing
             return false;
         }
         return true;
@@ -137,6 +156,7 @@ public class OntapHostListener implements HypervisorHostListener {
             logger.error("Failed to add host by HostListener as host was not found with id : {}", host.getId());
             return false;
         }
+        // TODO add storage pool get validation
         logger.info("Disconnecting host {} from ONTAP storage pool {}", host.getName(), pool.getName());
 
         try {

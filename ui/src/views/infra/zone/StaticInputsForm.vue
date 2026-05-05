@@ -247,6 +247,15 @@ export default {
         return Promise.resolve()
       }
     },
+    async checkNumberFormat (rule, value) {
+      if (!value || value === '') {
+        return Promise.resolve()
+      } else if (!/^\d+$/.test(String(value).replace(/,/g, ''))) {
+        return Promise.reject(rule.message)
+      } else {
+        return Promise.resolve()
+      }
+    },
     isDisplayInput (field) {
       if (!field.display && !field.hidden) {
         return true

@@ -575,7 +575,7 @@ export default {
           key: 'managed',
           checkbox: true,
           hidden: {
-            provider: ['DefaultPrimary', 'PowerFlex', 'Linstor']
+            provider: ['DefaultPrimary', 'PowerFlex', 'Linstor', 'NetApp ONTAP']
           }
         },
         {
@@ -589,14 +589,14 @@ export default {
           title: 'label.capacityiops',
           key: 'capacityIops',
           hidden: {
-            provider: ['DefaultPrimary', 'PowerFlex', 'Linstor']
+            provider: ['DefaultPrimary', 'PowerFlex', 'Linstor', 'NetApp ONTAP']
           }
         },
         {
           title: 'label.url',
           key: 'url',
           hidden: {
-            provider: ['DefaultPrimary', 'PowerFlex', 'Linstor']
+            provider: ['DefaultPrimary', 'PowerFlex', 'Linstor', 'NetApp ONTAP']
           }
         },
         {
@@ -634,6 +634,43 @@ export default {
           placeHolder: 'message.error.input.value',
           display: {
             provider: 'PowerFlex'
+          }
+        },
+        {
+          title: 'label.ontap.ip',
+          key: 'ontapIP',
+          required: true,
+          placeHolder: 'message.error.input.value',
+          display: {
+            provider: 'NetApp ONTAP'
+          }
+        },
+        {
+          title: 'label.username',
+          key: 'ontapUsername',
+          required: true,
+          placeHolder: 'message.error.input.value',
+          display: {
+            provider: 'NetApp ONTAP'
+          }
+        },
+        {
+          title: 'label.password',
+          key: 'ontapPassword',
+          required: true,
+          placeHolder: 'message.error.input.value',
+          password: true,
+          display: {
+            provider: 'NetApp ONTAP'
+          }
+        },
+        {
+          title: 'label.ontap.svm.name',
+          key: 'ontapSvmName',
+          required: true,
+          placeHolder: 'message.error.input.value',
+          display: {
+            provider: 'NetApp ONTAP'
           }
         },
         {
@@ -909,9 +946,9 @@ export default {
   },
   watch: {
     'prefillContent.provider' (newVal, oldVal) {
-      if (['SolidFire', 'PowerFlex'].includes(newVal) && !['SolidFire', 'PowerFlex'].includes(oldVal)) {
+      if (['SolidFire', 'PowerFlex', 'NetApp ONTAP'].includes(newVal) && !['SolidFire', 'PowerFlex', 'NetApp ONTAP'].includes(oldVal)) {
         this.$emit('fieldsChanged', { primaryStorageProtocol: undefined })
-      } else if (!['SolidFire', 'PowerFlex'].includes(newVal) && ['SolidFire', 'PowerFlex'].includes(oldVal)) {
+      } else if (!['SolidFire', 'PowerFlex', 'NetApp ONTAP'].includes(newVal) && ['SolidFire', 'PowerFlex', 'NetApp ONTAP'].includes(oldVal)) {
         this.$emit('fieldsChanged', { primaryStorageProtocol: undefined })
       }
 
@@ -996,6 +1033,17 @@ export default {
       this.primaryStorageScopes = scope
     },
     fetchProtocol () {
+      const provider = this.prefillContent?.provider || null
+      if (provider === 'NetApp ONTAP') {
+        this.primaryStorageProtocols = [
+          { id: 'NFS3', description: 'NFS3' },
+          { id: 'ISCSI', description: 'ISCSI' }
+        ]
+        if (!['NFS3', 'ISCSI'].includes(this.prefillContent?.primaryStorageProtocol)) {
+          this.$emit('fieldsChanged', { primaryStorageProtocol: 'NFS3' })
+        }
+        return
+      }
       const hypervisor = this.prefillContent?.hypervisor || null
       const protocols = []
       if (hypervisor === 'KVM') {
