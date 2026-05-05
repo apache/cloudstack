@@ -141,26 +141,14 @@ public class SecurityGroupWorkDaoImpl extends GenericDaoBase<SecurityGroupWorkVO
     }
 
     @Override
-    @DB
     public void updateStep(Long vmId, Long logSequenceNumber, Step step) {
-        final TransactionLegacy txn = TransactionLegacy.currentTxn();
-        txn.start();
         SearchCriteria<SecurityGroupWorkVO> sc = VmIdSeqNumSearch.create();
         sc.setParameters("vmId", vmId);
         sc.setParameters("seqno", logSequenceNumber);
 
-        final Filter filter = new Filter(SecurityGroupWorkVO.class, null, true, 0l, 1l);
-
-        final List<SecurityGroupWorkVO> vos = lockRows(sc, filter, true);
-        if (vos.size() == 0) {
-            txn.commit();
-            return;
-        }
-        SecurityGroupWorkVO work = vos.get(0);
-        work.setStep(step);
-        update(work.getId(), work);
-
-        txn.commit();
+        SecurityGroupWorkVO workForUpdate = createForUpdate();
+        workForUpdate.setStep(step);
+        update(workForUpdate, sc);
     }
 
     @Override
@@ -172,21 +160,10 @@ public class SecurityGroupWorkDaoImpl extends GenericDaoBase<SecurityGroupWorkVO
     }
 
     @Override
-    @DB
     public void updateStep(Long workId, Step step) {
-        final TransactionLegacy txn = TransactionLegacy.currentTxn();
-        txn.start();
-
-        SecurityGroupWorkVO work = lockRow(workId, true);
-        if (work == null) {
-            txn.commit();
-            return;
-        }
-        work.setStep(step);
-        update(work.getId(), work);
-
-        txn.commit();
-
+        SecurityGroupWorkVO workForUpdate = createForUpdate();
+        workForUpdate.setStep(step);
+        update(workId, workForUpdate);
     }
 
     @Override
