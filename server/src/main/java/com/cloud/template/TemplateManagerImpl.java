@@ -689,8 +689,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @Override
     public void prepareIsoForVmProfile(VirtualMachineProfile profile, DeployDestination dest) {
         UserVmVO vm = _userVmDao.findById(profile.getId());
-        Long poolId = singleStoragePoolId(dest);
         Map<Integer, Long> slotToIsoId = loadAttachedIsoSlots(vm);
+        Long poolId = slotToIsoId.isEmpty() ? null : singleStoragePoolId(dest);
 
         // Pre-allocate every cdrom slot at boot. QEMU/IDE refuses to hot-add new cdrom drives, so
         // runtime attachIso can only media-swap into a slot the domain already owns.
