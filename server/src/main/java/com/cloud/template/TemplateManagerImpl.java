@@ -1248,13 +1248,13 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         // Templates always live on primary storage and aren't tracked here.
         List<UserVmJoinVO> userVmUsingIso = _userVmJoinDao.listActiveByIsoId(templateId);
         if (!userVmUsingIso.isEmpty()) {
-            logger.debug("ISO " + templateId + " is not deleteable because it is attached to " + userVmUsingIso.size() + " Instances");
+            logger.debug("Unable to delete ISO {} because it is attached to {} Instances", templateId, userVmUsingIso.size());
             return false;
         }
         for (VmIsoMapVO row : _vmIsoMapDao.listByIsoId(templateId)) {
             UserVmVO vm = _userVmDao.findById(row.getVmId());
             if (vm != null && vm.getState() != State.Error && vm.getState() != State.Expunging) {
-                logger.debug("ISO " + templateId + " is not deleteable because it is attached to Instance " + vm.getUuid() + " at slot " + row.getDeviceSeq());
+                logger.debug("Unable to delete ISO {} because it is attached to Instance {} at slot {}", templateId, vm.getUuid(), row.getDeviceSeq());
                 return false;
             }
         }
