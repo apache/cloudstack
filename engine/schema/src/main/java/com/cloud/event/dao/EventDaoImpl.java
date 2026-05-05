@@ -18,6 +18,7 @@ package com.cloud.event.dao;
 
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 import org.springframework.stereotype.Component;
@@ -29,12 +30,13 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.db.UpdateBuilder;
 
 @Component
 public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements EventDao {
     protected final SearchBuilder<EventVO> CompletedEventSearch;
     protected final SearchBuilder<EventVO> ToArchiveOrDeleteEventSearch;
+    protected final SearchBuilder<EventVO> ArchiveByIdsSearch;
 
     public EventDaoImpl() {
         CompletedEventSearch = createSearchBuilder();
@@ -51,6 +53,10 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
         ToArchiveOrDeleteEventSearch.and("createdDateL", ToArchiveOrDeleteEventSearch.entity().getCreateDate(), Op.LTEQ);
         ToArchiveOrDeleteEventSearch.and("archived", ToArchiveOrDeleteEventSearch.entity().getArchived(), Op.EQ);
         ToArchiveOrDeleteEventSearch.done();
+
+        ArchiveByIdsSearch = createSearchBuilder();
+        ArchiveByIdsSearch.and("id", ArchiveByIdsSearch.entity().getId(), Op.IN);
+        ArchiveByIdsSearch.done();
     }
 
     @Override
@@ -101,15 +107,13 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
     @Override
     public void archiveEvents(List<EventVO> events) {
         if (events != null && !events.isEmpty()) {
-            TransactionLegacy txn = TransactionLegacy.currentTxn();
-            txn.start();
-            for (EventVO event : events) {
-                event = lockRow(event.getId(), true);
-                event.setArchived(true);
-                update(event.getId(), event);
-                txn.commit();
-            }
-            txn.close();
+            List<Long> ids = events.stream().map(EventVO::getId).collect(Collectors.toList());
+            SearchCriteria<EventVO> sc = ArchiveByIdsSearch.create();
+            sc.setParameters("id", ids.toArray(new Object[ids.size()]));
+            EventVO eventForUpdate = createForUpdate();
+            eventForUpdate.setArchived(true);
+            UpdateBuilder ub = getUpdateBuilder(eventForUpdate);
+            update(ub, sc, null);
         }
     }
 }
