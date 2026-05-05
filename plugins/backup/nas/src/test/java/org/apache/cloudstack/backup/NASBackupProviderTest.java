@@ -52,6 +52,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 
 import org.apache.cloudstack.backup.dao.BackupDao;
+import org.apache.cloudstack.backup.dao.BackupDetailsDao;
 import org.apache.cloudstack.backup.dao.BackupRepositoryDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -95,6 +96,9 @@ public class NASBackupProviderTest {
 
     @Mock
     private VMSnapshotDao vmSnapshotDaoMock;
+
+    @Mock
+    private BackupDetailsDao backupDetailsDao;
 
     @Test
     public void testDeleteBackup() throws OperationTimedoutException, AgentUnavailableException {
