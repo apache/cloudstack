@@ -195,7 +195,7 @@
         :footer="null"
         style="top: 20px;"
         :width="modalWidth"
-        :ok-button-props="getOkProps()"
+        :ok-button-props="okButtonProps"
         :cancel-button-props="getCancelProps()"
         :confirmLoading="actionLoading"
         @cancel="cancelAction"
@@ -270,8 +270,18 @@
               </a-table>
             </div>
             <br v-if="currentAction.paramFields.length > 0" />
-          </span>
-          <a-form
+             </span>
+           <div v-if="currentAction.requireNameConfirmation && !(currentAction.groupAction && selectedRowKeys.length > 0)" style="margin-bottom: 5px">
+            <a-form-item>
+                <a-input v-model:value="actionConfirmText" :placeholder="resource.name" />
+            </a-form-item>
+            <a-alert type="info">
+              <template #message>
+                <div v-html="$t('label.delete.confirmation')"></div>
+              </template>
+            </a-alert>
+           </div>
+           <a-form
             :ref="formRef"
             :model="form"
             :rules="rules"
@@ -526,6 +536,7 @@
                 type="primary"
                 @click="handleSubmit"
                 ref="submit"
+                :disabled="isSubmitDisabled"
               >{{ $t('label.ok') }}</a-button>
             </div>
           </a-form>
@@ -686,6 +697,7 @@ export default {
       confirmDirty: false,
       firstIndex: 0,
       modalWidth: '30vw',
+      actionConfirmText: '',
       promises: []
     }
   },
@@ -893,6 +905,22 @@ export default {
         return 'active'
       }
       return 'self'
+    },
+    okButtonProps () {
+      if (this.currentAction?.requireNameConfirmation && !(this.currentAction.groupAction && this.selectedRowKeys.length > 0)) {
+        const isConfirmed = this.actionConfirmText.trim() === this.resource?.name?.trim()
+        return { type: 'primary', disabled: !isConfirmed }
+      }
+      if (this.selectedRowKeys.length > 0 && this.currentAction?.groupAction) {
+        return {}
+      }
+      return { type: 'primary' }
+    },
+    isSubmitDisabled () {
+      if (this.currentAction?.requireNameConfirmation && !(this.currentAction.groupAction && this.selectedRowKeys.length > 0)) {
+        return this.actionConfirmText.trim() !== this.resource?.name?.trim()
+      }
+      return false
     }
   },
   methods: {
@@ -901,12 +929,6 @@ export default {
         return 'table-cell'
       }
       return 'inline-flex'
-    },
-    getOkProps () {
-      if (this.selectedRowKeys.length > 0 && this.currentAction?.groupAction) {
-      } else {
-        return { props: { type: 'primary' } }
-      }
     },
     getCancelProps () {
       if (this.selectedRowKeys.length > 0 && this.currentAction?.groupAction) {
@@ -1303,6 +1325,7 @@ export default {
       this.actionLoading = false
       this.showAction = false
       this.currentAction = {}
+      this.actionConfirmText = ''
     },
     cancelAction () {
       eventBus.emit('action-closing', { action: this.currentAction })
@@ -1360,6 +1383,7 @@ export default {
       this.currentAction = action
       this.currentAction.params = store.getters.apis[this.currentAction.api].params
       this.resource = action.resource
+      this.actionConfirmText = ''
       this.$emit('change-resource', this.resource)
       var paramFields = this.currentAction.params
       paramFields.sort(function (a, b) {
@@ -1642,6 +1666,12 @@ export default {
     },
     handleSubmit (e) {
       if (this.actionLoading) return
+
+      if (this.currentAction?.requireNameConfirmation && !(this.currentAction.groupAction && this.selectedRowKeys.length > 0)) {
+        if (this.actionConfirmText.trim() !== this.resource?.name?.trim()) {
+          return
+        }
+      }
       this.promises = []
       if (!this.dataView && this.currentAction.groupAction && this.selectedRowKeys.length > 0) {
         if (this.selectedRowKeys.length > 0) {
