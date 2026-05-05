@@ -177,6 +177,18 @@ public class OAuth2AuthManagerImplTest {
     }
 
     @Test
+    public void testDeleteOauthProviderHardDeletes() {
+        Long providerId = 42L;
+        when(_oauthProviderDao.expunge(providerId)).thenReturn(true);
+
+        boolean result = _authManager.deleteOauthProvider(providerId);
+
+        assertTrue(result);
+        Mockito.verify(_oauthProviderDao).expunge(providerId);
+        Mockito.verify(_oauthProviderDao, Mockito.never()).remove(Mockito.anyLong());
+    }
+
+    @Test
     public void testGetCommands() {
         List<Class<?>> expectedCmdList = new ArrayList<>();
         expectedCmdList.add(RegisterOAuthProviderCmd.class);

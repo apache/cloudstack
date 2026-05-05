@@ -236,7 +236,7 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
 
     @Override
     public boolean deleteOauthProvider(Long id) {
-        return _oauthProviderDao.remove(id);
+        return _oauthProviderDao.expunge(id);
     }
 
     @Override
