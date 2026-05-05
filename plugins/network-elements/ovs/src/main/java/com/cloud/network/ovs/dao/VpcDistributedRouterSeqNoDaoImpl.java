@@ -17,15 +17,31 @@
 package com.cloud.network.ovs.dao;
 
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class VpcDistributedRouterSeqNoDaoImpl extends GenericDaoBase<VpcDistributedRouterSeqNoVO, Long> implements VpcDistributedRouterSeqNoDao {
     private SearchBuilder<VpcDistributedRouterSeqNoVO> VpcIdSearch;
+
+    private static final String INCR_TOPOLOGY_SEQ_SQL =
+            "UPDATE `cloud`.`op_vpc_distributed_router_sequence_no` " +
+            "SET topology_update_sequence_no = LAST_INSERT_ID(topology_update_sequence_no + 1) WHERE id = ?";
+
+    private static final String INCR_POLICY_SEQ_SQL =
+            "UPDATE `cloud`.`op_vpc_distributed_router_sequence_no` " +
+            "SET routing_policy__update_sequence_no = LAST_INSERT_ID(routing_policy__update_sequence_no + 1) WHERE id = ?";
+
+    private static final String SELECT_LAST_INSERT_ID_SQL = "SELECT LAST_INSERT_ID()";
 
     protected VpcDistributedRouterSeqNoDaoImpl() {
         VpcIdSearch = createSearchBuilder();
@@ -38,6 +54,33 @@ public class VpcDistributedRouterSeqNoDaoImpl extends GenericDaoBase<VpcDistribu
         SearchCriteria<VpcDistributedRouterSeqNoVO> sc = VpcIdSearch.create();
         sc.setParameters("vmId", vpcId);
         return findOneIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public long incrementAndGetTopologySeqNo(long id) {
+        return incrementAndGet(id, INCR_TOPOLOGY_SEQ_SQL, "topology");
+    }
+
+    @Override
+    public long incrementAndGetPolicySeqNo(long id) {
+        return incrementAndGet(id, INCR_POLICY_SEQ_SQL, "policy");
+    }
+
+    private long incrementAndGet(long id, String updateSql, String seqType) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        try {
+            PreparedStatement pstmt = txn.prepareAutoCloseStatement(updateSql);
+            pstmt.setLong(1, id);
+            pstmt.executeUpdate();
+            pstmt = txn.prepareAutoCloseStatement(SELECT_LAST_INSERT_ID_SQL);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getLong(1);
+            }
+            throw new CloudRuntimeException("Failed to retrieve LAST_INSERT_ID after " + seqType + " seq increment for id: " + id);
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Error incrementing " + seqType + " sequence for id: " + id, e);
+        }
     }
 
 }
