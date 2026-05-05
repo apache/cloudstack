@@ -791,8 +791,8 @@ public class ServerAdapter extends ManagerBase {
             throw new InvalidParameterValueException("DataCenter with ID " + uuid + " not found");
         }
         Filter filter = new Filter(StoragePoolJoinVO.class, "id", true, offset, limit);
-        List<StoragePoolJoinVO> storagePoolVOS = storagePoolJoinDao.listByZoneAndType(dataCenterVO.getId(),
-                SUPPORTED_STORAGE_TYPES, filter);
+        List<StoragePoolJoinVO> storagePoolVOS = storagePoolJoinDao.listByZoneHypervisorAndType(dataCenterVO.getId(),
+                Hypervisor.HypervisorType.KVM, SUPPORTED_STORAGE_TYPES, filter);
         return StoreVOToStorageDomainConverter.toStorageDomainListFromPools(storagePoolVOS);
     }
 

@@ -76,6 +76,7 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
 import com.cloud.network.dao.NetworkDao;
@@ -676,7 +677,7 @@ public class ServerAdapterTest {
         when(dcVO.getId()).thenReturn(1L);
         when(dataCenterDao.findByUuid("dc-uuid")).thenReturn(dcVO);
         StoragePoolJoinVO poolVO = mock(StoragePoolJoinVO.class);
-        when(storagePoolJoinDao.listByZoneAndType(eq(1L), any(), any())).thenReturn(List.of(poolVO));
+        when(storagePoolJoinDao.listByZoneHypervisorAndType(eq(1L), eq(Hypervisor.HypervisorType.KVM), any(), any())).thenReturn(List.of(poolVO));
 
         assertNotNull(serverAdapter.listStorageDomainsByDcId("dc-uuid", 0L, 10L));
     }

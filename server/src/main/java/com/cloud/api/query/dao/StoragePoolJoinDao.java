@@ -18,6 +18,7 @@ package com.cloud.api.query.dao;
 
 import java.util.List;
 
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.ScopeType;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 
@@ -46,6 +47,6 @@ public interface StoragePoolJoinDao extends GenericDao<StoragePoolJoinVO, Long> 
 
     List<StoragePoolVO> findStoragePoolByScopeAndRuleTags(Long datacenterId, Long podId, Long clusterId, ScopeType scopeType, List<String> tags);
 
-    List<StoragePoolJoinVO> listByZoneAndType(long zoneId, List<Storage.StoragePoolType> types, Filter filter);
+    List<StoragePoolJoinVO> listByZoneHypervisorAndType(long zoneId, Hypervisor.HypervisorType hypervisorType, List<Storage.StoragePoolType> types, Filter filter);
 
 }

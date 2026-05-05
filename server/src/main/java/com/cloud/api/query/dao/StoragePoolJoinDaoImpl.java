@@ -41,6 +41,7 @@ import org.springframework.stereotype.Component;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.capacity.CapacityManager;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.server.ResourceTag;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
@@ -412,14 +413,18 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         return filteredPools;
     }
 
-    @Override
-    public List<StoragePoolJoinVO> listByZoneAndType(long zoneId, List<Storage.StoragePoolType> types, Filter filter) {
+    public List<StoragePoolJoinVO> listByZoneHypervisorAndType(long zoneId, Hypervisor.HypervisorType hypervisorType, List<Storage.StoragePoolType> types, Filter filter) {
         SearchBuilder<StoragePoolJoinVO> sb = createSearchBuilder();
         sb.and("zoneId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
+        sb.and("hypervisors", sb.entity().getHypervisor(), SearchCriteria.Op.IN);
         sb.and("types", sb.entity().getPoolType(), SearchCriteria.Op.IN);
         sb.done();
         SearchCriteria<StoragePoolJoinVO> sc = sb.create();
         sc.setParameters("zoneId", zoneId);
+        List<Hypervisor.HypervisorType> hypervisors = new ArrayList<>();
+        hypervisors.add(Hypervisor.HypervisorType.Any);
+        hypervisors.add(hypervisorType);
+        sc.setParameters("hypervisors", hypervisors.toArray());
         if (CollectionUtils.isNotEmpty(types)) {
             sc.setParameters("types", types.toArray());
         }
