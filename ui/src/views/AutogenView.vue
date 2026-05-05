@@ -195,8 +195,6 @@
         :footer="null"
         style="top: 20px;"
         :width="modalWidth"
-        :ok-button-props="okButtonProps"
-        :cancel-button-props="getCancelProps()"
         :confirmLoading="actionLoading"
         @cancel="cancelAction"
         centered
@@ -906,16 +904,6 @@ export default {
       }
       return 'self'
     },
-    okButtonProps () {
-      if (this.currentAction?.requireNameConfirmation && !(this.currentAction.groupAction && this.selectedRowKeys.length > 0)) {
-        const isConfirmed = this.actionConfirmText.trim() === this.resource?.name?.trim()
-        return { type: 'primary', disabled: !isConfirmed }
-      }
-      if (this.selectedRowKeys.length > 0 && this.currentAction?.groupAction) {
-        return {}
-      }
-      return { type: 'primary' }
-    },
     isSubmitDisabled () {
       if (this.currentAction?.requireNameConfirmation && !(this.currentAction.groupAction && this.selectedRowKeys.length > 0)) {
         return this.actionConfirmText.trim() !== this.resource?.name?.trim()
@@ -929,13 +917,6 @@ export default {
         return 'table-cell'
       }
       return 'inline-flex'
-    },
-    getCancelProps () {
-      if (this.selectedRowKeys.length > 0 && this.currentAction?.groupAction) {
-        return { props: { type: 'primary' } }
-      } else {
-        return { props: { type: 'default' } }
-      }
     },
     switchProject (projectId) {
       if (!projectId || !projectId.length || projectId.length !== 36) {
