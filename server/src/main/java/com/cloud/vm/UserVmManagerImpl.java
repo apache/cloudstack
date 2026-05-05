@@ -1150,6 +1150,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             logger.error("Vm {} is not in Running state, failed to reboot", vm);
             return null;
         }
+        if ( null == vm.getHostId() ) {
+            logger.error("Vm {} , is in state 'Running', but doesn't have a host id, failed to reboot", vm);
+            return null;
+        }
 
         collectVmDiskAndNetworkStatistics(vm, State.Running);
 
@@ -2477,10 +2481,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         _executor = Executors.newScheduledThreadPool(wrks, new NamedThreadFactory("UserVm-Scavenger"));
 
-        String vmIpWorkers = configs.get(VmIpFetchTaskWorkers.value().toString());
-        int vmipwrks = NumbersUtil.parseInt(vmIpWorkers, 10);
-
-        _vmIpFetchExecutor =   Executors.newScheduledThreadPool(vmipwrks, new NamedThreadFactory("UserVm-ipfetch"));
+        _vmIpFetchExecutor =   Executors.newScheduledThreadPool(VmIpFetchTaskWorkers.value(), new NamedThreadFactory("UserVm-ipfetch"));
 
         String aggregationRange = configs.get("usage.stats.job.aggregation.range");
         int _usageAggregationRange  = NumbersUtil.parseInt(aggregationRange, 1440);
@@ -2799,12 +2800,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 if (scanLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) {
                     try {
                         List<UserVmVO> vms = _vmDao.findDestroyedVms(new Date(System.currentTimeMillis() - ((long)_expungeDelay << 10)));
-                        if (logger.isInfoEnabled()) {
-                            if (vms.isEmpty()) {
-                                logger.trace("Found no Instances to expunge.");
-                            } else {
-                                logger.info("Found " + vms.size() + " Instances to expunge.");
-                            }
+                        if (vms.isEmpty()) {
+                            logger.trace("Found no Instances to expunge.");
+                        } else {
+                            logger.info("Found " + vms.size() + " Instances to expunge.");
                         }
                         for (UserVmVO vm : vms) {
                             try {
@@ -3144,9 +3143,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             NetworkVO network = _networkDao.findById(nic.getNetworkId());
             long isDefault = (nic.isDefaultNic()) ? 1 : 0;
             UsageEventUtils.publishUsageEvent(eventType, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
-                    Long.toString(nic.getId()), network.getNetworkOfferingId(), null, isDefault, vm.getClass().getName(), vm.getUuid(), true);
+                    Long.toString(nic.getId()), network.getNetworkOfferingId(), null, isDefault, vm.getClass().getName(), vm.getUuid(), isDisplay);
         }
-
     }
 
     @Override
@@ -3482,7 +3480,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Booting into a hardware setup menu is not implemented on " + vmInstance.getHypervisorType());
         }
 
-        UserVm userVm = rebootVirtualMachine(vmId, cmd.getBootIntoSetup(), cmd.isForced());
+        UserVm userVm = rebootVirtualMachine(vmId, enterSetup, cmd.isForced());
         if (userVm != null ) {
             // update the vmIdCountMap if the vm is in advanced shared network with out services
             final List<NicVO> nics = _nicDao.listByVmId(vmId);
@@ -5912,7 +5910,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     /**
      * Create or overwrite a parameter in the list
      * @param params the list of parameters
-     * @param parameter the parameter to creat/overwrite
+     * @param parameterMap the original map of parameters to take the existing parameters from if params is null
+     * @param parameter the parameter to create or overwrite
      * @param parameterValue the value to give to the parameter
      * @return the resulting updated list of parameters
      */
