@@ -2085,13 +2085,31 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
     }
 
+    private Map<Long, NetworkVO> batchLoadNetworksForNics(List<NicVO> nics) {
+        List<Long> networkIds = new ArrayList<>(nics.size());
+        for (NicVO nic : nics) {
+            networkIds.add(nic.getNetworkId());
+        }
+        Map<Long, NetworkVO> result = new HashMap<>(networkIds.size());
+        if (!networkIds.isEmpty()) {
+            for (NetworkVO network : _networksDao.listByIds(networkIds)) {
+                result.put(network.getId(), network);
+            }
+        }
+        return result;
+    }
+
     @Override
     public void setHypervisorHostname(VirtualMachineProfile vm, DeployDestination dest, boolean migrationSuccessful) throws ResourceUnavailableException {
         String hypervisorHostName = VirtualMachineManager.getHypervisorHostname(dest.getHost().getName());
         if (StringUtils.isNotEmpty(hypervisorHostName)) {
             final List<NicVO> nics = _nicDao.listByVmId(vm.getId());
+            final Map<Long, NetworkVO> networksById = batchLoadNetworksForNics(nics);
             for (final NicVO nic : nics) {
-                final NetworkVO network = _networksDao.findById(nic.getNetworkId());
+                final NetworkVO network = networksById.get(nic.getNetworkId());
+                if (network == null) {
+                    continue;
+                }
                 final Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
                 final NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate, _networkModel.isSecurityGroupSupportedInNetwork(network),
                         _networkModel.getNetworkTag(vm.getHypervisorType(), network));
@@ -2266,8 +2284,13 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
         final List<NicVO> nics = _nicDao.listByVmId(vm.getId());
         final ReservationContext context = new ReservationContextImpl(UUID.randomUUID().toString(), null, null);
+        final Map<Long, NetworkVO> networksById = batchLoadNetworksForNics(nics);
         for (final NicVO nic : nics) {
-            final NetworkVO network = _networksDao.findById(nic.getNetworkId());
+            final NetworkVO network = networksById.get(nic.getNetworkId());
+            if (network == null) {
+                logger.warn("Network {} not found for nic {} during migration prep, skipping", nic.getNetworkId(), nic);
+                continue;
+            }
             final Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
 
             final NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
@@ -2311,9 +2334,14 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     public void prepareAllNicsForMigration(final VirtualMachineProfile vm, final DeployDestination dest) {
         final List<NicVO> nics = _nicDao.listByVmId(vm.getId());
         final ReservationContext context = new ReservationContextImpl(UUID.randomUUID().toString(), null, null);
+        final Map<Long, NetworkVO> networksById = batchLoadNetworksForNics(nics);
         Long guestNetworkId = null;
         for (final NicVO nic : nics) {
-            final NetworkVO network = _networksDao.findById(nic.getNetworkId());
+            final NetworkVO network = networksById.get(nic.getNetworkId());
+            if (network == null) {
+                logger.warn("Network {} not found for nic {} during migration prep, skipping", nic.getNetworkId(), nic);
+                continue;
+            }
             if (network.getTrafficType().equals(TrafficType.Guest) && network.getGuestType().equals(GuestType.Isolated)) {
                 guestNetworkId = network.getId();
             }
