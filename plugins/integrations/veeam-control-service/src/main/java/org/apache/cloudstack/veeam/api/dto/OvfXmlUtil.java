@@ -63,6 +63,39 @@ public class OvfXmlUtil {
         return sdf;
     });
 
+    protected enum MemoryAllocationUnit {
+        Bytes("byte", 1),
+        Kilobytes("byte * 2^10", 1024),
+        Megabytes("byte * 2^20", 1024 * 1024),
+        Gigabytes("byte * 2^30", 1024 * 1024 * 1024);
+
+        final String allocationUnitsToken;
+        final long bytesMultiplier;
+
+        MemoryAllocationUnit(String allocationUnitsToken, long bytesMultiplier) {
+            this.allocationUnitsToken = allocationUnitsToken;
+            this.bytesMultiplier = bytesMultiplier;
+        }
+
+        public String getAllocationUnitsToken() {
+            return allocationUnitsToken;
+        }
+
+        public long getBytesMultiplier() {
+            return bytesMultiplier;
+        }
+
+        public static MemoryAllocationUnit fromString(String value) {
+            for (MemoryAllocationUnit unit : MemoryAllocationUnit.values()) {
+                if (StringUtils.isNotBlank(value) &&
+                        (unit.getAllocationUnitsToken().equalsIgnoreCase(value) || unit.name().equalsIgnoreCase(value))) {
+                    return unit;
+                }
+            }
+            return null;
+        }
+    }
+
     public static String toXml(final Vm vm, final UserVmJoinVO vo) {
         final String vmId = vm.getId();
         final String vmName = vm.getName();
@@ -306,7 +339,7 @@ public class OvfXmlUtil {
         sb.append("<rasd:Description>Memory Size</rasd:Description>");
         sb.append("<rasd:InstanceId>2</rasd:InstanceId>");
         sb.append("<rasd:ResourceType>4</rasd:ResourceType>");
-        sb.append("<rasd:AllocationUnits>MegaBytes</rasd:AllocationUnits>");
+        sb.append("<rasd:AllocationUnits>").append(MemoryAllocationUnit.Megabytes.getAllocationUnitsToken()).append("</rasd:AllocationUnits>");
         sb.append("<rasd:VirtualQuantity>").append(memMb).append("</rasd:VirtualQuantity>");
         sb.append("</Item>");
 
@@ -493,9 +526,8 @@ public class OvfXmlUtil {
         if (memItems != null && memItems.getLength() > 0) {
             Node memItem = memItems.item(0);
             String memStr = childText(memItem, "VirtualQuantity");
-            if (StringUtils.isNotBlank(memStr)) {
-                vm.setMemory(memStr);
-            }
+            String memAllocationUnitsStr = childText(memItem, "AllocationUnits");
+            updateVmMemory(vm, memStr, memAllocationUnitsStr);
         }
 
         // CPU
@@ -527,6 +559,21 @@ public class OvfXmlUtil {
                 vm.getCpu().getTopology().setThreads(threadsStr);
             }
         }
+    }
+
+    private static void updateVmMemory(Vm vm, String memStr, String memAllocationUnitsStr) {
+        if (StringUtils.isAnyBlank(memStr, memAllocationUnitsStr)) {
+            return;
+        }
+        MemoryAllocationUnit memoryAllocationUnit = MemoryAllocationUnit.fromString(memAllocationUnitsStr);
+        if (memoryAllocationUnit == null) {
+            return;
+        }
+        long memory = parseLong(memStr, 0);
+        if (memory == 0) {
+            return;
+        }
+        vm.setMemory(String.valueOf(memory * memoryAllocationUnit.getBytesMultiplier()));
     }
 
     private static void updateFromXmlCloudStackMetadataSection(Vm vm, Node metadataSection, XPath xpath) {

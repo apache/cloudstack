@@ -37,7 +37,7 @@ public class OvfXmlUtilTest {
         Vm vm = new Vm();
         OvfXmlUtil.updateFromXml(vm, configuration);
 
-        assertEquals(String.valueOf(512L), vm.getMemory());
+        assertEquals(String.valueOf(512 * OvfXmlUtil.MemoryAllocationUnit.Megabytes.getBytesMultiplier()), vm.getMemory());
         assertEquals("1", vm.getCpu().getTopology().getSockets());
         assertEquals("1", vm.getCpu().getTopology().getCores());
         assertEquals("1", vm.getCpu().getTopology().getThreads());
