@@ -1146,8 +1146,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             return null;
         }
 
-        if (vm.getState() != State.Running || vm.getHostId() == null) {
+        if (vm.getState() != State.Running) {
             logger.error("Vm {} is not in Running state, failed to reboot", vm);
+            return null;
+        }
+        if ( null == vm.getHostId() ) {
+            logger.error("Vm {} , is in state 'Running', but doesn't have a host id, failed to reboot", vm);
             return null;
         }
 
@@ -1160,9 +1164,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         try {
             startRoutersIfNeeded(vm, vmId);
         } catch (ConcurrentOperationException e) {
-            throw new CloudRuntimeException("Concurrent operations on starting router. " + e);
+            throw new CloudRuntimeException("Concurrent operations on starting router. ", e);
         } catch (Exception ex) {
-            throw new CloudRuntimeException("Router start failed due to" + ex);
+            throw new CloudRuntimeException("Router start failed due to", ex);
         } finally {
             if (logger.isInfoEnabled()) {
                 logger.info("Rebooting vm {}{}.", vm, enterSetup ? " entering hardware setup menu" : " as is");
@@ -1190,15 +1194,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // List all networks of vm
         List<Long> vmNetworks = _vmNetworkMapDao.getNetworks(vmId);
-        List<DomainRouterVO> routers = new ArrayList<>();
-        // List the stopped routers
+        Map<Long, DomainRouterVO> routersById = new LinkedHashMap<>();
         for (long vmNetworkId : vmNetworks) {
-            List<DomainRouterVO> router = _routerDao.listStopped(vmNetworkId);
-            routers.addAll(router);
+            List<DomainRouterVO> routers = _routerDao.listStopped(vmNetworkId);
+            for (DomainRouterVO router : routers) {
+                routersById.putIfAbsent(router.getId(), router);
+            }
         }
 
         // Safe to start the stopped router serially, consistent with deploy/start behavior
-        for (DomainRouterVO routerToStart : routers) {
+        for (DomainRouterVO routerToStart : routersById.values()) {
             logger.warn("Trying to start router {} as part of vm: {} reboot", routerToStart, vm);
             _virtualNetAppliance.startRouter(routerToStart.getId(), true);
         }
@@ -2477,10 +2482,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         _executor = Executors.newScheduledThreadPool(wrks, new NamedThreadFactory("UserVm-Scavenger"));
 
-        String vmIpWorkers = configs.get(VmIpFetchTaskWorkers.value().toString());
-        int vmipwrks = NumbersUtil.parseInt(vmIpWorkers, 10);
-
-        _vmIpFetchExecutor =   Executors.newScheduledThreadPool(vmipwrks, new NamedThreadFactory("UserVm-ipfetch"));
+        _vmIpFetchExecutor =   Executors.newScheduledThreadPool(VmIpFetchTaskWorkers.value(), new NamedThreadFactory("UserVm-ipfetch"));
 
         String aggregationRange = configs.get("usage.stats.job.aggregation.range");
         int _usageAggregationRange  = NumbersUtil.parseInt(aggregationRange, 1440);
@@ -2799,12 +2801,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 if (scanLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) {
                     try {
                         List<UserVmVO> vms = _vmDao.findDestroyedVms(new Date(System.currentTimeMillis() - ((long)_expungeDelay << 10)));
-                        if (logger.isInfoEnabled()) {
-                            if (vms.isEmpty()) {
-                                logger.trace("Found no Instances to expunge.");
-                            } else {
-                                logger.info("Found " + vms.size() + " Instances to expunge.");
-                            }
+                        if (vms.isEmpty()) {
+                            logger.trace("Found no Instances to expunge.");
+                        } else {
+                            logger.info("Found " + vms.size() + " Instances to expunge.");
                         }
                         for (UserVmVO vm : vms) {
                             try {
@@ -2875,7 +2875,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
             if (newGpu > currentGpu) {
                 _resourceLimitMgr.incrementVmGpuResourceCount(owner.getAccountId(), vmInstance.isDisplay(), svcOffering, template, newGpu - currentGpu);
-            } else if (newGpu > 0 && currentGpu > newGpu){
+            } else if (currentGpu > newGpu) {
                 _resourceLimitMgr.decrementVmGpuResourceCount(owner.getAccountId(), vmInstance.isDisplay(), svcOffering, template, currentGpu - newGpu);
             }
         } catch (ResourceAllocationException e) {
@@ -3144,9 +3144,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             NetworkVO network = _networkDao.findById(nic.getNetworkId());
             long isDefault = (nic.isDefaultNic()) ? 1 : 0;
             UsageEventUtils.publishUsageEvent(eventType, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
-                    Long.toString(nic.getId()), network.getNetworkOfferingId(), null, isDefault, vm.getClass().getName(), vm.getUuid(), true);
+                    Long.toString(nic.getId()), network.getNetworkOfferingId(), null, isDefault, vm.getClass().getName(), vm.getUuid(), isDisplay);
         }
-
     }
 
     @Override
@@ -3482,7 +3481,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Booting into a hardware setup menu is not implemented on " + vmInstance.getHypervisorType());
         }
 
-        UserVm userVm = rebootVirtualMachine(vmId, cmd.getBootIntoSetup(), cmd.isForced());
+        UserVm userVm = rebootVirtualMachine(vmId, enterSetup, cmd.isForced());
         if (userVm != null ) {
             // update the vmIdCountMap if the vm is in advanced shared network with out services
             final List<NicVO> nics = _nicDao.listByVmId(vmId);
@@ -4558,11 +4557,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             long id = _vmDao.getNextInSequence(Long.class, "id");
 
-            if (hostName != null) {
-                // Check is hostName is RFC compliant
-                checkNameForRFCCompliance(hostName);
-            }
-
             String instanceName = null;
             String instanceSuffix = _instance;
             String uuidName = _uuidMgr.generateUuid(UserVm.class, customId);
@@ -4700,7 +4694,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (rootDiskSize <= 0) {
                 throw new InvalidParameterValueException("Root disk size should be a positive number.");
             }
-            rootDiskSize = (rootDiskSizeCustomParam == null ? 0 : rootDiskSizeCustomParam) * GiB_TO_BYTES;
+            if (rootDiskSizeCustomParam != null) {
+                rootDiskSize = rootDiskSizeCustomParam * GiB_TO_BYTES;
+            }
             _volumeService.validateVolumeSizeInBytes(rootDiskSize);
             return rootDiskSize;
         } else {
@@ -5912,7 +5908,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     /**
      * Create or overwrite a parameter in the list
      * @param params the list of parameters
-     * @param parameter the parameter to creat/overwrite
+     * @param parameterMap the original map of parameters to take the existing parameters from if params is null
+     * @param parameter the parameter to create or overwrite
      * @param parameterValue the value to give to the parameter
      * @return the resulting updated list of parameters
      */
