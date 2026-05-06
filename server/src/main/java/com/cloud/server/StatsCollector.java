@@ -1591,8 +1591,10 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                     NicVO nic = _nicDao.search(sc_nic, null).get(0);
                                     List<VlanVO> vlan = _vlanDao.listVlansByNetworkId(nic.getNetworkId());
                                     NetworkVO networkVO = networkDao.findById(nic.getNetworkId());
-                                    if (CollectionUtils.isEmpty(vlan) || (vlan.get(0).getVlanType() != VlanType.DirectAttached
-                                            && (networkVO == null || !routedIpv4Manager.isRoutedNetwork(networkVO)))) {
+                                    boolean isRoutedNetwork = networkVO != null && routedIpv4Manager.isRoutedNetwork(networkVO);
+                                    boolean isDirectAttachedNetwork = CollectionUtils.isNotEmpty(vlan)
+                                            && vlan.get(0).getVlanType() == VlanType.DirectAttached;
+                                    if (!isRoutedNetwork && !isDirectAttachedNetwork) {
                                         continue; // only get network statistics for Shared or Routed network
                                     }
                                     UserStatisticsVO previousvmNetworkStats = _userStatsDao.findBy(userVm.getAccountId(), userVm.getDataCenterId(), nic.getNetworkId(),
