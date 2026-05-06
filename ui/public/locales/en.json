@@ -1433,6 +1433,7 @@
 "label.javadistribution": "Java Runtime Distribution",
 "label.javaversion": "Java Runtime Version",
 "label.keep": "Keep",
+"label.keep.mac.address.on.public.nic": "Use same MAC address for public NIC of VRs",
 "label.kernelversion": "Kernel Version",
 "label.key": "Key",
 "label.keyboard": "Keyboard language",
