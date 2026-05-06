@@ -345,7 +345,6 @@ public class DefaultEndPointSelector implements EndPointSelector {
 
     @Override
     public EndPoint select(DataObject srcData, DataObject destData, StorageAction action, boolean encryptionRequired) {
-        logger.error("IR24 select BACKUPSNAPSHOT from primary to secondary {} dest={}", srcData, destData);
         if (action == StorageAction.BACKUPSNAPSHOT && srcData.getDataStore().getRole() == DataStoreRole.Primary) {
             SnapshotInfo srcSnapshot = (SnapshotInfo)srcData;
             VolumeInfo volumeInfo = srcSnapshot.getBaseVolume();
@@ -353,6 +352,24 @@ public class DefaultEndPointSelector implements EndPointSelector {
             if (srcSnapshot.getHypervisorType() == Hypervisor.HypervisorType.KVM) {
                 if (vm != null && vm.getState() == VirtualMachine.State.Running) {
                     return getEndPointFromHostId(vm.getHostId());
+                }
+                // For CLVM pools, the snapshot LVM device only exists on the lock-holder host.
+                // Route the backup CopyCommand to that same host regardless of VM state.
+                DataStore srcStore = volumeInfo.getDataStore();
+                if (srcStore != null && srcStore.getRole() == DataStoreRole.Primary) {
+                    StoragePoolVO pool = _storagePoolDao.findById(srcStore.getId());
+                    if (pool != null && ClvmPoolManager.isClvmPoolType(pool.getPoolType())) {
+                        Long lockHostId = getClvmLockHostId(volumeInfo);
+                        if (lockHostId != null) {
+                            logger.info("CLVM snapshot backup: routing snapshot {} backup CopyCommand to lock-holder host {} (same host that created the snapshot)",
+                                    srcSnapshot.getUuid(), lockHostId);
+                            EndPoint ep = getEndPointFromHostId(lockHostId);
+                            if (ep != null) {
+                                return ep;
+                            }
+                            logger.warn("Could not get endpoint for CLVM lock host {}, falling back to default selection", lockHostId);
+                        }
+                    }
                 }
             }
             if (srcSnapshot.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
