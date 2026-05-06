@@ -763,6 +763,9 @@ public class ApiConstants {
     public static final String AUTO_MIGRATE = "automigrate";
     public static final String GUID = "guid";
     public static final String VM_SNAPSHOT_ENABELD = "vmsnapshotenabled";
+    public static final String VM_SNAPSHOT_LIMIT = "vmsnapshotlimit";
+    public static final String VM_SNAPSHOT_TOTAL = "vmsnapshottotal";
+    public static final String VM_SNAPSHOT_AVAILABLE = "vmsnapshotavailable";
     public static final String VSWITCH_TYPE_GUEST_TRAFFIC = "guestvswitchtype";
     public static final String VSWITCH_TYPE_PUBLIC_TRAFFIC = "publicvswitchtype";
     public static final String VSWITCH_NAME_GUEST_TRAFFIC = "guestvswitchname";

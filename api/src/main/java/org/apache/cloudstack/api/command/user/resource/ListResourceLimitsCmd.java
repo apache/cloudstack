@@ -42,7 +42,7 @@ public class ListResourceLimitsCmd extends BaseListProjectAndAccountResourcesCmd
     @Parameter(name = ApiConstants.ID, type = CommandType.LONG, description = "Lists resource limits by ID.")
     private Long id;
 
-    @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.INTEGER, description = "Type of resource. Values are 0, 1, 2, 3, 4, 6, 7, 8, 9, 10 and 11. "
+    @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.INTEGER, description = "Type of resource. Values are 0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11 and 12. "
         + "0 - Instance. Number of Instances a user can create. "
         + "1 - IP. Number of public IP addresses an account can own. "
         + "2 - Volume. Number of disk volumes an account can own. "
@@ -54,7 +54,8 @@ public class ListResourceLimitsCmd extends BaseListProjectAndAccountResourcesCmd
         + "8 - CPU. Number of CPU an account can allocate for their resources. "
         + "9 - Memory. Amount of RAM an account can allocate for their resources. "
         + "10 - PrimaryStorage. Total primary storage space (in GiB) a user can use. "
-        + "11 - SecondaryStorage. Total secondary storage space (in GiB) a user can use. ")
+        + "11 - SecondaryStorage. Total secondary storage space (in GiB) a user can use. "
+        + "12 - VmSnapshot. Number of VM snapshots an account can own.")
     private Integer resourceType;
 
     @Parameter(name = ApiConstants.RESOURCE_TYPE_NAME, type = CommandType.STRING, description = "Type of resource (wins over resourceType if both are provided). Values are: "
@@ -69,7 +70,8 @@ public class ListResourceLimitsCmd extends BaseListProjectAndAccountResourcesCmd
             + "cpu - CPU. Number of CPU an account can allocate for their resources. "
             + "memory - Memory. Amount of RAM an account can allocate for their resources. "
             + "primary_storage - PrimaryStorage. Total primary storage space (in GiB) a user can use. "
-            + "secondary_storage - SecondaryStorage. Total secondary storage space (in GiB) a user can use. ")
+            + "secondary_storage - SecondaryStorage. Total secondary storage space (in GiB) a user can use. "
+            + "vm_snapshot - VmSnapshot. Number of VM snapshots an account can own.")
     private String resourceTypeName;
 
     @Parameter(name = ApiConstants.TAG, type = CommandType.STRING, description = "Tag for the resource type", since = "4.20.0")

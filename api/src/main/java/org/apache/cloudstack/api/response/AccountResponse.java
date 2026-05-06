@@ -127,6 +127,18 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
     @Param(description = "The total number of Snapshots available for this Account")
     private String snapshotAvailable;
 
+    @SerializedName(ApiConstants.VM_SNAPSHOT_LIMIT)
+    @Param(description = "the number of VM snapshots that can be stored by this account")
+    private String vmSnapshotLimit;
+
+    @SerializedName(ApiConstants.VM_SNAPSHOT_TOTAL)
+    @Param(description = "the number of VM snapshots stored by this account")
+    private Long vmSnapshotTotal;
+
+    @SerializedName(ApiConstants.VM_SNAPSHOT_AVAILABLE)
+    @Param(description = "the number of VM snapshots available for this account")
+    private String vmSnapshotAvailable;
+
     @SerializedName("templatelimit")
     @Param(description = "The total number of Templates which can be created by this Account")
     private String templateLimit;
@@ -384,6 +396,21 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
     @Override
     public void setSnapshotAvailable(String snapshotAvailable) {
         this.snapshotAvailable = snapshotAvailable;
+    }
+
+    @Override
+    public void setVmSnapshotLimit(String vmSnapshotLimit) {
+        this.vmSnapshotLimit = vmSnapshotLimit;
+    }
+
+    @Override
+    public void setVmSnapshotTotal(Long vmSnapshotTotal) {
+        this.vmSnapshotTotal = vmSnapshotTotal;
+    }
+
+    @Override
+    public void setVmSnapshotAvailable(String vmSnapshotAvailable) {
+        this.vmSnapshotAvailable = vmSnapshotAvailable;
     }
 
     @Override
