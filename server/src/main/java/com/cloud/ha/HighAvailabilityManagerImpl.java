@@ -265,7 +265,23 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
 
         HAConfig.HAState state = haConfig.getState();
         logger.debug("Checking Host HA inspection is in progress or not for the host {} from HAConfig, HA state is {}", hostId, state);
-        return state == HAConfig.HAState.Suspect || state == HAConfig.HAState.Checking;
+        if (state == HAConfig.HAState.Suspect || state == HAConfig.HAState.Checking) {
+            return true;
+        }
+
+        if (state == HAConfig.HAState.Recovered || state == HAConfig.HAState.Available) {
+            // If the host HA state is Recovered, it indicates that the host has restarted successfully.
+            // If the host HA state is Available, it means the host has restarted successfully and the recovery waiting period has completed.
+            // In both states, the agent can connect as soon as the host is ready (and can move to Suspect -> Checking HA state if the agent connection fails again before Fencing).
+            final HostVO host = _hostDao.findById(hostId);
+            if (host != null && host.getStatus() != Status.Up) {
+                logger.debug("{} is in {} status and HA state is {}, considering Host HA inspection is still in progress" +
+                        " until we are sure the host is ready after a recovery wait period and agent is connected/Up", host, host.getStatus(), state);
+                return true;
+            }
+        }
+
+        return false;
     }
 
     @Override
