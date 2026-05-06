@@ -3028,8 +3028,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final NicTO[] nics = vmSpec.getNics();
         final Map <String, String> params = vmSpec.getDetails();
         String nicAdapter = "";
-        if (params != null && params.get("nicAdapter") != null && !params.get("nicAdapter").isEmpty()) {
-            nicAdapter = params.get("nicAdapter");
+        if (params != null && params.get(VmDetailConstants.NIC_ADAPTER) != null && !params.get(VmDetailConstants.NIC_ADAPTER).isEmpty()) {
+            nicAdapter = params.get(VmDetailConstants.NIC_ADAPTER);
+        } else if (MapUtils.isNotEmpty(params) && params.containsKey(GuestDef.BootType.UEFI.toString())) {
+            nicAdapter = "e1000";
         }
         Map<String, String> extraConfig = vmSpec.getExtraConfig();
         for (int i = 0; i < nics.length; i++) {
@@ -4383,22 +4385,42 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private DiskDef.DiskBus getGuestDiskModel(final String platformEmulator, boolean isUefiEnabled) {
         if (platformEmulator == null) {
             return DiskDef.DiskBus.IDE;
-        } else if (platformEmulator.startsWith("Other PV Virtio-SCSI")) {
-            return DiskDef.DiskBus.SCSI;
-        } else if (platformEmulator.contains("Ubuntu") ||
-                StringUtils.startsWithAny(platformEmulator,
-                        "Fedora", "CentOS", "Red Hat Enterprise Linux", "Debian GNU/Linux", "FreeBSD", "Oracle",
-                        "Rocky Linux", "AlmaLinux", "Other PV")) {
-            return DiskDef.DiskBus.VIRTIO;
-        } else if (isUefiEnabled && StringUtils.startsWithAny(platformEmulator, "Windows", "Other")) {
-            return DiskDef.DiskBus.SATA;
-        } else if (guestCpuArch != null && guestCpuArch.equals("aarch64")) {
-            return DiskDef.DiskBus.SCSI;
-        } else {
-            return DiskDef.DiskBus.IDE;
         }
 
+        final boolean isLinuxLike = platformEmulator.contains("Ubuntu") ||
+                StringUtils.startsWithAny(platformEmulator,
+                        "Fedora", "CentOS", "Red Hat Enterprise Linux",
+                        "Debian GNU/Linux", "FreeBSD", "Oracle",
+                        "Rocky Linux", "AlmaLinux", "Other PV");
+
+        // Explicit Virtio-SCSI preference
+        if (platformEmulator.startsWith("Other PV Virtio-SCSI")) {
+            return DiskDef.DiskBus.SCSI;
+        }
+
+        // Architecture-specific handling
+        if (guestCpuArch != null && guestCpuArch.equals("aarch64")) {
+            return DiskDef.DiskBus.SCSI;
+        }
+
+        // Use SCSI for Linux-based UEFI guests
+        if (isUefiEnabled && isLinuxLike) {
+            return DiskDef.DiskBus.SCSI;
+        }
+
+        // Windows/Other and UEFI behavior
+        if (isUefiEnabled && StringUtils.startsWithAny(platformEmulator, "Windows", "Other")) {
+            return DiskDef.DiskBus.SATA;
+        }
+
+        // non-UEFI Linux guests
+        if (isLinuxLike) {
+            return DiskDef.DiskBus.VIRTIO;
+        }
+
+        return DiskDef.DiskBus.IDE;
     }
+
     private void cleanupVMNetworks(final Connect conn, final List<InterfaceDef> nics) {
         if (nics != null) {
             for (final InterfaceDef nic : nics) {
