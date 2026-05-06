@@ -36,7 +36,7 @@ public final class Rule {
 
     public boolean matches(final String commandName) {
         return StringUtils.isNotEmpty(commandName)
-                && compiledPattern.matcher(commandName.toLowerCase()).matches();
+                && compiledPattern.matcher(commandName).matches();
     }
 
     public String getRuleString() {
