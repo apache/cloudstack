@@ -165,14 +165,16 @@ public final class UserVmJoinVOToVmConverter {
         dst.setCpuProfile(Ref.of(
                 basePath + ApiRouteHandler.BASE_ROUTE + "/cpuprofiles/" + src.getServiceOfferingUuid(),
                 src.getServiceOfferingUuid()));
-        if (allContent) {
-            dst.setInitialization(getOvfInitialization(dst, src));
-        }
 
         dst.setAccountId(src.getAccountUuid());
         dst.setAffinityGroupId(src.getAffinityGroupUuid());
         dst.setUserDataId(src.getUserDataUuid());
         dst.setDetails(details);
+
+        // Keep at last
+        if (allContent) {
+            dst.setInitialization(getOvfInitialization(dst, src));
+        }
 
         return dst;
     }
