@@ -79,7 +79,7 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
         }
 
         if (haManager.isHAEligible(host)) {
-            return haManager.getHostStatus(host);
+            return haManager.getHostStatusFromHAConfig(host);
         }
 
         List<StoragePoolVO> clusterPools = _storagePoolDao.findPoolsInClusters(Collections.singletonList(host.getClusterId()), null);

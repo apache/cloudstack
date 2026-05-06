@@ -42,6 +42,9 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.ha.HAConfig;
+import org.apache.cloudstack.ha.HAResource;
+import org.apache.cloudstack.ha.dao.HAConfigDao;
 import org.apache.cloudstack.managed.context.ManagedContext;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.management.ManagementServerHost;
@@ -223,6 +226,8 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
     @Inject
     ConfigurationDao _configDao;
     @Inject
+    HAConfigDao _haConfigDao;
+    @Inject
     VolumeOrchestrationService volumeMgr;
 
     String _instance;
@@ -237,25 +242,37 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
     long _timeBetweenCleanups;
     String _haTag = null;
 
+    protected HighAvailabilityManagerImpl() {
+    }
+
     private boolean vmHasPendingHAJob(final List<HaWorkVO> pendingHaWorks, final VMInstanceVO vm) {
         Optional<HaWorkVO> item = pendingHaWorks.stream()
                 .filter(h -> h.getInstanceId() == vm.getId())
                 .reduce((first, second) -> second);
         if (item.isPresent() && (item.get().getTimesTried() < _maxRetries ||
                 !item.get().canScheduleNew(_timeBetweenFailures))) {
-            logger.debug(String.format("Skipping HA on %s as there is already a running HA job for it", vm));
+            logger.debug("Skipping HA on {} as there is already a running HA job for it", vm);
             return true;
         }
         return false;
     }
 
-    protected HighAvailabilityManagerImpl() {
+    private boolean isHostHAInspectionInProgress(long hostId) {
+        final HAConfig haConfig = _haConfigDao.findHAResource(hostId, HAResource.ResourceType.Host);
+        if (haConfig == null || !haConfig.isEnabled()) {
+            return false;
+        }
+
+        HAConfig.HAState state = haConfig.getState();
+        logger.debug("Checking Host HA inspection is in progress or not for the host {} from HAConfig, HA state is {}", hostId, state);
+        return state == HAConfig.HAState.Suspect || state == HAConfig.HAState.Checking;
     }
 
     @Override
     public Status investigate(final long hostId) {
         final HostVO host = _hostDao.findById(hostId);
         if (host == null) {
+            logger.warn("Host with id {} is removed or doesn't exists.", hostId);
             return Status.Alert;
         }
 
@@ -812,6 +829,9 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
             return false;
         }
         if (!CancellableWorkReasonTypes.contains(work.getReasonType())) {
+            return false;
+        }
+        if (isHostHAInspectionInProgress(work.getHostId())) {
             return false;
         }
         Status hostStatus = investigate(work.getHostId());

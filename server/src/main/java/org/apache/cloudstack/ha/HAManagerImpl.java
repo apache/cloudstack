@@ -248,6 +248,7 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
     }
 
     private boolean isHAEnabledForCluster(final HAResource resource) {
+        // HA is enabled by default when cluster details doesn't exist
         if (resource == null || resource.getClusterId() == null) {
             return true;
         }
@@ -259,14 +260,10 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
         if (resource == null || resource.getId() < 1L) {
             return false;
         }
-        HAResource.ResourceType resourceType = null;
-        if (resource instanceof Host) {
-            resourceType = HAResource.ResourceType.Host;
-        }
-        if (resourceType == null) {
+        if (!(resource instanceof Host)) {
             return false;
         }
-        final HAConfig haConfig = haConfigDao.findHAResource(resource.getId(), resourceType);
+        final HAConfig haConfig = haConfigDao.findHAResource(resource.getId(), HAResource.ResourceType.Host);
         return haConfig != null && haConfig.isEnabled()
                 && haConfig.getState() != HAConfig.HAState.Disabled
                 && haConfig.getState() != HAConfig.HAState.Ineligible;
@@ -317,19 +314,23 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
         throw new Investigator.UnknownVM();
     }
 
-    public Status getHostStatus(final Host host) {
+    public Status getHostStatusFromHAConfig(final Host host) {
         final HAConfig haConfig = haConfigDao.findHAResource(host.getId(), HAResource.ResourceType.Host);
-        if (haConfig != null) {
-            if (haConfig.getState() == HAConfig.HAState.Fenced) {
-                logger.debug("HA: Agent [{}] is available/suspect/checking Up.", host);
-                return Status.Down;
-            } else if (haConfig.getState() == HAConfig.HAState.Degraded || haConfig.getState() == HAConfig.HAState.Recovering || haConfig.getState() == HAConfig.HAState.Fencing) {
-                logger.debug("HA: Agent [{}] is disconnected. State: {}, {}.", host, haConfig.getState(), haConfig.getState().getDescription());
-                return Status.Disconnected;
-            }
-            return Status.Up;
+        if (haConfig == null) {
+            logger.warn("HA: Agent [{}] config is not available.", host);
+            return Status.Unknown;
         }
-        return Status.Unknown;
+        if (haConfig.getState() == HAConfig.HAState.Fenced) {
+            logger.debug("HA: Agent [{}] is fenced.", host);
+            return Status.Down;
+        }
+        if (haConfig.getState() == HAConfig.HAState.Degraded || haConfig.getState() == HAConfig.HAState.Recovering || haConfig.getState() == HAConfig.HAState.Fencing) {
+            logger.debug("HA: Agent [{}] is disconnected. State: {}, {}.", host, haConfig.getState(), haConfig.getState().getDescription());
+            return Status.Disconnected;
+        }
+
+        logger.debug("HA: Agent [{}] is considered Up (HA state can be Available/Suspect/Checking/Recovered). State: {}, {}.", host, haConfig.getState(), haConfig.getState().getDescription());
+        return Status.Up;
     }
 
     //////////////////////////////////////////////////////
