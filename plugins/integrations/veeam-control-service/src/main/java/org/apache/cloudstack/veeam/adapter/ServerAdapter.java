@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -54,6 +55,7 @@ import org.apache.cloudstack.api.command.user.backup.ListBackupsCmd;
 import org.apache.cloudstack.api.command.user.job.ListAsyncJobsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
 import org.apache.cloudstack.api.command.user.offering.ListServiceOfferingsCmd;
+import org.apache.cloudstack.api.command.user.tag.CreateTagsCmd;
 import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
 import org.apache.cloudstack.api.command.user.vm.AddNicToVMCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
@@ -164,6 +166,7 @@ import com.cloud.org.Grouping;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
 import com.cloud.server.ResourceTag;
+import com.cloud.server.TaggedResourceService;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage;
@@ -186,6 +189,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.Filter;
@@ -207,7 +211,7 @@ public class ServerAdapter extends ManagerBase {
             Storage.StoragePoolType.NetworkFilesystem,
             Storage.StoragePoolType.SharedMountPoint
     );
-    private static final String VM_TA_KEY = "veeam_tag";
+    private static final String VM_TAG_KEY = "veeam_tag";
     private static final String WORKER_VM_GUEST_CPU_MODE = "host-passthrough";
     private static final String RESTORE_CONFIG = "restore.config";
 
@@ -312,6 +316,9 @@ public class ServerAdapter extends ManagerBase {
 
     @Inject
     DomainDao domainDao;
+
+    @Inject
+    TaggedResourceService taggedResourceService;
 
     protected static Map<String, Tag> getDummyTags() {
         Map<String, Tag> tags = new HashMap<>();
@@ -1154,7 +1161,7 @@ public class ServerAdapter extends ManagerBase {
     @ApiAccess(command = ListTagsCmd.class)
     protected List<Tag> listTagsByInstanceId(final long instanceId) {
         List<ResourceTagVO> tags = resourceTagDao.listByResourceTypeIdAndKeyPrefix(
-                ResourceTag.ResourceObjectType.UserVm, instanceId, VM_TA_KEY);
+                ResourceTag.ResourceObjectType.UserVm, instanceId, VM_TAG_KEY);
         return ResourceTagVOToTagConverter.toTags(tags);
     }
 
@@ -1725,7 +1732,7 @@ public class ServerAdapter extends ManagerBase {
         Filter filter = new Filter(ResourceTagVO.class, "id", true, offset, limit);
         Pair<List<Long>, List<Long>> ownerDetails = getResourceOwnerFiltersWithDomainIds();
         List<String> vmResourceTags = resourceTagDao.listByResourceTypeKeyPrefixAndOwners(
-                ResourceTag.ResourceObjectType.UserVm, VM_TA_KEY, ownerDetails.first(), ownerDetails.second(), filter);
+                ResourceTag.ResourceObjectType.UserVm, VM_TAG_KEY, ownerDetails.first(), ownerDetails.second(), filter);
         if (CollectionUtils.isNotEmpty(vmResourceTags)) {
             tags.addAll(ResourceTagVOToTagConverter.toTagsFromValues(vmResourceTags));
         }
@@ -1740,7 +1747,7 @@ public class ServerAdapter extends ManagerBase {
         Tag tag = getDummyTags().get(uuid);
         if (tag == null) {
             ResourceTagVO resourceTagVO = resourceTagDao.findByResourceTypeKeyPrefixAndValue(
-                    ResourceTag.ResourceObjectType.UserVm, VM_TA_KEY, uuid);
+                    ResourceTag.ResourceObjectType.UserVm, VM_TAG_KEY, uuid);
             accountService.checkAccess(CallContext.current().getCallingAccount(), null, false,
                     resourceTagVO);
             if (resourceTagVO != null) {
@@ -1751,5 +1758,32 @@ public class ServerAdapter extends ManagerBase {
             throw new InvalidParameterValueException("Tag with ID " + uuid + " not found");
         }
         return tag;
+    }
+
+    @ApiAccess(command = CreateTagsCmd.class)
+    public Tag createInstanceTag(final String vmUuid, final Tag request) {
+        UserVmVO vmVo = userVmDao.findByUuid(vmUuid);
+        if (vmVo == null) {
+            throw new InvalidParameterValueException("VM with ID " + vmUuid + " not found");
+        }
+        accountService.checkAccess(CallContext.current().getCallingAccount(), SecurityChecker.AccessType.OperateEntry,
+                false, vmVo);
+        Map<String, String> tags = new HashMap<>();
+        String name = request.getId();
+        tags.put(String.format( "%s%s", VM_TAG_KEY, UuidUtils.first(UUID.randomUUID().toString())), name);
+        try {
+            List<ResourceTag> resourceTags = taggedResourceService.createTags(Collections.singletonList(vmUuid),
+                    ResourceTag.ResourceObjectType.UserVm, tags, null);
+            ResourceTagVO tag = null;
+            if (CollectionUtils.isNotEmpty(resourceTags)) {
+                tag = resourceTagDao.findById(resourceTags.get(0).getId());
+            }
+            if (tag == null) {
+                throw new CloudRuntimeException("Unknown error");
+            }
+            return ResourceTagVOToTagConverter.toTag(tag);
+        } catch (Exception e) {
+            throw new CloudRuntimeException(String.format("Failed to create tag for %s: %s", name, e.getMessage()), e);
+        }
     }
 }

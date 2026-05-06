@@ -35,6 +35,7 @@ import org.apache.cloudstack.veeam.api.dto.NamedList;
 import org.apache.cloudstack.veeam.api.dto.Nic;
 import org.apache.cloudstack.veeam.api.dto.ResourceAction;
 import org.apache.cloudstack.veeam.api.dto.Snapshot;
+import org.apache.cloudstack.veeam.api.dto.Tag;
 import org.apache.cloudstack.veeam.api.dto.Vm;
 import org.apache.cloudstack.veeam.api.dto.VmAction;
 import org.apache.cloudstack.veeam.api.request.ListQuery;
@@ -160,6 +161,13 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
                         handleGetCheckpointsByVmId(id, resp, outFormat, io);
                     } else {
                         io.methodNotAllowed(resp, "GET, POST", outFormat);
+                    }
+                    return;
+                } else if ("tags".equals(subPath)) {
+                    if ("POST".equalsIgnoreCase(method)) {
+                        handlePostTagForVmId(id, req, resp, outFormat, io);
+                    } else {
+                        io.methodNotAllowed(resp, "POST", outFormat);
                     }
                     return;
                 }
@@ -526,6 +534,19 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
             serverAdapter.deleteCheckpoint(vmId, checkpointId);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, null, outFormat);
         } catch (CloudRuntimeException e) {
+            io.badRequest(resp, e.getMessage(), outFormat);
+        }
+    }
+
+    protected void handlePostTagForVmId(final String id, final HttpServletRequest req,
+               final HttpServletResponse resp, final Negotiation.OutFormat outFormat, final VeeamControlServlet io)
+            throws IOException {
+        String data = RouteHandler.getRequestData(req, logger);
+        try {
+            Tag request = io.getMapper().jsonMapper().readValue(data, Tag.class);
+            Tag response = serverAdapter.createInstanceTag(id, request);
+            io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
+        } catch (JsonProcessingException | CloudRuntimeException e) {
             io.badRequest(resp, e.getMessage(), outFormat);
         }
     }
