@@ -31,7 +31,7 @@ public final class Rule {
     public Rule(final String rule) {
         validate(rule);
         this.rule = rule;
-        this.compiledPattern = Pattern.compile(rule.toLowerCase().replace("*", "\\w*"));
+        this.compiledPattern = Pattern.compile(rule.replace("*", "\\w*"), Pattern.CASE_INSENSITIVE);
     }
 
     public boolean matches(final String commandName) {
