@@ -96,13 +96,15 @@ public class LibvirtClvmLockTransferCommandWrapper
     }
 
     /**
-     * Query which host currently holds the CLVM lock for a volume.
-     * Executes: lvs -o lv_attr,lv_host --noheadings <lvPath>
+     * Query whether this host currently has the CLVM LV activated locally.
+     * Executes: lvs -o lv_attr,lv_host,lv_active --noheadings <lvPath>
      *
-     * This queries the actual CLVM lock state (source of truth).
-     * The lv_host attribute shows which host currently has the volume activated.
-     *
-     * @return ClvmLockTransferAnswer with lock holder hostname
+     * lv_attr[4]=='a' (isActive) is LOCAL and is the authoritative signal — true only on
+     * the host where the LV is currently activated. The management server fans out this
+     * query to all cluster hosts; the one returning isActive=true is the lock holder.
+     * lv_attr[5]=='o' (isOpen) means a VM has the device open on this host (doing I/O).
+     * lv_host is retained for diagnostic logging only — do NOT use it to identify the
+     * lock holder.
      */
     private Answer handleQueryLockState(ClvmLockTransferCommand cmd, String lvPath, String volumeUuid) {
         try {
@@ -121,14 +123,11 @@ public class LibvirtClvmLockTransferCommandWrapper
                     String.format("lvs command failed: %s", result));
             }
 
-            // We need to find the line that contains the actual lv_attr (starts with '-' or other attr chars)
             String[] lines = parser.getLines().split("\n");
             String dataLine = null;
 
             for (String line : lines) {
                 String trimmed = line.trim();
-                // Skip empty lines and warning messages
-                // lv_attr always starts with '-', 'w', 'r', etc. and is at least 10 characters
                 if (!trimmed.isEmpty() &&
                     trimmed.length() >= 10 &&
                     (trimmed.charAt(0) == '-' || trimmed.charAt(0) == 'w' ||
@@ -157,18 +156,21 @@ public class LibvirtClvmLockTransferCommandWrapper
             }
 
             String lvAttr = parts[0];
+            // lv_host: for diagnostics only, unreliable for lock-holder identification
             String hostname = parts.length > 1 ? parts[1] : null;
 
+            // lv_attr[4]=='a' → LV is active on THIS host (local activation state)
             boolean isActive = lvAttr.length() > 4 && lvAttr.charAt(4) == 'a';
-            boolean isExclusive = lvAttr.length() > 5 && lvAttr.charAt(5) == 'e';
+            // lv_attr[5]=='o' → a process has the device file open on this host (VM doing I/O)
+            boolean isOpen   = lvAttr.length() > 5 && lvAttr.charAt(5) == 'o';
 
-            logger.info("Queried lock state for volume {}: attr={}, hostname={}, active={}, exclusive={}",
-                    volumeUuid, lvAttr, hostname, isActive, isExclusive);
+            logger.info("Queried lock state for volume {}: attr={}, hostname={}, active={}, open={}",
+                    volumeUuid, lvAttr, hostname, isActive, isOpen);
 
             return new ClvmLockTransferAnswer(cmd, true,
-                    String.format("Lock state: active=%s, exclusive=%s, host=%s",
-                            isActive, isExclusive, hostname != null ? hostname : "none"),
-                    hostname, isActive, isExclusive, lvAttr);
+                    String.format("Lock state: active=%s, open=%s, host=%s",
+                            isActive, isOpen, hostname != null ? hostname : "none"),
+                    hostname, isActive, isOpen, lvAttr);
 
         } catch (Exception e) {
             logger.error("Exception during lock state query for volume {}: {}",
@@ -176,4 +178,5 @@ public class LibvirtClvmLockTransferCommandWrapper
             return new ClvmLockTransferAnswer(cmd, false, "Exception: " + e.getMessage());
         }
     }
+
 }

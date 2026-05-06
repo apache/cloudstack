@@ -18,6 +18,7 @@
  */
 package com.cloud.storage.clvm;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import javax.inject.Inject;
@@ -151,105 +152,129 @@ public class ClvmPoolManager implements Configurable {
             return null;
         }
 
-        List<HostVO> hosts = null;
+        String vgName = pool.getPath();
+        if (vgName.startsWith("/")) {
+            vgName = vgName.substring(1);
+        }
+        String lvPath = String.format("/dev/%s/%s", vgName, volumePath);
 
+        // Fast path: trust the DB record and verify with a single host query
+        Long dbHostId = getClvmLockHostId(volumeId, volumeUuid);
+        if (dbHostId != null) {
+            HostVO dbHost = _hostDao.findById(dbHostId);
+            if (dbHost != null && dbHost.getStatus() == Status.Up
+                    && dbHost.getHypervisorType() == Hypervisor.HypervisorType.KVM) {
+                Boolean active = querySingleHostLockState(dbHostId, lvPath, volumeUuid);
+                if (Boolean.TRUE.equals(active)) {
+                    logger.debug("Fast path: volume {} confirmed active on DB host {}", volumeUuid, dbHostId);
+                    return dbHostId;
+                }
+                logger.info("Fast path miss: volume {} not active on DB host {} — falling back to full fan-out",
+                        volumeUuid, dbHostId);
+            } else {
+                logger.info("Fast path skip: DB host {} for volume {} is down/missing — falling back to full fan-out",
+                        dbHostId, volumeUuid);
+            }
+        }
+
+        List<HostVO> hosts = null;
         Long clusterId = pool.getClusterId();
         if (clusterId != null) {
             hosts = _hostDao.findByClusterId(clusterId, Host.Type.Routing);
-            logger.debug("Found {} routing hosts in cluster {} for pool {}",
-                    hosts != null ? hosts.size() : 0, clusterId, pool.getName());
         }
-
         if ((hosts == null || hosts.isEmpty()) && pool.getDataCenterId() > 0) {
-            logger.debug("Pool {} is zone-scoped or no hosts in cluster, checking zone {} for available routing hosts",
-                    pool.getName(), pool.getDataCenterId());
             hosts = _hostDao.findByDataCenterId(pool.getDataCenterId());
         }
-
         if (hosts == null || hosts.isEmpty()) {
             logger.warn("No KVM routing hosts found to query CLVM lock state for volume {} (pool: {}, cluster: {}, zone: {})",
                     volumeUuid, pool.getName(), clusterId, pool.getDataCenterId());
             return null;
         }
 
-        logger.debug("Querying lock state for volume {} from {} available hosts", volumeUuid, hosts.size());
+        List<Long> activeHostIds = new ArrayList<>();
 
         for (HostVO host : hosts) {
             if (host.getStatus() != Status.Up ||
-                host.getType() != com.cloud.host.Host.Type.Routing ||
+                host.getType() != Host.Type.Routing ||
                 host.getHypervisorType() != Hypervisor.HypervisorType.KVM) {
                 continue;
             }
-
-            String vgName = pool.getPath();
-            if (vgName.startsWith("/")) {
-                vgName = vgName.substring(1);
+            // Skip the DB host, already confirmed inactive in the fast path above
+            if (dbHostId != null && host.getId() == dbHostId) {
+                continue;
             }
-            String lvPath = String.format("/dev/%s/%s", vgName, volumePath);
 
-            try {
-                ClvmLockTransferCommand queryCmd = new ClvmLockTransferCommand(
-                        ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE,
-                        lvPath,
-                        volumeUuid
-                );
-
-                Answer answer = _agentMgr.send(host.getId(), queryCmd);
-
-                if (answer == null || !answer.getResult()) {
-                    logger.debug("Failed to query lock state from host {}: {}",
-                            host.getId(), answer != null ? answer.getDetails() : "null answer");
-                    continue;
-                }
-
-                if (!(answer instanceof ClvmLockTransferAnswer)) {
-                    logger.warn("Unexpected answer type for query lock state: {}", answer.getClass());
-                    continue;
-                }
-
-                ClvmLockTransferAnswer queryAnswer = (ClvmLockTransferAnswer) answer;
-                String hostname = queryAnswer.getCurrentLockHostname();
-
-                if (hostname == null || hostname.isEmpty()) {
-                    logger.debug("Volume {} is not locked (no exclusive lock held)", volumeUuid);
-                    if (updateDatabase) {
-                        VolumeDetailVO detail = _volsDetailsDao.findDetail(volumeId, CLVM_LOCK_HOST_ID);
-                        if (detail != null) {
-                            _volsDetailsDao.remove(detail.getId());
-                        }
-                    }
-                    return null;
-                }
-
-                HostVO lockHost = _hostDao.findByName(hostname);
-                if (lockHost == null) {
-                    logger.warn("Could not resolve hostname {} to host ID for volume {}",
-                            hostname, volumeUuid);
-                    return null;
-                }
-
-                Long lockHostId = lockHost.getId();
-                logger.info("Queried CLVM lock state for volume {}: locked by host {} ({}), exclusive={}",
-                        volumeUuid, lockHostId, hostname, queryAnswer.isExclusive());
-
-                if (updateDatabase) {
-                    Long dbHostId = getClvmLockHostId(volumeId, volumeUuid);
-                    if (dbHostId == null || !dbHostId.equals(lockHostId)) {
-                        logger.info("Correcting database: volume {} lock host: {} -> {} (actual)",
-                                volumeUuid, dbHostId, lockHostId);
-                        setClvmLockHostId(volumeId, lockHostId);
-                    }
-                }
-
-                return lockHostId;
-
-            } catch (AgentUnavailableException | OperationTimedoutException e) {
-                logger.debug("Could not query host {} for lock state: {}", host.getId(), e.getMessage());
+            Boolean active = querySingleHostLockState(host.getId(), lvPath, volumeUuid);
+            if (Boolean.TRUE.equals(active)) {
+                logger.debug("Volume {} is locally active on host {} (fan-out)", volumeUuid, host.getId());
+                activeHostIds.add(host.getId());
             }
         }
 
-        logger.warn("Could not query CLVM lock state for volume {} from any host", volumeUuid);
-        return null;
+        if (activeHostIds.isEmpty()) {
+            logger.debug("Volume {} is not active on any reachable host — no exclusive lock held", volumeUuid);
+            if (updateDatabase && dbHostId != null) {
+                VolumeDetailVO detail = _volsDetailsDao.findDetail(volumeId, CLVM_LOCK_HOST_ID);
+                if (detail != null) {
+                    _volsDetailsDao.remove(detail.getId());
+                }
+            }
+            return null;
+        }
+
+        if (activeHostIds.size() > 1) {
+            logger.warn("Volume {} is active on {} hosts {}, shared-mode LV (template?). "
+                    + "Skipping exclusive lock transfer.",
+                    volumeUuid, activeHostIds.size(), activeHostIds);
+            return null;
+        }
+
+        Long lockHostId = activeHostIds.get(0);
+        logger.info("Volume {} is exclusively active on host {} (found via fan-out, DB had {})",
+                volumeUuid, lockHostId, dbHostId);
+
+        if (updateDatabase) {
+            if (dbHostId == null || !dbHostId.equals(lockHostId)) {
+                logger.info("Correcting database: volume {} lock host: {} -> {} (actual)",
+                        volumeUuid, dbHostId, lockHostId);
+                setClvmLockHostId(volumeId, lockHostId);
+            }
+        }
+
+        return lockHostId;
+    }
+
+    /**
+     * Queries a single host for the CLVM LV activation state.
+     *
+     * @return {@code Boolean.TRUE} if the LV is active on that host,
+     *         {@code Boolean.FALSE} if reachable but inactive,
+     *         {@code null} if the host is unreachable or returned an error
+     */
+    private Boolean querySingleHostLockState(Long hostId, String lvPath, String volumeUuid) {
+        try {
+            ClvmLockTransferCommand queryCmd = new ClvmLockTransferCommand(
+                    ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE, lvPath, volumeUuid);
+            Answer answer = _agentMgr.send(hostId, queryCmd);
+
+            if (answer == null || !answer.getResult()) {
+                logger.debug("Failed to query lock state from host {}: {}",
+                        hostId, answer != null ? answer.getDetails() : "null answer");
+                return null;
+            }
+            if (!(answer instanceof ClvmLockTransferAnswer)) {
+                logger.warn("Unexpected answer type from host {} for QUERY_LOCK_STATE: {}",
+                        hostId, answer.getClass());
+                return null;
+            }
+            ClvmLockTransferAnswer queryAnswer = (ClvmLockTransferAnswer) answer;
+            logger.debug("Host {} reports volume {} active={} (attr={})",
+                    hostId, volumeUuid, queryAnswer.isActive(), queryAnswer.getLvAttributes());
+            return queryAnswer.isActive();
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
+            logger.debug("Could not query host {} for lock state: {}", hostId, e.getMessage());
+            return null;
+        }
     }
 
     /**
@@ -271,6 +296,17 @@ public class ClvmPoolManager implements Configurable {
         }
     }
 
+    /**
+     * Transfers the CLVM exclusive lock for a volume from the source host to the destination host.
+     *
+     * @param volumeUuid   The volume UUID
+     * @param volumeId     The volume DB ID
+     * @param volumePath   The LV name within the VG (e.g. "vm-123-disk-0")
+     * @param pool         The storage pool
+     * @param sourceHostId The host currently holding the lock (pre-validated by caller)
+     * @param destHostId   The host that should hold the lock after transfer
+     * @return true if the lock was successfully transferred and activated on the destination
+     */
     public boolean transferClvmVolumeLock(String volumeUuid, Long volumeId, String volumePath,
                                           StoragePool pool, Long sourceHostId, Long destHostId) {
         if (pool == null) {
@@ -286,21 +322,17 @@ public class ClvmPoolManager implements Configurable {
         String lvPath = String.format("/dev/%s/%s", vgName, volumePath);
 
         try {
-            Long actualLockHostId = queryCurrentLockHolder(volumeId, volumeUuid, volumePath, pool, false);
+            // sourceHostId is trusted as pre-validated by the caller
+            Long hostToDeactivate = sourceHostId;
 
-            Long hostToDeactivate = actualLockHostId != null ? actualLockHostId : sourceHostId;
-
-            logger.info("Transferring CLVM lock for volume {}: actual holder={}, provided source={}, destination={}",
-                    volumeUuid, actualLockHostId, sourceHostId, destHostId);
+            logger.info("Transferring CLVM lock for volume {}: source={}, destination={}",
+                    volumeUuid, sourceHostId, destHostId);
 
             if (hostToDeactivate != null && !hostToDeactivate.equals(destHostId)) {
                 HostVO deactivateHost = _hostDao.findById(hostToDeactivate);
                 if (deactivateHost != null && deactivateHost.getStatus() == Status.Up) {
                     ClvmLockTransferCommand deactivateCmd = new ClvmLockTransferCommand(
-                            ClvmLockTransferCommand.Operation.DEACTIVATE,
-                            lvPath,
-                            volumeUuid
-                    );
+                            ClvmLockTransferCommand.Operation.DEACTIVATE, lvPath, volumeUuid);
 
                     Answer deactivateAnswer = _agentMgr.send(hostToDeactivate, deactivateCmd);
 
@@ -314,8 +346,8 @@ public class ClvmPoolManager implements Configurable {
                     logger.warn("Host {} (current lock holder) is down. Will attempt force claim on destination host {}",
                             hostToDeactivate, destHostId);
                 }
-            } else if (actualLockHostId == null) {
-                logger.debug("Volume {} has no active lock, will directly activate on destination", volumeUuid);
+            } else if (hostToDeactivate == null) {
+                logger.debug("Volume {} has no active lock holder, will directly activate on destination", volumeUuid);
             }
 
             ClvmLockTransferCommand activateCmd = new ClvmLockTransferCommand(
@@ -336,7 +368,7 @@ public class ClvmPoolManager implements Configurable {
             setClvmLockHostId(volumeId, destHostId);
 
             logger.info("Successfully transferred CLVM lock for volume {} from host {} to host {}",
-                    volumeUuid, actualLockHostId != null ? actualLockHostId : "none", destHostId);
+                    volumeUuid, sourceHostId != null ? sourceHostId : "none", destHostId);
 
             return true;
 

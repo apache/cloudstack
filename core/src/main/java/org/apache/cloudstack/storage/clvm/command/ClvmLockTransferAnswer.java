@@ -27,7 +27,7 @@ public class ClvmLockTransferAnswer extends Answer {
 
     private String currentLockHostname;
     private boolean isActive;
-    private boolean isExclusive;
+    private boolean isOpen;
     private String lvAttributes;
 
     public ClvmLockTransferAnswer(ClvmLockTransferCommand cmd, boolean result, String details) {
@@ -35,20 +35,18 @@ public class ClvmLockTransferAnswer extends Answer {
     }
 
     public ClvmLockTransferAnswer(ClvmLockTransferCommand cmd, boolean result, String details,
-                                  String currentLockHostname, boolean isActive, boolean isExclusive,
+                                  String currentLockHostname, boolean isActive, boolean isOpen,
                                   String lvAttributes) {
         super(cmd, result, details);
         this.currentLockHostname = currentLockHostname;
         this.isActive = isActive;
-        this.isExclusive = isExclusive;
+        this.isOpen = isOpen;
         this.lvAttributes = lvAttributes;
     }
 
     /**
-     * Get the hostname of the host currently holding the lock (if any).
-     * This is parsed from the LVM "lv_host" field.
-     *
-     * @return hostname or null if no lock is held
+     * Get the hostname from lv_host. Retained for diagnostics only —
+     * do NOT use this to determine lock holder identity.
      */
     public String getCurrentLockHostname() {
         return currentLockHostname;
@@ -59,9 +57,8 @@ public class ClvmLockTransferAnswer extends Answer {
     }
 
     /**
-     * Whether the volume is currently active on any host.
-     *
-     * @return true if active, false otherwise
+     * Whether the LV is locally active on the queried host (lv_attr[4]=='a').
+     * This is the authoritative signal for lock holder discovery via fan-out.
      */
     public boolean isActive() {
         return isActive;
@@ -72,17 +69,15 @@ public class ClvmLockTransferAnswer extends Answer {
     }
 
     /**
-     * Whether the lock is exclusive (as opposed to shared).
-     * Only meaningful if isActive() is true.
-     *
-     * @return true if exclusive lock, false if shared
+     * Whether a process has the device file open on the queried host (lv_attr[5]=='o').
+     * true means a VM is actively doing I/O on this host right now — do NOT deactivate.
      */
-    public boolean isExclusive() {
-        return isExclusive;
+    public boolean isOpen() {
+        return isOpen;
     }
 
-    public void setExclusive(boolean exclusive) {
-        isExclusive = exclusive;
+    public void setOpen(boolean open) {
+        isOpen = open;
     }
 
     public String getLvAttributes() {
