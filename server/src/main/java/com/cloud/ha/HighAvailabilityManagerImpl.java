@@ -645,10 +645,13 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         boolean isHostRemoved = false;
         if (host == null) {
             host = _hostDao.findByIdIncludingRemoved(work.getHostId());
-            if (host != null) {
-                logger.debug("VM {} is now no longer on host {} as the host is removed", vm, host);
-                isHostRemoved = true;
+            if (host == null) {
+                logger.debug("VM {} is now no longer on host {}, the host doesn't exist", vm, work.getHostId());
+                return null;
             }
+
+            logger.debug("VM {} is now no longer on host {} as the host is removed", vm, host);
+            isHostRemoved = true;
         }
 
         DataCenterVO dcVO = _dcDao.findById(host.getDataCenterId());
@@ -749,7 +752,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
             return null; // VM doesn't require HA
         }
 
-        if ((host == null || host.getRemoved() != null || host.getState() != Status.Up)
+        if ((host.getRemoved() != null || host.getState() != Status.Up)
                  && !volumeMgr.canVmRestartOnAnotherServer(vm.getId())) {
             if (logger.isDebugEnabled()) {
                 logger.debug("VM {} can not restart on another server.", vm);
