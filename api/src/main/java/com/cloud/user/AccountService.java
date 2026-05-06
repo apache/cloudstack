@@ -92,6 +92,8 @@ public interface AccountService {
 
     Account getAccount(long accountId);
 
+    Account getAccountByUuid(String accountUuid);
+
     User getActiveUser(long userId);
 
     User getOneActiveUserForAccount(Account account);

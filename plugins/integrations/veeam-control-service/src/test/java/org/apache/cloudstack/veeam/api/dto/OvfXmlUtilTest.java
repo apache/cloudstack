@@ -18,10 +18,20 @@
 package org.apache.cloudstack.veeam.api.dto;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+
+import org.apache.logging.log4j.Logger;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
+
+import com.cloud.utils.Pair;
 
 @RunWith(MockitoJUnitRunner.class)
 public class OvfXmlUtilTest {
@@ -41,5 +51,30 @@ public class OvfXmlUtilTest {
         assertEquals("1", vm.getCpu().getTopology().getSockets());
         assertEquals("1", vm.getCpu().getTopology().getCores());
         assertEquals("1", vm.getCpu().getTopology().getThreads());
+    }
+
+    @Test
+    public void test_restoreConfig_parse() throws Exception {
+        Vm vm = mock(Vm.class);
+        Vm.Initialization initialization = mock(Vm.Initialization.class);
+        Vm.Initialization.Configuration configMock = mock(Vm.Initialization.Configuration.class);
+        when(initialization.getConfiguration()).thenReturn(configMock);
+        when(vm.getInitialization()).thenReturn(initialization);
+        String ovfXml;
+        try (InputStream is = getClass().getClassLoader().getResourceAsStream("test-ovf.xml")) {
+            assertNotNull(is);
+            ovfXml = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+        }
+        when(configMock.getData()).thenReturn(ovfXml);
+
+        String instanceConfig = OvfXmlUtil.getConfigMetadataXml(vm, mock(Logger.class));
+        assertNotNull(instanceConfig);
+        assertTrue(instanceConfig.contains("ovf:CloudStackMetadata_Type"));
+        assertTrue(instanceConfig.contains("<NetworkId>6965c1cf-8d44-4622-82e2-4dbbe4a58355</NetworkId>"));
+
+        Pair<String, String> result = OvfXmlUtil.getVmNicDetailFromStoredConfig(instanceConfig, "6965c1cf-8d44-4622-82e2-4dbbe4a58355", mock(Logger.class));
+        assertNotNull(result);
+        assertEquals("1e:01:50:00:00:fd", result.first());
+        assertEquals("10.1.1.103", result.second());
     }
 }

@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.veeam.api.converter;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -79,21 +80,32 @@ public class NicVOToNicConverter {
         device.setDescription(String.format("%s device", vo.getReserver()));
         device.setMac(mac);
         if (ObjectUtils.anyNotNull(vo.getIPv4Address(), vo.getIPv6Address())) {
-            Ip ip = new Ip();
-            if (vo.getIPv4Address() != null) {
-                ip.setAddress(vo.getIPv4Address());
-                ip.setGateway(vo.getIPv4Gateway());
-                ip.setVersion("v4");
-            } else if (vo.getIPv6Address() != null) {
-                ip.setAddress(vo.getIPv6Address());
-                ip.setGateway(vo.getIPv6Gateway());
-                ip.setVersion("v6");
-            }
-            device.setIps(NamedList.of("ip", List.of(ip)));
+            List<Ip> ips = getIps(vo);
+            device.setIps(NamedList.of("ip", ips));
         }
         device.setHref(vm.getHref() + "/reporteddevices/" + vo.getUuid());
         device.setVm(vm);
         return device;
+    }
+
+    @NotNull
+    private static List<Ip> getIps(NicVO vo) {
+        List<Ip> ips = new ArrayList<>();
+        if (vo.getIPv4Address() != null) {
+            Ip ip = new Ip();
+            ip.setAddress(vo.getIPv4Address());
+            ip.setGateway(vo.getIPv4Gateway());
+            ip.setVersion("v4");
+            ips.add(ip);
+        }
+        if (vo.getIPv6Address() != null) {
+            Ip ip6 = new Ip();
+            ip6.setAddress(vo.getIPv6Address());
+            ip6.setGateway(vo.getIPv6Gateway());
+            ip6.setVersion("v6");
+            ips.add(ip6);
+        }
+        return ips;
     }
 
     public static List<Nic> toNicList(final List<NicVO> vos, final String vmUuid, final Function<Long, NetworkVO> networkResolver) {

@@ -127,6 +127,7 @@ import org.apache.cloudstack.veeam.api.dto.VmAction;
 import org.apache.cloudstack.veeam.api.dto.VnicProfile;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -192,6 +193,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -207,6 +209,7 @@ public class ServerAdapter extends ManagerBase {
     );
     private static final String VM_TA_KEY = "veeam_tag";
     private static final String WORKER_VM_GUEST_CPU_MODE = "host-passthrough";
+    private static final String RESTORE_CONFIG = "restore.config";
 
     @Inject
     AccountService accountService;
@@ -512,7 +515,7 @@ public class ServerAdapter extends ManagerBase {
         return template;
     }
 
-    protected Vm createInstance(com.cloud.dc.DataCenter zone, Long clusterId, Account owner, Long domainId,
+    protected Pair<Vm, UserVm> createInstance(com.cloud.dc.DataCenter zone, Long clusterId, Account owner, Long domainId,
                 String accountName, Long projectId, String name, String displayName, String serviceOfferingUuid,
                 int cpu, int memory, String templateUuid, String userdata, ApiConstants.BootType bootType,
                 ApiConstants.BootMode bootMode, String affinityGroupId, String userDataId, Map<String, String> details) {
@@ -582,8 +585,10 @@ public class ServerAdapter extends ManagerBase {
             UserVm vm = userVmManager.createVirtualMachine(cmd);
             vm = userVmManager.finalizeCreateVirtualMachine(vm.getId());
             UserVmJoinVO vo = userVmJoinDao.findById(vm.getId());
-            return UserVmJoinVOToVmConverter.toVm(vo, this::getHostById, this::getDetailsByInstanceId,
-                    this::listTagsByInstanceId, this::listDiskAttachmentsByInstanceId, this::listNicsByInstance, false);
+            Vm vmObj = UserVmJoinVOToVmConverter.toVm(vo, this::getHostById, this::getDetailsByInstanceId,
+                    this::listTagsByInstanceId, this::listDiskAttachmentsByInstanceId, this::listNicsByInstance,
+                    false);
+            return new Pair<>(vmObj, vm);
         } catch (InsufficientCapacityException | ResourceUnavailableException | ResourceAllocationException | CloudRuntimeException e) {
             throw new CloudRuntimeException("Failed to create VM: " + e.getMessage(), e);
         }
@@ -616,6 +621,63 @@ public class ServerAdapter extends ManagerBase {
             }
         }
         return details;
+    }
+
+    protected void saveInstanceRestoreConfig(Vm request, UserVm vm) {
+        if (StringUtils.isBlank(request.getAccountId())) {
+            return;
+        }
+        if (accountService.getAccountByUuid(request.getAccountId()) == null) {
+            return;
+        }
+        String restoreConfig = OvfXmlUtil.getConfigMetadataXml(request, logger);
+        if (StringUtils.isBlank(restoreConfig)) {
+            return;
+        }
+        vmInstanceDetailsDao.addDetail(vm.getId(), RESTORE_CONFIG, restoreConfig, false);
+    }
+
+    protected void removeInstanceRestoreConfig(UserVm vm) {
+        vmInstanceDetailsDao.removeDetail(vm.getId(), RESTORE_CONFIG);
+    }
+
+    protected Pair<String, String> getValidatedInstanceNicDetails(final UserVmVO vm, final NetworkVO network) {
+        if (ObjectUtils.anyNull(vm, network)) {
+            return new Pair<>(null, null);
+        }
+        VMInstanceDetailVO detail = vmInstanceDetailsDao.findDetail(vm.getId(), RESTORE_CONFIG);
+        if (detail == null || StringUtils.isBlank(detail.getValue())) {
+            return new Pair<>(null, null);
+        }
+        Pair<String, String> result = OvfXmlUtil.getVmNicDetailFromStoredConfig(detail.getValue(), network.getUuid(), logger);
+        String mac = StringUtils.trimToNull(result.first());
+        String ip4Address = StringUtils.trimToNull(result.second());
+        NicVO nic = null;
+        if (mac != null) {
+            nic = nicDao.findByNetworkIdAndMacAddress(network.getId(), mac);
+            if (nic != null) {
+                logger.warn("MAC address {} specified in the restore config for {} is already in use by {}, ignoring it",
+                        mac, network, nic);
+                mac = null;
+                if (!Objects.equals(ip4Address, nic.getIPv4Address())) {
+                    nic = null;
+                }
+            }
+        }
+        if (ip4Address != null) {
+            if (nic == null) {
+                nic = nicDao.findNonPlaceHolderByIp4AddressAndNetworkId(ip4Address, network.getId());
+            }
+            if (nic != null) {
+                logger.warn("IPv4 address {} specified in the restore config for {} is already in use by {}, ignoring it",
+                        ip4Address, network, nic);
+                mac = null;
+                if (Objects.equals(ip4Address, nic.getIPv4Address())) {
+                    ip4Address = null;
+                }
+            }
+        }
+        return new Pair<>(mac, ip4Address);
     }
 
     protected static long getProvisionedSizeInGb(String sizeStr) {
@@ -968,10 +1030,12 @@ public class ServerAdapter extends ManagerBase {
         if (request.getTemplate() != null && StringUtils.isNotEmpty(request.getTemplate().getId())) {
             templateUuid = request.getTemplate().getId();
         }
-        return createInstance(zone, clusterId, owner, ownerDetails.first(), ownerDetails.second(),
+        Pair<Vm, UserVm> result = createInstance(zone, clusterId, owner, ownerDetails.first(), ownerDetails.second(),
                 ownerDetails.third(), name, displayName, serviceOfferingUuid, cpu, memoryMB, templateUuid,
                 userdata, bootOptions.first(), bootOptions.second(), request.getAffinityGroupId(),
                 request.getUserDataId(), request.getDetails());
+        saveInstanceRestoreConfig(request, result.second());
+        return result.first();
     }
 
     @ApiAccess(command = UpdateVMCmd.class)
@@ -1175,6 +1239,7 @@ public class ServerAdapter extends ManagerBase {
         }
         accountService.checkAccess(CallContext.current().getCallingAccount(), SecurityChecker.AccessType.OperateEntry,
                 false, vmVo);
+        removeInstanceRestoreConfig(vmVo);
         if (vmVo.getAccountId() != volumeVO.getAccountId()) {
             if (VeeamControlService.InstanceRestoreAssignOwner.value()) {
                 assignVolumeToAccount(volumeVO, vmVo.getAccountId());
@@ -1296,10 +1361,13 @@ public class ServerAdapter extends ManagerBase {
                 accountCannotAccessNetwork(networkVO, vmVo.getAccountId())) {
             assignVmToAccount(vmVo, networkVO.getAccountId());
         }
+        Pair<String, String> nicDetails = getValidatedInstanceNicDetails(vmVo, networkVO);
         AddNicToVMCmd cmd = new AddNicToVMCmd();
         ComponentContext.inject(cmd);
         cmd.setVmId(vmVo.getId());
         cmd.setNetworkId(networkVO.getId());
+        cmd.setMacAddress(nicDetails.first());
+        cmd.setIpaddr(nicDetails.second());
         if (request.getMac() != null && StringUtils.isNotBlank(request.getMac().getAddress())) {
             cmd.setMacAddress(request.getMac().getAddress());
         }

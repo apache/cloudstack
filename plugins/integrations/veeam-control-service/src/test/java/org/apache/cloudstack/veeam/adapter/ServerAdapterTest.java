@@ -48,14 +48,17 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.veeam.api.dto.DataCenter;
 import org.apache.cloudstack.veeam.api.dto.Disk;
+import org.apache.cloudstack.veeam.api.dto.OvfXmlUtil;
 import org.apache.cloudstack.veeam.api.dto.Tag;
 import org.apache.cloudstack.veeam.api.dto.Vm;
+import org.apache.logging.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -96,10 +99,14 @@ import com.cloud.user.User;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmManager;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VmDetailConstants;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -117,6 +124,7 @@ public class ServerAdapterTest {
     @Mock NetworkDao networkDao;
     @Mock UserVmDao userVmDao;
     @Mock UserVmJoinDao userVmJoinDao;
+    @Mock VMInstanceDetailsDao vmInstanceDetailsDao;
     @Mock VolumeDao volumeDao;
     @Mock VolumeJoinDao volumeJoinDao;
     // kept minimal: only mocks used directly by tests
@@ -126,6 +134,7 @@ public class ServerAdapterTest {
     @Mock ServiceOfferingDao serviceOfferingDao;
     @Mock VMTemplateDao templateDao;
     @Mock UserVmManager userVmManager;
+    @Mock NicDao nicDao;
     @Mock AsyncJobDao asyncJobDao;
     @Mock AsyncJobJoinDao asyncJobJoinDao;
     @Mock VMSnapshotDao vmSnapshotDao;
@@ -264,6 +273,185 @@ public class ServerAdapterTest {
         Map<String, String> result = ServerAdapter.getDetailsForInstanceCreation(null, offering, existingDetails);
 
         assertEquals("3000", result.get(VmDetailConstants.CPU_SPEED));
+    }
+
+    @Test
+    public void testGetValidatedInstanceNicDetails_NullVm_ReturnsNullPair() {
+        NetworkVO network = mock(NetworkVO.class);
+
+        Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails(null, network);
+
+        assertNull(result.first());
+        assertNull(result.second());
+    }
+
+    @Test
+    public void testGetValidatedInstanceNicDetails_NullNetwork_ReturnsNullPair() {
+        UserVmVO vm = mock(UserVmVO.class);
+
+        Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails(vm, null);
+
+        assertNull(result.first());
+        assertNull(result.second());
+    }
+
+    @Test
+    public void testGetValidatedInstanceNicDetails_NoRestoreConfig_ReturnsNullPair() {
+        UserVmVO vm = mock(UserVmVO.class);
+        when(vm.getId()).thenReturn(10L);
+        when(vmInstanceDetailsDao.findDetail(10L, "restore.config")).thenReturn(null);
+        NetworkVO network = mock(NetworkVO.class);
+
+        Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails(vm, network);
+
+        assertNull(result.first());
+        assertNull(result.second());
+    }
+
+    @Test
+    public void testGetValidatedInstanceNicDetails_BlankRestoreConfig_ReturnsNullPair() {
+        UserVmVO vm = mock(UserVmVO.class);
+        when(vm.getId()).thenReturn(10L);
+        VMInstanceDetailVO detail = mock(VMInstanceDetailVO.class);
+        when(detail.getValue()).thenReturn("   ");
+        when(vmInstanceDetailsDao.findDetail(10L, "restore.config")).thenReturn(detail);
+        NetworkVO network = mock(NetworkVO.class);
+
+        Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails(vm, network);
+
+        assertNull(result.first());
+        assertNull(result.second());
+    }
+
+    @Test
+    public void testGetValidatedInstanceNicDetails_BlankMacAndIpFromConfig_ReturnsNullPair() {
+        UserVmVO vm = mock(UserVmVO.class);
+        when(vm.getId()).thenReturn(11L);
+        VMInstanceDetailVO detail = mock(VMInstanceDetailVO.class);
+        when(detail.getValue()).thenReturn("restore-xml");
+        when(vmInstanceDetailsDao.findDetail(11L, "restore.config")).thenReturn(detail);
+
+        NetworkVO network = mock(NetworkVO.class);
+        when(network.getUuid()).thenReturn("network-uuid");
+
+        try (MockedStatic<OvfXmlUtil> ovfXmlUtil = Mockito.mockStatic(OvfXmlUtil.class)) {
+            ovfXmlUtil.when(() -> OvfXmlUtil.getVmNicDetailFromStoredConfig(eq("restore-xml"), eq("network-uuid"), any(Logger.class)))
+                    .thenReturn(new Pair<>("  ", "\t"));
+
+            Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails(vm, network);
+
+            assertNull(result.first());
+            assertNull(result.second());
+        }
+    }
+
+    @Test
+    public void testGetValidatedInstanceNicDetails_NoConflicts_ReturnsMacAndIp() {
+        UserVmVO vm = mock(UserVmVO.class);
+        when(vm.getId()).thenReturn(20L);
+        VMInstanceDetailVO detail = mock(VMInstanceDetailVO.class);
+        when(detail.getValue()).thenReturn("restore-xml");
+        when(vmInstanceDetailsDao.findDetail(20L, "restore.config")).thenReturn(detail);
+
+        NetworkVO network = mock(NetworkVO.class);
+        when(network.getId()).thenReturn(30L);
+        when(network.getUuid()).thenReturn("network-uuid");
+
+        when(nicDao.findByNetworkIdAndMacAddress(30L, "02:00:00:00:00:01")).thenReturn(null);
+        when(nicDao.findNonPlaceHolderByIp4AddressAndNetworkId("10.0.0.10", 30L)).thenReturn(null);
+
+        try (MockedStatic<OvfXmlUtil> ovfXmlUtil = Mockito.mockStatic(OvfXmlUtil.class)) {
+            ovfXmlUtil.when(() -> OvfXmlUtil.getVmNicDetailFromStoredConfig(eq("restore-xml"), eq("network-uuid"), any(Logger.class)))
+                    .thenReturn(new Pair<>("02:00:00:00:00:01", "10.0.0.10"));
+
+            Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails(vm, network);
+
+            assertEquals("02:00:00:00:00:01", result.first());
+            assertEquals("10.0.0.10", result.second());
+        }
+    }
+
+    @Test
+    public void testGetValidatedInstanceNicDetails_MacConflictWithSameIp_ClearsBoth() {
+        UserVmVO vm = mock(UserVmVO.class);
+        when(vm.getId()).thenReturn(21L);
+        VMInstanceDetailVO detail = mock(VMInstanceDetailVO.class);
+        when(detail.getValue()).thenReturn("restore-xml");
+        when(vmInstanceDetailsDao.findDetail(21L, "restore.config")).thenReturn(detail);
+
+        NetworkVO network = mock(NetworkVO.class);
+        when(network.getId()).thenReturn(31L);
+        when(network.getUuid()).thenReturn("network-uuid");
+
+        NicVO conflictingNic = mock(NicVO.class);
+        when(conflictingNic.getIPv4Address()).thenReturn("10.0.0.11");
+        when(nicDao.findByNetworkIdAndMacAddress(31L, "02:00:00:00:00:02")).thenReturn(conflictingNic);
+
+        try (MockedStatic<OvfXmlUtil> ovfXmlUtil = Mockito.mockStatic(OvfXmlUtil.class)) {
+            ovfXmlUtil.when(() -> OvfXmlUtil.getVmNicDetailFromStoredConfig(eq("restore-xml"), eq("network-uuid"), any(Logger.class)))
+                    .thenReturn(new Pair<>("02:00:00:00:00:02", "10.0.0.11"));
+
+            Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails(vm, network);
+
+            assertNull(result.first());
+            assertNull(result.second());
+        }
+    }
+
+    @Test
+    public void testGetValidatedInstanceNicDetails_MacConflictWithDifferentIp_ClearsOnlyMac() {
+        UserVmVO vm = mock(UserVmVO.class);
+        when(vm.getId()).thenReturn(22L);
+        VMInstanceDetailVO detail = mock(VMInstanceDetailVO.class);
+        when(detail.getValue()).thenReturn("restore-xml");
+        when(vmInstanceDetailsDao.findDetail(22L, "restore.config")).thenReturn(detail);
+
+        NetworkVO network = mock(NetworkVO.class);
+        when(network.getId()).thenReturn(32L);
+        when(network.getUuid()).thenReturn("network-uuid");
+
+        NicVO conflictingNic = mock(NicVO.class);
+        when(conflictingNic.getIPv4Address()).thenReturn("10.0.0.99");
+        when(nicDao.findByNetworkIdAndMacAddress(32L, "02:00:00:00:00:03")).thenReturn(conflictingNic);
+        when(nicDao.findNonPlaceHolderByIp4AddressAndNetworkId("10.0.0.12", 32L)).thenReturn(null);
+
+        try (MockedStatic<OvfXmlUtil> ovfXmlUtil = Mockito.mockStatic(OvfXmlUtil.class)) {
+            ovfXmlUtil.when(() -> OvfXmlUtil.getVmNicDetailFromStoredConfig(eq("restore-xml"), eq("network-uuid"), any(Logger.class)))
+                    .thenReturn(new Pair<>("02:00:00:00:00:03", "10.0.0.12"));
+
+            Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails(vm, network);
+
+            assertNull(result.first());
+            assertEquals("10.0.0.12", result.second());
+        }
+    }
+
+    @Test
+    public void testGetValidatedInstanceNicDetails_IpConflict_ClearsIpAndMac() {
+        UserVmVO vm = mock(UserVmVO.class);
+        when(vm.getId()).thenReturn(23L);
+        VMInstanceDetailVO detail = mock(VMInstanceDetailVO.class);
+        when(detail.getValue()).thenReturn("restore-xml");
+        when(vmInstanceDetailsDao.findDetail(23L, "restore.config")).thenReturn(detail);
+
+        NetworkVO network = mock(NetworkVO.class);
+        when(network.getId()).thenReturn(33L);
+        when(network.getUuid()).thenReturn("network-uuid");
+
+        when(nicDao.findByNetworkIdAndMacAddress(33L, "02:00:00:00:00:04")).thenReturn(null);
+        NicVO conflictingIpNic = mock(NicVO.class);
+        when(conflictingIpNic.getIPv4Address()).thenReturn("10.0.0.13");
+        when(nicDao.findNonPlaceHolderByIp4AddressAndNetworkId("10.0.0.13", 33L)).thenReturn(conflictingIpNic);
+
+        try (MockedStatic<OvfXmlUtil> ovfXmlUtil = Mockito.mockStatic(OvfXmlUtil.class)) {
+            ovfXmlUtil.when(() -> OvfXmlUtil.getVmNicDetailFromStoredConfig(eq("restore-xml"), eq("network-uuid"), any(Logger.class)))
+                    .thenReturn(new Pair<>("02:00:00:00:00:04", "10.0.0.13"));
+
+            Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails(vm, network);
+
+            assertNull(result.first());
+            assertNull(result.second());
+        }
     }
 
 

@@ -18,6 +18,7 @@
 package org.apache.cloudstack.veeam.api.dto;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -32,6 +33,7 @@ import javax.xml.XMLConstants;
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
@@ -41,11 +43,15 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Logger;
 import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 import com.cloud.api.query.vo.UserVmJoinVO;
+import com.cloud.utils.Pair;
 
 public class OvfXmlUtil {
 
@@ -108,8 +114,8 @@ public class OvfXmlUtil {
         final String bootTime = vm.getStartTime() != null ? formatDate(vm.getStartTime()) : creationDate;
 
         // Memory: Vm.memory is bytes (string)
-        final long memBytes = parseLong(vm.getMemory(), 1024L * 1024L * 1024L);
-        final long memMb = Math.max(128, memBytes / (1024L * 1024L));
+        final long memBytes = parseLong(vm.getMemory(), MemoryAllocationUnit.Gigabytes.getBytesMultiplier());
+        final long memMb = Math.max(128, memBytes / MemoryAllocationUnit.Megabytes.getBytesMultiplier());
 
         // CPU: topology cores/sockets/threads. We default sockets=1 threads=1.
         final int vcpu = Math.max(1, Integer.parseInt(vm.getCpu().getTopology().getCores()));
@@ -125,6 +131,8 @@ public class OvfXmlUtil {
 
         // Snapshot id (stable per VM id)
         final String snapshotId = UUID.nameUUIDFromBytes(("ovf-snap-" + vmId).getBytes(StandardCharsets.UTF_8)).toString();
+
+        final List<Nic> nics = nics(vm);
 
         final StringBuilder sb = new StringBuilder(16_384);
         sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
@@ -174,7 +182,7 @@ public class OvfXmlUtil {
             if (da == null || da.getDisk() == null || StringUtils.isBlank(da.getDisk().getId())) {
                 continue;
             }
-            final org.apache.cloudstack.veeam.api.dto.Disk d = da.getDisk();
+            final Disk d = da.getDisk();
             final String diskId = d.getId();
             final String storageDomainId = firstStorageDomainId(d);
             final String href = storageDomainId + "/" + diskId;
@@ -246,6 +254,26 @@ public class OvfXmlUtil {
             }
             if (vo.getAffinityGroupId() != null) {
                 sb.append("<AffinityGroupId>").append(escapeText(vo.getAffinityGroupUuid())).append("</AffinityGroupId>");
+            }
+            if (vm.getNics() != null && CollectionUtils.isNotEmpty(vm.getNics().getItems())) {
+                sb.append("<Nics>");
+                for (Nic nic : nics(vm)) {
+                    if (nic == null || StringUtils.isBlank(nic.getId())) {
+                        continue;
+                    }
+                    String networkId = nicNetworkId(nic);
+                    if (networkId == null) {
+                        continue;
+                    }
+                    sb.append("<Nic>");
+                    sb.append("<Id>").append(escapeText(nic.getId())).append("</Id>");
+                    sb.append("<NetworkId>").append(escapeText(networkId)).append("</NetworkId>");
+                    sb.append("<MACAddress>").append(escapeText(nicMac(nic))).append("</MACAddress>");
+                    sb.append("<Ip4Address>").append(escapeText(nicIp(nic, "v4"))).append("</Ip4Address>");
+                    sb.append("<Ip6Address>").append(escapeText(nicIp(nic, "v6"))).append("</Ip6Address>");
+                    sb.append("</Nic>");
+                }
+                sb.append("</Nics>");
             }
             sb.append("</CloudStack>");
             sb.append("</Section>");
@@ -349,7 +377,7 @@ public class OvfXmlUtil {
             if (da == null || da.getDisk() == null || StringUtils.isBlank(da.getDisk().getId())) {
                 continue;
             }
-            final org.apache.cloudstack.veeam.api.dto.Disk d = da.getDisk();
+            final Disk d = da.getDisk();
             final String diskId = d.getId();
             final String storageDomainId = firstStorageDomainId(d);
             final String href = storageDomainId + "/" + diskId;
@@ -380,16 +408,17 @@ public class OvfXmlUtil {
 
         // NICs as Items
         int nicSlot = 0;
-        for (Nic nic : nics(vm)) {
+        for (Nic nic : nics) {
             if (nic == null) {
                 continue;
             }
             final String nicId = firstNonBlank(nic.getId(), UUID.nameUUIDFromBytes(("nic-" + vmId + "-" + nicSlot).getBytes(StandardCharsets.UTF_8)).toString());
             final String nicName = firstNonBlank(nic.getName(), "nic" + (nicSlot + 1));
             final String mac = nic.getMac() != null ? defaultString(nic.getMac().getAddress()) : "";
+            final String elementName = nic.getVnicProfile() != null ? defaultString(nic.getVnicProfile().getId()) : nicName;
 
             sb.append("<Item>");
-            sb.append("<rasd:Caption>Ethernet adapter on [No Network]</rasd:Caption>");
+            sb.append("<rasd:Caption>Ethernet adapter - ").append(nic.getName()).append("</rasd:Caption>");
             sb.append("<rasd:InstanceId>").append(escapeText(nicId)).append("</rasd:InstanceId>");
             sb.append("<rasd:ResourceType>10</rasd:ResourceType>");
             sb.append("<rasd:OtherResourceType></rasd:OtherResourceType>");
@@ -397,7 +426,7 @@ public class OvfXmlUtil {
             sb.append("<rasd:Connection>").append(escapeText(defaultString(inferNetworkName(nic)))).append("</rasd:Connection>");
             sb.append("<rasd:Linked>").append(escapeText(booleanString(nic.getLinked(), "true"))).append("</rasd:Linked>");
             sb.append("<rasd:Name>").append(escapeText(nicName)).append("</rasd:Name>");
-            sb.append("<rasd:ElementName>").append(escapeText(nicName)).append("</rasd:ElementName>");
+            sb.append("<rasd:ElementName>").append(escapeText(elementName)).append("</rasd:ElementName>");
             sb.append("<rasd:MACAddress>").append(escapeText(mac)).append("</rasd:MACAddress>");
             sb.append("<rasd:speed>10000</rasd:speed>");
             sb.append("<Type>interface</Type>");
@@ -441,16 +470,153 @@ public class OvfXmlUtil {
         return sb.toString();
     }
 
-    public static void updateFromConfiguration(Vm vm) {
+    protected static String getVmConfigurationData(Vm vm) {
         Vm.Initialization initialization = vm.getInitialization();
         if (initialization == null) {
-            return;
+            return null;
         }
         Vm.Initialization.Configuration configuration = vm.getInitialization().getConfiguration();
         if (configuration == null) {
+            return null;
+        }
+        return configuration.getData();
+    }
+
+    public static void updateFromConfiguration(Vm vm) {
+        String configurationData = getVmConfigurationData(vm);
+        OvfXmlUtil.updateFromXml(vm, configurationData);
+    }
+
+    public static String getConfigMetadataXml(Vm vm, Logger logger) {
+        String configurationData = getVmConfigurationData(vm);
+        if (StringUtils.isBlank(configurationData)) {
+            return null;
+        }
+        try {
+            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+            dbf.setNamespaceAware(true);
+            dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            DocumentBuilder db = dbf.newDocumentBuilder();
+            Document doc = db.parse(new ByteArrayInputStream(configurationData.getBytes(StandardCharsets.UTF_8)));
+
+            XPathFactory xpf = XPathFactory.newInstance();
+            XPath xpath = xpf.newXPath();
+
+            // Persist only the CloudStack metadata section from the source OVF.
+            Node metadataSection = (Node) xpath.evaluate(
+                    "//*[local-name()='Section' and @*[local-name()='type']='ovf:CloudStackMetadata_Type']",
+                    doc,
+                    XPathConstants.NODE
+            );
+
+            if (metadataSection == null) {
+                return null;
+            }
+
+            // Wrap section payload so it remains standalone XML with namespace declarations.
+            StringBuilder sb = new StringBuilder(2048);
+            sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+            sb.append("<Sections")
+              .append(" xmlns:rasd=\"").append(NS_RASD).append("\"")
+              .append(" xmlns:ovf=\"").append(NS_OVF).append("\"")
+              .append(" xmlns:xsi=\"").append(NS_XSI).append("\"")
+              .append(">");
+            sb.append(nodeToString(metadataSection));
+            sb.append("</Sections>");
+
+            return sb.toString();
+        } catch (ParserConfigurationException | XPathExpressionException | IOException | SAXException  e) {
+            logger.error("Failed to parse VM configuration data for VM id {}: {}", vm.getId(), e.getMessage());
+            return null;
+        }
+    }
+
+    public static Pair<String, String> getVmNicDetailFromStoredConfig(String xmlConfig, String networkId, Logger logger) {
+        if (StringUtils.isAnyBlank(xmlConfig, networkId)) {
+            return new Pair<>(null, null);
+        }
+        try {
+            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+            dbf.setNamespaceAware(true);
+            dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            DocumentBuilder db = dbf.newDocumentBuilder();
+            Document doc = db.parse(new ByteArrayInputStream(xmlConfig.getBytes(StandardCharsets.UTF_8)));
+
+            XPathFactory xpf = XPathFactory.newInstance();
+            XPath xpath = xpf.newXPath();
+
+            // Preferred format: CloudStack metadata section with CloudStack/Nics/Nic records.
+            NodeList nicNodes = (NodeList) xpath.evaluate(
+                    "//*[local-name()='Section' and @*[local-name()='type']='ovf:CloudStackMetadata_Type']/*[local-name()='CloudStack']/*[local-name()='Nics']/*[local-name()='Nic']",
+                    doc,
+                    XPathConstants.NODESET
+            );
+            if (nicNodes != null && nicNodes.getLength() > 0) {
+                for (int i = 0; i < nicNodes.getLength(); i++) {
+                    Node nicNode = nicNodes.item(i);
+                    String nicNetworkId = xpathString(xpath, nicNode, "./*[local-name()='NetworkId']/text()");
+                    if (StringUtils.equals(nicNetworkId, networkId)) {
+                        return new Pair<>(
+                                xpathString(xpath, nicNode, "./*[local-name()='MACAddress' or local-name()='MACAddress']/text()"),
+                                xpathString(xpath, nicNode, "./*[local-name()='Ip4Address' or local-name()='Ip4Address']/text()")
+                        );
+                    }
+                }
+            }
+        } catch (ParserConfigurationException | XPathExpressionException | IOException | SAXException e) {
+            logger.error("Failed to parse VM configuration XML to retrieve details for NIC for network ID {}: {}",
+                    networkId, e.getMessage());
+        }
+        return new Pair<>(null, null);
+    }
+
+    private static String nodeToString(Node node) {
+        try {
+            // Implementation using string manipulation
+            StringBuilder sb = new StringBuilder();
+            serializeNodeToString(node, sb);
+            return sb.toString();
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    private static void serializeNodeToString(Node node, StringBuilder sb) {
+        if (node == null) {
             return;
         }
-        OvfXmlUtil.updateFromXml(vm, configuration.getData());
+
+        short nodeType = node.getNodeType();
+        switch (nodeType) {
+            case Node.ELEMENT_NODE:
+                sb.append("<").append(node.getNodeName());
+                NamedNodeMap attrs = node.getAttributes();
+                if (attrs != null) {
+                    for (int i = 0; i < attrs.getLength(); i++) {
+                        Node attr = attrs.item(i);
+                        sb.append(" ").append(attr.getNodeName()).append("=\"")
+                                .append(escapeAttr(attr.getNodeValue())).append("\"");
+                    }
+                }
+                sb.append(">");
+                NodeList children = node.getChildNodes();
+                for (int i = 0; i < children.getLength(); i++) {
+                    serializeNodeToString(children.item(i), sb);
+                }
+                sb.append("</").append(node.getNodeName()).append(">");
+                break;
+            case Node.TEXT_NODE:
+                String text = node.getNodeValue();
+                if (StringUtils.isNotBlank(text)) {
+                    sb.append(escapeText(text));
+                }
+                break;
+            case Node.CDATA_SECTION_NODE:
+                sb.append("<![CDATA[").append(node.getNodeValue()).append("]]>");
+                break;
+            default:
+                break;
+        }
     }
 
     protected static void updateFromXml(Vm vm, String ovfXml) {
@@ -663,6 +829,40 @@ public class OvfXmlUtil {
         return vm.getNics().getItems();
     }
 
+    private static String nicNetworkId(Nic nic) {
+        if (nic == null || nic.getVnicProfile() == null || StringUtils.isEmpty(nic.getVnicProfile().getId())) {
+            return null;
+        }
+        return nic.getVnicProfile().getId();
+    }
+
+    private static ReportedDevice getNicReportedDevice(Nic nic) {
+        if (nic == null || nic.getReportedDevices() == null || CollectionUtils.isEmpty(nic.getReportedDevices().getItems())) {
+            return null;
+        }
+        return nic.getReportedDevices().getItems().get(0);
+    }
+
+    private static String nicMac(Nic nic) {
+        if (nic == null || nic.getMac() == null || StringUtils.isBlank(nic.getMac().getAddress())) {
+            return "";
+        }
+        return nic.getMac().getAddress();
+    }
+
+    private static String nicIp(Nic nic, String version) {
+        ReportedDevice device = getNicReportedDevice(nic);
+        if (device == null || device.getIps() == null || CollectionUtils.isEmpty(device.getIps().getItems())) {
+            return "";
+        }
+        for (Ip ip : device.getIps().getItems()) {
+            if (version.equalsIgnoreCase(ip.getVersion())) {
+                return ip.getAddress();
+            }
+        }
+        return "";
+    }
+
     private static String inferOsDescription(Vm vm) {
         if (vm.getOs() == null) {
             return "other";
@@ -740,7 +940,7 @@ public class OvfXmlUtil {
         if (vm.getMemoryPolicy() == null || vm.getMemoryPolicy().getBallooning() == null) {
             return "true";
         }
-        return "true".equalsIgnoreCase(vm.getMemoryPolicy().getBallooning()) ? "true" : "false";
+        return Boolean.toString("true".equalsIgnoreCase(vm.getMemoryPolicy().getBallooning()));
     }
 
     private static int mapNicResourceSubType(String iface) {
@@ -795,7 +995,7 @@ public class OvfXmlUtil {
         if (bytes <= 0) {
             return 0;
         }
-        final long gib = 1024L * 1024L * 1024L;
+        final long gib = MemoryAllocationUnit.Gigabytes.getBytesMultiplier();
         return (bytes + gib - 1) / gib;
     }
 

@@ -627,4 +627,9 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     public User getOneActiveUserForAccount(Account account) {
         return null;
     }
+
+    @Override
+    public Account getAccountByUuid(String accountUuid) {
+        return null;
+    }
 }

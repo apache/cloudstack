@@ -2790,6 +2790,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
+    public Account getAccountByUuid(String accountUuid) {
+        return _accountDao.findByUuidIncludingRemoved(accountUuid);
+    }
+
+    @Override
     public RoleType getRoleType(Account account) {
         if (account == null) {
             return RoleType.Unknown;
