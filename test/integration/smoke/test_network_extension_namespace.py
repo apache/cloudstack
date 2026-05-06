@@ -149,6 +149,15 @@ NETWORK_SERVICE_CAPABILITIES_JSON = json.dumps({
     }
 })
 
+ISOLATED_NETWORK_SERVICES = (
+    "Dhcp,Dns,UserData,"
+    "SourceNat,StaticNat,PortForwarding,Firewall,Lb,CustomAction"
+)
+
+VPC_NETWORK_SERVICES = (
+    "Dhcp,Dns,UserData,"
+    "SourceNat,StaticNat,PortForwarding,Lb,NetworkACL,CustomAction"
+)
 
 # ---------------------------------------------------------------------------
 # Script download helpers
@@ -1310,7 +1319,7 @@ class TestNetworkExtensionNamespace(cloudstackTestCase):
         """
         self._check_kvm_host_prerequisites(['arping', 'dnsmasq', 'haproxy'])
         # ---- Setup ----
-        svc = "SourceNat,StaticNat,PortForwarding,Firewall,Lb,UserData,Dhcp,Dns"
+        svc = ISOLATED_NETWORK_SERVICES
         nw_offering, _ext_name = self._setup_extension_nsp_offering(
             "extnet-isolated", supported_services=svc)
         account, network, vm = self._create_account_network_vm(
@@ -1523,12 +1532,11 @@ class TestNetworkExtensionNamespace(cloudstackTestCase):
         """
         self._check_kvm_host_prerequisites(['arping', 'dnsmasq', 'haproxy'])
         # ---- Setup: extension + NSP only (no isolated offering for VPC tests) ----
-        svc = "SourceNat,StaticNat,PortForwarding,Lb,UserData,Dhcp,Dns,NetworkACL"
         _nw_offering, ext_name = self._setup_extension_nsp_offering(
-            "extnet-vpc", supported_services=svc, for_vpc=True)
+            "extnet-vpc", for_vpc=True)
 
         # ---- VPC tier network offering (useVpc=on) ----
-        vpc_tier_svc = "SourceNat,StaticNat,PortForwarding,Lb,UserData,Dhcp,Dns,NetworkACL"
+        vpc_tier_svc = VPC_NETWORK_SERVICES
         _tier_prov   = {s.strip(): ext_name for s in vpc_tier_svc.split(',')}
         vpc_tier_offering = NetworkOffering.create(self.apiclient, {
             "name":              "ExtNet-VPCTier-%s" % random_gen(),
@@ -1548,7 +1556,7 @@ class TestNetworkExtensionNamespace(cloudstackTestCase):
         self.logger.info("VPC tier offering '%s' enabled", vpc_tier_offering.name)
 
         # ---- VPC offering ----
-        vpc_svc  = "SourceNat,StaticNat,PortForwarding,Lb,UserData,Dhcp,Dns,NetworkACL"
+        vpc_svc  = VPC_NETWORK_SERVICES
         _vpc_prov = {s.strip(): ext_name for s in vpc_svc.split(',')}
         vpc_offering = VpcOffering.create(self.apiclient, {
             "name":              "ExtNet-VPC-%s" % random_gen(),
@@ -1832,12 +1840,11 @@ class TestNetworkExtensionNamespace(cloudstackTestCase):
         self._check_kvm_host_prerequisites(['arping', 'dnsmasq', 'haproxy'])
 
         # ---- Setup: extension + NSP (supporting NetworkACL) ----
-        svc = "SourceNat,StaticNat,PortForwarding,Lb,UserData,Dhcp,Dns,NetworkACL"
         _nw_offering, ext_name = self._setup_extension_nsp_offering(
-            "extnet-acl", supported_services=svc, for_vpc=True)
+            "extnet-acl", for_vpc=True)
 
         # ---- VPC tier network offering (useVpc=on, with NetworkACL support) ----
-        vpc_tier_svc = "SourceNat,StaticNat,PortForwarding,Lb,UserData,Dhcp,Dns,NetworkACL"
+        vpc_tier_svc = VPC_NETWORK_SERVICES
         _tier_prov   = {s.strip(): ext_name for s in vpc_tier_svc.split(',')}
         vpc_tier_offering = NetworkOffering.create(self.apiclient, {
             "name":              "ExtNet-VPCTier-ACL-%s" % random_gen(),
@@ -1857,7 +1864,7 @@ class TestNetworkExtensionNamespace(cloudstackTestCase):
         self.logger.info("VPC tier offering '%s' enabled", vpc_tier_offering.name)
 
         # ---- VPC offering ----
-        vpc_svc  = "SourceNat,StaticNat,PortForwarding,Lb,UserData,Dhcp,Dns,NetworkACL"
+        vpc_svc  = VPC_NETWORK_SERVICES
         _vpc_prov = {s.strip(): ext_name for s in vpc_svc.split(',')}
         vpc_offering = VpcOffering.create(self.apiclient, {
             "name":              "ExtNet-VPC-ACL-%s" % random_gen(),
@@ -2202,7 +2209,7 @@ class TestNetworkExtensionNamespace(cloudstackTestCase):
         """
         self._check_kvm_host_prerequisites(['ip', 'arping', 'dnsmasq', 'haproxy'])
 
-        svc = "SourceNat,PortForwarding,Dhcp,Dns,UserData,CustomAction"
+        svc = ISOLATED_NETWORK_SERVICES
         nw_offering, _ext_name = self._setup_extension_nsp_offering(
             "extnet-pbr", supported_services=svc)
         _account, network, vm = self._create_account_network_vm(
@@ -2351,9 +2358,9 @@ class TestNetworkExtensionNamespace(cloudstackTestCase):
         """Update VPC source NAT IP and verify old/new source NAT flags flip correctly."""
         self._check_kvm_host_prerequisites(['arping'])
 
-        svc = "SourceNat,StaticNat,PortForwarding,Lb,UserData,Dhcp,Dns,NetworkACL"
+        svc  = VPC_NETWORK_SERVICES
         _nw_offering, ext_name = self._setup_extension_nsp_offering(
-            "extnet-vpc-snat-update", supported_services=svc, for_vpc=True)
+            "extnet-vpc-snat-update", for_vpc=True)
 
         suffix = random_gen()
         account = None
@@ -2647,9 +2654,9 @@ class TestNetworkExtensionNamespace(cloudstackTestCase):
         """
         self._check_kvm_host_prerequisites(['ip', 'arping', 'dnsmasq', 'haproxy'])
 
-        svc = "SourceNat,PortForwarding,Dhcp,Dns,UserData,NetworkACL,CustomAction"
+        svc  = VPC_NETWORK_SERVICES
         _nw_offering, ext_name = self._setup_extension_nsp_offering(
-            "extnet-vpc-pbr", supported_services=svc, for_vpc=True)
+            "extnet-vpc-pbr", for_vpc=True)
 
         # ---- VPC tier network offering (useVpc=on) ----
         _tier_prov = {s.strip(): ext_name for s in svc.split(',')}
