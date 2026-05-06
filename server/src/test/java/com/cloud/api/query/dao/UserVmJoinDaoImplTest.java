@@ -177,4 +177,39 @@ public class UserVmJoinDaoImplTest extends GenericDaoBaseWithTagInformationBaseT
         Assert.assertEquals(2, response.getVnfNics().size());
         Assert.assertEquals(3, response.getVnfDetails().size());
     }
+
+    @Test
+    public void advertisedCdromCapReturnsDefaultWhenHostIdNull() {
+        Assert.assertEquals(com.cloud.template.TemplateManager.DEFAULT_CDROM_MAX_PER_VM,
+                _userVmJoinDaoImpl.advertisedCdromCap(null));
+    }
+
+    @Test
+    public void advertisedCdromCapReturnsParsedValue() {
+        com.cloud.host.DetailVO detail = Mockito.mock(com.cloud.host.DetailVO.class);
+        Mockito.when(detail.getValue()).thenReturn("2");
+        Mockito.when(hostDetailsDao.findDetail(7L, com.cloud.host.Host.HOST_CDROM_MAX_COUNT)).thenReturn(detail);
+        Assert.assertEquals(2, _userVmJoinDaoImpl.advertisedCdromCap(7L));
+    }
+
+    @Test
+    public void advertisedCdromCapFallsBackOnInvalidValue() {
+        com.cloud.host.DetailVO detail = Mockito.mock(com.cloud.host.DetailVO.class);
+        Mockito.when(detail.getValue()).thenReturn("xyz");
+        Mockito.when(hostDetailsDao.findDetail(7L, com.cloud.host.Host.HOST_CDROM_MAX_COUNT)).thenReturn(detail);
+        Assert.assertEquals(com.cloud.template.TemplateManager.DEFAULT_CDROM_MAX_PER_VM,
+                _userVmJoinDaoImpl.advertisedCdromCap(7L));
+    }
+
+    @Test
+    public void effectiveCdromMaxCountClampsToHypervisorCap() {
+        UserVmJoinVO userVm = Mockito.mock(UserVmJoinVO.class);
+        Mockito.when(userVm.getHostId()).thenReturn(7L);
+        Mockito.when(userVm.getClusterId()).thenReturn(5L);
+        com.cloud.host.DetailVO detail = Mockito.mock(com.cloud.host.DetailVO.class);
+        Mockito.when(detail.getValue()).thenReturn("2");
+        Mockito.when(hostDetailsDao.findDetail(7L, com.cloud.host.Host.HOST_CDROM_MAX_COUNT)).thenReturn(detail);
+        // Configured cap defaults to 1 (no cluster override mocked); host advertises 2; clamps to 1.
+        Assert.assertEquals(1, _userVmJoinDaoImpl.effectiveCdromMaxCount(userVm));
+    }
 }

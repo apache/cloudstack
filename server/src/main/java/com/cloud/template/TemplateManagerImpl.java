@@ -1543,7 +1543,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         return _vmIsoMapDao.findByVmIdIsoId(vmId, isoId) != null;
     }
 
-    private void enforceCdromAttachLimits(long vmId, UserVm vm, long isoId) {
+    void enforceCdromAttachLimits(long vmId, UserVm vm, long isoId) {
         Long primaryIsoId = vm.getIsoId();
         if (isIsoAlreadyAttached(vmId, primaryIsoId, isoId)) {
             throw new InvalidParameterValueException("The specified ISO is already attached to this Instance.");
@@ -1556,7 +1556,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
     }
 
-    private int effectiveMaxCdroms(VirtualMachine vm, Long hostId) {
+    int effectiveMaxCdroms(VirtualMachine vm, Long hostId) {
         HostVO host = hostId != null ? _hostDao.findById(hostId) : null;
         Long clusterId = host != null ? host.getClusterId() : null;
         int configuredCap = VmCdromMaxCount.valueIn(clusterId);
@@ -1571,7 +1571,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         return configuredCap;
     }
 
-    private int advertisedCdromCap(Long hostId) {
+    int advertisedCdromCap(Long hostId) {
         if (hostId == null) {
             return DEFAULT_CDROM_MAX_PER_VM;
         }
@@ -1588,7 +1588,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
     }
 
-    private Long hostIdForVm(VirtualMachine vm) {
+    Long hostIdForVm(VirtualMachine vm) {
         return vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
     }
 

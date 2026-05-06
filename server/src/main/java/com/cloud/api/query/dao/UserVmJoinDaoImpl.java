@@ -563,7 +563,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         return ChronoUnit.DAYS.between(createdDate, expiryDate);
     }
 
-    private int effectiveCdromMaxCount(UserVmJoinVO userVm) {
+    int effectiveCdromMaxCount(UserVmJoinVO userVm) {
         int configuredCap = TemplateManager.VmCdromMaxCount.valueIn(userVm.getClusterId());
         int hypervisorCap = advertisedCdromCap(userVm.getHostId() != null ? userVm.getHostId() : userVm.getLastHostId());
         // List endpoint clamps for display robustness; the action paths in TemplateManagerImpl
@@ -571,7 +571,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         return Math.min(configuredCap, hypervisorCap);
     }
 
-    private int advertisedCdromCap(Long hostId) {
+    int advertisedCdromCap(Long hostId) {
         if (hostId == null) {
             return TemplateManager.DEFAULT_CDROM_MAX_PER_VM;
         }

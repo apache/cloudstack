@@ -22,6 +22,7 @@ package com.cloud.template;
 import com.cloud.agent.AgentManager;
 import com.cloud.api.query.dao.SnapshotJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
+import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deployasis.dao.TemplateDeployAsIsDetailsDao;
 import com.cloud.domain.dao.DomainDao;
@@ -29,7 +30,11 @@ import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.Status;
+import com.cloud.host.DetailVO;
+import com.cloud.host.Host;
+import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.projects.ProjectManager;
@@ -66,8 +71,11 @@ import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.uservm.UserVm;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VmIsoMapVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -229,6 +237,15 @@ public class TemplateManagerImplTest extends TestCase {
 
     @Mock
     VmIsoMapDao _vmIsoMapDao;
+
+    @Mock
+    HostDao _hostDao;
+
+    @Mock
+    HostDetailsDao _hostDetailsDao;
+
+    @Mock
+    UserVmJoinDao _userVmJoinDao;
 
     public class CustomThreadPoolExecutor extends ThreadPoolExecutor {
         AtomicInteger ai = new AtomicInteger(0);
@@ -857,6 +874,124 @@ public class TemplateManagerImplTest extends TestCase {
                         && row.getDeviceSeq() == TemplateManager.CDROM_PRIMARY_DEVICE_SEQ + 1));
         Mockito.verify(vm, Mockito.never()).setIsoId(anyLong());
     }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void enforceCdromAttachLimitsThrowsWhenIsoAlreadyAttachedAtPrimary() {
+        UserVm vm = Mockito.mock(UserVm.class);
+        Mockito.when(vm.getIsoId()).thenReturn(42L);
+        templateManager.enforceCdromAttachLimits(1L, vm, 42L);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void enforceCdromAttachLimitsThrowsWhenIsoAlreadyAttachedInMap() {
+        UserVm vm = Mockito.mock(UserVm.class);
+        Mockito.when(vm.getIsoId()).thenReturn(99L);
+        Mockito.when(_vmIsoMapDao.findByVmIdIsoId(1L, 42L)).thenReturn(new VmIsoMapVO(1L, 42L, 4));
+        templateManager.enforceCdromAttachLimits(1L, vm, 42L);
+    }
+
+    @Test
+    public void advertisedCdromCapReturnsDefaultWhenHostIdNull() {
+        Assert.assertEquals(TemplateManager.DEFAULT_CDROM_MAX_PER_VM, templateManager.advertisedCdromCap(null));
+    }
+
+    @Test
+    public void advertisedCdromCapReturnsDefaultWhenDetailMissing() {
+        Mockito.when(_hostDetailsDao.findDetail(7L, Host.HOST_CDROM_MAX_COUNT)).thenReturn(null);
+        Assert.assertEquals(TemplateManager.DEFAULT_CDROM_MAX_PER_VM, templateManager.advertisedCdromCap(7L));
+    }
+
+    @Test
+    public void advertisedCdromCapReturnsParsedValue() {
+        DetailVO detail = Mockito.mock(DetailVO.class);
+        Mockito.when(detail.getValue()).thenReturn("3");
+        Mockito.when(_hostDetailsDao.findDetail(7L, Host.HOST_CDROM_MAX_COUNT)).thenReturn(detail);
+        Assert.assertEquals(3, templateManager.advertisedCdromCap(7L));
+    }
+
+    @Test
+    public void advertisedCdromCapFallsBackOnInvalidValue() {
+        DetailVO detail = Mockito.mock(DetailVO.class);
+        Mockito.when(detail.getValue()).thenReturn("not-a-number");
+        Mockito.when(_hostDetailsDao.findDetail(7L, Host.HOST_CDROM_MAX_COUNT)).thenReturn(detail);
+        Assert.assertEquals(TemplateManager.DEFAULT_CDROM_MAX_PER_VM, templateManager.advertisedCdromCap(7L));
+    }
+
+    @Test
+    public void hostIdForVmReturnsCurrentHost() {
+        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        Mockito.when(vm.getHostId()).thenReturn(42L);
+        Assert.assertEquals(Long.valueOf(42L), templateManager.hostIdForVm(vm));
+    }
+
+    @Test
+    public void hostIdForVmFallsBackToLastHost() {
+        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        Mockito.when(vm.getHostId()).thenReturn(null);
+        Mockito.when(vm.getLastHostId()).thenReturn(99L);
+        Assert.assertEquals(Long.valueOf(99L), templateManager.hostIdForVm(vm));
+    }
+
+    @Test
+    public void hostIdForVmReturnsNullWhenNoHost() {
+        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        Mockito.when(vm.getHostId()).thenReturn(null);
+        Mockito.when(vm.getLastHostId()).thenReturn(null);
+        Assert.assertNull(templateManager.hostIdForVm(vm));
+    }
+
+    @Test
+    public void effectiveMaxCdromsReturnsConfiguredCapWhenWithinHypervisorCap() {
+        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        DetailVO detail = Mockito.mock(DetailVO.class);
+        Mockito.when(detail.getValue()).thenReturn("2");
+        HostVO host = Mockito.mock(HostVO.class);
+        Mockito.when(host.getClusterId()).thenReturn(5L);
+        Mockito.when(_hostDao.findById(7L)).thenReturn(host);
+        Mockito.when(_hostDetailsDao.findDetail(7L, Host.HOST_CDROM_MAX_COUNT)).thenReturn(detail);
+        // Configured cap defaults to 1 (no cluster override mocked); hypervisor cap is 2; 1 <= 2 → no throw, returns 1.
+        Assert.assertEquals(1, templateManager.effectiveMaxCdroms(vm, 7L));
+    }
+
+    @Test
+    public void templateIsDeleteableReturnsTrueWhenNoVmsUseIso() {
+        Mockito.when(_userVmJoinDao.listActiveByIsoId(42L)).thenReturn(new ArrayList<>());
+        Mockito.when(_vmIsoMapDao.listByIsoId(42L)).thenReturn(new ArrayList<>());
+        Assert.assertTrue(templateManager.templateIsDeleteable(42L));
+    }
+
+    @Test
+    public void templateIsDeleteableReturnsFalseWhenPrimarySlotInUse() {
+        Mockito.when(_userVmJoinDao.listActiveByIsoId(42L))
+                .thenReturn(java.util.Collections.singletonList(Mockito.mock(UserVmJoinVO.class)));
+        Assert.assertFalse(templateManager.templateIsDeleteable(42L));
+        // Should not even need to consult vm_iso_map once primary slot in use.
+        Mockito.verify(_vmIsoMapDao, Mockito.never()).listByIsoId(anyLong());
+    }
+
+    @Test
+    public void templateIsDeleteableReturnsFalseWhenAttachedViaVmIsoMapToActiveVm() {
+        Mockito.when(_userVmJoinDao.listActiveByIsoId(42L)).thenReturn(new ArrayList<>());
+        Mockito.when(_vmIsoMapDao.listByIsoId(42L))
+                .thenReturn(java.util.Collections.singletonList(new VmIsoMapVO(1L, 42L, 4)));
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        Mockito.when(vm.getState()).thenReturn(State.Running);
+        Mockito.when(vm.getUuid()).thenReturn("uuid-1");
+        Mockito.when(_userVmDao.findById(1L)).thenReturn(vm);
+        Assert.assertFalse(templateManager.templateIsDeleteable(42L));
+    }
+
+    @Test
+    public void templateIsDeleteableIgnoresVmIsoMapForDestroyedVm() {
+        Mockito.when(_userVmJoinDao.listActiveByIsoId(42L)).thenReturn(new ArrayList<>());
+        Mockito.when(_vmIsoMapDao.listByIsoId(42L))
+                .thenReturn(java.util.Collections.singletonList(new VmIsoMapVO(1L, 42L, 4)));
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        Mockito.when(vm.getState()).thenReturn(State.Expunging);
+        Mockito.when(_userVmDao.findById(1L)).thenReturn(vm);
+        Assert.assertTrue(templateManager.templateIsDeleteable(42L));
+    }
+
 
     @Configuration
     @ComponentScan(basePackageClasses = {TemplateManagerImpl.class},
