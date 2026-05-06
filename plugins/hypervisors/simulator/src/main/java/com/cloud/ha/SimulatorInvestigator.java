@@ -60,7 +60,7 @@ public class SimulatorInvestigator extends AdapterBase implements Investigator {
         }
 
         if (haManager.isHAEligible(agent)) {
-            return haManager.getHostStatus(agent);
+            return haManager.getHostStatusFromHAConfig(agent);
         }
 
         CheckOnHostCommand cmd = new CheckOnHostCommand(agent);
