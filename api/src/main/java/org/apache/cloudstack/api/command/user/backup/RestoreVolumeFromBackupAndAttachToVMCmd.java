@@ -20,6 +20,7 @@ package org.apache.cloudstack.api.command.user.backup;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -53,6 +54,7 @@ public class RestoreVolumeFromBackupAndAttachToVMCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
+    @ACL
     @Parameter(name = ApiConstants.BACKUP_ID,
             type = CommandType.UUID,
             entityType = BackupResponse.class,
@@ -60,12 +62,14 @@ public class RestoreVolumeFromBackupAndAttachToVMCmd extends BaseAsyncCmd {
             description = "ID of the Instance backup")
     private Long backupId;
 
+    @ACL
     @Parameter(name = ApiConstants.VOLUME_ID,
             type = CommandType.STRING,
             required = true,
             description = "ID of the volume backed up")
     private String volumeUuid;
 
+    @ACL
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
             type = CommandType.UUID,
             entityType = UserVmResponse.class,

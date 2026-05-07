@@ -19,6 +19,9 @@
 
 package org.apache.cloudstack.storage.command;
 
+import com.cloud.configuration.Resource;
+import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
+
 public class TemplateOrVolumePostUploadCommand {
 
     long entityId;
@@ -183,6 +186,11 @@ public class TemplateOrVolumePostUploadCommand {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public void setDefaultMaxSecondaryStorageInBytes(long defaultMaxSecondaryStorageInBytes) {
+        this.defaultMaxSecondaryStorageInGB = defaultMaxSecondaryStorageInBytes != Resource.RESOURCE_UNLIMITED ?
+                ByteScaleUtils.bytesToGibibytes(defaultMaxSecondaryStorageInBytes) : Resource.RESOURCE_UNLIMITED;
     }
 
     public void setDefaultMaxSecondaryStorageInGB(long defaultMaxSecondaryStorageInGB) {

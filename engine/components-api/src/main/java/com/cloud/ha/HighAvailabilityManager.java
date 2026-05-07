@@ -21,6 +21,7 @@ import static org.apache.cloudstack.framework.config.ConfigKey.Scope.Cluster;
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.VMInstanceVO;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -31,6 +32,8 @@ import java.util.List;
  * HighAvailabilityManager checks to make sure the VMs are running fine.
  */
 public interface HighAvailabilityManager extends Manager {
+
+    List<StoragePoolType> LIBVIRT_STORAGE_POOL_TYPES_WITH_HA_SUPPORT = List.of(StoragePoolType.NetworkFilesystem, StoragePoolType.SharedMountPoint);
 
     ConfigKey<Boolean> ForceHA = new ConfigKey<>("Advanced", Boolean.class, "force.ha", "false",
         "Force High-Availability to happen even if the VM says no.", true, Cluster);

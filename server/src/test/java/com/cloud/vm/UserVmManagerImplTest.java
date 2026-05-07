@@ -61,6 +61,12 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
 
+import com.cloud.network.as.AutoScaleManager;
+import com.cloud.network.dao.FirewallRulesDao;
+import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.LoadBalancerVMMapDao;
+import com.cloud.network.dao.LoadBalancerVMMapVO;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -85,6 +91,7 @@ import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupScheduleDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.resourcelimit.Reserver;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
@@ -104,6 +111,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
@@ -138,12 +146,6 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
-import com.cloud.network.as.AutoScaleManager;
-import com.cloud.network.dao.FirewallRulesDao;
-import com.cloud.network.dao.IPAddressDao;
-import com.cloud.network.dao.IPAddressVO;
-import com.cloud.network.dao.LoadBalancerVMMapDao;
-import com.cloud.network.dao.LoadBalancerVMMapVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
@@ -160,9 +162,11 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.resourcelimit.CheckedReservation;
 import com.cloud.server.ManagementService;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.ScopeType;
@@ -459,6 +463,9 @@ public class UserVmManagerImplTest {
 
     MockedStatic<UnmanagedVMsManager> unmanagedVMsManagerMockedStatic;
 
+    @Mock
+    ServiceOfferingDetailsDao serviceOfferingDetailsDao;
+
     private static final long vmId = 1l;
     private static final long zoneId = 2L;
     private static final long accountId = 3L;
@@ -726,7 +733,6 @@ public class UserVmManagerImplTest {
         Mockito.doNothing().when(userVmManagerImpl).validateOldAndNewAccounts(Mockito.nullable(Account.class), Mockito.nullable(Account.class), Mockito.anyLong(), Mockito.nullable(String.class), Mockito.nullable(Long.class));
         Mockito.doNothing().when(userVmManagerImpl).validateIfVmHasNoRules(Mockito.any(), Mockito.anyLong());
         Mockito.doNothing().when(userVmManagerImpl).removeInstanceFromInstanceGroup(Mockito.anyLong());
-        Mockito.doNothing().when(userVmManagerImpl).verifyResourceLimitsForAccountAndStorage(Mockito.any(), Mockito.any(), Mockito.any(), anyList(), Mockito.any());
         Mockito.doNothing().when(userVmManagerImpl).validateIfNewOwnerHasAccessToTemplate(Mockito.any(), Mockito.any(), Mockito.any());
 
         Mockito.doNothing().when(userVmManagerImpl).updateVmOwner(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
@@ -1735,23 +1741,11 @@ public class UserVmManagerImplTest {
         Mockito.when(vol5.isDisplay()).thenReturn(true);
 
         List<VolumeVO> volumes = List.of(vol1, undisplayedVolume, vol3, vol4, vol5);
-        Long size = volumes.stream().filter(VolumeVO::isDisplay).mapToLong(VolumeVO::getSize).sum();
-        try {
-            userVmManagerImpl.checkVolumesLimits(account, volumes);
-            Mockito.verify(resourceLimitMgr, times(1))
-                    .checkResourceLimit(account, Resource.ResourceType.volume, 4);
-            Mockito.verify(resourceLimitMgr, times(1))
-                    .checkResourceLimit(account, Resource.ResourceType.primary_storage, size);
-            Mockito.verify(resourceLimitMgr, times(1))
-                    .checkResourceLimitWithTag(account, Resource.ResourceType.volume, "tag1", 2);
-            Mockito.verify(resourceLimitMgr, times(1))
-                    .checkResourceLimitWithTag(account, Resource.ResourceType.volume, "tag2", 3);
-            Mockito.verify(resourceLimitMgr, times(1))
-                    .checkResourceLimitWithTag(account, Resource.ResourceType.primary_storage, "tag1",
-                            vol1.getSize() + vol5.getSize());
-            Mockito.verify(resourceLimitMgr, times(1))
-                    .checkResourceLimitWithTag(account, Resource.ResourceType.primary_storage, "tag2",
-                            vol1.getSize() + vol3.getSize() + vol5.getSize());
+        List<Reserver> reservations = new ArrayList<>();
+
+        try (MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
+            userVmManagerImpl.checkVolumesLimits(account, volumes, reservations);
+            Assert.assertEquals(8, reservations.size());
         } catch (ResourceAllocationException e) {
             Assert.fail(e.getMessage());
         }
@@ -2042,26 +2036,26 @@ public class UserVmManagerImplTest {
 
     @Test
     public void verifyResourceLimitsForAccountAndStorageTestCountOnlyRunningVmsInResourceLimitationIsTrueDoesNotCallVmResourceLimitCheck() throws ResourceAllocationException {
+        List<Reserver> reservations = new ArrayList<>();
         LinkedList<VolumeVO> volumeVoList = new LinkedList<VolumeVO>();
         Mockito.doReturn(true).when(userVmManagerImpl).countOnlyRunningVmsInResourceLimitation();
 
-        userVmManagerImpl.verifyResourceLimitsForAccountAndStorage(accountMock, userVmVoMock, serviceOfferingVoMock, volumeVoList, virtualMachineTemplateMock);
+        userVmManagerImpl.verifyResourceLimitsForAccountAndStorage(accountMock, userVmVoMock, serviceOfferingVoMock, volumeVoList, virtualMachineTemplateMock, reservations);
 
-        Mockito.verify(resourceLimitMgr, Mockito.never()).checkVmResourceLimit(Mockito.any(), Mockito.anyBoolean(), Mockito.any(), Mockito.any());
-        Mockito.verify(resourceLimitMgr).checkResourceLimit(accountMock, Resource.ResourceType.volume, 0l);
-        Mockito.verify(resourceLimitMgr).checkResourceLimit(accountMock, Resource.ResourceType.primary_storage, 0l);
+        Mockito.verify(resourceLimitMgr, Mockito.never()).checkVmResourceLimit(Mockito.any(), Mockito.anyBoolean(), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(resourceLimitMgr, Mockito.never()).checkVolumeResourceLimit(Mockito.any(), Mockito.anyBoolean(), Mockito.any(), Mockito.any(), Mockito.any());
     }
 
     @Test
     public void verifyResourceLimitsForAccountAndStorageTestCountOnlyRunningVmsInResourceLimitationIsFalseCallsVmResourceLimitCheck() throws ResourceAllocationException {
+        List<Reserver> reservations = new ArrayList<>();
         LinkedList<VolumeVO> volumeVoList = new LinkedList<VolumeVO>();
         Mockito.doReturn(false).when(userVmManagerImpl).countOnlyRunningVmsInResourceLimitation();
 
-        userVmManagerImpl.verifyResourceLimitsForAccountAndStorage(accountMock, userVmVoMock, serviceOfferingVoMock, volumeVoList, virtualMachineTemplateMock);
+        userVmManagerImpl.verifyResourceLimitsForAccountAndStorage(accountMock, userVmVoMock, serviceOfferingVoMock, volumeVoList, virtualMachineTemplateMock, reservations);
 
-        Mockito.verify(resourceLimitMgr).checkVmResourceLimit(Mockito.any(), Mockito.anyBoolean(), Mockito.any(), Mockito.any());
-        Mockito.verify(resourceLimitMgr).checkResourceLimit(accountMock, Resource.ResourceType.volume, 0l);
-        Mockito.verify(resourceLimitMgr).checkResourceLimit(accountMock, Resource.ResourceType.primary_storage, 0l);
+        Mockito.verify(resourceLimitMgr).checkVmResourceLimit(Mockito.any(), Mockito.anyBoolean(), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(userVmManagerImpl).checkVolumesLimits(Mockito.any(), Mockito.any(), Mockito.any());
     }
 
     @Test
@@ -3106,7 +3100,7 @@ public class UserVmManagerImplTest {
         configureDoNothingForMethodsThatWeDoNotWantToTest();
 
         doThrow(ResourceAllocationException.class).when(userVmManagerImpl).verifyResourceLimitsForAccountAndStorage(Mockito.any(), Mockito.any(),
-                Mockito.any(), Mockito.any(), Mockito.any());
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
 
         Assert.assertThrows(ResourceAllocationException.class, () -> userVmManagerImpl.moveVmToUser(assignVmCmdMock));
     }
@@ -4368,5 +4362,97 @@ public class UserVmManagerImplTest {
         java.lang.reflect.Method method = UserVmManagerImpl.class.getDeclaredMethod("transitionExpungingToError", long.class);
         method.setAccessible(true);
         method.invoke(userVmManagerImpl, vmId);
+    }
+
+    private ServiceOfferingVO getMockedServiceOffering(boolean custom, boolean customSpeed) {
+        ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
+        when(serviceOffering.getUuid()).thenReturn("offering-uuid");
+        when(serviceOffering.isDynamic()).thenReturn(custom);
+        when(serviceOffering.isCustomCpuSpeedSupported()).thenReturn(customSpeed);
+        if (custom) {
+            when(serviceOffering.getCpu()).thenReturn(null);
+            when(serviceOffering.getRamSize()).thenReturn(null);
+        }
+        if (customSpeed) {
+            when(serviceOffering.getSpeed()).thenReturn(null);
+        } else {
+            when(serviceOffering.isCustomCpuSpeedSupported()).thenReturn(false);
+            when(serviceOffering.getSpeed()).thenReturn(1000);
+        }
+        return serviceOffering;
+    }
+
+    @Test
+    public void customOfferingNeedsCustomizationThrowsException() {
+        ServiceOfferingVO serviceOffering = getMockedServiceOffering(true, true);
+        InvalidParameterValueException ex = Assert.assertThrows(InvalidParameterValueException.class, () ->
+                userVmManagerImpl.validateCustomParameters(serviceOffering, Collections.emptyMap()));
+        assertEquals("Need to specify custom parameter values cpu, cpu speed and memory when using custom offering", ex.getMessage());
+    }
+
+    @Test
+    public void cpuSpeedCustomizationNotAllowedThrowsException() {
+        ServiceOfferingVO serviceOffering = getMockedServiceOffering(true, false);
+
+        Map<String, String> customParameters = new HashMap<>();
+        customParameters.put(VmDetailConstants.CPU_NUMBER, "1");
+        customParameters.put(VmDetailConstants.CPU_SPEED, "2500");
+
+        InvalidParameterValueException ex = Assert.assertThrows(InvalidParameterValueException.class, () ->
+                userVmManagerImpl.validateCustomParameters(serviceOffering, customParameters));
+        Assert.assertTrue(ex.getMessage().startsWith("The CPU speed of this offering"));
+    }
+
+    @Test
+    public void cpuSpeedCustomizationAllowedDoesNotThrowException() {
+        ServiceOfferingVO serviceOffering = getMockedServiceOffering(true, true);
+
+        when(serviceOfferingDetailsDao.listDetailsKeyPairs(anyLong())).thenReturn(
+                Map.of(ApiConstants.MIN_CPU_NUMBER, "1",
+                        ApiConstants.MAX_CPU_NUMBER, "4",
+                        ApiConstants.MIN_MEMORY, "256",
+                        ApiConstants.MAX_MEMORY, "8192"));
+
+        Map<String, String> customParameters = new HashMap<>();
+        customParameters.put(VmDetailConstants.CPU_NUMBER, "1");
+        customParameters.put(VmDetailConstants.CPU_SPEED, "2500");
+        customParameters.put(VmDetailConstants.MEMORY, "256");
+
+        userVmManagerImpl.validateCustomParameters(serviceOffering, customParameters);
+    }
+
+    @Test
+    public void verifyVmLimits_fixedOffering_throwsException() {
+        when(userVmVoMock.getId()).thenReturn(1L);
+        when(userVmVoMock.getServiceOfferingId()).thenReturn(1L);
+        when(accountDao.findById(anyLong())).thenReturn(callerAccount);
+        ServiceOfferingVO serviceOffering = getMockedServiceOffering(false, false);
+        when(_serviceOfferingDao.findById(anyLong())).thenReturn(serviceOffering);
+        when(_serviceOfferingDao.findByIdIncludingRemoved(anyLong(), anyLong())).thenReturn(serviceOffering);
+
+        Map<String, String> customParameters = new HashMap<>();
+        customParameters.put(VmDetailConstants.CPU_SPEED, "2500");
+
+        InvalidParameterValueException ex = Assert.assertThrows(InvalidParameterValueException.class, () ->
+                userVmManagerImpl.verifyVmLimits(userVmVoMock, customParameters));
+        assertEquals("CPU number, Memory and CPU speed cannot be updated for a non-dynamic offering", ex.getMessage());
+    }
+
+    @Test
+    public void verifyVmLimits_constrainedOffering_throwsException() {
+        when(userVmVoMock.getId()).thenReturn(1L);
+        when(userVmVoMock.getServiceOfferingId()).thenReturn(1L);
+        when(accountDao.findById(anyLong())).thenReturn(callerAccount);
+        ServiceOfferingVO serviceOffering = getMockedServiceOffering(true, false);
+        when(_serviceOfferingDao.findById(anyLong())).thenReturn(serviceOffering);
+        when(_serviceOfferingDao.findByIdIncludingRemoved(anyLong(), anyLong())).thenReturn(serviceOffering);
+
+        Map<String, String> customParameters = new HashMap<>();
+        customParameters.put(VmDetailConstants.CPU_NUMBER, "1");
+        customParameters.put(VmDetailConstants.CPU_SPEED, "2500");
+
+        InvalidParameterValueException ex = Assert.assertThrows(InvalidParameterValueException.class, () ->
+                userVmManagerImpl.verifyVmLimits(userVmVoMock, customParameters));
+        Assert.assertTrue(ex.getMessage().startsWith("The CPU speed of this offering"));
     }
 }

@@ -18,7 +18,7 @@ package com.cloud.hypervisor.kvm.resource;
 
 import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
-import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.utils.script.Script;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
@@ -39,18 +39,13 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
 
     private final String hostPrivateIp;
 
-    public KVMHAMonitor(HAStoragePool pool, String host, String scriptPath) {
+    public KVMHAMonitor(HAStoragePool pool, String host) {
         if (pool != null) {
             storagePool.put(pool.getPoolUUID(), pool);
         }
         hostPrivateIp = host;
-        configureHeartBeatPath(scriptPath);
 
         rebootHostAndAlertManagementOnHeartbeatTimeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.REBOOT_HOST_AND_ALERT_MANAGEMENT_ON_HEARTBEAT_TIMEOUT);
-    }
-
-    private static synchronized void configureHeartBeatPath(String scriptPath) {
-        KVMHABase.s_heartBeatPath = scriptPath;
     }
 
     public void addStoragePool(HAStoragePool pool) {
@@ -86,8 +81,8 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
             Set<String> removedPools = new HashSet<>();
             for (String uuid : storagePool.keySet()) {
                 HAStoragePool primaryStoragePool = storagePool.get(uuid);
-                if (primaryStoragePool.getPool().getType() == StoragePoolType.NetworkFilesystem) {
-                    checkForNotExistingPools(removedPools, uuid);
+                if (HighAvailabilityManager.LIBVIRT_STORAGE_POOL_TYPES_WITH_HA_SUPPORT.contains(primaryStoragePool.getPool().getType())) {
+                    checkForNotExistingLibvirtStoragePools(removedPools, uuid);
                     if (removedPools.contains(uuid)) {
                         continue;
                     }
@@ -127,7 +122,7 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
         return result;
     }
 
-    private void checkForNotExistingPools(Set<String> removedPools, String uuid) {
+    private void checkForNotExistingLibvirtStoragePools(Set<String> removedPools, String uuid) {
         try {
             Connect conn = LibvirtConnection.getConnection();
             StoragePool storage = conn.storagePoolLookupByUUIDString(uuid);

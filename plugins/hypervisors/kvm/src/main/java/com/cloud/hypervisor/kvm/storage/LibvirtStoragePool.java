@@ -31,6 +31,7 @@ import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import com.cloud.agent.api.to.HostTO;
 import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
+import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.hypervisor.kvm.resource.KVMHABase.HAStoragePool;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
@@ -320,13 +321,24 @@ public class LibvirtStoragePool implements KVMStoragePool {
 
     @Override
     public boolean isPoolSupportHA() {
-        return type == StoragePoolType.NetworkFilesystem;
+        return HighAvailabilityManager.LIBVIRT_STORAGE_POOL_TYPES_WITH_HA_SUPPORT.contains(type);
     }
 
     public String getHearthBeatPath() {
-        if (type == StoragePoolType.NetworkFilesystem) {
+        if (StoragePoolType.NetworkFilesystem.equals(type)) {
             String kvmScriptsDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_SCRIPTS_DIR);
-            return Script.findScript(kvmScriptsDir, "kvmheartbeat.sh");
+            String scriptPath = Script.findScript(kvmScriptsDir, "kvmheartbeat.sh");
+            if (scriptPath == null) {
+                throw new CloudRuntimeException("Unable to find heartbeat script 'kvmheartbeat.sh' in directory: " + kvmScriptsDir);
+            }
+            return scriptPath;
+        } else if (StoragePoolType.SharedMountPoint.equals(type)) {
+            String kvmScriptsDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_SCRIPTS_DIR);
+            String scriptPath = Script.findScript(kvmScriptsDir, "kvmsmpheartbeat.sh");
+            if (scriptPath == null) {
+                throw new CloudRuntimeException("Unable to find heartbeat script 'kvmsmpheartbeat.sh' in directory: " + kvmScriptsDir);
+            }
+            return scriptPath;
         }
         return null;
     }
@@ -409,5 +421,9 @@ public class LibvirtStoragePool implements KVMStoragePool {
         } else {
             return true;
         }
+    }
+
+    public void setType(StoragePoolType type) {
+        this.type = type;
     }
 }

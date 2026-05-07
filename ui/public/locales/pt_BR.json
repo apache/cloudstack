@@ -1295,6 +1295,7 @@
 "label.jsonconfiguration": "Configura\u00e7\u00e3o JSON",
 "label.keep": "Manter",
 "label.kernelversion": "Vers\u00e3o do Kernel",
+"label.keep.mac.address.on.public.nic": "Utilizar o mesmo endere\u00e7o MAC para a NIC p\u00fablica dos VRs",
 "label.key": "Chave",
 "label.keyboard": "Linguagem do teclado",
 "label.keyboardtype": "Tipo de teclado",
