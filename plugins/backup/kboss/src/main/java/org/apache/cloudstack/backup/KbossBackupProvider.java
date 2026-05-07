@@ -1185,7 +1185,6 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
 
         List<VolumeObjectTO> volumeToList = new ArrayList<>();
         boolean startedVm = false;
-        boolean validationPrepared = false;
         VirtualMachineTO vmTO = null;
         List<VolumeVO> volumeVOs = volumeDao.findByInstance(validationVm.getId());
         try {
@@ -1197,7 +1196,6 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
             if (!prepareForValidation(hostId, backupDeltaAndVolumePairs, backupVO, validationVm)) {
                 return false;
             }
-            validationPrepared = true;
 
             userVmManager.startVirtualMachine(validationVm, null);
             startedVm = true;
@@ -1220,7 +1218,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
             setBackupUnableToValidateAndSendAlert(backupVO, "Failed to validate due to unexpected exception: " + ex.getMessage());
             return false;
         } finally {
-            cleanupValidation(startedVm, validationVm, backupVO, volumeVOs, validationPrepared);
+            cleanupValidation(startedVm, validationVm, backupVO, volumeVOs);
         }
     }
 
@@ -1339,7 +1337,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
                 .collect(Collectors.toList());
     }
 
-    protected void cleanupValidation(boolean startedVm, UserVmVO validationVm, BackupVO backupVO, List<VolumeVO> volumeVOs, boolean validationPrepared) {
+    protected void cleanupValidation(boolean startedVm, UserVmVO validationVm, BackupVO backupVO, List<VolumeVO> volumeVOs) {
         if (startedVm) {
             userVmManager.stopVirtualMachine(validationVm.getId(), true);
         }
@@ -1364,14 +1362,14 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
             }
         }
 
-        if (validationPrepared) {
+        if (startedVm) {
             CleanupKbossValidationCommand cleanupKbossValidationCommand = new CleanupKbossValidationCommand(validationVm.getName(), getSecondaryStorageUrls(validationVm));
             Answer answer = agentManager.easySend(validationVm.getHostId(), cleanupKbossValidationCommand);
             if (answer == null || !answer.getResult()) {
                 logger.error("Failed to cleanup post validation of backup [{}]. Got answer [{}]", backupVO.getUuid(), answer == null ? null : answer.getDetails());
                 HostVO host = hostDao.findById(validationVm.getHostId());
                 sendMail = true;
-                errorMessage.append(String.format("\nFailed to cleanup secondary storage mount at host [%s].", host.getUuid()));
+                errorMessage.append(String.format("\nFailed to cleanup secondary storage mount at host [%s].", host != null ? host.getUuid() : "null"));
             }
         }
 

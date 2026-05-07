@@ -1561,7 +1561,7 @@ public class KbossBackupProviderTest {
         boolean result = kbossBackupProviderSpy.validateWithValidationVm(backupId, 2L, backupVoMock);
 
         assertFalse(result);
-        verify(kbossBackupProviderSpy, never()).cleanupValidation(anyBoolean(), any(), any(), any(), anyBoolean());
+        verify(kbossBackupProviderSpy, never()).cleanupValidation(anyBoolean(), any(), any(), any());
     }
 
     @Test
@@ -1578,7 +1578,7 @@ public class KbossBackupProviderTest {
         boolean result = kbossBackupProviderSpy.validateWithValidationVm(backupId, 2L, backupVoMock);
 
         assertFalse(result);
-        verify(kbossBackupProviderSpy).cleanupValidation(eq(false), eq(userVmVOMock), eq(backupVoMock), any(), eq(false));
+        verify(kbossBackupProviderSpy).cleanupValidation(eq(false), eq(userVmVOMock), eq(backupVoMock), any());
     }
 
     @Test
@@ -1603,7 +1603,7 @@ public class KbossBackupProviderTest {
 
         assertFalse(result);
         verify(kbossBackupProviderSpy).endBackupChainIfConfigured(backupVoMock);
-        verify(kbossBackupProviderSpy).cleanupValidation(eq(true), eq(userVmVOMock), eq(backupVoMock), any(), eq(true));
+        verify(kbossBackupProviderSpy).cleanupValidation(eq(true), eq(userVmVOMock), eq(backupVoMock), any());
     }
 
     @Test
@@ -1630,7 +1630,7 @@ public class KbossBackupProviderTest {
 
         assertTrue(result);
         verify(kbossBackupProviderSpy).calculateAndSaveHash(any(), eq(backupVoMock), anyLong());
-        verify(kbossBackupProviderSpy).cleanupValidation(eq(true), eq(userVmVOMock), eq(backupVoMock), any(), eq(true));
+        verify(kbossBackupProviderSpy).cleanupValidation(eq(true), eq(userVmVOMock), eq(backupVoMock), any());
     }
 
     @Test
@@ -1645,7 +1645,7 @@ public class KbossBackupProviderTest {
 
         assertFalse(result);
         verify(kbossBackupProviderSpy).setBackupUnableToValidateAndSendAlert(eq(backupVoMock), contains("boom"));
-        verify(kbossBackupProviderSpy).cleanupValidation(eq(false), eq(userVmVOMock), eq(backupVoMock), any(), eq(false));
+        verify(kbossBackupProviderSpy).cleanupValidation(eq(false), eq(userVmVOMock), eq(backupVoMock), any());
     }
 
 
@@ -1810,7 +1810,7 @@ public class KbossBackupProviderTest {
             CallContext callContextMock = Mockito.mock(CallContext.class);
             callContextMocked.when(CallContext::current).thenReturn(callContextMock);
 
-            kbossBackupProviderSpy.cleanupValidation(false, userVmVOMock, backupVoMock, List.of(dataVolume), false);
+            kbossBackupProviderSpy.cleanupValidation(false, userVmVOMock, backupVoMock, List.of(dataVolume));
 
             verify(userVmManagerMock, Mockito.never()).stopVirtualMachine(anyLong(), anyBoolean());
             verify(userVmManagerMock, Mockito.times(1)).destroyVm(any(DestroyVMCmd.class), Mockito.eq(false));
@@ -1834,7 +1834,7 @@ public class KbossBackupProviderTest {
             CallContext callContextMock = Mockito.mock(CallContext.class);
             callContextMocked.when(CallContext::current).thenReturn(callContextMock);
 
-            kbossBackupProviderSpy.cleanupValidation(false, userVmVOMock, backupVoMock, List.of(dataVolume), true);
+            kbossBackupProviderSpy.cleanupValidation(true, userVmVOMock, backupVoMock, List.of(dataVolume));
 
             verify(userVmManagerMock, Mockito.times(1)).destroyVm(any(DestroyVMCmd.class), Mockito.eq(false));
             verify(kbossBackupProviderSpy, Mockito.times(1)).sendCleanupFailedEmail(eq(backupVoMock), contains("Got an unexpected exception while trying to destroy validation VM."));
@@ -1856,10 +1856,11 @@ public class KbossBackupProviderTest {
             CallContext callContextMock = Mockito.mock(CallContext.class);
             callContextMocked.when(CallContext::current).thenReturn(callContextMock);
 
-            kbossBackupProviderSpy.cleanupValidation(false, userVmVOMock, backupVoMock, List.of(dataVolume), true);
+            kbossBackupProviderSpy.cleanupValidation(true, userVmVOMock, backupVoMock, List.of(dataVolume));
 
             verify(agentManagerMock, Mockito.times(1)).easySend(Mockito.eq(88L), any(CleanupKbossValidationCommand.class));
             verify(hostDaoMock, Mockito.times(1)).findById(88L);
+            verify(kbossBackupProviderSpy, times(1)).sendCleanupFailedEmail(any(), any());
         }
     }
 
@@ -1883,7 +1884,7 @@ public class KbossBackupProviderTest {
             CallContext callContextMock = Mockito.mock(CallContext.class);
             callContextMocked.when(CallContext::current).thenReturn(callContextMock);
 
-            kbossBackupProviderSpy.cleanupValidation(true, userVmVOMock, backupVoMock, List.of(rootVolume, dataVolume), true);
+            kbossBackupProviderSpy.cleanupValidation(true, userVmVOMock, backupVoMock, List.of(rootVolume, dataVolume));
 
             verify(userVmManagerMock, Mockito.times(1)).stopVirtualMachine(77L, true);
             verify(userVmManagerMock, Mockito.times(1)).destroyVm(any(DestroyVMCmd.class), Mockito.eq(false));

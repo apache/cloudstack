@@ -5662,6 +5662,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             return false;
         }
 
+        if (UserVmManager.VALIDATION_VM.equals(vm.getUserVmType())) {
+            return true;
+        }
+
         Answer answer = cmds.getAnswer("restoreVMSnapshot");
         if (answer != null && answer instanceof RestoreVMSnapshotAnswer) {
             RestoreVMSnapshotAnswer restoreVMSnapshotAnswer = (RestoreVMSnapshotAnswer) answer;
