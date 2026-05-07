@@ -1264,6 +1264,58 @@ public class UserVmManagerImplTest {
         }
     }
 
+    @Test
+    public void testIsAnyVmVolumeUsingLocalStorageSkipsDestroyedVolumeWithMissingPool() {
+        VolumeVO volume = Mockito.mock(VolumeVO.class);
+        Mockito.when(volume.getState()).thenReturn(Volume.State.Destroy);
+
+        Assert.assertFalse(userVmManagerImpl.isAnyVmVolumeUsingLocalStorage(Collections.singletonList(volume)));
+        Mockito.verify(primaryDataStoreDao, never()).findById(anyLong());
+    }
+
+    @Test
+    public void testIsAnyVmVolumeUsingLocalStorageSkipsRemovedVolume() {
+        VolumeVO volume = Mockito.mock(VolumeVO.class);
+        Mockito.when(volume.getRemoved()).thenReturn(new Date());
+
+        Assert.assertFalse(userVmManagerImpl.isAnyVmVolumeUsingLocalStorage(Collections.singletonList(volume)));
+        Mockito.verify(primaryDataStoreDao, never()).findById(anyLong());
+    }
+
+    @Test
+    public void testIsAnyVmVolumeUsingLocalStorageFailsForActiveVolumeWithMissingPool() {
+        VolumeVO volume = Mockito.mock(VolumeVO.class);
+        Mockito.when(volume.getState()).thenReturn(Volume.State.Ready);
+        Mockito.when(volume.getDiskOfferingId()).thenReturn(1L);
+        Mockito.when(volume.getPoolId()).thenReturn(2L);
+        DiskOfferingVO diskOffering = Mockito.mock(DiskOfferingVO.class);
+        Mockito.when(diskOfferingDao.findById(1L)).thenReturn(diskOffering);
+        Mockito.when(diskOffering.isUseLocalStorage()).thenReturn(false);
+        Mockito.when(primaryDataStoreDao.findById(2L)).thenReturn(null);
+
+        CloudRuntimeException exception = assertThrows(CloudRuntimeException.class, () ->
+                userVmManagerImpl.isAnyVmVolumeUsingLocalStorage(Collections.singletonList(volume)));
+        Assert.assertTrue(exception.getMessage().contains("storage pool ID 2 is missing or removed"));
+    }
+
+    @Test
+    public void testIsAnyVmVolumeUsingLocalStorageFailsForActiveVolumeWithRemovedPool() {
+        VolumeVO volume = Mockito.mock(VolumeVO.class);
+        Mockito.when(volume.getState()).thenReturn(Volume.State.Ready);
+        Mockito.when(volume.getDiskOfferingId()).thenReturn(1L);
+        Mockito.when(volume.getPoolId()).thenReturn(2L);
+        DiskOfferingVO diskOffering = Mockito.mock(DiskOfferingVO.class);
+        Mockito.when(diskOfferingDao.findById(1L)).thenReturn(diskOffering);
+        Mockito.when(diskOffering.isUseLocalStorage()).thenReturn(false);
+        StoragePoolVO storagePool = Mockito.mock(StoragePoolVO.class);
+        Mockito.when(storagePool.getRemoved()).thenReturn(new Date());
+        Mockito.when(primaryDataStoreDao.findById(2L)).thenReturn(storagePool);
+
+        CloudRuntimeException exception = assertThrows(CloudRuntimeException.class, () ->
+                userVmManagerImpl.isAnyVmVolumeUsingLocalStorage(Collections.singletonList(volume)));
+        Assert.assertTrue(exception.getMessage().contains("storage pool ID 2 is missing or removed"));
+    }
+
     private List<VolumeVO> mockVolumesForIsAllVmVolumesOnZoneWideStore(int nullPoolIdVolumes, int nullPoolVolumes, int zoneVolumes, int nonZoneVolumes) {
         List<VolumeVO> volumes = new ArrayList<>();
         for (int i=0; i< nullPoolIdVolumes + nullPoolVolumes + zoneVolumes + nonZoneVolumes; ++i) {
