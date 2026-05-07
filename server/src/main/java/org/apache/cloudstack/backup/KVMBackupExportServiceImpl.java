@@ -52,6 +52,7 @@ import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO;
 import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import org.springframework.stereotype.Component;
@@ -86,6 +87,7 @@ import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.VmWork;
 import com.cloud.vm.VmWorkConstants;
@@ -136,6 +138,9 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
     @Inject
     AsyncJobManager asyncJobManager;
 
+    @Inject
+    VirtualMachineManager virtualMachineManager;
+
     VmWorkJobHandlerProxy jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
     private void verifyKVMBackupExportServiceSupported(Long zoneId) {
@@ -145,24 +150,44 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         }
     }
 
+    protected void validateVmVolumesForBackup(VMInstanceVO vm) {
+        List<VolumeVO> volumes = volumeDao.findByInstanceAndNotStates(vm.getId(), Volume.State.Ready);
+        List<String> nonReadyVolumeIds = volumes
+                .stream()
+                .map(VolumeVO::getUuid)
+                .collect(Collectors.toList());
+        if (CollectionUtils.isNotEmpty(nonReadyVolumeIds)) {
+            throw new CloudRuntimeException(String.format("Volumes [%s] of Instance: %s are not in Ready state",
+                    StringUtils.join(nonReadyVolumeIds, ","), vm.getUuid()));
+        }
+    }
+
     @Override
     public Backup createBackup(StartBackupCmd cmd) {
         Long vmId = cmd.getVmId();
 
         VMInstanceVO vm = vmInstanceDao.findById(vmId);
         if (vm == null) {
-            throw new CloudRuntimeException("VM not found: " + vmId);
+            throw new CloudRuntimeException("Instance not found: " + vmId);
         }
 
         verifyKVMBackupExportServiceSupported(vm.getDataCenterId());
 
         if (vm.getState() != State.Running && vm.getState() != State.Stopped) {
-            throw new CloudRuntimeException("VM must be running or stopped to start backup");
+            throw new CloudRuntimeException("Instance must be running or stopped to start Backup");
         }
 
         Backup existingBackup = backupDao.findByVmId(vmId);
         if (existingBackup != null && existingBackup.getStatus() == Backup.Status.BackingUp) {
-            throw new CloudRuntimeException("Backup already in progress for VM: " + vmId);
+            throw new CloudRuntimeException("Backup already in progress for Instance: " + vm.getUuid());
+        }
+
+        validateVmVolumesForBackup(vm);
+
+        Pair<Long, Long> clusterAndHostId = virtualMachineManager.findClusterAndHostIdForVm(vm, false);
+        Long hostId = clusterAndHostId.second();
+        if (hostId == null) {
+            throw new CloudRuntimeException("Host cannot be determined for Instance: " + vm.getUuid());
         }
 
         BackupVO backup = new BackupVO();
@@ -190,8 +215,6 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         backup.setToCheckpointId(toCheckpointId);
         backup.setFromCheckpointId(fromCheckpointId);
         backup.setType("FULL");
-
-        Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
         backup.setHostId(hostId);
 
         return backupDao.persist(backup);
@@ -231,15 +254,20 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         Long vmId = cmd.getVmId();
         VMInstanceVO vm = vmInstanceDao.findById(vmId);
         if (vm == null) {
-            throw new CloudRuntimeException("VM not found: " + vmId);
+            removeFailedBackup(backup);
+            throw new CloudRuntimeException("Instance not found for Backup: " + backup.getUuid());
         }
         List<VolumeVO> volumes = volumeDao.findByInstance(vmId);
         Map<String, String> diskPathUuidMap = new HashMap<>();
         for (Volume vol : volumes) {
+            if (vol.getPoolId() == null) {
+                removeFailedBackup(backup);
+                throw new CloudRuntimeException("Storage Pool cannot be determined for Volume: " + vol.getUuid());
+            }
             String volumePath = getVolumePathForFileBasedBackend(vol);
             diskPathUuidMap.put(volumePath, vol.getUuid());
         }
-        long hostId = backup.getHostId();
+        Long hostId = backup.getHostId();
 
         VMInstanceDetailVO lastCheckpointId = vmInstanceDetailsDao.findDetail(vmId, VmDetailConstants.LAST_CHECKPOINT_ID);
         if (lastCheckpointId != null) {
@@ -248,6 +276,10 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
             } catch (CloudRuntimeException e) {
                 logger.warn("Failed to delete last checkpoint {} for VM {}, proceeding with backup start", lastCheckpointId.getValue(), vmId, e);
             }
+        }
+        if (hostId == null) {
+            removeFailedBackup(backup);
+            throw new CloudRuntimeException("Host cannot be found for Backup: " + backup.getUuid());
         }
 
         Host host = hostDao.findById(hostId);
@@ -276,7 +308,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         if (!answer.getResult()) {
             removeFailedBackup(backup);
             logger.error("Failed to start {} due to: {}", backup, answer.getDetails());
-            throw new CloudRuntimeException("Failed to start backup: " + answer.getDetails());
+            throw new CloudRuntimeException("Failed to start Backup: " + answer.getDetails());
         }
 
         // Update backup with checkpoint creation time
