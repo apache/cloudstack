@@ -26,6 +26,7 @@ import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -38,6 +39,7 @@ import java.util.concurrent.TimeUnit;
 import com.cloud.utils.DateUtil;
 import com.google.gson.JsonSyntaxException;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.influxdb.InfluxDB;
@@ -64,7 +66,12 @@ import com.cloud.agent.api.GetStorageStatsAnswer;
 import com.cloud.agent.api.GetStorageStatsCommand;
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
+import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
+import com.cloud.dc.dao.VlanDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.server.StatsCollector.ExternalStatsProtocol;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.VolumeStatsVO;
@@ -117,6 +124,15 @@ public class StatsCollectorTest {
 
     @Mock
     private StoragePoolVO mockPool;
+
+    @Mock
+    private RoutedIpv4Manager routedIpv4Manager;
+
+    @Mock
+    private NetworkDao networkDao;
+
+    @Mock
+    private VlanDao vlanDao;
 
     private static Gson gson = new Gson();
 
@@ -699,6 +715,78 @@ public class StatsCollectorTest {
             at com.google.gson.DefaultTypeAdapters$DefaultDateTypeAdapter.deserializeToDate(DefaultTypeAdapters.java:374)
             ... 42 more
          */
+    }
+
+    // -----------------------------------------------------------------------
+    // Tests for isNetworkEligibleForNetworkStats
+    // -----------------------------------------------------------------------
+
+    private VlanVO buildVlan(VlanType type) {
+        VlanVO vlan = Mockito.mock(VlanVO.class);
+        Mockito.when(vlan.getVlanType()).thenReturn(type);
+        return vlan;
+    }
+
+    @Test
+    public void isNetworkEligibleForNetworkStats_RoutedNetwork_ReturnsTrue() {
+        Long networkId = 1L;
+        NetworkVO networkVO = Mockito.mock(NetworkVO.class);
+        Mockito.when(networkDao.findById(networkId)).thenReturn(networkVO);
+        Mockito.when(vlanDao.listVlansByNetworkId(networkId)).thenReturn(Collections.emptyList());
+        Mockito.when(routedIpv4Manager.isRoutedNetwork(networkVO)).thenReturn(true);
+
+        Assert.assertTrue(statsCollector.isNetworkEligibleForNetworkStats(networkId));
+    }
+
+    @Test
+    public void isNetworkEligibleForNetworkStats_DirectAttachedNetwork_ReturnsTrue() {
+        Long networkId = 1L;
+        NetworkVO networkVO = Mockito.mock(NetworkVO.class);
+        Mockito.when(networkDao.findById(networkId)).thenReturn(networkVO);
+        Mockito.when(routedIpv4Manager.isRoutedNetwork(networkVO)).thenReturn(false);
+        List<VlanVO> vlans = Collections.singletonList(buildVlan(VlanType.DirectAttached));
+        Mockito.when(vlanDao.listVlansByNetworkId(networkId)).thenReturn(vlans);
+
+        Assert.assertTrue(statsCollector.isNetworkEligibleForNetworkStats(networkId));
+    }
+
+    @Test
+    public void isNetworkEligibleForNetworkStats_NeitherRoutedNorDirectAttached_ReturnsFalse() {
+        Long networkId = 1L;
+        NetworkVO networkVO = Mockito.mock(NetworkVO.class);
+        Mockito.when(networkDao.findById(networkId)).thenReturn(networkVO);
+        Mockito.when(routedIpv4Manager.isRoutedNetwork(networkVO)).thenReturn(false);
+        List<VlanVO> vlans = Collections.singletonList(buildVlan(VlanType.VirtualNetwork));
+        Mockito.when(vlanDao.listVlansByNetworkId(networkId)).thenReturn(vlans);
+
+        Assert.assertFalse(statsCollector.isNetworkEligibleForNetworkStats(networkId));
+    }
+
+    @Test
+    public void isNetworkEligibleForNetworkStats_NullNetworkAndEmptyVlans_ReturnsFalse() {
+        Long networkId = 1L;
+        Mockito.when(networkDao.findById(networkId)).thenReturn(null);
+        Mockito.when(vlanDao.listVlansByNetworkId(networkId)).thenReturn(Collections.emptyList());
+
+        Assert.assertFalse(statsCollector.isNetworkEligibleForNetworkStats(networkId));
+    }
+
+    @Test
+    public void isNetworkEligibleForNetworkStats_NullNetworkButDirectAttached_ReturnsTrue() {
+        Long networkId = 1L;
+        Mockito.when(networkDao.findById(networkId)).thenReturn(null);
+        List<VlanVO> vlans = Collections.singletonList(buildVlan(VlanType.DirectAttached));
+        Mockito.when(vlanDao.listVlansByNetworkId(networkId)).thenReturn(vlans);
+
+        Assert.assertTrue(statsCollector.isNetworkEligibleForNetworkStats(networkId));
+        Mockito.verify(routedIpv4Manager, Mockito.never()).isRoutedNetwork(Mockito.any());
+    }
+
+    @Test
+    public void isNetworkEligibleForNetworkStats_NullNetworkId_ReturnsFalse() {
+        Assert.assertFalse(statsCollector.isNetworkEligibleForNetworkStats(null));
+        Mockito.verify(networkDao, Mockito.never()).findById(Mockito.anyLong());
+        Mockito.verify(vlanDao, Mockito.never()).listVlansByNetworkId(Mockito.anyLong());
     }
 
     private static class TestClass {

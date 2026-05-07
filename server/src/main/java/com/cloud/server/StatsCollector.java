@@ -1589,12 +1589,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                     SearchCriteria<NicVO> sc_nic = _nicDao.createSearchCriteria();
                                     sc_nic.addAnd("macAddress", SearchCriteria.Op.EQ, vmNetworkStatEntry.getMacAddress());
                                     NicVO nic = _nicDao.search(sc_nic, null).get(0);
-                                    List<VlanVO> vlan = _vlanDao.listVlansByNetworkId(nic.getNetworkId());
-                                    NetworkVO networkVO = networkDao.findById(nic.getNetworkId());
-                                    boolean isRoutedNetwork = networkVO != null && routedIpv4Manager.isRoutedNetwork(networkVO);
-                                    boolean isDirectAttachedNetwork = CollectionUtils.isNotEmpty(vlan)
-                                            && vlan.get(0).getVlanType() == VlanType.DirectAttached;
-                                    if (!isRoutedNetwork && !isDirectAttachedNetwork) {
+                                    if (!isNetworkEligibleForNetworkStats(nic.getNetworkId())) {
                                         continue; // only get network statistics for Shared or Routed network
                                     }
                                     UserStatisticsVO previousvmNetworkStats = _userStatsDao.findBy(userVm.getAccountId(), userVm.getDataCenterId(), nic.getNetworkId(),
@@ -2150,6 +2145,27 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             return bytesReadDifferentFromPrevious || bytesWriteDifferentFromPrevious || ioReadDifferentFromPrevious || ioWriteDifferentFromPrevious;
         }
         return true;
+    }
+
+    /**
+     * Returns {@code true} if the given network is eligible for VM network statistics collection.
+     * Only Shared (DirectAttached) networks and Routed networks qualify.
+     *
+     * @param networkId the network id to evaluate
+     * @return {@code true} when the network is routed or direct-attached, {@code false} otherwise
+     */
+    protected boolean isNetworkEligibleForNetworkStats(Long networkId) {
+        if (networkId == null) {
+            return false;
+        }
+        List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(networkId);
+        boolean isDirectAttachedNetwork = CollectionUtils.isNotEmpty(vlans)
+                && vlans.get(0).getVlanType() == VlanType.DirectAttached;
+        if (isDirectAttachedNetwork) {
+            return true;
+        }
+        NetworkVO networkVO = networkDao.findById(networkId);
+        return networkVO != null && routedIpv4Manager.isRoutedNetwork(networkVO);
     }
 
     /**
