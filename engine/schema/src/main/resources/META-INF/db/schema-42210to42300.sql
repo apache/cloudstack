@@ -162,7 +162,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`internal_backup_service_job` (
     `id` bigint NOT NULL UNIQUE AUTO_INCREMENT,
     `backup_id` bigint unsigned NOT NULL COMMENT 'The backup ID. Foreign key that points to the backups table.',
     `instance_id` bigint unsigned NOT NULL COMMENT 'The instance ID. Foreign key that points to the vm_instance table.',
-    `account_id` bigint unsigned COMMENT 'Account ID of the owner of the VM.',
+    `account_id` bigint(20) unsigned COMMENT 'Account ID of the owner of the VM.',
     `host_id` bigint unsigned COMMENT 'The host ID that is executing the compression. Foreign key that points to the host table.',
     `zone_id` bigint unsigned NOT NULL COMMENT 'The zone ID of the where the VM is. Foreign key that points to the data_center table',
     `attempts` int(32) unsigned NOT NULL DEFAULT 0,
@@ -175,7 +175,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`internal_backup_service_job` (
     CONSTRAINT `fk_internal_backup_service_job__backup_id` FOREIGN KEY (`backup_id`) REFERENCES `backups`(`id`),
     CONSTRAINT `fk_internal_backup_service_job__instance_id` FOREIGN KEY (`instance_id`) REFERENCES `vm_instance`(`id`),
     CONSTRAINT `fk_internal_backup_service_job__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`),
-    CONSTRAINT `fk_internal_backup_service_job__zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center`(`id`)
+    CONSTRAINT `fk_internal_backup_service_job__zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center`(`id`),
     CONSTRAINT `fk_internal_backup_service_job__account_id` FOREIGN KEY (`account_id`) REFERENCES `account`(`id`)
     );
 
