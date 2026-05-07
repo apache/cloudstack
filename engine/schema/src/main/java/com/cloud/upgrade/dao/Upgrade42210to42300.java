@@ -21,11 +21,22 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
+import java.util.UUID;
 
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDaoImpl;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.crypt.DBEncryptionUtil;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class Upgrade42210to42300 extends DbUpgradeAbstractImpl implements DbUpgrade, DbUpgradeSystemVmTemplate {
+
+    private PrimaryDataStoreDao storageDao;
 
     @Override
     public String[] getUpgradableVersionRange() {
@@ -51,6 +62,56 @@ public class Upgrade42210to42300 extends DbUpgradeAbstractImpl implements DbUpgr
     @Override
     public void performDataMigration(Connection conn) {
         unhideJsInterpretationEnabled(conn);
+        normalizeStorPoolPrimaryStorageUuids();
+    }
+
+    protected PrimaryDataStoreDao getStorageDao() {
+        if (storageDao == null) {
+            storageDao = new PrimaryDataStoreDaoImpl();
+        }
+        return storageDao;
+    }
+
+    /**
+     * StorPool primary storage used {@code templateName + ";" + uuid} as {@code storage_pool.uuid}.
+     * Normalize to a plain UUID form so API and validation treat {@code id} like other pools.
+     * Template name remains in {@code storage_pool_details} ({@code SP_TEMPLATE}).
+     */
+    protected void normalizeStorPoolPrimaryStorageUuids() {
+        SearchBuilder<StoragePoolVO> sb = getStorageDao().createSearchBuilder();
+        sb.and("poolType", sb.entity().getPoolType(), SearchCriteria.Op.EQ);
+        sb.and("uuid", sb.entity().getUuid(), SearchCriteria.Op.LIKE);
+        sb.done();
+        SearchCriteria<StoragePoolVO> sc = sb.create();
+        sc.setParameters("poolType", StoragePoolType.StorPool);
+        sc.setParameters("uuid", "%;%");
+        List<StoragePoolVO> pools = getStorageDao().search(sc, null);
+        int updated = 0;
+        for (StoragePoolVO pool : pools) {
+            final String templatePrefixedPoolUuid = pool.getUuid();
+            if (templatePrefixedPoolUuid == null) {
+                continue;
+            }
+            final String[] parts = templatePrefixedPoolUuid.split(";");
+            if (parts.length < 2) {
+                continue;
+            }
+            final String realUuid = parts[1].trim();
+            try {
+                UUID.fromString(realUuid);
+            } catch (IllegalArgumentException e) {
+                logger.warn(
+                        "Skipping StorPool storage pool id [{}]: value after ';' is not a valid UUID: [{}]",
+                        pool.getId(), realUuid);
+                continue;
+            }
+            pool.setUuid(realUuid);
+            getStorageDao().update(pool.getId(), pool);
+            updated++;
+        }
+        if (updated > 0) {
+            logger.info("Normalized {} StorPool primary storage pool UUID(s) to plain UUID form.", updated);
+        }
     }
 
     protected void unhideJsInterpretationEnabled(Connection conn) {

@@ -336,7 +336,7 @@ public class StorPoolUtil {
         poolDetails.persist(new StoragePoolDetailVO(poolId, SP_AUTH_TOKEN, conn.getAuthToken(), false));
         poolDetails.persist(new StoragePoolDetailVO(poolId, SP_TEMPLATE, conn.getTemplateName(), false));
         StoragePoolVO pool = storagePool.findById(poolId);
-        pool.setUuid(conn.getTemplateName() + ";" + UUID.randomUUID().toString());
+        pool.setUuid(UUID.randomUUID().toString());
         storagePool.update(poolId, pool);
         StorPoolUtil.spLog(
                 "Storage pool with id=%s and template's name=%s was updated and its connection details are hidden from UI.",

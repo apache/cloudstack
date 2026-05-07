@@ -63,7 +63,7 @@ public final class StorPoolModifyStorageCommandWrapper extends CommandWrapper<St
             final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
             final KVMStoragePool storagepool =
                     storagePoolMgr.createStoragePool(command.getPool().getUuid(), command.getPool().getHost(), command.getPool().getPort(), command.getPool().getPath(), command.getPool()
-                            .getUserInfo(), command.getPool().getType());
+                            .getUserInfo(), command.getPool().getType(), command.getDetails());
             if (storagepool == null) {
                 logger.debug(String.format("Did not find a storage pool [%s]", command.getPool().getId()));
                 return new Answer(command, false, String.format("Failed to create storage pool [%s]", command.getPool().getId()));

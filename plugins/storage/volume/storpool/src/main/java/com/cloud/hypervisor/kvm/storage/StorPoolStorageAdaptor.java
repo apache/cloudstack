@@ -75,7 +75,7 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
     public KVMStoragePool createStoragePool(String uuid, String host, int port, String path, String userInfo, StoragePoolType storagePoolType, Map<String, String> details, boolean isPrimaryStorage) {
         SP_LOG("StorPoolStorageAdaptor.createStoragePool: uuid=%s, host=%s:%d, path=%s, userInfo=%s, type=%s", uuid, host, port, path, userInfo, storagePoolType);
 
-        StorPoolStoragePool storagePool = new StorPoolStoragePool(uuid, host, port, storagePoolType, this);
+        StorPoolStoragePool storagePool = new StorPoolStoragePool(uuid, host, port, storagePoolType, this, details);
         storageUuidToStoragePool.put(uuid, storagePool);
         return storagePool;
     }
@@ -409,7 +409,7 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
 
             srcFile = new QemuImgFile(srcTemplateFilePath, srcFileFormat);
 
-            String spTemplate = destPool.getUuid().split(";")[0];
+            String spTemplate = destPool.getAuthUserName();
 
             QemuImg qemu = new QemuImg(timeout);
             OutputInterpreter.AllLinesParser parser = createStorPoolVolume(destPool, srcFile, qemu, spTemplate);

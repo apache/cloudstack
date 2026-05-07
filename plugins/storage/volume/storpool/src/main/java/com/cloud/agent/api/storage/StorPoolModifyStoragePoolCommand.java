@@ -22,11 +22,13 @@ package com.cloud.agent.api.storage;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.storage.StoragePool;
 
+import java.util.Map;
+
 public class StorPoolModifyStoragePoolCommand extends ModifyStoragePoolCommand {
     private String volumeName;
 
-    public StorPoolModifyStoragePoolCommand(boolean add, StoragePool pool, String volumeName) {
-        super(add, pool);
+    public StorPoolModifyStoragePoolCommand(boolean add, StoragePool pool, String volumeName, Map<String, String> details) {
+        super(add, pool, details);
         this.volumeName = volumeName;
     }
 

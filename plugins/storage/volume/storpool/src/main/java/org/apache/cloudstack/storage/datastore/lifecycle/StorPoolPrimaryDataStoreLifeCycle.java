@@ -161,7 +161,7 @@ public class StorPoolPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeC
 
         PrimaryDataStoreParameters parameters = new PrimaryDataStoreParameters();
         parameters.setName(name);
-        parameters.setUuid(conn.getTemplateName() + ";" + UUID.randomUUID().toString());
+        parameters.setUuid(UUID.randomUUID().toString());
         parameters.setZoneId(zoneId);
         parameters.setProviderName(providerName);
         parameters.setType(StoragePoolType.StorPool);

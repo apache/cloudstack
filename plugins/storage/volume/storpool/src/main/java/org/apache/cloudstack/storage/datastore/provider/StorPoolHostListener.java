@@ -22,7 +22,9 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
 
@@ -119,7 +121,9 @@ public class StorPoolHostListener implements HypervisorHostListener {
             return false;
         }
 
-        StorPoolModifyStoragePoolCommand cmd = new StorPoolModifyStoragePoolCommand(true, pool, volumeOnPool.getValue());
+        Map<String, String> details = new HashMap<>();
+        details.put(StorPoolUtil.SP_TEMPLATE, conn.getTemplateName());
+        StorPoolModifyStoragePoolCommand cmd = new StorPoolModifyStoragePoolCommand(true, pool, volumeOnPool.getValue(), details);
         final Answer answer = agentMgr.easySend(hostId, cmd);
 
         StoragePoolHostVO poolHost = storagePoolHostDao.findByPoolHost(pool.getId(), hostId);

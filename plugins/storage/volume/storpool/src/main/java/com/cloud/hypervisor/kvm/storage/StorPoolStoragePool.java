@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.cloudstack.storage.datastore.util.StorPoolUtil;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -53,12 +54,13 @@ public class StorPoolStoragePool implements KVMStoragePool {
     private String _localPath;
     private String storageNodeId = getStorPoolConfigParam("SP_OURID");
 
-    public StorPoolStoragePool(String uuid, String host, int port, StoragePoolType storagePoolType, StorageAdaptor storageAdaptor) {
+    public StorPoolStoragePool(String uuid, String host, int port, StoragePoolType storagePoolType, StorageAdaptor storageAdaptor, Map<String, String> details) {
         _uuid = uuid;
         _sourceHost = host;
         _sourcePort = port;
         _storagePoolType = storagePoolType;
         _storageAdaptor = storageAdaptor;
+        _authUsername = details.get(StorPoolUtil.SP_TEMPLATE);
     }
 
     @Override
