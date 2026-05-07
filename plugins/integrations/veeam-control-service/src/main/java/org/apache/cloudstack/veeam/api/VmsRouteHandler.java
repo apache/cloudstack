@@ -19,6 +19,7 @@ package org.apache.cloudstack.veeam.api;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -174,7 +175,14 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
             } else if (idAndSubPath.size() == 3) {
                 String subPath = idAndSubPath.get(1);
                 String subId = idAndSubPath.get(2);
-                if ("snapshots".equals(subPath)) {
+                if ("diskattachments".equals(subPath)) {
+                    if (!"DELETE".equalsIgnoreCase(method)) {
+                        io.methodNotAllowed(resp, "DELETE", outFormat);
+                    } else  {
+                        handleDeleteDiskAttachmentForVmId(id, subId, req, resp, outFormat, io);
+                    }
+                    return;
+                } else if ("snapshots".equals(subPath)) {
                     if (!"GET".equalsIgnoreCase(method) && !"DELETE".equalsIgnoreCase(method)) {
                         io.methodNotAllowed(resp, "GET, DELETE", outFormat);
                     } else if ("GET".equalsIgnoreCase(method)) {
@@ -406,6 +414,24 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
             Snapshot response = serverAdapter.createInstanceSnapshot(id, request);
             io.getWriter().write(resp, HttpServletResponse.SC_ACCEPTED, response, outFormat);
         } catch (JsonProcessingException | CloudRuntimeException e) {
+            io.badRequest(resp, e.getMessage(), outFormat);
+        }
+    }
+
+    protected void handleDeleteDiskAttachmentForVmId(final String vmId, final String diskId,
+             final HttpServletRequest req, final HttpServletResponse resp,
+             final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
+        boolean delete = Boolean.FALSE.toString().equals(req.getParameter("detach_only"));
+        try {
+            serverAdapter.detachInstanceDisk(vmId, diskId);
+            if (delete) {
+                serverAdapter.deleteDisk(diskId);
+            }
+            Map<String, String> response = Map.of("status", "complete");
+            io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
+        } catch (InvalidParameterValueException e) {
+            io.notFound(resp, e.getMessage(), outFormat);
+        } catch (CloudRuntimeException e) {
             io.badRequest(resp, e.getMessage(), outFormat);
         }
     }

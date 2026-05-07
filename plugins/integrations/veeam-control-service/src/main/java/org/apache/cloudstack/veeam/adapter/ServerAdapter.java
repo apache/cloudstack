@@ -73,6 +73,7 @@ import org.apache.cloudstack.api.command.user.volume.AssignVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DestroyVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.command.user.volume.UpdateVolumeCmd;
 import org.apache.cloudstack.api.command.user.zone.ListZonesCmd;
@@ -198,6 +199,7 @@ import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceDetailVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -1263,6 +1265,30 @@ public class ServerAdapter extends ManagerBase {
         Volume volume = volumeApiService.attachVolumeToVM(vmVo.getId(), volumeVO.getId(), deviceId, false);
         VolumeJoinVO attachedVolumeVO = volumeJoinDao.findById(volume.getId());
         return VolumeJoinVOToDiskConverter.toDiskAttachment(attachedVolumeVO, this::getVolumePhysicalSize);
+    }
+
+    @ApiAccess(command = DetachVolumeCmd.class)
+    public void detachInstanceDisk(final String vmUuid, final String volumeUuid) {
+        UserVmVO vmVo = userVmDao.findByUuid(vmUuid);
+        if (vmVo == null) {
+            throw new InvalidParameterValueException("VM with ID " + vmUuid + " not found");
+        }
+        if (!VirtualMachine.State.Stopped.equals(vmVo.getState())) {
+            throw new InvalidParameterValueException("VM with ID " + vmUuid + " must be in stopped state to detach disk");
+        }
+        accountService.checkAccess(CallContext.current().getCallingAccount(), SecurityChecker.AccessType.OperateEntry,
+                false, vmVo);
+        VolumeVO volumeVo = volumeDao.findByUuid(volumeUuid);
+        if (volumeVo == null) {
+            throw new InvalidParameterValueException("Volume with ID " + volumeUuid + " not found");
+        }
+        if (volumeVo.getInstanceId() != vmVo.getId()) {
+            throw new InvalidParameterValueException("Volume with ID " + volumeUuid + " is not attached to VM with ID " + vmUuid);
+        }
+        DetachVolumeCmd cmd = new DetachVolumeCmd();
+        ComponentContext.inject(cmd);
+        cmd.setId(volumeVo.getId());
+        volumeApiService.detachVolumeFromVM(cmd);
     }
 
     @ApiAccess(command = CreateVolumeCmd.class)
