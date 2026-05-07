@@ -151,12 +151,17 @@ export default {
         if (this.resource.isstaticnat) {
           if (this.resource.virtualmachinetype === 'DomainRouter') {
             this.tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => ['vpn', 'firewall'].includes(tab.name)))
+          } else {
+            this.tabs = this.defaultTabs
           }
           return
         }
 
         // VPC IPs have all tabs, but firewall only if associatednetworkid present
         let tabs = this.$route.meta.tabs
+        if (!this.resource.associatednetworkid) {
+          tabs = tabs.filter(tab => tab.name !== 'firewall')
+        }
 
         const network = await this.fetchNetwork()
         if (network && network.networkofferingconservemode) {
