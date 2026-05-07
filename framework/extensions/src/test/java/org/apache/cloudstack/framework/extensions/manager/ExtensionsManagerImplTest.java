@@ -318,7 +318,7 @@ public class ExtensionsManagerImplTest {
     @Test
     public void getExtensionFromResourceReturnsNullIfEntityNotFound() {
         when(entityManager.findByUuid(any(), anyString())).thenReturn(null);
-        assertNull(extensionsManager.getExtensionFromResource(ExtensionCustomAction.ResourceType.VirtualMachine, "uuid"));
+        assertNull(extensionsManager.getExtensionWithCustomActionFromResource(ExtensionCustomAction.ResourceType.VirtualMachine, "uuid"));
     }
 
 
@@ -408,7 +408,7 @@ public class ExtensionsManagerImplTest {
         ExtensionVO extension = mock(ExtensionVO.class);
         when(extensionDao.findById(100L)).thenReturn(extension);
 
-        Extension result = extensionsManager.getExtensionFromResource(ExtensionCustomAction.ResourceType.VirtualMachine, "vm-uuid");
+        Extension result = extensionsManager.getExtensionWithCustomActionFromResource(ExtensionCustomAction.ResourceType.VirtualMachine, "vm-uuid");
 
         assertEquals(extension, result);
     }
@@ -417,7 +417,7 @@ public class ExtensionsManagerImplTest {
     public void getExtensionFromResourceReturnsNullForInvalidResourceUuid() {
         when(entityManager.findByUuid(eq(VirtualMachine.class), eq("invalid-uuid"))).thenReturn(null);
 
-        Extension result = extensionsManager.getExtensionFromResource(ExtensionCustomAction.ResourceType.VirtualMachine, "invalid-uuid");
+        Extension result = extensionsManager.getExtensionWithCustomActionFromResource(ExtensionCustomAction.ResourceType.VirtualMachine, "invalid-uuid");
 
         assertNull(result);
     }
@@ -428,7 +428,7 @@ public class ExtensionsManagerImplTest {
         when(entityManager.findByUuid(eq(VirtualMachine.class), eq("vm-uuid"))).thenReturn(vm);
         when(virtualMachineManager.findClusterAndHostIdForVm(vm, false)).thenReturn(new Pair<>(null, null));
 
-        Extension result = extensionsManager.getExtensionFromResource(ExtensionCustomAction.ResourceType.VirtualMachine, "vm-uuid");
+        Extension result = extensionsManager.getExtensionWithCustomActionFromResource(ExtensionCustomAction.ResourceType.VirtualMachine, "vm-uuid");
 
         assertNull(result);
     }
@@ -440,7 +440,7 @@ public class ExtensionsManagerImplTest {
         when(virtualMachineManager.findClusterAndHostIdForVm(vm, false)).thenReturn(new Pair<>(1L, 1L));
         when(extensionResourceMapDao.findByResourceIdAndType(1L, ExtensionResourceMap.ResourceType.Cluster)).thenReturn(null);
 
-        Extension result = extensionsManager.getExtensionFromResource(ExtensionCustomAction.ResourceType.VirtualMachine, "vm-uuid");
+        Extension result = extensionsManager.getExtensionWithCustomActionFromResource(ExtensionCustomAction.ResourceType.VirtualMachine, "vm-uuid");
 
         assertNull(result);
     }
@@ -2662,7 +2662,7 @@ public class ExtensionsManagerImplTest {
         ExtensionVO ext = mock(ExtensionVO.class);
         doReturn(ext).when(extensionsManager).getExtensionForPhysicalNetworkAndProvider(5L, "my-ext-provider");
 
-        Extension result = extensionsManager.getExtensionFromResource(ExtensionCustomAction.ResourceType.Network, "net-uuid");
+        Extension result = extensionsManager.getExtensionWithCustomActionFromResource(ExtensionCustomAction.ResourceType.Network, "net-uuid");
         assertEquals(ext, result);
     }
 
@@ -2680,7 +2680,7 @@ public class ExtensionsManagerImplTest {
         when(extensionResourceMapDao.listByResourceIdAndType(5L, ExtensionResourceMap.ResourceType.PhysicalNetwork))
                 .thenReturn(List.of(mapVO));
 
-        Extension result = extensionsManager.getExtensionFromResource(ExtensionCustomAction.ResourceType.Network, "net-uuid");
+        Extension result = extensionsManager.getExtensionWithCustomActionFromResource(ExtensionCustomAction.ResourceType.Network, "net-uuid");
         assertNull(result);
     }
 
@@ -2691,7 +2691,7 @@ public class ExtensionsManagerImplTest {
         when(network.getPhysicalNetworkId()).thenReturn(null);
         when(entityManager.findByUuid(eq(Network.class), eq("net-uuid"))).thenReturn(network);
 
-        Extension result = extensionsManager.getExtensionFromResource(ExtensionCustomAction.ResourceType.Network, "net-uuid");
+        Extension result = extensionsManager.getExtensionWithCustomActionFromResource(ExtensionCustomAction.ResourceType.Network, "net-uuid");
         assertNull(result);
     }
 
@@ -2710,7 +2710,7 @@ public class ExtensionsManagerImplTest {
         ExtensionVO ext = mock(ExtensionVO.class);
         when(extensionDao.findByName("my-vpc-provider")).thenReturn(ext);
 
-        Extension result = extensionsManager.getExtensionFromResource(ExtensionCustomAction.ResourceType.Vpc, "vpc-uuid");
+        Extension result = extensionsManager.getExtensionWithCustomActionFromResource(ExtensionCustomAction.ResourceType.Vpc, "vpc-uuid");
 
         assertEquals(ext, result);
     }
@@ -2723,7 +2723,7 @@ public class ExtensionsManagerImplTest {
 
         when(vpcServiceMapDao.getProviderForServiceInVpc(20L, Network.Service.CustomAction)).thenReturn(null);
 
-        Extension result = extensionsManager.getExtensionFromResource(ExtensionCustomAction.ResourceType.Vpc, "vpc-uuid");
+        Extension result = extensionsManager.getExtensionWithCustomActionFromResource(ExtensionCustomAction.ResourceType.Vpc, "vpc-uuid");
 
         assertNull(result);
         verify(extensionDao, never()).findByName(anyString());
@@ -2738,7 +2738,7 @@ public class ExtensionsManagerImplTest {
         when(vpcServiceMapDao.getProviderForServiceInVpc(20L, Network.Service.CustomAction)).thenReturn("missing-provider");
         when(extensionDao.findByName("missing-provider")).thenReturn(null);
 
-        Extension result = extensionsManager.getExtensionFromResource(ExtensionCustomAction.ResourceType.Vpc, "vpc-uuid");
+        Extension result = extensionsManager.getExtensionWithCustomActionFromResource(ExtensionCustomAction.ResourceType.Vpc, "vpc-uuid");
 
         assertNull(result);
     }
