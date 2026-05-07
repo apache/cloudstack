@@ -193,7 +193,7 @@ public class FirstFitAllocatorTest {
     Mockito.doReturn(account).when(virtualMachineProfile).getOwner();
     Mockito.doReturn(hostTag).when(serviceOffering).getHostTag();
     Mockito.doReturn(templateTag).when(vmTemplateVO).getTemplateTag();
-    Mockito.doReturn(emptyList).when(firstFitAllocatorSpy).retrieveHosts(Mockito.any(VirtualMachineProfile.class), Mockito.any(Host.Type.class), Mockito.nullable(List.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyString());
+    Mockito.doReturn(emptyList).when(firstFitAllocatorSpy).retrieveHosts(Mockito.any(VirtualMachineProfile.class), Mockito.any(Host.Type.class), Mockito.nullable(List.class), Mockito.any(VMTemplateVO.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyString());
     List<Host> suitableHosts = firstFitAllocatorSpy.allocateTo(virtualMachineProfile, deploymentPlan, type, excludeList, null, HostAllocator.RETURN_UPTO_ALL, considerReservedCapacity);
 
     Assert.assertNull(suitableHosts);
@@ -208,7 +208,7 @@ public class FirstFitAllocatorTest {
     Mockito.doReturn(account).when(virtualMachineProfile).getOwner();
     Mockito.doReturn(hostTag).when(serviceOffering).getHostTag();
     Mockito.doReturn(templateTag).when(vmTemplateVO).getTemplateTag();
-    Mockito.doReturn(hosts).when(firstFitAllocatorSpy).retrieveHosts(Mockito.any(VirtualMachineProfile.class), Mockito.any(Host.Type.class), Mockito.nullable(List.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyString());
+    Mockito.doReturn(hosts).when(firstFitAllocatorSpy).retrieveHosts(Mockito.any(VirtualMachineProfile.class), Mockito.any(Host.Type.class), Mockito.nullable(List.class), Mockito.any(VMTemplateVO.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyString());
     Mockito.doReturn(hosts).when(firstFitAllocatorSpy).allocateTo(Mockito.any(VirtualMachineProfile.class), Mockito.any(DeploymentPlan.class), Mockito.any(ServiceOffering.class), Mockito.any(VMTemplateVO.class), Mockito.any(DeploymentPlanner.ExcludeList.class), Mockito.anyList(), Mockito.anyInt(), Mockito.anyBoolean(), Mockito.any(Account.class));
     Mockito.doNothing().when(firstFitAllocatorSpy).addHostsToAvoidSet(Mockito.any(Host.Type.class), Mockito.any(DeploymentPlanner.ExcludeList.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyList());
     List<Host> suitableHosts = firstFitAllocatorSpy.allocateTo(virtualMachineProfile, deploymentPlan, type, excludeList, null, HostAllocator.RETURN_UPTO_ALL, considerReservedCapacity);
@@ -226,7 +226,7 @@ public class FirstFitAllocatorTest {
     Mockito.doReturn(account).when(virtualMachineProfile).getOwner();
     Mockito.doReturn(hostTag).when(serviceOffering).getHostTag();
     Mockito.doReturn(templateTag).when(vmTemplateVO).getTemplateTag();
-    Mockito.doReturn(hosts).when(firstFitAllocatorSpy).retrieveHosts(Mockito.any(VirtualMachineProfile.class), Mockito.any(Host.Type.class), Mockito.nullable(List.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyString());
+    Mockito.doReturn(hosts).when(firstFitAllocatorSpy).retrieveHosts(Mockito.any(VirtualMachineProfile.class), Mockito.any(Host.Type.class), Mockito.nullable(List.class), Mockito.any(VMTemplateVO.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyString());
     Mockito.doReturn(hosts).when(firstFitAllocatorSpy).allocateTo(Mockito.any(VirtualMachineProfile.class), Mockito.any(DeploymentPlan.class), Mockito.any(ServiceOffering.class), Mockito.any(VMTemplateVO.class), Mockito.any(DeploymentPlanner.ExcludeList.class), Mockito.anyList(), Mockito.anyInt(), Mockito.anyBoolean(), Mockito.any(Account.class));
     Mockito.doNothing().when(firstFitAllocatorSpy).addHostsToAvoidSet(Mockito.any(Host.Type.class), Mockito.any(DeploymentPlanner.ExcludeList.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyList());
     firstFitAllocatorSpy.allocateTo(virtualMachineProfile, deploymentPlan, type, excludeList, null, HostAllocator.RETURN_UPTO_ALL, considerReservedCapacity);
@@ -245,7 +245,7 @@ public class FirstFitAllocatorTest {
     Mockito.doReturn(hostsWithHaTag).when(hostDaoMock).listByHostTag(Mockito.any(Host.Type.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString());
     Mockito.doNothing().when(firstFitAllocatorSpy).filterHostsWithUefiEnabled(Mockito.any(Host.Type.class), Mockito.any(VirtualMachineProfile.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyList());
     Mockito.doNothing().when(firstFitAllocatorSpy).addHostsBasedOnTagRules(Mockito.anyString(), Mockito.anyList());
-    List<HostVO> resultHosts = firstFitAllocatorSpy.retrieveHosts(virtualMachineProfile, type, emptyList, clusterId, podId, dcId, hostTag, templateTag);
+    List<HostVO> resultHosts = firstFitAllocatorSpy.retrieveHosts(virtualMachineProfile, type, emptyList, vmTemplateVO, clusterId, podId, dcId, hostTag, templateTag);
 
     Assert.assertEquals(2, resultHosts.size());
     Assert.assertEquals(host1, resultHosts.get(0));
@@ -262,7 +262,7 @@ public class FirstFitAllocatorTest {
     Mockito.doReturn(hostsWithHaTag).when(hostDaoMock).listByHostTag(Mockito.any(Host.Type.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString());
     Mockito.doNothing().when(firstFitAllocatorSpy).filterHostsWithUefiEnabled(Mockito.any(Host.Type.class), Mockito.any(VirtualMachineProfile.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyList());
     Mockito.doNothing().when(firstFitAllocatorSpy).addHostsBasedOnTagRules(Mockito.anyString(), Mockito.anyList());
-    List<HostVO> resultHosts = firstFitAllocatorSpy.retrieveHosts(virtualMachineProfile, type, hostsToFilter, clusterId, podId, dcId, hostTag, templateTag);
+    List<HostVO> resultHosts = firstFitAllocatorSpy.retrieveHosts(virtualMachineProfile, type, hostsToFilter, vmTemplateVO, clusterId, podId, dcId, hostTag, templateTag);
 
     Assert.assertEquals(2, resultHosts.size());
     Assert.assertEquals(host1, resultHosts.get(0));
@@ -278,7 +278,7 @@ public class FirstFitAllocatorTest {
     Mockito.doReturn(upAndEnabledHostsWithNoHa).when(resourceManagerMock).listAllUpAndEnabledNonHAHosts(Mockito.any(Host.Type.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong());
     Mockito.doNothing().when(firstFitAllocatorSpy).filterHostsWithUefiEnabled(Mockito.any(Host.Type.class), Mockito.any(VirtualMachineProfile.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyList());
     Mockito.doNothing().when(firstFitAllocatorSpy).addHostsBasedOnTagRules(Mockito.nullable(String.class), Mockito.anyList());
-    List<HostVO> resultHosts = firstFitAllocatorSpy.retrieveHosts(virtualMachineProfile, type, emptyList, clusterId, podId, dcId, null, null);
+    List<HostVO> resultHosts = firstFitAllocatorSpy.retrieveHosts(virtualMachineProfile, type, emptyList, vmTemplateVO, clusterId, podId, dcId, null, null);
 
     Assert.assertEquals(2, resultHosts.size());
     Assert.assertEquals(host1, resultHosts.get(0));
@@ -293,7 +293,7 @@ public class FirstFitAllocatorTest {
     Mockito.doNothing().when(firstFitAllocatorSpy).retainHostsMatchingServiceOfferingAndTemplateTags(Mockito.anyList(), Mockito.any(Host.Type.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyString());
     Mockito.doNothing().when(firstFitAllocatorSpy).filterHostsWithUefiEnabled(Mockito.any(Host.Type.class), Mockito.any(VirtualMachineProfile.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyList());
     Mockito.doNothing().when(firstFitAllocatorSpy).addHostsBasedOnTagRules(Mockito.anyString(), Mockito.anyList());
-    firstFitAllocatorSpy.retrieveHosts(virtualMachineProfile, type, emptyList, clusterId, podId, dcId, hostTag, templateTag);
+    firstFitAllocatorSpy.retrieveHosts(virtualMachineProfile, type, emptyList, vmTemplateVO, clusterId, podId, dcId, hostTag, templateTag);
 
     Mockito.verify(firstFitAllocatorSpy, Mockito.times(1)).retainHostsMatchingServiceOfferingAndTemplateTags(Mockito.anyList(), Mockito.any(Host.Type.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyString());
   }

@@ -49,8 +49,13 @@ public class UpdateHostCmd extends BaseCmd {
     @Parameter(name = ApiConstants.OS_CATEGORY_ID,
                type = CommandType.UUID,
                entityType = GuestOSCategoryResponse.class,
-               description = "The ID of OS category to update the host with")
+               description = "the ID of OS category used to prioritize VMs with mathing OS category during the allocation process. " +
+                       "It cannot be used alongside the 'guestosrule' parameter.")
     private Long osCategoryId;
+
+    @Parameter(name = ApiConstants.GUEST_OS_RULE, type = CommandType.STRING, description = "the guest OS rule written in JavaScript to match with the OS of the VM." +
+            "It cannot be used alongside the 'oscategoryid' parameter.")
+    private String guestOsRule;
 
     @Parameter(name = ApiConstants.ALLOCATION_STATE,
                type = CommandType.STRING,
@@ -94,6 +99,10 @@ public class UpdateHostCmd extends BaseCmd {
 
     public Long getOsCategoryId() {
         return osCategoryId;
+    }
+
+    public String getGuestOsRule() {
+        return guestOsRule;
     }
 
     public String getAllocationState() {
