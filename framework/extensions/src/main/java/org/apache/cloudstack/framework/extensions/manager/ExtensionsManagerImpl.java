@@ -123,7 +123,6 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
-import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.ExternalProvisioner;
@@ -433,16 +432,15 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         unregisterExtensionWithCluster(cluster, extensionId);
     }
 
-    protected Extension getExtensionFromResource(ExtensionCustomAction.ResourceType resourceType, String resourceUuid) {
+    protected Extension getExtensionWithCustomActionFromResource(ExtensionCustomAction.ResourceType resourceType, String resourceUuid) {
         Object object = entityManager.findByUuid(resourceType.getAssociatedClass(), resourceUuid);
         if (object == null) {
             return null;
         }
-        Long clusterId = null;
-        if (resourceType == ExtensionCustomAction.ResourceType.VirtualMachine) {
+        if (ExtensionCustomAction.ResourceType.VirtualMachine.equals(resourceType)) {
             VirtualMachine vm = (VirtualMachine) object;
             Pair<Long, Long> clusterHostId = virtualMachineManager.findClusterAndHostIdForVm(vm, false);
-            clusterId = clusterHostId.first();
+            Long clusterId = clusterHostId.first();
             if (clusterId == null) {
                 return null;
             }
@@ -452,7 +450,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                 return null;
             }
             return extensionDao.findById(mapVO.getExtensionId());
-        } else if (resourceType == ExtensionCustomAction.ResourceType.Network) {
+        } else if (ExtensionCustomAction.ResourceType.Network.equals(resourceType)) {
             Network network = (Network) object;
             Long physicalNetworkId = network.getPhysicalNetworkId();
             if (physicalNetworkId == null) {
@@ -469,7 +467,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                 }
             }
             return null;
-        } else if (resourceType == ExtensionCustomAction.ResourceType.Vpc) {
+        } else if (ExtensionCustomAction.ResourceType.Vpc.equals(resourceType)) {
             Vpc vpc = (Vpc) object;
             // Find extension via the VPC's CustomAction service provider
             String providerName = vpcServiceMapDao.getProviderForServiceInVpc(vpc.getId(), Service.CustomAction);
@@ -808,12 +806,15 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         if (id != null) {
             sc.setParameters("id", id);
         }
+
         if (name != null) {
             sc.setParameters("name", name);
         }
+
         if (keyword != null) {
             sc.setParameters("keyword",  "%" + keyword + "%");
         }
+
         if (typeStr != null) {
             Extension.Type type = EnumUtils.getEnum(Extension.Type.class, typeStr);
             if (type == null) {
@@ -1635,7 +1636,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         }
 
         if (extensionId == null && resourceType != null && StringUtils.isNotBlank(resourceId)) {
-            Extension extension = getExtensionFromResource(resourceType, resourceId);
+            Extension extension = getExtensionWithCustomActionFromResource(resourceType, resourceId);
             if (extension == null) {
                 logger.error("No extension found for the specified resource [type: {}, id: {}]", resourceTypeStr, resourceId);
                 throw new InvalidParameterValueException("Internal error listing custom actions with specified resource");
@@ -1827,7 +1828,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
 
     @Override
     public CustomActionResultResponse runCustomAction(RunCustomActionCmd cmd) {
-        final Long id =  cmd.getCustomActionId();
+        final Long id = cmd.getCustomActionId();
         final String resourceTypeStr = cmd.getResourceType();
         final String resourceUuid = cmd.getResourceId();
         Map<String, String> cmdParameters = cmd.getParameters();
@@ -1852,8 +1853,6 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             logger.error("Failed to run {} as it is not enabled", customActionVO);
             throw new InvalidParameterValueException(error);
         }
-        final String actionName = customActionVO.getName();
-        RunCustomActionCommand runCustomActionCommand = new RunCustomActionCommand(actionName);
         final long extensionId = customActionVO.getExtensionId();
         final ExtensionVO extensionVO = extensionDao.findById(extensionId);
         if (extensionVO == null) {
@@ -1884,47 +1883,47 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             logger.error("Specified resource does not exist for running {}", customActionVO);
             throw new CloudRuntimeException(error);
         }
-        Long clusterId = null;
-        Long hostId = null;
-        if (entity instanceof Cluster) {
-            clusterId = ((Cluster)entity).getId();
-            List<HostVO> hosts = hostDao.listByClusterAndHypervisorType(clusterId, Hypervisor.HypervisorType.External);
-            if (CollectionUtils.isEmpty(hosts)) {
-                logger.error("No hosts found for {} for running {}", entity, customActionVO);
-                throw new CloudRuntimeException(error);
-            }
-            hostId = hosts.get(0).getId();
-        } else if (entity instanceof Host) {
-            Host host = (Host)entity;
-            if (!Hypervisor.HypervisorType.External.equals(host.getHypervisorType())) {
-                logger.error("Invalid {} specified as host resource for running {}", entity, customActionVO);
-                throw new InvalidParameterValueException(error);
-            }
-            hostId = host.getId();
-            clusterId = host.getClusterId();
-        } else if (entity instanceof VirtualMachine) {
-            VirtualMachine virtualMachine = (VirtualMachine)entity;
+        if (entity instanceof VirtualMachine) {
+            VirtualMachine virtualMachine = (VirtualMachine) entity;
             accountService.checkAccess(caller, null, true, virtualMachine);
-            if (!Hypervisor.HypervisorType.External.equals(virtualMachine.getHypervisorType())) {
-                logger.error("Invalid {} specified as VM resource for running {}", entity, customActionVO);
-                throw new InvalidParameterValueException(error);
-            }
-            VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(virtualMachine);
-            VirtualMachineTO virtualMachineTO = virtualMachineManager.toVmTO(vmProfile);
-            runCustomActionCommand.setVmTO(virtualMachineTO);
-            Pair<Long, Long> clusterAndHostId = virtualMachineManager.findClusterAndHostIdForVm(virtualMachine, false);
-            clusterId = clusterAndHostId.first();
-            hostId = clusterAndHostId.second();
+            return runVirtualMachineCustomAction(virtualMachine, customActionVO, extensionVO,
+                    actionResourceType, cmdParameters);
         } else if (entity instanceof Network) {
             // Network custom action: dispatched directly to NetworkCustomActionProvider (no agent)
             Network network = (Network) entity;
+            accountService.checkAccess(caller, null, true, network);
             return runNetworkCustomAction(network, customActionVO, extensionVO, actionResourceType, cmdParameters);
         } else if (entity instanceof Vpc) {
             // VPC custom action: find a tier network and dispatch to the same NetworkCustomActionProvider
             Vpc vpc = (Vpc) entity;
+            accountService.checkAccess(caller, null, true, vpc);
             return runVpcCustomAction(vpc, customActionVO, extensionVO, actionResourceType, cmdParameters);
         }
+        throw new CloudRuntimeException(String.format("Custom action for resource type %s is not supported",
+                actionResourceType.name()));
+    }
 
+    private CustomActionResultResponse runVirtualMachineCustomAction(VirtualMachine virtualMachine,
+            ExtensionCustomActionVO customActionVO, ExtensionVO extensionVO,
+            ExtensionCustomAction.ResourceType actionResourceType,
+            Map<String, String> cmdParameters) {
+
+        String error = "Internal error running action on virtual machine";
+
+        if (!Hypervisor.HypervisorType.External.equals(virtualMachine.getHypervisorType())) {
+            logger.error("Invalid {} specified as VM resource for running {}", virtualMachine, customActionVO);
+            throw new InvalidParameterValueException(error);
+        }
+
+        final String actionName = customActionVO.getName();
+        RunCustomActionCommand runCustomActionCommand = new RunCustomActionCommand(actionName);
+        VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(virtualMachine);
+        VirtualMachineTO virtualMachineTO = virtualMachineManager.toVmTO(vmProfile);
+        runCustomActionCommand.setVmTO(virtualMachineTO);
+        Pair<Long, Long> clusterAndHostId = virtualMachineManager.findClusterAndHostIdForVm(virtualMachine, false);
+
+        Long clusterId = clusterAndHostId.first();;
+        Long hostId = clusterAndHostId.second();
         if (clusterId == null || hostId == null) {
             logger.error(
                     "Unable to find cluster or host with the specified resource - cluster ID: {}, host ID: {}",
@@ -1958,7 +1957,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         Map<String, String> result = new HashMap<>();
         response.setSuccess(false);
         result.put(ApiConstants.MESSAGE, getActionMessage(false, customActionVO, extensionVO,
-                actionResourceType, entity));
+                actionResourceType, virtualMachine));
         Map<String, Map<String, String>> externalDetails =
                 getExternalAccessDetails(allDetails.first(), hostId, extensionResource);
         Map<String, String> vmExternalDetails = null;
@@ -1983,7 +1982,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                 RunCustomActionAnswer customActionAnswer = (RunCustomActionAnswer) answer;
                 response.setSuccess(answer.getResult());
                 result.put(ApiConstants.MESSAGE, getActionMessage(answer.getResult(), customActionVO, extensionVO,
-                        actionResourceType, entity));
+                        actionResourceType, virtualMachine));
                 result.put(ApiConstants.DETAILS, customActionAnswer.getDetails());
             }
         } catch (AgentUnavailableException e) {

@@ -17,6 +17,10 @@
 package org.apache.cloudstack.framework.extensions.network;
 
 import java.io.File;
+import java.net.URI;
+import java.net.InetAddress;
+import java.nio.ByteBuffer;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -24,9 +28,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.net.InetAddress;
-import java.nio.ByteBuffer;
-import java.nio.file.Files;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -513,7 +514,7 @@ public class NetworkExtensionElement extends AdapterBase implements
             try {
                 NetworkVO networkVo = networkDao.findById(network.getId());
                 if (networkVo != null) {
-                    java.net.URI ovnUri = java.net.URI.create("ovn://cs-net-" + network.getId());
+                    URI ovnUri = URI.create("ovn://cs-net-" + network.getId());
                     networkVo.setBroadcastDomainType(Networks.BroadcastDomainType.Lswitch);
                     networkVo.setBroadcastUri(ovnUri);
                     networkDao.update(networkVo.getId(), networkVo);
@@ -582,9 +583,9 @@ public class NetworkExtensionElement extends AdapterBase implements
             // / DB queries report consistent OVN identifiers instead of
             // the stale VLAN URI the GuestNetworkGuru allocated at
             // design-time.
-            java.net.URI ovnUri = null;
+            URI ovnUri = null;
             try {
-                ovnUri = java.net.URI.create("ovn://cs-net-" + network.getId());
+                ovnUri = URI.create("ovn://cs-net-" + network.getId());
             } catch (Exception e) {
                 logger.warn("Failed to build OVN URI for NIC {}: {}", nic.getId(), e.getMessage());
             }
@@ -593,7 +594,7 @@ public class NetworkExtensionElement extends AdapterBase implements
                 nic.setBroadcastUri(ovnUri);
                 nic.setIsolationUri(ovnUri);
                 try {
-                    com.cloud.vm.NicVO nicVo = nicDao.findById(nic.getId());
+                    NicVO nicVo = nicDao.findById(nic.getId());
                     if (nicVo != null) {
                         nicVo.setBroadcastUri(ovnUri);
                         nicVo.setIsolationUri(ovnUri);
