@@ -208,6 +208,15 @@
           </template>
           <a-switch v-model:checked="form.displaynetwork" />
         </a-form-item>
+        <a-form-item name="keepMacAddressOnPublicNic" ref="keepMacAddressOnPublicNic" v-if="isAdmin() && isUpdatingIsolatedNetwork && !resource?.vpcid">
+          <template #label>
+            <tooltip-label
+              :title="$t('label.keep.mac.address.on.public.nic')"
+              :tooltip="apiParams.keepmacaddressonpublicnic?.description"
+            />
+          </template>
+          <a-switch v-model:checked="form.keepMacAddressOnPublicNic" />
+        </a-form-item>
         <a-form-item name="forced" ref="forced" v-if="isAdmin()">
           <template #label>
             <tooltip-label :title="$t('label.forced')" :tooltip="apiParams.forced.description"/>
@@ -310,7 +319,8 @@ export default {
       this.form = reactive({
         displaynetwork: this.resource.displaynetwork,
         privatemtu: this.resource.privatemtu,
-        publicmtu: this.resource.publicmtu
+        publicmtu: this.resource.publicmtu,
+        keepMacAddressOnPublicNic: this.resource.keepmacaddressonpublicnic
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.required.input') }],
@@ -393,18 +403,20 @@ export default {
         const formRaw = toRaw(this.form)
         const values = this.handleRemoveFields(formRaw)
         this.loading = true
-        var manualFields = ['name', 'networkofferingid']
+        const manualFields = ['name', 'networkofferingid']
         const params = {
           id: this.resource.id,
           name: values.name
         }
-        for (var field in values) {
+        for (const field in values) {
           if (manualFields.includes(field)) continue
-          var fieldValue = values[field]
-          if (fieldValue !== undefined &&
-            fieldValue !== null &&
-            (!(field in this.resourceValues) || this.resourceValues[field] !== fieldValue)) {
-            params[field] = fieldValue
+          const fieldValue = values[field]
+          if (fieldValue !== undefined && fieldValue !== null && (!(field in this.resourceValues) || this.resourceValues[field] !== fieldValue)) {
+            if (field === 'keepMacAddressOnPublicNic') {
+              params.keepmacaddressonpublicnic = fieldValue
+            } else {
+              params[field] = fieldValue
+            }
           }
         }
         if (values.networkofferingid !== undefined &&

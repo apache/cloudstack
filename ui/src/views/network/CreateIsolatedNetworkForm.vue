@@ -294,6 +294,15 @@
               v-model:value="form.sourcenatipaddress"
               :placeholder="apiParams.sourcenatipaddress?.description"/>
           </a-form-item>
+          <a-form-item name="keepMacAddressOnPublicNic" ref="keepMacAddressOnPublicNic" v-if="isAdmin() && !selectedNetworkOffering?.forvpc">
+            <template #label>
+              <tooltip-label
+                :title="$t('label.keep.mac.address.on.public.nic')"
+                :tooltip="apiParams.keepmacaddressonpublicnic?.description"
+              />
+            </template>
+            <a-switch v-model:checked="form.keepMacAddressOnPublicNic" />
+          </a-form-item>
           <div :span="24" class="action-button">
             <a-button
               :loading="actionLoading"
@@ -408,7 +417,9 @@ export default {
   methods: {
     initForm () {
       this.formRef = ref()
-      this.form = reactive({})
+      this.form = reactive({
+        keepMacAddressOnPublicNic: true
+      })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.name') }],
         zoneid: [{ type: 'number', required: true, message: this.$t('message.error.select') }],
@@ -600,14 +611,15 @@ export default {
         const formRaw = toRaw(this.form)
         const values = this.handleRemoveFields(formRaw)
         this.actionLoading = true
-        var params = {
+        const params = {
           zoneId: this.selectedZone.id,
           name: values.name,
           displayText: values.displaytext,
-          networkOfferingId: this.selectedNetworkOffering.id
+          networkOfferingId: this.selectedNetworkOffering.id,
+          keepmacaddressonpublicnic: values.keepMacAddressOnPublicNic
         }
-        var usefulFields = ['gateway', 'netmask', 'cidrsize', 'startip', 'startipv4', 'endip', 'endipv4', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'sourcenatipaddress', 'externalid', 'vpcid', 'vlan', 'networkdomain']
-        for (var field of usefulFields) {
+        const usefulFields = ['gateway', 'netmask', 'cidrsize', 'startip', 'startipv4', 'endip', 'endipv4', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'sourcenatipaddress', 'externalid', 'vpcid', 'vlan', 'networkdomain']
+        for (const field of usefulFields) {
           if (this.isValidTextValueForKey(values, field)) {
             params[field] = values[field]
           }
