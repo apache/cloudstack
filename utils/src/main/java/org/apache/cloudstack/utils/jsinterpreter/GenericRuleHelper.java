@@ -16,34 +16,38 @@
 //under the License.
 package org.apache.cloudstack.utils.jsinterpreter;
 
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class GenericRuleHelper {
 
     protected static Logger LOGGER = LogManager.getLogger(GenericRuleHelper.class);
 
-    private static final String PARSE_TAGS = "tags = tags ? tags.split(',') : [];";
-
-
     public static boolean interpretTagAsRule(String rule, String tags, long timeout, String configName) {
-        String script = PARSE_TAGS + rule;
-        Boolean scriptReturn = interpretRule(tags, timeout, "tags", script, configName);
+        List<String> tagsPresetVariable = new ArrayList<>();
+        if (!StringUtils.isEmpty(tags)) {
+            tagsPresetVariable.addAll(Arrays.asList(tags.split(",")));
+        }
+
+        Boolean scriptReturn = interpretRule("tags", tagsPresetVariable, timeout, rule, configName);
 
         if (scriptReturn != null) {
             return scriptReturn;
         }
 
-        LOGGER.debug("Result of tag rule [{}] was not a boolean, returning false.", script);
+        LOGGER.debug("Result of tag rule [{}] was not a boolean, returning false.", rule);
         return false;
     }
 
     public static boolean interpretGuestOsRule(String rule, String vmGuestOs, long timeout, String configName) {
-        Boolean scriptReturn = interpretRule(vmGuestOs, timeout, "vmGuestOs", rule, configName);
+        Boolean scriptReturn = interpretRule("vmGuestOs", vmGuestOs, timeout, rule, configName);
 
         if (scriptReturn != null) {
             return scriptReturn;
@@ -53,10 +57,9 @@ public class GenericRuleHelper {
         return false;
     }
 
-    private static Boolean interpretRule(String rule, long timeout, String variable, String script, String configName) {
-        rule = String.format("'%s'", StringEscapeUtils.escapeEcmaScript(rule));
+    private static Boolean interpretRule(String variableName, Object variableValue, long timeout, String script, String configName) {
         try (JsInterpreter jsInterpreter = new JsInterpreter(timeout, configName)) {
-            jsInterpreter.injectVariable(variable, rule);
+            jsInterpreter.injectVariable(variableName, variableValue);
             Object scriptReturn = jsInterpreter.executeScript(script);
             if (scriptReturn instanceof Boolean) {
                 return (Boolean) scriptReturn;

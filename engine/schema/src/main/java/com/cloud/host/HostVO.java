@@ -856,7 +856,8 @@ public class HostVO implements Host {
         }
 
         if (BooleanUtils.isTrue(this.getIsTagARule())) {
-            return GenericRuleHelper.interpretTagAsRule(this.getHostTags().get(0), serviceOffering.getHostTag(), HostTagsDao.hostTagRuleExecutionTimeout.value());
+            return GenericRuleHelper.interpretTagAsRule(this.getHostTags().get(0), serviceOffering.getHostTag(), HostTagsDao.hostTagRuleExecutionTimeout.value(),
+                    HostTagsDao.hostTagRuleExecutionTimeout.key());
         }
 
         if (StringUtils.isEmpty(serviceOffering.getHostTag())) {
