@@ -35,6 +35,7 @@ public interface QuotaBalanceDao extends GenericDao<QuotaBalanceVO, Long> {
     QuotaBalanceVO findLaterBalanceEntry(Long accountId, Long domainId, Date afterThis);
 
     List<QuotaBalanceVO> listQuotaBalances(Long accountId, Long domainId, Date startDate, Date endDate);
+
     BigDecimal getLastQuotaBalance(Long accountId, Long domainId);
 
 }

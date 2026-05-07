@@ -3940,10 +3940,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     protected long getActiveProjectAccountByProjectId(long projectId) {
         Project project = _projectMgr.getProject(projectId);
         if (project == null) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Unable to find project with the specified ID.", projectId));
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to find project with the specified ID.");
         }
         if (project.getState() != Project.State.Active) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Project is not active.", projectId));
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Project is not active.");
         }
         return project.getProjectAccountId();
     }
