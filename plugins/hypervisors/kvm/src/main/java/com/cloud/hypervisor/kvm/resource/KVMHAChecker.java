@@ -40,7 +40,8 @@ public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
      */
     @Override
     public Boolean hasHeartBeat() {
-        String hostAndPools = String.format("host IP [%s] in pools [%s]", host.getPrivateNetwork().getIp(), storagePools.stream().map(pool -> pool.getPoolUUID()).collect(Collectors.joining(", ")));
+        String hostAndPools = String.format("host IP [%s] in pools [%s]", host.getPrivateNetwork().getIp(),
+                storagePools.stream().map(pool -> pool.getPoolUUID()).collect(Collectors.joining(", ")));
         logger.debug("Checking heart beat with KVMHAChecker for {}", hostAndPools);
 
         boolean heartBeatCheckResult = false;

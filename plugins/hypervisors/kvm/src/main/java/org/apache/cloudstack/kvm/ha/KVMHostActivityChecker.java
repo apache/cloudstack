@@ -73,9 +73,9 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
         try {
             return hasVMActivityOnHost(r, suspectTime);
         } catch (HACheckerException e) {
-            //Re-throwing the exception to avoid poluting the 'HACheckerException' already thrown
+            //Re-throwing the exception to avoid polluting the 'HACheckerException' already thrown
             throw e;
-        } catch (Exception e){
+        } catch (Exception e) {
             String message = String.format("Operation timed out, probably the %s is not reachable.", r.toString());
             logger.warn(message, e);
             throw new HACheckerException(message, e);
@@ -207,7 +207,6 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
         logger.debug("Checking VM activity for {} on storage pool [{}].", host.toString(), pool);
         try {
             Answer answer = storageManager.sendToPool(pool, getNeighbors(host), cmd);
-
             if (answer != null) {
                 activityStatus = !answer.getResult();
                 logger.debug("{} {} activity on storage pool [{}]", host.toString(), activityStatus ? "has" : "does not have", pool);
@@ -216,7 +215,7 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
                 logger.debug(message);
                 throw new IllegalStateException(message);
             }
-        } catch (StorageUnavailableException e){
+        } catch (StorageUnavailableException e) {
             String message = String.format("Storage [%s] is unavailable to do the check, probably the %s is not reachable.", pool, host);
             logger.warn(message, e);
             throw new HACheckerException(message, e);
@@ -261,5 +260,4 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
         }
         return ArrayUtils.toPrimitive(neighbors.toArray(new Long[neighbors.size()]));
     }
-
 }

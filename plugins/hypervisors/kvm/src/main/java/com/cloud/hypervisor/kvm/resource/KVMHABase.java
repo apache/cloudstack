@@ -137,7 +137,7 @@ public class KVMHABase {
             /* Can't find the mount point? */
             /* we need to mount it under poolName */
             if (poolName != null) {
-                Script mount = new Script("/bin/bash", 60000);
+                Script mount = new Script("/bin/bash", _timeout);
                 mount.add("-c");
                 mount.add("mount " + mountSource + " " + destPath);
                 String result = mount.execute();
@@ -153,7 +153,6 @@ public class KVMHABase {
     }
 
     protected String getMountPoint(HAStoragePool storagePool) {
-
         StoragePool pool = null;
         String poolName = null;
         try {
@@ -170,7 +169,6 @@ public class KVMHABase {
                 }
                 poolName = pool.getName();
             }
-
         } catch (LibvirtException e) {
             logger.debug("Ignoring libvirt error.", e);
         } finally {

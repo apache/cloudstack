@@ -139,9 +139,7 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
 
     public synchronized void purgeHACounter(final Long resourceId, final HAResource.ResourceType resourceType) {
         final String key = resourceCounterKey(resourceId, resourceType);
-        if (haCounterMap.containsKey(key)) {
-            haCounterMap.remove(key);
-        }
+        haCounterMap.remove(key);
     }
 
     public boolean transitionHAState(final HAConfig.Event event, final HAConfig haConfig) {
@@ -512,9 +510,14 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
 
         // Attempt recovery
         if (newState == HAConfig.HAState.Recovering) {
-            if (counter.getRecoveryCounter() >= (Long) (haProvider.getConfigValue(HAProviderConfig.MaxRecoveryAttempts, resource))) {
+            long recoveryCounter = counter.getRecoveryCounter();
+            Long maxRecoveryAttempts = (Long) (haProvider.getConfigValue(HAProviderConfig.MaxRecoveryAttempts, resource));
+            if (recoveryCounter >= maxRecoveryAttempts) {
+                logger.debug("Recovery attempts have reached the configured limit: {} for the resource [{}].", maxRecoveryAttempts, resource);
                 return false;
             }
+
+            logger.debug("Recovery attempt #{} for the resource [{}]. Max recovery attempts configured is {}.", recoveryCounter + 1, resource, maxRecoveryAttempts);
             final RecoveryTask task = ComponentContext.inject(new RecoveryTask(resource, haProvider, haConfig,
                     HAProviderConfig.RecoveryTimeout, recoveryExecutor));
             final Future<Boolean> recoveryFuture = recoveryExecutor.submit(task);
@@ -537,20 +540,20 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
             return false;
         }
 
-        logger.debug(String.format("HA state pre-transition:: new state=[%s], old state=[%s], for resource id=[%s], status=[%s], ha config state=[%s]." , newState, oldState, haConfig.getResourceId(), status, haConfig.getState()));
+        logger.debug("HA state pre-transition:: new state=[{}], old state=[{}], for resource id=[{}], status=[{}], ha config state=[{}].", newState, oldState, haConfig.getResourceId(), status, haConfig.getState());
 
         if (status && haConfig.getState() != newState) {
-            logger.warn(String.format("HA state pre-transition:: HA state is not equal to transition state, HA state=[%s], new state=[%s].", haConfig.getState(), newState));
+            logger.warn("HA state pre-transition:: HA state is not equal to transition state, HA state=[{}], new state=[{}].", haConfig.getState(), newState);
         }
         return processHAStateChange(haConfig, newState, status);
     }
 
     @Override
     public boolean postStateTransitionEvent(final StateMachine2.Transition<HAConfig.HAState, HAConfig.Event> transition, final HAConfig haConfig, final boolean status, final Object opaque) {
-        logger.debug(String.format("HA state post-transition:: new state=[%s], old state=[%s], for resource id=[%s], status=[%s], ha config state=[%s].", transition.getToState(), transition.getCurrentState(),  haConfig.getResourceId(), status, haConfig.getState()));
+        logger.debug("HA state post-transition:: new state=[{}], old state=[{}], for resource id=[{}], status=[{}], ha config state=[{}].", transition.getToState(), transition.getCurrentState(), haConfig.getResourceId(), status, haConfig.getState());
 
         if (status && haConfig.getState() != transition.getToState()) {
-            logger.warn(String.format("HA state post-transition:: HA state is not equal to transition state, HA state=[%s], new state=[%s].", haConfig.getState(), transition.getToState()));
+            logger.warn("HA state post-transition:: HA state is not equal to transition state, HA state=[{}], new state=[{}].", haConfig.getState(), transition.getToState());
         }
         return processHAStateChange(haConfig, transition.getToState(), status);
     }
@@ -646,7 +649,7 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
             try {
                 logger.debug("HA health check task is running...");
 
-                final List<HAConfig> haConfigList = new ArrayList<HAConfig>(haConfigDao.listAll());
+                final List<HAConfig> haConfigList = new ArrayList<>(haConfigDao.listAll());
                 for (final HAConfig haConfig : haConfigList) {
                     currentHaConfig = haConfig;
 
@@ -677,8 +680,8 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
                                     HAProviderConfig.HealthCheckTimeout, healthCheckExecutor));
                             healthCheckExecutor.submit(task);
                             break;
-                    default:
-                        break;
+                        default:
+                            break;
                     }
 
                     final HAResourceCounter counter = getHACounter(haConfig.getResourceId(), haConfig.getResourceType());
@@ -696,16 +699,22 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
                     }
 
                     if (haConfig.getState() == HAConfig.HAState.Recovering) {
-                        if (counter.getRecoveryCounter() >= (Long) (haProvider.getConfigValue(HAProviderConfig.MaxRecoveryAttempts, resource))) {
+                        long recoveryCounter = counter.getRecoveryCounter();
+                        Long maxRecoveryAttempts = (Long) (haProvider.getConfigValue(HAProviderConfig.MaxRecoveryAttempts, resource));
+                        if (recoveryCounter >= maxRecoveryAttempts) {
+                            logger.debug("Recovery attempts have reached the max limit: {} for the resource [{}].", maxRecoveryAttempts, resource);
                             transitionHAState(HAConfig.Event.RecoveryOperationThresholdExceeded, haConfig);
                         } else {
+                            logger.debug("Retry recovery for the resource [{}]. Max recovery attempts configured is {}.", resource, maxRecoveryAttempts);
                             transitionHAState(HAConfig.Event.RetryRecovery, haConfig);
                         }
                     }
 
                     if (haConfig.getState() == HAConfig.HAState.Recovered) {
                         counter.markRecoveryStarted();
-                        if (counter.canExitRecovery((Long)(haProvider.getConfigValue(HAProviderConfig.RecoveryWaitTimeout, resource)))) {
+                        Long recoveryWaitTimeout = (Long)(haProvider.getConfigValue(HAProviderConfig.RecoveryWaitTimeout, resource));
+                        logger.debug("Recovery started for the resource [{}], wait period configured to become Available is {} secs", resource, recoveryWaitTimeout);
+                        if (counter.canExitRecovery(recoveryWaitTimeout)) {
                             if (transitionHAState(HAConfig.Event.RecoveryWaitPeriodTimeout, haConfig)) {
                                 counter.markRecoveryCompleted();
                             }
@@ -718,7 +727,7 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
                 }
             } catch (Throwable t) {
                 if (currentHaConfig != null) {
-                    logger.error(String.format("Error trying to perform health checks in HA manager [%s].", currentHaConfig.getHaProvider()), t);
+                    logger.error("Error trying to perform health checks in HA manager [{}].", currentHaConfig.getHaProvider(), t);
                 } else {
                     logger.error("Error trying to perform health checks in HA manager.", t);
                 }

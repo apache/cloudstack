@@ -34,53 +34,49 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class KVMHAMonitor extends KVMHABase implements Runnable {
 
-    private final Map<String, HAStoragePool> storagePool = new ConcurrentHashMap<>();
+    private final Map<String, HAStoragePool> haStoragePools = new ConcurrentHashMap<>();
     private final boolean rebootHostAndAlertManagementOnHeartbeatTimeout;
 
     private final String hostPrivateIp;
 
-    public KVMHAMonitor(HAStoragePool pool, String host) {
-        if (pool != null) {
-            storagePool.put(pool.getPoolUUID(), pool);
-        }
+    public KVMHAMonitor(String host) {
         hostPrivateIp = host;
-
         rebootHostAndAlertManagementOnHeartbeatTimeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.REBOOT_HOST_AND_ALERT_MANAGEMENT_ON_HEARTBEAT_TIMEOUT);
     }
 
     public void addStoragePool(HAStoragePool pool) {
-        synchronized (storagePool) {
-            storagePool.put(pool.getPoolUUID(), pool);
+        synchronized (haStoragePools) {
+            haStoragePools.put(pool.getPoolUUID(), pool);
         }
     }
 
     public void removeStoragePool(String uuid) {
-        synchronized (storagePool) {
-            HAStoragePool pool = storagePool.get(uuid);
+        synchronized (haStoragePools) {
+            HAStoragePool pool = haStoragePools.get(uuid);
             if (pool != null) {
                 Script.runSimpleBashScript("umount " + pool.getMountDestPath());
-                storagePool.remove(uuid);
+                haStoragePools.remove(uuid);
             }
         }
     }
 
     public List<HAStoragePool> getStoragePools() {
-        synchronized (storagePool) {
-            return new ArrayList<>(storagePool.values());
+        synchronized (haStoragePools) {
+            return new ArrayList<>(haStoragePools.values());
         }
     }
 
     public HAStoragePool getStoragePool(String uuid) {
-        synchronized (storagePool) {
-            return storagePool.get(uuid);
+        synchronized (haStoragePools) {
+            return haStoragePools.get(uuid);
         }
     }
 
     protected void runHeartBeat() {
-        synchronized (storagePool) {
+        synchronized (haStoragePools) {
             Set<String> removedPools = new HashSet<>();
-            for (String uuid : storagePool.keySet()) {
-                HAStoragePool primaryStoragePool = storagePool.get(uuid);
+            for (String uuid : haStoragePools.keySet()) {
+                HAStoragePool primaryStoragePool = haStoragePools.get(uuid);
                 if (HighAvailabilityManager.LIBVIRT_STORAGE_POOL_TYPES_WITH_HA_SUPPORT.contains(primaryStoragePool.getPool().getType())) {
                     checkForNotExistingLibvirtStoragePools(removedPools, uuid);
                     if (removedPools.contains(uuid)) {
@@ -104,20 +100,18 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
     }
 
     private String executePoolHeartBeatCommand(String uuid, HAStoragePool primaryStoragePool, String result) {
-        for (int i = 1; i <= _heartBeatUpdateMaxTries; i++) {
+        for (int attempt = 1; attempt <= _heartBeatUpdateMaxTries; attempt++) {
             result = primaryStoragePool.getPool().createHeartBeatCommand(primaryStoragePool, hostPrivateIp, true);
-
-            if (result != null) {
-                logger.warn("Write heartbeat for pool [{}] failed: {}; try: {} of {}.", uuid, result, i, _heartBeatUpdateMaxTries);
-                try {
-                    Thread.sleep(_heartBeatUpdateRetrySleepInMs);
-                } catch (InterruptedException e) {
-                    logger.debug("[IGNORED] Interrupted between heartbeat retries.", e);
-                }
-            } else {
+            if (result == null) {
                 break;
             }
 
+            logger.warn("Write heartbeat for pool [{}] failed: {}; try: {} of {}.", uuid, result, attempt, _heartBeatUpdateMaxTries);
+            try {
+                Thread.sleep(_heartBeatUpdateRetrySleepInMs);
+            } catch (InterruptedException e) {
+                logger.debug("[IGNORED] Interrupted between heartbeat retries.", e);
+            }
         }
         return result;
     }

@@ -352,9 +352,7 @@ public class LibvirtStoragePool implements KVMStoragePool {
 
         if (hostValidation) {
             cmd.add("-h", hostPrivateIp);
-        }
-
-        if (!hostValidation) {
+        } else {
             cmd.add("-c");
         }
 
