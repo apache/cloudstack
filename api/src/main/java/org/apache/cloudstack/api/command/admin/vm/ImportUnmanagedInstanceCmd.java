@@ -152,8 +152,14 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.FORCED,
             type = CommandType.BOOLEAN,
-            description = "Instance is imported despite some of its NIC's MAC addresses are already present, in case the MAC address exists then a new MAC address is generated")
+            description = "Instance is imported even if some NIC MAC addresses already exist. If a MAC address exists, a new MAC address is generated")
     private Boolean forced;
+
+    @Parameter(name = ApiConstants.ALLOW_DUPLICATE_MAC_ADDRESSES,
+            type = CommandType.BOOLEAN,
+            since = "4.23.0",
+            description = "Preserve imported NIC MAC addresses even when they already exist on the target network. Intended for migration cutover workflows where the source and imported VMs are not active on the same L2 network at the same time")
+    private Boolean allowDuplicateMacAddresses;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -276,6 +282,10 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
 
     public boolean isForced() {
         return BooleanUtils.isTrue(forced);
+    }
+
+    public boolean isAllowDuplicateMacAddresses() {
+        return BooleanUtils.isTrue(allowDuplicateMacAddresses);
     }
 
     /////////////////////////////////////////////////////
