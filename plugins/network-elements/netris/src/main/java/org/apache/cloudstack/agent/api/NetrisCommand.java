@@ -25,6 +25,7 @@ public class NetrisCommand extends Command {
     private String name;
     private final Long id;
     private final boolean isVpc;
+    private boolean isL2;
 
     public NetrisCommand(long zoneId, Long accountId, Long domainId, String name, Long id, boolean isVpc) {
         this.zoneId = zoneId;
@@ -62,6 +63,14 @@ public class NetrisCommand extends Command {
 
     public boolean isVpc() {
         return isVpc;
+    }
+
+    public boolean isL2() {
+        return isL2;
+    }
+
+    public void setL2(boolean l2) {
+        isL2 = l2;
     }
 
     @Override

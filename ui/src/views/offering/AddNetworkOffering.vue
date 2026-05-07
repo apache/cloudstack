@@ -60,7 +60,7 @@
             <a-radio-button value="isolated">
               {{ $t('label.isolated') }}
             </a-radio-button>
-            <a-radio-button value="l2" v-if="form.provider !== 'NSX' && form.provider !== 'Netris'">
+            <a-radio-button value="l2" v-if="form.provider !== 'NSX'">
               {{ $t('label.l2') }}
             </a-radio-button>
             <a-radio-button value="shared" v-if="form.provider !== 'NSX' && form.provider !== 'Netris'">

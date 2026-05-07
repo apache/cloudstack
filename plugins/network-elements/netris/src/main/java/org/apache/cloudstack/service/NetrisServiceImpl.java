@@ -222,11 +222,12 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
     }
 
     @Override
-    public boolean createVnetResource(Long zoneId, long accountId, long domainId, String vpcName, Long vpcId, String networkName, Long networkId, String cidr, Boolean globalRouting) {
+    public boolean createVnetResource(Long zoneId, long accountId, long domainId, String vpcName, Long vpcId, String networkName, Long networkId, String cidr, Boolean globalRouting, boolean isL2) {
         NetworkVO network = networkDao.findById(networkId);
         String vxlanId = Networks.BroadcastDomainType.getValue(network.getBroadcastUri());
         CreateNetrisVnetCommand cmd = new CreateNetrisVnetCommand(zoneId, accountId, domainId, vpcName, vpcId, networkName, networkId, cidr, network.getGateway(), !Objects.isNull(vpcId));
         cmd.setVxlanId(Integer.parseInt(vxlanId));
+        cmd.setL2(isL2);
         NetrisProviderVO netrisProvider = netrisProviderDao.findByZoneId(zoneId);
         cmd.setNetrisTag(netrisProvider.getNetrisTag());
         cmd.setGlobalRouting(globalRouting);
@@ -241,18 +242,20 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
     }
 
     @Override
-    public boolean updateVnetResource(Long zoneId, long accountId, long domainId, String vpcName, Long vpcId, String networkName, Long networkId, String prevNetworkName) {
+    public boolean updateVnetResource(Long zoneId, long accountId, long domainId, String vpcName, Long vpcId, String networkName, Long networkId, String prevNetworkName, boolean isL2) {
         UpdateNetrisVnetCommand cmd = new UpdateNetrisVnetCommand(zoneId, accountId, domainId, networkName, networkId, Objects.nonNull(vpcId));
         cmd.setPrevNetworkName(prevNetworkName);
         cmd.setVpcId(vpcId);
         cmd.setVpcName(vpcName);
+        cmd.setL2(isL2);
         NetrisAnswer answer = sendNetrisCommand(cmd, zoneId);
         return answer.getResult();
     }
 
     @Override
-    public boolean deleteVnetResource(long zoneId, long accountId, long domainId, String vpcName, Long vpcId, String networkName, Long networkId, String cidr) {
+    public boolean deleteVnetResource(long zoneId, long accountId, long domainId, String vpcName, Long vpcId, String networkName, Long networkId, String cidr, boolean isL2) {
         DeleteNetrisVnetCommand cmd = new DeleteNetrisVnetCommand(zoneId, accountId, domainId, networkName, networkId, vpcName, vpcId, cidr, Objects.nonNull(vpcName));
+        cmd.setL2(isL2);
         Ipv6GuestPrefixSubnetNetworkMapVO ipv6PrefixNetworkMapVO = ipv6PrefixNetworkMapDao.findByNetworkId(networkId);
         if (Objects.nonNull(ipv6PrefixNetworkMapVO)) {
             cmd.setvNetV6Cidr(ipv6PrefixNetworkMapVO.getSubnet());

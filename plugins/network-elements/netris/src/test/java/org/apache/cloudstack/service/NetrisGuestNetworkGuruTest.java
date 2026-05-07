@@ -208,10 +208,10 @@ public class NetrisGuestNetworkGuruTest {
         Mockito.when(networkOffering.getNetworkMode()).thenReturn(NetworkOffering.NetworkMode.ROUTED);
         Mockito.when(netrisService.createVnetResource(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(),
                 Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(),
-                Mockito.anyBoolean())).thenReturn(true);
+                Mockito.anyBoolean(), Mockito.anyBoolean())).thenReturn(true);
         guru.createNetrisVnet(network, zone);
         Mockito.verify(netrisService).createVnetResource(zoneId, accountId, domainId, vpcName, vpcId,
-                networkName, networkId, networkCidr, true);
+                networkName, networkId, networkCidr, true, false);
     }
 
     @Test
