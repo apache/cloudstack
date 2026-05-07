@@ -49,7 +49,7 @@ public class UpdateHostCmd extends BaseCmd {
     @Parameter(name = ApiConstants.OS_CATEGORY_ID,
                type = CommandType.UUID,
                entityType = GuestOSCategoryResponse.class,
-               description = "the ID of OS category used to prioritize VMs with mathing OS category during the allocation process. " +
+               description = "the ID of OS category used to prioritize VMs with matching OS category during the allocation process. " +
                        "It cannot be used alongside the 'guestosrule' parameter.")
     private Long osCategoryId;
 
