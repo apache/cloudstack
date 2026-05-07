@@ -952,7 +952,7 @@
             style="margin-left: 5px"
             :actions="actions"
             :resource="record"
-            :enabled="quickViewEnabled() && actions.length > 0"
+            :enabled="quickViewEnabled(actions, columns, column.key)"
             @exec-action="$parent.execAction"
           />
         </template>

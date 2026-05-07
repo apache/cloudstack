@@ -1356,6 +1356,13 @@ public class ApiConstants {
     public static final String OBJECT_STORAGE_LIMIT = "objectstoragelimit";
     public static final String OBJECT_STORAGE_TOTAL = "objectstoragetotal";
 
+    public static final String KEEP_MAC_ADDRESS_ON_PUBLIC_NIC = "keepmacaddressonpublicnic";
+
+    public static final String PARAMETER_DESCRIPTION_KEEP_MAC_ADDRESS_ON_PUBLIC_NIC =
+            "Indicates whether to use the same MAC address for the public NIC of VRs on the same network. If \"true\", when creating redundant routers or recreating" +
+                    " a VR, CloudStack will use the same MAC address for the public NIC of all VRs. Otherwise, if \"false\", new public NICs will always have " +
+                    " a new MAC address.";
+
     // DNS provider related
     public static final String NAME_SERVERS = "nameservers";
     public static final String DNS_USER_NAME = "dnsusername";

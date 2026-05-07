@@ -2899,6 +2899,11 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
             }
         }
 
+        if (CallContext.current().getCallingAccount().getType() == Account.Type.ADMIN &&
+                network.getVpcId() == null && network.getGuestType() == Network.GuestType.Isolated) {
+            response.setKeepMacAddressOnPublicNic(network.getKeepMacAddressOnPublicNic());
+        }
+
         response.setObjectName("network");
         return response;
     }
@@ -3662,6 +3667,9 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
             }
         }
 
+        if (CallContext.current().getCallingAccount().getType() == Account.Type.ADMIN) {
+            response.setKeepMacAddressOnPublicNic(vpc.getKeepMacAddressOnPublicNic());
+        }
         response.setObjectName("vpc");
         return response;
     }
