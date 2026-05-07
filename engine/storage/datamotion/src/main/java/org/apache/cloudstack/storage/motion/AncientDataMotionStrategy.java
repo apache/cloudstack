@@ -187,7 +187,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 srcForCopy = cacheData = cacheMgr.createCacheObject(srcData, destScope);
             }
 
-            CopyCommand cmd = new CopyCommand(srcForCopy.getTO(), addFullCloneAndDiskprovisiongStrictnessFlagOnVMwareDest(destData.getTO()), primaryStorageDownloadWait,
+            CopyCommand cmd = new CopyCommand(srcForCopy.getTO(), addFullCloneAndDiskprovisiongStrictnessFlagOnDest(destData.getTO()), primaryStorageDownloadWait,
                     VirtualMachineManager.ExecuteInSequence.value());
             EndPoint ep = destHost != null ? RemoteHostEndPoint.getHypervisorHostEndPoint(destHost) : selector.select(srcForCopy, destData);
             if (ep == null) {
@@ -253,6 +253,43 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         return dataTO;
     }
 
+    /**
+     * Adds {@code 'xenserver.create.full.clone'} value for a given primary storage, whose HV is XenServer, on datastore's {@code fullCloneFlag} field
+     * @param dataTO Dest data store TO
+     * @return dataTO including fullCloneFlag, if provided
+     */
+    protected DataTO addFullCloneAndDiskprovisiongStrictnessFlagOnXenServerDest(DataTO dataTO) {
+        if (dataTO != null && dataTO.getHypervisorType().equals(Hypervisor.HypervisorType.XenServer)){
+            DataStoreTO dataStoreTO = dataTO.getDataStore();
+            if (dataStoreTO != null && dataStoreTO instanceof PrimaryDataStoreTO){
+                PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO) dataStoreTO;
+                primaryDataStoreTO.setFullCloneFlag(StorageManager.XenserverCreateCloneFull.valueIn(primaryDataStoreTO.getId()));
+            }
+        }
+        return dataTO;
+    }
+
+    /**
+     * Dispatches to the per-hypervisor {@code addFullCloneAndDiskprovisiongStrictnessFlagOn*Dest} helper
+     * based on {@code dataTO.getHypervisorType()}. Returns {@code dataTO} unchanged for hypervisors
+     * that do not have a full-clone toggle.
+     * @param dataTO Dest data store TO
+     * @return dataTO including fullCloneFlag, if provided
+     */
+    protected DataTO addFullCloneAndDiskprovisiongStrictnessFlagOnDest(DataTO dataTO) {
+        if (dataTO == null) {
+            return dataTO;
+        }
+        switch (dataTO.getHypervisorType()) {
+            case VMware:
+                return addFullCloneAndDiskprovisiongStrictnessFlagOnVMwareDest(dataTO);
+            case XenServer:
+                return addFullCloneAndDiskprovisiongStrictnessFlagOnXenServerDest(dataTO);
+            default:
+                return dataTO;
+        }
+    }
+
     protected Answer copyObject(DataObject srcData, DataObject destData) {
         return copyObject(srcData, destData, null);
     }
@@ -309,7 +346,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 ep = selector.select(srcData, volObj);
             }
 
-            CopyCommand cmd = new CopyCommand(srcData.getTO(), addFullCloneAndDiskprovisiongStrictnessFlagOnVMwareDest(volObj.getTO()), _createVolumeFromSnapshotWait, VirtualMachineManager.ExecuteInSequence.value());
+            CopyCommand cmd = new CopyCommand(srcData.getTO(), addFullCloneAndDiskprovisiongStrictnessFlagOnDest(volObj.getTO()), _createVolumeFromSnapshotWait, VirtualMachineManager.ExecuteInSequence.value());
 
             Answer answer = null;
             if (ep == null) {
@@ -332,7 +369,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     }
 
     protected Answer cloneVolume(DataObject template, DataObject volume) {
-        CopyCommand cmd = new CopyCommand(template.getTO(), addFullCloneAndDiskprovisiongStrictnessFlagOnVMwareDest(volume.getTO()), 0, VirtualMachineManager.ExecuteInSequence.value());
+        CopyCommand cmd = new CopyCommand(template.getTO(), addFullCloneAndDiskprovisiongStrictnessFlagOnDest(volume.getTO()), 0, VirtualMachineManager.ExecuteInSequence.value());
         try {
             EndPoint ep = selector.select(volume, anyVolumeRequiresEncryption(volume));
             Answer answer = null;
@@ -416,7 +453,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
 
                 objOnImageStore.processEvent(Event.CopyingRequested);
 
-                CopyCommand cmd = new CopyCommand(objOnImageStore.getTO(), addFullCloneAndDiskprovisiongStrictnessFlagOnVMwareDest(destData.getTO()), _copyvolumewait, VirtualMachineManager.ExecuteInSequence.value());
+                CopyCommand cmd = new CopyCommand(objOnImageStore.getTO(), addFullCloneAndDiskprovisiongStrictnessFlagOnDest(destData.getTO()), _copyvolumewait, VirtualMachineManager.ExecuteInSequence.value());
                 EndPoint ep = selector.select(objOnImageStore, destData, encryptionRequired);
                 if (ep == null) {
                     String errMsg = String.format(NO_REMOTE_ENDPOINT_WITH_ENCRYPTION, encryptionRequired);
@@ -660,7 +697,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             ep = selector.select(srcData, destData);
         }
 
-        CopyCommand cmd = new CopyCommand(srcData.getTO(), addFullCloneAndDiskprovisiongStrictnessFlagOnVMwareDest(destData.getTO()), _createprivatetemplatefromsnapshotwait, VirtualMachineManager.ExecuteInSequence.value());
+        CopyCommand cmd = new CopyCommand(srcData.getTO(), addFullCloneAndDiskprovisiongStrictnessFlagOnDest(destData.getTO()), _createprivatetemplatefromsnapshotwait, VirtualMachineManager.ExecuteInSequence.value());
         Answer answer = null;
         if (ep == null) {
             logger.error(NO_REMOTE_ENDPOINT_SSVM);
@@ -698,7 +735,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 Scope selectedScope = pickCacheScopeForCopy(srcData, destData);
                 cacheData = cacheMgr.getCacheObject(srcData, selectedScope);
 
-                CopyCommand cmd = new CopyCommand(srcData.getTO(), addFullCloneAndDiskprovisiongStrictnessFlagOnVMwareDest(destData.getTO()), _backupsnapshotwait, VirtualMachineManager.ExecuteInSequence.value());
+                CopyCommand cmd = new CopyCommand(srcData.getTO(), addFullCloneAndDiskprovisiongStrictnessFlagOnDest(destData.getTO()), _backupsnapshotwait, VirtualMachineManager.ExecuteInSequence.value());
                 cmd.setCacheTO(cacheData.getTO());
                 cmd.setOptions(options);
                 EndPoint ep = selector.select(srcData, destData, encryptionRequired);
@@ -709,7 +746,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                     answer = ep.sendMessage(cmd);
                 }
             } else {
-                addFullCloneAndDiskprovisiongStrictnessFlagOnVMwareDest(destData.getTO());
+                addFullCloneAndDiskprovisiongStrictnessFlagOnDest(destData.getTO());
                 CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _backupsnapshotwait, VirtualMachineManager.ExecuteInSequence.value());
                 cmd.setOptions(options);
                 EndPoint ep = selector.select(srcData, destData, StorageAction.BACKUPSNAPSHOT, encryptionRequired);
