@@ -115,7 +115,7 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.TEMPLATE_ID,
             type = CommandType.UUID,
             entityType = TemplateResponse.class,
-            description = "The ID of the Template for the Instance")
+            description = "The ID of the Template for the Instance. Required when importing an unmanaged KVM Instance.")
     private Long templateId;
 
     @Parameter(name = ApiConstants.SERVICE_OFFERING_ID,
