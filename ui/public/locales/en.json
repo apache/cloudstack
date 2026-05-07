@@ -1133,6 +1133,7 @@
 "label.forcks": "For CKS",
 "label.forbidden": "Forbidden",
 "label.forced": "Force",
+"label.generate.new.mac.if.required": "Generate new MAC if required",
 "label.force.convert.to.pool": "Force converting to storage pool directly (not using temporary storage for conversion)",
 "label.force.ms.to.import.vm.files": "Enable to force OVF Download via Management Server. Disable to use KVM Host ovftool (if installed)",
 "label.force.update.os.type": "Force update OS type",

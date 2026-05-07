@@ -4770,7 +4770,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     @DB
     @Override
-    public Pair<NicProfile, Integer> importNic(final String macAddress, int deviceId, final Network network, final Boolean isDefaultNic, final VirtualMachine vm, final Network.IpAddresses ipAddresses, final DataCenter dataCenter, final boolean forced)
+    public Pair<NicProfile, Integer> importNic(final String macAddress, int deviceId, final Network network, final Boolean isDefaultNic, final VirtualMachine vm, final Network.IpAddresses ipAddresses, final DataCenter dataCenter, final boolean forced, final boolean allowDuplicateMacAddress)
             throws ConcurrentOperationException, InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
         logger.debug("Allocating NIC for Instance {} in Network {} during import", vm, network);
         String selectedIp = null;
@@ -4796,7 +4796,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     throw new CloudRuntimeException("Invalid mac address: " + macAddressToPersist);
                 }
                 NicVO existingNic = _nicDao.findByNetworkIdAndMacAddress(network.getId(), macAddressToPersist);
-                if (existingNic != null) {
+                if (existingNic != null && !allowDuplicateMacAddress) {
                     macAddressToPersist = generateNewMacAddressIfForced(network, macAddressToPersist, forced);
                 }
                 NicVO vo = new NicVO(network.getGuruName(), vm.getId(), network.getId(), vm.getType());

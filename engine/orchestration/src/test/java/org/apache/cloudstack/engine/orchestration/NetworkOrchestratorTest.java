@@ -913,7 +913,7 @@ public class NetworkOrchestratorTest extends TestCase {
         Mockito.when(testOrchestrator._networkModel.listNetworkOfferingServices(networkOfferingId)).thenReturn(Arrays.asList(Service.Dns, Service.Dhcp));
         String macAddress = "02:01:01:82:00:01";
         int deviceId = 0;
-        testOrchestrator.importNic(macAddress, deviceId, network, true, vm, ipAddresses, dataCenter, false);
+        testOrchestrator.importNic(macAddress, deviceId, network, true, vm, ipAddresses, dataCenter, false, false);
     }
 
     @Test(expected = InsufficientVirtualNetworkCapacityException.class)
@@ -932,7 +932,7 @@ public class NetworkOrchestratorTest extends TestCase {
         Mockito.when(testOrchestrator._networkModel.listNetworkOfferingServices(networkOfferingId)).thenReturn(Arrays.asList(Service.Dns, Service.Dhcp));
         String macAddress = "02:01:01:82:00:01";
         int deviceId = 0;
-        testOrchestrator.importNic(macAddress, deviceId, network, true, vm, ipAddresses, dataCenter, false);
+        testOrchestrator.importNic(macAddress, deviceId, network, true, vm, ipAddresses, dataCenter, false, false);
     }
 
     @Test
@@ -959,7 +959,7 @@ public class NetworkOrchestratorTest extends TestCase {
         Mockito.when(testOrchestrator._networkModel.getNetworkTag(hypervisorType, network)).thenReturn("testtag");
         try (MockedStatic<Transaction> transactionMocked = Mockito.mockStatic(Transaction.class)) {
             transactionMocked.when(() -> Transaction.execute(any(TransactionCallback.class))).thenReturn(nic);
-            Pair<NicProfile, Integer> nicProfileIntegerPair = testOrchestrator.importNic(macAddress, deviceId, network, true, vm, ipAddresses, dataCenter, false);
+            Pair<NicProfile, Integer> nicProfileIntegerPair = testOrchestrator.importNic(macAddress, deviceId, network, true, vm, ipAddresses, dataCenter, false, false);
             verify(testOrchestrator._networkModel, times(1)).getNetworkRate(networkId, vmId);
             verify(testOrchestrator._networkModel, times(1)).isSecurityGroupSupportedInNetwork(network);
             verify(testOrchestrator._networkModel, times(1)).getNetworkTag(Hypervisor.HypervisorType.KVM, network);
@@ -997,7 +997,7 @@ public class NetworkOrchestratorTest extends TestCase {
         Mockito.when(testOrchestrator._networkModel.getNetworkTag(hypervisorType, network)).thenReturn("testtag");
         try (MockedStatic<Transaction> transactionMocked = Mockito.mockStatic(Transaction.class)) {
             transactionMocked.when(() -> Transaction.execute(any(TransactionCallback.class))).thenReturn(nic);
-            Pair<NicProfile, Integer> nicProfileIntegerPair = testOrchestrator.importNic(macAddress, deviceId, network, true, vm, ipAddresses, dataCenter, false);
+            Pair<NicProfile, Integer> nicProfileIntegerPair = testOrchestrator.importNic(macAddress, deviceId, network, true, vm, ipAddresses, dataCenter, false, false);
             verify(testOrchestrator, times(1)).getSelectedIpForNicImport(network, dataCenter, ipAddresses);
             verify(testOrchestrator._networkModel, times(1)).getNetworkRate(networkId, vmId);
             verify(testOrchestrator._networkModel, times(1)).isSecurityGroupSupportedInNetwork(network);
