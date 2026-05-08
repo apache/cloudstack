@@ -1258,8 +1258,7 @@ public class ServerAdapter extends ManagerBase {
             }
         }
         Long deviceId = null;
-        List<VolumeVO> volumes = volumeDao.findUsableVolumesForInstance(vmVo.getId());
-        if (CollectionUtils.isEmpty(volumes)) {
+        if (Volume.Type.ROOT.equals(volumeVO.getVolumeType())) {
             deviceId = 0L;
         }
         Volume volume = volumeApiService.attachVolumeToVM(vmVo.getId(), volumeVO.getId(), deviceId, false);
