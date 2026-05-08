@@ -328,12 +328,12 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
         for (VolumeVO volume : volumes) {
             StoragePoolVO storagePoolVO = storagePool.findById(volume.getPoolId());
             if (storagePoolVO.isManaged() && ONTAP_PROVIDER_NAME.equals(storagePoolVO.getStorageProviderName())) {
-                logger.debug(String.format("%s as the VM has a volume on ONTAP managed storage pool [%s]. " +
-                        "ONTAP managed storage has its own dedicated VM snapshot strategy.", cantHandleLog, storagePoolVO.getName()));
+                logger.debug(" {} as the VM has a volume on ONTAP managed storage pool [{}]. " +
+                        "ONTAP managed storage has its own dedicated VM snapshot strategy.", cantHandleLog, storagePoolVO.getName());
                 return StrategyPriority.CANT_HANDLE;
             }
             if (!supportedStoragePoolTypes.contains(storagePoolVO.getPoolType())) {
-                logger.debug(String.format("%s as the VM has a volume that is in a storage with unsupported type [%s].", cantHandleLog, storagePoolVO.getPoolType()));
+                logger.debug("{} as the VM has a volume that is in a storage with unsupported type [{}].", cantHandleLog, storagePoolVO.getPoolType());
                 return StrategyPriority.CANT_HANDLE;
             }
             List<SnapshotVO> snapshots = snapshotDao.listByVolumeIdAndTypeNotInAndStateNotRemoved(volume.getId(), Snapshot.Type.GROUP);

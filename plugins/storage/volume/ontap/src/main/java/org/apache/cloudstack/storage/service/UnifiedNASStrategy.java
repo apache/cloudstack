@@ -75,7 +75,7 @@ public class UnifiedNASStrategy extends NASStrategy {
         logger.info("createCloudStackVolume: Create cloudstack volume " + cloudstackVolume);
         try {
             // Step 1: set cloudstack volume metadata
-            String volumeUuid = updateCloudStackVolumeMetadata(cloudstackVolume.getDatastoreId(), cloudstackVolume.getVolumeInfo());
+            updateCloudStackVolumeMetadata(cloudstackVolume.getDatastoreId(), cloudstackVolume.getVolumeInfo());
             // Step 2: Send command to KVM host to create qcow2 file using qemu-img
             Answer answer = createVolumeOnKVMHost(cloudstackVolume.getVolumeInfo());
             if (answer == null || !answer.getResult()) {
@@ -106,7 +106,7 @@ public class UnifiedNASStrategy extends NASStrategy {
                 logger.error("deleteCloudStackVolume: " + errMsg);
                 throw new CloudRuntimeException(errMsg);
             }
-        }catch (Exception e) {
+        } catch (Exception e) {
             logger.error("deleteCloudStackVolume: error occured " + e);
             throw new CloudRuntimeException(e);
         }
@@ -123,7 +123,7 @@ public class UnifiedNASStrategy extends NASStrategy {
         CloudStackVolume cloudStackVolume = null;
         FileInfo fileInfo = getFile(cloudStackVolumeMap.get(OntapStorageConstants.VOLUME_UUID),cloudStackVolumeMap.get(OntapStorageConstants.FILE_PATH));
 
-        if(fileInfo != null){
+        if (fileInfo != null){
             cloudStackVolume = new CloudStackVolume();
             cloudStackVolume.setFlexVolumeUuid(cloudStackVolumeMap.get(OntapStorageConstants.VOLUME_UUID));
             cloudStackVolume.setFile(fileInfo);
@@ -298,22 +298,6 @@ public class UnifiedNASStrategy extends NASStrategy {
         }
     }
 
-    private boolean createFile(String volumeUuid, String filePath, FileInfo fileInfo) {
-        logger.info("createFile: Creating file: {} in volume: {}", filePath, volumeUuid);
-        try {
-            String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
-            nasFeignClient.createFile(authHeader, volumeUuid, filePath, fileInfo);
-            logger.info("createFile: File created successfully: {} in volume: {}", filePath, volumeUuid);
-            return true;
-        } catch (FeignException e) {
-            logger.error("createFile: Failed to create file: {} in volume: {}", filePath, volumeUuid, e);
-            return false;
-        } catch (Exception e) {
-            logger.error("createFile: Exception while creating file: {} in volume: {}", filePath, volumeUuid, e);
-            return false;
-        }
-    }
-
     private boolean deleteFile(String volumeUuid, String filePath) {
         logger.info("deleteFile: Deleting file: {} from volume: {}", filePath, volumeUuid);
         try {
@@ -405,25 +389,25 @@ public class UnifiedNASStrategy extends NASStrategy {
 
     private String updateCloudStackVolumeMetadata(String dataStoreId, DataObject volumeInfo) {
         logger.info("updateCloudStackVolumeMetadata called with datastoreID: {} volumeInfo: {} ", dataStoreId, volumeInfo );
-       try {
-           VolumeObject volumeObject = (VolumeObject) volumeInfo;
-           long volumeId = volumeObject.getId();
-           logger.info("updateCloudStackVolumeMetadata: VolumeInfo ID from VolumeObject: {}", volumeId);
-           VolumeVO volume = volumeDao.findById(volumeId);
-           if (volume == null) {
-               throw new CloudRuntimeException("Volume not found with id: " + volumeId);
-           }
-           String volumeUuid = volumeInfo.getUuid();
-           volume.setPoolType(Storage.StoragePoolType.NetworkFilesystem);
-           volume.setPoolId(Long.parseLong(dataStoreId));
-           volume.setPath(volumeUuid);  // Filename for qcow2 file
-           volumeDao.update(volume.getId(), volume);
-           logger.info("Updated volume path to {} for volume ID {}", volumeUuid, volumeId);
-           return volumeUuid;
-       }catch (Exception e){
-           logger.error("updateCloudStackVolumeMetadata: Exception while updating volumeInfo: {} in volume: {}", dataStoreId, volumeInfo.getUuid(), e);
-           throw new CloudRuntimeException("Exception while updating volumeInfo: " + e.getMessage());
-       }
+        try {
+            VolumeObject volumeObject = (VolumeObject) volumeInfo;
+            long volumeId = volumeObject.getId();
+            logger.info("updateCloudStackVolumeMetadata: VolumeInfo ID from VolumeObject: {}", volumeId);
+            VolumeVO volume = volumeDao.findById(volumeId);
+            if (volume == null) {
+                throw new CloudRuntimeException("Volume not found with id: " + volumeId);
+            }
+            String volumeUuid = volumeInfo.getUuid();
+            volume.setPoolType(Storage.StoragePoolType.NetworkFilesystem);
+            volume.setPoolId(Long.parseLong(dataStoreId));
+            volume.setPath(volumeUuid);  // Filename for qcow2 file
+            volumeDao.update(volume.getId(), volume);
+            logger.info("Updated volume path to {} for volume ID {}", volumeUuid, volumeId);
+            return volumeUuid;
+        } catch (Exception e){
+            logger.error("updateCloudStackVolumeMetadata: Exception while updating volumeInfo: {} in volume: {}", dataStoreId, volumeInfo.getUuid(), e);
+            throw new CloudRuntimeException("Exception while updating volumeInfo: " + e.getMessage());
+        }
     }
 
     private Answer createVolumeOnKVMHost(DataObject volumeInfo) {

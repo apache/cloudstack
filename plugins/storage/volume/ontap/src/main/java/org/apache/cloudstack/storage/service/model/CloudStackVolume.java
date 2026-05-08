@@ -63,26 +63,36 @@ public class CloudStackVolume {
     public void setLun(Lun lun) {
         this.lun = lun;
     }
+
     public String getDatastoreId() {
         return datastoreId;
     }
+
     public void setDatastoreId(String datastoreId) {
         this.datastoreId = datastoreId;
     }
+
     public DataObject getVolumeInfo() {
         return volumeInfo;
     }
+
     public void setVolumeInfo(DataObject volumeInfo) {
         this.volumeInfo = volumeInfo;
     }
     public String getFlexVolumeUuid() {
         return flexVolumeUuid;
     }
+
     public void setFlexVolumeUuid(String flexVolumeUuid) {
         this.flexVolumeUuid = flexVolumeUuid;
     }
 
-    public String getDestinationPath() { return this.destinationPath; }
-    public void setDestinationPath(String destinationPath) { this.destinationPath = destinationPath; }
+    public String getDestinationPath() {
+        return this.destinationPath;
+    }
+
+    public void setDestinationPath(String destinationPath) {
+        this.destinationPath = destinationPath;
+    }
 
 }

@@ -121,29 +121,26 @@ public class StorageStrategyTest {
         }
 
         @Override
-        public org.apache.cloudstack.storage.service.model.CloudStackVolume createCloudStackVolume(
-                org.apache.cloudstack.storage.service.model.CloudStackVolume cloudstackVolume) {
+        public CloudStackVolume createCloudStackVolume(CloudStackVolume cloudstackVolume) {
             return null;
         }
 
         @Override
-        org.apache.cloudstack.storage.service.model.CloudStackVolume updateCloudStackVolume(
-                org.apache.cloudstack.storage.service.model.CloudStackVolume cloudstackVolume) {
+        CloudStackVolume updateCloudStackVolume(CloudStackVolume cloudstackVolume) {
             return null;
         }
 
         @Override
-        public void deleteCloudStackVolume(org.apache.cloudstack.storage.service.model.CloudStackVolume cloudstackVolume) {
+        public void deleteCloudStackVolume(CloudStackVolume cloudstackVolume) {
         }
 
         @Override
-        public void copyCloudStackVolume(org.apache.cloudstack.storage.service.model.CloudStackVolume cloudstackVolume) {
+        public void copyCloudStackVolume(CloudStackVolume cloudstackVolume) {
 
         }
 
         @Override
-        public CloudStackVolume getCloudStackVolume(
-                Map<String, String> cloudStackVolumeMap) {
+        public CloudStackVolume getCloudStackVolume(Map<String, String> cloudStackVolumeMap) {
             return null;
         }
 
@@ -153,24 +150,21 @@ public class StorageStrategyTest {
         }
 
         @Override
-        public AccessGroup createAccessGroup(
-                org.apache.cloudstack.storage.service.model.AccessGroup accessGroup) {
+        public AccessGroup createAccessGroup(AccessGroup accessGroup) {
             return null;
         }
 
         @Override
-        public void deleteAccessGroup(org.apache.cloudstack.storage.service.model.AccessGroup accessGroup) {
+        public void deleteAccessGroup(AccessGroup accessGroup) {
         }
 
         @Override
-        AccessGroup updateAccessGroup(
-                org.apache.cloudstack.storage.service.model.AccessGroup accessGroup) {
+        AccessGroup updateAccessGroup(AccessGroup accessGroup) {
             return null;
         }
 
         @Override
-        public AccessGroup getAccessGroup(
-                Map<String, String> values) {
+        public AccessGroup getAccessGroup(Map<String, String> values) {
             return null;
         }
 
