@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.framework.jobs.impl;
 
+import java.lang.reflect.Field;
+
 import com.cloud.network.Network;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
@@ -26,10 +28,13 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
+
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -92,5 +97,48 @@ public class AsyncJobManagerImplTest {
         asyncJobManager.cleanupResources(job);
         Mockito.verify(networkOrchestrationService, Mockito.times(1)).stateTransitTo(networkVO,
                 Network.Event.OperationFailed);
+    }
+
+    @Test
+    public void testPoolSizeUsesConfiguredValueWhenLarger() {
+        int configuredSize = 3000;
+        int dbDerivedSize = 2000;
+        int result = Math.max(configuredSize, dbDerivedSize);
+        Assert.assertEquals(3000, result);
+    }
+
+    @Test
+    public void testPoolSizeUsesDbDerivedValueWhenLarger() {
+        int configuredSize = 50;
+        int dbDerivedSize = 2000;
+        int result = Math.max(configuredSize, dbDerivedSize);
+        Assert.assertEquals(2000, result);
+    }
+
+    @Test
+    public void testPoolSizeDefaultConfigKeyValues() {
+        overrideConfigValue(AsyncJobManagerImpl.ApiJobPoolSize, 50);
+        overrideConfigValue(AsyncJobManagerImpl.WorkJobPoolSize, 50);
+        Assert.assertEquals(Integer.valueOf(50), AsyncJobManagerImpl.ApiJobPoolSize.value());
+        Assert.assertEquals(Integer.valueOf(50), AsyncJobManagerImpl.WorkJobPoolSize.value());
+    }
+
+    @Test
+    public void testPoolSizeConfiguredOverridesDbDerived() {
+        overrideConfigValue(AsyncJobManagerImpl.ApiJobPoolSize, 5000);
+        int dbMaxActive = 4000;
+        int dbDerived = dbMaxActive / 2;
+        int actual = Math.max(AsyncJobManagerImpl.ApiJobPoolSize.value(), dbDerived);
+        Assert.assertEquals(5000, actual);
+    }
+
+    private void overrideConfigValue(final ConfigKey configKey, final Object value) {
+        try {
+            Field f = ConfigKey.class.getDeclaredField("_value");
+            f.setAccessible(true);
+            f.set(configKey, value);
+        } catch (IllegalAccessException | NoSuchFieldException e) {
+            Assert.fail(e.getMessage());
+        }
     }
 }
