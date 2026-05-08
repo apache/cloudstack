@@ -187,6 +187,10 @@ public class DeployVMCmd extends BaseDeployVMCmd {
         this.snapshotId = snapshotId;
     }
 
+    public void setSshKeyPairNames(List<String> sshKeyPairNames) {
+        this.sshKeyPairNames = sshKeyPairNames;
+    }
+
     @Override
     public void execute() {
         UserVm result;

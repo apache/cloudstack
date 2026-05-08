@@ -465,25 +465,25 @@ public class ServerAdapterTest {
 
     @Test
     public void testGetTemplateForInstanceCreation_NullUuid_ReturnsNull() {
-        assertNull(serverAdapter.getTemplateForInstanceCreation(null));
+        assertNull(serverAdapter.getTemplateForInstanceCreation(null, null));
     }
 
     @Test
     public void testGetTemplateForInstanceCreation_BlankUuid_ReturnsNull() {
-        assertNull(serverAdapter.getTemplateForInstanceCreation("   "));
+        assertNull(serverAdapter.getTemplateForInstanceCreation("   ", null));
     }
 
     @Test
     public void testGetTemplateForInstanceCreation_TemplateNotFound_ReturnsNull() {
         when(templateDao.findByUuid("missing-uuid")).thenReturn(null);
-        assertNull(serverAdapter.getTemplateForInstanceCreation("missing-uuid"));
+        assertNull(serverAdapter.getTemplateForInstanceCreation("missing-uuid", null));
     }
 
     @Test
     public void testGetTemplateForInstanceCreation_TemplateFound_ReturnsTemplate() {
         VMTemplateVO template = mock(VMTemplateVO.class);
         when(templateDao.findByUuid("valid-uuid")).thenReturn(template);
-        assertEquals(template, serverAdapter.getTemplateForInstanceCreation("valid-uuid"));
+        assertEquals(template, serverAdapter.getTemplateForInstanceCreation("valid-uuid", null));
     }
 
 

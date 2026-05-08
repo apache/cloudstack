@@ -170,11 +170,13 @@ import com.cloud.server.ResourceTag;
 import com.cloud.server.TaggedResourceService;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.GuestOS;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
@@ -183,8 +185,10 @@ import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.DomainService;
+import com.cloud.user.SSHKeyPairVO;
 import com.cloud.user.User;
 import com.cloud.user.UserDataVO;
+import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserDataDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.EnumUtils;
@@ -215,6 +219,7 @@ public class ServerAdapter extends ManagerBase {
     );
     private static final String VM_TAG_KEY = "veeam_tag";
     private static final String WORKER_VM_GUEST_CPU_MODE = "host-passthrough";
+    private static final String WORKER_VM_GUEST_OS = "AlmaLinux 9";
     private static final String RESTORE_CONFIG = "restore.config";
 
     @Inject
@@ -321,6 +326,12 @@ public class ServerAdapter extends ManagerBase {
 
     @Inject
     TaggedResourceService taggedResourceService;
+
+    @Inject
+    SSHKeyPairDao sshKeyPairDao;
+
+    @Inject
+    GuestOSDao guestOSDao;
 
     protected static Map<String, Tag> getDummyTags() {
         Map<String, Tag> tags = new HashMap<>();
@@ -512,22 +523,70 @@ public class ServerAdapter extends ManagerBase {
         return offering;
     }
 
-    protected VMTemplateVO getTemplateForInstanceCreation(String templateUuid) {
+    protected GuestOS getGuestOsForInstance(Vm request, boolean isWorkerVm) {
+        if (isWorkerVm) {
+            GuestOS os = guestOSDao.findOneByDisplayName(WORKER_VM_GUEST_OS);
+            if (os == null) {
+                logger.warn("Guest OS with name {} for worker VM not found, VM will be created with default guest OS",
+                        WORKER_VM_GUEST_OS);
+            }
+            return os;
+        }
+        final String guestOsId = request.getGuestOsId();
+        final String guestOsName = request.getGuestOsName();
+        if (StringUtils.isAllBlank(guestOsId, guestOsName)) {
+            return null;
+        }
+        GuestOS os = null;
+        if (StringUtils.isNotBlank(guestOsId)) {
+            os = guestOSDao.findByUuid(guestOsId);
+        }
+        if (os == null && StringUtils.isNotBlank(guestOsName)) {
+            os = guestOSDao.findOneByDisplayName(guestOsName);
+        }
+        if (os == null) {
+            logger.debug("Guest OS could not be identified with ID: {} and name: {} for the VM request", os);
+        }
+        return os;
+    }
+
+    protected VMTemplateVO getTemplateForInstanceCreation(String templateUuid, GuestOS guestOs) {
         if (StringUtils.isBlank(templateUuid)) {
             return null;
         }
         VMTemplateVO template = templateDao.findByUuid(templateUuid);
         if (template == null) {
-            logger.warn("Template with ID {} not found, VM will be created with default template", templateUuid);
+            logger.warn("Template with ID {} not found, guest OS: {}, VM will be created with default template",
+                    guestOs, templateUuid);
             return null;
         }
         return template;
     }
 
+    protected List<String> getValidatedSshKeyPairNames(String sshKeyPairNames, Account owner) {
+        if (StringUtils.isBlank(sshKeyPairNames)) {
+            return null;
+        }
+        List<String> sshKeys = Arrays.stream(sshKeyPairNames.split(","))
+                .map(String::trim)
+                .filter(StringUtils::isNotEmpty)
+                .collect(Collectors.toList());
+        Account account = owner != null ? owner : CallContext.current().getCallingAccount();
+        List<SSHKeyPairVO> keyPairs = sshKeyPairDao.findByNames(account.getId(), account.getDomainId(), sshKeys);
+        List<String> validatedNames = keyPairs.stream().map(SSHKeyPairVO::getName).collect(Collectors.toList());
+        if (sshKeys.size() != validatedNames.size()) {
+            logger.warn("Some SSH key pairs specified in the VM creation request were not found for {}. " +
+                            "Specified SSH key pairs: [{}], valid SSH key pairs: [{}]",
+                    account, StringUtils.join(sshKeys, ","), StringUtils.join(validatedNames, ","));
+        }
+        return validatedNames;
+    }
+
     protected Pair<Vm, UserVm> createInstance(com.cloud.dc.DataCenter zone, Long clusterId, Account owner, Long domainId,
                 String accountName, Long projectId, String name, String displayName, String serviceOfferingUuid,
-                int cpu, int memory, String templateUuid, String userdata, ApiConstants.BootType bootType,
-                ApiConstants.BootMode bootMode, String affinityGroupId, String userDataId, Map<String, String> details) {
+                int cpu, int memory, String templateUuid, GuestOS guestOs, String userdata, ApiConstants.BootType bootType,
+                ApiConstants.BootMode bootMode, String affinityGroupId, String userDataId, String sshKeyPairNames,
+                Map<String, String> details) {
         Account account = owner != null ? owner : CallContext.current().getCallingAccount();
         ServiceOffering serviceOffering = getServiceOfferingIdForVmCreation(zone, account, serviceOfferingUuid, cpu,
                 memory);
@@ -560,9 +619,11 @@ public class ServerAdapter extends ManagerBase {
         if (bootMode != null) {
             cmd.setBootMode(bootMode.toString());
         }
-        VMTemplateVO template = getTemplateForInstanceCreation(templateUuid);
+        VMTemplateVO template = getTemplateForInstanceCreation(templateUuid, guestOs);
         if (template != null) {
             cmd.setTemplateId(template.getId());
+        } else if (guestOs != null) {
+            CallContext.current().putContextParameter(ApiConstants.OS_ID, guestOs);
         }
         if (StringUtils.isNotBlank(affinityGroupId)) {
             AffinityGroupVO group = affinityGroupDao.findByUuid(affinityGroupId);
@@ -581,6 +642,9 @@ public class ServerAdapter extends ManagerBase {
             } else {
                 cmd.setUserDataId(userData.getId());
             }
+        }
+        if (StringUtils.isNotBlank(sshKeyPairNames)) {
+            cmd.setSshKeyPairNames(getValidatedSshKeyPairNames(sshKeyPairNames, owner));
         }
         cmd.setHypervisor(Hypervisor.HypervisorType.KVM.name());
         Map<String, String> instanceDetails = getDetailsForInstanceCreation(userdata, serviceOffering, details);
@@ -1039,10 +1103,11 @@ public class ServerAdapter extends ManagerBase {
         if (request.getTemplate() != null && StringUtils.isNotEmpty(request.getTemplate().getId())) {
             templateUuid = request.getTemplate().getId();
         }
+        GuestOS guestOs = getGuestOsForInstance(request, StringUtils.isNotEmpty(userdata));
         Pair<Vm, UserVm> result = createInstance(zone, clusterId, owner, ownerDetails.first(), ownerDetails.second(),
-                ownerDetails.third(), name, displayName, serviceOfferingUuid, cpu, memoryMB, templateUuid,
+                ownerDetails.third(), name, displayName, serviceOfferingUuid, cpu, memoryMB, templateUuid, guestOs,
                 userdata, bootOptions.first(), bootOptions.second(), request.getAffinityGroupId(),
-                request.getUserDataId(), request.getDetails());
+                request.getUserDataId(), request.getSshKeyPairNames(), request.getDetails());
         saveInstanceRestoreConfig(request, result.second());
         return result.first();
     }
@@ -1258,7 +1323,7 @@ public class ServerAdapter extends ManagerBase {
             }
         }
         Long deviceId = null;
-        if (Volume.Type.ROOT.equals(volumeVO.getVolumeType())) {
+        if (Boolean.parseBoolean(request.getBootable()) || Volume.Type.ROOT.equals(volumeVO.getVolumeType())) {
             deviceId = 0L;
         }
         Volume volume = volumeApiService.attachVolumeToVM(vmVo.getId(), volumeVO.getId(), deviceId, false);

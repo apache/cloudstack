@@ -160,7 +160,7 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
     private String sshKeyPairName;
 
     @Parameter(name = ApiConstants.SSH_KEYPAIRS, type = CommandType.LIST, collectionType = CommandType.STRING, since="4.17", description = "names of the ssh key pairs used to login to the virtual machine")
-    private List<String> sshKeyPairNames;
+    protected List<String> sshKeyPairNames;
 
     @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, description = "destination Host ID to deploy the VM to - parameter available for root admin only")
     private Long hostId;

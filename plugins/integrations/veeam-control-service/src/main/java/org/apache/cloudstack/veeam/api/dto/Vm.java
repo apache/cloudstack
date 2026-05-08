@@ -83,6 +83,9 @@ public final class Vm extends BaseDto {
     private String affinityGroupId;
     private String userDataId;
     private Map<String, String> details;
+    private String sshKeyPairNames;
+    private String guestOsId;
+    private String guestOsName;
 
     public String getName() {
         return name;
@@ -326,6 +329,33 @@ public final class Vm extends BaseDto {
 
     public void setDetails(Map<String, String> details) {
         this.details = details;
+    }
+
+    @JsonIgnore
+    public String getSshKeyPairNames() {
+        return sshKeyPairNames;
+    }
+
+    public void setSshKeyPairNames(String sshKeyPairNames) {
+        this.sshKeyPairNames = sshKeyPairNames;
+    }
+
+    @JsonIgnore
+    public String getGuestOsId() {
+        return guestOsId;
+    }
+
+    public void setGuestOsId(String guestOsId) {
+        this.guestOsId = guestOsId;
+    }
+
+    @JsonIgnore
+    public String getGuestOsName() {
+        return guestOsName;
+    }
+
+    public void setGuestOsName(String guestOsName) {
+        this.guestOsName = guestOsName;
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)

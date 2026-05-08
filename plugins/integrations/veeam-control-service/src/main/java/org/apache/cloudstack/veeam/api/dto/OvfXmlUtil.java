@@ -215,69 +215,7 @@ public class OvfXmlUtil {
         }
         sb.append("</Section>");
 
-        if (vo != null) {
-            // -- Add a section for CloudStack-specific metadata that some consumers might look for (e.g. for import back into CloudStack) ---
-            // Add CloudStack-specific metadata section
-            sb.append("<Section xsi:type=\"ovf:CloudStackMetadata_Type\">");
-            sb.append("<Info>CloudStack specific metadata</Info>");
-            sb.append("<CloudStack>");
-            sb.append("<AccountId>").append(vo.getAccountUuid()).append("</AccountId>");
-            sb.append("<DomainId>").append(vo.getDomainUuid()).append("</DomainId>");
-            sb.append("<ProjectId>").append(escapeText(vo.getProjectUuid())).append("</ProjectId>");
-            if (vm.getCpuProfile() != null && StringUtils.isNotBlank(vm.getCpuProfile().getId())) {
-                sb.append("<ServiceOfferingId>").append(vm.getCpuProfile().getId()).append("</ServiceOfferingId>");
-            }
-            sb.append("<DataDiskOfferingIdMap>");
-            for (DiskAttachment da : diskAttachments(vm)) {
-                if (da == null || da.getDisk() == null || StringUtils.isBlank(da.getDisk().getId())) {
-                    continue;
-                }
-                final Disk d = da.getDisk();
-                sb.append("<Entry>");
-                sb.append("<DiskId>").append(escapeText(d.getId())).append("</DiskId>");
-                sb.append("<OfferingId>").append(d.getDiskProfile().getId()).append("</OfferingId>");
-                sb.append("</Entry>");
-            }
-            sb.append("</DataDiskOfferingIdMap>");
-            if (MapUtils.isNotEmpty(vm.getDetails())) {
-                sb.append("<Details>");
-                for (Map.Entry<String, String> entry : vm.getDetails().entrySet()) {
-                    sb.append("<Detail>");
-                    sb.append("<Key>").append(escapeText(entry.getKey())).append("</Key>");
-                    sb.append("<Value>").append(escapeText(entry.getValue())).append("</Value>");
-                    sb.append("</Detail>");
-                }
-                sb.append("</Details>");
-            }
-            if (vo.getUserDataId() != null) {
-                sb.append("<UserDataId>").append(escapeText(vo.getUserDataUuid())).append("</UserDataId>");
-            }
-            if (vo.getAffinityGroupId() != null) {
-                sb.append("<AffinityGroupId>").append(escapeText(vo.getAffinityGroupUuid())).append("</AffinityGroupId>");
-            }
-            if (vm.getNics() != null && CollectionUtils.isNotEmpty(vm.getNics().getItems())) {
-                sb.append("<Nics>");
-                for (Nic nic : nics(vm)) {
-                    if (nic == null || StringUtils.isBlank(nic.getId())) {
-                        continue;
-                    }
-                    String networkId = nicNetworkId(nic);
-                    if (networkId == null) {
-                        continue;
-                    }
-                    sb.append("<Nic>");
-                    sb.append("<Id>").append(escapeText(nic.getId())).append("</Id>");
-                    sb.append("<NetworkId>").append(escapeText(networkId)).append("</NetworkId>");
-                    sb.append("<MACAddress>").append(escapeText(nicMac(nic))).append("</MACAddress>");
-                    sb.append("<Ip4Address>").append(escapeText(nicIp(nic, "v4"))).append("</Ip4Address>");
-                    sb.append("<Ip6Address>").append(escapeText(nicIp(nic, "v6"))).append("</Ip6Address>");
-                    sb.append("</Nic>");
-                }
-                sb.append("</Nics>");
-            }
-            sb.append("</CloudStack>");
-            sb.append("</Section>");
-        }
+        addCloudStackMetadata(vm, vo, sb);
 
         // --- Content / VirtualSystem ---
         sb.append("<Content ovf:id=\"out\" xsi:type=\"ovf:VirtualSystem_Type\">");
@@ -468,6 +406,81 @@ public class OvfXmlUtil {
         sb.append("</ovf:Envelope>");
 
         return sb.toString();
+    }
+
+    private static void addCloudStackMetadata(Vm vm, UserVmJoinVO vo, StringBuilder sb) {
+        if (vo != null) {
+            // -- Add a section for CloudStack-specific metadata that some consumers might look for (e.g. for import back into CloudStack) ---
+            // Add CloudStack-specific metadata section
+            sb.append("<Section xsi:type=\"ovf:CloudStackMetadata_Type\">");
+            sb.append("<Info>CloudStack specific metadata</Info>");
+            sb.append("<CloudStack>");
+            sb.append("<AccountId>").append(vo.getAccountUuid()).append("</AccountId>");
+            sb.append("<DomainId>").append(vo.getDomainUuid()).append("</DomainId>");
+            sb.append("<ProjectId>").append(escapeText(vo.getProjectUuid())).append("</ProjectId>");
+            if (vm.getCpuProfile() != null && StringUtils.isNotBlank(vm.getCpuProfile().getId())) {
+                sb.append("<ServiceOfferingId>").append(vm.getCpuProfile().getId()).append("</ServiceOfferingId>");
+            }
+            sb.append("<DataDiskOfferingIdMap>");
+            for (DiskAttachment da : diskAttachments(vm)) {
+                if (da == null || da.getDisk() == null || StringUtils.isBlank(da.getDisk().getId())) {
+                    continue;
+                }
+                final Disk d = da.getDisk();
+                sb.append("<Entry>");
+                sb.append("<DiskId>").append(escapeText(d.getId())).append("</DiskId>");
+                sb.append("<OfferingId>").append(d.getDiskProfile().getId()).append("</OfferingId>");
+                sb.append("</Entry>");
+            }
+            sb.append("</DataDiskOfferingIdMap>");
+            if (MapUtils.isNotEmpty(vm.getDetails())) {
+                sb.append("<Details>");
+                for (Map.Entry<String, String> entry : vm.getDetails().entrySet()) {
+                    sb.append("<Detail>");
+                    sb.append("<Key>").append(escapeText(entry.getKey())).append("</Key>");
+                    sb.append("<Value>").append(escapeText(entry.getValue())).append("</Value>");
+                    sb.append("</Detail>");
+                }
+                sb.append("</Details>");
+            }
+            if (vo.getUserDataId() != null) {
+                sb.append("<UserDataId>").append(escapeText(vo.getUserDataUuid())).append("</UserDataId>");
+            }
+            if (vo.getAffinityGroupId() != null) {
+                sb.append("<AffinityGroupId>").append(escapeText(vo.getAffinityGroupUuid())).append("</AffinityGroupId>");
+            }
+            if (vm.getNics() != null && CollectionUtils.isNotEmpty(vm.getNics().getItems())) {
+                sb.append("<Nics>");
+                for (Nic nic : nics(vm)) {
+                    if (nic == null || StringUtils.isBlank(nic.getId())) {
+                        continue;
+                    }
+                    String networkId = nicNetworkId(nic);
+                    if (networkId == null) {
+                        continue;
+                    }
+                    sb.append("<Nic>");
+                    sb.append("<Id>").append(escapeText(nic.getId())).append("</Id>");
+                    sb.append("<NetworkId>").append(escapeText(networkId)).append("</NetworkId>");
+                    sb.append("<MACAddress>").append(escapeText(nicMac(nic))).append("</MACAddress>");
+                    sb.append("<Ip4Address>").append(escapeText(nicIp(nic, "v4"))).append("</Ip4Address>");
+                    sb.append("<Ip6Address>").append(escapeText(nicIp(nic, "v6"))).append("</Ip6Address>");
+                    sb.append("</Nic>");
+                }
+                sb.append("</Nics>");
+            }
+            if (StringUtils.isNotBlank(vm.getSshKeyPairNames())) {
+                sb.append("<SshKeyPairs>").append(escapeText(vm.getSshKeyPairNames())).append("</SshKeyPairs>");
+            }
+            if (StringUtils.isNotBlank(vm.getGuestOsId())) {
+                sb.append("<GuestOsId>").append(escapeText(vm.getGuestOsId())).append("</GuestOsId>");
+            }
+            if (StringUtils.isNotBlank(vm.getGuestOsName())) {
+                sb.append("<GuestOsName>").append(escapeText(vm.getGuestOsName())).append("</GuestOsName>");
+            }
+            sb.append("</CloudStack>");
+            sb.append("</Section>");
+        }
     }
 
     protected static String getVmConfigurationData(Vm vm) {
@@ -757,6 +770,18 @@ public class OvfXmlUtil {
         String userDataId = xpathString(xpath, metadataSection, ".//*[local-name()='UserDataId']/text()");
         if (StringUtils.isNotBlank(userDataId)) {
             vm.setUserDataId(userDataId);
+        }
+        String sshKeyPairs = xpathString(xpath, metadataSection, ".//*[local-name()='SshKeyPairs']/text()");
+        if (StringUtils.isNotBlank(sshKeyPairs)) {
+            vm.setSshKeyPairNames(sshKeyPairs);
+        }
+        String guestOsId = xpathString(xpath, metadataSection, ".//*[local-name()='GuestOsId']/text()");
+        if (StringUtils.isNotBlank(guestOsId)) {
+            vm.setGuestOsId(guestOsId);
+        }
+        String guestOsName = xpathString(xpath, metadataSection, ".//*[local-name()='GuestOsName']/text()");
+        if (StringUtils.isNotBlank(guestOsName)) {
+            vm.setGuestOsId(guestOsName);
         }
         final Map<String, String> details = new HashMap<>();
         try {

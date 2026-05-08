@@ -170,6 +170,9 @@ public final class UserVmJoinVOToVmConverter {
         dst.setAffinityGroupId(src.getAffinityGroupUuid());
         dst.setUserDataId(src.getUserDataUuid());
         dst.setDetails(details);
+        dst.setSshKeyPairNames(src.getKeypairNames());
+        dst.setGuestOsId(src.getGuestOsUuid());
+        dst.setGuestOsName(src.getGuestOsDisplayName());
 
         // Keep at last
         if (allContent) {

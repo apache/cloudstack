@@ -323,6 +323,7 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.LaunchPermissionVO;
@@ -5166,12 +5167,24 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                                   Map<Integer, String>> extraDhcpOptionMap, final Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap,
                                   Map<String, String> userVmOVFPropertiesMap, final boolean dynamicScalingEnabled, String vmType, final Long rootDiskOfferingId, String sshkeypairs,
                                   List<VmDiskInfo> dataDiskInfoList, Volume volume, Snapshot snapshot) throws InsufficientCapacityException {
+        Long guestOsId = getGuestOsIdIfNeeded(template);
         return commitUserVm(false, zone, null, null, template, hostName, displayName, owner,
                 diskOfferingId, diskSize, userData, userDataId, userDataDetails, isDisplayVm, keyboard,
-                accountId, userId, offering, isIso, null, sshPublicKeys, networkNicMap,
-                id, instanceName, uuidName, hypervisorType, customParameters,
-                extraDhcpOptionMap, dataDiskTemplateToDiskOfferingMap,
-                userVmOVFPropertiesMap, null, dynamicScalingEnabled, vmType, rootDiskOfferingId, sshkeypairs, dataDiskInfoList, volume, snapshot);
+                accountId, userId, offering, isIso, guestOsId, sshPublicKeys, networkNicMap, id, instanceName, uuidName,
+                hypervisorType, customParameters, extraDhcpOptionMap, dataDiskTemplateToDiskOfferingMap,
+                userVmOVFPropertiesMap, null, dynamicScalingEnabled, vmType, rootDiskOfferingId, sshkeypairs,
+                dataDiskInfoList, volume, snapshot);
+    }
+
+    protected Long getGuestOsIdIfNeeded(VirtualMachineTemplate template) {
+        if (!_itMgr.isBlankInstanceDefaultTemplate(template)) {
+            return null;
+        }
+        Object obj = CallContext.current().getContextParameter(ApiConstants.OS_ID);
+        if (!(obj instanceof GuestOS)) {
+            return null;
+        }
+        return ((GuestOS)obj).getId();
     }
 
     public void validateRootDiskResize(final HypervisorType hypervisorType, Long rootDiskSize, VMTemplateVO templateVO, UserVmVO vm, final Map<String, String> customParameters) throws InvalidParameterValueException
