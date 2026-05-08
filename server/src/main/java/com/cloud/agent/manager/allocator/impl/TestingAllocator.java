@@ -28,32 +28,24 @@ import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.host.dao.HostDao;
-import com.cloud.offering.ServiceOffering;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 public class TestingAllocator extends AdapterBase implements HostAllocator {
     @Inject
     HostDao _hostDao;
-    Long _computingHost;
     Long _storageHost;
     Long _routingHost;
 
     @Override
     public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, int returnUpTo) {
-        return allocateTo(vmProfile, plan, type, avoid, returnUpTo, true);
+        return allocateTo(vmProfile, plan, type, avoid, null, returnUpTo, true);
     }
 
     @Override
     public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, List<? extends Host> hosts, int returnUpTo,
-        boolean considerReservedCapacity) {
-        return allocateTo(vmProfile, plan, type, avoid, returnUpTo, considerReservedCapacity);
-    }
-
-    @Override
-    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, int returnUpTo, boolean considerReservedCapacity) {
-        List<Host> availableHosts = new ArrayList<Host>();
+                                 boolean considerReservedCapacity) {
+        List<Host> availableHosts = new ArrayList<>();
         Host host = null;
         if (type == Host.Type.Routing && _routingHost != null) {
             host = _hostDao.findById(_routingHost);
@@ -64,13 +56,6 @@ public class TestingAllocator extends AdapterBase implements HostAllocator {
             availableHosts.add(host);
         }
         return availableHosts;
-    }
-
-    @Override
-    public boolean isVirtualMachineUpgradable(VirtualMachine vm, ServiceOffering offering) {
-        // currently we do no special checks to rule out a VM being upgradable to an offering, so
-        // return true
-        return true;
     }
 
     @Override

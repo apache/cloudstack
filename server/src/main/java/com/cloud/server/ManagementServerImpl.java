@@ -1696,11 +1696,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         List<Host> suitableHosts = new ArrayList<>();
 
         for (final HostAllocator allocator : hostAllocators) {
-            if (CollectionUtils.isNotEmpty(compatibleHosts)) {
-                suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, compatibleHosts, HostAllocator.RETURN_UPTO_ALL, false);
-            } else {
-                suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, HostAllocator.RETURN_UPTO_ALL, false);
-            }
+            suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, compatibleHosts, HostAllocator.RETURN_UPTO_ALL, false);
 
             if (CollectionUtils.isNotEmpty(suitableHosts)) {
                 break;
@@ -1709,10 +1705,10 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
 
         _dpMgr.reorderHostsByPriority(plan.getHostPriorities(), suitableHosts);
 
-        if (suitableHosts.isEmpty()) {
+        if (CollectionUtils.isEmpty(suitableHosts)) {
             logger.warn("No suitable hosts found.");
         } else {
-            logger.debug("Hosts having capacity and suitable for migration: {}", suitableHosts);
+            logger.debug("Hosts having capacity and are suitable for migration: {}", suitableHosts);
         }
 
         // Only list hosts of the same architecture as the source Host in a multi-arch zone
@@ -3040,7 +3036,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         final String hypervisor = cmd.getHypervisor();
         final String hypervisorVersion = cmd.getHypervisorVersion();
 
-        //throw exception if hypervisor name is not passed, but version is
+        //throw exception if hypervisor name is not passed, but a version is
         if (hypervisorVersion != null && (hypervisor == null || hypervisor.isEmpty())) {
             throw new InvalidParameterValueException("Hypervisor version parameter cannot be used without specifying a hypervisor : XenServer, KVM or VMware");
         }
@@ -3058,7 +3054,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         final SearchCriteria<GuestOSHypervisorVO> sc = sb.create();
 
         if (id != null) {
-            sc.setParameters("id", SearchCriteria.Op.EQ, id);
+            sc.setParameters("id", id);
         }
 
         if (osTypeId != null) {
