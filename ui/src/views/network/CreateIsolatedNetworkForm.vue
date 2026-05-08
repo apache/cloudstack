@@ -521,7 +521,7 @@ export default {
       if (this.vpc !== null) { // from VPC section
         this.fetchNetworkOfferingData(true)
       } else { // from guest network section
-        var params = {
+        const params = {
           account: this.owner.account,
           projectid: this.owner.projectid,
           domainid: this.owner.domainid
@@ -531,7 +531,7 @@ export default {
           api('listVPCs', params).then(json => {
             const listVPCs = json.listvpcsresponse.vpc
             this.hasVPC = this.arrayHasItems(listVPCs)
-            if (this.hasVPC === false) {
+            if (!this.hasVPC) {
               this.fetchNetworkOfferingData(false)
             } else {
               this.fetchNetworkOfferingData()
@@ -544,7 +544,7 @@ export default {
     },
     fetchNetworkOfferingData (forVpc) {
       this.networkOfferingLoading = true
-      var params = {
+      const params = {
         zoneid: this.selectedZone.id,
         guestiptype: 'Isolated',
         state: 'Enabled'
@@ -587,7 +587,7 @@ export default {
     },
     fetchVpcData () {
       this.vpcLoading = true
-      var params = {
+      const params = {
         listAll: true,
         details: 'min'
       }
@@ -610,14 +610,14 @@ export default {
         const formRaw = toRaw(this.form)
         const values = this.handleRemoveFields(formRaw)
         this.actionLoading = true
-        var params = {
+        const params = {
           zoneId: this.selectedZone.id,
           name: values.name,
           displayText: values.displaytext,
           networkOfferingId: this.selectedNetworkOffering.id
         }
-        var usefulFields = ['gateway', 'netmask', 'cidrsize', 'startip', 'startipv4', 'endip', 'endipv4', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'sourcenatipaddress', 'externalid', 'vpcid', 'vlan', 'networkdomain']
-        for (var field of usefulFields) {
+        const usefulFields = ['gateway', 'netmask', 'cidrsize', 'startip', 'startipv4', 'endip', 'endipv4', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'sourcenatipaddress', 'externalid', 'vpcid', 'vlan', 'networkdomain']
+        for (const field of usefulFields) {
           if (this.isValidTextValueForKey(values, field)) {
             params[field] = values[field]
           }
