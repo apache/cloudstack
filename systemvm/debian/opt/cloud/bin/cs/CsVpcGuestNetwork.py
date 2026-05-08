@@ -107,11 +107,12 @@ class CsVpcGuestNetwork(CsDataBag):
             self.conf.append("    AdvSendAdvert on;")
             self.conf.append("    MinRtrAdvInterval 5;")
             self.conf.append("    MaxRtrAdvInterval 15;")
-            self.conf.append("    prefix %s" % full_addr)
-            self.conf.append("    {")
-            self.conf.append("        AdvOnLink on;")
-            self.conf.append("        AdvAutonomous on;")
-            self.conf.append("    };")
+            if entry['router_guest_ip6'] == entry['router_guest_ip6_gateway'] or self.cl.is_redundant():
+                self.conf.append("    prefix %s" % full_addr)
+                self.conf.append("    {")
+                self.conf.append("        AdvOnLink on;")
+                self.conf.append("        AdvAutonomous on;")
+                self.conf.append("    };")
             if 'dns6' in list(entry.keys()) and entry['dns6']:
                 for dns in entry['dns6'].split(","):
                     self.conf.append("    RDNSS %s" % dns)
