@@ -16,10 +16,9 @@
 // under the License.
 package org.apache.cloudstack.schedule.dao;
 
+import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
 import org.apache.cloudstack.schedule.ResourceScheduleDetailVO;
-
-import com.cloud.utils.db.GenericDao;
 
 public interface ResourceScheduleDetailsDao extends GenericDao<ResourceScheduleDetailVO, Long>, ResourceDetailsDao<ResourceScheduleDetailVO> {
 }

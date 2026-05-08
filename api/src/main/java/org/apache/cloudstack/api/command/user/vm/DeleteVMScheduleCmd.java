@@ -22,6 +22,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
@@ -31,7 +32,6 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VMScheduleResponse;
 import org.apache.cloudstack.schedule.ResourceScheduleManager;
-import org.apache.cloudstack.api.ApiCommandResourceType;
 
 import javax.inject.Inject;
 import java.util.Collections;
@@ -50,12 +50,14 @@ public class DeleteVMScheduleCmd extends BaseCmd {
             required = true,
             description = "ID of Instance")
     private Long vmId;
+
     @Parameter(name = ApiConstants.ID,
             type = CommandType.UUID,
             entityType = VMScheduleResponse.class,
             required = false,
             description = "ID of Instance schedule")
     private Long id;
+
     @Parameter(name = ApiConstants.IDS,
             type = CommandType.LIST,
             collectionType = CommandType.UUID,
@@ -64,9 +66,9 @@ public class DeleteVMScheduleCmd extends BaseCmd {
             description = "IDs of Instance schedule")
     private List<Long> ids;
 
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
+    /// //////////////////////////////////////////////////
+    /// //////////////// Accessors ///////////////////////
+    /// //////////////////////////////////////////////////
 
     public Long getId() {
         return id;
@@ -83,9 +85,9 @@ public class DeleteVMScheduleCmd extends BaseCmd {
         return vmId;
     }
 
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
+    /// //////////////////////////////////////////////////
+    /// //////////// API Implementation///////////////////
+    /// //////////////////////////////////////////////////
 
     @Override
     public void execute() {

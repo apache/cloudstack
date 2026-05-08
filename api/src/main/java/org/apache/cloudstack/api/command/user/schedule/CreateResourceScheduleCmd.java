@@ -16,23 +16,21 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.schedule;
 
-import java.util.Date;
-import java.util.Map;
-
-import javax.inject.Inject;
-
+import com.cloud.exception.InvalidParameterValueException;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.commons.lang3.EnumUtils;
-import com.cloud.exception.InvalidParameterValueException;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.TaggedResources;
 import org.apache.cloudstack.api.response.ResourceScheduleResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.schedule.ResourceScheduleManager;
+import org.apache.commons.lang3.EnumUtils;
+
+import javax.inject.Inject;
+import java.util.Date;
+import java.util.Map;
 
 @APICommand(name = "createResourceSchedule", description = "Create Resource Schedule", responseObject = ResourceScheduleResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.23.0",
@@ -72,8 +70,12 @@ public class CreateResourceScheduleCmd extends BaseCmd {
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, required = false, description = "Map of (key/value pairs) details for the schedule.")
     private Map details;
 
-    public String getResourceType() {
-        return resourceType;
+    public ApiCommandResourceType getResourceType() {
+        ApiCommandResourceType type = EnumUtils.getEnumIgnoreCase(ApiCommandResourceType.class, resourceType);
+        if (type == null) {
+            throw new InvalidParameterValueException("Unknown resource type: " + resourceType);
+        }
+        return type;
     }
 
     public String getResourceId() {
@@ -112,20 +114,12 @@ public class CreateResourceScheduleCmd extends BaseCmd {
     }
 
     public Map<String, String> getDetails() {
-        Map<String, String> detailsMap = null;
-        if (details != null && !details.isEmpty()) {
-            detailsMap = TaggedResources.parseKeyValueMap(details, true);
-        }
-        return detailsMap;
+        return convertDetailsToMap(details);
     }
 
     @Override
     public void execute() {
-        ApiCommandResourceType type = EnumUtils.getEnumIgnoreCase(ApiCommandResourceType.class, getResourceType());
-        if (type == null) {
-            throw new InvalidParameterValueException("Unknown resource type: " + getResourceType());
-        }
-        ResourceScheduleResponse response = resourceScheduleManager.createSchedule(type, getResourceId(),
+        ResourceScheduleResponse response = resourceScheduleManager.createSchedule(getResourceType(), getResourceId(),
                 getDescription(), getSchedule(), getTimeZone(), getAction(), getStartDate(), getEndDate(), getEnabled(), getDetails());
         response.setResponseName(getCommandName());
         setResponseObject(response);

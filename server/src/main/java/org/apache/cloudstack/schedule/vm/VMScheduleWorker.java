@@ -63,16 +63,15 @@ public class VMScheduleWorker extends BaseScheduleWorker {
     public VMScheduleAction parseAction(String actionName) {
         VMScheduleAction action = EnumUtils.getEnumIgnoreCase(VMScheduleAction.class, actionName);
         if (action == null) {
-            throw new InvalidParameterValueException("Invalid action for VirtualMachine schedule: " + actionName +
-                    ". Supported actions: " + Arrays.toString(VMScheduleAction.values()));
+            throw new InvalidParameterValueException(String.format(
+                    "Invalid action for VirtualMachine schedule: %s. Supported actions: %s",
+                    actionName, Arrays.toString(VMScheduleAction.values())));
         }
         return action;
     }
 
     @Override
-    public void validateDetails(ResourceSchedule.Action action, Map<String, String> details) {
-        // No special details required/validated for VM schedules right now.
-    }
+    public void validateDetails(ResourceSchedule.Action action, Map<String, String> details) {}
 
     @Override
     protected Long processJob(ResourceScheduledJobVO job) {
@@ -88,7 +87,7 @@ public class VMScheduleWorker extends BaseScheduleWorker {
             return null;
         }
 
-        VMScheduleAction action = VMScheduleAction.valueOf(job.getActionName());
+        VMScheduleAction action = parseAction(job.getActionName());
         final long eventId = ActionEventUtils.onCompletedActionEvent(
                 User.UID_SYSTEM, vm.getAccountId(), null,
                 action.getEventType(), true,
@@ -97,11 +96,16 @@ public class VMScheduleWorker extends BaseScheduleWorker {
 
         if (vm.getState() == VirtualMachine.State.Running) {
             switch (action) {
-                case STOP:        return submitStopVMJob(vm, false, eventId);
-                case FORCE_STOP:  return submitStopVMJob(vm, true, eventId);
-                case REBOOT:      return submitRebootVMJob(vm, false, eventId);
-                case FORCE_REBOOT: return submitRebootVMJob(vm, true, eventId);
-                default: break;
+                case STOP:
+                    return submitStopVMJob(vm, false, eventId);
+                case FORCE_STOP:
+                    return submitStopVMJob(vm, true, eventId);
+                case REBOOT:
+                    return submitRebootVMJob(vm, false, eventId);
+                case FORCE_REBOOT:
+                    return submitRebootVMJob(vm, true, eventId);
+                default:
+                    break;
             }
         } else if (vm.getState() == VirtualMachine.State.Stopped && action == VMScheduleAction.START) {
             return submitStartVMJob(vm, eventId);

@@ -238,6 +238,7 @@ known_categories = {
     'removeQuarantinedIp': 'IP Quarantine',
     'Shutdown': 'Maintenance',
     'Maintenance': 'Maintenance',
+    'ResourceSchedule': 'Resource Schedule',
     'addObjectStoragePool': 'Object Store',
     'listObjectStoragePools': 'Object Store',
     'deleteObjectStoragePool': 'Object Store',

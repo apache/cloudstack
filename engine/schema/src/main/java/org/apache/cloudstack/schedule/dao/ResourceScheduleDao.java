@@ -34,7 +34,7 @@ public interface ResourceScheduleDao extends GenericDao<ResourceScheduleVO, Long
     long removeAllSchedulesForResource(ApiCommandResourceType resourceType, long resourceId);
 
     Pair<List<ResourceScheduleVO>, Integer> searchAndCount(List<Long> ids, ApiCommandResourceType resourceType, Long resourceId,
-            String action, Boolean enabled, Long offset, Long limit);
+                                                           String action, Boolean enabled, Long offset, Long limit);
 
     SearchCriteria<ResourceScheduleVO> getSearchCriteriaForResource(ApiCommandResourceType resourceType, long resourceId);
 }

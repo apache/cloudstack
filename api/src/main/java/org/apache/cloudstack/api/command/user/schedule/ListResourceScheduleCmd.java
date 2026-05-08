@@ -16,21 +16,20 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.schedule;
 
-import java.util.List;
-
-import javax.inject.Inject;
-
+import com.cloud.exception.InvalidParameterValueException;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.commons.lang3.EnumUtils;
-import com.cloud.exception.InvalidParameterValueException;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ResourceScheduleResponse;
 import org.apache.cloudstack.schedule.ResourceScheduleManager;
+import org.apache.commons.lang3.EnumUtils;
+
+import javax.inject.Inject;
+import java.util.List;
 
 @APICommand(name = "listResourceSchedule", description = "List Resource Schedules", responseObject = ResourceScheduleResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.23.0",
@@ -66,8 +65,12 @@ public class ListResourceScheduleCmd extends BaseListCmd {
         return ids;
     }
 
-    public String getResourceType() {
-        return resourceType;
+    public ApiCommandResourceType getResourceType() {
+        ApiCommandResourceType type = EnumUtils.getEnumIgnoreCase(ApiCommandResourceType.class, resourceType);
+        if (type == null) {
+            throw new InvalidParameterValueException("Unknown resource type: " + resourceType);
+        }
+        return type;
     }
 
     public String getResourceId() {
@@ -84,14 +87,10 @@ public class ListResourceScheduleCmd extends BaseListCmd {
 
     @Override
     public void execute() {
-        ApiCommandResourceType type = null;
-        if (getResourceType() != null) {
-            type = EnumUtils.getEnumIgnoreCase(ApiCommandResourceType.class, getResourceType());
-            if (type == null) {
-                throw new InvalidParameterValueException("Unknown resource type: " + getResourceType());
-            }
-        }
-        ListResponse<ResourceScheduleResponse> response = resourceScheduleManager.listSchedule(getId(), getIds(), type, getResourceId(), getAction(), getEnabled(), getStartIndex(), getPageSizeVal());
+        ListResponse<ResourceScheduleResponse> response = resourceScheduleManager.listSchedule(
+                getId(), getIds(), getResourceType(), getResourceId(), getAction(), getEnabled(),
+                getStartIndex(), getPageSizeVal()
+        );
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }

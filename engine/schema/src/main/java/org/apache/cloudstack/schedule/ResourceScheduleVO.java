@@ -89,7 +89,7 @@ public class ResourceScheduleVO implements ResourceSchedule {
     }
 
     public ResourceScheduleVO(ApiCommandResourceType resourceType, long resourceId, String description, String schedule,
-            String timeZone, String action, Date startDate, Date endDate, boolean enabled) {
+                              String timeZone, String action, Date startDate, Date endDate, boolean enabled) {
         uuid = UUID.randomUUID().toString();
         this.resourceType = resourceType;
         this.resourceId = resourceId;

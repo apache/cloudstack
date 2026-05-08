@@ -36,6 +36,7 @@ import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.cloudstack.schedule.dao.ResourceScheduleDao;
 import org.apache.cloudstack.schedule.dao.ResourceScheduledJobDao;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.springframework.scheduling.support.CronExpression;
 
@@ -66,8 +67,10 @@ public abstract class BaseScheduleWorker extends ManagerBase {
 
     @Inject
     protected ResourceScheduleDao resourceScheduleDao;
+
     @Inject
     protected ResourceScheduledJobDao resourceScheduledJobDao;
+
     @Inject
     protected AsyncJobManager asyncJobManager;
 
@@ -83,10 +86,14 @@ public abstract class BaseScheduleWorker extends ManagerBase {
         asyncJobDispatcher = dispatcher;
     }
 
-    /** The API resource type this worker handles (e.g. {@code ApiCommandResourceType.VirtualMachine}). */
+    /**
+     * The API resource type this worker handles (e.g. {@code ApiCommandResourceType.VirtualMachine}).
+     */
     public abstract ApiCommandResourceType getApiResourceType();
 
-    /** Convenience method returning {@code getApiResourceType().name()} for use in DAO queries, locks, and logging. */
+    /**
+     * Convenience method returning {@code getApiResourceType().name()} for use in DAO queries, locks, and logging.
+     */
     protected final String getResourceTypeName() {
         return getApiResourceType().name();
     }
@@ -258,7 +265,7 @@ public abstract class BaseScheduleWorker extends ManagerBase {
     }
 
     public void removeScheduledJobs(List<Long> scheduleIds) {
-        if (scheduleIds == null || scheduleIds.isEmpty()) {
+        if (CollectionUtils.isEmpty(scheduleIds)) {
             return;
         }
         int removed = resourceScheduledJobDao.expungeJobsForSchedules(scheduleIds, new Date());
@@ -312,7 +319,7 @@ public abstract class BaseScheduleWorker extends ManagerBase {
     }
 
     private void logSkippedJobs(Map<Long, ResourceScheduledJobVO> executed,
-                                 Map<Long, List<ResourceScheduledJobVO>> skipped) {
+                                Map<Long, List<ResourceScheduledJobVO>> skipped) {
         for (Map.Entry<Long, List<ResourceScheduledJobVO>> entry : skipped.entrySet()) {
             long resourceId = entry.getKey();
             ResourceScheduledJobVO running = executed.get(resourceId);
@@ -333,16 +340,18 @@ public abstract class BaseScheduleWorker extends ManagerBase {
     // Subclass helpers
     // -------------------------------------------------------------------------
 
-    /** Returns true when the given resource ID is valid and eligible for scheduling. */
     public abstract boolean isResourceValid(long resourceId);
 
-    /** Returns the account that owns the given resource (for ACL / event attribution). */
     public abstract long getEntityOwnerId(long resourceId);
 
-    /** Parses an action string into the resource-type-specific typed action constant. Throws InvalidParameterValueException for unknown values. */
+    /**
+     * Parses an action string into the resource-type-specific typed action constant. Throws InvalidParameterValueException for unknown values.
+     */
     public abstract ResourceSchedule.Action parseAction(String action);
 
-    /** Validates action-specific detail parameters. Throws InvalidParameterValueException on failure. */
+    /**
+     * Validates action-specific detail parameters. Throws InvalidParameterValueException on failure.
+     */
     public abstract void validateDetails(ResourceSchedule.Action action, Map<String, String> details);
 
     /**

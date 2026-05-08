@@ -33,10 +33,8 @@ public interface ResourceSchedule extends Identity, InternalIdentity {
      * and {@link #getEventType()} without knowing the concrete type.
      */
     interface Action {
-        /** Enum constant name (START, STOP, SCALE_UP, …). */
         String name();
 
-        /** CloudStack event type string used for audit / quota attribution. */
         String getEventType();
     }
 
@@ -50,7 +48,6 @@ public interface ResourceSchedule extends Identity, InternalIdentity {
 
     String getTimeZone();
 
-    /** Returns the raw action name stored in the DB (e.g. "START", "SCALE_UP"). */
     String getActionName();
 
     boolean getEnabled();

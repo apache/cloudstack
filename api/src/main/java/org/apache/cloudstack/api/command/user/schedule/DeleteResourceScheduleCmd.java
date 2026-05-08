@@ -16,15 +16,10 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.schedule;
 
-import java.util.List;
-
-import javax.inject.Inject;
-
+import com.cloud.exception.InvalidParameterValueException;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.commons.lang3.EnumUtils;
-import com.cloud.exception.InvalidParameterValueException;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -32,6 +27,10 @@ import org.apache.cloudstack.api.response.ResourceScheduleResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.schedule.ResourceScheduleManager;
+import org.apache.commons.lang3.EnumUtils;
+
+import javax.inject.Inject;
+import java.util.List;
 
 @APICommand(name = "deleteResourceSchedule", description = "Delete Resource Schedule", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.23.0",
@@ -53,8 +52,12 @@ public class DeleteResourceScheduleCmd extends BaseCmd {
     @Parameter(name = ApiConstants.IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = ResourceScheduleResponse.class, required = false, description = "comma separated list of schedule ids to be deleted")
     private List<Long> ids;
 
-    public String getResourceType() {
-        return resourceType;
+    public ApiCommandResourceType getResourceType() {
+        ApiCommandResourceType type = EnumUtils.getEnumIgnoreCase(ApiCommandResourceType.class, resourceType);
+        if (type == null) {
+            throw new InvalidParameterValueException("Unknown resource type: " + resourceType);
+        }
+        return type;
     }
 
     public String getResourceId() {
@@ -71,11 +74,7 @@ public class DeleteResourceScheduleCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        ApiCommandResourceType type = EnumUtils.getEnumIgnoreCase(ApiCommandResourceType.class, getResourceType());
-        if (type == null) {
-            throw new InvalidParameterValueException("Unknown resource type: " + getResourceType());
-        }
-        resourceScheduleManager.removeSchedule(type, getResourceId(), getId(), getIds());
+        resourceScheduleManager.removeSchedule(getResourceType(), getResourceId(), getId(), getIds());
         SuccessResponse response = new SuccessResponse(getCommandName());
         setResponseObject(response);
     }

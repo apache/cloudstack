@@ -26,6 +26,7 @@ import com.cloud.utils.db.SearchCriteria;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.schedule.ResourceScheduleVO;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
@@ -35,9 +36,7 @@ import java.util.List;
 public class ResourceScheduleDaoImpl extends GenericDaoBase<ResourceScheduleVO, Long> implements ResourceScheduleDao {
 
     private final SearchBuilder<ResourceScheduleVO> activeScheduleSearch;
-    private final SearchBuilder<ResourceScheduleVO> scheduleSearchByResourceAndIds;
-    private final SearchBuilder<ResourceScheduleVO> scheduleSearchByResource;
-    private final SearchBuilder<ResourceScheduleVO> scheduleSearch;
+    private final SearchBuilder<ResourceScheduleVO> allSearch;
 
     static final String RESOURCE_TYPE = "resourceType";
     static final String RESOURCE_ID = "resourceId";
@@ -53,24 +52,13 @@ public class ResourceScheduleDaoImpl extends GenericDaoBase<ResourceScheduleVO, 
         activeScheduleSearch.cp();
         activeScheduleSearch.done();
 
-        scheduleSearchByResourceAndIds = createSearchBuilder();
-        scheduleSearchByResourceAndIds.and(ApiConstants.ID, scheduleSearchByResourceAndIds.entity().getId(), SearchCriteria.Op.IN);
-        scheduleSearchByResourceAndIds.and(RESOURCE_TYPE, scheduleSearchByResourceAndIds.entity().getResourceType(), SearchCriteria.Op.EQ);
-        scheduleSearchByResourceAndIds.and(RESOURCE_ID, scheduleSearchByResourceAndIds.entity().getResourceId(), SearchCriteria.Op.EQ);
-        scheduleSearchByResourceAndIds.done();
-
-        scheduleSearchByResource = createSearchBuilder();
-        scheduleSearchByResource.and(RESOURCE_TYPE, scheduleSearchByResource.entity().getResourceType(), SearchCriteria.Op.EQ);
-        scheduleSearchByResource.and(RESOURCE_ID, scheduleSearchByResource.entity().getResourceId(), SearchCriteria.Op.EQ);
-        scheduleSearchByResource.done();
-
-        scheduleSearch = createSearchBuilder();
-        scheduleSearch.and(ApiConstants.ID, scheduleSearch.entity().getId(), SearchCriteria.Op.IN);
-        scheduleSearch.and(RESOURCE_TYPE, scheduleSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
-        scheduleSearch.and(RESOURCE_ID, scheduleSearch.entity().getResourceId(), SearchCriteria.Op.EQ);
-        scheduleSearch.and(ApiConstants.ACTION, scheduleSearch.entity().getActionName(), SearchCriteria.Op.EQ);
-        scheduleSearch.and(ApiConstants.ENABLED, scheduleSearch.entity().getEnabled(), SearchCriteria.Op.EQ);
-        scheduleSearch.done();
+        allSearch = createSearchBuilder();
+        allSearch.and(ApiConstants.ID, allSearch.entity().getId(), SearchCriteria.Op.IN);
+        allSearch.and(RESOURCE_TYPE, allSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
+        allSearch.and(RESOURCE_ID, allSearch.entity().getResourceId(), SearchCriteria.Op.EQ);
+        allSearch.and(ApiConstants.ACTION, allSearch.entity().getActionName(), SearchCriteria.Op.EQ);
+        allSearch.and(ApiConstants.ENABLED, allSearch.entity().getEnabled(), SearchCriteria.Op.EQ);
+        allSearch.done();
     }
 
     @Override
@@ -84,8 +72,10 @@ public class ResourceScheduleDaoImpl extends GenericDaoBase<ResourceScheduleVO, 
 
     @Override
     public long removeSchedulesForResourceAndIds(ApiCommandResourceType resourceType, long resourceId, List<Long> ids) {
-        SearchCriteria<ResourceScheduleVO> sc = scheduleSearchByResourceAndIds.create();
-        sc.setParameters(ApiConstants.ID, ids.toArray());
+        SearchCriteria<ResourceScheduleVO> sc = allSearch.create();
+        if (CollectionUtils.isNotEmpty(ids)) {
+            sc.setParameters(ApiConstants.ID, ids.toArray());
+        }
         sc.setParameters(RESOURCE_TYPE, resourceType);
         sc.setParameters(RESOURCE_ID, resourceId);
         return remove(sc);
@@ -93,7 +83,7 @@ public class ResourceScheduleDaoImpl extends GenericDaoBase<ResourceScheduleVO, 
 
     @Override
     public long removeAllSchedulesForResource(ApiCommandResourceType resourceType, long resourceId) {
-        SearchCriteria<ResourceScheduleVO> sc = scheduleSearchByResource.create();
+        SearchCriteria<ResourceScheduleVO> sc = allSearch.create();
         sc.setParameters(RESOURCE_TYPE, resourceType);
         sc.setParameters(RESOURCE_ID, resourceId);
         return remove(sc);
@@ -101,9 +91,9 @@ public class ResourceScheduleDaoImpl extends GenericDaoBase<ResourceScheduleVO, 
 
     @Override
     public Pair<List<ResourceScheduleVO>, Integer> searchAndCount(List<Long> ids, ApiCommandResourceType resourceType, Long resourceId,
-            String action, Boolean enabled, Long offset, Long limit) {
-        SearchCriteria<ResourceScheduleVO> sc = scheduleSearch.create();
-        if (ids != null && !ids.isEmpty()) {
+                                                                  String action, Boolean enabled, Long offset, Long limit) {
+        SearchCriteria<ResourceScheduleVO> sc = allSearch.create();
+        if (CollectionUtils.isNotEmpty(ids)) {
             sc.setParameters(ApiConstants.ID, ids.toArray());
         }
         sc.setParametersIfNotNull(ApiConstants.ENABLED, enabled);
@@ -116,7 +106,7 @@ public class ResourceScheduleDaoImpl extends GenericDaoBase<ResourceScheduleVO, 
 
     @Override
     public SearchCriteria<ResourceScheduleVO> getSearchCriteriaForResource(ApiCommandResourceType resourceType, long resourceId) {
-        SearchCriteria<ResourceScheduleVO> sc = scheduleSearchByResource.create();
+        SearchCriteria<ResourceScheduleVO> sc = allSearch.create();
         sc.setParameters(RESOURCE_TYPE, resourceType);
         sc.setParameters(RESOURCE_ID, resourceId);
         return sc;

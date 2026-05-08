@@ -21,9 +21,9 @@ package org.apache.cloudstack.api.command.user.vm;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.vm.VirtualMachine;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.response.ResourceScheduleResponse;
 import org.apache.cloudstack.api.response.VMScheduleResponse;
-import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.schedule.ResourceSchedule;
 import org.apache.cloudstack.schedule.ResourceScheduleManager;
 import org.junit.After;
@@ -38,8 +38,10 @@ import org.mockito.MockitoAnnotations;
 public class UpdateVMScheduleCmdTest {
     @Mock
     public ResourceScheduleManager resourceScheduleManager;
+
     @Mock
     public EntityManager entityManager;
+
     @InjectMocks
     private UpdateVMScheduleCmd updateVMScheduleCmd = new UpdateVMScheduleCmd();
 

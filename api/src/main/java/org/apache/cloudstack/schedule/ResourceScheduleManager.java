@@ -18,26 +18,26 @@
  */
 package org.apache.cloudstack.schedule;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ResourceScheduleResponse;
+
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.cloudstack.api.ApiCommandResourceType;
-
-import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.ResourceScheduleResponse;
-
 public interface ResourceScheduleManager {
 
-    ResourceScheduleResponse createSchedule(ApiCommandResourceType resourceType, String resourceUuid, String description,
-        String schedule, String timeZone, String action, Date startDate, Date endDate,
-        boolean enabled, Map<String, String> details);
+    ResourceScheduleResponse createSchedule(ApiCommandResourceType resourceType, String resourceUuid,
+                                            String description, String schedule, String timeZone, String action,
+                                            Date startDate, Date endDate, boolean enabled, Map<String, String> details);
 
-    ResourceScheduleResponse updateSchedule(Long id, String description, String schedule,
-        String timeZone, Date startDate, Date endDate, Boolean enabled, Map<String, String> details);
+    ResourceScheduleResponse updateSchedule(Long id, String description, String schedule, String timeZone,
+                                            Date startDate, Date endDate, Boolean enabled, Map<String, String> details);
 
     ListResponse<ResourceScheduleResponse> listSchedule(Long id, List<Long> ids, ApiCommandResourceType resourceType,
-        String resourceUuid, String action, Boolean enabled, Long startIndex, Long pageSize);
+                                                        String resourceUuid, String action, Boolean enabled,
+                                                        Long startIndex, Long pageSize);
 
     Long removeSchedule(ApiCommandResourceType resourceType, String resourceUuid, Long id, List<Long> ids);
 

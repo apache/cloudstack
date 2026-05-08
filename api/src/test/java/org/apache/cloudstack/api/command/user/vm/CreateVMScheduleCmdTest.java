@@ -36,8 +36,10 @@ import org.mockito.MockitoAnnotations;
 public class CreateVMScheduleCmdTest {
     @Mock
     public ResourceScheduleManager resourceScheduleManager;
+
     @Mock
     public EntityManager entityManager;
+
     @InjectMocks
     private CreateVMScheduleCmd createVMScheduleCmd = new CreateVMScheduleCmd();
 

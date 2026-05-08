@@ -36,6 +36,7 @@ import org.mockito.MockitoAnnotations;
 public class DeleteVMScheduleCmdTest {
     @Mock
     public ResourceScheduleManager resourceScheduleManager;
+
     @Mock
     public EntityManager entityManager;
 

@@ -16,14 +16,14 @@
 // under the License.
 package org.apache.cloudstack.schedule;
 
+import org.apache.cloudstack.api.ResourceDetail;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
-
-import org.apache.cloudstack.api.ResourceDetail;
 
 @Entity
 @Table(name = "resource_schedule_details")

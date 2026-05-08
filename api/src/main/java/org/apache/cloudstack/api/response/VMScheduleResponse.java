@@ -119,5 +119,7 @@ public class VMScheduleResponse extends BaseResponse {
         this.endDate = endDate;
     }
 
-    public void setCreated(Date created) { this.created = created; }
+    public void setCreated(Date created) {
+        this.created = created;
+    }
 }

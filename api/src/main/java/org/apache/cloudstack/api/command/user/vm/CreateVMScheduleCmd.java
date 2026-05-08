@@ -22,6 +22,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -29,9 +30,6 @@ import org.apache.cloudstack.api.response.ResourceScheduleResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VMScheduleResponse;
 import org.apache.cloudstack.schedule.ResourceScheduleManager;
-import org.apache.cloudstack.schedule.vm.VMScheduleAction;
-import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.commons.lang3.EnumUtils;
 
 import javax.inject.Inject;
 import java.util.Date;
@@ -95,9 +93,9 @@ public class CreateVMScheduleCmd extends BaseCmd {
             description = "Enable Instance schedule. Defaults to true")
     private Boolean enabled;
 
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
+    /// //////////////////////////////////////////////////
+    /// //////////////// Accessors ///////////////////////
+    /// //////////////////////////////////////////////////
 
     public Long getVmId() {
         return vmId;
@@ -134,26 +132,17 @@ public class CreateVMScheduleCmd extends BaseCmd {
         return enabled;
     }
 
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
+    /// //////////////////////////////////////////////////
+    /// //////////// API Implementation///////////////////
+    /// //////////////////////////////////////////////////
 
     @Override
     public void execute() {
-        String actionStr = null;
-        if (getAction() != null) {
-            VMScheduleAction vmAction = EnumUtils.getEnumIgnoreCase(VMScheduleAction.class, getAction());
-            if (vmAction == null) {
-                throw new InvalidParameterValueException(String.format("Invalid value for action: %s", getAction()));
-            }
-            actionStr = vmAction.name();
-        }
-
         String resourceIdStr = getVmId() != null ? String.valueOf(getVmId()) : null;
 
         ResourceScheduleResponse scheduleResponse = resourceScheduleManager.createSchedule(
                 ApiCommandResourceType.VirtualMachine,
-                resourceIdStr, getDescription(), getSchedule(), getTimeZone(), actionStr,
+                resourceIdStr, getDescription(), getSchedule(), getTimeZone(), getAction(),
                 getStartDate(), getEndDate(), getEnabled(), null);
         VMScheduleResponse response = new VMScheduleResponse(scheduleResponse);
         response.setResponseName(getCommandName());

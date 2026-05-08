@@ -22,12 +22,12 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ResourceScheduleResponse;
 import org.apache.cloudstack.api.response.VMScheduleResponse;
-import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.schedule.ResourceSchedule;
 import org.apache.cloudstack.schedule.ResourceScheduleManager;
 
@@ -86,9 +86,9 @@ public class UpdateVMScheduleCmd extends BaseCmd {
             description = "Enable Instance schedule")
     private Boolean enabled;
 
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
+    /// //////////////////////////////////////////////////
+    /// //////////////// Accessors ///////////////////////
+    /// //////////////////////////////////////////////////
 
     public Long getId() {
         return id;
@@ -118,9 +118,9 @@ public class UpdateVMScheduleCmd extends BaseCmd {
         return enabled;
     }
 
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
+    /// //////////////////////////////////////////////////
+    /// //////////// API Implementation///////////////////
+    /// //////////////////////////////////////////////////
 
     @Override
     public void execute() {
@@ -138,6 +138,9 @@ public class UpdateVMScheduleCmd extends BaseCmd {
             throw new InvalidParameterValueException(String.format("Unable to find VM schedule by id=%d", getId()));
         }
         VirtualMachine vm = _entityMgr.findById(VirtualMachine.class, schedule.getResourceId());
+        if (vm == null) {
+            throw new InvalidParameterValueException(String.format("Unable to find VM schedule by id=%d", getId()));
+        }
         return vm.getAccountId();
     }
 }

@@ -39,8 +39,8 @@ public class ResourceScheduledJobDaoImpl extends GenericDaoBase<ResourceSchedule
     private final SearchBuilder<ResourceScheduledJobVO> expungeJobForScheduleSearch;
     private final SearchBuilder<ResourceScheduledJobVO> scheduleAndTimestampSearch;
 
-    static final String SCHEDULED_TIMESTAMP = "scheduled_timestamp";
-    static final String SCHEDULE_ID = "schedule_id";
+    static final String SCHEDULED_TIMESTAMP = "scheduledTimestamp";
+    static final String SCHEDULE_ID = "scheduleId";
     static final String RESOURCE_TYPE = "resourceType";
 
     public ResourceScheduledJobDaoImpl() {

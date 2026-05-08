@@ -89,9 +89,9 @@ public class VMScheduleWorkerTest {
         closeable = MockitoAnnotations.openMocks(this);
         actionEventUtilsMocked = Mockito.mockStatic(ActionEventUtils.class);
         Mockito.when(ActionEventUtils.onScheduledActionEvent(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(),
-                       Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyBoolean(),
-                       Mockito.anyLong()))
-               .thenReturn(1L);
+                        Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyBoolean(),
+                        Mockito.anyLong()))
+                .thenReturn(1L);
         Mockito.when(ActionEventUtils.onCompletedActionEvent(Mockito.anyLong(), Mockito.anyLong(), Mockito.any(),
                 Mockito.anyString(), Mockito.anyBoolean(),
                 Mockito.anyString(),

@@ -38,6 +38,7 @@ import java.util.Collections;
 public class ListVMScheduleCmdTest {
     @Mock
     public ResourceScheduleManager resourceScheduleManager;
+
     @InjectMocks
     private ListVMScheduleCmd listVMScheduleCmd = new ListVMScheduleCmd();
     private AutoCloseable closeable;

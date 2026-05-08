@@ -201,3 +201,6 @@ CREATE TABLE IF NOT EXISTS `cloud`.`resource_schedule_details` (
 UPDATE `cloud`.`event` SET `type` = 'SCHEDULE.CREATE' WHERE `type` = 'VM.SCHEDULE.CREATE';
 UPDATE `cloud`.`event` SET `type` = 'SCHEDULE.UPDATE' WHERE `type` = 'VM.SCHEDULE.UPDATE';
 UPDATE `cloud`.`event` SET `type` = 'SCHEDULE.DELETE' WHERE `type` = 'VM.SCHEDULE.DELETE';
+
+-- Step 5: Rename the global configuration key for the scheduler
+UPDATE `cloud`.`configuration` SET name='scheduler.jobs.expire.interval' WHERE name='vmscheduler.jobs.expire.interval';

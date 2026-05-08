@@ -16,19 +16,21 @@
 // under the License.
 package org.apache.cloudstack.schedule;
 
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.TimeZone;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
+import com.cloud.api.query.MutualExclusiveIdsManagerBase;
+import com.cloud.event.ActionEvent;
+import com.cloud.event.EventTypes;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.user.AccountManager;
+import com.cloud.utils.DateUtil;
+import com.cloud.utils.Pair;
+import com.cloud.utils.component.PluggableService;
+import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.api.command.user.schedule.CreateResourceScheduleCmd;
 import org.apache.cloudstack.api.command.user.schedule.DeleteResourceScheduleCmd;
 import org.apache.cloudstack.api.command.user.schedule.ListResourceScheduleCmd;
@@ -42,36 +44,36 @@ import org.apache.cloudstack.api.response.ResourceScheduleResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.schedule.dao.ResourceScheduleDetailsDao;
 import org.apache.cloudstack.schedule.dao.ResourceScheduleDao;
+import org.apache.cloudstack.schedule.dao.ResourceScheduleDetailsDao;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.scheduling.support.CronExpression;
 
-import com.cloud.api.query.MutualExclusiveIdsManagerBase;
-import com.cloud.event.ActionEvent;
-import com.cloud.event.EventTypes;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.user.AccountManager;
-import com.cloud.utils.DateUtil;
-import com.cloud.utils.Pair;
-import com.cloud.utils.component.PluggableService;
-import com.cloud.utils.db.EntityManager;
-import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.TransactionCallback;
-import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.cloudstack.api.InternalIdentity;
-import org.apache.cloudstack.api.Identity;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.TimeZone;
+import java.util.stream.Collectors;
 
 public class ResourceScheduleManagerImpl extends MutualExclusiveIdsManagerBase implements ResourceScheduleManager, PluggableService, Configurable {
 
     @Inject
     private ResourceScheduleDao resourceScheduleDao;
+
     @Inject
     private ResourceScheduleDetailsDao resourceScheduleDetailsDao;
+
     @Inject
     private AccountManager accountManager;
+
     @Inject
     private EntityManager entityManager;
 
@@ -120,7 +122,7 @@ public class ResourceScheduleManagerImpl extends MutualExclusiveIdsManagerBase i
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {
+        return new ConfigKey<?>[]{
                 BaseScheduleWorker.ScheduledJobExpireInterval
         };
     }
@@ -254,33 +256,19 @@ public class ResourceScheduleManagerImpl extends MutualExclusiveIdsManagerBase i
     public ListResponse<ResourceScheduleResponse> listSchedule(Long id, List<Long> ids, ApiCommandResourceType resourceType,
                                                                String resourceUuid, String action, Boolean enabled,
                                                                Long startIndex, Long pageSize) {
-        List<Long> scheduleIds = getIdsListFromCmd(id, ids);
-        if (!scheduleIds.isEmpty() && resourceType == null) {
-            throw new InvalidParameterValueException("resourcetype is required when filtering by id or ids");
+        Long internalResourceId = null;
+        BaseScheduleWorker worker = getWorker(resourceType);
+        if (StringUtils.isBlank(resourceUuid)) {
+            throw new InvalidParameterValueException("Resource ID must be specified");
+        } else {
+            internalResourceId = resolveResourceId(resourceUuid, worker.getApiResourceType().getAssociatedClass());
+            long ownerId = worker.getEntityOwnerId(internalResourceId);
+            accountManager.checkAccess(CallContext.current().getCallingAccount(), null, false, accountManager.getAccount(ownerId));
         }
 
-        Long internalResourceId = null;
-        if (resourceType != null) {
-            BaseScheduleWorker worker = getWorker(resourceType);
-            if (StringUtils.isNotBlank(resourceUuid)) {
-                internalResourceId = resolveResourceId(resourceUuid, worker.getApiResourceType().getAssociatedClass());
-                long ownerId = worker.getEntityOwnerId(internalResourceId);
-                accountManager.checkAccess(CallContext.current().getCallingAccount(), null, false, accountManager.getAccount(ownerId));
-            }
-            for (Long schedId : scheduleIds) {
-                ResourceScheduleVO scheduleVO = resourceScheduleDao.findById(schedId);
-                if (scheduleVO == null) {
-                    throw new InvalidParameterValueException("Schedule " + schedId + " not found");
-                }
-                if (!resourceType.equals(scheduleVO.getResourceType())) {
-                    throw new InvalidParameterValueException("Schedule " + schedId + " is not of resource type " + resourceType);
-                }
-                long ownerId = worker.getEntityOwnerId(scheduleVO.getResourceId());
-                accountManager.checkAccess(CallContext.current().getCallingAccount(), null, false, accountManager.getAccount(ownerId));
-            }
-            if (action != null) {
-                action = worker.parseAction(action).name();
-            }
+        List<Long> scheduleIds = getIdsListFromCmd(id, ids);
+        if (action != null) {
+            action = worker.parseAction(action).name();
         }
 
         Pair<List<ResourceScheduleVO>, Integer> result = resourceScheduleDao.searchAndCount(
@@ -442,22 +430,15 @@ public class ResourceScheduleManagerImpl extends MutualExclusiveIdsManagerBase i
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, false, accountManager.getAccount(ownerId));
 
         List<Long> ids = getIdsListFromCmd(id, idsList);
-
-        if (ids.isEmpty()) {
-            throw new InvalidParameterValueException("Either id or ids parameter must be specified");
-        }
-
+        Pair<List<ResourceScheduleVO>, Integer> result = resourceScheduleDao.searchAndCount(ids, resourceType, internalResourceId, null, null, null, null);
+        List<ResourceScheduleVO> schedulesToRemove = result.first();
+        List<Long> scheduleIdsToRemove = schedulesToRemove.stream().map(ResourceScheduleVO::getId).collect(Collectors.toList());
         return Transaction.execute((TransactionCallback<Long>) status -> {
-            worker.removeScheduledJobs(ids);
-
-            for (Long schedId : ids) {
-                resourceScheduleDetailsDao.removeDetails(schedId);
-            }
+            worker.removeScheduledJobs(scheduleIdsToRemove);
 
             CallContext.current().setEventResourceId(internalResourceId);
             CallContext.current().setEventResourceType(worker.getApiResourceType());
-            return resourceScheduleDao.removeSchedulesForResourceAndIds(
-                    resourceType, internalResourceId, ids);
+            return resourceScheduleDao.removeSchedulesForResourceAndIds(resourceType, internalResourceId, scheduleIdsToRemove);
         });
     }
 }

@@ -260,6 +260,17 @@ public class ResourceScheduleManagerImplTest {
         Mockito.when(resourceScheduleDao.removeSchedulesForResourceAndIds(
                 Mockito.any(), Mockito.anyLong(), Mockito.anyList())).thenReturn(1L);
 
+        ResourceScheduleVO schedule1 = Mockito.mock(ResourceScheduleVO.class);
+        ResourceScheduleVO schedule2 = Mockito.mock(ResourceScheduleVO.class);
+        List<ResourceScheduleVO> scheduleList = new ArrayList<>();
+        scheduleList.add(schedule1);
+        scheduleList.add(schedule2);
+
+        Mockito.when(resourceScheduleDao.searchAndCount(
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+                Mockito.any(), Mockito.any(), Mockito.any())
+        ).thenReturn(new Pair<>(scheduleList, scheduleList.size()));
+
         Long rowsRemoved = resourceScheduleManager.removeSchedule(
                 ApiCommandResourceType.VirtualMachine, "1", 10L, null);
 
