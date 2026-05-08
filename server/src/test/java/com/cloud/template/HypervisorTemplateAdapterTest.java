@@ -526,13 +526,13 @@ public class HypervisorTemplateAdapterTest {
     @Test
     public void isZoneAndImageStoreAvailableTestTemplateIsPrivateAndItIsNotAlreadyAllocatedToTheSameZoneShouldReturnTrue() {
         DataStore dataStoreMock = Mockito.mock(DataStore.class);
-        ImageStoreVO ImageStoreVOMock = Mockito.mock(ImageStoreVO.class);
+        ImageStoreVO imageStoreVoMock = Mockito.mock(ImageStoreVO.class);
         Long zoneId = 1L;
         Set<Long> zoneSet = new HashSet<>();
         boolean isTemplatePrivate = true;
         DataCenterVO dataCenterVOMock = Mockito.mock(DataCenterVO.class);
 
-        Mockito.when(_imgStoreDao.findById(Mockito.anyLong())).thenReturn(ImageStoreVOMock);
+        Mockito.when(_imgStoreDao.findById(Mockito.anyLong())).thenReturn(imageStoreVoMock);
         Mockito.when(_dcDao.findById(Mockito.anyLong())).thenReturn(dataCenterVOMock);
         Mockito.when(dataCenterVOMock.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
         Mockito.when(statsCollectorMock.imageStoreHasEnoughCapacity(any(DataStore.class))).thenReturn(true);

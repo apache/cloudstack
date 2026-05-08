@@ -165,7 +165,7 @@ public class TemplateServiceImpl implements TemplateService {
     @Inject
     StorageOrchestrationService storageOrchestrator;
     @Inject
-    ImageStoreDao dataStoreDao;
+    ImageStoreDao imageStoreDao;
 
     class TemplateOpContext<T> extends AsyncRpcContext<T> {
         final TemplateObject template;
@@ -298,9 +298,7 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
     protected boolean shouldDownloadTemplateToStore(VMTemplateVO template, DataStore store) {
-        if (dataStoreDao.findById(store.getId()).isReadonly()) {
-            logger.debug("Template [{}] will not be downloaded to image store [{}] because this store is marked as read-only.", template.getUniqueName(),
-                    store.getName());
+        if (_storeMgr.isRemovedOrReadonly(store)) {
             return false;
         }
 

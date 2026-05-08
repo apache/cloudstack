@@ -128,7 +128,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     @Inject
     DataStoreManager dataStoreManager;
     @Inject
-    ImageStoreDao dataStoreDao;
+    ImageStoreDao imageStoreDao;
 
     protected String _proxy = null;
 
@@ -178,9 +178,9 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         AsyncCallbackDispatcher<BaseImageStoreDriverImpl, DownloadAnswer> caller = AsyncCallbackDispatcher.create(this);
         caller.setContext(context);
         if (data.getType() == DataObjectType.TEMPLATE) {
-            if (dataStoreDao.findById(dataStore.getId()).isReadonly()) {
-                logger.debug("Template [{}] will not be downloaded to image store [{}] because this store is marked as read-only.", data.getName(),
-                        dataStore.getName());
+            if (dataStoreManager.isRemovedOrReadonly(dataStore)) {
+                DownloadAnswer ans = new DownloadAnswer("Data store is removed or in read-only mode", VMTemplateStorageResourceAssoc.Status.UNKNOWN);
+                caller.complete(ans);
                 return;
             }
             caller.setCallback(caller.getTarget().createTemplateAsyncCallback(null, null));

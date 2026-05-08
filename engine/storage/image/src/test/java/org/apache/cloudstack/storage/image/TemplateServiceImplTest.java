@@ -107,10 +107,10 @@ public class TemplateServiceImplTest {
     DataCenterDao _dcDao;
 
     @Mock
-    ImageStoreDao imageStore;
+    ImageStoreDao imageStoreDao;
 
     @Mock
-    ImageStoreVO imageMock;
+    ImageStoreVO imageStoreMock;
 
     Map<String, TemplateProp> templatesInSourceStore = new HashMap<>();
 
@@ -127,13 +127,13 @@ public class TemplateServiceImplTest {
         Mockito.doReturn(templateInfoMock).when(templateDataFactoryMock).getTemplate(2L, sourceStoreMock);
         Mockito.doReturn(3L).when(dataStoreMock).getId();
         Mockito.doReturn(zoneScopeMock).when(dataStoreMock).getScope();
-        Mockito.when(imageStore.findById(3L)).thenReturn(imageMock);
+        Mockito.when(imageStoreDao.findById(3L)).thenReturn(imageStoreMock);
     }
 
     @Test
     public void shouldDownloadTemplateToStoreTestSkipsTemplateDirectedToAnotherStorage() {
         DataStore destinedStore = Mockito.mock(DataStore.class);
-        Mockito.when(imageMock.isReadonly()).thenReturn(false);
+        Mockito.when(imageStoreMock.isReadonly()).thenReturn(false);
         Mockito.doReturn(dataStoreMock.getId() + 1L).when(destinedStore).getId();
         Mockito.when(templateManagerMock.verifyHeuristicRulesForZone(tmpltMock, zoneScopeMock.getScopeId())).thenReturn(destinedStore);
         Assert.assertFalse(templateService.shouldDownloadTemplateToStore(tmpltMock, dataStoreMock));
@@ -141,41 +141,41 @@ public class TemplateServiceImplTest {
 
     @Test
     public void shouldDownloadTemplateToStoreTestDownloadsPublicTemplate() {
-        Mockito.when(imageMock.isReadonly()).thenReturn(false);
+        Mockito.when(imageStoreMock.isReadonly()).thenReturn(false);
         Mockito.when(tmpltMock.isPublicTemplate()).thenReturn(true);
         Assert.assertTrue(templateService.shouldDownloadTemplateToStore(tmpltMock, dataStoreMock));
     }
 
     @Test
     public void shouldDownloadTemplateToStoreTestDownloadsFeaturedTemplate() {
-        Mockito.when(imageMock.isReadonly()).thenReturn(false);
+        Mockito.when(imageStoreMock.isReadonly()).thenReturn(false);
         Mockito.when(tmpltMock.isFeatured()).thenReturn(true);
         Assert.assertTrue(templateService.shouldDownloadTemplateToStore(tmpltMock, dataStoreMock));
     }
 
     @Test
     public void shouldDownloadTemplateToStoreTestDownloadsSystemTemplate() {
-        Mockito.when(imageMock.isReadonly()).thenReturn(false);
+        Mockito.when(imageStoreMock.isReadonly()).thenReturn(false);
         Mockito.when(tmpltMock.getTemplateType()).thenReturn(Storage.TemplateType.SYSTEM);
         Assert.assertTrue(templateService.shouldDownloadTemplateToStore(tmpltMock, dataStoreMock));
     }
 
     @Test
     public void shouldDownloadTemplateToStoreTestDownloadsPrivateNoRefTemplate() {
-        Mockito.when(imageMock.isReadonly()).thenReturn(false);
+        Mockito.when(imageStoreMock.isReadonly()).thenReturn(false);
         Assert.assertTrue(templateService.shouldDownloadTemplateToStore(tmpltMock, dataStoreMock));
     }
 
     @Test
     public void shouldDownloadTemplateToStoreTestSkipsPrivateExistingTemplate() {
-        Mockito.when(imageMock.isReadonly()).thenReturn(false);
+        Mockito.when(imageStoreMock.isReadonly()).thenReturn(false);
         Mockito.when(templateDataStoreDao.findByTemplateZone(tmpltMock.getId(), zoneScopeMock.getScopeId(), DataStoreRole.Image)).thenReturn(Mockito.mock(TemplateDataStoreVO.class));
         Assert.assertFalse(templateService.shouldDownloadTemplateToStore(tmpltMock, dataStoreMock));
     }
 
     @Test
     public void shouldDownloadTemplateToStoreTestSkipsWhenStorageIsReadOnly() {
-        Mockito.when(imageMock.isReadonly()).thenReturn(true);
+        Mockito.when(imageStoreMock.isReadonly()).thenReturn(true);
         Assert.assertFalse(templateService.shouldDownloadTemplateToStore(tmpltMock, dataStoreMock));
 
     }
