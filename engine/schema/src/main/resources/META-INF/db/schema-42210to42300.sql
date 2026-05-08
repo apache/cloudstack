@@ -140,7 +140,6 @@ CALL `cloud`.`IDEMPOTENT_ADD_INDEX`('idx_alert_type_data_center_id_archived_pod_
 CALL `cloud`.`IDEMPOTENT_ADD_INDEX`('idx_configuration_name','cloud.configuration', '(name)');
 CALL `cloud`.`IDEMPOTENT_ADD_INDEX`('idx_account_id_removed','cloud.account', '(id, removed)');
 CALL `cloud`.`IDEMPOTENT_ADD_INDEX`('idx_async_job_id_removed','cloud.async_job', '(id, removed)');
-CALL `cloud`.`IDEMPOTENT_ADD_INDEX`('idx_user_id_api_key_removed','cloud.user', '(id, api_key, removed)');
 CALL `cloud`.`IDEMPOTENT_ADD_INDEX`('idx_resource_limit_type_domain_id_tag','cloud.resource_limit', '(type, domain_id, tag)');
 CALL `cloud`.`IDEMPOTENT_ADD_INDEX`('idx_vm_instance_id_removed','cloud.vm_instance', '(id, removed)');
 CALL `cloud`.`IDEMPOTENT_ADD_INDEX`('idx_vm_host_state_removed','cloud.vm_instance', '(host_id, state, removed)');
