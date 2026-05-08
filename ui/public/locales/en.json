@@ -795,6 +795,7 @@
 "label.delete.ciscoasa1000v": "Delete CiscoASA1000v",
 "label.delete.ciscovnmc.resource": "Delete CiscoVNMC resource",
 "label.delete.condition": "Delete condition",
+"label.delete.confirmation": "Enter the exact resource name to proceed with deletion",
 "label.delete.custom.action": "Delete Custom Action",
 "label.delete.dedicated.vlan.range": "Deleted dedicated VLAN/VNI range.",
 "label.delete.domain": "Delete domain",
