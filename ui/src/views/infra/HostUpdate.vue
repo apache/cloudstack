@@ -231,7 +231,7 @@ export default {
         Object.keys(params).forEach((key) => (params[key] == null) && delete params[key])
         this.loading = true
 
-        postAPI('updateHost', {}, 'POST', params).then(() => {
+        postAPI('updateHost', params).then(() => {
           this.$message.success({
             content: `${this.$t('label.action.update.host')} - ${values.name}`,
             duration: 2
