@@ -30,7 +30,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -49,6 +48,7 @@ import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -107,6 +107,7 @@ class OntapVMSnapshotStrategyTest {
     private static final String VM_UUID = "vm-uuid-123";
 
     @Spy
+    @InjectMocks
     private OntapVMSnapshotStrategy strategy;
 
     @Mock
@@ -133,34 +134,8 @@ class OntapVMSnapshotStrategyTest {
     private VolumeDetailsDao volumeDetailsDao;
 
     @BeforeEach
-    void setUp() throws Exception {
-        // Inject mocks into the inherited fields via reflection
-        // DefaultVMSnapshotStrategy fields
-        setField(strategy, DefaultVMSnapshotStrategy.class, "vmSnapshotHelper", vmSnapshotHelper);
-        setField(strategy, DefaultVMSnapshotStrategy.class, "guestOSDao", guestOSDao);
-        setField(strategy, DefaultVMSnapshotStrategy.class, "userVmDao", userVmDao);
-        setField(strategy, DefaultVMSnapshotStrategy.class, "vmSnapshotDao", vmSnapshotDao);
-        setField(strategy, DefaultVMSnapshotStrategy.class, "agentMgr", agentMgr);
-        setField(strategy, DefaultVMSnapshotStrategy.class, "volumeDao", volumeDao);
-
-        // StorageVMSnapshotStrategy fields
-        setField(strategy, StorageVMSnapshotStrategy.class, "storagePool", storagePool);
-        setField(strategy, StorageVMSnapshotStrategy.class, "vmSnapshotDetailsDao", vmSnapshotDetailsDao);
-        setField(strategy, StorageVMSnapshotStrategy.class, "volumeDataFactory", volumeDataFactory);
-
-        // OntapVMSnapshotStrategy fields
-        setField(strategy, OntapVMSnapshotStrategy.class, "storagePoolDetailsDao", storagePoolDetailsDao);
-        setField(strategy, OntapVMSnapshotStrategy.class, "volumeDetailsDao", volumeDetailsDao);
-    }
-
-    // ──────────────────────────────────────────────────────────────────────────
-    // Helper: inject field via reflection into a specific declaring class
-    // ──────────────────────────────────────────────────────────────────────────
-
-    private void setField(Object target, Class<?> declaringClass, String fieldName, Object value) throws Exception {
-        Field field = declaringClass.getDeclaredField(fieldName);
-        field.setAccessible(true);
-        field.set(target, value);
+    void setUp() {
+        // @InjectMocks handles injection into inherited fields
     }
 
     // ──────────────────────────────────────────────────────────────────────────
