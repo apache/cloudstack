@@ -38,6 +38,7 @@ public interface OutOfBandManagementService {
 
     long getId();
     boolean isOutOfBandManagementEnabled(Host host);
+    boolean isOutOfBandManagementEnabledForHost(Long hostId);
     void submitBackgroundPowerSyncTask(Host host);
     boolean transitionPowerStateToDisabled(List<Long> hostIds);
 
