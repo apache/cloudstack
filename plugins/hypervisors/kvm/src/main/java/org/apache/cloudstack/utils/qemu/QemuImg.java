@@ -54,8 +54,8 @@ public class QemuImg {
     public static final String TARGET_ZERO_FLAG = "--target-is-zero";
     public static final String PREALLOCATION = "preallocation";
     public static final long QEMU_2_10 = 2010000;
-    public static final long QEMU_5_10 = 5010000;
-    public static final long QEMU_5_20 = 5020000;
+    public static final long QEMU_5_1 = 5001000;
+    public static final long QEMU_5_2 = 5002000;
 
     public static final int MIN_BITMAP_VERSION = 3;
 
@@ -520,7 +520,7 @@ public class QemuImg {
             script.add(srcFile.getFileName());
         }
 
-        if (this.version >= QEMU_5_10 && keepBitmaps && Qcow2Inspector.validateQcow2Version(srcFile.getFileName(), MIN_BITMAP_VERSION)) {
+        if (this.version >= QEMU_5_1 && keepBitmaps && Qcow2Inspector.validateQcow2Version(srcFile.getFileName(), MIN_BITMAP_VERSION)) {
             script.add("--bitmaps");
         }
 
