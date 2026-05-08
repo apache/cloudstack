@@ -20,8 +20,9 @@ package org.apache.cloudstack.api.command.user.vm;
 
 import com.cloud.exception.InvalidParameterValueException;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ResourceScheduleResponse;
 import org.apache.cloudstack.api.response.VMScheduleResponse;
-import org.apache.cloudstack.vm.schedule.VMScheduleManager;
+import org.apache.cloudstack.schedule.ResourceScheduleManager;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -36,7 +37,7 @@ import java.util.Collections;
 
 public class ListVMScheduleCmdTest {
     @Mock
-    public VMScheduleManager vmScheduleManager;
+    public ResourceScheduleManager resourceScheduleManager;
     @InjectMocks
     private ListVMScheduleCmd listVMScheduleCmd = new ListVMScheduleCmd();
     private AutoCloseable closeable;
@@ -58,12 +59,14 @@ public class ListVMScheduleCmdTest {
      */
     @Test
     public void testEmptyResponse() {
-        ListResponse<VMScheduleResponse> response = new ListResponse<VMScheduleResponse>();
-        response.setResponses(new ArrayList<VMScheduleResponse>());
-        Mockito.when(vmScheduleManager.listSchedule(listVMScheduleCmd)).thenReturn(response);
+        ListResponse<ResourceScheduleResponse> response = new ListResponse<ResourceScheduleResponse>();
+        response.setResponses(new ArrayList<ResourceScheduleResponse>());
+        Mockito.when(resourceScheduleManager.listSchedule(
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()
+        )).thenReturn(response);
         listVMScheduleCmd.execute();
         ListResponse<VMScheduleResponse> actualResponseObject = (ListResponse<VMScheduleResponse>) listVMScheduleCmd.getResponseObject();
-        Assert.assertEquals(response, actualResponseObject);
         Assert.assertEquals(0L, actualResponseObject.getResponses().size());
     }
 
@@ -74,15 +77,22 @@ public class ListVMScheduleCmdTest {
      */
     @Test
     public void testNonEmptyResponse() {
-        ListResponse<VMScheduleResponse> listResponse = new ListResponse<VMScheduleResponse>();
-        VMScheduleResponse response = Mockito.mock(VMScheduleResponse.class);
+        ListResponse<ResourceScheduleResponse> listResponse = new ListResponse<ResourceScheduleResponse>();
+        ResourceScheduleResponse response = new ResourceScheduleResponse();
+        response.setId("schedule-uuid");
+        response.setResourceId("vm-uuid");
         listResponse.setResponses(Collections.singletonList(response));
-        Mockito.when(vmScheduleManager.listSchedule(listVMScheduleCmd)).thenReturn(listResponse);
+        Mockito.when(resourceScheduleManager.listSchedule(
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()
+        )).thenReturn(listResponse);
         listVMScheduleCmd.execute();
         ListResponse<VMScheduleResponse> actualResponseObject = (ListResponse<VMScheduleResponse>) listVMScheduleCmd.getResponseObject();
-        Assert.assertEquals(listResponse, actualResponseObject);
         Assert.assertEquals(1L, actualResponseObject.getResponses().size());
-        Assert.assertEquals(response, actualResponseObject.getResponses().get(0));
+        Assert.assertEquals("schedule-uuid",
+                org.springframework.test.util.ReflectionTestUtils.getField(actualResponseObject.getResponses().get(0), "id"));
+        Assert.assertEquals("vm-uuid",
+                org.springframework.test.util.ReflectionTestUtils.getField(actualResponseObject.getResponses().get(0), "vmId"));
     }
 
     /**
@@ -92,7 +102,10 @@ public class ListVMScheduleCmdTest {
      */
     @Test(expected = InvalidParameterValueException.class)
     public void testInvalidParameterValueException() {
-        Mockito.when(vmScheduleManager.listSchedule(listVMScheduleCmd)).thenThrow(InvalidParameterValueException.class);
+        Mockito.when(resourceScheduleManager.listSchedule(
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()
+        )).thenThrow(InvalidParameterValueException.class);
         listVMScheduleCmd.execute();
         ListResponse<VMScheduleResponse> actualResponseObject = (ListResponse<VMScheduleResponse>) listVMScheduleCmd.getResponseObject();
     }

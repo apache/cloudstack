@@ -16,23 +16,26 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.vm.schedule;
+package org.apache.cloudstack.schedule;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 import java.util.Date;
 
-public interface VMScheduledJob extends Identity, InternalIdentity {
-    long getVmId();
+public interface ResourceScheduledJob extends Identity, InternalIdentity {
+    ApiCommandResourceType getResourceType();
 
-    long getVmScheduleId();
+    long getResourceId();
+
+    long getScheduleId();
 
     Long getAsyncJobId();
 
     void setAsyncJobId(long asyncJobId);
 
-    VMSchedule.Action getAction();
+    String getActionName();
 
     Date getScheduledTime();
 }

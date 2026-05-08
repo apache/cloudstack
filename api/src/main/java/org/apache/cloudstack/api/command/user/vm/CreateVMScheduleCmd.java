@@ -25,9 +25,13 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.response.ResourceScheduleResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VMScheduleResponse;
-import org.apache.cloudstack.vm.schedule.VMScheduleManager;
+import org.apache.cloudstack.schedule.ResourceScheduleManager;
+import org.apache.cloudstack.schedule.vm.VMScheduleAction;
+import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.commons.lang3.EnumUtils;
 
 import javax.inject.Inject;
 import java.util.Date;
@@ -38,7 +42,7 @@ import java.util.Date;
 public class CreateVMScheduleCmd extends BaseCmd {
 
     @Inject
-    VMScheduleManager vmScheduleManager;
+    ResourceScheduleManager resourceScheduleManager;
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
             type = CommandType.UUID,
@@ -136,7 +140,22 @@ public class CreateVMScheduleCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        VMScheduleResponse response = vmScheduleManager.createSchedule(this);
+        String actionStr = null;
+        if (getAction() != null) {
+            VMScheduleAction vmAction = EnumUtils.getEnumIgnoreCase(VMScheduleAction.class, getAction());
+            if (vmAction == null) {
+                throw new InvalidParameterValueException(String.format("Invalid value for action: %s", getAction()));
+            }
+            actionStr = vmAction.name();
+        }
+
+        String resourceIdStr = getVmId() != null ? String.valueOf(getVmId()) : null;
+
+        ResourceScheduleResponse scheduleResponse = resourceScheduleManager.createSchedule(
+                ApiCommandResourceType.VirtualMachine,
+                resourceIdStr, getDescription(), getSchedule(), getTimeZone(), actionStr,
+                getStartDate(), getEndDate(), getEnabled(), null);
+        VMScheduleResponse response = new VMScheduleResponse(scheduleResponse);
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }

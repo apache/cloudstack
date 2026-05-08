@@ -18,31 +18,38 @@
  */
 package org.apache.cloudstack.api.response;
 
-import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
+import java.util.Date;
+import java.util.Map;
+
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 import org.apache.cloudstack.schedule.ResourceSchedule;
 
-import java.util.Date;
+import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = ResourceSchedule.class)
-public class VMScheduleResponse extends BaseResponse {
+public class ResourceScheduleResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "The ID of Instance schedule")
+    @Param(description = "The ID of resource schedule")
     private String id;
 
-    @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
-    @Param(description = "ID of Instance")
-    private String vmId;
+    @SerializedName(ApiConstants.RESOURCE_TYPE)
+    @Param(description = "Type of the resource")
+    private ApiCommandResourceType resourceType;
+
+    @SerializedName(ApiConstants.RESOURCE_ID)
+    @Param(description = "ID of the resource")
+    private String resourceId;
 
     @SerializedName(ApiConstants.DESCRIPTION)
-    @Param(description = "Description of Instance schedule")
+    @Param(description = "Description of resource schedule")
     private String description;
 
     @SerializedName(ApiConstants.SCHEDULE)
-    @Param(description = "Cron formatted Instance schedule")
+    @Param(description = "Cron formatted resource schedule")
     private String schedule;
 
     @SerializedName(ApiConstants.TIMEZONE)
@@ -54,7 +61,7 @@ public class VMScheduleResponse extends BaseResponse {
     private ResourceSchedule.Action action;
 
     @SerializedName(ApiConstants.ENABLED)
-    @Param(description = "VM schedule is enabled")
+    @Param(description = "Resource schedule is enabled")
     private boolean enabled;
 
     @SerializedName(ApiConstants.START_DATE)
@@ -65,59 +72,107 @@ public class VMScheduleResponse extends BaseResponse {
     @Param(description = "Date after which the schedule becomes inactive")
     private Date endDate;
 
+    @SerializedName(ApiConstants.DETAILS)
+    @Param(description = "Schedule details")
+    private Map<String, String> details;
+
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "Date when the schedule was created")
     private Date created;
-
-    public VMScheduleResponse(ResourceScheduleResponse scheduleResponse) {
-        super("vmschedule");
-        this.id = scheduleResponse.getId();
-        this.vmId = scheduleResponse.getResourceId();
-        this.description = scheduleResponse.getDescription();
-        this.schedule = scheduleResponse.getSchedule();
-        this.timeZone = scheduleResponse.getTimeZone();
-        this.action = scheduleResponse.getAction();
-        this.enabled = scheduleResponse.getEnabled();
-        this.startDate = scheduleResponse.getStartDate();
-        this.endDate = scheduleResponse.getEndDate();
-        this.created = scheduleResponse.getCreated();
-    }
 
     public void setId(String id) {
         this.id = id;
     }
 
-    public void setVmId(String vmId) {
-        this.vmId = vmId;
+    public String getId() {
+        return id;
+    }
+
+    public void setResourceType(ApiCommandResourceType resourceType) {
+        this.resourceType = resourceType;
+    }
+
+    public ApiCommandResourceType getResourceType() {
+        return resourceType;
+    }
+
+    public void setResourceId(String resourceId) {
+        this.resourceId = resourceId;
+    }
+
+    public String getResourceId() {
+        return resourceId;
     }
 
     public void setDescription(String description) {
         this.description = description;
     }
 
+    public String getDescription() {
+        return description;
+    }
+
     public void setSchedule(String schedule) {
         this.schedule = schedule;
+    }
+
+    public String getSchedule() {
+        return schedule;
     }
 
     public void setTimeZone(String timeZone) {
         this.timeZone = timeZone;
     }
 
+    public String getTimeZone() {
+        return timeZone;
+    }
+
     public void setAction(ResourceSchedule.Action action) {
         this.action = action;
+    }
+
+    public ResourceSchedule.Action getAction() {
+        return action;
     }
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
     }
 
+    public boolean getEnabled() {
+        return enabled;
+    }
+
     public void setStartDate(Date startDate) {
         this.startDate = startDate;
+    }
+
+    public Date getStartDate() {
+        return startDate;
     }
 
     public void setEndDate(Date endDate) {
         this.endDate = endDate;
     }
 
-    public void setCreated(Date created) { this.created = created; }
+    public Date getEndDate() {
+        return endDate;
+    }
+
+    public void setDetails(Map<String, String> details) {
+        this.details = details;
+    }
+
+    public Map<String, String> getDetails() {
+        return details;
+    }
+
+    public void setCreated(Date created) {
+        this.created = created;
+    }
+
+    public Date getCreated() {
+        return created;
+    }
 }

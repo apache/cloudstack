@@ -16,36 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.vm.schedule;
+package org.apache.cloudstack.schedule.dao;
 
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.schedule.ResourceScheduledJobVO;
 
-import java.time.ZoneId;
 import java.util.Date;
+import java.util.List;
 
-public interface VMSchedule extends Identity, InternalIdentity {
-    enum Action {
-        START, STOP, REBOOT, FORCE_STOP, FORCE_REBOOT
-    }
+public interface ResourceScheduledJobDao extends GenericDao<ResourceScheduledJobVO, Long> {
+    List<ResourceScheduledJobVO> listJobsToStart(ApiCommandResourceType resourceType, Date currentTimestamp);
 
-    long getVmId();
+    int expungeJobsForSchedules(List<Long> scheduleIds, Date dateAfter);
 
-    String getDescription();
+    int expungeJobsBefore(ApiCommandResourceType resourceType, Date currentTimestamp);
 
-    String getSchedule();
-
-    String getTimeZone();
-
-    Action getAction();
-
-    boolean getEnabled();
-
-    Date getStartDate();
-
-    Date getEndDate();
-
-    ZoneId getTimeZoneId();
-
-    Date getCreated();
+    ResourceScheduledJobVO findByScheduleAndTimestamp(long scheduleId, Date scheduledTimestamp);
 }

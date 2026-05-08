@@ -30,8 +30,8 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VMScheduleResponse;
-import org.apache.cloudstack.vm.schedule.VMSchedule;
-import org.apache.cloudstack.vm.schedule.VMScheduleManager;
+import org.apache.cloudstack.schedule.ResourceScheduleManager;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 
 import javax.inject.Inject;
 import java.util.Collections;
@@ -42,7 +42,7 @@ import java.util.List;
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class DeleteVMScheduleCmd extends BaseCmd {
     @Inject
-    VMScheduleManager vmScheduleManager;
+    ResourceScheduleManager resourceScheduleManager;
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
             type = CommandType.UUID,
@@ -89,12 +89,15 @@ public class DeleteVMScheduleCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        long rowsRemoved = vmScheduleManager.removeSchedule(this);
+        String resourceIdStr = getVmId() != null ? String.valueOf(getVmId()) : null;
+        long rowsRemoved = resourceScheduleManager.removeSchedule(
+                ApiCommandResourceType.VirtualMachine,
+                resourceIdStr, getId(), getIds());
 
         if (rowsRemoved > 0) {
             final SuccessResponse response = new SuccessResponse();
             response.setResponseName(getCommandName());
-            response.setObjectName(VMSchedule.class.getSimpleName().toLowerCase());
+            response.setObjectName("vmschedule");
             setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete Instance Schedules");

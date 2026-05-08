@@ -372,8 +372,8 @@
     <bean id="bucketApiServiceImpl" class="org.apache.cloudstack.storage.object.BucketApiServiceImpl" />
     <bean id="routedIpv4ManagerImpl" class="org.apache.cloudstack.network.RoutedIpv4ManagerImpl" />
 
-    <bean id="VMScheduleManagerImpl" class="org.apache.cloudstack.vm.schedule.VMScheduleManagerImpl" />
-    <bean id="VMSchedulerImpl" class="org.apache.cloudstack.vm.schedule.VMSchedulerImpl">
+    <bean id="ResourceScheduleManagerImpl" class="org.apache.cloudstack.schedule.ResourceScheduleManagerImpl" />
+    <bean id="VMScheduleWorker" class="org.apache.cloudstack.schedule.vm.VMScheduleWorker">
         <property name="asyncJobDispatcher" ref="ApiAsyncJobDispatcher" />
     </bean>
 

@@ -16,9 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.vm.schedule;
+package org.apache.cloudstack.schedule;
 
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import javax.persistence.Column;
@@ -37,8 +38,8 @@ import java.util.TimeZone;
 import java.util.UUID;
 
 @Entity
-@Table(name = "vm_schedule")
-public class VMScheduleVO implements VMSchedule {
+@Table(name = "resource_schedule")
+public class ResourceScheduleVO implements ResourceSchedule {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
@@ -50,8 +51,12 @@ public class VMScheduleVO implements VMSchedule {
     @Column(name = "description")
     String description;
 
-    @Column(name = "vm_id", nullable = false)
-    long vmId;
+    @Enumerated(value = EnumType.STRING)
+    @Column(name = "resource_type", nullable = false)
+    ApiCommandResourceType resourceType;
+
+    @Column(name = "resource_id", nullable = false)
+    long resourceId;
 
     @Column(name = "schedule", nullable = false)
     String schedule;
@@ -60,8 +65,7 @@ public class VMScheduleVO implements VMSchedule {
     String timeZone;
 
     @Column(name = "action", nullable = false)
-    @Enumerated(value = EnumType.STRING)
-    Action action;
+    String actionName;
 
     @Column(name = "enabled", nullable = false)
     boolean enabled;
@@ -80,17 +84,19 @@ public class VMScheduleVO implements VMSchedule {
     @Column(name = GenericDao.REMOVED_COLUMN)
     Date removed;
 
-    public VMScheduleVO() {
+    public ResourceScheduleVO() {
         uuid = UUID.randomUUID().toString();
     }
 
-    public VMScheduleVO(long vmId, String description, String schedule, String timeZone, Action action, Date startDate, Date endDate, boolean enabled) {
+    public ResourceScheduleVO(ApiCommandResourceType resourceType, long resourceId, String description, String schedule,
+            String timeZone, String action, Date startDate, Date endDate, boolean enabled) {
         uuid = UUID.randomUUID().toString();
-        this.vmId = vmId;
+        this.resourceType = resourceType;
+        this.resourceId = resourceId;
         this.description = description;
         this.schedule = schedule;
         this.timeZone = timeZone;
-        this.action = action;
+        this.actionName = action;
         this.startDate = startDate;
         this.endDate = endDate;
         this.enabled = enabled;
@@ -98,7 +104,8 @@ public class VMScheduleVO implements VMSchedule {
 
     @Override
     public String toString() {
-        return String.format("VMSchedule %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "uuid", "action", "description"));
+        return String.format("ResourceSchedule %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                this, "id", "uuid", "resourceType", "actionName", "description"));
     }
 
     @Override
@@ -111,14 +118,25 @@ public class VMScheduleVO implements VMSchedule {
         return id;
     }
 
-    public long getVmId() {
-        return vmId;
+    @Override
+    public ApiCommandResourceType getResourceType() {
+        return resourceType;
     }
 
-    public void setVmId(long vmId) {
-        this.vmId = vmId;
+    public void setResourceType(ApiCommandResourceType resourceType) {
+        this.resourceType = resourceType;
     }
 
+    @Override
+    public long getResourceId() {
+        return resourceId;
+    }
+
+    public void setResourceId(long resourceId) {
+        this.resourceId = resourceId;
+    }
+
+    @Override
     public String getDescription() {
         return description;
     }
@@ -127,6 +145,7 @@ public class VMScheduleVO implements VMSchedule {
         this.description = description;
     }
 
+    @Override
     public String getSchedule() {
         return schedule.substring(2);
     }
@@ -144,14 +163,16 @@ public class VMScheduleVO implements VMSchedule {
         this.timeZone = timeZone;
     }
 
-    public Action getAction() {
-        return action;
+    @Override
+    public String getActionName() {
+        return actionName;
     }
 
-    public void setAction(Action action) {
-        this.action = action;
+    public void setActionName(String action) {
+        this.actionName = action;
     }
 
+    @Override
     public boolean getEnabled() {
         return enabled;
     }
@@ -183,6 +204,7 @@ public class VMScheduleVO implements VMSchedule {
         return TimeZone.getTimeZone(getTimeZone()).toZoneId();
     }
 
+    @Override
     public Date getCreated() {
         return created;
     }

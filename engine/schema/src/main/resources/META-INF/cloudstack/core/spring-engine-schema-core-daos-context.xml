@@ -282,8 +282,9 @@
   <bean id="secondaryStorageHeuristicDaoImpl" class="org.apache.cloudstack.secstorage.dao.SecondaryStorageHeuristicDaoImpl" />
   <bean id="heuristicRuleHelper" class="org.apache.cloudstack.storage.heuristics.HeuristicRuleHelper" />
   <bean id="publicIpQuarantineDaoImpl" class="com.cloud.network.dao.PublicIpQuarantineDaoImpl" />
-  <bean id="VMScheduleDaoImpl" class="org.apache.cloudstack.vm.schedule.dao.VMScheduleDaoImpl" />
-  <bean id="VMScheduledJobDaoImpl" class="org.apache.cloudstack.vm.schedule.dao.VMScheduledJobDaoImpl" />
+  <bean id="ResourceScheduleDaoImpl" class="org.apache.cloudstack.schedule.dao.ResourceScheduleDaoImpl" />
+  <bean id="ResourceScheduleDetailsDaoImpl" class="org.apache.cloudstack.schedule.dao.ResourceScheduleDetailsDaoImpl" />
+  <bean id="ResourceScheduledJobDaoImpl" class="org.apache.cloudstack.schedule.dao.ResourceScheduledJobDaoImpl" />
   <bean id="VmwareDatacenterDaoImpl" class="com.cloud.hypervisor.vmware.dao.VmwareDatacenterDaoImpl" />
   <bean id="vnfTemplateDetailsDaoImpl" class="com.cloud.storage.dao.VnfTemplateDetailsDaoImpl" />
   <bean id="vnfTemplateNicDaoImpl" class="com.cloud.storage.dao.VnfTemplateNicDaoImpl" />

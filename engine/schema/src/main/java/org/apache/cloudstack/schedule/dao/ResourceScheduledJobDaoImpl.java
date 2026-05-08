@@ -16,13 +16,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.vm.schedule.dao;
+package org.apache.cloudstack.schedule.dao;
 
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import org.apache.cloudstack.vm.schedule.VMScheduledJobVO;
+import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.schedule.ResourceScheduledJobVO;
 import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.stereotype.Component;
 
@@ -31,62 +32,59 @@ import java.util.Date;
 import java.util.List;
 
 @Component
-public class VMScheduledJobDaoImpl extends GenericDaoBase<VMScheduledJobVO, Long> implements VMScheduledJobDao {
+public class ResourceScheduledJobDaoImpl extends GenericDaoBase<ResourceScheduledJobVO, Long> implements ResourceScheduledJobDao {
 
-    private final SearchBuilder<VMScheduledJobVO> jobsToStartSearch;
-
-    private final SearchBuilder<VMScheduledJobVO> expungeJobsBeforeSearch;
-
-    private final SearchBuilder<VMScheduledJobVO> expungeJobForScheduleSearch;
-
-    private final SearchBuilder<VMScheduledJobVO> scheduleAndTimestampSearch;
+    private final SearchBuilder<ResourceScheduledJobVO> jobsToStartSearch;
+    private final SearchBuilder<ResourceScheduledJobVO> expungeJobsBeforeSearch;
+    private final SearchBuilder<ResourceScheduledJobVO> expungeJobForScheduleSearch;
+    private final SearchBuilder<ResourceScheduledJobVO> scheduleAndTimestampSearch;
 
     static final String SCHEDULED_TIMESTAMP = "scheduled_timestamp";
+    static final String SCHEDULE_ID = "schedule_id";
+    static final String RESOURCE_TYPE = "resourceType";
 
-    static final String VM_SCHEDULE_ID = "vm_schedule_id";
-
-    public VMScheduledJobDaoImpl() {
+    public ResourceScheduledJobDaoImpl() {
         super();
+
         jobsToStartSearch = createSearchBuilder();
+        jobsToStartSearch.and(RESOURCE_TYPE, jobsToStartSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
         jobsToStartSearch.and(SCHEDULED_TIMESTAMP, jobsToStartSearch.entity().getScheduledTime(), SearchCriteria.Op.EQ);
         jobsToStartSearch.and("async_job_id", jobsToStartSearch.entity().getAsyncJobId(), SearchCriteria.Op.NULL);
         jobsToStartSearch.done();
 
         expungeJobsBeforeSearch = createSearchBuilder();
+        expungeJobsBeforeSearch.and(RESOURCE_TYPE, expungeJobsBeforeSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
         expungeJobsBeforeSearch.and(SCHEDULED_TIMESTAMP, expungeJobsBeforeSearch.entity().getScheduledTime(), SearchCriteria.Op.LT);
         expungeJobsBeforeSearch.done();
 
         expungeJobForScheduleSearch = createSearchBuilder();
-        expungeJobForScheduleSearch.and(VM_SCHEDULE_ID, expungeJobForScheduleSearch.entity().getVmScheduleId(), SearchCriteria.Op.IN);
+        expungeJobForScheduleSearch.and(SCHEDULE_ID, expungeJobForScheduleSearch.entity().getScheduleId(), SearchCriteria.Op.IN);
         expungeJobForScheduleSearch.and(SCHEDULED_TIMESTAMP, expungeJobForScheduleSearch.entity().getScheduledTime(), SearchCriteria.Op.GTEQ);
         expungeJobForScheduleSearch.done();
 
         scheduleAndTimestampSearch = createSearchBuilder();
-        scheduleAndTimestampSearch.and(VM_SCHEDULE_ID, scheduleAndTimestampSearch.entity().getVmScheduleId(), SearchCriteria.Op.EQ);
+        scheduleAndTimestampSearch.and(SCHEDULE_ID, scheduleAndTimestampSearch.entity().getScheduleId(), SearchCriteria.Op.EQ);
         scheduleAndTimestampSearch.and(SCHEDULED_TIMESTAMP, scheduleAndTimestampSearch.entity().getScheduledTime(), SearchCriteria.Op.EQ);
         scheduleAndTimestampSearch.done();
     }
 
-    /**
-     * Execution of job wouldn't be at exact seconds. So, we round off and then execute.
-     */
     @Override
-    public List<VMScheduledJobVO> listJobsToStart(Date currentTimestamp) {
+    public List<ResourceScheduledJobVO> listJobsToStart(ApiCommandResourceType resourceType, Date currentTimestamp) {
         if (currentTimestamp == null) {
             currentTimestamp = new Date();
         }
         Date truncatedTs = DateUtils.round(currentTimestamp, Calendar.MINUTE);
-
-        SearchCriteria<VMScheduledJobVO> sc = jobsToStartSearch.create();
+        SearchCriteria<ResourceScheduledJobVO> sc = jobsToStartSearch.create();
+        sc.setParameters(RESOURCE_TYPE, resourceType);
         sc.setParameters(SCHEDULED_TIMESTAMP, truncatedTs);
-        Filter filter = new Filter(VMScheduledJobVO.class, "vmScheduleId", true, null, null);
+        Filter filter = new Filter(ResourceScheduledJobVO.class, "scheduleId", true, null, null);
         return search(sc, filter);
     }
 
     @Override
-    public int expungeJobsForSchedules(List<Long> vmScheduleIds, Date dateAfter) {
-        SearchCriteria<VMScheduledJobVO> sc = expungeJobForScheduleSearch.create();
-        sc.setParameters(VM_SCHEDULE_ID, vmScheduleIds.toArray());
+    public int expungeJobsForSchedules(List<Long> scheduleIds, Date dateAfter) {
+        SearchCriteria<ResourceScheduledJobVO> sc = expungeJobForScheduleSearch.create();
+        sc.setParameters(SCHEDULE_ID, scheduleIds.toArray());
         if (dateAfter != null) {
             sc.setParameters(SCHEDULED_TIMESTAMP, dateAfter);
         }
@@ -94,16 +92,17 @@ public class VMScheduledJobDaoImpl extends GenericDaoBase<VMScheduledJobVO, Long
     }
 
     @Override
-    public int expungeJobsBefore(Date date) {
-        SearchCriteria<VMScheduledJobVO> sc = expungeJobsBeforeSearch.create();
+    public int expungeJobsBefore(ApiCommandResourceType resourceType, Date date) {
+        SearchCriteria<ResourceScheduledJobVO> sc = expungeJobsBeforeSearch.create();
+        sc.setParameters(RESOURCE_TYPE, resourceType);
         sc.setParameters(SCHEDULED_TIMESTAMP, date);
         return expunge(sc);
     }
 
     @Override
-    public VMScheduledJobVO findByScheduleAndTimestamp(long scheduleId, Date scheduledTimestamp) {
-        SearchCriteria<VMScheduledJobVO> sc = scheduleAndTimestampSearch.create();
-        sc.setParameters(VM_SCHEDULE_ID, scheduleId);
+    public ResourceScheduledJobVO findByScheduleAndTimestamp(long scheduleId, Date scheduledTimestamp) {
+        SearchCriteria<ResourceScheduledJobVO> sc = scheduleAndTimestampSearch.create();
+        sc.setParameters(SCHEDULE_ID, scheduleId);
         sc.setParameters(SCHEDULED_TIMESTAMP, scheduledTimestamp);
         return findOneBy(sc);
     }

@@ -204,9 +204,9 @@ class TestVMSchedule(cloudstackTestCase):
             "Check VM Schedule timezone in list resources call",
         )
 
-        # Check for entry in vm_scheduled_job in db
+        # Check for entry in resource_scheduled_job in db
         vmscheduled_job = self.dbclient.execute(
-            "select * from vm_scheduled_job where vm_schedule_id IN (SELECT id FROM vm_schedule WHERE uuid = '%s')"
+            "select * from resource_scheduled_job where schedule_id IN (SELECT id FROM resource_schedule WHERE uuid = '%s')"
             % vmschedule.id,
             db="cloud",
         )
@@ -214,13 +214,13 @@ class TestVMSchedule(cloudstackTestCase):
         self.assertIsInstance(
             vmscheduled_job,
             list,
-            "Check if VM Schedule exists in vm_scheduled_job table",
+            "Check if VM Schedule exists in resource_scheduled_job table",
         )
 
         self.assertGreater(
             len(vmscheduled_job),
             0,
-            "Check if VM Schedule exists in vm_scheduled_job table",
+            "Check if VM Schedule exists in resource_scheduled_job table",
         )
         return
 

@@ -24,19 +24,25 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ResourceScheduleResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VMScheduleResponse;
-import org.apache.cloudstack.vm.schedule.VMSchedule;
-import org.apache.cloudstack.vm.schedule.VMScheduleManager;
+import org.apache.cloudstack.schedule.ResourceScheduleManager;
+import org.apache.cloudstack.schedule.vm.VMScheduleAction;
+import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.commons.lang3.EnumUtils;
+import com.cloud.exception.InvalidParameterValueException;
 
 import javax.inject.Inject;
+import java.util.ArrayList;
+import java.util.List;
 
 @APICommand(name = "listVMSchedule", description = "List Instance Schedules.", responseObject = VMScheduleResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListVMScheduleCmd extends BaseListCmd {
     @Inject
-    VMScheduleManager vmScheduleManager;
+    ResourceScheduleManager resourceScheduleManager;
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
             type = CommandType.UUID,
@@ -89,9 +95,27 @@ public class ListVMScheduleCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     @Override
     public void execute() {
-        ListResponse<VMScheduleResponse> response = vmScheduleManager.listSchedule(this);
+        String actionStr = null;
+        if (getAction() != null) {
+            VMScheduleAction vmAction = EnumUtils.getEnumIgnoreCase(VMScheduleAction.class, getAction());
+            if (vmAction == null) {
+                throw new InvalidParameterValueException("Invalid value for action: " + getAction());
+            }
+            actionStr = vmAction.name();
+        }
+
+        String resourceIdStr = getVmId() != null ? String.valueOf(getVmId()) : null;
+
+        ListResponse<ResourceScheduleResponse> scheduleResponse = resourceScheduleManager.listSchedule(
+                getId(), null, ApiCommandResourceType.VirtualMachine, resourceIdStr, actionStr, getEnabled(), getStartIndex(), getPageSizeVal());
+        List<VMScheduleResponse> vmScheduleResponses = new ArrayList<>();
+        for (ResourceScheduleResponse resourceScheduleResponse : scheduleResponse.getResponses()) {
+            vmScheduleResponses.add(new VMScheduleResponse(resourceScheduleResponse));
+        }
+        ListResponse<VMScheduleResponse> response = new ListResponse<>();
+        response.setResponses(vmScheduleResponses, scheduleResponse.getCount());
         response.setResponseName(getCommandName());
-        response.setObjectName(VMSchedule.class.getSimpleName().toLowerCase());
+        response.setObjectName("vmschedule");
         setResponseObject(response);
     }
 }

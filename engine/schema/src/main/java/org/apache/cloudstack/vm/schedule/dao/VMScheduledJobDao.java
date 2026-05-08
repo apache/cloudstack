@@ -18,19 +18,11 @@
  */
 package org.apache.cloudstack.vm.schedule.dao;
 
-import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.vm.schedule.VMScheduledJobVO;
+import org.apache.cloudstack.schedule.dao.ResourceScheduledJobDao;
 
-import java.util.Date;
-import java.util.List;
-
-public interface VMScheduledJobDao extends GenericDao<VMScheduledJobVO, Long> {
-
-    List<VMScheduledJobVO> listJobsToStart(Date currentTimestamp);
-
-    int expungeJobsForSchedules(List<Long> scheduleId, Date dateAfter);
-
-    int expungeJobsBefore(Date currentTimestamp);
-
-    VMScheduledJobVO findByScheduleAndTimestamp(long scheduleId, Date scheduledTimestamp);
+/**
+ * @deprecated Use {@link ResourceScheduledJobDao} directly.
+ */
+@Deprecated
+public interface VMScheduledJobDao extends ResourceScheduledJobDao {
 }
