@@ -83,6 +83,7 @@ import org.apache.cloudstack.storage.image.store.TemplateObject;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -1342,13 +1343,9 @@ public class VolumeServiceImpl implements VolumeService {
             grantAccess(volumeInfo, destHost, primaryDataStore);
             volumeInfo = volFactory.getVolume(volumeInfo.getId(), primaryDataStore);
             // For Netapp ONTAP iscsiName or Lun path  is available only after grantAccess
-            String managedStoreTarget = volumeInfo.get_iScsiName() != null ? volumeInfo.get_iScsiName() : volumeInfo.getUuid();
+            String managedStoreTarget = ObjectUtils.defaultIfNull(volumeInfo.get_iScsiName(), volumeInfo.getUuid());
             details.put(PrimaryDataStore.MANAGED_STORE_TARGET, managedStoreTarget);
             primaryDataStore.setDetails(details);
-            // Update destTemplateInfo with the iSCSI path from volumeInfo
-            if (destTemplateInfo instanceof TemplateObject) {
-                ((TemplateObject)destTemplateInfo).setInstallPath(volumeInfo.getPath());
-            }
 
             try {
                 motionSrv.copyAsync(srcTemplateInfo, destTemplateInfo, destHost, caller);

@@ -29,6 +29,7 @@ import com.cloud.host.HostVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.dao.SnapshotDetailsDao;
@@ -109,7 +110,7 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
     public DataStoreTO getStoreTO(DataStore store) { return null; }
 
     @Override
-    public boolean volumesRequireGrantAccessWhenUsed(){
+    public boolean volumesRequireGrantAccessWhenUsed() {
         logger.info("OntapPrimaryDatastoreDriver: volumesRequireGrantAccessWhenUsed: Called");
         return true;
     }
@@ -141,7 +142,6 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
                 logger.error("createAsync: Storage Pool not found for id: " + dataStore.getId());
                 throw new CloudRuntimeException("Storage Pool not found for id: " + dataStore.getId());
             }
-            String storagePoolUuid = dataStore.getUuid();
 
             Map<String, String> details = storagePoolDetailsDao.listDetailsKeyPairs(dataStore.getId());
 
@@ -149,7 +149,7 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
                 VolumeInfo volInfo = (VolumeInfo) dataObject;
 
                 // Create the backend storage object (LUN for iSCSI, no-op for NFS)
-                CloudStackVolume created = createCloudStackVolume(dataStore, volInfo, details);
+                CloudStackVolume created = createCloudStackVolume(storagePool, volInfo, details);
 
                 // Update CloudStack volume record with storage pool association and protocol-specific details
                 VolumeVO volumeVO = volumeDao.findById(volInfo.getId());
@@ -201,22 +201,10 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
     /**
      * Creates a volume on the ONTAP backend.
      */
-    private CloudStackVolume createCloudStackVolume(DataStore dataStore, DataObject dataObject, Map<String, String> details) {
-        StoragePoolVO storagePool = storagePoolDao.findById(dataStore.getId());
-        if (storagePool == null) {
-            logger.error("createCloudStackVolume: Storage Pool not found for id: {}", dataStore.getId());
-            throw new CloudRuntimeException("Storage Pool not found for id: " + dataStore.getId());
-        }
-
+    private CloudStackVolume createCloudStackVolume(StoragePoolVO storagePool, VolumeInfo volumeObject, Map<String, String> details) {
         StorageStrategy storageStrategy = OntapStorageUtils.getStrategyByStoragePoolDetails(details);
-
-        if (dataObject.getType() == DataObjectType.VOLUME) {
-            VolumeInfo volumeObject = (VolumeInfo) dataObject;
-            CloudStackVolume cloudStackVolumeRequest = OntapStorageUtils.createCloudStackVolumeRequestByProtocol(storagePool, details, volumeObject);
-            return storageStrategy.createCloudStackVolume(cloudStackVolumeRequest);
-        } else {
-            throw new CloudRuntimeException("Unsupported DataObjectType: " + dataObject.getType());
-        }
+        CloudStackVolume cloudStackVolumeRequest = OntapStorageUtils.createCloudStackVolumeRequestByProtocol(storagePool, details, volumeObject);
+        return storageStrategy.createCloudStackVolume(cloudStackVolumeRequest);
     }
 
     /**
@@ -243,7 +231,7 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
                 StorageStrategy storageStrategy = OntapStorageUtils.getStrategyByStoragePoolDetails(details);
                 logger.info("createCloudStackVolumeForTypeVolume: Connection to Ontap SVM [{}] successful, preparing CloudStackVolumeRequest", details.get(OntapStorageConstants.SVM_NAME));
                 VolumeInfo volumeInfo = (VolumeInfo) data;
-                CloudStackVolume cloudStackVolumeRequest = createDeleteCloudStackVolumeRequest(storagePool,details,volumeInfo);
+                CloudStackVolume cloudStackVolumeRequest = createDeleteCloudStackVolumeRequest(storagePool, details, volumeInfo);
                 storageStrategy.deleteCloudStackVolume(cloudStackVolumeRequest);
                 logger.info("deleteAsync: Volume deleted: " + volumeInfo.getId());
                 commandResult.setResult(null);
@@ -308,7 +296,7 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
 
             if (jobResponse != null && jobResponse.getJob() != null) {
                 // Poll for job completion
-                Boolean jobSucceeded = storageStrategy.jobPollForSuccess(jobResponse.getJob().getUuid(), 30, 2);
+                Boolean jobSucceeded = storageStrategy.jobPollForSuccess(jobResponse.getJob().getUuid(), 30, 2000);
                 if (!jobSucceeded) {
                     throw new CloudRuntimeException("Delete job failed for snapshot [" +
                             snapshotName + "] on FlexVol [" + flexVolUuid + "]");
@@ -383,7 +371,6 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
                 logger.error("grantAccess: Storage Pool not found for id: " + dataStore.getId());
                 throw new CloudRuntimeException("Storage Pool not found for id: " + dataStore.getId());
             }
-            String storagePoolUuid = dataStore.getUuid();
 
             // ONTAP managed storage only supports cluster and zone scoped pools
             if (storagePool.getScope() != ScopeType.CLUSTER && storagePool.getScope() != ScopeType.ZONE) {
@@ -412,7 +399,6 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
                             OntapStorageConstants.NAME, accessGroupName,
                             OntapStorageConstants.SVM_DOT_NAME, svmName
                     );
-                    Igroup igroup = new Igroup();
                     AccessGroup accessGroup = sanStrategy.getAccessGroup(getAccessGroupMap);
                     if(accessGroup == null || accessGroup.getIgroup() == null) {
                         logger.info("grantAccess: Igroup {} does not exist for the host {} : Need to create Igroup for the host ", accessGroupName, host.getName());
@@ -425,7 +411,6 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
                         accessGroup = sanStrategy.createAccessGroup(accessGroup);
                     }else{
                         logger.info("grantAccess: Igroup {} already exist for the host {}: ", accessGroup.getIgroup().getName() ,host.getName());
-                        igroup = accessGroup.getIgroup();
                         /* TODO Below cases will be covered later, for now they will be a pre-requisite on customer side
                           1. Igroup exist with the same name but host initiator has been rempved
                           2.  Igroup exist with the same name but host initiator has been changed may be due to new NIC or new adapter
@@ -520,8 +505,8 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
             String accessGroupName = OntapStorageUtils.getIgroupName(svmName, host.getName());
 
             // Retrieve LUN name from volume details; if missing, volume may not have been fully created
-            String lunName = volumeDetailsDao.findDetail(volumeVO.getId(), OntapStorageConstants.LUN_DOT_NAME) != null ?
-                    volumeDetailsDao.findDetail(volumeVO.getId(), OntapStorageConstants.LUN_DOT_NAME).getValue() : null;
+            VolumeDetailVO lunDetail = volumeDetailsDao.findDetail(volumeVO.getId(), OntapStorageConstants.LUN_DOT_NAME);
+            String lunName = lunDetail != null ? lunDetail.getValue() : null;
             if (lunName == null) {
                 logger.warn("revokeAccessForVolume: No LUN name found for volume [{}]; skipping revoke", volumeVO.getId());
                 return;
@@ -671,10 +656,9 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
             // For iSCSI, retrieve LUN UUID for restore operations
             String lunUuid = null;
             if (ProtocolType.ISCSI.name().equalsIgnoreCase(protocol)) {
-                lunUuid = volumeDetailsDao.findDetail(volumeVO.getId(), OntapStorageConstants.LUN_DOT_UUID) != null
-                        ? volumeDetailsDao.findDetail(volumeVO.getId(), OntapStorageConstants.LUN_DOT_UUID).getValue()
-                        : null;
-                if (lunUuid == null) {
+                VolumeDetailVO lunDetail = volumeDetailsDao.findDetail(volumeVO.getId(), OntapStorageConstants.LUN_DOT_UUID);
+                String lunUUID = lunDetail != null ? lunDetail.getValue() : null;
+                if (lunUUID == null) {
                     throw new CloudRuntimeException("LUN UUID not found for iSCSI volume " + volumeVO.getId());
                 }
             }
@@ -692,7 +676,7 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
             }
 
             // Poll for job completion
-            Boolean jobSucceeded = storageStrategy.jobPollForSuccess(jobResponse.getJob().getUuid(), 30, 2);
+            Boolean jobSucceeded = storageStrategy.jobPollForSuccess(jobResponse.getJob().getUuid(), 30, 2000);
             if (!jobSucceeded) {
                 throw new CloudRuntimeException("FlexVolume snapshot job failed on FlexVol UUID [" + flexVolUuid + "]");
             }
@@ -843,7 +827,7 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
             }
 
             // Poll for job completion (use longer timeout for large LUNs/files)
-            Boolean jobSucceeded = storageStrategy.jobPollForSuccess(jobResponse.getJob().getUuid(), 60, 2);
+            Boolean jobSucceeded = storageStrategy.jobPollForSuccess(jobResponse.getJob().getUuid(), 60, 2000);
             if (!jobSucceeded) {
                 throw new CloudRuntimeException("Restore job failed for snapshot [" +
                         snapshotName + "]");

@@ -108,7 +108,7 @@ public class OntapStorageUtils {
         return name.matches(OntapStorageConstants.ONTAP_NAME_REGEX);
     }
 
-    public static String getOSTypeFromHypervisor(String hypervisorType){
+    public static String getOSTypeFromHypervisor(String hypervisorType) {
         switch (hypervisorType) {
             case OntapStorageConstants.KVM:
                 return Lun.OsTypeEnum.LINUX.name();

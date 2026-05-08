@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.kvm.storage;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -97,19 +98,8 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
 
         String result = iScsiAdmCmd.execute();
 
-        if (result != null) {
-            // Node record may already exist from a previous run; accept and proceed
-            if (isNonFatalNodeCreate(result)) {
-                logger.debug("iSCSI node already exists for {}@{}:{}, proceeding", getIqn(volumeUuid), pool.getSourceHost(), pool.getSourcePort());
-            } else {
-                logger.debug("Failed to add iSCSI target " + volumeUuid);
-                System.out.println("Failed to add iSCSI target " + volumeUuid);
-
-                return false;
-            }
-        } else {
-            logger.debug("Successfully added iSCSI target " + volumeUuid);
-            System.out.println("Successfully added to iSCSI target " + volumeUuid);
+        if (!handleNodeCreateResult(result, volumeUuid)) {
+            return false;
         }
 
         String chapInitiatorUsername = details.get(DiskTO.CHAP_INITIATOR_USERNAME);
@@ -143,29 +133,13 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
 
         result = iScsiAdmCmd.execute();
 
-        if (result != null) {
-            if (isNonFatalLogin(result)) {
-                logger.debug("iSCSI login returned benign message for {}@{}:{}: {}", iqn, host, port, result);
-                // Session already exists — a newly mapped LUN won't be visible until
-                // the kernel's next periodic SCSI scan (~30-60s).
-                Script rescanCmd = new Script(true, "iscsiadm", 0, logger);
-                rescanCmd.add("-m", "session");
-                rescanCmd.add("--rescan");
-                String rescanResult = rescanCmd.execute();
-                if (rescanResult != null) {
-                    logger.warn("iSCSI session rescan returned: {}", rescanResult);
-                } else {
-                    logger.debug("iSCSI session rescan completed successfully for {}@{}:{}", iqn, host, port);
-                }
-            } else {
-                logger.debug("Failed to log in to iSCSI target " + volumeUuid + ": " + result);
-                System.out.println("Failed to log in to iSCSI target " + volumeUuid);
+        if (!handleLoginResult(result, volumeUuid)) {
+            return false;
+        }
 
-                return false;
-            }
-        } else {
-            logger.debug("Successfully logged in to iSCSI target " + volumeUuid);
-            System.out.println("Successfully logged in to iSCSI target " + volumeUuid);
+        // If the session already existed, a newly mapped LUN won't be visible until a rescan.
+        if (result != null) {
+            rescanIscsiSessions(iqn, host, port);
         }
 
         // There appears to be a race condition where logging in to the iSCSI volume via iscsiadm
@@ -183,19 +157,54 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
         return true;
     }
 
-    // Removed sessionExists() call to avoid noisy sudo/iscsiadm session queries that may fail on some setups
-
-    private boolean isNonFatalLogin(String result) {
-        if (result == null) return true;
+    /**
+     * Checks the result of an iscsiadm node-create command.
+     * Returns true if the node was created or already exists, false on failure.
+     */
+    boolean handleNodeCreateResult(String result, String volumeUuid) {
+        if (result == null) {
+            logger.debug("Successfully added iSCSI node for target {}", volumeUuid);
+            return true;
+        }
         String msg = result.toLowerCase();
-        // Accept messages where the session already exists
-        return msg.contains("already present") || msg.contains("already logged in") || msg.contains("session exists");
+        if (msg.contains("already exists") || msg.contains("database exists") || msg.contains("exists")) {
+            logger.debug("iSCSI node already exists for target {}, proceeding", volumeUuid);
+            return true;
+        }
+        logger.debug("Failed to add iSCSI node for target {}: {}", volumeUuid, result);
+        return false;
     }
 
-    private boolean isNonFatalNodeCreate(String result) {
-        if (result == null) return true;
+    /**
+     * Checks the result of an iscsiadm login command.
+     * Returns true if the login succeeded or session already exists, false on failure.
+     */
+    boolean handleLoginResult(String result, String volumeUuid) {
+        if (result == null) {
+            logger.debug("Successfully logged in to iSCSI target {}", volumeUuid);
+            return true;
+        }
         String msg = result.toLowerCase();
-        return msg.contains("already exists") || msg.contains("database exists") || msg.contains("exists");
+        if (msg.contains("already present") || msg.contains("already logged in") || msg.contains("session exists")) {
+            logger.debug("iSCSI session already exists for target {}, proceeding", volumeUuid);
+            return true;
+        }
+        logger.debug("Failed to log in to iSCSI target {}: {}", volumeUuid, result);
+        return false;
+    }
+
+    private void rescanIscsiSessions(String iqn, String host, int port) {
+        Script rescanCmd = new Script(true, "iscsiadm", 0, logger);
+        rescanCmd.add("-m", "node");
+        rescanCmd.add("-T", iqn);
+        rescanCmd.add("-p", host + ":" + port);
+        rescanCmd.add("--rescan");
+        String rescanResult = rescanCmd.execute();
+        if (rescanResult != null) {
+            logger.warn("iSCSI session rescan returned: {}", rescanResult);
+        } else {
+            logger.debug("iSCSI session rescan completed successfully for {}@{}:{}", iqn, host, port);
+        }
     }
 
     private void waitForDiskToBecomeAvailable(String volumeUuid, KVMStoragePool pool) {
@@ -340,15 +349,15 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
      */
     private boolean hasOtherActiveLuns(String host, int port, String iqn, String lun) {
         String prefix = "ip-" + host + ":" + port + "-iscsi-" + iqn + "-lun-";
-        java.io.File byPathDir = new java.io.File("/dev/disk/by-path");
+        File byPathDir = new File("/dev/disk/by-path");
         if (!byPathDir.exists() || !byPathDir.isDirectory()) {
             return false;
         }
-        java.io.File[] entries = byPathDir.listFiles();
+        File[] entries = byPathDir.listFiles();
         if (entries == null) {
             return false;
         }
-        for (java.io.File entry : entries) {
+        for (File entry : entries) {
             String name = entry.getName();
             // Skip partition entries (e.g. lun-0-part1, lun-0-part2) — these are not
             // independent LUNs, they are partition symlinks for the same LUN disk.
