@@ -575,7 +575,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             logger.debug("Allocating disks for {}",  persistedVm);
 
-            if (_userVmMgr.isBlankInstance(template)) {
+            if (isBlankInstance(template)) {
                 logger.debug("Template is a dummy template for hypervisor {}, skipping volume allocation", hyperType);
                 return;
             } else {
@@ -6701,5 +6701,19 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             throw new InsufficientServerCapacityException(String.format("Unable to create a deployment for %s",
                     vmProfile), DataCenter.class, plan.getDataCenterId(), areAffinityGroupsAssociated(vmProfile));
         }
+    }
+
+    @Override
+    public boolean isBlankInstanceDefaultTemplate(VirtualMachineTemplate template) {
+        return KVM_BLANK_VM_TEMPLATE_NAME.equals(template.getUniqueName());
+    }
+
+    @Override
+    public boolean isBlankInstance(VirtualMachineTemplate template) {
+        if (isBlankInstanceDefaultTemplate(template)) {
+            return true;
+        }
+        return Boolean.TRUE.equals(
+                MapUtils.getBoolean(CallContext.current().getContextParameters(), ApiConstants.BLANK_INSTANCE));
     }
 }

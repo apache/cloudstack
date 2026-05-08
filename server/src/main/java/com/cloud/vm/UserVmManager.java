@@ -206,6 +206,4 @@ public interface UserVmManager extends UserVmService {
      * @return true if the VM is part of a CKS cluster, false otherwise.
      */
     boolean isVMPartOfAnyCKSCluster(VMInstanceVO vm);
-
-    boolean isBlankInstance(VirtualMachineTemplate template);
 }
