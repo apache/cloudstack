@@ -904,6 +904,7 @@
 "label.items.selected": "item(ns) selecionados",
 "label.japanese.keyboard": "Teclado japon\u00eas",
 "label.keep": "Manter",
+"label.keep.mac.address.on.public.nic": "Utilizar o mesmo endere\u00e7o MAC para a NIC p\u00fablica dos VRs",
 "label.key": "Chave",
 "label.keyboard": "Linguagem do teclado",
 "label.keyboardtype": "Tipo de teclado",

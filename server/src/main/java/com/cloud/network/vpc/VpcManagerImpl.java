@@ -1568,7 +1568,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @ActionEvent(eventType = EventTypes.EVENT_VPC_CREATE, eventDescription = "creating vpc", create = true)
     public Vpc createVpc(final long zoneId, final long vpcOffId, final long vpcOwnerId, final String vpcName, final String displayText, final String cidr, String networkDomain,
                          final String ip4Dns1, final String ip4Dns2, final String ip6Dns1, final String ip6Dns2, final Boolean displayVpc, Integer publicMtu,
-                         final Integer cidrSize, final Long asNumber, final List<Long> bgpPeerIds, Boolean useVrIpResolver) throws ResourceAllocationException {
+                         final Integer cidrSize, final Long asNumber, final List<Long> bgpPeerIds, Boolean useVrIpResolver, boolean keepMacAddressOnPublicNic) throws ResourceAllocationException {
         final Account caller = CallContext.current().getCallingAccount();
         final Account owner = _accountMgr.getAccount(vpcOwnerId);
 
@@ -1668,6 +1668,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         vpc.setPublicMtu(publicMtu);
         vpc.setDisplay(Boolean.TRUE.equals(displayVpc));
         vpc.setUseRouterIpResolver(Boolean.TRUE.equals(useVrIpResolver));
+        vpc.setKeepMacAddressOnPublicNic(keepMacAddressOnPublicNic);
 
         try (CheckedReservation vpcReservation = new CheckedReservation(owner, ResourceType.vpc, null, null, 1L, reservationDao, _resourceLimitMgr)) {
             if (vpc.getCidr() == null && cidrSize != null) {
@@ -1728,7 +1729,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         List<Long> bgpPeerIds = (cmd instanceof CreateVPCCmdByAdmin) ? ((CreateVPCCmdByAdmin)cmd).getBgpPeerIds() : null;
         Vpc vpc = createVpc(cmd.getZoneId(), cmd.getVpcOffering(), cmd.getEntityOwnerId(), cmd.getVpcName(), cmd.getDisplayText(),
             cmd.getCidr(), cmd.getNetworkDomain(), cmd.getIp4Dns1(), cmd.getIp4Dns2(), cmd.getIp6Dns1(),
-            cmd.getIp6Dns2(), cmd.isDisplay(), cmd.getPublicMtu(), cmd.getCidrSize(), cmd.getAsNumber(), bgpPeerIds, cmd.getUseVrIpResolver());
+            cmd.getIp6Dns2(), cmd.isDisplay(), cmd.getPublicMtu(), cmd.getCidrSize(), cmd.getAsNumber(), bgpPeerIds,
+            cmd.getUseVrIpResolver(), cmd.getKeepMacAddressOnPublicNic());
 
         String sourceNatIP = cmd.getSourceNatIP();
         boolean forNsx = isVpcForProvider(Provider.Nsx, vpc);
@@ -1940,12 +1942,14 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     @Override
     public Vpc updateVpc(UpdateVPCCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException {
-        return updateVpc(cmd.getId(), cmd.getVpcName(), cmd.getDisplayText(), cmd.getCustomId(), cmd.isDisplayVpc(), cmd.getPublicMtu(), cmd.getSourceNatIP());
+        return updateVpc(cmd.getId(), cmd.getVpcName(), cmd.getDisplayText(), cmd.getCustomId(),
+                cmd.isDisplayVpc(), cmd.getPublicMtu(), cmd.getSourceNatIP(), cmd.getKeepMacAddressOnPublicNic());
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_UPDATE, eventDescription = "updating vpc")
-    public Vpc updateVpc(final long vpcId, final String vpcName, final String displayText, final String customId, final Boolean displayVpc, Integer mtu, String sourceNatIp) throws ResourceUnavailableException, InsufficientCapacityException {
+    public Vpc updateVpc(final long vpcId, final String vpcName, final String displayText, final String customId,
+                         final Boolean displayVpc, Integer mtu, String sourceNatIp, Boolean keepMacAddressOnPublicNic) throws ResourceUnavailableException, InsufficientCapacityException {
         final Account caller = CallContext.current().getCallingAccount();
 
         // Verify input parameters
@@ -1975,6 +1979,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         if (displayVpc != null) {
             vpc.setDisplay(displayVpc);
+        }
+
+        if (keepMacAddressOnPublicNic != null) {
+            vpc.setKeepMacAddressOnPublicNic(keepMacAddressOnPublicNic);
         }
 
         mtu = validateMtu(vpcToUpdate, mtu);
