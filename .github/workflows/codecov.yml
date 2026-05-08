@@ -21,6 +21,7 @@ on: [pull_request, push]
 
 permissions:
   contents: read
+  pull-requests: write  # required to post/update the grade comment on PRs
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -28,7 +29,7 @@ concurrency:
 
 jobs:
   build:
-    if: github.repository == 'apache/cloudstack'
+    if: github.repository == 'apache/cloudstack' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
     name: codecov
     runs-on: ubuntu-22.04
     steps:
@@ -57,3 +58,56 @@ jobs:
           verbose: true
           name: codecov
           token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Compute Coverage Grade
+        id: grade
+        run: bash scripts/coverage-grade.sh client/target/site/jacoco-aggregate/jacoco.xml
+
+      # Posts a new comment on every push so coverage history is preserved across the PR timeline.
+      # On push events (no PR number) this step is skipped automatically.
+      - name: Post Coverage Grade Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const grade     = '${{ steps.grade.outputs.coverage_grade }}';
+            const label     = '${{ steps.grade.outputs.coverage_grade_label }}';
+            const linePct   = '${{ steps.grade.outputs.line_coverage }}';
+            const branchPct = '${{ steps.grade.outputs.branch_coverage }}';
+            const emojiMap  = { A: '🟢', B: '🟡', C: '🟠', D: '🔴', F: '⛔' };
+            const emoji     = emojiMap[grade] ?? '❓';
+            const runUrl    = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+            const branchRow = branchPct !== 'N/A'
+              ? `| Branch coverage | **${branchPct}%** |`
+              : '';
+
+            const body = [
+              `## ${emoji} Test Coverage Grade: \`${grade}\` — ${label}`,
+              '',
+              '| Metric | Value |',
+              '|--------|-------|',
+              `| Line coverage   | **${linePct}%** |`,
+              branchRow,
+              '',
+              '### Grade Scale',
+              '| Grade | Line Coverage | Meaning |',
+              '|-------|--------------|---------|',
+              '| 🟢 A | ≥ 80% | Excellent - this code sleeps well at night 😴 |',
+              '| 🟡 B | 60-79% | Good - almost there, don\'t stop now 😉 |',
+              '| 🟠 C | 40-59% | Acceptable - your code is wearing a seatbelt, but no airbags 😬 |',
+              '| 🔴 D | 20-39% | Marginal - boldly shipping where no test has gone before 🖖 |',
+              '| ⛔ F | < 20%  | Failing - tests? what tests? 🔥 |',
+              '',
+              '> Branch coverage is shown as a secondary signal. Grade is determined by **line coverage**.',
+              `> [View full Actions run](${runUrl})`,
+            ].filter(l => l !== undefined).join('\n');
+
+            await github.rest.issues.createComment({
+              owner:        context.repo.owner,
+              repo:         context.repo.repo,
+              issue_number: context.issue.number,
+              body:         body,
+            });
+            console.log('Posted coverage grade comment');
