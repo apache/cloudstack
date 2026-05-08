@@ -158,10 +158,14 @@ class TestDeployVMFromISO(cloudstackTestCase):
             "Check list response returns a valid list"
         )
         vm_response = list_vm_response[0]
+        vm_state = self.virtual_machine.getState(
+            self.apiclient,
+            VirtualMachine.RUNNING
+        )
 
         self.assertEqual(
-            vm_response.state,
-            "Running",
+            vm_state,
+            VirtualMachine.RUNNING,
             "Check virtual machine is in running state"
         )
 
