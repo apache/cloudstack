@@ -865,7 +865,7 @@ public class ServerAdapterTest {
         when(dcVO.getId()).thenReturn(1L);
         when(dataCenterDao.findByUuid("dc-uuid")).thenReturn(dcVO);
         StoragePoolJoinVO poolVO = mock(StoragePoolJoinVO.class);
-        when(storagePoolJoinDao.listByZoneHypervisorAndType(eq(1L), eq(Hypervisor.HypervisorType.KVM), any(), any())).thenReturn(List.of(poolVO));
+        when(storagePoolJoinDao.listAvailableByZoneHypervisorAndType(eq(1L), eq(Hypervisor.HypervisorType.KVM), any(), any())).thenReturn(List.of(poolVO));
 
         assertNotNull(serverAdapter.listStorageDomainsByDcId("dc-uuid", 0L, 10L));
     }
@@ -905,7 +905,7 @@ public class ServerAdapterTest {
     @Test
     public void testListAllHosts_ReturnsList() {
         HostJoinVO hostVO = mock(HostJoinVO.class);
-        when(hostJoinDao.listRoutingHostsByHypervisor(any(), any())).thenReturn(List.of(hostVO));
+        when(hostJoinDao.listAvailableRoutingHostsByHypervisor(any(), any())).thenReturn(List.of(hostVO));
 
         assertEquals(1, serverAdapter.listAllHosts(0L, 10L).size());
     }

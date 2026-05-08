@@ -43,6 +43,6 @@ public interface HostJoinDao extends GenericDao<HostJoinVO, Long> {
 
     List<HostJoinVO> findByClusterId(Long clusterId, Host.Type type);
 
-    List<HostJoinVO> listRoutingHostsByHypervisor(Hypervisor.HypervisorType hypervisorType, Filter filter);
+    List<HostJoinVO> listAvailableRoutingHostsByHypervisor(Hypervisor.HypervisorType hypervisorType, Filter filter);
 
 }

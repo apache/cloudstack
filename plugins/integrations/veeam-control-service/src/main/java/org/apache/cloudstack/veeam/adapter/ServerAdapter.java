@@ -862,7 +862,7 @@ public class ServerAdapter extends ManagerBase {
             throw new InvalidParameterValueException("DataCenter with ID " + uuid + " not found");
         }
         Filter filter = new Filter(StoragePoolJoinVO.class, "id", true, offset, limit);
-        List<StoragePoolJoinVO> storagePoolVOS = storagePoolJoinDao.listByZoneHypervisorAndType(dataCenterVO.getId(),
+        List<StoragePoolJoinVO> storagePoolVOS = storagePoolJoinDao.listAvailableByZoneHypervisorAndType(dataCenterVO.getId(),
                 Hypervisor.HypervisorType.KVM, SUPPORTED_STORAGE_TYPES, filter);
         return StoreVOToStorageDomainConverter.toStorageDomainListFromPools(storagePoolVOS);
     }
@@ -897,7 +897,7 @@ public class ServerAdapter extends ManagerBase {
     @ApiAccess(command = ListHostsCmd.class)
     public List<Host> listAllHosts(Long offset, Long limit) {
         Filter filter = new Filter(HostJoinVO.class, "id", true, offset, limit);
-        final List<HostJoinVO> hosts = hostJoinDao.listRoutingHostsByHypervisor(Hypervisor.HypervisorType.KVM, filter);
+        final List<HostJoinVO> hosts = hostJoinDao.listAvailableRoutingHostsByHypervisor(Hypervisor.HypervisorType.KVM, filter);
         return HostJoinVOToHostConverter.toHostList(hosts);
     }
 

@@ -47,6 +47,6 @@ public interface StoragePoolJoinDao extends GenericDao<StoragePoolJoinVO, Long> 
 
     List<StoragePoolVO> findStoragePoolByScopeAndRuleTags(Long datacenterId, Long podId, Long clusterId, ScopeType scopeType, List<String> tags);
 
-    List<StoragePoolJoinVO> listByZoneHypervisorAndType(long zoneId, Hypervisor.HypervisorType hypervisorType, List<Storage.StoragePoolType> types, Filter filter);
+    List<StoragePoolJoinVO> listAvailableByZoneHypervisorAndType(long zoneId, Hypervisor.HypervisorType hypervisorType, List<Storage.StoragePoolType> types, Filter filter);
 
 }

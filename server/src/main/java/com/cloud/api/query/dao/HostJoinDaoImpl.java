@@ -53,6 +53,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostStats;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.resource.ResourceState;
 import com.cloud.storage.StorageStats;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.db.Filter;
@@ -415,15 +416,20 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
     }
 
     @Override
-    public List<HostJoinVO> listRoutingHostsByHypervisor(Hypervisor.HypervisorType hypervisorType, Filter filter) {
+    public List<HostJoinVO> listAvailableRoutingHostsByHypervisor(Hypervisor.HypervisorType hypervisorType, Filter filter) {
+        List<ResourceState> availableStates = Arrays.asList(
+                ResourceState.Enabled, ResourceState.Disabled, ResourceState.Degraded
+        );
         SearchBuilder<HostJoinVO> sb = createSearchBuilder();
         sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
         sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
+        sb.and("resourceStates", sb.entity().getResourceState(), SearchCriteria.Op.IN);
         sb.done();
 
         SearchCriteria<HostJoinVO> sc = sb.create();
         sc.setParameters("type", Host.Type.Routing);
         sc.setParameters("hypervisorType", hypervisorType);
+        sc.setParameters("resourceStates", availableStates.toArray());
         return listBy(sc, filter);
     }
 }

@@ -66,7 +66,7 @@ public class StoragePoolJoinDaoImplTest {
     }
 
     @Test
-    public void listByZoneHypervisorAndTypeReturnsMatchingPoolsWhenTypesAreProvided() {
+    public void listAvailableByZoneHypervisorAndTypeReturnsMatchingPoolsWhenTypesAreProvided() {
         long zoneId = 42L;
         Hypervisor.HypervisorType hypervisorType = Hypervisor.HypervisorType.KVM;
         List<Storage.StoragePoolType> types = Arrays.asList(Storage.StoragePoolType.NetworkFilesystem, Storage.StoragePoolType.Filesystem);
@@ -75,7 +75,7 @@ public class StoragePoolJoinDaoImplTest {
 
         doReturn(expectedPools).when(storagePoolJoinDao).listBy(searchCriteria, filter);
 
-        List<StoragePoolJoinVO> result = storagePoolJoinDao.listByZoneHypervisorAndType(zoneId, hypervisorType, types, filter);
+        List<StoragePoolJoinVO> result = storagePoolJoinDao.listAvailableByZoneHypervisorAndType(zoneId, hypervisorType, types, filter);
 
         assertSame(expectedPools, result);
         verify(searchCriteria).setParameters("zoneId", zoneId);
@@ -85,7 +85,7 @@ public class StoragePoolJoinDaoImplTest {
     }
 
     @Test
-    public void listByZoneHypervisorAndTypeSkipsTypeFilterWhenTypesAreNull() {
+    public void listAvailableByZoneHypervisorAndTypeSkipsTypeFilterWhenTypesAreNull() {
         long zoneId = 7L;
         Hypervisor.HypervisorType hypervisorType = Hypervisor.HypervisorType.VMware;
         Filter filter = mock(Filter.class);
@@ -93,7 +93,7 @@ public class StoragePoolJoinDaoImplTest {
 
         doReturn(expectedPools).when(storagePoolJoinDao).listBy(searchCriteria, filter);
 
-        List<StoragePoolJoinVO> result = storagePoolJoinDao.listByZoneHypervisorAndType(zoneId, hypervisorType, null, filter);
+        List<StoragePoolJoinVO> result = storagePoolJoinDao.listAvailableByZoneHypervisorAndType(zoneId, hypervisorType, null, filter);
 
         assertSame(expectedPools, result);
         verify(searchCriteria).setParameters("zoneId", zoneId);
@@ -103,14 +103,14 @@ public class StoragePoolJoinDaoImplTest {
     }
 
     @Test
-    public void listByZoneHypervisorAndTypeSkipsTypeFilterForEmptyTypesAndPassesNullFilter() {
+    public void listAvailableByZoneHypervisorAndTypeSkipsTypeFilterForEmptyTypesAndPassesNullFilter() {
         long zoneId = 9L;
         Hypervisor.HypervisorType hypervisorType = Hypervisor.HypervisorType.XenServer;
         List<StoragePoolJoinVO> expectedPools = Collections.singletonList(mock(StoragePoolJoinVO.class));
 
         doReturn(expectedPools).when(storagePoolJoinDao).listBy(searchCriteria, null);
 
-        List<StoragePoolJoinVO> result = storagePoolJoinDao.listByZoneHypervisorAndType(zoneId, hypervisorType, Collections.emptyList(), null);
+        List<StoragePoolJoinVO> result = storagePoolJoinDao.listAvailableByZoneHypervisorAndType(zoneId, hypervisorType, Collections.emptyList(), null);
 
         assertSame(expectedPools, result);
         verify(searchCriteria).setParameters("zoneId", zoneId);
