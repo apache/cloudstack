@@ -17,6 +17,8 @@
 package com.cloud.hypervisor.kvm.storage;
 
 import java.io.File;
+import java.io.FileWriter;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -387,20 +389,20 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
      */
     private void removeStaleScsiDevice(String host, int port, String iqn, String lun) {
         String byPath = getByPath(host, port, "/" + iqn + "/" + lun);
-        java.nio.file.Path byPathLink = java.nio.file.Paths.get(byPath);
-        if (!java.nio.file.Files.exists(byPathLink)) {
+        Path byPathLink = Paths.get(byPath);
+        if (!Files.exists(byPathLink)) {
             logger.debug("by-path entry for LUN " + lun + " already gone, nothing to remove");
             return;
         }
         try {
-            java.nio.file.Path realDevice = byPathLink.toRealPath();
+            Path realDevice = byPathLink.toRealPath();
             String devName = realDevice.getFileName().toString();
-            java.io.File deleteFile = new java.io.File("/sys/block/" + devName + "/device/delete");
+            File deleteFile = new File("/sys/block/" + devName + "/device/delete");
             if (!deleteFile.exists()) {
                 logger.warn("sysfs delete entry not found for device " + devName + " — cannot remove stale SCSI device");
                 return;
             }
-            try (java.io.FileWriter fw = new java.io.FileWriter(deleteFile)) {
+            try (FileWriter fw = new FileWriter(deleteFile)) {
                 fw.write("1");
             }
             logger.info("Removed stale SCSI device " + devName + " for LUN /" + iqn + "/" + lun + " via sysfs");
