@@ -158,7 +158,6 @@ class OntapPrimaryDatastoreDriverTest {
     void testCreateAsync_VolumeWithISCSI_Success() {
         // Setup
         when(dataStore.getId()).thenReturn(1L);
-        when(dataStore.getUuid()).thenReturn("pool-uuid-123");
         when(dataStore.getName()).thenReturn("ontap-pool");
         when(volumeInfo.getType()).thenReturn(VOLUME);
         when(volumeInfo.getId()).thenReturn(100L);
@@ -212,7 +211,6 @@ class OntapPrimaryDatastoreDriverTest {
         storagePoolDetails.put(OntapStorageConstants.PROTOCOL, ProtocolType.NFS3.name());
 
         when(dataStore.getId()).thenReturn(1L);
-        when(dataStore.getUuid()).thenReturn("pool-uuid-123");
         when(dataStore.getName()).thenReturn("ontap-pool");
         when(volumeInfo.getType()).thenReturn(VOLUME);
         when(volumeInfo.getId()).thenReturn(100L);
@@ -336,7 +334,6 @@ class OntapPrimaryDatastoreDriverTest {
     void testGrantAccess_ClusterScope_Success() {
         // Setup
         when(dataStore.getId()).thenReturn(1L);
-        when(dataStore.getUuid()).thenReturn("pool-uuid-123");
         when(volumeInfo.getType()).thenReturn(VOLUME);
         when(volumeInfo.getId()).thenReturn(100L);
 
@@ -389,7 +386,6 @@ class OntapPrimaryDatastoreDriverTest {
         when(hostVO.getName()).thenReturn("host1");
 
         when(dataStore.getId()).thenReturn(1L);
-        when(dataStore.getUuid()).thenReturn("pool-uuid-123");
         when(volumeInfo.getType()).thenReturn(VOLUME);
         when(volumeInfo.getId()).thenReturn(100L);
 
