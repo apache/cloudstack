@@ -8127,7 +8127,7 @@ class HSMProfile:
         cmd = addHSMProfile.addHSMProfileCmd()
         cmd.name = name
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
-        return HSMProfile(apiclient.addHSMProfile(cmd).__dict__)
+        return HSMProfile(apiclient.createHSMProfile(cmd).__dict__)
 
     @classmethod
     def list(cls, apiclient, **kwargs):
