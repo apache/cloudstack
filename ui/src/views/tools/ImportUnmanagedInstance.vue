@@ -40,6 +40,9 @@
                 :showIcon="true"
                 :message="$t('message.import.running.instance.warning')"
               />
+              <div v-if="!isNormalUserOrProject">
+                <ownership-selection @fetch-owner="fetchOwnerOptions" />
+              </div>
               <a-form-item name="displayname" ref="displayname">
                 <template #label>
                   <tooltip-label :title="$t('label.displayname')" :tooltip="apiParams.displayname.description"/>
@@ -57,59 +60,6 @@
                 <a-input
                   v-model:value="form.hostname"
                   :placeholder="apiParams.hostname.description" />
-              </a-form-item>
-              <a-form-item name="domainid" ref="domainid">
-                <template #label>
-                  <tooltip-label :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
-                </template>
-                <a-select
-                  v-model:value="form.domainid"
-                  showSearch
-                  optionFilterProp="label"
-                  :filterOption="(input, option) => {
-                    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                  }"
-                  :loading="optionsLoading.domains"
-                  :placeholder="apiParams.domainid.description"
-                  @change="val => { this.selectedDomainId = val }">
-                  <a-select-option v-for="dom in domainSelectOptions" :key="dom.value" :label="dom.label">
-                    <span>
-                      <resource-icon v-if="dom.icon" :image="dom.icon" size="1x" style="margin-right: 5px"/>
-                      <block-outlined v-else-if="dom.value !== null" style="margin-right: 5px" />
-                      {{ dom.label }}
-                    </span>
-                  </a-select-option>
-                </a-select>
-              </a-form-item>
-              <a-form-item name="account" ref="account" v-if="selectedDomainId">
-                <template #label>
-                  <tooltip-label :title="$t('label.account')" :tooltip="apiParams.account.description"/>
-                </template>
-                <a-input
-                  v-model:value="form.account"
-                  :placeholder="apiParams.account.description"/>
-              </a-form-item>
-              <a-form-item name="projectid" ref="projectid">
-                <template #label>
-                  <tooltip-label :title="$t('label.project')" :tooltip="apiParams.projectid.description"/>
-                </template>
-                <a-select
-                  v-model:value="form.projectid"
-                  showSearch
-                  optionFilterProp="label"
-                  :filterOption="(input, option) => {
-                    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                  }"
-                  :loading="optionsLoading.projects"
-                  :placeholder="apiParams.projectid.description">
-                  <a-select-option v-for="proj in projectSelectOptions" :key="proj.value" :label="proj.label">
-                    <span>
-                      <resource-icon v-if="proj.icon" :image="proj.icon" size="1x" style="margin-right: 5px"/>
-                      <project-outlined  v-else-if="proj.value !== null" style="margin-right: 5px" />
-                      {{ proj.label }}
-                    </span>
-                  </a-select-option>
-                </a-select>
               </a-form-item>
               <a-form-item name="templateid" ref="templateid" v-if="cluster.hypervisortype === 'VMware' || (cluster.hypervisortype === 'KVM' && !selectedVmwareVcenter && !isDiskImport && !isExternalImport)">
                 <template #label>
@@ -315,8 +265,8 @@
                 <multi-network-selection
                   :items="nics"
                   :zoneId="cluster.zoneid"
-                  :domainid="form.domainid"
-                  :account="form.account"
+                  :domainid="this.owner.domainid"
+                  :accountid="this.owner.account"
                   :selectionEnabled="false"
                   :filterUnimplementedNetworks="true"
                   :hypervisor="this.cluster.hypervisortype"
@@ -391,6 +341,7 @@ import { api } from '@/api'
 import _ from 'lodash'
 import InfoCard from '@/components/view/InfoCard'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import OwnershipSelection from '@/views/compute/wizard/OwnershipSelection.vue'
 import ComputeOfferingSelection from '@views/compute/wizard/ComputeOfferingSelection'
 import ComputeSelection from '@views/compute/wizard/ComputeSelection'
 import MultiDiskSelection from '@views/compute/wizard/MultiDiskSelection'
@@ -398,10 +349,12 @@ import MultiNetworkSelection from '@views/compute/wizard/MultiNetworkSelection'
 import OsLogo from '@/components/widgets/OsLogo'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import CheckBoxSelectPair from '@/components/CheckBoxSelectPair'
+import store from '@/store'
 
 export default {
   name: 'ImportUnmanagedInstances',
   components: {
+    OwnershipSelection,
     InfoCard,
     TooltipLabel,
     ComputeOfferingSelection,
@@ -472,22 +425,20 @@ export default {
   },
   data () {
     return {
+      owner: {
+        projectid: store.getters.project?.id,
+        domainid: store.getters.project?.id ? null : store.getters.userInfo.domainid,
+        account: store.getters.project?.id ? null : store.getters.userInfo.account
+      },
       options: {
-        domains: [],
-        projects: [],
         networks: [],
         templates: []
       },
       rowCount: {},
       optionsLoading: {
-        domains: false,
-        projects: false,
         networks: false,
         templates: false
       },
-      domains: [],
-      domainLoading: false,
-      selectedDomainId: null,
       templates: [],
       templateLoading: false,
       templateType: this.defaultTemplateType(),
@@ -588,8 +539,19 @@ export default {
             showicon: true
           },
           field: 'templateid'
+        },
+        accounts: {
+          list: 'listAccounts',
+          isLoad: true,
+          options: {
+            domainid: this.domainid
+          },
+          field: 'accountid'
         }
       }
+    },
+    isNormalUserOrProject () {
+      return ['User'].includes(this.$store.getters.userInfo.roletype) || store.getters.project?.id
     },
     isVmRunning () {
       if (this.resource && this.resource.powerstate === 'PowerOn') {
@@ -724,13 +686,29 @@ export default {
         forced: this.switches.forced,
         forcemstoimportvmfiles: this.switches.forceMsToImportVmFiles,
         domainid: null,
-        account: null
+        accountid: null
       })
       this.rules = reactive({
         displayname: [{ required: true, message: this.$t('message.error.input.value') }],
         templateid: [{ required: this.templateType !== 'auto', message: this.$t('message.error.input.value') }],
         rootdiskid: [{ required: this.templateType !== 'auto', message: this.$t('message.error.input.value') }]
       })
+    },
+    fetchOwnerOptions (OwnerOptions) {
+      this.owner = {}
+      if (OwnerOptions.selectedAccountType === 'Account') {
+        if (!OwnerOptions.selectedAccount) {
+          return
+        }
+        this.owner.account = OwnerOptions.selectedAccount
+        this.owner.domainid = OwnerOptions.selectedDomain
+      } else if (OwnerOptions.selectedAccountType === 'Project') {
+        if (!OwnerOptions.selectedProject) {
+          return
+        }
+        this.owner.projectid = OwnerOptions.selectedProject
+      }
+      this.fetchData()
     },
     fetchData () {
       _.each(this.params, (param, name) => {
@@ -1067,6 +1045,12 @@ export default {
           storageid: this.pool.id,
           diskpath: this.diskpath,
           temppath: this.tmppath
+        }
+        values.domainid = this.owner.domainid
+        if (this.owner.projectid) {
+          values.projectid = this.owner.projectid
+        } else {
+          values.account = this.owner.account
         }
         var importapi = 'importUnmanagedInstance'
         if (this.isExternalImport || this.isDiskImport || this.selectedVmwareVcenter) {
