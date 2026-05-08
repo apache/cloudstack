@@ -117,7 +117,7 @@ Requires: ipset
 Requires: perl
 Requires: rsync
 Requires: cifs-utils
-Requires: edk2-ovmf
+Requires: qemu-ovmf-x86_64
 Requires: swtpm
 Requires: (python3-libvirt or python3-libvirt-python)
 Requires: (qemu-img or qemu-tools)
