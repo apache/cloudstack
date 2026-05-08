@@ -53,4 +53,9 @@ public class PreMigrationCommand extends Command {
     public boolean executeInSequence() {
         return true;
     }
+
+    @Override
+    public boolean isBypassHostMaintenance() {
+        return true;
+    }
 }

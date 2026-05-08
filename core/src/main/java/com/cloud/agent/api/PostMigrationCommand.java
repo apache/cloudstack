@@ -51,4 +51,9 @@ public class PostMigrationCommand extends Command {
     public boolean executeInSequence() {
         return true;
     }
+
+    @Override
+    public boolean isBypassHostMaintenance() {
+        return true;
+    }
 }
