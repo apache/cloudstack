@@ -62,7 +62,7 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
     @Inject
     private AgentManager agentMgr;
     @Inject
-    private PrimaryDataStoreDao storagePool;
+    private PrimaryDataStoreDao storagePoolDao;
     @Inject
     private StorageManager storageManager;
     @Inject
@@ -188,9 +188,9 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
             throw new IllegalStateException(String.format("Calling KVM investigator for non KVM Host of type [%s].", host.getHypervisorType()));
         }
         boolean activityStatus = true;
-        HashMap<StoragePool, List<Volume>> poolVolMap = getVolumeUuidOnHost(host);
-        for (StoragePool pool : poolVolMap.keySet()) {
-            activityStatus = verifyActivityOfStorageOnHost(poolVolMap, pool, host, suspectTime, activityStatus);
+        HashMap<StoragePool, List<Volume>> poolVolumeMap = getStoragePoolAndVolumeInfoOnHost(host);
+        for (StoragePool pool : poolVolumeMap.keySet()) {
+            activityStatus = verifyActivityOfStorageOnHost(poolVolumeMap, pool, host, suspectTime, activityStatus);
             if (!activityStatus) {
                 logger.warn("It seems that the storage pool [{}] does not have activity on {}.", pool, host);
                 break;
@@ -223,33 +223,33 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
         return activityStatus;
     }
 
-    private HashMap<StoragePool, List<Volume>> getVolumeUuidOnHost(Host host) {
-        List<VMInstanceVO> vm_list = vmInstanceDao.listByHostId(host.getId());
-        List<VolumeVO> volume_list = new ArrayList<VolumeVO>();
-        for (VirtualMachine vm : vm_list) {
+    private HashMap<StoragePool, List<Volume>> getStoragePoolAndVolumeInfoOnHost(Host host) {
+        List<VMInstanceVO> vmListOnHost = vmInstanceDao.listByHostId(host.getId());
+        List<VolumeVO> volumeListOnHost = new ArrayList<>();
+        for (VirtualMachine vm : vmListOnHost) {
             logger.debug("Retrieving volumes of VM [{}]...", vm);
-            List<VolumeVO> vm_volume_list = volumeDao.findByInstance(vm.getId());
-            volume_list.addAll(vm_volume_list);
+            List<VolumeVO> volumeListOfVM = volumeDao.findByInstance(vm.getId());
+            volumeListOnHost.addAll(volumeListOfVM);
         }
 
-        HashMap<StoragePool, List<Volume>> poolVolMap = new HashMap<StoragePool, List<Volume>>();
-        for (Volume vol : volume_list) {
-            StoragePool sp = storagePool.findById(vol.getPoolId());
-            logger.debug("Retrieving storage pool [{}] of volume [{}]...", sp, vol);
-            if (!poolVolMap.containsKey(sp)) {
-                List<Volume> list = new ArrayList<Volume>();
-                list.add(vol);
+        HashMap<StoragePool, List<Volume>> poolVolumeMap = new HashMap<>();
+        for (Volume volume : volumeListOnHost) {
+            StoragePool pool = storagePoolDao.findById(volume.getPoolId());
+            logger.debug("Retrieving storage pool [{}] of volume [{}]...", pool, volume);
+            if (!poolVolumeMap.containsKey(pool)) {
+                List<Volume> volList = new ArrayList<>();
+                volList.add(volume);
 
-                poolVolMap.put(sp, list);
+                poolVolumeMap.put(pool, volList);
             } else {
-                poolVolMap.get(sp).add(vol);
+                poolVolumeMap.get(pool).add(volume);
             }
         }
-        return poolVolMap;
+        return poolVolumeMap;
     }
 
     public long[] getNeighbors(Host host) {
-        List<Long> neighbors = new ArrayList<Long>();
+        List<Long> neighbors = new ArrayList<>();
         List<HostVO> clusterHosts = resourceManager.listHostsInClusterByStatus(host.getClusterId(), Status.Up);
         logger.debug("Retrieving all \"Up\" hosts from cluster [{}]...", clusterDao.findById(host.getClusterId()));
         for (HostVO clusterHost : clusterHosts) {
