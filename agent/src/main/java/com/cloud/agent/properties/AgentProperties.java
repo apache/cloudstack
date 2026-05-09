@@ -602,20 +602,39 @@ public class AgentProperties{
      * Action taken by the KVM agent's storage heartbeat scripts (kvmheartbeat.sh / kvmspheartbeat.sh)
      * when a heartbeat write fails persistently. Allowed values:
      * <ul>
-     *   <li>{@code reboot} (default) — immediate sysrq-trigger reboot; original behavior</li>
-     *   <li>{@code graceful-reboot} — {@code systemctl reboot} instead of sysrq, lets VMs stop cleanly</li>
-     *   <li>{@code restart-agent} — restart cloudstack-agent only; running VMs preserved</li>
-     *   <li>{@code log-only} — log + alert, no automatic action</li>
+     *   <li>{@code hard-reboot} (default; {@code reboot} accepted as alias) — immediate
+     *       sysrq-trigger reboot. Required default for setups where a stale NFSv3 mount can
+     *       prevent a graceful shutdown from completing.</li>
+     *   <li>{@code graceful-reboot} — {@code systemctl reboot} instead of sysrq; allows VMs
+     *       to stop cleanly. Use only if a stale storage mount cannot block shutdown.</li>
+     *   <li>{@code restart-agent} — restart cloudstack-agent only; running VMs preserved.</li>
+     *   <li>{@code log-only} — log + alert; take no automatic action (admin must investigate).</li>
+     *   <li>{@code custom} — invoke the script at {@link #KVM_HEARTBEAT_FENCE_CUSTOM_SCRIPT}
+     *       (default {@code /etc/cloudstack/agent/heartbeat-fence-custom.sh}). The script is
+     *       called with one argument: the heartbeat script name (e.g. {@code kvmheartbeat.sh}).
+     *       If the script is missing or not executable, falls back to {@code hard-reboot}.</li>
      * </ul>
      * The non-default values are recommended for setups using LINSTOR/DRBD or other replicated
      * local storage, where transient I/O contention can cause a heartbeat write to time out
      * without the host actually being unhealthy.<br>
      * Read by the heartbeat shell scripts directly from agent.properties.<br>
      * Data type: String.<br>
-     * Default value: {@code reboot}
+     * Default value: {@code hard-reboot}
      */
     public static final Property<String> KVM_HEARTBEAT_FENCE_ACTION
-        = new Property<>("kvm.heartbeat.fence.action", "reboot");
+        = new Property<>("kvm.heartbeat.fence.action", "hard-reboot");
+
+    /**
+     * Path to the operator-supplied script invoked when
+     * {@link #KVM_HEARTBEAT_FENCE_ACTION} is set to {@code custom}. The script must be
+     * executable and is called with a single positional argument: the heartbeat script name
+     * that triggered the fence (e.g. {@code kvmheartbeat.sh}). Read by the heartbeat shell
+     * scripts directly from agent.properties.<br>
+     * Data type: String.<br>
+     * Default value: {@code /etc/cloudstack/agent/heartbeat-fence-custom.sh}
+     */
+    public static final Property<String> KVM_HEARTBEAT_FENCE_CUSTOM_SCRIPT
+        = new Property<>("kvm.heartbeat.fence.custom.script", "/etc/cloudstack/agent/heartbeat-fence-custom.sh");
 
     /**
      * Enables manually setting CPU's topology on KVM's VM. <br>
