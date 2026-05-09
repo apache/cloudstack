@@ -512,12 +512,11 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
                     .filter(key -> key.startsWith("Aux/" + LinstorUtil.CS_TEMPLATE_FOR_PREFIX))
                     .count();
             if (remainingTemplateRefs == expectedProps) {
-                // Surface the case where a resource that LOOKS like a template (resource name
-                // starts with the requested prefix) has zero `_cs-template-for-` aux properties
-                // even though we never decremented one — that's a legacy template predating the
-                // ref-count convention. Logging it before deletion lets operators audit how
-                // many such orphans existed at upgrade time.
-                if (expectedProps == 0 && rd.getName().toLowerCase().startsWith(rscName.toLowerCase())) {
+                // Surface the legacy case where a resource has zero `_cs-template-for-` aux
+                // properties even though we never decremented one — that's a template predating
+                // the ref-count convention, or a stale orphan. Logging before deletion lets
+                // operators audit how many such orphans existed at upgrade time.
+                if (expectedProps == 0) {
                     logger.info("Linstor: deleting resource {} which has no _cs-template-for- aux properties " +
                                     "(legacy template predating the ref-count convention, or a stale orphan). " +
                                     "Resource group context: {}", rd.getName(), rscGrpName);
