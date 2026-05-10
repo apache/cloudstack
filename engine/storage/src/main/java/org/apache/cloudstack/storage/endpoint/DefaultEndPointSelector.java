@@ -32,6 +32,7 @@ import javax.inject.Inject;
 
 import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.dao.DedicatedResourceDao;
+import com.cloud.storage.Volume;
 import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.user.Account;
@@ -460,27 +461,39 @@ public class DefaultEndPointSelector implements EndPointSelector {
             return null;
         }
 
+
         // Check if this is a CLVM pool
         StoragePoolVO pool = _storagePoolDao.findById(store.getId());
         if (pool == null || !ClvmPoolManager.isClvmPoolType(pool.getPoolType())) {
             return null;
         }
+        if (Volume.State.Allocated == volume.getState()) {
+            // Check if destination host hint is set
+            Long destHostId = volume.getDestinationHostId();
+            if (destHostId == null) {
+                return null;
+            }
 
-        // Check if destination host hint is set
-        Long destHostId = volume.getDestinationHostId();
-        if (destHostId == null) {
-            return null;
+            logger.info("CLVM {}: routing volume {} to destination host {} for optimal exclusive lock placement",
+                    operation, volume.getUuid(), destHostId);
+
+            EndPoint ep = getEndPointFromHostId(destHostId);
+            if (ep != null) {
+                return ep;
+            }
         }
 
-        logger.info("CLVM {}: routing volume {} to destination host {} for optimal exclusive lock placement",
-                operation, volume.getUuid(), destHostId);
-
-        EndPoint ep = getEndPointFromHostId(destHostId);
+        Long lockHostId = getClvmLockHostId(volume);
+        if (lockHostId == null) {
+            return null;
+        }
+        logger.info("CLVM {}: routing existing volume {} to live lock-holder host {}",
+                operation, volume.getUuid(), lockHostId);
+        EndPoint ep = getEndPointFromHostId(lockHostId);
         if (ep != null) {
             return ep;
         }
-
-        logger.warn("Could not get endpoint for destination host {}, falling back to default selection", destHostId);
+        logger.warn("Could not get endpoint for lock host {}, falling back to default selection", lockHostId);
         return null;
     }
 
@@ -704,6 +717,14 @@ public class DefaultEndPointSelector implements EndPointSelector {
 
         if (vm.getState() == VirtualMachine.State.Running) {
             return getEndPointFromHostId(vm.getHostId());
+        } else if (vm.getState() == VirtualMachine.State.Stopped) {
+            StoragePoolVO pool = _storagePoolDao.findById(volumeInfo.getPoolId());
+            if (pool != null && ClvmPoolManager.isClvmPoolType(pool.getPoolType())) {
+                EndPoint ep = getApplicableEndpointForClvm(snapshotInfo, volumeInfo);
+                if (ep != null) {
+                    return ep;
+                }
+            }
         }
 
         Long hostId = vm.getLastHostId();
@@ -714,6 +735,20 @@ public class DefaultEndPointSelector implements EndPointSelector {
         }
 
         return select(snapshotInfo, encryptionRequired);
+    }
+
+    private EndPoint getApplicableEndpointForClvm(SnapshotInfo snapshotInfo, VolumeInfo volumeInfo) {
+        Long lockHostId = getClvmLockHostId(volumeInfo);
+        if (lockHostId != null) {
+            logger.debug("CLVM snapshot operation: routing snapshot [{}] to lock-holder host [{}]",
+                    snapshotInfo.getUuid(), lockHostId);
+            EndPoint ep = getEndPointFromHostId(lockHostId);
+            if (ep != null) {
+                return ep;
+            }
+            logger.warn("Could not get endpoint for CLVM lock host {}, falling back", lockHostId);
+        }
+        return null;
     }
 
     @Override
