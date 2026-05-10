@@ -20,6 +20,7 @@ package org.apache.cloudstack.storage.endpoint;
 import com.cloud.host.Host;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.storage.Volume;
 import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage.StoragePoolType;
@@ -270,6 +271,7 @@ public class DefaultEndPointSelectorTest {
         Mockito.when(storagePoolVOMock.getPoolType()).thenReturn(StoragePoolType.CLVM);
         Mockito.when(volumeInfoMock.getDestinationHostId()).thenReturn(DEST_HOST_ID);
         Mockito.doReturn(endPointMock).when(defaultEndPointSelectorSpy).getEndPointFromHostId(DEST_HOST_ID);
+        Mockito.when(volumeInfoMock.getState()).thenReturn(Volume.State.Allocated);
 
         EndPoint result = defaultEndPointSelectorSpy.select(volumeInfoMock, false);
 
@@ -285,8 +287,8 @@ public class DefaultEndPointSelectorTest {
         Mockito.when(volumeInfoMock.getDataStore()).thenReturn(datastoreMock);
         Mockito.when(_storagePoolDao.findById(STORE_ID)).thenReturn(storagePoolVOMock);
         Mockito.when(storagePoolVOMock.getPoolType()).thenReturn(StoragePoolType.CLVM_NG);
-        Mockito.when(volumeInfoMock.getDestinationHostId()).thenReturn(DEST_HOST_ID);
         Mockito.doReturn(endPointMock).when(defaultEndPointSelectorSpy).getEndPointFromHostId(DEST_HOST_ID);
+        Mockito.doReturn(DEST_HOST_ID).when(defaultEndPointSelectorSpy).getClvmLockHostId(volumeInfoMock);
 
         EndPoint result = defaultEndPointSelectorSpy.select(volumeInfoMock, false);
 
@@ -306,6 +308,7 @@ public class DefaultEndPointSelectorTest {
         Mockito.when(datastoreMock.getScope()).thenReturn(Mockito.mock(Scope.class));
         Mockito.doReturn(endPointMock).when(defaultEndPointSelectorSpy).findEndPointInScope(
                 Mockito.any(), Mockito.anyString(), Mockito.eq(STORE_ID), Mockito.eq(false));
+        Mockito.when(volumeInfoMock.getState()).thenReturn(Volume.State.Allocated);
 
         EndPoint result = defaultEndPointSelectorSpy.select(volumeInfoMock, false);
 
@@ -339,8 +342,9 @@ public class DefaultEndPointSelectorTest {
         Mockito.when(volumeInfoMock.getDataStore()).thenReturn(datastoreMock);
         Mockito.when(_storagePoolDao.findById(STORE_ID)).thenReturn(storagePoolVOMock);
         Mockito.when(storagePoolVOMock.getPoolType()).thenReturn(StoragePoolType.CLVM_NG);
-        Mockito.when(volumeInfoMock.getDestinationHostId()).thenReturn(DEST_HOST_ID);
         Mockito.doReturn(endPointMock).when(defaultEndPointSelectorSpy).getEndPointFromHostId(DEST_HOST_ID);
+        Mockito.doReturn(DEST_HOST_ID).when(defaultEndPointSelectorSpy).getClvmLockHostId(volumeInfoMock);
+        Mockito.when(volumeInfoMock.getState()).thenReturn(Volume.State.Creating);
 
         EndPoint result = defaultEndPointSelectorSpy.select(snapshotInfoMock, false);
 
@@ -513,8 +517,9 @@ public class DefaultEndPointSelectorTest {
         Mockito.when(datastoreMock.getId()).thenReturn(STORE_ID);
         Mockito.when(_storagePoolDao.findById(STORE_ID)).thenReturn(storagePoolVOMock);
         Mockito.when(storagePoolVOMock.getPoolType()).thenReturn(StoragePoolType.CLVM_NG);
-        Mockito.when(volumeInfoMock.getDestinationHostId()).thenReturn(DEST_HOST_ID);
         Mockito.doReturn(endPointMock).when(defaultEndPointSelectorSpy).getEndPointFromHostId(DEST_HOST_ID);
+        Mockito.doReturn(DEST_HOST_ID).when(defaultEndPointSelectorSpy).getClvmLockHostId(volumeInfoMock);
+        Mockito.when(volumeInfoMock.getState()).thenReturn(Volume.State.Creating);
 
         EndPoint result = defaultEndPointSelectorSpy.select(srcDataMock, volumeInfoMock, false);
 
@@ -536,7 +541,6 @@ public class DefaultEndPointSelectorTest {
         Mockito.when(datastoreMock.getId()).thenReturn(STORE_ID);
         Mockito.when(_storagePoolDao.findById(STORE_ID)).thenReturn(storagePoolVOMock);
         Mockito.when(storagePoolVOMock.getPoolType()).thenReturn(StoragePoolType.CLVM);
-        Mockito.when(volumeInfoMock.getDestinationHostId()).thenReturn(null);
         Mockito.doReturn(endPointMock).when(defaultEndPointSelectorSpy).findEndPointForImageMove(
                 srcStoreMock, datastoreMock, false);
 
