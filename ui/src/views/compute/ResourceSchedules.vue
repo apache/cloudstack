@@ -22,7 +22,7 @@
       style="width: 100%; margin-bottom: 10px"
       @click="showAddModal"
       :loading="loading"
-      :disabled="!('createVMSchedule' in $store.getters.apis)"
+      :disabled="!('createResourceSchedule' in $store.getters.apis)"
     >
       <template #icon><plus-outlined /></template> {{ $t('label.schedule.add') }}
     </a-button>
@@ -34,10 +34,25 @@
       :selectedColumns="selectedColumnKeys"
       ref="listview"
       @update-selected-columns="updateSelectedColumns"
-      @update-vm-schedule="updateVMSchedule"
-      @remove-vm-schedule="removeVMSchedule"
       @refresh="this.fetchData"
-    />
+    >
+      <template #scheduleActions="{ record }">
+        <tooltip-button
+          :tooltip="$t('label.edit')"
+          :disabled="!('updateResourceSchedule' in $store.getters.apis)"
+          icon="edit-outlined"
+          @onClick="updateSchedule(record)"
+        />
+        <tooltip-button
+          :tooltip="$t('label.remove')"
+          :disabled="!('deleteResourceSchedule' in $store.getters.apis)"
+          icon="delete-outlined"
+          :danger="true"
+          type="primary"
+          @onClick="removeSchedule(record)"
+        />
+      </template>
+    </list-view>
     <a-pagination
       class="row-element"
       style="margin-top: 10px"
@@ -256,6 +271,7 @@ import { reactive, ref, toRaw } from 'vue'
 import { getAPI, postAPI } from '@/api'
 import ListView from '@/components/view/ListView'
 import Status from '@/components/widgets/Status'
+import TooltipButton from '@/components/widgets/TooltipButton'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import { mixinForm } from '@/utils/mixin'
 import { timeZone } from '@/utils/timezone'
@@ -269,39 +285,46 @@ dayjs.extend(utc)
 dayjs.extend(timezone)
 
 export default {
-  name: 'InstanceSchedules',
+  name: 'ResourceSchedules',
   mixins: [mixinForm],
   components: {
     Status,
     ListView,
+    TooltipButton,
     TooltipLabel
   },
   props: {
-    virtualmachine: {
+    resource: {
       type: Object,
+      required: true
+    },
+    resourceType: {
+      type: String,
       required: true
     },
     loading: {
       type: Boolean,
-      required: true
+      default: false
     }
   },
   data () {
     this.fetchTimeZone = debounce(this.fetchTimeZone, 800)
     return {
       tabLoading: false,
-      columnKeys: ['action', 'enabled', 'description', 'schedule', 'timezone', 'startdate', 'enddate', 'created', 'vmScheduleActions'],
+      columnKeys: ['action', 'enabled', 'description', 'schedule', 'timezone', 'startdate', 'enddate', 'created', 'scheduleActions'],
       selectedColumnKeys: [],
       columns: [],
       schedules: [],
       timeZoneMap: [],
-      actions: [
-        { value: 'START', label: 'label.start' },
-        { value: 'STOP', label: 'label.stop' },
-        { value: 'REBOOT', label: 'label.reboot' },
-        { value: 'FORCE_STOP', label: 'label.force.stop' },
-        { value: 'FORCE_REBOOT', label: 'label.force.reboot' }
-      ],
+      resourceActionsMap: {
+        VirtualMachine: [
+          { value: 'START', label: 'label.start' },
+          { value: 'STOP', label: 'label.stop' },
+          { value: 'REBOOT', label: 'label.reboot' },
+          { value: 'FORCE_STOP', label: 'label.force.stop' },
+          { value: 'FORCE_REBOOT', label: 'label.force.reboot' }
+        ]
+      },
       periods: [
         { id: 'year', value: ['month', 'day', 'dayOfWeek', 'hour', 'minute'] },
         { id: 'month', value: ['day', 'dayOfWeek', 'hour', 'minute'] },
@@ -319,7 +342,7 @@ export default {
     }
   },
   beforeCreate () {
-    this.apiParams = this.$getApiParams('createVMSchedule')
+    this.apiParams = this.$getApiParams('createResourceSchedule')
   },
   computed: {
     pageSizeOptions () {
@@ -330,6 +353,9 @@ export default {
       return [...new Set(sizes)].sort(function (a, b) {
         return a - b
       }).map(String)
+    },
+    actions () {
+      return this.resourceActionsMap[this.resourceType] || []
     }
   },
   created () {
@@ -341,7 +367,8 @@ export default {
     this.fetchTimeZone()
   },
   watch: {
-    virtualmachine: {
+    resource: {
+      deep: true,
       handler () {
         this.fetchSchedules()
       }
@@ -351,7 +378,7 @@ export default {
     initForm () {
       this.formRef = ref()
       this.form = reactive({
-        action: 'START',
+        action: this.actions.length > 0 ? this.actions[0].value : null,
         schedule: '* * * * *',
         description: '',
         timezone: 'UTC',
@@ -368,14 +395,15 @@ export default {
         endDate: [{ required: false, message: `${this.$t('message.error.select')}` }]
       })
     },
-    createVMSchedule (schedule) {
+    createSchedule (schedule) {
       this.resetForm()
       this.showAddModal()
     },
-    removeVMSchedule (schedule) {
-      postAPI('deleteVMSchedule', {
+    removeSchedule (schedule) {
+      postAPI('deleteResourceSchedule', {
         id: schedule.id,
-        virtualmachineid: this.virtualmachine.id
+        resourceid: this.resource.id,
+        resourcetype: this.resourceType
       }).then(() => {
         if (this.totalCount - 1 === this.pageSize * (this.page - 1)) {
           this.page = this.page - 1 > 0 ? this.page - 1 : 1
@@ -384,16 +412,16 @@ export default {
         this.$message.success(message)
       }).catch(error => {
         console.error(error)
-        this.$message.error(this.$t('message.error.remove.vm.schedule'))
+        this.$message.error(this.$t('message.error.remove.resource.schedule'))
         this.$notification.error({
           message: this.$t('label.error'),
-          description: this.$t('message.error.remove.vm.schedule')
+          description: this.$t('message.error.remove.resource.schedule')
         })
       }).finally(() => {
         this.fetchData()
       })
     },
-    updateVMSchedule (schedule) {
+    updateSchedule (schedule) {
       this.resetForm()
       this.isEdit = true
       Object.assign(this.form, schedule)
@@ -416,23 +444,24 @@ export default {
           schedule: values.schedule,
           timezone: values.timezone,
           action: values.action,
-          virtualmachineid: this.virtualmachine.id,
+          resourceid: this.resource.id,
+          resourcetype: this.resourceType,
           enabled: values.enabled,
           startdate: (values.startDate) ? values.startDate.format(this.pattern) : null,
           enddate: (values.endDate) ? values.endDate.format(this.pattern) : null
         }
         let command = null
         if (this.form.id === null || this.form.id === undefined) {
-          command = 'createVMSchedule'
+          command = 'createResourceSchedule'
         } else {
           params.id = this.form.id
-          command = 'updateVMSchedule'
+          command = 'updateResourceSchedule'
         }
 
         postAPI(command, params).then(response => {
           this.$notification.success({
             message: this.$t('label.schedule'),
-            description: this.$t('message.success.config.vm.schedule')
+            description: this.$t('message.success.config.resource.schedule')
           })
           this.isSubmitted = false
           this.fetchData()
@@ -475,20 +504,25 @@ export default {
     },
     fetchSchedules () {
       this.schedules = []
-      if (!this.virtualmachine.id) {
+      if (!this.resource.id) {
         return
       }
       const params = {
         page: this.page,
         pagesize: this.pageSize,
-        virtualmachineid: this.virtualmachine.id,
+        resourceid: this.resource.id,
+        resourcetype: this.resourceType,
         listall: true
       }
       this.tabLoading = true
-      getAPI('listVMSchedule', params).then(json => {
+      getAPI('listResourceSchedule', params).then(json => {
         this.schedules = []
-        this.totalCount = json?.listvmscheduleresponse?.count || 0
-        this.schedules = json?.listvmscheduleresponse?.vmschedule || []
+        this.totalCount = json?.listresourcescheduleresponse?.count || 0
+        this.schedules = json?.listresourcescheduleresponse?.resourceschedule || []
+      }).catch(error => {
+        console.error(error)
+        this.$notifyError(error)
+      }).finally(() => {
         this.tabLoading = false
       })
     },

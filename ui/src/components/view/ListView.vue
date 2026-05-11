@@ -1037,21 +1037,11 @@
         />
         <slot></slot>
       </template>
-      <template v-if="column.key === 'vmScheduleActions'">
-        <tooltip-button
-          :tooltip="$t('label.edit')"
-          :disabled="!('updateVMSchedule' in $store.getters.apis)"
-          icon="edit-outlined"
-          @onClick="updateVMSchedule(record)"
-        />
-        <tooltip-button
-          :tooltip="$t('label.remove')"
-          :disabled="!('deleteVMSchedule' in $store.getters.apis)"
-          icon="delete-outlined"
-          :danger="true"
-          type="primary"
-          @onClick="removeVMSchedule(record)"
-        />
+      <template v-if="column.key === 'scheduleActions'">
+        <slot
+          name="scheduleActions"
+          :record="record"
+        ></slot>
       </template>
       <template v-if="column.key === 'vgpuActions'">
         <slot name="actionButtons" :record="record" :actions="actions"></slot>
@@ -1396,12 +1386,6 @@ export default {
     },
     editTariffValue (record) {
       this.$emit('edit-tariff-action', true, record)
-    },
-    updateVMSchedule (record) {
-      this.$emit('update-vm-schedule', record)
-    },
-    removeVMSchedule (record) {
-      this.$emit('remove-vm-schedule', record)
     },
     ipV6Address (text, record) {
       if (!record || !record.nic || record.nic.length === 0) {
