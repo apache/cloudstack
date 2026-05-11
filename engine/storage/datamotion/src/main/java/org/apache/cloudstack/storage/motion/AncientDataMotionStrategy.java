@@ -280,14 +280,14 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         if (dataTO == null) {
             return dataTO;
         }
-        switch (dataTO.getHypervisorType()) {
-            case VMware:
-                return addFullCloneAndDiskprovisiongStrictnessFlagOnVMwareDest(dataTO);
-            case XenServer:
-                return addFullCloneAndDiskprovisiongStrictnessFlagOnXenServerDest(dataTO);
-            default:
-                return dataTO;
+        Hypervisor.HypervisorType hypervisorType = dataTO.getHypervisorType();
+        if (Hypervisor.HypervisorType.VMware.equals(hypervisorType)) {
+            return addFullCloneAndDiskprovisiongStrictnessFlagOnVMwareDest(dataTO);
         }
+        if (Hypervisor.HypervisorType.XenServer.equals(hypervisorType)) {
+            return addFullCloneAndDiskprovisiongStrictnessFlagOnXenServerDest(dataTO);
+        }
+        return dataTO;
     }
 
     protected Answer copyObject(DataObject srcData, DataObject destData) {
