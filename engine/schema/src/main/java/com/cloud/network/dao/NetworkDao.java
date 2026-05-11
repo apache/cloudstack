@@ -136,5 +136,5 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long>, StateDao<State,
 
     List<NetworkVO> getAllPersistentNetworksFromZone(long dataCenterId);
 
-    NetworkVO findByZoneIdAndAccountIdAndGuestType(long zoneId, long accountId, GuestType guestType);
+    NetworkVO findByZoneIdAndAccountIdAndGuestTypeAndName(long zoneId, long accountId, GuestType guestType, String name);
 }

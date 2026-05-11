@@ -1175,19 +1175,18 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
     }
 
     protected boolean validateWithValidationVm(long backupId, long hostId, BackupVO backupVO) {
-        UserVmVO validationVm;
-        validationVm = allocateValidationVm(backupId, backupVO);
-        if (validationVm == null) {
-            return false;
-        }
-
-        HostVO hostVo = hostDao.findById(hostId);
-
-        List<VolumeObjectTO> volumeToList = new ArrayList<>();
         boolean startedVm = false;
-        VirtualMachineTO vmTO = null;
-        List<VolumeVO> volumeVOs = volumeDao.findByInstance(validationVm.getId());
+        UserVmVO validationVm = null;
+        List<VolumeVO> volumeVOs = List.of();
         try {
+            validationVm = allocateValidationVm(backupId, backupVO);
+            if (validationVm == null) {
+                return false;
+            }
+
+            HostVO hostVo = hostDao.findById(hostId);
+            List<VolumeObjectTO> volumeToList = new ArrayList<>();
+            volumeVOs = volumeDao.findByInstance(validationVm.getId());
             createValidationVolumesOnPrimaryStorage(volumeVOs, validationVm, backupVO, hostVo, volumeToList);
 
             List<InternalBackupDataStoreVO> backupDeltas = internalBackupDataStoreDao.listByBackupId(backupId);
@@ -1205,7 +1204,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
 
             HypervisorGuru hvGuru = hypervisorGuruManager.getGuru(validationVm.getHypervisorType());
             VirtualMachineProfileImpl profile = new VirtualMachineProfileImpl(validationVm);
-            vmTO = hvGuru.implement(profile);
+            VirtualMachineTO vmTO = hvGuru.implement(profile);
 
             if (!validateBackup(backupId, vmTO, backupDeltaAndVolumePairs, backupVO, validationVm, hostVo)) {
                 endBackupChainIfConfigured(backupVO);
@@ -1410,6 +1409,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
 
     protected void createValidationVolumesOnPrimaryStorage(List<VolumeVO> volumeVOs, UserVmVO validationVm, BackupVO backupVO, HostVO hostVo, List<VolumeObjectTO> volumeToList) throws NoTransitionException {
         for (VolumeVO volume : volumeVOs) {
+            logger.debug("Creating validation volume [{}] for validation VM [{}].", volume.getUuid(), validationVm.getUuid());
             VolumeInfo volumeInfo = volumeDataFactory.getVolume(volume.getId());
             volumeInfo = volumeOrchestrationService.createVolumeOnPrimaryStorage(validationVm, volumeInfo, Hypervisor.HypervisorType.KVM, null, hostVo.getClusterId(),
                     hostVo.getPodId());
@@ -2676,8 +2676,9 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
 
     protected Pair<Boolean, BackupVO> validateCompressionStateForRestoreAndGetBackup(long backupId) {
         return Transaction.execute(TransactionLegacy.CLOUD_DB, (TransactionCallback<Pair<Boolean, BackupVO>>) result -> {
+            BackupVO backupVO = null;
             try {
-                BackupVO backupVO = lockBackup(backupId);
+                backupVO = lockBackup(backupId);
                 if (backupVO == null) {
                     logger.warn("Unable to get lock on backup [{}]. Cannot restore it.", backupId);
                     return new Pair<>(false, null);
@@ -2692,7 +2693,9 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
                 backupDao.update(backupId, backupVO);
                 return new Pair<>(true, backupVO);
             } finally {
-                releaseBackup(backupId);
+                if (backupVO != null) {
+                    releaseBackup(backupId);
+                }
             }
         });
     }
@@ -2703,8 +2706,9 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
      * */
     protected boolean validateBackupStateForRemoval(long backupId) {
         return Transaction.execute(TransactionLegacy.CLOUD_DB, (TransactionCallback<Boolean>) result -> {
+            BackupVO backupVO = null;
             try {
-                BackupVO backupVO = lockBackup(backupId);
+                backupVO = lockBackup(backupId);
                 if (backupVO == null) {
                     logger.warn("Unable to acquire lock for backup [{}]. Cannot remove it.", backupId);
                     return false;
@@ -2727,7 +2731,9 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
                 }
                 return true;
             } finally {
-                releaseBackup(backupId);
+                if (backupVO != null) {
+                    releaseBackup(backupId);
+                }
             }
         });
     }
@@ -2738,8 +2744,9 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
      * */
     protected Pair<Boolean, BackupVO> validateBackupStateForStartCompressionAndUpdateCompressionStatus(long backupId) {
         return Transaction.execute(TransactionLegacy.CLOUD_DB, (TransactionCallback<Pair<Boolean, BackupVO>>) result -> {
+            BackupVO backupVO = null;
             try {
-                BackupVO backupVO = lockBackup(backupId);
+                backupVO = lockBackup(backupId);
                 if (backupVO == null) {
                     logger.warn("Unable to get lock on backup [{}]. Will abort the start of the compression process. We might try again later.", backupId);
                     return new Pair<>(false, null);
@@ -2755,7 +2762,9 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
                 backupDao.update(backupVO.getId(), backupVO);
                 return new Pair<>(true, backupVO);
             } finally {
-                releaseBackup(backupId);
+                if (backupVO != null) {
+                    releaseBackup(backupId);
+                }
             }
         });
     }
@@ -2766,8 +2775,9 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
      * */
     protected Pair<Boolean, BackupVO> validateBackupStateForFinalizeCompression(long backupId) {
         return Transaction.execute(TransactionLegacy.CLOUD_DB, (TransactionCallback<Pair<Boolean, BackupVO>>) result -> {
+            BackupVO backupVO = null;
             try {
-                BackupVO backupVO = lockBackup(backupId);
+                backupVO = lockBackup(backupId);
                 if (backupVO == null) {
                     logger.warn("Unable to get lock on backup [{}]. Will abort the finalize compression process. We might try again later.", backupId);
                     return new Pair<>(false, null);
@@ -2786,23 +2796,25 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
                     backupVO.setCompressionStatus(Backup.CompressionStatus.FinalizingCompression);
                     backupDao.update(backupId, backupVO);
                 } else {
-                    logger.warn(
-                            "Backup [{}] is in [{}] state. Aborting compression and cleaning up compressed data. We can only finish compression process if backup is in [{}] " + "state.",
-                            backupVO.getUuid(), backupVO.getStatus(), Backup.Status.BackedUp);
+                    logger.warn("Backup [{}] is in [{}] state. Aborting compression and cleaning up compressed data. We can only finish compression process if backup is in [{}] "
+                                    + "state.", backupVO.getUuid(), backupVO.getStatus(), Backup.Status.BackedUp);
                     backupVO.setCompressionStatus(Backup.CompressionStatus.CompressionError);
                     backupDao.update(backupId, backupVO);
                 }
                 return new Pair<>(true, backupVO);
             } finally {
-                releaseBackup(backupId);
+                if (backupVO != null) {
+                    releaseBackup(backupId);
+                }
             }
         });
     }
 
     protected Pair<Boolean, Backup.Status> validateBackupStateForRestoreBackupToVM(long backupId) {
         return Transaction.execute(TransactionLegacy.CLOUD_DB, (TransactionCallback<Pair<Boolean, Backup.Status>>) result -> {
+            BackupVO backupVO = null;
             try {
-                BackupVO backupVO = lockBackup(backupId);
+                backupVO = lockBackup(backupId);
                 if (backupVO == null) {
                     logger.warn("Unable to get lock on backup [{}]. Cannot create VM from this backup right now.", backupId);
                     return new Pair<>(false, null);
@@ -2815,13 +2827,14 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
                     backupDao.update(backupId, backupVO);
                     return new Pair<>(true, oldStatus);
                 } else {
-                    logger.warn(
-                            "Backup [{}] is in [{}] state. Aborting restore. We can only restore the backup if backup is in [{}] states.",
+                    logger.warn("Backup [{}] is in [{}] state. Aborting VM creation from backup. We can only create VM from backup if backup is in [{}] state.",
                             backupVO.getUuid(), backupVO.getStatus(), List.of(Backup.Status.BackedUp, Backup.Status.Restoring));
                     return new Pair<>(false, null);
                 }
             } finally {
-                releaseBackup(backupId);
+                if (backupVO != null) {
+                    releaseBackup(backupId);
+                }
             }
         });
     }
@@ -2832,10 +2845,11 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
      * */
     protected boolean validateBackupStateForValidation(long backupId) {
         return Transaction.execute(TransactionLegacy.CLOUD_DB, (TransactionCallback<Boolean>) result -> {
+            BackupVO backupVO = null;
             try {
-                BackupVO backupVO = lockBackup(backupId);
+                backupVO = lockBackup(backupId);
                 if (backupVO == null) {
-                    logger.warn("Unable to acquire lock for backup [{}]. Cannot validate it.", backupId);
+                    logger.warn("Unable to acquire lock for backup [{}]. Cannot validate it. It might have been removed.", backupId);
                     return false;
                 }
 
@@ -2846,7 +2860,9 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
                 }
                 return true;
             } finally {
-                releaseBackup(backupId);
+                if (backupVO != null) {
+                    releaseBackup(backupId);
+                }
             }
         });
     }

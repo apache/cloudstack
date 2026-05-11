@@ -427,6 +427,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 3;
 
     private static final long GiB_TO_BYTES = 1024 * 1024 * 1024;
+    private static final String BACKUP_VALIDATION_NETWORK = "BackupValidationNetwork";
+    private static final String DEFAULT_SHARED_NETWORK_OFFERING_WITH_NO_SERVICE = "DefaultSharedNetworkOfferingWithNoService";
 
     @Inject
     private EntityManager _entityMgr;
@@ -4584,19 +4586,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     }
 
                     profile.setDefaultNic(true);
-                    if (!_networkModel.areServicesSupportedInNetwork(network.getId(), new Service[]{Service.UserData})) {
-                        if ((userData != null) && (!userData.isEmpty())) {
-                            throw new InvalidParameterValueException(String.format("Unable to deploy VM as UserData is provided while deploying the VM, but there is no support for %s service in the default network %s/%s.", Service.UserData.getName(), network.getName(), network.getUuid()));
-                        }
-
-                        if ((sshPublicKeys != null) && (!sshPublicKeys.isEmpty())) {
-                            throw new InvalidParameterValueException(String.format("Unable to deploy VM as SSH keypair is provided while deploying the VM, but there is no support for %s service in the default network %s/%s", Service.UserData.getName(), network.getName(), network.getUuid()));
-                        }
-
-                        if (template.isEnablePassword()) {
-                            throw new InvalidParameterValueException(String.format("Unable to deploy VM as template %s is password enabled, but there is no support for %s service in the default network %s/%s", template, Service.UserData.getName(), network.getName(), network.getUuid()));
-                        }
-                    }
+                    validateUserdataSupport(userData, vmType, template, network, sshPublicKeys);
                 }
 
                 if (_networkModel.isSecurityGroupSupportedInNetwork(network)) {
@@ -4700,6 +4690,30 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new CloudRuntimeException(e);
         } finally {
             ReservationHelper.closeAll(checkedReservations);
+        }
+    }
+
+    /**
+     * Validates that the network supports the necessary UserData-related features for the VM
+     * <br/>
+     * Validation VMs are not validated, there VMs should be in a no-service network regardless of the original VM's settings.
+     * */
+    private void validateUserdataSupport(String userData, String vmType, VMTemplateVO template, NetworkVO network, String sshPublicKeys) {
+        if (VALIDATION_VM.equals(vmType)) {
+            return;
+        }
+        if (!_networkModel.areServicesSupportedInNetwork(network.getId(), new Service[]{Service.UserData})) {
+            if ((userData != null) && (!userData.isEmpty())) {
+                throw new InvalidParameterValueException(String.format("Unable to deploy VM as UserData is provided while deploying the VM, but there is no support for %s service in the default network %s/%s.", Service.UserData.getName(), network.getName(), network.getUuid()));
+            }
+
+            if ((sshPublicKeys != null) && (!sshPublicKeys.isEmpty())) {
+                throw new InvalidParameterValueException(String.format("Unable to deploy VM as SSH keypair is provided while deploying the VM, but there is no support for %s service in the default network %s/%s", Service.UserData.getName(), network.getName(), network.getUuid()));
+            }
+
+            if (template.isEnablePassword()) {
+                throw new InvalidParameterValueException(String.format("Unable to deploy VM as template %s is password enabled, but there is no support for %s service in the default network %s/%s", template.getId(), Service.UserData.getName(), network.getName(), network.getUuid()));
+            }
         }
     }
 
@@ -10128,13 +10142,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new CloudRuntimeException(String.format("Unable to find service offering with the uuid stored in backup [%s]. Unable to validate the backup.", backup.getUuid()));
         }
 
-        VirtualMachineTemplate template;
-
         String templateUuid = backup.getDetail(ApiConstants.TEMPLATE_ID);
         if (templateUuid == null) {
             throw new CloudRuntimeException(String.format("Backup [%s] doesn't contain a template uuid. Unable to validate it.", backup.getUuid()));
         }
-        template = _templateDao.findByUuidIncludingRemoved(templateUuid);
+        VirtualMachineTemplate template = _templateDao.findByUuidIncludingRemoved(templateUuid);
         if (template == null) {
             throw new CloudRuntimeException(String.format("Unable to find template associated with the backup [%s]. Unable to validate it.", backup.getUuid()));
         }
@@ -10183,17 +10195,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private Network getValidationNetwork(long zoneId) {
-        NetworkVO networkVo = _networkDao.findByZoneIdAndAccountIdAndGuestType(zoneId, Account.ACCOUNT_ID_SYSTEM, GuestType.Shared);
+        NetworkVO networkVo = _networkDao.findByZoneIdAndAccountIdAndGuestTypeAndName(zoneId, Account.ACCOUNT_ID_SYSTEM, GuestType.Shared, BACKUP_VALIDATION_NETWORK);
         AccountVO accountVO = _accountDao.findById(Account.ACCOUNT_ID_SYSTEM);
 
         if (networkVo != null) {
             return networkVo;
         }
 
-        NetworkOfferingVO offeringVo = _networkOfferingDao.findByUniqueName("DefaultSharedNetworkOfferingWithNoService");
+        NetworkOfferingVO offeringVo = _networkOfferingDao.findByUniqueName(DEFAULT_SHARED_NETWORK_OFFERING_WITH_NO_SERVICE);
 
         if (offeringVo == null) {
-            offeringVo = new NetworkOfferingVO("DefaultSharedNetworkOfferingWithNoService",
+            offeringVo = new NetworkOfferingVO(DEFAULT_SHARED_NETWORK_OFFERING_WITH_NO_SERVICE,
                     "Default shared offering with no services.", TrafficType.Guest, false, false, null, null, true, Availability.Optional, null, GuestType.Shared, false, true,
                     false, false, false, false);
             offeringVo.setState(NetworkOffering.State.Enabled);
@@ -10201,7 +10213,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         try {
-            CreateNetworkCmd cmd = new CreateNetworkCmd(offeringVo.getId(), "BackupValidationNetwork", "System network for validating backups", "192.168.0.1", "255.255.0.0",
+            CreateNetworkCmd cmd = new CreateNetworkCmd(offeringVo.getId(), BACKUP_VALIDATION_NETWORK, "System network for validating backups", "192.168.0.1", "255.255.0.0",
                     "192.168.0.2", "192.168.255.255", accountVO.getDomainId(), accountVO.getAccountName(), zoneId, ACLType.Domain.name(), true, false);
             ComponentContext.inject(cmd);
             return networkService.createGuestNetwork(cmd);

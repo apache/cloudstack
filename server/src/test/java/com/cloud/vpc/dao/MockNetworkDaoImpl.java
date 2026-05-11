@@ -281,7 +281,7 @@ public class MockNetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implemen
         return List.of();
     }
     @Override
-    public NetworkVO findByZoneIdAndAccountIdAndGuestType(long zoneId, long accountId, GuestType guestType) {
+    public NetworkVO findByZoneIdAndAccountIdAndGuestTypeAndName(long zoneId, long accountId, GuestType guestType, String name) {
         return null;
     }
 }

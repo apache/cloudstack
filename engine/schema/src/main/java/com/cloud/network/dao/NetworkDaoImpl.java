@@ -910,12 +910,13 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
     }
 
     @Override
-    public NetworkVO findByZoneIdAndAccountIdAndGuestType(long zoneId, long accountId, GuestType guestType) {
+    public NetworkVO findByZoneIdAndAccountIdAndGuestTypeAndName(long zoneId, long accountId, GuestType guestType, String name) {
         SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
 
         sc.setParameters("datacenter", zoneId);
         sc.setParameters("account", accountId);
         sc.setParameters("guestType", guestType);
+        sc.setParameters("name", name);
 
         return findOneBy(sc);
     }

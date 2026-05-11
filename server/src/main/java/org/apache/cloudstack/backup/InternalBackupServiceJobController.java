@@ -251,7 +251,7 @@ public abstract class InternalBackupServiceJobController extends ManagerBase {
             }
 
             if (busyInstances.contains(job.getInstanceId())) {
-                VirtualMachine vm = instanceDao.findById(job.getInstanceId());
+                VirtualMachine vm = instanceDao.findByIdIncludingRemoved(job.getInstanceId());
                 logger.debug("Instance [{}] has another backup service job running, will not schedule a {} job for it now.", vm.getUuid(), controllerType);
                 continue;
             }

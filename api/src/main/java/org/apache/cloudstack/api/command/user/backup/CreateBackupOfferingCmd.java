@@ -143,7 +143,7 @@ public class CreateBackupOfferingCmd extends BaseCmd {
                 sb.append(",");
             } catch (IllegalArgumentException ex) {
                 logger.error("Invalid validation step informed [{}].", step, ex);
-                throw new InvalidParameterValueException(String.format("Invalid validation step [%s] informed. Accepted values are: wait_for_boot, screenshot and script.", step));
+                throw new InvalidParameterValueException(String.format("Invalid validation step [%s] informed. Accepted values are: wait_for_boot, screenshot and execute_command.", step));
             }
         }
         sb.deleteCharAt(sb.lastIndexOf(","));
