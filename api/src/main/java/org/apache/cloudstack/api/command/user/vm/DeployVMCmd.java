@@ -191,6 +191,10 @@ public class DeployVMCmd extends BaseDeployVMCmd {
         this.sshKeyPairNames = sshKeyPairNames;
     }
 
+    public void setSecurityGroupList(List<Long> securityGroupIdList) {
+        this.securityGroupIdList = securityGroupIdList;
+    }
+
     @Override
     public void execute() {
         UserVm result;

@@ -44,6 +44,7 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -68,6 +69,7 @@ public class OvfXmlUtil {
         sdf.setTimeZone(UTC);
         return sdf;
     });
+    private static final org.slf4j.Logger log = LoggerFactory.getLogger(OvfXmlUtil.class);
 
     protected enum MemoryAllocationUnit {
         Bytes("byte", 1),
@@ -478,6 +480,16 @@ public class OvfXmlUtil {
             if (StringUtils.isNotBlank(vm.getGuestOsName())) {
                 sb.append("<GuestOsName>").append(escapeText(vm.getGuestOsName())).append("</GuestOsName>");
             }
+            if (StringUtils.isNotBlank(vm.getInstanceType())) {
+                sb.append("<Type>").append(escapeText(vm.getInstanceType())).append("</Type>");
+            }
+            if (StringUtils.isNoneBlank(vm.getSharedFSId(), vm.getSharedFsVolumeName())) {
+                sb.append("<SharedFSId>").append(escapeText(vm.getSharedFSId())).append("</SharedFSId>");
+                sb.append("<SharedFSVolumeName>").append(escapeText(vm.getSharedFsVolumeName())).append("</SharedFSVolumeName>");
+            }
+            if (StringUtils.isNotBlank(vm.getSecurityGroupId())) {
+                sb.append("<SecurityGroupId>").append(escapeText(vm.getSecurityGroupId())).append("</SecurityGroupId>");
+            }
             sb.append("</CloudStack>");
             sb.append("</Section>");
         }
@@ -581,6 +593,33 @@ public class OvfXmlUtil {
                     networkId, e.getMessage());
         }
         return new Pair<>(null, null);
+    }
+
+    public static Vm parseVmRestoreConfig(String xmlConfig, Logger logger) {
+        Vm vm = new Vm();
+        if (StringUtils.isBlank(xmlConfig)) {
+            logger.error("No XML configuration provided for VM restore");
+            return vm;
+        }
+        try {
+            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+            dbf.setNamespaceAware(true);
+            dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            DocumentBuilder db = dbf.newDocumentBuilder();
+            Document doc = db.parse(new ByteArrayInputStream(xmlConfig.getBytes(StandardCharsets.UTF_8)));
+
+            XPathFactory xpf = XPathFactory.newInstance();
+            XPath xpath = xpf.newXPath();
+            Node metadataSection = (Node) xpath.evaluate(
+                    "//*[local-name()='Section' and @*[local-name()='type']='ovf:CloudStackMetadata_Type']",
+                    doc,
+                    XPathConstants.NODE
+            );
+            updateFromXmlCloudStackMetadataSection(vm, metadataSection, xpath);
+        } catch (ParserConfigurationException | XPathExpressionException | IOException | SAXException e) {
+            logger.error("Failed to parse VM configuration XML for restore: {}", e.getMessage());
+        }
+        return vm;
     }
 
     private static String nodeToString(Node node) {
@@ -783,6 +822,22 @@ public class OvfXmlUtil {
         if (StringUtils.isNotBlank(guestOsName)) {
             vm.setGuestOsId(guestOsName);
         }
+        String instanceType = xpathString(xpath, metadataSection, ".//*[local-name()='Type']/text()");
+        if (StringUtils.isNotBlank(instanceType)) {
+            vm.setInstanceType(instanceType);
+        }
+        String sharedFSId = xpathString(xpath, metadataSection, ".//*[local-name()='SharedFSId']/text()");
+        if (StringUtils.isNotBlank(sharedFSId)) {
+            vm.setSharedFSId(sharedFSId);
+        }
+        String sharedFSVolumeName = xpathString(xpath, metadataSection, ".//*[local-name()='SharedFSVolumeName']/text()");
+        if (StringUtils.isNotBlank(sharedFSVolumeName)) {
+            vm.setSharedFsVolumeName(sharedFSVolumeName);
+        }
+        String securityGroupId = xpathString(xpath, metadataSection, ".//*[local-name()='SecurityGroupId']/text()");
+        if (StringUtils.isNotBlank(securityGroupId)) {
+            vm.setInstanceType(securityGroupId);
+        }
         final Map<String, String> details = new HashMap<>();
         try {
             NodeList detailNodes = (NodeList) xpath.evaluate(
@@ -918,7 +973,7 @@ public class OvfXmlUtil {
 
     private static String mapDiskInterface(String iface) {
         if (StringUtils.isBlank(iface)) {
-            return "VirtIO_SCSI";
+            return "VirtIO";
         }
         String v = iface.toLowerCase(Locale.ROOT);
         if (v.contains("virtio") && v.contains("scsi")) {

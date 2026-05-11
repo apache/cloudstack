@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.veeam.api.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -33,6 +34,9 @@ public final class DiskAttachment extends BaseDto {
     private String usesScsiReservation;
     private Disk disk;
     private Vm vm;
+
+    // Internal properties
+    private long internalId;
 
     public DiskAttachment() {
     }
@@ -107,5 +111,14 @@ public final class DiskAttachment extends BaseDto {
 
     public void setVm(Vm vm) {
         this.vm = vm;
+    }
+
+    @JsonIgnore
+    public long getInternalId() {
+        return internalId;
+    }
+
+    public void setInternalId(long internalId) {
+        this.internalId = internalId;
     }
 }

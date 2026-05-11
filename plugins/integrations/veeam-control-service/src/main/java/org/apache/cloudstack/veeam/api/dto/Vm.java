@@ -86,6 +86,10 @@ public final class Vm extends BaseDto {
     private String sshKeyPairNames;
     private String guestOsId;
     private String guestOsName;
+    private String instanceType;
+    private String sharedFSId;
+    private String sharedFsVolumeName;
+    private String securityGroupId;
 
     public String getName() {
         return name;
@@ -356,6 +360,42 @@ public final class Vm extends BaseDto {
 
     public void setGuestOsName(String guestOsName) {
         this.guestOsName = guestOsName;
+    }
+
+    @JsonIgnore
+    public String getInstanceType() {
+        return instanceType;
+    }
+
+    public void setInstanceType(String instanceType) {
+        this.instanceType = instanceType;
+    }
+
+    @JsonIgnore
+    public String getSharedFSId() {
+        return sharedFSId;
+    }
+
+    public void setSharedFSId(String sharedFSId) {
+        this.sharedFSId = sharedFSId;
+    }
+
+    @JsonIgnore
+    public String getSharedFsVolumeName() {
+        return sharedFsVolumeName;
+    }
+
+    public void setSharedFsVolumeName(String sharedFsVolumeName) {
+        this.sharedFsVolumeName = sharedFsVolumeName;
+    }
+
+    @JsonIgnore
+    public String getSecurityGroupId() {
+        return securityGroupId;
+    }
+
+    public void setSecurityGroupId(String securityGroupId) {
+        this.securityGroupId = securityGroupId;
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)

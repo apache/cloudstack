@@ -62,7 +62,7 @@ public class UserVmJoinVOToVmConverterTest {
         when(src.getAffinityGroupUuid()).thenReturn("ag-1");
         when(src.getUserDataUuid()).thenReturn("ud-1");
 
-        final Vm vm = UserVmJoinVOToVmConverter.toVm(src, null, null, null, null, null, false);
+        final Vm vm = UserVmJoinVOToVmConverter.toVm(src, null, null, null, null, null, null, false);
 
         assertEquals("vm-1", vm.getId());
         assertEquals("vm-1-name", vm.getName());
@@ -122,6 +122,7 @@ public class UserVmJoinVOToVmConverterTest {
                 id -> List.of(tag),
                 id -> List.of(disk),
                 ignored -> List.of(nic),
+                null,
                 false);
 
         assertEquals("down", vm.getStatus());

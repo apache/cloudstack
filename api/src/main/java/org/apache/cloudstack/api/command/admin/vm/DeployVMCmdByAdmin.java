@@ -47,6 +47,13 @@ public class DeployVMCmdByAdmin extends DeployVMCmd implements AdminCmd {
             since = "4.23.0")
     private Boolean blankInstance;
 
+    // Internal flag to allow deploying instance with a given type
+    private String instanceType;
+
+    /////////////////////////////////////////////////////
+    ////////////////// Getters //////////////////////////
+    /////////////////////////////////////////////////////
+
     public Long getPodId() {
         return podId;
     }
@@ -60,6 +67,14 @@ public class DeployVMCmdByAdmin extends DeployVMCmd implements AdminCmd {
         return Boolean.TRUE.equals(blankInstance);
     }
 
+    @Override
+    public String getInstanceType() {
+        if (!isBlankInstance()) {
+            return null;
+        }
+        return instanceType;
+    }
+
     /////////////////////////////////////////////////////
     ////////////////// Setters //////////////////////////
     /////////////////////////////////////////////////////
@@ -70,5 +85,9 @@ public class DeployVMCmdByAdmin extends DeployVMCmd implements AdminCmd {
 
     public void setBlankInstance(boolean blankInstance) {
         this.blankInstance = blankInstance;
+    }
+
+    public void setInstanceType(String instanceType) {
+        this.instanceType = instanceType;
     }
 }

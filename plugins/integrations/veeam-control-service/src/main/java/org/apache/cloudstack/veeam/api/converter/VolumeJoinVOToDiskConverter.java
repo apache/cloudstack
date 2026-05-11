@@ -153,10 +153,12 @@ public class VolumeJoinVOToDiskConverter {
         // Properties
         da.setActive("true");
         da.setBootable(String.valueOf(Volume.Type.ROOT.equals(vol.getVolumeType())));
-        da.setIface("virtio_scsi");
+        da.setIface("virtio");
         da.setLogicalName(vol.getName());
         da.setReadOnly("false");
         da.setPassDiscard("false");
+
+        da.setInternalId(vol.getId());
 
         return da;
     }

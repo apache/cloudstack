@@ -21,10 +21,12 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.storage.sharedfs.SharedFS;
 import org.apache.cloudstack.veeam.VeeamControlService;
 import org.apache.cloudstack.veeam.api.ApiRouteHandler;
 import org.apache.cloudstack.veeam.api.VmsRouteHandler;
@@ -61,6 +63,7 @@ public final class UserVmJoinVOToVmConverter {
                           final Function<Long, List<Tag>> tagsResolver,
                           final Function<Long, List<DiskAttachment>> disksResolver,
                           final Function<UserVmJoinVO, List<Nic>> nicsResolver,
+                          final Function<UserVmJoinVO, SharedFS> sharedFsResolver,
                           final boolean allContent) {
         if (src == null) {
             return null;
@@ -173,13 +176,34 @@ public final class UserVmJoinVOToVmConverter {
         dst.setSshKeyPairNames(src.getKeypairNames());
         dst.setGuestOsId(src.getGuestOsUuid());
         dst.setGuestOsName(src.getGuestOsDisplayName());
+        dst.setInstanceType(src.getUserVmType());
+        updateSharedFSDetailsIfNeeded(src, sharedFsResolver, dst);
+        dst.setSecurityGroupId(src.getSecurityGroupUuid());
 
-        // Keep at last
+        // Keep at end
         if (allContent) {
             dst.setInitialization(getOvfInitialization(dst, src));
         }
 
         return dst;
+    }
+
+    private static void updateSharedFSDetailsIfNeeded(UserVmJoinVO src, Function<UserVmJoinVO, SharedFS> sharedFsResolver, Vm dst) {
+        if (sharedFsResolver == null || dst.getDiskAttachments() == null) {
+            return;
+        }
+        SharedFS sharedFS = sharedFsResolver.apply(src);
+        if (sharedFS == null) {
+            return;
+        }
+        Optional<DiskAttachment> disk = dst.getDiskAttachments().getItems()
+                .stream()
+                .filter(d -> d.getInternalId() == sharedFS.getVolumeId())
+                .findFirst();
+        disk.ifPresent(diskAttachment -> {
+            dst.setSharedFSId(sharedFS.getUuid());
+            dst.setSharedFsVolumeName(diskAttachment.getLogicalName());
+        });
     }
 
     private static Vm.Initialization getOvfInitialization(Vm vm, UserVmJoinVO vo) {
@@ -198,9 +222,11 @@ public final class UserVmJoinVOToVmConverter {
                                     final Function<Long, List<Tag>> tagsResolver,
                                     final Function<Long, List<DiskAttachment>> disksResolver,
                                     final Function<UserVmJoinVO, List<Nic>> nicsResolver,
+                                    final Function<UserVmJoinVO, SharedFS> sharedFsResolver,
                                     final boolean allContent) {
         return srcList.stream()
-                .map(v -> toVm(v, hostResolver, detailsResolver, tagsResolver, disksResolver, nicsResolver, allContent))
+                .map(v -> toVm(v, hostResolver, detailsResolver, tagsResolver, disksResolver,
+                        nicsResolver, sharedFsResolver, allContent))
                 .collect(Collectors.toList());
     }
 

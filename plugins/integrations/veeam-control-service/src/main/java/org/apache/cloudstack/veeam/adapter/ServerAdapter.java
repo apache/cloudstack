@@ -51,6 +51,7 @@ import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.DeployVMCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.vm.DestroyVMCmdByAdmin;
 import org.apache.cloudstack.api.command.user.backup.ListBackupsCmd;
 import org.apache.cloudstack.api.command.user.job.ListAsyncJobsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
@@ -92,6 +93,8 @@ import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.sharedfs.SharedFS;
+import org.apache.cloudstack.storage.sharedfs.SharedFSService;
 import org.apache.cloudstack.veeam.VeeamControlService;
 import org.apache.cloudstack.veeam.api.converter.AsyncJobJoinVOToJobConverter;
 import org.apache.cloudstack.veeam.api.converter.BackupVOToBackupConverter;
@@ -160,8 +163,12 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
+import com.cloud.network.as.AutoScaleVmGroupVmMapVO;
+import com.cloud.network.as.dao.AutoScaleVmGroupVmMapDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.security.SecurityGroupVO;
+import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project;
@@ -332,6 +339,15 @@ public class ServerAdapter extends ManagerBase {
 
     @Inject
     GuestOSDao guestOSDao;
+
+    @Inject
+    SecurityGroupDao securityGroupDao;
+
+    @Inject
+    SharedFSService sharedFSService;
+
+    @Inject
+    AutoScaleVmGroupVmMapDao autoScaleVmGroupVmMapDao;
 
     protected static Map<String, Tag> getDummyTags() {
         Map<String, Tag> tags = new HashMap<>();
@@ -582,11 +598,76 @@ public class ServerAdapter extends ManagerBase {
         return validatedNames;
     }
 
+    protected AffinityGroupVO getValidatedAffinityGroup(String affinityGroupUuid) {
+        if (StringUtils.isBlank(affinityGroupUuid)) {
+            return null;
+        }
+        AffinityGroupVO group = affinityGroupDao.findByUuid(affinityGroupUuid);
+        if (group == null) {
+            logger.warn("Failed to find affinity group with ID {} specified in Instance creation request, " +
+                    "skipping affinity group assignment", affinityGroupUuid);
+            return null;
+        }
+        return group;
+    }
+
+    protected UserDataVO getValidatedUserdata(String userdataUuid) {
+        if (StringUtils.isBlank(userdataUuid)) {
+            return null;
+        }
+        UserDataVO userDataVO = userDataDao.findByUuid(userdataUuid);
+        if (userDataVO == null) {
+            logger.warn("Failed to find userdata with ID {} specified in Instance creation request, " +
+                    "skipping userdata assignment", userdataUuid);
+            return null;
+        }
+        return userDataVO;
+    }
+
+    protected SecurityGroupVO getValidatedSecurityGroup(String securityGroupUuid) {
+        if (StringUtils.isBlank(securityGroupUuid)) {
+            return null;
+        }
+        SecurityGroupVO group = securityGroupDao.findByUuid(securityGroupUuid);
+        if (group == null) {
+            logger.warn("Failed to find userdata with ID {} specified in Instance creation request, " +
+                    "skipping security group assignment", securityGroupUuid);
+            return null;
+        }
+        return group;
+    }
+
+    protected String getValidatedInstanceType(Vm request) {
+        String instanceType = StringUtils.trimToNull(request.getInstanceType());
+        if (StringUtils.isEmpty(request.getInstanceType())) {
+            return null;
+        }
+        if (!UserVmManager.SHAREDFSVM.equals(instanceType)) {
+            logger.warn("{} is not supported for restore, returning null Instance type");
+            return null;
+        }
+        if (StringUtils.isBlank(request.getSharedFSId())) {
+            logger.warn("Shared Filesystem ID not available, returning null Instance type");
+            return null;
+        }
+        SharedFS sharedFS = sharedFSService.getSharedFSByUuid(request.getSharedFSId());
+        if (sharedFS == null) {
+            logger.warn("Shared Filesystem for ID: {} not found, returning null Instance type", request.getSharedFSId());
+            return null;
+        }
+        UserVmVO existingVm = userVmDao.findById(sharedFS.getVmId());
+        if (existingVm != null) {
+            logger.error("{} already has a {}, returning null Instance type", sharedFS, existingVm);
+            return null;
+        }
+        return instanceType;
+    }
+
     protected Pair<Vm, UserVm> createInstance(com.cloud.dc.DataCenter zone, Long clusterId, Account owner, Long domainId,
                 String accountName, Long projectId, String name, String displayName, String serviceOfferingUuid,
                 int cpu, int memory, String templateUuid, GuestOS guestOs, String userdata, ApiConstants.BootType bootType,
                 ApiConstants.BootMode bootMode, String affinityGroupId, String userDataId, String sshKeyPairNames,
-                Map<String, String> details) {
+                String instanceType, String securityGroupId, Map<String, String> details) {
         Account account = owner != null ? owner : CallContext.current().getCallingAccount();
         ServiceOffering serviceOffering = getServiceOfferingIdForVmCreation(zone, account, serviceOfferingUuid, cpu,
                 memory);
@@ -625,27 +706,22 @@ public class ServerAdapter extends ManagerBase {
         } else if (guestOs != null) {
             CallContext.current().putContextParameter(ApiConstants.OS_ID, guestOs);
         }
-        if (StringUtils.isNotBlank(affinityGroupId)) {
-            AffinityGroupVO group = affinityGroupDao.findByUuid(affinityGroupId);
-            if (group == null) {
-                logger.warn("Failed to find affinity group with ID {} specified in Instance creation request, " +
-                        "skipping affinity group assignment", affinityGroupId);
-            } else {
-                cmd.setAffinityGroupIds(List.of(group.getId()));
-            }
+        AffinityGroupVO group = getValidatedAffinityGroup(affinityGroupId);
+        if (group != null) {
+            cmd.setAffinityGroupIds(List.of(group.getId()));
         }
-        if (StringUtils.isNotBlank(userDataId)) {
-            UserDataVO userData = userDataDao.findByUuid(userDataId);
-            if (userData == null) {
-                logger.warn("Failed to find userdata with ID {} specified in Instance creation request, " +
-                        "skipping userdata assignment", userDataId);
-            } else {
-                cmd.setUserDataId(userData.getId());
-            }
+        UserDataVO userData = getValidatedUserdata(userDataId);
+        if (userData != null) {
+            cmd.setUserDataId(userData.getId());
+        }
+        SecurityGroupVO securityGroup = getValidatedSecurityGroup(securityGroupId);
+        if (securityGroup != null) {
+            cmd.setSecurityGroupList(List.of(securityGroup.getId()));
         }
         if (StringUtils.isNotBlank(sshKeyPairNames)) {
             cmd.setSshKeyPairNames(getValidatedSshKeyPairNames(sshKeyPairNames, owner));
         }
+        cmd.setInstanceType(StringUtils.trimToNull(instanceType));
         cmd.setHypervisor(Hypervisor.HypervisorType.KVM.name());
         Map<String, String> instanceDetails = getDetailsForInstanceCreation(userdata, serviceOffering, details);
         if (MapUtils.isNotEmpty(instanceDetails)) {
@@ -660,7 +736,7 @@ public class ServerAdapter extends ManagerBase {
             UserVmJoinVO vo = userVmJoinDao.findById(vm.getId());
             Vm vmObj = UserVmJoinVOToVmConverter.toVm(vo, this::getHostById, this::getDetailsByInstanceId,
                     this::listTagsByInstanceId, this::listDiskAttachmentsByInstanceId, this::listNicsByInstance,
-                    false);
+                    null, false);
             return new Pair<>(vmObj, vm);
         } catch (InsufficientCapacityException | ResourceUnavailableException | ResourceAllocationException | CloudRuntimeException e) {
             throw new CloudRuntimeException("Failed to create VM: " + e.getMessage(), e);
@@ -712,6 +788,39 @@ public class ServerAdapter extends ManagerBase {
 
     protected void removeInstanceRestoreConfig(UserVm vm) {
         vmInstanceDetailsDao.removeDetail(vm.getId(), RESTORE_CONFIG);
+    }
+
+    protected void processInstanceRestoreConfigIfNeeded(UserVm userVm, Volume volume) {
+        VMInstanceDetailVO detail = vmInstanceDetailsDao.findDetail(userVm.getId(), RESTORE_CONFIG);
+        if (detail == null) {
+            return;
+        }
+        String config = detail.getValue();
+        if (StringUtils.isAnyBlank(userVm.getUserVmType(), config)) {
+            removeInstanceRestoreConfig(userVm);
+            return;
+        }
+        Vm vm = OvfXmlUtil.parseVmRestoreConfig(config, logger);
+        if (StringUtils.isAnyBlank(vm.getSharedFSId(), vm.getSharedFsVolumeName())) {
+            removeInstanceRestoreConfig(userVm);
+            return;
+        }
+        if (!vm.getSharedFsVolumeName().equals(volume.getName())) {
+            return;
+        }
+        removeInstanceRestoreConfig(userVm);
+        SharedFS sharedFS = sharedFSService.getSharedFSByUuid(vm.getSharedFSId());
+        if (sharedFS == null) {
+            logger.warn("Shared Filesystem with ID {} specified in the restore config for {} not found, unable to restore Instance for Shared Filesystem",
+                    vm.getSharedFSId(), userVm);
+            return;
+        }
+        UserVm existingVm = userVmDao.findById(sharedFS.getId());
+        if (existingVm != null) {
+            logger.error("{} specified in the restore config for {} is already associated with {}, unable to restore Instance for Shared Filesystem",
+                    sharedFS, userVm, existingVm);
+        }
+        sharedFSService.updateSharedFSPostRestore(sharedFS.getId(), volume.getId());
     }
 
     protected Pair<String, String> getValidatedInstanceNicDetails(final UserVmVO vm, final NetworkVO network) {
@@ -881,6 +990,20 @@ public class ServerAdapter extends ManagerBase {
         return vmInstanceDetailsDao.listDetailsKeyPairs(instanceId, true);
     }
 
+    protected SharedFS getSharedFSForInstance(UserVmJoinVO vo) {
+        if (vo == null || !UserVmManager.SHAREDFSVM.equals(vo.getUserVmType())) {
+            return null;
+        }
+        return sharedFSService.getSharedFSForVmId(vo.getId());
+    }
+
+    protected void validateInstanceBackupConditions(UserVm vm) {
+        List<AutoScaleVmGroupVmMapVO> asGroupVmVOs = autoScaleVmGroupVmMapDao.listByVm(vm.getId());
+        if (CollectionUtils.isNotEmpty(asGroupVmVOs)) {
+            throw new CloudRuntimeException("Instance is part of an AutoScale group, unable to proceed with backup");
+        }
+    }
+
     public Pair<User, Account> getServiceAccount() {
         String serviceAccountUuid = VeeamControlService.ServiceAccountId.value();
         if (StringUtils.isEmpty(serviceAccountUuid)) {
@@ -1016,14 +1139,15 @@ public class ServerAdapter extends ManagerBase {
                  boolean allContent, Long offset, Long limit) {
         Filter filter = new Filter(UserVmJoinVO.class, "id", true, offset, limit);
         Pair<List<Long>, String> ownerDetails = getResourceOwnerFilters();
-        List<UserVmJoinVO> vms = userVmJoinDao.listByHypervisorTypeAndOwners(Hypervisor.HypervisorType.KVM,
-                ownerDetails.first(), ownerDetails.second(), filter);
+        List<UserVmJoinVO> vms = userVmJoinDao.listByHypervisorNotTypesAndOwners(Hypervisor.HypervisorType.KVM,
+                Arrays.asList(UserVmManager.CKS_NODE), ownerDetails.first(), ownerDetails.second(), filter);
         return UserVmJoinVOToVmConverter.toVmList(vms,
                 this::getHostById,
                 this::getDetailsByInstanceId,
                 includeTags ? this::listTagsByInstanceId : null,
                 includeDisks ? this::listDiskAttachmentsByInstanceId : null,
                 includeNics ? this::listNicsByInstance : null,
+                allContent ? this::getSharedFSForInstance: null,
                 allContent);
     }
 
@@ -1040,6 +1164,7 @@ public class ServerAdapter extends ManagerBase {
                 includeTags ? this::listTagsByInstanceId : null,
                 includeDisks ? this::listDiskAttachmentsByInstanceId : null,
                 includeNics ? this::listNicsByInstance : null,
+                allContent ? this::getSharedFSForInstance : null,
                 allContent);
     }
 
@@ -1104,10 +1229,12 @@ public class ServerAdapter extends ManagerBase {
             templateUuid = request.getTemplate().getId();
         }
         GuestOS guestOs = getGuestOsForInstance(request, StringUtils.isNotEmpty(userdata));
+        String instanceType = getValidatedInstanceType(request);
         Pair<Vm, UserVm> result = createInstance(zone, clusterId, owner, ownerDetails.first(), ownerDetails.second(),
                 ownerDetails.third(), name, displayName, serviceOfferingUuid, cpu, memoryMB, templateUuid, guestOs,
                 userdata, bootOptions.first(), bootOptions.second(), request.getAffinityGroupId(),
-                request.getUserDataId(), request.getSshKeyPairNames(), request.getDetails());
+                request.getUserDataId(), request.getSshKeyPairNames(), instanceType,
+                request.getSecurityGroupId(), request.getDetails());
         saveInstanceRestoreConfig(request, result.second());
         return result.first();
     }
@@ -1124,13 +1251,17 @@ public class ServerAdapter extends ManagerBase {
         if (vo == null) {
             throw new InvalidParameterValueException("VM with ID " + uuid + " not found");
         }
+        boolean isAdmin = accountService.isRootAdmin(CallContext.current().getCallingAccountId());
         try {
-            DestroyVMCmd cmd = new DestroyVMCmd();
+            DestroyVMCmd cmd = isAdmin ? new DestroyVMCmdByAdmin() : new DestroyVMCmd();
             cmd.setHttpMethod(BaseCmd.HTTPMethod.POST.name());
             ComponentContext.inject(cmd);
             Map<String, String> params = new HashMap<>();
             params.put(ApiConstants.ID, vo.getUuid());
             params.put(ApiConstants.EXPUNGE, Boolean.TRUE.toString());
+            if (isAdmin) {
+                params.put(ApiConstants.FORCED, Boolean.TRUE.toString());
+            }
             ApiServerService.AsyncCmdResult result = processAsyncCmdWithContext(cmd, params);
             AsyncJobJoinVO jobVo = asyncJobJoinDao.findById(result.jobId);
             if (jobVo == null) {
@@ -1313,7 +1444,6 @@ public class ServerAdapter extends ManagerBase {
         }
         accountService.checkAccess(CallContext.current().getCallingAccount(), SecurityChecker.AccessType.OperateEntry,
                 false, vmVo);
-        removeInstanceRestoreConfig(vmVo);
         if (vmVo.getAccountId() != volumeVO.getAccountId()) {
             if (VeeamControlService.InstanceRestoreAssignOwner.value()) {
                 assignVolumeToAccount(volumeVO, vmVo.getAccountId());
@@ -1326,7 +1456,8 @@ public class ServerAdapter extends ManagerBase {
         if (Boolean.parseBoolean(request.getBootable()) || Volume.Type.ROOT.equals(volumeVO.getVolumeType())) {
             deviceId = 0L;
         }
-        Volume volume = volumeApiService.attachVolumeToVM(vmVo.getId(), volumeVO.getId(), deviceId, false);
+        Volume volume = volumeApiService.attachVolumeToVM(vmVo.getId(), volumeVO.getId(), deviceId, true);
+        processInstanceRestoreConfigIfNeeded(vmVo, volume);
         VolumeJoinVO attachedVolumeVO = volumeJoinDao.findById(volume.getId());
         return VolumeJoinVOToDiskConverter.toDiskAttachment(attachedVolumeVO, this::getVolumePhysicalSize);
     }
@@ -1699,6 +1830,7 @@ public class ServerAdapter extends ManagerBase {
         }
         accountService.checkAccess(CallContext.current().getCallingAccount(), SecurityChecker.AccessType.OperateEntry,
                 false, vmVo);
+        validateInstanceBackupConditions(vmVo);
         validateInstanceStorage(vmVo);
         try {
             StartBackupCmd cmd = new StartBackupCmd();

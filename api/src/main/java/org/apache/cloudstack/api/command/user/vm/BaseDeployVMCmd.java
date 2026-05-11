@@ -168,7 +168,7 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
     @ACL
     @Parameter(name = ApiConstants.SECURITY_GROUP_IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = SecurityGroupResponse.class, description = "comma separated list of security groups id that going to be applied to the virtual machine. "
             + "Should be passed only when vm is created from a zone with Basic Network support." + " Mutually exclusive with securitygroupnames parameter")
-    private List<Long> securityGroupIdList;
+    protected List<Long> securityGroupIdList;
 
     @ACL
     @Parameter(name = ApiConstants.SECURITY_GROUP_NAMES, type = CommandType.LIST, collectionType = CommandType.STRING, entityType = SecurityGroupResponse.class, description = "comma separated list of security groups names that going to be applied to the virtual machine."
@@ -796,6 +796,10 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
                 throw new InvalidParameterValueException(errMesg);
             }
         }
+        return null;
+    }
+
+    public String getInstanceType() {
         return null;
     }
 

@@ -845,10 +845,11 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
     }
 
     @Override
-    public List<UserVmJoinVO> listByHypervisorTypeAndOwners(Hypervisor.HypervisorType hypervisorType,
-                    List<Long> accountIds, String domainPath, Filter filter) {
+    public List<UserVmJoinVO> listByHypervisorNotTypesAndOwners(Hypervisor.HypervisorType hypervisorType,
+                       List<String> excludeTypes, List<Long> accountIds, String domainPath, Filter filter) {
         SearchBuilder<UserVmJoinVO> sb = createSearchBuilder();
         sb.and("hypervisorType", sb.entity().getHypervisorType(), Op.EQ);
+        sb.and("type", sb.entity().getUserVmType(), Op.NOTIN);
         boolean accountIdsNotEmpty = CollectionUtils.isNotEmpty(accountIds);
         boolean domainPathNotBlank = StringUtils.isNotBlank(domainPath);
         if (accountIdsNotEmpty || domainPathNotBlank) {
@@ -859,6 +860,9 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         sb.done();
         SearchCriteria<UserVmJoinVO> sc = sb.create();
         sc.setParameters("hypervisorType", hypervisorType);
+        if (CollectionUtils.isNotEmpty(excludeTypes)) {
+            sc.setParameters("type", excludeTypes.toArray());
+        }
         if (accountIdsNotEmpty) {
             sc.setParameters("account", accountIds.toArray());
         }
