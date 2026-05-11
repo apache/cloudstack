@@ -7225,7 +7225,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     public boolean isVMUsingLocalStorage(VMInstanceVO vm) {
-        List<VolumeVO> volumes = _volsDao.findByInstance(vm.getId());
+        List<VolumeVO> volumes = _volsDao.findByInstanceAndNotDestroyed(vm.getId());
         return isAnyVmVolumeUsingLocalStorage(volumes);
     }
 
@@ -7660,12 +7660,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     protected boolean isAnyVmVolumeUsingLocalStorage(final List<VolumeVO> volumes) {
         for (VolumeVO vol : volumes) {
-            if (vol == null || vol.getRemoved() != null ||
-                    Volume.State.Destroy.equals(vol.getState()) ||
-                    Volume.State.Expunged.equals(vol.getState())) {
-                logger.debug("Skipping non-active volume while checking local storage usage: {}", vol);
-                continue;
-            }
             DiskOfferingVO diskOffering = _diskOfferingDao.findById(vol.getDiskOfferingId());
             if (diskOffering != null && diskOffering.isUseLocalStorage()) {
                 return true;

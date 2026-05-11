@@ -44,6 +44,8 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
 
     List<VolumeVO> findByInstance(long id);
 
+    List<VolumeVO> findByInstanceAndNotDestroyed(long id);
+
     List<VolumeVO> findByInstanceAndType(long id, Volume.Type vType);
 
     List<VolumeVO> findIncludingRemovedByInstanceAndType(long id, Volume.Type vType);
