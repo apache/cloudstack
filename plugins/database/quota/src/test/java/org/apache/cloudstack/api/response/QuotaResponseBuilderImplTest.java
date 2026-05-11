@@ -44,7 +44,6 @@ import org.apache.cloudstack.api.command.QuotaConfigureEmailCmd;
 import org.apache.cloudstack.api.command.QuotaCreditsListCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateListCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateUpdateCmd;
-import org.apache.cloudstack.api.command.QuotaStatementCmd;
 import org.apache.cloudstack.api.command.QuotaSummaryCmd;
 import org.apache.cloudstack.api.command.QuotaValidateActivationRuleCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -155,7 +154,7 @@ public class QuotaResponseBuilderImplTest extends TestCase {
     Date date = new Date();
 
     @Mock
-    Account accountMock;
+    AccountVO accountMock;
 
     @Mock
     DomainVO domainVoMock;
@@ -1010,107 +1009,130 @@ public class QuotaResponseBuilderImplTest extends TestCase {
     }
 
     @Test
-    public void getAccountIdForQuotaStatementTestLimitsToCallingAccountForNormalUser() {
-        QuotaStatementCmd cmd = Mockito.mock(QuotaStatementCmd.class);
+    public void getAccountIdForQuotaStatementTestReturnsProvidedAccount() {
+        long providedAccountId = 200L;
 
-        Mockito.doReturn(accountMock).when(callContextMock).getCallingAccount();
-        Mockito.doReturn(Account.Type.NORMAL).when(accountMock).getType();
+        Mockito.when(accountDaoMock.findByIdIncludingRemoved(providedAccountId)).thenReturn(accountMock);
+        Mockito.doNothing().when(accountManagerMock).checkAccess(callerAccountMock, null, false, accountMock);
 
-        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
-            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+        long result = quotaResponseBuilderSpy.getAccountIdForQuotaStatement(providedAccountId, null);
 
-            Long result = quotaResponseBuilderSpy.getAccountIdForQuotaStatement(cmd);
-
-            Assert.assertEquals(Long.valueOf(callerAccountMock.getAccountId()), result);
-        }
+        Assert.assertEquals(200L, result);
+        Mockito.verify(accountManagerMock).checkAccess(callerAccountMock, null, false, accountMock);
     }
 
     @Test
-    public void getAccountIdForQuotaStatementTestReturnsEntityOwnerIdWhenProvided() {
-        QuotaStatementCmd cmd = Mockito.mock(QuotaStatementCmd.class);
+    public void getAccountIdForQuotaStatementTestReturnsNullWhenCallerIsAdminWithoutProvidedAccount() {
+        Mockito.when(callerAccountMock.getType()).thenReturn(Account.Type.ADMIN);
 
-        Mockito.doReturn(42L).when(cmd).getEntityOwnerId();
+        Long result = quotaResponseBuilderSpy.getAccountIdForQuotaStatement(-1L, null);
 
-        Long result = quotaResponseBuilderSpy.getAccountIdForQuotaStatement(cmd);
-
-        Assert.assertEquals(Long.valueOf(42L), result);
+        assertNull(result);
+        Mockito.verify(accountManagerMock, Mockito.never()).getAccount(Mockito.anyLong());
     }
 
     @Test
-    public void getAccountIdForQuotaStatementTestLimitsToCallingAccountWhenCallerIsAdminAndDomainIsNotProvided() {
-        QuotaStatementCmd cmd = Mockito.mock(QuotaStatementCmd.class);
+    public void getAccountIdForQuotaStatementTestReturnsNullWhenCallerIsDomainAdminWithoutProvidedAccount() {
+        Mockito.when(callerAccountMock.getType()).thenReturn(Account.Type.DOMAIN_ADMIN);
 
-        Mockito.doReturn(accountMock).when(callContextMock).getCallingAccount();
-        Mockito.doReturn(Account.Type.ADMIN).when(accountMock).getType();
-        Mockito.doReturn(-1L).when(cmd).getEntityOwnerId();
-        Mockito.doReturn(null).when(cmd).getDomainId();
+        Long result = quotaResponseBuilderSpy.getAccountIdForQuotaStatement(-1L, null);
 
-        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
-            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
-
-            Long result = quotaResponseBuilderSpy.getAccountIdForQuotaStatement(cmd);
-
-            Assert.assertEquals(Long.valueOf(callerAccountMock.getAccountId()), result);
-        }
+        assertNull(result);
+        Mockito.verify(accountManagerMock, Mockito.never()).getAccount(Mockito.anyLong());
     }
 
     @Test
-    public void getAccountIdForQuotaStatementTestReturnsNullWhenCallerIsAdminAndDomainIsProvided() {
-        QuotaStatementCmd cmd = Mockito.mock(QuotaStatementCmd.class);
+    public void getAccountIdForQuotaStatementTestReturnsFallbackAccountWhenNoAccountProvidedAndCallerIsNotAdmin() {
+        Mockito.when(callerAccountMock.getType()).thenReturn(Account.Type.NORMAL);
 
-        Mockito.doReturn(accountMock).when(callContextMock).getCallingAccount();
-        Mockito.doReturn(Account.Type.ADMIN).when(accountMock).getType();
-        Mockito.doReturn(-1L).when(cmd).getEntityOwnerId();
-        Mockito.doReturn(10L).when(cmd).getDomainId();
+        Mockito.when(accountDaoMock.findByIdIncludingRemoved(300L)).thenReturn(accountMock);
+        Mockito.doNothing().when(accountManagerMock).checkAccess(callerAccountMock, null, false, accountMock);
 
-        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
-            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+        long result = quotaResponseBuilderSpy.getAccountIdForQuotaStatement(-1L, 300L);
 
-            Long result = quotaResponseBuilderSpy.getAccountIdForQuotaStatement(cmd);
-
-            Assert.assertNull(result);
-        }
+        assertEquals(300L, result);
+        Mockito.verify(accountManagerMock).checkAccess(callerAccountMock, null, false, accountMock);
     }
 
     @Test
-    public void getDomainIdForQuotaStatementTestReturnsAccountDomainIdWhenAccountIdIsProvided() {
-        QuotaStatementCmd cmd = Mockito.mock(QuotaStatementCmd.class);
-        AccountVO account = Mockito.mock(AccountVO.class);
+    public void getAccountIdForQuotaStatementTestAccessDeniedForProvidedAccount() {
+        Mockito.when(accountDaoMock.findByIdIncludingRemoved(200L)).thenReturn(accountMock);
+        Mockito.doThrow(new PermissionDeniedException("Access denied"))
+                .when(accountManagerMock).checkAccess(callerAccountMock, null, false, accountMock);
 
-        Mockito.doReturn(account).when(accountDaoMock).findByIdIncludingRemoved(55L);
-        Mockito.doReturn(77L).when(account).getDomainId();
-
-        Long result = quotaResponseBuilderSpy.getDomainIdForQuotaStatement(cmd, 55L);
-
-        Assert.assertEquals(Long.valueOf(77L), result);
+        Assert.assertThrows(PermissionDeniedException.class,
+                () -> quotaResponseBuilderSpy.getAccountIdForQuotaStatement(200L, null));
+        Mockito.verify(accountManagerMock).checkAccess(callerAccountMock, null, false, accountMock);
     }
 
     @Test
-    public void getDomainIdForQuotaStatementTestReturnsProvidedDomainIdWhenAccountIdIsNull() {
-        QuotaStatementCmd cmd = Mockito.mock(QuotaStatementCmd.class);
+    public void getDomainIdsForQuotaStatementTestReturnsNullPairWhenAccountIsProvided() {
+        Pair<Long, List<Long>> result = quotaResponseBuilderSpy.getDomainIdsForQuotaStatement(100L, null, false);
 
-        Mockito.doReturn(99L).when(cmd).getDomainId();
-
-        Long result = quotaResponseBuilderSpy.getDomainIdForQuotaStatement(cmd, null);
-
-        Assert.assertEquals(Long.valueOf(99L), result);
+        assertNull(result.first());
+        assertNull(result.second());
+        Mockito.verify(domainDaoMock, Mockito.never()).findByIdIncludingRemoved(Mockito.anyLong());
     }
 
     @Test
-    public void getDomainIdForQuotaStatementTestFallsBackToCallingAccountDomainIdWhenNeitherAccountNorDomainIsProvided() {
-        QuotaStatementCmd cmd = Mockito.mock(QuotaStatementCmd.class);
-        Account account = Mockito.mock(Account.class);
+    public void getDomainIdsForQuotaStatementTestReturnsProvidedDomainIdNonRecursively() {
+        Mockito.when(domainDaoMock.findByIdIncludingRemoved(5L)).thenReturn(domainVoMock);
+        Mockito.doNothing().when(accountManagerMock).checkAccess(callerAccountMock, domainVoMock);
 
-        Mockito.doReturn(null).when(cmd).getDomainId();
-        Mockito.doReturn(123L).when(account).getDomainId();
-        Mockito.doReturn(account).when(callContextMock).getCallingAccount();
+        Pair<Long, List<Long>> result = quotaResponseBuilderSpy.getDomainIdsForQuotaStatement(null, 5L, false);
 
-        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
-            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+        assertEquals(5L, (long) result.first());
+        assertEquals(List.of(5L), result.second());
+        Mockito.verify(accountManagerMock).checkAccess(callerAccountMock, domainVoMock);
+    }
 
-            Long result = quotaResponseBuilderSpy.getDomainIdForQuotaStatement(cmd, null);
+    @Test
+    public void getDomainIdsForQuotaStatementTestReturnsCallerDomainNonRecursively() {
+        Mockito.when(callerAccountMock.getDomainId()).thenReturn(7L);
 
-            Assert.assertEquals(123L, result.longValue());
-        }
+        Pair<Long, List<Long>> result = quotaResponseBuilderSpy.getDomainIdsForQuotaStatement(null, null, false);
+
+        assertEquals(7L, (long) result.first());
+        assertEquals(List.of(7L), result.second());
+        Mockito.verify(domainDaoMock, Mockito.never()).findByIdIncludingRemoved(Mockito.anyLong());
+    }
+
+    @Test
+    public void getDomainIdsForQuotaStatementTestReturnsProvidedDomainRecursively() {
+        List<Long> domainAndChildren = List.of(5L, 10L, 15L);
+        Mockito.when(domainDaoMock.findByIdIncludingRemoved(5L)).thenReturn(domainVoMock);
+        Mockito.when(domainDaoMock.getDomainAndChildrenIds(5L)).thenReturn(domainAndChildren);
+        Mockito.doNothing().when(accountManagerMock).checkAccess(callerAccountMock, domainVoMock);
+
+        Pair<Long, List<Long>> result = quotaResponseBuilderSpy.getDomainIdsForQuotaStatement(null, 5L, true);
+
+        assertEquals(5L, (long) result.first());
+        assertEquals(domainAndChildren, result.second());
+        Mockito.verify(domainDaoMock).getDomainAndChildrenIds(5L);
+    }
+
+    @Test
+    public void getDomainIdsForQuotaStatementReturnsCallerDomainRecursively() {
+        List<Long> domainAndChildren = List.of(1L, 2L, 3L);
+        Mockito.when(callerAccountMock.getDomainId()).thenReturn(1L);
+
+        Mockito.when(domainDaoMock.getDomainAndChildrenIds(1L)).thenReturn(domainAndChildren);
+
+        Pair<Long, List<Long>> result = quotaResponseBuilderSpy.getDomainIdsForQuotaStatement(null, null, true);
+
+        assertEquals(1L, (long) result.first());
+        assertEquals(domainAndChildren, result.second());
+        Mockito.verify(domainDaoMock).getDomainAndChildrenIds(1L);
+    }
+
+    @Test
+    public void getDomainIdsForQuotaStatementTestThrowsAccessDeniedForProvidedDomain() {
+        Mockito.when(domainDaoMock.findByIdIncludingRemoved(5L)).thenReturn(domainVoMock);
+        Mockito.doThrow(new PermissionDeniedException("Access denied"))
+                .when(accountManagerMock).checkAccess(callerAccountMock, domainVoMock);
+
+        Assert.assertThrows(PermissionDeniedException.class,
+                () -> quotaResponseBuilderSpy.getDomainIdsForQuotaStatement(null, 5L, false));
+        Mockito.verify(accountManagerMock).checkAccess(callerAccountMock, domainVoMock);
     }
 }

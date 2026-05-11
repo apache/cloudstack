@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -43,9 +44,11 @@ import org.apache.cloudstack.quota.constant.QuotaTypes;
 import org.apache.cloudstack.quota.dao.QuotaAccountDao;
 import org.apache.cloudstack.quota.dao.QuotaBalanceDao;
 import org.apache.cloudstack.quota.dao.QuotaTariffDao;
+import org.apache.cloudstack.quota.dao.QuotaTariffUsageDao;
 import org.apache.cloudstack.quota.dao.QuotaUsageDao;
 import org.apache.cloudstack.quota.vo.QuotaAccountVO;
 import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
+import org.apache.cloudstack.quota.vo.QuotaTariffUsageVO;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
 import org.apache.cloudstack.quota.vo.QuotaUsageVO;
 import org.apache.cloudstack.usage.UsageUnitTypes;
@@ -86,7 +89,8 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     private QuotaBalanceDao _quotaBalanceDao;
     @Inject
     private ConfigurationDao _configDao;
-
+    @Inject
+    private QuotaTariffUsageDao quotaTariffUsageDao;
     @Inject
     protected PresetVariableHelper presetVariableHelper;
 
@@ -310,14 +314,14 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         String accountToString = account.reflectionToString();
         logger.info("Calculating quota usage of [{}] usage records for account [{}].", usageRecords.size(), accountToString);
 
-        List<Pair<UsageVO, QuotaUsageVO>> pairsUsageAndQuotaUsage = new ArrayList<>();
+        Map<UsageVO, Pair<QuotaUsageVO, List<QuotaTariffUsageVO>>> mapUsageAndQuotaUsage = new LinkedHashMap<>();
 
         try (JsInterpreter jsInterpreter = new JsInterpreter(QuotaConfig.QuotaActivationRuleTimeout.value())) {
             for (UsageVO usageRecord : usageRecords) {
                 int usageType = usageRecord.getUsageType();
 
                 if (!shouldCalculateUsageRecord(account, usageRecord)) {
-                    pairsUsageAndQuotaUsage.add(new Pair<>(usageRecord, null));
+                    mapUsageAndQuotaUsage.put(usageRecord, null);
                     continue;
                 }
 
@@ -325,18 +329,31 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
                 List<QuotaTariffVO> quotaTariffs = pairQuotaTariffsPerUsageTypeAndHasActivationRule.first();
                 boolean hasAnyQuotaTariffWithActivationRule = pairQuotaTariffsPerUsageTypeAndHasActivationRule.second();
 
-                BigDecimal aggregatedQuotaTariffsValue = aggregateQuotaTariffsValues(usageRecord, quotaTariffs, hasAnyQuotaTariffWithActivationRule, jsInterpreter, accountToString);
+                Map<QuotaTariffVO, BigDecimal> aggregatedQuotaTariffsAndValues = aggregateQuotaTariffsValues(usageRecord,
+                        quotaTariffs, hasAnyQuotaTariffWithActivationRule, jsInterpreter, accountToString);
+                BigDecimal aggregatedQuotaTariffsValue = aggregatedQuotaTariffsAndValues.values().stream().reduce(BigDecimal.ZERO, BigDecimal::add);
+                logger.debug("The aggregation of the quota tariffs of account [{}] resulted in [{}] for the usage record [{}].",
+                        account, aggregatedQuotaTariffsValue, usageRecord);
 
                 QuotaUsageVO quotaUsage = createQuotaUsageAccordingToUsageUnit(usageRecord, aggregatedQuotaTariffsValue, accountToString);
+                if (quotaUsage == null) {
+                    mapUsageAndQuotaUsage.put(usageRecord, null);
+                    continue;
+                }
 
-                pairsUsageAndQuotaUsage.add(new Pair<>(usageRecord, quotaUsage));
+                List<QuotaTariffUsageVO> quotaTariffUsages = new ArrayList<>();
+                for (Map.Entry<QuotaTariffVO, BigDecimal> entry : aggregatedQuotaTariffsAndValues.entrySet()) {
+                    QuotaTariffUsageVO quotaTariffUsage = createQuotaTariffUsage(usageRecord, entry.getKey(), entry.getValue());
+                    quotaTariffUsages.add(quotaTariffUsage);
+                }
+                mapUsageAndQuotaUsage.put(usageRecord, new Pair<>(quotaUsage, quotaTariffUsages));
             }
         } catch (Exception e) {
             logger.error(String.format("Failed to calculate the quota usage for account [%s] due to [%s].", accountToString, e.getMessage()), e);
             return new ArrayList<>();
         }
 
-        return persistUsagesAndQuotaUsagesAndRetrievePersistedQuotaUsages(pairsUsageAndQuotaUsage);
+        return persistUsagesAndQuotaUsagesAndRetrievePersistedQuotaUsages(mapUsageAndQuotaUsage);
     }
 
     protected boolean shouldCalculateUsageRecord(AccountVO accountVO, UsageVO usageRecord) {
@@ -348,31 +365,41 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         return true;
     }
 
-    protected List<QuotaUsageVO> persistUsagesAndQuotaUsagesAndRetrievePersistedQuotaUsages(List<Pair<UsageVO, QuotaUsageVO>> pairsUsageAndQuotaUsage) {
-        List<QuotaUsageVO> quotaUsages = new ArrayList<>();
+    protected List<QuotaUsageVO> persistUsagesAndQuotaUsagesAndRetrievePersistedQuotaUsages(Map<UsageVO, Pair<QuotaUsageVO, List<QuotaTariffUsageVO>>> mapUsageAndQuotaTariffUsage) {
+        List<QuotaUsageVO> quotaUsages = new ArrayList<>(); // TODO: isso tem que ser em uma transação
 
-        for (Pair<UsageVO, QuotaUsageVO> pairUsageAndQuotaUsage : pairsUsageAndQuotaUsage) {
-            UsageVO usageVo = pairUsageAndQuotaUsage.first();
+        for (Map.Entry<UsageVO, Pair<QuotaUsageVO, List<QuotaTariffUsageVO>>> usageAndTariffUsage : mapUsageAndQuotaTariffUsage.entrySet()) {
+            UsageVO usageVo = usageAndTariffUsage.getKey();
             usageVo.setQuotaCalculated(1);
             _usageDao.persistUsage(usageVo);
 
-            QuotaUsageVO quotaUsageVo = pairUsageAndQuotaUsage.second();
-            if (quotaUsageVo != null) {
-                _quotaUsageDao.persistQuotaUsage(quotaUsageVo);
-                quotaUsages.add(quotaUsageVo);
+            Pair<QuotaUsageVO, List<QuotaTariffUsageVO>> pairUsageAndTariffUsages = usageAndTariffUsage.getValue();
+            if (pairUsageAndTariffUsages != null) {
+                QuotaUsageVO quotaUsage = pairUsageAndTariffUsages.first();
+                _quotaUsageDao.persistQuotaUsage(quotaUsage);
+                quotaUsages.add(quotaUsage);
+
+                persistQuotaTariffUsages(pairUsageAndTariffUsages.second(), quotaUsage.getId());
             }
         }
 
         return quotaUsages;
     }
 
-    protected BigDecimal aggregateQuotaTariffsValues(UsageVO usageRecord, List<QuotaTariffVO> quotaTariffs, boolean hasAnyQuotaTariffWithActivationRule,
-            JsInterpreter jsInterpreter, String accountToString) {
+    protected void persistQuotaTariffUsages(List<QuotaTariffUsageVO> quotaTariffUsages, Long quotaUsageId) {
+        for (QuotaTariffUsageVO quotaTariffUsage : quotaTariffUsages) {
+            quotaTariffUsage.setQuotaUsageId(quotaUsageId);
+            quotaTariffUsageDao.persistQuotaTariffUsage(quotaTariffUsage);
+        }
+    }
+
+    protected Map<QuotaTariffVO, BigDecimal> aggregateQuotaTariffsValues(UsageVO usageRecord, List<QuotaTariffVO> quotaTariffs, boolean hasAnyQuotaTariffWithActivationRule,
+                                                                         JsInterpreter jsInterpreter, String accountToString) {
         String usageRecordToString = usageRecord.toString(usageAggregationTimeZone);
         logger.debug("Validating usage record [{}] for account [{}] against [{}] quota tariffs.", usageRecordToString, accountToString, quotaTariffs.size());
 
         PresetVariables presetVariables = getPresetVariables(hasAnyQuotaTariffWithActivationRule, usageRecord);
-        BigDecimal aggregatedQuotaTariffsValue = BigDecimal.ZERO;
+        Map<QuotaTariffVO, BigDecimal> aggregatedQuotaTariffsAndValues = new HashMap<>();
 
         quotaTariffs.sort(Comparator.comparing(QuotaTariffVO::getPosition));
 
@@ -381,10 +408,9 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
 
         for (QuotaTariffVO quotaTariff : quotaTariffs) {
             if (isQuotaTariffInPeriodToBeApplied(usageRecord, quotaTariff, accountToString)) {
-
                 BigDecimal tariffValue = getQuotaTariffValueToBeApplied(quotaTariff, jsInterpreter, presetVariables, lastTariffs);
 
-                aggregatedQuotaTariffsValue = aggregatedQuotaTariffsValue.add(tariffValue);
+                aggregatedQuotaTariffsAndValues.put(quotaTariff, tariffValue);
 
                 Tariff tariffPresetVariable = new Tariff();
                 tariffPresetVariable.setId(quotaTariff.getUuid());
@@ -393,10 +419,10 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             }
         }
 
-        logger.debug(String.format("The aggregation of the quota tariffs resulted in the value [%s] for the usage record [%s]. We will use this value to calculate the final"
-                + " usage value.", aggregatedQuotaTariffsValue, usageRecordToString));
+        logger.debug("The aggregation of the quota tariffs resulted in [{}] quota tariffs for the usage record [{}]. The values of the quota tariffs will be used"
+                + " to calculate the final usage value.", aggregatedQuotaTariffsAndValues.size(), usageRecordToString);
 
-        return aggregatedQuotaTariffsValue;
+        return aggregatedQuotaTariffsAndValues;
     }
 
     protected PresetVariables getPresetVariables(boolean hasAnyQuotaTariffWithActivationRule, UsageVO usageRecord) {
@@ -405,6 +431,26 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         }
 
         return null;
+    }
+
+    protected QuotaTariffUsageVO createQuotaTariffUsage(UsageVO usageRecord, QuotaTariffVO quotaTariff, BigDecimal quotaTariffValue) {
+        BigDecimal quotaUsageValue = BigDecimal.ZERO;
+
+        if (!quotaTariffValue.equals(BigDecimal.ZERO)) {
+            String quotaUnit = QuotaTypes.getQuotaType(usageRecord.getUsageType()).getQuotaUnit();
+            logger.trace("Calculating the value of the quota tariff [{}] according to its value [{}] and its quota unit [{}].", quotaTariff, quotaTariffValue, quotaUnit);
+            quotaUsageValue = getUsageValueAccordingToUsageUnitType(usageRecord, quotaTariffValue, quotaUnit);
+            logger.debug("The calculation of the value of the quota tariff [{}] according to its value [{}] and its usage unit [{}] resulted in the value [{}].",
+                    quotaTariff, quotaTariffValue, quotaUnit, quotaUsageValue);
+        } else {
+            logger.debug("Quota tariff [{}] has no value to be calculated; therefore, it will be marked as value zero.", quotaTariff);
+        }
+
+        QuotaTariffUsageVO quotaTariffUsage = new QuotaTariffUsageVO();
+        quotaTariffUsage.setTariffId(quotaTariff.getId());
+        quotaTariffUsage.setQuotaUsed(quotaUsageValue);
+
+        return quotaTariffUsage;
     }
 
     /**
