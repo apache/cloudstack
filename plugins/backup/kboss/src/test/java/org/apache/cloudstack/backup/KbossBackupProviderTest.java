@@ -1561,7 +1561,7 @@ public class KbossBackupProviderTest {
         boolean result = kbossBackupProviderSpy.validateWithValidationVm(backupId, 2L, backupVoMock);
 
         assertFalse(result);
-        verify(kbossBackupProviderSpy, never()).cleanupValidation(anyBoolean(), any(), any(), any());
+        verify(kbossBackupProviderSpy).cleanupValidation(anyBoolean(), any(), any(), any());
     }
 
     @Test
@@ -2819,7 +2819,7 @@ public class KbossBackupProviderTest {
         Pair<Boolean, BackupVO> result = kbossBackupProviderSpy.validateCompressionStateForRestoreAndGetBackup(backupId);
 
         assertFalse(result.first());
-        verify(kbossBackupProviderSpy).releaseBackup(backupId);
+        verify(kbossBackupProviderSpy, never()).releaseBackup(backupId);
     }
 
     @Test
@@ -2856,7 +2856,7 @@ public class KbossBackupProviderTest {
         boolean result = kbossBackupProviderSpy.validateBackupStateForRemoval(backupId);
 
         assertFalse(result);
-        verify(kbossBackupProviderSpy).releaseBackup(backupId);
+        verify(kbossBackupProviderSpy, never()).releaseBackup(backupId);
     }
 
     @Test
@@ -2922,7 +2922,7 @@ public class KbossBackupProviderTest {
 
         assertFalse(result.first());
         verify(backupDaoMock, never()).update(backupId, backupVoMock);
-        verify(kbossBackupProviderSpy).releaseBackup(backupId);
+        verify(kbossBackupProviderSpy, never()).releaseBackup(backupId);
     }
 
     @Test
@@ -2961,7 +2961,7 @@ public class KbossBackupProviderTest {
 
         assertFalse(result.first());
         verify(backupDaoMock, never()).update(backupId, backupVoMock);
-        verify(kbossBackupProviderSpy).releaseBackup(backupId);
+        verify(kbossBackupProviderSpy, never()).releaseBackup(backupId);
     }
 
     @Test
@@ -3028,7 +3028,7 @@ public class KbossBackupProviderTest {
 
         assertFalse(result.first());
         verify(backupDaoMock, never()).update(backupId, backupVoMock);
-        verify(kbossBackupProviderSpy).releaseBackup(backupId);
+        verify(kbossBackupProviderSpy, never()).releaseBackup(backupId);
     }
 
     @Test
@@ -3077,7 +3077,7 @@ public class KbossBackupProviderTest {
         boolean result = kbossBackupProviderSpy.validateBackupStateForValidation(backupId);
 
         assertFalse(result);
-        verify(kbossBackupProviderSpy).releaseBackup(backupId);
+        verify(kbossBackupProviderSpy, never()).releaseBackup(backupId);
     }
 
     @Test

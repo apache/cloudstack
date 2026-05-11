@@ -1337,6 +1337,9 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
     }
 
     protected void cleanupValidation(boolean startedVm, UserVmVO validationVm, BackupVO backupVO, List<VolumeVO> volumeVOs) {
+        if (validationVm == null) {
+            return;
+        }
         if (startedVm) {
             userVmManager.stopVirtualMachine(validationVm.getId(), true);
         }
