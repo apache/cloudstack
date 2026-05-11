@@ -23,6 +23,10 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.cloud.configuration.ConfigurationManagerImpl;
+import org.apache.cloudstack.api.command.user.event.ArchiveEventsCmd;
+import org.apache.cloudstack.api.command.user.event.DeleteEventsCmd;
+import org.apache.commons.lang3.time.DateUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -42,6 +46,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -72,6 +77,7 @@ import com.cloud.cpu.CPU;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.event.dao.EventDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
@@ -174,6 +180,9 @@ public class ManagementServerImplTest {
     @Mock
     ExtensionsManager extensionManager;
 
+    @Mock
+    EventDao eventDao;
+
     @Spy
     @InjectMocks
     ManagementServerImpl spy = new ManagementServerImpl();
@@ -188,13 +197,6 @@ public class ManagementServerImplTest {
     public void setup() throws IllegalAccessException, NoSuchFieldException {
         closeable = MockitoAnnotations.openMocks(this);
         CallContext.register(Mockito.mock(User.class), Mockito.mock(Account.class));
-        spy._accountMgr = accountManager;
-        spy.userDataDao = userDataDao;
-        spy.templateDao = templateDao;
-        spy._userVmDao = userVmDao;
-        spy.annotationDao = annotationDao;
-        spy._detailsDao = hostDetailsDao;
-        spy.userDataManager = userDataManager;
 
         spy.setHostAllocators(List.of(hostAllocator));
 
@@ -1058,5 +1060,101 @@ public class ManagementServerImplTest {
         Mockito.when(extensionManager.getInstanceConsole(virtualMachine, host)).thenReturn(Mockito.mock(com.cloud.agent.api.Answer.class));
         Assert.assertNotNull(spy.getExternalVmConsole(virtualMachine, host));
         Mockito.verify(extensionManager).getInstanceConsole(virtualMachine, host);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateEventOperationParametersTestIdsAndTypeAndEndDateIsNullThrowInvalidParameterValueException() {
+        spy.validateEventOperationParameters(null, null, null, new Date());
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateEventOperationParametersTestStartDateIsNotNullAndEndDateIsNullThrowInvalidParameterValueException() {
+        spy.validateEventOperationParameters(List.of(1L), null, null, new Date());
+    }
+
+    private ArchiveEventsCmd createArchiveEventsCmdForTests() {
+        ArchiveEventsCmd cmd = new ArchiveEventsCmd();
+        cmd.setIds(List.of(10L, 11L, 12L, 13L));
+        cmd.setType("type");
+        cmd.setEndDate(new Date());
+        cmd.setStartDate(DateUtils.addDays(cmd.getEndDate(), -1));
+        return cmd;
+    }
+
+    @Test
+    public void archiveEventsTestArchivesOnlyOwnEventsWhenCallerIsNormalUser() {
+        Long callerId = 5L;
+        ArchiveEventsCmd cmd = createArchiveEventsCmdForTests();
+
+        Mockito.doReturn(Account.Type.NORMAL).when(account).getType();
+        Mockito.doReturn(callerId).when(account).getId();
+        Mockito.doReturn(account).when(spy).getCaller();
+
+        spy.archiveEvents(cmd);
+
+        Mockito.verify(spy).validateEventOperationParameters(cmd.getIds(), cmd.getType(), cmd.getEndDate(), cmd.getStartDate());
+        Mockito.verify(eventDao).archiveEvents(cmd.getIds(), cmd.getType(), cmd.getStartDate(), cmd.getEndDate(), callerId,
+                null, ConfigurationManagerImpl.DELETE_QUERY_BATCH_SIZE.value());
+    }
+
+    @Test
+    public void archiveEventsTestArchivesOnlyEventsOfOwnDomainWhenCallerIsAdmin() {
+        Long callerDomainId = 6L;
+        List<Long> domainIds = List.of(callerDomainId, 7L, 8L);
+        ArchiveEventsCmd cmd = createArchiveEventsCmdForTests();
+
+        Mockito.doReturn(Account.Type.DOMAIN_ADMIN).when(account).getType();
+        Mockito.doReturn(callerDomainId).when(account).getDomainId();
+        Mockito.doReturn(account).when(spy).getCaller();
+        Mockito.doReturn(domainIds).when(domainDao).getDomainAndChildrenIds(callerDomainId);
+
+        spy.archiveEvents(cmd);
+
+        Mockito.verify(spy).validateEventOperationParameters(cmd.getIds(), cmd.getType(), cmd.getEndDate(), cmd.getStartDate());
+        Mockito.verify(eventDao).archiveEvents(cmd.getIds(), cmd.getType(), cmd.getStartDate(), cmd.getEndDate(), null,
+                domainIds, ConfigurationManagerImpl.DELETE_QUERY_BATCH_SIZE.value());
+    }
+
+    private DeleteEventsCmd createDeleteEventsCmdForTests() {
+        DeleteEventsCmd cmd = new DeleteEventsCmd();
+        cmd.setIds(List.of(10L, 11L, 12L, 13L));
+        cmd.setType("type");
+        cmd.setEndDate(new Date());
+        cmd.setStartDate(DateUtils.addDays(cmd.getEndDate(), -1));
+        return cmd;
+    }
+
+    @Test
+    public void deleteEventsTestDeletesOnlyOwnEventsWhenCallerIsNormalUser() {
+        Long callerId = 5L;
+        DeleteEventsCmd cmd = createDeleteEventsCmdForTests();
+
+        Mockito.doReturn(Account.Type.NORMAL).when(account).getType();
+        Mockito.doReturn(callerId).when(account).getId();
+        Mockito.doReturn(account).when(spy).getCaller();
+
+        spy.deleteEvents(cmd);
+
+        Mockito.verify(spy).validateEventOperationParameters(cmd.getIds(), cmd.getType(), cmd.getEndDate(), cmd.getStartDate());
+        Mockito.verify(eventDao).purgeAll(cmd.getIds(), cmd.getStartDate(), cmd.getEndDate(), null, cmd.getType(),
+                callerId, null, ConfigurationManagerImpl.DELETE_QUERY_BATCH_SIZE.value());
+    }
+
+    @Test
+    public void deleteEventsTestDeletesOnlyEventsOfOwnDomainCallerIsAdmin() {
+        Long callerDomainId = 6L;
+        List<Long> domainIds = List.of(callerDomainId, 7L, 8L);
+        DeleteEventsCmd cmd = createDeleteEventsCmdForTests();
+
+        Mockito.doReturn(Account.Type.DOMAIN_ADMIN).when(account).getType();
+        Mockito.doReturn(callerDomainId).when(account).getDomainId();
+        Mockito.doReturn(account).when(spy).getCaller();
+        Mockito.doReturn(domainIds).when(domainDao).getDomainAndChildrenIds(callerDomainId);
+
+        spy.deleteEvents(cmd);
+
+        Mockito.verify(spy).validateEventOperationParameters(cmd.getIds(), cmd.getType(), cmd.getEndDate(), cmd.getStartDate());
+        Mockito.verify(eventDao).purgeAll(cmd.getIds(), cmd.getStartDate(), cmd.getEndDate(), null, cmd.getType(),
+                null, domainIds, ConfigurationManagerImpl.DELETE_QUERY_BATCH_SIZE.value());
     }
 }

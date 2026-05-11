@@ -51,6 +51,7 @@ public class Upgrade42210to42300 extends DbUpgradeAbstractImpl implements DbUpgr
     @Override
     public void performDataMigration(Connection conn) {
         unhideJsInterpretationEnabled(conn);
+        addIndexes(conn);
     }
 
     protected void unhideJsInterpretationEnabled(Connection conn) {
@@ -88,5 +89,11 @@ public class Upgrade42210to42300 extends DbUpgradeAbstractImpl implements DbUpgr
         } catch (CloudRuntimeException e) {
             logger.warn("Error while decrypting configuration 'js.interpretation.enabled'. The configuration may already be decrypted.");
         }
+    }
+
+    private void addIndexes(Connection conn) {
+        DbUpgradeUtils.addIndexWithNameIfNeeded(conn, "event", "i_event__multiple_columns_for_generic_search",
+                "account_id", "domain_id", "archived",  "display", "resource_type", "resource_id", "start_id", "type", "level",
+                "created", "id");
     }
 }

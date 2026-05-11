@@ -25,7 +25,10 @@ public class DbUpgradeUtils {
 
     public static void addIndexIfNeeded(Connection conn, String tableName, String... columnNames) {
         String indexName = dao.generateIndexName(tableName, columnNames);
+        addIndexWithNameIfNeeded(conn, tableName, indexName, columnNames);
+    }
 
+    public static void addIndexWithNameIfNeeded(Connection conn, String tableName, String indexName, String... columnNames) {
         if (!dao.indexExists(conn, tableName, indexName)) {
             dao.createIndex(conn, tableName, indexName, columnNames);
         }
