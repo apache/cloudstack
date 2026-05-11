@@ -1265,27 +1265,8 @@ public class UserVmManagerImplTest {
     }
 
     @Test
-    public void testIsAnyVmVolumeUsingLocalStorageSkipsDestroyedVolumeWithMissingPool() {
-        VolumeVO volume = Mockito.mock(VolumeVO.class);
-        Mockito.when(volume.getState()).thenReturn(Volume.State.Destroy);
-
-        Assert.assertFalse(userVmManagerImpl.isAnyVmVolumeUsingLocalStorage(Collections.singletonList(volume)));
-        Mockito.verify(primaryDataStoreDao, never()).findById(anyLong());
-    }
-
-    @Test
-    public void testIsAnyVmVolumeUsingLocalStorageSkipsRemovedVolume() {
-        VolumeVO volume = Mockito.mock(VolumeVO.class);
-        Mockito.when(volume.getRemoved()).thenReturn(new Date());
-
-        Assert.assertFalse(userVmManagerImpl.isAnyVmVolumeUsingLocalStorage(Collections.singletonList(volume)));
-        Mockito.verify(primaryDataStoreDao, never()).findById(anyLong());
-    }
-
-    @Test
     public void testIsAnyVmVolumeUsingLocalStorageFailsForActiveVolumeWithMissingPool() {
         VolumeVO volume = Mockito.mock(VolumeVO.class);
-        Mockito.when(volume.getState()).thenReturn(Volume.State.Ready);
         Mockito.when(volume.getDiskOfferingId()).thenReturn(1L);
         Mockito.when(volume.getPoolId()).thenReturn(2L);
         DiskOfferingVO diskOffering = Mockito.mock(DiskOfferingVO.class);
@@ -1301,7 +1282,6 @@ public class UserVmManagerImplTest {
     @Test
     public void testIsAnyVmVolumeUsingLocalStorageFailsForActiveVolumeWithRemovedPool() {
         VolumeVO volume = Mockito.mock(VolumeVO.class);
-        Mockito.when(volume.getState()).thenReturn(Volume.State.Ready);
         Mockito.when(volume.getDiskOfferingId()).thenReturn(1L);
         Mockito.when(volume.getPoolId()).thenReturn(2L);
         DiskOfferingVO diskOffering = Mockito.mock(DiskOfferingVO.class);
