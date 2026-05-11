@@ -135,12 +135,13 @@ export default {
         return
       }
       if (this.resource && this.resource.vpcid) {
-``        const vpc = await this.fetchVpc()
+        const vpc = await this.fetchVpc()
+        const hasFirewallCapability = this.hasVpcFirewallCapability(vpc)
 
         // VPC IPs with source nat have only VPN when VPC offering conserve mode = false
         if (this.resource.issourcenat && vpc?.vpcofferingconservemode === false) {
-          let tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'vpn'))
-          this.tabs = this.addFirewallTab(tabs)
+          const tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'vpn'))
+          this.tabs = hasFirewallCapability ? this.addFirewallTab(tabs) : tabs
           return
         }
 
@@ -150,12 +151,15 @@ export default {
           if (this.resource.virtualmachinetype === 'DomainRouter') {
             tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'vpn'))
           }
-          this.tabs = this.addFirewallTab(tabs)
+          this.tabs = hasFirewallCapability ? this.addFirewallTab(tabs) : tabs
           return
         }
 
-        // VPC IPs have all tabs, and firewall should always be visible
+        // VPC IPs have all tabs; firewall is shown only if VPC has firewall capability
         let tabs = this.$route.meta.tabs
+        if (!hasFirewallCapability) {
+          tabs = tabs.filter(tab => tab.name !== 'firewall')
+        }
 
         const network = await this.fetchNetwork()
         if (network && network.networkofferingconservemode) {
@@ -209,6 +213,10 @@ export default {
         return tabs
       }
       return tabs.concat(firewallTab)
+    },
+    hasVpcFirewallCapability (vpc) {
+      const services = vpc?.service || []
+      return Array.isArray(services) && services.some(service => (service?.name || '').toLowerCase() === 'firewall')
     },
     fetchVpc () {
       if (!this.resource.vpcid) {
