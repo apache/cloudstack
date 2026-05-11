@@ -7052,6 +7052,51 @@ class VMSchedule:
         cmd.virtualmachineid = self.virtualmachineid
         return (apiclient.deleteVMSchedule(cmd))
 
+
+class ResourceSchedule:
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, resourcetype, resourceid, action, schedule, timezone, startdate, enddate=None, enabled=False, description=None, details=None):
+        cmd = createResourceSchedule.createResourceScheduleCmd()
+        cmd.resourcetype = resourcetype
+        cmd.resourceid = resourceid
+        cmd.description = description
+        cmd.action = action
+        cmd.schedule = schedule
+        cmd.timezone = timezone
+        cmd.startdate = startdate
+        cmd.enddate = enddate
+        cmd.enabled = enabled
+        cmd.details = details
+        return ResourceSchedule(apiclient.createResourceSchedule(cmd).__dict__)
+
+    @classmethod
+    def list(cls, apiclient, resourcetype, resourceid, id=None, enabled=None, action=None):
+        cmd = listResourceSchedule.listResourceScheduleCmd()
+        cmd.resourcetype = resourcetype
+        cmd.resourceid = resourceid
+        cmd.id = id
+        cmd.enabled = enabled
+        cmd.action = action
+        return apiclient.listResourceSchedule(cmd)
+
+    def update(self, apiclient, **kwargs):
+        cmd = updateResourceSchedule.updateResourceScheduleCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.updateResourceSchedule(cmd)
+
+    def delete(self, apiclient):
+        cmd = deleteResourceSchedule.deleteResourceScheduleCmd()
+        cmd.id = self.id
+        cmd.resourcetype = self.resourcetype
+        cmd.resourceid = self.resourceid
+        return apiclient.deleteResourceSchedule(cmd)
+
+
 class VnfTemplate:
     """Manage VNF template life cycle"""
 

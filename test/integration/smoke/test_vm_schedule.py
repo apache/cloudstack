@@ -17,7 +17,7 @@
 """ P1 tests for VM Schedule
 """
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.lib.base import Account, ServiceOffering, VirtualMachine, VMSchedule
+from marvin.lib.base import Account, ServiceOffering, VirtualMachine, ResourceSchedule
 from marvin.lib.common import get_domain, get_zone, get_template
 from marvin.lib.utils import cleanup_resources
 
@@ -27,6 +27,8 @@ from nose.plugins.attrib import attr
 import datetime
 import time
 
+
+RESOURCE_TYPE = "VirtualMachine"
 
 class Services:
     """Test Snapshots Services"""
@@ -148,8 +150,9 @@ class TestVMSchedule(cloudstackTestCase):
 
         # Create VM Schedule
         schedule = "0 0 1 * *"
-        vmschedule = VMSchedule.create(
+        vmschedule = ResourceSchedule.create(
             self.apiclient,
+            RESOURCE_TYPE,
             self.virtual_machine.id,
             "start",
             schedule,
@@ -166,8 +169,8 @@ class TestVMSchedule(cloudstackTestCase):
         self.debug("Created VM Schedule with ID: %s" % vmschedule.id)
 
         # List VM Schedule
-        vmschedules = VMSchedule.list(
-            self.apiclient, self.virtual_machine.id, id=vmschedule.id
+        vmschedules = ResourceSchedule.list(
+            self.apiclient, RESOURCE_TYPE, self.virtual_machine.id, id=vmschedule.id
         )
 
         self.assertEqual(
@@ -187,9 +190,15 @@ class TestVMSchedule(cloudstackTestCase):
         )
 
         self.assertEqual(
-            vmschedules[0].virtualmachineid,
+            vmschedules[0].resourceid,
             self.virtual_machine.id,
-            "Check VM ID in list resources call",
+            "Check resource ID in list resources call",
+        )
+
+        self.assertEqual(
+            vmschedules[0].resourcetype,
+            RESOURCE_TYPE,
+            "Check resource type in list resources call",
         )
 
         self.assertEqual(
@@ -237,8 +246,9 @@ class TestVMSchedule(cloudstackTestCase):
 
         # Create VM Schedule with invalid virtual machine ID
         with self.assertRaises(Exception):
-            VMSchedule.create(
+            ResourceSchedule.create(
                 self.apiclient,
+                RESOURCE_TYPE,
                 "invalid",
                 "start",
                 "0 0 1 * *",
@@ -251,8 +261,9 @@ class TestVMSchedule(cloudstackTestCase):
 
         # Create VM Schedule with invalid schedule
         with self.assertRaises(Exception):
-            VMSchedule.create(
+            ResourceSchedule.create(
                 self.apiclient,
+                RESOURCE_TYPE,
                 self.virtual_machine.id,
                 "start",
                 "invalid",
@@ -265,8 +276,9 @@ class TestVMSchedule(cloudstackTestCase):
 
         # Create VM Schedule with invalid start date
         with self.assertRaises(Exception):
-            VMSchedule.create(
+            ResourceSchedule.create(
                 self.apiclient,
+                RESOURCE_TYPE,
                 self.virtual_machine.id,
                 "start",
                 "0 0 1 * *",
@@ -277,8 +289,9 @@ class TestVMSchedule(cloudstackTestCase):
 
         # Create VM Schedule with invalid action
         with self.assertRaises(Exception):
-            VMSchedule.create(
+            ResourceSchedule.create(
                 self.apiclient,
+                RESOURCE_TYPE,
                 self.virtual_machine.id,
                 "invalid",
                 "0 0 1 * *",
@@ -291,8 +304,9 @@ class TestVMSchedule(cloudstackTestCase):
 
         # test invalid end date
         with self.assertRaises(Exception):
-            VMSchedule.create(
+            ResourceSchedule.create(
                 self.apiclient,
+                RESOURCE_TYPE,
                 self.virtual_machine.id,
                 "start",
                 "0 0 1 * *",
@@ -315,8 +329,9 @@ class TestVMSchedule(cloudstackTestCase):
 
         # Create VM Schedule
         schedule = "0 0 1 * *"
-        vmschedule = VMSchedule.create(
+        vmschedule = ResourceSchedule.create(
             self.apiclient,
+            RESOURCE_TYPE,
             self.virtual_machine.id,
             "start",
             schedule,
@@ -351,8 +366,8 @@ class TestVMSchedule(cloudstackTestCase):
         self.debug("Updated VM Schedule with ID: %s" % vmschedule.id)
 
         # List VM Schedule
-        vmschedules = VMSchedule.list(
-            self.apiclient, self.virtual_machine.id, id=vmschedule.id
+        vmschedules = ResourceSchedule.list(
+            self.apiclient, RESOURCE_TYPE, self.virtual_machine.id, id=vmschedule.id
         )
         self.assertEqual(
             isinstance(vmschedules, list),
@@ -371,8 +386,14 @@ class TestVMSchedule(cloudstackTestCase):
         )
 
         self.assertEqual(
-            vmschedules[0].virtualmachineid,
+            vmschedules[0].resourceid,
             self.virtual_machine.id,
+            "Check VM ID in list resources call",
+        )
+
+        self.assertEqual(
+            vmschedules[0].resourcetype,
+            RESOURCE_TYPE,
             "Check VM ID in list resources call",
         )
 
@@ -395,8 +416,9 @@ class TestVMSchedule(cloudstackTestCase):
 
         # Create VM Schedule
         schedule = "0 0 1 * *"
-        vmschedule = VMSchedule.create(
+        vmschedule = ResourceSchedule.create(
             self.apiclient,
+            RESOURCE_TYPE,
             self.virtual_machine.id,
             "start",
             schedule,
@@ -486,8 +508,9 @@ class TestVMSchedule(cloudstackTestCase):
 
         # Create VM Schedule - start
         start_schedule = "*/2 * * * *"
-        start_vmschedule = VMSchedule.create(
+        start_vmschedule = ResourceSchedule.create(
             self.apiclient,
+            RESOURCE_TYPE,
             self.virtual_machine.id,
             "start",
             start_schedule,
@@ -503,8 +526,9 @@ class TestVMSchedule(cloudstackTestCase):
 
         # Create VM Schedule - stop
         stop_schedule = "*/1 * * * *"
-        stop_vmschedule = VMSchedule.create(
+        stop_vmschedule = ResourceSchedule.create(
             self.apiclient,
+            RESOURCE_TYPE,
             self.virtual_machine.id,
             "stop",
             stop_schedule,
@@ -519,8 +543,8 @@ class TestVMSchedule(cloudstackTestCase):
         self.debug("Created VM Schedule with ID: %s" % stop_vmschedule.id)
 
         # Verify VM Schedule is created
-        vmschedules = VMSchedule.list(
-            self.apiclient, self.virtual_machine.id, id=start_vmschedule.id
+        vmschedules = ResourceSchedule.list(
+            self.apiclient, RESOURCE_TYPE, self.virtual_machine.id, id=start_vmschedule.id
         )
 
         self.assertEqual(
@@ -575,15 +599,15 @@ class TestVMSchedule(cloudstackTestCase):
 
         # Verify VM Schedule is deleted
         self.assertEqual(
-            VMSchedule.list(
-                self.apiclient, self.virtual_machine.id, id=start_vmschedule.id
+            ResourceSchedule.list(
+                self.apiclient, RESOURCE_TYPE, self.virtual_machine.id, id=start_vmschedule.id
             ),
             None,
             "Check VM Schedule is deleted",
         )
         self.assertEqual(
-            VMSchedule.list(
-                self.apiclient, self.virtual_machine.id, id=stop_vmschedule.id
+            ResourceSchedule.list(
+                self.apiclient, RESOURCE_TYPE, self.virtual_machine.id, id=stop_vmschedule.id
             ),
             None,
             "Check VM Schedule is deleted",
