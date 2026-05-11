@@ -45,7 +45,6 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -106,10 +105,6 @@ class OntapVMSnapshotStrategyTest {
     private static final String VM_INSTANCE_NAME = "i-2-100-VM";
     private static final String VM_UUID = "vm-uuid-123";
 
-    @Spy
-    @InjectMocks
-    private OntapVMSnapshotStrategy strategy;
-
     @Mock
     private UserVmDao userVmDao;
     @Mock
@@ -133,10 +128,9 @@ class OntapVMSnapshotStrategyTest {
     @Mock
     private VolumeDetailsDao volumeDetailsDao;
 
-    @BeforeEach
-    void setUp() {
-        // @InjectMocks handles injection into inherited fields
-    }
+    @Spy
+    @InjectMocks
+    private OntapVMSnapshotStrategy strategy;
 
     // ──────────────────────────────────────────────────────────────────────────
     // Helper: create common mocks

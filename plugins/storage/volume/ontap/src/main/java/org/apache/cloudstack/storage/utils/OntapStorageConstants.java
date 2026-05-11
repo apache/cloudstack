@@ -19,10 +19,12 @@
 
 package org.apache.cloudstack.storage.utils;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 
 public class OntapStorageConstants {
 
-    public static final String ONTAP_PLUGIN_NAME = "NetApp ONTAP";
+    /** Same as {@link DataStoreProvider#ONTAP_PLUGIN_NAME}; retained for existing ONTAP plugin call sites. */
+    public static final String ONTAP_PLUGIN_NAME = DataStoreProvider.ONTAP_PLUGIN_NAME;
     public static final int NFS3_PORT = 2049;
     public static final int ISCSI_PORT = 3260;
 

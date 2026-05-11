@@ -51,6 +51,7 @@ import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import org.apache.cloudstack.backup.BackupOfferingVO;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
@@ -76,8 +77,6 @@ import java.util.stream.Collectors;
 public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStrategy {
 
     private static final List<Storage.StoragePoolType> supportedStoragePoolTypes = List.of(Storage.StoragePoolType.Filesystem, Storage.StoragePoolType.NetworkFilesystem, Storage.StoragePoolType.SharedMountPoint);
-
-    private static final String ONTAP_PROVIDER_NAME = "NetApp ONTAP";
 
     @Inject
     protected SnapshotDataStoreDao snapshotDataStoreDao;
@@ -327,8 +326,8 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
         List<VolumeVO> volumes = volumeDao.findByInstance(vmId);
         for (VolumeVO volume : volumes) {
             StoragePoolVO storagePoolVO = storagePool.findById(volume.getPoolId());
-            if (storagePoolVO.isManaged() && ONTAP_PROVIDER_NAME.equals(storagePoolVO.getStorageProviderName())) {
-                logger.debug(" {} as the VM has a volume on ONTAP managed storage pool [{}]. " +
+            if (storagePoolVO.isManaged() && DataStoreProvider.ONTAP_PLUGIN_NAME.equals(storagePoolVO.getStorageProviderName())) {
+                logger.debug("{} as the VM has a volume on ONTAP managed storage pool [{}]. " +
                         "ONTAP managed storage has its own dedicated VM snapshot strategy.", cantHandleLog, storagePoolVO.getName());
                 return StrategyPriority.CANT_HANDLE;
             }
