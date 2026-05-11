@@ -383,7 +383,7 @@ public class BackupCompressionServiceJobControllerTest {
     @Test
     public void submitQueuedJobsForExecutionTestBusyInstanceIsSkipped() {
         doReturn(instanceId).when(internalBackupServiceJobVoMock).getInstanceId();
-        doReturn(vmInstanceVoMock).when(vmInstanceDaoMock).findById(instanceId);
+        doReturn(vmInstanceVoMock).when(vmInstanceDaoMock).findByIdIncludingRemoved(instanceId);
 
         List<Pair<HostVO, Long>> hostAndNumberOfJobsPairList = List.of(new Pair<>(hostVO, 0L));
         Set<Long> busyInstances = Set.of(instanceId);
