@@ -710,7 +710,12 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         case Ipv6Firewall:
             for (FirewallServiceProvider fwElement : _firewallElements) {
                 Network.Provider provider = fwElement.getProvider();
-                boolean  isFwProvider = _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Firewall, provider);
+                boolean isFwProvider;
+                if (network.getVpcId() != null) {
+                    isFwProvider = _vpcMgr.isProviderSupportServiceInVpc(network.getVpcId(), Service.Firewall, provider);
+                } else {
+                    isFwProvider = _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Firewall, provider);
+                }
                 if (!isFwProvider) {
                     continue;
                 }
