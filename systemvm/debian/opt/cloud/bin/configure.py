@@ -703,12 +703,26 @@ class CsAcl(CsDataBag):
             self.add_routing_rules()
             return
 
+        fw_chains_created = set()
         for item in self.dbag:
             if item == "id":
                  continue
             if self.config.is_vpc() and not ("purpose" in self.dbag[item] and self.dbag[item]["purpose"] == "Firewall"):
                 self.AclDevice(self.dbag[item], self.config).create()
             else:
+                # For VPC firewall rules, create the PREROUTING jump and chain skeleton
+                # once per public IP before adding the individual rule
+                if self.config.is_vpc() and self.dbag[item].get("purpose") == "Firewall":
+                    src_ip = self.dbag[item].get("src_ip")
+                    if src_ip and src_ip not in fw_chains_created:
+                        fw = self.config.get_fw()
+                        fw.append(["mangle", "front",
+                                   "-A PREROUTING -d %s/32 -j FIREWALL_%s" % (src_ip, src_ip)])
+                        fw.append(["mangle", "front",
+                                   "-A FIREWALL_%s -m state --state RELATED,ESTABLISHED -j RETURN" % src_ip])
+                        fw.append(["mangle", "",
+                                   "-A FIREWALL_%s -j DROP" % src_ip])
+                        fw_chains_created.add(src_ip)
                 self.AclIP(self.dbag[item], self.config).create()
 
 class CsIpv6Firewall(CsDataBag):
