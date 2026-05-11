@@ -34,13 +34,13 @@ import com.cloud.storage.StoragePoolAutomation;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.common.base.Preconditions;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.engine.subsystem.api.storage.AbstractScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreParameters;
-import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
@@ -232,7 +232,7 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
             throw new CloudRuntimeException("Storage pool name is null or empty, cannot create primary storage");
         }
 
-        if (StringUtils.isBlank(providerName)) {
+        if (StringUtils.isBlank(providerName )) {
             throw new CloudRuntimeException("Provider name is null or empty, cannot create primary storage");
         }
 
@@ -273,9 +273,9 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
         }
 
         // Detect missing required keys
-        HashSet<String> providedKeys = new HashSet<>(details.keySet());
+        Set<String> providedKeys = new HashSet<>(details.keySet());
         if (!providedKeys.containsAll(requiredKeys)) {
-            HashSet<String> missing = new HashSet<>(requiredKeys);
+            Set<String> missing = new HashSet<>(requiredKeys);
             missing.removeAll(providedKeys);
             throw new CloudRuntimeException("ONTAP primary storage creation failed, missing detail(s): " + missing);
         }
@@ -287,10 +287,10 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
     public boolean attachCluster(DataStore dataStore, ClusterScope scope) {
         logger.debug("In attachCluster for ONTAP primary storage");
         if (dataStore == null) {
-            throw new InvalidParameterValueException("dataStore should not be null");
+            throw new InvalidParameterValueException("DataStore should not be null");
         }
         if (scope == null) {
-            throw new InvalidParameterValueException("scope should not be null");
+            throw new InvalidParameterValueException("Scope should not be null");
         }
         List<String> hostsIdentifier = new ArrayList<>();
         StoragePoolVO storagePool = storagePoolDao.findById(dataStore.getId());
@@ -378,6 +378,7 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
         _dataStoreHelper.attachZone(dataStore);
         return true;
     }
+
     private boolean validateProtocolSupportAndFetchHostsIdentifier(List<HostVO> hosts, ProtocolType protocolType, List<String> hostIdentifiers) {
         switch (protocolType) {
             case ISCSI:

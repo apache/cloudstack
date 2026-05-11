@@ -30,6 +30,7 @@ public class VolumeConcise {
     private String uuid;
 
     @JsonProperty("name")
+
     private String name;
 
     public String getUuid() {
@@ -45,6 +46,5 @@ public class VolumeConcise {
     }
 
     public void setName(String name) {
-        this.name = name;
-    }
+        this.name = name;  }
 }

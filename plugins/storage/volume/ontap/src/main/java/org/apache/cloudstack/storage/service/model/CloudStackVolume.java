@@ -36,18 +36,23 @@ public class CloudStackVolume {
      *   a. snapshot workflows will get source LUN details from it.
      */
     private Lun lun;
+
     private String datastoreId;
+
     /**
      * FlexVolume UUID on which this cloudstack volume is created.
      *    a. Field is eligible for unified storage only.
      *    b. It will be null for the disaggregated storage.
      */
     private String flexVolumeUuid;
+
     /**
      * Field serves for snapshot workflows
      */
     private String destinationPath;
+
     private DataObject volumeInfo; // This is needed as we need DataObject to be passed to agent to create volume
+
     public FileInfo getFile() {
         return file;
     }
@@ -79,6 +84,7 @@ public class CloudStackVolume {
     public void setVolumeInfo(DataObject volumeInfo) {
         this.volumeInfo = volumeInfo;
     }
+
     public String getFlexVolumeUuid() {
         return flexVolumeUuid;
     }

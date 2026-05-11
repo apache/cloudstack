@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotOptions;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
@@ -233,7 +234,7 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
                         volume.getId(), pool.getName());
                 return false;
             }
-            if (!OntapStorageConstants.ONTAP_PLUGIN_NAME.equals(pool.getStorageProviderName())) {
+            if (!DataStoreProvider.ONTAP_PLUGIN_NAME.equals(pool.getStorageProviderName())) {
                 logger.debug("allVolumesOnOntapManagedStorage: Volume [{}] is on managed pool [{}] with provider [{}], not ONTAP",
                         volume.getId(), pool.getName(), pool.getStorageProviderName());
                 return false;
