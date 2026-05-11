@@ -49,7 +49,6 @@ public class LibvirtStartBackupCommandWrapperTest {
     @Test
     public void testExecuteStoppedVmBitmapAddSuccess() {
         Mockito.when(command.isStoppedVM()).thenReturn(true);
-        Mockito.when(command.getVmName()).thenReturn("i-2-3-VM");
         Mockito.when(command.getToCheckpointId()).thenReturn("cp-stopped-1");
         Mockito.when(command.getDiskPathUuidMap()).thenReturn(Map.of("/path/disk1.qcow2", "vol-1"));
 
@@ -66,7 +65,6 @@ public class LibvirtStartBackupCommandWrapperTest {
     @Test
     public void testExecuteStoppedVmBitmapAddFailure() {
         Mockito.when(command.isStoppedVM()).thenReturn(true);
-        Mockito.when(command.getVmName()).thenReturn("i-2-3-VM");
         Mockito.when(command.getToCheckpointId()).thenReturn("cp-stopped-2");
         Mockito.when(command.getDiskPathUuidMap()).thenReturn(Map.of("/path/disk1.qcow2", "vol-1"));
 
@@ -114,5 +112,71 @@ public class LibvirtStartBackupCommandWrapperTest {
             Assert.assertTrue(answer.getResult());
             Assert.assertTrue(answer.getDetails().contains("Backup started successfully"));
         }
+    }
+
+    @Test
+    public void testExecuteRunningVmCheckpointRedefineFailure() {
+        Mockito.when(command.isStoppedVM()).thenReturn(false);
+        Mockito.when(command.getVmName()).thenReturn("i-2-3-VM");
+        Mockito.when(command.getToCheckpointId()).thenReturn("cp-running-3");
+        Mockito.when(command.getFromCheckpointId()).thenReturn("cp-running-missing");
+        Mockito.when(command.getFromCheckpointCreateTime()).thenReturn(12345L);
+        Mockito.when(command.getSocket()).thenReturn("sock-3");
+
+        try (MockedConstruction<Script> ignored = Mockito.mockConstruction(Script.class, (mock, context) -> {
+            int constructionIndex = context.getCount();
+            if (constructionIndex == 1) {
+                Mockito.when(mock.execute()).thenReturn("checkpoint missing");
+            } else if (constructionIndex == 2) {
+                Mockito.when(mock.execute()).thenReturn("checkpoint redefine failed");
+            } else {
+                Mockito.when(mock.execute()).thenReturn(null);
+            }
+        })) {
+            Answer answer = wrapper.execute(command, resource);
+
+            Assert.assertFalse(answer.getResult());
+            Assert.assertTrue(answer.getDetails().contains("Failed to redefine from-checkpoint cp-running-missing"));
+        }
+    }
+
+    @Test
+    public void testExecuteRunningVmBackupBeginFailure() {
+        Mockito.when(command.isStoppedVM()).thenReturn(false);
+        Mockito.when(command.getVmName()).thenReturn("i-2-3-VM");
+        Mockito.when(command.getToCheckpointId()).thenReturn("cp-running-4");
+        Mockito.when(command.getFromCheckpointId()).thenReturn(null);
+        Mockito.when(command.getSocket()).thenReturn("sock-4");
+        Mockito.when(command.getDiskPathUuidMap()).thenReturn(Map.of("/path/disk1.qcow2", "vol-1"));
+        Mockito.when(resource.getDiskPathLabelMap("i-2-3-VM")).thenReturn(Map.of("/path/disk1.qcow2", "vda"));
+
+        try (MockedConstruction<Script> ignored = Mockito.mockConstruction(Script.class, (mock, context) -> {
+            if (context.getCount() == 1) {
+                Mockito.when(mock.execute()).thenReturn("backup begin failed");
+            } else {
+                Mockito.when(mock.execute()).thenReturn(null);
+            }
+        })) {
+            Answer answer = wrapper.execute(command, resource);
+
+            Assert.assertFalse(answer.getResult());
+            Assert.assertTrue(answer.getDetails().contains("Backup begin failed: backup begin failed"));
+        }
+    }
+
+    @Test
+    public void testExecuteRunningVmCreateBackupXmlExceptionReturnsFailure() {
+        Mockito.when(command.isStoppedVM()).thenReturn(false);
+        Mockito.when(command.getVmName()).thenReturn("i-2-3-VM");
+        Mockito.when(command.getToCheckpointId()).thenReturn("cp-running-5");
+        Mockito.when(command.getFromCheckpointId()).thenReturn(null);
+        Mockito.when(command.getSocket()).thenReturn("sock-5");
+        Mockito.when(command.getDiskPathUuidMap()).thenReturn(Map.of("/path/disk1.qcow2", "vol-1"));
+        Mockito.when(resource.getDiskPathLabelMap("i-2-3-VM")).thenThrow(new RuntimeException("disk labels unavailable"));
+
+        Answer answer = wrapper.execute(command, resource);
+
+        Assert.assertFalse(answer.getResult());
+        Assert.assertTrue(answer.getDetails().contains("Error starting backup: disk labels unavailable"));
     }
 }
