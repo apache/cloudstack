@@ -135,33 +135,27 @@ export default {
         return
       }
       if (this.resource && this.resource.vpcid) {
-        const vpc = await this.fetchVpc()
+``        const vpc = await this.fetchVpc()
 
         // VPC IPs with source nat have only VPN when VPC offering conserve mode = false
         if (this.resource.issourcenat && vpc?.vpcofferingconservemode === false) {
           let tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'vpn'))
-          if (this.resource.associatednetworkid) {
-            tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => ['vpn', 'firewall'].includes(tab.name)))
-          }
-          this.tabs = tabs
+          this.tabs = this.addFirewallTab(tabs)
           return
         }
 
-        // VPC IPs with static nat have nothing
+        // VPC IPs with static nat keep existing VPN behavior and always show firewall
         if (this.resource.isstaticnat) {
+          let tabs = this.defaultTabs
           if (this.resource.virtualmachinetype === 'DomainRouter') {
-            this.tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => ['vpn', 'firewall'].includes(tab.name)))
-          } else {
-            this.tabs = this.defaultTabs
+            tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'vpn'))
           }
+          this.tabs = this.addFirewallTab(tabs)
           return
         }
 
-        // VPC IPs have all tabs, but firewall only if associatednetworkid present
+        // VPC IPs have all tabs, and firewall should always be visible
         let tabs = this.$route.meta.tabs
-        if (!this.resource.associatednetworkid) {
-          tabs = tabs.filter(tab => tab.name !== 'firewall')
-        }
 
         const network = await this.fetchNetwork()
         if (network && network.networkofferingconservemode) {
@@ -208,6 +202,13 @@ export default {
     },
     fetchAction () {
       this.actions = this.$route.meta.actions || []
+    },
+    addFirewallTab (tabs) {
+      const firewallTab = this.$route.meta.tabs.find(tab => tab.name === 'firewall')
+      if (!firewallTab || tabs.some(tab => tab.name === 'firewall')) {
+        return tabs
+      }
+      return tabs.concat(firewallTab)
     },
     fetchVpc () {
       if (!this.resource.vpcid) {
