@@ -115,7 +115,9 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -124,6 +126,7 @@ import org.apache.cloudstack.extension.ExtensionHelper;
 import org.apache.cloudstack.extension.NetworkCustomActionProvider;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.VpcDetailsDao;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.nio.charset.StandardCharsets;
@@ -499,32 +502,14 @@ public class NetworkExtensionElement extends AdapterBase implements
         implArgs.add("--extension-ip"); implArgs.add(safeStr(extensionIp));
         implArgs.addAll(vpcArgs);
 
-        boolean result = executeScript(network, CMD_IMPLEMENT_NETWORK, implArgs.toArray(new String[0]));
+        Pair<Boolean, String> result = executeScriptAndReturnOutput(network, CMD_IMPLEMENT_NETWORK, implArgs.toArray(new String[0]));
 
-        if (!result) {
+        if (!result.first()) {
             return false;
         }
 
-        // When the extension declares vif.binding=lswitch, also update the
-        // Network row itself so listNetworks / DB queries advertise the
-        // OVN-flavoured identifier instead of the cosmetic VLAN URI the
-        // GuestNetworkGuru allocated at design-time.  Format follows the
-        // legacy ovn-plugin convention: ``ovn://cs-net-<networkId>``.
-        if (isLswitchVifBinding(network)) {
-            try {
-                NetworkVO networkVo = networkDao.findById(network.getId());
-                if (networkVo != null) {
-                    URI ovnUri = URI.create("ovn://cs-net-" + network.getId());
-                    networkVo.setBroadcastDomainType(Networks.BroadcastDomainType.Lswitch);
-                    networkVo.setBroadcastUri(ovnUri);
-                    networkDao.update(networkVo.getId(), networkVo);
-                    logger.debug("implement: applied Lswitch broadcast type and ovn:// URI to network {} per extension vif.binding hint",
-                            network.getId());
-                }
-            } catch (Exception e) {
-                logger.warn("Failed to persist OVN URI on network {}: {}", network.getId(), e.getMessage());
-            }
-        }
+        // Update the network properties from the output
+        applyNetworkUpdateFromScriptOutput(network, result.second());
 
         // Step 3: Configure source NAT for both VPC and non-VPC networks for
         // compatibility (other network-element providers may also implement VPC tiers).
@@ -571,42 +556,8 @@ public class NetworkExtensionElement extends AdapterBase implements
             return false;
         }
 
-        // VIF binding hint -- when the extension declares vif.binding=lswitch,
-        // override the NicProfile's broadcast type so OvsVifDriver picks the
-        // Lswitch path on the KVM agent.  That path already emits libvirt
-        // <virtualport type='openvswitch' interfaceid='<nic.getUuid()>'/> and
-        // libvirt sets external_ids:iface-id atomically with tap creation.
-        // No agent patch is required for this binding mode.
-        if (isLswitchVifBinding(network)) {
-            // Override broadcast type + URI on the NicProfile (in-memory),
-            // and persist the same to the underlying nics row so listNics
-            // / DB queries report consistent OVN identifiers instead of
-            // the stale VLAN URI the GuestNetworkGuru allocated at
-            // design-time.
-            URI ovnUri = null;
-            try {
-                ovnUri = URI.create("ovn://cs-net-" + network.getId());
-            } catch (Exception e) {
-                logger.warn("Failed to build OVN URI for NIC {}: {}", nic.getId(), e.getMessage());
-            }
-            nic.setBroadcastType(Networks.BroadcastDomainType.Lswitch);
-            if (ovnUri != null) {
-                nic.setBroadcastUri(ovnUri);
-                nic.setIsolationUri(ovnUri);
-                try {
-                    NicVO nicVo = nicDao.findById(nic.getId());
-                    if (nicVo != null) {
-                        nicVo.setBroadcastUri(ovnUri);
-                        nicVo.setIsolationUri(ovnUri);
-                        nicDao.update(nicVo.getId(), nicVo);
-                    }
-                } catch (Exception e) {
-                    logger.warn("Failed to persist OVN URI on nics row {}: {}", nic.getId(), e.getMessage());
-                }
-            }
-            logger.debug("prepare: applied Lswitch broadcast type and ovn:// URI to NIC {} (uuid={}) on network {} per extension vif.binding hint",
-                    nic.getId(), nic.getUuid(), network.getId());
-        }
+        // Sync nic with network
+        applyNicUpdateFromNetwork(network, nic);
 
         final NetworkOfferingVO offering = networkOfferingDao.findById(network.getNetworkOfferingId());
         implement(network, offering, dest, context);
@@ -615,47 +566,33 @@ public class NetworkExtensionElement extends AdapterBase implements
     }
 
     /**
-     * Returns {@code true} when the extension that owns the given network
-     * declares {@code vif.binding=lswitch} in its {@code extension_details}.
-     * Used by {@link #prepare(Network, NicProfile, VirtualMachineProfile,
-     * DeployDestination, ReservationContext)} to switch the NIC's
-     * {@link Networks.BroadcastDomainType} to {@code Lswitch} so the KVM
-     * agent's existing {@code OvsVifDriver} Lswitch path is exercised --
-     * see the framework README for the full contract.
+     * Returns {@code ["--nic-uuid", "<uuid>"]} when the extension so the script
+     * can use the same UUID when needed.
      */
-    private boolean isLswitchVifBinding(Network network) {
-        try {
-            Extension extension = resolveExtension(network);
-            if (extension == null) {
-                return false;
-            }
-            Map<String, String> details = extensionDetailsDao.listDetailsKeyPairs(extension.getId());
-            if (details == null) {
-                return false;
-            }
-            String vifBinding = details.get(ExtensionHelper.VIF_BINDING_DETAIL_KEY);
-            return ExtensionHelper.VIF_BINDING_LSWITCH.equalsIgnoreCase(vifBinding);
-        } catch (Exception e) {
-            logger.debug("Failed to resolve vif.binding for network {}: {}", network.getId(), e.getMessage());
-            return false;
-        }
-    }
-
-    /**
-     * Returns {@code ["--nic-uuid", "<uuid>"]} when the extension prefers the
-     * Lswitch VIF binding path so the script can use the same UUID as the LSP
-     * name (matching the {@code interfaceid} that {@code OvsVifDriver} emits).
-     * Returns an empty list when the extension does not opt in -- existing
-     * extensions that derive identifiers from the MAC keep working unchanged.
-     */
-    private List<String> getNicUuidArgs(Network network, NicProfile nic) {
+    private List<String> getNicUuidArgs(NicProfile nic) {
         if (nic == null || nic.getUuid() == null || nic.getUuid().isBlank()) {
             return Collections.emptyList();
         }
-        if (!isLswitchVifBinding(network)) {
-            return Collections.emptyList();
-        }
         return List.of("--nic-uuid", nic.getUuid());
+    }
+
+    private void applyNicUpdateFromNetwork(Network network, NicProfile nic) {
+        if (nic == null) {
+            return;
+        }
+        try {
+            NicVO nicVo = nicDao.findById(nic.getId());
+            if (nicVo == null) {
+                return;
+            }
+            if (network.getBroadcastUri() != null) {
+                nicVo.setBroadcastUri(network.getBroadcastUri());
+                nicVo.setIsolationUri(network.getBroadcastUri());
+            }
+            nicDao.update(nic.getId(), nicVo);
+        } catch (Exception e) {
+            logger.debug("Failed to update nic {}: {}", nic.getId(), e.getMessage());
+        }
     }
 
     @Override
@@ -1071,6 +1008,10 @@ public class NetworkExtensionElement extends AdapterBase implements
      * </ul>
      */
     protected boolean executeScript(Network network, String command, String... args) {
+        return executeScriptAndReturnOutput(network, command, args).first();
+    }
+
+    protected Pair<Boolean, String> executeScriptAndReturnOutput(Network network, String command, String... args) {
         Extension extension = resolveExtension(network);
         File scriptFile = resolveScriptFile(network, extension);
 
@@ -1107,12 +1048,80 @@ public class NetworkExtensionElement extends AdapterBase implements
             }
             if (exitCode != 0) {
                 logger.error("Network extension script failed with exit code {}: {}", exitCode, outputStr);
-                return false;
+                return new Pair<>(false, outputStr);
             }
-            return true;
+            return new Pair<>(true, outputStr);
         } catch (Exception e) {
             logger.error("Failed to execute network extension script: {}", e.getMessage(), e);
             throw new CloudRuntimeException("Failed to execute network extension script", e);
+        }
+    }
+
+    private JsonObject parseJsonOutput(String outputStr) {
+        if (StringUtils.isBlank(outputStr)) {
+            return null;
+        }
+        try {
+            JsonElement parsed = JsonParser.parseString(outputStr);
+            if (!parsed.isJsonObject()) {
+                logger.debug("Ignoring non-object script output: {}", outputStr);
+                return null;
+            }
+            return parsed.getAsJsonObject();
+        } catch (Exception e) {
+            logger.debug("Ignoring non-JSON script output: {}", outputStr);
+            return null;
+        }
+    }
+
+    private String getJsonString(JsonObject jsonObject, String key) {
+        if (jsonObject == null || StringUtils.isBlank(key) || !jsonObject.has(key)) {
+            return null;
+        }
+        JsonElement value = jsonObject.get(key);
+        if (value == null || value.isJsonNull()) {
+            return null;
+        }
+        return value.getAsString();
+    }
+
+    private void applyNetworkUpdateFromScriptOutput(Network network, String outputStr) {
+        JsonObject outputJson = parseJsonOutput(outputStr);
+
+        String networkBroadcastUri = getJsonString(outputJson, "network.broadcast_uri");
+        String networkBroadcastDomainType = getJsonString(outputJson, "network.broadcast_domain_type");
+        if (networkBroadcastUri == null && networkBroadcastDomainType == null) {
+            return;
+        }
+
+        try {
+            NetworkVO networkVo = networkDao.findById(network.getId());
+            if (networkVo == null) {
+                return;
+            }
+
+            boolean changed = false;
+            if (networkBroadcastDomainType != null) {
+                Networks.BroadcastDomainType domainType = EnumUtils.getEnumIgnoreCase(Networks.BroadcastDomainType.class, networkBroadcastDomainType);
+                if (domainType != null) {
+                    networkVo.setBroadcastDomainType(domainType);
+                    changed = true;
+                } else {
+                    logger.warn("Ignoring unknown broadcast domain type '{}' for network {}",
+                            networkBroadcastDomainType, network.getId());
+                }
+            }
+
+            if (networkBroadcastUri != null) {
+                networkVo.setBroadcastUri(URI.create(networkBroadcastUri));
+                changed = true;
+            }
+
+            if (changed) {
+                networkDao.update(networkVo.getId(), networkVo);
+            }
+        } catch (Exception e) {
+            logger.warn("Failed to update network {} from script output: {}", network.getId(), e.getMessage());
         }
     }
 
@@ -1492,7 +1501,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         args.add("--default-nic");  args.add(String.valueOf(nic.isDefaultNic()));
         args.add("--domain");       args.add(safeStr(network.getNetworkDomain()));
         args.add("--extension-ip"); args.add(safeStr(extensionIp));
-        args.addAll(getNicUuidArgs(network, nic));
+        args.addAll(getNicUuidArgs(nic));
         args.addAll(getVpcIdArgs(network));
         return executeScript(network, CMD_ADD_DHCP_ENTRY, args.toArray(new String[0]));
     }
@@ -1581,7 +1590,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         args.add("--mac");          args.add(safeStr(nic.getMacAddress()));
         args.add("--ip");           args.add(safeStr(nic.getIPv4Address()));
         args.add("--extension-ip"); args.add(safeStr(extensionIp));
-        args.addAll(getNicUuidArgs(network, nic));
+        args.addAll(getNicUuidArgs(nic));
         args.addAll(getVpcIdArgs(network));
         return executeScript(network, CMD_REMOVE_DHCP_ENTRY, args.toArray(new String[0]));
     }
@@ -1604,7 +1613,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         args.add("--ip");           args.add(safeStr(nic.getIPv4Address()));
         args.add("--hostname");     args.add(safeStr(hostname));
         args.add("--extension-ip"); args.add(safeStr(extensionIp));
-        args.addAll(getNicUuidArgs(network, nic));
+        args.addAll(getNicUuidArgs(nic));
         args.addAll(getVpcIdArgs(network));
         return executeScript(network, CMD_ADD_DNS_ENTRY, args.toArray(new String[0]));
     }
@@ -1781,7 +1790,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         args.add("--ip");           args.add(safeStr(nicIpAddress));
         args.add("--gateway");      args.add(safeStr(nic.getIPv4Gateway()));
         args.add("--extension-ip"); args.add(safeStr(ensureExtensionIp(network)));
-        args.addAll(getNicUuidArgs(network, nic));
+        args.addAll(getNicUuidArgs(nic));
         args.addAll(getVpcIdArgs(network));
         return executeScriptWithFilePayload(network, CMD_SAVE_VM_DATA, "--vm-data-file",
                 vmDataArg, args.toArray(new String[0]));
@@ -1805,7 +1814,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         args.add("--gateway");      args.add(safeStr(nic.getIPv4Gateway()));
         args.add("--password");     args.add(password);
         args.add("--extension-ip"); args.add(safeStr(extensionIp));
-        args.addAll(getNicUuidArgs(network, nic));
+        args.addAll(getNicUuidArgs(nic));
         args.addAll(getVpcIdArgs(network));
         return executeScript(network, CMD_SAVE_PASSWORD, args.toArray(new String[0]));
     }
@@ -1832,7 +1841,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         args.add("--gateway");      args.add(safeStr(nic.getIPv4Gateway()));
         args.add("--userdata");     args.add(userData);
         args.add("--extension-ip"); args.add(safeStr(extensionIp));
-        args.addAll(getNicUuidArgs(network, nic));
+        args.addAll(getNicUuidArgs(nic));
         args.addAll(getVpcIdArgs(network));
         return executeScript(network, CMD_SAVE_USERDATA, args.toArray(new String[0]));
     }
@@ -1856,7 +1865,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         args.add("--gateway");      args.add(safeStr(nic.getIPv4Gateway()));
         args.add("--sshkey");       args.add(sshKeyBase64);
         args.add("--extension-ip"); args.add(safeStr(extensionIp));
-        args.addAll(getNicUuidArgs(network, nic));
+        args.addAll(getNicUuidArgs(nic));
         args.addAll(getVpcIdArgs(network));
         return executeScript(network, CMD_SAVE_SSHKEY, args.toArray(new String[0]));
     }
@@ -1880,7 +1889,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         args.add("--gateway");             args.add(safeStr(nic.getIPv4Gateway()));
         args.add("--hypervisor-hostname"); args.add(hostname);
         args.add("--extension-ip");        args.add(safeStr(extensionIp));
-        args.addAll(getNicUuidArgs(network, nic));
+        args.addAll(getNicUuidArgs(nic));
         args.addAll(getVpcIdArgs(network));
         return executeScript(network, CMD_SAVE_HYPERVISOR_HOSTNAME, args.toArray(new String[0]));
     }
