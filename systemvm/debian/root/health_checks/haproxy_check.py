@@ -51,8 +51,8 @@ def checkLoadBalance(haproxyData, haCfgSections):
 
                 bindStr = lbSec["sourceIp"] + ":" + formatPort(lbSec["sourcePortStart"], lbSec["sourcePortEnd"])
                 bind_line = cfgSection["bind"][0]
-                bind_token = bind_line.split()[0] if bind_line else ""
-                if bind_token != bindStr:
+                bind_token = bind_line.split()[:2] if bind_line else ""
+                if (" ").join(bind_token) != bindStr:
                     print("Incorrect bind string found. Expected " + bindStr + " but found " + cfgSection["bind"][0] + ".")
                     correct = False
 
