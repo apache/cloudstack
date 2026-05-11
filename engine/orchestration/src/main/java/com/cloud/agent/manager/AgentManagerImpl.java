@@ -2076,13 +2076,15 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
          * and request to reconnect (instead of throwing away).
          */
         private void processPingCommand(Link link, PingCommand cmd, Request request) {
+            request.logD("Processing:", true);
             if (cmd.getContextParam("logid") != null) {
                 ThreadContext.put("logcontextid", cmd.getContextParam("logid"));
             }
-            PingAnswer answer = new PingAnswer(cmd, getAvoidMsList(), true);
+            boolean requestStartupCommand = cmd instanceof PingRoutingCommand && ((PingRoutingCommand) cmd).isGatewayAccessible();
+            PingAnswer answer = new PingAnswer(cmd, getAvoidMsList(), requestStartupCommand);
             Response response = new Response(request, new Answer[]{answer}, _nodeId, cmd.getHostId());
             response.setSequence(request.getSequence());
-            response.logD("Processing:", true);
+            response.logD("Sending:", true);
             try {
                 link.send(response.toBytes());
             } catch (final ClosedChannelException e) {
@@ -2321,7 +2323,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
             Response response = new Response(request, new Answer[]{answer}, _nodeId, Optional.ofNullable(hostId).orElse(-1L));
             response.setSequence(request.getSequence());
-            response.logD("Processing:", true);
+            response.logD("Sending:", true);
             try {
                 link.send(response.toBytes());
             } catch (final ClosedChannelException e) {
