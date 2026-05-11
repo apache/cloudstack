@@ -23,6 +23,8 @@ import org.apache.cloudstack.backup.StartNBDServerAnswer;
 import org.apache.cloudstack.backup.StartNBDServerCommand;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
@@ -68,6 +70,11 @@ public class LibvirtStartNBDServerCommandWrapper extends CommandWrapper<StartNBD
         }
 
         String socketName = "/tmp/imagetransfer/" + socket + ".sock";
+        String bitmapArg = "";
+        if (StringUtils.isNotBlank(cmd.getFromCheckpointId())
+                && isBitmapPresentOnDisk(volumePath, cmd.getFromCheckpointId())) {
+            bitmapArg = "-B " + cmd.getFromCheckpointId();
+        }
         // --persistent: Don't stop the service when the last client disconnects.
         // --shared=NUM: Allow up to NUM clients to share the device (default 1), 0 for unlimited. Number of parallel connections is managed by the image server.
         String systemdRunCmd = String.format(
@@ -75,7 +82,7 @@ public class LibvirtStartNBDServerCommandWrapper extends CommandWrapper<StartNBD
                 unitName,
                 exportName,
                 socketName,
-                cmd.getFromCheckpointId() != null ? "-B " + cmd.getFromCheckpointId() : "",
+                bitmapArg,
                 cmd.getDirection().equals("download") ? "--read-only" : "",
                 volumePath
         );
@@ -124,5 +131,41 @@ public class LibvirtStartNBDServerCommandWrapper extends CommandWrapper<StartNBD
         String transferUrl = String.format("nbd+unix:///%s", cmd.getSocket());
         return new StartNBDServerAnswer(cmd, true, "qemu-nbd service started for upload",
                     transferId, transferUrl);
+    }
+
+    private boolean isBitmapPresentOnDisk(String volumePath, String fromCheckpointId) {
+        String qemuImgInfo = Script.runBashScriptIgnoreExitValue(
+                String.format("qemu-img info --output=json %s", volumePath), 0);
+        if (StringUtils.isBlank(qemuImgInfo)) {
+            logger.warn("Unable to read qemu-img info output for disk path [{}].", volumePath);
+            return false;
+        }
+        try {
+            JSONObject info = new JSONObject(qemuImgInfo);
+            JSONObject formatSpecific = info.optJSONObject("format-specific");
+            if (formatSpecific == null) {
+                return false;
+            }
+            JSONObject formatData = formatSpecific.optJSONObject("data");
+            if (formatData == null) {
+                return false;
+            }
+            JSONArray bitmaps = formatData.optJSONArray("bitmaps");
+            if (bitmaps == null) {
+                return false;
+            }
+            for (int i = 0; i < bitmaps.length(); i++) {
+                JSONObject bitmap = bitmaps.optJSONObject(i);
+                if (bitmap == null) {
+                    continue;
+                }
+                if (fromCheckpointId.equals(bitmap.optString("name"))) {
+                    return true;
+                }
+            }
+        } catch (Exception e) {
+            logger.warn("Failed to parse qemu-img info output for disk path [{}].", volumePath, e);
+        }
+        return false;
     }
 }

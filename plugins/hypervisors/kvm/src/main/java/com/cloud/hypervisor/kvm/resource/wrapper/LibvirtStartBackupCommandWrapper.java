@@ -19,12 +19,18 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.cloudstack.backup.StartBackupAnswer;
 import org.apache.cloudstack.backup.StartBackupCommand;
+import org.apache.cloudstack.utils.qemu.QemuCommand;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.libvirt.Domain;
+import org.libvirt.LibvirtException;
 import com.cloud.agent.api.Answer;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
@@ -150,13 +156,9 @@ public class LibvirtStartBackupCommandWrapper extends CommandWrapper<StartBackup
         return xml.toString();
     }
 
-    private String createBackupXml(StartBackupCommand cmd, String fromCheckpointId, String socket, LibvirtComputingResource resource) {
+    private String createBackupXml(StartBackupCommand cmd, String fromCheckpointId, String socket, LibvirtComputingResource resource) throws LibvirtException {
         StringBuilder xml = new StringBuilder();
         xml.append("<domainbackup mode=\"pull\">\n");
-
-        if (StringUtils.isNotBlank(fromCheckpointId)) {
-            xml.append("  <incremental>").append(fromCheckpointId).append("</incremental>\n");
-        }
 
         xml.append(String.format("  <server transport=\"unix\" socket=\"/tmp/imagetransfer/%s.sock\"/>\n", socket));
 
@@ -164,17 +166,37 @@ public class LibvirtStartBackupCommandWrapper extends CommandWrapper<StartBackup
 
         Map<String, String> diskPathUuidMap = cmd.getDiskPathUuidMap();
         Map<String, String> diskPathLabelMap = resource.getDiskPathLabelMap(cmd.getVmName());
+        Map<String, Boolean> diskPathHasFromCheckpointMap = new HashMap<>();
+        if (StringUtils.isNotBlank(fromCheckpointId)) {
+            Domain vm = null;
+            try {
+                vm = resource.getDomain(resource.getLibvirtUtilitiesHelper().getConnection(), cmd.getVmName());
+                if (vm != null) {
+                    diskPathHasFromCheckpointMap = getVmDiskPathHasFromCheckpointMap(vm, fromCheckpointId);
+                } else {
+                    logger.warn("Failed to get domain for VM [{}] while evaluating export bitmap [{}]. Falling back to full Backup",
+                            cmd.getVmName(), fromCheckpointId);
+                }
+            } finally {
+                if (vm != null) {
+                   vm.free();
+                }
+            }
+        }
 
         for (Map.Entry<String, String> entry : diskPathLabelMap.entrySet()) {
-            if (!diskPathUuidMap.containsKey(entry.getKey())) {
+            String diskPath = entry.getKey();
+            if (!diskPathUuidMap.containsKey(diskPath)) {
                 continue;
             }
             String diskName = entry.getValue();
-            String export = diskPathUuidMap.get(entry.getKey());
+            String export = diskPathUuidMap.get(diskPath);
             String scratchFile = "/var/tmp/scratch-" + export + ".qcow2";
             xml.append("    <disk name=\"").append(diskName).append("\" type=\"file\" exportname=\"").append(export);
-            if (StringUtils.isNotBlank(fromCheckpointId)) {
-                xml.append("\" exportbitmap=\"").append(fromCheckpointId);
+            if (StringUtils.isNotBlank(fromCheckpointId) && Boolean.TRUE.equals(diskPathHasFromCheckpointMap.get(diskPath))) {
+                xml.append("\" backupmode=\"incremental\"")
+                        .append(" incremental=\"").append(fromCheckpointId)
+                        .append("\" exportbitmap=\"").append(fromCheckpointId);
             }
             xml.append("\">\n");
             xml.append("      <scratch file=\"").append(scratchFile).append("\"/>\n");
@@ -194,7 +216,6 @@ public class LibvirtStartBackupCommandWrapper extends CommandWrapper<StartBackup
     }
 
     private Answer handleStoppedVmBackup(StartBackupCommand cmd, String toCheckpointId) {
-        String vmName = cmd.getVmName();
         Map<String, String> diskPathUuidMap = cmd.getDiskPathUuidMap();
         for (Map.Entry<String, String> entry : diskPathUuidMap.entrySet()) {
             String diskPath = entry.getKey();
@@ -217,5 +238,44 @@ public class LibvirtStartBackupCommandWrapper extends CommandWrapper<StartBackup
 
     private long getCheckpointCreateTime() {
         return System.currentTimeMillis() / 1000;
+    }
+
+    private Map<String, Boolean> getVmDiskPathHasFromCheckpointMap(Domain vm, String fromCheckpointId) throws LibvirtException {
+        Map<String, Boolean> diskPathHasFromCheckpointMap = new HashMap<>();
+        String queryBlock = vm.qemuMonitorCommand(QemuCommand.buildQemuCommand("query-block", null), 0);
+        JSONObject response = new JSONObject(queryBlock);
+        JSONArray blocks = response.optJSONArray("return");
+        if (blocks == null) {
+            logger.warn("Couldn't get bitmap information for the VM [{}]. Falling back to full Backup", vm.getName());
+            return diskPathHasFromCheckpointMap;
+        }
+        for (int i = 0; i < blocks.length(); i++) {
+            JSONObject block = blocks.getJSONObject(i);
+            JSONObject inserted = block.optJSONObject("inserted");
+            if (inserted == null) {
+                continue;
+            }
+            String file = inserted.optString("file");
+            if (StringUtils.isBlank(file)) {
+                continue;
+            }
+            JSONArray dirtyBitmaps = inserted.optJSONArray("dirty-bitmaps");
+            boolean hasFromCheckpointBitmap = false;
+            if (dirtyBitmaps != null) {
+                for (int j = 0; j < dirtyBitmaps.length(); j++) {
+                    JSONObject dirtyBitmap = dirtyBitmaps.optJSONObject(j);
+                    if (dirtyBitmap == null) {
+                        continue;
+                    }
+                    String bitmapName = dirtyBitmap.optString("name");
+                    if (fromCheckpointId.equals(bitmapName)) {
+                        hasFromCheckpointBitmap = true;
+                        break;
+                    }
+                }
+            }
+            diskPathHasFromCheckpointMap.put(file, hasFromCheckpointBitmap);
+        }
+        return diskPathHasFromCheckpointMap;
     }
 }
