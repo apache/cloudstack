@@ -707,7 +707,7 @@ class CsAcl(CsDataBag):
         fw_chains_created = set()
         for item in self.dbag:
             if item == "id":
-                 continue
+                continue
             if self.config.is_vpc() and not ("purpose" in self.dbag[item] and self.dbag[item]["purpose"] == "Firewall"):
                 self.AclDevice(self.dbag[item], self.config).create()
             else:
