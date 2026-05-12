@@ -19,7 +19,7 @@
 
 package org.apache.cloudstack.storage.lifecycle;
 
-
+import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
