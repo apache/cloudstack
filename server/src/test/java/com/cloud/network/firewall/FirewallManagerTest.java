@@ -21,23 +21,29 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
+import com.cloud.network.Network.Capability;
+import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkRuleApplier;
 import com.cloud.network.dao.FirewallRulesDao;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.element.FirewallServiceProvider;
 import com.cloud.network.element.VirtualRouterElement;
 import com.cloud.network.element.VpcVirtualRouterElement;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.FirewallRule.FirewallRuleType;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcManager;
+import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
 import com.cloud.utils.component.ComponentContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -53,7 +59,9 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -78,6 +86,8 @@ public class FirewallManagerTest {
     VpcManager _vpcMgr;
     @Mock
     IpAddressManager _ipAddrMgr;
+    @Mock
+    RoutedIpv4Manager routedIpv4Manager;
     @Mock
     FirewallRulesDao _firewallDao;
     @Mock
@@ -115,7 +125,7 @@ public class FirewallManagerTest {
     }
 
     private FirewallRule createFirewallRule(int startPort, int endPort, Purpose purpose) {
-        return new FirewallRuleVO("xid", 1L, startPort, endPort, "TCP", 2, 3, 4, purpose, new ArrayList<>(),
+        return new FirewallRuleVO("xid", 1L, startPort, endPort, "TCP", 2L, 3, 4, purpose, new ArrayList<>(),
                 new ArrayList<>(), 5, 6, null, FirewallRule.TrafficType.Ingress);
     }
 
@@ -331,5 +341,35 @@ public class FirewallManagerTest {
         boolean result = _firewallMgr.checkIfRulesHaveConflictingPortRanges(pfRule50to150, pfRule151to200, false, false, true, true);
 
         Assert.assertFalse(result);
+    }
+
+    @Test
+    public void testValidateFirewallRuleVpcWithoutAssociatedNetworkUsesVpcCapabilities() {
+        final Account caller = Mockito.mock(Account.class);
+        final IPAddressVO ipAddress = Mockito.mock(IPAddressVO.class);
+        final NetworkVO network = Mockito.mock(NetworkVO.class);
+        final FirewallServiceProvider firewallServiceProvider = Mockito.mock(FirewallServiceProvider.class);
+        final Map<Capability, String> firewallCaps = new HashMap<>();
+        final Map<Service, Map<Capability, String>> capabilities = new HashMap<>();
+
+        firewallCaps.put(Capability.SupportedTrafficDirection, "ingress, egress");
+        firewallCaps.put(Capability.SupportedProtocols, "tcp,udp,icmp");
+        firewallCaps.put(Capability.SupportedEgressProtocols, "tcp,udp,icmp");
+        capabilities.put(Service.Firewall, firewallCaps);
+
+        when(ipAddress.getAssociatedWithNetworkId()).thenReturn(null);
+        when(ipAddress.getVpcId()).thenReturn(10L);
+        when(_networkModel.getNetwork(2L)).thenReturn(network);
+        when(network.getVpcId()).thenReturn(10L);
+        when(network.getDataCenterId()).thenReturn(1L);
+        when(routedIpv4Manager.isVirtualRouterGateway(network)).thenReturn(false);
+        when(firewallServiceProvider.getProvider()).thenReturn(Network.Provider.VPCVirtualRouter);
+        when(firewallServiceProvider.getCapabilities()).thenReturn(capabilities);
+        when(_vpcMgr.isProviderSupportServiceInVpc(10L, Service.Firewall, Network.Provider.VPCVirtualRouter)).thenReturn(true);
+        _firewallMgr._firewallElements = List.of(firewallServiceProvider);
+
+        _firewallMgr.validateFirewallRule(caller, ipAddress, 80, 80, "tcp", Purpose.Firewall, FirewallRuleType.User, 2L, FirewallRule.TrafficType.Ingress);
+
+        verify(_networkModel, Mockito.never()).getNetworkServiceCapabilities(Mockito.anyLong(), Mockito.eq(Service.Firewall));
     }
 }
