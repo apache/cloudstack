@@ -357,11 +357,9 @@ public class FirewallManagerTest {
         firewallCaps.put(Capability.SupportedEgressProtocols, "tcp,udp,icmp");
         capabilities.put(Service.Firewall, firewallCaps);
 
-        when(ipAddress.getAssociatedWithNetworkId()).thenReturn(null);
         when(ipAddress.getVpcId()).thenReturn(10L);
         when(_networkModel.getNetwork(2L)).thenReturn(network);
         when(network.getVpcId()).thenReturn(10L);
-        when(network.getDataCenterId()).thenReturn(1L);
         when(routedIpv4Manager.isVirtualRouterGateway(network)).thenReturn(false);
         when(firewallServiceProvider.getProvider()).thenReturn(Network.Provider.VPCVirtualRouter);
         when(firewallServiceProvider.getCapabilities()).thenReturn(capabilities);
