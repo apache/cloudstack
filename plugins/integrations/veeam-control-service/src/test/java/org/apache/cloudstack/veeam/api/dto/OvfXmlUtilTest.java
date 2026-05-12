@@ -70,11 +70,11 @@ public class OvfXmlUtilTest {
         String instanceConfig = OvfXmlUtil.getConfigMetadataXml(vm, mock(Logger.class));
         assertNotNull(instanceConfig);
         assertTrue(instanceConfig.contains("ovf:CloudStackMetadata_Type"));
-        assertTrue(instanceConfig.contains("<NetworkId>6965c1cf-8d44-4622-82e2-4dbbe4a58355</NetworkId>"));
+        assertTrue(instanceConfig.contains("<NetworkId>6aff2178-a323-4148-a592-edbd47b93229</NetworkId>"));
 
-        Pair<String, String> result = OvfXmlUtil.getVmNicDetailFromStoredConfig(instanceConfig, "6965c1cf-8d44-4622-82e2-4dbbe4a58355", mock(Logger.class));
+        Pair<String, String> result = OvfXmlUtil.getVmNicDetailFromStoredConfig(instanceConfig, "6aff2178-a323-4148-a592-edbd47b93229", mock(Logger.class));
         assertNotNull(result);
-        assertEquals("1e:01:50:00:00:fd", result.first());
-        assertEquals("10.1.1.103", result.second());
+        assertEquals("02:01:00:cf:00:05", result.first());
+        assertEquals("10.1.1.40", result.second());
     }
 }
