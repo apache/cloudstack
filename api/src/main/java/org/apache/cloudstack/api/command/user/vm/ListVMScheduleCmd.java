@@ -34,6 +34,7 @@ import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 
+@Deprecated
 @APICommand(name = "listVMSchedule", description = "List Instance Schedules.", responseObject = VMScheduleResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
@@ -64,7 +65,7 @@ public class ListVMScheduleCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.ENABLED,
             type = CommandType.BOOLEAN,
             required = false,
-            description = "ID of Instance schedule")
+            description = "Filter by enabled status")
     private Boolean enabled;
 
     /// //////////////////////////////////////////////////

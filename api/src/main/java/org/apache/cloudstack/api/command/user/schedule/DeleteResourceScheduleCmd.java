@@ -43,7 +43,7 @@ public class DeleteResourceScheduleCmd extends BaseCmd {
     @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.STRING, required = true, description = "Type of the resource")
     private String resourceType;
 
-    @Parameter(name = ApiConstants.RESOURCE_ID, type = CommandType.STRING, required = true, description = "ID of the resource for which schedule is to be defined")
+    @Parameter(name = ApiConstants.RESOURCE_ID, type = CommandType.STRING, required = true, description = "ID of the resource for which schedules are to be deleted")
     private String resourceId;
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ResourceScheduleResponse.class, required = false, description = "ID of the schedule to be deleted")

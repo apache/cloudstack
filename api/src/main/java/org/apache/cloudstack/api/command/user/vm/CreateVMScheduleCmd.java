@@ -34,6 +34,7 @@ import org.apache.cloudstack.schedule.ResourceScheduleManager;
 import javax.inject.Inject;
 import java.util.Date;
 
+@Deprecated
 @APICommand(name = "createVMSchedule", description = "Create Instance Schedule", responseObject = VMScheduleResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
@@ -77,14 +78,14 @@ public class CreateVMScheduleCmd extends BaseCmd {
             type = CommandType.DATE,
             required = false,
             description = "Start date from which the schedule becomes active. Defaults to current date plus 1 minute."
-                    + "Use format \"yyyy-MM-dd hh:mm:ss\")")
+                    + "Use format \"yyyy-MM-dd hh:mm:ss\"")
     private Date startDate;
 
     @Parameter(name = ApiConstants.END_DATE,
             type = CommandType.DATE,
             required = false,
             description = "End date after which the schedule becomes inactive"
-                    + "Use format \"yyyy-MM-dd hh:mm:ss\")")
+                    + "Use format \"yyyy-MM-dd hh:mm:ss\"")
     private Date endDate;
 
     @Parameter(name = ApiConstants.ENABLED,

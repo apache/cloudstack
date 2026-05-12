@@ -37,6 +37,7 @@ import javax.inject.Inject;
 import java.util.Collections;
 import java.util.List;
 
+@Deprecated
 @APICommand(name = "deleteVMSchedule", description = "Delete Instance Schedule.", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})

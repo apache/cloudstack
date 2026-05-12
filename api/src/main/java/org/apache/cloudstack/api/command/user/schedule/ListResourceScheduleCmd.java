@@ -39,22 +39,22 @@ public class ListResourceScheduleCmd extends BaseListCmd {
     @Inject
     ResourceScheduleManager resourceScheduleManager;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ResourceScheduleResponse.class, required = false, description = "ID of the schedule to be updated")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ResourceScheduleResponse.class, required = false, description = "ID of the schedule")
     private Long id;
 
-    @Parameter(name = ApiConstants.IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = ResourceScheduleResponse.class, required = false, description = "comma separated list of schedule ids to be deleted")
+    @Parameter(name = ApiConstants.IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = ResourceScheduleResponse.class, required = false, description = "comma separated list of schedule ids")
     private List<Long> ids;
 
-    @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.STRING, required = true, description = "Type of the resource")
+    @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.STRING, required = true, description = "Type of the resource.")
     private String resourceType;
 
-    @Parameter(name = ApiConstants.RESOURCE_ID, type = CommandType.STRING, required = true, description = "ID of the resource for which schedule is to be defined")
+    @Parameter(name = ApiConstants.RESOURCE_ID, type = CommandType.STRING, required = true, description = "ID of the resource for which schedules are to be listed.")
     private String resourceId;
 
     @Parameter(name = ApiConstants.ACTION, type = CommandType.STRING, required = false, description = "Action to take on the resource.")
     private String action;
 
-    @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, required = false, description = "Enable schedule. Defaults to true")
+    @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, required = false, description = "Filter by enabled status.")
     private Boolean enabled;
 
     public Long getId() {
