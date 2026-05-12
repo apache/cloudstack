@@ -1020,12 +1020,6 @@ public class ServerAdapter extends ManagerBase {
         return new Pair<>(user, account);
     }
 
-    @Override
-    public boolean start() {
-        getServiceAccount();
-        return true;
-    }
-
     @ApiAccess(command = ListZonesCmd.class)
     public List<DataCenter> listAllDataCenters(Long offset, Long limit) {
         Filter filter = new Filter(DataCenterJoinVO.class, "id", true, offset, limit);
