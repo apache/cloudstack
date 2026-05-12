@@ -703,6 +703,7 @@ class CsAcl(CsDataBag):
             self.add_routing_rules()
             return
 
+        desired_firewall_ips = self._get_desired_vpc_firewall_ips()
         fw_chains_created = set()
         for item in self.dbag:
             if item == "id":
@@ -724,6 +725,56 @@ class CsAcl(CsDataBag):
                                    "-A FIREWALL_%s -j DROP" % src_ip])
                         fw_chains_created.add(src_ip)
                 self.AclIP(self.dbag[item], self.config).create()
+
+        if self.config.is_vpc():
+            self._cleanup_removed_vpc_firewall_chains(desired_firewall_ips)
+
+    def _get_desired_vpc_firewall_ips(self):
+        desired_firewall_ips = set()
+        if not self.config.is_vpc():
+            return desired_firewall_ips
+
+        for item in self.dbag:
+            if item == "id":
+                continue
+            rule = self.dbag[item]
+            if rule.get("purpose") == "Firewall":
+                src_ip = rule.get("src_ip")
+                if src_ip:
+                    desired_firewall_ips.add(src_ip)
+        return desired_firewall_ips
+
+    def _cleanup_removed_vpc_firewall_chains(self, desired_firewall_ips):
+        """Delete FIREWALL_<ip> chain only when no firewall rule remains for that VPC public IP."""
+        try:
+            mangle_save = CsHelper.execute("iptables-save -t mangle")
+            existing_firewall_ips = []
+            for line in mangle_save:
+                if line.startswith(":FIREWALL_"):
+                    chain = line.split(" ")[0][1:]
+                    existing_firewall_ips.append(chain.replace("FIREWALL_", "", 1))
+
+            for src_ip in existing_firewall_ips:
+                if src_ip in desired_firewall_ips:
+                    continue
+                self._delete_vpc_firewall_chain(src_ip)
+        except Exception as e:
+            logging.debug("Failed VPC firewall chain cleanup: %s", e)
+
+    def _delete_vpc_firewall_chain(self, src_ip):
+        chain = "FIREWALL_%s" % src_ip
+        try:
+            prerouting_rules = CsHelper.execute("iptables -t mangle -S PREROUTING")
+            for rule in prerouting_rules:
+                if ("-d %s/32" % src_ip) in rule and ("-j %s" % chain) in rule:
+                    delete_rule = rule.replace("-A PREROUTING", "-D PREROUTING", 1)
+                    CsHelper.execute2("iptables -t mangle %s" % delete_rule, False)
+
+            CsHelper.execute2("iptables -t mangle -F %s" % chain, False)
+            CsHelper.execute2("iptables -t mangle -X %s" % chain, False)
+            logging.info("Deleted VPC firewall chain %s as last firewall rule was removed", chain)
+        except Exception as e:
+            logging.debug("Failed deleting VPC firewall chain %s: %s", chain, e)
 
 class CsIpv6Firewall(CsDataBag):
     """
