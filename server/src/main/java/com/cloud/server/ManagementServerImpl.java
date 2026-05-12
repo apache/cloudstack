@@ -1707,16 +1707,15 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
 
         if (CollectionUtils.isEmpty(suitableHosts)) {
             logger.warn("No suitable hosts found.");
-        } else {
-            logger.debug("Hosts having capacity and are suitable for migration: {}", suitableHosts);
+            return suitableHosts;
         }
 
+        logger.debug("Hosts having capacity and are suitable for migration: {}", suitableHosts);
+
         // Only list hosts of the same architecture as the source Host in a multi-arch zone
-        if (!suitableHosts.isEmpty()) {
-            List<CPU.CPUArch> clusterArchs = ApiDBUtils.listZoneClustersArchs(vm.getDataCenterId());
-            if (CollectionUtils.isNotEmpty(clusterArchs) && clusterArchs.size() > 1) {
-                suitableHosts = suitableHosts.stream().filter(h -> h.getArch() == srcHost.getArch()).collect(Collectors.toList());
-            }
+        List<CPU.CPUArch> clusterArchs = ApiDBUtils.listZoneClustersArchs(vm.getDataCenterId());
+        if (CollectionUtils.isNotEmpty(clusterArchs) && clusterArchs.size() > 1) {
+            suitableHosts = suitableHosts.stream().filter(h -> h.getArch() == srcHost.getArch()).collect(Collectors.toList());
         }
 
         return suitableHosts;
