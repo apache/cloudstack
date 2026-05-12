@@ -83,40 +83,16 @@ import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ResponseObject;
-import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
-import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
 import org.apache.cloudstack.api.response.ConsoleSessionResponse;
-import org.apache.cloudstack.api.response.DirectDownloadCertificateResponse;
 import org.apache.cloudstack.api.response.GuestOSCategoryResponse;
-import org.apache.cloudstack.api.response.IpQuarantineResponse;
-import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
 import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
-import org.apache.cloudstack.api.response.UnmanagedInstanceResponse;
-import org.apache.cloudstack.api.response.UsageRecordResponse;
 import org.apache.cloudstack.api.response.TrafficTypeResponse;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.usage.UsageService;
-import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 
-import com.cloud.capacity.Capacity;
-import com.cloud.configuration.Resource;
-import com.cloud.domain.DomainVO;
 import com.cloud.host.HostVO;
 import com.cloud.network.Networks;
 import com.cloud.network.PhysicalNetworkTrafficType;
-import com.cloud.network.PublicIpQuarantine;
-import com.cloud.network.as.AutoScaleVmGroup;
-import com.cloud.network.as.AutoScaleVmGroupVO;
-import com.cloud.network.as.AutoScaleVmProfileVO;
-import com.cloud.network.as.dao.AutoScaleVmGroupVmMapDao;
-import com.cloud.network.dao.IPAddressDao;
-import com.cloud.network.dao.IPAddressVO;
-import com.cloud.network.dao.LoadBalancerVO;
-import com.cloud.network.dao.NetworkServiceMapDao;
-import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.resource.icon.ResourceIconVO;
@@ -124,19 +100,7 @@ import com.cloud.server.ResourceIcon;
 import com.cloud.server.ResourceIconManager;
 import com.cloud.server.ResourceTag;
 import com.cloud.storage.GuestOsCategory;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.usage.UsageVO;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.user.AccountVO;
-import com.cloud.user.User;
-import com.cloud.user.UserData;
-import com.cloud.user.UserDataVO;
-import com.cloud.user.UserVO;
-import com.cloud.user.dao.UserDataDao;
-import com.cloud.utils.net.Ip;
 import com.cloud.vm.ConsoleSessionVO;
-import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.VMInstanceVO;
 
 import static org.junit.Assert.assertEquals;
@@ -190,11 +154,12 @@ public class ApiResponseHelperTest {
     private HostVO hostVOMock;
     @Mock
     private VMInstanceVO vmInstanceVOMock;
-    VpcVO vpcVOMock;
 
     @Mock
-    NetworkACL networkACLMock;
+    private VpcVO vpcVOMock;
 
+    @Mock
+    private NetworkACL networkACLMock;
 
     @Spy
     @InjectMocks

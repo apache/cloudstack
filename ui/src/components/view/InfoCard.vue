@@ -626,6 +626,7 @@
               <router-link v-if="!isStatic && $router.resolve('/diskoffering/' + resource.rootdiskofferingid).matched[0].redirect !== '/exception/404'" :to="{ path: '/diskoffering/' + resource.rootdiskofferingid }">{{ resource.rootdiskofferingdisplaytext }}</router-link>
               <span v-else>{{ resource.rootdiskofferingdisplaytext }}</span>
             </div>
+          </div>
             <div class="resource-detail-item" v-if="resource.keypairs && resource.keypairs.length > 0">
               <div class="resource-detail-item__label">{{ $t('label.keypairs') }}</div>
               <div class="resource-detail-item__details">
