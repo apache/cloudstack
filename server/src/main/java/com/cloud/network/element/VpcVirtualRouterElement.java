@@ -139,7 +139,13 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
                 return false;
             }
         } else {
-            if (!_networkMdl.isProviderSupportServiceInNetwork(network.getId(), service, getProvider())) {
+            boolean supportsService;
+            if (service == Service.Firewall) {
+                supportsService = _vpcMgr.isProviderSupportServiceInVpc(network.getVpcId(), service, getProvider());
+            } else {
+                supportsService = _networkMdl.isProviderSupportServiceInNetwork(network.getId(), service, getProvider());
+            }
+            if (!supportsService) {
                 logger.trace("Element " + getProvider().getName() + " doesn't support service " + service.getName() + " in the network " + network);
                 return false;
             }
