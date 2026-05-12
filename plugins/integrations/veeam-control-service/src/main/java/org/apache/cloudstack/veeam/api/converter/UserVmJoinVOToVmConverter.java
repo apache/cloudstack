@@ -99,7 +99,8 @@ public final class UserVmJoinVOToVmConverter {
                     src.getHostUuid()));
         }
         if (hostResolver != null) {
-            HostJoinVO hostVo = hostResolver.apply(src.getHostId() == null ? src.getLastHostId() : src.getHostId());
+            Long hostId = (src.getHostId() == null || src.getHostId() == 0) ? src.getLastHostId() : src.getHostId();
+            HostJoinVO hostVo = hostResolver.apply(hostId);
             if (hostVo != null) {
                 dst.setHost(buildRef(
                         basePath + ApiRouteHandler.BASE_ROUTE,
