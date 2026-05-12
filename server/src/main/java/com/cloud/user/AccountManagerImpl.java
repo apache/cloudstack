@@ -3202,7 +3202,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         ApiKeyPair keyPair;
         if (accessingApiKey != null) {
             ApiKeyPair accessingKeyPair = apiKeyPairService.findByApiKey(accessingApiKey);
-            if (userId == accessingKeyPair.getUserId()) {
+            if (accessingKeyPair != null && userId == accessingKeyPair.getUserId()) {
                 keyPair = apiKeyPairService.findByApiKey(accessingApiKey);
             } else {
                 keyPair = _accountService.getLatestUserKeyPair(userId);
@@ -3320,6 +3320,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             return Boolean.TRUE;
         }
         ApiKeyPair accessingKeyPair = apiKeyPairService.findByApiKey(apiKey);
+        if (accessingKeyPair == null) {
+            logger.warn("Unable to find API key pair for the accessing API key: {}", apiKey);
+            return Boolean.TRUE;
+        }
         return isApiKeySupersetOfPermission(new ArrayList<>(getAllKeypairPermissions(accessingKeyPair.getApiKey())), new ArrayList<>(getAllKeypairPermissions(accessedKeyPair.getApiKey())));
     }
 
@@ -3335,7 +3339,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 return accessingApiKey;
             }
         } catch (NullPointerException e) {
-            logger.info("Accessing API through session.");
+            logger.info("Accessing API through session.", e);
         }
         return null;
     }
@@ -3582,6 +3586,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new InvalidParameterValueException("API key not present in the request's URL and, thus, unable to fetch API key rules.");
         }
         ApiKeyPair apiKeyPair = keyPairManager.findByApiKey(apiKey);
+        if (apiKeyPair == null) {
+            logger.warn("Unable to find API key pair by API key: {}", apiKey);
+            return new ArrayList<>();
+        }
         Account account = _accountDao.findById(apiKeyPair.getAccountId());
         List<ApiKeyPairPermission> keyPairPermissions = keyPairManager.findAllPermissionsByKeyPairId(apiKeyPair.getId(), account.getRoleId());
         return new ArrayList<>(keyPairPermissions);
@@ -3848,12 +3856,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     public UserAccount getUserByApiKey(String apiKey) {
         ApiKeyPairVO keyPair = apiKeyPairDao.findByApiKey(apiKey);
-
-        if (keyPair == null) {
-            return null;
+        if (keyPair != null) {
+            return userAccountDao.findById(keyPair.getUserId());
         }
 
-        return userAccountDao.findById(keyPair.getUserId());
+        return null;
     }
 
     @Override
