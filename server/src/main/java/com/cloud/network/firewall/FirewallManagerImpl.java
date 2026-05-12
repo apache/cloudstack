@@ -912,7 +912,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
                             success = false;
                         } else {
                             removeRule(rule);
-                            if (rule.getSourceIpAddressId() != null) {
+                            if (rule.getSourceIpAddressId() != null && rule.getVpcId() == null) {
                                 //if the rule is the last one for the ip address assigned to VPC, unassign it from the network
                                 _vpcMgr.unassignIPFromVpcNetwork(rule.getSourceIpAddressId(), rule.getNetworkId());
                             }
