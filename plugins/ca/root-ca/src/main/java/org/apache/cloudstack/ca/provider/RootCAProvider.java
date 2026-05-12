@@ -59,6 +59,7 @@ import org.apache.cloudstack.framework.ca.CAProvider;
 import org.apache.cloudstack.framework.ca.Certificate;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.config.ValidatedConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.utils.security.CertUtils;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
@@ -103,25 +104,25 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
     /////////////// Root CA Settings ///////////////////
     ////////////////////////////////////////////////////
 
-    private static ConfigKey<String> rootCAPrivateKey = new ConfigKey<>("Hidden", String.class,
-            "ca.plugin.root.private.key",
-            null,
+    private static ConfigKey<String> rootCAPrivateKey = new ValidatedConfigKey<>("Hidden", String.class,
+            "ca.plugin.root.private.key", null,
             "The ROOT CA private key in PEM format. " +
             "When set along with the public key and certificate, CloudStack uses this custom CA instead of auto-generating one. " +
-            "All three ca.plugin.root.* keys must be set together. Restart management server(s) when changed.", false);
+            "All three ca.plugin.root.* keys must be set together. Restart management server(s) when changed.",
+            false, ConfigKey.Scope.Global, null, RootCAProvider::validatePrivateKeyPem);
 
-    private static ConfigKey<String> rootCAPublicKey = new ConfigKey<>("Hidden", String.class,
-            "ca.plugin.root.public.key",
-            null,
+    private static ConfigKey<String> rootCAPublicKey = new ValidatedConfigKey<>("Hidden", String.class,
+            "ca.plugin.root.public.key", null,
             "The ROOT CA public key in PEM format (X.509/SPKI: must start with '-----BEGIN PUBLIC KEY-----'). " +
-            "Required when providing a custom CA. Restart management server(s) when changed.", false);
+            "Required when providing a custom CA. Restart management server(s) when changed.",
+            false, ConfigKey.Scope.Global, null, RootCAProvider::validatePublicKeyPem);
 
-    private static ConfigKey<String> rootCACertificate = new ConfigKey<>("Hidden", String.class,
-            "ca.plugin.root.ca.certificate",
-            null,
+    private static ConfigKey<String> rootCACertificate = new ValidatedConfigKey<>("Hidden", String.class,
+            "ca.plugin.root.ca.certificate", null,
             "The CA certificate(s) in PEM format (must start with '-----BEGIN CERTIFICATE-----'). " +
             "For intermediate CAs, concatenate the signing cert first, followed by intermediate(s) and root. " +
-            "Required when providing a custom CA. Restart management server(s) when changed.", false);
+            "Required when providing a custom CA. Restart management server(s) when changed.",
+            false, ConfigKey.Scope.Global, null, RootCAProvider::validateCACertificatePem);
 
     private static ConfigKey<String> rootCAIssuerDN = new ConfigKey<>("Advanced", String.class,
             "ca.plugin.root.issuer.dn",
@@ -327,24 +328,26 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
         return loadRootCAKeyPair();
     }
 
-    private boolean saveNewRootCACertificate() {
+    boolean saveNewRootCACertificate() {
         if (caKeyPair == null) {
             throw new CloudRuntimeException("Cannot issue self-signed root CA certificate as CA keypair is not initialized");
         }
         try {
             logger.debug("Generating root CA certificate");
-            final X509Certificate rootCaCertificate = CertUtils.generateV3Certificate(
+            final X509Certificate generatedCACert = CertUtils.generateV3Certificate(
                     null, caKeyPair, caKeyPair.getPublic(),
                     rootCAIssuerDN.value(), CAManager.CertSignatureAlgorithm.value(),
                     getCaValidityDays(), null, null);
-            if (!configDao.update(rootCACertificate.key(), rootCACertificate.category(), CertUtils.x509CertificateToPem(rootCaCertificate))) {
+            if (!configDao.update(rootCACertificate.key(), rootCACertificate.category(), CertUtils.x509CertificateToPem(generatedCACert))) {
                 logger.error("Failed to update RootCA public/x509 certificate");
             }
+            caCertificates = new ArrayList<>(java.util.Collections.singletonList(generatedCACert));
+            caCertificate = generatedCACert;
         } catch (final CertificateException | NoSuchAlgorithmException | NoSuchProviderException | SignatureException | InvalidKeyException | OperatorCreationException | IOException e) {
             logger.error("Failed to generate RootCA certificate from private/public keys due to exception:", e);
             return false;
         }
-        return loadRootCACertificate();
+        return caCertificate != null;
     }
 
     private boolean loadRootCAKeyPair() {
@@ -360,27 +363,31 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
         return caKeyPair.getPrivate() != null && caKeyPair.getPublic() != null;
     }
 
-    private boolean loadRootCACertificate() {
+    boolean loadRootCACertificate() {
+        caCertificate = null;
+        caCertificates = null;
         if (StringUtils.isEmpty(rootCACertificate.value())) {
             return false;
         }
         try {
-            caCertificates = CertUtils.pemToX509Certificates(rootCACertificate.value());
-            if (CollectionUtils.isEmpty(caCertificates)) {
+            final List<X509Certificate> loadedCerts = CertUtils.pemToX509Certificates(rootCACertificate.value());
+            if (CollectionUtils.isEmpty(loadedCerts)) {
                 logger.error("No certificates found in ca.plugin.root.ca.certificate");
                 return false;
             }
-            caCertificate = caCertificates.get(0);
+            final X509Certificate loadedCACert = loadedCerts.get(0);
 
             // Verify key ownership without enforcing self-signature
-            if (!caCertificate.getPublicKey().equals(caKeyPair.getPublic())) {
+            if (!loadedCACert.getPublicKey().equals(caKeyPair.getPublic())) {
                 logger.error("The public key in the CA certificate does not match the configured CA public key");
                 return false;
             }
 
-            if (caCertificates.size() > 1) {
-                logger.info("Loaded CA certificate chain with {} certificate(s)", caCertificates.size());
+            if (loadedCerts.size() > 1) {
+                logger.info("Loaded CA certificate chain with {} certificate(s)", loadedCerts.size());
             }
+            caCertificates = loadedCerts;
+            caCertificate = loadedCACert;
         } catch (final IOException | CertificateException e) {
             logger.error("Failed to load saved RootCA certificate due to exception:", e);
             return false;
@@ -445,6 +452,40 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
         }
     }
 
+
+    private static void validatePrivateKeyPem(String value) {
+        if (StringUtils.isEmpty(value)) return;
+        try {
+            CertUtils.pemToPrivateKey(value);
+        } catch (InvalidKeySpecException | IOException e) {
+            throw new IllegalArgumentException(
+                    "ca.plugin.root.private.key is not a valid PEM private key: " + e.getMessage());
+        }
+    }
+
+    private static void validatePublicKeyPem(String value) {
+        if (StringUtils.isEmpty(value)) return;
+        try {
+            CertUtils.pemToPublicKey(value);
+        } catch (InvalidKeySpecException | IOException e) {
+            throw new IllegalArgumentException(
+                    "ca.plugin.root.public.key is not a valid PEM public key: " + e.getMessage());
+        }
+    }
+
+    static void validateCACertificatePem(String value) {
+        if (StringUtils.isEmpty(value)) return;
+        try {
+            final List<X509Certificate> certs = CertUtils.pemToX509Certificates(value);
+            if (CollectionUtils.isEmpty(certs)) {
+                throw new IllegalArgumentException(
+                        "ca.plugin.root.ca.certificate contains no certificates");
+            }
+        } catch (IOException | CertificateException e) {
+            throw new IllegalArgumentException(
+                    "ca.plugin.root.ca.certificate is not a valid PEM certificate: " + e.getMessage());
+        }
+    }
 
     private boolean setupCA() {
         if (!loadRootCAKeyPair()) {

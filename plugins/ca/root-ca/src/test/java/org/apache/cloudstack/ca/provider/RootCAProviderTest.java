@@ -39,6 +39,7 @@ import javax.net.ssl.SSLEngine;
 
 import org.apache.cloudstack.framework.ca.Certificate;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.utils.security.CertUtils;
 import org.apache.cloudstack.utils.security.SSLUtils;
 import org.bouncycastle.asn1.x509.GeneralName;
@@ -50,7 +51,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.test.util.ReflectionTestUtils;
 
 
 @RunWith(MockitoJUnitRunner.class)
@@ -218,8 +218,8 @@ public class RootCAProviderTest {
     }
 
     @Test
-    public void testIsManagementCertificateNoMatch() {
-        ReflectionTestUtils.setField(provider, "managementCertificateCustomSAN", "cloudstack");
+    public void testIsManagementCertificateNoMatch() throws Exception {
+        addField(provider, "managementCertificateCustomSAN", "cloudstack");
         try {
             X509Certificate certificate = Mockito.mock(X509Certificate.class);
             List<List<?>> altNames = new ArrayList<>();
@@ -234,9 +234,9 @@ public class RootCAProviderTest {
     }
 
     @Test
-    public void testIsManagementCertificateMatch() {
+    public void testIsManagementCertificateMatch() throws Exception {
         String customSAN = "cloudstack";
-        ReflectionTestUtils.setField(provider, "managementCertificateCustomSAN", customSAN);
+        addField(provider, "managementCertificateCustomSAN", customSAN);
         try {
             X509Certificate certificate = Mockito.mock(X509Certificate.class);
             List<List<?>> altNames = new ArrayList<>();
@@ -247,6 +247,60 @@ public class RootCAProviderTest {
             Assert.assertTrue(provider.isManagementCertificate(certificate));
         } catch (CertificateParsingException e) {
             Assert.fail(String.format("Exception occurred: %s", e.getMessage()));
+        }
+    }
+
+    @Test
+    public void testLoadRootCACertificateWithMismatchedCert() throws Exception {
+        KeyPair otherKeyPair = CertUtils.generateRandomKeyPair(1024);
+        X509Certificate mismatchedCert = CertUtils.generateV3Certificate(null, otherKeyPair, otherKeyPair.getPublic(), "CN=other", "SHA256withRSA", 365, null, null);
+        String mismatchedPem = CertUtils.x509CertificateToPem(mismatchedCert);
+
+        ConfigKey<String> mockCertKey = Mockito.mock(ConfigKey.class);
+        Mockito.when(mockCertKey.value()).thenReturn(mismatchedPem);
+        addField(provider, "rootCACertificate", mockCertKey);
+
+        addField(provider, "caCertificate", null);
+        addField(provider, "caCertificates", null);
+
+        Boolean result = provider.loadRootCACertificate();
+        Assert.assertFalse(result);
+        Assert.assertNull(provider.getCaCertificate());
+    }
+
+    @Test
+    public void testSaveNewRootCACertificateWithStaleCache() throws Exception {
+        ConfigurationDao configDao = Mockito.mock(ConfigurationDao.class);
+        addField(provider, "configDao", configDao);
+
+        ConfigKey<String> mockCertKey = Mockito.mock(ConfigKey.class);
+        Mockito.when(mockCertKey.key()).thenReturn("ca.plugin.root.ca.certificate");
+        Mockito.when(mockCertKey.category()).thenReturn("Hidden");
+        addField(provider, "rootCACertificate", mockCertKey);
+
+        ConfigKey<String> mockIssuerKey = Mockito.mock(ConfigKey.class);
+        Mockito.when(mockIssuerKey.value()).thenReturn("CN=ca.cloudstack.apache.org");
+        addField(provider, "rootCAIssuerDN", mockIssuerKey);
+
+        addField(provider, "caCertificate", null);
+        addField(provider, "caCertificates", null);
+
+        Mockito.when(configDao.update(Mockito.anyString(), Mockito.anyString(), Mockito.anyString())).thenReturn(true);
+
+        Boolean result = provider.saveNewRootCACertificate();
+        Assert.assertTrue(result);
+        Assert.assertNotNull(provider.getCaCertificate());
+        Assert.assertEquals(1, provider.getCaCertificate().size());
+    }
+
+    @Test
+    public void testValidateCACertificatePem() throws Exception {
+        String truncatedPem = "-----BEGIN CERTIFICATE-----\nMIICxTCCAa0CAQAw\n";
+        try {
+            RootCAProvider.validateCACertificatePem(truncatedPem);
+            Assert.fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            Assert.assertTrue(e.getMessage().contains("is not a valid PEM certificate"));
         }
     }
 }
