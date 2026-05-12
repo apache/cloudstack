@@ -19,10 +19,13 @@ package com.cloud.network.element;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.Network;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManagerImpl;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.vm.DomainRouterVO;
@@ -43,7 +46,9 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -59,6 +64,12 @@ public class VpcVirtualRouterElementTest {
 
     @Mock
     EntityManager _entityMgr;
+
+    @Mock
+    NetworkModel _networkMdl;
+
+    @Mock
+    VpcManager _vpcMgr;
 
     @Mock
     NetworkTopologyContext networkTopologyContext;
@@ -187,5 +198,19 @@ public class VpcVirtualRouterElementTest {
         }
 
         verify(remoteAccessVpn, times(1)).getVpcId();
+    }
+
+    @Test
+    public void testCanHandleFirewallUsesVpcCapability() {
+        final Network network = Mockito.mock(Network.class);
+
+        when(_networkMdl.getPhysicalNetworkId(network)).thenReturn(1L);
+        when(network.getVpcId()).thenReturn(100L);
+        when(_networkMdl.isProviderEnabledInPhysicalNetwork(1L, Network.Provider.VPCVirtualRouter.getName())).thenReturn(true);
+        when(_vpcMgr.isProviderSupportServiceInVpc(100L, Network.Service.Firewall, Network.Provider.VPCVirtualRouter)).thenReturn(true);
+
+        assertTrue(vpcVirtualRouterElement.canHandle(network, Network.Service.Firewall));
+        verify(_vpcMgr).isProviderSupportServiceInVpc(100L, Network.Service.Firewall, Network.Provider.VPCVirtualRouter);
+        verify(_networkMdl, never()).isProviderSupportServiceInNetwork(network.getId(), Network.Service.Firewall, Network.Provider.VPCVirtualRouter);
     }
 }
