@@ -208,3 +208,6 @@ INSERT INTO cloud.role_permissions (uuid, role_id, rule, permission, sort_order)
 SELECT uuid(), role_id, 'quotaResourceStatement', permission, sort_order
 FROM cloud.role_permissions rp
 WHERE rule = 'quotaStatement' AND NOT EXISTS(SELECT 1 FROM cloud.role_permissions rp_ WHERE rp.role_id = rp_.role_id AND rp_.rule = 'quotaResourceStatement');
+
+-- This is part of allowing firewall rules on public IP addresses in VPC network
+ALTER TABLE `cloud`.`firewall_rules` MODIFY COLUMN `network_id` BIGINT UNSIGNED NULL;
