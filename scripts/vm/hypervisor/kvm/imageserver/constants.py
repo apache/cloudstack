@@ -15,6 +15,12 @@
 # specific language governing permissions and limitations
 # under the License.
 
+import logging
+
+# Logging level
+LOGGING_LEVEL = logging.INFO
+
+# Read/Write chunk size for NBD backend
 CHUNK_SIZE = 256 * 1024  # 256 KiB
 
 # NBD base:allocation flags (hole=1, zero=2; hole|zero=3)

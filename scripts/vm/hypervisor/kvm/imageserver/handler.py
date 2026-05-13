@@ -49,7 +49,7 @@ class Handler(BaseHTTPRequestHandler):
     _CONTENT_RANGE_RE = re.compile(r"^bytes\s+(\d+)-(\d+)/(?:\*|\d+)$")
 
     def log_message(self, fmt: str, *args: Any) -> None:
-        logging.info("%s - - %s", self.client_address[0], fmt % args)
+        logging.debug("%s - - %s", self.client_address[0], fmt % args)
 
     # ------------------------------------------------------------------
     # Response helpers
@@ -529,7 +529,7 @@ class Handler(BaseHTTPRequestHandler):
         bytes_sent = 0
         expected_bytes = 0
         try:
-            logging.info("GET start image_id=%s range=%s", image_id, range_header or "-")
+            logging.debug("GET start image_id=%s range=%s", image_id, range_header or "-")
             backend = create_backend(cfg)
             session = None
             try:
@@ -617,7 +617,7 @@ class Handler(BaseHTTPRequestHandler):
                     bytes_sent,
                 )
             dur = now_s() - start
-            logging.info(
+            logging.debug(
                 "GET end image_id=%s bytes=%d duration_s=%.3f", image_id, bytes_sent, dur
             )
 
@@ -627,7 +627,7 @@ class Handler(BaseHTTPRequestHandler):
         start = now_s()
         bytes_written = 0
         try:
-            logging.info("PUT start image_id=%s content_length=%d", image_id, content_length)
+            logging.debug("PUT start image_id=%s content_length=%d", image_id, content_length)
             backend = create_backend(cfg)
             try:
                 bytes_written = backend.write_full(self.rfile, content_length, flush)
@@ -644,7 +644,7 @@ class Handler(BaseHTTPRequestHandler):
             self._send_error_json(HTTPStatus.INTERNAL_SERVER_ERROR, "backend error")
         finally:
             dur = now_s() - start
-            logging.info(
+            logging.debug(
                 "PUT end image_id=%s bytes=%d duration_s=%.3f", image_id, bytes_written, dur
             )
 
@@ -679,7 +679,7 @@ class Handler(BaseHTTPRequestHandler):
         start = now_s()
         bytes_written = 0
         try:
-            logging.info(
+            logging.debug(
                 "PUT range start image_id=%s Content-Range=%s content_length=%d flush=%s",
                 image_id, content_range, content_length, flush,
             )
@@ -709,7 +709,7 @@ class Handler(BaseHTTPRequestHandler):
             self._send_error_json(HTTPStatus.INTERNAL_SERVER_ERROR, "backend error")
         finally:
             dur = now_s() - start
-            logging.info(
+            logging.debug(
                 "PUT range end image_id=%s bytes=%d duration_s=%.3f flush=%s",
                 image_id, bytes_written, dur, flush,
             )
@@ -810,7 +810,7 @@ class Handler(BaseHTTPRequestHandler):
     ) -> None:
         start = now_s()
         try:
-            logging.info(
+            logging.debug(
                 "PATCH zero start image_id=%s offset=%d size=%d flush=%s",
                 image_id, offset, size, flush,
             )
@@ -825,7 +825,7 @@ class Handler(BaseHTTPRequestHandler):
             self._send_error_json(HTTPStatus.INTERNAL_SERVER_ERROR, "backend error")
         finally:
             dur = now_s() - start
-            logging.info("PATCH zero end image_id=%s duration_s=%.3f", image_id, dur)
+            logging.debug("PATCH zero end image_id=%s duration_s=%.3f", image_id, dur)
 
     def _handle_patch_range(
         self,
@@ -855,7 +855,7 @@ class Handler(BaseHTTPRequestHandler):
         start = now_s()
         bytes_written = 0
         try:
-            logging.info(
+            logging.debug(
                 "PATCH range start image_id=%s range=%s content_length=%d",
                 image_id, range_header, content_length,
             )
@@ -893,7 +893,7 @@ class Handler(BaseHTTPRequestHandler):
             self._send_error_json(HTTPStatus.INTERNAL_SERVER_ERROR, "backend error")
         finally:
             dur = now_s() - start
-            logging.info(
+            logging.debug(
                 "PATCH range end image_id=%s bytes=%d duration_s=%.3f",
                 image_id, bytes_written, dur,
             )

@@ -41,6 +41,7 @@ from .constants import (
     CONTROL_SOCKET_PERMISSIONS,
     DEFAULT_HTTP_PORT,
     DEFAULT_LISTEN_ADDRESS,
+    LOGGING_LEVEL
 )
 from .handler import Handler
 
@@ -176,7 +177,7 @@ def main() -> None:
         parser.error("--tls-enabled requires --tls-cert-file and --tls-key-file")
 
     logging.basicConfig(
-        level=logging.INFO,
+        level=LOGGING_LEVEL,
         format="%(asctime)s %(levelname)s %(message)s",
     )
 
