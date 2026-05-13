@@ -144,7 +144,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
                 !StringUtils.equals("veeam", BackupProviderPlugin.valueIn(zoneId))) {
             throw new CloudRuntimeException("Veeam-KVM backups are disabled because the CloudStack Zone is configured to use the \"" +
                     BackupProviderPlugin.valueIn(zoneId) + "\" backup provider. Acceptable \"backup.framework.provider.plugin\" " +
-                    "values are [\"veeam\", \"dummy\"]. Refer to documentation for more details on backup providers compatibility.");
+                    "values are [\"veeam\", \"dummy\"]. Please refer to the documentation for more details on backup providers compatibility.");
         }
     }
 
