@@ -366,7 +366,8 @@ public abstract class BaseScheduleWorker extends ManagerBase {
      */
     public <T extends BaseCmd> long submitAsyncJob(
             Class<T> cmdClass, long accountId, long resourceId, long eventId,
-            Map<String, String> extra) {
+            Map<String, String> extra
+    ) {
         Map<String, String> params = new HashMap<>(extra);
         params.put(ApiConstants.ID, String.valueOf(resourceId));
         params.put("ctxUserId", "1");

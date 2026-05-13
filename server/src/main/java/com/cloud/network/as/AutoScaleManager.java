@@ -48,6 +48,8 @@ public interface AutoScaleManager extends AutoScaleService {
 
     void checkAutoScaleUser(Long autoscaleUserId, long accountId);
 
+    void validateMinMaxMembers(int minMembers, int maxMembers);
+
     boolean deleteAutoScaleVmGroupsByAccount(Account account);
 
     void cleanUpAutoScaleResources(Account account);

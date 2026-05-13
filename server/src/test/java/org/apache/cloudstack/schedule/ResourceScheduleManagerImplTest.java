@@ -19,6 +19,7 @@
 package org.apache.cloudstack.schedule;
 
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
@@ -34,6 +35,8 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.schedule.dao.ResourceScheduleDao;
 import org.apache.cloudstack.schedule.dao.ResourceScheduleDetailsDao;
+import org.apache.cloudstack.schedule.autoscale.AutoScaleScheduleAction;
+import org.apache.cloudstack.schedule.autoscale.AutoScaleScheduleWorker;
 import org.apache.cloudstack.schedule.vm.VMScheduleAction;
 import org.apache.cloudstack.schedule.vm.VMScheduleWorker;
 import org.apache.commons.lang.time.DateUtils;
@@ -74,6 +77,9 @@ public class ResourceScheduleManagerImplTest {
     VMScheduleWorker vmScheduleWorker;
 
     @Mock
+    AutoScaleScheduleWorker autoScaleScheduleWorker;
+
+    @Mock
     UserVmManager userVmManager;
 
     @Mock
@@ -92,8 +98,10 @@ public class ResourceScheduleManagerImplTest {
         CallContext.register(callingUser, callingAccount);
 
         Mockito.when(vmScheduleWorker.getApiResourceType()).thenReturn(ApiCommandResourceType.VirtualMachine);
+        Mockito.when(autoScaleScheduleWorker.getApiResourceType()).thenReturn(ApiCommandResourceType.AutoScaleVmGroup);
         Map<ApiCommandResourceType, BaseScheduleWorker> workerMap = new HashMap<>();
         workerMap.put(ApiCommandResourceType.VirtualMachine, vmScheduleWorker);
+        workerMap.put(ApiCommandResourceType.AutoScaleVmGroup, autoScaleScheduleWorker);
         ReflectionTestUtils.setField(resourceScheduleManager, "workerMap", workerMap);
     }
 
@@ -224,6 +232,43 @@ public class ResourceScheduleManagerImplTest {
         Mockito.verify(resourceScheduleDao, Mockito.times(1)).update(Mockito.eq(1L), Mockito.any(ResourceScheduleVO.class));
 
         validateResponse(response, schedule, vm);
+    }
+
+    @Test
+    public void createScheduleAutoScale() {
+        AutoScaleVmGroup group = Mockito.mock(AutoScaleVmGroup.class);
+        ResourceScheduleVO schedule = Mockito.mock(ResourceScheduleVO.class);
+        Account ownerAccount = Mockito.mock(Account.class);
+        Map<String, String> details = new HashMap<>();
+        details.put("minmembers", "2");
+        details.put("maxmembers", "5");
+
+        Mockito.when(group.getId()).thenReturn(21L);
+        Mockito.when(group.getUuid()).thenReturn(UUID.randomUUID().toString());
+        Mockito.when(entityManager.findByUuid(AutoScaleVmGroup.class, "asg-uuid")).thenReturn(group);
+        Mockito.when(autoScaleScheduleWorker.isResourceValid(21L)).thenReturn(true);
+        Mockito.when(autoScaleScheduleWorker.getEntityOwnerId(21L)).thenReturn(2L);
+        Mockito.when(autoScaleScheduleWorker.parseAction("UPDATE")).thenReturn(AutoScaleScheduleAction.UPDATE);
+        Mockito.when(accountManager.getAccount(2L)).thenReturn(ownerAccount);
+        Mockito.when(resourceScheduleDao.persist(Mockito.any(ResourceScheduleVO.class))).thenReturn(schedule);
+        Mockito.when(schedule.getId()).thenReturn(99L);
+        Mockito.when(schedule.getResourceType()).thenReturn(ApiCommandResourceType.AutoScaleVmGroup);
+        Mockito.when(schedule.getResourceId()).thenReturn(21L);
+        Mockito.when(schedule.getActionName()).thenReturn("UPDATE");
+        Mockito.when(autoScaleScheduleWorker.parseAction("UPDATE")).thenReturn(AutoScaleScheduleAction.UPDATE);
+        Mockito.when(entityManager.findById(AutoScaleVmGroup.class, 21L)).thenReturn(group);
+
+        ResourceScheduleResponse response = resourceScheduleManager.createSchedule(
+                ApiCommandResourceType.AutoScaleVmGroup, "asg-uuid", null,
+                "0 0 * * *", "UTC", "UPDATE",
+                DateUtils.addDays(new Date(), 1), DateUtils.addDays(new Date(), 2),
+                true, details);
+
+        Assert.assertEquals(ApiCommandResourceType.AutoScaleVmGroup, ReflectionTestUtils.getField(response, "resourceType"));
+        Assert.assertEquals("21", ReflectionTestUtils.getField(response, "resourceId"));
+        Assert.assertEquals("2", ((Map<String, String>) ReflectionTestUtils.getField(response, "details")).get("minmembers"));
+        Assert.assertEquals("5", ((Map<String, String>) ReflectionTestUtils.getField(response, "details")).get("maxmembers"));
+        Mockito.verify(autoScaleScheduleWorker, Mockito.times(1)).validateDetails(Mockito.eq(AutoScaleScheduleAction.UPDATE), Mockito.eq(details));
     }
 
     @Test

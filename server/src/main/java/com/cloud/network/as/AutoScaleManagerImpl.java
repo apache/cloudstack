@@ -73,6 +73,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.schedule.ResourceScheduleManager;
 import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -285,6 +286,8 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     private VirtualMachineManager virtualMachineManager;
     @Inject
     GuestOSDao guestOSDao;
+    @Inject
+    private ResourceScheduleManager resourceScheduleManager;
 
     private static final String PARAM_ROOT_DISK_SIZE = "rootdisksize";
     private static final String PARAM_DISK_OFFERING_ID = "diskofferingid";
@@ -1098,7 +1101,11 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
 
         if (autoScaleVmGroupVO.getState().equals(AutoScaleVmGroup.State.NEW)) {
             /* This condition is for handling failures during creation command */
-            return autoScaleVmGroupDao.remove(id);
+            boolean removed = autoScaleVmGroupDao.remove(id);
+            if (removed) {
+                resourceScheduleManager.removeSchedulesForResource(ApiCommandResourceType.AutoScaleVmGroup, id);
+            }
+            return removed;
         }
 
         if (!autoScaleVmGroupVO.getState().equals(AutoScaleVmGroup.State.DISABLED) && !Boolean.TRUE.equals(cleanup)) {
@@ -1168,6 +1175,8 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                     return false;
                 }
 
+                resourceScheduleManager.removeSchedulesForResource(ApiCommandResourceType.AutoScaleVmGroup, id);
+
                 logger.info("Successfully deleted autoscale vm group: {}", autoScaleVmGroupVO);
                 return success; // Successfull
             }
@@ -1231,6 +1240,22 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         return searchWrapper.search();
     }
 
+    @Override
+    public void validateMinMaxMembers(int minMembers, int maxMembers) {
+        if (minMembers <= 0) {
+            throw new InvalidParameterValueException(ApiConstants.MIN_MEMBERS + " is an invalid value: " + minMembers);
+        }
+
+        if (maxMembers <= 0) {
+            throw new InvalidParameterValueException(ApiConstants.MAX_MEMBERS + " is an invalid value: " + maxMembers);
+        }
+
+        if (minMembers > maxMembers) {
+            throw new InvalidParameterValueException(ApiConstants.MIN_MEMBERS + " (" + minMembers + ")cannot be greater than " + ApiConstants.MAX_MEMBERS + " (" +
+                    maxMembers + ")");
+        }
+    }
+
     @DB
     protected AutoScaleVmGroupVO checkValidityAndPersist(final AutoScaleVmGroupVO vmGroup, final List<Long> passedScaleUpPolicyIds,
         final List<Long> passedScaleDownPolicyIds) {
@@ -1249,18 +1274,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             ApiDBUtils.getAutoScaleVmGroupPolicyIds(vmGroup.getId(), currentScaleUpPolicyIds, currentScaleDownPolicyIds);
         }
 
-        if (minMembers <= 0) {
-            throw new InvalidParameterValueException(ApiConstants.MIN_MEMBERS + " is an invalid value: " + minMembers);
-        }
-
-        if (maxMembers <= 0) {
-            throw new InvalidParameterValueException(ApiConstants.MAX_MEMBERS + " is an invalid value: " + maxMembers);
-        }
-
-        if (minMembers > maxMembers) {
-            throw new InvalidParameterValueException(ApiConstants.MIN_MEMBERS + " (" + minMembers + ")cannot be greater than " + ApiConstants.MAX_MEMBERS + " (" +
-                maxMembers + ")");
-        }
+        validateMinMaxMembers(minMembers, maxMembers);
 
         if (interval <= 0) {
             throw new InvalidParameterValueException("interval is an invalid value: " + interval);
@@ -1341,10 +1355,10 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         AutoScaleVmGroupVO vmGroupVO = getEntityInDatabase(CallContext.current().getCallingAccount(), "AutoScale Vm Group", vmGroupId, autoScaleVmGroupDao);
         int currentInterval = vmGroupVO.getInterval();
 
-        boolean physicalParametersUpdate = (minMembers != null || maxMembers != null || (interval != null && interval != currentInterval) || CollectionUtils.isNotEmpty(scaleUpPolicyIds) || CollectionUtils.isNotEmpty(scaleDownPolicyIds));
+        boolean physicalParametersUpdate = ((interval != null && interval != currentInterval) || CollectionUtils.isNotEmpty(scaleUpPolicyIds) || CollectionUtils.isNotEmpty(scaleDownPolicyIds));
 
         if (physicalParametersUpdate && !vmGroupVO.getState().equals(AutoScaleVmGroup.State.DISABLED)) {
-            throw new InvalidParameterValueException("An AutoScale Vm Group can be updated with minMembers/maxMembers/Interval only when it is in disabled state");
+            throw new InvalidParameterValueException("An AutoScale Vm Group can be updated with Interval/Policies only when it is in disabled state");
         }
 
         if (StringUtils.isNotBlank(name)) {

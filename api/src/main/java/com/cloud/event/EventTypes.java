@@ -677,6 +677,7 @@ public class EventTypes {
     public static final String EVENT_AUTOSCALEVMGROUP_DISABLE = "AUTOSCALEVMGROUP.DISABLE";
     public static final String EVENT_AUTOSCALEVMGROUP_SCALEDOWN = "AUTOSCALEVMGROUP.SCALEDOWN";
     public static final String EVENT_AUTOSCALEVMGROUP_SCALEUP = "AUTOSCALEVMGROUP.SCALEUP";
+    public static final String EVENT_AUTOSCALEVMGROUP_SCHEDULE_UPDATE = "AUTOSCALEVMGROUP.SCHEDULE.UPDATE";
 
     public static final String EVENT_BAREMETAL_DHCP_SERVER_ADD = "PHYSICAL.DHCP.ADD";
     public static final String EVENT_BAREMETAL_DHCP_SERVER_DELETE = "PHYSICAL.DHCP.DELETE";
@@ -895,6 +896,7 @@ public class EventTypes {
         entityEventDetails.put(EVENT_VM_SCHEDULE_REBOOT, ResourceSchedule.class);
         entityEventDetails.put(EVENT_VM_SCHEDULE_FORCE_STOP, ResourceSchedule.class);
         entityEventDetails.put(EVENT_VM_SCHEDULE_FORCE_REBOOT, ResourceSchedule.class);
+        entityEventDetails.put(EVENT_AUTOSCALEVMGROUP_SCHEDULE_UPDATE, ResourceSchedule.class);
 
         // Generic Resource Schedule
         entityEventDetails.put(EVENT_SCHEDULE_CREATE, ResourceSchedule.class);

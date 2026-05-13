@@ -915,6 +915,12 @@ export default {
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/AutoScaleDownPolicyTab.vue')))
         },
         {
+          name: 'schedules',
+          resourceType: 'AutoScaleVmGroup',
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ResourceSchedules.vue'))),
+          show: () => { return 'listResourceSchedule' in store.getters.apis }
+        },
+        {
           name: 'events',
           resourceType: 'AutoScaleVmGroup',
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),

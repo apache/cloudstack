@@ -2241,6 +2241,7 @@
 "label.schedule": "Schedule",
 "label.scheduled": "Scheduled",
 "label.schedule.add": "Add schedule",
+"label.update.members": "Update members",
 "label.scheduled.backups": "Scheduled backups",
 "label.schedules": "Schedules",
 "label.scope": "Scope",

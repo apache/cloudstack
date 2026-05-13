@@ -130,6 +130,41 @@
           </a-radio-button>
         </a-radio-group>
       </a-form-item>
+      <a-row
+        v-if="resourceType === 'AutoScaleVmGroup'"
+        justify="space-between"
+      >
+        <a-col :span="11">
+          <a-form-item
+            name="minMembers"
+            ref="minMembers"
+          >
+            <template #label>
+              <tooltip-label :title="$t('label.minimum.members')" />
+            </template>
+            <a-input-number
+              v-model:value="form.minMembers"
+              :min="1"
+              style="width: 100%"
+            />
+          </a-form-item>
+        </a-col>
+        <a-col :span="11">
+          <a-form-item
+            name="maxMembers"
+            ref="maxMembers"
+          >
+            <template #label>
+              <tooltip-label :title="$t('label.maximum.members')" />
+            </template>
+            <a-input-number
+              v-model:value="form.maxMembers"
+              :min="1"
+              style="width: 100%"
+            />
+          </a-form-item>
+        </a-col>
+      </a-row>
       <a-form-item
         name="timezone"
         ref="timezone"
@@ -323,6 +358,9 @@ export default {
           { value: 'REBOOT', label: 'label.reboot' },
           { value: 'FORCE_STOP', label: 'label.force.stop' },
           { value: 'FORCE_REBOOT', label: 'label.force.reboot' }
+        ],
+        AutoScaleVmGroup: [
+          { value: 'UPDATE', label: 'label.update.members' }
         ]
       },
       periods: [
@@ -382,6 +420,8 @@ export default {
         schedule: '* * * * *',
         description: '',
         timezone: 'UTC',
+        minMembers: null,
+        maxMembers: null,
         startDate: '',
         endDate: '',
         enabled: true,
@@ -390,6 +430,8 @@ export default {
       this.rules = reactive({
         schedule: [{ type: 'string', required: true, message: this.$t('message.error.required.input') }],
         action: [{ type: 'string', required: true, message: this.$t('message.error.required.input') }],
+        minMembers: [{ required: this.resourceType === 'AutoScaleVmGroup', message: this.$t('message.error.required.input') }],
+        maxMembers: [{ required: this.resourceType === 'AutoScaleVmGroup', message: this.$t('message.error.required.input') }],
         timezone: [{ required: true, message: `${this.$t('message.error.select')}` }],
         startDate: [{ required: false, message: `${this.$t('message.error.select')}` }],
         endDate: [{ required: false, message: `${this.$t('message.error.select')}` }]
@@ -425,6 +467,8 @@ export default {
       this.resetForm()
       this.isEdit = true
       Object.assign(this.form, schedule)
+      this.form.minMembers = schedule?.details?.minmembers ? Number(schedule.details.minmembers) : null
+      this.form.maxMembers = schedule?.details?.maxmembers ? Number(schedule.details.maxmembers) : null
       // Some weird issue when we directly pass in the moment with tz object
       this.form.startDate = dayjs(schedule.startdate).tz(schedule.timezone)
       this.form.endDate = schedule.enddate ? dayjs(dayjs(schedule.enddate).tz(schedule.timezone)) : null
@@ -449,6 +493,10 @@ export default {
           enabled: values.enabled,
           startdate: (values.startDate) ? values.startDate.format(this.pattern) : null,
           enddate: (values.endDate) ? values.endDate.format(this.pattern) : null
+        }
+        if (this.resourceType === 'AutoScaleVmGroup') {
+          params['details[0].minmembers'] = values.minMembers
+          params['details[1].maxmembers'] = values.maxMembers
         }
         let command = null
         if (this.form.id === null || this.form.id === undefined) {

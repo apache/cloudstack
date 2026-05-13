@@ -58,10 +58,10 @@ public class CreateResourceScheduleCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ACTION, type = CommandType.STRING, required = true, description = "Action to take on the resource.")
     private String action;
 
-    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, required = false, description = "Start date from which the schedule becomes active. Defaults to current date plus 1 minute. Use format \"yyyy-MM-dd hh:mm:ss\"")
+    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, required = false, description = "Start date from which the schedule becomes active. Defaults to current date plus 1 minute. (Format \"yyyy-MM-dd hh:mm:ss\")")
     private Date startDate;
 
-    @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, required = false, description = "End date after which the schedule becomes inactive. Use format \"yyyy-MM-dd hh:mm:ss\"")
+    @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, required = false, description = "End date after which the schedule becomes inactive. (Format \"yyyy-MM-dd hh:mm:ss\")")
     private Date endDate;
 
     @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, required = false, description = "Enable schedule. Defaults to true")

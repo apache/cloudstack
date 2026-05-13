@@ -71,14 +71,14 @@ public class UpdateVMScheduleCmd extends BaseCmd {
             type = CommandType.DATE,
             required = false,
             description = "Start date from which the schedule becomes active"
-                    + "Use format \"yyyy-MM-dd hh:mm:ss\"")
+                    + "(Format \"yyyy-MM-dd hh:mm:ss\")")
     private Date startDate;
 
     @Parameter(name = ApiConstants.END_DATE,
             type = CommandType.DATE,
             required = false,
             description = "End date after which the schedule becomes inactive"
-                    + "Use format \"yyyy-MM-dd hh:mm:ss\"")
+                    + "(Format \"yyyy-MM-dd hh:mm:ss\")")
     private Date endDate;
 
     @Parameter(name = ApiConstants.ENABLED,

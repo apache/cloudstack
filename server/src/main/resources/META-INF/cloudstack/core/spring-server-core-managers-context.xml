@@ -376,6 +376,9 @@
     <bean id="VMScheduleWorker" class="org.apache.cloudstack.schedule.vm.VMScheduleWorker">
         <property name="asyncJobDispatcher" ref="ApiAsyncJobDispatcher" />
     </bean>
+    <bean id="AutoScaleScheduleWorker" class="org.apache.cloudstack.schedule.autoscale.AutoScaleScheduleWorker">
+        <property name="asyncJobDispatcher" ref="ApiAsyncJobDispatcher" />
+    </bean>
 
     <bean id="vnfTemplateManager" class="org.apache.cloudstack.storage.template.VnfTemplateManagerImpl" />
 
