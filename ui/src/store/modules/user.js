@@ -422,8 +422,7 @@ const user = {
         api('listLdapConfigurations').then(response => {
           const ldapEnable = (response.ldapconfigurationresponse.count > 0)
           commit('SET_LDAP', ldapEnable)
-        }).catch(error => {
-          reject(error)
+        }).catch(ignored => {
         })
 
         api('cloudianIsEnabled').then(response => {
@@ -551,7 +550,7 @@ const user = {
         }
       })
     },
-    UpdateConfiguration ({ commit }) {
+    UpdateLdapConfigurationFlag ({ commit }) {
       return new Promise((resolve, reject) => {
         api('listLdapConfigurations').then(response => {
           const ldapEnable = (response.ldapconfigurationresponse.count > 0)
