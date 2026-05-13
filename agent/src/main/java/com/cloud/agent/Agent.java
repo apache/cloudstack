@@ -176,7 +176,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
     long pingInterval = 0;
     AtomicInteger commandsInProgress = new AtomicInteger(0);
 
-    private static final AtomicBoolean RECONNECT_LOCK = new AtomicBoolean(false);
+    private final AtomicBoolean reconnectLock = new AtomicBoolean(false);
     boolean reconnectAllowed = true;
 
     //For time sensitive task, e.g. PingTask
@@ -626,7 +626,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
      *                       this is only "switch Management Server", it does not perform full Host Connect process.
      */
     protected void reconnect(Link link, String preferredHost, boolean forceReconnect) {
-        if (!RECONNECT_LOCK.compareAndSet(false, true)) {
+        if (!reconnectLock.compareAndSet(false, true)) {
             logger.warn("Reconnect is already running, exiting");
             return;
         }
@@ -691,7 +691,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                         skipTimeoutRef.set(true);
                     }
                 }
-                if(!skipTimeoutRef.get()) {
+                if (!skipTimeoutRef.get()) {
                     shell.getBackoffAlgorithm().waitBeforeRetry();
                 }
                 host = shell.getNextHost();
@@ -703,7 +703,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
             String msg = String.format("Connected to the host: %s (%s)", shell.getConnectedHost(), this.link);
             logger.info(msg);
         } finally {
-            RECONNECT_LOCK.set(false);
+            reconnectLock.set(false);
             logger.debug("Removed reconnect lock");
         }
     }
@@ -763,7 +763,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                 .map(IOException::getMessage)
                 .filter(BROKEN_PIPE_MSG::equalsIgnoreCase)
                 .isPresent();
-        if(rejectedByMs) {
+        if (rejectedByMs) {
             logger.warn("Attempted to re-connect to {}, but rejected" +
                     " due to 'agent.max.concurrent.new.connections' reached limit," +
                     " will try again", hostLog, e);
