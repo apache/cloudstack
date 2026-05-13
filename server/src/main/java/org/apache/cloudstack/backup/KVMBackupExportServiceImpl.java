@@ -139,9 +139,12 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
     VmWorkJobHandlerProxy jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
     private void verifyKVMBackupExportServiceSupported(Long zoneId) {
-        if (BackupFrameworkEnabled.value() && !StringUtils.equals("dummy", BackupProviderPlugin.valueIn(zoneId))) {
-            throw new CloudRuntimeException("Veeam-KVM integration can not be used along with the " + BackupProviderPlugin.valueIn(zoneId) +
-                    " backup provider. Either set backup.framework.enabled to false or set the Zone level config backup.framework.provider.plugin to \"dummy\".");
+        if (BackupFrameworkEnabled.value() &&
+                !StringUtils.equals("dummy", BackupProviderPlugin.valueIn(zoneId)) &&
+                !StringUtils.equals("veeam", BackupProviderPlugin.valueIn(zoneId))) {
+            throw new CloudRuntimeException("Veeam-KVM backups are disabled because the CloudStack Zone is configured to use the \"" +
+                    BackupProviderPlugin.valueIn(zoneId) + "\" backup provider. Acceptable \"backup.framework.provider.plugin\" " +
+                    "values are [\"veeam\", \"dummy\"]. Refer to documentation for more details on backup providers compatibility.");
         }
     }
 
