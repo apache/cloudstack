@@ -23,6 +23,7 @@ import com.cloud.agent.api.CheckConvertInstanceAnswer;
 import com.cloud.agent.api.CheckConvertInstanceCommand;
 import com.cloud.agent.api.CheckVolumeAnswer;
 import com.cloud.agent.api.CheckVolumeCommand;
+import com.cloud.agent.api.CleanupConvertedInstanceDisksCommand;
 import com.cloud.agent.api.ConvertInstanceAnswer;
 import com.cloud.agent.api.ConvertInstanceCommand;
 import com.cloud.agent.api.CopyRemoteVolumeAnswer;
@@ -1717,13 +1718,14 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             logger.debug("The host {}  is selected to execute the conversion of the " +
                     "instance {} from VMware to KVM ", convertHost, sourceVMName);
 
+            long importStartTime = System.currentTimeMillis();
+            importVMTask = importVmTasksManager.createImportVMTaskRecord(zone, owner, userId, displayName, vcenter, datacenterName, sourceVMName,
+                    convertHost, importHost);
+
             temporaryConvertLocation = selectInstanceConversionTemporaryLocation(
                     destinationCluster, convertHost, importHost, convertStoragePoolId, forceConvertToPool);
             List<StoragePoolVO> convertStoragePools = findInstanceConversionDestinationStoragePoolsInCluster(destinationCluster, serviceOffering, dataDiskOfferingMap, temporaryConvertLocation, forceConvertToPool);
 
-            long importStartTime = System.currentTimeMillis();
-            importVMTask = importVmTasksManager.createImportVMTaskRecord(zone, owner, userId, displayName, vcenter, datacenterName, sourceVMName,
-                    convertHost, importHost);
             importVmTasksManager.updateImportVMTaskStep(importVMTask, zone, owner, convertHost, importHost, null, CloningInstance);
 
             // sourceVMwareInstance could be a cloned instance from sourceVMName, of the sourceVMName itself if its powered off.
@@ -2214,26 +2216,44 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             throw new CloudRuntimeException(err);
         }
 
+        boolean cleanupConvertedDisks = false;
+        String convertedDisksPrefix = null;
         Answer importAnswer;
         try {
+            convertedDisksPrefix = ((ConvertInstanceAnswer)convertAnswer).getTemporaryConvertUuid();
             ImportConvertedInstanceCommand importCmd = new ImportConvertedInstanceCommand(
                     remoteInstanceTO, destinationStoragePools, temporaryConvertLocation,
-                    ((ConvertInstanceAnswer)convertAnswer).getTemporaryConvertUuid(), forceConvertToPool);
+                    convertedDisksPrefix, forceConvertToPool);
             importAnswer = agentManager.send(importHost.getId(), importCmd);
+
+            if (!importAnswer.getResult()) {
+                cleanupConvertedDisks = true;
+                String err = String.format(
+                        "The import process failed for instance %s from VMware to KVM on host %s: %s",
+                        sourceVM, importHost, importAnswer.getDetails());
+                logger.error(err);
+                throw new CloudRuntimeException(err);
+            }
         } catch (AgentUnavailableException | OperationTimedoutException e) {
+            cleanupConvertedDisks = true;
             String err = String.format(
                     "Could not send the import converted instance command to host %s due to: %s",
                     importHost, e.getMessage());
             logger.error(err, e);
             throw new CloudRuntimeException(err);
-        }
-
-        if (!importAnswer.getResult()) {
-            String err = String.format(
-                    "The import process failed for instance %s from VMware to KVM on host %s: %s",
-                    sourceVM, importHost, importAnswer.getDetails());
-            logger.error(err);
-            throw new CloudRuntimeException(err);
+        } finally {
+            if (cleanupConvertedDisks) {
+                logger.debug("Cleaning up the converted disks for the VM {} through " +
+                        "the conversion host {}", sourceVM, convertHost.getName());
+                CleanupConvertedInstanceDisksCommand cleanupCommand =
+                        new CleanupConvertedInstanceDisksCommand(temporaryConvertLocation, convertedDisksPrefix);
+                try {
+                    agentManager.send(convertHost.getId(), cleanupCommand);
+                } catch (AgentUnavailableException | OperationTimedoutException e) {
+                    logger.error("Error cleaning up converted disks for VM {} through the conversion host {}",
+                            sourceVM, convertHost.getName(), e);
+                }
+            }
         }
 
         return ((ImportConvertedInstanceAnswer) importAnswer).getConvertedInstance();
