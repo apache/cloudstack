@@ -180,4 +180,3 @@ class TestVpcFirewallRules(cloudstackTestCase):
         self.assertEqual(listed_rule.protocol.lower(), "tcp")
         self.assertEqual(int(listed_rule.startport), 19443)
         self.assertEqual(int(listed_rule.endport), 19443)
-
