@@ -849,7 +849,11 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
                        List<String> excludeTypes, List<Long> accountIds, String domainPath, Filter filter) {
         SearchBuilder<UserVmJoinVO> sb = createSearchBuilder();
         sb.and("hypervisorType", sb.entity().getHypervisorType(), Op.EQ);
-        sb.and("type", sb.entity().getUserVmType(), Op.NOTIN);
+        if (CollectionUtils.isNotEmpty(excludeTypes)) {
+            sb.and().op("typeNull", sb.entity().getUserVmType(), Op.NULL);
+            sb.or("type", sb.entity().getUserVmType(), Op.NOTIN);
+            sb.cp();
+        }
         boolean accountIdsNotEmpty = CollectionUtils.isNotEmpty(accountIds);
         boolean domainPathNotBlank = StringUtils.isNotBlank(domainPath);
         if (accountIdsNotEmpty || domainPathNotBlank) {
