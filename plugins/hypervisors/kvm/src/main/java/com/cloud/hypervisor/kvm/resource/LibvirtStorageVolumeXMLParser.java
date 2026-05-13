@@ -35,6 +35,26 @@ import org.xml.sax.SAXException;
 public class LibvirtStorageVolumeXMLParser {
     protected Logger logger = LogManager.getLogger(getClass());
 
+    public String getBackingFileNameIfExists(String volXML) {
+        try {
+            DocumentBuilder builder = ParserUtils.getSaferDocumentBuilderFactory().newDocumentBuilder();
+
+            InputSource is = new InputSource();
+            is.setCharacterStream(new StringReader(volXML));
+            Document doc = builder.parse(is);
+
+            Element rootElement = doc.getDocumentElement();
+            Element backingStore = (Element)rootElement.getElementsByTagName("backingStore").item(0);
+            if (backingStore != null) {
+                String[] paths = getTagValue("path", backingStore).split("/");
+                return paths[paths.length-1];
+            }
+        } catch (ParserConfigurationException | SAXException | IOException e) {
+            logger.error(e.toString(), e);
+        }
+        return null;
+    }
+
     public LibvirtStorageVolumeDef parseStorageVolumeXML(String volXML) {
         DocumentBuilder builder;
         try {
@@ -50,6 +70,7 @@ public class LibvirtStorageVolumeXMLParser {
             Element target = (Element)rootElement.getElementsByTagName("target").item(0);
             String format = getAttrValue("type", "format", target);
             Long capacity = Long.parseLong(getTagValue("capacity", rootElement));
+
             return new LibvirtStorageVolumeDef(VolName, capacity, LibvirtStorageVolumeDef.VolumeFormat.getFormat(format), null, null);
         } catch (ParserConfigurationException e) {
             logger.debug(e.toString());

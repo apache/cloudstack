@@ -507,6 +507,12 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         return parser.parseStoragePoolXML(poolDefXML);
     }
 
+    public String getBackingFileOfVolumeIfExists(StorageVol vol) throws LibvirtException {
+        String volDefXML = vol.getXMLDesc(0);
+        LibvirtStorageVolumeXMLParser parser = new LibvirtStorageVolumeXMLParser();
+        return parser.getBackingFileNameIfExists(volDefXML);
+    }
+
     public LibvirtStorageVolumeDef getStorageVolumeDef(Connect conn, StorageVol vol) throws LibvirtException {
         String volDefXML = vol.getXMLDesc(0);
         LibvirtStorageVolumeXMLParser parser = new LibvirtStorageVolumeXMLParser();
@@ -657,6 +663,16 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
     }
 
+    public Long getBackingFileSizes(StoragePool pool, StorageVol vol) throws LibvirtException {
+        long size = vol.getInfo().allocation;
+        String backingFileOfVolumeIfExists = getBackingFileOfVolumeIfExists(vol);
+        if (backingFileOfVolumeIfExists != null) {
+            StorageVol backingFile = getVolume(pool, backingFileOfVolumeIfExists);
+            size += getBackingFileSizes(pool, backingFile);
+        }
+        return size;
+    }
+
     @Override
     public KVMPhysicalDisk getPhysicalDisk(String volumeUuid, KVMStoragePool pool) {
         LibvirtStoragePool libvirtPool = (LibvirtStoragePool)pool;
@@ -665,8 +681,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             StorageVol vol = getVolume(libvirtPool.getPool(), volumeUuid);
             KVMPhysicalDisk disk;
             LibvirtStorageVolumeDef voldef = getStorageVolumeDef(libvirtPool.getPool().getConnect(), vol);
+            Long allSizes = getBackingFileSizes(libvirtPool.getPool(), vol);
             disk = new KVMPhysicalDisk(vol.getPath(), vol.getName(), pool);
-            disk.setSize(vol.getInfo().allocation);
+            disk.setSize(allSizes);
             disk.setVirtualSize(vol.getInfo().capacity);
 
             /**
