@@ -51,12 +51,10 @@ public class StorageProviderFactory {
             case NFS3:
                 UnifiedNASStrategy unifiedNASStrategy = new UnifiedNASStrategy(ontapStorage);
                 ComponentContext.inject(unifiedNASStrategy);
-                unifiedNASStrategy.setOntapStorage(ontapStorage);
                 return unifiedNASStrategy;
             case ISCSI:
                 UnifiedSANStrategy unifiedSANStrategy = new UnifiedSANStrategy(ontapStorage);
                 ComponentContext.inject(unifiedSANStrategy);
-                unifiedSANStrategy.setOntapStorage(ontapStorage);
                 return unifiedSANStrategy;
             default:
                 throw new CloudRuntimeException("Unsupported protocol: " + protocol);

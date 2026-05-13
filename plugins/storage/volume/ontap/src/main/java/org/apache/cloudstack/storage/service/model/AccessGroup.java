@@ -54,6 +54,7 @@ public class AccessGroup {
     public List<HostVO> getHostsToConnect() {
         return hostsToConnect;
     }
+
     public void setHostsToConnect(List<HostVO> hostsToConnect) {
         this.hostsToConnect = hostsToConnect;
     }
@@ -69,6 +70,7 @@ public class AccessGroup {
     public Scope getScope() {
         return scope;
     }
+
     public void setScope(Scope scope) {
         this.scope = scope;
     }

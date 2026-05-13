@@ -257,7 +257,7 @@ public abstract class StorageStrategy {
             }
             String jobUUID = jobResponse.getJob().getUuid();
 
-            Boolean jobSucceeded = jobPollForSuccess(jobUUID,10, 1);
+            Boolean jobSucceeded = jobPollForSuccess(jobUUID,10, 1000);
             if (!jobSucceeded) {
                 logger.error("Volume creation job failed for volume: " + volumeName);
                 throw new CloudRuntimeException("Volume creation job failed for volume: " + volumeName);
@@ -341,7 +341,7 @@ public abstract class StorageStrategy {
         try {
             // TODO: Implement lun and file deletion, if any, before deleting the volume
             JobResponse jobResponse = volumeFeignClient.deleteVolume(authHeader, volume.getUuid());
-            Boolean jobSucceeded = jobPollForSuccess(jobResponse.getJob().getUuid(),10, 1);
+            Boolean jobSucceeded = jobPollForSuccess(jobResponse.getJob().getUuid(), 10, 1000);
             if (!jobSucceeded) {
                 logger.error("Volume deletion job failed for volume: " + volume.getName());
                 throw new CloudRuntimeException("Volume deletion job failed for volume: " + volume.getName());
@@ -642,10 +642,10 @@ public abstract class StorageStrategy {
      *
      * @param jobUUID          UUID of the ONTAP job to poll
      * @param maxRetries       maximum number of poll attempts
-     * @param sleepTimeInSecs  seconds to sleep between poll attempts
+     * @param sleepTimeInMilliSecs  seconds to sleep between poll attempts
      * @return true if the job completed successfully
      */
-    public Boolean jobPollForSuccess(String jobUUID, int maxRetries, int sleepTimeInSecs) {
+    public Boolean jobPollForSuccess(String jobUUID, int maxRetries, int sleepTimeInMilliSecs) {
         //Create URI for GET Job API
         int jobRetryCount = 0;
         Job jobResp = null;
@@ -669,7 +669,7 @@ public abstract class StorageStrategy {
                 }
 
                 jobRetryCount++;
-                Thread.sleep(OntapStorageConstants.CREATE_VOLUME_CHECK_SLEEP_TIME);
+                Thread.sleep(sleepTimeInMilliSecs);
             }
             if (jobResp == null || !jobResp.getState().equals(OntapStorageConstants.JOB_SUCCESS)) {
                 return false;
