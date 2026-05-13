@@ -22,8 +22,6 @@ import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -134,88 +132,6 @@ import java.util.Base64;
 import java.util.stream.Collectors;
 
 
-/**
- * NetworkExtensionElement is a network plugin that delegates all network
- * configuration to an external script via a registered {@link Extension} of
- * type {@code NetworkOrchestrator}.
- *
- * <h3>Script invocation model</h3>
- * The script is called with a command name and optional CLI arguments.
- * Two JSON blobs are always forwarded as named CLI arguments:
- * <ul>
- *   <li>{@value #ARG_PHYSICAL_NETWORK_EXTENSION_DETAILS} {@code <json>} – all
- *       details stored in {@code extension_resource_map_details} when the
- *       extension was registered with the physical network (connection info,
- *       host list, credentials, etc.).  The script owns the schema.</li>
- *   <li>{@value #ARG_NETWORK_EXTENSION_DETAILS} {@code <json>} – the
- *       per-network JSON blob stored in {@code network_details} under key
- *       {@value #NETWORK_DETAIL_EXTENSION_DETAILS}.  Populated by the
- *       script's {@code ensure-network-device} response and updated on
- *       failover (e.g. selected host, namespace, segment ID).</li>
- * </ul>
- *
- * <h3>Script resolution</h3>
- * The script is resolved from the extension path set when the extension was
- * created.  Lookup order (first match wins):
- * <ol>
- *   <li>{@code <extensionPath>/<extensionName>.sh} — preferred convention,
- *       e.g. for an extension named {@code network-extension} the script is
- *       {@code network-extension.sh}.</li>
- *   <li>{@code <extensionPath>} itself, if it is a file and is executable.</li>
- * </ol>
- *
- * <h3>Physical-network extension details</h3>
- * Any key/value pairs stored in {@code extension_resource_map_details} at
- * registration time are passed verbatim as a JSON object.  There are no
- * pre-defined keys — the user and the script agree on the schema.  The only
- * special treatment is that keys named {@code password} or {@code sshkey} are
- * redacted in log output.
- *
- * <p>Two well-known optional keys control which host network interfaces the
- * wrapper script uses to create bridges and veth pairs:</p>
- * <ul>
- *   <li>{@code guest.network.device} — host NIC for guest (internal) traffic;
- *       defaults to {@code eth1} when absent.</li>
- *   <li>{@code public.network.device} — host NIC for public (NAT/external)
- *       traffic; defaults to {@code eth1} when absent.</li>
- * </ul>
- *
- * <p>Example registration for a KVM-namespace backend:</p>
- * <pre>
- *   cmk registerExtension id=&lt;ext-uuid&gt; resourcetype=PhysicalNetwork \
- *       resourceid=&lt;phys-uuid&gt; \
- *       details[0].key=hosts                details[0].value=192.168.1.10,192.168.1.11 \
- *       details[1].key=port                 details[1].value=22 \
- *       details[2].key=username             details[2].value=root \
- *       details[3].key=sshkey               details[3].value="$(cat ~/.ssh/id_rsa)" \
- *       details[4].key=guest.network.device details[4].value=eth1 \
- *       details[5].key=public.network.device details[5].value=eth1
- * </pre>
- *
- * <h3>Per-network extension details</h3>
- * On first {@code implement}, the script is called with
- * {@code ensure-network-device}.  The script selects a host (e.g. from the
- * {@code hosts} list in the physical-network details), checks it is reachable,
- * and prints a JSON object to stdout.  CloudStack stores this verbatim in
- * {@code network_details} under key {@value #NETWORK_DETAIL_EXTENSION_DETAILS}
- * and forwards it on every subsequent call via
- * {@value #ARG_NETWORK_EXTENSION_DETAILS}.
- *
- * <p>Example per-network details (KVM-namespace backend):</p>
- * <pre>{"host":"192.168.1.10","namespace":"cs-net-42"}</pre>
- *
- * <h3>Network capabilities</h3>
- * When creating the extension, set detail {@code network.service.capabilities} to a
- * JSON object describing the services and their capabilities:
- * <pre>
- * {
- *   "services": ["SourceNat", "StaticNat", "PortForwarding", "Firewall"],
- *   "capabilities": {
- *     "SourceNat": { "SupportedSourceNatTypes": "peraccount", "RedundantRouter": "false" }
- *   }
- * }
- * </pre>
- */
 public class NetworkExtensionElement extends AdapterBase implements
         NetworkElement, SourceNatServiceProvider, StaticNatServiceProvider,
         PortForwardingServiceProvider, IpDeployer, NetworkCustomActionProvider,
@@ -283,14 +199,15 @@ public class NetworkExtensionElement extends AdapterBase implements
 
     // ---- Script argument names ----
 
-    /** CLI argument carrying physical-network extension details as a JSON object. */
-    public static final String ARG_PHYSICAL_NETWORK_EXTENSION_DETAILS = "--physical-network-extension-details";
+    public static final String ARG_PHYSICAL_NETWORK_EXTENSION_DETAILS = "physical-network-extension-details";
+    public static final String ARG_NETWORK_EXTENSION_DETAILS = "network-extension-details";
+    public static final String ARG_PAYLOAD = "payload";
+    public static final String ARG_ACTION_PARAMS = "action-params";
 
-    /** CLI argument carrying per-network opaque JSON blob. */
-    public static final String ARG_NETWORK_EXTENSION_DETAILS = "--network-extension-details";
+    public static final int DEFAULT_SCRIPT_TIMEOUT_SECONDS = 60;
 
-    /** CLI argument carrying per-action parameters as a JSON object. */
-    public static final String ARG_ACTION_PARAMS = "--action-params";
+    public static final int EXIT_CODE_SUCCESS = 0;
+    public static final int EXIT_CODE_FAILURE = -1;
 
     // ---- Script command names ----
 
@@ -324,6 +241,7 @@ public class NetworkExtensionElement extends AdapterBase implements
     public static final String CMD_SHUTDOWN_VPC = "shutdown-vpc";
     public static final String CMD_UPDATE_VPC_SOURCE_NAT_IP = "update-vpc-source-nat-ip";
     public static final String CMD_APPLY_NETWORK_ACL = "apply-network-acl";
+    public static final String CMD_CUSTOM_ACTION = "custom-action";
 
     // ---- Network detail key ----
 
@@ -490,21 +408,18 @@ public class NetworkExtensionElement extends AdapterBase implements
 
         String vlanId = getVlanId(network);
 
-        // Build common vpc/network args
-        List<String> vpcArgs = getVpcIdArgs(network);
-
         // Step 2: Create the network on the device.
-        List<String> implArgs = new ArrayList<>();
-        implArgs.add("--network-id");   implArgs.add(String.valueOf(network.getId()));
-        implArgs.add("--vlan");         implArgs.add(safeStr(vlanId));
-        implArgs.add("--gateway");      implArgs.add(safeStr(network.getGateway()));
-        implArgs.add("--cidr");         implArgs.add(safeStr(network.getCidr()));
-        implArgs.add("--extension-ip"); implArgs.add(safeStr(extensionIp));
-        implArgs.addAll(vpcArgs);
+        JsonObject implementPayload = new JsonObject();
+        implementPayload.addProperty("network_id", String.valueOf(network.getId()));
+        implementPayload.addProperty("vlan", safeStr(vlanId));
+        implementPayload.addProperty("gateway", safeStr(network.getGateway()));
+        implementPayload.addProperty("cidr", safeStr(network.getCidr()));
+        implementPayload.addProperty("extension_ip", safeStr(extensionIp));
+        addVpcIdToPayload(implementPayload, network);
 
-        Pair<Boolean, String> result = executeScriptAndReturnOutput(network, CMD_IMPLEMENT_NETWORK, implArgs.toArray(new String[0]));
+        Pair<Integer, String> result = executeScriptAndReturnOutput(network, CMD_IMPLEMENT_NETWORK, implementPayload);
 
-        if (!result.first()) {
+        if (result.first() != EXIT_CODE_SUCCESS) {
             return false;
         }
 
@@ -565,17 +480,6 @@ public class NetworkExtensionElement extends AdapterBase implements
         return true;
     }
 
-    /**
-     * Returns {@code ["--nic-uuid", "<uuid>"]} when the extension so the script
-     * can use the same UUID when needed.
-     */
-    private List<String> getNicUuidArgs(NicProfile nic) {
-        if (nic == null || nic.getUuid() == null || nic.getUuid().isBlank()) {
-            return Collections.emptyList();
-        }
-        return List.of("--nic-uuid", nic.getUuid());
-    }
-
     private void applyNicUpdateFromNetwork(Network network, NicProfile nic) {
         if (nic == null) {
             return;
@@ -605,11 +509,11 @@ public class NetworkExtensionElement extends AdapterBase implements
     public boolean shutdown(Network network, ReservationContext context, boolean cleanup)
             throws ConcurrentOperationException, ResourceUnavailableException {
         logger.info("Shutting down network extension for network {}", network.getId());
-        List<String> args = new ArrayList<>();
-        args.add("--network-id"); args.add(String.valueOf(network.getId()));
-        args.add("--vlan");       args.add(safeStr(getVlanId(network)));
-        args.addAll(getVpcIdArgs(network));
-        boolean result = executeScript(network, CMD_SHUTDOWN_NETWORK, args.toArray(new String[0]));
+        JsonObject payload = new JsonObject();
+        payload.addProperty("network_id", String.valueOf(network.getId()));
+        payload.addProperty("vlan", safeStr(getVlanId(network)));
+        addVpcIdToPayload(payload, network);
+        boolean result = executeScript(network, CMD_SHUTDOWN_NETWORK, payload);
         if (result) {
             // Remove stored per-network extension details (e.g. namespace). For VPC-backed networks
             // the namespace is named cs-vpc-<vpcId>, stored in the extension details. Removing the
@@ -627,14 +531,14 @@ public class NetworkExtensionElement extends AdapterBase implements
     public boolean destroy(Network network, ReservationContext context)
             throws ConcurrentOperationException, ResourceUnavailableException {
         logger.info("Destroying network extension for network {}", network.getId());
-        List<String> args = new ArrayList<>();
-        args.add("--network-id"); args.add(String.valueOf(network.getId()));
-        args.add("--vlan");       args.add(safeStr(getVlanId(network)));
-        args.addAll(getVpcIdArgs(network));
+        JsonObject payload = new JsonObject();
+        payload.addProperty("network_id", String.valueOf(network.getId()));
+        payload.addProperty("vlan", safeStr(getVlanId(network)));
+        addVpcIdToPayload(payload, network);
         // For both isolated and VPC tier networks, use destroy-network.
         // For VPC tiers, the script preserves the shared namespace;
         // the VPC namespace is removed only when shutdownVpc() calls shutdown-vpc.
-        boolean result = executeScript(network, CMD_DESTROY_NETWORK, args.toArray(new String[0]));
+        boolean result = executeScript(network, CMD_DESTROY_NETWORK, payload);
         if (result) {
             cleanupPlaceholderNicIp(network, context);
             networkDetailsDao.removeDetail(network.getId(), NETWORK_DETAIL_EXTENSION_DETAILS);
@@ -741,39 +645,22 @@ public class NetworkExtensionElement extends AdapterBase implements
         Extension extension = resolveExtension(network);
         File scriptFile = resolveScriptFile(network, extension);
 
-        String physicalNetworkDetailsJson = buildPhysicalNetworkDetailsJson(network.getPhysicalNetworkId(), extension);
-
-        List<String> cmdLine = new ArrayList<>();
-        cmdLine.add(scriptFile.getAbsolutePath());
-        cmdLine.add(CMD_ENSURE_NETWORK_DEVICE);
-        cmdLine.add("--network-id");
-        cmdLine.add(String.valueOf(network.getId()));
-        cmdLine.add("--vlan");
-        cmdLine.add(safeStr(getVlanId(network)));
-        cmdLine.add("--zone-id");
-        cmdLine.add(String.valueOf(network.getDataCenterId()));
-        // Pass VPC ID so the script can derive the correct namespace (cs-net-<vpcId>)
-        if (network.getVpcId() != null) {
-            cmdLine.add("--vpc-id");
-            cmdLine.add(String.valueOf(network.getVpcId()));
-        }
-        cmdLine.add("--current-details");
-        cmdLine.add(currentDetails);
-        cmdLine.add(ARG_PHYSICAL_NETWORK_EXTENSION_DETAILS);
-        cmdLine.add(physicalNetworkDetailsJson);
-        cmdLine.add(ARG_NETWORK_EXTENSION_DETAILS);
-        cmdLine.add(currentDetails);
+        JsonObject argsPayload = new JsonObject();
+        argsPayload.addProperty("network_id", String.valueOf(network.getId()));
+        argsPayload.addProperty("vlan", safeStr(getVlanId(network)));
+        argsPayload.addProperty("zone_id", String.valueOf(network.getDataCenterId()));
+        argsPayload.addProperty("current_details", currentDetails);
+        addVpcIdToPayload(argsPayload, network);
+        JsonObject payload = buildNetworkScriptPayload(network, argsPayload, extension);
 
         try {
-            ProcessBuilder pb = new ProcessBuilder(cmdLine);
-            pb.redirectErrorStream(true);
-            Process process = pb.start();
-            String output = new String(process.getInputStream().readAllBytes()).trim();
-            int exitCode = process.waitFor();
+            Pair<Integer, String> result = executeScriptWithFilePayload(scriptFile,
+                    CMD_ENSURE_NETWORK_DEVICE, payload, "Network extension");
+            String output = result.second() != null ? result.second() : "";
 
-            if (exitCode != 0) {
+            if (result.first() != EXIT_CODE_SUCCESS) {
                 logger.warn("ensure-network-device exited {} for network {} — keeping current details",
-                        exitCode, network.getId());
+                        -1, network.getId());
                 if ("{}".equals(currentDetails)) {
                     networkDetailsDao.addDetail(network.getId(), NETWORK_DETAIL_EXTENSION_DETAILS, "{}", false);
                 }
@@ -864,19 +751,19 @@ public class NetworkExtensionElement extends AdapterBase implements
                 publicCidr = null;
             }
 
-            List<String> args = new ArrayList<>();
-            args.add("--network-id");         args.add(String.valueOf(network.getId()));
-            args.add("--vlan");               args.add(safeStr(vlanId));
-            args.add("--public-ip");          args.add(ip.getAddress().addr());
-            args.add("--source-nat");         args.add(String.valueOf(isSourceNat));
-            args.add("--gateway");            args.add(safeStr(network.getGateway()));
-            args.add("--cidr");               args.add(safeStr(network.getCidr()));
-            args.add("--public-gateway");     args.add(safeStr(publicGateway));
-            args.add("--public-cidr");        args.add(safeStr(publicCidr));
-            args.add("--public-vlan");        args.add(publicVlanTag);
-            args.addAll(getVpcIdArgs(network));
+            JsonObject payload = new JsonObject();
+            payload.addProperty("network_id", String.valueOf(network.getId()));
+            payload.addProperty("vlan", safeStr(vlanId));
+            payload.addProperty("public_ip", ip.getAddress().addr());
+            payload.addProperty("source_nat", String.valueOf(isSourceNat));
+            payload.addProperty("gateway", safeStr(network.getGateway()));
+            payload.addProperty("cidr", safeStr(network.getCidr()));
+            payload.addProperty("public_gateway", safeStr(publicGateway));
+            payload.addProperty("public_cidr", safeStr(publicCidr));
+            payload.addProperty("public_vlan", publicVlanTag);
+            addVpcIdToPayload(payload, network);
 
-             boolean result = executeScript(network, action, args.toArray(new String[0]));
+             boolean result = executeScript(network, action, payload);
              if (!result) {
                  throw new ResourceUnavailableException(
                          "Failed to " + action + " for IP " + ip.getAddress().addr(),
@@ -924,22 +811,20 @@ public class NetworkExtensionElement extends AdapterBase implements
         }
         logger.info("Applying {} static NAT rules for network {}", rules.size(), config.getId());
         String vlanId = getVlanId(config);
-        List<String> vpcArgs = getVpcIdArgs(config);
-
         for (StaticNat rule : rules) {
             String action = rule.isForRevoke() ? CMD_DELETE_STATIC_NAT : CMD_ADD_STATIC_NAT;
             String publicCidr = getPublicCidr(rule.getSourceIpAddressId());
             String publicVlanTag = getPublicVlanTag(rule.getSourceIpAddressId());
 
-            List<String> args = new ArrayList<>();
-            args.add("--network-id");        args.add(String.valueOf(config.getId()));
-            args.add("--vlan");              args.add(safeStr(vlanId));
-            args.add("--public-ip");         args.add(getIpAddress(rule.getSourceIpAddressId()));
-            args.add("--public-cidr");       args.add(safeStr(publicCidr));
-            args.add("--public-vlan");       args.add(publicVlanTag);
-            args.add("--private-ip");        args.add(safeStr(rule.getDestIpAddress()));
-            args.addAll(vpcArgs);
-            boolean result = executeScript(config, action, args.toArray(new String[0]));
+            JsonObject payload = new JsonObject();
+            payload.addProperty("network_id", String.valueOf(config.getId()));
+            payload.addProperty("vlan", safeStr(vlanId));
+            payload.addProperty("public_ip", getIpAddress(rule.getSourceIpAddressId()));
+            payload.addProperty("public_cidr", safeStr(publicCidr));
+            payload.addProperty("public_vlan", publicVlanTag);
+            payload.addProperty("private_ip", safeStr(rule.getDestIpAddress()));
+            addVpcIdToPayload(payload, config);
+            boolean result = executeScript(config, action, payload);
             if (!result) {
                 throw new ResourceUnavailableException("Failed to " + action + " for static NAT rule",
                         Network.class, config.getId());
@@ -961,8 +846,6 @@ public class NetworkExtensionElement extends AdapterBase implements
         }
         logger.info("Applying {} port forwarding rules for network {}", rules.size(), network.getId());
         String vlanId = getVlanId(network);
-        List<String> vpcArgs = getVpcIdArgs(network);
-
         for (PortForwardingRule rule : rules) {
             boolean isRevoke = rule.getState() == FirewallRule.State.Revoke;
             String action = isRevoke ? CMD_DELETE_PORT_FORWARD : CMD_ADD_PORT_FORWARD;
@@ -971,19 +854,19 @@ public class NetworkExtensionElement extends AdapterBase implements
             String publicCidr  = getPublicCidr(rule.getSourceIpAddressId());
             String publicVlanTag = getPublicVlanTag(rule.getSourceIpAddressId());
 
-            List<String> args = new ArrayList<>();
-            args.add("--network-id");        args.add(String.valueOf(network.getId()));
-            args.add("--vlan");              args.add(safeStr(vlanId));
-            args.add("--public-ip");         args.add(getIpAddress(rule.getSourceIpAddressId()));
-            args.add("--public-cidr");       args.add(safeStr(publicCidr));
-            args.add("--public-vlan");       args.add(publicVlanTag);
-            args.add("--public-port");       args.add(safeStr(publicPort));
-            args.add("--private-ip");        args.add(safeStr(rule.getDestinationIpAddress() != null
+            JsonObject payload = new JsonObject();
+            payload.addProperty("network_id", String.valueOf(network.getId()));
+            payload.addProperty("vlan", safeStr(vlanId));
+            payload.addProperty("public_ip", getIpAddress(rule.getSourceIpAddressId()));
+            payload.addProperty("public_cidr", safeStr(publicCidr));
+            payload.addProperty("public_vlan", publicVlanTag);
+            payload.addProperty("public_port", safeStr(publicPort));
+            payload.addProperty("private_ip", safeStr(rule.getDestinationIpAddress() != null
                     ? rule.getDestinationIpAddress().addr() : null));
-            args.add("--private-port");      args.add(safeStr(privatePort));
-            args.add("--protocol");          args.add(safeStr(rule.getProtocol()));
-            args.addAll(vpcArgs);
-            boolean result = executeScript(network, action, args.toArray(new String[0]));
+            payload.addProperty("private_port", safeStr(privatePort));
+            payload.addProperty("protocol", safeStr(rule.getProtocol()));
+            addVpcIdToPayload(payload, network);
+            boolean result = executeScript(network, action, payload);
             if (!result) {
                 throw new ResourceUnavailableException("Failed to " + action + " for port forwarding rule",
                         Network.class, network.getId());
@@ -994,67 +877,15 @@ public class NetworkExtensionElement extends AdapterBase implements
 
     // ---- Script execution ----
 
-    /**
-     * Executes the network-extension.sh script with the given command and arguments.
-     *
-     * <p>Two JSON blobs are always appended as named CLI arguments:</p>
-     * <ul>
-     *   <li>{@value #ARG_PHYSICAL_NETWORK_EXTENSION_DETAILS} {@code <json>} – all
-     *       {@code extension_resource_map_details} for this extension on the physical
-     *       network.  Sensitive keys (password, sshkey) are included but redacted in
-     *       log output.</li>
-     *   <li>{@value #ARG_NETWORK_EXTENSION_DETAILS} {@code <json>} – the per-network
-     *       JSON blob from {@code network_details} ({@code {}} if not yet set).</li>
-     * </ul>
-     */
-    protected boolean executeScript(Network network, String command, String... args) {
-        return executeScriptAndReturnOutput(network, command, args).first();
+    protected boolean executeScript(Network network, String command, JsonObject argsPayload) {
+        return executeScriptAndReturnOutput(network, command, argsPayload).first() == 0;
     }
 
-    protected Pair<Boolean, String> executeScriptAndReturnOutput(Network network, String command, String... args) {
-        Extension extension = resolveExtension(network);
-        File scriptFile = resolveScriptFile(network, extension);
-
+    protected Pair<Integer, String> executeScriptAndReturnOutput(Network network, String command, JsonObject argsPayload) {
         ensureExtensionDetails(network);
-
-        String physicalNetworkDetailsJson = buildPhysicalNetworkDetailsJson(network.getPhysicalNetworkId(), extension);
-        String networkExtensionDetailsJson = getNetworkExtensionDetailsJson(network);
-
-        // Log the JSON blobs so we can diagnose missing-argument issues in runtime logs
-        logger.debug("Physical network details JSON: {}", physicalNetworkDetailsJson);
-        logger.debug("Network extension details JSON: {}", networkExtensionDetailsJson);
-
-        List<String> cmdLine = new ArrayList<>();
-        cmdLine.add(scriptFile.getAbsolutePath());
-        cmdLine.add(command);
-        cmdLine.addAll(Arrays.asList(args));
-        cmdLine.add(ARG_PHYSICAL_NETWORK_EXTENSION_DETAILS);
-        cmdLine.add(physicalNetworkDetailsJson);
-        cmdLine.add(ARG_NETWORK_EXTENSION_DETAILS);
-        cmdLine.add(networkExtensionDetailsJson);
-
-        logger.debug("Executing network extension script: {}", String.join(" ", cmdLine));
-
-        try {
-            ProcessBuilder pb = new ProcessBuilder(cmdLine);
-            pb.redirectErrorStream(true);
-            Process process = pb.start();
-            byte[] output = process.getInputStream().readAllBytes();
-            int exitCode = process.waitFor();
-
-            String outputStr = new String(output).trim();
-            if (!outputStr.isEmpty()) {
-                logger.debug("Script output: {}", outputStr);
-            }
-            if (exitCode != 0) {
-                logger.error("Network extension script failed with exit code {}: {}", exitCode, outputStr);
-                return new Pair<>(false, outputStr);
-            }
-            return new Pair<>(true, outputStr);
-        } catch (Exception e) {
-            logger.error("Failed to execute network extension script: {}", e.getMessage(), e);
-            throw new CloudRuntimeException("Failed to execute network extension script", e);
-        }
+        Extension extension = resolveExtension(network);
+        JsonObject payload = buildNetworkScriptPayload(network, argsPayload, extension);
+        return executeScriptWithFilePayload(network, command, payload);
     }
 
     private JsonObject parseJsonOutput(String outputStr) {
@@ -1074,11 +905,28 @@ public class NetworkExtensionElement extends AdapterBase implements
         }
     }
 
-    private String getJsonString(JsonObject jsonObject, String key) {
-        if (jsonObject == null || StringUtils.isBlank(key) || !jsonObject.has(key)) {
+    private String getJsonString(JsonObject jsonObject, String keyPath) {
+        if (jsonObject == null || StringUtils.isBlank(keyPath)) {
             return null;
         }
-        JsonElement value = jsonObject.get(key);
+        JsonElement value = jsonObject.has(keyPath) ? jsonObject.get(keyPath) : null;
+        if (value == null) {
+            JsonElement current = jsonObject;
+            String[] parts = keyPath.split("\\.");
+            for (String part : parts) {
+                if (current == null || !current.isJsonObject()) {
+                    current = null;
+                    break;
+                }
+                JsonObject currentObj = current.getAsJsonObject();
+                if (!currentObj.has(part)) {
+                    current = null;
+                    break;
+                }
+                current = currentObj.get(part);
+            }
+            value = current;
+        }
         if (value == null || value.isJsonNull()) {
             return null;
         }
@@ -1125,25 +973,53 @@ public class NetworkExtensionElement extends AdapterBase implements
         }
     }
 
-    /**
-     * Writes a potentially large payload to a temporary file and passes the file path
-     * to the extension script via {@code payloadArgName}. This avoids argv size limits
-     * for multi-MB payloads.
-     */
-    protected boolean executeScriptWithFilePayload(Network network, String command,
-            String payloadArgName, String payload, String... args) {
+    protected Pair<Integer, String> executeScriptWithFilePayload(Network network, String command, JsonObject payload) {
+        Extension extension = resolveExtension(network);
+        File scriptFile = resolveScriptFile(network, extension);
+        return executeScriptWithFilePayload(scriptFile, command, payload, "Network extension");
+    }
+
+    private Pair<Integer, String> executeScriptWithFilePayload(File scriptFile, String command,
+            JsonObject payload, String logPrefix) {
         File payloadFile = null;
         try {
             payloadFile = File.createTempFile("cs-extnet-" + command + "-", ".payload");
-            logger.debug("Writing payload {} to payload file {}", payload, payloadFile);
-            Files.writeString(payloadFile.toPath(), payload != null ? payload : "", StandardCharsets.UTF_8);
+            String payloadJson = payload != null ? new Gson().toJson(payload) : "{}";
+            logger.debug("Writing payload to payload file {}", payloadFile);
+            Files.writeString(payloadFile.toPath(), payloadJson, StandardCharsets.UTF_8);
 
-            List<String> cmdArgs = new ArrayList<>();
-            cmdArgs.addAll(Arrays.asList(args));
-            cmdArgs.add(payloadArgName);
-            cmdArgs.add(payloadFile.getAbsolutePath());
+            List<String> cmdLine = new ArrayList<>();
+            cmdLine.add(scriptFile.getAbsolutePath());
+            cmdLine.add(command);
+            cmdLine.add(payloadFile.getAbsolutePath());
+            cmdLine.add(String.valueOf(DEFAULT_SCRIPT_TIMEOUT_SECONDS));
 
-            return executeScript(network, command, cmdArgs.toArray(new String[0]));
+            logger.debug("Executing {} script: {}", logPrefix, String.join(" ", cmdLine));
+
+            ProcessBuilder processBuilder = new ProcessBuilder(cmdLine);
+            processBuilder.redirectErrorStream(true);
+            Process process = processBuilder.start();
+            byte[] output = process.getInputStream().readAllBytes();
+            int exitCode = process.waitFor();
+
+            String outputStr = new String(output).trim();
+            if (!outputStr.isEmpty()) {
+                logger.debug("Script output: {}", outputStr);
+            }
+
+            if (exitCode != EXIT_CODE_SUCCESS) {
+                logger.error("{} script {} failed with exit code {}: {}", logPrefix, command, exitCode, outputStr);
+                return new Pair<>(exitCode, outputStr);
+            }
+
+            JsonObject outputJson = parseJsonOutput(outputStr);
+            String status = outputJson != null ? getJsonString(outputJson, "status") : null;
+            if (StringUtils.isNotBlank(status) && !"success".equalsIgnoreCase(status)) {
+                logger.error("{} script {} returned non-success status '{}': {}", logPrefix, command, status, outputStr);
+                return new Pair<>(EXIT_CODE_FAILURE, outputStr);
+            }
+
+            return new Pair<>(EXIT_CODE_SUCCESS, outputStr);
         } catch (Exception e) {
             throw new CloudRuntimeException(
                     String.format("Failed preparing payload file for command %s", command), e);
@@ -1151,6 +1027,27 @@ public class NetworkExtensionElement extends AdapterBase implements
             if (payloadFile != null && payloadFile.exists() && !payloadFile.delete()) {
                 payloadFile.deleteOnExit();
             }
+        }
+    }
+
+    private JsonObject buildNetworkScriptPayload(Network network, JsonObject argsPayload, Extension extension) {
+        JsonObject payload = new JsonObject();
+        payload.add(ARG_PHYSICAL_NETWORK_EXTENSION_DETAILS,
+                buildPhysicalNetworkExtensionDetailsPayload(network.getPhysicalNetworkId(), extension));
+        payload.add(ARG_NETWORK_EXTENSION_DETAILS, buildNetworkExtensionDetailsPayload(network));
+        payload.add(ARG_PAYLOAD, argsPayload != null ? argsPayload : new JsonObject());
+        return payload;
+    }
+
+    private void addVpcIdToPayload(JsonObject payload, Network network) {
+        if (payload != null && network != null && network.getVpcId() != null) {
+            payload.addProperty("vpc_id", String.valueOf(network.getVpcId()));
+        }
+    }
+
+    private void addNicUuidToPayload(JsonObject payload, NicProfile nic) {
+        if (payload != null && nic != null && StringUtils.isNotBlank(nic.getUuid())) {
+            payload.addProperty("nic_uuid", nic.getUuid());
         }
     }
 
@@ -1184,56 +1081,82 @@ public class NetworkExtensionElement extends AdapterBase implements
         return details;
     }
 
-
     /**
-     * Returns {@code ["--vpc-id", "<vpcId>"]} when the network belongs to a VPC,
-     * or an empty list otherwise.  Appended to every script invocation so the
-     * wrapper script can derive the correct namespace (cs-net-&lt;vpcId&gt;).
+     * Builds the physical-network extension details as a {@link JsonObject}.
+     * Includes all {@code extension_resource_map_details} for the extension on the
+     * physical network, enriched with physical-network metadata fields.
      */
-    private List<String> getVpcIdArgs(Network network) {
-        if (network.getVpcId() != null) {
-            return List.of("--vpc-id", String.valueOf(network.getVpcId()));
-        }
-        return List.of();
-    }
-
-    /**
-     * Serialises the physical-network extension details to a compact JSON object string.
-     */
-    private String buildPhysicalNetworkDetailsJson(Long physicalNetworkId, Extension extension) {
-        return mapToJson(buildPhysicalNetworkDetailsMap(physicalNetworkId, extension));
-    }
-
-    /**
-     * Reads the per-network JSON blob from {@code network_details}
-     * (returns {@code {}} if not yet set).
-     */
-    private String getNetworkExtensionDetailsJson(Network network) {
-        if (network.getVpcId() != null) {
-            return getVpcExtensionDetailsJson(network.getVpcId());
-        } else {
-            Map<String, String> networkDetails = networkDetailsDao.listDetailsKeyPairs(network.getId());
-            return networkDetails != null
-                    ? networkDetails.getOrDefault(NETWORK_DETAIL_EXTENSION_DETAILS, "{}") : "{}";
-        }
-    }
-
-
-    /**
-     * Serialises a {@code Map<String, String>} to a compact JSON object string.
-     * Returns {@code {}} for null or empty maps.
-     */
-    private String mapToJson(Map<String, String> map) {
-        if (map == null || map.isEmpty()) {
-            return "{}";
-        }
+    private JsonObject buildPhysicalNetworkExtensionDetailsPayload(Long physicalNetworkId, Extension extension) {
+        Map<String, String> map = buildPhysicalNetworkDetailsMap(physicalNetworkId, extension);
         JsonObject obj = new JsonObject();
         for (Map.Entry<String, String> entry : map.entrySet()) {
             if (entry.getValue() != null) {
                 obj.addProperty(entry.getKey(), entry.getValue());
             }
         }
-        return new Gson().toJson(obj);
+        return obj;
+    }
+
+    /**
+     * Returns the per-network extension-details JSON blob (the value stored under
+     * {@code NETWORK_DETAIL_EXTENSION_DETAILS} in {@code network_details} or
+     * {@code vpc_details}) as a {@link JsonObject}.
+     * Returns an empty object when no blob has been stored yet.
+     */
+    private JsonObject buildNetworkExtensionDetailsPayload(Network network) {
+        String json;
+        if (network.getVpcId() != null) {
+            Map<String, String> vpcDetails = vpcDetailsDao.listDetailsKeyPairs(network.getVpcId());
+            json = vpcDetails != null ? vpcDetails.getOrDefault(NETWORK_DETAIL_EXTENSION_DETAILS, "{}") : "{}";
+        } else {
+            Map<String, String> networkDetails = networkDetailsDao.listDetailsKeyPairs(network.getId());
+            json = networkDetails != null ? networkDetails.getOrDefault(NETWORK_DETAIL_EXTENSION_DETAILS, "{}") : "{}";
+        }
+        return parseJsonObjectOrEmpty(json);
+    }
+
+    /**
+     * Returns the VPC-level extension-details JSON blob (stored under
+     * {@code NETWORK_DETAIL_EXTENSION_DETAILS} in {@code vpc_details}) as a
+     * {@link JsonObject}.  Returns an empty object when no blob has been stored.
+     */
+    private JsonObject buildVpcExtensionDetailsPayload(long vpcId) {
+        Map<String, String> vpcDetails = vpcDetailsDao.listDetailsKeyPairs(vpcId);
+        String json = vpcDetails != null ? vpcDetails.getOrDefault(NETWORK_DETAIL_EXTENSION_DETAILS, "{}") : "{}";
+        return parseJsonObjectOrEmpty(json);
+    }
+
+    /**
+     * Builds the custom-action parameters as a {@link JsonObject}.
+     * Returns an empty object for {@code null} or empty parameter maps.
+     */
+    private JsonObject buildActionParamsPayload(Map<String, Object> parameters) {
+        JsonObject obj = new JsonObject();
+        if (parameters == null || parameters.isEmpty()) {
+            return obj;
+        }
+        for (Map.Entry<String, Object> entry : parameters.entrySet()) {
+            obj.addProperty(entry.getKey(),
+                    entry.getValue() != null ? entry.getValue().toString() : "");
+        }
+        return obj;
+    }
+
+    /**
+     * Parses a JSON string into a {@link JsonObject}.
+     * Returns an empty {@link JsonObject} when the input is {@code null}, blank,
+     * or not a valid JSON object.
+     */
+    private JsonObject parseJsonObjectOrEmpty(String json) {
+        if (json == null || json.isBlank()) {
+            return new JsonObject();
+        }
+        try {
+            JsonElement element = JsonParser.parseString(json);
+            return element.isJsonObject() ? element.getAsJsonObject() : new JsonObject();
+        } catch (Exception e) {
+            return new JsonObject();
+        }
     }
 
     // ---- Custom action ----
@@ -1245,53 +1168,27 @@ public class NetworkExtensionElement extends AdapterBase implements
 
     /**
      * Runs a custom action on the external network device.
-     * Per-action parameters are passed as a JSON object via
-     * {@value #ARG_ACTION_PARAMS}, e.g.:
-     * <pre>--action-params '{"key1":"value1","key2":"value2"}'</pre>
-     * The wrapper script receives the `--action-params` JSON string and forwards
-     * it unchanged to hook scripts as the `--action-params` CLI argument; hook
-     * scripts should parse the JSON themselves (for example using `jq` or a
-     * small shell/awk parser).
+     * The custom action payload is written to a temporary file and passed to the
+     * extension script via {@link #executeScriptWithFilePayload(File, String, JsonObject, String)}.
      */
+    @Override
     public String runCustomAction(Network network, String actionName, Map<String, Object> parameters) {
         Extension extension = resolveExtension(network);
         File scriptFile = resolveScriptFile(network, extension);
 
-        String physicalNetworkDetailsJson = buildPhysicalNetworkDetailsJson(network.getPhysicalNetworkId(), extension);
-        String networkExtensionDetailsJson = getNetworkExtensionDetailsJson(network);
-        String actionParamsJson = buildActionParamsJson(parameters);
-
-        List<String> cmdLine = new ArrayList<>();
-        cmdLine.add(scriptFile.getAbsolutePath());
-        cmdLine.add("custom-action");
-        cmdLine.add("--network-id");
-        cmdLine.add(String.valueOf(network.getId()));
-        cmdLine.addAll(getVpcIdArgs(network));
-        cmdLine.add("--action");
-        cmdLine.add(actionName);
-        cmdLine.add(ARG_ACTION_PARAMS);
-        cmdLine.add(actionParamsJson);
-        cmdLine.add(ARG_PHYSICAL_NETWORK_EXTENSION_DETAILS);
-        cmdLine.add(physicalNetworkDetailsJson);
-        cmdLine.add(ARG_NETWORK_EXTENSION_DETAILS);
-        cmdLine.add(networkExtensionDetailsJson);
+        JsonObject payload = buildCustomActionPayload(network, extension, actionName, parameters);
 
         logger.info("Running custom action '{}' on network {} (extension: {}, params: {} key(s))",
                 actionName, network.getId(), extension != null ? extension.getName() : "unknown",
                 parameters != null ? parameters.size() : 0);
 
         try {
-            ProcessBuilder pb = new ProcessBuilder(cmdLine);
-            pb.redirectErrorStream(true);
-            Process process = pb.start();
-            byte[] output = process.getInputStream().readAllBytes();
-            int exitCode = process.waitFor();
-            String outputStr = new String(output).trim();
+            Pair<Integer, String> result = executeScriptWithFilePayload(scriptFile, CMD_CUSTOM_ACTION, payload,
+                    "Network extension");
+            String outputStr = result.second() != null ? result.second().trim() : "";
 
-            logger.debug("Running custom action script: {}", String.join(" ", cmdLine));
-
-            if (exitCode != 0) {
-                logger.error("Custom action '{}' failed (exit {}): {}", actionName, exitCode, outputStr);
+            if (result.first() != EXIT_CODE_SUCCESS) {
+                logger.error("Custom action '{}' failed: {}", actionName, outputStr);
                 return null;
             }
             logger.info("Custom action '{}' completed successfully", actionName);
@@ -1309,7 +1206,8 @@ public class NetworkExtensionElement extends AdapterBase implements
 
     /**
      * Runs a custom action on the external network device for a VPC.
-     * The script receives {@code --vpc-id} (no {@code --network-id}).
+     * The custom action payload is written to a temporary file and passed to the
+     * extension script via {@link #executeScriptWithFilePayload(File, String, JsonObject, String)}.
      */
     @Override
     public String runCustomAction(Vpc vpc, String actionName, Map<String, Object> parameters) {
@@ -1321,40 +1219,19 @@ public class NetworkExtensionElement extends AdapterBase implements
         Extension extension = physNetAndExt.second();
         File scriptFile = resolveScriptFileForVpc(physicalNetworkId, extension);
 
-        String physicalNetworkDetailsJson = buildPhysicalNetworkDetailsJson(physicalNetworkId, extension);
-        String vpcExtDetailsJson = getVpcExtensionDetailsJson(vpc.getId());
-        String actionParamsJson = buildActionParamsJson(parameters);
-
-        List<String> cmdLine = new ArrayList<>();
-        cmdLine.add(scriptFile.getAbsolutePath());
-        cmdLine.add("custom-action");
-        cmdLine.add("--vpc-id");
-        cmdLine.add(String.valueOf(vpc.getId()));
-        cmdLine.add("--action");
-        cmdLine.add(actionName);
-        cmdLine.add(ARG_ACTION_PARAMS);
-        cmdLine.add(actionParamsJson);
-        cmdLine.add(ARG_PHYSICAL_NETWORK_EXTENSION_DETAILS);
-        cmdLine.add(physicalNetworkDetailsJson);
-        cmdLine.add(ARG_NETWORK_EXTENSION_DETAILS);
-        cmdLine.add(vpcExtDetailsJson);
+        JsonObject payload = buildCustomActionPayload(vpc, physicalNetworkId, extension, actionName, parameters);
 
         logger.info("Running custom action '{}' on VPC {} (extension: {}, params: {} key(s))",
                 actionName, vpc.getId(), extension != null ? extension.getName() : "unknown",
                 parameters != null ? parameters.size() : 0);
 
         try {
-            ProcessBuilder pb = new ProcessBuilder(cmdLine);
-            pb.redirectErrorStream(true);
-            Process process = pb.start();
-            byte[] output = process.getInputStream().readAllBytes();
-            int exitCode = process.waitFor();
-            String outputStr = new String(output).trim();
+            Pair<Integer, String> result = executeScriptWithFilePayload(scriptFile, CMD_CUSTOM_ACTION, payload,
+                    "VPC extension");
+            String outputStr = result.second() != null ? result.second().trim() : "";
 
-            logger.debug("Running VPC custom action script: {}", String.join(" ", cmdLine));
-
-            if (exitCode != 0) {
-                logger.error("VPC custom action '{}' failed (exit {}): {}", actionName, exitCode, outputStr);
+            if (result.first() != EXIT_CODE_SUCCESS) {
+                logger.error("VPC custom action '{}' failed: {}", actionName, outputStr);
                 return null;
             }
             logger.info("VPC custom action '{}' completed successfully", actionName);
@@ -1365,20 +1242,31 @@ public class NetworkExtensionElement extends AdapterBase implements
         }
     }
 
-    /**
-     * Serialises custom-action parameters to a compact JSON object string.
-     * Returns {@code {}} for null or empty maps.
-     */
-    private String buildActionParamsJson(Map<String, Object> parameters) {
-        if (parameters == null || parameters.isEmpty()) {
-            return "{}";
-        }
-        JsonObject obj = new JsonObject();
-        for (Map.Entry<String, Object> entry : parameters.entrySet()) {
-            obj.addProperty(entry.getKey(),
-                    entry.getValue() != null ? entry.getValue().toString() : "");
-        }
-        return new Gson().toJson(obj);
+    private JsonObject buildCustomActionPayload(Network network, Extension extension, String actionName,
+            Map<String, Object> parameters) {
+        JsonObject payload = new JsonObject();
+        payload.addProperty("network_id", String.valueOf(network.getId()));
+        addVpcIdToPayload(payload, network);
+        payload.addProperty("action", actionName);
+        payload.add(ARG_ACTION_PARAMS, buildActionParamsPayload(parameters));
+        payload.add(ARG_PHYSICAL_NETWORK_EXTENSION_DETAILS,
+                buildPhysicalNetworkExtensionDetailsPayload(network.getPhysicalNetworkId(), extension));
+        payload.add(ARG_NETWORK_EXTENSION_DETAILS,
+                buildNetworkExtensionDetailsPayload(network));
+        return payload;
+    }
+
+    private JsonObject buildCustomActionPayload(Vpc vpc, Long physicalNetworkId, Extension extension,
+            String actionName, Map<String, Object> parameters) {
+        JsonObject payload = new JsonObject();
+        payload.addProperty("vpc_id", String.valueOf(vpc.getId()));
+        payload.addProperty("action", actionName);
+        payload.add(ARG_ACTION_PARAMS, buildActionParamsPayload(parameters));
+        payload.add(ARG_PHYSICAL_NETWORK_EXTENSION_DETAILS,
+                buildPhysicalNetworkExtensionDetailsPayload(physicalNetworkId, extension));
+        payload.add(ARG_NETWORK_EXTENSION_DETAILS,
+                buildVpcExtensionDetailsPayload(vpc.getId()));
+        return payload;
     }
 
     // ---- Script file resolution ----
@@ -1490,20 +1378,20 @@ public class NetworkExtensionElement extends AdapterBase implements
         String extensionIp = ensureExtensionIp(network);
         logger.debug("addDhcpEntry: network={} mac={} ip={}", network.getId(),
                 nic.getMacAddress(), nic.getIPv4Address());
-        List<String> args = new ArrayList<>();
-        args.add("--network-id");   args.add(String.valueOf(network.getId()));
-        args.add("--mac");          args.add(safeStr(nic.getMacAddress()));
-        args.add("--ip");           args.add(safeStr(nic.getIPv4Address()));
-        args.add("--hostname");     args.add(safeStr(vm.getHostName()));
-        args.add("--gateway");      args.add(safeStr(network.getGateway()));
-        args.add("--cidr");         args.add(safeStr(network.getCidr()));
-        args.add("--dns");          args.add(safeStr(getNetworkDns(network)));
-        args.add("--default-nic");  args.add(String.valueOf(nic.isDefaultNic()));
-        args.add("--domain");       args.add(safeStr(network.getNetworkDomain()));
-        args.add("--extension-ip"); args.add(safeStr(extensionIp));
-        args.addAll(getNicUuidArgs(nic));
-        args.addAll(getVpcIdArgs(network));
-        return executeScript(network, CMD_ADD_DHCP_ENTRY, args.toArray(new String[0]));
+        JsonObject payload = new JsonObject();
+        payload.addProperty("network_id", String.valueOf(network.getId()));
+        payload.addProperty("mac", safeStr(nic.getMacAddress()));
+        payload.addProperty("ip", safeStr(nic.getIPv4Address()));
+        payload.addProperty("hostname", safeStr(vm.getHostName()));
+        payload.addProperty("gateway", safeStr(network.getGateway()));
+        payload.addProperty("cidr", safeStr(network.getCidr()));
+        payload.addProperty("dns", safeStr(getNetworkDns(network)));
+        payload.addProperty("default_nic", String.valueOf(nic.isDefaultNic()));
+        payload.addProperty("domain", safeStr(network.getNetworkDomain()));
+        payload.addProperty("extension_ip", safeStr(extensionIp));
+        addNicUuidToPayload(payload, nic);
+        addVpcIdToPayload(payload, network);
+        return executeScript(network, CMD_ADD_DHCP_ENTRY, payload);
     }
 
     @Override
@@ -1515,16 +1403,17 @@ public class NetworkExtensionElement extends AdapterBase implements
         }
         logger.debug("configDhcpSupportForSubnet: network={}", network.getId());
         String extensionIp = ensureExtensionIp(network);
-        List<String> args = new ArrayList<>();
-        args.add("--network-id");   args.add(String.valueOf(network.getId()));
-        args.add("--gateway");      args.add(safeStr(network.getGateway()));
-        args.add("--cidr");         args.add(safeStr(network.getCidr()));
-        args.add("--dns");          args.add(safeStr(getNetworkDns(network)));
-        args.add("--vlan");         args.add(safeStr(getVlanId(network)));
-        args.add("--domain");       args.add(safeStr(network.getNetworkDomain()));
-        args.add("--extension-ip"); args.add(safeStr(extensionIp));
-        args.addAll(getVpcIdArgs(network));
-        return executeScript(network, CMD_CONFIG_DHCP_SUBNET, args.toArray(new String[0]));
+        JsonObject payload = new JsonObject();
+        payload.addProperty("network_id", String.valueOf(network.getId()));
+        payload.addProperty("gateway", safeStr(network.getGateway()));
+        payload.addProperty("cidr", safeStr(network.getCidr()));
+        payload.addProperty("dns", safeStr(getNetworkDns(network)));
+        payload.addProperty("vlan", safeStr(getVlanId(network)));
+        payload.addProperty("domain", safeStr(network.getNetworkDomain()));
+        payload.addProperty("extension_ip", safeStr(extensionIp));
+        addNicUuidToPayload(payload, nic);
+        addVpcIdToPayload(payload, network);
+        return executeScript(network, CMD_CONFIG_DHCP_SUBNET, payload);
     }
 
     @Override
@@ -1534,11 +1423,11 @@ public class NetworkExtensionElement extends AdapterBase implements
         }
         logger.debug("removeDhcpSupportForSubnet: network={}", network.getId());
         String extensionIp = ensureExtensionIp(network);
-        List<String> args = new ArrayList<>();
-        args.add("--network-id");   args.add(String.valueOf(network.getId()));
-        args.add("--extension-ip"); args.add(safeStr(extensionIp));
-        args.addAll(getVpcIdArgs(network));
-        return executeScript(network, CMD_REMOVE_DHCP_SUBNET, args.toArray(new String[0]));
+        JsonObject payload = new JsonObject();
+        payload.addProperty("network_id", String.valueOf(network.getId()));
+        payload.addProperty("extension_ip", safeStr(extensionIp));
+        addVpcIdToPayload(payload, network);
+        return executeScript(network, CMD_REMOVE_DHCP_SUBNET, payload);
     }
 
     @Override
@@ -1562,14 +1451,14 @@ public class NetworkExtensionElement extends AdapterBase implements
         }
         json.append("}");
         String extensionIp = ensureExtensionIp(network);
-        List<String> args = new ArrayList<>();
-        args.add("--network-id");   args.add(String.valueOf(network.getId()));
-        args.add("--nic-id");       args.add(String.valueOf(nicId));
-        args.add("--options");      args.add(json.toString());
-        args.add("--extension-ip"); args.add(safeStr(extensionIp));
-        args.addAll(getVpcIdArgs(network));
+        JsonObject payload = new JsonObject();
+        payload.addProperty("network_id", String.valueOf(network.getId()));
+        payload.addProperty("nic_id", String.valueOf(nicId));
+        payload.addProperty("options", json.toString());
+        payload.addProperty("extension_ip", safeStr(extensionIp));
+        addVpcIdToPayload(payload, network);
         try {
-            return executeScript(network, CMD_SET_DHCP_OPTIONS, args.toArray(new String[0]));
+            return executeScript(network, CMD_SET_DHCP_OPTIONS, payload);
         } catch (Exception e) {
             logger.warn("setExtraDhcpOptions failed for network {}: {}", network.getId(), e.getMessage());
             return false;
@@ -1585,14 +1474,14 @@ public class NetworkExtensionElement extends AdapterBase implements
         logger.debug("removeDhcpEntry: network={} mac={} ip={}", network.getId(),
                 nic.getMacAddress(), nic.getIPv4Address());
         String extensionIp = ensureExtensionIp(network);
-        List<String> args = new ArrayList<>();
-        args.add("--network-id");   args.add(String.valueOf(network.getId()));
-        args.add("--mac");          args.add(safeStr(nic.getMacAddress()));
-        args.add("--ip");           args.add(safeStr(nic.getIPv4Address()));
-        args.add("--extension-ip"); args.add(safeStr(extensionIp));
-        args.addAll(getNicUuidArgs(nic));
-        args.addAll(getVpcIdArgs(network));
-        return executeScript(network, CMD_REMOVE_DHCP_ENTRY, args.toArray(new String[0]));
+        JsonObject payload = new JsonObject();
+        payload.addProperty("network_id", String.valueOf(network.getId()));
+        payload.addProperty("mac", safeStr(nic.getMacAddress()));
+        payload.addProperty("ip", safeStr(nic.getIPv4Address()));
+        payload.addProperty("extension_ip", safeStr(extensionIp));
+        addNicUuidToPayload(payload, nic);
+        addVpcIdToPayload(payload, network);
+        return executeScript(network, CMD_REMOVE_DHCP_ENTRY, payload);
     }
 
     // ---- DnsServiceProvider ----
@@ -1608,14 +1497,14 @@ public class NetworkExtensionElement extends AdapterBase implements
         logger.debug("addDnsEntry: network={} hostname={} ip={}", network.getId(),
                 hostname, nic.getIPv4Address());
         String extensionIp = ensureExtensionIp(network);
-        List<String> args = new ArrayList<>();
-        args.add("--network-id");   args.add(String.valueOf(network.getId()));
-        args.add("--ip");           args.add(safeStr(nic.getIPv4Address()));
-        args.add("--hostname");     args.add(safeStr(hostname));
-        args.add("--extension-ip"); args.add(safeStr(extensionIp));
-        args.addAll(getNicUuidArgs(nic));
-        args.addAll(getVpcIdArgs(network));
-        return executeScript(network, CMD_ADD_DNS_ENTRY, args.toArray(new String[0]));
+        JsonObject payload = new JsonObject();
+        payload.addProperty("network_id", String.valueOf(network.getId()));
+        payload.addProperty("ip", safeStr(nic.getIPv4Address()));
+        payload.addProperty("hostname", safeStr(hostname));
+        payload.addProperty("extension_ip", safeStr(extensionIp));
+        addNicUuidToPayload(payload, nic);
+        addVpcIdToPayload(payload, network);
+        return executeScript(network, CMD_ADD_DNS_ENTRY, payload);
     }
 
     @Override
@@ -1627,16 +1516,17 @@ public class NetworkExtensionElement extends AdapterBase implements
         }
         logger.debug("configDnsSupportForSubnet: network={}", network.getId());
         String extensionIp = ensureExtensionIp(network);
-        List<String> args = new ArrayList<>();
-        args.add("--network-id");   args.add(String.valueOf(network.getId()));
-        args.add("--gateway");      args.add(safeStr(network.getGateway()));
-        args.add("--cidr");         args.add(safeStr(network.getCidr()));
-        args.add("--dns");          args.add(safeStr(getNetworkDns(network)));
-        args.add("--vlan");         args.add(safeStr(getVlanId(network)));
-        args.add("--domain");       args.add(safeStr(network.getNetworkDomain()));
-        args.add("--extension-ip"); args.add(safeStr(extensionIp));
-        args.addAll(getVpcIdArgs(network));
-        return executeScript(network, CMD_CONFIG_DNS_SUBNET, args.toArray(new String[0]));
+        JsonObject payload = new JsonObject();
+        payload.addProperty("network_id", String.valueOf(network.getId()));
+        payload.addProperty("gateway", safeStr(network.getGateway()));
+        payload.addProperty("cidr", safeStr(network.getCidr()));
+        payload.addProperty("dns", safeStr(getNetworkDns(network)));
+        payload.addProperty("vlan", safeStr(getVlanId(network)));
+        payload.addProperty("domain", safeStr(network.getNetworkDomain()));
+        payload.addProperty("extension_ip", safeStr(extensionIp));
+        addNicUuidToPayload(payload, nic);
+        addVpcIdToPayload(payload, network);
+        return executeScript(network, CMD_CONFIG_DNS_SUBNET, payload);
     }
 
     @Override
@@ -1646,11 +1536,11 @@ public class NetworkExtensionElement extends AdapterBase implements
         }
         logger.debug("removeDnsSupportForSubnet: network={}", network.getId());
         String extensionIp = ensureExtensionIp(network);
-        List<String> args = new ArrayList<>();
-        args.add("--network-id");   args.add(String.valueOf(network.getId()));
-        args.add("--extension-ip"); args.add(safeStr(extensionIp));
-        args.addAll(getVpcIdArgs(network));
-        return executeScript(network, CMD_REMOVE_DNS_SUBNET, args.toArray(new String[0]));
+        JsonObject payload = new JsonObject();
+        payload.addProperty("network_id", String.valueOf(network.getId()));
+        payload.addProperty("extension_ip", safeStr(extensionIp));
+        addVpcIdToPayload(payload, network);
+        return executeScript(network, CMD_REMOVE_DNS_SUBNET, payload);
     }
 
     // ---- UserDataServiceProvider ----
@@ -1785,15 +1675,16 @@ public class NetworkExtensionElement extends AdapterBase implements
         String vmDataArg = Base64.getEncoder().encodeToString(
                 json.toString().getBytes(StandardCharsets.UTF_8));
 
-        List<String> args = new ArrayList<>();
-        args.add("--network-id");   args.add(String.valueOf(network.getId()));
-        args.add("--ip");           args.add(safeStr(nicIpAddress));
-        args.add("--gateway");      args.add(safeStr(nic.getIPv4Gateway()));
-        args.add("--extension-ip"); args.add(safeStr(ensureExtensionIp(network)));
-        args.addAll(getNicUuidArgs(nic));
-        args.addAll(getVpcIdArgs(network));
-        return executeScriptWithFilePayload(network, CMD_SAVE_VM_DATA, "--vm-data-file",
-                vmDataArg, args.toArray(new String[0]));
+        JsonObject payload = new JsonObject();
+        payload.addProperty("network_id", String.valueOf(network.getId()));
+        payload.addProperty("ip", safeStr(nicIpAddress));
+        payload.addProperty("gateway", safeStr(nic.getIPv4Gateway()));
+        payload.addProperty("extension_ip", safeStr(ensureExtensionIp(network)));
+        payload.addProperty("vm_data", vmDataArg);
+        addNicUuidToPayload(payload, nic);
+        addVpcIdToPayload(payload, network);
+
+        return executeScript(network, CMD_SAVE_VM_DATA, payload);
     }
 
     @Override
@@ -1808,15 +1699,15 @@ public class NetworkExtensionElement extends AdapterBase implements
         }
         logger.debug("savePassword: network={} ip={}", network.getId(), nic.getIPv4Address());
         String extensionIp = ensureExtensionIp(network);
-        List<String> args = new ArrayList<>();
-        args.add("--network-id");   args.add(String.valueOf(network.getId()));
-        args.add("--ip");           args.add(safeStr(nic.getIPv4Address()));
-        args.add("--gateway");      args.add(safeStr(nic.getIPv4Gateway()));
-        args.add("--password");     args.add(password);
-        args.add("--extension-ip"); args.add(safeStr(extensionIp));
-        args.addAll(getNicUuidArgs(nic));
-        args.addAll(getVpcIdArgs(network));
-        return executeScript(network, CMD_SAVE_PASSWORD, args.toArray(new String[0]));
+        JsonObject payload = new JsonObject();
+        payload.addProperty("network_id", String.valueOf(network.getId()));
+        payload.addProperty("ip", safeStr(nic.getIPv4Address()));
+        payload.addProperty("gateway", safeStr(nic.getIPv4Gateway()));
+        payload.addProperty("password", password);
+        payload.addProperty("extension_ip", safeStr(extensionIp));
+        addNicUuidToPayload(payload, nic);
+        addVpcIdToPayload(payload, network);
+        return executeScript(network, CMD_SAVE_PASSWORD, payload);
     }
 
     @Override
@@ -1835,15 +1726,15 @@ public class NetworkExtensionElement extends AdapterBase implements
         logger.debug("saveUserData: network={} ip={}", network.getId(), nic.getIPv4Address());
         // userData is stored as base64; pass it directly so the script can decode it
         String extensionIp = ensureExtensionIp(network);
-        List<String> args = new ArrayList<>();
-        args.add("--network-id");   args.add(String.valueOf(network.getId()));
-        args.add("--ip");           args.add(safeStr(nic.getIPv4Address()));
-        args.add("--gateway");      args.add(safeStr(nic.getIPv4Gateway()));
-        args.add("--userdata");     args.add(userData);
-        args.add("--extension-ip"); args.add(safeStr(extensionIp));
-        args.addAll(getNicUuidArgs(nic));
-        args.addAll(getVpcIdArgs(network));
-        return executeScript(network, CMD_SAVE_USERDATA, args.toArray(new String[0]));
+        JsonObject payload = new JsonObject();
+        payload.addProperty("network_id", String.valueOf(network.getId()));
+        payload.addProperty("ip", safeStr(nic.getIPv4Address()));
+        payload.addProperty("gateway", safeStr(nic.getIPv4Gateway()));
+        payload.addProperty("userdata", userData);
+        payload.addProperty("extension_ip", safeStr(extensionIp));
+        addNicUuidToPayload(payload, nic);
+        addVpcIdToPayload(payload, network);
+        return executeScript(network, CMD_SAVE_USERDATA, payload);
     }
 
     @Override
@@ -1859,15 +1750,15 @@ public class NetworkExtensionElement extends AdapterBase implements
         // Encode SSH key as base64 to safely pass via CLI
         String sshKeyBase64 = Base64.getEncoder().encodeToString(sshPublicKey.getBytes(java.nio.charset.StandardCharsets.UTF_8));
         String extensionIp = ensureExtensionIp(network);
-        List<String> args = new ArrayList<>();
-        args.add("--network-id");   args.add(String.valueOf(network.getId()));
-        args.add("--ip");           args.add(safeStr(nic.getIPv4Address()));
-        args.add("--gateway");      args.add(safeStr(nic.getIPv4Gateway()));
-        args.add("--sshkey");       args.add(sshKeyBase64);
-        args.add("--extension-ip"); args.add(safeStr(extensionIp));
-        args.addAll(getNicUuidArgs(nic));
-        args.addAll(getVpcIdArgs(network));
-        return executeScript(network, CMD_SAVE_SSHKEY, args.toArray(new String[0]));
+        JsonObject payload = new JsonObject();
+        payload.addProperty("network_id", String.valueOf(network.getId()));
+        payload.addProperty("ip", safeStr(nic.getIPv4Address()));
+        payload.addProperty("gateway", safeStr(nic.getIPv4Gateway()));
+        payload.addProperty("sshkey", sshKeyBase64);
+        payload.addProperty("extension_ip", safeStr(extensionIp));
+        addNicUuidToPayload(payload, nic);
+        addVpcIdToPayload(payload, network);
+        return executeScript(network, CMD_SAVE_SSHKEY, payload);
     }
 
     @Override
@@ -1883,15 +1774,15 @@ public class NetworkExtensionElement extends AdapterBase implements
         logger.debug("saveHypervisorHostname: network={} ip={} host={}", network.getId(),
                 nic.getIPv4Address(), hostname);
         String extensionIp = ensureExtensionIp(network);
-        List<String> args = new ArrayList<>();
-        args.add("--network-id");          args.add(String.valueOf(network.getId()));
-        args.add("--ip");                  args.add(safeStr(nic.getIPv4Address()));
-        args.add("--gateway");             args.add(safeStr(nic.getIPv4Gateway()));
-        args.add("--hypervisor-hostname"); args.add(hostname);
-        args.add("--extension-ip");        args.add(safeStr(extensionIp));
-        args.addAll(getNicUuidArgs(nic));
-        args.addAll(getVpcIdArgs(network));
-        return executeScript(network, CMD_SAVE_HYPERVISOR_HOSTNAME, args.toArray(new String[0]));
+        JsonObject payload = new JsonObject();
+        payload.addProperty("network_id", String.valueOf(network.getId()));
+        payload.addProperty("ip", safeStr(nic.getIPv4Address()));
+        payload.addProperty("gateway", safeStr(nic.getIPv4Gateway()));
+        payload.addProperty("hypervisor_hostname", hostname);
+        payload.addProperty("extension_ip", safeStr(extensionIp));
+        addNicUuidToPayload(payload, nic);
+        addVpcIdToPayload(payload, network);
+        return executeScript(network, CMD_SAVE_HYPERVISOR_HOSTNAME, payload);
     }
 
     // ---- LoadBalancingServiceProvider ----
@@ -1907,7 +1798,6 @@ public class NetworkExtensionElement extends AdapterBase implements
         }
         logger.info("Applying {} LB rules for network {}", rules.size(), network.getId());
         String vlanId = getVlanId(network);
-        List<String> vpcArgs = getVpcIdArgs(network);
 
         // Serialise all rules as a JSON array and pass as a single --lb-rules argument
         StringBuilder json = new StringBuilder("[");
@@ -1943,12 +1833,12 @@ public class NetworkExtensionElement extends AdapterBase implements
         }
         json.append("]");
 
-        List<String> args = new ArrayList<>();
-        args.add("--network-id"); args.add(String.valueOf(network.getId()));
-        args.add("--vlan");       args.add(safeStr(vlanId));
-        args.add("--lb-rules");   args.add(json.toString());
-        args.addAll(vpcArgs);
-        boolean result = executeScript(network, CMD_APPLY_LB_RULES, args.toArray(new String[0]));
+        JsonObject payload = new JsonObject();
+        payload.addProperty("network_id", String.valueOf(network.getId()));
+        payload.addProperty("vlan", safeStr(vlanId));
+        payload.addProperty("lb_rules", json.toString());
+        addVpcIdToPayload(payload, network);
+        boolean result = executeScript(network, CMD_APPLY_LB_RULES, payload);
         if (!result) {
             throw new ResourceUnavailableException("Failed to apply LB rules for network " + network.getId(),
                     Network.class, network.getId());
@@ -2127,15 +2017,15 @@ public class NetworkExtensionElement extends AdapterBase implements
         String rulesBase64 = Base64.getEncoder().encodeToString(
                 json.toString().getBytes(StandardCharsets.UTF_8));
 
-        List<String> args = new ArrayList<>();
-        args.add("--network-id");  args.add(String.valueOf(network.getId()));
-        args.add("--vlan");        args.add(safeStr(getVlanId(network)));
-        args.add("--gateway");     args.add(safeStr(network.getGateway()));
-        args.add("--cidr");        args.add(safeStr(network.getCidr()));
-        args.addAll(getVpcIdArgs(network));
+        JsonObject payload = new JsonObject();
+        payload.addProperty("network_id", String.valueOf(network.getId()));
+        payload.addProperty("vlan", safeStr(getVlanId(network)));
+        payload.addProperty("gateway", safeStr(network.getGateway()));
+        payload.addProperty("cidr", safeStr(network.getCidr()));
+        payload.addProperty("fw_rules", rulesBase64);
+        addVpcIdToPayload(payload, network);
 
-        boolean result = executeScriptWithFilePayload(network, CMD_APPLY_FW_RULES, "--fw-rules-file",
-                rulesBase64, args.toArray(new String[0]));
+        boolean result = executeScript(network, CMD_APPLY_FW_RULES, payload);
         if (!result) {
             throw new ResourceUnavailableException(
                     "Failed to apply firewall rules for network " + network.getId(),
@@ -2203,18 +2093,18 @@ public class NetworkExtensionElement extends AdapterBase implements
         String restoreDataBase64 = buildRestoreNetworkData(network, nics, dhcpEnabled, dnsEnabled, userdataEnabled);
 
         String extensionIp = ensureExtensionIp(network);
-        List<String> args = new ArrayList<>();
-        args.add("--network-id");    args.add(String.valueOf(network.getId()));
-        args.add("--gateway");       args.add(safeStr(network.getGateway()));
-        args.add("--cidr");          args.add(safeStr(network.getCidr()));
-        args.add("--vlan");          args.add(safeStr(getVlanId(network)));
-        args.add("--extension-ip");  args.add(safeStr(extensionIp));
-        args.add("--dns");           args.add(safeStr(getNetworkDns(network)));
-        args.add("--domain");        args.add(safeStr(network.getNetworkDomain()));
-        args.addAll(getVpcIdArgs(network));
+        JsonObject payload = new JsonObject();
+        payload.addProperty("network_id", String.valueOf(network.getId()));
+        payload.addProperty("gateway", safeStr(network.getGateway()));
+        payload.addProperty("cidr", safeStr(network.getCidr()));
+        payload.addProperty("vlan", safeStr(getVlanId(network)));
+        payload.addProperty("extension_ip", safeStr(extensionIp));
+        payload.addProperty("dns", safeStr(getNetworkDns(network)));
+        payload.addProperty("domain", safeStr(network.getNetworkDomain()));
+        payload.addProperty("restore_data", restoreDataBase64);
+        addVpcIdToPayload(payload, network);
 
-        return executeScriptWithFilePayload(network, CMD_RESTORE_NETWORK, "--restore-data-file",
-                restoreDataBase64, args.toArray(new String[0]));
+        return executeScript(network, CMD_RESTORE_NETWORK, payload);
     }
 
     /**
@@ -2280,9 +2170,6 @@ public class NetworkExtensionElement extends AdapterBase implements
             }
 
             Long instanceId = nic.getInstanceId();
-            if (instanceId == null) {
-                continue;
-            }
 
             UserVmVO userVm = userVmDao.findById(instanceId);
             if (userVm == null) {
@@ -2475,37 +2362,18 @@ public class NetworkExtensionElement extends AdapterBase implements
                     vpc.getId(), vpc.getZoneId());
             return;
         }
-        Long physicalNetworkId = physNetAndExt.first();
-        Extension extension = physNetAndExt.second();
-        File scriptFile = resolveScriptFileForVpc(physicalNetworkId, extension);
-        String physicalNetworkDetailsJson = buildPhysicalNetworkDetailsJson(physicalNetworkId, extension);
-
-        List<String> cmdLine = new ArrayList<>();
-        cmdLine.add(scriptFile.getAbsolutePath());
-        cmdLine.add(CMD_ENSURE_NETWORK_DEVICE);
-        cmdLine.add("--vpc-id");
-        cmdLine.add(String.valueOf(vpc.getId()));
-        cmdLine.add("--zone-id");
-        cmdLine.add(String.valueOf(vpc.getZoneId()));
-        cmdLine.add("--current-details");
-        cmdLine.add(currentDetails);
-        cmdLine.add(ARG_PHYSICAL_NETWORK_EXTENSION_DETAILS);
-        cmdLine.add(physicalNetworkDetailsJson);
-        cmdLine.add(ARG_NETWORK_EXTENSION_DETAILS);
-        cmdLine.add(currentDetails);
+        JsonObject argsPayload = new JsonObject();
+        argsPayload.addProperty("vpc_id", String.valueOf(vpc.getId()));
+        argsPayload.addProperty("zone_id", String.valueOf(vpc.getZoneId()));
+        argsPayload.addProperty("current_details", currentDetails);
 
         try {
-            ProcessBuilder pb = new ProcessBuilder(cmdLine);
-            pb.redirectErrorStream(true);
-            Process process = pb.start();
-            String output = new String(process.getInputStream().readAllBytes()).trim();
-            int exitCode = process.waitFor();
+            Pair<Integer, String> result = executeVpcScriptAndReturnOutput(vpc, CMD_ENSURE_NETWORK_DEVICE, argsPayload);
+            String output = result.second() != null ? result.second() : "";
 
-            logger.debug("Ensuring VPC network device script: {}", String.join(" ", cmdLine));
-
-            if (exitCode != 0) {
+            if (result.first() != EXIT_CODE_SUCCESS) {
                 logger.warn("ensure-network-device exited {} for VPC {} — keeping current details",
-                        exitCode, vpc.getId());
+                        -1, vpc.getId());
                 if ("{}".equals(currentDetails)) {
                     vpcDetailsDao.addDetail(vpc.getId(), NETWORK_DETAIL_EXTENSION_DETAILS, "{}", false);
                 }
@@ -2529,66 +2397,38 @@ public class NetworkExtensionElement extends AdapterBase implements
     }
 
     /**
-     * Returns the per-VPC extension-details JSON from {@code vpc_details}
-     * (returns {@code {}} if not yet set).
-     */
-    private String getVpcExtensionDetailsJson(long vpcId) {
-        Map<String, String> vpcDetails = vpcDetailsDao.listDetailsKeyPairs(vpcId);
-        return vpcDetails != null
-                ? vpcDetails.getOrDefault(NETWORK_DETAIL_EXTENSION_DETAILS, "{}") : "{}";
-    }
-
-    /**
      * Executes the extension script for a VPC-level command (no tier network required).
      * Uses VPC-level details from {@code vpc_details}.
      */
-    protected boolean executeVpcScript(Vpc vpc, String command, String... args) {
+    protected boolean executeVpcScript(Vpc vpc, String command, JsonObject argsPayload) {
+        return executeVpcScriptAndReturnOutput(vpc, command, argsPayload).first() == EXIT_CODE_SUCCESS;
+    }
+
+    protected Pair<Integer, String> executeVpcScriptAndReturnOutput(Vpc vpc, String command, JsonObject argsPayload) {
         Pair<Long, Extension> physNetAndExt = resolveExtensionForVpc(vpc);
         if (physNetAndExt == null) {
             logger.warn("executeVpcScript: no extension found for VPC {} zone {}", vpc.getId(), vpc.getZoneId());
-            return false;
+            return new Pair<>(EXIT_CODE_FAILURE, "No extension found for VPC " + vpc.getId());
         }
         Long physicalNetworkId = physNetAndExt.first();
         Extension extension = physNetAndExt.second();
         File scriptFile = resolveScriptFileForVpc(physicalNetworkId, extension);
-
-        String physicalNetworkDetailsJson = buildPhysicalNetworkDetailsJson(physicalNetworkId, extension);
-        String vpcExtDetailsJson = getVpcExtensionDetailsJson(vpc.getId());
-
-        logger.debug("Physical network details JSON: {}", physicalNetworkDetailsJson);
-        logger.debug("VPC extension details JSON: {}", vpcExtDetailsJson);
-
-        List<String> cmdLine = new ArrayList<>();
-        cmdLine.add(scriptFile.getAbsolutePath());
-        cmdLine.add(command);
-        cmdLine.addAll(Arrays.asList(args));
-        cmdLine.add(ARG_PHYSICAL_NETWORK_EXTENSION_DETAILS);
-        cmdLine.add(physicalNetworkDetailsJson);
-        cmdLine.add(ARG_NETWORK_EXTENSION_DETAILS);
-        cmdLine.add(vpcExtDetailsJson);
-
-        logger.debug("Executing VPC extension script: {}", String.join(" ", cmdLine));
-
         try {
-            ProcessBuilder pb = new ProcessBuilder(cmdLine);
-            pb.redirectErrorStream(true);
-            Process process = pb.start();
-            byte[] output = process.getInputStream().readAllBytes();
-            int exitCode = process.waitFor();
-
-            String outputStr = new String(output).trim();
-            if (!outputStr.isEmpty()) {
-                logger.debug("Script output: {}", outputStr);
-            }
-            if (exitCode != 0) {
-                logger.error("VPC extension script {} failed with exit code {}: {}", command, exitCode, outputStr);
-                return false;
-            }
-            return true;
+            JsonObject payload = buildVpcScriptPayload(vpc, argsPayload, physicalNetworkId, extension);
+            return executeScriptWithFilePayload(scriptFile, command, payload, "VPC extension");
         } catch (Exception e) {
             logger.error("Failed to execute VPC extension script {}: {}", command, e.getMessage(), e);
             throw new CloudRuntimeException("Failed to execute VPC extension script: " + command, e);
         }
+    }
+
+    private JsonObject buildVpcScriptPayload(Vpc vpc, JsonObject argsPayload, Long physicalNetworkId, Extension extension) {
+        JsonObject payload = new JsonObject();
+        payload.add(ARG_PHYSICAL_NETWORK_EXTENSION_DETAILS,
+                buildPhysicalNetworkExtensionDetailsPayload(physicalNetworkId, extension));
+        payload.add(ARG_NETWORK_EXTENSION_DETAILS, buildVpcExtensionDetailsPayload(vpc.getId()));
+        payload.add(ARG_PAYLOAD, argsPayload != null ? argsPayload : new JsonObject());
+        return payload;
     }
 
     protected PublicIpAddress getVpcSourceNatIp(long vpcId) {
@@ -2634,26 +2474,22 @@ public class NetworkExtensionElement extends AdapterBase implements
         ensureExtensionDetails(vpc);
 
         // Step 2: Create the VPC namespace (no anchor tier network needed).
-        List<String> implArgs = new ArrayList<>();
-        implArgs.add("--vpc-id");  implArgs.add(String.valueOf(vpc.getId()));
-        implArgs.add("--cidr");    implArgs.add(safeStr(vpc.getCidr()));
+        JsonObject implPayload = new JsonObject();
+        implPayload.addProperty("vpc_id", String.valueOf(vpc.getId()));
+        implPayload.addProperty("cidr", safeStr(vpc.getCidr()));
 
         // Include source NAT IP if already allocated, so the script can set up the
         // VPC-level SNAT rule for the entire VPC CIDR.
         final PublicIpAddress sourceNatIp = getVpcSourceNatIp(vpc.getId());
         if (sourceNatIp != null) {
-            implArgs.add("--public-ip");      implArgs.add(safeStr(sourceNatIp.getAddress().addr()));
-            implArgs.add("--public-vlan");    implArgs.add(safeStr(getPublicVlanTag(sourceNatIp.getId())));
-            implArgs.add("--public-gateway"); implArgs.add(safeStr(sourceNatIp.getGateway()));
-            implArgs.add("--public-cidr");    implArgs.add(safeStr(getPublicCidr(sourceNatIp.getId())));
-            implArgs.add("--source-nat");     implArgs.add("true");
+            implPayload.addProperty("public_ip", safeStr(sourceNatIp.getAddress().addr()));
+            implPayload.addProperty("public_vlan", safeStr(getPublicVlanTag(sourceNatIp.getId())));
+            implPayload.addProperty("public_gateway", safeStr(sourceNatIp.getGateway()));
+            implPayload.addProperty("public_cidr", safeStr(getPublicCidr(sourceNatIp.getId())));
+            implPayload.addProperty("source_nat", "true");
         }
 
-        if (!executeVpcScript(vpc, CMD_IMPLEMENT_VPC, implArgs.toArray(new String[0]))) {
-            return false;
-        }
-
-        return true;
+        return executeVpcScript(vpc, CMD_IMPLEMENT_VPC, implPayload);
     }
 
     /**
@@ -2677,20 +2513,20 @@ public class NetworkExtensionElement extends AdapterBase implements
                     continue;
                 }
 
-                final List<String> args = new ArrayList<>();
-                args.add("--network-id"); args.add(String.valueOf(network.getId()));
-                args.add("--vlan");       args.add(safeStr(getVlanId(network)));
-                args.addAll(getVpcIdArgs(network));
+                final JsonObject payload = new JsonObject();
+                payload.addProperty("network_id", String.valueOf(network.getId()));
+                payload.addProperty("vlan", safeStr(getVlanId(network)));
+                addVpcIdToPayload(payload, network);
 
-                final boolean tierResult = executeScript(network, CMD_DESTROY_NETWORK, args.toArray(new String[0]));
+                final boolean tierResult = executeScript(network, CMD_DESTROY_NETWORK, payload);
                 result = result && tierResult;
             }
         }
 
         // Remove the VPC namespace and VPC-level details regardless of tier result.
-        List<String> vpcArgs = new ArrayList<>();
-        vpcArgs.add("--vpc-id"); vpcArgs.add(String.valueOf(vpc.getId()));
-        boolean vpcResult = executeVpcScript(vpc, CMD_SHUTDOWN_VPC, vpcArgs.toArray(new String[0]));
+        JsonObject vpcPayload = new JsonObject();
+        vpcPayload.addProperty("vpc_id", String.valueOf(vpc.getId()));
+        boolean vpcResult = executeVpcScript(vpc, CMD_SHUTDOWN_VPC, vpcPayload);
         if (vpcResult) {
             try {
                 vpcDetailsDao.removeDetail(vpc.getId(), NETWORK_DETAIL_EXTENSION_DETAILS);
@@ -2737,17 +2573,17 @@ public class NetworkExtensionElement extends AdapterBase implements
             return false;
         }
 
-        final List<String> args = new ArrayList<>();
+        final JsonObject payload = new JsonObject();
         final VlanVO vlan = vlanDao.findById(address.getVlanId());
-        args.add("--vpc-id");         args.add(String.valueOf(vpc.getId()));
-        args.add("--cidr");           args.add(safeStr(vpc.getCidr()));
-        args.add("--public-ip");      args.add(safeStr(address.getAddress().addr()));
-        args.add("--public-vlan");    args.add(safeStr(getPublicVlanTag(address.getId())));
-        args.add("--public-gateway"); args.add(vlan != null ? safeStr(vlan.getVlanGateway()) : "");
-        args.add("--public-cidr");    args.add(safeStr(getPublicCidr(address.getId())));
-        args.add("--source-nat");     args.add("true");
+        payload.addProperty("vpc_id", String.valueOf(vpc.getId()));
+        payload.addProperty("cidr", safeStr(vpc.getCidr()));
+        payload.addProperty("public_ip", safeStr(address.getAddress().addr()));
+        payload.addProperty("public_vlan", safeStr(getPublicVlanTag(address.getId())));
+        payload.addProperty("public_gateway", vlan != null ? safeStr(vlan.getVlanGateway()) : "");
+        payload.addProperty("public_cidr", safeStr(getPublicCidr(address.getId())));
+        payload.addProperty("source_nat", "true");
 
-        final boolean result = executeVpcScript(vpc, CMD_UPDATE_VPC_SOURCE_NAT_IP, args.toArray(new String[0]));
+        final boolean result = executeVpcScript(vpc, CMD_UPDATE_VPC_SOURCE_NAT_IP, payload);
         if (!result) {
             logger.warn("updateVpcSourceNatIp: failed to update source NAT IP for VPC {} to {}",
                     vpc.getId(), address.getAddress().addr());
@@ -2779,15 +2615,15 @@ public class NetworkExtensionElement extends AdapterBase implements
 
         String aclRulesBase64 = buildAclRulesBase64(activeRules);
 
-        List<String> args = new ArrayList<>();
-        args.add("--network-id"); args.add(String.valueOf(config.getId()));
-        args.add("--vlan");       args.add(safeStr(getVlanId(config)));
-        args.add("--gateway");    args.add(safeStr(config.getGateway()));
-        args.add("--cidr");       args.add(safeStr(config.getCidr()));
-        args.addAll(getVpcIdArgs(config));
+        JsonObject payload = new JsonObject();
+        payload.addProperty("network_id", String.valueOf(config.getId()));
+        payload.addProperty("vlan", safeStr(getVlanId(config)));
+        payload.addProperty("gateway", safeStr(config.getGateway()));
+        payload.addProperty("cidr", safeStr(config.getCidr()));
+        payload.addProperty("acl_rules", aclRulesBase64);
+        addVpcIdToPayload(payload, config);
 
-        boolean result = executeScriptWithFilePayload(config, CMD_APPLY_NETWORK_ACL,
-                "--acl-rules-file", aclRulesBase64, args.toArray(new String[0]));
+        boolean result = executeScript(config, CMD_APPLY_NETWORK_ACL, payload);
         if (!result) {
             throw new ResourceUnavailableException(
                     "Failed to apply network ACL rules for network " + config.getId(),
@@ -2820,15 +2656,15 @@ public class NetworkExtensionElement extends AdapterBase implements
             try {
                 String aclRulesBase64 = buildAclRulesBase64(activeRules);
 
-                List<String> args = new ArrayList<>();
-                args.add("--network-id"); args.add(String.valueOf(network.getId()));
-                args.add("--vlan");       args.add(safeStr(getVlanId(network)));
-                args.add("--gateway");    args.add(safeStr(network.getGateway()));
-                args.add("--cidr");       args.add(safeStr(network.getCidr()));
-                args.addAll(getVpcIdArgs(network));
+                JsonObject payload = new JsonObject();
+                payload.addProperty("network_id", String.valueOf(network.getId()));
+                payload.addProperty("vlan", safeStr(getVlanId(network)));
+                payload.addProperty("gateway", safeStr(network.getGateway()));
+                payload.addProperty("cidr", safeStr(network.getCidr()));
+                payload.addProperty("acl_rules", aclRulesBase64);
+                addVpcIdToPayload(payload, network);
 
-                boolean r = executeScriptWithFilePayload(network, CMD_APPLY_NETWORK_ACL,
-                        "--acl-rules-file", aclRulesBase64, args.toArray(new String[0]));
+                boolean r = executeScript(network, CMD_APPLY_NETWORK_ACL, payload);
                 result = result && r;
             } catch (Exception e) {
                 logger.warn("reorderAclRules: failed for network {}: {}", network.getId(), e.getMessage());
