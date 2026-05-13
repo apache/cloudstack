@@ -2248,7 +2248,11 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 CleanupConvertedInstanceDisksCommand cleanupCommand =
                         new CleanupConvertedInstanceDisksCommand(temporaryConvertLocation, convertedDisksPrefix);
                 try {
-                    agentManager.send(convertHost.getId(), cleanupCommand);
+                    Answer cleanupAnswer = agentManager.send(convertHost.getId(), cleanupCommand);
+                    if (!cleanupAnswer.getResult()) {
+                        logger.warn("Failed to cleanup the converted disks for the VM {} through " +
+                                "the conversion host {}: {}", sourceVM, convertHost.getName(), cleanupAnswer.getDetails());
+                    }
                 } catch (AgentUnavailableException | OperationTimedoutException e) {
                     logger.error("Error cleaning up converted disks for VM {} through the conversion host {}",
                             sourceVM, convertHost.getName(), e);

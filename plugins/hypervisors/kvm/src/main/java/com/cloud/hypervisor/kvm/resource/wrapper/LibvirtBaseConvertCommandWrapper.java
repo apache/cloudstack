@@ -51,7 +51,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public abstract class LibvirtBaseConvertCommandWrapper <T extends Command, A extends Answer, R extends ServerResource> extends CommandWrapper<Command, Answer, ServerResource> {
+public abstract class LibvirtBaseConvertCommandWrapper <T extends Command, A extends Answer, R extends ServerResource> extends CommandWrapper<T, A, R> {
 
     protected KVMStoragePool getTemporaryStoragePool(DataStoreTO conversionTemporaryLocation, KVMStoragePoolManager storagePoolMgr) {
         if (conversionTemporaryLocation instanceof NfsTO) {
@@ -237,8 +237,10 @@ public abstract class LibvirtBaseConvertCommandWrapper <T extends Command, A ext
             logger.error(err);
             throw new CloudRuntimeException(err);
         }
-        InputStream is = new BufferedInputStream(new FileInputStream(xmlPath));
-        String xml = IOUtils.toString(is, Charset.defaultCharset());
+        String xml;
+        try (InputStream is = new BufferedInputStream(new FileInputStream(xmlPath))) {
+            xml = IOUtils.toString(is, Charset.defaultCharset());
+        }
         final LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
         try {
             parser.parseDomainXML(xml);

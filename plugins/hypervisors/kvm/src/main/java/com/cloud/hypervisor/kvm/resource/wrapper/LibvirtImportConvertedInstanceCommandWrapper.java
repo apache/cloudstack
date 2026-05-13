@@ -20,8 +20,6 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import java.util.List;
 
-import com.cloud.agent.api.Command;
-import com.cloud.resource.ServerResource;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 
 import com.cloud.agent.api.Answer;
@@ -42,9 +40,7 @@ import com.cloud.resource.ResourceWrapper;
 public class LibvirtImportConvertedInstanceCommandWrapper extends LibvirtBaseConvertCommandWrapper<ImportConvertedInstanceCommand, Answer, LibvirtComputingResource> {
 
     @Override
-    public Answer execute(Command command, ServerResource resource) {
-        ImportConvertedInstanceCommand cmd = (ImportConvertedInstanceCommand) command;
-        LibvirtComputingResource serverResource = (LibvirtComputingResource) resource;
+    public Answer execute(ImportConvertedInstanceCommand cmd, LibvirtComputingResource serverResource) {
         RemoteInstanceTO sourceInstance = cmd.getSourceInstance();
         Hypervisor.HypervisorType sourceHypervisorType = sourceInstance.getHypervisorType();
         String sourceInstanceName = sourceInstance.getInstanceName();

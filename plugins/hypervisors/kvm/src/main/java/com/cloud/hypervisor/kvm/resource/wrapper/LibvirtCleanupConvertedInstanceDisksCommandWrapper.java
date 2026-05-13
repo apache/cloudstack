@@ -20,7 +20,6 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CleanupConvertedInstanceDisksCommand;
-import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtDomainXMLParser;
@@ -28,7 +27,6 @@ import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.resource.ResourceWrapper;
-import com.cloud.resource.ServerResource;
 
 import java.io.File;
 import java.util.List;
@@ -37,11 +35,9 @@ import java.util.List;
 public class LibvirtCleanupConvertedInstanceDisksCommandWrapper extends LibvirtBaseConvertCommandWrapper<CleanupConvertedInstanceDisksCommand, Answer, LibvirtComputingResource> {
 
     @Override
-    public Answer execute(Command command, ServerResource resource) {
-        CleanupConvertedInstanceDisksCommand cmd = (CleanupConvertedInstanceDisksCommand) command;
-        LibvirtComputingResource serverResource = (LibvirtComputingResource) resource;
-        DataStoreTO vmVolumesStore = cmd.getVmVolumesStore();
-        String vmVolumesPrefix = cmd.getVmVolumesPrefix();
+    public Answer execute(CleanupConvertedInstanceDisksCommand command, LibvirtComputingResource serverResource) {
+        DataStoreTO vmVolumesStore = command.getVmVolumesStore();
+        String vmVolumesPrefix = command.getVmVolumesPrefix();
 
         final KVMStoragePoolManager storagePoolMgr = serverResource.getStoragePoolMgr();
         KVMStoragePool conversionPool = getTemporaryStoragePool(vmVolumesStore, storagePoolMgr);
@@ -53,7 +49,7 @@ public class LibvirtCleanupConvertedInstanceDisksCommandWrapper extends LibvirtB
             boolean xmlExists = new File(xmlPath).exists();
 
             LibvirtDomainXMLParser xmlParser = xmlExists ? parseMigratedVMXmlDomain(volumesBasePath) : null;
-            List<KVMPhysicalDisk> temporaryDisks = xmlExists ?
+            List<KVMPhysicalDisk> temporaryDisks = xmlExists && xmlParser != null ?
                     getTemporaryDisksFromParsedXml(conversionPool, xmlParser, volumesBasePath) :
                     getTemporaryDisksWithPrefixFromTemporaryPool(conversionPool, conversionPoolPath, vmVolumesPrefix);
 
