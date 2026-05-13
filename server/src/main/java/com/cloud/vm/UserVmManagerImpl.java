@@ -6680,7 +6680,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             applyLeaseOnCreateInstance(vm, cmd.getLeaseDuration(), cmd.getLeaseExpiryAction(), svcOffering);
         }
 
-        if (_itMgr.isBlankInstance(template) && cmd instanceof DeployVMCmd && ((DeployVMCmd) cmd).isBlankInstance()) {
+        if (_itMgr.isBlankInstanceDefaultTemplate(template) && cmd instanceof DeployVMCmd && ((DeployVMCmd) cmd).isBlankInstance()) {
             logger.info("Revoking launch permission for Dummy template");
             launchPermissionDao.removePermissions(template.getId(), Collections.singletonList(owner.getId()));
         }
