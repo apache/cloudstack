@@ -219,7 +219,12 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         if (sourceIpAddressId == null) {
             return null;
         }
-        return _ipAddressDao.findById(sourceIpAddressId);
+        IPAddressVO sourceIp = _ipAddressDao.findById(sourceIpAddressId);
+        if (sourceIp == null) {
+            throw new CloudRuntimeException("Unable to find IP address by id=" + sourceIpAddressId);
+        }
+
+        return sourceIp;
     }
 
     protected FirewallRule createIngressFirewallRuleForIsolatedIp(FirewallRule rule, Account caller, IPAddressVO sourceIp)

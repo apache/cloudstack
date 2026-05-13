@@ -27,6 +27,7 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkRuleApplier;
 import com.cloud.network.dao.FirewallRulesDao;
+import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
@@ -43,6 +44,7 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
 import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.junit.After;
@@ -97,6 +99,8 @@ public class FirewallManagerTest {
     FirewallRulesDao _firewallDao;
     @Mock
     NetworkDao _networkDao;
+    @Mock
+    IPAddressDao _ipAddressDao;
 
     @Spy
     @InjectMocks
@@ -693,5 +697,11 @@ public class FirewallManagerTest {
     public void testGetSourceIpForIngressRuleReturnsNullWhenIdIsNull() {
         IPAddressVO result = _firewallMgr.getSourceIpForIngressRule(null);
         Assert.assertNull(result);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testGetSourceIpForIngressRuleReturnsNullWhenIpIsnotPresent() {
+        when(_ipAddressDao.findById(1L)).thenReturn(null);
+        _firewallMgr.getSourceIpForIngressRule(1L);
     }
 }
