@@ -1319,6 +1319,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         final Map<String, Long> dataDiskOfferingMap = cmd.getDataDiskToDiskOfferingList();
         final Map<String, String> details = cmd.getDetails();
         final boolean forced = cmd.isForced();
+        Long guestOsId = cmd.getGuestOsId();
         List<HostVO> hosts = resourceManager.listHostsInClusterByStatus(clusterId, Status.Up);
         UserVm userVm = null;
         List<String> additionalNameFilters = getAdditionalNameFilters(cluster);
@@ -1350,7 +1351,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                             template, instanceName, displayName, hostName, caller, owner, userId,
                             serviceOffering, dataDiskOfferingMap,
                             nicNetworkMap, nicIpAddressMap,
-                            details, cmd.getMigrateAllowed(), managedVms, forced);
+                            details, cmd.getMigrateAllowed(), managedVms, forced, guestOsId);
                 }
             }
 
@@ -1497,7 +1498,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                                                          String hostName, Account caller, Account owner, long userId,
                                                          ServiceOfferingVO serviceOffering, Map<String, Long> dataDiskOfferingMap,
                                                          Map<String, Long> nicNetworkMap, Map<String, Network.IpAddresses> nicIpAddressMap,
-                                                         Map<String, String> details, Boolean migrateAllowed, List<String> managedVms, boolean forced) throws ResourceAllocationException {
+                                                         Map<String, String> details, Boolean migrateAllowed, List<String> managedVms, boolean forced, Long guestOsId) throws ResourceAllocationException {
         UserVm userVm = null;
         for (HostVO host : hosts) {
             HashMap<String, UnmanagedInstanceTO> unmanagedInstances = getUnmanagedInstancesForHost(host, instanceName, managedVms);
@@ -1548,7 +1549,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                     userVm = importVirtualMachineInternal(unmanagedInstance, instanceName, zone, cluster, host,
                             template, displayName, hostName, CallContext.current().getCallingAccount(), owner, userId,
                             serviceOffering, dataDiskOfferingMap,
-                            nicNetworkMap, nicIpAddressMap, null,
+                            nicNetworkMap, nicIpAddressMap, guestOsId,
                             details, migrateAllowed, forced, true);
                 } finally {
                     ReservationHelper.closeAll(reservations);
@@ -2611,6 +2612,9 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         Long hostId = cmd.getHostId();
         Long poolId = cmd.getStoragePoolId();
         Long networkId = cmd.getNetworkId();
+        Long guestOsId = cmd.getGuestOsId();
+        String macAddress = cmd.getMacAddress();
+        String ipAddress = cmd.getIpAddress();
 
         UnmanagedInstanceTO unmanagedInstanceTO = null;
         if (ImportSource.EXTERNAL == importSource) {
@@ -2679,12 +2683,12 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 userVm = importExternalKvmVirtualMachine(unmanagedInstanceTO, instanceName, zone,
                         template, displayName, hostName, caller, owner, userId,
                         serviceOffering, dataDiskOfferingMap,
-                        nicNetworkMap, nicIpAddressMap, remoteUrl, username, password, tmpPath, details);
+                        nicNetworkMap, nicIpAddressMap, guestOsId, remoteUrl, username, password, tmpPath, details);
             } else if (ImportSource.SHARED == importSource || ImportSource.LOCAL == importSource) {
                 try {
                     userVm = importKvmVirtualMachineFromDisk(importSource, instanceName, zone,
                             template, displayName, hostName, caller, owner, userId,
-                            serviceOffering, dataDiskOfferingMap, networkId, hostId, poolId, diskPath,
+                            serviceOffering, dataDiskOfferingMap, networkId, macAddress, ipAddress, guestOsId, hostId, poolId, diskPath,
                             details);
                 } catch (InsufficientCapacityException e) {
                     throw new RuntimeException(e);
@@ -2711,7 +2715,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                                                 final VirtualMachineTemplate template, final String displayName, final String hostName, final Account caller, final Account owner, final Long userId,
                                                 final ServiceOfferingVO serviceOffering, final Map<String, Long> dataDiskOfferingMap,
                                                 final Map<String, Long> nicNetworkMap, final Map<String, Network.IpAddresses> callerNicIpAddressMap,
-                                                final String remoteUrl, String username, String password, String tmpPath, final Map<String, String> details) throws ResourceAllocationException {
+                                                final Long guestOsId, final String remoteUrl, String username, String password, String tmpPath, final Map<String, String> details) throws ResourceAllocationException {
         UserVm userVm = null;
 
         Map<String, String> allDetails = new HashMap<>(details);
@@ -2747,7 +2751,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         try {
             userVm = userVmManager.importVM(zone, null, template, null, displayName, owner,
                     null, caller, true, null, owner.getAccountId(), userId,
-                    serviceOffering, null, null, hostName,
+                    serviceOffering, null, guestOsId, hostName,
                     Hypervisor.HypervisorType.KVM, allDetails, powerState, null);
         } catch (InsufficientCapacityException ice) {
             logger.error(String.format("Failed to import vm name: %s", instanceName), ice);
@@ -2848,6 +2852,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     private UserVm importKvmVirtualMachineFromDisk(final ImportSource importSource, final String instanceName, final DataCenter zone,
                                                    final VirtualMachineTemplate template, final String displayName, final String hostName, final Account caller, final Account owner, final Long userId,
                                                    final ServiceOfferingVO serviceOffering, final Map<String, Long> dataDiskOfferingMap, final Long networkId,
+                                                   final String requestedMacAddress, final String requestedIpAddress, final Long guestOsId,
                                                    final Long hostId, final Long poolId, final String diskPath, final Map<String, String> details) throws InsufficientCapacityException, ResourceAllocationException {
 
         UserVm userVm = null;
@@ -2878,9 +2883,15 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             }
         }
 
-        String macAddress = networkModel.getNextAvailableMacAddressInNetwork(networkId);
+        String macAddress = StringUtils.defaultIfBlank(requestedMacAddress, networkModel.getNextAvailableMacAddressInNetwork(networkId));
+        if (!NetUtils.isValidMac(macAddress)) {
+            throw new InvalidParameterValueException("MAC address is invalid: " + macAddress);
+        }
 
-        String ipAddress = network.getGuestType() != Network.GuestType.L2 ? "auto" : null;
+        String ipAddress = StringUtils.defaultIfBlank(requestedIpAddress, network.getGuestType() != Network.GuestType.L2 ? "auto" : null);
+        if (StringUtils.isNotBlank(ipAddress) && !"auto".equals(ipAddress) && !NetUtils.isValidIp4(ipAddress)) {
+            throw new InvalidParameterValueException("IP address is invalid: " + ipAddress);
+        }
 
         Network.IpAddresses requestedIpPair = new Network.IpAddresses(ipAddress, null, macAddress);
 
@@ -2903,7 +2914,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             checkVmResourceLimitsForExternalKvmVmImport(owner, serviceOffering, (VMTemplateVO) template, details, reservations);
             userVm = userVmManager.importVM(zone, null, template, null, displayName, owner,
                     null, caller, true, null, owner.getAccountId(), userId,
-                    serviceOffering, null, null, hostName,
+                    serviceOffering, null, guestOsId, hostName,
                     Hypervisor.HypervisorType.KVM, allDetails, powerState, networkNicMap);
 
             if (userVm == null) {

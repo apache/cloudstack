@@ -61,6 +61,7 @@ public class LibvirtDomainXMLParser {
     private Integer vncPort;
     private  String vncPasswd;
     private String desc;
+    private String osInfoId;
     private LibvirtVMDef.CpuTuneDef cpuTuneDef;
     private LibvirtVMDef.CpuModeDef cpuModeDef;
     private String name;
@@ -79,6 +80,7 @@ public class LibvirtDomainXMLParser {
             Element rootElement = doc.getDocumentElement();
 
             desc = getTagValue("description", rootElement);
+            osInfoId = getOsInfoId(rootElement);
             name = getTagValue("name", rootElement);
 
             Element devices = (Element)rootElement.getElementsByTagName("devices").item(0);
@@ -455,6 +457,27 @@ public class LibvirtDomainXMLParser {
         return node.getAttribute(attr);
     }
 
+    private static String getOsInfoId(Element rootElement) {
+        if (rootElement == null) {
+            return null;
+        }
+
+        NodeList nodes = rootElement.getElementsByTagName("*");
+        for (int i = 0; i < nodes.getLength(); i++) {
+            Node node = nodes.item(i);
+            String nodeName = node.getNodeName();
+            String namespace = node.getNamespaceURI();
+            if ("libosinfo:os".equals(nodeName) || ("os".equals(node.getLocalName()) && StringUtils.contains(namespace, "libosinfo"))) {
+                Element element = (Element)node;
+                String id = element.getAttribute("id");
+                if (StringUtils.isNotBlank(id)) {
+                    return id;
+                }
+            }
+        }
+        return null;
+    }
+
     /**
      * Parse the disk block part of the libvirt XML.
      * @param def
@@ -508,6 +531,10 @@ public class LibvirtDomainXMLParser {
 
     public String getDescription() {
         return desc;
+    }
+
+    public String getOsInfoId() {
+        return osInfoId;
     }
 
     public String getName() {

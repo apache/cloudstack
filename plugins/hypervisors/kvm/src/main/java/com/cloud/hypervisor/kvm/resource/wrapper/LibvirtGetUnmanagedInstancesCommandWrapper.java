@@ -131,6 +131,8 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
             if (parser.getCpuModeDef() != null) {
                 instance.setCpuCoresPerSocket(parser.getCpuModeDef().getCoresPerSocket());
             }
+            instance.setOperatingSystemId(parser.getOsInfoId());
+            instance.setOperatingSystem(parser.getDescription());
             instance.setHypervisorType(Hypervisor.HypervisorType.KVM.name());
             instance.setPowerState(getPowerState(libvirtComputingResource.getVmState(conn,domain.getName())));
             instance.setMemory((int) LibvirtComputingResource.getDomainMemory(domain) / 1024);

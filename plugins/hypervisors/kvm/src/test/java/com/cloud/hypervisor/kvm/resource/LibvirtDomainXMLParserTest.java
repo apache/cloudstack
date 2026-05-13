@@ -73,10 +73,17 @@ public class LibvirtDomainXMLParserTest extends TestCase {
         String diskPath2 = "/var/lib/libvirt/images/my-test-image2.qcow2";
         String secretUuid = "5644d664-a238-3a9b-811c-961f609d29f4";
 
-        String xml = "<domain type='kvm' id='10'>" +
+        String osInfoId = "http://ubuntu.com/ubuntu/24.04";
+
+        String xml = "<domain type='kvm' id='10' xmlns:libosinfo='http://libosinfo.org/xmlns/libvirt/domain/1.0'>" +
                      "<name>s-2970-VM</name>" +
                      "<uuid>4d2c1526-865d-4fc9-a1ac-dbd1801a22d0</uuid>" +
                      "<description>Debian GNU/Linux 6(64-bit)</description>" +
+                     "<metadata>" +
+                     "<libosinfo:libosinfo>" +
+                     "<libosinfo:os id='" + osInfoId + "'/>" +
+                     "</libosinfo:libosinfo>" +
+                     "</metadata>" +
                      "<memory unit='KiB'>262144</memory>" +
                      "<currentMemory unit='KiB'>262144</currentMemory>" +
                      "<vcpu placement='static'>1</vcpu>" +
@@ -220,6 +227,7 @@ public class LibvirtDomainXMLParserTest extends TestCase {
         parser.parseDomainXML(xml);
 
         assertEquals(vncPort - 5900, (int)parser.getVncPort());
+        assertEquals(osInfoId, parser.getOsInfoId());
 
         List<DiskDef> disks = parser.getDisks();
         /* Disk 0 is the first disk, the QCOW2 file backed virto disk */

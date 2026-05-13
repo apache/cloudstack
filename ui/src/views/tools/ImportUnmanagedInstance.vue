@@ -262,6 +262,24 @@
                   <a-span v-else>{{ $t('label.no.matching.guest.os.vmware.import') }}</a-span>
                 </template>
               </a-form-item>
+              <a-form-item name="osid" ref="osid" v-if="showOsTypeSelection">
+                <template #label>
+                  <tooltip-label :title="$t('label.guest.os')" :tooltip="$t('label.select.guest.os.type')"/>
+                </template>
+                <a-select
+                  v-model:value="form.osid"
+                  showSearch
+                  allowClear
+                  optionFilterProp="label"
+                  :filterOption="(input, option) => {
+                    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }"
+                  :loading="osTypesLoading">
+                  <a-select-option v-for="ostype in osTypeSelectOptions" :key="ostype.value" :label="ostype.label">
+                    {{ ostype.label }}
+                  </a-select-option>
+                </a-select>
+              </a-form-item>
               <a-form-item name="serviceofferingid" ref="serviceofferingid">
                 <template #label>
                   <tooltip-label :title="$t('label.serviceofferingid')" :tooltip="apiParams.serviceofferingid.description"/>
@@ -403,6 +421,22 @@
                       </span>
                     </a-select-option>
                   </a-select>
+                </a-form-item>
+                <a-form-item name="macaddress" ref="macaddress" v-if="apiParams.macaddress">
+                  <template #label>
+                    <tooltip-label :title="$t('label.macaddress')" :tooltip="apiParams.macaddress.description"/>
+                  </template>
+                  <a-input
+                    v-model:value="form.macaddress"
+                    :placeholder="$t('label.macaddress.example')" />
+                </a-form-item>
+                <a-form-item name="ipaddress" ref="ipaddress" v-if="apiParams.ipaddress">
+                  <template #label>
+                    <tooltip-label :title="$t('label.ipaddress')" :tooltip="apiParams.ipaddress.description"/>
+                  </template>
+                  <a-input
+                    v-model:value="form.ipaddress"
+                    :placeholder="$t('label.ipaddress')" />
                 </a-form-item>
               </div>
               <a-row v-if="!selectedVmwareVcenter" :gutter="12">
@@ -546,6 +580,8 @@ export default {
       selectedDomainId: null,
       templates: [],
       templateLoading: false,
+      osTypes: [],
+      osTypesLoading: false,
       templateType: this.defaultTemplateType(),
       totalComputeOfferings: 0,
       computeOfferings: [],
@@ -670,6 +706,12 @@ export default {
       }
       return false
     },
+    showOsTypeSelection () {
+      return (this.isDiskImport || this.isExternalImport || this.isKVMUnmanagedImport) && this.apiParams.osid
+    },
+    isKVMUnmanagedImport () {
+      return this.hypervisor && this.hypervisor === 'kvm' && this.importsource === 'unmanaged'
+    },
     isKVMUnmanage () {
       return this.hypervisor && this.hypervisor === 'kvm' && (this.importsource === 'unmanaged' || this.importsource === 'external')
     },
@@ -724,6 +766,32 @@ export default {
           ostypename: template.ostypename
         }
       })
+    },
+    osTypeSelectOptions () {
+      const options = this.osTypes.map((ostype) => {
+        return {
+          label: ostype.description,
+          value: ostype.id
+        }
+      })
+      const filter = this.getGuestOsFilter()
+      if (!filter.familyTerms.length) {
+        return options
+      }
+
+      const familyMatches = options.filter(option => this.matchesGuestOsFamily(option.label, filter.familyTerms))
+      if (!familyMatches.length) {
+        return options
+      }
+
+      if (filter.version) {
+        const versionMatches = familyMatches.filter(option => this.matchesGuestOsVersion(option.label, filter.version))
+        if (versionMatches.length) {
+          return versionMatches
+        }
+      }
+
+      return familyMatches
     },
     dataDisks () {
       var disks = []
@@ -793,7 +861,9 @@ export default {
         forceconverttopool: this.switches.forceConvertToPool,
         domainid: null,
         account: null,
-        osid: null
+        osid: null,
+        macaddress: null,
+        ipaddress: null
       })
       this.rules = reactive({
         displayname: [{ required: true, message: this.$t('message.error.input.value') }],
@@ -814,10 +884,69 @@ export default {
       })
       this.fetchKvmHostsForConversion()
       this.fetchKvmHostsForImporting()
+      if (this.showOsTypeSelection) {
+        this.fetchOsTypes()
+      }
       if (this.resource?.disk?.length > 1) {
         this.updateSelectedRootDisk()
       }
       this.fetchVmwareToKVMExtraConfigsSetting()
+    },
+    fetchOsTypes () {
+      if (!('listOsTypes' in this.$store.getters.apis)) {
+        return
+      }
+      this.osTypesLoading = true
+      getAPI('listOsTypes').then(json => {
+        this.osTypes = json.listostypesresponse.ostype || []
+        this.selectMatchedOsType()
+      }).finally(() => {
+        this.osTypesLoading = false
+      })
+    },
+    getGuestOsFilter () {
+      const source = [
+        this.resource?.operatingSystemId,
+        this.resource?.operatingSystem
+      ].filter(Boolean).join(' ').toLowerCase()
+      const families = [
+        { aliases: ['ubuntu'], terms: ['ubuntu'] },
+        { aliases: ['debian'], terms: ['debian'] },
+        { aliases: ['redhat', 'red hat', 'rhel'], terms: ['red hat', 'rhel'] },
+        { aliases: ['centos'], terms: ['centos'] },
+        { aliases: ['rocky'], terms: ['rocky'] },
+        { aliases: ['alma'], terms: ['alma'] },
+        { aliases: ['oracle'], terms: ['oracle'] },
+        { aliases: ['suse', 'opensuse'], terms: ['suse'] },
+        { aliases: ['fedora'], terms: ['fedora'] },
+        { aliases: ['windows'], terms: ['windows'] },
+        { aliases: ['freebsd'], terms: ['freebsd'] }
+      ]
+      const matchedFamilies = families.filter(family => family.aliases.some(alias => source.includes(alias)))
+      const versionMatch = source.match(/\b\d+(?:[._-]\d+)?\b/)
+      return {
+        familyTerms: matchedFamilies.flatMap(family => family.terms),
+        version: versionMatch ? versionMatch[0].replace(/[_-]/g, '.') : null
+      }
+    },
+    matchesGuestOsFamily (label, familyTerms) {
+      const normalizedLabel = label.toLowerCase()
+      return familyTerms.some(term => normalizedLabel.includes(term))
+    },
+    matchesGuestOsVersion (label, version) {
+      const normalizedLabel = label.toLowerCase()
+      const normalizedVersion = version.toLowerCase()
+      const majorVersion = normalizedVersion.split('.')[0]
+      return normalizedLabel.includes(normalizedVersion) || normalizedLabel.includes(majorVersion)
+    },
+    selectMatchedOsType () {
+      if (this.form.osid || !this.osTypes.length) {
+        return
+      }
+      const options = this.osTypeSelectOptions
+      if (options.length > 0 && options.length < this.osTypes.length) {
+        this.form.osid = options[0].value
+      }
     },
     fetchVmwareToKVMExtraConfigsSetting () {
       const params = {
@@ -1228,6 +1357,12 @@ export default {
             }
             params.name = values.displayname
             params.networkid = values.networkid
+            if (values.macaddress) {
+              params.macaddress = values.macaddress
+            }
+            if (values.ipaddress) {
+              params.ipaddress = values.ipaddress
+            }
           }
         }
         if (!this.computeOffering || !this.computeOffering.id) {

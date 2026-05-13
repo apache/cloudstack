@@ -32,6 +32,7 @@ import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.GuestOSResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
@@ -118,6 +119,13 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
             description = "The ID of the Template for the Instance")
     private Long templateId;
 
+    @Parameter(name = ApiConstants.OS_ID,
+            type = CommandType.UUID,
+            entityType = GuestOSResponse.class,
+            since = "4.22.1",
+            description = "optional - the ID of the guest OS for the imported Instance.")
+    private Long guestOsId;
+
     @Parameter(name = ApiConstants.SERVICE_OFFERING_ID,
             type = CommandType.UUID,
             entityType = ServiceOfferingResponse.class,
@@ -185,6 +193,10 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
 
     public Long getTemplateId() {
         return templateId;
+    }
+
+    public Long getGuestOsId() {
+        return guestOsId;
     }
 
     public Long getProjectId() {

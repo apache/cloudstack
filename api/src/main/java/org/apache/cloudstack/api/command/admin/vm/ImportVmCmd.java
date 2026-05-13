@@ -30,7 +30,6 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.GuestOSResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
@@ -107,6 +106,18 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
             description = "the network ID")
     private Long networkId;
 
+    @Parameter(name = ApiConstants.MAC_ADDRESS,
+            type = CommandType.STRING,
+            since = "4.22.1",
+            description = "(only for importing VMs from KVM local/shared storage) optional - the MAC address for the imported VM NIC. If omitted, a new MAC address is generated.")
+    private String macAddress;
+
+    @Parameter(name = ApiConstants.IP_ADDRESS,
+            type = CommandType.STRING,
+            since = "4.22.1",
+            description = "(only for importing VMs from KVM local/shared storage) optional - the IPv4 address for the imported VM NIC. If omitted, IPv4 assignment remains automatic.")
+    private String ipAddress;
+
     @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, description = "Host where local disk is located")
     private Long hostId;
 
@@ -171,13 +182,6 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
             since = "4.22",
             description = "(only for importing VMs from VMware to KVM) optional - if true, forces virt-v2v conversions to write directly on the provided storage pool (avoid using temporary conversion pool).")
     private Boolean forceConvertToPool;
-
-    @Parameter(name = ApiConstants.OS_ID,
-            type = CommandType.UUID,
-            entityType = GuestOSResponse.class,
-            since = "4.22.1",
-            description = "(only for importing VMs from VMware to KVM) optional - the ID of the guest OS for the imported VM.")
-    private Long guestOsId;
 
     @Parameter(name = ApiConstants.USE_VDDK,
             type = CommandType.BOOLEAN,
@@ -275,6 +279,14 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
         return networkId;
     }
 
+    public String getMacAddress() {
+        return macAddress;
+    }
+
+    public String getIpAddress() {
+        return ipAddress;
+    }
+
     @Override
     public String getEventType() {
         return EventTypes.EVENT_VM_IMPORT;
@@ -286,10 +298,6 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
 
     public boolean getForceConvertToPool() {
         return BooleanUtils.toBooleanDefaultIfNull(forceConvertToPool, false);
-    }
-
-    public Long getGuestOsId() {
-        return guestOsId;
     }
 
     @Override
