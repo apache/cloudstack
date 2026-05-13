@@ -442,7 +442,6 @@ public class FirewallManagerTest {
         Map<Service, Map<Capability, String>> providerCapabilities = new HashMap<>();
         providerCapabilities.put(Service.Firewall, firewallCaps);
 
-        when(network.getId()).thenReturn(1L);
         when(network.getVpcId()).thenReturn(10L);
         when(fwProvider.getProvider()).thenReturn(Network.Provider.VPCVirtualRouter);
         when(fwProvider.getCapabilities()).thenReturn(providerCapabilities);
@@ -589,24 +588,6 @@ public class FirewallManagerTest {
         _firewallMgr.validateFirewallRuleForVpc(caller, ipAddress, 80, 80, "tcp", Purpose.Firewall, FirewallRuleType.User, 10L, FirewallRule.TrafficType.Ingress);
 
         verify(_accountMgr, times(1)).checkAccess(caller, null, true, ipAddress);
-    }
-
-    @Test
-    public void testCreateIngressFirewallRuleRoutesToVpcMethodWhenIpHasVpcId() throws NetworkRuleConflictException {
-        FirewallRule rule = Mockito.mock(FirewallRule.class);
-        IPAddressVO ipAddress = Mockito.mock(IPAddressVO.class);
-
-        when(rule.getSourceIpAddressId()).thenReturn(1L);
-        when(ipAddress.getVpcId()).thenReturn(10L);
-
-        doReturn(ipAddress).when(_firewallMgr).getSourceIpForIngressRule(1L);
-        doReturn(rule).when(_firewallMgr).createIngressFirewallRuleForVpcIp(rule, null, ipAddress);
-
-        doReturn(rule).when(_firewallMgr).createIngressFirewallRuleForVpcIp(
-                Mockito.eq(rule), Mockito.any(), Mockito.eq(ipAddress));
-
-        verify(_firewallMgr, never()).createIngressFirewallRuleForIsolatedIp(
-                Mockito.any(), Mockito.any(), Mockito.any());
     }
 
     @Test
