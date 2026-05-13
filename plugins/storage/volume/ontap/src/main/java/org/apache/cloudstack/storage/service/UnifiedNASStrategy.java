@@ -123,7 +123,7 @@ public class UnifiedNASStrategy extends NASStrategy {
         CloudStackVolume cloudStackVolume = null;
         FileInfo fileInfo = getFile(cloudStackVolumeMap.get(OntapStorageConstants.VOLUME_UUID),cloudStackVolumeMap.get(OntapStorageConstants.FILE_PATH));
 
-        if (fileInfo != null){
+        if (fileInfo != null) {
             cloudStackVolume = new CloudStackVolume();
             cloudStackVolume.setFlexVolumeUuid(cloudStackVolumeMap.get(OntapStorageConstants.VOLUME_UUID));
             cloudStackVolume.setFile(fileInfo);
@@ -297,59 +297,6 @@ public class UnifiedNASStrategy extends NASStrategy {
             throw new CloudRuntimeException("Failed to assign export policy: " + e.getMessage());
         }
     }
-
-    private boolean deleteFile(String volumeUuid, String filePath) {
-        logger.info("deleteFile: Deleting file: {} from volume: {}", filePath, volumeUuid);
-        try {
-            String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
-            nasFeignClient.deleteFile(authHeader, volumeUuid, filePath);
-            logger.info("deleteFile: File deleted successfully: {} from volume: {}", filePath, volumeUuid);
-            return true;
-        } catch (FeignException e) {
-            logger.error("deleteFile: Failed to delete file: {} from volume: {}", filePath, volumeUuid, e);
-            return false;
-        } catch (Exception e) {
-            logger.error("deleteFile: Exception while deleting file: {} from volume: {}", filePath, volumeUuid, e);
-            return false;
-        }
-    }
-
-    private OntapResponse<FileInfo> getFileInfo(String volumeUuid, String filePath) {
-        logger.debug("getFileInfo: Getting file info for: {} in volume: {}", filePath, volumeUuid);
-        try {
-            String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
-            OntapResponse<FileInfo> response = nasFeignClient.getFileResponse(authHeader, volumeUuid, filePath);
-            logger.debug("getFileInfo: Retrieved file info for: {} in volume: {}", filePath, volumeUuid);
-            return response;
-        } catch (FeignException e){
-            if (e.status() == 404) {
-                logger.debug("getFileInfo: File not found: {} in volume: {}", filePath, volumeUuid);
-                return null;
-            }
-            logger.error("getFileInfo: Failed to get file info: {} in volume: {}", filePath, volumeUuid, e);
-            throw new CloudRuntimeException("Failed to get file info: " + e.getMessage());
-        } catch (Exception e){
-            logger.error("getFileInfo: Exception while getting file info: {} in volume: {}", filePath, volumeUuid, e);
-            throw new CloudRuntimeException("Failed to get file info: " + e.getMessage());
-        }
-    }
-
-    private boolean updateFile(String volumeUuid, String filePath, FileInfo fileInfo) {
-        logger.info("updateFile: Updating file: {} in volume: {}", filePath, volumeUuid);
-        try {
-            String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
-            nasFeignClient.updateFile( authHeader, volumeUuid, filePath, fileInfo);
-            logger.info("updateFile: File updated successfully: {} in volume: {}", filePath, volumeUuid);
-            return true;
-        } catch (FeignException e) {
-            logger.error("updateFile: Failed to update file: {} in volume: {}", filePath, volumeUuid, e);
-            return false;
-        } catch (Exception e){
-            logger.error("updateFile: Exception while updating file: {} in volume: {}", filePath, volumeUuid, e);
-            return false;
-        }
-    }
-
 
     private ExportPolicy createExportPolicyRequest(AccessGroup accessGroup,String svmName , String volumeName){
 
