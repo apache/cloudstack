@@ -2976,6 +2976,14 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
             }
         }
 
+        Long vpcId = fwRule.getVpcId();
+        if (vpcId != null) {
+            Vpc vpc = ApiDBUtils.findVpcById(vpcId);
+            if (vpc != null) {
+                response.setVpcId(vpc.getUuid());
+            }
+        }
+
         FirewallRule.State state = fwRule.getState();
         String stateToSet = state.toString();
         if (state.equals(FirewallRule.State.Revoke)) {
@@ -5425,8 +5433,27 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         response.setIcmpCode(fwRule.getIcmpCode());
         response.setIcmpType(fwRule.getIcmpType());
 
-        Network network = ApiDBUtils.findNetworkById(fwRule.getNetworkId());
-        response.setNetworkId(network.getUuid());
+        Long networkId = fwRule.getNetworkId();
+        if (networkId != null) {
+            Network network = ApiDBUtils.findNetworkById(networkId);
+            if (network != null) {
+                response.setNetworkId(network.getUuid());
+            }
+        }
+
+        Long vpcId = fwRule.getVpcId();
+        if (vpcId == null && networkId != null) {
+            Network network = ApiDBUtils.findNetworkById(networkId);
+            if (network != null) {
+                vpcId = network.getVpcId();
+            }
+        }
+        if (vpcId != null) {
+            Vpc vpc = ApiDBUtils.findVpcById(vpcId);
+            if (vpc != null) {
+                response.setVpcId(vpc.getUuid());
+            }
+        }
 
         FirewallRule.State state = fwRule.getState();
         String stateToSet = state.toString();
