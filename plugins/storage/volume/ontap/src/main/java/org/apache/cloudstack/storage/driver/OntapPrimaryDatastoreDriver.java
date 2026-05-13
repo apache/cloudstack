@@ -147,12 +147,12 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
             if (dataObject.getType() == DataObjectType.VOLUME) {
                 VolumeInfo volInfo = (VolumeInfo) dataObject;
 
-                // Create the backend storage object (LUN for iSCSI, no-op for NFS)
-                CloudStackVolume created = createCloudStackVolume(storagePool, volInfo, details);
-
                 // Update CloudStack volume record with storage pool association and protocol-specific details
                 VolumeVO volumeVO = volumeDao.findById(volInfo.getId());
                 if (volumeVO != null) {
+                    // Create the backend storage object (LUN for iSCSI, no-op for NFS)
+                    CloudStackVolume created = createCloudStackVolume(storagePool, volInfo, details);
+
                     volumeVO.setPoolType(storagePool.getPoolType());
                     volumeVO.setPoolId(storagePool.getId());
 
@@ -723,12 +723,15 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
             return volumeVO.getPath();
         } else if (ProtocolType.ISCSI.name().equalsIgnoreCase(protocol)) {
             // For iSCSI, retrieve the LUN name from volume details
-            String lunName = volumeDetailsDao.findDetail(volumeVO.getId(), OntapStorageConstants.LUN_DOT_NAME) != null ?
-                    volumeDetailsDao.findDetail(volumeVO.getId(), OntapStorageConstants.LUN_DOT_NAME).getValue() : null;
-            if (lunName == null) {
-                throw new CloudRuntimeException("No LUN name found for volume " + volumeVO.getId());
-            }
-            return lunName;
+            VolumeDetailVO volumeDetails = volumeDetailsDao.findDetail(volumeVO.getId(), OntapStorageConstants.LUN_DOT_NAME);
+
+             if(volumeDetails != null) {
+                 String lunName = volumeDetails.getValue();
+                 if (lunName == null) {
+                     throw new CloudRuntimeException("No LUN name found for volume " + volumeVO.getId());
+                 }
+                 return lunName;
+             }
         }
         throw new CloudRuntimeException("Unsupported protocol " + protocol);
     }

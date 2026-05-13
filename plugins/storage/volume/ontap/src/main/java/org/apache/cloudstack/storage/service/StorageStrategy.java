@@ -339,7 +339,6 @@ public abstract class StorageStrategy {
         logger.info("Deleting ONTAP volume by name: " + volume.getName() + " and uuid: " + volume.getUuid());
         String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
         try {
-            // TODO: Implement lun and file deletion, if any, before deleting the volume
             JobResponse jobResponse = volumeFeignClient.deleteVolume(authHeader, volume.getUuid());
             Boolean jobSucceeded = jobPollForSuccess(jobResponse.getJob().getUuid(), 10, 1000);
             if (!jobSucceeded) {
