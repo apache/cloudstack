@@ -2013,7 +2013,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
                             guestNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName()
                                     + "-network", null, null, null, false, null, owner, null, physicalNetwork, zoneId, ACLType.Account, null, null, null, null, true, null, null, null, null, null,
-                                    null, null, null, null, null, null);
+                                    null, null, null, null, null);
                             if (guestNetwork == null) {
                                 logger.warn("Failed to create default Virtual network for the account {} in zone {}", owner, zone);
                                 throw new CloudRuntimeException(String.format("Failed to create a" +

@@ -4189,7 +4189,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         logger.debug("Creating Network for Account {} from the network offering {} as a part of deployVM process", owner, requiredOfferings.get(0));
         Network newNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network",
                 null, null, null, false, null, owner, null, physicalNetwork, zone.getId(), ACLType.Account, null, null, null, null, true, null, null,
-                null, null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null);
         if (newNetwork != null) {
             defaultNetwork = _networkDao.findById(newNetwork.getId());
         }
@@ -8769,10 +8769,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         long requiredOfferingId = requiredOffering.getId();
         logger.debug("Creating network for account [{}] from the network offering [{}] as a part of VM deployment process.", newAccount, requiredOfferingId);
 
-        String networkName = String.format("%s-network", newAccount.getAccountName());
-        Network newNetwork = _networkMgr.createGuestNetwork(requiredOfferingId, networkName, networkName, null, null, null,
-                false, null, newAccount, null, physicalNetwork, zoneId, ACLType.Account, null, null, null, null, true, null,
-                null, null, null, null, null, null, null, null, null, null);
+        String newAccountName = newAccount.getAccountName();
+        Network newNetwork = _networkMgr.createGuestNetwork(requiredOfferingId, newAccountName + "-network",
+                newAccountName + "-network", null, null, null, false, null, newAccount,
+                null, physicalNetwork, zoneId, ACLType.Account, null, null,
+                null, null, true, null, null, null, null, null, null, null, null, null, null);
 
         if (requiredOffering.isPersistent()) {
             newNetwork = implementNetwork(caller, zone, newNetwork);
