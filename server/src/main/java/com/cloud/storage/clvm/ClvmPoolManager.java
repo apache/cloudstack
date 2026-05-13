@@ -181,8 +181,7 @@ public class ClvmPoolManager implements Configurable {
         Long clusterId = pool.getClusterId();
         if (clusterId != null) {
             hosts = _hostDao.findByClusterId(clusterId, Host.Type.Routing);
-        }
-        if ((hosts == null || hosts.isEmpty()) && pool.getDataCenterId() > 0) {
+        } else if (pool.getDataCenterId() > 0) {
             hosts = _hostDao.findByDataCenterId(pool.getDataCenterId());
         }
         if (hosts == null || hosts.isEmpty()) {

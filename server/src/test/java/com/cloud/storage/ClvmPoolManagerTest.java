@@ -46,6 +46,7 @@ import java.util.Collections;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -249,13 +250,13 @@ public class ClvmPoolManagerTest {
         when(pool.getPath()).thenReturn(VG_NAME);
         when(volsDetailsDao.findDetail(VOLUME_ID, ClvmPoolManager.CLVM_LOCK_HOST_ID)).thenReturn(null);
         when(hostDao.findByClusterId(10L, Host.Type.Routing)).thenReturn(Collections.emptyList());
-        when(hostDao.findByDataCenterId(1L)).thenReturn(Collections.emptyList());
+        lenient().when(hostDao.findByDataCenterId(1L)).thenReturn(Collections.emptyList());
 
         Long result = clvmPoolManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
 
         Assert.assertNull(result);
         verify(hostDao, times(1)).findByClusterId(10L, Host.Type.Routing);
-        verify(hostDao, times(1)).findByDataCenterId(1L);
+        verify(hostDao, times(0)).findByDataCenterId(1L);
     }
 
     @Test
