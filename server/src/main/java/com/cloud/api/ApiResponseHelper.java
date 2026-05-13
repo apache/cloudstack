@@ -5442,12 +5442,6 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         }
 
         Long vpcId = fwRule.getVpcId();
-        if (vpcId == null && networkId != null) {
-            Network network = ApiDBUtils.findNetworkById(networkId);
-            if (network != null) {
-                vpcId = network.getVpcId();
-            }
-        }
         if (vpcId != null) {
             Vpc vpc = ApiDBUtils.findVpcById(vpcId);
             if (vpc != null) {
