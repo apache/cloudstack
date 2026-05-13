@@ -106,6 +106,7 @@
         />
       </a-form-item>
       <a-form-item
+        v-if="actions.length > 1"
         name="action"
         ref="action"
         :wrapperCol="{ span: 24 }"
@@ -140,7 +141,7 @@
             ref="minMembers"
           >
             <template #label>
-              <tooltip-label :title="$t('label.minimum.members')" />
+              <tooltip-label :title="$t('label.minmembers')" />
             </template>
             <a-input-number
               v-model:value="form.minMembers"
@@ -155,7 +156,7 @@
             ref="maxMembers"
           >
             <template #label>
-              <tooltip-label :title="$t('label.maximum.members')" />
+              <tooltip-label :title="$t('label.maxmembers')" />
             </template>
             <a-input-number
               v-model:value="form.maxMembers"
@@ -483,11 +484,12 @@ export default {
       this.formRef.value.validate().then(() => {
         const formRaw = toRaw(this.form)
         const values = this.handleRemoveFields(formRaw)
+        const selectedAction = values.action || (this.actions.length === 1 ? this.actions[0].value : null)
         var params = {
           description: values.description,
           schedule: values.schedule,
           timezone: values.timezone,
-          action: values.action,
+          action: selectedAction,
           resourceid: this.resource.id,
           resourcetype: this.resourceType,
           enabled: values.enabled,
