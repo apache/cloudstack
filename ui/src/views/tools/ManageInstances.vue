@@ -1285,18 +1285,28 @@ export default {
       })
     },
     syncVmwareCbtMigration (migration) {
-      postAPI('syncVmwareCbtMigration', { id: migration.id }).then(() => {
+      postAPI('syncVmwareCbtMigration', this.getVmwareCbtMigrationActionParams(migration)).then(() => {
         this.fetchVmwareCbtMigrations()
       }).catch(error => {
         this.$notifyError(error)
       })
     },
     cutoverVmwareCbtMigration (migration) {
-      postAPI('cutoverVmwareCbtMigration', { id: migration.id }).then(() => {
+      postAPI('cutoverVmwareCbtMigration', this.getVmwareCbtMigrationActionParams(migration)).then(() => {
         this.fetchVmwareCbtMigrations()
       }).catch(error => {
         this.$notifyError(error)
       })
+    },
+    getVmwareCbtMigrationActionParams (migration) {
+      const params = { id: migration.id }
+      if (!migration.existingvcenterid && this.selectedVmwareVcenter &&
+        this.selectedVmwareVcenter.vcenter === migration.vcenter &&
+        this.selectedVmwareVcenter.datacentername === migration.datacentername) {
+        params.username = this.selectedVmwareVcenter.username
+        params.password = this.selectedVmwareVcenter.password
+      }
+      return params
     },
     onVmwareCbtMigrationStarted () {
       this.activeTabKey = 3
