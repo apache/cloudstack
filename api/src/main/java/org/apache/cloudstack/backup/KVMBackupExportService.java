@@ -98,4 +98,9 @@ public interface KVMBackupExportService extends Configurable, PluggableService {
      * Delete a VM checkpoint (no-op for normal flow, kept for API parity)
      */
     boolean deleteVmCheckpoint(DeleteVmCheckpointCmd cmd);
+
+    /**
+     * List Compatible Data Center Ids for the service
+     */
+    List<Long> listCompatibleDataCenterIds();
 }

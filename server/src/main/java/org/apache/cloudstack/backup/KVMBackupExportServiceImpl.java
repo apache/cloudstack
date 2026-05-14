@@ -27,6 +27,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -58,6 +59,8 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
@@ -96,6 +99,7 @@ import com.cloud.vm.dao.VMInstanceDetailsDao;
 public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackupExportService, VmWorkJobHandler {
     public static final String VM_WORK_JOB_HANDLER = KVMBackupExportServiceImpl.class.getSimpleName();
     private static final long BACKUP_FINALIZE_WAIT_CHECK_INTERVAL = 15 * 1000L;
+    private static Set<String> COMPATIBLE_BACKUP_PROVIDERS = Set.of("veeam", "dummy");
 
     @Inject
     private VMInstanceDao vmInstanceDao;
@@ -128,6 +132,9 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
     private StoragePoolHostDao storagePoolHostDao;
 
     @Inject
+    private DataCenterDao dataCenterDao;
+
+    @Inject
     AccountService accountService;
 
     @Inject
@@ -138,13 +145,22 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
 
     VmWorkJobHandlerProxy jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
+    private Boolean isZoneCompatible(Long zoneId) {
+        if (!BackupFrameworkEnabled.valueIn(zoneId)) {
+            return true;
+        }
+        if (COMPATIBLE_BACKUP_PROVIDERS.contains(BackupProviderPlugin.valueIn(zoneId))) {
+            return true;
+        }
+        return false;
+    }
+
     private void verifyKVMBackupExportServiceSupported(Long zoneId) {
-        if (BackupFrameworkEnabled.value() &&
-                !StringUtils.equals("dummy", BackupProviderPlugin.valueIn(zoneId)) &&
-                !StringUtils.equals("veeam", BackupProviderPlugin.valueIn(zoneId))) {
+        if (!isZoneCompatible(zoneId)) {
             throw new CloudRuntimeException("Veeam-KVM backups are disabled because the CloudStack Zone is configured to use the \"" +
                     BackupProviderPlugin.valueIn(zoneId) + "\" backup provider. Acceptable \"backup.framework.provider.plugin\" " +
-                    "values are [\"veeam\", \"dummy\"]. Please refer to the documentation for more details on backup providers compatibility.");
+                    "values are " + COMPATIBLE_BACKUP_PROVIDERS +
+                    ". Please refer to the documentation for more details on backup providers compatibility.");
         }
     }
 
@@ -851,6 +867,18 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         revertVmCheckpointDetailsAfterActiveDelete(vmId, details);
 
         return true;
+    }
+
+    @Override
+    public List<Long> listCompatibleDataCenterIds() {
+        List<Long> compatibleDataCenters = new ArrayList<>();
+        for (final DataCenter dataCenter : dataCenterDao.listAllZones()) {
+            Long zoneId = dataCenter.getId();
+            if (isZoneCompatible(zoneId)) {
+                compatibleDataCenters.add(zoneId);
+            }
+        }
+        return compatibleDataCenters;
     }
 
     private void revertVmCheckpointDetailsAfterActiveDelete(long vmId, Map<String, String> detailsBeforeDelete) {
