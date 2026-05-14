@@ -103,7 +103,7 @@ export default {
           label: 'label.edit',
           dataView: true,
           popup: true,
-          args: ['description', 'clientid', 'redirecturi', 'secretkey']
+          args: ['description', 'clientid', 'redirecturi', 'secretkey', 'domainid']
         },
         {
           api: 'updateOauthProvider',
