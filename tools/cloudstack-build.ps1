@@ -182,7 +182,7 @@ if ([string]::IsNullOrWhiteSpace($Test)) {
         $mavenArgs += @("-DskipTests", "-DskipITs")
     }
 } else {
-    $mavenArgs += @("-Dtest=$Test", "-DfailIfNoTests=false", "-DskipITs")
+    $mavenArgs += @("-Dtest=$Test", "-DfailIfNoTests=false", "-Dsurefire.failIfNoSpecifiedTests=false", "-DskipITs")
 }
 
 $mavenArgs += @("-Dcheckstyle.skip=true", "-Dspotbugs.skip=true", $Phase)
