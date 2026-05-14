@@ -640,6 +640,14 @@ public class ApiConstants {
     public static final String SOURCE_HOST = "sourcehost";
     public static final String SOURCE_CLUSTER = "sourcecluster";
     public static final String SOURCE_VM_NAME = "sourcevmname";
+    public static final String SOURCE_DISK_ID = "sourcediskid";
+    public static final String SOURCE_DISK_DEVICE_KEY = "sourcediskdevicekey";
+    public static final String SOURCE_DISK_PATH = "sourcediskpath";
+    public static final String TARGET_DISK_LIST = "targetdisklist";
+    public static final String TARGET_PATH = "targetpath";
+    public static final String TARGET_FORMAT = "targetformat";
+    public static final String CHANGE_ID = "changeid";
+    public static final String SNAPSHOT_MOR = "snapshotmor";
     public static final String CURRENT_STEP = "currentstep";
     public static final String LAST_ERROR = "lasterror";
     public static final String COMPLETED_CYCLES = "completedcycles";

@@ -19,6 +19,7 @@ package org.apache.cloudstack.vm;
 import org.apache.cloudstack.api.command.admin.vm.CancelVmwareCbtMigrationCmd;
 import org.apache.cloudstack.api.command.admin.vm.CutoverVmwareCbtMigrationCmd;
 import org.apache.cloudstack.api.command.admin.vm.ListVmwareCbtMigrationsCmd;
+import org.apache.cloudstack.api.command.admin.vm.RegisterVmwareCbtMigrationTargetCmd;
 import org.apache.cloudstack.api.command.admin.vm.StartVmwareCbtMigrationCmd;
 import org.apache.cloudstack.api.command.admin.vm.SyncVmwareCbtMigrationCmd;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -32,6 +33,8 @@ public interface VmwareCbtMigrationManager extends PluggableService {
     ListResponse<VmwareCbtMigrationResponse> listVmwareCbtMigrations(ListVmwareCbtMigrationsCmd cmd);
 
     VmwareCbtMigrationResponse syncVmwareCbtMigration(SyncVmwareCbtMigrationCmd cmd);
+
+    VmwareCbtMigrationResponse registerVmwareCbtMigrationTarget(RegisterVmwareCbtMigrationTargetCmd cmd);
 
     VmwareCbtMigrationResponse cutoverVmwareCbtMigration(CutoverVmwareCbtMigrationCmd cmd);
 

@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.response;
 
 import java.util.Date;
+import java.util.List;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
@@ -137,6 +138,10 @@ public class VmwareCbtMigrationResponse extends BaseResponse {
     @Param(description = "the dirty rate in bytes per second observed in the last CBT delta cycle")
     private Long lastDirtyRate;
 
+    @SerializedName(ApiConstants.DISK)
+    @Param(description = "the source and target disks tracked by this VMware CBT migration")
+    private List<VmwareCbtMigrationDiskResponse> disks;
+
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "the create date of the VMware CBT migration")
     private Date created;
@@ -251,6 +256,10 @@ public class VmwareCbtMigrationResponse extends BaseResponse {
 
     public void setLastDirtyRate(Long lastDirtyRate) {
         this.lastDirtyRate = lastDirtyRate;
+    }
+
+    public void setDisks(List<VmwareCbtMigrationDiskResponse> disks) {
+        this.disks = disks;
     }
 
     public void setCreated(Date created) {

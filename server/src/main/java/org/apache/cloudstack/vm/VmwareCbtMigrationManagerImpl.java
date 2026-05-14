@@ -18,7 +18,9 @@ package org.apache.cloudstack.vm;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
 
@@ -27,9 +29,11 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.vm.CancelVmwareCbtMigrationCmd;
 import org.apache.cloudstack.api.command.admin.vm.CutoverVmwareCbtMigrationCmd;
 import org.apache.cloudstack.api.command.admin.vm.ListVmwareCbtMigrationsCmd;
+import org.apache.cloudstack.api.command.admin.vm.RegisterVmwareCbtMigrationTargetCmd;
 import org.apache.cloudstack.api.command.admin.vm.StartVmwareCbtMigrationCmd;
 import org.apache.cloudstack.api.command.admin.vm.SyncVmwareCbtMigrationCmd;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.VmwareCbtMigrationDiskResponse;
 import org.apache.cloudstack.api.response.VmwareCbtMigrationResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -160,6 +164,7 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
         cmdList.add(StartVmwareCbtMigrationCmd.class);
         cmdList.add(ListVmwareCbtMigrationsCmd.class);
         cmdList.add(SyncVmwareCbtMigrationCmd.class);
+        cmdList.add(RegisterVmwareCbtMigrationTargetCmd.class);
         cmdList.add(CutoverVmwareCbtMigrationCmd.class);
         cmdList.add(CancelVmwareCbtMigrationCmd.class);
         return cmdList;
@@ -300,6 +305,31 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
         } finally {
             removeDeltaSnapshotIfPossible(source, migration, snapshot);
         }
+    }
+
+    @Override
+    public VmwareCbtMigrationResponse registerVmwareCbtMigrationTarget(RegisterVmwareCbtMigrationTargetCmd cmd) {
+        VmwareCbtMigrationVO migration = getMigration(cmd.getId());
+        rejectTerminalMigration(migration, "register target disks for");
+        if (migration.getState() == VmwareCbtMigration.State.CuttingOver) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+                    String.format("Cannot register target disks for VMware CBT migration %s while cutover is in progress",
+                            migration.getUuid()));
+        }
+
+        int registeredDiskCount = registerTargetDisks(migration, cmd.getTargetDisks());
+        int diskCount = vmwareCbtMigrationDiskDao.listByMigrationId(migration.getId()).size();
+        boolean allTargetDisksRegistered = registeredDiskCount == diskCount;
+
+        migration.setState(allTargetDisksRegistered ? VmwareCbtMigration.State.Replicating :
+                VmwareCbtMigration.State.InitialSync);
+        migration.setCurrentStep(allTargetDisksRegistered ?
+                "Initial full sync target disks registered; ready for CBT delta synchronization" :
+                String.format("Registered %s of %s initial full sync target disk(s)", registeredDiskCount, diskCount));
+        migration.setLastError(null);
+        migration.setUpdated(new Date());
+        vmwareCbtMigrationDao.update(migration.getId(), migration);
+        return createVmwareCbtMigrationResponse(migration);
     }
 
     @Override
@@ -524,6 +554,46 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
                                 migration.getUuid(), disk.getSourceDiskId()));
             }
         }
+    }
+
+    private int registerTargetDisks(VmwareCbtMigrationVO migration, List<VmwareCbtTargetDiskInfo> targetDisks) {
+        if (CollectionUtils.isEmpty(targetDisks)) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "At least one target disk must be provided");
+        }
+
+        List<VmwareCbtMigrationDiskVO> disks = vmwareCbtMigrationDiskDao.listByMigrationId(migration.getId());
+        Map<String, VmwareCbtMigrationDiskVO> disksBySourceDiskId = new HashMap<>();
+        for (VmwareCbtMigrationDiskVO disk : disks) {
+            disksBySourceDiskId.put(disk.getSourceDiskId(), disk);
+        }
+
+        for (VmwareCbtTargetDiskInfo targetDisk : targetDisks) {
+            VmwareCbtMigrationDiskVO disk = disksBySourceDiskId.get(targetDisk.getSourceDiskId());
+            if (disk == null) {
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+                        String.format("Source disk %s is not tracked by VMware CBT migration %s",
+                                targetDisk.getSourceDiskId(), migration.getUuid()));
+            }
+            disk.setTargetPath(targetDisk.getTargetPath());
+            disk.setTargetFormat(StringUtils.defaultIfBlank(targetDisk.getTargetFormat(), "qcow2"));
+            if (StringUtils.isNotBlank(targetDisk.getChangeId())) {
+                disk.setChangeId(targetDisk.getChangeId());
+            }
+            if (StringUtils.isNotBlank(targetDisk.getSnapshotMor())) {
+                disk.setSnapshotMor(targetDisk.getSnapshotMor());
+            }
+            disk.setState(VmwareCbtMigrationDisk.State.Ready);
+            disk.setUpdated(new Date());
+            vmwareCbtMigrationDiskDao.update(disk.getId(), disk);
+        }
+
+        int registeredDiskCount = 0;
+        for (VmwareCbtMigrationDiskVO disk : vmwareCbtMigrationDiskDao.listByMigrationId(migration.getId())) {
+            if (StringUtils.isNotBlank(disk.getTargetPath())) {
+                registeredDiskCount++;
+            }
+        }
+        return registeredDiskCount;
     }
 
     private VmwareCbtSnapshotInfo createDeltaSnapshot(VmwareSource source, VmwareCbtMigrationVO migration,
@@ -802,10 +872,33 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
         response.setTotalChangedBytes(migration.getTotalChangedBytes());
         response.setLastChangedBytes(migration.getLastChangedBytes());
         response.setLastDirtyRate(migration.getLastDirtyRate());
+        response.setDisks(createVmwareCbtMigrationDiskResponses(migration));
         response.setCreated(migration.getCreated());
         response.setLastUpdated(migration.getUpdated());
         response.setObjectName(OBJECT_NAME);
         return response;
+    }
+
+    private List<VmwareCbtMigrationDiskResponse> createVmwareCbtMigrationDiskResponses(VmwareCbtMigrationVO migration) {
+        List<VmwareCbtMigrationDiskResponse> diskResponses = new ArrayList<>();
+        List<VmwareCbtMigrationDiskVO> disks = vmwareCbtMigrationDiskDao.listByMigrationId(migration.getId());
+        for (VmwareCbtMigrationDiskVO disk : disks) {
+            VmwareCbtMigrationDiskResponse diskResponse = new VmwareCbtMigrationDiskResponse();
+            diskResponse.setId(disk.getUuid());
+            diskResponse.setSourceDiskId(disk.getSourceDiskId());
+            diskResponse.setSourceDiskDeviceKey(disk.getSourceDiskDeviceKey());
+            diskResponse.setSourceDiskPath(disk.getSourceDiskPath());
+            diskResponse.setDatastoreName(disk.getDatastoreName());
+            diskResponse.setCapacityBytes(disk.getCapacityBytes());
+            diskResponse.setTargetPath(disk.getTargetPath());
+            diskResponse.setTargetFormat(disk.getTargetFormat());
+            diskResponse.setChangeId(disk.getChangeId());
+            diskResponse.setSnapshotMor(disk.getSnapshotMor());
+            diskResponse.setState(disk.getState().name());
+            diskResponse.setObjectName("vmwarecbtmigrationdisk");
+            diskResponses.add(diskResponse);
+        }
+        return diskResponses;
     }
 
     @Override
