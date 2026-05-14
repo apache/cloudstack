@@ -59,10 +59,11 @@ public class LibvirtVmwareCbtSyncCommandWrapper extends CommandWrapper<VmwareCbt
                     0, 0, 0, false, null);
         }
 
-        String msg = String.format("VMware CBT cycle %s for migration %s validated %s changed block range(s) " +
+        String msg = String.format("VMware CBT cycle %s for migration %s validated %s changed block range(s), " +
+                        "coalesced them into %s copy range(s) " +
                         "across %s disk(s), totaling %s bytes, but changed-block copy is not implemented yet.",
-                cmd.getCycleNumber(), cmd.getMigrationUuid(), syncPlan.getChangedRangeCount(), syncPlan.getDiskPlans().size(),
-                syncPlan.getChangedBytes());
+                cmd.getCycleNumber(), cmd.getMigrationUuid(), syncPlan.getChangedRangeCount(), syncPlan.getCopyRangeCount(),
+                syncPlan.getDiskPlans().size(), syncPlan.getChangedBytes());
         logger.info(msg);
         return new VmwareCbtMigrationAnswer(cmd, false, msg, cmd.getMigrationUuid(), cmd.getCycleNumber(),
                 syncPlan.getChangedBytes(), 0, 0, false, null);

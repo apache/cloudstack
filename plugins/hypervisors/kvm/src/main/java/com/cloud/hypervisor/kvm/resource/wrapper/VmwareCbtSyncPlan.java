@@ -18,6 +18,7 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,24 +35,25 @@ class VmwareCbtSyncPlan {
     private final String validationError;
     private final List<DiskPlan> diskPlans;
     private final int changedRangeCount;
+    private final int copyRangeCount;
     private final long changedBytes;
 
     private VmwareCbtSyncPlan(boolean valid, String validationError, List<DiskPlan> diskPlans,
-                              int changedRangeCount, long changedBytes) {
+                              int changedRangeCount, int copyRangeCount, long changedBytes) {
         this.valid = valid;
         this.validationError = validationError;
         this.diskPlans = diskPlans;
         this.changedRangeCount = changedRangeCount;
+        this.copyRangeCount = copyRangeCount;
         this.changedBytes = changedBytes;
     }
 
     static VmwareCbtSyncPlan create(List<VmwareCbtDiskTO> disks, List<VmwareCbtChangedBlockRangeTO> changedBlocks) {
         if (CollectionUtils.isEmpty(changedBlocks)) {
-            return new VmwareCbtSyncPlan(true, null, Collections.emptyList(), 0, 0);
+            return new VmwareCbtSyncPlan(true, null, Collections.emptyList(), 0, 0, 0);
         }
 
         Map<String, DiskPlanBuilder> diskPlansById = getDiskPlansById(disks);
-        long changedBytes = 0;
         int changedRangeCount = 0;
 
         for (VmwareCbtChangedBlockRangeTO changedBlock : changedBlocks) {
@@ -71,11 +73,18 @@ class VmwareCbtSyncPlan {
             }
 
             diskPlan.addChangedBlock(changedBlock);
-            changedBytes += changedBlock.getLength();
             changedRangeCount++;
         }
 
-        return new VmwareCbtSyncPlan(true, null, getPopulatedDiskPlans(diskPlansById), changedRangeCount, changedBytes);
+        List<DiskPlan> diskPlans = getPopulatedDiskPlans(diskPlansById);
+        long changedBytes = 0;
+        int copyRangeCount = 0;
+        for (DiskPlan diskPlan : diskPlans) {
+            changedBytes += diskPlan.getChangedBytes();
+            copyRangeCount += diskPlan.getChangedBlocks().size();
+        }
+
+        return new VmwareCbtSyncPlan(true, null, diskPlans, changedRangeCount, copyRangeCount, changedBytes);
     }
 
     private static Map<String, DiskPlanBuilder> getDiskPlansById(List<VmwareCbtDiskTO> disks) {
@@ -133,7 +142,7 @@ class VmwareCbtSyncPlan {
     }
 
     private static VmwareCbtSyncPlan invalid(String validationError) {
-        return new VmwareCbtSyncPlan(false, validationError, Collections.emptyList(), 0, 0);
+        return new VmwareCbtSyncPlan(false, validationError, Collections.emptyList(), 0, 0, 0);
     }
 
     boolean isValid() {
@@ -150,6 +159,10 @@ class VmwareCbtSyncPlan {
 
     int getChangedRangeCount() {
         return changedRangeCount;
+    }
+
+    int getCopyRangeCount() {
+        return copyRangeCount;
     }
 
     long getChangedBytes() {
@@ -185,7 +198,6 @@ class VmwareCbtSyncPlan {
 
         private final VmwareCbtDiskTO disk;
         private final List<VmwareCbtChangedBlockRangeTO> changedBlocks = new ArrayList<>();
-        private long changedBytes;
 
         DiskPlanBuilder(VmwareCbtDiskTO disk) {
             this.disk = disk;
@@ -193,11 +205,50 @@ class VmwareCbtSyncPlan {
 
         void addChangedBlock(VmwareCbtChangedBlockRangeTO changedBlock) {
             changedBlocks.add(changedBlock);
-            changedBytes += changedBlock.getLength();
         }
 
         DiskPlan build() {
-            return new DiskPlan(disk, new ArrayList<>(changedBlocks), changedBytes);
+            List<VmwareCbtChangedBlockRangeTO> copyBlocks = coalesceChangedBlocks(changedBlocks);
+            return new DiskPlan(disk, copyBlocks, sumChangedBytes(copyBlocks));
+        }
+
+        private List<VmwareCbtChangedBlockRangeTO> coalesceChangedBlocks(List<VmwareCbtChangedBlockRangeTO> changedBlocks) {
+            if (CollectionUtils.isEmpty(changedBlocks)) {
+                return Collections.emptyList();
+            }
+
+            List<VmwareCbtChangedBlockRangeTO> sortedBlocks = new ArrayList<>(changedBlocks);
+            sortedBlocks.sort(Comparator.comparingLong(VmwareCbtChangedBlockRangeTO::getStartOffset)
+                    .thenComparingLong(VmwareCbtChangedBlockRangeTO::getLength));
+
+            List<VmwareCbtChangedBlockRangeTO> copyBlocks = new ArrayList<>();
+            String diskId = disk.getDiskId();
+            long currentStart = sortedBlocks.get(0).getStartOffset();
+            long currentEnd = currentStart + sortedBlocks.get(0).getLength();
+
+            for (int i = 1; i < sortedBlocks.size(); i++) {
+                VmwareCbtChangedBlockRangeTO changedBlock = sortedBlocks.get(i);
+                long blockStart = changedBlock.getStartOffset();
+                long blockEnd = blockStart + changedBlock.getLength();
+                if (blockStart <= currentEnd) {
+                    currentEnd = Math.max(currentEnd, blockEnd);
+                    continue;
+                }
+
+                copyBlocks.add(new VmwareCbtChangedBlockRangeTO(diskId, currentStart, currentEnd - currentStart));
+                currentStart = blockStart;
+                currentEnd = blockEnd;
+            }
+            copyBlocks.add(new VmwareCbtChangedBlockRangeTO(diskId, currentStart, currentEnd - currentStart));
+            return copyBlocks;
+        }
+
+        private long sumChangedBytes(List<VmwareCbtChangedBlockRangeTO> changedBlocks) {
+            long changedBytes = 0;
+            for (VmwareCbtChangedBlockRangeTO changedBlock : changedBlocks) {
+                changedBytes += changedBlock.getLength();
+            }
+            return changedBytes;
         }
     }
 

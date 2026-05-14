@@ -38,10 +38,30 @@ public class VmwareCbtSyncPlanTest {
 
         Assert.assertTrue(syncPlan.isValid());
         Assert.assertEquals(3, syncPlan.getChangedRangeCount());
+        Assert.assertEquals(3, syncPlan.getCopyRangeCount());
         Assert.assertEquals(3584, syncPlan.getChangedBytes());
         Assert.assertEquals(2, syncPlan.getDiskPlans().size());
         Assert.assertEquals(1536, syncPlan.getDiskPlans().get(0).getChangedBytes());
         Assert.assertEquals(2048, syncPlan.getDiskPlans().get(1).getChangedBytes());
+    }
+
+    @Test
+    public void testCreateCoalescesAdjacentAndOverlappingRanges() {
+        VmwareCbtSyncPlan syncPlan = VmwareCbtSyncPlan.create(List.of(createDisk("disk-1", "/target", 8192)), List.of(
+                new VmwareCbtChangedBlockRangeTO("disk-1", 4096, 512),
+                new VmwareCbtChangedBlockRangeTO("disk-1", 0, 1024),
+                new VmwareCbtChangedBlockRangeTO("disk-1", 1024, 1024),
+                new VmwareCbtChangedBlockRangeTO("disk-1", 4352, 1024)));
+
+        Assert.assertTrue(syncPlan.isValid());
+        Assert.assertEquals(4, syncPlan.getChangedRangeCount());
+        Assert.assertEquals(2, syncPlan.getCopyRangeCount());
+        Assert.assertEquals(3328, syncPlan.getChangedBytes());
+        Assert.assertEquals(2, syncPlan.getDiskPlans().get(0).getChangedBlocks().size());
+        Assert.assertEquals(0, syncPlan.getDiskPlans().get(0).getChangedBlocks().get(0).getStartOffset());
+        Assert.assertEquals(2048, syncPlan.getDiskPlans().get(0).getChangedBlocks().get(0).getLength());
+        Assert.assertEquals(4096, syncPlan.getDiskPlans().get(0).getChangedBlocks().get(1).getStartOffset());
+        Assert.assertEquals(1280, syncPlan.getDiskPlans().get(0).getChangedBlocks().get(1).getLength());
     }
 
     @Test
