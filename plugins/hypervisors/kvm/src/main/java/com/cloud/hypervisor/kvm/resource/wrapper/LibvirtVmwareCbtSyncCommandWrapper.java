@@ -16,9 +16,12 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import java.util.List;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.VmwareCbtMigrationAnswer;
 import com.cloud.agent.api.VmwareCbtSyncCommand;
+import com.cloud.agent.api.to.VmwareCbtChangedBlockRangeTO;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
@@ -36,10 +39,31 @@ public class LibvirtVmwareCbtSyncCommandWrapper extends CommandWrapper<VmwareCbt
                     0, 0, 0, false, null);
         }
 
-        String msg = String.format("VMware CBT cycle %s for migration %s reached the KVM agent, but changed-block copy is not implemented yet.",
-                cmd.getCycleNumber(), cmd.getMigrationUuid());
+        long startTime = System.currentTimeMillis();
+        List<VmwareCbtChangedBlockRangeTO> changedBlocks = cmd.getChangedBlocks();
+        if (changedBlocks == null || changedBlocks.isEmpty()) {
+            long durationSeconds = Math.max(1L, (System.currentTimeMillis() - startTime) / 1000L);
+            String msg = String.format("VMware CBT cycle %s for migration %s completed with no changed blocks.",
+                    cmd.getCycleNumber(), cmd.getMigrationUuid());
+            logger.info(msg);
+            return new VmwareCbtMigrationAnswer(cmd, true, msg, cmd.getMigrationUuid(), cmd.getCycleNumber(),
+                    0, 0, durationSeconds, true, null);
+        }
+
+        long changedBytes = getChangedBytes(changedBlocks);
+        String msg = String.format("VMware CBT cycle %s for migration %s received %s changed block range(s) " +
+                        "totaling %s bytes, but changed-block copy is not implemented yet.",
+                cmd.getCycleNumber(), cmd.getMigrationUuid(), changedBlocks.size(), changedBytes);
         logger.info(msg);
         return new VmwareCbtMigrationAnswer(cmd, false, msg, cmd.getMigrationUuid(), cmd.getCycleNumber(),
-                0, 0, 0, false, null);
+                changedBytes, 0, 0, false, null);
+    }
+
+    private long getChangedBytes(List<VmwareCbtChangedBlockRangeTO> changedBlocks) {
+        long changedBytes = 0;
+        for (VmwareCbtChangedBlockRangeTO changedBlock : changedBlocks) {
+            changedBytes += changedBlock.getLength();
+        }
+        return changedBytes;
     }
 }
