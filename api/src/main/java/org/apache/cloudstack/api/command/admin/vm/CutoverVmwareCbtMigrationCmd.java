@@ -40,7 +40,7 @@ import com.cloud.user.Account;
         description = "Perform final cutover for a VMware CBT migration",
         responseObject = VmwareCbtMigrationResponse.class,
         responseView = ResponseObject.ResponseView.Full,
-        requestHasSensitiveInfo = false,
+        requestHasSensitiveInfo = true,
         responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin},
         since = "4.22.1")
@@ -53,8 +53,24 @@ public class CutoverVmwareCbtMigrationCmd extends BaseCmd {
             required = true, description = "the VMware CBT migration ID")
     private Long id;
 
+    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING,
+            description = "the username for the source vCenter, required for sessions not linked to an existing vCenter")
+    private String username;
+
+    @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING,
+            description = "the password for the source vCenter, required for sessions not linked to an existing vCenter")
+    private String password;
+
     public Long getId() {
         return id;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public String getPassword() {
+        return password;
     }
 
     @Override

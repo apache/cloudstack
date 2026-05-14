@@ -39,11 +39,12 @@ public class VmwareCbtMigrationDiskVO implements VmwareCbtMigrationDisk {
         uuid = UUID.randomUUID().toString();
     }
 
-    public VmwareCbtMigrationDiskVO(long migrationId, String sourceDiskId, String sourceDiskPath,
-                                    String datastoreName, Long capacityBytes) {
+    public VmwareCbtMigrationDiskVO(long migrationId, String sourceDiskId, Integer sourceDiskDeviceKey,
+                                    String sourceDiskPath, String datastoreName, Long capacityBytes) {
         this();
         this.migrationId = migrationId;
         this.sourceDiskId = sourceDiskId;
+        this.sourceDiskDeviceKey = sourceDiskDeviceKey;
         this.sourceDiskPath = sourceDiskPath;
         this.datastoreName = datastoreName;
         this.capacityBytes = capacityBytes;
@@ -63,6 +64,9 @@ public class VmwareCbtMigrationDiskVO implements VmwareCbtMigrationDisk {
 
     @Column(name = "source_disk_id")
     private String sourceDiskId;
+
+    @Column(name = "source_disk_device_key")
+    private Integer sourceDiskDeviceKey;
 
     @Column(name = "source_disk_path")
     private String sourceDiskPath;
@@ -117,6 +121,10 @@ public class VmwareCbtMigrationDiskVO implements VmwareCbtMigrationDisk {
 
     public String getSourceDiskId() {
         return sourceDiskId;
+    }
+
+    public Integer getSourceDiskDeviceKey() {
+        return sourceDiskDeviceKey;
     }
 
     public String getSourceDiskPath() {

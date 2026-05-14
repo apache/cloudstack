@@ -79,7 +79,7 @@ public class VmwareCbtMigrationServiceImpl implements VmwareCbtMigrationService 
             }
 
             UnmanagedInstanceTO unmanagedInstance = VmwareHelper.getUnmanagedInstance(hyperHost, vmMO);
-            return toVmwareCbtDiskInfo(unmanagedInstance, collectChangeIds(vmMO));
+            return toVmwareCbtDiskInfo(unmanagedInstance, collectDiskDeviceInfo(vmMO));
         } catch (Exception e) {
             String message = String.format("Unable to discover VMware CBT source disks for VM %s in vCenter %s: %s",
                     sourceVmName, vcenter, e.getMessage());
@@ -89,7 +89,7 @@ public class VmwareCbtMigrationServiceImpl implements VmwareCbtMigrationService 
     }
 
     private List<VmwareCbtDiskInfo> toVmwareCbtDiskInfo(UnmanagedInstanceTO unmanagedInstance,
-                                                        Map<String, String> changeIds) {
+                                                        Map<String, DiskDeviceInfo> diskDeviceInfo) {
         List<VmwareCbtDiskInfo> disks = new ArrayList<>();
         if (unmanagedInstance == null || CollectionUtils.isEmpty(unmanagedInstance.getDisks())) {
             return disks;
@@ -98,21 +98,22 @@ public class VmwareCbtMigrationServiceImpl implements VmwareCbtMigrationService 
         for (UnmanagedInstanceTO.Disk disk : unmanagedInstance.getDisks()) {
             String sourceDiskId = StringUtils.defaultIfBlank(disk.getDiskId(), disk.getLabel());
             String sourceDiskPath = StringUtils.defaultIfBlank(disk.getImagePath(), disk.getFileBaseName());
-            String changeId = changeIds.get(sourceDiskId);
-            if (StringUtils.isBlank(changeId)) {
-                changeId = changeIds.get(sourceDiskPath);
+            DiskDeviceInfo deviceInfo = diskDeviceInfo.get(sourceDiskId);
+            if (deviceInfo == null) {
+                deviceInfo = diskDeviceInfo.get(sourceDiskPath);
             }
-            disks.add(new VmwareCbtDiskInfo(sourceDiskId, disk.getLabel(), sourceDiskPath, disk.getDatastoreName(),
-                    disk.getCapacity(), changeId));
+            disks.add(new VmwareCbtDiskInfo(sourceDiskId, deviceInfo != null ? deviceInfo.deviceKey : null,
+                    disk.getLabel(), sourceDiskPath, disk.getDatastoreName(), disk.getCapacity(),
+                    deviceInfo != null ? deviceInfo.changeId : null));
         }
         return disks;
     }
 
-    private Map<String, String> collectChangeIds(VirtualMachineMO vmMO) throws Exception {
-        Map<String, String> changeIds = new HashMap<>();
+    private Map<String, DiskDeviceInfo> collectDiskDeviceInfo(VirtualMachineMO vmMO) throws Exception {
+        Map<String, DiskDeviceInfo> diskDeviceInfo = new HashMap<>();
         VirtualDisk[] disks = vmMO.getAllDiskDevice();
         if (disks == null) {
-            return changeIds;
+            return diskDeviceInfo;
         }
 
         for (VirtualDevice device : disks) {
@@ -120,19 +121,17 @@ public class VmwareCbtMigrationServiceImpl implements VmwareCbtMigrationService 
                 continue;
             }
             VirtualDisk disk = (VirtualDisk) device;
-            String changeId = getBackingStringValue(disk.getBacking(), "getChangeId");
-            if (StringUtils.isBlank(changeId)) {
-                continue;
-            }
+            DiskDeviceInfo deviceInfo = new DiskDeviceInfo(disk.getKey(),
+                    getBackingStringValue(disk.getBacking(), "getChangeId"));
             if (StringUtils.isNotBlank(disk.getDiskObjectId())) {
-                changeIds.put(disk.getDiskObjectId(), changeId);
+                diskDeviceInfo.put(disk.getDiskObjectId(), deviceInfo);
             }
             String fileName = getBackingStringValue(disk.getBacking(), "getFileName");
             if (StringUtils.isNotBlank(fileName)) {
-                changeIds.put(fileName, changeId);
+                diskDeviceInfo.put(fileName, deviceInfo);
             }
         }
-        return changeIds;
+        return diskDeviceInfo;
     }
 
     private String getBackingStringValue(Object backing, String methodName) {
@@ -146,6 +145,16 @@ public class VmwareCbtMigrationServiceImpl implements VmwareCbtMigrationService 
             return value != null ? value.toString() : null;
         } catch (ReflectiveOperationException e) {
             return null;
+        }
+    }
+
+    private static class DiskDeviceInfo {
+        private final Integer deviceKey;
+        private final String changeId;
+
+        private DiskDeviceInfo(Integer deviceKey, String changeId) {
+            this.deviceKey = deviceKey;
+            this.changeId = changeId;
         }
     }
 }

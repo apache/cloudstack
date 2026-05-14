@@ -77,6 +77,9 @@ public class VmwareCbtMigrationVO implements VmwareCbtMigration {
     @Column(name = "vm_id")
     private Long vmId;
 
+    @Column(name = "existing_vcenter_id")
+    private Long existingVcenterId;
+
     @Column(name = "destination_cluster_id")
     private long destinationClusterId;
 
@@ -169,6 +172,14 @@ public class VmwareCbtMigrationVO implements VmwareCbtMigration {
 
     public void setVmId(Long vmId) {
         this.vmId = vmId;
+    }
+
+    public Long getExistingVcenterId() {
+        return existingVcenterId;
+    }
+
+    public void setExistingVcenterId(Long existingVcenterId) {
+        this.existingVcenterId = existingVcenterId;
     }
 
     public long getDestinationClusterId() {

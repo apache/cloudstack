@@ -21,6 +21,7 @@ import java.io.Serializable;
 public class VmwareCbtDiskTO implements Serializable {
 
     private String diskId;
+    private Integer diskDeviceKey;
     private String sourceDiskPath;
     private String datastoreName;
     private String targetPath;
@@ -32,9 +33,11 @@ public class VmwareCbtDiskTO implements Serializable {
     public VmwareCbtDiskTO() {
     }
 
-    public VmwareCbtDiskTO(String diskId, String sourceDiskPath, String datastoreName, String targetPath,
-                          String targetFormat, String changeId, String snapshotMor, long capacityBytes) {
+    public VmwareCbtDiskTO(String diskId, Integer diskDeviceKey, String sourceDiskPath, String datastoreName,
+                          String targetPath, String targetFormat, String changeId, String snapshotMor,
+                          long capacityBytes) {
         this.diskId = diskId;
+        this.diskDeviceKey = diskDeviceKey;
         this.sourceDiskPath = sourceDiskPath;
         this.datastoreName = datastoreName;
         this.targetPath = targetPath;
@@ -46,6 +49,10 @@ public class VmwareCbtDiskTO implements Serializable {
 
     public String getDiskId() {
         return diskId;
+    }
+
+    public Integer getDiskDeviceKey() {
+        return diskDeviceKey;
     }
 
     public String getSourceDiskPath() {

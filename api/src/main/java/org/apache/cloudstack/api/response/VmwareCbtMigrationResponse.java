@@ -85,6 +85,10 @@ public class VmwareCbtMigrationResponse extends BaseResponse {
     @Param(description = "the source VMware vCenter")
     private String vcenter;
 
+    @SerializedName(ApiConstants.EXISTING_VCENTER_ID)
+    @Param(description = "the linked existing vCenter ID, when used")
+    private String existingVcenterId;
+
     @SerializedName(ApiConstants.DATACENTER_NAME)
     @Param(description = "the source VMware datacenter")
     private String datacenterName;
@@ -195,6 +199,10 @@ public class VmwareCbtMigrationResponse extends BaseResponse {
 
     public void setVcenter(String vcenter) {
         this.vcenter = vcenter;
+    }
+
+    public void setExistingVcenterId(String existingVcenterId) {
+        this.existingVcenterId = existingVcenterId;
     }
 
     public void setDatacenterName(String datacenterName) {

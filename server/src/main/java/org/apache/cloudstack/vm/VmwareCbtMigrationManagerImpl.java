@@ -137,6 +137,7 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager 
 
         VmwareCbtMigrationVO migration = new VmwareCbtMigrationVO(zone.getId(), caller.getAccountId(), CallContext.current().getCallingUserId(),
                 destinationCluster.getId(), displayName, source.vcenter, source.datacenterName, cmd.getSourceHost(), cmd.getSourceCluster(), sourceVmName);
+        migration.setExistingVcenterId(source.existingVcenterId);
         if (convertHost != null) {
             migration.setConvertHostId(convertHost.getId());
         }
@@ -338,7 +339,7 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager 
                 throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
                         String.format("Cannot find any existing VMware datacenter with ID %s", cmd.getExistingVcenterId()));
             }
-            return new VmwareSource(existingDc.getVcenterHost(), existingDc.getVmwareDatacenterName(),
+            return new VmwareSource(existingDc.getId(), existingDc.getVcenterHost(), existingDc.getVmwareDatacenterName(),
                     existingDc.getUser(), existingDc.getPassword(), cmd.getSourceHost());
         }
 
@@ -346,7 +347,7 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager 
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
                     "Please set all the information for a vCenter IP/Name, datacenter, username and password");
         }
-        return new VmwareSource(cmd.getVcenter(), cmd.getDatacenterName(), cmd.getUsername(), cmd.getPassword(),
+        return new VmwareSource(null, cmd.getVcenter(), cmd.getDatacenterName(), cmd.getUsername(), cmd.getPassword(),
                 cmd.getSourceHost());
     }
 
@@ -396,7 +397,8 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager 
         for (VmwareCbtDiskInfo sourceDisk : sourceDisks) {
             VmwareCbtMigrationDiskVO disk = new VmwareCbtMigrationDiskVO(migration.getId(),
                     StringUtils.defaultIfBlank(sourceDisk.getSourceDiskId(), sourceDisk.getLabel()),
-                    sourceDisk.getSourceDiskPath(), sourceDisk.getDatastoreName(), sourceDisk.getCapacityBytes());
+                    sourceDisk.getSourceDiskDeviceKey(), sourceDisk.getSourceDiskPath(), sourceDisk.getDatastoreName(),
+                    sourceDisk.getCapacityBytes());
             disk.setChangeId(sourceDisk.getChangeId());
             disk.setTargetFormat("qcow2");
             disk.setUpdated(new Date());
@@ -424,9 +426,9 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager 
         List<VmwareCbtMigrationDiskVO> disks = vmwareCbtMigrationDiskDao.listByMigrationId(migration.getId());
         List<VmwareCbtDiskTO> diskTOs = new ArrayList<>();
         for (VmwareCbtMigrationDiskVO disk : disks) {
-            diskTOs.add(new VmwareCbtDiskTO(disk.getSourceDiskId(), disk.getSourceDiskPath(), disk.getDatastoreName(),
-                    disk.getTargetPath(), disk.getTargetFormat(), disk.getChangeId(), disk.getSnapshotMor(),
-                    disk.getCapacityBytes() == null ? 0L : disk.getCapacityBytes()));
+            diskTOs.add(new VmwareCbtDiskTO(disk.getSourceDiskId(), disk.getSourceDiskDeviceKey(),
+                    disk.getSourceDiskPath(), disk.getDatastoreName(), disk.getTargetPath(), disk.getTargetFormat(),
+                    disk.getChangeId(), disk.getSnapshotMor(), disk.getCapacityBytes() == null ? 0L : disk.getCapacityBytes()));
         }
         return diskTOs;
     }
@@ -519,6 +521,12 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager 
 
         response.setDisplayName(migration.getDisplayName());
         response.setVcenter(migration.getVcenter());
+        if (migration.getExistingVcenterId() != null) {
+            VmwareDatacenterVO existingDc = vmwareDatacenterDao.findById(migration.getExistingVcenterId());
+            if (existingDc != null) {
+                response.setExistingVcenterId(existingDc.getUuid());
+            }
+        }
         response.setDatacenterName(migration.getDatacenter());
         response.setSourceHost(migration.getSourceHost());
         response.setSourceCluster(migration.getSourceCluster());
@@ -538,13 +546,16 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager 
     }
 
     private static class VmwareSource {
+        private final Long existingVcenterId;
         private final String vcenter;
         private final String datacenterName;
         private final String username;
         private final String password;
         private final String sourceHost;
 
-        private VmwareSource(String vcenter, String datacenterName, String username, String password, String sourceHost) {
+        private VmwareSource(Long existingVcenterId, String vcenter, String datacenterName, String username,
+                             String password, String sourceHost) {
+            this.existingVcenterId = existingVcenterId;
             this.vcenter = vcenter;
             this.datacenterName = datacenterName;
             this.username = username;

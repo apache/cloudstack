@@ -19,15 +19,17 @@ package org.apache.cloudstack.vm;
 public class VmwareCbtDiskInfo {
 
     private final String sourceDiskId;
+    private final Integer sourceDiskDeviceKey;
     private final String label;
     private final String sourceDiskPath;
     private final String datastoreName;
     private final Long capacityBytes;
     private final String changeId;
 
-    public VmwareCbtDiskInfo(String sourceDiskId, String label, String sourceDiskPath, String datastoreName,
-                             Long capacityBytes, String changeId) {
+    public VmwareCbtDiskInfo(String sourceDiskId, Integer sourceDiskDeviceKey, String label, String sourceDiskPath,
+                             String datastoreName, Long capacityBytes, String changeId) {
         this.sourceDiskId = sourceDiskId;
+        this.sourceDiskDeviceKey = sourceDiskDeviceKey;
         this.label = label;
         this.sourceDiskPath = sourceDiskPath;
         this.datastoreName = datastoreName;
@@ -37,6 +39,10 @@ public class VmwareCbtDiskInfo {
 
     public String getSourceDiskId() {
         return sourceDiskId;
+    }
+
+    public Integer getSourceDiskDeviceKey() {
+        return sourceDiskDeviceKey;
     }
 
     public String getLabel() {
