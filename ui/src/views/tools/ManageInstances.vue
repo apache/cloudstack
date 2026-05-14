@@ -510,6 +510,20 @@
                 @change-filter="onChangeImportTasksFilter"
               />
             </a-tab-pane>
+            <a-tab-pane :key=3 :tab="$t('label.vmware.cbt.migrations')" v-if="isMigrateFromVmware && ('listVmwareCbtMigrations' in $store.getters.apis)">
+              <VmwareCbtMigrations
+                :migrations="vmwareCbtMigrations"
+                :loading="loadingVmwareCbtMigrations"
+                :filter="vmwareCbtMigrationsFilter"
+                :total="itemCount.vmwareCbtMigrations || 0"
+                :page="page.vmwareCbtMigrations"
+                :pageSize="pageSize.vmwareCbtMigrations"
+                @fetch-vmware-cbt-migrations="fetchVmwareCbtMigrations"
+                @change-pagination="onChangeVmwareCbtMigrationsPagination"
+                @change-filter="onChangeVmwareCbtMigrationsFilter"
+                @cancel-vmware-cbt-migration="cancelVmwareCbtMigration"
+              />
+            </a-tab-pane>
           </a-tabs>
 
         </a-card>
@@ -567,6 +581,7 @@ import ResourceIcon from '@/components/view/ResourceIcon'
 import SelectVmwareVcenter from '@/views/tools/SelectVmwareVcenter'
 import TooltipLabel from '@/components/widgets/TooltipLabel.vue'
 import ImportVmTasks from '@/views/tools/ImportVmTasks.vue'
+import VmwareCbtMigrations from '@/views/tools/VmwareCbtMigrations.vue'
 
 export default {
   components: {
@@ -577,7 +592,8 @@ export default {
     ImportUnmanagedInstances,
     ResourceIcon,
     SelectVmwareVcenter,
-    ImportVmTasks
+    ImportVmTasks,
+    VmwareCbtMigrations
   },
   name: 'ManageVms',
   data () {
@@ -712,12 +728,14 @@ export default {
       page: {
         unmanaged: 1,
         managed: 1,
-        tasks: 1
+        tasks: 1,
+        vmwareCbtMigrations: 1
       },
       pageSize: {
         unmanaged: 10,
         managed: 10,
-        tasks: 10
+        tasks: 10,
+        vmwareCbtMigrations: 10
       },
       searchFilters: {
         unmanaged: [],
@@ -776,6 +794,9 @@ export default {
       loadingImportVmTasks: false,
       importVmTasks: [],
       importVmTasksFilter: 'running',
+      loadingVmwareCbtMigrations: false,
+      vmwareCbtMigrations: [],
+      vmwareCbtMigrationsFilter: 'all',
       loadingGuestOsMappings: false
     }
   },
@@ -906,6 +927,7 @@ export default {
         }
       }
       return this.unmanagedInstancesLoading || this.managedInstancesLoading
+        || this.loadingImportVmTasks || this.loadingVmwareCbtMigrations
     },
     zoneSelectOptions () {
       return this.options.zones.map((zone) => {
@@ -1115,6 +1137,8 @@ export default {
       this.managedInstances = []
       this.managedInstancesSelectedRowKeys = []
       this.page.tasks = 1
+      this.page.vmwareCbtMigrations = 1
+      this.vmwareCbtMigrations = []
       this.activeTabKey = 1
     },
     onSelectHypervisor (value) {
@@ -1189,6 +1213,8 @@ export default {
     onTabChange (e) {
       if (e === 2) {
         this.fetchImportVmTasks()
+      } else if (e === 3) {
+        this.fetchVmwareCbtMigrations()
       }
     },
     onChangeImportTasksPagination (page, pagesize) {
@@ -1215,6 +1241,44 @@ export default {
         this.$notifyError(error)
       }).finally(() => {
         this.loadingImportVmTasks = false
+      })
+    },
+    onChangeVmwareCbtMigrationsPagination (page, pagesize) {
+      this.page.vmwareCbtMigrations = page
+      this.pageSize.vmwareCbtMigrations = pagesize
+      this.fetchVmwareCbtMigrations()
+    },
+    onChangeVmwareCbtMigrationsFilter (filter) {
+      this.vmwareCbtMigrationsFilter = filter
+      this.fetchVmwareCbtMigrations()
+    },
+    fetchVmwareCbtMigrations () {
+      if (!('listVmwareCbtMigrations' in this.$store.getters.apis)) {
+        return
+      }
+      this.loadingVmwareCbtMigrations = true
+      const params = {
+        zoneid: this.zoneId,
+        page: this.page.vmwareCbtMigrations,
+        pagesize: this.pageSize.vmwareCbtMigrations
+      }
+      if (this.vmwareCbtMigrationsFilter && this.vmwareCbtMigrationsFilter !== 'all') {
+        params.state = this.vmwareCbtMigrationsFilter
+      }
+      getAPI('listVmwareCbtMigrations', params).then(response => {
+        this.itemCount.vmwareCbtMigrations = response.listvmwarecbtmigrationsresponse.count
+        this.vmwareCbtMigrations = response.listvmwarecbtmigrationsresponse.vmwarecbtmigration || []
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.loadingVmwareCbtMigrations = false
+      })
+    },
+    cancelVmwareCbtMigration (migration) {
+      postAPI('cancelVmwareCbtMigration', { id: migration.id }).then(() => {
+        this.fetchVmwareCbtMigrations()
+      }).catch(error => {
+        this.$notifyError(error)
       })
     },
     fetchInstances () {
