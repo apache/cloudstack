@@ -929,8 +929,8 @@ export default {
           return true
         }
       }
-      return this.unmanagedInstancesLoading || this.managedInstancesLoading
-        || this.loadingImportVmTasks || this.loadingVmwareCbtMigrations
+      return this.unmanagedInstancesLoading || this.managedInstancesLoading ||
+        this.loadingImportVmTasks || this.loadingVmwareCbtMigrations
     },
     zoneSelectOptions () {
       return this.options.zones.map((zone) => {
