@@ -64,6 +64,8 @@ import com.cloud.gpu.dao.VgpuProfileDao;
 import com.cloud.host.ControlState;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.IpAddress;
 import com.cloud.network.vpc.VpcVO;
@@ -138,6 +140,8 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
     VmIsoMapDao vmIsoMapDao;
     @Inject
     HostDetailsDao hostDetailsDao;
+    @Inject
+    HostDao hostDao;
     @Inject
     ExtensionHelper extensionHelper;
 
@@ -564,8 +568,17 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
     }
 
     int effectiveCdromMaxCount(UserVmJoinVO userVm) {
-        int configuredCap = TemplateManager.VmIsoMaxCount.valueIn(userVm.getClusterId());
-        int hypervisorCap = advertisedCdromCap(userVm.getHostId() != null ? userVm.getHostId() : userVm.getLastHostId());
+        Long hostId = userVm.getHostId() != null && userVm.getHostId() > 0
+                ? userVm.getHostId() : userVm.getLastHostId();
+        Long clusterId = userVm.getClusterId();
+        if (clusterId == null && hostId != null) {
+            HostVO host = hostDao.findById(hostId);
+            if (host != null) {
+                clusterId = host.getClusterId();
+            }
+        }
+        int configuredCap = TemplateManager.VmIsoMaxCount.valueIn(clusterId);
+        int hypervisorCap = advertisedCdromCap(hostId);
         // List endpoint clamps for display robustness; the action paths in TemplateManagerImpl
         // throw on misconfiguration so operators still see the loud error when they try to attach.
         return Math.min(configuredCap, hypervisorCap);
