@@ -404,7 +404,8 @@ public class LinstorUtil {
     /**
      * Default per-call timeout for {@link #waitForResourceDefinitionDeleted}. Long enough for a
      * healthy LINSTOR controller to finish a normal delete; short enough not to block the calling
-     * agent thread for too long if the delete is genuinely stuck.
+     * thread for too long if the delete is genuinely stuck. Used both from the management server
+     * (e.g. {@code LinstorPrimaryDataStoreDriverImpl}) and from KVM agent paths.
      */
     public static final long DEFAULT_RD_DELETE_VERIFY_TIMEOUT_MILLIS = 30_000L;
 
@@ -412,14 +413,14 @@ public class LinstorUtil {
      * Returns {@code true} if the named resource definition is no longer present on the LINSTOR
      * controller. Used after a {@code resourceDefinitionDelete} to verify the delete actually
      * completed (LINSTOR can return success on the API call while the resource lingers in
-     * DELETING state due to peer issues, lost quorum, or down satellites).
+     * DELETING state due to peer issues, lost quorum, or down satellites). Uses the
+     * controller-side name filter rather than scanning every RD on the cluster (cheap even
+     * when polled once per second from {@link #waitForResourceDefinitionDeleted}).
      */
     public static boolean isResourceDefinitionGone(DevelopersApi api, String rscName) throws ApiException {
-        List<ResourceDefinition> all = api.resourceDefinitionList(null, false, null, null, null);
-        if (all == null) {
-            return true;
-        }
-        return all.stream().noneMatch(rd -> rscName.equalsIgnoreCase(rd.getName()));
+        List<ResourceDefinition> matching =
+                api.resourceDefinitionList(Collections.singletonList(rscName), false, null, null, null);
+        return matching == null || matching.isEmpty();
     }
 
     /**
