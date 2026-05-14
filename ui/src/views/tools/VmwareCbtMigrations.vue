@@ -62,7 +62,7 @@
           :pagination="false"
           :rowKey="record => record.id"
           :columns="columns"
-          :rowExpandable="record => getDisks(record).length > 0">
+          :rowExpandable="record => getDisks(record).length > 0 || getCycles(record).length > 0">
           <template #bodyCell="{ column, record, text }">
             <template v-if="column.key === 'displayname'">
               <router-link v-if="record.virtualmachineid" :to="{ path: '/vm/' + record.virtualmachineid }">{{ record.displayname }}</router-link>
@@ -76,11 +76,11 @@
               <span>{{ $toLocaleDate(record.created) }}</span>
             </template>
             <template v-else-if="['lastchangedbytes', 'totalchangedbytes'].includes(column.key)">
-              <span v-if="text">{{ $bytesToHumanReadableSize(text) }}</span>
+              <span v-if="text !== null && text !== undefined">{{ $bytesToHumanReadableSize(text) }}</span>
               <span v-else>-</span>
             </template>
             <template v-else-if="column.key === 'lastdirtyrate'">
-              <span v-if="text">{{ $bytesToHumanReadableSize(text) }}/s</span>
+              <span v-if="text !== null && text !== undefined">{{ $bytesToHumanReadableSize(text) }}/s</span>
               <span v-else>-</span>
             </template>
             <template v-else-if="column.key === 'action'">
@@ -138,25 +138,57 @@
             </template>
           </template>
           <template #expandedRowRender="{ record }">
-            <a-table
-              size="small"
-              :columns="diskColumns"
-              :data-source="getDisks(record)"
-              :rowKey="diskRowKey"
-              :pagination="false">
-              <template #bodyCell="{ column, text }">
-                <template v-if="column.key === 'capacity'">
-                  <span v-if="text">{{ $bytesToHumanReadableSize(text) }}</span>
-                  <span v-else>-</span>
+            <div class="vmware-cbt-expanded-row">
+              <a-table
+                v-if="getDisks(record).length > 0"
+                size="small"
+                :columns="diskColumns"
+                :data-source="getDisks(record)"
+                :rowKey="diskRowKey"
+                :pagination="false">
+                <template #bodyCell="{ column, text }">
+                  <template v-if="column.key === 'capacity'">
+                    <span v-if="text !== null && text !== undefined">{{ $bytesToHumanReadableSize(text) }}</span>
+                    <span v-else>-</span>
+                  </template>
+                  <template v-else-if="column.key === 'targetpath' || column.key === 'changeid' || column.key === 'snapshotmor'">
+                    <span>{{ text || '-' }}</span>
+                  </template>
+                  <template v-else>
+                    <span>{{ text }}</span>
+                  </template>
                 </template>
-                <template v-else-if="column.key === 'targetpath' || column.key === 'changeid' || column.key === 'snapshotmor'">
-                  <span>{{ text || '-' }}</span>
+              </a-table>
+              <a-table
+                v-if="getCycles(record).length > 0"
+                size="small"
+                class="vmware-cbt-cycle-table"
+                :columns="cycleColumns"
+                :data-source="getCycles(record)"
+                :rowKey="cycleRowKey"
+                :pagination="false">
+                <template #bodyCell="{ column, text }">
+                  <template v-if="column.key === 'changedbytes'">
+                    <span v-if="text !== null && text !== undefined">{{ $bytesToHumanReadableSize(text) }}</span>
+                    <span v-else>-</span>
+                  </template>
+                  <template v-else-if="column.key === 'dirtyrate'">
+                    <span v-if="text !== null && text !== undefined">{{ $bytesToHumanReadableSize(text) }}/s</span>
+                    <span v-else>-</span>
+                  </template>
+                  <template v-else-if="column.key === 'duration'">
+                    <span>{{ formatDuration(text) }}</span>
+                  </template>
+                  <template v-else-if="column.key === 'created' || column.key === 'lastupdated'">
+                    <span v-if="text">{{ $toLocaleDate(text) }}</span>
+                    <span v-else>-</span>
+                  </template>
+                  <template v-else>
+                    <span>{{ text || '-' }}</span>
+                  </template>
                 </template>
-                <template v-else>
-                  <span>{{ text }}</span>
-                </template>
-              </template>
-            </a-table>
+              </a-table>
+            </div>
           </template>
         </a-table>
         <div class="instances-card-footer">
@@ -382,9 +414,52 @@ export default {
         dataIndex: 'state'
       }
     ]
+    const cycleColumns = [
+      {
+        key: 'cyclenumber',
+        title: this.$t('label.cyclenumber'),
+        dataIndex: 'cyclenumber'
+      },
+      {
+        key: 'state',
+        title: this.$t('label.state'),
+        dataIndex: 'state'
+      },
+      {
+        key: 'changedbytes',
+        title: this.$t('label.changedbytes'),
+        dataIndex: 'changedbytes'
+      },
+      {
+        key: 'dirtyrate',
+        title: this.$t('label.dirtyrate'),
+        dataIndex: 'dirtyrate'
+      },
+      {
+        key: 'duration',
+        title: this.$t('label.duration'),
+        dataIndex: 'duration'
+      },
+      {
+        key: 'description',
+        title: this.$t('label.description'),
+        dataIndex: 'description'
+      },
+      {
+        key: 'created',
+        title: this.$t('label.created'),
+        dataIndex: 'created'
+      },
+      {
+        key: 'lastupdated',
+        title: this.$t('label.last.updated'),
+        dataIndex: 'lastupdated'
+      }
+    ]
     return {
       columns,
       diskColumns,
+      cycleColumns,
       targetDiskColumns: diskColumns,
       filters: ['all', 'Created', 'InitialSync', 'Replicating', 'ReadyForCutover', 'CuttingOver', 'Completed', 'Failed', 'Cancelled'],
       registerTargetsVisible: false,
@@ -413,8 +488,21 @@ export default {
       const disks = record?.disk || record?.disks || []
       return Array.isArray(disks) ? disks : [disks]
     },
+    getCycles (record) {
+      const cycles = record?.cycle || record?.cycles || []
+      return Array.isArray(cycles) ? cycles : [cycles]
+    },
     diskRowKey (record, index) {
       return record.id || record.sourcediskid || index
+    },
+    cycleRowKey (record, index) {
+      return record.id || record.cyclenumber || index
+    },
+    formatDuration (duration) {
+      if (!duration) {
+        return '-'
+      }
+      return Math.round(duration / 1000) + 's'
     },
     openTargetRegistration (record) {
       this.selectedMigration = record
@@ -482,3 +570,9 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.vmware-cbt-cycle-table {
+  margin-top: 12px;
+}
+</style>

@@ -33,6 +33,7 @@ import org.apache.cloudstack.api.command.admin.vm.RegisterVmwareCbtMigrationTarg
 import org.apache.cloudstack.api.command.admin.vm.StartVmwareCbtMigrationCmd;
 import org.apache.cloudstack.api.command.admin.vm.SyncVmwareCbtMigrationCmd;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.VmwareCbtMigrationCycleResponse;
 import org.apache.cloudstack.api.response.VmwareCbtMigrationDiskResponse;
 import org.apache.cloudstack.api.response.VmwareCbtMigrationResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -251,9 +252,16 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
         VmwareCbtSnapshotInfo snapshot = null;
         try {
             snapshot = createDeltaSnapshot(source, migration, cycleNumber);
+            cycle.setState(VmwareCbtMigrationCycle.State.QueryingChangedAreas);
+            cycle.setSnapshotMor(snapshot.getSnapshotMor());
+            cycle.setDescription("Querying VMware CBT changed disk areas");
+            cycle.setUpdated(new Date());
+            vmwareCbtMigrationCycleDao.update(cycle.getId(), cycle);
+
             VmwareCbtChangedBlockQueryResult changedBlockQuery = queryChangedBlocks(source, migration,
                     snapshot.getSnapshotMor());
 
+            cycle.setState(VmwareCbtMigrationCycle.State.CopyingChangedBlocks);
             cycle.setDescription(String.format("Dispatching %s VMware CBT changed block range(s) to KVM agent",
                     changedBlockQuery.changedBlocks.size()));
             cycle.setUpdated(new Date());
@@ -911,6 +919,7 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
         response.setLastChangedBytes(migration.getLastChangedBytes());
         response.setLastDirtyRate(migration.getLastDirtyRate());
         response.setDisks(createVmwareCbtMigrationDiskResponses(migration));
+        response.setCycles(createVmwareCbtMigrationCycleResponses(migration));
         response.setCreated(migration.getCreated());
         response.setLastUpdated(migration.getUpdated());
         response.setObjectName(OBJECT_NAME);
@@ -937,6 +946,27 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
             diskResponses.add(diskResponse);
         }
         return diskResponses;
+    }
+
+    private List<VmwareCbtMigrationCycleResponse> createVmwareCbtMigrationCycleResponses(VmwareCbtMigrationVO migration) {
+        List<VmwareCbtMigrationCycleResponse> cycleResponses = new ArrayList<>();
+        List<VmwareCbtMigrationCycleVO> cycles = vmwareCbtMigrationCycleDao.listByMigrationId(migration.getId());
+        for (VmwareCbtMigrationCycleVO cycle : cycles) {
+            VmwareCbtMigrationCycleResponse cycleResponse = new VmwareCbtMigrationCycleResponse();
+            cycleResponse.setId(cycle.getUuid());
+            cycleResponse.setCycleNumber(cycle.getCycleNumber());
+            cycleResponse.setSnapshotMor(cycle.getSnapshotMor());
+            cycleResponse.setChangedBytes(cycle.getChangedBytes());
+            cycleResponse.setDirtyRate(cycle.getDirtyRate());
+            cycleResponse.setDuration(cycle.getDuration());
+            cycleResponse.setState(cycle.getState().name());
+            cycleResponse.setDescription(cycle.getDescription());
+            cycleResponse.setCreated(cycle.getCreated());
+            cycleResponse.setLastUpdated(cycle.getUpdated());
+            cycleResponse.setObjectName("vmwarecbtmigrationcycle");
+            cycleResponses.add(cycleResponse);
+        }
+        return cycleResponses;
     }
 
     @Override

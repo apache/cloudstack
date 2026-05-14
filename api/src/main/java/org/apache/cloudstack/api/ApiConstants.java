@@ -655,6 +655,7 @@ public class ApiConstants {
     public static final String LAST_CHANGED_BYTES = "lastchangedbytes";
     public static final String LAST_DIRTY_RATE = "lastdirtyrate";
     public static final String TOTAL_CHANGED_BYTES = "totalchangedbytes";
+    public static final String CYCLE = "cycle";
     public static final String CYCLE_NUMBER = "cyclenumber";
     public static final String CHANGED_BYTES = "changedbytes";
     public static final String DIRTY_RATE = "dirtyrate";

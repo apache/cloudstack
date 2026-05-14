@@ -142,6 +142,10 @@ public class VmwareCbtMigrationResponse extends BaseResponse {
     @Param(description = "the source and target disks tracked by this VMware CBT migration")
     private List<VmwareCbtMigrationDiskResponse> disks;
 
+    @SerializedName(ApiConstants.CYCLE)
+    @Param(description = "the CBT delta synchronization cycles tracked by this VMware CBT migration")
+    private List<VmwareCbtMigrationCycleResponse> cycles;
+
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "the create date of the VMware CBT migration")
     private Date created;
@@ -260,6 +264,10 @@ public class VmwareCbtMigrationResponse extends BaseResponse {
 
     public void setDisks(List<VmwareCbtMigrationDiskResponse> disks) {
         this.disks = disks;
+    }
+
+    public void setCycles(List<VmwareCbtMigrationCycleResponse> cycles) {
+        this.cycles = cycles;
     }
 
     public void setCreated(Date created) {
