@@ -925,7 +925,7 @@ public class ServerAdapterTest {
     @Test(expected = InvalidParameterValueException.class)
     public void testDeleteInstance_VmNotFound_Throws() {
         when(userVmDao.findByUuid("vm-uuid")).thenReturn(null);
-        serverAdapter.deleteInstance("vm-uuid", false);
+        serverAdapter.deleteInstance("vm-uuid", true, false);
     }
 
 

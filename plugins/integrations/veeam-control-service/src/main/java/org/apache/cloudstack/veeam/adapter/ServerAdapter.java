@@ -568,7 +568,8 @@ public class ServerAdapter extends ManagerBase {
             os = guestOSDao.findOneByDisplayName(guestOsName);
         }
         if (os == null) {
-            logger.debug("Guest OS could not be identified with ID: {} and name: {} for the VM request", os);
+            logger.debug("Guest OS could not be identified with ID: {} and name: {} for the VM request",
+                    guestOsId, guestOsName);
         }
         return os;
     }
@@ -1311,7 +1312,7 @@ public class ServerAdapter extends ManagerBase {
     }
 
     @ApiAccess(command = DestroyVMCmd.class)
-    public VmAction deleteInstance(String uuid, boolean async) {
+    public VmAction deleteInstance(String uuid, boolean deleteVolumes, boolean async) {
         UserVmVO vo = userVmDao.findByUuid(uuid);
         if (vo == null) {
             throw new InvalidParameterValueException("VM with ID " + uuid + " not found");
@@ -1324,6 +1325,15 @@ public class ServerAdapter extends ManagerBase {
             Map<String, String> params = new HashMap<>();
             params.put(ApiConstants.ID, vo.getUuid());
             params.put(ApiConstants.EXPUNGE, Boolean.TRUE.toString());
+            if (deleteVolumes) {
+                List<String>volumeIds = volumeDao.findByInstance(vo.getId()).stream()
+                        .filter(v -> Volume.Type.DATADISK.equals(v.getVolumeType()))
+                        .map(VolumeVO::getUuid)
+                        .collect(Collectors.toList());
+                if (CollectionUtils.isNotEmpty(volumeIds)) {
+                    params.put(ApiConstants.VOLUME_IDS, String.join(",", volumeIds));
+                }
+            }
             if (isAdmin) {
                 params.put(ApiConstants.FORCED, Boolean.TRUE.toString());
             }

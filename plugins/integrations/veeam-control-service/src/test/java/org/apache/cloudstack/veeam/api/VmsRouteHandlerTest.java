@@ -105,7 +105,7 @@ public class VmsRouteHandlerTest extends RouteHandlerTestSupport {
         stopAction.setStatus("stopping");
         final VmAction shutdownAction = new VmAction();
         shutdownAction.setStatus("shutting_down");
-        when(handler.serverAdapter.deleteInstance("vm-1", true)).thenReturn(deleteAction);
+        when(handler.serverAdapter.deleteInstance("vm-1", true, true)).thenReturn(deleteAction);
         when(handler.serverAdapter.startInstance("vm-1", false)).thenReturn(startAction);
         when(handler.serverAdapter.stopInstance("vm-1", false)).thenReturn(stopAction);
         when(handler.serverAdapter.shutdownInstance("vm-1", false)).thenReturn(shutdownAction);
@@ -119,9 +119,9 @@ public class VmsRouteHandlerTest extends RouteHandlerTestSupport {
         assertContains(get.body(), "\"id\":\"vm-1\"");
 
         final ResponseCapture delete = newResponse();
-        handler.handle(newRequest("DELETE", Map.of("async", "true"), null, null), delete.response,
+        handler.handle(newRequest("DELETE", Map.of("async", "true", "detach_only", "false"), null, null), delete.response,
                 "/api/vms/vm-1", Negotiation.OutFormat.JSON, newServlet());
-        verify(handler.serverAdapter).deleteInstance("vm-1", true);
+        verify(handler.serverAdapter).deleteInstance("vm-1", true, true);
         verify(delete.response).setStatus(200);
         assertContains(delete.body(), "deleted");
 

@@ -299,8 +299,9 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
     protected void handleDeleteById(final String id, final HttpServletRequest req, final HttpServletResponse resp,
                 final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
         boolean async = RouteHandler.isRequestAsync(req);
+        boolean deleteVolumes = Boolean.FALSE.toString().equals(req.getParameter("detach_only"));
         try {
-            VmAction vm = serverAdapter.deleteInstance(id, async);
+            VmAction vm = serverAdapter.deleteInstance(id, deleteVolumes, async);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, vm, outFormat);
         } catch (CloudRuntimeException e) {
             io.badRequest(resp, e.getMessage(), outFormat);

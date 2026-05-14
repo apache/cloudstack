@@ -821,7 +821,7 @@ public class OvfXmlUtil {
         }
         String guestOsName = xpathString(xpath, metadataSection, ".//*[local-name()='GuestOsName']/text()");
         if (StringUtils.isNotBlank(guestOsName)) {
-            vm.setGuestOsId(guestOsName);
+            vm.setGuestOsName(guestOsName);
         }
         String instanceType = xpathString(xpath, metadataSection, ".//*[local-name()='Type']/text()");
         if (StringUtils.isNotBlank(instanceType)) {
