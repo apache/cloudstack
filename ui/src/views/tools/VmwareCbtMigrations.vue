@@ -61,7 +61,8 @@
           size="middle"
           :pagination="false"
           :rowKey="record => record.id"
-          :columns="columns">
+          :columns="columns"
+          :rowExpandable="record => getDisks(record).length > 0">
           <template #bodyCell="{ column, record, text }">
             <template v-if="column.key === 'displayname'">
               <router-link v-if="record.virtualmachineid" :to="{ path: '/vm/' + record.virtualmachineid }">{{ record.displayname }}</router-link>
@@ -84,6 +85,14 @@
             </template>
             <template v-else-if="column.key === 'action'">
               <a-space size="small">
+                <a-button
+                  v-if="canRegisterTargets(record)"
+                  size="small"
+                  :disabled="!('registerVmwareCbtMigrationTarget' in $store.getters.apis)"
+                  @click="openTargetRegistration(record)">
+                  <template #icon><edit-outlined /></template>
+                  {{ $t('label.register.targets') }}
+                </a-button>
                 <a-popconfirm
                   v-if="canSync(record)"
                   :title="$t('message.confirm.sync.vmware.cbt.migration')"
@@ -128,6 +137,27 @@
               </a-space>
             </template>
           </template>
+          <template #expandedRowRender="{ record }">
+            <a-table
+              size="small"
+              :columns="diskColumns"
+              :data-source="getDisks(record)"
+              :rowKey="diskRowKey"
+              :pagination="false">
+              <template #bodyCell="{ column, text }">
+                <template v-if="column.key === 'capacity'">
+                  <span v-if="text">{{ $bytesToHumanReadableSize(text) }}</span>
+                  <span v-else>-</span>
+                </template>
+                <template v-else-if="column.key === 'targetpath' || column.key === 'changeid' || column.key === 'snapshotmor'">
+                  <span>{{ text || '-' }}</span>
+                </template>
+                <template v-else>
+                  <span>{{ text }}</span>
+                </template>
+              </template>
+            </a-table>
+          </template>
         </a-table>
         <div class="instances-card-footer">
           <a-pagination
@@ -146,10 +176,54 @@
         </div>
       </a-card>
     </a-col>
+    <a-modal
+      :visible="registerTargetsVisible"
+      :title="$t('label.register.targets')"
+      :okText="$t('label.ok')"
+      :cancelText="$t('label.cancel')"
+      :confirmLoading="registerTargetsLoading"
+      :maskClosable="false"
+      width="80%"
+      @ok="submitTargetRegistration"
+      @cancel="closeTargetRegistration">
+      <a-table
+        size="small"
+        :columns="targetDiskColumns"
+        :data-source="targetDiskRows"
+        :rowKey="diskRowKey"
+        :pagination="false">
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'capacity'">
+            <span v-if="record.capacity">{{ $bytesToHumanReadableSize(record.capacity) }}</span>
+            <span v-else>-</span>
+          </template>
+          <template v-else-if="column.key === 'targetpath'">
+            <a-input v-model:value="record.targetpath" :placeholder="$t('label.target.path')" />
+          </template>
+          <template v-else-if="column.key === 'targetformat'">
+            <a-select v-model:value="record.targetformat" style="width: 120px">
+              <a-select-option value="qcow2">qcow2</a-select-option>
+              <a-select-option value="raw">raw</a-select-option>
+            </a-select>
+          </template>
+          <template v-else-if="column.key === 'changeid'">
+            <a-input v-model:value="record.changeid" :placeholder="$t('label.change.id')" />
+          </template>
+          <template v-else-if="column.key === 'snapshotmor'">
+            <a-input v-model:value="record.snapshotmor" :placeholder="$t('label.snapshot.mor')" />
+          </template>
+          <template v-else>
+            <span>{{ record[column.dataIndex] || '-' }}</span>
+          </template>
+        </template>
+      </a-table>
+    </a-modal>
   </a-row>
 </template>
 
 <script>
+import { postAPI } from '@/api'
+
 export default {
   name: 'VmwareCbtMigrations',
   props: {
@@ -266,14 +340,62 @@ export default {
         dataIndex: 'action'
       }
     ]
+    const diskColumns = [
+      {
+        key: 'sourcediskid',
+        title: this.$t('label.source.disk'),
+        dataIndex: 'sourcediskid'
+      },
+      {
+        key: 'sourcediskpath',
+        title: this.$t('label.source.disk.path'),
+        dataIndex: 'sourcediskpath'
+      },
+      {
+        key: 'capacity',
+        title: this.$t('label.capacity'),
+        dataIndex: 'capacity'
+      },
+      {
+        key: 'targetpath',
+        title: this.$t('label.target.path'),
+        dataIndex: 'targetpath'
+      },
+      {
+        key: 'targetformat',
+        title: this.$t('label.target.format'),
+        dataIndex: 'targetformat'
+      },
+      {
+        key: 'changeid',
+        title: this.$t('label.change.id'),
+        dataIndex: 'changeid'
+      },
+      {
+        key: 'snapshotmor',
+        title: this.$t('label.snapshot.mor'),
+        dataIndex: 'snapshotmor'
+      },
+      {
+        key: 'state',
+        title: this.$t('label.state'),
+        dataIndex: 'state'
+      }
+    ]
     return {
       columns,
-      filters: ['all', 'Created', 'InitialSync', 'Replicating', 'ReadyForCutover', 'CuttingOver', 'Completed', 'Failed', 'Cancelled']
+      diskColumns,
+      targetDiskColumns: diskColumns,
+      filters: ['all', 'Created', 'InitialSync', 'Replicating', 'ReadyForCutover', 'CuttingOver', 'Completed', 'Failed', 'Cancelled'],
+      registerTargetsVisible: false,
+      registerTargetsLoading: false,
+      selectedMigration: null,
+      targetDiskRows: []
     }
   },
   methods: {
     canSync (record) {
-      return ['Created', 'InitialSync', 'Replicating'].includes(record.state)
+      return ['Replicating', 'ReadyForCutover'].includes(record.state)
     },
     canCutover (record) {
       return record.state === 'ReadyForCutover'
@@ -281,8 +403,75 @@ export default {
     canCancel (record) {
       return !['Completed', 'Failed', 'Cancelled'].includes(record.state)
     },
+    canRegisterTargets (record) {
+      return ['Created', 'InitialSync'].includes(record.state) && this.getDisks(record).length > 0
+    },
     getFilterLabel (filter) {
       return filter === 'all' ? this.$t('label.all') : filter
+    },
+    getDisks (record) {
+      const disks = record?.disk || record?.disks || []
+      return Array.isArray(disks) ? disks : [disks]
+    },
+    diskRowKey (record, index) {
+      return record.id || record.sourcediskid || index
+    },
+    openTargetRegistration (record) {
+      this.selectedMigration = record
+      this.targetDiskRows = this.getDisks(record).map((disk, index) => ({
+        id: disk.id || disk.sourcediskid || index,
+        sourcediskid: disk.sourcediskid,
+        sourcediskpath: disk.sourcediskpath,
+        capacity: disk.capacity || disk.capacitybytes,
+        targetpath: disk.targetpath || '',
+        targetformat: disk.targetformat || 'qcow2',
+        changeid: disk.changeid || '',
+        snapshotmor: disk.snapshotmor || '',
+        state: disk.state
+      }))
+      this.registerTargetsVisible = true
+    },
+    closeTargetRegistration () {
+      this.registerTargetsVisible = false
+      this.selectedMigration = null
+      this.targetDiskRows = []
+    },
+    submitTargetRegistration () {
+      if (!this.selectedMigration) {
+        return
+      }
+      if (this.targetDiskRows.some(disk => !disk.targetpath || disk.targetpath.trim() === '')) {
+        this.$notification.error({
+          message: this.$t('message.request.failed'),
+          description: this.$t('message.error.vmware.cbt.target.path')
+        })
+        return
+      }
+
+      const params = {
+        id: this.selectedMigration.id
+      }
+      this.targetDiskRows.forEach((disk, index) => {
+        params['targetdisklist[' + index + '].sourcediskid'] = disk.sourcediskid
+        params['targetdisklist[' + index + '].targetpath'] = disk.targetpath.trim()
+        params['targetdisklist[' + index + '].targetformat'] = disk.targetformat
+        if (disk.changeid) {
+          params['targetdisklist[' + index + '].changeid'] = disk.changeid
+        }
+        if (disk.snapshotmor) {
+          params['targetdisklist[' + index + '].snapshotmor'] = disk.snapshotmor
+        }
+      })
+
+      this.registerTargetsLoading = true
+      postAPI('registerVmwareCbtMigrationTarget', params).then(() => {
+        this.closeTargetRegistration()
+        this.$emit('fetch-vmware-cbt-migrations')
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.registerTargetsLoading = false
+      })
     },
     onFilterChange (e) {
       this.$emit('change-filter', e)
