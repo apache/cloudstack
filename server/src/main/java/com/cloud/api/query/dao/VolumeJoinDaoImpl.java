@@ -17,6 +17,7 @@
 package com.cloud.api.query.dao;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -384,9 +385,15 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
     }
 
     @Override
-    public List<VolumeJoinVO> listByHypervisorTypeAndOwners(Hypervisor.HypervisorType hypervisorType,
-                    List<Long> accountIds, String domainPath, Filter filter) {
+    public List<VolumeJoinVO> listByZonesHypervisorTypeAndOwners(List<Long> zoneIds,
+                                                                 Hypervisor.HypervisorType hypervisorType,
+                                                                 List<Long> accountIds, String domainPath,
+                                                                 Filter filter) {
+        if (CollectionUtils.isEmpty(zoneIds)) {
+            return Collections.emptyList();
+        }
         SearchBuilder<VolumeJoinVO> sb = createSearchBuilder();
+        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.IN);
         sb.and("vmType", sb.entity().getVmType(), SearchCriteria.Op.EQ);
         sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
         boolean accountIdsNotEmpty = CollectionUtils.isNotEmpty(accountIds);
@@ -398,6 +405,7 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
         }
         sb.done();
         SearchCriteria<VolumeJoinVO> sc = sb.create();
+        sc.setParameters("dataCenterId", zoneIds.toArray());
         sc.setParameters("vmType", VirtualMachine.Type.User);
         sc.setParameters("hypervisorType", hypervisorType);
         if (accountIdsNotEmpty) {

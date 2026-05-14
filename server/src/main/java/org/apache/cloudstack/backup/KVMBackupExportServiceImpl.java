@@ -59,7 +59,6 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
-import com.cloud.dc.DataCenter;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
@@ -871,14 +870,9 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
 
     @Override
     public List<Long> listCompatibleDataCenterIds() {
-        List<Long> compatibleDataCenters = new ArrayList<>();
-        for (final DataCenter dataCenter : dataCenterDao.listAllZones()) {
-            Long zoneId = dataCenter.getId();
-            if (isZoneCompatible(zoneId)) {
-                compatibleDataCenters.add(zoneId);
-            }
-        }
-        return compatibleDataCenters;
+        return dataCenterDao.listAllIds().stream()
+                .filter(this::isZoneCompatible)
+                .collect(Collectors.toList());
     }
 
     private void revertVmCheckpointDetailsAfterActiveDelete(long vmId, Map<String, String> detailsBeforeDelete) {

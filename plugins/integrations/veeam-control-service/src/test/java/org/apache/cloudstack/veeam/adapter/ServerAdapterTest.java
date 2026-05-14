@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.backup.BackupVO;
+import org.apache.cloudstack.backup.KVMBackupExportService;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.ImageTransferDao;
 import org.apache.cloudstack.context.CallContext;
@@ -142,6 +143,8 @@ public class ServerAdapterTest {
     @Mock NetworkModel networkModel;
     @Mock ProjectManager projectManager;
     @Mock DomainDao domainDao;
+    @Mock
+    KVMBackupExportService kvmBackupExportService;
 
     @Before
     public void setupCallContext() {
@@ -816,7 +819,7 @@ public class ServerAdapterTest {
     @Test
     public void testListAllDataCenters_ReturnsConvertedList() {
         DataCenterJoinVO vo = mock(DataCenterJoinVO.class);
-        when(dataCenterJoinDao.listAll(any())).thenReturn(List.of(vo));
+        when(dataCenterJoinDao.listByIds(anyList(), any())).thenReturn(List.of(vo));
 
         List<DataCenter> result = serverAdapter.listAllDataCenters(0L, 10L);
 
@@ -826,7 +829,7 @@ public class ServerAdapterTest {
 
     @Test
     public void testListAllDataCenters_EmptyList_ReturnsEmpty() {
-        when(dataCenterJoinDao.listAll(any())).thenReturn(Collections.emptyList());
+        when(dataCenterJoinDao.listByIds(anyList(), any())).thenReturn(Collections.emptyList());
 
         assertTrue(serverAdapter.listAllDataCenters(0L, 10L).isEmpty());
     }
@@ -869,7 +872,7 @@ public class ServerAdapterTest {
 
     @Test
     public void testListAllClusters_ReturnsEmptyListWhenNoClusters() {
-        when(clusterDao.listByHypervisorType(any(), any())).thenReturn(Collections.emptyList());
+        when(clusterDao.listByZonesAndHypervisorType(anyList(), any(), any())).thenReturn(Collections.emptyList());
         assertTrue(serverAdapter.listAllClusters(0L, 10L).isEmpty());
     }
 
@@ -884,7 +887,7 @@ public class ServerAdapterTest {
     @Test
     public void testListAllHosts_ReturnsList() {
         HostJoinVO hostVO = mock(HostJoinVO.class);
-        when(hostJoinDao.listAvailableRoutingHostsByHypervisor(any(), any())).thenReturn(List.of(hostVO));
+        when(hostJoinDao.listAvailableRoutingByZonesAndHypervisor(anyList(), any(), any())).thenReturn(List.of(hostVO));
 
         assertEquals(1, serverAdapter.listAllHosts(0L, 10L).size());
     }

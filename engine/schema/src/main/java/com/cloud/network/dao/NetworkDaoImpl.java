@@ -19,6 +19,7 @@ package com.cloud.network.dao;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -647,9 +648,13 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
     }
 
     @Override
-    public List<NetworkVO> listByTrafficTypeAndOwners(final TrafficType trafficType, List<Long> accountIds,
-                      List<Long> domainIds, Filter filter) {
+    public List<NetworkVO> listByZonesTrafficTypeAndOwners(List<Long> zoneIds, final TrafficType trafficType,
+                                                           List<Long> accountIds, List<Long> domainIds, Filter filter) {
+        if (CollectionUtils.isEmpty(zoneIds)) {
+            return Collections.emptyList();
+        }
         SearchBuilder<NetworkVO> sb = createSearchBuilder();
+        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.IN);
         sb.and("trafficType", sb.entity().getTrafficType(), Op.EQ);
         boolean accountIdsNotEmpty = CollectionUtils.isNotEmpty(accountIds);
         boolean domainIdsNotEmpty = CollectionUtils.isNotEmpty(domainIds);
@@ -660,6 +665,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
         }
         sb.done();
         final SearchCriteria<NetworkVO> sc = sb.create();
+        sc.setParameters("dataCenterId", zoneIds.toArray());
         sc.setParameters("trafficType", trafficType);
         if (accountIdsNotEmpty) {
             sc.setParameters("account", accountIds.toArray());

@@ -52,7 +52,7 @@ public interface UserVmJoinDao extends GenericDao<UserVmJoinVO, Long> {
 
     List<UserVmJoinVO> listLeaseInstancesExpiringInDays(int days);
 
-    List<UserVmJoinVO> listByHypervisorNotTypesAndOwners(Hypervisor.HypervisorType hypervisorType,
-                                                         List<String> excludeTypes, List<Long> accountIds,
-                                                         String domainPath, Filter filter);
+    List<UserVmJoinVO> listByZonesHypervisorNotTypesAndOwners(List<Long> zoneIds, Hypervisor.HypervisorType hypervisorType,
+                                                              List<String> excludeTypes, List<Long> accountIds,
+                                                              String domainPath, Filter filter);
 }

@@ -63,5 +63,5 @@ public interface ClusterDao extends GenericDao<ClusterVO, Long> {
 
     List<Long> listEnabledClusterIdsByZoneHypervisorArch(Long zoneId, HypervisorType hypervisorType, CPU.CPUArch arch);
 
-    List<ClusterVO> listByHypervisorType(HypervisorType hypervisorType, Filter filter);
+    List<ClusterVO> listByZonesAndHypervisorType(List<Long> zoneIds, HypervisorType hypervisorType, Filter filter);
 }

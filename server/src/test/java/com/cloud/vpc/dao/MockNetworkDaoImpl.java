@@ -172,8 +172,8 @@ public class MockNetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implemen
     }
 
     @Override
-    public List<NetworkVO> listByTrafficTypeAndOwners(final TrafficType trafficType, List<Long> accountIds,
-                                                      List<Long> domainIds, Filter filter) {
+    public List<NetworkVO> listByZonesTrafficTypeAndOwners(List<Long> zoneIds, final TrafficType trafficType, List<Long> accountIds,
+                                                           List<Long> domainIds, Filter filter) {
         return null;
     }
 

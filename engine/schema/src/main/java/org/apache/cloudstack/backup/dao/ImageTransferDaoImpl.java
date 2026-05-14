@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.backup.dao;
 
+import java.util.Collections;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
@@ -106,8 +107,13 @@ public class ImageTransferDaoImpl extends GenericDaoBase<ImageTransferVO, Long> 
     }
 
     @Override
-    public List<ImageTransferVO> listByOwners(List<Long> accountIds, List<Long> domainIds, Filter filter) {
+    public List<ImageTransferVO> listByZonesAndOwners(List<Long> zoneIds, List<Long> accountIds, List<Long> domainIds,
+                                                      Filter filter) {
+        if (CollectionUtils.isEmpty(zoneIds)) {
+            return Collections.emptyList();
+        }
         SearchBuilder<ImageTransferVO> sb = createSearchBuilder();
+        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.IN);
         boolean accountIdsNotEmpty = CollectionUtils.isNotEmpty(accountIds);
         boolean domainIdsNotEmpty = CollectionUtils.isNotEmpty(domainIds);
         if (accountIdsNotEmpty || domainIdsNotEmpty) {
@@ -117,6 +123,7 @@ public class ImageTransferDaoImpl extends GenericDaoBase<ImageTransferVO, Long> 
         }
         sb.done();
         final SearchCriteria<ImageTransferVO> sc = sb.create();
+        sc.setParameters("dataCenterId", zoneIds.toArray());
         if (accountIdsNotEmpty) {
             sc.setParameters("account", accountIds.toArray());
         }

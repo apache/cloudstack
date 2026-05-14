@@ -41,6 +41,7 @@ import org.apache.cloudstack.veeam.api.dto.Ref;
 import org.apache.cloudstack.veeam.api.dto.Tag;
 import org.apache.cloudstack.veeam.api.dto.Topology;
 import org.apache.cloudstack.veeam.api.dto.Vm;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -181,11 +182,7 @@ public final class UserVmJoinVOToVmConverter {
         dst.setGuestOsName(src.getGuestOsDisplayName());
         dst.setInstanceType(src.getUserVmType());
         updateSharedFSDetailsIfNeeded(src, sharedFsResolver, dst);
-        if (securityGroupsResolver != null) {
-            dst.setSecurityGroupIds(securityGroupsResolver.apply(src.getId()).stream()
-                    .map(SecurityGroupVO::getUuid)
-                    .collect(Collectors.toList()));
-        }
+        updateSecurityGroupsIfNeeded(src, securityGroupsResolver, dst);
 
         // Keep at end
         if (allContent) {
@@ -193,6 +190,19 @@ public final class UserVmJoinVOToVmConverter {
         }
 
         return dst;
+    }
+
+    private static void updateSecurityGroupsIfNeeded(UserVmJoinVO src, Function<Long, List<SecurityGroupVO>> securityGroupsResolver, Vm dst) {
+        if (securityGroupsResolver == null) {
+            return;
+        }
+        List<SecurityGroupVO> securityGroups = securityGroupsResolver.apply(src.getId());
+        if (CollectionUtils.isEmpty(securityGroups)) {
+            return;
+        }
+        dst.setSecurityGroupIds(securityGroups.stream()
+                .map(SecurityGroupVO::getUuid)
+                .collect(Collectors.toList()));
     }
 
     private static void updateSharedFSDetailsIfNeeded(UserVmJoinVO src, Function<UserVmJoinVO, SharedFS> sharedFsResolver, Vm dst) {

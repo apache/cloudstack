@@ -39,6 +39,6 @@ public interface VolumeJoinDao extends GenericDao<VolumeJoinVO, Long> {
 
     List<VolumeJoinVO> listByInstanceId(long instanceId);
 
-    List<VolumeJoinVO> listByHypervisorTypeAndOwners(Hypervisor.HypervisorType hypervisorType, List<Long> accountIds,
-                                                     String domainPath, Filter filter);
+    List<VolumeJoinVO> listByZonesHypervisorTypeAndOwners(List<Long> zoneIds, Hypervisor.HypervisorType hypervisorType,
+                                                          List<Long> accountIds, String domainPath, Filter filter);
 }

@@ -31,5 +31,6 @@ public interface ImageTransferDao extends GenericDao<ImageTransferVO, Long> {
     ImageTransferVO findByVolume(Long volumeId);
     ImageTransferVO findUnfinishedByVolume(Long volumeId);
     List<ImageTransferVO> listByPhaseAndDirection(ImageTransfer.Phase phase, ImageTransfer.Direction direction);
-    List<ImageTransferVO> listByOwners(List<Long> accountIds, List<Long> domainIds, Filter filter);
+    List<ImageTransferVO> listByZonesAndOwners(List<Long> zoneIds, List<Long> accountIds, List<Long> domainIds,
+                                               Filter filter);
 }

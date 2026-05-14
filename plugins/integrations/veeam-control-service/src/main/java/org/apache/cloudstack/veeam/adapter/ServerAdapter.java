@@ -1087,7 +1087,8 @@ public class ServerAdapter extends ManagerBase {
     @ApiAccess(command = ListZonesCmd.class)
     public List<DataCenter> listAllDataCenters(Long offset, Long limit) {
         Filter filter = new Filter(DataCenterJoinVO.class, "id", true, offset, limit);
-        final List<DataCenterJoinVO> clusters = dataCenterJoinDao.listAll(filter);
+        final List<DataCenterJoinVO> clusters = dataCenterJoinDao.listByIds(
+                kvmBackupExportService.listCompatibleDataCenterIds(), filter);
         return DataCenterJoinVOToDataCenterConverter.toDCList(clusters);
     }
 
@@ -1126,7 +1127,8 @@ public class ServerAdapter extends ManagerBase {
     @ApiAccess(command = ListClustersCmd.class)
     public List<Cluster> listAllClusters(Long offset, Long limit) {
         Filter filter = new Filter(ClusterVO.class, "id", true, offset, limit);
-        final List<ClusterVO> clusters = clusterDao.listByHypervisorType(Hypervisor.HypervisorType.KVM, filter);
+        final List<ClusterVO> clusters = clusterDao.listByZonesAndHypervisorType(
+                kvmBackupExportService.listCompatibleDataCenterIds(), Hypervisor.HypervisorType.KVM, filter);
         return ClusterVOToClusterConverter.toClusterList(clusters, this::getZoneById);
     }
 
@@ -1142,7 +1144,8 @@ public class ServerAdapter extends ManagerBase {
     @ApiAccess(command = ListHostsCmd.class)
     public List<Host> listAllHosts(Long offset, Long limit) {
         Filter filter = new Filter(HostJoinVO.class, "id", true, offset, limit);
-        final List<HostJoinVO> hosts = hostJoinDao.listAvailableRoutingHostsByHypervisor(Hypervisor.HypervisorType.KVM, filter);
+        final List<HostJoinVO> hosts = hostJoinDao.listAvailableRoutingByZonesAndHypervisor(
+                kvmBackupExportService.listCompatibleDataCenterIds(), Hypervisor.HypervisorType.KVM, filter);
         return HostJoinVOToHostConverter.toHostList(hosts);
     }
 
@@ -1159,7 +1162,8 @@ public class ServerAdapter extends ManagerBase {
     public List<Network> listAllNetworks(Long offset, Long limit) {
         Filter filter = new Filter(NetworkVO.class, "id", true, offset, limit);
         Pair<List<Long>, List<Long>> ownerDetails = getResourceOwnerFiltersWithDomainIds();
-        final List<NetworkVO> networks = networkDao.listByTrafficTypeAndOwners(Networks.TrafficType.Guest,
+        final List<NetworkVO> networks = networkDao.listByZonesTrafficTypeAndOwners(
+                kvmBackupExportService.listCompatibleDataCenterIds(), Networks.TrafficType.Guest,
                 ownerDetails.first(), ownerDetails.second(), filter);
         return NetworkVOToNetworkConverter.toNetworkList(networks, this::getZoneById);
     }
@@ -1178,7 +1182,8 @@ public class ServerAdapter extends ManagerBase {
     public List<VnicProfile> listAllVnicProfiles(Long offset, Long limit) {
         Filter filter = new Filter(NetworkVO.class, "id", true, offset, limit);
         Pair<List<Long>, List<Long>> ownerDetails = getResourceOwnerFiltersWithDomainIds();
-        final List<NetworkVO> networks = networkDao.listByTrafficTypeAndOwners(Networks.TrafficType.Guest,
+        final List<NetworkVO> networks = networkDao.listByZonesTrafficTypeAndOwners(
+                kvmBackupExportService.listCompatibleDataCenterIds(), Networks.TrafficType.Guest,
                 ownerDetails.first(), ownerDetails.second(), filter);
         return NetworkVOToVnicProfileConverter.toVnicProfileList(networks, this::getZoneById);
     }
@@ -1197,7 +1202,8 @@ public class ServerAdapter extends ManagerBase {
                  boolean allContent, Long offset, Long limit) {
         Filter filter = new Filter(UserVmJoinVO.class, "id", true, offset, limit);
         Pair<List<Long>, String> ownerDetails = getResourceOwnerFilters();
-        List<UserVmJoinVO> vms = userVmJoinDao.listByHypervisorNotTypesAndOwners(Hypervisor.HypervisorType.KVM,
+        List<UserVmJoinVO> vms = userVmJoinDao.listByZonesHypervisorNotTypesAndOwners(
+                kvmBackupExportService.listCompatibleDataCenterIds(), Hypervisor.HypervisorType.KVM,
                 Arrays.asList(UserVmManager.CKS_NODE), ownerDetails.first(), ownerDetails.second(), filter);
         return UserVmJoinVOToVmConverter.toVmList(vms,
                 this::getHostById,
@@ -1442,7 +1448,8 @@ public class ServerAdapter extends ManagerBase {
     public List<Disk> listAllDisks(Long offset, Long limit) {
         Filter filter = new Filter(VolumeJoinVO.class, "id", true, offset, limit);
         Pair<List<Long>, String> ownerDetails = getResourceOwnerFilters();
-        List<VolumeJoinVO> kvmVolumes = volumeJoinDao.listByHypervisorTypeAndOwners(Hypervisor.HypervisorType.KVM,
+        List<VolumeJoinVO> kvmVolumes = volumeJoinDao.listByZonesHypervisorTypeAndOwners(
+                kvmBackupExportService.listCompatibleDataCenterIds(), Hypervisor.HypervisorType.KVM,
                 ownerDetails.first(), ownerDetails.second(), filter);
         return VolumeJoinVOToDiskConverter.toDiskList(kvmVolumes, this::getVolumePhysicalSize);
     }
@@ -1672,7 +1679,8 @@ public class ServerAdapter extends ManagerBase {
     public List<ImageTransfer> listAllImageTransfers(Long offset, Long limit) {
         Filter filter = new Filter(ImageTransferVO.class, "id", true, offset, limit);
         Pair<List<Long>, List<Long>> ownerDetails = getResourceOwnerFiltersWithDomainIds();
-        List<ImageTransferVO> imageTransfers = imageTransferDao.listByOwners(ownerDetails.first(),
+        List<ImageTransferVO> imageTransfers = imageTransferDao.listByZonesAndOwners(
+                kvmBackupExportService.listCompatibleDataCenterIds(), ownerDetails.first(),
                 ownerDetails.second(), filter);
         return ImageTransferVOToImageTransferConverter.toImageTransferList(imageTransfers, this::getHostById, this::getVolumeById);
     }
