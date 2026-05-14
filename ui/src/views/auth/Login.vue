@@ -27,6 +27,7 @@
   >
     <a-tabs
       class="tab-center"
+      :key="$i18n.locale"
       :activeKey="customActiveKey"
       size="large"
       :tabBarStyle="{ textAlign: 'center', borderBottom: 'unset' }"
@@ -155,7 +156,7 @@
           <span style="display: inline-flex; align-items: center; gap: 4px; color: inherit;">
             <img src="/assets/github.svg" alt="GitHub" style="width: 16px; height: 16px; display: block;" />
             <img src="/assets/google.svg" alt="Google" style="width: 16px; height: 16px; display: block;" />
-            <span>External</span>
+            <span>{{ $t('label.login.external') }}</span>
           </span>
         </template>
         <a-form-item name="oauthDomain">

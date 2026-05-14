@@ -1515,6 +1515,7 @@
 "label.locked": "Locked",
 "label.login": "Login",
 "label.loginfo": "Log file information",
+"label.login.external": "External",
 "label.login.portal": "Portal login",
 "label.login.single.signon": "Single sign-on",
 "label.logout": "Logout",
