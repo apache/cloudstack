@@ -81,6 +81,7 @@ plugins/network-elements/juniper-contrail/logs/
 replace.properties.override
 replace.properties.tmp
 scripts/.pydevproject
+settings.toml
 scripts/vm/hypervisor/xenserver/vhd-util
 systemvm/.pydevproject
 target/
