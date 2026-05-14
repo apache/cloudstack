@@ -1559,12 +1559,12 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     int effectiveMaxCdroms(VirtualMachine vm, Long hostId) {
         HostVO host = hostId != null ? _hostDao.findById(hostId) : null;
         Long clusterId = host != null ? host.getClusterId() : null;
-        int configuredCap = VmCdromMaxCount.valueIn(clusterId);
+        int configuredCap = VmIsoMaxCount.valueIn(clusterId);
         int hypervisorCap = advertisedCdromCap(hostId);
         if (configuredCap > hypervisorCap) {
             String message = String.format(
                     "%s is set to %d but the placement host supports a maximum of %d CD-ROM(s) per Instance; lower %s to %d or less.",
-                    VmCdromMaxCount.key(), configuredCap, hypervisorCap, VmCdromMaxCount.key(), hypervisorCap);
+                    VmIsoMaxCount.key(), configuredCap, hypervisorCap, VmIsoMaxCount.key(), hypervisorCap);
             logger.error(message);
             throw new InvalidParameterValueException(message);
         }
@@ -2713,7 +2713,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 TemplatePreloaderPoolSize,
                 ValidateUrlIsResolvableBeforeRegisteringTemplate,
                 TemplateDeleteFromPrimaryStorage,
-                VmCdromMaxCount};
+                VmIsoMaxCount};
     }
 
     public List<TemplateAdapter> getTemplateAdapters() {

@@ -269,7 +269,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
                 }
             }
             userVmResponse.setIsos(attachedIsos);
-            userVmResponse.setCdromMaxCount(effectiveCdromMaxCount(userVm));
+            userVmResponse.setIsoMaxCount(effectiveCdromMaxCount(userVm));
         }
         if (details.contains(VMDetails.all) || details.contains(VMDetails.servoff)) {
             userVmResponse.setServiceOfferingId(userVm.getServiceOfferingUuid());
@@ -564,7 +564,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
     }
 
     int effectiveCdromMaxCount(UserVmJoinVO userVm) {
-        int configuredCap = TemplateManager.VmCdromMaxCount.valueIn(userVm.getClusterId());
+        int configuredCap = TemplateManager.VmIsoMaxCount.valueIn(userVm.getClusterId());
         int hypervisorCap = advertisedCdromCap(userVm.getHostId() != null ? userVm.getHostId() : userVm.getLastHostId());
         // List endpoint clamps for display robustness; the action paths in TemplateManagerImpl
         // throw on misconfiguration so operators still see the loud error when they try to attach.

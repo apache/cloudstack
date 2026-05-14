@@ -64,10 +64,10 @@ public interface TemplateManager {
             true,
             ConfigKey.Scope.Global);
 
-    ConfigKey<Integer> VmCdromMaxCount = new ConfigKey<Integer>("Advanced",
+    ConfigKey<Integer> VmIsoMaxCount = new ConfigKey<Integer>("Advanced",
             Integer.class,
-            "vm.cdrom.max.count", "1",
-            "Maximum number of CD-ROM drives per VM.",
+            "vm.iso.max.count", "1",
+            "Maximum number of ISOs that may be attached to a VM.",
             true,
             ConfigKey.Scope.Cluster);
 

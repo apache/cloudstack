@@ -103,10 +103,10 @@ export default {
   },
   methods: {
     computeMaxSelections () {
-      // Server pre-computes the effective cap (cluster-scoped vm.cdrom.max.count clamped to
-      // the hypervisor's own limit) and exposes it on the VM as cdrommaxcount.
-      const effectiveCap = this.resource.cdrommaxcount != null
-        ? this.resource.cdrommaxcount
+      // Server pre-computes the effective cap (cluster-scoped vm.iso.max.count clamped to
+      // the hypervisor's own limit) and exposes it on the VM as isomaxcount.
+      const effectiveCap = this.resource.isomaxcount != null
+        ? this.resource.isomaxcount
         : (this.resource.hypervisor === 'KVM' ? 2 : 1)
       const alreadyAttached = (this.resource.isos && this.resource.isos.length) ||
         (this.resource.isoid ? 1 : 0)
