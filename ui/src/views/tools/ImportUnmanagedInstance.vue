@@ -264,7 +264,7 @@
               </a-form-item>
               <a-form-item name="osid" ref="osid" v-if="showOsTypeSelection">
                 <template #label>
-                  <tooltip-label :title="$t('label.guest.os')" :tooltip="$t('label.select.guest.os.type')"/>
+                  <tooltip-label :title="$t('label.guest.os')" :tooltip="apiParams.osid.description"/>
                 </template>
                 <a-select
                   v-model:value="form.osid"
