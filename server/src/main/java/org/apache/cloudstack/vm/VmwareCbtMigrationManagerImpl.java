@@ -49,6 +49,7 @@ import com.cloud.agent.api.VmwareCbtMigrationAnswer;
 import com.cloud.agent.api.VmwareCbtSyncCommand;
 import com.cloud.agent.api.to.RemoteInstanceTO;
 import com.cloud.agent.api.to.VmwareCbtChangedBlockRangeTO;
+import com.cloud.agent.api.to.VmwareCbtDiskSyncResultTO;
 import com.cloud.agent.api.to.VmwareCbtDiskTO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
@@ -201,8 +202,8 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager 
             vmwareCbtMigrationCycleDao.update(cycle.getId(), cycle);
 
             VmwareCbtSyncCommand syncCommand = new VmwareCbtSyncCommand(migration.getUuid(),
-                    createRemoteInstance(migration), getDiskTransferObjects(migration), changedBlockQuery.changedBlocks,
-                    cycleNumber, snapshot.getSnapshotMor(), false);
+                    createRemoteInstance(source, migration), getDiskTransferObjects(migration),
+                    changedBlockQuery.changedBlocks, cycleNumber, snapshot.getSnapshotMor(), false);
             syncCommand.setWait(3600);
 
             VmwareCbtMigrationAnswer answer = sendVmwareCbtCommand(cbtHost, syncCommand, "synchronize",
@@ -213,6 +214,7 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager 
                 return createVmwareCbtMigrationResponse(vmwareCbtMigrationDao.findById(migration.getId()));
             }
 
+            applyDiskResults(migration, answer.getDiskResults());
             updateDiskChangeIds(migration, changedBlockQuery.changedDisks);
 
             cycle.setState(VmwareCbtMigrationCycle.State.Completed);
@@ -246,6 +248,7 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager 
     public VmwareCbtMigrationResponse cutoverVmwareCbtMigration(CutoverVmwareCbtMigrationCmd cmd) {
         VmwareCbtMigrationVO migration = getMigration(cmd.getId());
         rejectTerminalMigration(migration, "cut over");
+        VmwareSource source = resolveVmwareSource(migration, cmd.getUsername(), cmd.getPassword());
         HostVO cbtHost = getCbtHostForMigration(migration);
 
         migration.setState(VmwareCbtMigration.State.CuttingOver);
@@ -254,7 +257,7 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager 
         migration.setUpdated(new Date());
         vmwareCbtMigrationDao.update(migration.getId(), migration);
 
-        VmwareCbtCutoverCommand cutoverCommand = new VmwareCbtCutoverCommand(migration.getUuid(), createRemoteInstance(migration),
+        VmwareCbtCutoverCommand cutoverCommand = new VmwareCbtCutoverCommand(migration.getUuid(), createRemoteInstance(source, migration),
                 getDiskTransferObjects(migration), migration.getCompletedCycles() + 1, true);
         cutoverCommand.setWait(3600);
 
@@ -264,6 +267,7 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager 
             return createVmwareCbtMigrationResponse(vmwareCbtMigrationDao.findById(migration.getId()));
         }
 
+        applyDiskResults(migration, answer.getDiskResults());
         migration.setState(VmwareCbtMigration.State.Completed);
         migration.setCurrentStep("Completed");
         migration.setUpdated(new Date());
@@ -497,6 +501,37 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager 
         }
     }
 
+    private void applyDiskResults(VmwareCbtMigrationVO migration, List<VmwareCbtDiskSyncResultTO> diskResults) {
+        if (CollectionUtils.isEmpty(diskResults)) {
+            return;
+        }
+
+        List<VmwareCbtMigrationDiskVO> disks = vmwareCbtMigrationDiskDao.listByMigrationId(migration.getId());
+        for (VmwareCbtDiskSyncResultTO diskResult : diskResults) {
+            for (VmwareCbtMigrationDiskVO disk : disks) {
+                if (StringUtils.equals(disk.getSourceDiskId(), diskResult.getDiskId())) {
+                    applyDiskResult(disk, diskResult);
+                    break;
+                }
+            }
+        }
+    }
+
+    private void applyDiskResult(VmwareCbtMigrationDiskVO disk, VmwareCbtDiskSyncResultTO diskResult) {
+        if (StringUtils.isNotBlank(diskResult.getTargetPath())) {
+            disk.setTargetPath(diskResult.getTargetPath());
+        }
+        if (StringUtils.isNotBlank(diskResult.getChangeId())) {
+            disk.setChangeId(diskResult.getChangeId());
+        }
+        if (StringUtils.isNotBlank(diskResult.getSnapshotMor())) {
+            disk.setSnapshotMor(diskResult.getSnapshotMor());
+        }
+        disk.setState(diskResult.getResult() ? VmwareCbtMigrationDisk.State.Ready : VmwareCbtMigrationDisk.State.Failed);
+        disk.setUpdated(new Date());
+        vmwareCbtMigrationDiskDao.update(disk.getId(), disk);
+    }
+
     private void removeDeltaSnapshotIfPossible(VmwareSource source, VmwareCbtMigrationVO migration,
                                                VmwareCbtSnapshotInfo snapshot) {
         if (source == null || snapshot == null || StringUtils.isBlank(snapshot.getSnapshotMor())) {
@@ -543,9 +578,9 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager 
         return selectCbtHost(null, destinationCluster);
     }
 
-    private RemoteInstanceTO createRemoteInstance(VmwareCbtMigrationVO migration) {
-        return new RemoteInstanceTO(migration.getSourceVmName(), null, migration.getVcenter(), null, null,
-                migration.getDatacenter(), migration.getSourceCluster(), migration.getSourceHost());
+    private RemoteInstanceTO createRemoteInstance(VmwareSource source, VmwareCbtMigrationVO migration) {
+        return new RemoteInstanceTO(migration.getSourceVmName(), null, source.vcenter, source.username, source.password,
+                source.datacenterName, migration.getSourceCluster(), migration.getSourceHost());
     }
 
     private List<VmwareCbtDiskTO> getDiskTransferObjects(VmwareCbtMigrationVO migration) {
