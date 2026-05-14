@@ -197,6 +197,12 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
             throw new CloudRuntimeException("Provider with the given id is not there");
         }
 
+        if (Boolean.TRUE.equals(enabled) && !isOAuthPluginEnabled(providerVO.getDomainId())) {
+            throw new CloudRuntimeException(String.format(
+                    "OAuth plugin is not enabled %s. Enable oauth2.enabled at that scope before enabling this provider.",
+                    providerVO.getDomainId() == null ? "globally" : "for this domain"));
+        }
+
         if (StringUtils.isNotEmpty(description)) {
             providerVO.setDescription(description);
         }

@@ -153,6 +153,33 @@ public class OAuth2AuthManagerImplTest {
     }
 
     @Test
+    public void testUpdateOauthProviderRejectsEnableWhenPluginDisabledAtScope() {
+        Long id = 7L;
+        Long domainId = 42L;
+
+        UpdateOAuthProviderCmd cmd = Mockito.mock(UpdateOAuthProviderCmd.class);
+        when(cmd.getId()).thenReturn(id);
+        when(cmd.getEnabled()).thenReturn(true);
+
+        OauthProviderVO providerVO = new OauthProviderVO();
+        providerVO.setProvider("github");
+        providerVO.setDomainId(domainId);
+        providerVO.setEnabled(false);
+
+        when(_oauthProviderDao.findById(id)).thenReturn(providerVO);
+        Mockito.doReturn(false).when(_authManager).isOAuthPluginEnabled(domainId);
+
+        try {
+            _authManager.updateOauthProvider(cmd);
+            Assert.fail("Expected CloudRuntimeException when enabling provider while oauth2.enabled is false at scope");
+        } catch (CloudRuntimeException e) {
+            assertTrue(e.getMessage().contains("OAuth plugin is not enabled"));
+        }
+
+        Mockito.verify(_oauthProviderDao, Mockito.never()).update(Mockito.eq(id), Mockito.any(OauthProviderVO.class));
+    }
+
+    @Test
     public void testListOauthProviders() {
         String uuid = "1234-5678-9101";
         String provider = "testProvider";
