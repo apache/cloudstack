@@ -6043,7 +6043,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public boolean hostSupportsVmwareCbtMigration() {
-        return hostSupportsVddk()
+        return hostSupportsVmwareCbtMigration(null);
+    }
+
+    public boolean hostSupportsVmwareCbtMigration(String overriddenVddkLibDir) {
+        return hostSupportsVddk(overriddenVddkLibDir)
                 && Script.runSimpleBashScriptForExitValue(QEMU_IMG_SUPPORTED_CHECK_CMD) == 0
                 && Script.runSimpleBashScriptForExitValue(QEMU_NBD_SUPPORTED_CHECK_CMD) == 0;
     }

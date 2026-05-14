@@ -44,7 +44,7 @@ public class LibvirtVmwareCbtSyncCommandWrapperTest {
 
     @Before
     public void setUp() {
-        Mockito.when(libvirtComputingResource.hostSupportsVmwareCbtMigration()).thenReturn(true);
+        Mockito.when(libvirtComputingResource.hostSupportsVmwareCbtMigration(Mockito.isNull())).thenReturn(true);
     }
 
     @Test
@@ -80,6 +80,22 @@ public class LibvirtVmwareCbtSyncCommandWrapperTest {
         Assert.assertFalse(answer.getResult());
         Assert.assertEquals(1024, ((VmwareCbtMigrationAnswer) answer).getChangedBytes());
         Assert.assertTrue(answer.getDetails().contains("validated 1 changed block range"));
+    }
+
+    @Test
+    public void testExecuteUsesCommandVddkLibDirOverrideForSupportCheck() {
+        VmwareCbtDiskTO disk = createDisk("disk-1", "/var/lib/libvirt/images/disk-1.qcow2", 8192);
+        VmwareCbtSyncCommand command = createCommand(List.of(disk),
+                List.of(new VmwareCbtChangedBlockRangeTO("disk-1", 0, 1024)));
+        command.setVddkLibDir("/opt/vmware-vddk/override");
+        Mockito.when(libvirtComputingResource.hostSupportsVmwareCbtMigration("/opt/vmware-vddk/override"))
+                .thenReturn(true);
+
+        Answer answer = wrapper.execute(command, libvirtComputingResource);
+
+        Assert.assertFalse(answer.getResult());
+        Assert.assertTrue(answer.getDetails().contains("validated 1 changed block range"));
+        Mockito.verify(libvirtComputingResource).hostSupportsVmwareCbtMigration("/opt/vmware-vddk/override");
     }
 
     private VmwareCbtSyncCommand createCommand(List<VmwareCbtDiskTO> disks, List<VmwareCbtChangedBlockRangeTO> changedBlocks) {

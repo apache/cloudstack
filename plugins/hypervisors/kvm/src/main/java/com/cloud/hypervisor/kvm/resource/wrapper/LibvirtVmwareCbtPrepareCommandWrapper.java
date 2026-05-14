@@ -28,7 +28,7 @@ public class LibvirtVmwareCbtPrepareCommandWrapper extends CommandWrapper<Vmware
 
     @Override
     public Answer execute(VmwareCbtPrepareCommand cmd, LibvirtComputingResource serverResource) {
-        if (!serverResource.hostSupportsVmwareCbtMigration()) {
+        if (!serverResource.hostSupportsVmwareCbtMigration(cmd.getVddkLibDir())) {
             String msg = String.format("Cannot prepare VMware CBT migration %s on host %s. VDDK, qemu-img and qemu-nbd are required.",
                     cmd.getMigrationUuid(), serverResource.getPrivateIp());
             logger.info(msg);
