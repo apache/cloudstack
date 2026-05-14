@@ -570,6 +570,12 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
     int effectiveCdromMaxCount(UserVmJoinVO userVm) {
         Long hostId = userVm.getHostId() != null && userVm.getHostId() > 0
                 ? userVm.getHostId() : userVm.getLastHostId();
+        if (hostId == null && userVm.getHypervisorType() != null) {
+            List<HostVO> candidates = hostDao.listByDataCenterIdAndHypervisorType(userVm.getDataCenterId(), userVm.getHypervisorType());
+            if (!candidates.isEmpty()) {
+                hostId = candidates.get(0).getId();
+            }
+        }
         Long clusterId = userVm.getClusterId();
         if (clusterId == null && hostId != null) {
             HostVO host = hostDao.findById(hostId);
