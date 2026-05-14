@@ -50,20 +50,21 @@ public class LibvirtVmwareCbtSyncCommandWrapper extends CommandWrapper<VmwareCbt
                     0, 0, durationSeconds, true, null);
         }
 
-        long changedBytes = getChangedBytes(changedBlocks);
-        String msg = String.format("VMware CBT cycle %s for migration %s received %s changed block range(s) " +
-                        "totaling %s bytes, but changed-block copy is not implemented yet.",
-                cmd.getCycleNumber(), cmd.getMigrationUuid(), changedBlocks.size(), changedBytes);
+        VmwareCbtSyncPlan syncPlan = VmwareCbtSyncPlan.create(cmd.getDisks(), changedBlocks);
+        if (!syncPlan.isValid()) {
+            String msg = String.format("Cannot synchronize VMware CBT cycle %s for migration %s: %s",
+                    cmd.getCycleNumber(), cmd.getMigrationUuid(), syncPlan.getValidationError());
+            logger.info(msg);
+            return new VmwareCbtMigrationAnswer(cmd, false, msg, cmd.getMigrationUuid(), cmd.getCycleNumber(),
+                    0, 0, 0, false, null);
+        }
+
+        String msg = String.format("VMware CBT cycle %s for migration %s validated %s changed block range(s) " +
+                        "across %s disk(s), totaling %s bytes, but changed-block copy is not implemented yet.",
+                cmd.getCycleNumber(), cmd.getMigrationUuid(), syncPlan.getChangedRangeCount(), syncPlan.getDiskPlans().size(),
+                syncPlan.getChangedBytes());
         logger.info(msg);
         return new VmwareCbtMigrationAnswer(cmd, false, msg, cmd.getMigrationUuid(), cmd.getCycleNumber(),
-                changedBytes, 0, 0, false, null);
-    }
-
-    private long getChangedBytes(List<VmwareCbtChangedBlockRangeTO> changedBlocks) {
-        long changedBytes = 0;
-        for (VmwareCbtChangedBlockRangeTO changedBlock : changedBlocks) {
-            changedBytes += changedBlock.getLength();
-        }
-        return changedBytes;
+                syncPlan.getChangedBytes(), 0, 0, false, null);
     }
 }
