@@ -131,28 +131,43 @@ public class OauthLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
         String oauthProvider = ((provider == null) ? null : provider[0]);
         String email = ((emailArray == null) ? null : emailArray[0]);
         String secretCode = ((secretCodeArray == null) ? null : secretCodeArray[0]);
-        if (StringUtils.isAnyEmpty(oauthProvider, email, secretCode)) {
-            throw new CloudAuthenticationException("OAuth provider, email, secretCode any of these cannot be null");
+
+        try {
+            if (StringUtils.isAnyEmpty(oauthProvider, email, secretCode)) {
+                throw new CloudAuthenticationException("OAuth provider, email, secretCode any of these cannot be null");
+            }
+
+            Long domainId = getDomainIdFromParams(params, auditTrailSb, responseType);
+            final String[] domainName = (String[])params.get(ApiConstants.DOMAIN);
+            String domain = getDomainName(auditTrailSb, domainName);
+
+            final Domain userDomain = _domainService.findDomainByIdOrPath(domainId, domain);
+            if (Objects.nonNull(userDomain)) {
+                domainId = userDomain.getId();
+            }
+
+            boolean oauthEnabled = domainId == null
+                    ? Boolean.TRUE.equals(OAuth2IsPluginEnabled.value())
+                    : Boolean.TRUE.equals(OAuth2IsPluginEnabled.valueInScope(ConfigKey.Scope.Domain, domainId, true));
+            if (!oauthEnabled) {
+                logger.debug(String.format("OAuth is not enabled %s, users cannot login using OAuth", domainId == null ? "globally" : "in domain " + domainId));
+                throw new CloudAuthenticationException(String.format(
+                        "OAuth login is not enabled %s. Please contact your administrator.",
+                        domainId == null ? "globally" : "for this domain"));
+            }
+
+            return doOauthAuthentication(session, domainId, domain, email, params, remoteAddress, responseType, auditTrailSb);
+        } catch (final CloudAuthenticationException ex) {
+            throw toServerApiException(session, params, responseType, auditTrailSb, ex);
         }
+    }
 
-        Long domainId = getDomainIdFromParams(params, auditTrailSb, responseType);
-        final String[] domainName = (String[])params.get(ApiConstants.DOMAIN);
-        String domain = getDomainName(auditTrailSb, domainName);
-
-        final Domain userDomain = _domainService.findDomainByIdOrPath(domainId, domain);
-        if (Objects.nonNull(userDomain)) {
-            domainId = userDomain.getId();
-        }
-
-        boolean oauthEnabled = domainId == null
-                ? Boolean.TRUE.equals(OAuth2IsPluginEnabled.value())
-                : Boolean.TRUE.equals(OAuth2IsPluginEnabled.valueInScope(ConfigKey.Scope.Domain, domainId, true));
-        if (!oauthEnabled) {
-            logger.debug(String.format("OAuth is not enabled %s, users cannot login using OAuth", domainId == null ? "globally" : "in domain " + domainId));
-            throw new CloudAuthenticationException("You are not allowed to login, please contact your administrator.");
-        }
-
-        return doOauthAuthentication(session, domainId, domain, email, params, remoteAddress, responseType, auditTrailSb);
+    private ServerApiException toServerApiException(HttpSession session, Map<String, Object[]> params, String responseType, StringBuilder auditTrailSb, CloudAuthenticationException ex) {
+        ApiServlet.invalidateHttpSession(session, "fall through to API key,");
+        String msg = ex.getMessage() != null ? ex.getMessage() : "failed to authenticate user via OAuth";
+        auditTrailSb.append(" " + ApiErrorCode.ACCOUNT_ERROR + " " + msg);
+        String serializedResponse = _apiServer.getSerializedApiError(ApiErrorCode.ACCOUNT_ERROR.getHttpCode(), msg, params, responseType);
+        return new ServerApiException(ApiErrorCode.ACCOUNT_ERROR, serializedResponse);
     }
 
     private String doOauthAuthentication(HttpSession session, Long domainId, String domain, String email, Map<String, Object[]> params, InetAddress remoteAddress, String responseType, StringBuilder auditTrailSb) {
