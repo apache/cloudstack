@@ -19,7 +19,7 @@
   <a-spin :spinning="loading">
     <div class="form-layout">
       <label>
-        {{ $t('label.header.backup.schedule') }}
+        {{ scheduleToEdit === null ? $t('label.header.backup.schedule') : null }}
       </label>
       <div class="form" v-ctrl-enter="handleSubmit">
         <a-form
@@ -29,7 +29,7 @@
           layout="vertical"
           @finish="handleSubmit">
           <a-row :gutter="12">
-            <a-col :md="24" :lg="24">
+            <a-col :md="24" :lg="24" v-if="scheduleToEdit === null">
               <a-form-item :label="$t('label.intervaltype')" ref="intervaltype" name="intervaltype">
                 <a-radio-group
                   v-model:value="form.intervaltype"
@@ -54,7 +54,7 @@
               <a-form-item :label="$t('label.time')" ref="time" name="time">
                 <a-input-number
                   style="width: 100%"
-                  :disabled="isIntervalDisabled(form.intervaltype)"
+                  :disabled="scheduleToEdit === null && isIntervalDisabled(form.intervaltype)"
                   v-model:value="form.time"
                   :placeholder="$t('label.minute.past.hour')"
                   :min="1"
@@ -71,7 +71,7 @@
                 <a-time-picker
                   use12Hours
                   format="h:mm A"
-                  :disabled="isIntervalDisabled(form.intervaltype)"
+                  :disabled="scheduleToEdit === null && isIntervalDisabled(form.intervaltype)"
                   v-model:value="form.timeSelect"
                   style="width: 100%;" />
               </a-form-item>
@@ -81,7 +81,7 @@
                 <a-select
                   v-model:value="form['day-of-week']"
                   showSearch
-                  :disabled="isIntervalDisabled(form.intervaltype)"
+                  :disabled="scheduleToEdit === null && isIntervalDisabled(form.intervaltype)"
                   optionFilterProp="label"
                   :filterOption="(input, option) => {
                     return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
@@ -97,7 +97,7 @@
                 <a-select
                   v-model:value="form['day-of-month']"
                   showSearch
-                  :disabled="isIntervalDisabled(form.intervaltype)"
+                  :disabled="scheduleToEdit === null && isIntervalDisabled(form.intervaltype)"
                   optionFilterProp="label"
                   :filterOption="(input, option) => {
                     return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
@@ -181,6 +181,7 @@ import { timeZone } from '@/utils/timezone'
 import { mixinForm } from '@/utils/mixin'
 import debounce from 'lodash/debounce'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import dayjs from 'dayjs'
 
 export default {
   name: 'FormSchedule',
@@ -204,6 +205,11 @@ export default {
     submitFn: {
       type: Function,
       default: null
+    },
+    scheduleToEdit: {
+      type: Object,
+      required: false,
+      default: null
     }
   },
   data () {
@@ -215,12 +221,20 @@ export default {
       timeZoneMap: [],
       fetching: false,
       backupProvider: null,
+      backupOffering: null,
+      maxSchedType: {
+        HOURLY: 1,
+        DAILY: 1,
+        WEEKLY: 1,
+        MONTHLY: 1
+      },
       actionLoading: false,
       listDayOfWeek: ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
     }
   },
   beforeCreate () {
-    this.apiParams = this.$getApiParams('createBackupSchedule')
+    this.apiToCall = this.scheduleToEdit !== null ? 'updateBackupSchedule' : 'createBackupSchedule'
+    this.apiParams = this.$getApiParams(this.apiToCall)
   },
   created () {
     this.initForm()
@@ -229,18 +243,19 @@ export default {
   },
   mounted () {
     if (this.form.intervaltype && this.isIntervalDisabled(this.form.intervaltype)) {
-      const nextAvailable = this.getNextAvailableIntervalType(this.form.intervaltype)
+      const nextAvailable = this.getNextAvailableIntervalType()
       if (nextAvailable) {
         this.form.intervaltype = nextAvailable
         this.handleChangeIntervalType()
       }
     }
+    this.populateFormWithScheduleData()
   },
   watch: {
     dataSource: {
       handler () {
         if (this.form.intervaltype && this.getNextAvailableIntervalType && this.isIntervalDisabled(this.form.intervaltype)) {
-          const nextAvailable = this.getNextAvailableIntervalType(this.form.intervaltype)
+          const nextAvailable = this.getNextAvailableIntervalType()
           if (nextAvailable) {
             this.form.intervaltype = nextAvailable
             this.handleChangeIntervalType()
@@ -251,12 +266,16 @@ export default {
     },
     'form.intervaltype' (newVal) {
       if (newVal && this.getNextAvailableIntervalType && this.isIntervalDisabled(newVal)) {
-        const nextAvailable = this.getNextAvailableIntervalType(newVal)
+        const nextAvailable = this.getNextAvailableIntervalType()
         if (nextAvailable) {
           this.form.intervaltype = nextAvailable
           this.handleChangeIntervalType()
         }
       }
+    },
+    scheduleToEdit () {
+      this.populateFormWithScheduleData()
+      this.handleChangeIntervalType()
     }
   },
   inject: ['refreshSchedule', 'closeSchedule'],
@@ -280,15 +299,21 @@ export default {
         timezone: [{ required: true, message: `${this.$t('message.error.select')}` }]
       })
     },
-    fetchBackupOffering () {
-      if ('backupoffering' in this.resource) {
-        this.backupProvider = this.resource.backupoffering.provider
-        return
+    getMaxSchedules () {
+      for (const [key, value] of Object.entries(this.maxSchedType)) {
+        let typeLimit = value
+        if (this.backupOffering.backupofferingdetails) {
+          typeLimit = this.backupOffering.backupofferingdetails[key.toUpperCase()] ?? 1
+        }
+        this.maxSchedType[key] = typeLimit
       }
+    },
+    fetchBackupOffering () {
       getAPI('listBackupOfferings', { id: this.resource.backupofferingid }).then(json => {
         if (json.listbackupofferingsresponse && json.listbackupofferingsresponse.backupoffering) {
-          const backupoffering = json.listbackupofferingsresponse.backupoffering[0]
-          this.backupProvider = backupoffering.provider
+          this.backupOffering = json.listbackupofferingsresponse.backupoffering[0]
+          this.backupProvider = this.backupOffering.provider
+          this.getMaxSchedules()
         }
       }).catch(error => {
         this.$notifyError(error)
@@ -324,6 +349,38 @@ export default {
         })
       }
     },
+    populateFormWithScheduleData () {
+      if (!this.scheduleToEdit) return
+      const { quiescevm, isolated, schedule, timezone, intervaltype, maxbackups } = this.scheduleToEdit
+      const lowerIntervalType = intervaltype.toLowerCase()
+
+      this.form.intervaltype = lowerIntervalType
+      this.form.quiescevm = quiescevm ?? false
+      this.form.isolated = isolated ?? false
+      this.form.timezone = timezone
+      this.form.maxbackups = maxbackups !== 0 ? maxbackups : null
+
+      if (lowerIntervalType === 'hourly') {
+        this.form.time = Number(schedule)
+        return
+      }
+
+      if (lowerIntervalType === 'daily') {
+        this.form.timeSelect = dayjs(schedule, 'mm:HH')
+        return
+      }
+
+      const [minute, hour, day] = schedule.split(':')
+      this.form.timeSelect = dayjs(`${minute}:${hour}`, 'mm:HH')
+
+      if (lowerIntervalType === 'weekly') {
+        this.form['day-of-week'] = day - 1
+      }
+
+      if (lowerIntervalType === 'monthly') {
+        this.form['day-of-month'] = day
+      }
+    },
     handleChangeIntervalType () {
       if (this.form.intervaltype === 'weekly') {
         this.fetchDayOfWeek()
@@ -331,14 +388,11 @@ export default {
         this.fetchDayOfMonth()
       }
     },
-    getNextAvailableIntervalType (currentIntervalType) {
+    getNextAvailableIntervalType () {
       const intervalTypes = ['hourly', 'daily', 'weekly', 'monthly']
-      const currentIndex = intervalTypes.indexOf(currentIntervalType ? currentIntervalType.toLowerCase() : '')
-      const startIndex = currentIndex >= 0 ? currentIndex : -1
 
-      for (let i = 1; i <= intervalTypes.length; i++) {
-        const nextIndex = (startIndex + i) % intervalTypes.length
-        const nextIntervalType = intervalTypes[nextIndex]
+      for (let i = 0; i <= intervalTypes.length; i++) {
+        const nextIntervalType = intervalTypes[i]
 
         if (!this.isIntervalDisabled(nextIntervalType)) {
           return nextIntervalType
@@ -348,40 +402,41 @@ export default {
     },
     isIntervalDisabled (intervalType) {
       intervalType = intervalType.toUpperCase()
-      if (this.dataSource?.length === 0) {
+      if (this.dataSource?.length === 0 && this.maxSchedType[intervalType] !== 0) {
+        return false
+      }
+      if (this.maxSchedType[intervalType] < 0) {
         return false
       }
       const dataSource = this.dataSource.filter(item => item.intervaltype === intervalType)
-      if (dataSource && dataSource.length > 0) {
-        return true
-      }
-      return false
+      return dataSource && dataSource.length >= this.maxSchedType[intervalType]
     },
     handleSubmit (e) {
       if (this.actionLoading) return
       this.formRef.value.validate().then(() => {
         const formRaw = toRaw(this.form)
+        console.log(formRaw)
         const values = this.handleRemoveFields(formRaw)
         const params = {}
         params.virtualmachineid = this.resource.id
-        params.intervaltype = values.intervaltype.toUpperCase()
+        params.intervaltype = this.scheduleToEdit?.intervaltype.toUpperCase() ?? values.intervaltype.toUpperCase()
         params.maxbackups = values.maxbackups
         params.timezone = values.timezone
         if (values.quiescevm) {
           params.quiescevm = values.quiescevm
         }
         params.isolated = values.isolated
-        switch (values.intervaltype) {
-          case 'hourly':
+        switch (params.intervaltype) {
+          case 'HOURLY':
             params.schedule = values.time
             break
-          case 'daily':
+          case 'DAILY':
             params.schedule = values.timeSelect.format('mm:HH')
             break
-          case 'weekly':
+          case 'WEEKLY':
             params.schedule = [values.timeSelect.format('mm:HH'), (values['day-of-week'] + 1)].join(':')
             break
-          case 'monthly':
+          case 'MONTHLY':
             params.schedule = [values.timeSelect.format('mm:HH'), values['day-of-month']].join(':')
             break
         }
@@ -390,8 +445,11 @@ export default {
           this.resetForm()
           return
         }
+        if (this.scheduleToEdit !== null) {
+          params.id = this.scheduleToEdit.id
+        }
         this.actionLoading = true
-        postAPI('createBackupSchedule', params).then(json => {
+        postAPI(this.apiToCall, params).then(json => {
           this.$notification.success({
             message: this.$t('label.scheduled.backups'),
             description: this.$t('message.success.config.backup.schedule')
@@ -405,6 +463,10 @@ export default {
         })
       }).catch(error => {
         this.formRef.value.scrollToField(error.errorFields[0].name)
+      }).finally(() => {
+        if (this.scheduleToEdit !== null) {
+          this.closeAction()
+        }
       })
     },
     resetForm () {
@@ -414,6 +476,7 @@ export default {
     },
     closeAction () {
       this.closeSchedule()
+      this.resetForm()
     }
   }
 }

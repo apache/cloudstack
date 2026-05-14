@@ -35,19 +35,9 @@ import java.util.TimerTask;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.cloud.host.Host;
-import com.cloud.storage.VolumeApiService;
-import com.cloud.utils.exception.BackupProviderException;
-import com.cloud.utils.fsm.NoTransitionException;
-import com.cloud.vm.VirtualMachineManager;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.vm.VmDiskInfo;
-import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
-import com.cloud.utils.DomainHelper;
-import com.cloud.utils.EnumUtils;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.InternalIdentity;
@@ -60,20 +50,20 @@ import org.apache.cloudstack.api.command.admin.backup.UpdateBackupOfferingCmd;
 import org.apache.cloudstack.api.command.admin.vm.CreateVMFromBackupCmdByAdmin;
 import org.apache.cloudstack.api.command.user.backup.AssignVirtualMachineToBackupOfferingCmd;
 import org.apache.cloudstack.api.command.user.backup.CreateBackupCmd;
+import org.apache.cloudstack.api.command.user.backup.CreateBackupOfferingCmd;
 import org.apache.cloudstack.api.command.user.backup.CreateBackupScheduleCmd;
 import org.apache.cloudstack.api.command.user.backup.DeleteBackupCmd;
 import org.apache.cloudstack.api.command.user.backup.DeleteBackupScheduleCmd;
 import org.apache.cloudstack.api.command.user.backup.DownloadValidationScreenshotCmd;
 import org.apache.cloudstack.api.command.user.backup.FinishBackupChainCmd;
-import org.apache.cloudstack.api.command.user.backup.ListBackupServiceJobsCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupOfferingsCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupScheduleCmd;
+import org.apache.cloudstack.api.command.user.backup.ListBackupServiceJobsCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupsCmd;
 import org.apache.cloudstack.api.command.user.backup.RemoveVirtualMachineFromBackupOfferingCmd;
 import org.apache.cloudstack.api.command.user.backup.RestoreBackupCmd;
 import org.apache.cloudstack.api.command.user.backup.RestoreVolumeFromBackupAndAttachToVMCmd;
 import org.apache.cloudstack.api.command.user.backup.UpdateBackupScheduleCmd;
-import org.apache.cloudstack.api.command.user.backup.CreateBackupOfferingCmd;
 import org.apache.cloudstack.api.command.user.backup.repository.AddBackupRepositoryCmd;
 import org.apache.cloudstack.api.command.user.backup.repository.DeleteBackupRepositoryCmd;
 import org.apache.cloudstack.api.command.user.backup.repository.ListBackupRepositoriesCmd;
@@ -99,6 +89,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -127,6 +118,7 @@ import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
@@ -146,6 +138,7 @@ import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSDao;
@@ -161,6 +154,8 @@ import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
+import com.cloud.utils.DomainHelper;
+import com.cloud.utils.EnumUtils;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ComponentContext;
@@ -176,14 +171,20 @@ import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.TransactionStatus;
+import com.cloud.utils.exception.BackupProviderException;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.VmDiskInfo;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 
 public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
@@ -325,6 +326,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException("Backup offering '" + cmd.getExternalId() + "' does not exist on provider " + provider.getName() + " on zone " + cmd.getZoneId());
         }
 
+        Map<DateUtil.IntervalType, Integer> intervalTypeToMaxAmountMap = parseIntervalTypeToMaxAmountMap(cmd.getMaxSchedules());
+
         final BackupOfferingVO offering = new BackupOfferingVO(cmd.getZoneId(), cmd.getExternalId(), provider.getName(),
                 cmd.getName(), cmd.getDescription(), cmd.getUserDrivenBackups());
 
@@ -341,6 +344,11 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 backupOfferingDetailsDao.saveDetails(detailsVOList);
             }
         }
+
+        for (DateUtil.IntervalType intervalType : intervalTypeToMaxAmountMap.keySet()) {
+            backupOfferingDetailsDao.addDetail(savedOffering.getId(), intervalType.name(), String.valueOf(intervalTypeToMaxAmountMap.get(intervalType)), true);
+        }
+
         logger.debug("Successfully created backup offering " + cmd.getName() + " mapped to backup provider offering " + cmd.getExternalId());
         return savedOffering;
     }
@@ -414,6 +422,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
         if (cmd.getValidationSteps() != null) {
             detailsVOList.add(new BackupOfferingDetailsVO(savedOffering.getId(), ApiConstants.VALIDATION_STEPS, cmd.getValidationSteps(), true));
+        }
+        Map<DateUtil.IntervalType, Integer> intervalTypeToMaxAmountMap = parseIntervalTypeToMaxAmountMap(cmd.getMaxSchedules());
+        for (DateUtil.IntervalType intervalType : intervalTypeToMaxAmountMap.keySet()) {
+            detailsVOList.add(new BackupOfferingDetailsVO(savedOffering.getId(), intervalType.name(), String.valueOf(intervalTypeToMaxAmountMap.get(intervalType)), true));
         }
 
         if (!detailsVOList.isEmpty()) {
@@ -800,13 +812,14 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_SCHEDULE_CONFIGURE, eventDescription = "configuring Instance Backup Schedule")
+    @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_SCHEDULE_CONFIGURE, eventDescription = "creating Instance Backup Schedule")
     public BackupSchedule configureBackupSchedule(CreateBackupScheduleCmd cmd) {
         final Long vmId = cmd.getVmId();
         final DateUtil.IntervalType intervalType = cmd.getIntervalType();
         final String scheduleString = cmd.getSchedule();
         final TimeZone timeZone = TimeZone.getTimeZone(cmd.getTimezone());
-        boolean isolated = cmd.isIsolated();
+        boolean quiesceVm = BooleanUtils.isTrue(cmd.isQuiesceVM());
+        boolean isolated = BooleanUtils.isTrue(cmd.isIsolated());
 
         if (intervalType == null) {
             throw new CloudRuntimeException("Invalid interval type provided");
@@ -826,42 +839,97 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
 
         final int maxBackups = validateAndGetDefaultBackupRetentionIfRequired(cmd.getMaxBackups(), offering, vm);
+        validateQuiesceAndIsolated(offering, quiesceVm, isolated);
 
-        if (isolated && !KBOSS_BACKUP_PROVIDER.equals(offering.getProvider())) {
-            throw new InvalidParameterValueException("Isolated backups are only supported by KBOSS backup provider.");
-        }
-
-        if (!quiesceSupported.contains(offering.getProvider()) && cmd.getQuiesceVM() != null) {
-            throw new InvalidParameterValueException("Quiesce VM option is supported only by NAS and KBOSS backup providers.");
-        }
+        validateMaxScheduleForIntervalType(offering, intervalType, vm);
+        validateDifferentScheduleFromExistingSchedules(vm, intervalType, scheduleString);
 
         final String timezoneId = timeZone.getID();
         if (!timezoneId.equals(cmd.getTimezone())) {
             logger.warn("Using timezone: " + timezoneId + " for running this snapshot policy as an equivalent of " + cmd.getTimezone());
         }
 
-        Date nextDateTime = null;
+        Date nextDateTime;
         try {
             nextDateTime = DateUtil.getNextRunTime(intervalType, cmd.getSchedule(), timezoneId, null);
         } catch (Exception e) {
             throw new InvalidParameterValueException("Invalid schedule: " + cmd.getSchedule() + " for interval type: " + cmd.getIntervalType());
         }
 
-        final BackupScheduleVO schedule = backupScheduleDao.findByVMAndIntervalType(vmId, intervalType);
-        if (schedule == null) {
-            return backupScheduleDao.persist(new BackupScheduleVO(vmId, intervalType, scheduleString, timezoneId, nextDateTime, maxBackups, cmd.getQuiesceVM(), vm.getAccountId(),
+        return backupScheduleDao.persist(new BackupScheduleVO(vmId, intervalType, scheduleString, timezoneId, nextDateTime, maxBackups, cmd.isQuiesceVM(), vm.getAccountId(),
                     vm.getDomainId(), isolated));
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_SCHEDULE_CONFIGURE, eventDescription = "updating VM backup schedule")
+    public BackupSchedule configureBackupSchedule(UpdateBackupScheduleCmd cmd) {
+        BackupScheduleVO schedule;
+        DateUtil.IntervalType intervalType = cmd.getIntervalType();
+        Long vmId = cmd.getVmId();
+        VMInstanceVO vm;
+        if (cmd.getId() != null) {
+            schedule = backupScheduleDao.findById(cmd.getId());
+        } else if (vmId != null && intervalType != null) {
+            List<BackupScheduleVO> schedules = backupScheduleDao.listByVMAndIntervalType(vmId, intervalType);
+            if (schedules.size() > 1) {
+                vm = findVmById(vmId);
+                throw new InvalidParameterValueException(String.format("There is more than one schedule with type [%s] for VM [%s]. Please inform the schedule ID to update.",
+                        intervalType, vm.getUuid()));
+            }
+            if (schedules.isEmpty()) {
+                return configureBackupSchedule(new CreateBackupScheduleCmd(cmd));
+            }
+            schedule = schedules.get(0);
+        } else {
+            throw new InvalidParameterValueException("You must either inform the schedule ID to update, or the VM ID and interval type.");
+        }
+
+        vm = findVmById(schedule.getVmId());
+        validateBackupForZone(vm.getDataCenterId());
+        accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
+
+        final BackupOffering offering = backupOfferingDao.findById(vm.getBackupOfferingId());
+
+        boolean quiesceVm = ObjectUtils.defaultIfNull(cmd.isQuiesceVm(), Boolean.TRUE.equals(schedule.getQuiesceVM()));
+        boolean isolated = ObjectUtils.defaultIfNull(cmd.isIsolated(), schedule.isIsolated());
+        validateQuiesceAndIsolated(offering, quiesceVm, isolated);
+
+        String timeZoneString = ObjectUtils.defaultIfNull(cmd.getTimezone(), schedule.getTimezone());
+        TimeZone timeZone = TimeZone.getTimeZone(timeZoneString);
+        intervalType = ObjectUtils.defaultIfNull(intervalType, schedule.getScheduleType());
+        String scheduleString = ObjectUtils.defaultIfNull(cmd.getSchedule(), schedule.getSchedule());
+
+        Date nextDateTime;
+        try {
+            nextDateTime = DateUtil.getNextRunTime(intervalType, scheduleString, timeZone.getID(), null);
+        } catch (Exception e) {
+            throw new InvalidParameterValueException("Invalid schedule: " + cmd.getSchedule() + " for interval type: " + intervalType);
+        }
+
+        int maxBackups = schedule.getMaxBackups();
+        if (cmd.getMaxBackups() != null) {
+            maxBackups = validateAndGetDefaultBackupRetentionIfRequired(cmd.getMaxBackups(), offering, vm);
         }
 
         schedule.setScheduleType((short) intervalType.ordinal());
         schedule.setSchedule(scheduleString);
-        schedule.setTimezone(timezoneId);
+        schedule.setTimezone(timeZone.getID());
         schedule.setScheduledTimestamp(nextDateTime);
         schedule.setMaxBackups(maxBackups);
-        schedule.setQuiesceVM(cmd.getQuiesceVM());
+        schedule.setQuiesceVM(quiesceVm);
         schedule.setIsolated(isolated);
         backupScheduleDao.update(schedule.getId(), schedule);
         return backupScheduleDao.findById(schedule.getId());
+    }
+
+    protected void validateQuiesceAndIsolated(BackupOffering offering, boolean isQuiesceVm, boolean isIsolated) {
+        if (isQuiesceVm && !quiesceSupported.contains(offering.getProvider())) {
+            throw new InvalidParameterValueException("Quiesce VM option is supported only by NAS and KBOSS backup providers.");
+        }
+
+        if (isIsolated && !KBOSS_BACKUP_PROVIDER.equals(offering.getProvider())) {
+            throw new InvalidParameterValueException("Isolated backups are only supported by KBOSS backup provider.");
+        }
     }
 
     /**
@@ -2545,7 +2613,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
 
 
-        if (allowUserDrivenBackups != null){
+        if (allowUserDrivenBackups != null) {
             offering.setUserDrivenBackupAllowed(allowUserDrivenBackups);
             fields.add("allowUserDrivenBackups: " + allowUserDrivenBackups);
         }
@@ -2569,6 +2637,20 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             List<Long> existingDomainIds = backupOfferingDetailsDao.findDomainIds(id);
             Collections.sort(existingDomainIds);
             updateBackupOfferingDomainDetails(id, filteredDomainIds, existingDomainIds);
+        }
+
+        Map<String, String> maxSchedules = updateBackupOfferingCmd.getMaxSchedules();
+        if (MapUtils.isNotEmpty(maxSchedules)) {
+            for (String intervalTypeString : maxSchedules.keySet()) {
+                DateUtil.IntervalType intervalType = DateUtil.IntervalType.getIntervalType(intervalTypeString);
+                if (intervalType == null) {
+                    String message = String.format("Received invalid interval type name. Accepted values are [%s].", List.of(DateUtil.IntervalType.values()));
+                    logger.warn(message);
+                    throw new InvalidParameterValueException(message);
+                }
+                Integer maxAmount = Integer.valueOf(maxSchedules.get(intervalTypeString));
+                backupOfferingDetailsDao.addDetail(id, intervalType.name(), String.valueOf(maxAmount), true);
+            }
         }
 
         BackupOfferingVO response = backupOfferingDao.findById(id);
@@ -2621,6 +2703,46 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             details.put(ApiConstants.NICS, new Gson().toJson(nics));
         }
         return details;
+    }
+
+    private Map<DateUtil.IntervalType, Integer> parseIntervalTypeToMaxAmountMap(Map<String, String> maxSchedules) {
+        Map<DateUtil.IntervalType, Integer> intervalTypeToMaxAmountMap = new HashMap<>();
+        if (MapUtils.isEmpty(maxSchedules)) {
+            return intervalTypeToMaxAmountMap;
+        }
+
+        for (String intervalTypeString : maxSchedules.keySet()) {
+            DateUtil.IntervalType intervalType = DateUtil.IntervalType.getIntervalType(intervalTypeString);
+            if (intervalType == null) {
+                String message = String.format("Received invalid interval type name. Accepted values are [%s].", List.of(DateUtil.IntervalType.values()));
+                logger.warn(message);
+                throw new InvalidParameterValueException(message);
+            }
+            Integer maxAmount = Integer.valueOf(maxSchedules.get(intervalTypeString));
+            intervalTypeToMaxAmountMap.put(intervalType, maxAmount);
+        }
+        return intervalTypeToMaxAmountMap;
+    }
+
+    protected void validateMaxScheduleForIntervalType(BackupOffering offering, DateUtil.IntervalType intervalType, VMInstanceVO vm) {
+        BackupOfferingDetailsVO maxScheduleForType = backupOfferingDetailsDao.findDetail(offering.getId(), intervalType.name());
+        if (maxScheduleForType == null || Integer.parseInt(maxScheduleForType.getValue()) < 0) {
+            return;
+        }
+        List<BackupScheduleVO> existingBackupSchedules = backupScheduleDao.listByVMAndIntervalType(vm.getId(), intervalType);
+
+        if (existingBackupSchedules.size() >= Integer.parseInt(maxScheduleForType.getValue())) {
+            throw new CloudRuntimeException(String.format("VM [%s] already has the max allowed schedules of type [%s] for backup offering [%s].", vm.getUuid(),
+                    intervalType.name(), offering.getUuid()));
+        }
+    }
+
+    private void validateDifferentScheduleFromExistingSchedules(VMInstanceVO vm, DateUtil.IntervalType intervalType, String schedule) {
+        List<BackupScheduleVO> existingBackupSchedules = backupScheduleDao.listByVMAndIntervalType(vm.getId(), intervalType);
+        if (existingBackupSchedules.stream().anyMatch(existingSchedule -> existingSchedule.getSchedule().equals(schedule))) {
+            throw new CloudRuntimeException(String.format("VM [%s] already has a [%s] schedule at [%s]. Cannot have multiple schedules of the same type at the same time.",
+                    vm.getUuid(), intervalType.name(), schedule));
+        }
     }
 
     @Override

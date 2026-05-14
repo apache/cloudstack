@@ -31,6 +31,8 @@ import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.exception.InvalidParameterValueException;
@@ -39,6 +41,8 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 import java.util.List;
 import java.util.function.LongFunction;
+
+import java.util.Map;
 
 @APICommand(name = "updateBackupOffering", description = "Updates a backup offering.", responseObject = BackupOfferingResponse.class,
 requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.16.0")
@@ -69,6 +73,11 @@ public class UpdateBackupOfferingCmd extends BaseCmd implements DomainAndZoneIdR
             length = 4096)
     private String domainIds;
 
+    @Parameter(name = ApiConstants.MAX_SCHEDULES, type = CommandType.MAP,
+            description = "Maximum number of schedules, values lower than 0 disable the limit. By default, all allowed schedule types have a limit of 1. Accepts a map of " +
+                    "schedule type to maximum amount. Example: maxschedules[0].DAILY=2&maxschedules[0].WEEKLY=5. Please note that all values should be on the same index ('0').")
+    private Map maxSchedules;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -88,13 +97,20 @@ public class UpdateBackupOfferingCmd extends BaseCmd implements DomainAndZoneIdR
         return allowUserDrivenBackups;
     }
 
+    public Map<String, String> getMaxSchedules() {
+        if (MapUtils.isEmpty(maxSchedules)) {
+            return null;
+        }
+        return (Map<String, String>)maxSchedules.values().iterator().next();
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
     @Override
     public void execute() {
         try {
-            if (StringUtils.isAllEmpty(getName(), getDescription()) && getAllowUserDrivenBackups() == null && CollectionUtils.isEmpty(getDomainIds())) {
+            if (StringUtils.isAllEmpty(getName(), getDescription()) && getAllowUserDrivenBackups() == null && CollectionUtils.isEmpty(getDomainIds()) && ObjectUtils.allNull(getAllowUserDrivenBackups(), getMaxSchedules())) {
                 throw new InvalidParameterValueException(String.format("Can't update Backup Offering [id: %s] because there are no parameters to be updated, at least one of the",
                         "following should be informed: name, description or allowUserDrivenBackups.", id));
             }
