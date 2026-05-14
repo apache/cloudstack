@@ -108,7 +108,7 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
 
     @Parameter(name = ApiConstants.MAC_ADDRESS,
             type = CommandType.STRING,
-            since = "4.22.1",
+            since = "4.23.0",
             description = "(only for importing VMs from KVM local/shared storage) optional - the MAC address for the imported VM NIC. If omitted, a new MAC address is generated.")
     private String macAddress;
 
