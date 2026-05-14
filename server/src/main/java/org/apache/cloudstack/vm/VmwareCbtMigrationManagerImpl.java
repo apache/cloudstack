@@ -37,6 +37,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -99,6 +100,8 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager 
     private VmwareCbtMigrationCycleDao vmwareCbtMigrationCycleDao;
     @Inject
     private AgentManager agentManager;
+    @Autowired(required = false)
+    private VmwareCbtMigrationService vmwareCbtMigrationService;
 
     @Override
     public List<Class<?>> getCommands() {
@@ -129,6 +132,7 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager 
         }
 
         VmwareSource source = resolveVmwareSource(cmd);
+        List<VmwareCbtDiskInfo> sourceDisks = discoverSourceDisks(source, sourceVmName);
         String displayName = StringUtils.defaultIfBlank(cmd.getDisplayName(), sourceVmName);
 
         VmwareCbtMigrationVO migration = new VmwareCbtMigrationVO(zone.getId(), caller.getAccountId(), CallContext.current().getCallingUserId(),
@@ -139,9 +143,11 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager 
         if (storagePool != null) {
             migration.setStoragePoolId(storagePool.getId());
         }
-        migration.setCurrentStep("Waiting for initial VDDK full sync");
+        migration.setState(VmwareCbtMigration.State.InitialSync);
+        migration.setCurrentStep(String.format("Discovered %s source disk(s); waiting for initial VDDK full sync", sourceDisks.size()));
         migration.setUpdated(new Date());
         migration = vmwareCbtMigrationDao.persist(migration);
+        persistSourceDisks(migration, sourceDisks);
         return createVmwareCbtMigrationResponse(migration);
     }
 
@@ -332,14 +338,16 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager 
                 throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
                         String.format("Cannot find any existing VMware datacenter with ID %s", cmd.getExistingVcenterId()));
             }
-            return new VmwareSource(existingDc.getVcenterHost(), existingDc.getVmwareDatacenterName());
+            return new VmwareSource(existingDc.getVcenterHost(), existingDc.getVmwareDatacenterName(),
+                    existingDc.getUser(), existingDc.getPassword(), cmd.getSourceHost());
         }
 
         if (StringUtils.isAnyBlank(cmd.getVcenter(), cmd.getDatacenterName(), cmd.getUsername(), cmd.getPassword())) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
                     "Please set all the information for a vCenter IP/Name, datacenter, username and password");
         }
-        return new VmwareSource(cmd.getVcenter(), cmd.getDatacenterName());
+        return new VmwareSource(cmd.getVcenter(), cmd.getDatacenterName(), cmd.getUsername(), cmd.getPassword(),
+                cmd.getSourceHost());
     }
 
     private VmwareCbtMigration.State parseState(String state) {
@@ -366,6 +374,33 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager 
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
                     String.format("Cannot %s VMware CBT migration %s because it is already in state %s",
                             action, migration.getUuid(), migration.getState()));
+        }
+    }
+
+    private List<VmwareCbtDiskInfo> discoverSourceDisks(VmwareSource source, String sourceVmName) {
+        if (vmwareCbtMigrationService == null) {
+            throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR,
+                    "VMware CBT disk discovery service is unavailable. Please enable the VMware hypervisor plugin.");
+        }
+
+        List<VmwareCbtDiskInfo> sourceDisks = vmwareCbtMigrationService.listSourceDisks(source.vcenter, source.datacenterName,
+                source.username, source.password, source.sourceHost, sourceVmName);
+        if (CollectionUtils.isEmpty(sourceDisks)) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR,
+                    String.format("No source disks were discovered for VMware VM %s", sourceVmName));
+        }
+        return sourceDisks;
+    }
+
+    private void persistSourceDisks(VmwareCbtMigrationVO migration, List<VmwareCbtDiskInfo> sourceDisks) {
+        for (VmwareCbtDiskInfo sourceDisk : sourceDisks) {
+            VmwareCbtMigrationDiskVO disk = new VmwareCbtMigrationDiskVO(migration.getId(),
+                    StringUtils.defaultIfBlank(sourceDisk.getSourceDiskId(), sourceDisk.getLabel()),
+                    sourceDisk.getSourceDiskPath(), sourceDisk.getDatastoreName(), sourceDisk.getCapacityBytes());
+            disk.setChangeId(sourceDisk.getChangeId());
+            disk.setTargetFormat("qcow2");
+            disk.setUpdated(new Date());
+            vmwareCbtMigrationDiskDao.persist(disk);
         }
     }
 
@@ -505,10 +540,16 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager 
     private static class VmwareSource {
         private final String vcenter;
         private final String datacenterName;
+        private final String username;
+        private final String password;
+        private final String sourceHost;
 
-        private VmwareSource(String vcenter, String datacenterName) {
+        private VmwareSource(String vcenter, String datacenterName, String username, String password, String sourceHost) {
             this.vcenter = vcenter;
             this.datacenterName = datacenterName;
+            this.username = username;
+            this.password = password;
+            this.sourceHost = sourceHost;
         }
     }
 }
