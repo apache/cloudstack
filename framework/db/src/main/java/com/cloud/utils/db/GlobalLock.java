@@ -313,7 +313,7 @@ public class GlobalLock {
             }
             if (ownerThread == Thread.currentThread()) {
                 lockCount--;
-                if (lockCount < 0) {
+                if (lockCount < 1) {
                     ownerThread = null;
                     boolean result = DbUtil.releaseGlobalLock(name);
 
