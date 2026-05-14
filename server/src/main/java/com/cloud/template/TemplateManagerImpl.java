@@ -1599,7 +1599,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     }
 
     Long hostIdForVm(VirtualMachine vm) {
-        return vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
+        Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
+        if (hostId == null && vm.getHypervisorType() != null) {
+            List<HostVO> candidates = _hostDao.listByDataCenterIdAndHypervisorType(vm.getDataCenterId(), vm.getHypervisorType());
+            if (!candidates.isEmpty()) {
+                hostId = candidates.get(0).getId();
+            }
+        }
+        return hostId;
     }
 
     @Override
