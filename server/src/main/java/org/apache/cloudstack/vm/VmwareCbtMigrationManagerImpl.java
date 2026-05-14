@@ -32,6 +32,8 @@ import org.apache.cloudstack.api.command.admin.vm.SyncVmwareCbtMigrationCmd;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.VmwareCbtMigrationResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.collections4.CollectionUtils;
@@ -77,10 +79,55 @@ import com.cloud.vm.dao.VmwareCbtMigrationCycleDao;
 import com.cloud.vm.dao.VmwareCbtMigrationDao;
 import com.cloud.vm.dao.VmwareCbtMigrationDiskDao;
 
-public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager {
+public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager, Configurable {
 
     private static final String OBJECT_NAME = "vmwarecbtmigration";
     private static final Logger LOGGER = LogManager.getLogger(VmwareCbtMigrationManagerImpl.class);
+
+    static final ConfigKey<Integer> VmwareCbtMigrationMinCycles = new ConfigKey<>(Integer.class,
+            "vmware.cbt.migration.min.cycles",
+            "Advanced",
+            "1",
+            "Minimum number of CBT delta synchronization cycles to run before CloudStack can recommend final VMware to KVM cutover",
+            true,
+            ConfigKey.Scope.Global,
+            null);
+
+    static final ConfigKey<Integer> VmwareCbtMigrationMaxCycles = new ConfigKey<>(Integer.class,
+            "vmware.cbt.migration.max.cycles",
+            "Advanced",
+            "5",
+            "Maximum number of CBT delta synchronization cycles to run before CloudStack recommends final VMware to KVM cutover",
+            true,
+            ConfigKey.Scope.Global,
+            null);
+
+    static final ConfigKey<Integer> VmwareCbtMigrationQuietCycles = new ConfigKey<>(Integer.class,
+            "vmware.cbt.migration.quiet.cycles",
+            "Advanced",
+            "2",
+            "Number of consecutive quiet CBT delta synchronization cycles required before CloudStack recommends final VMware to KVM cutover",
+            true,
+            ConfigKey.Scope.Global,
+            null);
+
+    static final ConfigKey<Long> VmwareCbtMigrationQuietBytes = new ConfigKey<>(Long.class,
+            "vmware.cbt.migration.quiet.bytes",
+            "Advanced",
+            "1073741824",
+            "Maximum changed bytes in a CBT delta synchronization cycle for the cycle to be considered quiet",
+            true,
+            ConfigKey.Scope.Global,
+            null);
+
+    static final ConfigKey<Long> VmwareCbtMigrationQuietDirtyRate = new ConfigKey<>(Long.class,
+            "vmware.cbt.migration.quiet.dirty.rate",
+            "Advanced",
+            "16777216",
+            "Maximum changed bytes per second in a CBT delta synchronization cycle for the cycle to be considered quiet",
+            true,
+            ConfigKey.Scope.Global,
+            null);
 
     @Inject
     private VmwareCbtMigrationDao vmwareCbtMigrationDao;
@@ -216,21 +263,31 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager 
 
             applyDiskResults(migration, answer.getDiskResults());
             updateDiskChangeIds(migration, changedBlockQuery.changedDisks);
+            long changedBytes = answer.getChangedBytes();
+            long durationSeconds = answer.getDurationSeconds();
+            long dirtyRate = getDirtyRateBytesPerSecond(changedBytes, durationSeconds, answer.getDirtyRateBytesPerSecond());
+            VmwareCbtMigrationCutoverPolicy cutoverPolicy = getCutoverPolicy();
+            VmwareCbtMigrationCutoverPolicy.Decision cutoverDecision = cutoverPolicy.decide(cycleNumber,
+                    migration.getQuietCycles(), changedBytes, durationSeconds);
+            int quietCycles = cutoverPolicy.isQuietCycle(changedBytes, durationSeconds) ?
+                    migration.getQuietCycles() + 1 : 0;
 
             cycle.setState(VmwareCbtMigrationCycle.State.Completed);
-            cycle.setChangedBytes(answer.getChangedBytes());
-            cycle.setDirtyRate(answer.getDirtyRateBytesPerSecond());
-            cycle.setDuration(answer.getDurationSeconds() * 1000);
+            cycle.setChangedBytes(changedBytes);
+            cycle.setDirtyRate(dirtyRate);
+            cycle.setDuration(durationSeconds * 1000);
             cycle.setDescription(answer.getDetails());
             cycle.setUpdated(new Date());
             vmwareCbtMigrationCycleDao.update(cycle.getId(), cycle);
 
             migration.setCompletedCycles(cycleNumber);
-            migration.setTotalChangedBytes(migration.getTotalChangedBytes() + answer.getChangedBytes());
-            migration.setLastChangedBytes(answer.getChangedBytes());
-            migration.setLastDirtyRate(answer.getDirtyRateBytesPerSecond());
-            migration.setState(answer.getReadyForCutover() ? VmwareCbtMigration.State.ReadyForCutover : VmwareCbtMigration.State.Replicating);
-            migration.setCurrentStep(answer.getReadyForCutover() ? "Ready for final cutover" : "CBT delta synchronization completed");
+            migration.setQuietCycles(quietCycles);
+            migration.setTotalChangedBytes(migration.getTotalChangedBytes() + changedBytes);
+            migration.setLastChangedBytes(changedBytes);
+            migration.setLastDirtyRate(dirtyRate);
+            migration.setState(cutoverDecision == VmwareCbtMigrationCutoverPolicy.Decision.CONTINUE ?
+                    VmwareCbtMigration.State.Replicating : VmwareCbtMigration.State.ReadyForCutover);
+            migration.setCurrentStep(getCutoverDecisionStep(cutoverDecision));
             migration.setUpdated(new Date());
             vmwareCbtMigrationDao.update(migration.getId(), migration);
             return createVmwareCbtMigrationResponse(migration);
@@ -501,6 +558,34 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager 
         }
     }
 
+    private VmwareCbtMigrationCutoverPolicy getCutoverPolicy() {
+        return new VmwareCbtMigrationCutoverPolicy(VmwareCbtMigrationMinCycles.value(),
+                VmwareCbtMigrationMaxCycles.value(), VmwareCbtMigrationQuietCycles.value(),
+                VmwareCbtMigrationQuietBytes.value(), VmwareCbtMigrationQuietDirtyRate.value());
+    }
+
+    private long getDirtyRateBytesPerSecond(long changedBytes, long durationSeconds, long reportedDirtyRate) {
+        if (reportedDirtyRate > 0) {
+            return reportedDirtyRate;
+        }
+        if (durationSeconds <= 0) {
+            return changedBytes;
+        }
+        return changedBytes / durationSeconds;
+    }
+
+    private String getCutoverDecisionStep(VmwareCbtMigrationCutoverPolicy.Decision cutoverDecision) {
+        switch (cutoverDecision) {
+            case READY_FOR_CUTOVER:
+                return "Ready for final cutover";
+            case READY_FOR_CUTOVER_MAX_CYCLES:
+                return "Ready for final cutover after reaching maximum CBT delta cycles";
+            case CONTINUE:
+            default:
+                return "CBT delta synchronization completed; continue replication cycles";
+        }
+    }
+
     private void applyDiskResults(VmwareCbtMigrationVO migration, List<VmwareCbtDiskSyncResultTO> diskResults) {
         if (CollectionUtils.isEmpty(diskResults)) {
             return;
@@ -704,6 +789,22 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager 
         response.setLastUpdated(migration.getUpdated());
         response.setObjectName(OBJECT_NAME);
         return response;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return VmwareCbtMigrationManagerImpl.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {
+                VmwareCbtMigrationMinCycles,
+                VmwareCbtMigrationMaxCycles,
+                VmwareCbtMigrationQuietCycles,
+                VmwareCbtMigrationQuietBytes,
+                VmwareCbtMigrationQuietDirtyRate
+        };
     }
 
     private static class VmwareSource {

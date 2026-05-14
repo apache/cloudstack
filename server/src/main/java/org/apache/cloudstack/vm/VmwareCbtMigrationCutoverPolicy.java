@@ -55,6 +55,9 @@ public class VmwareCbtMigrationCutoverPolicy {
         if (completedCycles < minCycles) {
             return Decision.CONTINUE;
         }
+        if (lastChangedBytes == 0) {
+            return Decision.READY_FOR_CUTOVER;
+        }
         int updatedQuietCycles = isQuietCycle(lastChangedBytes, lastCycleDurationSeconds) ? quietCycles + 1 : 0;
         if (updatedQuietCycles >= quietCyclesRequired) {
             return Decision.READY_FOR_CUTOVER;

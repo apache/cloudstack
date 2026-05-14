@@ -38,6 +38,16 @@ public class VmwareCbtMigrationCutoverPolicyTest {
     }
 
     @Test
+    public void testReadyForCutoverAfterMinimumCyclesWhenNoBlocksChanged() {
+        VmwareCbtMigrationCutoverPolicy policy = new VmwareCbtMigrationCutoverPolicy(2, 5, 2, 1024, 0);
+
+        Assert.assertEquals(VmwareCbtMigrationCutoverPolicy.Decision.CONTINUE,
+                policy.decide(1, 0, 0, 10));
+        Assert.assertEquals(VmwareCbtMigrationCutoverPolicy.Decision.READY_FOR_CUTOVER,
+                policy.decide(2, 0, 0, 10));
+    }
+
+    @Test
     public void testDirtyRateCanKeepReplicationRunning() {
         VmwareCbtMigrationCutoverPolicy policy = new VmwareCbtMigrationCutoverPolicy(1, 5, 1, 0, 1024);
 

@@ -233,51 +233,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             ConfigKey.Kind.CSV,
             null);
 
-    ConfigKey<Integer> VmwareCbtMigrationMinCycles = new ConfigKey<>(Integer.class,
-            "vmware.cbt.migration.min.cycles",
-            "Advanced",
-            "1",
-            "Minimum number of CBT delta synchronization cycles to run before CloudStack can recommend final VMware to KVM cutover",
-            true,
-            ConfigKey.Scope.Global,
-            null);
-
-    ConfigKey<Integer> VmwareCbtMigrationMaxCycles = new ConfigKey<>(Integer.class,
-            "vmware.cbt.migration.max.cycles",
-            "Advanced",
-            "5",
-            "Maximum number of CBT delta synchronization cycles to run before CloudStack recommends final VMware to KVM cutover",
-            true,
-            ConfigKey.Scope.Global,
-            null);
-
-    ConfigKey<Integer> VmwareCbtMigrationQuietCycles = new ConfigKey<>(Integer.class,
-            "vmware.cbt.migration.quiet.cycles",
-            "Advanced",
-            "2",
-            "Number of consecutive quiet CBT delta synchronization cycles required before CloudStack recommends final VMware to KVM cutover",
-            true,
-            ConfigKey.Scope.Global,
-            null);
-
-    ConfigKey<Long> VmwareCbtMigrationQuietBytes = new ConfigKey<>(Long.class,
-            "vmware.cbt.migration.quiet.bytes",
-            "Advanced",
-            "1073741824",
-            "Maximum changed bytes in a CBT delta synchronization cycle for the cycle to be considered quiet",
-            true,
-            ConfigKey.Scope.Global,
-            null);
-
-    ConfigKey<Long> VmwareCbtMigrationQuietDirtyRate = new ConfigKey<>(Long.class,
-            "vmware.cbt.migration.quiet.dirty.rate",
-            "Advanced",
-            "16777216",
-            "Maximum changed bytes per second in a CBT delta synchronization cycle for the cycle to be considered quiet",
-            true,
-            ConfigKey.Scope.Global,
-            null);
-
     @Inject
     private AgentManager agentManager;
     @Inject
@@ -3235,12 +3190,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 ThreadsOnMSToImportVMwareVMFiles,
                 ThreadsOnKVMHostToImportVMwareVMFiles,
                 ConvertVmwareInstanceToKvmExtraParamsAllowed,
-                ConvertVmwareInstanceToKvmExtraParamsAllowedList,
-                VmwareCbtMigrationMinCycles,
-                VmwareCbtMigrationMaxCycles,
-                VmwareCbtMigrationQuietCycles,
-                VmwareCbtMigrationQuietBytes,
-                VmwareCbtMigrationQuietDirtyRate
+                ConvertVmwareInstanceToKvmExtraParamsAllowedList
         };
     }
 }
