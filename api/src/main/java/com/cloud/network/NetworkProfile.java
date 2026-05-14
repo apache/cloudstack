@@ -386,6 +386,11 @@ public class NetworkProfile implements Network {
     }
 
     @Override
+    public boolean getKeepMacAddressOnPublicNic() {
+        return true;
+    }
+
+    @Override
     public String toString() {
         return String.format("NetworkProfile %s",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
