@@ -168,12 +168,27 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
         }
     }
 
-    protected void deleteKubernetesClusterVpcTierRules(Network network, List<Long> removedVmIds) throws ManagementServerException {
+    protected void deleteKubernetesClusterVpcTierRules(Network network, List<Long> removedVmIds) throws ManagementServerException, ResourceUnavailableException {
+        removeVpcTierAclRules(network);
+        if (manager.isNetrisNetwork(network)) {
+            IpAddress lbIp = getVpcTierKubernetesPublicIp(network);
+            if (lbIp != null) {
+                removeLoadBalancingRule(lbIp, network, owner);
+            }
+            IpAddress natIp = getVpcTierKubernetesPublicIp(network, ApiConstants.NETRIS_NAT_PUBLIC_IP_ID);
+            if (natIp != null) {
+                try {
+                    removePortForwardingRules(natIp, network, owner, removedVmIds);
+                } catch (ResourceUnavailableException e) {
+                    throw new ManagementServerException(String.format("Failed to remove Kubernetes cluster port forwarding rules for network : %s", network.getName()), e);
+                }
+            }
+            return;
+        }
         IpAddress publicIp = getVpcTierKubernetesPublicIp(network);
         if (publicIp == null) {
             return;
         }
-        removeVpcTierAclRules(network);
         try {
             removePortForwardingRules(publicIp, network, owner, removedVmIds);
         } catch (ResourceUnavailableException e) {
@@ -181,7 +196,7 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
         }
     }
 
-    private void deleteKubernetesClusterNetworkRules() throws ManagementServerException {
+    private void deleteKubernetesClusterNetworkRules() throws ManagementServerException, ResourceUnavailableException {
         NetworkVO network = networkDao.findById(kubernetesCluster.getNetworkId());
         if (network == null) {
             return;
@@ -221,7 +236,7 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
         }
     }
 
-    private void checkForRulesToDelete() throws ManagementServerException {
+    private void checkForRulesToDelete() throws ManagementServerException, ResourceUnavailableException {
         NetworkVO kubernetesClusterNetwork = networkDao.findById(kubernetesCluster.getNetworkId());
         if (kubernetesClusterNetwork != null && !manager.isDirectAccess(kubernetesClusterNetwork)) {
             deleteKubernetesClusterNetworkRules();
@@ -233,12 +248,18 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
         if (networkVO == null || networkVO.getVpcId() == null) {
             return;
         }
-        IpAddress address = getVpcTierKubernetesPublicIp(networkVO);
-        if (address == null) {
-            return;
+        IpAddress lbIp = getVpcTierKubernetesPublicIp(networkVO);
+        if (lbIp != null) {
+            networkService.releaseIpAddress(lbIp.getId());
+            kubernetesClusterDetailsDao.removeDetail(kubernetesCluster.getId(), ApiConstants.PUBLIC_IP_ID);
         }
-        networkService.releaseIpAddress(address.getId());
-        kubernetesClusterDetailsDao.removeDetail(kubernetesCluster.getId(), ApiConstants.PUBLIC_IP_ID);
+        if (manager.isNetrisNetwork(networkVO)) {
+            IpAddress natIp = getVpcTierKubernetesPublicIp(networkVO, ApiConstants.NETRIS_NAT_PUBLIC_IP_ID);
+            if (natIp != null) {
+                networkService.releaseIpAddress(natIp.getId());
+                kubernetesClusterDetailsDao.removeDetail(kubernetesCluster.getId(), ApiConstants.NETRIS_NAT_PUBLIC_IP_ID);
+            }
+        }
     }
 
     public boolean destroy() throws CloudRuntimeException {
@@ -293,7 +314,7 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
             } else {
                 try {
                     checkForRulesToDelete();
-                } catch (ManagementServerException e) {
+                } catch (ManagementServerException | ResourceUnavailableException e) {
                     String msg = String.format("Failed to remove network rules of Kubernetes cluster : %s", kubernetesCluster.getName());
                     logger.warn(msg, e);
                     updateKubernetesClusterEntryForGC();

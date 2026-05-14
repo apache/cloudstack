@@ -46,6 +46,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -68,6 +70,7 @@ import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkService;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.vpc.VpcService;
 import com.cloud.projects.ProjectService;
@@ -167,7 +170,26 @@ public class KubernetesClusterActionWorker {
     protected VirtualMachineTemplate clusterTemplate;
     protected File sshKeyFile;
     protected String publicIpAddress;
+    /** For Netris VPC-tier clusters the Kubernetes API is exposed via the L4 LB rule on the LB IP.
+     *  For all other clusters: same value as {@link #publicIpAddress}. */
+    protected String apiPublicIpAddress;
     protected int sshPort;
+
+    /**
+     * Returns the public IP that Kubernetes nodes should use as the API server cluster endpoint.
+     * For Netris VPC-tier clusters this is the LB IP (stored under {@code PUBLIC_IP_ID}); for all
+     * other clusters it falls back to {@link #publicIpAddress}.
+     * {@link #publicIpAddress} must be set before calling this method.
+     */
+    protected String resolveApiPublicIpAddress(Network network) {
+        if (network != null && network.getVpcId() != null && manager.isNetrisNetwork(network)) {
+            IpAddress lbIp = getVpcTierKubernetesPublicIp(network);
+            if (lbIp != null) {
+                return lbIp.getAddress().addr();
+            }
+        }
+        return publicIpAddress;
+    }
 
 
     protected final String deploySecretsScriptFilename = "deploy-cloudstack-secret";
@@ -355,13 +377,18 @@ public class KubernetesClusterActionWorker {
     }
 
     protected IpAddress getVpcTierKubernetesPublicIp(Network network) {
-        KubernetesClusterDetailsVO detailsVO = kubernetesClusterDetailsDao.findDetail(kubernetesCluster.getId(), ApiConstants.PUBLIC_IP_ID);
+        return getVpcTierKubernetesPublicIp(network, ApiConstants.PUBLIC_IP_ID);
+    }
+
+    protected IpAddress getVpcTierKubernetesPublicIp(Network network, String detailKey) {
+        KubernetesClusterDetailsVO detailsVO = kubernetesClusterDetailsDao.findDetail(kubernetesCluster.getId(), detailKey);
         if (detailsVO == null || StringUtils.isEmpty(detailsVO.getValue())) {
             return null;
         }
         IpAddress address = ipAddressDao.findByUuid(detailsVO.getValue());
         if (address == null || !Objects.equals(network.getVpcId(), address.getVpcId())) {
-            logger.warn(String.format("Public IP with ID: %s linked to the Kubernetes cluster: %s is not usable", detailsVO.getValue(), kubernetesCluster.getName()));
+            logger.warn("Public IP with ID: {} (key={}) linked to Kubernetes cluster: {} is not usable",
+                    detailsVO.getValue(), detailKey, kubernetesCluster.getName());
             return null;
         }
         return address;
@@ -369,14 +396,57 @@ public class KubernetesClusterActionWorker {
 
     protected IpAddress acquireVpcTierKubernetesPublicIp(Network network) throws
             InsufficientAddressCapacityException, ResourceAllocationException, ResourceUnavailableException {
-        IpAddress ip = networkService.allocateIP(owner, kubernetesCluster.getZoneId(), network.getId(), null, null);
+        return acquireVpcTierKubernetesPublicIp(network, ApiConstants.PUBLIC_IP_ID);
+    }
+
+    protected IpAddress acquireVpcTierKubernetesPublicIp(Network network, String detailKey) throws
+            InsufficientAddressCapacityException, ResourceAllocationException, ResourceUnavailableException {
+        IpAddress ip;
+        if (manager.isNetrisNetwork(network)) {
+            ip = allocateIpFromNetrisRange(network);
+        } else {
+            ip = networkService.allocateIP(owner, kubernetesCluster.getZoneId(), network.getId(), null, null);
+        }
         if (ip == null) {
             return null;
         }
         ip = vpcService.associateIPToVpc(ip.getId(), network.getVpcId());
         ip = ipAddressManager.associateIPToGuestNetwork(ip.getId(), network.getId(), false);
-        kubernetesClusterDetailsDao.addDetail(kubernetesCluster.getId(), ApiConstants.PUBLIC_IP_ID, ip.getUuid(), false);
+        kubernetesClusterDetailsDao.addDetail(kubernetesCluster.getId(), detailKey, ip.getUuid(), false);
         return ip;
+    }
+
+    /**
+     * Finds and allocates a free public IP from the Netris-reserved VLAN range in the cluster's
+     * zone. Used for both the LB IP ({@code PUBLIC_IP_ID}) and the NAT IP
+     * ({@code NETRIS_NAT_PUBLIC_IP_ID}): all IPs acquired for a Netris cluster must come from
+     * VLANs tagged {@code forNetris=true} in {@code vlan_details}. The actual allocation is
+     * delegated to {@link NetworkService#allocateIP} with the discovered address so that the
+     * normal account-lock / state-transition path is preserved.
+     *
+     * @return the allocated {@link IpAddress}, or {@code null} if the Netris range is exhausted
+     */
+    private IpAddress allocateIpFromNetrisRange(Network network) throws
+            InsufficientAddressCapacityException, ResourceAllocationException, ResourceUnavailableException {
+        long dcId = kubernetesCluster.getZoneId();
+        List<Long> netrisVlanIds = vlanDao.listVlansForExternalNetworkProvider(dcId, ApiConstants.NETRIS_DETAIL_KEY)
+                .stream().map(VlanVO::getId).collect(Collectors.toList());
+        if (netrisVlanIds.isEmpty()) {
+            throw new CloudRuntimeException(String.format(
+                    "Cannot allocate Netris LB IP for Kubernetes cluster %s: no VLANs tagged " +
+                    "'forNetris=true' found in zone %d", kubernetesCluster.getName(), dcId));
+        }
+        List<IPAddressVO> available = ipAddressManager.listAvailablePublicIps(
+                dcId, null, netrisVlanIds, owner, VlanType.VirtualNetwork,
+                network.getId(), false, false, false, null, null, false,
+                null, null, false, false);
+        if (available.isEmpty()) {
+            logger.warn(String.format("No available IPs in the Netris range for zone %d, " +
+                    "Kubernetes cluster %s", dcId, kubernetesCluster.getName()));
+            return null;
+        }
+        String requestedIp = available.get(0).getAddress().addr();
+        return networkService.allocateIP(owner, dcId, network.getId(), null, requestedIp);
     }
 
     protected Pair<String, Integer> getKubernetesClusterServerIpSshPortForIsolatedNetwork(Network network) {
@@ -402,6 +472,27 @@ public class KubernetesClusterActionWorker {
                                                                                   boolean acquireNewPublicIpForVpcTierIfNeeded) throws
             InsufficientAddressCapacityException, ResourceAllocationException, ResourceUnavailableException {
         int port = CLUSTER_NODES_DEFAULT_START_SSH_PORT;
+        if (manager.isNetrisNetwork(network)) {
+            // For Netris:
+            // NAT IP is the SSH/API/port-forwarding endpoint.
+            // LB IP (PUBLIC_IP_ID) is reserved for Kubernetes LoadBalancer
+            IpAddress natIp = getVpcTierKubernetesPublicIp(network, ApiConstants.NETRIS_NAT_PUBLIC_IP_ID);
+            if (natIp != null) {
+                return new Pair<>(natIp.getAddress().addr(), port);
+            }
+            if (acquireNewPublicIpForVpcTierIfNeeded) {
+                // Acquire LB IP first so it is stored under PUBLIC_IP_ID for Netris
+                if (getVpcTierKubernetesPublicIp(network) == null) {
+                    acquireVpcTierKubernetesPublicIp(network);
+                }
+                natIp = acquireVpcTierKubernetesPublicIp(network, ApiConstants.NETRIS_NAT_PUBLIC_IP_ID);
+                if (natIp != null) {
+                    return new Pair<>(natIp.getAddress().addr(), port);
+                }
+            }
+            logger.warn(String.format("No NAT public IP found for Netris VPC tier: %s, Kubernetes cluster: %s", network, kubernetesCluster.getName()));
+            return new Pair<>(null, port);
+        }
         IpAddress address = getVpcTierKubernetesPublicIp(network);
         if (address != null) {
             return new Pair<>(address.getAddress().addr(), port);

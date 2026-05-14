@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.collections.CollectionUtils;
@@ -137,6 +138,24 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
     }
 
     private void scaleKubernetesClusterVpcTierRules(final List<Long> clusterVMIds) throws ManagementServerException {
+        if (manager.isNetrisNetwork(network)) {
+            // For Netris: SSH port-forwarding is on NAT IP; the LB rule on LB IP for 6443 is fixed and never re-provisioned during scale
+            IpAddress natIp = getVpcTierKubernetesPublicIp(network, ApiConstants.NETRIS_NAT_PUBLIC_IP_ID);
+            if (natIp == null) {
+                throw new ManagementServerException(String.format("No NAT IP found for Netris VPC tier : %s, Kubernetes cluster : %s", network.getName(), kubernetesCluster.getName()));
+            }
+            try {
+                removePortForwardingRules(natIp, network, owner, CLUSTER_NODES_DEFAULT_START_SSH_PORT, CLUSTER_NODES_DEFAULT_START_SSH_PORT + clusterVMIds.size() - 1);
+            } catch (ResourceUnavailableException e) {
+                throw new ManagementServerException(String.format("Failed to remove SSH port forwarding rules for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
+            }
+            try {
+                provisionSshPortForwardingRules(natIp, network, owner, clusterVMIds);
+            } catch (ResourceUnavailableException | NetworkRuleConflictException e) {
+                throw new ManagementServerException(String.format("Failed to activate SSH port forwarding rules for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
+            }
+            return;
+        }
         IpAddress publicIp = getVpcTierKubernetesPublicIp(network);
         if (publicIp == null) {
             throw new ManagementServerException(String.format("No public IP addresses found for VPC tier : %s, Kubernetes cluster : %s", network.getName(), kubernetesCluster.getName()));
@@ -146,7 +165,6 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         } catch (ResourceUnavailableException e) {
             throw new ManagementServerException(String.format("Failed to remove SSH port forwarding rules for removed VMs for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
         }
-        // Add port forwarding rule for SSH access on each node VM
         try {
             provisionSshPortForwardingRules(publicIp, network, owner, clusterVMIds);
         } catch (ResourceUnavailableException | NetworkRuleConflictException e) {
@@ -373,7 +391,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         LaunchPermissionVO launchPermission =  new LaunchPermissionVO(clusterTemplate.getId(), owner.getId());
         launchPermissionDao.persist(launchPermission);
         try {
-            clusterVMs = provisionKubernetesClusterNodeVms((int)(newVmCount + kubernetesCluster.getNodeCount()), (int)kubernetesCluster.getNodeCount(), publicIpAddress);
+            clusterVMs = provisionKubernetesClusterNodeVms((int)(newVmCount + kubernetesCluster.getNodeCount()), (int)kubernetesCluster.getNodeCount(), apiPublicIpAddress);
             updateLoginUserDetails(clusterVMs.stream().map(InternalIdentity::getId).collect(Collectors.toList()));
         } catch (CloudRuntimeException | ManagementServerException | ResourceUnavailableException | InsufficientCapacityException e) {
             logTransitStateToFailedIfNeededAndThrow(Level.ERROR, String.format("Scaling failed for Kubernetes cluster : %s, unable to provision node VM in the cluster", kubernetesCluster.getName()), e);
@@ -410,6 +428,9 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         Pair<String, Integer> publicIpSshPort = getKubernetesClusterServerIpSshPort(null);
         publicIpAddress = publicIpSshPort.first();
         sshPort = publicIpSshPort.second();
+        // For Netris VPC-tier: apiPublicIpAddress = LB IP (kubeadm join target for new nodes).
+        // For all others: same as publicIpAddress.
+        apiPublicIpAddress = resolveApiPublicIpAddress(network);
         if (StringUtils.isEmpty(publicIpAddress)) {
             logTransitStateToFailedIfNeededAndThrow(Level.ERROR, String.format("Scaling failed for Kubernetes cluster : %s, unable to retrieve associated public IP", kubernetesCluster.getName()));
         }
