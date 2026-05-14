@@ -16,13 +16,21 @@
 // under the License.
 package org.apache.cloudstack.vm;
 
-import java.util.List;
+public class VmwareCbtChangedBlockInfo {
 
-public interface VmwareCbtMigrationService {
-    List<VmwareCbtDiskInfo> listSourceDisks(String vcenter, String datacenterName, String username, String password,
-                                            String sourceHost, String sourceVmName);
+    private final long startOffset;
+    private final long length;
 
-    List<VmwareCbtChangedDiskInfo> queryChangedDiskAreas(String vcenter, String datacenterName, String username,
-                                                         String password, String sourceHost, String sourceVmName,
-                                                         List<VmwareCbtDiskInfo> disks, String snapshotMor);
+    public VmwareCbtChangedBlockInfo(long startOffset, long length) {
+        this.startOffset = startOffset;
+        this.length = length;
+    }
+
+    public long getStartOffset() {
+        return startOffset;
+    }
+
+    public long getLength() {
+        return length;
+    }
 }
