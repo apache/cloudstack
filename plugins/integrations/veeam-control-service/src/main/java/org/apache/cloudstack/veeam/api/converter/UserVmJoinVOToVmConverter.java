@@ -46,6 +46,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.api.query.vo.HostJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
+import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.vm.VirtualMachine;
 
 public final class UserVmJoinVOToVmConverter {
@@ -64,6 +65,7 @@ public final class UserVmJoinVOToVmConverter {
                           final Function<Long, List<DiskAttachment>> disksResolver,
                           final Function<UserVmJoinVO, List<Nic>> nicsResolver,
                           final Function<UserVmJoinVO, SharedFS> sharedFsResolver,
+                          final Function<Long, List<SecurityGroupVO>> securityGroupsResolver,
                           final boolean allContent) {
         if (src == null) {
             return null;
@@ -179,7 +181,11 @@ public final class UserVmJoinVOToVmConverter {
         dst.setGuestOsName(src.getGuestOsDisplayName());
         dst.setInstanceType(src.getUserVmType());
         updateSharedFSDetailsIfNeeded(src, sharedFsResolver, dst);
-        dst.setSecurityGroupId(src.getSecurityGroupUuid());
+        if (securityGroupsResolver != null) {
+            dst.setSecurityGroupIds(securityGroupsResolver.apply(src.getId()).stream()
+                    .map(SecurityGroupVO::getUuid)
+                    .collect(Collectors.toList()));
+        }
 
         // Keep at end
         if (allContent) {
@@ -224,10 +230,11 @@ public final class UserVmJoinVOToVmConverter {
                                     final Function<Long, List<DiskAttachment>> disksResolver,
                                     final Function<UserVmJoinVO, List<Nic>> nicsResolver,
                                     final Function<UserVmJoinVO, SharedFS> sharedFsResolver,
+                                    final Function<Long, List<SecurityGroupVO>> securityGroupsResolver,
                                     final boolean allContent) {
         return srcList.stream()
                 .map(v -> toVm(v, hostResolver, detailsResolver, tagsResolver, disksResolver,
-                        nicsResolver, sharedFsResolver, allContent))
+                        nicsResolver, sharedFsResolver, securityGroupsResolver, allContent))
                 .collect(Collectors.toList());
     }
 

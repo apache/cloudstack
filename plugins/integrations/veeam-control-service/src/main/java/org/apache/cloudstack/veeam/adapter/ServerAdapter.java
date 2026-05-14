@@ -23,9 +23,11 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -167,8 +169,10 @@ import com.cloud.network.as.AutoScaleVmGroupVmMapVO;
 import com.cloud.network.as.dao.AutoScaleVmGroupVmMapDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.security.SecurityGroupVMMapVO;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.dao.SecurityGroupDao;
+import com.cloud.network.security.dao.SecurityGroupVMMapDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project;
@@ -226,7 +230,7 @@ public class ServerAdapter extends ManagerBase {
     );
     private static final String VM_TAG_KEY = "veeam_tag";
     private static final String WORKER_VM_GUEST_CPU_MODE = "host-passthrough";
-    private static final String WORKER_VM_GUEST_OS = "AlmaLinux 9";
+    private static final String WORKER_VM_GUEST_OS = "Rocky Linux 9";
     private static final String RESTORE_CONFIG = "restore.config";
 
     @Inject
@@ -342,6 +346,9 @@ public class ServerAdapter extends ManagerBase {
 
     @Inject
     SecurityGroupDao securityGroupDao;
+
+    @Inject
+    SecurityGroupVMMapDao securityGroupVMMapDao;
 
     @Inject
     SharedFSService sharedFSService;
@@ -630,11 +637,37 @@ public class ServerAdapter extends ManagerBase {
         }
         SecurityGroupVO group = securityGroupDao.findByUuid(securityGroupUuid);
         if (group == null) {
-            logger.warn("Failed to find userdata with ID {} specified in Instance creation request, " +
-                    "skipping security group assignment", securityGroupUuid);
+            logger.warn("Failed to find security group with ID {} specified in Instance creation request, " +
+                    "skipping its assignment", securityGroupUuid);
             return null;
         }
         return group;
+    }
+
+    protected List<Long> getValidatedSecurityGroups(List<String> uuids, long vmId) {
+        if (CollectionUtils.isEmpty(uuids)) {
+            return null;
+        }
+        List<SecurityGroupVO> instanceGroups = getSecurityGroupsForInstance(vmId);
+        Set<Long> existingIds = CollectionUtils.isNotEmpty(instanceGroups)
+                ? instanceGroups.stream().map(SecurityGroupVO::getId).collect(Collectors.toSet())
+                : new HashSet<>();
+        Set<Long> requestedIds = uuids.stream()
+                .map(uuid -> {
+                    SecurityGroupVO group = getValidatedSecurityGroup(uuid);
+                    return group != null ? group.getId() : null;
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        if (CollectionUtils.isEmpty(requestedIds)) {
+            return null;
+        }
+        Set<Long> mergedIds = new HashSet<>(existingIds);
+        mergedIds.addAll(requestedIds);
+        if (mergedIds.equals(existingIds)) {
+            return null;
+        }
+        return new ArrayList<>(mergedIds);
     }
 
     protected String getValidatedInstanceType(Vm request) {
@@ -667,7 +700,7 @@ public class ServerAdapter extends ManagerBase {
                 String accountName, Long projectId, String name, String displayName, String serviceOfferingUuid,
                 int cpu, int memory, String templateUuid, GuestOS guestOs, String userdata, ApiConstants.BootType bootType,
                 ApiConstants.BootMode bootMode, String affinityGroupId, String userDataId, String sshKeyPairNames,
-                String instanceType, String securityGroupId, Map<String, String> details) {
+                String instanceType, Map<String, String> details) {
         Account account = owner != null ? owner : CallContext.current().getCallingAccount();
         ServiceOffering serviceOffering = getServiceOfferingIdForVmCreation(zone, account, serviceOfferingUuid, cpu,
                 memory);
@@ -714,10 +747,6 @@ public class ServerAdapter extends ManagerBase {
         if (userData != null) {
             cmd.setUserDataId(userData.getId());
         }
-        SecurityGroupVO securityGroup = getValidatedSecurityGroup(securityGroupId);
-        if (securityGroup != null) {
-            cmd.setSecurityGroupList(List.of(securityGroup.getId()));
-        }
         if (StringUtils.isNotBlank(sshKeyPairNames)) {
             cmd.setSshKeyPairNames(getValidatedSshKeyPairNames(sshKeyPairNames, owner));
         }
@@ -736,7 +765,7 @@ public class ServerAdapter extends ManagerBase {
             UserVmJoinVO vo = userVmJoinDao.findById(vm.getId());
             Vm vmObj = UserVmJoinVOToVmConverter.toVm(vo, this::getHostById, this::getDetailsByInstanceId,
                     this::listTagsByInstanceId, this::listDiskAttachmentsByInstanceId, this::listNicsByInstance,
-                    null, false);
+                    null, null, false);
             return new Pair<>(vmObj, vm);
         } catch (InsufficientCapacityException | ResourceUnavailableException | ResourceAllocationException | CloudRuntimeException e) {
             throw new CloudRuntimeException("Failed to create VM: " + e.getMessage(), e);
@@ -823,12 +852,8 @@ public class ServerAdapter extends ManagerBase {
         sharedFSService.updateSharedFSPostRestore(sharedFS.getId(), volume.getId());
     }
 
-    protected Pair<String, String> getValidatedInstanceNicDetails(final UserVmVO vm, final NetworkVO network) {
-        if (ObjectUtils.anyNull(vm, network)) {
-            return new Pair<>(null, null);
-        }
-        VMInstanceDetailVO detail = vmInstanceDetailsDao.findDetail(vm.getId(), RESTORE_CONFIG);
-        if (detail == null || StringUtils.isBlank(detail.getValue())) {
+    protected Pair<String, String> getValidatedInstanceNicDetails(final VMInstanceDetailVO detail, final NetworkVO network) {
+        if (ObjectUtils.anyNull(detail, network) || StringUtils.isBlank(detail.getValue())) {
             return new Pair<>(null, null);
         }
         Pair<String, String> result = OvfXmlUtil.getVmNicDetailFromStoredConfig(detail.getValue(), network.getUuid(), logger);
@@ -860,6 +885,34 @@ public class ServerAdapter extends ManagerBase {
             }
         }
         return new Pair<>(mac, ip4Address);
+    }
+
+    protected void updateInstanceSecurityGroupsIfNeeded(final UserVmVO vmVo, final VMInstanceDetailVO detail, final NetworkVO network) {
+        if (ObjectUtils.anyNull(detail, network) || StringUtils.isBlank(detail.getValue())) {
+            return;
+        }
+        String config = detail.getValue();
+        Vm vm = OvfXmlUtil.parseVmRestoreConfig(config, logger);
+        if (CollectionUtils.isEmpty(vm.getSecurityGroupIds())) {
+            return;
+        }
+        List<Long> securityGroupIds = getValidatedSecurityGroups(vm.getSecurityGroupIds(), vmVo.getId());
+        if (CollectionUtils.isEmpty(securityGroupIds)) {
+            return;
+        }
+        if (!networkModel.areServicesSupportedInNetwork(network.getId(), NetworkVO.Service.SecurityGroup)) {
+            logger.debug("{} does not support security groups, will try with remaining networks for {}", network, vmVo);
+            return;
+        }
+        UpdateVMCmd cmd = new UpdateVMCmd();
+        ComponentContext.inject(cmd);
+        cmd.setId(vmVo.getId());
+        cmd.setSecurityGroupIdList(securityGroupIds);
+        try {
+            userVmManager.updateVirtualMachine(cmd);
+        } catch (ResourceUnavailableException | InsufficientCapacityException e) {
+            throw new CloudRuntimeException("Failed to add security group(s) due to: " + e.getMessage());
+        }
     }
 
     protected static long getProvisionedSizeInGb(String sizeStr) {
@@ -995,6 +1048,17 @@ public class ServerAdapter extends ManagerBase {
             return null;
         }
         return sharedFSService.getSharedFSForVmId(vo.getId());
+    }
+
+    protected List<SecurityGroupVO> getSecurityGroupsForInstance(long vmId) {
+        List<SecurityGroupVMMapVO> mappings = securityGroupVMMapDao.listByInstanceId(vmId);
+        if (CollectionUtils.isEmpty(mappings)) {
+            return null;
+        }
+        return securityGroupDao.listByIds(
+                mappings.stream()
+                        .map(SecurityGroupVMMapVO::getSecurityGroupId)
+                        .collect(Collectors.toList()));
     }
 
     protected void validateInstanceBackupConditions(UserVm vm) {
@@ -1138,10 +1202,11 @@ public class ServerAdapter extends ManagerBase {
         return UserVmJoinVOToVmConverter.toVmList(vms,
                 this::getHostById,
                 this::getDetailsByInstanceId,
-                includeTags ? this::listTagsByInstanceId : null,
-                includeDisks ? this::listDiskAttachmentsByInstanceId : null,
-                includeNics ? this::listNicsByInstance : null,
+                (includeTags || allContent) ? this::listTagsByInstanceId : null,
+                (includeDisks || allContent) ? this::listDiskAttachmentsByInstanceId : null,
+                (includeNics || allContent) ? this::listNicsByInstance : null,
                 allContent ? this::getSharedFSForInstance: null,
+                allContent ? this::getSecurityGroupsForInstance: null,
                 allContent);
     }
 
@@ -1155,10 +1220,11 @@ public class ServerAdapter extends ManagerBase {
         return UserVmJoinVOToVmConverter.toVm(vo,
                 this::getHostById,
                 this::getDetailsByInstanceId,
-                includeTags ? this::listTagsByInstanceId : null,
-                includeDisks ? this::listDiskAttachmentsByInstanceId : null,
-                includeNics ? this::listNicsByInstance : null,
-                allContent ? this::getSharedFSForInstance : null,
+                (includeTags || allContent) ? this::listTagsByInstanceId : null,
+                (includeDisks || allContent) ? this::listDiskAttachmentsByInstanceId : null,
+                (includeNics || allContent) ? this::listNicsByInstance : null,
+                allContent ? this::getSharedFSForInstance: null,
+                allContent ? this::getSecurityGroupsForInstance: null,
                 allContent);
     }
 
@@ -1227,8 +1293,7 @@ public class ServerAdapter extends ManagerBase {
         Pair<Vm, UserVm> result = createInstance(zone, clusterId, owner, ownerDetails.first(), ownerDetails.second(),
                 ownerDetails.third(), name, displayName, serviceOfferingUuid, cpu, memoryMB, templateUuid, guestOs,
                 userdata, bootOptions.first(), bootOptions.second(), request.getAffinityGroupId(),
-                request.getUserDataId(), request.getSshKeyPairNames(), instanceType,
-                request.getSecurityGroupId(), request.getDetails());
+                request.getUserDataId(), request.getSshKeyPairNames(), instanceType, request.getDetails());
         saveInstanceRestoreConfig(request, result.second());
         return result.first();
     }
@@ -1583,7 +1648,8 @@ public class ServerAdapter extends ManagerBase {
                 accountCannotAccessNetwork(networkVO, vmVo.getAccountId())) {
             assignVmToAccount(vmVo, networkVO.getAccountId());
         }
-        Pair<String, String> nicDetails = getValidatedInstanceNicDetails(vmVo, networkVO);
+        VMInstanceDetailVO detail = vmInstanceDetailsDao.findDetail(vmVo.getId(), RESTORE_CONFIG);
+        Pair<String, String> nicDetails = getValidatedInstanceNicDetails(detail, networkVO);
         AddNicToVMCmd cmd = new AddNicToVMCmd();
         ComponentContext.inject(cmd);
         cmd.setVmId(vmVo.getId());
@@ -1598,6 +1664,7 @@ public class ServerAdapter extends ManagerBase {
         if (nic == null) {
             throw new CloudRuntimeException("Failed to attach NIC to VM");
         }
+        updateInstanceSecurityGroupsIfNeeded(vmVo, detail, networkVO);
         return NicVOToNicConverter.toNic(nic, vmUuid, this::getNetworkById);
     }
 

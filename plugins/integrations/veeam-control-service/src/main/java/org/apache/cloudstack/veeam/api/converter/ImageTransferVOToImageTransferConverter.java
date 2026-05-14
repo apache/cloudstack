@@ -52,7 +52,6 @@ public class ImageTransferVOToImageTransferConverter {
         } else if (org.apache.cloudstack.backup.ImageTransfer.Phase.failed.equals(vo.getPhase())) {
             imageTransfer.setPhase("finished_failed");
         }
-        imageTransfer.setProxyUrl(vo.getTransferUrl());
         imageTransfer.setShallow(Boolean.toString(false));
         imageTransfer.setTimeoutPolicy("legacy");
         imageTransfer.setTransferUrl(vo.getTransferUrl());

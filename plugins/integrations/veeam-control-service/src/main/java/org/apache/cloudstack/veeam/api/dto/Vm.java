@@ -89,7 +89,7 @@ public final class Vm extends BaseDto {
     private String instanceType;
     private String sharedFSId;
     private String sharedFsVolumeName;
-    private String securityGroupId;
+    private List<String> securityGroupIds;
 
     public String getName() {
         return name;
@@ -390,12 +390,12 @@ public final class Vm extends BaseDto {
     }
 
     @JsonIgnore
-    public String getSecurityGroupId() {
-        return securityGroupId;
+    public List<String> getSecurityGroupIds() {
+        return securityGroupIds;
     }
 
-    public void setSecurityGroupId(String securityGroupId) {
-        this.securityGroupId = securityGroupId;
+    public void setSecurityGroupIds(List<String> securityGroupIds) {
+        this.securityGroupIds = securityGroupIds;
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)

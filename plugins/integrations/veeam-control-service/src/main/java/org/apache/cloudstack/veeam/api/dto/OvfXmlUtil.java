@@ -21,6 +21,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -487,8 +488,8 @@ public class OvfXmlUtil {
                 sb.append("<SharedFSId>").append(escapeText(vm.getSharedFSId())).append("</SharedFSId>");
                 sb.append("<SharedFSVolumeName>").append(escapeText(vm.getSharedFsVolumeName())).append("</SharedFSVolumeName>");
             }
-            if (StringUtils.isNotBlank(vm.getSecurityGroupId())) {
-                sb.append("<SecurityGroupId>").append(escapeText(vm.getSecurityGroupId())).append("</SecurityGroupId>");
+            if (CollectionUtils.isNotEmpty(vm.getSecurityGroupIds())) {
+                sb.append("<SecurityGroupIds>").append(escapeText(StringUtils.join(vm.getSecurityGroupIds(), ","))).append("</SecurityGroupIds>");
             }
             sb.append("</CloudStack>");
             sb.append("</Section>");
@@ -834,9 +835,9 @@ public class OvfXmlUtil {
         if (StringUtils.isNotBlank(sharedFSVolumeName)) {
             vm.setSharedFsVolumeName(sharedFSVolumeName);
         }
-        String securityGroupId = xpathString(xpath, metadataSection, ".//*[local-name()='SecurityGroupId']/text()");
-        if (StringUtils.isNotBlank(securityGroupId)) {
-            vm.setInstanceType(securityGroupId);
+        String securityGroupIds = xpathString(xpath, metadataSection, ".//*[local-name()='SecurityGroupIds']/text()");
+        if (StringUtils.isNotBlank(securityGroupIds)) {
+            vm.setSecurityGroupIds(Arrays.asList(StringUtils.split(securityGroupIds, ",")));
         }
         final Map<String, String> details = new HashMap<>();
         try {

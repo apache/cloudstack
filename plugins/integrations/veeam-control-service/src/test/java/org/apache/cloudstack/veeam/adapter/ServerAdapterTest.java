@@ -101,8 +101,8 @@ import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmManager;
-import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -287,9 +287,9 @@ public class ServerAdapterTest {
 
     @Test
     public void testGetValidatedInstanceNicDetails_NullNetwork_ReturnsNullPair() {
-        UserVmVO vm = mock(UserVmVO.class);
+        VMInstanceDetailVO detail = mock(VMInstanceDetailVO.class);
 
-        Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails(vm, null);
+        Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails(detail, null);
 
         assertNull(result.first());
         assertNull(result.second());
@@ -297,12 +297,9 @@ public class ServerAdapterTest {
 
     @Test
     public void testGetValidatedInstanceNicDetails_NoRestoreConfig_ReturnsNullPair() {
-        UserVmVO vm = mock(UserVmVO.class);
-        when(vm.getId()).thenReturn(10L);
-        when(vmInstanceDetailsDao.findDetail(10L, "restore.config")).thenReturn(null);
         NetworkVO network = mock(NetworkVO.class);
 
-        Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails(vm, network);
+        Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails(null, network);
 
         assertNull(result.first());
         assertNull(result.second());
@@ -310,14 +307,11 @@ public class ServerAdapterTest {
 
     @Test
     public void testGetValidatedInstanceNicDetails_BlankRestoreConfig_ReturnsNullPair() {
-        UserVmVO vm = mock(UserVmVO.class);
-        when(vm.getId()).thenReturn(10L);
         VMInstanceDetailVO detail = mock(VMInstanceDetailVO.class);
         when(detail.getValue()).thenReturn("   ");
-        when(vmInstanceDetailsDao.findDetail(10L, "restore.config")).thenReturn(detail);
         NetworkVO network = mock(NetworkVO.class);
 
-        Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails(vm, network);
+        Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails(detail, network);
 
         assertNull(result.first());
         assertNull(result.second());
@@ -325,11 +319,8 @@ public class ServerAdapterTest {
 
     @Test
     public void testGetValidatedInstanceNicDetails_BlankMacAndIpFromConfig_ReturnsNullPair() {
-        UserVmVO vm = mock(UserVmVO.class);
-        when(vm.getId()).thenReturn(11L);
         VMInstanceDetailVO detail = mock(VMInstanceDetailVO.class);
         when(detail.getValue()).thenReturn("restore-xml");
-        when(vmInstanceDetailsDao.findDetail(11L, "restore.config")).thenReturn(detail);
 
         NetworkVO network = mock(NetworkVO.class);
         when(network.getUuid()).thenReturn("network-uuid");
@@ -338,7 +329,7 @@ public class ServerAdapterTest {
             ovfXmlUtil.when(() -> OvfXmlUtil.getVmNicDetailFromStoredConfig(eq("restore-xml"), eq("network-uuid"), any(Logger.class)))
                     .thenReturn(new Pair<>("  ", "\t"));
 
-            Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails(vm, network);
+            Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails(detail, network);
 
             assertNull(result.first());
             assertNull(result.second());
@@ -347,11 +338,8 @@ public class ServerAdapterTest {
 
     @Test
     public void testGetValidatedInstanceNicDetails_NoConflicts_ReturnsMacAndIp() {
-        UserVmVO vm = mock(UserVmVO.class);
-        when(vm.getId()).thenReturn(20L);
         VMInstanceDetailVO detail = mock(VMInstanceDetailVO.class);
         when(detail.getValue()).thenReturn("restore-xml");
-        when(vmInstanceDetailsDao.findDetail(20L, "restore.config")).thenReturn(detail);
 
         NetworkVO network = mock(NetworkVO.class);
         when(network.getId()).thenReturn(30L);
@@ -364,7 +352,7 @@ public class ServerAdapterTest {
             ovfXmlUtil.when(() -> OvfXmlUtil.getVmNicDetailFromStoredConfig(eq("restore-xml"), eq("network-uuid"), any(Logger.class)))
                     .thenReturn(new Pair<>("02:00:00:00:00:01", "10.0.0.10"));
 
-            Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails(vm, network);
+            Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails(detail, network);
 
             assertEquals("02:00:00:00:00:01", result.first());
             assertEquals("10.0.0.10", result.second());
@@ -373,11 +361,8 @@ public class ServerAdapterTest {
 
     @Test
     public void testGetValidatedInstanceNicDetails_MacConflictWithSameIp_ClearsBoth() {
-        UserVmVO vm = mock(UserVmVO.class);
-        when(vm.getId()).thenReturn(21L);
         VMInstanceDetailVO detail = mock(VMInstanceDetailVO.class);
         when(detail.getValue()).thenReturn("restore-xml");
-        when(vmInstanceDetailsDao.findDetail(21L, "restore.config")).thenReturn(detail);
 
         NetworkVO network = mock(NetworkVO.class);
         when(network.getId()).thenReturn(31L);
@@ -391,7 +376,7 @@ public class ServerAdapterTest {
             ovfXmlUtil.when(() -> OvfXmlUtil.getVmNicDetailFromStoredConfig(eq("restore-xml"), eq("network-uuid"), any(Logger.class)))
                     .thenReturn(new Pair<>("02:00:00:00:00:02", "10.0.0.11"));
 
-            Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails(vm, network);
+            Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails(detail, network);
 
             assertNull(result.first());
             assertNull(result.second());
@@ -400,11 +385,8 @@ public class ServerAdapterTest {
 
     @Test
     public void testGetValidatedInstanceNicDetails_MacConflictWithDifferentIp_ClearsOnlyMac() {
-        UserVmVO vm = mock(UserVmVO.class);
-        when(vm.getId()).thenReturn(22L);
         VMInstanceDetailVO detail = mock(VMInstanceDetailVO.class);
         when(detail.getValue()).thenReturn("restore-xml");
-        when(vmInstanceDetailsDao.findDetail(22L, "restore.config")).thenReturn(detail);
 
         NetworkVO network = mock(NetworkVO.class);
         when(network.getId()).thenReturn(32L);
@@ -419,7 +401,7 @@ public class ServerAdapterTest {
             ovfXmlUtil.when(() -> OvfXmlUtil.getVmNicDetailFromStoredConfig(eq("restore-xml"), eq("network-uuid"), any(Logger.class)))
                     .thenReturn(new Pair<>("02:00:00:00:00:03", "10.0.0.12"));
 
-            Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails(vm, network);
+            Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails(detail, network);
 
             assertNull(result.first());
             assertEquals("10.0.0.12", result.second());
@@ -428,11 +410,8 @@ public class ServerAdapterTest {
 
     @Test
     public void testGetValidatedInstanceNicDetails_IpConflict_ClearsIpAndMac() {
-        UserVmVO vm = mock(UserVmVO.class);
-        when(vm.getId()).thenReturn(23L);
         VMInstanceDetailVO detail = mock(VMInstanceDetailVO.class);
         when(detail.getValue()).thenReturn("restore-xml");
-        when(vmInstanceDetailsDao.findDetail(23L, "restore.config")).thenReturn(detail);
 
         NetworkVO network = mock(NetworkVO.class);
         when(network.getId()).thenReturn(33L);
@@ -447,7 +426,7 @@ public class ServerAdapterTest {
             ovfXmlUtil.when(() -> OvfXmlUtil.getVmNicDetailFromStoredConfig(eq("restore-xml"), eq("network-uuid"), any(Logger.class)))
                     .thenReturn(new Pair<>("02:00:00:00:00:04", "10.0.0.13"));
 
-            Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails(vm, network);
+            Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails(detail, network);
 
             assertNull(result.first());
             assertNull(result.second());
