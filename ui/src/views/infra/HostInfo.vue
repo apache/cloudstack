@@ -64,6 +64,22 @@
           </div>
         </div>
       </a-list-item>
+      <a-list-item v-if="host.details && host.details['host.vddk.support']">
+        <div>
+          <strong>{{ $t('label.host.vddk.support') }}</strong>
+          <div>
+            {{ host.details['host.vddk.support'] }}
+          </div>
+        </div>
+      </a-list-item>
+      <a-list-item v-if="host.details && host.details['host.vddk.version']">
+        <div>
+          <strong>{{ $t('label.host.vddk.version') }}</strong>
+          <div>
+            {{ host.details['host.vddk.version'] }}
+          </div>
+        </div>
+      </a-list-item>
       <a-list-item v-if="host.details && host.details['host.ovftool.version']">
         <div>
           <strong>{{ $t('label.host.ovftool.version') }}</strong>

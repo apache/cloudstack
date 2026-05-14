@@ -3033,7 +3033,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         final String hypervisor = cmd.getHypervisor();
         final String hypervisorVersion = cmd.getHypervisorVersion();
 
-        //throw exception if hypervisor name is not passed, but version is
+        //throw exception if hypervisor name is not passed, but a version is
         if (hypervisorVersion != null && (hypervisor == null || hypervisor.isEmpty())) {
             throw new InvalidParameterValueException("Hypervisor version parameter cannot be used without specifying a hypervisor : XenServer, KVM or VMware");
         }
@@ -3051,7 +3051,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         final SearchCriteria<GuestOSHypervisorVO> sc = sb.create();
 
         if (id != null) {
-            sc.setParameters("id", SearchCriteria.Op.EQ, id);
+            sc.setParameters("id", id);
         }
 
         if (osTypeId != null) {

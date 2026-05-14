@@ -94,6 +94,9 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
     private String password;
     private String sessionKey;
 
+    private String gatewayVersion = null;
+    private int[] parsedVersion = null;
+
     // The session token is valid for 8 hours from the time it was created, unless there has been no activity for 10 minutes
     // Reference: https://cpsdocs.dellemc.com/bundle/PF_REST_API_RG/page/GUID-92430F19-9F44-42B6-B898-87D5307AE59B.html
     private static final long MAX_VALID_SESSION_TIME_IN_HRS = 8;
@@ -621,13 +624,24 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
             throw new CloudRuntimeException("Unable to revert, source snapshot volume and destination volume doesn't belong to same volume tree");
         }
 
+        String requestBody = buildOverwriteVolumeContentRequest(sourceSnapshotVolumeId);
+
         Boolean overwriteVolumeContentStatus = post(
                 "/instances/Volume::" + destVolumeId + "/action/overwriteVolumeContent",
-                String.format("{\"srcVolumeId\":\"%s\",\"allowOnExtManagedVol\":\"TRUE\"}", sourceSnapshotVolumeId), Boolean.class);
+                requestBody, Boolean.class);
         if (overwriteVolumeContentStatus != null) {
             return overwriteVolumeContentStatus;
         }
         return false;
+    }
+
+    private String buildOverwriteVolumeContentRequest(final String srcVolumeId) {
+        if (isVersionAtLeast(4, 0)) {
+            logger.debug("Using PowerFlex 4.0+ overwriteVolumeContent request body");
+            return String.format("{\"srcVolumeId\":\"%s\"}", srcVolumeId);
+        } else {
+            logger.debug("Using pre-4.0 overwriteVolumeContent request body");
+            return String.format("{\"srcVolumeId\":\"%s\",\"allowOnExtManagedVol\":\"TRUE\"}", srcVolumeId);                }
     }
 
     @Override
@@ -1167,5 +1181,50 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
 
         sb.append("\n");
         return sb.toString();
+    }
+
+    private String fetchGatewayVersion() {
+        try {
+            JsonNode node = get("/version", JsonNode.class);
+            if (node != null && node.isTextual()) {
+                return node.asText();
+            }
+            if (node != null && node.has("version")) {
+                return node.get("version").asText();
+            }
+        } catch (Exception e) {
+            logger.warn("Could not fetch PowerFlex gateway version: " + e.getMessage());
+        }
+        return null;
+    }
+
+    private int[] parseVersion(String version) {
+        if (StringUtils.isEmpty(version)) return new int[]{0, 0, 0};
+        String[] parts = version.replaceAll("\"", "").split("\\.");
+        int[] parsed = new int[3];
+        for (int i = 0; i < Math.min(parts.length, 3); i++) {
+            try {
+                parsed[i] = Integer.parseInt(parts[i].trim());
+            } catch (NumberFormatException e) {
+                parsed[i] = 0;
+            }
+        }
+        return parsed;
+    }
+
+    private synchronized int[] getGatewayVersion() {
+        if (parsedVersion == null) {
+            gatewayVersion = fetchGatewayVersion();
+            parsedVersion = parseVersion(gatewayVersion);
+            logger.info("PowerFlex Gateway version detected: " + gatewayVersion
+                    + " => parsed: " + Arrays.toString(parsedVersion));
+        }
+        return parsedVersion;
+    }
+
+    private boolean isVersionAtLeast(int major, int minor) {
+        int[] v = getGatewayVersion();
+        if (v[0] != major) return v[0] > major;
+        return v[1] >= minor;
     }
 }

@@ -101,10 +101,17 @@ encrypt_backup() {
     return 1
   fi
   log -ne "Encrypting backup files with LUKS"
+  # Preserve compression if it was requested upstream — otherwise the
+  # encrypt-step re-convert produces an uncompressed (but encrypted) qcow2,
+  # silently discarding the compression work done earlier (Copilot review).
+  local compress_flag=""
+  if [[ "$COMPRESS" == "true" ]]; then
+    compress_flag="-c"
+  fi
   for img in "$backup_dir"/*.qcow2; do
     [[ -f "$img" ]] || continue
     local tmp_img="${img}.luks"
-    if qemu-img convert -O qcow2 \
+    if qemu-img convert $compress_flag -O qcow2 \
         --object "secret,id=sec0,file=$ENCRYPT_PASSFILE" \
         -o "encrypt.format=luks,encrypt.key-secret=sec0" \
         "$img" "$tmp_img" >> "$logFile" 2>&1; then
@@ -121,14 +128,30 @@ encrypt_backup() {
 verify_backup() {
   local backup_dir="$1"
   local failed=0
+  # If encryption was applied to this backup, qemu-img check has to open the
+  # qcow2 with the same LUKS secret — otherwise every verification call fails
+  # with a "Could not open" error and --verify is unusable on encrypted
+  # backups (Copilot review).
+  local check_secret=()
+  if [[ -n "$ENCRYPT_PASSFILE" && -f "$ENCRYPT_PASSFILE" ]]; then
+    check_secret=(--object "secret,id=sec0,file=$ENCRYPT_PASSFILE")
+  fi
   for img in "$backup_dir"/*.qcow2; do
     [[ -f "$img" ]] || continue
-    if ! qemu-img check "$img" > /dev/null 2>&1; then
+    local check_ok=0
+    if [[ ${#check_secret[@]} -gt 0 ]]; then
+      qemu-img check "${check_secret[@]}" --image-opts \
+        "driver=qcow2,file.filename=$img,encrypt.key-secret=sec0" \
+        > /dev/null 2>&1 && check_ok=1
+    else
+      qemu-img check "$img" > /dev/null 2>&1 && check_ok=1
+    fi
+    if [[ $check_ok -eq 1 ]]; then
+      log -ne "Backup verification passed: $img"
+    else
       echo "Backup verification failed for $img"
       log -ne "Backup verification FAILED: $img"
       failed=1
-    else
-      log -ne "Backup verification passed: $img"
     fi
   done
   if [[ $failed -ne 0 ]]; then
@@ -139,17 +162,42 @@ verify_backup() {
 
 ### Operation methods ###
 
+get_ceph_uuid_from_path() {
+  local fullpath="$1"
+  # disk for rbd => rbd:<pool>/<uuid>:mon_host=<monitor_host>...
+  # sample: rbd:cloudstack/53d5c355-d726-4d3e-9422-046a503a0b12:mon_host=10.0.1.2...
+  local beforeUuid="${fullpath#*/}" # Remove up to first slash after rbd:
+  local volUuid="${beforeUuid%%:*}" # Remove everything after colon to get the uuid
+  echo ""$volUuid""
+}
+
+get_linstor_uuid_from_path() {
+  local fullpath="$1"
+  # disk for linstor => /dev/drbd/by-res/cs-<uuid>/0
+  # sample: /dev/drbd/by-res/cs-53d5c355-d726-4d3e-9422-046a503a0b12/0
+  local beforeUuid="${fullpath#/dev/drbd/by-res/}"
+  local volUuid="${beforeUuid%%/*}"
+  volUuid="${volUuid#cs-}"
+  echo "$volUuid"
+}
+
 backup_running_vm() {
   mount_operation
   mkdir -p "$dest" || { echo "Failed to create backup directory $dest"; exit 1; }
 
   name="root"
   echo "<domainbackup mode='push'><disks>" > $dest/backup.xml
-  for disk in $(virsh -c qemu:///system domblklist $VM --details 2>/dev/null | awk '/disk/{print$3}'); do
-    volpath=$(virsh -c qemu:///system domblklist $VM --details | awk "/$disk/{print $4}" | sed 's/.*\///')
-    echo "<disk name='$disk' backup='yes' type='file' backupmode='full'><driver type='qcow2'/><target file='$dest/$name.$volpath.qcow2' /></disk>" >> $dest/backup.xml
+  while read -r disk fullpath; do
+    if [[ "$fullpath" == /dev/drbd/by-res/* ]]; then
+        volUuid=$(get_linstor_uuid_from_path "$fullpath")
+    else
+        volUuid="${fullpath##*/}"
+    fi
+    echo "<disk name='$disk' backup='yes' type='file' backupmode='full'><driver type='qcow2'/><target file='$dest/$name.$volUuid.qcow2' /></disk>" >> $dest/backup.xml
     name="datadisk"
-  done
+  done < <(
+    virsh -c qemu:///system domblklist "$VM" --details 2>/dev/null | awk '$2=="disk"{print $3, $4}'
+  )
   echo "</disks></domainbackup>" >> $dest/backup.xml
 
   local thaw=0
@@ -205,6 +253,25 @@ backup_running_vm() {
     sleep 5
   done
 
+  # Use qemu-img convert to sparsify linstor backups which get bloated due to virsh backup-begin.
+  name="root"
+  while read -r disk fullpath; do
+    if [[ "$fullpath" != /dev/drbd/by-res/* ]]; then
+      continue
+    fi
+    volUuid=$(get_linstor_uuid_from_path "$fullpath")
+    if ! qemu-img convert -O qcow2 "$dest/$name.$volUuid.qcow2" "$dest/$name.$volUuid.qcow2.tmp" >> "$logFile" 2> >(cat >&2); then
+      echo "qemu-img convert failed for $dest/$name.$volUuid.qcow2"
+      cleanup
+      exit 1
+    fi
+
+    mv "$dest/$name.$volUuid.qcow2.tmp" "$dest/$name.$volUuid.qcow2"
+    name="datadisk"
+  done < <(
+    virsh -c qemu:///system domblklist "$VM" --details 2>/dev/null | awk '$2=="disk"{print $3, $4}'
+  )
+
   rm -f $dest/backup.xml
 
   # Compress backup files if requested
@@ -255,10 +322,9 @@ backup_stopped_vm() {
   name="root"
   for disk in $DISK_PATHS; do
     if [[ "$disk" == rbd:* ]]; then
-      # disk for rbd => rbd:<pool>/<uuid>:mon_host=<monitor_host>...
-      # sample: rbd:cloudstack/53d5c355-d726-4d3e-9422-046a503a0b12:mon_host=10.0.1.2...
-      beforeUuid="${disk#*/}"     # Remove up to first slash after rbd:
-      volUuid="${beforeUuid%%:*}" # Remove everything after colon to get the uuid
+      volUuid=$(get_ceph_uuid_from_path "$disk")
+    elif [[ "$disk" == /dev/drbd/by-res/* ]]; then
+      volUuid=$(get_linstor_uuid_from_path "$disk")
     else
       volUuid="${disk##*/}"
     fi

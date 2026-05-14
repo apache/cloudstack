@@ -52,6 +52,15 @@ import java.util.Objects;
 @ResourceWrapper(handles = TakeBackupCommand.class)
 public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCommand, Answer, LibvirtComputingResource> {
     private static final Integer EXIT_CLEANUP_FAILED = 20;
+
+    // Detail keys exchanged via TakeBackupCommand.getDetails() — single source of truth so
+    // the management-server config wiring, this wrapper, and any future readers don't drift.
+    // (Per Copilot review on apache/cloudstack#12898: avoid scattering string literals.)
+    static final String DETAIL_COMPRESSION = "compression";
+    static final String DETAIL_ENCRYPTION = "encryption";
+    static final String DETAIL_ENCRYPTION_PASSPHRASE = "encryption_passphrase";
+    static final String DETAIL_BANDWIDTH_LIMIT = "bandwidth_limit";
+    static final String DETAIL_INTEGRITY_CHECK = "integrity_check";
     @Override
     public Answer execute(TakeBackupCommand command, LibvirtComputingResource libvirtComputingResource) {
         final String vmName = command.getVmName();
@@ -62,6 +71,7 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
         List<PrimaryDataStoreTO> volumePools = command.getVolumePools();
         final List<String> volumePaths = command.getVolumePaths();
         KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
+        int timeout = command.getWait() > 0 ? command.getWait() * 1000 : libvirtComputingResource.getCmdsTimeout();
 
         List<String> diskPaths = new ArrayList<>();
         if (Objects.nonNull(volumePaths)) {
@@ -93,11 +103,11 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
         File passphraseFile = null;
         Map<String, String> details = command.getDetails();
         if (details != null) {
-            if ("true".equals(details.get("compression"))) {
+            if ("true".equals(details.get(DETAIL_COMPRESSION))) {
                 cmdArgs.add("-c");
             }
-            if ("true".equals(details.get("encryption"))) {
-                String passphrase = details.get("encryption_passphrase");
+            if ("true".equals(details.get(DETAIL_ENCRYPTION))) {
+                String passphrase = details.get(DETAIL_ENCRYPTION_PASSPHRASE);
                 if (passphrase == null || passphrase.isEmpty()) {
                     return new BackupAnswer(command, false, "Encryption is enabled but no passphrase was provided");
                 }
@@ -118,11 +128,11 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
                     return new BackupAnswer(command, false, "Failed to create encryption passphrase file: " + e.getMessage());
                 }
             }
-            String bwLimit = details.get("bandwidth_limit");
+            String bwLimit = details.get(DETAIL_BANDWIDTH_LIMIT);
             if (bwLimit != null && !"0".equals(bwLimit)) {
                 cmdArgs.add("-b"); cmdArgs.add(bwLimit);
             }
-            if ("true".equals(details.get("integrity_check"))) {
+            if ("true".equals(details.get(DETAIL_INTEGRITY_CHECK))) {
                 cmdArgs.add("--verify");
             }
         }
@@ -132,9 +142,9 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
 
         Pair<Integer, String> result;
         try {
-            result = Script.executePipedCommands(commands, libvirtComputingResource.getCmdsTimeout());
+            result = Script.executePipedCommands(commands, timeout);
         } finally {
-            // Clean up passphrase file after backup completes
+            // Clean up passphrase file after backup completes (best-effort).
             if (passphraseFile != null && passphraseFile.exists()) {
                 passphraseFile.delete();
             }

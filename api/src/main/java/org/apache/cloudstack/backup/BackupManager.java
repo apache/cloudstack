@@ -226,7 +226,7 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
      * @param forced Indicates if backup will be force removed or not
      * @return returns operation success
      */
-    boolean deleteBackup(final Long backupId, final Boolean forced);
+    boolean deleteBackup(final Long backupId, final Boolean forced) throws ResourceAllocationException;
 
     void validateBackupForZone(Long zoneId);
 

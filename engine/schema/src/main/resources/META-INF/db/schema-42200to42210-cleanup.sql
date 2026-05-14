@@ -19,4 +19,8 @@
 -- Schema upgrade cleanup from 4.22.0.0 to 4.22.1.0
 --;
 
-DROP VIEW IF EXISTS `cloud`.`account_netstats_view`;
+-- Entries remaining on `cloud`.`resource_reservation` during the upgrade process are stale, so delete them.
+-- This script was added to normalize volume/primary storage reservations that got stuck due to a bug on VM deployment,
+-- but it is more interesting to introduce a smarter logic to clean these stale reservations in the future without the need
+-- for upgrades (for instance, by having a heartbeat_time column for the reservations and automatically cleaning old entries).
+DELETE FROM `cloud`.`resource_reservation`;
