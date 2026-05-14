@@ -694,7 +694,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         // Pre-allocate every cdrom slot at boot. QEMU/IDE refuses to hot-add new cdrom drives, so
         // runtime attachIso can only media-swap into a slot the domain already owns.
-        int totalSlots = Math.max(effectiveMaxCdroms(vm, dest.getHost().getId()), slotsNeededFor(slotToIsoId));
+        int totalSlots = Math.max(effectiveMaxCdroms(vm, dest.getHost().getId(), false), slotsNeededFor(slotToIsoId));
         for (int i = 0; i < totalSlots; i++) {
             int diskSeq = CDROM_PRIMARY_DEVICE_SEQ + i;
             Long isoId = slotToIsoId.get(diskSeq);
@@ -1557,6 +1557,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     }
 
     int effectiveMaxCdroms(VirtualMachine vm, Long hostId) {
+        return effectiveMaxCdroms(vm, hostId, true);
+    }
+
+    int effectiveMaxCdroms(VirtualMachine vm, Long hostId, boolean failOnMisconfig) {
         HostVO host = hostId != null ? _hostDao.findById(hostId) : null;
         Long clusterId = host != null ? host.getClusterId() : null;
         int configuredCap = VmIsoMaxCount.valueIn(clusterId);
@@ -1565,8 +1569,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             String message = String.format(
                     "%s is set to %d but the placement host supports a maximum of %d CD-ROM(s) per Instance; lower %s to %d or less.",
                     VmIsoMaxCount.key(), configuredCap, hypervisorCap, VmIsoMaxCount.key(), hypervisorCap);
-            logger.error(message);
-            throw new InvalidParameterValueException(message);
+            if (failOnMisconfig) {
+                logger.error(message);
+                throw new InvalidParameterValueException(message);
+            }
+            // VM start path: don't block the Instance from booting just because the cap was misconfigured.
+            // The next attach attempt will surface the misconfig loudly via the strict variant.
+            logger.warn("{} Clamping to {} for VM start.", message, hypervisorCap);
+            return hypervisorCap;
         }
         return configuredCap;
     }
