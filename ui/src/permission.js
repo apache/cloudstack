@@ -169,7 +169,7 @@ router.beforeEach((to, from, next) => {
       }
     }
   } else {
-    if (window.location.href.includes('verifyOauth') && to.name === undefined) {
+    if (window.location.search.includes('verifyOauth') && to.name !== 'VerifyOauth') {
       currentURL = new URL(window.location.href)
       urlParams = new URLSearchParams(currentURL.search)
       code = urlParams.get('code')
