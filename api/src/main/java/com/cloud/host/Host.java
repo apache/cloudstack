@@ -60,6 +60,9 @@ public interface Host extends StateObject<Status>, Identity, Partition, HAResour
     String HOST_VDDK_SUPPORT = "host.vddk.support";
     String HOST_VDDK_LIB_DIR = "vddk.lib.dir";
     String HOST_VDDK_VERSION = "host.vddk.version";
+    String HOST_VMWARE_CBT_SUPPORT = "host.vmware.cbt.support";
+    String HOST_QEMU_IMG_VERSION = "host.qemu.img.version";
+    String HOST_QEMU_NBD_VERSION = "host.qemu.nbd.version";
     String HOST_OVFTOOL_VERSION = "host.ovftool.version";
     String HOST_VIRTV2V_VERSION = "host.virtv2v.version";
     String HOST_SSH_PORT = "host.ssh.port";

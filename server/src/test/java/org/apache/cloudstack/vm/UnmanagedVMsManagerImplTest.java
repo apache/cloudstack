@@ -730,6 +730,27 @@ public class UnmanagedVMsManagerImplTest {
         Assert.assertEquals(defaultTemplateName, templateForImportInstance.getName());
     }
 
+    @Test
+    public void testGetVmwareMigrationModeFallsBackToUseVddk() {
+        ImportVmCmd cmd = Mockito.mock(ImportVmCmd.class);
+        Assert.assertEquals(ImportVmCmd.VmwareMigrationMode.OVF, unmanagedVMsManager.getVmwareMigrationMode(cmd, false));
+        Assert.assertEquals(ImportVmCmd.VmwareMigrationMode.VDDK, unmanagedVMsManager.getVmwareMigrationMode(cmd, true));
+    }
+
+    @Test
+    public void testGetVmwareMigrationModeParsesCbt() {
+        ImportVmCmd cmd = Mockito.mock(ImportVmCmd.class);
+        when(cmd.getVmwareMigrationMode()).thenReturn("cbt");
+        Assert.assertEquals(ImportVmCmd.VmwareMigrationMode.CBT, unmanagedVMsManager.getVmwareMigrationMode(cmd, false));
+    }
+
+    @Test(expected = ServerApiException.class)
+    public void testGetVmwareMigrationModeRejectsUnknownMode() {
+        ImportVmCmd cmd = Mockito.mock(ImportVmCmd.class);
+        when(cmd.getVmwareMigrationMode()).thenReturn("not-a-mode");
+        unmanagedVMsManager.getVmwareMigrationMode(cmd, false);
+    }
+
     private enum VcenterParameter {
         EXISTING,
         EXTERNAL,

@@ -152,11 +152,18 @@
                   </a-row>
                 </a-radio-group>
               </a-form-item>
-              <a-form-item name="usevddk" ref="usevddk" v-if="selectedVmwareVcenter">
+              <a-form-item name="vmwaremigrationmode" ref="vmwaremigrationmode" v-if="selectedVmwareVcenter">
                 <template #label>
-                  <tooltip-label :title="$t('label.use.vddk')" :tooltip="apiParams.usevddk ? apiParams.usevddk.description : ''"/>
+                  <tooltip-label :title="$t('label.vmware.migration.mode')" :tooltip="apiParams.vmwaremigrationmode ? apiParams.vmwaremigrationmode.description : ''"/>
                 </template>
-                <a-switch v-model:checked="form.usevddk" @change="onUseVddkChange" />
+                <a-radio-group
+                  v-model:value="form.vmwaremigrationmode"
+                  button-style="solid"
+                  @change="onVmwareMigrationModeChange">
+                  <a-radio-button value="ovf">{{ $t('label.vmware.migration.mode.ovf') }}</a-radio-button>
+                  <a-radio-button value="vddk">{{ $t('label.vmware.migration.mode.vddk') }}</a-radio-button>
+                  <a-radio-button value="cbt">{{ $t('label.vmware.migration.mode.cbt') }}</a-radio-button>
+                </a-radio-group>
               </a-form-item>
               <a-form-item name="forceconverttopool" ref="forceconverttopool" v-if="selectedVmwareVcenter">
                 <template #label>
@@ -176,7 +183,7 @@
                   @handle-checkselectpair-change="updateSelectedKvmHostForConversion"
                 />
               </a-form-item>
-              <a-form-item name="importhostid" ref="importhostid" v-if="!form.usevddk">
+              <a-form-item name="importhostid" ref="importhostid" v-if="form.vmwaremigrationmode === 'ovf'">
                 <check-box-select-pair
                   layout="vertical"
                   v-if="cluster.hypervisortype === 'KVM' && selectedVmwareVcenter"
@@ -190,7 +197,7 @@
               </a-form-item>
               <a-form-item name="convertstorageoption" ref="convertstorageoption">
                 <check-box-select-pair
-                  :key="`convertstorageoption-${form.usevddk ? 'vddk' : 'default'}-${switches.forceConvertToPool ? 'pool' : 'tmp'}`"
+                  :key="`convertstorageoption-${form.vmwaremigrationmode}-${switches.forceConvertToPool ? 'pool' : 'tmp'}`"
                   layout="vertical"
                   v-if="cluster.hypervisortype === 'KVM' && selectedVmwareVcenter"
                   :resourceKey="cluster.id"
@@ -233,7 +240,7 @@
                   :placeholder="$t('label.extra')"
                 />
               </a-form-item>
-              <a-form-item name="forcemstoimportvmfiles" ref="forcemstoimportvmfiles" v-if="selectedVmwareVcenter && !form.usevddk">
+              <a-form-item name="forcemstoimportvmfiles" ref="forcemstoimportvmfiles" v-if="selectedVmwareVcenter && form.vmwaremigrationmode === 'ovf'">
                 <template #label>
                   <tooltip-label :title="$t('label.force.ms.to.import.vm.files')" :tooltip="apiParams.forcemstoimportvmfiles.description"/>
                 </template>
@@ -786,6 +793,7 @@ export default {
       this.formRef = ref()
       this.form = reactive({
         rootdiskid: 0,
+        vmwaremigrationmode: 'ovf',
         usevddk: false,
         migrateallowed: this.switches.migrateAllowed,
         forced: this.switches.forced,
@@ -1050,13 +1058,25 @@ export default {
               host.name = host.name + ' (vddk=' + host.details['host.vddk.version'] + ')'
             }
           }
+          if (this.form.vmwaremigrationmode === 'cbt') {
+            if (host.details['host.vmware.cbt.support'] === 'true' || host.details['host.vmware.cbt.support'] === true) {
+              host.name = host.name + ' (CBT=' + this.$t('label.supported') + ')'
+            } else {
+              host.name = host.name + ' (CBT=' + this.$t('label.not.supported') + ')'
+            }
+            if (host.details['host.qemu.img.version']) {
+              host.name = host.name + ' (qemu-img=' + host.details['host.qemu.img.version'] + ')'
+            }
+            if (host.details['host.qemu.nbd.version']) {
+              host.name = host.name + ' (qemu-nbd=' + host.details['host.qemu.nbd.version'] + ')'
+            }
+          }
         })
 
         // Enable usevddk by default if at least one host has VDDK support
         // Only auto-enable if user hasn't manually modified the setting
         if (hasVddkSupport && !this.form.usevddk && !this.userModifiedVddkSetting) {
-          this.form.usevddk = true
-          this.onUseVddkChange(true, false)
+          this.setVmwareMigrationMode('vddk', false)
         }
       })
     },
@@ -1162,6 +1182,13 @@ export default {
       this.selectedStoragePoolForConversion = null
       this.showStoragePoolsForConversion = false
       this.resetStorageOptionsForConversion()
+    },
+    onVmwareMigrationModeChange (event) {
+      this.setVmwareMigrationMode(event.target.value, true)
+    },
+    setVmwareMigrationMode (mode, isUserChange = true) {
+      this.form.vmwaremigrationmode = mode
+      this.onUseVddkChange(mode === 'vddk' || mode === 'cbt', isUserChange)
     },
     onUseVddkChange (val, isUserChange = true) {
       if (isUserChange) {
@@ -1306,12 +1333,16 @@ export default {
           if (this.vmwareToKvmExtraParams) {
             params.extraparams = this.vmwareToKvmExtraParams
           }
-          if (values.usevddk) {
+          const vmwareMigrationMode = values.vmwaremigrationmode || (values.usevddk ? 'vddk' : 'ovf')
+          params.vmwaremigrationmode = vmwareMigrationMode
+          if (vmwareMigrationMode === 'vddk') {
             params.usevddk = true
             params.forcemstoimportvmfiles = false
-          } else {
+          } else if (vmwareMigrationMode === 'ovf') {
             params.usevddk = false
             params.forcemstoimportvmfiles = values.forcemstoimportvmfiles
+          } else {
+            params.forcemstoimportvmfiles = false
           }
           if (values.forceconverttopool !== undefined) {
             params.forceconverttopool = values.forceconverttopool
@@ -1431,6 +1462,7 @@ export default {
       this.templateType = this.defaultTemplateType()
       this.updateComputeOffering(undefined)
       this.switches = {}
+      this.form.vmwaremigrationmode = 'ovf'
       this.form.usevddk = false
       this.form.forceconverttopool = false
       this.form.forcemstoimportvmfiles = false

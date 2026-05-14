@@ -233,6 +233,51 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             ConfigKey.Kind.CSV,
             null);
 
+    ConfigKey<Integer> VmwareCbtMigrationMinCycles = new ConfigKey<>(Integer.class,
+            "vmware.cbt.migration.min.cycles",
+            "Advanced",
+            "1",
+            "Minimum number of CBT delta synchronization cycles to run before CloudStack can recommend final VMware to KVM cutover",
+            true,
+            ConfigKey.Scope.Global,
+            null);
+
+    ConfigKey<Integer> VmwareCbtMigrationMaxCycles = new ConfigKey<>(Integer.class,
+            "vmware.cbt.migration.max.cycles",
+            "Advanced",
+            "5",
+            "Maximum number of CBT delta synchronization cycles to run before CloudStack recommends final VMware to KVM cutover",
+            true,
+            ConfigKey.Scope.Global,
+            null);
+
+    ConfigKey<Integer> VmwareCbtMigrationQuietCycles = new ConfigKey<>(Integer.class,
+            "vmware.cbt.migration.quiet.cycles",
+            "Advanced",
+            "2",
+            "Number of consecutive quiet CBT delta synchronization cycles required before CloudStack recommends final VMware to KVM cutover",
+            true,
+            ConfigKey.Scope.Global,
+            null);
+
+    ConfigKey<Long> VmwareCbtMigrationQuietBytes = new ConfigKey<>(Long.class,
+            "vmware.cbt.migration.quiet.bytes",
+            "Advanced",
+            "1073741824",
+            "Maximum changed bytes in a CBT delta synchronization cycle for the cycle to be considered quiet",
+            true,
+            ConfigKey.Scope.Global,
+            null);
+
+    ConfigKey<Long> VmwareCbtMigrationQuietDirtyRate = new ConfigKey<>(Long.class,
+            "vmware.cbt.migration.quiet.dirty.rate",
+            "Advanced",
+            "16777216",
+            "Maximum changed bytes per second in a CBT delta synchronization cycle for the cycle to be considered quiet",
+            true,
+            ConfigKey.Scope.Global,
+            null);
+
     @Inject
     private AgentManager agentManager;
     @Inject
@@ -1663,7 +1708,12 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         boolean forceConvertToPool = cmd.getForceConvertToPool();
         Long guestOsId = cmd.getGuestOsId();
         boolean forceMsToImportVmFiles = Boolean.TRUE.equals(cmd.getForceMsToImportVmFiles());
-        boolean useVddk = cmd.getUseVddk();
+        ImportVmCmd.VmwareMigrationMode vmwareMigrationMode = getVmwareMigrationMode(cmd, cmd.getUseVddk());
+        if (ImportVmCmd.VmwareMigrationMode.CBT == vmwareMigrationMode) {
+            throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR,
+                    "VMware CBT warm migration is not executable yet. Use OVF or VDDK migration mode until CBT replication support is implemented.");
+        }
+        boolean useVddk = ImportVmCmd.VmwareMigrationMode.VDDK == vmwareMigrationMode;
 
         if ((existingVcenterId == null && vcenter == null) || (existingVcenterId != null && vcenter != null)) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
@@ -1789,6 +1839,14 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 removeTemplate(temporaryConvertLocation, ovfTemplateOnConvertLocation);
             }
             ReservationHelper.closeAll(reservations);
+        }
+    }
+
+    protected ImportVmCmd.VmwareMigrationMode getVmwareMigrationMode(ImportVmCmd cmd, boolean useVddkFallback) {
+        try {
+            return ImportVmCmd.VmwareMigrationMode.fromValue(cmd.getVmwareMigrationMode(), useVddkFallback);
+        } catch (IllegalArgumentException e) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.getMessage());
         }
     }
 
@@ -3177,7 +3235,12 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 ThreadsOnMSToImportVMwareVMFiles,
                 ThreadsOnKVMHostToImportVMwareVMFiles,
                 ConvertVmwareInstanceToKvmExtraParamsAllowed,
-                ConvertVmwareInstanceToKvmExtraParamsAllowedList
+                ConvertVmwareInstanceToKvmExtraParamsAllowedList,
+                VmwareCbtMigrationMinCycles,
+                VmwareCbtMigrationMaxCycles,
+                VmwareCbtMigrationQuietCycles,
+                VmwareCbtMigrationQuietBytes,
+                VmwareCbtMigrationQuietDirtyRate
         };
     }
 }

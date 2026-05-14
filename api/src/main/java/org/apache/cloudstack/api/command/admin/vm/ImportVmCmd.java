@@ -57,6 +57,24 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
     @Inject
     public VmImportService vmImportService;
 
+    public enum VmwareMigrationMode {
+        OVF,
+        VDDK,
+        CBT;
+
+        public static VmwareMigrationMode fromValue(String value, boolean useVddkFallback) {
+            if (StringUtils.isBlank(value)) {
+                return useVddkFallback ? VDDK : OVF;
+            }
+            for (VmwareMigrationMode mode : values()) {
+                if (mode.name().equalsIgnoreCase(value)) {
+                    return mode;
+                }
+            }
+            throw new IllegalArgumentException(String.format("Unsupported VMware migration mode: %s", value));
+        }
+    }
+
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
@@ -186,6 +204,13 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
                     "This parameter is mutually exclusive with " + ApiConstants.FORCE_MS_TO_IMPORT_VM_FILES + ".")
     private Boolean useVddk;
 
+    @Parameter(name = ApiConstants.VMWARE_MIGRATION_MODE,
+            type = CommandType.STRING,
+            since = "4.22.1",
+            description = "(only for importing VMs from VMware to KVM) optional - migration mode to use. Valid values are OVF, VDDK, and CBT. " +
+                    "When omitted, CloudStack preserves the existing usevddk behavior.")
+    private String vmwareMigrationMode;
+
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -265,6 +290,10 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
 
     public boolean getUseVddk() {
         return BooleanUtils.toBooleanDefaultIfNull(useVddk, true);
+    }
+
+    public String getVmwareMigrationMode() {
+        return vmwareMigrationMode;
     }
 
     public String getTmpPath() {

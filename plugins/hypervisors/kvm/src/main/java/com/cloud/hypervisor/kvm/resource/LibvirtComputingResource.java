@@ -18,10 +18,13 @@ package com.cloud.hypervisor.kvm.resource;
 
 import static com.cloud.host.Host.HOST_INSTANCE_CONVERSION;
 import static com.cloud.host.Host.HOST_OVFTOOL_VERSION;
+import static com.cloud.host.Host.HOST_QEMU_IMG_VERSION;
+import static com.cloud.host.Host.HOST_QEMU_NBD_VERSION;
 import static com.cloud.host.Host.HOST_VDDK_LIB_DIR;
 import static com.cloud.host.Host.HOST_VDDK_SUPPORT;
 import static com.cloud.host.Host.HOST_VDDK_VERSION;
 import static com.cloud.host.Host.HOST_VIRTV2V_VERSION;
+import static com.cloud.host.Host.HOST_VMWARE_CBT_SUPPORT;
 import static com.cloud.host.Host.HOST_VOLUME_ENCRYPTION;
 import static org.apache.cloudstack.utils.linux.KVMHostInfo.isHostS390x;
 
@@ -369,6 +372,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public static final String UBUNTU_WINDOWS_GUEST_CONVERSION_SUPPORTED_CHECK_CMD = "dpkg -l virtio-win";
     public static final String UBUNTU_NBDKIT_PKG_CHECK_CMD = "dpkg -l nbdkit";
     public static final String VDDK_AUTODETECT_PATH_CMD = "find / -type d -name 'vmware-vix-disklib-distrib' 2>/dev/null | head -n 1";
+    public static final String QEMU_IMG_SUPPORTED_CHECK_CMD = "qemu-img --version";
+    public static final String QEMU_NBD_SUPPORTED_CHECK_CMD = "qemu-nbd --version";
 
     public static final int LIBVIRT_CGROUP_CPU_SHARES_MIN = 2;
     public static final int LIBVIRT_CGROUP_CPU_SHARES_MAX = 262144;
@@ -4286,11 +4291,20 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         boolean instanceConversionSupported = hostSupportsInstanceConversion();
         cmd.getHostDetails().put(HOST_INSTANCE_CONVERSION, String.valueOf(instanceConversionSupported));
         cmd.getHostDetails().put(HOST_VDDK_SUPPORT, String.valueOf(hostSupportsVddk()));
+        cmd.getHostDetails().put(HOST_VMWARE_CBT_SUPPORT, String.valueOf(hostSupportsVmwareCbtMigration()));
         if (StringUtils.isNotBlank(vddkLibDir)) {
             cmd.getHostDetails().put(HOST_VDDK_LIB_DIR, vddkLibDir);
         }
         if (StringUtils.isNotBlank(vddkVersion)) {
             cmd.getHostDetails().put(HOST_VDDK_VERSION, vddkVersion);
+        }
+        String qemuImgVersion = getQemuImgVersion();
+        if (StringUtils.isNotBlank(qemuImgVersion)) {
+            cmd.getHostDetails().put(HOST_QEMU_IMG_VERSION, qemuImgVersion);
+        }
+        String qemuNbdVersion = getQemuNbdVersion();
+        if (StringUtils.isNotBlank(qemuNbdVersion)) {
+            cmd.getHostDetails().put(HOST_QEMU_NBD_VERSION, qemuNbdVersion);
         }
         if (instanceConversionSupported) {
             cmd.getHostDetails().put(HOST_VIRTV2V_VERSION, getHostVirtV2vVersion());
@@ -6026,6 +6040,51 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             effectiveVddkLibDir = detectVddkLibDir();
         }
         return hostSupportsInstanceConversion() && isVddkLibDirValid(effectiveVddkLibDir) && StringUtils.isNotBlank(detectVddkVersion());
+    }
+
+    public boolean hostSupportsVmwareCbtMigration() {
+        return hostSupportsVddk()
+                && Script.runSimpleBashScriptForExitValue(QEMU_IMG_SUPPORTED_CHECK_CMD) == 0
+                && Script.runSimpleBashScriptForExitValue(QEMU_NBD_SUPPORTED_CHECK_CMD) == 0;
+    }
+
+    public String getQemuImgVersion() {
+        return detectFirstLineVersion("qemu-img", "--version");
+    }
+
+    public String getQemuNbdVersion() {
+        return detectFirstLineVersion("qemu-nbd", "--version");
+    }
+
+    protected String detectFirstLineVersion(String... command) {
+        try {
+            ProcessBuilder pb = new ProcessBuilder(command);
+            Process process = pb.start();
+
+            String output = new String(process.getInputStream().readAllBytes());
+            process.waitFor();
+
+            for (String line : output.split("\\R")) {
+                String trimmed = StringUtils.trimToNull(line);
+                if (StringUtils.isNotBlank(trimmed)) {
+                    return parseVersionToken(trimmed);
+                }
+            }
+        } catch (Exception e) {
+            LOGGER.debug("Failed to detect version for command {}: {}", String.join(" ", command), e.getMessage());
+        }
+        return null;
+    }
+
+    protected String parseVersionToken(String versionLine) {
+        String versionMarker = " version ";
+        int markerIndex = versionLine.indexOf(versionMarker);
+        if (markerIndex < 0) {
+            return versionLine;
+        }
+        String value = versionLine.substring(markerIndex + versionMarker.length());
+        String[] parts = value.split("\\s+", 2);
+        return parts.length > 0 ? parts[0] : versionLine;
     }
 
     protected boolean isVddkLibDirValid(String path) {
