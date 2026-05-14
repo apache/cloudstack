@@ -563,6 +563,7 @@
             @close-action="closeImportUnmanagedInstanceForm"
             @loading-changed="updateManageInstanceActionLoading"
             @track-import-jobid="trackImportJobId"
+            @vmware-cbt-migration-started="onVmwareCbtMigrationStarted"
           />
         </a-modal>
       </div>
@@ -1296,6 +1297,10 @@ export default {
       }).catch(error => {
         this.$notifyError(error)
       })
+    },
+    onVmwareCbtMigrationStarted () {
+      this.activeTabKey = 3
+      this.fetchVmwareCbtMigrations()
     },
     fetchInstances () {
       this.fetchUnmanagedInstances()

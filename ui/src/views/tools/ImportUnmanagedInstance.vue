@@ -434,7 +434,9 @@
               </a-row>
               <div :span="24" class="action-button">
                 <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-                <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+                <a-button :loading="loading" type="primary" @click="handleSubmit">
+                  {{ form.vmwaremigrationmode === 'cbt' ? $t('label.start') : $t('label.ok') }}
+                </a-button>
               </div>
             </a-form>
           </a-card>
@@ -525,7 +527,7 @@ export default {
       required: false
     },
     selectedVmwareVcenter: {
-      type: Array,
+      type: Object,
       required: false
     },
     loadingGuestOsMappings: {
@@ -1257,6 +1259,9 @@ export default {
             params.networkid = values.networkid
           }
         }
+        if (this.isVmwareCbtStart(values)) {
+          return this.startVmwareCbtMigration(values)
+        }
         if (!this.computeOffering || !this.computeOffering.id) {
           this.$notification.error({
             message: this.$t('message.request.failed'),
@@ -1448,6 +1453,52 @@ export default {
         })
       }).catch(() => {
         this.$emit('loading-changed', false)
+      })
+    },
+    isVmwareCbtStart (values) {
+      return this.selectedVmwareVcenter && (values.vmwaremigrationmode || 'ovf') === 'cbt'
+    },
+    startVmwareCbtMigration (values) {
+      if (!('startVmwareCbtMigration' in this.$store.getters.apis)) {
+        this.$notification.error({
+          message: this.$t('message.request.failed'),
+          description: this.$t('message.api.not.available')
+        })
+        return
+      }
+
+      const params = {
+        zoneid: this.zoneid,
+        clusterid: this.cluster.id,
+        displayname: values.displayname,
+        sourcevmname: this.resource.name,
+        hostip: this.resource.hostname,
+        clustername: this.resource.clustername
+      }
+      if (this.selectedVmwareVcenter.existingvcenterid) {
+        params.existingvcenterid = this.selectedVmwareVcenter.existingvcenterid
+      } else {
+        params.vcenter = this.selectedVmwareVcenter.vcenter
+        params.datacentername = this.selectedVmwareVcenter.datacentername
+        params.username = this.selectedVmwareVcenter.username
+        params.password = this.selectedVmwareVcenter.password
+      }
+      if (this.selectedKvmHostForConversion) {
+        params.convertinstancehostid = this.selectedKvmHostForConversion
+      }
+      const selectedPoolForConversion = values.convertstoragepoolid || this.selectedStoragePoolForConversion
+      if (selectedPoolForConversion) {
+        params.convertinstancepoolid = selectedPoolForConversion
+      }
+
+      this.updateLoading(true)
+      postAPI('startVmwareCbtMigration', params).then(() => {
+        this.$emit('vmware-cbt-migration-started')
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.closeAction()
+        this.updateLoading(false)
       })
     },
     updateLoading (value) {
