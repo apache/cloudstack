@@ -113,24 +113,48 @@ public class VmwareCbtMigrationCycleVO implements VmwareCbtMigrationCycle {
         return snapshotMor;
     }
 
+    public void setSnapshotMor(String snapshotMor) {
+        this.snapshotMor = snapshotMor;
+    }
+
     public Long getChangedBytes() {
         return changedBytes;
+    }
+
+    public void setChangedBytes(Long changedBytes) {
+        this.changedBytes = changedBytes;
     }
 
     public Long getDirtyRate() {
         return dirtyRate;
     }
 
+    public void setDirtyRate(Long dirtyRate) {
+        this.dirtyRate = dirtyRate;
+    }
+
     public Long getDuration() {
         return duration;
+    }
+
+    public void setDuration(Long duration) {
+        this.duration = duration;
     }
 
     public State getState() {
         return state;
     }
 
+    public void setState(State state) {
+        this.state = state;
+    }
+
     public String getDescription() {
         return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public Date getCreated() {
@@ -139,5 +163,9 @@ public class VmwareCbtMigrationCycleVO implements VmwareCbtMigrationCycle {
 
     public Date getUpdated() {
         return updated;
+    }
+
+    public void setUpdated(Date updated) {
+        this.updated = updated;
     }
 }

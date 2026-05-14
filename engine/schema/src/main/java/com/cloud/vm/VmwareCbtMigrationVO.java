@@ -251,16 +251,32 @@ public class VmwareCbtMigrationVO implements VmwareCbtMigration {
         return quietCycles;
     }
 
+    public void setQuietCycles(int quietCycles) {
+        this.quietCycles = quietCycles;
+    }
+
     public long getTotalChangedBytes() {
         return totalChangedBytes;
+    }
+
+    public void setTotalChangedBytes(long totalChangedBytes) {
+        this.totalChangedBytes = totalChangedBytes;
     }
 
     public Long getLastChangedBytes() {
         return lastChangedBytes;
     }
 
+    public void setLastChangedBytes(Long lastChangedBytes) {
+        this.lastChangedBytes = lastChangedBytes;
+    }
+
     public Long getLastDirtyRate() {
         return lastDirtyRate;
+    }
+
+    public void setLastDirtyRate(Long lastDirtyRate) {
+        this.lastDirtyRate = lastDirtyRate;
     }
 
     public Date getCreated() {

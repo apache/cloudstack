@@ -135,20 +135,40 @@ public class VmwareCbtMigrationDiskVO implements VmwareCbtMigrationDisk {
         return targetPath;
     }
 
+    public void setTargetPath(String targetPath) {
+        this.targetPath = targetPath;
+    }
+
     public String getTargetFormat() {
         return targetFormat;
+    }
+
+    public void setTargetFormat(String targetFormat) {
+        this.targetFormat = targetFormat;
     }
 
     public String getChangeId() {
         return changeId;
     }
 
+    public void setChangeId(String changeId) {
+        this.changeId = changeId;
+    }
+
     public String getSnapshotMor() {
         return snapshotMor;
     }
 
+    public void setSnapshotMor(String snapshotMor) {
+        this.snapshotMor = snapshotMor;
+    }
+
     public State getState() {
         return state;
+    }
+
+    public void setState(State state) {
+        this.state = state;
     }
 
     public Date getCreated() {
@@ -157,5 +177,9 @@ public class VmwareCbtMigrationDiskVO implements VmwareCbtMigrationDisk {
 
     public Date getUpdated() {
         return updated;
+    }
+
+    public void setUpdated(Date updated) {
+        this.updated = updated;
     }
 }

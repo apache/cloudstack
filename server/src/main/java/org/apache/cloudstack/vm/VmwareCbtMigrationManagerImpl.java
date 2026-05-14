@@ -17,6 +17,7 @@
 package org.apache.cloudstack.vm;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -34,24 +35,43 @@ import org.apache.cloudstack.api.response.VmwareCbtMigrationResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
+import com.cloud.agent.api.VmwareCbtCleanupCommand;
+import com.cloud.agent.api.VmwareCbtCutoverCommand;
+import com.cloud.agent.api.VmwareCbtMigrationAnswer;
+import com.cloud.agent.api.VmwareCbtSyncCommand;
+import com.cloud.agent.api.to.RemoteInstanceTO;
+import com.cloud.agent.api.to.VmwareCbtDiskTO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.VmwareDatacenterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VmwareDatacenterDao;
+import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.OperationTimedoutException;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
+import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.resource.ResourceState;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.utils.Pair;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VmwareCbtMigrationCycleVO;
+import com.cloud.vm.VmwareCbtMigrationDiskVO;
 import com.cloud.vm.VmwareCbtMigrationVO;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.VmwareCbtMigrationCycleDao;
 import com.cloud.vm.dao.VmwareCbtMigrationDao;
+import com.cloud.vm.dao.VmwareCbtMigrationDiskDao;
 
 public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager {
 
@@ -73,6 +93,12 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager 
     private AccountService accountService;
     @Inject
     private UserVmDao userVmDao;
+    @Inject
+    private VmwareCbtMigrationDiskDao vmwareCbtMigrationDiskDao;
+    @Inject
+    private VmwareCbtMigrationCycleDao vmwareCbtMigrationCycleDao;
+    @Inject
+    private AgentManager agentManager;
 
     @Override
     public List<Class<?>> getCommands() {
@@ -94,7 +120,7 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager 
 
         DataCenterVO zone = getZone(cmd.getZoneId());
         ClusterVO destinationCluster = getDestinationCluster(cmd.getClusterId(), zone.getId());
-        HostVO convertHost = getConvertHost(cmd.getConvertInstanceHostId(), destinationCluster);
+        HostVO convertHost = selectCbtHost(cmd.getConvertInstanceHostId(), destinationCluster);
         StoragePoolVO storagePool = getStoragePool(cmd.getStoragePoolId(), zone, destinationCluster);
 
         String sourceVmName = StringUtils.trimToNull(cmd.getSourceVmName());
@@ -138,22 +164,84 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager 
     public VmwareCbtMigrationResponse syncVmwareCbtMigration(SyncVmwareCbtMigrationCmd cmd) {
         VmwareCbtMigrationVO migration = getMigration(cmd.getId());
         rejectTerminalMigration(migration, "synchronize");
-        throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR,
-                "VMware CBT delta synchronization is not executable yet. The migration record is ready for the future replication worker.");
+        HostVO cbtHost = getCbtHostForMigration(migration);
+        int cycleNumber = migration.getCompletedCycles() + 1;
+        VmwareCbtMigrationCycleVO cycle = new VmwareCbtMigrationCycleVO(migration.getId(), cycleNumber);
+        cycle.setState(VmwareCbtMigrationCycle.State.CopyingChangedBlocks);
+        cycle.setDescription("Dispatching CBT delta synchronization to KVM agent");
+        cycle.setUpdated(new Date());
+        cycle = vmwareCbtMigrationCycleDao.persist(cycle);
+
+        migration.setState(VmwareCbtMigration.State.Replicating);
+        migration.setCurrentStep(String.format("Running CBT delta synchronization cycle %s", cycleNumber));
+        migration.setLastError(null);
+        migration.setUpdated(new Date());
+        vmwareCbtMigrationDao.update(migration.getId(), migration);
+
+        VmwareCbtSyncCommand syncCommand = new VmwareCbtSyncCommand(migration.getUuid(), createRemoteInstance(migration),
+                getDiskTransferObjects(migration), Collections.emptyList(), cycleNumber, null, false);
+        syncCommand.setWait(3600);
+
+        VmwareCbtMigrationAnswer answer = sendVmwareCbtCommand(cbtHost, syncCommand, "synchronize", migration.getUuid());
+        if (!answer.getResult()) {
+            markCycleFailed(cycle, answer.getDetails());
+            markMigrationFailed(migration, "CBT delta synchronization failed", answer.getDetails());
+            return createVmwareCbtMigrationResponse(vmwareCbtMigrationDao.findById(migration.getId()));
+        }
+
+        cycle.setState(VmwareCbtMigrationCycle.State.Completed);
+        cycle.setChangedBytes(answer.getChangedBytes());
+        cycle.setDirtyRate(answer.getDirtyRateBytesPerSecond());
+        cycle.setDuration(answer.getDurationSeconds() * 1000);
+        cycle.setDescription(answer.getDetails());
+        cycle.setUpdated(new Date());
+        vmwareCbtMigrationCycleDao.update(cycle.getId(), cycle);
+
+        migration.setCompletedCycles(cycleNumber);
+        migration.setTotalChangedBytes(migration.getTotalChangedBytes() + answer.getChangedBytes());
+        migration.setLastChangedBytes(answer.getChangedBytes());
+        migration.setLastDirtyRate(answer.getDirtyRateBytesPerSecond());
+        migration.setState(answer.getReadyForCutover() ? VmwareCbtMigration.State.ReadyForCutover : VmwareCbtMigration.State.Replicating);
+        migration.setCurrentStep(answer.getReadyForCutover() ? "Ready for final cutover" : "CBT delta synchronization completed");
+        migration.setUpdated(new Date());
+        vmwareCbtMigrationDao.update(migration.getId(), migration);
+        return createVmwareCbtMigrationResponse(migration);
     }
 
     @Override
     public VmwareCbtMigrationResponse cutoverVmwareCbtMigration(CutoverVmwareCbtMigrationCmd cmd) {
         VmwareCbtMigrationVO migration = getMigration(cmd.getId());
         rejectTerminalMigration(migration, "cut over");
-        throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR,
-                "VMware CBT cutover is not executable yet. Final cutover will use virt-v2v after the CBT replication worker is implemented.");
+        HostVO cbtHost = getCbtHostForMigration(migration);
+
+        migration.setState(VmwareCbtMigration.State.CuttingOver);
+        migration.setCurrentStep("Running final CBT cutover");
+        migration.setLastError(null);
+        migration.setUpdated(new Date());
+        vmwareCbtMigrationDao.update(migration.getId(), migration);
+
+        VmwareCbtCutoverCommand cutoverCommand = new VmwareCbtCutoverCommand(migration.getUuid(), createRemoteInstance(migration),
+                getDiskTransferObjects(migration), migration.getCompletedCycles() + 1, true);
+        cutoverCommand.setWait(3600);
+
+        VmwareCbtMigrationAnswer answer = sendVmwareCbtCommand(cbtHost, cutoverCommand, "cut over", migration.getUuid());
+        if (!answer.getResult()) {
+            markMigrationFailed(migration, "CBT cutover failed", answer.getDetails());
+            return createVmwareCbtMigrationResponse(vmwareCbtMigrationDao.findById(migration.getId()));
+        }
+
+        migration.setState(VmwareCbtMigration.State.Completed);
+        migration.setCurrentStep("Completed");
+        migration.setUpdated(new Date());
+        vmwareCbtMigrationDao.update(migration.getId(), migration);
+        return createVmwareCbtMigrationResponse(migration);
     }
 
     @Override
     public VmwareCbtMigrationResponse cancelVmwareCbtMigration(CancelVmwareCbtMigrationCmd cmd) {
         VmwareCbtMigrationVO migration = getMigration(cmd.getId());
         if (!migration.getState().isTerminal()) {
+            sendCleanupCommandIfPossible(migration);
             migration.setState(VmwareCbtMigration.State.Cancelled);
             migration.setCurrentStep("Cancelled");
             migration.setUpdated(new Date());
@@ -184,19 +272,33 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager 
         return cluster;
     }
 
-    private HostVO getConvertHost(Long hostId, ClusterVO destinationCluster) {
+    private HostVO selectCbtHost(Long hostId, ClusterVO destinationCluster) {
         if (hostId == null) {
-            return null;
+            List<HostVO> hosts = hostDao.listByClusterHypervisorTypeAndHostCapability(destinationCluster.getId(),
+                    destinationCluster.getHypervisorType(), Host.HOST_VMWARE_CBT_SUPPORT);
+            if (CollectionUtils.isEmpty(hosts)) {
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+                        String.format("Could not find an enabled KVM host in cluster %s that reports VMware CBT migration support", destinationCluster.getName()));
+            }
+            return hosts.get(0);
         }
         HostVO host = hostDao.findById(hostId);
         if (host == null) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Unable to find conversion host with ID %s", hostId));
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Unable to find CBT migration host with ID %s", hostId));
         }
         if (host.getClusterId() == null || host.getClusterId() != destinationCluster.getId()) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Conversion host must belong to the destination KVM cluster");
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "CBT migration host must belong to the destination KVM cluster");
         }
         if (Hypervisor.HypervisorType.KVM != host.getHypervisorType()) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Conversion host must be a KVM host");
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "CBT migration host must be a KVM host");
+        }
+        if (host.getType() != Host.Type.Routing || host.getStatus() != Status.Up || host.getResourceState() != ResourceState.Enabled) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "CBT migration host must be an enabled, running routing host");
+        }
+        hostDao.loadDetails(host);
+        if (!Boolean.parseBoolean(host.getDetail(Host.HOST_VMWARE_CBT_SUPPORT))) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+                    String.format("CBT migration host %s does not report VMware CBT migration support", host.getName()));
         }
         return host;
     }
@@ -264,6 +366,74 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager 
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
                     String.format("Cannot %s VMware CBT migration %s because it is already in state %s",
                             action, migration.getUuid(), migration.getState()));
+        }
+    }
+
+    private HostVO getCbtHostForMigration(VmwareCbtMigrationVO migration) {
+        ClusterVO destinationCluster = clusterDao.findById(migration.getDestinationClusterId());
+        if (destinationCluster == null) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to find destination cluster for VMware CBT migration");
+        }
+        if (migration.getConvertHostId() != null) {
+            return selectCbtHost(migration.getConvertHostId(), destinationCluster);
+        }
+        return selectCbtHost(null, destinationCluster);
+    }
+
+    private RemoteInstanceTO createRemoteInstance(VmwareCbtMigrationVO migration) {
+        return new RemoteInstanceTO(migration.getSourceVmName(), null, migration.getVcenter(), null, null,
+                migration.getDatacenter(), migration.getSourceCluster(), migration.getSourceHost());
+    }
+
+    private List<VmwareCbtDiskTO> getDiskTransferObjects(VmwareCbtMigrationVO migration) {
+        List<VmwareCbtMigrationDiskVO> disks = vmwareCbtMigrationDiskDao.listByMigrationId(migration.getId());
+        List<VmwareCbtDiskTO> diskTOs = new ArrayList<>();
+        for (VmwareCbtMigrationDiskVO disk : disks) {
+            diskTOs.add(new VmwareCbtDiskTO(disk.getSourceDiskId(), disk.getSourceDiskPath(), disk.getDatastoreName(),
+                    disk.getTargetPath(), disk.getTargetFormat(), disk.getChangeId(), disk.getSnapshotMor(),
+                    disk.getCapacityBytes() == null ? 0L : disk.getCapacityBytes()));
+        }
+        return diskTOs;
+    }
+
+    private VmwareCbtMigrationAnswer sendVmwareCbtCommand(HostVO host, Command command, String action, String migrationUuid) {
+        try {
+            Answer answer = agentManager.send(host.getId(), command);
+            if (answer instanceof VmwareCbtMigrationAnswer) {
+                return (VmwareCbtMigrationAnswer) answer;
+            }
+            return new VmwareCbtMigrationAnswer(command, answer.getResult(), answer.getDetails(), migrationUuid);
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
+            String message = String.format("Failed to %s VMware CBT migration %s on host %s due to: %s",
+                    action, migrationUuid, host.getName(), e.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, message, e);
+        }
+    }
+
+    private void markCycleFailed(VmwareCbtMigrationCycleVO cycle, String details) {
+        cycle.setState(VmwareCbtMigrationCycle.State.Failed);
+        cycle.setDescription(details);
+        cycle.setUpdated(new Date());
+        vmwareCbtMigrationCycleDao.update(cycle.getId(), cycle);
+    }
+
+    private void markMigrationFailed(VmwareCbtMigrationVO migration, String currentStep, String details) {
+        migration.setState(VmwareCbtMigration.State.Failed);
+        migration.setCurrentStep(currentStep);
+        migration.setLastError(details);
+        migration.setUpdated(new Date());
+        vmwareCbtMigrationDao.update(migration.getId(), migration);
+    }
+
+    private void sendCleanupCommandIfPossible(VmwareCbtMigrationVO migration) {
+        try {
+            HostVO cbtHost = getCbtHostForMigration(migration);
+            VmwareCbtCleanupCommand cleanupCommand = new VmwareCbtCleanupCommand(migration.getUuid(), getDiskTransferObjects(migration),
+                    true, true, true);
+            cleanupCommand.setWait(300);
+            sendVmwareCbtCommand(cbtHost, cleanupCommand, "clean up", migration.getUuid());
+        } catch (ServerApiException e) {
+            migration.setLastError(e.getDescription());
         }
     }
 
