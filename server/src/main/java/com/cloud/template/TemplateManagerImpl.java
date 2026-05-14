@@ -36,6 +36,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.cpu.CPU;
 import com.cloud.resourcelimit.CheckedReservation;
+import com.cloud.user.dao.UserDataDao;
 import com.cloud.utils.UriUtils;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -328,6 +329,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Inject
     private ReservationDao reservationDao;
+
+    @Inject
+    private UserDataDao userDataDao;
 
     private TemplateAdapter getAdapter(HypervisorType type) {
         TemplateAdapter adapter = null;
@@ -2532,12 +2536,17 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         _accountMgr.checkAccess(caller, AccessType.OperateEntry, true, template);
 
-        template.setUserDataId(userDataId);
         if (userDataId != null) {
+            UserData userData = userDataDao.findById(userDataId);
+            if (userData == null) {
+                throw new InvalidParameterValueException("Unable to find user data with the specified ID.");
+            }
+            _accountMgr.checkAccess(caller, null, false, userData);
             template.setUserDataLinkPolicy(overridePolicy);
         } else {
             template.setUserDataLinkPolicy(null);
         }
+        template.setUserDataId(userDataId);
         _tmpltDao.update(template.getId(), template);
 
         return _tmpltDao.findById(template.getId());

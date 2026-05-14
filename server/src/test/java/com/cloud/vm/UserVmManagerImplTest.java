@@ -949,7 +949,6 @@ public class UserVmManagerImplTest {
 
         when(userVmVoMock.getState()).thenReturn(VirtualMachine.State.Stopped);
 
-        when(cmd.getUserData()).thenReturn("testUserdata");
         when(cmd.getUserdataId()).thenReturn(1L);
 
         try {
