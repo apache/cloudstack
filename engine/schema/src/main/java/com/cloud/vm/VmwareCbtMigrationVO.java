@@ -107,6 +107,15 @@ public class VmwareCbtMigrationVO implements VmwareCbtMigration {
     @Column(name = "source_vm_name")
     private String sourceVmName;
 
+    @Column(name = "vddk_lib_dir")
+    private String vddkLibDir;
+
+    @Column(name = "vddk_transports")
+    private String vddkTransports;
+
+    @Column(name = "vddk_thumbprint")
+    private String vddkThumbprint;
+
     @Column(name = "state")
     @Enumerated(value = EnumType.STRING)
     private State state;
@@ -224,6 +233,30 @@ public class VmwareCbtMigrationVO implements VmwareCbtMigration {
 
     public String getSourceVmName() {
         return sourceVmName;
+    }
+
+    public String getVddkLibDir() {
+        return vddkLibDir;
+    }
+
+    public void setVddkLibDir(String vddkLibDir) {
+        this.vddkLibDir = vddkLibDir;
+    }
+
+    public String getVddkTransports() {
+        return vddkTransports;
+    }
+
+    public void setVddkTransports(String vddkTransports) {
+        this.vddkTransports = vddkTransports;
+    }
+
+    public String getVddkThumbprint() {
+        return vddkThumbprint;
+    }
+
+    public void setVddkThumbprint(String vddkThumbprint) {
+        this.vddkThumbprint = vddkThumbprint;
     }
 
     public State getState() {

@@ -16,6 +16,9 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.vm;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -33,6 +36,7 @@ import org.apache.cloudstack.api.response.VmwareDatacenterResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.vm.VmwareCbtMigrationManager;
+import org.apache.commons.collections.MapUtils;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -106,6 +110,10 @@ public class StartVmwareCbtMigrationCmd extends BaseCmd {
             description = "optional primary storage pool for converted disks")
     private Long storagePoolId;
 
+    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP,
+            description = "optional VDDK details for CBT replication, such as vddk.lib.dir, vddk.transports and vddk.thumbprint")
+    private Map details;
+
     public Long getZoneId() {
         return zoneId;
     }
@@ -156,6 +164,27 @@ public class StartVmwareCbtMigrationCmd extends BaseCmd {
 
     public Long getStoragePoolId() {
         return storagePoolId;
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<String, String> getDetails() {
+        Map<String, String> params = new HashMap<>();
+        if (MapUtils.isEmpty(details)) {
+            return params;
+        }
+
+        for (Object value : details.values()) {
+            if (!(value instanceof Map)) {
+                continue;
+            }
+            Map<Object, Object> detailMap = (Map<Object, Object>)value;
+            for (Map.Entry<Object, Object> entry : detailMap.entrySet()) {
+                if (entry.getKey() != null && entry.getValue() != null) {
+                    params.put(entry.getKey().toString(), entry.getValue().toString());
+                }
+            }
+        }
+        return params;
     }
 
     @Override

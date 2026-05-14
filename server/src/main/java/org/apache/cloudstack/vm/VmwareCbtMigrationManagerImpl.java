@@ -86,6 +86,8 @@ import com.cloud.vm.dao.VmwareCbtMigrationDiskDao;
 public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager, Configurable {
 
     private static final String OBJECT_NAME = "vmwarecbtmigration";
+    private static final String DETAIL_VDDK_TRANSPORTS = "vddk.transports";
+    private static final String DETAIL_VDDK_THUMBPRINT = "vddk.thumbprint";
     private static final Logger LOGGER = LogManager.getLogger(VmwareCbtMigrationManagerImpl.class);
 
     static final ConfigKey<Integer> VmwareCbtMigrationMinCycles = new ConfigKey<>(Integer.class,
@@ -200,6 +202,7 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
         if (storagePool != null) {
             migration.setStoragePoolId(storagePool.getId());
         }
+        applyVddkDetails(migration, cmd.getDetails());
         migration.setState(VmwareCbtMigration.State.InitialSync);
         migration.setCurrentStep(String.format("Discovered %s source disk(s); waiting for initial VDDK full sync", sourceDisks.size()));
         migration.setUpdated(new Date());
@@ -257,6 +260,7 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
             VmwareCbtSyncCommand syncCommand = new VmwareCbtSyncCommand(migration.getUuid(),
                     createRemoteInstance(source, migration), getDiskTransferObjects(migration),
                     changedBlockQuery.changedBlocks, cycleNumber, snapshot.getSnapshotMor(), false);
+            applyVddkDetails(syncCommand, migration);
             syncCommand.setWait(3600);
 
             VmwareCbtMigrationAnswer answer = sendVmwareCbtCommand(cbtHost, syncCommand, "synchronize",
@@ -348,6 +352,7 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
 
         VmwareCbtCutoverCommand cutoverCommand = new VmwareCbtCutoverCommand(migration.getUuid(), createRemoteInstance(source, migration),
                 getDiskTransferObjects(migration), migration.getCompletedCycles() + 1, true);
+        applyVddkDetails(cutoverCommand, migration);
         cutoverCommand.setWait(3600);
 
         VmwareCbtMigrationAnswer answer = sendVmwareCbtCommand(cbtHost, cutoverCommand, "cut over", migration.getUuid());
@@ -753,6 +758,27 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
     private RemoteInstanceTO createRemoteInstance(VmwareSource source, VmwareCbtMigrationVO migration) {
         return new RemoteInstanceTO(migration.getSourceVmName(), null, source.vcenter, source.username, source.password,
                 source.datacenterName, migration.getSourceCluster(), migration.getSourceHost());
+    }
+
+    private void applyVddkDetails(VmwareCbtMigrationVO migration, Map<String, String> details) {
+        if (details == null) {
+            return;
+        }
+        migration.setVddkLibDir(StringUtils.trimToNull(details.get(Host.HOST_VDDK_LIB_DIR)));
+        migration.setVddkTransports(StringUtils.trimToNull(details.get(DETAIL_VDDK_TRANSPORTS)));
+        migration.setVddkThumbprint(StringUtils.trimToNull(details.get(DETAIL_VDDK_THUMBPRINT)));
+    }
+
+    private void applyVddkDetails(VmwareCbtSyncCommand command, VmwareCbtMigrationVO migration) {
+        command.setVddkLibDir(migration.getVddkLibDir());
+        command.setVddkTransports(migration.getVddkTransports());
+        command.setVddkThumbprint(migration.getVddkThumbprint());
+    }
+
+    private void applyVddkDetails(VmwareCbtCutoverCommand command, VmwareCbtMigrationVO migration) {
+        command.setVddkLibDir(migration.getVddkLibDir());
+        command.setVddkTransports(migration.getVddkTransports());
+        command.setVddkThumbprint(migration.getVddkThumbprint());
     }
 
     private List<VmwareCbtDiskTO> getDiskTransferObjects(VmwareCbtMigrationVO migration) {
