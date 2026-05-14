@@ -230,6 +230,8 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
     public VmwareCbtMigrationResponse syncVmwareCbtMigration(SyncVmwareCbtMigrationCmd cmd) {
         VmwareCbtMigrationVO migration = getMigration(cmd.getId());
         rejectTerminalMigration(migration, "synchronize");
+        requireMigrationState(migration, "synchronize", VmwareCbtMigration.State.Replicating,
+                VmwareCbtMigration.State.ReadyForCutover);
         VmwareSource source = resolveVmwareSource(migration, cmd.getUsername(), cmd.getPassword());
         validateInitialSyncTargetDisks(migration);
         HostVO cbtHost = getCbtHostForMigration(migration);
@@ -315,11 +317,8 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
     public VmwareCbtMigrationResponse registerVmwareCbtMigrationTarget(RegisterVmwareCbtMigrationTargetCmd cmd) {
         VmwareCbtMigrationVO migration = getMigration(cmd.getId());
         rejectTerminalMigration(migration, "register target disks for");
-        if (migration.getState() == VmwareCbtMigration.State.CuttingOver) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
-                    String.format("Cannot register target disks for VMware CBT migration %s while cutover is in progress",
-                            migration.getUuid()));
-        }
+        requireMigrationState(migration, "register target disks for", VmwareCbtMigration.State.Created,
+                VmwareCbtMigration.State.InitialSync);
 
         int registeredDiskCount = registerTargetDisks(migration, cmd.getTargetDisks());
         int diskCount = vmwareCbtMigrationDiskDao.listByMigrationId(migration.getId()).size();
@@ -340,6 +339,7 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
     public VmwareCbtMigrationResponse cutoverVmwareCbtMigration(CutoverVmwareCbtMigrationCmd cmd) {
         VmwareCbtMigrationVO migration = getMigration(cmd.getId());
         rejectTerminalMigration(migration, "cut over");
+        requireMigrationState(migration, "cut over", VmwareCbtMigration.State.ReadyForCutover);
         VmwareSource source = resolveVmwareSource(migration, cmd.getUsername(), cmd.getPassword());
         validateInitialSyncTargetDisks(migration);
         HostVO cbtHost = getCbtHostForMigration(migration);
@@ -521,6 +521,18 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
                     String.format("Cannot %s VMware CBT migration %s because it is already in state %s",
                             action, migration.getUuid(), migration.getState()));
         }
+    }
+
+    private void requireMigrationState(VmwareCbtMigrationVO migration, String action,
+                                       VmwareCbtMigration.State... allowedStates) {
+        for (VmwareCbtMigration.State allowedState : allowedStates) {
+            if (migration.getState() == allowedState) {
+                return;
+            }
+        }
+        throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+                String.format("Cannot %s VMware CBT migration %s while it is in state %s. Expected state: %s",
+                        action, migration.getUuid(), migration.getState(), StringUtils.join(allowedStates, ", ")));
     }
 
     private List<VmwareCbtDiskInfo> discoverSourceDisks(VmwareSource source, String sourceVmName) {
