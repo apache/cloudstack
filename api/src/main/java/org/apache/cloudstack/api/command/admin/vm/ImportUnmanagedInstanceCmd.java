@@ -122,7 +122,7 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.OS_ID,
             type = CommandType.UUID,
             entityType = GuestOSResponse.class,
-            since = "4.22.1",
+            since = "4.23.0",
             description = "optional - the ID of the guest OS for the imported Instance.")
     private Long guestOsId;
 
