@@ -22,7 +22,14 @@ public interface VmwareCbtMigrationService {
     List<VmwareCbtDiskInfo> listSourceDisks(String vcenter, String datacenterName, String username, String password,
                                             String sourceHost, String sourceVmName);
 
+    VmwareCbtSnapshotInfo createSnapshot(String vcenter, String datacenterName, String username, String password,
+                                         String sourceHost, String sourceVmName, String snapshotName,
+                                         String snapshotDescription, boolean quiesce);
+
     List<VmwareCbtChangedDiskInfo> queryChangedDiskAreas(String vcenter, String datacenterName, String username,
                                                          String password, String sourceHost, String sourceVmName,
                                                          List<VmwareCbtDiskInfo> disks, String snapshotMor);
+
+    void removeSnapshot(String vcenter, String datacenterName, String username, String password, String sourceHost,
+                        String sourceVmName, String snapshotMor);
 }

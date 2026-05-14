@@ -27,6 +27,7 @@ import org.apache.cloudstack.vm.VmwareCbtChangedBlockInfo;
 import org.apache.cloudstack.vm.VmwareCbtChangedDiskInfo;
 import org.apache.cloudstack.vm.VmwareCbtDiskInfo;
 import org.apache.cloudstack.vm.VmwareCbtMigrationService;
+import org.apache.cloudstack.vm.VmwareCbtSnapshotInfo;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -65,6 +66,28 @@ public class VmwareCbtMigrationServiceImpl implements VmwareCbtMigrationService 
     }
 
     @Override
+    public VmwareCbtSnapshotInfo createSnapshot(String vcenter, String datacenterName, String username, String password,
+                                                String sourceHost, String sourceVmName, String snapshotName,
+                                                String snapshotDescription, boolean quiesce) {
+        try {
+            VmwareContext context = VmwareContextFactory.getContext(vcenter, username, password);
+            VmwareVmLookup lookup = lookupVirtualMachine(context, vcenter, datacenterName, sourceHost, sourceVmName);
+            ManagedObjectReference snapshot = lookup.vmMO.createSnapshotGetReference(snapshotName,
+                    snapshotDescription, false, quiesce);
+            if (snapshot == null) {
+                throw new CloudRuntimeException(String.format("Unable to create VMware snapshot %s for VM %s",
+                        snapshotName, sourceVmName));
+            }
+            return new VmwareCbtSnapshotInfo(snapshotName, formatManagedObjectReference(snapshot));
+        } catch (Exception e) {
+            String message = String.format("Unable to create VMware CBT snapshot for VM %s in vCenter %s: %s",
+                    sourceVmName, vcenter, e.getMessage());
+            LOGGER.error(message, e);
+            throw new CloudRuntimeException(message, e);
+        }
+    }
+
+    @Override
     public List<VmwareCbtChangedDiskInfo> queryChangedDiskAreas(String vcenter, String datacenterName, String username,
                                                                 String password, String sourceHost, String sourceVmName,
                                                                 List<VmwareCbtDiskInfo> disks, String snapshotMor) {
@@ -83,6 +106,31 @@ public class VmwareCbtMigrationServiceImpl implements VmwareCbtMigrationService 
         } catch (Exception e) {
             String message = String.format("Unable to query VMware CBT changed areas for VM %s in vCenter %s: %s",
                     sourceVmName, vcenter, e.getMessage());
+            LOGGER.error(message, e);
+            throw new CloudRuntimeException(message, e);
+        }
+    }
+
+    @Override
+    public void removeSnapshot(String vcenter, String datacenterName, String username, String password,
+                               String sourceHost, String sourceVmName, String snapshotMor) {
+        if (StringUtils.isBlank(snapshotMor)) {
+            return;
+        }
+
+        try {
+            VmwareContext context = VmwareContextFactory.getContext(vcenter, username, password);
+            lookupVirtualMachine(context, vcenter, datacenterName, sourceHost, sourceVmName);
+            ManagedObjectReference snapshot = toManagedObjectReference("VirtualMachineSnapshot", snapshotMor);
+            ManagedObjectReference task = context.getService().removeSnapshotTask(snapshot, false, true);
+            if (!context.getVimClient().waitForTask(task)) {
+                throw new CloudRuntimeException(String.format("Unable to remove VMware snapshot %s for VM %s",
+                        snapshotMor, sourceVmName));
+            }
+            context.waitForTaskProgressDone(task);
+        } catch (Exception e) {
+            String message = String.format("Unable to remove VMware CBT snapshot %s for VM %s in vCenter %s: %s",
+                    snapshotMor, sourceVmName, vcenter, e.getMessage());
             LOGGER.error(message, e);
             throw new CloudRuntimeException(message, e);
         }
@@ -229,6 +277,13 @@ public class VmwareCbtMigrationServiceImpl implements VmwareCbtMigrationService 
             reference.setValue(mor);
         }
         return reference;
+    }
+
+    private String formatManagedObjectReference(ManagedObjectReference mor) {
+        if (mor == null) {
+            return null;
+        }
+        return String.format("%s:%s", mor.getType(), mor.getValue());
     }
 
     private String getBackingStringValue(Object backing, String methodName) {
