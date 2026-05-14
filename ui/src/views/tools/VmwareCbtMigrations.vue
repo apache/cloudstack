@@ -83,19 +83,49 @@
               <span v-else>-</span>
             </template>
             <template v-else-if="column.key === 'action'">
-              <a-popconfirm
-                :title="$t('message.confirm.cancel.vmware.cbt.migration')"
-                :okText="$t('label.ok')"
-                :cancelText="$t('label.cancel')"
-                @confirm="() => this.$emit('cancel-vmware-cbt-migration', record)">
-                <a-button
+              <a-space size="small">
+                <a-popconfirm
+                  v-if="canSync(record)"
+                  :title="$t('message.confirm.sync.vmware.cbt.migration')"
+                  :okText="$t('label.ok')"
+                  :cancelText="$t('label.cancel')"
+                  @confirm="() => this.$emit('sync-vmware-cbt-migration', record)">
+                  <a-button
+                    size="small"
+                    :disabled="!('syncVmwareCbtMigration' in $store.getters.apis)">
+                    <template #icon><sync-outlined /></template>
+                    {{ $t('label.sync.delta') }}
+                  </a-button>
+                </a-popconfirm>
+                <a-popconfirm
+                  v-if="canCutover(record)"
+                  :title="$t('message.confirm.cutover.vmware.cbt.migration')"
+                  :okText="$t('label.ok')"
+                  :cancelText="$t('label.cancel')"
+                  @confirm="() => this.$emit('cutover-vmware-cbt-migration', record)">
+                  <a-button
+                    size="small"
+                    type="primary"
+                    :disabled="!('cutoverVmwareCbtMigration' in $store.getters.apis)">
+                    <template #icon><thunderbolt-outlined /></template>
+                    {{ $t('label.cutover') }}
+                  </a-button>
+                </a-popconfirm>
+                <a-popconfirm
                   v-if="canCancel(record)"
-                  size="small"
-                  :danger="true"
-                  :disabled="!('cancelVmwareCbtMigration' in $store.getters.apis)">
-                  {{ $t('label.cancel') }}
-                </a-button>
-              </a-popconfirm>
+                  :title="$t('message.confirm.cancel.vmware.cbt.migration')"
+                  :okText="$t('label.ok')"
+                  :cancelText="$t('label.cancel')"
+                  @confirm="() => this.$emit('cancel-vmware-cbt-migration', record)">
+                  <a-button
+                    size="small"
+                    :danger="true"
+                    :disabled="!('cancelVmwareCbtMigration' in $store.getters.apis)">
+                    <template #icon><close-circle-outlined /></template>
+                    {{ $t('label.cancel') }}
+                  </a-button>
+                </a-popconfirm>
+              </a-space>
             </template>
           </template>
         </a-table>
@@ -242,6 +272,12 @@ export default {
     }
   },
   methods: {
+    canSync (record) {
+      return ['Created', 'InitialSync', 'Replicating'].includes(record.state)
+    },
+    canCutover (record) {
+      return record.state === 'ReadyForCutover'
+    },
     canCancel (record) {
       return !['Completed', 'Failed', 'Cancelled'].includes(record.state)
     },

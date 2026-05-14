@@ -521,6 +521,8 @@
                 @fetch-vmware-cbt-migrations="fetchVmwareCbtMigrations"
                 @change-pagination="onChangeVmwareCbtMigrationsPagination"
                 @change-filter="onChangeVmwareCbtMigrationsFilter"
+                @sync-vmware-cbt-migration="syncVmwareCbtMigration"
+                @cutover-vmware-cbt-migration="cutoverVmwareCbtMigration"
                 @cancel-vmware-cbt-migration="cancelVmwareCbtMigration"
               />
             </a-tab-pane>
@@ -1276,6 +1278,20 @@ export default {
     },
     cancelVmwareCbtMigration (migration) {
       postAPI('cancelVmwareCbtMigration', { id: migration.id }).then(() => {
+        this.fetchVmwareCbtMigrations()
+      }).catch(error => {
+        this.$notifyError(error)
+      })
+    },
+    syncVmwareCbtMigration (migration) {
+      postAPI('syncVmwareCbtMigration', { id: migration.id }).then(() => {
+        this.fetchVmwareCbtMigrations()
+      }).catch(error => {
+        this.$notifyError(error)
+      })
+    },
+    cutoverVmwareCbtMigration (migration) {
+      postAPI('cutoverVmwareCbtMigration', { id: migration.id }).then(() => {
         this.fetchVmwareCbtMigrations()
       }).catch(error => {
         this.$notifyError(error)
