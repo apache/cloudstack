@@ -554,7 +554,7 @@ const user = {
     UpdateLdapConfigurationFlag ({ commit }) {
       return new Promise((resolve, reject) => {
         api('listLdapConfigurations').then(response => {
-          const ldapEnable = ((response && response.ldapconfigurationresponse && response.ldapconfigurationresponse.count) || 0) > 0
+          const ldapEnable = (response && response.ldapconfigurationresponse && response.ldapconfigurationresponse.count > 0)
           commit('SET_LDAP', ldapEnable)
           resolve(ldapEnable)
         }).catch(error => {
