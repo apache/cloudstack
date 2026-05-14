@@ -196,6 +196,7 @@
                   :resourceKey="cluster.id"
                   :selectOptions="storageOptionsForConversion"
                   :checkBoxLabel="switches.forceConvertToPool ? $t('message.select.destination.storage.instance.conversion') : $t('message.select.temporary.storage.instance.conversion')"
+                  :checkBoxTooltip="switches.forceConvertToPool ? null : $t('message.select.temporary.storage.instance.conversion.tooltip')"
                   :defaultCheckBoxValue="switches.forceConvertToPool"
                   :reversed="false"
                   @handle-checkselectpair-change="updateSelectedStorageOptionForConversion"
