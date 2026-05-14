@@ -197,10 +197,26 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
             throw new CloudRuntimeException("Provider with the given id is not there");
         }
 
-        if (Boolean.TRUE.equals(enabled) && !isOAuthPluginEnabled(providerVO.getDomainId())) {
+        Long targetDomainId = providerVO.getDomainId();
+        if (cmd.getDomainId() != null || StringUtils.isNotEmpty(cmd.getDomainPath())) {
+            Long resolved = resolveDomainIdFromIdOrPath(cmd.getDomainId(), cmd.getDomainPath());
+            if (resolved == null) {
+                throw new CloudRuntimeException("Unable to resolve the supplied domain. Provide a valid domain id or path.");
+            }
+            if (!resolved.equals(providerVO.getDomainId())) {
+                OauthProviderVO existing = _oauthProviderDao.findByProviderAndDomain(providerVO.getProvider(), resolved);
+                if (existing != null) {
+                    throw new CloudRuntimeException(String.format(
+                            "Provider with the name %s is already registered for domain %d", providerVO.getProvider(), resolved));
+                }
+            }
+            targetDomainId = resolved;
+        }
+
+        if (Boolean.TRUE.equals(enabled) && !isOAuthPluginEnabled(targetDomainId)) {
             throw new CloudRuntimeException(String.format(
                     "OAuth plugin is not enabled %s. Enable oauth2.enabled at that scope before enabling this provider.",
-                    providerVO.getDomainId() == null ? "globally" : "for this domain"));
+                    targetDomainId == null ? "globally" : "for this domain"));
         }
 
         if (StringUtils.isNotEmpty(description)) {
@@ -218,6 +234,7 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
         if (enabled != null) {
             providerVO.setEnabled(enabled);
         }
+        providerVO.setDomainId(targetDomainId);
 
         _oauthProviderDao.update(id, providerVO);
 

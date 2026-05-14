@@ -153,6 +153,62 @@ public class OAuth2AuthManagerImplTest {
     }
 
     @Test
+    public void testUpdateOauthProviderReassignsDomain() {
+        Long id = 5L;
+        Long oldDomainId = 10L;
+        Long newDomainId = 20L;
+
+        UpdateOAuthProviderCmd cmd = Mockito.mock(UpdateOAuthProviderCmd.class);
+        when(cmd.getId()).thenReturn(id);
+        when(cmd.getDomainId()).thenReturn(newDomainId);
+
+        OauthProviderVO providerVO = new OauthProviderVO();
+        providerVO.setProvider("github");
+        providerVO.setDomainId(oldDomainId);
+        when(_oauthProviderDao.findById(id)).thenReturn(providerVO);
+
+        Domain newDomain = Mockito.mock(Domain.class);
+        when(newDomain.getId()).thenReturn(newDomainId);
+        when(_domainService.getDomain(Mockito.anyString())).thenReturn(newDomain);
+        Mockito.doReturn(newDomainId).when(_authManager).resolveDomainIdFromIdOrPath(newDomainId, null);
+        when(_oauthProviderDao.findByProviderAndDomain("github", newDomainId)).thenReturn(null);
+        when(_oauthProviderDao.update(Mockito.eq(id), Mockito.any(OauthProviderVO.class))).thenReturn(true);
+        when(_oauthProviderDao.findById(id)).thenReturn(providerVO);
+
+        OauthProviderVO result = _authManager.updateOauthProvider(cmd);
+        assertEquals(newDomainId, result.getDomainId());
+    }
+
+    @Test
+    public void testUpdateOauthProviderRejectsDuplicateAtTargetDomain() {
+        Long id = 5L;
+        Long oldDomainId = 10L;
+        Long newDomainId = 20L;
+
+        UpdateOAuthProviderCmd cmd = Mockito.mock(UpdateOAuthProviderCmd.class);
+        when(cmd.getId()).thenReturn(id);
+        when(cmd.getDomainId()).thenReturn(newDomainId);
+
+        OauthProviderVO providerVO = new OauthProviderVO();
+        providerVO.setProvider("github");
+        providerVO.setDomainId(oldDomainId);
+        when(_oauthProviderDao.findById(id)).thenReturn(providerVO);
+
+        Mockito.doReturn(newDomainId).when(_authManager).resolveDomainIdFromIdOrPath(newDomainId, null);
+        OauthProviderVO collision = new OauthProviderVO();
+        collision.setProvider("github");
+        collision.setDomainId(newDomainId);
+        when(_oauthProviderDao.findByProviderAndDomain("github", newDomainId)).thenReturn(collision);
+
+        try {
+            _authManager.updateOauthProvider(cmd);
+            Assert.fail("Expected CloudRuntimeException for duplicate at target domain");
+        } catch (CloudRuntimeException e) {
+            assertTrue(e.getMessage().contains("already registered"));
+        }
+    }
+
+    @Test
     public void testUpdateOauthProviderRejectsEnableWhenPluginDisabledAtScope() {
         Long id = 7L;
         Long domainId = 42L;

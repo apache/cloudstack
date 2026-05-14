@@ -31,6 +31,7 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.context.CallContext;
 
 import javax.inject.Inject;
@@ -63,6 +64,14 @@ public final class UpdateOAuthProviderCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, description = "OAuth provider will be enabled or disabled based on this value")
     private Boolean enabled;
 
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class,
+            description = "Domain ID to reassign this OAuth provider to. If not provided, the current domain assignment is kept.", since = "4.23.0")
+    private Long domainId;
+
+    @Parameter(name = ApiConstants.DOMAIN, type = CommandType.STRING,
+            description = "Domain path to reassign this OAuth provider to. Ignored when Domain ID is passed. If neither is provided, the current domain assignment is kept.", since = "4.23.0")
+    private String domainPath;
+
     @Inject
     OAuth2AuthManager _oauthMgr;
 
@@ -92,6 +101,14 @@ public final class UpdateOAuthProviderCmd extends BaseCmd {
 
     public Boolean getEnabled() {
         return enabled;
+    }
+
+    public Long getDomainId() {
+        return domainId;
+    }
+
+    public String getDomainPath() {
+        return domainPath;
     }
 
     /////////////////////////////////////////////////////
