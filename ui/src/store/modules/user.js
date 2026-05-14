@@ -219,7 +219,7 @@ const user = {
           commit('SET_PROJECT', {})
           commit('SET_HEADER_NOTICES', [])
           commit('SET_FEATURES', {})
-          commit('SET_LDAP', {})
+          commit('SET_LDAP', false)
           commit('SET_CLOUDIAN', {})
           commit('SET_DOMAIN_STORE', {})
           commit('SET_LOGOUT_FLAG', false)
@@ -268,7 +268,7 @@ const user = {
           commit('SET_PROJECT', {})
           commit('SET_HEADER_NOTICES', [])
           commit('SET_FEATURES', {})
-          commit('SET_LDAP', {})
+          commit('SET_LDAP', false)
           commit('SET_CLOUDIAN', {})
           commit('SET_DOMAIN_STORE', {})
           commit('SET_LOGOUT_FLAG', false)
@@ -420,9 +420,10 @@ const user = {
         })
 
         api('listLdapConfigurations').then(response => {
-          const ldapEnable = (response.ldapconfigurationresponse.count > 0)
+          const ldapEnable = ((response && response.ldapconfigurationresponse && response.ldapconfigurationresponse.count) || 0) > 0
           commit('SET_LDAP', ldapEnable)
         }).catch(ignored => {
+          commit('SET_LDAP', false)
         })
 
         api('cloudianIsEnabled').then(response => {
@@ -447,7 +448,7 @@ const user = {
         commit('SET_PROJECT', {})
         commit('SET_HEADER_NOTICES', [])
         commit('SET_FEATURES', {})
-        commit('SET_LDAP', {})
+        commit('SET_LDAP', false)
         commit('SET_CLOUDIAN', {})
         commit('RESET_THEME')
         commit('SET_DOMAIN_STORE', {})
@@ -553,8 +554,9 @@ const user = {
     UpdateLdapConfigurationFlag ({ commit }) {
       return new Promise((resolve, reject) => {
         api('listLdapConfigurations').then(response => {
-          const ldapEnable = (response.ldapconfigurationresponse.count > 0)
+          const ldapEnable = ((response && response.ldapconfigurationresponse && response.ldapconfigurationresponse.count) || 0) > 0
           commit('SET_LDAP', ldapEnable)
+          resolve(ldapEnable)
         }).catch(error => {
           reject(error)
         })
