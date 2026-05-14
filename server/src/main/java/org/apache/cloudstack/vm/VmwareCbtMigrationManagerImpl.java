@@ -223,6 +223,7 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
         VmwareCbtMigrationVO migration = getMigration(cmd.getId());
         rejectTerminalMigration(migration, "synchronize");
         VmwareSource source = resolveVmwareSource(migration, cmd.getUsername(), cmd.getPassword());
+        validateInitialSyncTargetDisks(migration);
         HostVO cbtHost = getCbtHostForMigration(migration);
         int cycleNumber = migration.getCompletedCycles() + 1;
         VmwareCbtMigrationCycleVO cycle = new VmwareCbtMigrationCycleVO(migration.getId(), cycleNumber);
@@ -306,6 +307,7 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
         VmwareCbtMigrationVO migration = getMigration(cmd.getId());
         rejectTerminalMigration(migration, "cut over");
         VmwareSource source = resolveVmwareSource(migration, cmd.getUsername(), cmd.getPassword());
+        validateInitialSyncTargetDisks(migration);
         HostVO cbtHost = getCbtHostForMigration(migration);
 
         migration.setState(VmwareCbtMigration.State.CuttingOver);
@@ -506,6 +508,21 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
             disk.setTargetFormat("qcow2");
             disk.setUpdated(new Date());
             vmwareCbtMigrationDiskDao.persist(disk);
+        }
+    }
+
+    private void validateInitialSyncTargetDisks(VmwareCbtMigrationVO migration) {
+        List<VmwareCbtMigrationDiskVO> disks = vmwareCbtMigrationDiskDao.listByMigrationId(migration.getId());
+        if (CollectionUtils.isEmpty(disks)) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+                    String.format("VMware CBT migration %s has no discovered source disks", migration.getUuid()));
+        }
+        for (VmwareCbtMigrationDiskVO disk : disks) {
+            if (StringUtils.isBlank(disk.getTargetPath())) {
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+                        String.format("VMware CBT migration %s cannot run delta sync before initial full sync registers target disk path for source disk %s",
+                                migration.getUuid(), disk.getSourceDiskId()));
+            }
         }
     }
 
