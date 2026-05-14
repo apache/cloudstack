@@ -17,7 +17,6 @@
 package org.apache.cloudstack.vm;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -37,6 +36,8 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.cloud.agent.AgentManager;
@@ -47,6 +48,7 @@ import com.cloud.agent.api.VmwareCbtCutoverCommand;
 import com.cloud.agent.api.VmwareCbtMigrationAnswer;
 import com.cloud.agent.api.VmwareCbtSyncCommand;
 import com.cloud.agent.api.to.RemoteInstanceTO;
+import com.cloud.agent.api.to.VmwareCbtChangedBlockRangeTO;
 import com.cloud.agent.api.to.VmwareCbtDiskTO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
@@ -77,6 +79,7 @@ import com.cloud.vm.dao.VmwareCbtMigrationDiskDao;
 public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager {
 
     private static final String OBJECT_NAME = "vmwarecbtmigration";
+    private static final Logger LOGGER = LogManager.getLogger(VmwareCbtMigrationManagerImpl.class);
 
     @Inject
     private VmwareCbtMigrationDao vmwareCbtMigrationDao;
@@ -171,6 +174,7 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager 
     public VmwareCbtMigrationResponse syncVmwareCbtMigration(SyncVmwareCbtMigrationCmd cmd) {
         VmwareCbtMigrationVO migration = getMigration(cmd.getId());
         rejectTerminalMigration(migration, "synchronize");
+        VmwareSource source = resolveVmwareSource(migration, cmd.getUsername(), cmd.getPassword());
         HostVO cbtHost = getCbtHostForMigration(migration);
         int cycleNumber = migration.getCompletedCycles() + 1;
         VmwareCbtMigrationCycleVO cycle = new VmwareCbtMigrationCycleVO(migration.getId(), cycleNumber);
@@ -185,34 +189,57 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager 
         migration.setUpdated(new Date());
         vmwareCbtMigrationDao.update(migration.getId(), migration);
 
-        VmwareCbtSyncCommand syncCommand = new VmwareCbtSyncCommand(migration.getUuid(), createRemoteInstance(migration),
-                getDiskTransferObjects(migration), Collections.emptyList(), cycleNumber, null, false);
-        syncCommand.setWait(3600);
+        VmwareCbtSnapshotInfo snapshot = null;
+        try {
+            snapshot = createDeltaSnapshot(source, migration, cycleNumber);
+            VmwareCbtChangedBlockQueryResult changedBlockQuery = queryChangedBlocks(source, migration,
+                    snapshot.getSnapshotMor());
 
-        VmwareCbtMigrationAnswer answer = sendVmwareCbtCommand(cbtHost, syncCommand, "synchronize", migration.getUuid());
-        if (!answer.getResult()) {
-            markCycleFailed(cycle, answer.getDetails());
-            markMigrationFailed(migration, "CBT delta synchronization failed", answer.getDetails());
+            cycle.setDescription(String.format("Dispatching %s VMware CBT changed block range(s) to KVM agent",
+                    changedBlockQuery.changedBlocks.size()));
+            cycle.setUpdated(new Date());
+            vmwareCbtMigrationCycleDao.update(cycle.getId(), cycle);
+
+            VmwareCbtSyncCommand syncCommand = new VmwareCbtSyncCommand(migration.getUuid(),
+                    createRemoteInstance(migration), getDiskTransferObjects(migration), changedBlockQuery.changedBlocks,
+                    cycleNumber, snapshot.getSnapshotMor(), false);
+            syncCommand.setWait(3600);
+
+            VmwareCbtMigrationAnswer answer = sendVmwareCbtCommand(cbtHost, syncCommand, "synchronize",
+                    migration.getUuid());
+            if (!answer.getResult()) {
+                markCycleFailed(cycle, answer.getDetails());
+                markMigrationFailed(migration, "CBT delta synchronization failed", answer.getDetails());
+                return createVmwareCbtMigrationResponse(vmwareCbtMigrationDao.findById(migration.getId()));
+            }
+
+            updateDiskChangeIds(migration, changedBlockQuery.changedDisks);
+
+            cycle.setState(VmwareCbtMigrationCycle.State.Completed);
+            cycle.setChangedBytes(answer.getChangedBytes());
+            cycle.setDirtyRate(answer.getDirtyRateBytesPerSecond());
+            cycle.setDuration(answer.getDurationSeconds() * 1000);
+            cycle.setDescription(answer.getDetails());
+            cycle.setUpdated(new Date());
+            vmwareCbtMigrationCycleDao.update(cycle.getId(), cycle);
+
+            migration.setCompletedCycles(cycleNumber);
+            migration.setTotalChangedBytes(migration.getTotalChangedBytes() + answer.getChangedBytes());
+            migration.setLastChangedBytes(answer.getChangedBytes());
+            migration.setLastDirtyRate(answer.getDirtyRateBytesPerSecond());
+            migration.setState(answer.getReadyForCutover() ? VmwareCbtMigration.State.ReadyForCutover : VmwareCbtMigration.State.Replicating);
+            migration.setCurrentStep(answer.getReadyForCutover() ? "Ready for final cutover" : "CBT delta synchronization completed");
+            migration.setUpdated(new Date());
+            vmwareCbtMigrationDao.update(migration.getId(), migration);
+            return createVmwareCbtMigrationResponse(migration);
+        } catch (RuntimeException e) {
+            String error = StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName());
+            markCycleFailed(cycle, error);
+            markMigrationFailed(migration, "CBT delta synchronization failed", error);
             return createVmwareCbtMigrationResponse(vmwareCbtMigrationDao.findById(migration.getId()));
+        } finally {
+            removeDeltaSnapshotIfPossible(source, migration, snapshot);
         }
-
-        cycle.setState(VmwareCbtMigrationCycle.State.Completed);
-        cycle.setChangedBytes(answer.getChangedBytes());
-        cycle.setDirtyRate(answer.getDirtyRateBytesPerSecond());
-        cycle.setDuration(answer.getDurationSeconds() * 1000);
-        cycle.setDescription(answer.getDetails());
-        cycle.setUpdated(new Date());
-        vmwareCbtMigrationCycleDao.update(cycle.getId(), cycle);
-
-        migration.setCompletedCycles(cycleNumber);
-        migration.setTotalChangedBytes(migration.getTotalChangedBytes() + answer.getChangedBytes());
-        migration.setLastChangedBytes(answer.getChangedBytes());
-        migration.setLastDirtyRate(answer.getDirtyRateBytesPerSecond());
-        migration.setState(answer.getReadyForCutover() ? VmwareCbtMigration.State.ReadyForCutover : VmwareCbtMigration.State.Replicating);
-        migration.setCurrentStep(answer.getReadyForCutover() ? "Ready for final cutover" : "CBT delta synchronization completed");
-        migration.setUpdated(new Date());
-        vmwareCbtMigrationDao.update(migration.getId(), migration);
-        return createVmwareCbtMigrationResponse(migration);
     }
 
     @Override
@@ -351,6 +378,26 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager 
                 cmd.getSourceHost());
     }
 
+    private VmwareSource resolveVmwareSource(VmwareCbtMigrationVO migration, String username, String password) {
+        if (migration.getExistingVcenterId() != null) {
+            VmwareDatacenterVO existingDc = vmwareDatacenterDao.findById(migration.getExistingVcenterId());
+            if (existingDc == null) {
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+                        String.format("Cannot find any existing VMware datacenter with ID %s",
+                                migration.getExistingVcenterId()));
+            }
+            return new VmwareSource(existingDc.getId(), existingDc.getVcenterHost(), existingDc.getVmwareDatacenterName(),
+                    existingDc.getUser(), existingDc.getPassword(), migration.getSourceHost());
+        }
+
+        if (StringUtils.isAnyBlank(migration.getVcenter(), migration.getDatacenter(), username, password)) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+                    "Please provide source vCenter username and password for this VMware CBT migration");
+        }
+        return new VmwareSource(null, migration.getVcenter(), migration.getDatacenter(), username, password,
+                migration.getSourceHost());
+    }
+
     private VmwareCbtMigration.State parseState(String state) {
         if (StringUtils.isBlank(state)) {
             return null;
@@ -379,12 +426,7 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager 
     }
 
     private List<VmwareCbtDiskInfo> discoverSourceDisks(VmwareSource source, String sourceVmName) {
-        if (vmwareCbtMigrationService == null) {
-            throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR,
-                    "VMware CBT disk discovery service is unavailable. Please enable the VMware hypervisor plugin.");
-        }
-
-        List<VmwareCbtDiskInfo> sourceDisks = vmwareCbtMigrationService.listSourceDisks(source.vcenter, source.datacenterName,
+        List<VmwareCbtDiskInfo> sourceDisks = getVmwareCbtMigrationService().listSourceDisks(source.vcenter, source.datacenterName,
                 source.username, source.password, source.sourceHost, sourceVmName);
         if (CollectionUtils.isEmpty(sourceDisks)) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR,
@@ -404,6 +446,90 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager 
             disk.setUpdated(new Date());
             vmwareCbtMigrationDiskDao.persist(disk);
         }
+    }
+
+    private VmwareCbtSnapshotInfo createDeltaSnapshot(VmwareSource source, VmwareCbtMigrationVO migration,
+                                                      int cycleNumber) {
+        String snapshotName = String.format("cloudstack-cbt-%s-%s", migration.getUuid(), cycleNumber);
+        String description = String.format("CloudStack VMware CBT migration %s cycle %s", migration.getUuid(),
+                cycleNumber);
+        return getVmwareCbtMigrationService().createSnapshot(source.vcenter, source.datacenterName, source.username,
+                source.password, source.sourceHost, migration.getSourceVmName(), snapshotName, description, false);
+    }
+
+    private VmwareCbtChangedBlockQueryResult queryChangedBlocks(VmwareSource source, VmwareCbtMigrationVO migration,
+                                                                String snapshotMor) {
+        List<VmwareCbtMigrationDiskVO> disks = vmwareCbtMigrationDiskDao.listByMigrationId(migration.getId());
+        List<VmwareCbtDiskInfo> sourceDisks = new ArrayList<>();
+        for (VmwareCbtMigrationDiskVO disk : disks) {
+            sourceDisks.add(new VmwareCbtDiskInfo(disk.getSourceDiskId(), disk.getSourceDiskDeviceKey(), null,
+                    disk.getSourceDiskPath(), disk.getDatastoreName(), disk.getCapacityBytes(), disk.getChangeId()));
+            disk.setSnapshotMor(snapshotMor);
+            disk.setUpdated(new Date());
+            vmwareCbtMigrationDiskDao.update(disk.getId(), disk);
+        }
+
+        List<VmwareCbtChangedDiskInfo> changedDisks = getVmwareCbtMigrationService().queryChangedDiskAreas(source.vcenter,
+                source.datacenterName, source.username, source.password, source.sourceHost,
+                migration.getSourceVmName(), sourceDisks, snapshotMor);
+        List<VmwareCbtChangedBlockRangeTO> changedBlocks = new ArrayList<>();
+        for (VmwareCbtChangedDiskInfo changedDisk : changedDisks) {
+            for (VmwareCbtChangedBlockInfo changedBlock : changedDisk.getChangedBlocks()) {
+                changedBlocks.add(new VmwareCbtChangedBlockRangeTO(changedDisk.getSourceDiskId(),
+                        changedBlock.getStartOffset(), changedBlock.getLength()));
+            }
+        }
+        return new VmwareCbtChangedBlockQueryResult(changedBlocks, changedDisks);
+    }
+
+    private void updateDiskChangeIds(VmwareCbtMigrationVO migration, List<VmwareCbtChangedDiskInfo> changedDisks) {
+        List<VmwareCbtMigrationDiskVO> disks = vmwareCbtMigrationDiskDao.listByMigrationId(migration.getId());
+        for (VmwareCbtMigrationDiskVO disk : disks) {
+            for (VmwareCbtChangedDiskInfo changedDisk : changedDisks) {
+                if (StringUtils.isNotBlank(changedDisk.getNextChangeId()) &&
+                        StringUtils.equals(disk.getSourceDiskId(), changedDisk.getSourceDiskId())) {
+                    disk.setChangeId(changedDisk.getNextChangeId());
+                    disk.setUpdated(new Date());
+                    vmwareCbtMigrationDiskDao.update(disk.getId(), disk);
+                    break;
+                }
+            }
+        }
+    }
+
+    private void removeDeltaSnapshotIfPossible(VmwareSource source, VmwareCbtMigrationVO migration,
+                                               VmwareCbtSnapshotInfo snapshot) {
+        if (source == null || snapshot == null || StringUtils.isBlank(snapshot.getSnapshotMor())) {
+            return;
+        }
+
+        try {
+            getVmwareCbtMigrationService().removeSnapshot(source.vcenter, source.datacenterName, source.username,
+                    source.password, source.sourceHost, migration.getSourceVmName(), snapshot.getSnapshotMor());
+            clearDiskSnapshotMor(migration, snapshot.getSnapshotMor());
+        } catch (RuntimeException e) {
+            LOGGER.warn(String.format("Unable to remove VMware CBT snapshot %s for migration %s: %s",
+                    snapshot.getSnapshotMor(), migration.getUuid(), e.getMessage()), e);
+        }
+    }
+
+    private void clearDiskSnapshotMor(VmwareCbtMigrationVO migration, String snapshotMor) {
+        List<VmwareCbtMigrationDiskVO> disks = vmwareCbtMigrationDiskDao.listByMigrationId(migration.getId());
+        for (VmwareCbtMigrationDiskVO disk : disks) {
+            if (StringUtils.equals(disk.getSnapshotMor(), snapshotMor)) {
+                disk.setSnapshotMor(null);
+                disk.setUpdated(new Date());
+                vmwareCbtMigrationDiskDao.update(disk.getId(), disk);
+            }
+        }
+    }
+
+    private VmwareCbtMigrationService getVmwareCbtMigrationService() {
+        if (vmwareCbtMigrationService == null) {
+            throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR,
+                    "VMware CBT migration service is unavailable. Please enable the VMware hypervisor plugin.");
+        }
+        return vmwareCbtMigrationService;
     }
 
     private HostVO getCbtHostForMigration(VmwareCbtMigrationVO migration) {
@@ -561,6 +687,17 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager 
             this.username = username;
             this.password = password;
             this.sourceHost = sourceHost;
+        }
+    }
+
+    private static class VmwareCbtChangedBlockQueryResult {
+        private final List<VmwareCbtChangedBlockRangeTO> changedBlocks;
+        private final List<VmwareCbtChangedDiskInfo> changedDisks;
+
+        private VmwareCbtChangedBlockQueryResult(List<VmwareCbtChangedBlockRangeTO> changedBlocks,
+                                                 List<VmwareCbtChangedDiskInfo> changedDisks) {
+            this.changedBlocks = changedBlocks;
+            this.changedDisks = changedDisks;
         }
     }
 }
