@@ -23,59 +23,88 @@
   xmlns="http://pmd.sourceforge.net/ruleset/2.0.0">
 
   <description>
-    Ruleset that brings all the rulesets we want from the pmd jar, because
-    the maven-pmd-plugin doesn't find them otherwise. This is also the place
-    to add our own future rulesets, if any.
+    CloudStack PMD ruleset. Enables all PMD 7 categories with
+    project-specific exclusions for rules that are too noisy
+    or incompatible with CloudStack conventions.
   </description>
 
-  <rule ref="category/java/basic.xml"/>
-  <rule ref="category/java/braces.xml"/>
-  <rule ref="category/java/clone.xml"/>
-  <rule ref="category/java/codesize.xml"/>
-  <rule ref="category/java/comments.xml">
-    <!-- We shouldn't limit the number of lines in the header of a class -->
-    <exclude name="CommentSize"/>
-    <exclude name="CommentRequired" />
+  <rule ref="category/java/bestpractices.xml">
+    <exclude name="AbstractClassWithoutAbstractMethod" />
+    <exclude name="GuardLogStatement" />
+    <exclude name="LiteralsFirstInComparisons" />
+    <exclude name="PreserveStackTrace" />
+    <exclude name="AvoidReassigningParameters" />
+    <exclude name="LooseCoupling" />
+    <exclude name="UseCollectionIsEmpty" />
+    <exclude name="MissingOverride" />
+    <exclude name="UnusedAssignment" />
   </rule>
-  <rule ref="category/java/controversial.xml">
-    <!-- The rule is good, but is not properly applied. It forces you to statically declare it as ConcurrentHashMap -->
-    <exclude name="UseConcurrentHashMap"/>
-    <exclude name="CallSuperInConstructor"/>
-    <exclude name="AtLeastOneConstructor"/>
-    <exclude name="AssignmentInOperand"/>
-    <exclude name="NullAssignment"/>
-    <exclude name="DataflowAnomalyAnalysis" />
-    <exclude name="UseObjectForClearerAPI" />
+
+  <rule ref="category/java/codestyle.xml">
+    <exclude name="ShortVariable" />
+    <exclude name="AtLeastOneConstructor" />
+    <exclude name="CallSuperInConstructor" />
+    <exclude name="LocalVariableCouldBeFinal" />
+    <exclude name="MethodArgumentCouldBeFinal" />
+    <exclude name="OnlyOneReturn" />
+    <exclude name="CommentDefaultAccessModifier" />
+    <exclude name="FieldNamingConventions" />
+    <exclude name="UseDiamondOperator" />
+    <exclude name="UselessParentheses" />
+    <exclude name="PrematureDeclaration" />
+    <exclude name="UnnecessaryBoxing" />
+    <exclude name="ControlStatementBraces" />
+    <exclude name="FieldDeclarationsShouldBeAtStartOfClass" />
+    <exclude name="ConfusingTernary" />
+    <exclude name="UnnecessaryFullyQualifiedName" />
+    <exclude name="LocalVariableNamingConventions" />
+    <exclude name="UnnecessaryModifier" />
+    <exclude name="LongVariable" />
   </rule>
-  <rule ref="category/java/coupling.xml">
+
+  <rule ref="category/java/design.xml">
     <exclude name="ExcessiveImports" />
     <exclude name="LawOfDemeter"/>
+    <exclude name="CyclomaticComplexity" />
+    <exclude name="CognitiveComplexity" />
+    <exclude name="NPathComplexity" />
+    <exclude name="AvoidCatchingGenericException" />
+    <exclude name="AvoidUncheckedExceptionsInSignatures" />
+    <exclude name="ImmutableField" />
+    <exclude name="NcssCount" />
+    <exclude name="CollapsibleIfStatements" />
+    <exclude name="MutableStaticState" />
+    <exclude name="CouplingBetweenObjects" />
+    <exclude name="TooManyMethods" />
+    <exclude name="GodClass" />
   </rule>
-  <rule ref="category/java/design.xml">
+
+  <rule ref="category/java/documentation.xml">
+    <exclude name="CommentSize" />
+    <exclude name="CommentRequired" />
+  </rule>
+
+  <rule ref="category/java/errorprone.xml">
+    <exclude name="AssignmentInOperand" />
+    <exclude name="NullAssignment" />
     <exclude name="ConstructorCallsOverridableMethod"/>
-    <exclude name="AbstractClassWithoutAbstractMethod"/>
+    <exclude name="AvoidDuplicateLiterals" />
+    <exclude name="ReplaceJavaUtilDate" />
+    <exclude name="AvoidLiteralsInIfCondition" />
+    <exclude name="UseLocaleWithCaseConversions" />
+    <exclude name="CompareObjectsWithEquals" />
+  </rule>
+
+  <rule ref="category/java/multithreading.xml">
+    <exclude name="UseConcurrentHashMap" />
     <exclude name="AvoidSynchronizedAtMethodLevel"/>
+    <exclude name="DoNotUseThreads" />
   </rule>
-  <rule ref="category/java/empty.xml"/>
-  <rule ref="category/java/finalizers.xml"/>
-  <rule ref="category/java/imports.xml"/>
-  <rule ref="category/java/j2ee.xml"/>
-  <rule ref="category/java/junit.xml"/>
-  <rule ref="category/java/logging-java.xml"/>
-  <rule ref="category/java/naming.xml">
-    <exclude name="ShortVariable"/>
-    <exclude name="AbstractNaming"/>
+
+  <rule ref="category/java/performance.xml">
+    <exclude name="AvoidInstantiatingObjectsInLoops" />
+    <exclude name="RedundantFieldInitializer" />
   </rule>
-  <rule ref="category/java/naming.xml/LongVariable">
-    <properties>
-      <property name="minimum" value="32"/>
-    </properties>
-  </rule>
-  <rule ref="category/java/optimizations.xml"/>
-  <rule ref="category/java/strictexception.xml"/>
-  <rule ref="category/java/strings.xml"/>
-  <rule ref="category/java/sunsecure.xml"/>
-  <rule ref="category/java/typeresolution.xml"/>
-  <rule ref="category/java/unnecessary.xml"/>
-  <rule ref="category/java/unusedcode.xml"/>
+  <rule ref="category/java/security.xml" />
+
 </ruleset>
