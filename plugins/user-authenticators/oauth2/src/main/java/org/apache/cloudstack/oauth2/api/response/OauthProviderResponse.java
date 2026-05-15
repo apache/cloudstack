@@ -65,6 +65,10 @@ public class OauthProviderResponse extends BaseResponse {
     @Param(description = "name of the domain the provider belongs to (empty for global)", since = "4.23.0")
     private String domainName;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the domain the provider belongs to (empty for global)", since = "4.23.0")
+    private String domainPath;
+
     @SerializedName(ApiConstants.ENABLED)
     @Param(description = "Whether the OAuth provider is enabled or not")
     private boolean enabled;
@@ -80,7 +84,16 @@ public class OauthProviderResponse extends BaseResponse {
         if (Objects.nonNull(domain)) {
             this.domainUuid = domain.getUuid();
             this.domainName = domain.getName();
+            this.domainPath = prettifyDomainPath(domain.getPath());
         }
+    }
+
+    private static String prettifyDomainPath(String path) {
+        if (path == null) {
+            return null;
+        }
+        String trimmed = path.endsWith("/") ? path.substring(0, path.length() - 1) : path;
+        return "ROOT" + trimmed;
     }
 
     public String getId() {
@@ -146,6 +159,14 @@ public class OauthProviderResponse extends BaseResponse {
 
     public void setDomainName(String domainName) {
         this.domainName = domainName;
+    }
+
+    public String getDomainPath() {
+        return domainPath;
+    }
+
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
     }
 
     public String getSecretKey() {
