@@ -31,6 +31,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 import java.util.stream.Collectors;
 
@@ -2281,6 +2282,27 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         return null;
     }
 
+    protected void validateExistingHostLocationImmutable(final HostVO host, final boolean newHost,
+            final long dcId, final Long podId, final Long clusterId, final StartupCommand startup) {
+        if (newHost || host == null || host.getType() != Host.Type.Routing) {
+            return;
+        }
+        final Long existingDcId = host.getDataCenterId();
+        final Long existingPodId = host.getPodId();
+        final Long existingClusterId = host.getClusterId();
+        if (existingDcId == null || existingPodId == null || existingClusterId == null) {
+            return;
+        }
+        if (existingDcId == dcId && Objects.equals(existingPodId, podId) && Objects.equals(existingClusterId, clusterId)) {
+            return;
+        }
+        final String identity = host.getUuid() != null ? host.getUuid() : host.getGuid();
+        final String ip = startup != null ? startup.getPrivateIpAddress() : "unknown";
+        throw new InvalidParameterValueException(String.format(
+                "Host %s (ip: %s) is already registered in [zone: %d, pod: %d, cluster: %d] and cannot be re-added or reconnected with [zone: %d, pod: %s, cluster: %s]. Zone, pod and cluster of an existing host are immutable.",
+                identity, ip, existingDcId, existingPodId, existingClusterId, dcId, podId, clusterId));
+    }
+
     protected HostVO createHostVO(final StartupCommand[] cmds, final ServerResource resource, final Map<String, String> details, List<String> hostTags,
             final ResourceStateAdapter.Event stateEvent) {
         boolean newHost = false;
@@ -2355,6 +2377,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 }
             }
         }
+
+        validateExistingHostLocationImmutable(host, newHost, dcId, podId, clusterId, startup);
 
         host.setDataCenterId(dc.getId());
         host.setPodId(podId);
