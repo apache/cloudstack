@@ -2537,11 +2537,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         if (pool.getType() == StoragePoolType.CLVM && volFormat == PhysicalDiskFormat.RAW) {
             return "CLVM";
+        } else if (poolType == StoragePoolType.CLVM_NG) {
+            return "CLVM_NG";
         } else if ((poolType == StoragePoolType.NetworkFilesystem
                 || poolType == StoragePoolType.SharedMountPoint
                 || poolType == StoragePoolType.Filesystem
-                || poolType == StoragePoolType.Gluster
-                || poolType == StoragePoolType.CLVM_NG)
+                || poolType == StoragePoolType.Gluster)
                 && volFormat == PhysicalDiskFormat.QCOW2 ) {
             return "QCOW2";
         } else if (poolType == StoragePoolType.Linstor) {
