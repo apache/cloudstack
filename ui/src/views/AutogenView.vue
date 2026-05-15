@@ -495,7 +495,7 @@
                   :placeholder="field.description"
                 />
                 <a-input-password
-                  v-else-if="field.name==='password' || field.name==='currentpassword' || field.name==='confirmpassword'"
+                  v-else-if="field.name==='password' || field.name==='currentpassword' || field.name==='confirmpassword' || field.name==='secretkey'"
                   v-model:value="form[field.name]"
                   :placeholder="field.description"
                   @blur="($event) => handleConfirmBlur($event, field.name)"
