@@ -147,7 +147,7 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
         String clientId = StringUtils.trim(cmd.getClientId());
         String redirectUri = StringUtils.trim(cmd.getRedirectUri());
         String secretKey = StringUtils.trim(cmd.getSecretKey());
-        Long domainId = resolveDomainIdFromIdOrPath(cmd.getDomainId(), cmd.getDomainPath());
+        Long domainId = normalizeGlobalScope(resolveDomainIdFromIdOrPath(cmd.getDomainId(), cmd.getDomainPath()));
 
         if (!isOAuthPluginEnabled(domainId)) {
             throw new CloudRuntimeException("OAuth is not enabled, please enable to register");
@@ -203,11 +203,13 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
             if (resolved == null) {
                 throw new CloudRuntimeException("Unable to resolve the supplied domain. Provide a valid domain id or path.");
             }
-            if (!resolved.equals(providerVO.getDomainId())) {
+            resolved = normalizeGlobalScope(resolved);
+            if (!Objects.equals(resolved, providerVO.getDomainId())) {
                 OauthProviderVO existing = _oauthProviderDao.findByProviderAndDomain(providerVO.getProvider(), resolved);
                 if (existing != null) {
                     throw new CloudRuntimeException(String.format(
-                            "Provider with the name %s is already registered for domain %d", providerVO.getProvider(), resolved));
+                            "Provider with the name %s is already registered for domain %s", providerVO.getProvider(),
+                            resolved == null ? "ROOT (global)" : resolved));
                 }
             }
             targetDomainId = resolved;
@@ -300,6 +302,12 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
             }
         }
         return null;
+    }
+
+    // The ROOT domain is the top of the tree, so a provider scoped to it is equivalent
+    // to a global provider; treat it as global so the global oauth2.enabled config applies.
+    protected Long normalizeGlobalScope(Long domainId) {
+        return (domainId != null && Domain.ROOT_DOMAIN == domainId) ? null : domainId;
     }
 
     protected String normalizeDomainPath(String path) {

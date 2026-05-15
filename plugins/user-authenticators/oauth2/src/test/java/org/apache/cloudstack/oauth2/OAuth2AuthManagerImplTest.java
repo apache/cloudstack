@@ -209,6 +209,32 @@ public class OAuth2AuthManagerImplTest {
     }
 
     @Test
+    public void testRegisterOauthProviderForRootDomainTreatedAsGlobal() {
+        RegisterOAuthProviderCmd cmd = Mockito.mock(RegisterOAuthProviderCmd.class);
+        when(cmd.getProvider()).thenReturn("github");
+        when(cmd.getDomainId()).thenReturn(com.cloud.domain.Domain.ROOT_DOMAIN);
+        when(cmd.getSecretKey()).thenReturn("secret");
+        when(cmd.getClientId()).thenReturn("clientId");
+        when(cmd.getRedirectUri()).thenReturn("https://redirect");
+
+        // global check must be consulted (domainId resolves to null), not the ROOT domain scope
+        when(_authManager.isOAuthPluginEnabled(Mockito.isNull())).thenReturn(true);
+        when(_oauthProviderDao.findByProviderAndDomain("github", null)).thenReturn(null);
+        when(_oauthProviderDao.persist(Mockito.any(OauthProviderVO.class))).thenAnswer(i -> i.getArgument(0));
+
+        OauthProviderVO result = _authManager.registerOauthProvider(cmd);
+        assertNull(result.getDomainId());
+        Mockito.verify(_oauthProviderDao).findByProviderAndDomain("github", null);
+    }
+
+    @Test
+    public void testNormalizeGlobalScopeMapsRootToNull() {
+        assertNull(_authManager.normalizeGlobalScope(com.cloud.domain.Domain.ROOT_DOMAIN));
+        assertNull(_authManager.normalizeGlobalScope(null));
+        assertEquals(Long.valueOf(42L), _authManager.normalizeGlobalScope(42L));
+    }
+
+    @Test
     public void testUpdateOauthProviderRejectsEnableWhenPluginDisabledAtScope() {
         Long id = 7L;
         Long domainId = 42L;
