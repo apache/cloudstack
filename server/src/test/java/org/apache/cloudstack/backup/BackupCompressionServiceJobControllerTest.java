@@ -515,7 +515,6 @@ public class BackupCompressionServiceJobControllerTest {
         doReturn(executingJobsPair).when(backupCompressionServiceJobControllerSpy).getHostToNumberOfExecutingJobsAndTotalExecutingJobs(eq(dataCenterVoMock), any());
         doReturn(List.of(new Pair<>(hostVO, 0L))).when(backupCompressionServiceJobControllerSpy).filterHostsWithTooManyJobs(any(), any());
         doReturn(new HashSet<Long>()).when(backupCompressionServiceJobControllerSpy).submitFinalizeJobsForExecution(any(), any(), eq(datacenterId));
-        doReturn(List.of()).when(internalBackupServiceJobDaoMock).listExecutingJobsByZoneIdAndJobType(eq(datacenterId), eq(InternalBackupServiceJobType.BackupValidation));
         doReturn(List.of(internalBackupServiceJobVoMock)).when(backupCompressionServiceJobControllerSpy).thinJobsToStartList(eq(dataCenterVoMock), any(), anyInt(), any());
         doNothing().when(backupCompressionServiceJobControllerSpy).submitQueuedJobsForExecution(any(), any(), any(), any(), eq(datacenterId));
 
@@ -524,5 +523,6 @@ public class BackupCompressionServiceJobControllerTest {
 
         verify(backupCompressionServiceJobControllerSpy).submitQueuedJobsForExecution(any(), any(), any(), any(), eq(datacenterId));
         verify(internalBackupServiceJobDaoMock).unlockFromLockTable("compression_lock");
+        verify(internalBackupServiceJobDaoMock).listExecutingJobsByZoneIdAndJobType(eq(datacenterId), eq(InternalBackupServiceJobType.StartCompression));
     }
 }

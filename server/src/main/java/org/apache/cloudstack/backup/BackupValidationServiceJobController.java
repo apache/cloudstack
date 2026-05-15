@@ -127,8 +127,8 @@ public class BackupValidationServiceJobController extends InternalBackupServiceJ
                 jobsToStart = thinJobsToStartList(zone, jobsToStart, hostToNumberOfExecutingJobsAndTotalExecutingJobs.second(), backupValidationMaxConcurrentOperations);
 
                 List<Pair<HostVO, Long>> hostAndNumberOfJobsPairList = filterHostsWithTooManyJobs(hostToNumberOfExecutingJobsAndTotalExecutingJobs.first(), backupValidationMaxConcurrentOperationsPerHost);
-                Set<Long> busyInstances = internalBackupServiceJobDao.listExecutingJobsByZoneIdAndJobType(zone.getId(), InternalBackupServiceJobType.StartCompression,
-                        InternalBackupServiceJobType.FinalizeCompression).stream().map(InternalBackupServiceJobVO::getInstanceId).collect(Collectors.toSet());
+                Set<Long> busyInstances = internalBackupServiceJobDao.listExecutingJobsByZoneIdAndJobType(zone.getId(), InternalBackupServiceJobType.BackupValidation)
+                                .stream().map(InternalBackupServiceJobVO::getInstanceId).collect(Collectors.toSet());
 
                 submitQueuedJobsForExecution(jobsToStart, hostAndNumberOfJobsPairList, busyInstances, backupValidationMaxConcurrentOperationsPerHost, zone.getId());
             }

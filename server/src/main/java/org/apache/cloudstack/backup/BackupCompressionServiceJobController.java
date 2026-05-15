@@ -120,7 +120,7 @@ public class BackupCompressionServiceJobController extends InternalBackupService
                 List<Pair<HostVO, Long>> hostAndNumberOfJobsPairList = filterHostsWithTooManyJobs(hostToNumberOfExecutingJobsAndTotalExecutingJobs.first(),
                         backupCompressionMaxConcurrentOperationsPerHost);
                 HashSet<Long> busyInstances = submitFinalizeJobsForExecution(jobsToStart, hostAndNumberOfJobsPairList, zone.getId());
-                busyInstances.addAll(internalBackupServiceJobDao.listExecutingJobsByZoneIdAndJobType(zone.getId(), InternalBackupServiceJobType.BackupValidation).stream().
+                busyInstances.addAll(internalBackupServiceJobDao.listExecutingJobsByZoneIdAndJobType(zone.getId(), InternalBackupServiceJobType.StartCompression).stream().
                         map(InternalBackupServiceJobVO::getInstanceId).collect(Collectors.toSet()));
 
                 jobsToStart = thinJobsToStartList(zone, jobsToStart, hostToNumberOfExecutingJobsAndTotalExecutingJobs.second(), backupCompressionMaxConcurrentOperations);
