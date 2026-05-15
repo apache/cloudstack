@@ -43,9 +43,8 @@ public interface VeeamControlService extends PluggableService, Configurable {
             "change-me", "Password for Basic Auth on Veeam Integration REST API server", true);
     ConfigKey<String> ServiceAccountId = new ConfigKey<>("Advanced", String.class,
             "integration.veeam.control.service.account", "",
-            "ID of the service account used to perform operations on resources. " +
-                    "Preferably an admin-level account with permissions to access resources across the environment " +
-                    "and optionally assign them to other users.",
+            "ID of the service account that the Veeam Control Service uses to perform operations on " +
+                    "resources.This account should be a Root-Admin.",
             true);
     ConfigKey<Boolean> InstanceRestoreAssignOwner = new ConfigKey<>("Advanced", Boolean.class,
             "integration.veeam.control.instance.restore.assign.owner",

@@ -79,6 +79,9 @@ public final class Vm extends BaseDto {
     public EmptyElement display = new EmptyElement();
 
     // CloudStack-specific fields
+    private String instanceId;
+    private String instanceName;
+    private String instanceGroupId;
     private String accountId;
     private String affinityGroupId;
     private String userDataId;
@@ -297,6 +300,33 @@ public final class Vm extends BaseDto {
 
     public void setCpuProfile(Ref cpuProfile) {
         this.cpuProfile = cpuProfile;
+    }
+
+    @JsonIgnore
+    public String getInstanceId() {
+        return instanceId;
+    }
+
+    public void setInstanceId(String instanceId) {
+        this.instanceId = instanceId;
+    }
+
+    @JsonIgnore
+    public String getInstanceName() {
+        return instanceName;
+    }
+
+    public void setInstanceName(String instanceName) {
+        this.instanceName = instanceName;
+    }
+
+    @JsonIgnore
+    public String getInstanceGroupId() {
+        return instanceGroupId;
+    }
+
+    public void setInstanceGroupId(String instanceGroupId) {
+        this.instanceGroupId = instanceGroupId;
     }
 
     @JsonIgnore

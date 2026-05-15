@@ -418,6 +418,9 @@ public class OvfXmlUtil {
             sb.append("<Section xsi:type=\"ovf:CloudStackMetadata_Type\">");
             sb.append("<Info>CloudStack specific metadata</Info>");
             sb.append("<CloudStack>");
+            sb.append("<InstanceId>").append(vm.getInstanceId()).append("</InstanceId>");
+            sb.append("<InstanceName>").append(vm.getInstanceName()).append("</InstanceName>");
+            sb.append("<InstanceGroupId>").append(vm.getInstanceGroupId()).append("</InstanceGroupId>");
             sb.append("<AccountId>").append(vo.getAccountUuid()).append("</AccountId>");
             sb.append("<DomainId>").append(vo.getDomainUuid()).append("</DomainId>");
             sb.append("<ProjectId>").append(escapeText(vo.getProjectUuid())).append("</ProjectId>");
@@ -798,6 +801,18 @@ public class OvfXmlUtil {
     private static void updateFromXmlCloudStackMetadataSection(Vm vm, Node metadataSection, XPath xpath) {
         if (metadataSection == null) {
             return;
+        }
+        String instanceId = xpathString(xpath, metadataSection, ".//*[local-name()='InstanceId']/text()");
+        if (StringUtils.isNotBlank(instanceId)) {
+            vm.setInstanceId(instanceId);
+        }
+        String instanceName = xpathString(xpath, metadataSection, ".//*[local-name()='InstanceName']/text()");
+        if (StringUtils.isNotBlank(instanceName)) {
+            vm.setInstanceName(instanceName);
+        }
+        String instanceGroupId = xpathString(xpath, metadataSection, ".//*[local-name()='InstanceGroupId']/text()");
+        if (StringUtils.isNotBlank(instanceGroupId)) {
+            vm.setInstanceGroupId(instanceGroupId);
         }
         String serviceOfferingId = xpathString(xpath, metadataSection, ".//*[local-name()='ServiceOfferingId']/text()");
         if (StringUtils.isNotBlank(serviceOfferingId)) {

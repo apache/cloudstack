@@ -173,6 +173,9 @@ public final class UserVmJoinVOToVmConverter {
                 basePath + ApiRouteHandler.BASE_ROUTE + "/cpuprofiles/" + src.getServiceOfferingUuid(),
                 src.getServiceOfferingUuid()));
 
+        dst.setInstanceId(src.getUuid());
+        dst.setInstanceName(src.getInstanceName());
+        dst.setInstanceGroupId(src.getInstanceGroupUuid());
         dst.setAccountId(src.getAccountUuid());
         dst.setAffinityGroupId(src.getAffinityGroupUuid());
         dst.setUserDataId(src.getUserDataUuid());
