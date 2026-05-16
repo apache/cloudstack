@@ -38,8 +38,10 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
 import com.cloud.vm.snapshot.VMSnapshotVO;
@@ -116,6 +118,9 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
     @Inject
     private VMInstanceDao vmInstanceDao;
+
+    @Inject
+    private VMInstanceDetailsDao vmInstanceDetailsDao;
 
     @Inject
     private PrimaryDataStoreDao primaryDataStoreDao;
@@ -226,6 +231,12 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
      * appended to the existing chain. Stopped VMs are always full (libvirt {@code backup-begin}
      * requires a running QEMU process). The {@code nas.backup.full.every} ConfigKey controls
      * how many backups (full + incrementals) form one chain before a new full is forced.
+     *
+     * <p>The decision is anchored on the VM's {@code nas.active_checkpoint_id} detail, which
+     * records the bitmap that currently exists on the running QEMU. After a restore that
+     * detail is cleared, so the next backup is automatically full — even though there may be
+     * a more recent "last backup taken" row in the database. This matches the prescription in
+     * the PR review (avoid relying on "last backup" because that breaks after restore).</p>
      */
     protected ChainDecision decideChain(VirtualMachine vm) {
         final String newBitmap = "backup-" + System.currentTimeMillis() / 1000L;
@@ -242,38 +253,29 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             return ChainDecision.fullStart(newBitmap);
         }
 
-        // Walk this VM's backups newest→oldest, find the most recent BackedUp backup that has a
-        // bitmap stored. If we don't find one, this is the first backup in a chain — start full.
-        List<Backup> history = backupDao.listByVmId(vm.getDataCenterId(), vm.getId());
-        if (history == null || history.isEmpty()) {
+        // 1. If the VM has no active_checkpoint_id, there is no bitmap on the host to use as
+        //    a parent. This is the case after restore (we clear it), after VM was just assigned
+        //    to the offering, or on the very first backup.
+        String activeCheckpoint = readVmActiveCheckpoint(vm.getId());
+        if (activeCheckpoint == null) {
             return ChainDecision.fullStart(newBitmap);
         }
-        history.sort(Comparator.comparing(Backup::getDate).reversed());
 
-        Backup parent = null;
-        String parentBitmap = null;
-        String parentChainId = null;
-        int parentChainPosition = -1;
-        for (Backup b : history) {
-            if (!Backup.Status.BackedUp.equals(b.getStatus())) {
-                continue;
-            }
-            String bm = readDetail(b, NASBackupChainKeys.BITMAP_NAME);
-            if (bm == null) {
-                continue;
-            }
-            parent = b;
-            parentBitmap = bm;
-            parentChainId = readDetail(b, NASBackupChainKeys.CHAIN_ID);
-            String posStr = readDetail(b, NASBackupChainKeys.CHAIN_POSITION);
-            try {
-                parentChainPosition = posStr == null ? 0 : Integer.parseInt(posStr);
-            } catch (NumberFormatException e) {
-                parentChainPosition = 0;
-            }
-            break;
+        // 2. Find the latest BackedUp backup of this VM whose BITMAP_NAME matches the VM's
+        //    active_checkpoint_id. Only that backup is a safe parent — any earlier backup
+        //    would have a bitmap that QEMU may have rotated out. Per the review:
+        //      "The latest backup should have the bitmap_name equal to the VM's
+        //       active_checkpoint_id which will become the parent backup. If not, force full."
+        Backup parent = findLatestBackedUpBackupWithBitmap(vm.getId(), activeCheckpoint);
+        if (parent == null) {
+            LOG.debug("VM {} has active_checkpoint_id={} but no matching backup found — forcing full",
+                    vm.getInstanceName(), activeCheckpoint);
+            return ChainDecision.fullStart(newBitmap);
         }
-        if (parent == null || parentBitmap == null || parentChainId == null) {
+
+        String parentChainId = readDetail(parent, NASBackupChainKeys.CHAIN_ID);
+        int parentChainPosition = chainPosition(parent);
+        if (parentChainId == null || parentChainPosition == Integer.MAX_VALUE) {
             return ChainDecision.fullStart(newBitmap);
         }
 
@@ -286,8 +288,42 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         // qcow2 onto it. The path is stored relative to the NAS mount point — the script
         // resolves it inside its mount session.
         String parentPath = composeParentBackupPath(parent);
-        return ChainDecision.incremental(newBitmap, parentBitmap, parentPath,
+        return ChainDecision.incremental(newBitmap, activeCheckpoint, parentPath,
                 parentChainId, parentChainPosition + 1);
+    }
+
+    /**
+     * Read the {@code nas.active_checkpoint_id} VM detail. Returns {@code null} when no detail
+     * exists (post-restore, first backup, or after explicit reset).
+     */
+    private String readVmActiveCheckpoint(long vmId) {
+        VMInstanceDetailVO d = vmInstanceDetailsDao.findDetail(vmId, NASBackupChainKeys.VM_ACTIVE_CHECKPOINT_ID);
+        if (d == null) {
+            return null;
+        }
+        String v = d.getValue();
+        return (v == null || v.isEmpty()) ? null : v;
+    }
+
+    /**
+     * Locate the most-recent {@code BackedUp} backup for {@code vmId} whose bitmap name equals
+     * {@code bitmapName}. Used by {@link #decideChain} to anchor the next incremental.
+     */
+    private Backup findLatestBackedUpBackupWithBitmap(long vmId, String bitmapName) {
+        List<Backup> history = backupDao.listByVmId(null, vmId);
+        if (history == null || history.isEmpty()) {
+            return null;
+        }
+        history.sort(Comparator.comparing(Backup::getDate).reversed());
+        for (Backup b : history) {
+            if (!Backup.Status.BackedUp.equals(b.getStatus())) {
+                continue;
+            }
+            if (bitmapName.equals(readDetail(b, NASBackupChainKeys.BITMAP_NAME))) {
+                return b;
+            }
+        }
+        return null;
     }
 
     private String readDetail(Backup backup, String key) {
@@ -328,6 +364,34 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             if (parentUuid != null) {
                 backupDetailsDao.persist(new BackupDetailVO(backup.getId(), NASBackupChainKeys.PARENT_BACKUP_ID, parentUuid, true));
             }
+        }
+    }
+
+    /**
+     * Upsert the VM's {@code nas.active_checkpoint_id} detail to {@code bitmapName}. Called
+     * after every successful backup so the next backup's parent-bitmap decision is anchored
+     * on what actually exists on QEMU, not on "last backup taken".
+     */
+    private void upsertVmActiveCheckpoint(long vmId, String bitmapName) {
+        VMInstanceDetailVO existing = vmInstanceDetailsDao.findDetail(vmId, NASBackupChainKeys.VM_ACTIVE_CHECKPOINT_ID);
+        if (existing == null) {
+            vmInstanceDetailsDao.addDetail(vmId, NASBackupChainKeys.VM_ACTIVE_CHECKPOINT_ID, bitmapName, false);
+            return;
+        }
+        existing.setValue(bitmapName);
+        vmInstanceDetailsDao.update(existing.getId(), existing);
+    }
+
+    /**
+     * Remove the VM's {@code nas.active_checkpoint_id} detail. Called from the restore paths:
+     * after restore the disk image has no QEMU bitmap attached, so any future incremental
+     * would be based on stale state. Clearing forces the next backup to be a fresh full.
+     */
+    private void clearVmActiveCheckpoint(long vmId) {
+        VMInstanceDetailVO existing = vmInstanceDetailsDao.findDetail(vmId, NASBackupChainKeys.VM_ACTIVE_CHECKPOINT_ID);
+        if (existing != null) {
+            vmInstanceDetailsDao.removeDetail(vmId, NASBackupChainKeys.VM_ACTIVE_CHECKPOINT_ID);
+            LOG.debug("Cleared nas.active_checkpoint_id for VM id={} (was {})", vmId, existing.getValue());
         }
     }
 
@@ -440,6 +504,18 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
                     logger.info("NAS incremental for VM {} recreated parent bitmap {} (likely VM was restarted since last backup)",
                             vm.getInstanceName(), answer.getBitmapRecreated());
                 }
+                // Pin the VM's active_checkpoint_id to whichever bitmap the agent actually
+                // created. This is the only valid parent for the next incremental (see
+                // decideChain). For the stopped-VM offline path BITMAP_CREATED is null —
+                // no bitmap exists on the host, so we also clear any stale detail from a
+                // prior online backup. Either way, after this step the detail accurately
+                // reflects what's on the running QEMU (or absence thereof).
+                String confirmedBitmap = answer.getBitmapCreated();
+                if (confirmedBitmap != null) {
+                    upsertVmActiveCheckpoint(vm.getId(), confirmedBitmap);
+                } else {
+                    clearVmActiveCheckpoint(vm.getId());
+                }
                 return new Pair<>(true, backupVO);
             } else {
                 throw new CloudRuntimeException("Failed to update backup");
@@ -530,6 +606,11 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             throw new CloudRuntimeException("Unable to contact backend control plane to initiate backup");
         } catch (OperationTimedoutException e) {
             throw new CloudRuntimeException("Operation to restore backup timed out, please try again");
+        }
+        // After a restore the QEMU dirty-bitmap chain is gone — clear active_checkpoint_id so
+        // the next backup is taken as a fresh full and starts a new chain. See decideChain.
+        if (answer != null && answer.getResult()) {
+            clearVmActiveCheckpoint(vm.getId());
         }
         return new Pair<>(answer.getResult(), answer.getDetails());
     }

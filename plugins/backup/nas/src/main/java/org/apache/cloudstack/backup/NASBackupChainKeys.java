@@ -45,6 +45,15 @@ public final class NASBackupChainKeys {
     /** Set to the bitmap name when this incremental had to recreate its parent bitmap on the host (informational; this incremental is larger than usual). */
     public static final String BITMAP_RECREATED = "nas.bitmap_recreated";
 
+    /**
+     * VM-scoped detail (stored in {@code vm_instance_details}) holding the QEMU dirty-bitmap
+     * name that currently exists on the running VM and is therefore the only valid parent
+     * for the next incremental backup. Written by {@link #BITMAP_NAME} on each successful
+     * backup; cleared on restore (the restored disk image has no bitmap, so the next backup
+     * must be a fresh full). When the VM has no detail, {@code decideChain} forces full.
+     */
+    public static final String VM_ACTIVE_CHECKPOINT_ID = "nas.active_checkpoint_id";
+
     private NASBackupChainKeys() {
     }
 }

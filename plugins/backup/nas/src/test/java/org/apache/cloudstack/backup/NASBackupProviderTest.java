@@ -48,8 +48,10 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.Pair;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupDetailsDao;
@@ -99,6 +101,9 @@ public class NASBackupProviderTest {
 
     @Mock
     private BackupDetailsDao backupDetailsDao;
+
+    @Mock
+    private VMInstanceDetailsDao vmInstanceDetailsDao;
 
     @Test
     public void testDeleteBackup() throws OperationTimedoutException, AgentUnavailableException {
@@ -356,5 +361,80 @@ public class NASBackupProviderTest {
         Mockito.verify(hostDao).findById(hostId);
         Mockito.verify(hostDao).findHypervisorHostInCluster(clusterId);
         Mockito.verify(resourceManager).findOneRandomRunningHostByHypervisor(Hypervisor.HypervisorType.KVM, zoneId);
+    }
+
+    // -- decideChain anchored on VM's active_checkpoint_id -------------------------------
+
+    /**
+     * No active_checkpoint_id on the VM (post-restore, first-ever backup, or detail purged) =>
+     * decideChain must return a fresh full. This is the regression abh1sar called out at
+     * NASBackupProvider.java:251 ("This logic breaks after restore. We can't use the last
+     * backup taken as parent in that case.").
+     */
+    @Test
+    public void decideChainReturnsFullWhenVmHasNoActiveCheckpoint() {
+        Long zoneId = 1L;
+        Long vmId = 42L;
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        Mockito.when(vm.getId()).thenReturn(vmId);
+        Mockito.when(vm.getDataCenterId()).thenReturn(zoneId);
+        Mockito.when(vm.getState()).thenReturn(VMInstanceVO.State.Running);
+
+        Mockito.when(vmInstanceDetailsDao.findDetail(vmId, NASBackupChainKeys.VM_ACTIVE_CHECKPOINT_ID)).thenReturn(null);
+
+        NASBackupProvider.ChainDecision decision = nasBackupProvider.decideChain(vm);
+        Assert.assertNotNull(decision);
+        Assert.assertEquals(NASBackupChainKeys.TYPE_FULL, decision.mode);
+        Assert.assertNull(decision.bitmapParent);
+        Assert.assertEquals(0, decision.chainPosition);
+    }
+
+    /**
+     * After a successful restoreVMFromBackup, decideChain on the next backup must produce
+     * a full. We verify by checking that vmInstanceDetailsDao.removeDetail is called with
+     * the active_checkpoint_id key.
+     */
+    @Test
+    public void restoreClearsActiveCheckpointDetail() throws AgentUnavailableException, OperationTimedoutException {
+        Long vmId = 7L;
+        Long hostId = 8L;
+        Long backupOfferingId = 9L;
+
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        Mockito.when(vm.getId()).thenReturn(vmId);
+        Mockito.when(vm.getLastHostId()).thenReturn(hostId);
+        Mockito.when(vm.getRemoved()).thenReturn(null);
+        Mockito.when(vm.getName()).thenReturn("vm7");
+
+        HostVO host = mock(HostVO.class);
+        Mockito.when(host.getStatus()).thenReturn(Status.Up);
+        Mockito.when(host.getId()).thenReturn(hostId);
+        Mockito.when(hostDao.findById(hostId)).thenReturn(host);
+
+        BackupVO backup = new BackupVO();
+        backup.setVmId(vmId);
+        backup.setBackupOfferingId(backupOfferingId);
+        backup.setExternalId("i-2-7-VM/2026.05.16.10.00.00");
+        ReflectionTestUtils.setField(backup, "id", 100L);
+        // backedUpVolumes defaults to null => BackupVO.getBackedUpVolumes returns emptyList().
+
+        BackupRepositoryVO repo = new BackupRepositoryVO(1L, "nas", "test-repo",
+                "nfs", "address", "sync", 1024L, null);
+        Mockito.when(backupRepositoryDao.findByBackupOfferingId(backupOfferingId)).thenReturn(repo);
+
+        Mockito.when(volumeDao.findByInstance(vmId)).thenReturn(Collections.emptyList());
+
+        BackupAnswer answer = mock(BackupAnswer.class);
+        Mockito.when(answer.getResult()).thenReturn(true);
+        Mockito.when(agentManager.send(Mockito.anyLong(), Mockito.any(RestoreBackupCommand.class))).thenReturn(answer);
+
+        // Pre-existing checkpoint detail so removeDetail has something to "clear".
+        VMInstanceDetailVO existing = mock(VMInstanceDetailVO.class);
+        Mockito.when(existing.getValue()).thenReturn("backup-1715000000");
+        Mockito.when(vmInstanceDetailsDao.findDetail(vmId, NASBackupChainKeys.VM_ACTIVE_CHECKPOINT_ID)).thenReturn(existing);
+
+        boolean ok = nasBackupProvider.restoreVMFromBackup(vm, backup);
+        Assert.assertTrue(ok);
+        Mockito.verify(vmInstanceDetailsDao).removeDetail(vmId, NASBackupChainKeys.VM_ACTIVE_CHECKPOINT_ID);
     }
 }
