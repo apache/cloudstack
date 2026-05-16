@@ -28,6 +28,7 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -389,10 +390,12 @@ public class NASBackupProviderTest {
         Assert.assertEquals(0, decision.chainPosition);
     }
 
+    // -- restore clears active_checkpoint_id ---------------------------------------------
+
     /**
      * After a successful restoreVMFromBackup, decideChain on the next backup must produce
-     * a full. We verify by checking that vmInstanceDetailsDao.removeDetail is called with
-     * the active_checkpoint_id key.
+     * a full. We verify this end-to-end by checking that vmInstanceDetailsDao.removeDetail
+     * is called with the active_checkpoint_id key.
      */
     @Test
     public void restoreClearsActiveCheckpointDetail() throws AgentUnavailableException, OperationTimedoutException {
@@ -436,5 +439,157 @@ public class NASBackupProviderTest {
         boolean ok = nasBackupProvider.restoreVMFromBackup(vm, backup);
         Assert.assertTrue(ok);
         Mockito.verify(vmInstanceDetailsDao).removeDetail(vmId, NASBackupChainKeys.VM_ACTIVE_CHECKPOINT_ID);
+    }
+
+    // -- delete-pending cascade ----------------------------------------------------------
+
+    /**
+     * Deleting an incremental that has a live child must mark the incremental as
+     * delete-pending in backup_details and NOT touch the on-NAS file or the backups row.
+     * This is the snapshot-style pattern abh1sar requested at NASBackupProvider.java:696.
+     */
+    @Test
+    public void deleteWithLiveChildMarksDeletePendingAndPreservesFile()
+            throws AgentUnavailableException, OperationTimedoutException {
+        Long zoneId = 1L;
+        Long vmId = 2L;
+        Long hostId = 3L;
+        Long offeringId = 4L;
+
+        BackupVO parent = new BackupVO();
+        parent.setVmId(vmId);
+        parent.setBackupOfferingId(offeringId);
+        parent.setExternalId("i-2-2-VM/2026.05.10.10.00.00");
+        parent.setZoneId(zoneId);
+        ReflectionTestUtils.setField(parent, "id", 50L);
+        ReflectionTestUtils.setField(parent, "uuid", "parent-uuid");
+
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        Mockito.when(vm.getLastHostId()).thenReturn(hostId);
+        HostVO host = mock(HostVO.class);
+        Mockito.when(host.getStatus()).thenReturn(Status.Up);
+        Mockito.when(host.getId()).thenReturn(hostId);
+        Mockito.when(hostDao.findById(hostId)).thenReturn(host);
+
+        BackupRepositoryVO repo = new BackupRepositoryVO(1L, "nas", "test-repo",
+                "nfs", "address", "sync", 1024L, null);
+        Mockito.when(backupRepositoryDao.findByBackupOfferingId(offeringId)).thenReturn(repo);
+        Mockito.when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
+
+        // CHAIN_ID on the parent => not the no-chain fast path.
+        BackupDetailVO chainIdDetail = new BackupDetailVO(50L, NASBackupChainKeys.CHAIN_ID, "chain-1", true);
+        Mockito.when(backupDetailsDao.findDetail(50L, NASBackupChainKeys.CHAIN_ID)).thenReturn(chainIdDetail);
+
+        // A live child references parent-uuid via PARENT_BACKUP_ID.
+        BackupVO child = new BackupVO();
+        child.setVmId(vmId);
+        child.setBackupOfferingId(offeringId);
+        child.setExternalId("i-2-2-VM/2026.05.10.10.30.00");
+        child.setZoneId(zoneId);
+        child.setStatus(Backup.Status.BackedUp);
+        ReflectionTestUtils.setField(child, "id", 51L);
+        ReflectionTestUtils.setField(child, "uuid", "child-uuid");
+
+        BackupDetailVO childChainId = new BackupDetailVO(51L, NASBackupChainKeys.CHAIN_ID, "chain-1", true);
+        BackupDetailVO childParent = new BackupDetailVO(51L, NASBackupChainKeys.PARENT_BACKUP_ID, "parent-uuid", true);
+        Mockito.when(backupDetailsDao.findDetail(51L, NASBackupChainKeys.CHAIN_ID)).thenReturn(childChainId);
+        Mockito.when(backupDetailsDao.findDetail(51L, NASBackupChainKeys.PARENT_BACKUP_ID)).thenReturn(childParent);
+        Mockito.when(backupDetailsDao.findDetail(51L, NASBackupChainKeys.DELETE_PENDING)).thenReturn(null);
+
+        Mockito.when(backupDao.listByVmId(null, vmId)).thenReturn(List.of(parent, child));
+
+        boolean result = nasBackupProvider.deleteBackup(parent, false);
+        Assert.assertTrue(result);
+
+        // No agent traffic — the on-NAS file must be preserved while children are alive.
+        Mockito.verify(agentManager, Mockito.never()).send(Mockito.anyLong(), Mockito.any(DeleteBackupCommand.class));
+        // No DB row removal — the row is the tombstone marker.
+        Mockito.verify(backupDao, Mockito.never()).remove(50L);
+        // A DELETE_PENDING detail was persisted.
+        ArgumentCaptor<BackupDetailVO> captor = ArgumentCaptor.forClass(BackupDetailVO.class);
+        Mockito.verify(backupDetailsDao).persist(captor.capture());
+        Assert.assertEquals(NASBackupChainKeys.DELETE_PENDING, captor.getValue().getName());
+        Assert.assertEquals("true", captor.getValue().getValue());
+    }
+
+    /**
+     * Deleting a leaf incremental whose parent is delete-pending must (a) delete the leaf and
+     * then (b) sweep up the tombstoned parent. Mirrors DefaultSnapshotStrategy's
+     * "delete leaf, then walk up while parent is destroying-and-childless".
+     */
+    @Test
+    public void deletingLeafSweepsUpDeletePendingParent()
+            throws AgentUnavailableException, OperationTimedoutException {
+        Long zoneId = 1L;
+        Long vmId = 2L;
+        Long hostId = 3L;
+        Long offeringId = 4L;
+
+        BackupVO leaf = new BackupVO();
+        leaf.setVmId(vmId);
+        leaf.setBackupOfferingId(offeringId);
+        leaf.setExternalId("i-2-2-VM/2026.05.10.11.00.00");
+        leaf.setZoneId(zoneId);
+        ReflectionTestUtils.setField(leaf, "id", 51L);
+        ReflectionTestUtils.setField(leaf, "uuid", "leaf-uuid");
+
+        BackupVO parent = new BackupVO();
+        parent.setVmId(vmId);
+        parent.setBackupOfferingId(offeringId);
+        parent.setExternalId("i-2-2-VM/2026.05.10.10.30.00");
+        parent.setZoneId(zoneId);
+        ReflectionTestUtils.setField(parent, "id", 50L);
+        ReflectionTestUtils.setField(parent, "uuid", "parent-uuid");
+
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        Mockito.when(vm.getLastHostId()).thenReturn(hostId);
+        HostVO host = mock(HostVO.class);
+        Mockito.when(host.getStatus()).thenReturn(Status.Up);
+        Mockito.when(host.getId()).thenReturn(hostId);
+        Mockito.when(hostDao.findById(hostId)).thenReturn(host);
+
+        BackupRepositoryVO repo = new BackupRepositoryVO(1L, "nas", "test-repo",
+                "nfs", "address", "sync", 1024L, null);
+        Mockito.when(backupRepositoryDao.findByBackupOfferingId(offeringId)).thenReturn(repo);
+        Mockito.when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
+
+        // Leaf details.
+        BackupDetailVO leafChainId = new BackupDetailVO(51L, NASBackupChainKeys.CHAIN_ID, "chain-1", true);
+        BackupDetailVO leafParent = new BackupDetailVO(51L, NASBackupChainKeys.PARENT_BACKUP_ID, "parent-uuid", true);
+        Mockito.when(backupDetailsDao.findDetail(51L, NASBackupChainKeys.CHAIN_ID)).thenReturn(leafChainId);
+        Mockito.when(backupDetailsDao.findDetail(51L, NASBackupChainKeys.PARENT_BACKUP_ID)).thenReturn(leafParent);
+
+        // Parent is tombstoned.
+        BackupDetailVO parentChainId = new BackupDetailVO(50L, NASBackupChainKeys.CHAIN_ID, "chain-1", true);
+        BackupDetailVO parentPending = new BackupDetailVO(50L, NASBackupChainKeys.DELETE_PENDING, "true", true);
+        Mockito.when(backupDetailsDao.findDetail(50L, NASBackupChainKeys.CHAIN_ID)).thenReturn(parentChainId);
+        Mockito.when(backupDetailsDao.findDetail(50L, NASBackupChainKeys.DELETE_PENDING)).thenReturn(parentPending);
+        // Parent has no parent of its own (it's the full anchor).
+        Mockito.when(backupDetailsDao.findDetail(50L, NASBackupChainKeys.PARENT_BACKUP_ID)).thenReturn(null);
+
+        // listByVmId is called repeatedly. We use a mutable list so the sweep observes the
+        // leaf has been removed and treats the parent as childless.
+        java.util.List<Backup> liveBackups = new java.util.ArrayList<>(List.of(parent, leaf));
+        Mockito.when(backupDao.listByVmId(null, vmId)).thenAnswer(inv -> new java.util.ArrayList<>(liveBackups));
+
+        // Agent acknowledges every delete.
+        Mockito.when(agentManager.send(Mockito.anyLong(), Mockito.any(DeleteBackupCommand.class)))
+                .thenReturn(new BackupAnswer(new DeleteBackupCommand(null, null, null, null), true, "ok"));
+        // backupDao.remove(id) drops the corresponding row from the live list so the next
+        // listByVmId call reflects post-delete state — mirrors the real DAO contract.
+        Mockito.when(backupDao.remove(Mockito.anyLong())).thenAnswer(inv -> {
+            Long id = inv.getArgument(0);
+            liveBackups.removeIf(b -> b.getId() == id);
+            return true;
+        });
+
+        boolean result = nasBackupProvider.deleteBackup(leaf, false);
+        Assert.assertTrue(result);
+
+        // Both backups must be physically deleted (leaf first, then tombstoned parent).
+        Mockito.verify(agentManager, Mockito.times(2))
+                .send(Mockito.anyLong(), Mockito.any(DeleteBackupCommand.class));
+        Mockito.verify(backupDao).remove(51L);
+        Mockito.verify(backupDao).remove(50L);
     }
 }

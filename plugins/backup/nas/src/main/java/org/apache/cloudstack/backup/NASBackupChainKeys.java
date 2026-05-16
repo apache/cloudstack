@@ -46,6 +46,14 @@ public final class NASBackupChainKeys {
     public static final String BITMAP_RECREATED = "nas.bitmap_recreated";
 
     /**
+     * Tombstone key stored in {@code backup_details} when a backup is requested for deletion
+     * but still has live children. The on-NAS file is preserved until the last child is gone,
+     * at which point cascade deletion collects every tombstoned ancestor. Mirrors the snapshot
+     * subsystem's {@code Hidden} state semantics (see {@code DefaultSnapshotStrategy}).
+     */
+    public static final String DELETE_PENDING = "nas.delete_pending";
+
+    /**
      * VM-scoped detail (stored in {@code vm_instance_details}) holding the QEMU dirty-bitmap
      * name that currently exists on the running VM and is therefore the only valid parent
      * for the next incremental backup. Written by {@link #BITMAP_NAME} on each successful
