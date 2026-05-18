@@ -17,6 +17,46 @@
 
 package com.cloud.resource;
 
+import static com.cloud.resource.ResourceState.Event.ErrorsCorrected;
+import static com.cloud.resource.ResourceState.Event.InternalEnterMaintenance;
+import static com.cloud.resource.ResourceState.Event.UnableToMaintain;
+import static com.cloud.resource.ResourceState.Event.UnableToMigrate;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
+
+import org.apache.cloudstack.api.command.admin.host.CancelHostAsDegradedCmd;
+import org.apache.cloudstack.api.command.admin.host.DeclareHostAsDegradedCmd;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.BDDMockito;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedConstruction;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
@@ -43,45 +83,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.trilead.ssh2.Connection;
-import org.apache.cloudstack.api.command.admin.host.CancelHostAsDegradedCmd;
-import org.apache.cloudstack.api.command.admin.host.DeclareHostAsDegradedCmd;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.BDDMockito;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockedConstruction;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.mockito.Spy;
-import org.mockito.junit.MockitoJUnitRunner;
-
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
-
-import static com.cloud.resource.ResourceState.Event.ErrorsCorrected;
-import static com.cloud.resource.ResourceState.Event.InternalEnterMaintenance;
-import static com.cloud.resource.ResourceState.Event.UnableToMaintain;
-import static com.cloud.resource.ResourceState.Event.UnableToMigrate;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ResourceManagerImplTest {
@@ -216,6 +217,19 @@ public class ResourceManagerImplTest {
         actionEventUtilsMocked.close();
         getVncPortCommandMockedConstruction.close();
         closeable.close();
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCheckForDuplicateHostThrowsWhenIpAlreadyExists() {
+        when(hostDao.findByIp("10.0.0.10")).thenReturn(host);
+        resourceManager.checkForDuplicateHost("http://10.0.0.10");
+    }
+
+    @Test
+    public void testCheckForDuplicateHostAllowsUniqueHost() {
+        when(hostDao.findByIp("10.0.0.30")).thenReturn(null);
+        resourceManager.checkForDuplicateHost("http://10.0.0.30");
+        verify(hostDao, times(1)).findByIp("10.0.0.30");
     }
 
     @Test
