@@ -6413,7 +6413,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
             _accountMgr.checkAccess(caller, null, true, snapshot);
             VolumeInfo volumeOfSnapshot = getVolume(snapshot.getVolumeId(), templateId, true);
-            templateId = volumeOfSnapshot.getTemplateId();
+            if (volumeOfSnapshot != null) {
+                templateId = volumeOfSnapshot.getTemplateId();
+            } else if (templateId == null) {
+                throw new InvalidParameterValueException(
+                        "Could not determine template from snapshot id=" + cmd.getSnapshotId() +
+                                "; the source volume no longer exists. Please specify a templateId.");
+            }
         }
 
         VirtualMachineTemplate template = null;
@@ -6695,7 +6701,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private VolumeInfo getVolume(long id, Long templateId, boolean isSnapshot) {
         VolumeInfo volume = volFactory.getVolume(id);
         if (volume != null) {
-            if (volume.getDataStore() == null || !ScopeType.ZONE.equals(volume.getDataStore().getScope().getScopeType())) {
+            if (!isSnapshot
+                    && (volume.getDataStore() == null
+                    || !ScopeType.ZONE.equals(volume.getDataStore().getScope().getScopeType()))) {
                 throw new InvalidParameterValueException("Deployment of virtual machine is supported only for Zone-wide storage pools");
             }
             checkIfVolumeTemplateIsTheSameAsTheProvided(volume, templateId);
