@@ -3908,9 +3908,6 @@ public class UserVmManagerImplTest {
         when(snapshotMock.getVolumeId()).thenReturn(volumeId);
         when(volumeInfo.getTemplateId()).thenReturn(templateId);
         when(volumeInfo.getInstanceId()).thenReturn(null);
-        when(volumeInfo.getDataStore()).thenReturn(primaryDataStore);
-        when(primaryDataStore.getScope()).thenReturn(scopeMock);
-        when(primaryDataStore.getScope().getScopeType()).thenReturn(ScopeType.ZONE);
         when(templateMock.getTemplateType()).thenReturn(Storage.TemplateType.VNF);
         when(templateMock.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
         when(templateMock.isDeployAsIs()).thenReturn(false);
@@ -3925,6 +3922,137 @@ public class UserVmManagerImplTest {
 
 
         userVmManagerImpl.createVirtualMachine(deployVMCmd);
+    }
+
+    /**
+     * Bug fix: when deploying a VM from a snapshot whose source volume resided on
+     * local (HOST-scoped) storage, the zone-wide pool check must be skipped.
+     * The source volume's pool type is irrelevant – only the snapshot matters.
+     */
+    @Test
+    public void createVirtualMachineWithSnapshotFromExpungedLocalStorageVolumeSucceeds()
+            throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
+        DeployVMCmd deployVMCmd = new DeployVMCmd();
+        ReflectionTestUtils.setField(deployVMCmd, "zoneId", zoneId);
+        ReflectionTestUtils.setField(deployVMCmd, "serviceOfferingId", serviceOfferingId);
+        ReflectionTestUtils.setField(deployVMCmd, "snapshotId", snashotId);
+        deployVMCmd._accountService = accountService;
+
+        when(accountService.finalyzeAccountId(nullable(String.class), nullable(Long.class), nullable(Long.class), eq(true))).thenReturn(accountId);
+        when(accountService.getActiveAccountById(accountId)).thenReturn(account);
+        when(entityManager.findById(DataCenter.class, zoneId)).thenReturn(_dcMock);
+        when(entityManager.findById(ServiceOffering.class, serviceOfferingId)).thenReturn(serviceOffering);
+        when(snapshotDaoMock.findById(snashotId)).thenReturn(snapshotMock);
+        when(snapshotMock.getVolumeId()).thenReturn(volumeId);
+        when(volumeDataFactory.getVolume(volumeId)).thenReturn(volumeInfo);
+        when(volumeInfo.getTemplateId()).thenReturn(templateId);
+        when(volumeInfo.getInstanceId()).thenReturn(null);
+        when(entityManager.findByIdIncludingRemoved(VirtualMachineTemplate.class, templateId)).thenReturn(templateMock);
+        when(templateMock.getTemplateType()).thenReturn(Storage.TemplateType.VNF);
+        when(templateMock.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        when(templateMock.isDeployAsIs()).thenReturn(false);
+        when(templateMock.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+        when(templateMock.getUserDataId()).thenReturn(null);
+        Mockito.doNothing().when(vnfTemplateManager).validateVnfApplianceNics(any(), nullable(List.class), any());
+        when(_dcMock.isLocalStorageEnabled()).thenReturn(true);
+        when(_dcMock.getNetworkType()).thenReturn(DataCenter.NetworkType.Basic);
+        Mockito.doReturn(userVmVoMock).when(userVmManagerImpl).createBasicSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), nullable(Boolean.class), any(), any(), any(),
+                any(), any(), any(), any(), eq(true), any(), any(), any());
+
+        // Must NOT throw "Deployment of virtual machine is supported only for Zone-wide storage pools"
+        userVmManagerImpl.createVirtualMachine(deployVMCmd);
+    }
+
+    /**
+     * Bug fix: when deploying a VM from a snapshot whose source volume's storage pool
+     * was expunged (data store is null), the zone-wide pool check must be skipped.
+     */
+    @Test
+    public void createVirtualMachineWithSnapshotFromVolumeWithNullDataStoreSucceeds()
+            throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
+        DeployVMCmd deployVMCmd = new DeployVMCmd();
+        ReflectionTestUtils.setField(deployVMCmd, "zoneId", zoneId);
+        ReflectionTestUtils.setField(deployVMCmd, "serviceOfferingId", serviceOfferingId);
+        ReflectionTestUtils.setField(deployVMCmd, "snapshotId", snashotId);
+        deployVMCmd._accountService = accountService;
+
+        when(accountService.finalyzeAccountId(nullable(String.class), nullable(Long.class), nullable(Long.class), eq(true))).thenReturn(accountId);
+        when(accountService.getActiveAccountById(accountId)).thenReturn(account);
+        when(entityManager.findById(DataCenter.class, zoneId)).thenReturn(_dcMock);
+        when(entityManager.findById(ServiceOffering.class, serviceOfferingId)).thenReturn(serviceOffering);
+        when(snapshotDaoMock.findById(snashotId)).thenReturn(snapshotMock);
+        when(snapshotMock.getVolumeId()).thenReturn(volumeId);
+        when(volumeDataFactory.getVolume(volumeId)).thenReturn(volumeInfo);
+        when(volumeInfo.getTemplateId()).thenReturn(templateId);
+        when(volumeInfo.getInstanceId()).thenReturn(null);
+        when(entityManager.findByIdIncludingRemoved(VirtualMachineTemplate.class, templateId)).thenReturn(templateMock);
+        when(templateMock.getTemplateType()).thenReturn(Storage.TemplateType.VNF);
+        when(templateMock.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        when(templateMock.isDeployAsIs()).thenReturn(false);
+        when(templateMock.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+        when(templateMock.getUserDataId()).thenReturn(null);
+        Mockito.doNothing().when(vnfTemplateManager).validateVnfApplianceNics(any(), nullable(List.class), any());
+        when(_dcMock.isLocalStorageEnabled()).thenReturn(true);
+        when(_dcMock.getNetworkType()).thenReturn(DataCenter.NetworkType.Basic);
+        Mockito.doReturn(userVmVoMock).when(userVmManagerImpl).createBasicSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), nullable(Boolean.class), any(), any(), any(),
+                any(), any(), any(), any(), eq(true), any(), any(), any());
+
+        // Must NOT throw "Deployment of virtual machine is supported only for Zone-wide storage pools"
+        userVmManagerImpl.createVirtualMachine(deployVMCmd);
+    }
+
+    /**
+     * Regression: deploying directly from a volume (not a snapshot) whose storage pool
+     * is HOST-scoped (local) must still be rejected with an appropriate error.
+     */
+    @Test
+    public void createVirtualMachineWithVolumeFromNonZoneScopedStorageFails() {
+        DeployVMCmd deployVMCmd = new DeployVMCmd();
+        ReflectionTestUtils.setField(deployVMCmd, "zoneId", zoneId);
+        ReflectionTestUtils.setField(deployVMCmd, "serviceOfferingId", serviceOfferingId);
+        ReflectionTestUtils.setField(deployVMCmd, "volumeId", volumeId);
+        deployVMCmd._accountService = accountService;
+
+        when(accountService.finalyzeAccountId(nullable(String.class), nullable(Long.class), nullable(Long.class), eq(true))).thenReturn(accountId);
+        when(accountService.getActiveAccountById(accountId)).thenReturn(account);
+        when(entityManager.findById(DataCenter.class, zoneId)).thenReturn(_dcMock);
+        when(entityManager.findById(ServiceOffering.class, serviceOfferingId)).thenReturn(serviceOffering);
+        when(volumeDataFactory.getVolume(volumeId)).thenReturn(volumeInfo);
+        // Volume lives on HOST-scoped (local) storage
+        when(volumeInfo.getDataStore()).thenReturn(primaryDataStore);
+        when(primaryDataStore.getScope()).thenReturn(scopeMock);
+        when(scopeMock.getScopeType()).thenReturn(ScopeType.HOST);
+
+        InvalidParameterValueException ex = assertThrows(InvalidParameterValueException.class,
+                () -> userVmManagerImpl.createVirtualMachine(deployVMCmd));
+        assertEquals("Deployment of virtual machine is supported only for Zone-wide storage pools", ex.getMessage());
+    }
+
+    /**
+     * Regression: deploying directly from a volume (not a snapshot) whose storage pool
+     * has been expunged (null data store) must still be rejected with an appropriate error.
+     */
+    @Test
+    public void createVirtualMachineWithVolumeWithNullDataStoreFails() {
+        DeployVMCmd deployVMCmd = new DeployVMCmd();
+        ReflectionTestUtils.setField(deployVMCmd, "zoneId", zoneId);
+        ReflectionTestUtils.setField(deployVMCmd, "serviceOfferingId", serviceOfferingId);
+        ReflectionTestUtils.setField(deployVMCmd, "volumeId", volumeId);
+        deployVMCmd._accountService = accountService;
+
+        when(accountService.finalyzeAccountId(nullable(String.class), nullable(Long.class), nullable(Long.class), eq(true))).thenReturn(accountId);
+        when(accountService.getActiveAccountById(accountId)).thenReturn(account);
+        when(entityManager.findById(DataCenter.class, zoneId)).thenReturn(_dcMock);
+        when(entityManager.findById(ServiceOffering.class, serviceOfferingId)).thenReturn(serviceOffering);
+        when(volumeDataFactory.getVolume(volumeId)).thenReturn(volumeInfo);
+        // Volume's data store is null (pool was deleted)
+        when(volumeInfo.getDataStore()).thenReturn(null);
+
+        InvalidParameterValueException ex = assertThrows(InvalidParameterValueException.class,
+                () -> userVmManagerImpl.createVirtualMachine(deployVMCmd));
+        assertEquals("Deployment of virtual machine is supported only for Zone-wide storage pools", ex.getMessage());
     }
 
     @Test
