@@ -19,9 +19,11 @@ package com.cloud.resource;
 import static com.cloud.configuration.ConfigurationManagerImpl.MIGRATE_VM_ACROSS_CLUSTERS;
 import static com.cloud.configuration.ConfigurationManagerImpl.SET_HOST_DOWN_TO_MAINTENANCE;
 
+import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -2613,19 +2615,22 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     void checkForDuplicateHost(final String url) {
         String hostIpOrName = null;
+        String ipAddress = null;
         try {
             hostIpOrName = new URI(UriUtils.encodeURIComponent(url)).getHost();
-        } catch (final URISyntaxException ignore) {
-            // unparseable URL - discoverer will reject it shortly anyway
+            InetAddress ip = InetAddress.getByName(hostIpOrName);
+            ipAddress = ip.getHostAddress();
+        } catch (final URISyntaxException | UnknownHostException ignore) {
+            // unparseable URL or unknown host - discoverer will reject it shortly anyway
         }
         if (StringUtils.isBlank(hostIpOrName)) {
             return;
         }
-        final HostVO existingByIp = _hostDao.findByIp(hostIpOrName);
+        final HostVO existingByIp = _hostDao.findByIp(ipAddress);
         if (existingByIp != null) {
             throw new InvalidParameterValueException(String.format(
-                    "A host with IP address / hostname '%s' already exists (id: %s). Remove it before adding again.",
-                    hostIpOrName, existingByIp.getUuid()));
+                    "A host with IP address / hostname '%s' (%s) already exists (id: %s). Remove it before adding again.",
+                    hostIpOrName, ipAddress, existingByIp.getUuid()));
         }
     }
 
