@@ -1003,11 +1003,10 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     private boolean isRollBackAllowedForProvider(LoadBalancerVO loadBalancer) {
         Network network = _networkDao.findById(loadBalancer.getNetworkId());
         List<Provider> provider = _networkMgr.getProvidersForServiceInNetwork(network, Service.Lb);
-        if (provider == null || provider.isEmpty()) {
+        if (CollectionUtils.isEmpty(provider)) {
             return false;
         }
-        return provider.get(0) == Provider.Netscaler || provider.get(0) == Provider.F5BigIp ||
-                provider.get(0) == Provider.VirtualRouter || provider.get(0) == Provider.VPCVirtualRouter;
+        return List.of(Provider.Netscaler, Provider.F5BigIp, Provider.VirtualRouter, Provider.VPCVirtualRouter).contains(provider.get(0));
     }
 
     @Override
