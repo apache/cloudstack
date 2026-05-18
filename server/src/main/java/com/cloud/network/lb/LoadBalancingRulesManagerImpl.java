@@ -1126,7 +1126,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                     if (ip.equals(primaryIp)) {
                         continue;
                     }
-                    if (_nicSecondaryIpDao.findByIp4AddressAndNicId(ip,nicInSameNetwork.getId()) == null) {
+                    if (_nicSecondaryIpDao.findByIp4AddressAndNicId(ip, nicInSameNetwork.getId()) == null) {
                         throw new InvalidParameterValueException("Instance IP "+ ip + " specified does not belong to " +
                                 "NIC in Network " + nicInSameNetwork.getNetworkId());
                     }
@@ -2020,7 +2020,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                         for (LoadBalancerVMMapVO lbVmMapToRevoke : lbVmMapsToRevoke) {
                             _lb2VmMapDao.remove(lb.getId(), lbVmMapToRevoke.getInstanceId(), lbVmMapToRevoke.getInstanceIp(), null);
                             logger.debug("Load balancer rule {} is removed for Instance {} and IP {}",
-                                    lb, lbVmMapToRevoke.getInstanceId(), lbVmMapToRevoke.getInstanceIp());;
+                                    lb, lbVmMapToRevoke.getInstanceId(), lbVmMapToRevoke.getInstanceIp());
                         }
 
                         if (_lb2VmMapDao.listByLoadBalancerId(lb.getId()).isEmpty()) {
