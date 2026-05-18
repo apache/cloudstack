@@ -322,10 +322,11 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
             if (!configDao.update(rootCAPrivateKey.key(), rootCAPrivateKey.category(), CertUtils.privateKeyToPem(keyPair.getPrivate()))) {
                 logger.error("Failed to save RootCA private key");
             }
+            caKeyPair = keyPair;
         } catch (final NoSuchProviderException | NoSuchAlgorithmException | IOException e) {
             logger.error("Failed to generate/save RootCA private/public keys due to exception:", e);
         }
-        return loadRootCAKeyPair();
+        return caKeyPair != null && caKeyPair.getPrivate() != null && caKeyPair.getPublic() != null;
     }
 
     boolean saveNewRootCACertificate() {
@@ -351,6 +352,9 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
     }
 
     private boolean loadRootCAKeyPair() {
+        if (caKeyPair != null) {
+            return true;
+        }
         if (StringUtils.isAnyEmpty(rootCAPublicKey.value(), rootCAPrivateKey.value())) {
             return false;
         }
@@ -364,6 +368,9 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
     }
 
     boolean loadRootCACertificate() {
+        if (caCertificate != null && CollectionUtils.isNotEmpty(caCertificates)) {
+            return true;
+        }
         caCertificate = null;
         caCertificates = null;
         if (StringUtils.isEmpty(rootCACertificate.value())) {
