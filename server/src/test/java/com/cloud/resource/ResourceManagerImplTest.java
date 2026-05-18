@@ -219,6 +219,19 @@ public class ResourceManagerImplTest {
         closeable.close();
     }
 
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCheckForDuplicateHostThrowsWhenIpAlreadyExists() {
+        when(hostDao.findByIp("10.0.0.10")).thenReturn(host);
+        resourceManager.checkForDuplicateHost("http://10.0.0.10");
+    }
+
+    @Test
+    public void testCheckForDuplicateHostAllowsUniqueHost() {
+        when(hostDao.findByIp("10.0.0.30")).thenReturn(null);
+        resourceManager.checkForDuplicateHost("http://10.0.0.30");
+        verify(hostDao, times(1)).findByIp("10.0.0.30");
+    }
+
     @Test
     public void testCheckAndMaintainEnterMaintenanceModeNoVms() throws NoTransitionException {
         // Test entering into maintenance with no VMs running on host.

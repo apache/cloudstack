@@ -799,6 +799,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             throw new InvalidParameterValueException(url + " is not a valid uri");
         }
 
+        checkForDuplicateHost(url);
+
         final List<HostVO> hosts = new ArrayList<>();
         logger.info("Trying to add a new host at {} in data center {}", url, zone);
         boolean isHypervisorTypeSupported = false;
@@ -2607,6 +2609,24 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
         return host;
+    }
+
+    void checkForDuplicateHost(final String url) {
+        String hostIpOrName = null;
+        try {
+            hostIpOrName = new URI(UriUtils.encodeURIComponent(url)).getHost();
+        } catch (final URISyntaxException ignore) {
+            // unparseable URL - discoverer will reject it shortly anyway
+        }
+        if (StringUtils.isBlank(hostIpOrName)) {
+            return;
+        }
+        final HostVO existingByIp = _hostDao.findByIp(hostIpOrName);
+        if (existingByIp != null) {
+            throw new InvalidParameterValueException(String.format(
+                    "A host with IP address / hostname '%s' already exists (id: %s). Remove it before adding again.",
+                    hostIpOrName, existingByIp.getUuid()));
+        }
     }
 
     private Host createHostAndAgentDeferred(final ServerResource resource, final Map<String, String> details, final boolean old, final List<String> hostTags, final boolean forRebalance) {
