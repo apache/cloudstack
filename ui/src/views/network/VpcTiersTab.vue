@@ -34,7 +34,14 @@
                 {{ $t('label.name') }}
               </div>
               <div>
-                <router-link :to="{ path: '/guestnetwork/' + network.id }">{{ network.name }} </router-link>
+                <router-link
+                  v-if="network.projectid"
+                  :to="{ path: '/guestnetwork/' + network.id, query: {projectid: -1 }}">
+                  {{ network.name }}
+                </router-link>
+                <router-link v-else :to="{ path: '/guestnetwork/' + network.id }">
+                  {{ network.name }}
+                </router-link>
                 <a-tag v-if="network.broadcasturi">{{ network.broadcasturi }}</a-tag>
               </div>
             </div>
@@ -58,7 +65,23 @@
                 </router-link>
               </div>
             </div>
-            <div class="list__col" v-if="!(resource.domainid === network.domainid && resource.account === network.account)">
+            <div
+              class="list__col"
+              v-if="(network.projectid && resource.account) || (network.projectid !== resource.projectid)"
+            >
+              <div class="list__label">
+                {{ $t('label.project') }}
+              </div>
+              <div>
+                <router-link :to="{ path: '/project/' + network.projectid }">
+                  {{ network.project }}
+                </router-link>
+              </div>
+            </div>
+            <div
+              class="list__col"
+              v-else-if="(network.account && resource.projectid) || network.account !== resource.account || network.domainid !== resource.domainid"
+            >
               <div class="list__label">
                 {{ $t('label.account') }}
               </div>
@@ -549,7 +572,7 @@ export default {
       }
       for (const network of this.networks) {
         this.fetchLoadBalancers(network.id)
-        this.fetchVMs(network.id)
+        this.fetchVMs(network)
         this.updateDisplayCollapsible(network.networkofferingid, network)
       }
       this.publicLBNetworkExists()
@@ -710,17 +733,21 @@ export default {
         this.fetchLoading = false
       })
     },
-    fetchVMs (id) {
+    fetchVMs (network) {
       this.fetchLoading = true
-      getAPI('listVirtualMachines', {
+      var params = {
         listAll: true,
         vpcid: this.resource.id,
-        networkid: id,
+        networkid: network.id,
         page: this.page,
         pagesize: this.pageSize
-      }).then(json => {
-        this.vms[id] = json.listvirtualmachinesresponse.virtualmachine || []
-        this.itemCounts.vms[id] = json.listvirtualmachinesresponse.count || 0
+      }
+      if (network.projectid) {
+        params.projectid = -1
+      }
+      getAPI('listVirtualMachines', params).then(json => {
+        this.vms[network.id] = json.listvirtualmachinesresponse.virtualmachine || []
+        this.itemCounts.vms[network.id] = json.listvirtualmachinesresponse.count || 0
       }).finally(() => {
         this.fetchLoading = false
       })
@@ -784,7 +811,7 @@ export default {
         var params = {
           vpcid: this.resource.id,
           domainid: this.owner?.domainid || this.resource.domainid,
-          account: this.owner?.projectid ? null : (this.owner?.account ? this.owner.account : this.resource.account),
+          account: this.owner?.projectid ? null : (this.owner?.account || this.resource.account),
           projectid: this.owner?.projectid || null,
           networkOfferingId: values.networkOffering,
           name: values.name,
