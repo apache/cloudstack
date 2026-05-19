@@ -116,6 +116,7 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
                         if (logger.isDebugEnabled()) {
                             logger.debug(String.format("module start failure of module [%s] was due to: ", moduleDefinitionName), e);
                         }
+                        throw new RuntimeException(String.format("Failed to start module [%s]", moduleDefinitionName), e);
                     }
                 } catch (EmptyStackException e) {
                     logger.warn(String.format("Failed to obtain module context due to [%s]. Using root context instead.", e.getMessage()));
@@ -147,10 +148,11 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
                         logger.debug("Failed to obtain module context: ", e);
                     }
                 } catch (BeansException e) {
-                    logger.warn(String.format("Failed to start module [%s] due to: [%s].", def.getName(), e.getMessage()));
+                    logger.warn(String.format("Failed to load module [%s] due to: [%s].", def.getName(), e.getMessage()));
                     if (logger.isDebugEnabled()) {
-                        logger.debug(String.format("module start failure of module [%s] was due to: ", def.getName()), e);
+                        logger.debug(String.format("module load failure of module [%s] was due to: ", def.getName()), e);
                     }
+                    throw new RuntimeException(String.format("Failed to load module [%s]", def.getName()), e);
                 }
             }
         });
