@@ -20,6 +20,10 @@ import os
 from netaddr import *
 from random import randint
 import json
+import fcntl
+import shutil
+import tempfile
+import signal
 from .CsGuestNetwork import CsGuestNetwork
 from cs.CsDatabag import CsDataBag
 from cs.CsFile import CsFile
@@ -139,7 +143,8 @@ class CsDhcp(CsDataBag):
             # Listen Address
             if self.cl.is_redundant():
                 listen_address.append(gateway)
-            listen_address.append(ip)
+            else:
+                listen_address.append(ip)
             # Add localized "data-server" records in /etc/hosts for VPC routers
             if self.config.is_vpc() or self.config.is_router():
                 self.add_host(gateway, "%s data-server" % CsHelper.get_hostname())
@@ -165,14 +170,78 @@ class CsDhcp(CsDataBag):
                 mac = lease[1]
                 ip = lease[2]
                 if mac not in macs_dhcphosts:
+                    logging.info("Releasing DHCP lease for IP: %s, mac: %s", ip, mac)
                     cmd = "dhcp_release $(ip route get %s | grep eth | head -1 | awk '{print $3}') %s %s" % (ip, ip, mac)
                     logging.info(cmd)
                     CsHelper.execute(cmd)
+                    if self.ensure_lease_removed(ip):
+                        logging.info("Lease for %s still existed after dhcp_release; removed manually", ip)
                     removed = removed + 1
                     self.del_host(ip)
             logging.info("Deleted %s entries from dnsmasq.leases file" % str(removed))
         except Exception as e:
             logging.error("Caught error while trying to delete entries from dnsmasq.leases file: %s" % e)
+
+    def lease_exists(self, ip):
+        if not os.path.exists(LEASES):
+            return False
+
+        with open(LEASES, "r") as fp:
+            for line in fp:
+                fields = line.split()
+                if len(fields) >= 3 and fields[2] == ip:
+                    return True
+
+        return False
+
+    def remove_lease(self, ip):
+        if not os.path.exists(LEASES):
+            return False
+
+        removed = False
+
+        with open(LEASES, "r+") as fp:
+            fcntl.flock(fp.fileno(), fcntl.LOCK_EX)
+            lines = fp.readlines()
+
+            fd, tmp_path = tempfile.mkstemp(
+                prefix="dnsmasq.leases.",
+                dir=os.path.dirname(LEASES)
+            )
+
+            try:
+                with os.fdopen(fd, "w") as tmp:
+                    for line in lines:
+                        fields = line.split()
+
+                        if len(fields) >= 3 and fields[2] == ip:
+                            removed = True
+                            continue
+
+                        tmp.write(line)
+
+                if removed:
+                    shutil.move(tmp_path, LEASES)
+
+                    # reload dnsmasq
+                    try:
+                        with open("/var/run/dnsmasq.pid") as pidf:
+                            os.kill(int(pidf.read().strip()), signal.SIGHUP)
+                    except Exception:
+                        pass
+
+                    os.system("ip neigh flush all")
+                else:
+                    os.remove(tmp_path)
+            finally:
+                fcntl.flock(fp.fileno(), fcntl.LOCK_UN)
+
+        return removed
+
+    def ensure_lease_removed(self, ip):
+        if self.lease_exists(ip):
+            return self.remove_lease(ip)
+        return False
 
     def preseed(self):
         self.add_host("127.0.0.1", "localhost")
