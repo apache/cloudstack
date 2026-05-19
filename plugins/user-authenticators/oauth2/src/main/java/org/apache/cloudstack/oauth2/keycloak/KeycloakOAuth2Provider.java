@@ -46,6 +46,7 @@ import org.apache.http.util.EntityUtils;
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
@@ -129,10 +130,14 @@ public class KeycloakOAuth2Provider extends AdapterBase implements UserOAuth2Aut
                 }
 
                 JsonObject json = JsonParser.parseString(body).getAsJsonObject();
-                String idToken = json.get("id_token").getAsString();
-                validateIdToken(idToken, provider);
+                JsonElement fetchedIdToken = json.get("id_token");
+                if (fetchedIdToken == null) {
+                	throw new CloudRuntimeException("No id_token found in token");
+                }
+				String idTokenAsString = fetchedIdToken.getAsString();
+                validateIdToken(idTokenAsString , provider);
 
-                this.idToken = idToken;
+                this.idToken = idTokenAsString ;
             } catch (IOException e) {
                 throw new CloudRuntimeException("Unable to connect to Keycloak server", e);
             }
