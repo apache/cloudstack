@@ -28,6 +28,8 @@ concurrency:
 
 jobs:
   triage:
+  triage:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false
     permissions:
       pull-requests: write  # for eps1lon/actions-label-merge-conflict to label PRs
     runs-on: ubuntu-22.04
