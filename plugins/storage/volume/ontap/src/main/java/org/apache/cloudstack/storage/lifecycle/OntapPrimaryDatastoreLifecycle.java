@@ -34,7 +34,6 @@ import com.cloud.storage.StoragePoolAutomation;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.common.base.Preconditions;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.engine.subsystem.api.storage.AbstractScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
