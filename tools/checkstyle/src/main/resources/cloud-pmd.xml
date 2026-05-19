@@ -31,52 +31,52 @@
   <rule ref="category/java/bestpractices.xml">
     <exclude name="AbstractClassWithoutAbstractMethod" />
     <exclude name="GuardLogStatement" />
-    <exclude name="LiteralsFirstInComparisons" />
-    <exclude name="PreserveStackTrace" />
-    <exclude name="AvoidReassigningParameters" />
-    <exclude name="LooseCoupling" />
-    <exclude name="UseCollectionIsEmpty" />
-    <exclude name="MissingOverride" />
-    <exclude name="UnusedAssignment" />
+    <!-- <exclude name="LiteralsFirstInComparisons" /> -->
+    <!-- <exclude name="PreserveStackTrace" /> -->
+    <!-- <exclude name="AvoidReassigningParameters" /> -->
+    <!-- <exclude name="LooseCoupling" /> -->
+    <!-- <exclude name="UseCollectionIsEmpty" /> -->
+    <!-- <exclude name="MissingOverride" /> -->
+    <!-- <exclude name="UnusedAssignment" /> -->
   </rule>
 
   <rule ref="category/java/codestyle.xml">
     <exclude name="ShortVariable" />
     <exclude name="AtLeastOneConstructor" />
     <exclude name="CallSuperInConstructor" />
-    <exclude name="LocalVariableCouldBeFinal" />
-    <exclude name="MethodArgumentCouldBeFinal" />
-    <exclude name="OnlyOneReturn" />
-    <exclude name="CommentDefaultAccessModifier" />
-    <exclude name="FieldNamingConventions" />
-    <exclude name="UseDiamondOperator" />
-    <exclude name="UselessParentheses" />
-    <exclude name="PrematureDeclaration" />
-    <exclude name="UnnecessaryBoxing" />
-    <exclude name="ControlStatementBraces" />
-    <exclude name="FieldDeclarationsShouldBeAtStartOfClass" />
-    <exclude name="ConfusingTernary" />
-    <exclude name="UnnecessaryFullyQualifiedName" />
-    <exclude name="LocalVariableNamingConventions" />
-    <exclude name="UnnecessaryModifier" />
+    <!-- <exclude name="LocalVariableCouldBeFinal" />
+    <exclude name="MethodArgumentCouldBeFinal" /> -->
+    <!-- <exclude name="OnlyOneReturn" /> -->
+    <!-- <exclude name="CommentDefaultAccessModifier" /> -->
+    <!-- <exclude name="FieldNamingConventions" /> -->
+    <!-- <exclude name="UseDiamondOperator" /> -->
+    <!-- <exclude name="UselessParentheses" /> -->
+    <!-- <exclude name="PrematureDeclaration" /> -->
+    <!-- <exclude name="UnnecessaryBoxing" /> -->
+    <!-- <exclude name="ControlStatementBraces" /> -->
+    <!-- <exclude name="FieldDeclarationsShouldBeAtStartOfClass" /> -->
+    <!-- <exclude name="ConfusingTernary" /> -->
+    <!-- <exclude name="UnnecessaryFullyQualifiedName" /> -->
+    <!-- <exclude name="LocalVariableNamingConventions" /> -->
+    <!-- <exclude name="UnnecessaryModifier" /> -->
     <exclude name="LongVariable" />
   </rule>
 
   <rule ref="category/java/design.xml">
     <exclude name="ExcessiveImports" />
     <exclude name="LawOfDemeter"/>
-    <exclude name="CyclomaticComplexity" />
-    <exclude name="CognitiveComplexity" />
-    <exclude name="NPathComplexity" />
-    <exclude name="AvoidCatchingGenericException" />
-    <exclude name="AvoidUncheckedExceptionsInSignatures" />
-    <exclude name="ImmutableField" />
-    <exclude name="NcssCount" />
-    <exclude name="CollapsibleIfStatements" />
-    <exclude name="MutableStaticState" />
+    <!-- <exclude name="CyclomaticComplexity" /> -->
+    <!-- <exclude name="CognitiveComplexity" /> -->
+    <!-- <exclude name="NPathComplexity" /> -->
+    <!-- <exclude name="AvoidCatchingGenericException" /> -->
+    <!-- <exclude name="AvoidUncheckedExceptionsInSignatures" /> -->
+    <!-- <exclude name="ImmutableField" /> -->
+    <!-- <exclude name="NcssCount" /> -->
+    <!-- <exclude name="CollapsibleIfStatements" /> -->
+    <!-- <exclude name="MutableStaticState" />
     <exclude name="CouplingBetweenObjects" />
     <exclude name="TooManyMethods" />
-    <exclude name="GodClass" />
+    <exclude name="GodClass" /> -->
   </rule>
 
   <rule ref="category/java/documentation.xml">
@@ -88,22 +88,22 @@
     <exclude name="AssignmentInOperand" />
     <exclude name="NullAssignment" />
     <exclude name="ConstructorCallsOverridableMethod"/>
-    <exclude name="AvoidDuplicateLiterals" />
+    <!-- <exclude name="AvoidDuplicateLiterals" />
     <exclude name="ReplaceJavaUtilDate" />
     <exclude name="AvoidLiteralsInIfCondition" />
     <exclude name="UseLocaleWithCaseConversions" />
-    <exclude name="CompareObjectsWithEquals" />
+    <exclude name="CompareObjectsWithEquals" /> -->
   </rule>
 
   <rule ref="category/java/multithreading.xml">
     <exclude name="UseConcurrentHashMap" />
     <exclude name="AvoidSynchronizedAtMethodLevel"/>
-    <exclude name="DoNotUseThreads" />
+    <!-- <exclude name="DoNotUseThreads" /> -->
   </rule>
 
   <rule ref="category/java/performance.xml">
-    <exclude name="AvoidInstantiatingObjectsInLoops" />
-    <exclude name="RedundantFieldInitializer" />
+    <!-- <exclude name="AvoidInstantiatingObjectsInLoops" />
+    <exclude name="RedundantFieldInitializer" /> -->
   </rule>
   <rule ref="category/java/security.xml" />
 
