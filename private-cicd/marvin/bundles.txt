@@ -1,0 +1,5 @@
+# Named Marvin test bundles (paths relative to test/integration/).
+# Used by scripts/marvin-run.sh and config/marvin.yaml.
+
+ontap-smoke=plugins/ontap/test_ontap_smoke.py
+ontap-all=plugins/ontap/

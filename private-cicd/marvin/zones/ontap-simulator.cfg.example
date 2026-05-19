@@ -1,0 +1,12 @@
+# Example zone stub for ONTAP Marvin jobs. Copy to ontap-simulator.cfg and align with setup/dev/*.cfg.
+# Do not commit real credentials.
+
+[cloud]
+name = CloudStack CI ONTAP
+dns1 = 8.8.8.8
+dns2 = 8.8.4.4
+internaldns1 = 8.8.8.8
+internaldns2 = 8.8.4.4
+
+# Extend with zone, pod, cluster, primary storage, and ONTAP provider settings
+# per your simulator or lab layout.

@@ -1,0 +1,26 @@
+# Marvin / simulator integration (Phase 2). Jenkins reads this when PIPELINE_PHASE=marvin.
+
+python_version: "3.10"
+
+# Zone config under private-cicd/marvin/zones/ (lab secrets stay in Jenkins credentials).
+zone_config: marvin/zones/ontap-simulator.cfg.example
+
+# Test paths relative to CloudStack test/integration/ (see marvin/bundles.txt).
+default_bundle: ontap-smoke
+
+bundles:
+  ontap-smoke:
+    - plugins/ontap/test_ontap_smoke.py
+  ontap-all:
+    - plugins/ontap/
+
+maven:
+  # Marvin needs a built management server; run full build before marvin phase.
+  require_full_build: true
+  profiles: developer,systemvm
+  simulator: true
+
+mysql:
+  database: cloud
+  user: cloud
+  # password: set via Jenkins credential / env MARVIN_DB_PASSWORD

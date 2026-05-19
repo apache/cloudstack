@@ -1,0 +1,27 @@
+# Fast build profile: ONTAP storage plugin only (Maven reactor -pl -am).
+# Used by PIPELINE_PHASE=build-ontap-fast and scripts/mvn-ontap-fast.sh.
+
+ontap:
+  maven_artifact: cloud-plugin-storage-volume-ontap
+  maven_pl: ":cloud-plugin-storage-volume-ontap"
+  plugin_path: plugins/storage/volume/ontap
+
+maven:
+  profiles: developer
+  skip_tests: false
+  extra_args: ""
+  # Two-step: (-am -DskipTests install) then (-pl ontap test). Never use "-am test"
+  # or upstream modules (e.g. engine/schema) run sudo-mount tests and hang on Password:
+  steps:
+    - install_deps_skip_tests
+    - test_ontap_only
+
+# Paths that trigger a full build when changed (git diff); optional in Jenkins later.
+change_detection:
+  full_build_paths:
+    - client/
+    - engine/
+    - api/
+    - framework/
+    - plugins/storage/volume/default/
+    - pom.xml

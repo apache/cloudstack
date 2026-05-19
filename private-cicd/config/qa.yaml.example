@@ -1,0 +1,11 @@
+# Copy to config/qa.yaml and customize (qa.yaml may be gitignored locally if it contains secrets).
+# Select in Jenkins via CONFIG_DEFAULTS_FILE=config/qa.yaml
+
+cloudstack:
+  git_url: https://github.com/NetApp/netapp-cloudstack.git
+  branch: dev_branch
+
+profiles:
+  nightly:
+    cloudstack:
+      branch: main

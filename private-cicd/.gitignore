@@ -1,0 +1,4 @@
+# Local overrides with secrets (templates *.example stay tracked)
+config/qa.yaml
+marvin/zones/*.cfg
+!marvin/zones/*.cfg.example

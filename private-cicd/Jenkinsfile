@@ -1,0 +1,292 @@
+/*
+ * Private downstream Jenkins pipeline for Apache CloudStack.
+ * Not for inclusion in apache/cloudstack upstream.
+ *
+ * Rollout: Phase -1 = preflight (validate private-cicd only). Phase 1 = build-only. Phases 2–3 = marvin / delivery — see private-cicd/docs/IMPLEMENTATION-PHASES.md
+ *
+ * Usage:
+ *  - Monorepo: Script Path = private-cicd/Jenkinsfile ; leave CLONE_SEPARATE = false.
+ *  - CI-only repo: set CLONE_SEPARATE = true and point CLOUDSTACK_* at your fork/tag.
+ */
+
+pipeline {
+  agent any
+
+  options {
+    buildDiscarder(logRotator(numToKeepStr: '30'))
+    timestamps()
+    timeout(time: 4, unit: 'HOURS')
+  }
+
+  parameters {
+    choice(
+      name: 'PIPELINE_PHASE',
+      choices: ['build-ontap-fast', 'build-only', 'preflight', 'marvin', 'delivery'],
+      description: 'build-ontap-fast = ONTAP plugin -pl -am test. preflight = Phase -1. build-only = full Maven. marvin / delivery reserved; see private-cicd/docs/IMPLEMENTATION-PHASES.md'
+    )
+    string(
+      name: 'CONFIG_DEFAULTS_FILE',
+      defaultValue: 'config/defaults.yaml',
+      description: 'YAML path relative to CICD_ROOT (e.g. config/defaults.yaml or config/team-b.yaml).'
+    )
+    string(
+      name: 'CONFIG_PROFILE',
+      defaultValue: '',
+      description: 'Optional: key under profiles in the defaults YAML (e.g. example-lts-branch). Blank = use only top-level cloudstack: from the file.'
+    )
+    booleanParam(
+      name: 'CLONE_SEPARATE',
+      defaultValue: false,
+      description: 'If true, clone CloudStack into cloudstack-src/ (use when this job repo is CI-only). If false, expect CloudStack pom.xml at the workspace root (multibranch on your fork). Branch/url below apply only when this is true.'
+    )
+    string(
+      name: 'CLOUDSTACK_GIT_URL',
+      defaultValue: '',
+      description: 'Override Git URL for CloudStack. Leave blank to use config/defaults.yaml (after optional CONFIG_PROFILE).'
+    )
+    string(
+      name: 'CLOUDSTACK_GIT_BRANCH',
+      defaultValue: '',
+      description: 'Override branch or tag for clone. Leave blank to use config/defaults.yaml (after optional CONFIG_PROFILE). Ignored when CLONE_SEPARATE is false.'
+    )
+    booleanParam(
+      name: 'ENABLE_NOREDIST',
+      defaultValue: false,
+      description: 'If true, run third-party non-OSS install script then mvn -Dnoredist (see README / legal for your org).'
+    )
+    booleanParam(
+      name: 'SKIP_TESTS',
+      defaultValue: true,
+      description: 'If true, Maven uses -DskipTests=true (faster CI).'
+    )
+    booleanParam(
+      name: 'INSTALL_APT_DEPS',
+      defaultValue: true,
+      description: 'If true, run private-cicd/scripts/install-build-deps-ubuntu.sh (requires sudo on agent).'
+    )
+    booleanParam(
+      name: 'SETUP_IPMITOOL_WRAPPER',
+      defaultValue: false,
+      description: 'If true, install CloudStack-style ipmitool wrapper (requires sudo).'
+    )
+  }
+
+  environment {
+    MAVEN_OPTS = '-Xmx3072m -XX:MaxMetaspaceSize=512m'
+  }
+
+  stages {
+    stage('Phase gate') {
+      steps {
+        script {
+          switch (params.PIPELINE_PHASE) {
+            case 'preflight':
+            case 'build-ontap-fast':
+            case 'build-only':
+              break
+            case 'marvin':
+            case 'delivery':
+              error("PIPELINE_PHASE='${params.PIPELINE_PHASE}' is not implemented yet. Use preflight, build-ontap-fast, or build-only. See private-cicd/docs/IMPLEMENTATION-PHASES.md")
+            default:
+              error("PIPELINE_PHASE='${params.PIPELINE_PHASE}' is not supported.")
+          }
+        }
+      }
+    }
+
+    stage('Resolve CloudStack directory') {
+      steps {
+        script {
+          if (fileExists("${env.WORKSPACE}/private-cicd/scripts/install-build-deps-ubuntu.sh")) {
+            env.CICD_SCRIPT_DIR = "${env.WORKSPACE}/private-cicd/scripts"
+            env.CICD_ROOT = "${env.WORKSPACE}/private-cicd"
+          } else if (fileExists("${env.WORKSPACE}/scripts/install-build-deps-ubuntu.sh")) {
+            env.CICD_SCRIPT_DIR = "${env.WORKSPACE}/scripts"
+            env.CICD_ROOT = env.WORKSPACE
+          } else {
+            error('Cannot find install-build-deps-ubuntu.sh (expected private-cicd/scripts or scripts/).')
+          }
+          if (params.CLONE_SEPARATE) {
+            env.CLOUDSTACK_DIR = "${env.WORKSPACE}/cloudstack-src"
+          } else {
+            env.CLOUDSTACK_DIR = env.WORKSPACE
+          }
+
+          def rel = params.CONFIG_DEFAULTS_FILE?.trim()
+          if (!rel) {
+            rel = 'config/defaults.yaml'
+          }
+          rel = rel.replaceAll('^/+', '')
+          if (rel.contains('..')) {
+            error('CONFIG_DEFAULTS_FILE must stay under CICD_ROOT (no .. segments).')
+          }
+          def cfgPath = "${env.CICD_ROOT}/${rel}"
+          echo "Loading CI defaults from: ${cfgPath}"
+          def baseCfg = [cloudstack: [git_url: 'https://github.com/apache/cloudstack.git', branch: 'main']]
+          if (fileExists(cfgPath)) {
+            baseCfg = readYaml(file: cfgPath) ?: baseCfg
+          } else {
+            echo "No ${cfgPath}; using built-in CloudStack URL/branch defaults."
+          }
+
+          def cs = new LinkedHashMap((baseCfg.cloudstack ?: [:]) as Map)
+          def profileName = params.CONFIG_PROFILE?.trim()
+          if (profileName && baseCfg.profiles instanceof Map && baseCfg.profiles[profileName]) {
+            def overlay = baseCfg.profiles[profileName].cloudstack
+            if (overlay instanceof Map) {
+              cs.putAll(overlay as Map)
+            }
+          }
+
+          def urlOverride = params.CLOUDSTACK_GIT_URL?.trim()
+          def branchOverride = params.CLOUDSTACK_GIT_BRANCH?.trim()
+          env.EFFECTIVE_CLOUDSTACK_GIT_URL = urlOverride ?: (cs.git_url as String ?: 'https://github.com/apache/cloudstack.git')
+          env.EFFECTIVE_CLOUDSTACK_GIT_BRANCH = branchOverride ?: (cs.branch as String ?: 'main')
+
+          echo "CICD_ROOT=${env.CICD_ROOT} CICD_SCRIPT_DIR=${env.CICD_SCRIPT_DIR} CLOUDSTACK_DIR=${env.CLOUDSTACK_DIR}"
+          echo "CONFIG_PROFILE=${profileName ?: '(none)'} EFFECTIVE_CLOUDSTACK_GIT_URL=${env.EFFECTIVE_CLOUDSTACK_GIT_URL} EFFECTIVE_CLOUDSTACK_GIT_BRANCH=${env.EFFECTIVE_CLOUDSTACK_GIT_BRANCH}"
+        }
+      }
+    }
+
+    stage('Phase -1: validate private-cicd') {
+      when {
+        expression { return params.PIPELINE_PHASE == 'preflight' }
+      }
+      steps {
+        sh """CICD_ROOT='${env.CICD_ROOT}' bash '${env.CICD_SCRIPT_DIR}/validate-local.sh'"""
+      }
+    }
+
+    stage('Clone CloudStack') {
+      when {
+        allOf {
+          expression { return params.PIPELINE_PHASE in ['build-only', 'build-ontap-fast'] }
+          expression { return params.CLONE_SEPARATE }
+        }
+      }
+      steps {
+        sh 'rm -rf cloudstack-src && mkdir cloudstack-src'
+        dir('cloudstack-src') {
+          checkout(
+            [
+              $class                           : 'GitSCM',
+              branches                         : [[name: "*/${env.EFFECTIVE_CLOUDSTACK_GIT_BRANCH}"]],
+              doGenerateSubmoduleConfigurations: false,
+              extensions                       : [],
+              submoduleCfg                     : [],
+              userRemoteConfigs                : [[url: env.EFFECTIVE_CLOUDSTACK_GIT_URL]]
+            ]
+          )
+        }
+      }
+    }
+
+    stage('Validate tree') {
+      when {
+        expression { return params.PIPELINE_PHASE in ['build-only', 'build-ontap-fast'] }
+      }
+      steps {
+        script {
+          def pom = "${env.CLOUDSTACK_DIR}/pom.xml"
+          if (!fileExists(pom)) {
+            error("Missing ${pom}. Enable CLONE_SEPARATE or check out CloudStack with Script Path private-cicd/Jenkinsfile at repo root.")
+          }
+        }
+      }
+    }
+
+    stage('Install OS build dependencies') {
+      when {
+        allOf {
+          expression { return params.PIPELINE_PHASE in ['build-only', 'build-ontap-fast'] }
+          expression { return params.INSTALL_APT_DEPS }
+        }
+      }
+      steps {
+        sh """bash '${env.CICD_SCRIPT_DIR}/install-build-deps-ubuntu.sh'"""
+      }
+    }
+
+    stage('Optional ipmitool wrapper') {
+      when {
+        allOf {
+          expression { return params.PIPELINE_PHASE in ['build-only', 'build-ontap-fast'] }
+          expression { return params.SETUP_IPMITOOL_WRAPPER }
+        }
+      }
+      steps {
+        sh """bash '${env.CICD_SCRIPT_DIR}/setup-ipmitool-wrapper.sh'"""
+      }
+    }
+
+    stage('Non-OSS (noredist)') {
+      when {
+        allOf {
+          expression { return params.PIPELINE_PHASE == 'build-only' }
+          expression { return params.ENABLE_NOREDIST }
+        }
+      }
+      steps {
+        dir("${env.CLOUDSTACK_DIR}") {
+          sh '''
+            set -e
+            rm -rf nonoss
+            git clone https://github.com/shapeblue/cloudstack-nonoss.git nonoss
+            cd nonoss && bash -x install-non-oss.sh
+            cd ..
+            rm -rf nonoss
+          '''
+        }
+      }
+    }
+
+    stage('Phase 1a: ONTAP fast build') {
+      when {
+        expression { return params.PIPELINE_PHASE == 'build-ontap-fast' }
+      }
+      steps {
+        dir("${env.CLOUDSTACK_DIR}") {
+          script {
+            def skip = params.SKIP_TESTS ? 'true' : 'false'
+            sh """SKIP_TESTS='${skip}' CLOUDSTACK_DIR='${env.CLOUDSTACK_DIR}' bash '${env.CICD_SCRIPT_DIR}/mvn-ontap-fast.sh'"""
+          }
+        }
+      }
+    }
+
+    stage('Phase 1: Maven build') {
+      when {
+        expression { return params.PIPELINE_PHASE == 'build-only' }
+      }
+      steps {
+        dir("${env.CLOUDSTACK_DIR}") {
+          script {
+            def skip = params.SKIP_TESTS ? '-DskipTests=true' : ''
+            def noredist = params.ENABLE_NOREDIST ? '-Dnoredist' : ''
+            sh "mvn -B -P developer,systemvm -Dsimulator ${noredist} clean install ${skip} -T\$(nproc)"
+          }
+        }
+      }
+    }
+  }
+
+  post {
+    always {
+      script {
+        if (params.PIPELINE_PHASE in ['build-only', 'build-ontap-fast']) {
+          dir("${env.CLOUDSTACK_DIR}") {
+            def junitGlob = '**/target/surefire-reports/*.xml'
+            if (params.PIPELINE_PHASE == 'build-ontap-fast') {
+              junitGlob = 'plugins/storage/volume/ontap/target/surefire-reports/*.xml'
+            }
+            junit testResults: junitGlob, allowEmptyResults: true
+          }
+        }
+      }
+    }
+    failure {
+      echo 'Pipeline failed — see console output.'
+    }
+  }
+}
