@@ -56,7 +56,7 @@ public class AddIpToVmNicCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, required = false, description = "Secondary IP Address")
     private String ipAddr;
 
-    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, required = false, description = "Description", length = 2048)
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, required = false, description = "Description of the secondary IP address", length = 2048)
     private String description;
 
     /////////////////////////////////////////////////////

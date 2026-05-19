@@ -54,7 +54,7 @@ public class NicSecondaryIpResponse extends BaseResponse {
     private String vmId;
 
     @SerializedName(ApiConstants.DESCRIPTION)
-    @Param(description = "description")
+    @Param(description = "Description of the secondary IP address")
     private String description;
 
     @Override
