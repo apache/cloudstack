@@ -1693,6 +1693,12 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             _launchPermissionDao.removeAllPermissions(id);
             _messageBus.publish(_name, TemplateManager.MESSAGE_RESET_TEMPLATE_PERMISSION_EVENT, PublishScope.LOCAL, template.getId());
         }
+
+        if (isPublic != null || isFeatured != null || "reset".equalsIgnoreCase(operation)) {
+            for (VMTemplateZoneVO templateZone : _tmpltZoneDao.listByTemplateId(template.getId())) {
+                _tmpltSvr.enforceSecStorageCopyLimit(template.getId(), templateZone.getZoneId());
+            }
+        }
         return true;
     }
 
@@ -2183,15 +2189,12 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             return 0;
         }
         TemplateType type = template.getTemplateType();
-        // System, routing and builtin templates must be available on every secondary storage pool,
-        // so they are never subject to the configured copy limit.
         if (type == TemplateType.SYSTEM || type == TemplateType.ROUTING || type == TemplateType.BUILTIN) {
             return 0;
         }
-        boolean isPrivate = !template.isPublicTemplate() && !template.isFeatured();
-        return isPrivate
-                ? PrivateTemplateSecStorageCopy.valueIn(zoneId)
-                : PublicTemplateSecStorageCopy.valueIn(zoneId);
+        return template.isPublicTemplate()
+                ? PublicTemplateSecStorageCopy.valueIn(zoneId)
+                : PrivateTemplateSecStorageCopy.valueIn(zoneId);
     }
 
     @Override

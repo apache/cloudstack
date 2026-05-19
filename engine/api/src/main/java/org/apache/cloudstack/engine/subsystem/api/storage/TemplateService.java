@@ -67,6 +67,8 @@ public interface TemplateService {
 
     void handleTemplateSync(DataStore store);
 
+    void enforceSecStorageCopyLimit(long templateId, long zoneId);
+
     void downloadBootstrapSysTemplate(DataStore store);
 
     void addSystemVMTemplatesToSecondary(DataStore store);
