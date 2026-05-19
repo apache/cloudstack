@@ -152,6 +152,15 @@ public interface TemplateManager {
 
     List<DataStore> getImageStoreByTemplate(long templateId, Long zoneId);
 
+    /**
+     * Returns the maximum number of secondary storage pools a template should be copied to in the given zone,
+     * based on {@link #PublicTemplateSecStorageCopy} / {@link #PrivateTemplateSecStorageCopy}.
+     * A return value of {@code 0} (or less) means "no limit" (copy to all secondary storage pools).
+     * System, routing and builtin templates are always exempt from the limit (returns {@code 0}), as they
+     * must be available on every secondary storage pool.
+     */
+    int getSecStorageCopyLimit(VMTemplateVO template, long zoneId);
+
     TemplateInfo prepareIso(long isoId, long dcId, Long hostId, Long poolId);
 
 

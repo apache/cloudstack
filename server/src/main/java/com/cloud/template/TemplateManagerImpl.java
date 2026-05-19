@@ -2178,6 +2178,23 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     }
 
     @Override
+    public int getSecStorageCopyLimit(VMTemplateVO template, long zoneId) {
+        if (template == null) {
+            return 0;
+        }
+        TemplateType type = template.getTemplateType();
+        // System, routing and builtin templates must be available on every secondary storage pool,
+        // so they are never subject to the configured copy limit.
+        if (type == TemplateType.SYSTEM || type == TemplateType.ROUTING || type == TemplateType.BUILTIN) {
+            return 0;
+        }
+        boolean isPrivate = !template.isPublicTemplate() && !template.isFeatured();
+        return isPrivate
+                ? PrivateTemplateSecStorageCopy.valueIn(zoneId)
+                : PublicTemplateSecStorageCopy.valueIn(zoneId);
+    }
+
+    @Override
     @ActionEvent(eventType = EventTypes.EVENT_ISO_UPDATE, eventDescription = "Updating ISO", async = false)
     public VMTemplateVO updateTemplate(UpdateIsoCmd cmd) {
         return updateTemplateOrIso(cmd);

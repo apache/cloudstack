@@ -296,11 +296,7 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
     private boolean hasReachedSecStorageCopyLimit(VMTemplateVO template, long zoneId) {
-        boolean isPrivate = !template.isPublicTemplate() && !template.isFeatured()
-                && !TemplateType.SYSTEM.equals(template.getTemplateType());
-        int copyLimit = isPrivate
-                ? TemplateManager.PrivateTemplateSecStorageCopy.valueIn(zoneId)
-                : TemplateManager.PublicTemplateSecStorageCopy.valueIn(zoneId);
+        int copyLimit = _tmpltMgr.getSecStorageCopyLimit(template, zoneId);
         if (copyLimit <= 0) {
             return false;
         }

@@ -168,9 +168,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
     }
 
     protected int getSecStorageCopyLimit(VMTemplateVO template, long zoneId) {
-        return isPrivateTemplate(template)
-                ? TemplateManager.PrivateTemplateSecStorageCopy.valueIn(zoneId)
-                : TemplateManager.PublicTemplateSecStorageCopy.valueIn(zoneId);
+        return templateMgr.getSecStorageCopyLimit(template, zoneId);
     }
 
     protected boolean isZoneAndImageStoreAvailable(DataStore imageStore, Long zoneId, Map<Long, Integer> zoneCopyCount, int copyLimit) {
@@ -250,15 +248,6 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             payload.setRequiresHvm(template.requiresHvm());
             payload.setDescription(template.getDisplayText());
             payloads.add(payload);
-        }
-    }
-
-    protected boolean isPrivateTemplate(VMTemplateVO template){
-        // if public OR featured OR system template
-        if (template.isPublicTemplate() || template.isFeatured() || template.getTemplateType() == TemplateType.SYSTEM) {
-            return false;
-        } else {
-            return true;
         }
     }
 
