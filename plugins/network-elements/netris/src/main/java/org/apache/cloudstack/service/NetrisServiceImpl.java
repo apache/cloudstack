@@ -38,6 +38,7 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.offering.NetworkOffering;
 import io.netris.model.NatPostBody;
 import org.apache.cloudstack.agent.api.CreateOrUpdateNetrisACLCommand;
 import com.cloud.utils.Pair;
@@ -222,7 +223,7 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
     }
 
     @Override
-    public boolean createVnetResource(Long zoneId, long accountId, long domainId, String vpcName, Long vpcId, String networkName, Long networkId, String cidr, Boolean globalRouting, boolean isL2) {
+    public boolean createVnetResource(Long zoneId, long accountId, long domainId, String vpcName, Long vpcId, String networkName, Long networkId, String cidr, NetworkOffering.NetworkMode networkMode, NetUtils.InternetProtocol internetProtocol, boolean isL2) {
         NetworkVO network = networkDao.findById(networkId);
         String vxlanId = Networks.BroadcastDomainType.getValue(network.getBroadcastUri());
         CreateNetrisVnetCommand cmd = new CreateNetrisVnetCommand(zoneId, accountId, domainId, vpcName, vpcId, networkName, networkId, cidr, network.getGateway(), !Objects.isNull(vpcId));
@@ -230,7 +231,8 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
         cmd.setL2(isL2);
         NetrisProviderVO netrisProvider = netrisProviderDao.findByZoneId(zoneId);
         cmd.setNetrisTag(netrisProvider.getNetrisTag());
-        cmd.setGlobalRouting(globalRouting);
+        cmd.setNetworkMode(networkMode);
+        cmd.setInternetProtocol(internetProtocol);
         if (Objects.nonNull(networkId)) {
             Ipv6GuestPrefixSubnetNetworkMapVO ipv6PrefixNetworkMapVO = ipv6PrefixNetworkMapDao.findByNetworkId(networkId);
             if (Objects.nonNull(ipv6PrefixNetworkMapVO)) {

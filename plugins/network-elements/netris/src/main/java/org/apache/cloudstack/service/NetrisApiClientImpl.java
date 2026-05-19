@@ -21,6 +21,7 @@ import com.cloud.network.netris.NetrisLbBackend;
 import com.cloud.network.netris.NetrisNetworkRule;
 import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.StaticRouteVO;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -1203,7 +1204,22 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         String netrisTag = cmd.getNetrisTag();
         boolean isVpc = cmd.isVpc();
         boolean isL2 = cmd.isL2();
-        Boolean isGlobalRouting = cmd.isGlobalRouting();
+
+        // Derive per-address-family global routing flags from networkMode + internetProtocol:
+        //   ipv4 NAT      -> ipv4 global routing: false,  ipv6 global routing: n/a
+        //   ipv4 ROUTED   -> ipv4 global routing: true,   ipv6 global routing: n/a
+        //   dual NAT      -> ipv4 global routing: false,  ipv6 global routing: true
+        //   dual ROUTED   -> ipv4 global routing: true,   ipv6 global routing: true
+        NetworkOffering.NetworkMode networkMode = cmd.getNetworkMode();
+        NetUtils.InternetProtocol internetProtocol = cmd.getInternetProtocol();
+        Boolean ipv4GlobalRouting = null;
+        Boolean ipv6GlobalRouting = null;
+        if (networkMode != null) {
+            ipv4GlobalRouting = NetworkOffering.NetworkMode.ROUTED.equals(networkMode);
+            if (NetUtils.InternetProtocol.DualStack.equals(internetProtocol)) {
+                ipv6GlobalRouting = true;
+            }
+        }
 
         String netrisGateway = null;
         if (!isL2 && vnetCidr != null && cmd.getGateway() != null) {
@@ -1239,7 +1255,7 @@ public class NetrisApiClientImpl implements NetrisApiClient {
 
             if (!isL2) {
                 String netrisSubnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_SUBNET, String.valueOf(cmd.getVpcId()), vnetCidr);
-                createIpamSubnetInternal(netrisSubnetName, vnetCidr, SubnetBody.PurposeEnum.COMMON, associatedVpc, isGlobalRouting);
+                createIpamSubnetInternal(netrisSubnetName, vnetCidr, SubnetBody.PurposeEnum.COMMON, associatedVpc, ipv4GlobalRouting);
                 if (Objects.nonNull(netrisV6Cidr)) {
                     String netrisV6IpamAllocationName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_ALLOCATION, netrisV6Cidr);
                     String netrisV6SubnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_SUBNET, String.valueOf(cmd.getVpcId()), netrisV6Cidr);
@@ -1250,7 +1266,7 @@ public class NetrisApiClientImpl implements NetrisApiClient {
                             throw new CloudRuntimeException(String.format("Failed to create Netris IPAM Allocation %s for VPC %s", netrisV6IpamAllocationName, associatedVpc.getName()));
                         }
                     }
-                    createIpamSubnetInternal(netrisV6SubnetName, netrisV6Cidr, SubnetBody.PurposeEnum.COMMON, associatedVpc, isGlobalRouting);
+                    createIpamSubnetInternal(netrisV6SubnetName, netrisV6Cidr, SubnetBody.PurposeEnum.COMMON, associatedVpc, ipv6GlobalRouting);
                 }
                 logger.debug("Successfully created IPAM Subnet for network {} on Netris", networkName);
             }

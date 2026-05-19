@@ -45,6 +45,7 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.user.Account;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
@@ -376,14 +377,14 @@ public class NetrisGuestNetworkGuru  extends GuestNetworkGuru implements Network
         }
         String vpcName = null;
         Long vpcId = null;
-        Boolean globalRouting = null;
         boolean isL2 = false;
         long networkOfferingId = networkVO.getNetworkOfferingId();
+
         NetworkOfferingVO networkOfferingVO = networkOfferingDao.findById(networkOfferingId);
+        NetUtils.InternetProtocol internetProtocol = networkOfferingDao.getNetworkOfferingInternetProtocol(networkOfferingVO.getId());
+        NetworkOffering.NetworkMode networkMode = networkOfferingVO.getNetworkMode();
         if (Network.GuestType.L2.equals(networkOfferingVO.getGuestType())) {
             isL2 = true;
-        } else if (NetworkOffering.NetworkMode.ROUTED.equals(networkOfferingVO.getNetworkMode())) {
-            globalRouting = true;
         }
         if (!isL2) {
             if (nonNull(networkVO.getVpcId())) {
@@ -407,7 +408,7 @@ public class NetrisGuestNetworkGuru  extends GuestNetworkGuru implements Network
             }
         }
         boolean result = netrisService.createVnetResource(zone.getId(), account.getId(), domain.getId(), vpcName, vpcId,
-                networkVO.getName(), networkVO.getId(), networkVO.getCidr(), globalRouting, isL2);
+                networkVO.getName(), networkVO.getId(), networkVO.getCidr(), networkMode, internetProtocol, isL2);
         if (!result) {
             throw new CloudRuntimeException("Failed to create Netris vNet resource for network: " + networkVO.getName());
         }

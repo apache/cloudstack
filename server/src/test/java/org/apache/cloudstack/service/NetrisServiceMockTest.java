@@ -23,6 +23,8 @@ import com.cloud.network.netris.NetrisNetworkRule;
 import com.cloud.network.netris.NetrisService;
 import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.offering.NetworkOffering;
+import com.cloud.utils.net.NetUtils;
 
 import java.util.List;
 
@@ -48,7 +50,7 @@ public class NetrisServiceMockTest implements NetrisService {
     }
 
     @Override
-    public boolean createVnetResource(Long zoneId, long accountId, long domainId, String vpcName, Long vpcId, String networkName, Long networkId, String cidr, Boolean globalRouting, boolean isL2) {
+    public boolean createVnetResource(Long zoneId, long accountId, long domainId, String vpcName, Long vpcId, String networkName, Long networkId, String cidr, NetworkOffering.NetworkMode networkMode, NetUtils.InternetProtocol internetProtocol, boolean isL2) {
         return true;
     }
 
