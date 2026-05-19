@@ -159,6 +159,7 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.load_balancer_stickiness_policies', 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.global_load_balancer_lb_rule_map', 'removed', 'datetime DEFAULT NULL');
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.elastic_lb_vm_map', 'removed', 'datetime DEFAULT NULL');
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.tungsten_lb_health_monitor', 'removed', 'datetime DEFAULT NULL');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.global_load_balancing_rules', 'removed', 'datetime DEFAULT NULL');
 
 ALTER TABLE `cloud`.`load_balancer_vm_map`
 DROP KEY `load_balancer_id`,
