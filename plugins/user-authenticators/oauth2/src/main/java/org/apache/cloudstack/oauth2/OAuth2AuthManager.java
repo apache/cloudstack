@@ -18,6 +18,7 @@
 //
 package org.apache.cloudstack.oauth2;
 
+import com.cloud.domain.Domain;
 import com.cloud.utils.component.PluggableService;
 import org.apache.cloudstack.api.auth.PluggableAPIAuthenticator;
 import org.apache.cloudstack.auth.UserOAuth2Authenticator;
@@ -64,4 +65,19 @@ public interface OAuth2AuthManager extends PluggableAPIAuthenticator, PluggableS
     OauthProviderVO updateOauthProvider(UpdateOAuthProviderCmd cmd);
 
     Long resolveDomainId(Map<String, Object[]> params);
+
+    /**
+     * Resolves whether the OAuth plugin is enabled for the given domain scope.
+     * A null domain or the ROOT domain is treated as the global scope, since the
+     * ROOT domain has no domain-level override and inherits the global value;
+     * any other domain is checked strictly at its own domain scope (no inheritance).
+     * @param domainId domain id, or null for global
+     * @return true if OAuth is enabled for that scope
+     */
+    static boolean isPluginEnabledForDomain(Long domainId) {
+        if (domainId == null || domainId == Domain.ROOT_DOMAIN) {
+            return Boolean.TRUE.equals(OAuth2IsPluginEnabled.value());
+        }
+        return Boolean.TRUE.equals(OAuth2IsPluginEnabled.valueInScope(ConfigKey.Scope.Domain, domainId, true));
+    }
 }

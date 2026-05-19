@@ -38,7 +38,6 @@ import org.apache.cloudstack.api.auth.PluggableAPIAuthenticator;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.auth.UserOAuth2Authenticator;
-import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.oauth2.OAuth2AuthManager;
 import org.apache.cloudstack.oauth2.api.response.OauthProviderResponse;
 import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
@@ -145,9 +144,7 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
             Domain domain = result.getDomainId() != null ? ApiDBUtils.findDomainById(result.getDomainId()) : null;
             OauthProviderResponse r = new OauthProviderResponse(result.getUuid(), result.getProvider(),
                     result.getDescription(), result.getClientId(), result.getSecretKey(), result.getRedirectUri(), domain);
-            boolean oauthEnabled = result.getDomainId() == null
-                    ? Boolean.TRUE.equals(OAuth2AuthManager.OAuth2IsPluginEnabled.value())
-                    : Boolean.TRUE.equals(OAuth2AuthManager.OAuth2IsPluginEnabled.valueInScope(ConfigKey.Scope.Domain, result.getDomainId(), true));
+            boolean oauthEnabled = OAuth2AuthManager.isPluginEnabledForDomain(result.getDomainId());
             if (oauthEnabled && authenticatorPluginNames.contains(result.getProvider()) && result.isEnabled()) {
                 r.setEnabled(true);
             } else {
@@ -162,7 +159,7 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
             List<OauthProviderVO> allProviders = _oauth2mgr.listOauthProviders(null, null, null);
             for (OauthProviderVO domainProvider : allProviders) {
                 if (domainProvider.getDomainId() != null && domainProvider.isEnabled()
-                        && Boolean.TRUE.equals(OAuth2AuthManager.OAuth2IsPluginEnabled.valueInScope(ConfigKey.Scope.Domain, domainProvider.getDomainId(), true))
+                        && OAuth2AuthManager.isPluginEnabledForDomain(domainProvider.getDomainId())
                         && authenticatorPluginNames.contains(domainProvider.getProvider())) {
                     totalEnabledCount++;
                 }

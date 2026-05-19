@@ -50,9 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.net.InetAddress;
 
-import org.apache.cloudstack.framework.config.ConfigKey;
-
-import static org.apache.cloudstack.oauth2.OAuth2AuthManager.OAuth2IsPluginEnabled;
+import org.apache.cloudstack.oauth2.OAuth2AuthManager;
 
 @APICommand(name = "oauthlogin", description = "Logs a user into the CloudStack after successful verification of OAuth secret code from the particular provider." +
         "A successful login attempt will generate a JSESSIONID cookie value that can be passed in subsequent Query command calls until the \"logout\" command has been issued or the session has expired.",
@@ -146,9 +144,7 @@ public class OauthLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
                 domainId = userDomain.getId();
             }
 
-            boolean oauthEnabled = domainId == null
-                    ? Boolean.TRUE.equals(OAuth2IsPluginEnabled.value())
-                    : Boolean.TRUE.equals(OAuth2IsPluginEnabled.valueInScope(ConfigKey.Scope.Domain, domainId, true));
+            boolean oauthEnabled = OAuth2AuthManager.isPluginEnabledForDomain(domainId);
             if (!oauthEnabled) {
                 logger.debug(String.format("OAuth is not enabled %s, users cannot login using OAuth", domainId == null ? "globally" : "in domain " + domainId));
                 throw new CloudAuthenticationException(String.format(
