@@ -17,16 +17,14 @@
 
 name: "PR Merge Conflict Check"
 on:
-  push:
-  pull_request:
-    types: [opened, synchronize, reopened]
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
 
-permissions:  # added using https://github.com/step-security/secure-workflows
-  contents: read
+permissions: {}
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  group: "gh-aw-${{ github.workflow }}"
 
 jobs:
   triage:
