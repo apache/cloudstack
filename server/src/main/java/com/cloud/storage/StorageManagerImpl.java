@@ -1285,6 +1285,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             changes = true;
         }
 
+        if (cmd.getUrl() != null) {
+            changes = true;
+        }
+
         if (changes) {
             StoragePoolVO storagePool = _storagePoolDao.findById(id);
             DataStoreProvider dataStoreProvider = _dataStoreProviderMgr.getDataStoreProvider(storagePool.getStorageProviderName());
@@ -1300,6 +1304,21 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     _storagePoolDao.updateCapacityIops(id, updatedCapacityIops);
                 }
                 if (cmd.getUrl() != null) {
+                    if (!storagePool.isInMaintenance()) {
+                        throw new InvalidParameterValueException("Storage pool must be in Maintenance state before its URL can be changed. " +
+                                "Please put the pool into maintenance first.");
+                    }
+                    URI newUri;
+                    try {
+                        newUri = new URI(cmd.getUrl());
+                    } catch (URISyntaxException e) {
+                        throw new InvalidParameterValueException("Invalid URL format: " + cmd.getUrl());
+                    }
+                    storagePool.setHostAddress(newUri.getHost());
+                    storagePool.setPath(newUri.getPath());
+                    if (newUri.getPort() != -1) {
+                        storagePool.setPort(newUri.getPort());
+                    }
                     details.put("url", cmd.getUrl());
                 }
                 _storagePoolDao.update(id, storagePool);
@@ -4129,17 +4148,24 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     public ImageStore updateImageStore(UpdateImageStoreCmd cmd) {
-        return updateImageStoreStatus(cmd.getId(), cmd.getName(), cmd.getReadonly(), cmd.getCapacityBytes());
+        return updateImageStoreStatus(cmd.getId(), cmd.getName(), cmd.getReadonly(), cmd.getCapacityBytes(), cmd.getUrl());
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_UPDATE_IMAGE_STORE_ACCESS_STATE,
             eventDescription = "image store access updated")
-    public ImageStore updateImageStoreStatus(Long id, String name, Boolean readonly, Long capacityBytes) {
+    public ImageStore updateImageStoreStatus(Long id, String name, Boolean readonly, Long capacityBytes, String url) {
         // Input validation
         ImageStoreVO imageStoreVO = _imageStoreDao.findById(id);
         if (imageStoreVO == null) {
             throw new IllegalArgumentException("Unable to find image store with ID: " + id);
+        }
+        if (url != null) {
+            if (!imageStoreVO.isReadonly()) {
+                throw new InvalidParameterValueException("Image store must be set to read-only (maintenance) state before its URL can be changed. " +
+                        "Please set readOnly=true on the image store first.");
+            }
+            imageStoreVO.setUrl(url);
         }
         if (com.cloud.utils.StringUtils.isNotBlank(name)) {
             imageStoreVO.setName(name);
@@ -4156,7 +4182,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     public ImageStore updateImageStoreStatus(Long id, Boolean readonly) {
-        return updateImageStoreStatus(id, null, readonly, null);
+        return updateImageStoreStatus(id, null, readonly, null, null);
     }
 
     /**
