@@ -1304,29 +1304,88 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     _storagePoolDao.updateCapacityIops(id, updatedCapacityIops);
                 }
                 if (cmd.getUrl() != null) {
-                    if (!storagePool.isInMaintenance()) {
-                        throw new InvalidParameterValueException("Storage pool must be in Maintenance state before its URL can be changed. " +
-                                "Please put the pool into maintenance first.");
-                    }
-                    URI newUri;
-                    try {
-                        newUri = new URI(cmd.getUrl());
-                    } catch (URISyntaxException e) {
-                        throw new InvalidParameterValueException("Invalid URL format: " + cmd.getUrl());
-                    }
-                    storagePool.setHostAddress(newUri.getHost());
-                    storagePool.setPath(newUri.getPath());
-                    if (newUri.getPort() != -1) {
-                        storagePool.setPort(newUri.getPort());
-                    }
                     details.put("url", cmd.getUrl());
+
+                    // Updating host/path/port and propagating the remount to agents is only
+                    // supported for NFS and Gluster pools. For other types of storage pools, the URL is just informational and won't be used for actual connection, so we don't need to parse and propagate it.
+                    StoragePoolType poolType = storagePool.getPoolType();
+                    if (poolType == StoragePoolType.NetworkFilesystem || poolType == StoragePoolType.Gluster) {
+                        if (!storagePool.isInMaintenance()) {
+                            throw new InvalidParameterValueException("Storage pool must be in Maintenance state before its URL can be changed. " +
+                                    "Please put the pool into maintenance first.");
+                        }
+                        URI newUri;
+                        try {
+                            newUri = new URI(cmd.getUrl());
+                        } catch (URISyntaxException e) {
+                            throw new InvalidParameterValueException("Invalid URL format: " + cmd.getUrl());
+                        }
+                        storagePool.setHostAddress(newUri.getHost());
+                        storagePool.setPath(newUri.getPath());
+                        if (newUri.getPort() != -1) {
+                            storagePool.setPort(newUri.getPort());
+                        }
+                    }
                 }
                 _storagePoolDao.update(id, storagePool);
                 _storagePoolDao.updateDetails(id, details);
+                ((PrimaryDataStoreLifeCycle) dataStoreLifeCycle).updateStoragePool(storagePool, details);
+                StoragePoolType poolType = storagePool.getPoolType();
+                if (cmd.getUrl() != null &&
+                        (poolType == StoragePoolType.NetworkFilesystem || poolType == StoragePoolType.Gluster)) {
+                    propagateStoragePoolUrlChangeToHosts(storagePool);
+                }
             }
         }
 
         return (PrimaryDataStoreInfo)_dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
+    }
+
+    /**
+     * Propagates a storage pool URL change to all currently connected hosts by sending
+     * a {@link ModifyStoragePoolCommand} with the updated connection details.
+     * This is called after the pool URL has been persisted to the DB while the pool is
+     * in Maintenance state (so no VMs are actively using it).
+     *
+     * @param updatedPool the {@link StoragePoolVO} whose hostAddress/path/port have already been updated
+     */
+    private void propagateStoragePoolUrlChangeToHosts(StoragePoolVO updatedPool) {
+        List<Long> poolIds = List.of(updatedPool.getId());
+        List<Long> connectedHostIds = _storagePoolHostDao.findHostsConnectedToPools(poolIds);
+        if (connectedHostIds.isEmpty()) {
+            logger.debug("No connected hosts found for storage pool [{}]; nothing to propagate for URL change.", updatedPool.getName());
+            return;
+        }
+
+        // Fetch fresh DataStore so that StoragePool delegates (getHostAddress, getPath, getPort)
+        // return the newly saved values.
+        StoragePool freshPool = (StoragePool) _dataStoreMgr.getDataStore(updatedPool.getId(), DataStoreRole.Primary);
+
+        Pair<Map<String, String>, Boolean> nfsMountOpts = getStoragePoolNFSMountOpts(freshPool, null);
+        Map<String, String> mountDetails = nfsMountOpts != null ? nfsMountOpts.first() : new java.util.HashMap<>();
+
+        logger.info("Propagating new URL for storage pool [{}] to {} connected host(s).", updatedPool.getName(), connectedHostIds.size());
+
+        for (Long hostId : connectedHostIds) {
+            HostVO host = _hostDao.findById(hostId);
+            if (host == null) {
+                logger.warn("Host [{}] not found; skipping URL propagation for pool [{}].", hostId, updatedPool.getName());
+                continue;
+            }
+
+            ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(true, freshPool, mountDetails);
+            Answer answer = _agentMgr.easySend(hostId, cmd);
+
+            if (answer == null || !answer.getResult()) {
+                String detail = (answer == null) ? "no answer returned" : answer.getDetails();
+                logger.warn("Failed to propagate new URL for storage pool [{}] to host [{}]: {}",
+                        updatedPool.getName(), host.getName(), detail);
+            } else {
+                logger.info("Successfully propagated new URL for storage pool [{}] to host [{}].",
+                        updatedPool.getName(), host.getName());
+                updateStoragePoolHostVOAndBytes(freshPool, hostId, (ModifyStoragePoolAnswer) answer);
+            }
+        }
     }
 
     private void changeStoragePoolScopeToZone(StoragePoolVO primaryStorage) {
