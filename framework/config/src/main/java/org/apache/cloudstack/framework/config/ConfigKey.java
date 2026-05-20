@@ -269,6 +269,17 @@ public class ConfigKey<T> {
 
     private String _defaultValueIfEmpty = null;
 
+    private boolean _strictScope = false;
+
+    public boolean isStrictScope() {
+        return _strictScope;
+    }
+
+    public ConfigKey<T> withStrictScope() {
+        this._strictScope = true;
+        return this;
+    }
+
     public static void init(ConfigDepotImpl depot) {
         s_depot = depot;
     }
