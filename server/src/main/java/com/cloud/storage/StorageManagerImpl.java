@@ -2321,8 +2321,13 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             }
             List<SnapshotDataStoreVO> remaining = _snapshotStoreDao.findBySnapshotIdAndNotInDestroyedHiddenState(snapshot.getId());
             if (CollectionUtils.isEmpty(remaining)) {
+                Snapshot.State previousState = snapshot.getState();
                 snapshot.setState(Snapshot.State.Destroyed);
                 _snapshotDao.update(snapshot.getId(), snapshot);
+                annotationDao.removeByEntityType(AnnotationService.EntityType.SNAPSHOT.name(), snapshot.getUuid());
+                if (previousState != Snapshot.State.Error && previousState != Snapshot.State.Destroyed) {
+                    _resourceLimitMgr.decrementResourceCount(snapshot.getAccountId(), ResourceType.snapshot);
+                }
             } else {
                 logger.warn("Storage driver did not remove all primary store refs for snapshot {}; leaving parent record for the next scavenger pass to retry", snapshot);
             }

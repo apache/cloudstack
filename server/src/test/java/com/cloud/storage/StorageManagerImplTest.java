@@ -141,6 +141,10 @@ public class StorageManagerImplTest {
     org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory snapshotFactory;
     @Mock
     org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService _snapshotService;
+    @Mock
+    com.cloud.user.ResourceLimitService _resourceLimitMgr;
+    @Mock
+    org.apache.cloudstack.annotation.dao.AnnotationDao annotationDao;
 
     @Mock
     ClusterDao clusterDao;
@@ -1736,6 +1740,8 @@ public class StorageManagerImplTest {
 
         SnapshotVO snapshot = Mockito.mock(SnapshotVO.class);
         Mockito.when(snapshot.getId()).thenReturn(10L);
+        Mockito.when(snapshot.getAccountId()).thenReturn(7L);
+        Mockito.when(snapshot.getUuid()).thenReturn("snap-uuid");
         Mockito.when(snapshot.getState()).thenReturn(Snapshot.State.BackedUp);
         Mockito.when(snapshotDao.listByVolumeId(1L)).thenReturn(List.of(snapshot));
 
@@ -1760,6 +1766,9 @@ public class StorageManagerImplTest {
         Mockito.verify(_snapshotService).deleteSnapshot(snapshotInfo);
         Mockito.verify(snapshot).setState(Snapshot.State.Destroyed);
         Mockito.verify(snapshotDao).update(10L, snapshot);
+        Mockito.verify(_resourceLimitMgr).decrementResourceCount(7L, com.cloud.configuration.Resource.ResourceType.snapshot);
+        Mockito.verify(annotationDao).removeByEntityType(
+                org.apache.cloudstack.annotation.AnnotationService.EntityType.SNAPSHOT.name(), "snap-uuid");
     }
 
     @Test
@@ -1793,6 +1802,8 @@ public class StorageManagerImplTest {
         Mockito.verify(_snapshotService).deleteSnapshot(snapshotInfo);
         Mockito.verify(snapshot, Mockito.never()).setState(Snapshot.State.Destroyed);
         Mockito.verify(snapshotDao, Mockito.never()).update(Mockito.anyLong(), Mockito.any(SnapshotVO.class));
+        Mockito.verifyNoInteractions(_resourceLimitMgr);
+        Mockito.verifyNoInteractions(annotationDao);
     }
 
     @Test
