@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -133,6 +134,7 @@ import org.apache.cloudstack.veeam.api.dto.Tag;
 import org.apache.cloudstack.veeam.api.dto.Vm;
 import org.apache.cloudstack.veeam.api.dto.VmAction;
 import org.apache.cloudstack.veeam.api.dto.VnicProfile;
+import org.apache.cloudstack.veeam.utils.CloudConfigUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -231,6 +233,7 @@ public class ServerAdapter extends ManagerBase {
     private static final String VM_TAG_KEY = "veeam_tag";
     private static final String WORKER_VM_GUEST_CPU_MODE = "host-passthrough";
     private static final String WORKER_VM_GUEST_OS = "Rocky Linux 9";
+    private static final String WORKER_VM_IP_DETAIL = "worker.vm.ip";
     private static final String RESTORE_CONFIG = "restore.config";
 
     @Inject
@@ -802,6 +805,19 @@ public class ServerAdapter extends ManagerBase {
         return details;
     }
 
+    protected void saveInstanceAdditionalDetails(Vm request, UserVm vm) {
+        if (request.isWorkerVm()) {
+            Optional<String> ip = CloudConfigUtil.extractIpv4Address(
+                    request.getInitialization().getCustomScript());
+            if (ip.isPresent() && StringUtils.isNotBlank(ip.get())) {
+                logger.debug("Saving worker VM IP {} in details for {}", ip.get(), vm);
+                vmInstanceDetailsDao.addDetail(vm.getId(), WORKER_VM_IP_DETAIL, ip.get(), false);
+            }
+            return;
+        }
+        saveInstanceRestoreConfig(request, vm);
+    }
+
     protected void saveInstanceRestoreConfig(Vm request, UserVm vm) {
         if (StringUtils.isBlank(request.getAccountId())) {
             return;
@@ -813,11 +829,16 @@ public class ServerAdapter extends ManagerBase {
         if (StringUtils.isBlank(restoreConfig)) {
             return;
         }
+        logger.debug("Saving restore config: {} in details for {}", restoreConfig, vm);
         vmInstanceDetailsDao.addDetail(vm.getId(), RESTORE_CONFIG, restoreConfig, false);
     }
 
     protected void removeInstanceRestoreConfig(UserVm vm) {
         vmInstanceDetailsDao.removeDetail(vm.getId(), RESTORE_CONFIG);
+    }
+
+    protected void removeInstanceWorkerVmIp(UserVm vm) {
+        vmInstanceDetailsDao.removeDetail(vm.getId(), WORKER_VM_IP_DETAIL);
     }
 
     protected void processInstanceRestoreConfigIfNeeded(UserVm userVm, Volume volume) {
@@ -853,11 +874,11 @@ public class ServerAdapter extends ManagerBase {
         sharedFSService.updateSharedFSPostRestore(sharedFS.getId(), volume.getId());
     }
 
-    protected Pair<String, String> getValidatedInstanceNicDetails(final VMInstanceDetailVO detail, final NetworkVO network) {
-        if (ObjectUtils.anyNull(detail, network) || StringUtils.isBlank(detail.getValue())) {
+    protected Pair<String, String> getValidatedInstanceNicDetails(final String config, final NetworkVO network) {
+        if (ObjectUtils.anyNull(config, network) || StringUtils.isBlank(config)) {
             return new Pair<>(null, null);
         }
-        Pair<String, String> result = OvfXmlUtil.getVmNicDetailFromStoredConfig(detail.getValue(), network.getUuid(), logger);
+        Pair<String, String> result = OvfXmlUtil.getVmNicDetailFromStoredConfig(config, network.getUuid(), logger);
         String mac = StringUtils.trimToNull(result.first());
         String ip4Address = StringUtils.trimToNull(result.second());
         NicVO nic = null;
@@ -888,11 +909,10 @@ public class ServerAdapter extends ManagerBase {
         return new Pair<>(mac, ip4Address);
     }
 
-    protected void updateInstanceSecurityGroupsIfNeeded(final UserVmVO vmVo, final VMInstanceDetailVO detail, final NetworkVO network) {
-        if (ObjectUtils.anyNull(detail, network) || StringUtils.isBlank(detail.getValue())) {
+    protected void updateInstanceSecurityGroupsIfNeeded(final UserVmVO vmVo, final String config, final NetworkVO network) {
+        if (ObjectUtils.anyNull(config, network) || StringUtils.isBlank(config)) {
             return;
         }
-        String config = detail.getValue();
         Vm vm = OvfXmlUtil.parseVmRestoreConfig(config, logger);
         if (CollectionUtils.isEmpty(vm.getSecurityGroupIds())) {
             return;
@@ -1295,13 +1315,13 @@ public class ServerAdapter extends ManagerBase {
         if (request.getTemplate() != null && StringUtils.isNotEmpty(request.getTemplate().getId())) {
             templateUuid = request.getTemplate().getId();
         }
-        GuestOS guestOs = getGuestOsForInstance(request, StringUtils.isNotEmpty(userdata));
+        GuestOS guestOs = getGuestOsForInstance(request, request.isWorkerVm());
         String instanceType = getValidatedInstanceType(request);
         Pair<Vm, UserVm> result = createInstance(zone, clusterId, owner, ownerDetails.first(), ownerDetails.second(),
                 ownerDetails.third(), name, displayName, serviceOfferingUuid, cpu, memoryMB, templateUuid, guestOs,
                 userdata, bootOptions.first(), bootOptions.second(), request.getAffinityGroupId(),
                 request.getUserDataId(), request.getSshKeyPairNames(), instanceType, request.getDetails());
-        saveInstanceRestoreConfig(request, result.second());
+        saveInstanceAdditionalDetails(request, result.second());
         return result.first();
     }
 
@@ -1665,8 +1685,15 @@ public class ServerAdapter extends ManagerBase {
                 accountCannotAccessNetwork(networkVO, vmVo.getAccountId())) {
             assignVmToAccount(vmVo, networkVO.getAccountId());
         }
-        VMInstanceDetailVO detail = vmInstanceDetailsDao.findDetail(vmVo.getId(), RESTORE_CONFIG);
-        Pair<String, String> nicDetails = getValidatedInstanceNicDetails(detail, networkVO);
+        Map<String, String> details = vmInstanceDetailsDao.listDetailsKeyPairs(
+                vmVo.getId(), List.of(RESTORE_CONFIG, WORKER_VM_IP_DETAIL));
+        String restoreConfig = details.get(RESTORE_CONFIG);
+        Pair<String, String> nicDetails = getValidatedInstanceNicDetails(restoreConfig, networkVO);
+        String workerVmIp = details.get(WORKER_VM_IP_DETAIL);
+        if (StringUtils.isNotBlank(workerVmIp)) {
+            nicDetails = new Pair<>(null, workerVmIp);
+            removeInstanceWorkerVmIp(vmVo);
+        }
         AddNicToVMCmd cmd = new AddNicToVMCmd();
         ComponentContext.inject(cmd);
         cmd.setVmId(vmVo.getId());
@@ -1681,7 +1708,7 @@ public class ServerAdapter extends ManagerBase {
         if (nic == null) {
             throw new CloudRuntimeException("Failed to attach NIC to VM");
         }
-        updateInstanceSecurityGroupsIfNeeded(vmVo, detail, networkVO);
+        updateInstanceSecurityGroupsIfNeeded(vmVo, restoreConfig, networkVO);
         return NicVOToNicConverter.toNic(nic, vmUuid, this::getNetworkById);
     }
 

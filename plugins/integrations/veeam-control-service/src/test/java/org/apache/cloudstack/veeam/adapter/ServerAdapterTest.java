@@ -103,7 +103,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
-import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -290,9 +289,7 @@ public class ServerAdapterTest {
 
     @Test
     public void testGetValidatedInstanceNicDetails_NullNetwork_ReturnsNullPair() {
-        VMInstanceDetailVO detail = mock(VMInstanceDetailVO.class);
-
-        Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails(detail, null);
+        Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails("config", null);
 
         assertNull(result.first());
         assertNull(result.second());
@@ -310,11 +307,9 @@ public class ServerAdapterTest {
 
     @Test
     public void testGetValidatedInstanceNicDetails_BlankRestoreConfig_ReturnsNullPair() {
-        VMInstanceDetailVO detail = mock(VMInstanceDetailVO.class);
-        when(detail.getValue()).thenReturn("   ");
         NetworkVO network = mock(NetworkVO.class);
 
-        Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails(detail, network);
+        Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails("   ", network);
 
         assertNull(result.first());
         assertNull(result.second());
@@ -322,9 +317,6 @@ public class ServerAdapterTest {
 
     @Test
     public void testGetValidatedInstanceNicDetails_BlankMacAndIpFromConfig_ReturnsNullPair() {
-        VMInstanceDetailVO detail = mock(VMInstanceDetailVO.class);
-        when(detail.getValue()).thenReturn("restore-xml");
-
         NetworkVO network = mock(NetworkVO.class);
         when(network.getUuid()).thenReturn("network-uuid");
 
@@ -332,7 +324,7 @@ public class ServerAdapterTest {
             ovfXmlUtil.when(() -> OvfXmlUtil.getVmNicDetailFromStoredConfig(eq("restore-xml"), eq("network-uuid"), any(Logger.class)))
                     .thenReturn(new Pair<>("  ", "\t"));
 
-            Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails(detail, network);
+            Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails("restore-xml", network);
 
             assertNull(result.first());
             assertNull(result.second());
@@ -341,9 +333,6 @@ public class ServerAdapterTest {
 
     @Test
     public void testGetValidatedInstanceNicDetails_NoConflicts_ReturnsMacAndIp() {
-        VMInstanceDetailVO detail = mock(VMInstanceDetailVO.class);
-        when(detail.getValue()).thenReturn("restore-xml");
-
         NetworkVO network = mock(NetworkVO.class);
         when(network.getId()).thenReturn(30L);
         when(network.getUuid()).thenReturn("network-uuid");
@@ -355,7 +344,7 @@ public class ServerAdapterTest {
             ovfXmlUtil.when(() -> OvfXmlUtil.getVmNicDetailFromStoredConfig(eq("restore-xml"), eq("network-uuid"), any(Logger.class)))
                     .thenReturn(new Pair<>("02:00:00:00:00:01", "10.0.0.10"));
 
-            Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails(detail, network);
+            Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails("restore-xml", network);
 
             assertEquals("02:00:00:00:00:01", result.first());
             assertEquals("10.0.0.10", result.second());
@@ -364,9 +353,6 @@ public class ServerAdapterTest {
 
     @Test
     public void testGetValidatedInstanceNicDetails_MacConflictWithSameIp_ClearsBoth() {
-        VMInstanceDetailVO detail = mock(VMInstanceDetailVO.class);
-        when(detail.getValue()).thenReturn("restore-xml");
-
         NetworkVO network = mock(NetworkVO.class);
         when(network.getId()).thenReturn(31L);
         when(network.getUuid()).thenReturn("network-uuid");
@@ -379,7 +365,7 @@ public class ServerAdapterTest {
             ovfXmlUtil.when(() -> OvfXmlUtil.getVmNicDetailFromStoredConfig(eq("restore-xml"), eq("network-uuid"), any(Logger.class)))
                     .thenReturn(new Pair<>("02:00:00:00:00:02", "10.0.0.11"));
 
-            Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails(detail, network);
+            Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails("restore-xml", network);
 
             assertNull(result.first());
             assertNull(result.second());
@@ -388,9 +374,6 @@ public class ServerAdapterTest {
 
     @Test
     public void testGetValidatedInstanceNicDetails_MacConflictWithDifferentIp_ClearsOnlyMac() {
-        VMInstanceDetailVO detail = mock(VMInstanceDetailVO.class);
-        when(detail.getValue()).thenReturn("restore-xml");
-
         NetworkVO network = mock(NetworkVO.class);
         when(network.getId()).thenReturn(32L);
         when(network.getUuid()).thenReturn("network-uuid");
@@ -404,7 +387,7 @@ public class ServerAdapterTest {
             ovfXmlUtil.when(() -> OvfXmlUtil.getVmNicDetailFromStoredConfig(eq("restore-xml"), eq("network-uuid"), any(Logger.class)))
                     .thenReturn(new Pair<>("02:00:00:00:00:03", "10.0.0.12"));
 
-            Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails(detail, network);
+            Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails("restore-xml", network);
 
             assertNull(result.first());
             assertEquals("10.0.0.12", result.second());
@@ -413,9 +396,6 @@ public class ServerAdapterTest {
 
     @Test
     public void testGetValidatedInstanceNicDetails_IpConflict_ClearsIpAndMac() {
-        VMInstanceDetailVO detail = mock(VMInstanceDetailVO.class);
-        when(detail.getValue()).thenReturn("restore-xml");
-
         NetworkVO network = mock(NetworkVO.class);
         when(network.getId()).thenReturn(33L);
         when(network.getUuid()).thenReturn("network-uuid");
@@ -429,7 +409,7 @@ public class ServerAdapterTest {
             ovfXmlUtil.when(() -> OvfXmlUtil.getVmNicDetailFromStoredConfig(eq("restore-xml"), eq("network-uuid"), any(Logger.class)))
                     .thenReturn(new Pair<>("02:00:00:00:00:04", "10.0.0.13"));
 
-            Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails(detail, network);
+            Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails("restore-xml", network);
 
             assertNull(result.first());
             assertNull(result.second());

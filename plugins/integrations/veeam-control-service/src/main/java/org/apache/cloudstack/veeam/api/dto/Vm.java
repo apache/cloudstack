@@ -571,6 +571,7 @@ public final class Vm extends BaseDto {
 
         private String customScript;
         private Configuration configuration;
+        private Boolean regenerateIds;
 
         public String getCustomScript() {
             return customScript;
@@ -586,6 +587,14 @@ public final class Vm extends BaseDto {
 
         public void setConfiguration(Configuration configuration) {
             this.configuration = configuration;
+        }
+
+        public Boolean isRegenerateIds() {
+            return regenerateIds;
+        }
+
+        public void setRegenerateIds(boolean regenerateIds) {
+            this.regenerateIds = regenerateIds;
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -610,6 +619,14 @@ public final class Vm extends BaseDto {
                 this.type = type;
             }
         }
+    }
+
+    /**
+     * Assumes that any request carrying a non-empty custom script represents a worker VM.
+     */
+    @JsonIgnore
+    public boolean isWorkerVm() {
+        return initialization != null && StringUtils.isNotEmpty(initialization.getCustomScript());
     }
 
     public static Vm of(String href, String id) {
