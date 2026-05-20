@@ -982,7 +982,7 @@
 <script>
 import { getAPI, postAPI } from '@/api'
 import { createPathBasedOnVmType } from '@/utils/plugins'
-import { validateLinks } from '@/utils/links'
+import { validateLinksAsync } from '@/utils/links'
 import Console from '@/components/widgets/Console'
 import OsLogo from '@/components/widgets/OsLogo'
 import Status from '@/components/widgets/Status'
@@ -1070,12 +1070,12 @@ export default {
     },
     resource: {
       deep: true,
-      handler (newData, oldData) {
+      async handler (newData, oldData) {
         if (newData === oldData) return
         this.newResource = newData
         this.showKeys = false
         this.setData()
-        this.validLinks = validateLinks(this.$router, this.isStatic, this.resource)
+        this.validLinks = await validateLinksAsync(this.$router, this.isStatic, this.resource)
 
         if ('apikey' in this.resource) {
           this.getUserKeys()
