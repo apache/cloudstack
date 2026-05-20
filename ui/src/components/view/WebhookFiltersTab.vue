@@ -18,6 +18,7 @@
 <template>
   <div>
     <div class="add-row">
+      <p>{{ $t('message.webhook.filter.add') }}</p>
       <a-form
         :ref="addFormRef"
         :model="addFilterForm"
@@ -90,7 +91,7 @@
       {{ (selectedRowKeys && selectedRowKeys.length > 0) ? $t('label.action.delete.webhook.filters') : $t('label.action.clear.webhook.filters') }}
     </a-button>
     <list-view
-      :tabLoading="tabLoading"
+      :loading="tabLoading"
       :columns="columns"
       :items="filters"
       :actions="actions"

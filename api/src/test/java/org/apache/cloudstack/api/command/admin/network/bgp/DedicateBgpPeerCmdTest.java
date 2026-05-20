@@ -39,7 +39,7 @@ public class DedicateBgpPeerCmdTest {
     @Test
     public void testDedicateBgpPeerCmd() {
         Long id = 1L;
-        UUID uuid = UUID.randomUUID();
+        String uuid = UUID.randomUUID().toString();
         String accountName = "user";
         Long projectId = 10L;
         Long domainId = 11L;

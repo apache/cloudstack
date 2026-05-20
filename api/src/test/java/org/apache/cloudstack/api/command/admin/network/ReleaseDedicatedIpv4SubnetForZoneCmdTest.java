@@ -39,7 +39,7 @@ public class ReleaseDedicatedIpv4SubnetForZoneCmdTest {
     @Test
     public void testReleaseDedicatedIpv4SubnetForZoneCmd() {
         Long id = 1L;
-        UUID uuid = UUID.randomUUID();
+        String uuid = UUID.randomUUID().toString();
 
         ReleaseDedicatedIpv4SubnetForZoneCmd cmd = new ReleaseDedicatedIpv4SubnetForZoneCmd();
         ReflectionTestUtils.setField(cmd, "id", id);

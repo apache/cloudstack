@@ -46,7 +46,6 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.GATEWAY_ID,
                type = CommandType.UUID,
                entityType = PrivateGatewayResponse.class,
-               required = true,
                description = "The gateway ID we are creating static route for. Mutually exclusive with the nexthop parameter")
     private Long gatewayId;
 

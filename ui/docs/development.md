@@ -32,7 +32,7 @@ The following tree shows the basic UI codebase filesystem:
 
 ```bash
     src
-    ├── assests       # sprites, icons, images
+    ├── assets        # sprites, icons, images
     ├── components    # Shared vue files used to render various generic / widely used components
     ├── config        # Contains the layout details of the various routes / sections available in the UI
     ├── locales       # Custom translation keys for the various supported languages

@@ -235,7 +235,7 @@ public class ConfigHelperTest {
         lbs.toArray(arrayLbs);
 
         final NicTO nic = new NicTO();
-        final LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(arrayLbs, "64.10.2.10", "10.1.10.2", "192.168.1.2", nic, null, "1000", false);
+        final LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(arrayLbs, "64.10.2.10", "10.1.10.2", "192.168.1.2", nic, null, "1000", false, 0L);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, "10.1.10.2");
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, ROUTERNAME);
 

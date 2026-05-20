@@ -125,12 +125,12 @@ public class GuestOSDaoImpl extends GenericDaoBase<GuestOSVO, Long> implements G
         return listBy(sc);
     }
 
-    public Pair<List<? extends GuestOS>, Integer> listGuestOSByCriteria(Long startIndex, Long pageSize, Long id, Long osCategoryId, String description, String keyword, Boolean forDisplay) {
+    public Pair<List<? extends GuestOS>, Integer> listGuestOSByCriteria(Long startIndex, Long pageSize, List<Long> ids, Long osCategoryId, String description, String keyword, Boolean forDisplay) {
         final Filter searchFilter = new Filter(GuestOSVO.class, "displayName", true, startIndex, pageSize);
         final SearchCriteria<GuestOSVO> sc = createSearchCriteria();
 
-        if (id != null) {
-            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+        if (CollectionUtils.isNotEmpty(ids)) {
+            sc.addAnd("id", SearchCriteria.Op.IN, ids.toArray());
         }
 
         if (osCategoryId != null) {

@@ -28,7 +28,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
-import java.util.UUID;
 import java.util.regex.Matcher;
 
 import javax.inject.Inject;
@@ -314,20 +313,7 @@ public class ParamProcessWorker implements DispatchWorker {
 
     protected void doAccessChecks(BaseCmd cmd, Map<Object, AccessType> entitiesToAccess) {
         Account caller = CallContext.current().getCallingAccount();
-        List<Long> entityOwners = cmd.getEntityOwnerIds();
-        Account[] owners = null;
-        if (entityOwners != null) {
-            owners = entityOwners.stream().map(id -> _accountMgr.getAccount(id)).toArray(Account[]::new);
-        } else {
-            if (cmd.getEntityOwnerId() == Account.ACCOUNT_ID_SYSTEM && cmd instanceof BaseAsyncCmd && ((BaseAsyncCmd)cmd).getApiResourceType() == ApiCommandResourceType.Network) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Skipping access check on the network owner if the owner is ROOT/system.");
-                }
-                owners = new Account[]{};
-            } else {
-                owners = new Account[]{_accountMgr.getAccount(cmd.getEntityOwnerId())};
-            }
-        }
+        Account[] owners = getEntityOwners(cmd);
 
         if (cmd instanceof BaseAsyncCreateCmd) {
             // check that caller can access the owner account.
@@ -539,7 +525,7 @@ public class ParamProcessWorker implements DispatchWorker {
                         continue;
                     }
                     String entityUuid = ((Identity) objVO).getUuid();
-                    CallContext.current().putApiResourceUuid(annotation.name(), UUID.fromString(entityUuid));
+                    CallContext.current().putApiResourceUuid(annotation.name(), entityUuid);
                 }
                 validateNaturalNumber(internalId, annotation.name());
                 return internalId;
@@ -564,7 +550,7 @@ public class ParamProcessWorker implements DispatchWorker {
             }
             // Return on first non-null Id for the uuid entity
             if (internalId != null){
-                CallContext.current().putApiResourceUuid(annotation.name(), UUID.fromString(uuid));
+                CallContext.current().putApiResourceUuid(annotation.name(), uuid);
                 CallContext.current().putContextParameter(entity, uuid);
                 break;
             }

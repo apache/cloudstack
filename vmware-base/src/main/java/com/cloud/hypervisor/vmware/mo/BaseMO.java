@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.vmware.mo;
 
+import com.cloud.hypervisor.Hypervisor;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -45,9 +46,9 @@ public class BaseMO {
     protected VmwareContext _context;
     protected ManagedObjectReference _mor;
 
-    protected static String[] propertyPathsForUnmanagedVmsThinListing = new String[] {"name", "config.template",
-            "runtime.powerState", "config.guestId", "config.guestFullName", "runtime.host",
-            "config.bootOptions", "config.firmware"};
+    protected static String[] propertyPathsForUnmanagedVmsThinListing = new String[] {"name", "config.template", "runtime.powerState",
+            "config.guestId", "config.guestFullName", "summary.guest.guestId", "summary.guest.guestFullName",
+            "runtime.host", "config.bootOptions", "config.firmware"};
 
     private String _name;
 
@@ -207,6 +208,11 @@ public class BaseMO {
         boolean isTemplate = false;
         boolean excludeByKeyword = false;
 
+        String configGuestId = null;
+        String configGuestFullName = null;
+        String summaryGuestId = null;
+        String summaryGuestFullName = null;
+
         for (DynamicProperty objProp : objProps) {
             if (objProp.getName().equals("name")) {
                 vmName = (String) objProp.getVal();
@@ -220,13 +226,17 @@ public class BaseMO {
                 VirtualMachinePowerState powerState = (VirtualMachinePowerState) objProp.getVal();
                 vm.setPowerState(convertPowerState(powerState));
             } else if (objProp.getName().equals("config.guestFullName")) {
-                vm.setOperatingSystem((String) objProp.getVal());
+                configGuestFullName = (String) objProp.getVal();
             } else if (objProp.getName().equals("config.guestId")) {
-                vm.setOperatingSystemId((String) objProp.getVal());
+                configGuestId = (String) objProp.getVal();
+            } else if (objProp.getName().equals("summary.guest.guestFullName")) {
+                summaryGuestFullName = (String) objProp.getVal();
+            } else if (objProp.getName().equals("summary.guest.guestId")) {
+                summaryGuestId = (String) objProp.getVal();
             } else if (objProp.getName().equals("config.bootOptions")) {
                 VirtualMachineBootOptions bootOptions = (VirtualMachineBootOptions) objProp.getVal();
                 String bootMode = "LEGACY";
-                if (bootOptions != null && bootOptions.isEfiSecureBootEnabled()) {
+                if (bootOptions != null && Boolean.TRUE.equals(bootOptions.isEfiSecureBootEnabled())) {
                     bootMode = "SECURE";
                 }
                 vm.setBootMode(bootMode);
@@ -238,6 +248,11 @@ public class BaseMO {
                 setUnmanagedInstanceTOHostAndCluster(vm, hostMor, hostClusterNamesMap);
             }
         }
+
+        vm.setHypervisorType(Hypervisor.HypervisorType.VMware.name());
+        vm.setOperatingSystem(StringUtils.isNotBlank(summaryGuestFullName) ? summaryGuestFullName : configGuestFullName);
+        vm.setOperatingSystemId(StringUtils.isNotBlank(summaryGuestId) ? summaryGuestId : configGuestId);
+
         if (isTemplate || excludeByKeyword) {
             return null;
         }

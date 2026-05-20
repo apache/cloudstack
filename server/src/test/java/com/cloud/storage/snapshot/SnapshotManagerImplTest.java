@@ -22,7 +22,6 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.org.Grouping;
 import com.cloud.storage.DataStoreRole;
@@ -317,12 +316,11 @@ public class SnapshotManagerImplTest {
         Mockito.when(result1.isFailed()).thenReturn(false);
         AsyncCallFuture<SnapshotResult> future1 = Mockito.mock(AsyncCallFuture.class);
         try {
-            Mockito.doNothing().when(resourceLimitService).checkResourceLimit(Mockito.any(), Mockito.any(), Mockito.anyLong());
             Mockito.when(future.get()).thenReturn(result);
             Mockito.when(snapshotService.queryCopySnapshot(Mockito.any())).thenReturn(future);
             Mockito.when(future1.get()).thenReturn(result1);
             Mockito.when(snapshotService.copySnapshot(Mockito.any(SnapshotInfo.class), Mockito.anyString(), Mockito.any(DataStore.class))).thenReturn(future1);
-        } catch (ResourceAllocationException | ResourceUnavailableException | ExecutionException | InterruptedException e) {
+        } catch (ResourceUnavailableException | ExecutionException | InterruptedException e) {
             Assert.fail(e.getMessage());
         }
         List<Long> addedZone = new ArrayList<>();

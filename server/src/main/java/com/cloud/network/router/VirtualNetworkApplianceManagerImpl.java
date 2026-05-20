@@ -1690,7 +1690,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 } else {
                     loadBalancingData.append("maxconn=").append(offering.getConcurrentConnections());
                 }
-
+                loadBalancingData.append(",idletimeout=").append(NetworkOrchestrationService.NETWORK_LB_HAPROXY_IDLE_TIMEOUT.value());
                 loadBalancingData.append(",sourcePortStart=").append(firewallRuleVO.getSourcePortStart())
                         .append(",sourcePortEnd=").append(firewallRuleVO.getSourcePortEnd());
                 if (firewallRuleVO instanceof LoadBalancerVO) {

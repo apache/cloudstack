@@ -74,6 +74,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     private final SearchBuilder<VolumeVO> storeAndInstallPathSearch;
     private final SearchBuilder<VolumeVO> volumeIdSearch;
     protected GenericSearchBuilder<VolumeVO, Long> CountByAccount;
+    protected final SearchBuilder<VolumeVO> ExternalUuidSearch;
     protected GenericSearchBuilder<VolumeVO, SumCount> primaryStorageSearch;
     protected GenericSearchBuilder<VolumeVO, SumCount> primaryStorageSearch2;
     protected GenericSearchBuilder<VolumeVO, SumCount> secondaryStorageSearch;
@@ -458,6 +459,10 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         CountByAccount.and("displayVolume", CountByAccount.entity().isDisplayVolume(), Op.EQ);
         CountByAccount.and("idNIN", CountByAccount.entity().getId(), Op.NIN);
         CountByAccount.done();
+
+        ExternalUuidSearch = createSearchBuilder();
+        ExternalUuidSearch.and("externalUuid", ExternalUuidSearch.entity().getExternalUuid(), Op.EQ);
+        ExternalUuidSearch.done();
 
         primaryStorageSearch = createSearchBuilder(SumCount.class);
         primaryStorageSearch.select("sum", Func.SUM, primaryStorageSearch.entity().getSize());
@@ -933,5 +938,12 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         sc.and(sc.entity().getLastId(), SearchCriteria.Op.EQ,  lastVolumeId);
         sc.and(sc.entity().getState(), SearchCriteria.Op.IN,  (Object[]) states);
         return sc.find();
+    }
+
+    @Override
+    public VolumeVO findByExternalUuid(String externalUuid) {
+        SearchCriteria<VolumeVO> sc = ExternalUuidSearch.create();
+        sc.setParameters("externalUuid", externalUuid);
+        return findOneBy(sc);
     }
 }

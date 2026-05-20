@@ -35,6 +35,7 @@ import org.apache.logging.log4j.LogManager;
 
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.UriUtils;
+import com.cloud.utils.net.HttpClientCloudStackUserAgent;
 
 public final class QCOW2Utils {
     protected static Logger LOGGER = LogManager.getLogger(QCOW2Utils.class);
@@ -119,6 +120,7 @@ public final class QCOW2Utils {
         try {
             URI url = new URI(urlStr);
             httpConn = (HttpURLConnection)url.toURL().openConnection();
+            httpConn.setRequestProperty(UriUtils.USER_AGENT, HttpClientCloudStackUserAgent.CLOUDSTACK_USER_AGENT);
             httpConn.setInstanceFollowRedirects(followRedirects);
             return getVirtualSize(httpConn.getInputStream(), UriUtils.isUrlForCompressedFile(urlStr));
         } catch (URISyntaxException e) {
