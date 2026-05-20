@@ -1251,8 +1251,8 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         }
 
         if (minMembers > maxMembers) {
-            throw new InvalidParameterValueException(ApiConstants.MIN_MEMBERS + " (" + minMembers + ")cannot be greater than " + ApiConstants.MAX_MEMBERS + " (" +
-                    maxMembers + ")");
+            throw new InvalidParameterValueException(ApiConstants.MIN_MEMBERS + " (" + minMembers +
+                    ") cannot be greater than " + ApiConstants.MAX_MEMBERS + " (" + maxMembers + ")");
         }
     }
 

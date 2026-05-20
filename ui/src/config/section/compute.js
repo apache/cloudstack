@@ -969,9 +969,9 @@ export default {
           dataView: true,
           args: (record, store) => {
             var args = ['name']
+            args.push('maxmembers')
+            args.push('minmembers')
             if (record.state === 'DISABLED') {
-              args.push('maxmembers')
-              args.push('minmembers')
               args.push('interval')
             }
             return args
