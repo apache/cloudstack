@@ -2291,10 +2291,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         if (newHost || host == null || host.getType() != Host.Type.Routing) {
             return;
         }
-        final Long existingDcId = host.getDataCenterId();
+        final long existingDcId = host.getDataCenterId();
         final Long existingPodId = host.getPodId();
         final Long existingClusterId = host.getClusterId();
-        if (existingDcId == null || existingPodId == null || existingClusterId == null) {
+        if (existingPodId == null || existingClusterId == null) {
             return;
         }
         if (existingDcId == dcId && Objects.equals(existingPodId, podId) && Objects.equals(existingClusterId, clusterId)) {
@@ -2302,9 +2302,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
         final String identity = host.getUuid() != null ? host.getUuid() : host.getGuid();
         final String ip = startup != null ? startup.getPrivateIpAddress() : "unknown";
-        throw new InvalidParameterValueException(String.format(
-                "Host %s (ip: %s) is already registered in [zone: %d, pod: %d, cluster: %d] and cannot be re-added or reconnected with [zone: %d, pod: %s, cluster: %s]. Zone, pod and cluster of an existing host are immutable.",
-                identity, ip, existingDcId, existingPodId, existingClusterId, dcId, podId, clusterId));
+        throw new InvalidParameterValueException(
+                String.format("Host %s (ip: %s) is already registered in [zone: %s, pod: %s, cluster: %s] and cannot " +
+                                "be re-added or reconnected with [zone: %s, pod: %s, cluster: %s]. Zone, pod and " +
+                                "cluster of an existing host are immutable.",
+                        identity, ip, existingDcId, existingPodId, existingClusterId, dcId, podId, clusterId));
     }
 
     protected HostVO createHostVO(final StartupCommand[] cmds, final ServerResource resource, final Map<String, String> details, List<String> hostTags,
@@ -2618,19 +2620,23 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         String ipAddress = null;
         try {
             hostIpOrName = new URI(UriUtils.encodeURIComponent(url)).getHost();
+            if (StringUtils.isBlank(hostIpOrName)) {
+                return;
+            }
             InetAddress ip = InetAddress.getByName(hostIpOrName);
             ipAddress = ip.getHostAddress();
         } catch (final URISyntaxException | UnknownHostException ignore) {
             // unparseable URL or unknown host - discoverer will reject it shortly anyway
-        }
-        if (StringUtils.isBlank(hostIpOrName)) {
             return;
         }
-        final HostVO existingByIp = _hostDao.findByIp(ipAddress);
-        if (existingByIp != null) {
-            throw new InvalidParameterValueException(String.format(
-                    "A host with IP address / hostname '%s' (%s) already exists (id: %s). Remove it before adding again.",
-                    hostIpOrName, ipAddress, existingByIp.getUuid()));
+
+        if (StringUtils.isNotBlank(ipAddress)) {
+            final HostVO existingByIp = _hostDao.findByIp(ipAddress);
+            if (existingByIp != null) {
+                throw new InvalidParameterValueException(String.format(
+                        "A host with IP address '%s' (%s) already exists (id: %s). Remove it before adding again.",
+                        ipAddress, hostIpOrName, existingByIp));
+            }
         }
     }
 
