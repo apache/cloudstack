@@ -17,7 +17,9 @@
 
 export function validateLinks (router, isStatic, resource) {
   const validLinks = {
-    volume: false
+    volume: false,
+    template: false,
+    iso: false
   }
 
   if (isStatic) {
@@ -30,6 +32,15 @@ export function validateLinks (router, isStatic, resource) {
     } else {
       validLinks.volume = true
     }
+  }
+
+  if (resource.templateid) {
+    const templatePath = (resource.templateformat === 'ISO' ? '/iso/' : '/template/') + resource.templateid
+    validLinks.template = router.resolve(templatePath).matched[0].redirect !== '/exception/404'
+  }
+
+  if (resource.isoid) {
+    validLinks.iso = router.resolve('/iso/' + resource.isoid).matched[0].redirect !== '/exception/404'
   }
 
   return validLinks

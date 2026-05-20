@@ -609,7 +609,8 @@
               <div class="resource-detail-item__details">
                 <resource-icon v-if="images.template || images.guestoscategory" :image="images.template || images.guestoscategory" size="1x" style="margin-right: 5px"/>
                 <SaveOutlined v-else />
-                <router-link :to="{ path: (resource.templateformat === 'ISO' ? '/iso/' : '/template/') + resource.templateid }">{{ resource.templatedisplaytext || resource.templatename || resource.templateid }} </router-link>
+                <router-link v-if="validLinks.template" :to="{ path: (resource.templateformat === 'ISO' ? '/iso/' : '/template/') + resource.templateid }">{{ resource.templatedisplaytext || resource.templatename || resource.templateid }} </router-link>
+                <span v-else>{{ resource.templatedisplaytext || resource.templatename || resource.templateid }}</span>
               </div>
             </div>
             <div class="resource-detail-item" v-if="resource.isoid">
@@ -617,7 +618,8 @@
               <div class="resource-detail-item__details">
                 <resource-icon v-if="images.iso || (resource.isoid === resource.templateid && images.guestoscategory)" :image="images.iso || images.guestoscategory" size="1x" style="margin-right: 5px"/>
                 <UsbOutlined v-else />
-                  <router-link :to="{ path: '/iso/' + resource.isoid }">{{ resource.isodisplaytext || resource.isoname || resource.isoid }} </router-link>
+                <router-link v-if="validLinks.iso" :to="{ path: '/iso/' + resource.isoid }">{{ resource.isodisplaytext || resource.isoname || resource.isoid }} </router-link>
+                <span v-else>{{ resource.isodisplaytext || resource.isoname || resource.isoid }}</span>
               </div>
             </div>
             <div class="resource-detail-item" v-if="resource.serviceofferingname && resource.serviceofferingid">
@@ -1084,6 +1086,7 @@ export default {
   },
   created () {
     this.setData()
+    this.validLinks = validateLinks(this.$router, this.isStatic, this.resource)
     eventBus.on('handle-close', (showModal) => {
       this.showUploadModal(showModal)
     })
