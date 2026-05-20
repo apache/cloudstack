@@ -18,6 +18,7 @@
 package org.apache.cloudstack.backup;
 
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.LogLevel;
 
 public class StartNBDServerCommand extends Command {
     private String transferId;
@@ -26,17 +27,20 @@ public class StartNBDServerCommand extends Command {
     private String socket;
     private String direction;
     private String fromCheckpointId;
+    @LogLevel(LogLevel.Log4jLevel.Off)
+    private byte[] passphrase;
 
     public StartNBDServerCommand() {
     }
 
-    protected StartNBDServerCommand(String transferId, String exportName, String volumePath, String socket, String direction, String fromCheckpointId) {
+    protected StartNBDServerCommand(String transferId, String exportName, String volumePath, String socket, String direction, String fromCheckpointId, byte[] passphrase) {
         this.transferId = transferId;
         this.socket = socket;
         this.exportName = exportName;
         this.volumePath = volumePath;
         this.direction = direction;
         this.fromCheckpointId = fromCheckpointId;
+        this.passphrase = passphrase;
     }
 
     public String getExportName() {
@@ -66,5 +70,9 @@ public class StartNBDServerCommand extends Command {
 
     public String getFromCheckpointId() {
         return fromCheckpointId;
+    }
+
+    public byte[] getPassphrase() {
+        return passphrase;
     }
 }

@@ -18,9 +18,11 @@
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import java.io.File;
+import java.io.IOException;
 
 import org.apache.cloudstack.backup.StartNBDServerAnswer;
 import org.apache.cloudstack.backup.StartNBDServerCommand;
+import org.apache.cloudstack.utils.cryptsetup.KeyFile;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.json.JSONArray;
@@ -36,6 +38,41 @@ import com.cloud.utils.script.Script;
 @ResourceWrapper(handles = StartNBDServerCommand.class)
 public class LibvirtStartNBDServerCommandWrapper extends CommandWrapper<StartNBDServerCommand, Answer, LibvirtComputingResource> {
     protected Logger logger = LogManager.getLogger(getClass());
+
+    private String createSystemdRunCmd(StartNBDServerCommand cmd, String unitName, String volumePath, String exportName, String socket) throws IOException {
+        String socketName = "/tmp/imagetransfer/" + socket + ".sock";
+
+        String bitmapArg = "";
+        if (StringUtils.isNotBlank(cmd.getFromCheckpointId())
+                && isBitmapPresentOnDisk(volumePath, cmd.getFromCheckpointId())) {
+            bitmapArg = "-B " + cmd.getFromCheckpointId();
+        }
+
+        byte[] passphrase = cmd.getPassphrase(); // may be null
+        String readOnlyArg = cmd.getDirection().equals("download") ? "--read-only" : "";
+        String imageArg = volumePath;
+        String secretArg = "";
+        if (passphrase != null && passphrase.length > 0) {
+            KeyFile srcKey = new KeyFile(passphrase);
+            secretArg = String.format("--object secret,id=sec0,file=%s", srcKey);
+            imageArg = String.format("--image-opts driver=qcow2,file.driver=file,file.filename=%s,encrypt.key-secret=sec0", volumePath);
+        }
+
+        // --persistent: Don't stop the service when the last client disconnects.
+        // --shared=NUM: Allow up to NUM clients to share the device (default 1), 0 for unlimited. Number of parallel connections is managed by the image server.
+        String systemdRunCmd = String.format(
+                "systemd-run --unit=%s --property=Restart=no qemu-nbd %s " +
+                        "--export-name %s --socket %s --persistent --shared=0 %s %s %s",
+                unitName,
+                secretArg,
+                exportName,
+                socketName,
+                bitmapArg,
+                readOnlyArg,
+                imageArg
+        );
+        return systemdRunCmd;
+    }
 
     @Override
     public Answer execute(StartNBDServerCommand cmd, LibvirtComputingResource resource) {
@@ -69,24 +106,13 @@ public class LibvirtStartNBDServerCommandWrapper extends CommandWrapper<StartNBD
             dir.mkdirs();
         }
 
-        String socketName = "/tmp/imagetransfer/" + socket + ".sock";
-        String bitmapArg = "";
-        if (StringUtils.isNotBlank(cmd.getFromCheckpointId())
-                && isBitmapPresentOnDisk(volumePath, cmd.getFromCheckpointId())) {
-            bitmapArg = "-B " + cmd.getFromCheckpointId();
+        String systemdRunCmd = "";
+        try {
+            systemdRunCmd = createSystemdRunCmd(cmd, unitName, volumePath, exportName, socket);
+        } catch (IOException e) {
+            logger.error("Failed to create the KeyFile for qemu-nbd service", e);
+            return new StartNBDServerAnswer(cmd, false, "Failed to create systemd run command for qemu-nbd service: " + e.getMessage());
         }
-        // --persistent: Don't stop the service when the last client disconnects.
-        // --shared=NUM: Allow up to NUM clients to share the device (default 1), 0 for unlimited. Number of parallel connections is managed by the image server.
-        String systemdRunCmd = String.format(
-                "systemd-run --unit=%s --property=Restart=no qemu-nbd --export-name %s --socket %s --persistent --shared=0 %s %s %s",
-                unitName,
-                exportName,
-                socketName,
-                bitmapArg,
-                cmd.getDirection().equals("download") ? "--read-only" : "",
-                volumePath
-        );
-
 
         Script startScript = new Script("/bin/bash", logger);
         startScript.add("-c");
@@ -99,12 +125,18 @@ public class LibvirtStartNBDServerCommandWrapper extends CommandWrapper<StartNBD
         }
 
         // Wait with timeout until the service is up
-        int maxWaitSeconds = 10;
-        int pollIntervalMs = 1000;
+        int maxWaitSeconds = 20;
+        int pollIntervalMs = 5000;
         int maxAttempts = (maxWaitSeconds * 1000) / pollIntervalMs;
         boolean serviceActive = false;
 
         for (int attempt = 0; attempt < maxAttempts; attempt++) {
+            try {
+                Thread.sleep(pollIntervalMs);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return new StartNBDServerAnswer(cmd, false, "Interrupted while waiting for qemu-nbd service to start");
+            }
             Script verifyScript = new Script("/bin/bash", logger);
             verifyScript.add("-c");
             verifyScript.add(String.format("systemctl is-active --quiet %s", unitName));
@@ -113,12 +145,6 @@ public class LibvirtStartNBDServerCommandWrapper extends CommandWrapper<StartNBD
                 serviceActive = true;
                 logger.info(String.format("qemu-nbd service %s is now active (attempt %d)", unitName, attempt + 1));
                 break;
-            }
-            try {
-                Thread.sleep(pollIntervalMs);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return new StartNBDServerAnswer(cmd, false, "Interrupted while waiting for qemu-nbd service to start");
             }
         }
 

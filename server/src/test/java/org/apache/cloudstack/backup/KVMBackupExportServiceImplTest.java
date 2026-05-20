@@ -37,6 +37,8 @@ import org.apache.cloudstack.api.command.admin.backup.StartBackupCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.ImageTransferDao;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.junit.Before;
@@ -114,6 +116,9 @@ public class KVMBackupExportServiceImplTest {
 
     @Mock
     HostVO hostVO;
+
+    @Mock
+    VolumeDataFactory volumeDataFactory;
 
     @Mock
     CallContext callContext;
@@ -433,6 +438,7 @@ public class KVMBackupExportServiceImplTest {
             when(vmInstanceDetailsDao.listDetailsKeyPairs(55L)).thenReturn(Map.of(VmDetailConstants.ACTIVE_CHECKPOINT_ID, "ckp-active"));
             when(hostDao.findById(802L)).thenReturn(hostVO);
             when(hostVO.getDataCenterId()).thenReturn(1L);
+            when(volumeDataFactory.getVolume(602L)).thenReturn(mock(VolumeInfo.class));
 
             when(agentManager.send(eq(802L), any(Command.class))).thenReturn(
                     new StartNBDServerAnswer(null, true, null),

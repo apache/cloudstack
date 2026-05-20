@@ -45,6 +45,8 @@ import org.apache.cloudstack.api.response.ImageTransferResponse;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.ImageTransferDao;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
@@ -141,6 +143,9 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
 
     @Inject
     VirtualMachineManager virtualMachineManager;
+
+    @Inject
+    private VolumeDataFactory volumeDataFactory;
 
     VmWorkJobHandlerProxy jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
@@ -270,8 +275,11 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
             removeFailedBackup(backup);
             throw new CloudRuntimeException("Instance not found for Backup: " + backup.getUuid());
         }
+        boolean isVmStopped = vm.getState() == State.Stopped;
+
         List<VolumeVO> volumes = volumeDao.findByInstance(vmId);
         Map<String, String> diskPathUuidMap = new HashMap<>();
+        Map<String, byte[]> diskPathPassphraseMap = new HashMap<>();
         for (Volume vol : volumes) {
             if (vol.getPoolId() == null) {
                 removeFailedBackup(backup);
@@ -279,6 +287,12 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
             }
             String volumePath = getVolumePathForFileBasedBackend(vol);
             diskPathUuidMap.put(volumePath, vol.getUuid());
+            if (isVmStopped) {
+                VolumeInfo volumeInfo = volumeDataFactory.getVolume(vol.getId());
+                diskPathPassphraseMap.put(volumePath, volumeInfo.getPassphrase());
+            } else {
+                diskPathPassphraseMap.put(volumePath, null);
+            }
         }
         Long hostId = backup.getHostId();
 
@@ -306,7 +320,8 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
             fromCheckpointCreateTime,
             backup.getUuid(),
             diskPathUuidMap,
-            vm.getState() == State.Stopped
+            diskPathPassphraseMap,
+            isVmStopped
         );
 
         StartBackupAnswer answer;
@@ -427,7 +442,14 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         if (vm.getState() == State.Stopped) {
             Map<String, String> vmDetails = vmInstanceDetailsDao.listDetailsKeyPairs(backup.getVmId());
             String volumePath = getVolumePathForFileBasedBackend(volume);
-            startNBDServer(transferId, direction, backup.getHostId(), volume.getUuid(), volumePath, vmDetails.get(VmDetailConstants.ACTIVE_CHECKPOINT_ID));
+            VolumeInfo volumeInfo = volumeDataFactory.getVolume(volume.getId());
+            startNBDServer(transferId,
+                    direction,
+                    backup.getHostId(),
+                    volume.getUuid(),
+                    volumePath,
+                    vmDetails.get(VmDetailConstants.ACTIVE_CHECKPOINT_ID),
+                    volumeInfo.getPassphrase());
             socket = transferId;
         }
 
@@ -494,7 +516,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         }
     }
 
-    private void startNBDServer(String transferId, String direction, Long hostId, String exportName, String volumePath, String checkpointId) {
+    private void startNBDServer(String transferId, String direction, Long hostId, String exportName, String volumePath, String checkpointId, byte[] passphrase) {
         StartNBDServerAnswer nbdServerAnswer;
         if (hostId == null) {
             throw new CloudRuntimeException("Host cannot be determined for starting NBD server");
@@ -509,7 +531,8 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
                 volumePath,
                 transferId,
                 direction,
-                checkpointId
+                checkpointId,
+                passphrase
         );
         try {
             nbdServerAnswer = (StartNBDServerAnswer) agentManager.send(hostId, nbdServerCmd);
@@ -577,7 +600,8 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
                     idleTimeoutSec);
 
         } else {
-            startNBDServer(transferId, direction, host.getId(), volume.getUuid(), volumePath, null);
+            VolumeInfo volumeInfo = volumeDataFactory.getVolume(volume.getId());
+            startNBDServer(transferId, direction, host.getId(), volume.getUuid(), volumePath, null, volumeInfo.getPassphrase());
             imageTransfer = new ImageTransferVO(
                     transferId,
                     null,

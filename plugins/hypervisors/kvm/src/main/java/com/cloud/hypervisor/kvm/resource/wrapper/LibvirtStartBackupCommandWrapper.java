@@ -19,11 +19,13 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.cloudstack.backup.StartBackupAnswer;
 import org.apache.cloudstack.backup.StartBackupCommand;
+import org.apache.cloudstack.utils.cryptsetup.KeyFile;
 import org.apache.cloudstack.utils.qemu.QemuCommand;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -217,13 +219,30 @@ public class LibvirtStartBackupCommandWrapper extends CommandWrapper<StartBackup
 
     private Answer handleStoppedVmBackup(StartBackupCommand cmd, String toCheckpointId) {
         Map<String, String> diskPathUuidMap = cmd.getDiskPathUuidMap();
+        Map<String, byte[]> diskPathPassphraseMap = cmd.getDiskPathPassphraseMap();
         for (Map.Entry<String, String> entry : diskPathUuidMap.entrySet()) {
             String diskPath = entry.getKey();
-            Script script = new Script("sudo");
-            script.add("qemu-img");
+            Script script = new Script("qemu-img");
+            byte[] passphrase = diskPathPassphraseMap.get(diskPath);
+
             script.add("bitmap");
             script.add("--add");
-            script.add(diskPath);
+
+            if (passphrase != null && passphrase.length > 0) {
+                KeyFile srcKey;
+                try {
+                    srcKey = new KeyFile(passphrase);
+                } catch (IOException ex) {
+                    return new StartBackupAnswer(cmd, false, "Failed to create KeyFile while adding bitmap " + toCheckpointId + " to disk " + diskPath);
+                }
+                script.add("--object");
+                script.add(String.format("secret,id=sec0,file=%s", srcKey));
+                script.add("--image-opts");
+                script.add(String.format("driver=qcow2,file.driver=file,file.filename=%s,encrypt.key-secret=sec0", diskPath));
+            } else {
+                script.add(diskPath);
+            }
+
             script.add(toCheckpointId);
             String result = script.execute();
             if (result != null) {

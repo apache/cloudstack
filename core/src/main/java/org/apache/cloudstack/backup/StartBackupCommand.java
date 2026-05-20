@@ -20,6 +20,7 @@ package org.apache.cloudstack.backup;
 import java.util.Map;
 
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.LogLevel;
 
 public class StartBackupCommand extends Command {
     private String vmName;
@@ -29,18 +30,21 @@ public class StartBackupCommand extends Command {
     private String socket;
     private Map<String, String> diskPathUuidMap;
     private boolean stoppedVM;
+    @LogLevel(LogLevel.Log4jLevel.Off)
+    private Map<String, byte[]> diskPathPassphraseMap;
 
     public StartBackupCommand() {
     }
 
     public StartBackupCommand(String vmName, String toCheckpointId, String fromCheckpointId, Long fromCheckpointCreateTime,
-                              String socket, Map<String, String> diskPathUuidMap, boolean stoppedVM) {
+                              String socket, Map<String, String> diskPathUuidMap, Map<String, byte[]> passphrases, boolean stoppedVM) {
         this.vmName = vmName;
         this.toCheckpointId = toCheckpointId;
         this.fromCheckpointId = fromCheckpointId;
         this.fromCheckpointCreateTime = fromCheckpointCreateTime;
         this.socket = socket;
         this.diskPathUuidMap = diskPathUuidMap;
+        this.diskPathPassphraseMap = passphrases;
         this.stoppedVM = stoppedVM;
     }
 
@@ -74,6 +78,10 @@ public class StartBackupCommand extends Command {
 
     public boolean isStoppedVM() {
         return stoppedVM;
+    }
+
+    public Map<String, byte[]> getDiskPathPassphraseMap() {
+        return diskPathPassphraseMap;
     }
 
     @Override
