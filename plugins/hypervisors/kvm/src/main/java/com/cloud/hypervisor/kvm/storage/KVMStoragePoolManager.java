@@ -72,7 +72,9 @@ public class KVMStoragePoolManager {
 
     private void addStoragePool(String uuid, StoragePoolInformation pool) {
         synchronized (_storagePools) {
-            if (!_storagePools.containsKey(uuid)) {
+            // Insert on first registration; on subsequent calls (e.g. ModifyStoragePoolCommand)
+            // overwrite when new details are present so config changes are reflected
+            if (!_storagePools.containsKey(uuid) || MapUtils.isNotEmpty(pool.getDetails())) {
                 _storagePools.put(uuid, pool);
             }
         }
@@ -327,6 +329,10 @@ public class KVMStoragePoolManager {
      */
     private void addPoolDetails(String uuid, LibvirtStoragePool pool) {
         StoragePoolInformation storagePoolInformation = _storagePools.get(uuid);
+        if (storagePoolInformation == null) {
+            logger.warn("No cached StoragePoolInformation found for pool UUID {}, pool details will not be set.", uuid);
+            return;
+        }
         Map<String, String> details = storagePoolInformation.getDetails();
 
         if (MapUtils.isNotEmpty(details)) {
