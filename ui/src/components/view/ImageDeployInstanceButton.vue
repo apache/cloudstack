@@ -84,7 +84,7 @@ export default {
     allowed () {
       return (this.$route.meta.name === 'template' ||
         (this.$route.meta.name === 'iso' && this.resource?.bootable)) &&
-        this.resource.isready
+        !!this.resource?.isready
     }
   },
   methods: {
