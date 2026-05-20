@@ -20,7 +20,6 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
-import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
