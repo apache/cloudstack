@@ -112,11 +112,8 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
                             logger.debug(String.format("Could not get module [%s] context bean.", moduleDefinitionName));
                         }
                     } catch (BeansException e) {
-                        logger.warn(String.format("Failed to start module [%s] due to: [%s].", moduleDefinitionName, e.getMessage()));
-                        if (logger.isDebugEnabled()) {
-                            logger.debug(String.format("module start failure of module [%s] was due to: ", moduleDefinitionName), e);
-                        }
-                        throw new RuntimeException(String.format("Failed to start module [%s]", moduleDefinitionName), e);
+                        logger.error("Failed to start module [{}] due to: {}", def.getName(), e);
+                        throw new RuntimeException(String.format("Failed to start module [%s]", def.getName()));
                     }
                 } catch (EmptyStackException e) {
                     logger.warn(String.format("Failed to obtain module context due to [%s]. Using root context instead.", e.getMessage()));
@@ -148,11 +145,8 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
                         logger.debug("Failed to obtain module context: ", e);
                     }
                 } catch (BeansException e) {
-                    logger.warn(String.format("Failed to load module [%s] due to: [%s].", def.getName(), e.getMessage()));
-                    if (logger.isDebugEnabled()) {
-                        logger.debug(String.format("module load failure of module [%s] was due to: ", def.getName()), e);
-                    }
-                    throw new RuntimeException(String.format("Failed to load module [%s]", def.getName()), e);
+                    logger.error("Failed to load module [{}] due to: {}", def.getName(), e);
+                    throw new RuntimeException(String.format("Failed to load module [%s]", def.getName()));
                 }
             }
         });
