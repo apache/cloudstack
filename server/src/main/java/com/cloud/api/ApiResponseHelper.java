@@ -2336,7 +2336,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         if (so != null) {
             ServiceOffering soffering = ApiDBUtils.findServiceOfferingById(so);
-            if (soffering != null) {
+            if (soffering != null && _accountMgr.isRootAdmin(CallContext.current().getCallingAccountId())) {
                 response.setServiceOfferingId(soffering.getUuid());
                 response.setServiceOfferingName(soffering.getName());
             }
