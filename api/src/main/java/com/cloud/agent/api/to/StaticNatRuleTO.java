@@ -28,6 +28,7 @@ import com.cloud.network.rules.StaticNatRule;
 
 public class StaticNatRuleTO extends FirewallRuleTO {
     String dstIp;
+    boolean destinationIpOnDefaultNic = true;
 
     protected StaticNatRuleTO() {
     }
@@ -77,6 +78,14 @@ public class StaticNatRuleTO extends FirewallRuleTO {
 
     public String getDstIp() {
         return dstIp;
+    }
+
+    public boolean isDestinationIpOnDefaultNic() {
+        return destinationIpOnDefaultNic;
+    }
+
+    public void setDestinationIpOnDefaultNic(boolean destinationIpOnDefaultNic) {
+        this.destinationIpOnDefaultNic = destinationIpOnDefaultNic;
     }
 
 }

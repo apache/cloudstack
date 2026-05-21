@@ -25,18 +25,25 @@ public class StaticNatRule {
     private String sourceIpAddress;
     private String sourcePortRange;
     private String destinationIpAddress;
+    private boolean destinationIpOnDefaultNic = true;
 
     public StaticNatRule() {
         // Empty constructor for (de)serialization
     }
 
     public StaticNatRule(boolean revoke, String protocol, String sourceIpAddress, String sourcePortRange, String destinationIpAddress) {
+        this(revoke, protocol, sourceIpAddress, sourcePortRange, destinationIpAddress, true);
+    }
+
+    public StaticNatRule(boolean revoke, String protocol, String sourceIpAddress, String sourcePortRange,
+                         String destinationIpAddress, boolean destinationIpOnDefaultNic) {
         super();
         this.revoke = revoke;
         this.protocol = protocol;
         this.sourceIpAddress = sourceIpAddress;
         this.sourcePortRange = sourcePortRange;
         this.destinationIpAddress = destinationIpAddress;
+        this.destinationIpOnDefaultNic = destinationIpOnDefaultNic;
     }
 
     public boolean isRevoke() {
@@ -77,6 +84,14 @@ public class StaticNatRule {
 
     public void setDestinationIpAddress(String destinationIpAddress) {
         this.destinationIpAddress = destinationIpAddress;
+    }
+
+    public boolean isDestinationIpOnDefaultNic() {
+        return destinationIpOnDefaultNic;
+    }
+
+    public void setDestinationIpOnDefaultNic(boolean destinationIpOnDefaultNic) {
+        this.destinationIpOnDefaultNic = destinationIpOnDefaultNic;
     }
 
 }
