@@ -19,11 +19,27 @@
   <div
     :class="'form-layout'"
     @keyup.ctrl.enter="handleSubmit">
-    <span v-if="uploadPercentage > 0">
+    <span v-if="uploading">
       <loading-outlined />
       {{ $t('message.upload.file.processing') }}
       <a-progress :percent="uploadPercentage" />
     </span>
+    <div v-else-if="ssvmCertUntrusted" class="ssvm-cert-warning">
+      <a-alert
+        type="warning"
+        show-icon
+        :message="$t('message.ssvm.cert.untrusted')"
+        :description="$t('message.ssvm.cert.trust.instructions')" />
+      <div class="action-button" style="margin-top: 16px">
+        <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+        <a :href="ssvmOrigin" target="_blank" rel="noopener noreferrer">
+          <a-button>{{ $t('label.ssvm.open.cert.page') }}</a-button>
+        </a>
+        <a-button type="primary" :loading="loading" @click="retryUpload">
+          {{ $t('label.retry.upload') }}
+        </a-button>
+      </div>
+    </div>
     <a-spin :spinning="loading" v-else>
       <a-form
         :ref="formRef"
@@ -497,6 +513,8 @@ export default {
       uploadPercentage: 0,
       uploading: false,
       fileList: [],
+      ssvmCertUntrusted: false,
+      ssvmOrigin: '',
       zones: {},
       defaultZone: '',
       hyperVisor: {},
@@ -610,12 +628,32 @@ export default {
       this.form.file = file
       return false
     },
+    async probeSsvmCert (origin) {
+      try {
+        await fetch(origin, { method: 'HEAD', mode: 'no-cors' })
+        return true
+      } catch (e) {
+        return false
+      }
+    },
+    async retryUpload () {
+      this.loading = true
+      const trusted = await this.probeSsvmCert(this.ssvmOrigin)
+      this.loading = false
+      if (!trusted) {
+        this.$message.warning(this.$t('message.ssvm.cert.still.untrusted'))
+        return
+      }
+      this.ssvmCertUntrusted = false
+      this.handleUpload()
+    },
     handleUpload () {
       const { fileList } = this
       const formData = new FormData()
       fileList.forEach(file => {
         formData.append('files[]', file)
       })
+      this.uploading = true
       this.uploadPercentage = 0
       axios.post(this.uploadParams.postURL,
         formData,
@@ -639,6 +677,8 @@ export default {
         this.closeAction()
       }).catch(e => {
         this.$notifyError(e)
+      }).finally(() => {
+        this.uploading = false
       })
     },
     fetchCustomHypervisorName () {
@@ -1124,12 +1164,18 @@ export default {
               duration: 0
             })
           }
-          api('getUploadParamsForTemplate', params).then(json => {
+          api('getUploadParamsForTemplate', params).then(async json => {
             this.uploadParams = (json.postuploadtemplateresponse && json.postuploadtemplateresponse.getuploadparams) ? json.postuploadtemplateresponse.getuploadparams : ''
-            this.handleUpload()
             if (this.userdataid !== null) {
               this.linkUserdataToTemplate(this.userdataid, json.postuploadtemplateresponse.template[0].id)
             }
+            this.ssvmOrigin = new URL(this.uploadParams.postURL).origin
+            const trusted = await this.probeSsvmCert(this.ssvmOrigin)
+            if (!trusted) {
+              this.ssvmCertUntrusted = true
+              return
+            }
+            this.handleUpload()
           }).catch(error => {
             this.$notifyError(error)
           }).finally(() => {
