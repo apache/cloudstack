@@ -23,7 +23,6 @@ import json
 import fcntl
 import shutil
 import tempfile
-import signal
 from .CsGuestNetwork import CsGuestNetwork
 from cs.CsDatabag import CsDataBag
 from cs.CsFile import CsFile
@@ -225,12 +224,9 @@ class CsDhcp(CsDataBag):
 
                     # reload dnsmasq
                     try:
-                        with open("/var/run/dnsmasq.pid") as pidf:
-                            os.kill(int(pidf.read().strip()), signal.SIGHUP)
+                        CsHelper.service("dnsmasq", "reload")
                     except Exception:
                         pass
-
-                    os.system("ip neigh flush all")
                 else:
                     os.remove(tmp_path)
             finally:
