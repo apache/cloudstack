@@ -38,6 +38,7 @@ import org.apache.cloudstack.resourcedetail.dao.UserDetailsDao;
 import org.apache.cloudstack.utils.mailing.MailAddress;
 import org.apache.cloudstack.utils.mailing.SMTPMailProperties;
 import org.apache.cloudstack.utils.mailing.SMTPMailSender;
+import org.apache.http.conn.util.InetAddressUtils;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -191,8 +192,9 @@ public class UserPasswordResetManagerImpl extends ManagerBase implements UserPas
 
         String requestDomain = CallContext.current().getRequestRemoteAddress();
         String resetLinkDomain = getResetLinkDomain(requestDomain);
+        String formattedResetLinkDomain = formatResetLinkDomain(resetLinkDomain);
         String resetLink = String.format("%s/client/#/user/resetPassword?username=%s&token=%s",
-                resetLinkDomain, username, resetToken);
+                formattedResetLinkDomain, username, resetToken);
         String content = getMessageBody(userAccount, resetToken, resetLink);
 
         SMTPMailProperties mailProperties = new SMTPMailProperties();
@@ -214,46 +216,41 @@ public class UserPasswordResetManagerImpl extends ManagerBase implements UserPas
     }
 
     private String getResetLinkDomain(String requestDomain) {
-        String domain = "";
-
         if (StringUtils.isNotBlank(requestDomain)) {
             logger.debug("Searching for GUI theme with common name that matches the request's domain: [{}]", requestDomain);
             List<Long> commonNameDetails = guiThemeDetailsDao.listGuiThemeIdsByCommonName(requestDomain);
 
             if (!commonNameDetails.isEmpty()) {
                 logger.debug("GUI theme with ID {} was found; using request's domain for password reset link.", commonNameDetails.get(0));
-                domain = requestDomain;
+                return requestDomain;
             } else {
                 logger.debug("No GUI theme was found with a common name that matches the request's domain.");
             }
         }
 
         String configurationDomain = UserPasswordResetDomainURL.value();
-        if (StringUtils.isBlank(domain) && !StringUtils.isBlank(configurationDomain)) {
+        if (StringUtils.isNotBlank(configurationDomain)) {
             logger.debug("Defaulting reset link's domain to the [{}] configuration value: [{}].", UserPasswordResetDomainURL.key(), UserPasswordResetDomainURL.value());
-            domain = configurationDomain;
+            return configurationDomain;
         }
 
-        if (StringUtils.isBlank(domain)) {
-            logger.debug("Using the first IP address in the [{}] configuration for the reset password email domain because the [{}] configuration is not defined.", ManagementServerAddresses.key(), UserPasswordResetDomainURL.key());
-            domain = ManagementServerAddresses.value().split(",")[0];
+        logger.debug("Using the first IP address in the [{}] configuration for the reset password email domain because the [{}] configuration is not defined.", ManagementServerAddresses.key(), UserPasswordResetDomainURL.key());
+        return ManagementServerAddresses.value().split(",")[0];
+    }
 
-            if (ServerProperties.isHttpsEnabled()) {
-                domain = "https://" + domain + ":" + ServerProperties.getHttpsPort();
-            } else {
-                domain = "http://" + domain + ":" + ServerProperties.getHttpPort();
-            }
+    private String formatResetLinkDomain(String resetLinkDomain) {
+        String protocol = ServerProperties.isHttpsEnabled() ? "https" : "http";
+
+        if (InetAddressUtils.isIPv4Address(resetLinkDomain)) {
+            int port = protocol.equals("https") ? ServerProperties.getHttpsPort() : ServerProperties.getHttpPort();
+            resetLinkDomain = resetLinkDomain + ":" + port;
         }
 
-        if (!domain.startsWith("http")) {
-            if (ServerProperties.isHttpsEnabled()) {
-                domain = "https://" + domain;
-            } else {
-                domain = "http://" + domain;
-            }
+        if (!resetLinkDomain.startsWith("http")) {
+            resetLinkDomain = protocol + "://" + resetLinkDomain;
         }
 
-        return domain.replaceAll("/+$", "");
+        return resetLinkDomain.replaceAll("/+$", "");
     }
 
     @Override
