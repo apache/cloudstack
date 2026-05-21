@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form-layout" v-ctrl-enter="handleSubmit">
+  <div class="form-layout">
     <span v-if="uploading">
       <loading-outlined />
       {{ $t('message.upload.file.processing') }}
@@ -38,7 +38,7 @@
         </a-button>
       </div>
     </div>
-    <a-spin :spinning="loading" v-else>
+    <a-spin :spinning="loading" v-else v-ctrl-enter="handleSubmit">
       <a-form
         :ref="formRef"
         :model="form"
