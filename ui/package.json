@@ -51,7 +51,7 @@
     "cronstrue": "^2.26.0",
     "dompurify": "^3.2.6",
     "enquire.js": "^2.1.6",
-    "js-cookie": "^2.2.1",
+    "js-cookie": "^3.0.7",
     "lodash": "^4.17.15",
     "md5": "^2.2.1",
     "minio": "^7.0.33",
