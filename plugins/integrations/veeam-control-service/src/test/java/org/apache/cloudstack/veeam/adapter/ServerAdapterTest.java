@@ -948,12 +948,11 @@ public class ServerAdapterTest {
         VolumeVO vo = mock(VolumeVO.class);
         when(vo.getId()).thenReturn(10L);
         when(volumeDao.findByUuid("vol-uuid")).thenReturn(vo);
-        Account sysAccount = mock(Account.class);
-        when(accountService.getSystemAccount()).thenReturn(sysAccount);
+        Account account = CallContext.current().getCallingAccount();
 
         serverAdapter.deleteDisk("vol-uuid");
 
-        verify(volumeApiService).deleteVolume(10L, sysAccount);
+        verify(volumeApiService).destroyVolume(10L, account, true, false);
     }
 
 
