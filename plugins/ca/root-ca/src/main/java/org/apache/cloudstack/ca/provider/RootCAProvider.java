@@ -412,7 +412,7 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
                 networkInterface.getInetAddresses().asIterator().forEachRemaining(inetAddress -> {
                     String[] msNetworkCidrs = msNetworkCidr.split(",");
                     for (String cidr : msNetworkCidrs) {
-                        if (NetUtils.isIpWithInCidrRange(inetAddress.getHostAddress(), cidr)) {
+                        if (NetUtils.isIpWithInCidrRange(inetAddress.getHostAddress(), cidr.trim())) {
                             ipList.add(inetAddress.getHostAddress());
                             logger.debug(String.format("Added IP [%s] to the list of IPs in the management server's certificate.", inetAddress.getHostAddress()));
                         }
