@@ -38,6 +38,7 @@ import javax.inject.Inject;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiServerService;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -1552,6 +1553,10 @@ public class ServerAdapter extends ManagerBase {
         if (Boolean.parseBoolean(request.getBootable()) || Volume.Type.ROOT.equals(volumeVO.getVolumeType())) {
             deviceId = 0L;
         }
+        CallContext context = CallContext.current();
+        context.setEventDetails("Volume Id: " + volumeVO.getUuid() + " VmId: " + vmVo.getUuid());
+        context.setEventResourceType(ApiCommandResourceType.Volume);
+        context.setEventResourceId(volumeVO.getId());
         Volume volume = volumeApiService.attachVolumeToVM(vmVo.getId(), volumeVO.getId(), deviceId, true);
         processInstanceRestoreConfigIfNeeded(vmVo, volume);
         VolumeJoinVO attachedVolumeVO = volumeJoinDao.findById(volume.getId());
@@ -1569,16 +1574,20 @@ public class ServerAdapter extends ManagerBase {
         }
         accountService.checkAccess(CallContext.current().getCallingAccount(), SecurityChecker.AccessType.OperateEntry,
                 false, vmVo);
-        VolumeVO volumeVo = volumeDao.findByUuid(volumeUuid);
-        if (volumeVo == null) {
+        VolumeVO volumeVO = volumeDao.findByUuid(volumeUuid);
+        if (volumeVO == null) {
             throw new InvalidParameterValueException("Volume with ID " + volumeUuid + " not found");
         }
-        if (volumeVo.getInstanceId() != vmVo.getId()) {
+        if (volumeVO.getInstanceId() != vmVo.getId()) {
             throw new InvalidParameterValueException("Volume with ID " + volumeUuid + " is not attached to VM with ID " + vmUuid);
         }
+        CallContext context = CallContext.current();
+        context.setEventDetails("Volume Id: " + volumeVO.getUuid() + " VmId: " + vmVo.getUuid());
+        context.setEventResourceType(ApiCommandResourceType.Volume);
+        context.setEventResourceId(volumeVO.getId());
         DetachVolumeCmd cmd = new DetachVolumeCmd();
         ComponentContext.inject(cmd);
-        cmd.setId(volumeVo.getId());
+        cmd.setId(volumeVO.getId());
         volumeApiService.detachVolumeFromVM(cmd);
     }
 
@@ -1629,7 +1638,11 @@ public class ServerAdapter extends ManagerBase {
         if (vo == null) {
             throw new InvalidParameterValueException("Disk with ID " + uuid + " not found");
         }
-        volumeApiService.deleteVolume(vo.getId(), accountService.getSystemAccount());
+        CallContext context = CallContext.current();
+        context.setEventDetails("Volume Id: " + vo.getUuid());
+        context.setEventResourceType(ApiCommandResourceType.Volume);
+        context.setEventResourceId(vo.getId());
+        volumeApiService.destroyVolume(vo.getId(), CallContext.current().getCallingAccount(), true, false);
     }
 
     @ApiAccess(command = UpdateVolumeCmd.class)
@@ -1694,6 +1707,10 @@ public class ServerAdapter extends ManagerBase {
             nicDetails = new Pair<>(null, workerVmIp);
             removeInstanceWorkerVmIp(vmVo);
         }
+        CallContext context = CallContext.current();
+        context.setEventResourceType(ApiCommandResourceType.VirtualMachine);
+        context.setEventResourceId(vmVo.getId());
+        CallContext.current().setEventDetails("Vm Id: " + vmVo.getUuid() + " Network Id: " + networkVO.getUuid());
         AddNicToVMCmd cmd = new AddNicToVMCmd();
         ComponentContext.inject(cmd);
         cmd.setVmId(vmVo.getId());
