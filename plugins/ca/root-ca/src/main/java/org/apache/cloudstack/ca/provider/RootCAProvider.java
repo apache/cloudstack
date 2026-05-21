@@ -401,15 +401,21 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
 
     protected void addConfiguredManagementIp(List<String> ipList) {
         String msNetworkCidr = configDao.getValue(Config.ManagementNetwork.key());
+        if (StringUtils.isEmpty(msNetworkCidr)) {
+            return;
+        }
         try {
             logger.debug(String.format("Trying to find management IP in CIDR range [%s].", msNetworkCidr));
             Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
 
             networkInterfaces.asIterator().forEachRemaining(networkInterface -> {
                 networkInterface.getInetAddresses().asIterator().forEachRemaining(inetAddress -> {
-                    if (NetUtils.isIpWithInCidrRange(inetAddress.getHostAddress(), msNetworkCidr)) {
-                        ipList.add(inetAddress.getHostAddress());
-                        logger.debug(String.format("Added IP [%s] to the list of IPs in the management server's certificate.", inetAddress.getHostAddress()));
+                    String[] msNetworkCidrs = msNetworkCidr.split(",");
+                    for (String cidr : msNetworkCidrs) {
+                        if (NetUtils.isIpWithInCidrRange(inetAddress.getHostAddress(), cidr)) {
+                            ipList.add(inetAddress.getHostAddress());
+                            logger.debug(String.format("Added IP [%s] to the list of IPs in the management server's certificate.", inetAddress.getHostAddress()));
+                        }
                     }
                 });
             });
