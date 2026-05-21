@@ -206,7 +206,8 @@ public class NetrisGuestNetworkGuru  extends GuestNetworkGuru implements Network
         if (network.getName() != null) {
             implemented.setName(network.getName());
         }
-        allocateVnet(network, implemented, network.getDataCenterId(), network.getPhysicalNetworkId(), network.getReservationId());
+
+        allocateVnet(network, implemented, network.getDataCenterId(), network.getPhysicalNetworkId(), context != null ? context.getReservationId() : null);
         return implemented;
     }
 
@@ -215,12 +216,13 @@ public class NetrisGuestNetworkGuru  extends GuestNetworkGuru implements Network
             throws InsufficientVirtualNetworkCapacityException {
         String vnet = null;
         Long networkId = implemented.getId() > 0 ? implemented.getId() : network.getId();
+        long accountId = implemented.getAccountId() > 0 ? implemented.getAccountId() : network.getAccountId();
         if (network.getBroadcastUri() == null) {
             NetworkDetailVO netrisVnetDetail = networkDetailsDao.findDetail(networkId, ApiConstants.NETRIS_VXLAN_ID);
             if (nonNull(netrisVnetDetail)) {
                 vnet = netrisVnetDetail.getValue();
             } else {
-                vnet = _dcDao.allocateVnet(dcId, physicalNetworkId, network.getAccountId(), reservationId, UseSystemGuestVlans.valueIn(network.getAccountId()));
+                vnet = _dcDao.allocateVnet(dcId, physicalNetworkId, accountId, reservationId, UseSystemGuestVlans.valueIn(accountId));
                 if (vnet == null) {
                     throw new InsufficientVirtualNetworkCapacityException("Unable to allocate vnet as a " + "part of network " + network + " implement ", DataCenter.class,
                             dcId);
@@ -228,7 +230,7 @@ public class NetrisGuestNetworkGuru  extends GuestNetworkGuru implements Network
                 networkDetailsDao.addDetail(networkId, ApiConstants.NETRIS_VXLAN_ID, vnet, true);
             }
             implemented.setBroadcastUri(Networks.BroadcastDomainType.Netris.toUri(vnet));
-            ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), network.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VXLAN_ASSIGN,
+            ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), accountId, EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VXLAN_ASSIGN,
                     "Assigned Zone vNet: " + vnet + " Network Id: " + networkId, networkId, ApiCommandResourceType.Network.toString(), 0);
         } else {
             implemented.setBroadcastUri(network.getBroadcastUri());
@@ -304,62 +306,76 @@ public class NetrisGuestNetworkGuru  extends GuestNetworkGuru implements Network
         // Do nothing
     }
 
-    /**
-     * For L2 Netris networks, trash() is the reliable deletion hook regardless of network state.
-     * L2 networks have no service providers mapped, so NetrisElement.destroy() is never reached for them.
-     * This override handles both the Netris vNet deletion and the VXLAN release from op_dc_vnet_alloc.
-     */
-    @Override
-    public boolean trash(Network network, NetworkOffering offering) {
-        if (!Network.GuestType.L2.equals(offering.getGuestType())) {
-            return super.trash(network, offering);
-        }
-
-        NetworkVO networkVO = _networkDao.findById(network.getId());
-        if (networkVO == null) {
-            logger.warn("Could not find network {} to trash, skipping Netris L2 cleanup", network.getId());
-            return super.trash(network, offering);
-        }
-
-        DataCenterVO zone = _dcDao.findById(network.getDataCenterId());
-        if (Objects.isNull(zone)) {
-            logger.error("Cannot find zone with ID {} while trashing L2 Netris network {}", network.getDataCenterId(), network.getId());
-            return false;
-        }
-
-        Account account = accountDao.findById(network.getAccountId());
-        if (Objects.isNull(account)) {
-            logger.error("Cannot find account with ID {} while trashing L2 Netris network {}", network.getAccountId(), network.getId());
-            return false;
-        }
-
-        DomainVO domain = domainDao.findById(account.getDomainId());
-        if (Objects.isNull(domain)) {
-            logger.error("Cannot find domain with ID {} while trashing L2 Netris network {}", account.getDomainId(), network.getId());
-            return false;
-        }
-
-        logger.debug("Trashing L2 Netris network {}, deleting Netris vNet resource", network.getId());
-        netrisService.deleteVnetResource(zone.getId(), account.getId(), domain.getId(),
-                null, null, networkVO.getName(), network.getId(), network.getCidr(), true);
-
-        // Release the VXLAN slot back to op_dc_vnet_alloc if one was allocated in setup()
+    private void releaseAllocatedVnet(Network network) {
+        String vxlanId = null;
         if (Objects.nonNull(network.getBroadcastUri())) {
-            String vxlanId = Networks.BroadcastDomainType.getValue(network.getBroadcastUri());
-            logger.debug("Releasing VXLAN {} for L2 Netris network {}", vxlanId, network.getId());
-            _dcDao.releaseVnet(vxlanId, network.getDataCenterId(), network.getPhysicalNetworkId(),
-                    network.getAccountId(), network.getReservationId());
-            ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), network.getAccountId(),
-                    EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VXLAN_RELEASE,
-                    "Released Zone vNet: " + vxlanId + " for Network: " + network.getId(),
-                    network.getDataCenterId(), ApiCommandResourceType.Zone.toString(), 0);
+            vxlanId = Networks.BroadcastDomainType.getValue(network.getBroadcastUri());
+        } else {
+            NetworkDetailVO vxlanDetail = networkDetailsDao.findDetail(network.getId(), ApiConstants.NETRIS_VXLAN_ID);
+            if (Objects.nonNull(vxlanDetail)) {
+                vxlanId = vxlanDetail.getValue();
+            }
         }
 
-        // Clean up the stored VXLAN detail
+        if (Objects.isNull(vxlanId)) {
+            logger.debug("No VXLAN allocated for Netris network {}, nothing to release", network.getId());
+            return;
+        }
+
+        logger.debug("Releasing VXLAN {} for Netris network {}", vxlanId, network.getId());
+        _dcDao.releaseVnet(vxlanId, network.getDataCenterId(), network.getPhysicalNetworkId(),
+                network.getAccountId(), network.getReservationId());
+        // Attempt to clean up with null reservation ID
+        _dcDao.releaseVnet(vxlanId, network.getDataCenterId(), network.getPhysicalNetworkId(),
+                network.getAccountId(), null);
+        if (network.getAccountId() != 0) {
+            _dcDao.releaseVnet(vxlanId, network.getDataCenterId(), network.getPhysicalNetworkId(),
+                    0L, null);
+        }
+        ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), network.getAccountId(),
+                EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VXLAN_RELEASE,
+                "Released Zone vNet: " + vxlanId + " for Network: " + network.getId(),
+                network.getDataCenterId(), ApiCommandResourceType.Zone.toString(), 0);
+
         NetworkDetailVO vxlanDetail = networkDetailsDao.findDetail(network.getId(), ApiConstants.NETRIS_VXLAN_ID);
         if (Objects.nonNull(vxlanDetail)) {
             networkDetailsDao.removeDetail(network.getId(), ApiConstants.NETRIS_VXLAN_ID);
         }
+    }
+
+    @Override
+    public boolean trash(Network network, NetworkOffering offering) {
+        if (Network.GuestType.L2.equals(offering.getGuestType())) {
+            NetworkVO networkVO = _networkDao.findById(network.getId());
+            if (networkVO == null) {
+                logger.warn("Could not find network {} to trash, skipping Netris L2 cleanup", network.getId());
+                return super.trash(network, offering);
+            }
+
+            DataCenterVO zone = _dcDao.findById(network.getDataCenterId());
+            if (Objects.isNull(zone)) {
+                logger.error("Cannot find zone with ID {} while trashing L2 Netris network {}", network.getDataCenterId(), network.getId());
+                return false;
+            }
+
+            Account account = accountDao.findById(network.getAccountId());
+            if (Objects.isNull(account)) {
+                logger.error("Cannot find account with ID {} while trashing L2 Netris network {}", network.getAccountId(), network.getId());
+                return false;
+            }
+
+            DomainVO domain = domainDao.findById(account.getDomainId());
+            if (Objects.isNull(domain)) {
+                logger.error("Cannot find domain with ID {} while trashing L2 Netris network {}", account.getDomainId(), network.getId());
+                return false;
+            }
+
+            logger.debug("Trashing L2 Netris network {}, deleting Netris vNet resource", network.getId());
+            netrisService.deleteVnetResource(zone.getId(), account.getId(), domain.getId(),
+                    null, null, networkVO.getName(), network.getId(), network.getCidr(), true);
+        }
+
+        releaseAllocatedVnet(network);
 
         return super.trash(network, offering);
     }
