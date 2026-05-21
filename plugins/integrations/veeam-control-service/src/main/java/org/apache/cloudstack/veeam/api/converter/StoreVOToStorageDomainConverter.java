@@ -48,7 +48,7 @@ public class StoreVOToStorageDomainConverter {
         sd.setName(pool.getName());
 
         // oVirt sample returns numbers as strings
-        sd.setAvailable(Long.toString(pool.getCapacityBytes() - pool.getUsedBytes()));
+        sd.setAvailable(Long.toString(Math.max(0, pool.getCapacityBytes() - pool.getUsedBytes())));
         sd.setUsed(Long.toString(pool.getUsedBytes()));
         sd.setCommitted(Long.toString(pool.getCapacityBytes()));
 

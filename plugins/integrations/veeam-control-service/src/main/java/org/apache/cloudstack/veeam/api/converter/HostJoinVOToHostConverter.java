@@ -70,7 +70,7 @@ public class HostJoinVOToHostConverter {
 
         // --- Memory ---
         h.setMemory(String.valueOf(vo.getTotalMemory()));
-        h.setMaxSchedulingMemory(String.valueOf(vo.getTotalMemory() - vo.getMemUsedCapacity()));
+        h.setMaxSchedulingMemory(String.valueOf(Math.max(0, vo.getTotalMemory() - vo.getMemUsedCapacity())));
 
         h.setType("ovirt_node");
         h.setAutoNumaStatus("unknown");
