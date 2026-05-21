@@ -30,6 +30,8 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.storage.ChangeStoragePoolScopeCmd;
 import org.apache.cloudstack.api.command.admin.storage.ConfigureStorageAccessCmd;
@@ -169,6 +171,9 @@ public class StorageManagerImplTest {
 
     @Mock
     DataStoreManager dataStoreMgr;
+
+    @Mock
+    ImageStoreDao imageStoreDao;
 
     @Test
     public void createLocalStoragePoolName() {
@@ -1715,5 +1720,70 @@ public class StorageManagerImplTest {
         Mockito.when(lifeCycle.initialize(Mockito.any())).thenThrow(new RuntimeException("Initialization failed"));
 
         storageManagerImpl.discoverObjectStore(name, url, size, providerName, details);
+    }
+
+    private ImageStoreVO mockImageStoreVO(String protocol, boolean readonly) {
+        ImageStoreVO vo = Mockito.mock(ImageStoreVO.class);
+        Mockito.when(vo.getProtocol()).thenReturn(protocol);
+        Mockito.when(vo.isReadonly()).thenReturn(readonly);
+        return vo;
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testUpdateImageStoreStatus_rejectsUrlChangeWhenNotReadonly() {
+        long storeId = 1L;
+        ImageStoreVO vo = mockImageStoreVO("nfs", false);
+        Mockito.when(imageStoreDao.findById(storeId)).thenReturn(vo);
+
+        storageManagerImpl.updateImageStoreStatus(storeId, null, null, null, "nfs://newhost/newpath");
+    }
+
+    @Test
+    public void testUpdateImageStoreStatus_allowsUrlChangeWhenAlreadyReadonly() {
+        long storeId = 2L;
+        ImageStoreVO vo = mockImageStoreVO("nfs", true);
+        Mockito.when(imageStoreDao.findById(storeId)).thenReturn(vo);
+        Mockito.when(imageStoreDao.update(Mockito.eq(storeId), Mockito.any())).thenReturn(true);
+
+        ImageStore result = storageManagerImpl.updateImageStoreStatus(storeId, null, null, null, "nfs://newhost/newpath");
+
+        assertNotNull(result);
+        Mockito.verify(imageStoreDao).update(Mockito.eq(storeId), Mockito.any(ImageStoreVO.class));
+    }
+
+    @Test
+    public void testUpdateImageStoreStatus_allowsUrlChangeWhenReadonlySetInSameRequest() {
+        long storeId = 3L;
+        ImageStoreVO vo = mockImageStoreVO("nfs", false);
+        Mockito.when(imageStoreDao.findById(storeId)).thenReturn(vo);
+        Mockito.when(imageStoreDao.update(Mockito.eq(storeId), Mockito.any())).thenReturn(true);
+
+        ImageStore result = storageManagerImpl.updateImageStoreStatus(storeId, null, Boolean.TRUE, null, "nfs://newhost/newpath");
+
+        assertNotNull(result);
+        Mockito.verify(imageStoreDao).update(Mockito.eq(storeId), Mockito.any(ImageStoreVO.class));
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testUpdateImageStoreStatus_rejectsMalformedUrl() {
+        long storeId = 4L;
+        ImageStoreVO vo = mockImageStoreVO("nfs", true);
+        Mockito.when(imageStoreDao.findById(storeId)).thenReturn(vo);
+
+        storageManagerImpl.updateImageStoreStatus(storeId, null, null, null, "nfs://");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testUpdateImageStoreStatus_rejectsMismatchedProtocol() {
+        long storeId = 5L;
+        ImageStoreVO vo = mockImageStoreVO("nfs", true);
+        Mockito.when(imageStoreDao.findById(storeId)).thenReturn(vo);
+
+        storageManagerImpl.updateImageStoreStatus(storeId, null, null, null, "http://somehost/path");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testExtractUriParamsAsMap_rejectsMissingHostForNfs() {
+        storageManagerImpl.extractUriParamsAsMap("nfs:///just-a-path");
     }
 }

@@ -1314,17 +1314,17 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                             throw new InvalidParameterValueException("Storage pool must be in Maintenance state before its URL can be changed. " +
                                     "Please put the pool into maintenance first.");
                         }
-                        URI newUri;
-                        try {
-                            newUri = new URI(cmd.getUrl());
-                        } catch (URISyntaxException e) {
-                            throw new InvalidParameterValueException("Invalid URL format: " + cmd.getUrl());
+                        Map<String, String> newUriParams = extractUriParamsAsMap(cmd.getUrl());
+                        String newHost = newUriParams.get("host");
+                        String newPath = newUriParams.get("hostPath");
+                        if (StringUtils.isAnyBlank(newHost, newPath)) {
+                            throw new InvalidParameterValueException("Invalid URL: host and path must not be empty. " +
+                                    "Expected format: nfs://hostname/path or gluster://hostname/volume");
                         }
-                        storagePool.setHostAddress(newUri.getHost());
-                        storagePool.setPath(newUri.getPath());
-                        if (newUri.getPort() != -1) {
-                            storagePool.setPort(newUri.getPort());
-                        }
+                        storagePool.setHostAddress(newHost);
+                        storagePool.setPath(newPath);
+                        String newPortStr = newUriParams.get("port");
+                        storagePool.setPort(newPortStr != null ? Integer.parseInt(newPortStr) : 0);
                     }
                 }
                 _storagePoolDao.update(id, storagePool);
@@ -1366,10 +1366,12 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         logger.info("Propagating new URL for storage pool [{}] to {} connected host(s).", updatedPool.getName(), connectedHostIds.size());
 
+        List<String> failedHosts = new ArrayList<>();
         for (Long hostId : connectedHostIds) {
             HostVO host = _hostDao.findById(hostId);
             if (host == null) {
                 logger.warn("Host [{}] not found; skipping URL propagation for pool [{}].", hostId, updatedPool.getName());
+                failedHosts.add("unknown-host-" + hostId);
                 continue;
             }
 
@@ -1380,11 +1382,20 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 String detail = (answer == null) ? "no answer returned" : answer.getDetails();
                 logger.warn("Failed to propagate new URL for storage pool [{}] to host [{}]: {}",
                         updatedPool.getName(), host.getName(), detail);
+                failedHosts.add(host.getName());
             } else {
                 logger.info("Successfully propagated new URL for storage pool [{}] to host [{}].",
                         updatedPool.getName(), host.getName());
                 updateStoragePoolHostVOAndBytes(freshPool, hostId, (ModifyStoragePoolAnswer) answer);
             }
+        }
+
+        if (!failedHosts.isEmpty()) {
+            throw new CloudRuntimeException(String.format(
+                    "Storage pool [%s] URL was updated in the database, but the new mount could not be applied " +
+                    "on the following host(s): %s. The pool may be in an inconsistent state; please verify " +
+                    "connectivity and remount manually if necessary.",
+                    updatedPool.getName(), String.join(", ", failedHosts)));
         }
     }
 
@@ -4220,10 +4231,14 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             throw new IllegalArgumentException("Unable to find image store with ID: " + id);
         }
         if (url != null) {
-            if (!imageStoreVO.isReadonly()) {
+            boolean willBeReadonly = (readonly != null && readonly) || imageStoreVO.isReadonly();
+            if (!willBeReadonly) {
                 throw new InvalidParameterValueException("Image store must be set to read-only (maintenance) state before its URL can be changed. " +
                         "Please set readOnly=true on the image store first.");
             }
+
+            String existingProtocol = imageStoreVO.getProtocol();
+            validateUrl(url, existingProtocol);
             imageStoreVO.setUrl(url);
         }
         if (com.cloud.utils.StringUtils.isNotBlank(name)) {
@@ -4237,6 +4252,26 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
         _imageStoreDao.update(id, imageStoreVO);
         return imageStoreVO;
+    }
+
+    private void validateUrl(String url, String existingProtocol) {
+        try {
+            UriUtils.UriInfo newUriInfo = UriUtils.getUriInfo(url);
+            String newScheme = newUriInfo.getScheme();
+            String newHost = newUriInfo.getStorageHost();
+            String newPath = newUriInfo.getStoragePath();
+            if (StringUtils.isAnyBlank(newScheme, newHost, newPath)) {
+                throw new InvalidParameterValueException("Invalid image store URL: scheme, host and path must not be empty.");
+            }
+
+            if (existingProtocol != null && !existingProtocol.equalsIgnoreCase(newScheme)) {
+                throw new InvalidParameterValueException(String.format(
+                        "URL scheme '%s' does not match the image store's existing protocol '%s'.",
+                        newScheme, existingProtocol));
+            }
+        } catch (CloudRuntimeException e) {
+            throw new InvalidParameterValueException("Invalid image store URL: " + e.getMessage());
+        }
     }
 
     @Override
