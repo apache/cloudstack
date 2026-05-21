@@ -172,6 +172,7 @@ import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { axios } from '../../utils/request'
 import { mixinForm } from '@/utils/mixin'
+import { probeSsvmCert } from '@/utils/ssvmProbe'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import InfiniteScrollSelect from '@/components/widgets/InfiniteScrollSelect.vue'
@@ -286,34 +287,27 @@ export default {
       this.form.account = accountName
       this.account = accountName
     },
-    async probeSsvmCert (origin) {
-      try {
-        await fetch(origin, { method: 'HEAD', mode: 'no-cors' })
-        return true
-      } catch (e) {
-        return false
-      }
-    },
     async retryUpload () {
       this.loading = true
-      const trusted = await this.probeSsvmCert(this.ssvmOrigin)
+      const reachable = await probeSsvmCert(this.ssvmOrigin)
       this.loading = false
-      if (!trusted) {
-        this.$message.warning(this.$t('message.ssvm.cert.still.untrusted'))
+      if (!reachable) {
+        this.$message.warning(this.$t('message.ssvm.unreachable.retry'))
         return
       }
       this.ssvmCertUntrusted = false
       this.handleUpload()
     },
     handleUpload () {
-      const { fileList } = this
       if (this.fileList.length > 1) {
         this.$notification.error({
           message: this.$t('message.upload.volume.failed'),
           description: this.$t('message.upload.file.limit'),
           duration: 0
         })
+        return
       }
+      const { fileList } = this
       const formData = new FormData()
       fileList.forEach(file => {
         formData.append('files[]', file)
@@ -372,7 +366,7 @@ export default {
         api('getUploadParamsForVolume', params).then(async json => {
           this.uploadParams = json.postuploadvolumeresponse?.getuploadparams || ''
           this.ssvmOrigin = new URL(this.uploadParams.postURL).origin
-          const trusted = await this.probeSsvmCert(this.ssvmOrigin)
+          const trusted = await probeSsvmCert(this.ssvmOrigin)
           if (!trusted) {
             this.ssvmCertUntrusted = true
             return

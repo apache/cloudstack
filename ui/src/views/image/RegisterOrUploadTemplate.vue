@@ -488,6 +488,7 @@ import { api } from '@/api'
 import store from '@/store'
 import { axios } from '../../utils/request'
 import { mixinForm } from '@/utils/mixin'
+import { probeSsvmCert } from '@/utils/ssvmProbe'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -628,20 +629,12 @@ export default {
       this.form.file = file
       return false
     },
-    async probeSsvmCert (origin) {
-      try {
-        await fetch(origin, { method: 'HEAD', mode: 'no-cors' })
-        return true
-      } catch (e) {
-        return false
-      }
-    },
     async retryUpload () {
       this.loading = true
-      const trusted = await this.probeSsvmCert(this.ssvmOrigin)
+      const reachable = await probeSsvmCert(this.ssvmOrigin)
       this.loading = false
-      if (!trusted) {
-        this.$message.warning(this.$t('message.ssvm.cert.still.untrusted'))
+      if (!reachable) {
+        this.$message.warning(this.$t('message.ssvm.unreachable.retry'))
         return
       }
       this.ssvmCertUntrusted = false
@@ -1170,7 +1163,7 @@ export default {
               this.linkUserdataToTemplate(this.userdataid, json.postuploadtemplateresponse.template[0].id)
             }
             this.ssvmOrigin = new URL(this.uploadParams.postURL).origin
-            const trusted = await this.probeSsvmCert(this.ssvmOrigin)
+            const trusted = await probeSsvmCert(this.ssvmOrigin)
             if (!trusted) {
               this.ssvmCertUntrusted = true
               return
