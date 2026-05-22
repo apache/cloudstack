@@ -19,7 +19,7 @@
 
 import argparse
 import sys
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import uuid
 import subprocess
 import os
@@ -90,7 +90,7 @@ class InstallSysTemplate(object):
       self.databaseuserpassword = ""
     if self.args.templatesuffix:
       self.templatesuffix = self.args.templatesuffix
-    print 'Password for DB: %s'%self.databaseuserpassword
+    print('Password for DB: %s'%self.databaseuserpassword)
 
   def errorAndExit(self, msg):
     err = '''\n\nWe apologize for below error:
@@ -117,11 +117,11 @@ for full help
 
   def runMysql(self, query):
     try:
-      print 'Running Query: %s' % query
+      print('Running Query: %s' % query)
       mysqlCmds = ['mysql', '--user=%s'%self.databaseusername, '--host=%s'%self.databasehostname, '--password=%s'%self.databaseuserpassword, '--skip-column-names', '-U', 'cloud', '-e "%s"'%query]
       templateId = self.runCmd(mysqlCmds)
-      print 'TemplateId is : %s' % templateId
-    except Exception, e:
+      print('TemplateId is : %s' % templateId)
+    except Exception as e:
       err = '''Encountering an error when executing mysql script\n%s''' % str(e)
       self.errorAndExit(err)
     return templateId
@@ -137,9 +137,9 @@ for full help
 
   def downloadTemplate(self):
     self.systemvmtemplatepath = self.templateName + "." + self.fileextension
-    print 'Downloading template from %s To %s' % (self.systemvmtemplateurl, self.systemvmtemplatepath)
+    print('Downloading template from %s To %s' % (self.systemvmtemplateurl, self.systemvmtemplatepath))
     try:
-      templateFileDownloadUrl = urllib.urlretrieve(self.systemvmtemplateurl, self.systemvmtemplatepath, reporthook=self.report)
+      templateFileDownloadUrl = urllib.request.urlretrieve(self.systemvmtemplateurl, self.systemvmtemplatepath, reporthook=self.report)
     except Exception:
       self.errorAndExit("Failed to download template file from %s" % self.systemvmtemplateurl)
 
@@ -150,23 +150,23 @@ for full help
   def installTemplate(self):
     destDir = self.mountpoint + os.sep + "template" + os.sep + "tmpl" + os.sep + "1" + os.sep + str(self.template)
     self.destDir = destDir
-    print 'The desination Directory is : %s' % destDir
+    print('The desination Directory is : %s' % destDir)
     try:
       if self.forcecleanup:
         if os.path.exists(destDir):
           shutil.rmtree(destDir)
       if not os.path.exists(destDir):
         os.makedirs(destDir)
-    except Exception, e:
+    except Exception as e:
       self.errorAndExit('Failed to create directories on the mounted path.. %s' % str (e))
-    print 'Installing Template to : %s' % destDir
+    print('Installing Template to : %s' % destDir)
     tmpFile = self.templateName + "." + "tmp"
     self.uncompressFile(tmpFile)
-    print 'Moving the decompressed file to destination directory %s... which could take a long time, please wait' % destDir
+    print('Moving the decompressed file to destination directory %s... which could take a long time, please wait' % destDir)
     shutil.move(tmpFile, destDir + os.sep + self.templateName)
 
   def uncompressFile(self, fileName):
-    print 'Uncompressing the file %s... which could take a long time, please wait' % self.systemvmtemplatepath
+    print('Uncompressing the file %s... which could take a long time, please wait' % self.systemvmtemplatepath)
     if self.fileextension == 'gz':
       compressedFile = gzip.GzipFile(self.systemvmtemplatepath, 'rb')
       decompressedData = compressedFile.read()
@@ -181,7 +181,7 @@ for full help
       decompressedFile = file(fileName, 'wb')
       decompressedFile.write(decompressedData)
       decompressedFile.close()
-      print ''
+      print('')
     elif self.fileextension == 'zip':
       zippedFile = zipfile.ZipFile(self.systemvmtemplatepath, 'r')
       zippedFiles = zippedFile.namelist()
@@ -191,7 +191,7 @@ for full help
       decompressedFile.write(decompressedData)
       decompressedFile.close()
       zippedFile.close()
-      print ''
+      print('')
     else:
       self.errorAndExit('Not supported file type %s to decompress' % self.fileextension)
     self.fileSize = os.path.getsize(fileName)
@@ -226,10 +226,10 @@ for full help
       self.installTemplate()
       self.writeProperties()
     finally:
-      print ''
-    print ''
-    print "CloudStack has successfully installed system template"
-    print ''
+      print('')
+    print('')
+    print("CloudStack has successfully installed system template")
+    print('')
 
 if __name__ == "__main__":
    o = InstallSysTemplate()

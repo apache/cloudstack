@@ -62,14 +62,14 @@ def prepare():
         f.write(stuff)
         f.close()
         return 0
-    except Exception, e:
-        print e
+    except Exception as e:
+        print(e)
         return 1
 
 
 if __name__ == "__main__":
     if len(sys.argv) < 7:
-        print "Usage: prepare_kickstart_bootfile.py tftp_dir mac kernel initrd ks_file ks_device"
+        print("Usage: prepare_kickstart_bootfile.py tftp_dir mac kernel initrd ks_file ks_device")
         exit(1)
 
     (tftp_dir, mac, kernel, initrd, ks_file, ks_device) = sys.argv[1:]

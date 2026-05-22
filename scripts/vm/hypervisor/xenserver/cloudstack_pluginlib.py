@@ -17,7 +17,7 @@
 
 # Common function for Cloudstack's XenAPI plugins
 
-import ConfigParser
+import configparser
 import logging
 import os
 import subprocess
@@ -73,7 +73,7 @@ def setup_logging(log_file=None):
     log_date_format = DEFAULT_LOG_DATE_FORMAT
     # try to read plugin configuration file
     if os.path.exists(PLUGIN_CONFIG_PATH):
-        config = ConfigParser.ConfigParser()
+        config = configparser.ConfigParser()
         config.read(PLUGIN_CONFIG_PATH)
         try:
             options = config.options('LOGGING')
@@ -91,7 +91,7 @@ def setup_logging(log_file=None):
             # configuration file contained invalid attributes
             # ignore them
             pass
-        except ConfigParser.NoSectionError:
+        except configparser.NoSectionError:
             # Missing 'Logging' section in configuration file
             pass
 
@@ -138,7 +138,7 @@ def _is_process_run(pidFile, name):
         fpid = open(pidFile, "r")
         pid = fpid.readline()
         fpid.close()
-    except IOError, e:
+    except IOError as e:
         return -1
 
     pid = pid[:-1]
@@ -335,11 +335,11 @@ class jsonLoader(object):
 
   def __repr__(self):
         return '{%s}' % str(', '.join('%s : %s' % (k, repr(v)) for (k, v)
-                                      in self.__dict__.iteritems()))
+                                      in self.__dict__.items()))
 
   def __str__(self):
         return '{%s}' % str(', '.join('%s : %s' % (k, repr(v)) for (k, v)
-                                      in self.__dict__.iteritems()))
+                                      in self.__dict__.items()))
 def get_acl(vpcconfig, required_acl_id):
     acls = vpcconfig.acls
     for acl in acls:
@@ -409,7 +409,7 @@ def create_tunnel(bridge, remote_ip, gre_key, src_host, dst_host, network_uuid):
         key_validation = do_cmd(verify_interface_key)
         ip_validation = do_cmd(verify_interface_ip)
 
-        if not gre_key in key_validation or not remote_ip in ip_validation:
+        if gre_key not in key_validation or remote_ip not in ip_validation:
             logging.debug("WARNING: Unexpected output while verifying " +
                           "interface %s on bridge %s" % (name, bridge))
             return "FAILURE:VERIFY_INTERFACE_FAILED"
@@ -581,7 +581,7 @@ def configure_vpc_bridge_for_network_topology(bridge, this_host_id, json_config,
 
         return "SUCCESS: successfully configured bridge as per the VPC topology update with sequence no: %s"%sequence_no
 
-    except Exception,e:
+    except Exception as e:
         error_message = "An unexpected error occurred while configuring bridge " + bridge + \
                         " as per latest VPC topology update with sequence no: %s" %sequence_no
         logging.debug(error_message + " due to " + str(e))
@@ -757,7 +757,7 @@ def configure_vpc_bridge_for_routing_policies(bridge, json_config, sequence_no):
         return "SUCCESS: successfully configured bridge as per the latest routing policies update with " \
                "sequence no: %s"%sequence_no
 
-    except Exception,e:
+    except Exception as e:
         error_message = "An unexpected error occurred while configuring bridge " + bridge + \
                         " as per latest VPC's routing policy update with sequence number %s." %sequence_no
         logging.debug(error_message + " due to " + str(e))
@@ -797,7 +797,7 @@ def update_flooding_rules_on_port_plug_unplug(bridge, interface, command, if_net
 
             if port.startswith('vif'):
                 network_id = get_network_id_for_vif(port)
-                if network_id not in all_tiers.keys():
+                if network_id not in list(all_tiers.keys()):
                     all_tiers[network_id] = tier_ports()
                 tier_ports_info = all_tiers[network_id]
                 tier_ports_info.tier_vif_ofports.append(if_ofport)
@@ -806,14 +806,14 @@ def update_flooding_rules_on_port_plug_unplug(bridge, interface, command, if_net
 
             if port.startswith('t'):
                 network_id = get_network_id_for_tunnel_port(port)[1:-1]
-                if network_id not in all_tiers.keys():
+                if network_id not in list(all_tiers.keys()):
                     all_tiers[network_id] = tier_ports()
                 tier_ports_info = all_tiers[network_id]
                 tier_ports_info.tier_tunnelif_ofports.append(if_ofport)
                 tier_ports_info.tier_all_ofports.append(if_ofport)
                 all_tiers[network_id] = tier_ports_info
 
-        for network_id, tier_ports_info in all_tiers.items():
+        for network_id, tier_ports_info in list(all_tiers.items()):
             if len(tier_ports_info.tier_all_ofports) == 1 :
                 continue
 
@@ -850,7 +850,7 @@ def update_flooding_rules_on_port_plug_unplug(bridge, interface, command, if_net
 
         logging.debug("successfully configured bridge %s as per the latest flooding rules " %bridge)
 
-    except Exception,e:
+    except Exception as e:
         if os.path.isfile(ofspec_filename):
             os.remove(ofspec_filename)
         error_message = "An unexpected error occurred while updating the flooding rules for the bridge " + \

@@ -47,7 +47,7 @@ def log(s):
     if get_log_destination() == 'syslog':
         syslog.syslog(s)
     else:
-        print >>sys.stderr, s
+        print(s, file=sys.stderr)
 
 # Exceptions.
 
@@ -244,8 +244,8 @@ def _strlist_from_xml(n, ltag, itag):
 def _otherconfig_to_xml(xml, parent, val, attrs):
     otherconfig = xml.createElement("other_config")
     parent.appendChild(otherconfig)
-    for n,v in val.items():
-        if not n in attrs:
+    for n,v in list(val.items()):
+        if n not in attrs:
             raise Error("Unknown other-config attribute: %s" % n)
         _str_to_xml(xml, otherconfig, n, v)
 def _otherconfig_from_xml(n, attrs):
@@ -270,10 +270,10 @@ _VLAN_XML_TAG = "vlan"
 _BOND_XML_TAG = "bond"
 _NETWORK_XML_TAG = "network"
 
-_ETHTOOL_OTHERCONFIG_ATTRS = ['ethtool-%s' % x for x in 'autoneg', 'speed', 'duplex', 'rx', 'tx', 'sg', 'tso', 'ufo', 'gso' ]
+_ETHTOOL_OTHERCONFIG_ATTRS = ['ethtool-%s' % x for x in ('autoneg', 'speed', 'duplex', 'rx', 'tx', 'sg', 'tso', 'ufo', 'gso') ]
 
 _PIF_OTHERCONFIG_ATTRS = [ 'domain', 'peerdns', 'defaultroute', 'mtu', 'static-routes' ] + \
-                        [ 'bond-%s' % x for x in 'mode', 'miimon', 'downdelay', 'updelay', 'use_carrier' ] + \
+                        [ 'bond-%s' % x for x in ('mode', 'miimon', 'downdelay', 'updelay', 'use_carrier') ] + \
                         _ETHTOOL_OTHERCONFIG_ATTRS
 
 _PIF_ATTRS = { 'uuid': (_str_to_xml,_str_from_xml),
@@ -358,11 +358,11 @@ class DatabaseCache(object):
         return dict(defs)
 
     def __pif_on_host(self,pif):
-        return self.__pifs.has_key(pif)
+        return pif in self.__pifs
 
     def __get_pif_records_from_xapi(self, session, host):
         self.__pifs = {}
-        for (p,rec) in session.xenapi.PIF.get_all_records().items():
+        for (p,rec) in list(session.xenapi.PIF.get_all_records().items()):
             if rec['host'] != host:
                 continue
             self.__pifs[p] = {}
@@ -370,12 +370,12 @@ class DatabaseCache(object):
                 self.__pifs[p][f] = rec[f]
             self.__pifs[p]['other_config'] = {}
             for f in _PIF_OTHERCONFIG_ATTRS:
-                if not rec['other_config'].has_key(f): continue
+                if f not in rec['other_config']: continue
                 self.__pifs[p]['other_config'][f] = rec['other_config'][f]
 
     def __get_vlan_records_from_xapi(self, session):
         self.__vlans = {}
-        for (v,rec) in session.xenapi.VLAN.get_all_records().items():
+        for (v,rec) in list(session.xenapi.VLAN.get_all_records().items()):
             if not self.__pif_on_host(rec['untagged_PIF']):
                 continue
             self.__vlans[v] = {}
@@ -384,7 +384,7 @@ class DatabaseCache(object):
 
     def __get_bond_records_from_xapi(self, session):
         self.__bonds = {}
-        for (b,rec) in session.xenapi.Bond.get_all_records().items():
+        for (b,rec) in list(session.xenapi.Bond.get_all_records().items()):
             if not self.__pif_on_host(rec['master']):
                 continue
             self.__bonds[b] = {}
@@ -393,7 +393,7 @@ class DatabaseCache(object):
 
     def __get_network_records_from_xapi(self, session):
         self.__networks = {}
-        for (n,rec) in session.xenapi.network.get_all_records().items():
+        for (n,rec) in list(session.xenapi.network.get_all_records().items()):
             self.__networks[n] = {}
             for f in _NETWORK_ATTRS:
                 if f == "PIFs":
@@ -407,7 +407,7 @@ class DatabaseCache(object):
                     self.__networks[n][f] = rec[f]
             self.__networks[n]['other_config'] = {}
             for f in _NETWORK_OTHERCONFIG_ATTRS:
-                if not rec['other_config'].has_key(f): continue
+                if f not in rec['other_config']: continue
                 self.__networks[n]['other_config'][f] = rec['other_config'][f]
 
     def __to_xml(self, xml, parent, key, ref, rec, attrs):
@@ -417,8 +417,8 @@ class DatabaseCache(object):
         if ref:
             e.setAttribute('ref', ref)
 
-        for n,v in rec.items():
-            if attrs.has_key(n):
+        for n,v in list(rec.items()):
+            if n in attrs:
                 h,_ = attrs[n]
                 h(xml, e, n, v)
             else:
@@ -449,7 +449,7 @@ class DatabaseCache(object):
             try:
 
                 inventory = self.__read_xensource_inventory()
-                assert(inventory.has_key('INSTALLATION_UUID'))
+                assert('INSTALLATION_UUID' in inventory)
                 log("host uuid is %s" % inventory['INSTALLATION_UUID'])
 
                 host = session.xenapi.host.get_by_uuid(inventory['INSTALLATION_UUID'])
@@ -499,13 +499,13 @@ class DatabaseCache(object):
 
         xml = getDOMImplementation().createDocument(
             None, "xenserver-network-configuration", None)
-        for (ref,rec) in self.__pifs.items():
+        for (ref,rec) in list(self.__pifs.items()):
             self.__to_xml(xml, xml.documentElement, _PIF_XML_TAG, ref, rec, _PIF_ATTRS)
-        for (ref,rec) in self.__bonds.items():
+        for (ref,rec) in list(self.__bonds.items()):
             self.__to_xml(xml, xml.documentElement, _BOND_XML_TAG, ref, rec, _BOND_ATTRS)
-        for (ref,rec) in self.__vlans.items():
+        for (ref,rec) in list(self.__vlans.items()):
             self.__to_xml(xml, xml.documentElement, _VLAN_XML_TAG, ref, rec, _VLAN_ATTRS)
-        for (ref,rec) in self.__networks.items():
+        for (ref,rec) in list(self.__networks.items()):
             self.__to_xml(xml, xml.documentElement, _NETWORK_XML_TAG, ref, rec,
                           _NETWORK_ATTRS)
 
@@ -514,9 +514,7 @@ class DatabaseCache(object):
         f.close()
 
     def get_pif_by_uuid(self, uuid):
-        pifs = map(lambda (ref,rec): ref,
-                  filter(lambda (ref,rec): uuid == rec['uuid'],
-                         self.__pifs.items()))
+        pifs = [ref_rec3[0] for ref_rec3 in [ref_rec for ref_rec in list(self.__pifs.items()) if uuid == ref_rec[1]['uuid']]]
         if len(pifs) == 0:
             raise Error("Unknown PIF \"%s\"" % uuid)
         elif len(pifs) > 1:
@@ -525,14 +523,10 @@ class DatabaseCache(object):
         return pifs[0]
 
     def get_pifs_by_device(self, device):
-        return map(lambda (ref,rec): ref,
-                   filter(lambda (ref,rec): rec['device'] == device,
-                          self.__pifs.items()))
+        return [ref_rec4[0] for ref_rec4 in [ref_rec1 for ref_rec1 in list(self.__pifs.items()) if ref_rec1[1]['device'] == device]]
 
     def get_pif_by_bridge(self, bridge):
-        networks = map(lambda (ref,rec): ref,
-                       filter(lambda (ref,rec): rec['bridge'] == bridge,
-                              self.__networks.items()))
+        networks = [ref_rec5[0] for ref_rec5 in [ref_rec2 for ref_rec2 in list(self.__networks.items()) if ref_rec2[1]['bridge'] == bridge]]
         if len(networks) == 0:
             raise Error("No matching network \"%s\"" % bridge)
 
@@ -549,13 +543,13 @@ class DatabaseCache(object):
         return answer
 
     def get_pif_record(self, pif):
-        if self.__pifs.has_key(pif):
+        if pif in self.__pifs:
             return self.__pifs[pif]
         raise Error("Unknown PIF \"%s\"" % pif)
     def get_all_pifs(self):
         return self.__pifs
     def pif_exists(self, pif):
-        return self.__pifs.has_key(pif)
+        return pif in self.__pifs
 
     def get_management_pif(self):
         """ Returns the management pif on host
@@ -567,18 +561,18 @@ class DatabaseCache(object):
         return None
 
     def get_network_record(self, network):
-        if self.__networks.has_key(network):
+        if network in self.__networks:
             return self.__networks[network]
         raise Error("Unknown network \"%s\"" % network)
 
     def get_bond_record(self, bond):
-        if self.__bonds.has_key(bond):
+        if bond in self.__bonds:
             return self.__bonds[bond]
         else:
             return None
 
     def get_vlan_record(self, vlan):
-        if self.__vlans.has_key(vlan):
+        if vlan in self.__vlans:
             return self.__vlans[vlan]
         else:
             return None
@@ -589,19 +583,19 @@ class DatabaseCache(object):
 
 def ethtool_settings(oc):
     settings = []
-    if oc.has_key('ethtool-speed'):
+    if 'ethtool-speed' in oc:
         val = oc['ethtool-speed']
         if val in ["10", "100", "1000"]:
             settings += ['speed', val]
         else:
             log("Invalid value for ethtool-speed = %s. Must be 10|100|1000." % val)
-    if oc.has_key('ethtool-duplex'):
+    if 'ethtool-duplex' in oc:
         val = oc['ethtool-duplex']
         if val in ["10", "100", "1000"]:
             settings += ['duplex', 'val']
         else:
             log("Invalid value for ethtool-duplex = %s. Must be half|full." % val)
-    if oc.has_key('ethtool-autoneg'):
+    if 'ethtool-autoneg' in oc:
         val = oc['ethtool-autoneg']
         if val in ["true", "on"]:
             settings += ['autoneg', 'on']
@@ -611,7 +605,7 @@ def ethtool_settings(oc):
             log("Invalid value for ethtool-autoneg = %s. Must be on|true|off|false." % val)
     offload = []
     for opt in ("rx", "tx", "sg", "tso", "ufo", "gso"):
-        if oc.has_key("ethtool-" + opt):
+        if "ethtool-" + opt in oc:
             val = oc["ethtool-" + opt]
             if val in ["true", "on"]:
                 offload += [opt, 'on']
@@ -631,12 +625,12 @@ def mtu_setting(nw, type, oc):
     mtu = None
 
     nwrec = db().get_network_record(nw)
-    if nwrec.has_key('MTU'):
+    if 'MTU' in nwrec:
         mtu = nwrec['MTU']
     else:
         mtu = "1500"
 
-    if oc.has_key('mtu'):
+    if 'mtu' in oc:
         log("Override Network.MTU setting on bridge %s from %s.MTU is %s" % \
             (nwrec['bridge'], type, mtu))
         mtu = oc['mtu']
@@ -645,7 +639,7 @@ def mtu_setting(nw, type, oc):
         try:
             int(mtu)      # Check that the value is an integer
             return mtu
-        except ValueError, x:
+        except ValueError as x:
             log("Invalid value for mtu = %s" % mtu)
 
     return None
@@ -854,7 +848,7 @@ def DatapathFactory(pif):
         network_conf = open(root_prefix() + "/etc/xensource/network.conf", 'r')
         network_backend = network_conf.readline().strip()
         network_conf.close()
-    except Exception, e:
+    except Exception as e:
         raise Error("failed to determine network backend:" + e)
 
     if network_backend == "bridge":

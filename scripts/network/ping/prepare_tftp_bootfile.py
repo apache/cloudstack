@@ -72,14 +72,14 @@ def prepare(is_restore):
         f.write(stuff)
         f.close()
         return 0
-    except Exception, e:
-        print e
+    except Exception as e:
+        print(e)
         return 1
 
 
 if __name__ == "__main__":
     if len(sys.argv) < 12:
-        print "Usage: prepare_tftp_bootfile.py tftp_dir mac cifs_server share directory image_to_restor cifs_username cifs_password ip netmask gateway"
+        print("Usage: prepare_tftp_bootfile.py tftp_dir mac cifs_server share directory image_to_restor cifs_username cifs_password ip netmask gateway")
         exit(1)
 
     (cmd, tftp_dir, mac, cifs_server, share, directory, template_dir, cifs_username, cifs_password, ip, netmask, gateway) = sys.argv[1:]
@@ -89,7 +89,7 @@ if __name__ == "__main__":
     elif cmd == "backup":
         ret = prepare(False)
     else:
-        print "Unknown cmd: %s"%cmd
+        print("Unknown cmd: %s"%cmd)
         ret = 1
 
     exit(ret)

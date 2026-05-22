@@ -72,9 +72,9 @@ class Check(object):
     def nfsoutput(self):
         command="mount -v -t nfs"
         p=subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
-        lines=map(lambda line: line.split()[2], p.stdout.readlines())
+        lines=[line.split()[2] for line in p.stdout.readlines()]
         test=re.compile("^%s" % (primary))
-        lines=filter(test.search, lines)
+        lines=list(filter(test.search, lines))
         return lines
 
     """
@@ -128,7 +128,7 @@ def figureOutPrimary():
                 return "/var/run/sr-mount"
             if "Oracle VM server" in line:
                 return "/OVS/Repositories/"
-    print "Unknown hypervisor, consider adding it, exiting"
+    print("Unknown hypervisor, consider adding it, exiting")
     sys.exit(42)
 
 """ The logger is here """
@@ -165,11 +165,11 @@ if __name__ == '__main__':
             opts, args = getopt.getopt(sys.argv[1:], "h:y:i:s",
                 [ 'host', 'timeout', 'interval', 'state'])
         except getopt.GetoptError:
-            print """Usage:
+            print("""Usage:
                 host: host guid.
                 timeout: timeout to fail on
                 interval: time between checks
-                state: check the state"""
+                state: check the state""")
             sys.exit()
         for o, a in opts:
             if o in ('host'):
@@ -187,14 +187,14 @@ if __name__ == '__main__':
             opts, args = getopt.getopt(sys.argv[1:], "g:p:f:c:t:i:s",
                 [ 'guid=', 'primary=','failcmd=','cmd=','timeout=','interval', 'state'])
         except getopt.GetoptError:
-            print """Usage:
+            print("""Usage:
                     --guid|-g: guid of the host to check
                     --primary|-p: match for primary storage to monitor.
                     --failcmd|-f: executed on timeout.
                     --cmd|-c: command to execute next to hb file(s) on primary.
                     --timeout|-t: excute failcmd after timeout(s) is hit.
                     --interval|-i: run the checks every %ss>
-                    --state|-s check state"""
+                    --state|-s check state""")
             sys.exit()
 
         for o, a in opts:
@@ -226,10 +226,10 @@ if __name__ == '__main__':
             if pid > 0:
                 # exit first parent
                 if me == "heartbeat":
-                    print "> DONE <"
+                    print("> DONE <")
                 sys.exit(0)
-        except OSError, e:
-            print >>sys.stderr, "fork #1 failed: %d (%s)" % (e.errno, e.strerror)
+        except OSError as e:
+            print("fork #1 failed: %d (%s)" % (e.errno, e.strerror), file=sys.stderr)
             sys.exit(1)
 
     checker=Check(cmd=cmd,
@@ -247,7 +247,7 @@ if __name__ == '__main__':
         logger.debug("cmd time: %s" % (runtime))
         if checkstate:
             for fs in checker.results:
-                print "%s: %s" % (fs, checker.results[fs])
+                print("%s: %s" % (fs, checker.results[fs]))
             if checker.ok == False:
                 sys.exit(1)
             else:

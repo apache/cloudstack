@@ -137,8 +137,8 @@ def main(command, vif_raw):
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
-        print "usage: %s [online|offline] vif-domid-idx" % \
-               os.path.basename(sys.argv[0])
+        print("usage: %s [online|offline] vif-domid-idx" % \
+               os.path.basename(sys.argv[0]))
         sys.exit(1)
     else:
         command, vif_raw = sys.argv[1:3]
