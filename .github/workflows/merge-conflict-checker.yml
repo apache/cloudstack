@@ -17,16 +17,14 @@
 
 name: "PR Merge Conflict Check"
 on:
-  push:
-  pull_request:
-    types: [opened, synchronize, reopened]
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
 
-permissions:  # added using https://github.com/step-security/secure-workflows
-  contents: read
+permissions: {}
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  group: "gh-aw-${{ github.workflow }}"
 
 jobs:
   triage:
@@ -35,7 +33,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Conflict Check
-      uses: eps1lon/actions-label-merge-conflict@v2.0.0
+      uses: eps1lon/actions-label-merge-conflict@v3.0.3
       with:
         repoToken: "${{ secrets.GITHUB_TOKEN }}"
         dirtyLabel: "status:has-conflicts"

@@ -283,7 +283,7 @@ jobs:
           # https://github.com/actions/runner-images/blob/main/images/linux/Ubuntu2004-Readme.md#mysql
           sudo apt-get install -y mysql-server
           sudo systemctl start mysql
-          sudo mysql -uroot -proot -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY ''; FLUSH PRIVILEGES;"
+          sudo mysql -uroot -proot -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH caching_sha2_password BY ''; FLUSH PRIVILEGES;"
           sudo systemctl restart mysql
           sudo mysql -uroot -e "SELECT VERSION();"
 
@@ -341,7 +341,7 @@ jobs:
           echo -e "Simulator CI Test Results: (only failures listed)\n"
           python3 ./tools/marvin/xunit-reader.py integration-test-results/
 
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v6
         with:
           files: jacoco-coverage.xml
           fail_ci_if_error: true

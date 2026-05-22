@@ -50,7 +50,8 @@ github:
     rebase: false
 
   collaborators:
-    - gpordeus
+    - ingox
+    - gp-santos
     - erikbocks
     - Imvedansh
     - Damans227
