@@ -89,9 +89,26 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     static final ConfigKey<Boolean> NASInfraBackupEnabled = new ConfigKey<>("Advanced", Boolean.class,
             "nas.infra.backup.enabled",
             "false",
-            "Enable automated infrastructure backup (database, configs) to NAS storage. " +
-            "When enabled, the management server will perform a daily backup of the CloudStack " +
-            "database, configuration files, and SSL certificates to the configured NAS location.",
+            "Enable automated infrastructure backup to NAS storage. When enabled, the management " +
+            "server will perform a daily backup of CloudStack configuration files and SSL " +
+            "certificates to the configured NAS location. The CloudStack database is NOT included " +
+            "by default — for production deployments, manage database backups externally (e.g. via " +
+            "a cron job running mysqldump). To opt in to bundling the database with this backup " +
+            "(useful only for small / edge / single-MS deployments without separate ops tooling), " +
+            "also set nas.infra.backup.include.database=true.",
+            true,
+            ConfigKey.Scope.Global,
+            BackupFrameworkEnabled.key());
+
+    static final ConfigKey<Boolean> NASInfraBackupIncludeDatabase = new ConfigKey<>("Advanced", Boolean.class,
+            "nas.infra.backup.include.database",
+            "false",
+            "Include the CloudStack database in the daily infrastructure backup. Defaults to false " +
+            "because production deployments typically manage DB backups via external tooling (e.g. " +
+            "cron + mysqldump, replication, dedicated backup appliance) and are better served " +
+            "doing so. Only set true when you want one-knob disaster recovery for a small/edge " +
+            "deployment and the same NAS that already holds your VM backups is an acceptable " +
+            "target. Has no effect unless nas.infra.backup.enabled is also true.",
             true,
             ConfigKey.Scope.Global,
             BackupFrameworkEnabled.key());
@@ -116,7 +133,8 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     static final ConfigKey<Boolean> NASInfraBackupUsageDb = new ConfigKey<>("Advanced", Boolean.class,
             "nas.infra.backup.include.usage.db",
             "true",
-            "Include the cloud_usage database in infrastructure backup.",
+            "Also include the cloud_usage database when the CloudStack database is being backed " +
+            "up. Has no effect unless nas.infra.backup.include.database is also true.",
             true,
             ConfigKey.Scope.Global,
             BackupFrameworkEnabled.key());
@@ -643,6 +661,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         return new ConfigKey[]{
                 NASBackupRestoreMountTimeout,
                 NASInfraBackupEnabled,
+                NASInfraBackupIncludeDatabase,
                 NASInfraBackupLocation,
                 NASInfraBackupRetention,
                 NASInfraBackupUsageDb
