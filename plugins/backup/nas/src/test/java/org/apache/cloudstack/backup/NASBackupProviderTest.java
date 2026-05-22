@@ -430,7 +430,7 @@ public class NASBackupProviderTest {
 
         TakeBackupCommand capturedCmd = cmdCaptor.getValue();
         Map<String, String> details = capturedCmd.getDetails();
-        Assert.assertEquals("true", details.get("compression"));
+        Assert.assertEquals("true", details.get(TakeBackupCommand.DETAIL_COMPRESSION));
 
         // Reset config
         overrideConfigValue(nasBackupProvider.NASBackupCompressionEnabled, "false");
@@ -464,7 +464,7 @@ public class NASBackupProviderTest {
 
         TakeBackupCommand capturedCmd = cmdCaptor.getValue();
         Map<String, String> details = capturedCmd.getDetails();
-        Assert.assertEquals("50", details.get("bandwidth_limit"));
+        Assert.assertEquals("50", details.get(TakeBackupCommand.DETAIL_BANDWIDTH_LIMIT));
 
         overrideConfigValue(nasBackupProvider.NASBackupBandwidthLimitMbps, "0");
     }
@@ -497,7 +497,7 @@ public class NASBackupProviderTest {
 
         TakeBackupCommand capturedCmd = cmdCaptor.getValue();
         Map<String, String> details = capturedCmd.getDetails();
-        Assert.assertEquals("true", details.get("integrity_check"));
+        Assert.assertEquals("true", details.get(TakeBackupCommand.DETAIL_INTEGRITY_CHECK));
 
         overrideConfigValue(nasBackupProvider.NASBackupIntegrityCheckEnabled, "false");
     }
@@ -531,8 +531,8 @@ public class NASBackupProviderTest {
 
         TakeBackupCommand capturedCmd = cmdCaptor.getValue();
         Map<String, String> details = capturedCmd.getDetails();
-        Assert.assertEquals("true", details.get("encryption"));
-        Assert.assertEquals("my-secret-passphrase", details.get("encryption_passphrase"));
+        Assert.assertEquals("true", details.get(TakeBackupCommand.DETAIL_ENCRYPTION));
+        Assert.assertEquals("my-secret-passphrase", details.get(TakeBackupCommand.DETAIL_ENCRYPTION_PASSPHRASE));
 
         overrideConfigValue(nasBackupProvider.NASBackupEncryptionEnabled, "false");
         overrideConfigValue(nasBackupProvider.NASBackupEncryptionPassphrase, "");

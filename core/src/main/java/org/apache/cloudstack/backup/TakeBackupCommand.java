@@ -28,6 +28,15 @@ import java.util.List;
 import java.util.Map;
 
 public class TakeBackupCommand extends Command {
+    // Detail-map keys shared between the management server (NASBackupProvider) and
+    // the KVM agent wrapper. Defining them once here avoids drift between producer
+    // and consumer when a key is renamed.
+    public static final String DETAIL_COMPRESSION = "compression";
+    public static final String DETAIL_ENCRYPTION = "encryption";
+    public static final String DETAIL_ENCRYPTION_PASSPHRASE = "encryption_passphrase";
+    public static final String DETAIL_BANDWIDTH_LIMIT = "bandwidth_limit";
+    public static final String DETAIL_INTEGRITY_CHECK = "integrity_check";
+
     private String vmName;
     private String backupPath;
     private String backupRepoType;
