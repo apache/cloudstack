@@ -68,26 +68,48 @@ public class InfrastructureBackupTask extends ManagedContextRunnable implements 
         return DAILY_INTERVAL_MS;
     }
 
+    /** Indirection so tests can override without standing up the ConfigDepot. */
+    protected boolean isEnabled() {
+        return Boolean.TRUE.equals(NASBackupProvider.NASInfraBackupEnabled.value());
+    }
+
+    protected String getBackupLocation() {
+        return NASBackupProvider.NASInfraBackupLocation.value();
+    }
+
+    protected int getRetentionCount() {
+        return NASBackupProvider.NASInfraBackupRetention.value();
+    }
+
+    protected boolean isDatabaseIncluded() {
+        return Boolean.TRUE.equals(NASBackupProvider.NASInfraBackupIncludeDatabase.value());
+    }
+
+    protected boolean isUsageDbIncluded() {
+        return Boolean.TRUE.equals(NASBackupProvider.NASInfraBackupUsageDb.value());
+    }
+
     @Override
     protected void runInContext() {
-        if (!Boolean.TRUE.equals(NASBackupProvider.NASInfraBackupEnabled.value())) {
+        if (!isEnabled()) {
             LOG.debug("Infrastructure backup is disabled (nas.infra.backup.enabled=false)");
             return;
         }
 
-        String nasBackupPath = NASBackupProvider.NASInfraBackupLocation.value();
+        String nasBackupPath = getBackupLocation();
         if (nasBackupPath == null || nasBackupPath.isEmpty()) {
             LOG.error("Infrastructure backup location not configured (nas.infra.backup.location is empty)");
             return;
         }
 
-        int retentionCount = NASBackupProvider.NASInfraBackupRetention.value();
-        boolean includeUsageDb = Boolean.TRUE.equals(NASBackupProvider.NASInfraBackupUsageDb.value());
+        int retentionCount = getRetentionCount();
+        boolean includeDatabase = isDatabaseIncluded();
+        boolean includeUsageDb = isUsageDbIncluded();
 
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
         String backupDir = nasBackupPath + "/infra-backup/" + timestamp;
 
-        LOG.info("Starting infrastructure backup to {}", backupDir);
+        LOG.info("Starting infrastructure backup to {} (database included: {})", backupDir, includeDatabase);
 
         try {
             File dir = new File(backupDir);
@@ -96,26 +118,30 @@ public class InfrastructureBackupTask extends ManagedContextRunnable implements 
                 return;
             }
 
-            // Read database credentials from db.properties
-            Properties dbProps = loadDbProperties();
-            if (dbProps == null) {
-                LOG.error("Failed to load database properties from {}", DB_PROPERTIES_PATH);
-                return;
-            }
+            // 1 & 2. Database backup — opt-in via nas.infra.backup.include.database.
+            // Production deployments typically run their own mysqldump cron jobs and disable this;
+            // it exists for small/edge deployments wanting unified DR on the same NAS as VM backups.
+            if (includeDatabase) {
+                Properties dbProps = loadDbProperties();
+                if (dbProps == null) {
+                    LOG.error("Database backup requested but failed to load properties from {} — skipping DB component", DB_PROPERTIES_PATH);
+                } else {
+                    String dbHost = dbProps.getProperty("db.cloud.host", "localhost");
+                    String dbUser = dbProps.getProperty("db.cloud.username", "cloud");
+                    String dbPassword = dbProps.getProperty("db.cloud.password", "");
 
-            String dbHost = dbProps.getProperty("db.cloud.host", "localhost");
-            String dbUser = dbProps.getProperty("db.cloud.username", "cloud");
-            String dbPassword = dbProps.getProperty("db.cloud.password", "");
+                    backupDatabase("cloud", backupDir, timestamp, dbHost, dbUser, dbPassword);
 
-            // 1. Backup CloudStack database
-            backupDatabase("cloud", backupDir, timestamp, dbHost, dbUser, dbPassword);
-
-            // 2. Backup usage database if enabled
-            if (includeUsageDb) {
-                String usageHost = dbProps.getProperty("db.usage.host", dbHost);
-                String usageUser = dbProps.getProperty("db.usage.username", dbUser);
-                String usagePassword = dbProps.getProperty("db.usage.password", dbPassword);
-                backupDatabase("cloud_usage", backupDir, timestamp, usageHost, usageUser, usagePassword);
+                    if (includeUsageDb) {
+                        String usageHost = dbProps.getProperty("db.usage.host", dbHost);
+                        String usageUser = dbProps.getProperty("db.usage.username", dbUser);
+                        String usagePassword = dbProps.getProperty("db.usage.password", dbPassword);
+                        backupDatabase("cloud_usage", backupDir, timestamp, usageHost, usageUser, usagePassword);
+                    }
+                }
+            } else {
+                LOG.debug("Database backup skipped (nas.infra.backup.include.database=false). " +
+                        "Manage DB backups externally for production deployments.");
             }
 
             // 3. Backup management server configs
@@ -143,7 +169,7 @@ public class InfrastructureBackupTask extends ManagedContextRunnable implements 
         }
     }
 
-    private Properties loadDbProperties() {
+    protected Properties loadDbProperties() {
         File propsFile = new File(DB_PROPERTIES_PATH);
         if (!propsFile.exists()) {
             LOG.warn("Database properties file not found: {}", DB_PROPERTIES_PATH);
@@ -160,7 +186,7 @@ public class InfrastructureBackupTask extends ManagedContextRunnable implements 
         }
     }
 
-    private void backupDatabase(String dbName, String backupDir, String timestamp,
+    protected void backupDatabase(String dbName, String backupDir, String timestamp,
                                  String dbHost, String dbUser, String dbPassword) {
         String dumpFile = backupDir + "/" + dbName + "-" + timestamp + ".sql.gz";
 
@@ -198,7 +224,7 @@ public class InfrastructureBackupTask extends ManagedContextRunnable implements 
         }
     }
 
-    private void backupDirectory(String sourcePath, String backupDir, String archiveName) {
+    protected void backupDirectory(String sourcePath, String backupDir, String archiveName) {
         File source = new File(sourcePath);
         if (!source.exists() || !source.isDirectory()) {
             LOG.debug("Directory {} does not exist, skipping", sourcePath);
@@ -232,7 +258,7 @@ public class InfrastructureBackupTask extends ManagedContextRunnable implements 
         }
     }
 
-    private void cleanupOldBackups(String nasBackupPath, int retentionCount) {
+    protected void cleanupOldBackups(String nasBackupPath, int retentionCount) {
         File infraDir = new File(nasBackupPath + "/infra-backup");
         if (!infraDir.exists()) {
             return;
