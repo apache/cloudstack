@@ -80,7 +80,7 @@ public class KVMFencer extends AdapterBase implements FenceBuilder {
 
         List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(host.getClusterId());
         FenceCommand fence = new FenceCommand(vm, host);
-        fence.setReportCheckFailureIfOneStorageIsDown(HighAvailabilityManager.KvmHAFenceHostIfHeartbeatFailsOnStorage.value());
+        fence.setReportCheckFailureIfOneStorageIsDown(HighAvailabilityManager.KvmHAFenceHostIfHeartbeatFailsOnStorage.valueIn(host.getDataCenterId()));
 
         int i = 0;
         for (HostVO h : hosts) {
