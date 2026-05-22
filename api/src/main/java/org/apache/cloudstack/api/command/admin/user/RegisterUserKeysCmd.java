@@ -50,7 +50,7 @@ public class RegisterUserKeysCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "API key pair name.")
     private String name;
 
-    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "API key pair description.")
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "API key pair description.", length = 1024)
     private String description;
 
     @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, description = "Start date of the API key pair. " +
@@ -138,6 +138,9 @@ public class RegisterUserKeysCmd extends BaseAsyncCmd {
 
             String description = detail.get(ApiConstants.DESCRIPTION);
             if (StringUtils.isNotEmpty(description)) {
+                if (permission.length() > 255) {
+                    throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Description cannot be longer than 255 characters.");
+                }
                 ruleDetails.put(ApiConstants.DESCRIPTION, description);
             }
 

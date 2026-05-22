@@ -63,6 +63,12 @@ export default {
       resourceType: 'User',
       component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
       show: () => { return 'listEvents' in store.getters.apis }
+    },
+    {
+      name: 'apikeypairs',
+      resourceType: 'User',
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/ApiKeyPairsTab.vue'))),
+      show: () => { return 'listUserKeys' in store.getters.apis }
     }
   ],
   actions: [

@@ -1132,6 +1132,10 @@ export default {
             params.name = this.$route.params.id
           }
         }
+        if (['listUserKeys'].includes(this.apiName)) {
+          delete params.listall
+          params.keypairid = this.$route.params.id
+        }
         if (['listPublicIpAddresses'].includes(this.apiName)) {
           params.allocatedonly = false
         }
@@ -1253,7 +1257,7 @@ export default {
         if (this.items.length <= 0 && this.dataView) {
           this.$router.push({ path: '/exception/404' })
         }
-        if (!this.showAction || this.dataView) {
+        if (!this.showAction || this.dataView || (this.items.length === 1 && this.apiName === 'getUserKeys')) {
           this.resource = this.items?.[0] || {}
           this.$emit('change-resource', this.resource)
         }

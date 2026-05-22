@@ -70,7 +70,7 @@ public class ApiKeyPairVO implements ApiKeyPair {
     @Temporal(value = TemporalType.TIMESTAMP)
     private Date created = Date.from(Instant.now());
 
-    @Column(name = "description")
+    @Column(name = "description", length = 1024)
     private String description = "";
 
     @Column(name = "api_key", nullable = false)
