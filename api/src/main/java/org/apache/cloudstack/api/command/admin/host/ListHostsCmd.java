@@ -118,6 +118,9 @@ public class ListHostsCmd extends BaseListCmd {
             since = "4.21.0")
     private String storageAccessGroup;
 
+    @Parameter(name = ApiConstants.VERSION, type = CommandType.STRING, description = "the host version", since = "4.20.3")
+    private String version;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -222,6 +225,10 @@ public class ListHostsCmd extends BaseListCmd {
         this.storageAccessGroup = storageAccessGroup;
     }
 
+    public String getVersion() {
+        return version;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -245,7 +252,7 @@ public class ListHostsCmd extends BaseListCmd {
             for (Host host : result.first()) {
                 HostResponse hostResponse = _responseGenerator.createHostResponse(host, getDetails());
                 Boolean suitableForMigration = false;
-                if (hostsWithCapacity.contains(host)) {
+                if (hostsWithCapacity != null && hostsWithCapacity.contains(host)) {
                     suitableForMigration = true;
                 }
                 hostResponse.setSuitableForMigration(suitableForMigration);

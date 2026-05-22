@@ -60,12 +60,20 @@ public final class CitrixReadyCommandWrapper extends CommandWrapper<ReadyCommand
             final Set<VM> vms = host.getResidentVMs(conn);
             citrixResourceBase.destroyPatchVbd(conn, vms);
 
+        } catch (final Exception e) {
+            logger.warn("Unable to destroy CD-ROM device for system VMs", e);
+        }
+
+        try {
+            final Host host = Host.getByUuid(conn, citrixResourceBase.getHost().getUuid());
             final Host.Record hr = host.getRecord(conn);
             if (isUefiSupported(CitrixHelper.getProductVersion(hr))) {
                 hostDetails.put(com.cloud.host.Host.HOST_UEFI_ENABLE, Boolean.TRUE.toString());
             }
-        } catch (final Exception e) {
+        } catch (Exception e) {
+            logger.warn("Unable to get UEFI support info", e);
         }
+
         try {
             final boolean result = citrixResourceBase.cleanupHaltedVms(conn);
             if (!result) {

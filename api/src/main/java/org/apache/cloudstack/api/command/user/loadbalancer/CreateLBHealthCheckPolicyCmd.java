@@ -155,7 +155,7 @@ public class CreateLBHealthCheckPolicyCmd extends BaseAsyncCreateCmd {
         boolean success = false;
 
         try {
-            CallContext.current().setEventDetails("Load balancer health check policy ID : " + getEntityId());
+            CallContext.current().setEventDetails("Load balancer health check policy ID : " + getEntityUuid());
             success = _lbService.applyLBHealthCheckPolicy(this);
             if (success) {
                 // State might be different after the rule is applied, so get new object here

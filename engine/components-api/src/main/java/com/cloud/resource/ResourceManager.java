@@ -57,8 +57,8 @@ public interface ResourceManager extends ResourceService, Configurable {
 
     ConfigKey<Boolean> KvmSshToAgentEnabled = new ConfigKey<>("Advanced", Boolean.class,
             "kvm.ssh.to.agent","true",
-            "Number of retries when preparing a host into Maintenance Mode is faulty before failing",
-            false);
+            "True if the management server will restart the agent service via SSH into the KVM hosts after or during maintenance operations",
+            true);
 
     ConfigKey<String> HOST_MAINTENANCE_LOCAL_STRATEGY = new ConfigKey<>(String.class,
     "host.maintenance.local.storage.strategy", "Advanced","Error",
@@ -78,6 +78,11 @@ public interface ResourceManager extends ResourceService, Configurable {
             ConfigKey.Scope.Zone, null, null, null, null, null,
             ConfigKey.Kind.Select,
             "," + CPU.CPUArch.getTypesAsCSV());
+
+    ConfigKey<String> SystemVMDefaultHypervisor = new ConfigKey<String>(String.class,
+            "system.vm.default.hypervisor", "Advanced", "Any", "Hypervisor type used to create System VMs. Valid values are: XenServer, KVM, VMware, Hyperv, VirtualBox, " +
+            "Parralels, BareMetal, Ovm, LXC, Any", true, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.Select, "XenServer, KVM, VMware, Hyperv, " +
+            "VirtualBox, Parralels, BareMetal, Ovm, LXC, Any");
 
     /**
      * Register a listener for different types of resource life cycle events.
@@ -116,6 +121,8 @@ public interface ResourceManager extends ResourceService, Configurable {
     public void deleteRoutingHost(HostVO host, boolean isForced, boolean forceDestroyStorage) throws UnableDeleteHostException;
 
     public boolean executeUserRequest(long hostId, ResourceState.Event event) throws AgentUnavailableException;
+
+    boolean executeUserRequest(long hostId, ResourceState.Event event, boolean isForced, boolean isForceDeleteStorage) throws AgentUnavailableException;
 
     boolean resourceStateTransitTo(Host host, Event event, long msId) throws NoTransitionException;
 
@@ -161,6 +168,8 @@ public interface ResourceManager extends ResourceService, Configurable {
     public List<HypervisorType> listAvailHypervisorInZone(Long zoneId);
 
     public HostVO findHostByGuid(String guid);
+
+    HostVO findHostByGuidPrefix(String guid);
 
     public HostVO findHostByName(String name);
 

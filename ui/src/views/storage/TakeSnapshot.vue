@@ -66,7 +66,10 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('label.usestoragereplication')" name="useStorageReplication" ref="useStorageReplication">
+        <a-form-item name="useStorageReplication" ref="useStorageReplication">
+          <template #label>
+            <tooltip-label :title="$t('label.usestoragereplication')" :tooltip="apiParams.usestoragereplication.description" />
+          </template>
           <a-switch v-model:checked="form.useStorageReplication" />
         </a-form-item>
         <a-form-item v-if="isAdmin && form.useStorageReplication" ref="storageids" name="storageids">
@@ -93,7 +96,10 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-          <a-form-item :label="$t('label.asyncbackup')" name="asyncbackup" ref="asyncbackup" v-if="!supportsStorageSnapshot">
+          <a-form-item name="asyncbackup" ref="asyncbackup" v-if="!supportsStorageSnapshot">
+            <template #label>
+              <tooltip-label :title="$t('label.asyncbackup')" :tooltip="apiParams.asyncbackup.description" />
+            </template>
           <a-switch v-model:checked="form.asyncbackup" />
         </a-form-item>
         <a-form-item :label="$t('label.quiescevm')" name="quiescevm" ref="quiescevm" v-if="quiescevm && hypervisorSupportsQuiesceVm">

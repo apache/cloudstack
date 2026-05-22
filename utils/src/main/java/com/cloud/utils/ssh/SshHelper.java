@@ -23,6 +23,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -40,6 +42,23 @@ public class SshHelper {
     private static final int DEFAULT_CONNECT_TIMEOUT = 180000;
     private static final int DEFAULT_KEX_TIMEOUT = 60000;
     private static final int DEFAULT_WAIT_RESULT_TIMEOUT = 120000;
+    private static final String MASKED_VALUE = "*****";
+
+    private static final Pattern[] SENSITIVE_COMMAND_PATTERNS = new Pattern[] {
+            Pattern.compile("(?i)(\\s+-p\\s+['\"])([^'\"]*)(['\"])"),
+            Pattern.compile("(?i)(\\s+-p\\s+)([^\\s]+)"),
+            Pattern.compile("(?i)(\\s+-p=['\"])([^'\"]*)(['\"])"),
+            Pattern.compile("(?i)(\\s+-p=)([^\\s]+)"),
+            Pattern.compile("(?i)(--password=['\"])([^'\"]*)(['\"])"),
+            Pattern.compile("(?i)(--password=)([^\\s]+)"),
+            Pattern.compile("(?i)(--password\\s+['\"])([^'\"]*)(['\"])"),
+            Pattern.compile("(?i)(--password\\s+)([^\\s]+)"),
+            Pattern.compile("(?i)(\\s+-u\\s+['\"][^,'\":]+[,:])([^'\"]*)(['\"])"),
+            Pattern.compile("(?i)(\\s+-u\\s+[^\\s,:]+[,:])([^\\s]+)"),
+            Pattern.compile("(?i)(\\s+-s\\s+['\"])([^'\"]*)(['\"])"),
+            Pattern.compile("(?i)(\\s+-s\\s+)([^\\s]+)"),
+
+    };
 
     protected static Logger LOGGER = LogManager.getLogger(SshHelper.class);
 
@@ -145,7 +164,7 @@ public class SshHelper {
     }
 
     public static void scpTo(String host, int port, String user, File pemKeyFile, String password, String remoteTargetDirectory, String[] localFiles, String fileMode,
-                             int connectTimeoutInMs, int kexTimeoutInMs) throws Exception {
+            int connectTimeoutInMs, int kexTimeoutInMs) throws Exception {
 
         com.trilead.ssh2.Connection conn = null;
         com.trilead.ssh2.SCPClient scpClient = null;
@@ -291,13 +310,16 @@ public class SshHelper {
             }
 
             if (sess.getExitStatus() == null) {
-                //Exit status is NOT available. Returning failure result.
-                LOGGER.error(String.format("SSH execution of command %s has no exit status set. Result output: %s", command, result));
+                // Exit status is NOT available. Returning failure result.
+                LOGGER.error(String.format("SSH execution of command %s has no exit status set. Result output: %s",
+                        sanitizeForLogging(command), sanitizeForLogging(result)));
                 return new Pair<Boolean, String>(false, result);
             }
 
             if (sess.getExitStatus() != null && sess.getExitStatus().intValue() != 0) {
-                LOGGER.error(String.format("SSH execution of command %s has an error status code in return. Result output: %s", command, result));
+                LOGGER.error(String.format(
+                        "SSH execution of command %s has an error status code in return. Result output: %s",
+                        sanitizeForLogging(command), sanitizeForLogging(result)));
                 return new Pair<Boolean, String>(false, result);
             }
             return new Pair<Boolean, String>(true, result);
@@ -365,5 +387,48 @@ public class SshHelper {
             LOGGER.error(msg);
             throw new SshException(msg);
         }
+    }
+
+    private static String sanitizeForLogging(String value) {
+        if (value == null) {
+            return null;
+        }
+        String masked = maskSensitiveValue(value);
+        String cleaned = com.cloud.utils.StringUtils.cleanString(masked);
+        if (StringUtils.isBlank(cleaned)) {
+            return masked;
+        }
+        return cleaned;
+    }
+
+    private static String maskSensitiveValue(String value) {
+        String masked = value;
+        for (Pattern pattern : SENSITIVE_COMMAND_PATTERNS) {
+            masked = replaceWithMask(masked, pattern);
+        }
+        return masked;
+    }
+
+    private static String replaceWithMask(String value, Pattern pattern) {
+        Matcher matcher = pattern.matcher(value);
+        if (!matcher.find()) {
+            return value;
+        }
+
+        StringBuffer buffer = new StringBuffer();
+        do {
+            StringBuilder replacement = new StringBuilder();
+            replacement.append(matcher.group(1));
+            if (matcher.groupCount() >= 3) {
+                replacement.append(MASKED_VALUE);
+                replacement.append(matcher.group(matcher.groupCount()));
+            } else {
+                replacement.append(MASKED_VALUE);
+            }
+            matcher.appendReplacement(buffer, Matcher.quoteReplacement(replacement.toString()));
+        } while (matcher.find());
+
+        matcher.appendTail(buffer);
+        return buffer.toString();
     }
 }

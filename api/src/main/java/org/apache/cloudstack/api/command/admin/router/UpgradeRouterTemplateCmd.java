@@ -119,7 +119,7 @@ public class UpgradeRouterTemplateCmd extends org.apache.cloudstack.api.BaseCmd 
 
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-        CallContext.current().setEventDetails("Upgrading router Template");
+        CallContext.current().setEventDetails("Upgrading router with with ID: " + getResourceUuid(ApiConstants.ID) + " template");
         List<Long> result = _routerService.upgradeRouterTemplate(this);
         if (result != null) {
             ListResponse<UpgradeRouterTemplateResponse> response = _responseGenerator.createUpgradeRouterTemplateResponse(result);

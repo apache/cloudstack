@@ -181,15 +181,6 @@ public interface VirtualMachineManager extends Manager {
     void advanceReboot(String vmUuid, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException,
         ConcurrentOperationException, OperationTimedoutException;
 
-    /**
-     * Check to see if a virtual machine can be upgraded to the given service offering
-     *
-     * @param vm
-     * @param offering
-     * @return true if the host can handle the upgrade, false otherwise
-     */
-    boolean isVirtualMachineUpgradable(final VirtualMachine vm, final ServiceOffering offering);
-
     VirtualMachine findById(long vmId);
 
     void storageMigration(String vmUuid, Map<Long, Long> volumeToPool);
@@ -229,6 +220,8 @@ public interface VirtualMachineManager extends Manager {
     boolean removeNicFromVm(VirtualMachine vm, Nic nic) throws ConcurrentOperationException, ResourceUnavailableException;
 
     Boolean updateDefaultNicForVM(VirtualMachine vm, Nic nic, Nic defaultNic);
+
+    boolean updateVmNic(VirtualMachine vm, Nic nic, Boolean enabled) throws ResourceUnavailableException;
 
     /**
      * @param vm

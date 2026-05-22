@@ -45,6 +45,10 @@ public class ListMgmtsCmd extends BaseListCmd {
             since = "4.20.1.0")
     private Boolean peers;
 
+    @Parameter(name = ApiConstants.VERSION, type = CommandType.STRING,
+            description = "the version of the management server", since = "4.20.3")
+    private String version;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -59,6 +63,10 @@ public class ListMgmtsCmd extends BaseListCmd {
 
     public Boolean getPeers() {
         return BooleanUtils.toBooleanDefaultIfNull(peers, false);
+    }
+
+    public String getVersion() {
+        return version;
     }
 
     /////////////////////////////////////////////////////

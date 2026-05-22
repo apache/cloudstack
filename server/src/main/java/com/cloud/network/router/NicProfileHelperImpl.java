@@ -21,6 +21,7 @@ import java.net.URI;
 
 import javax.inject.Inject;
 
+import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.network.router.deployment.RouterDeploymentDefinition;
@@ -61,7 +62,7 @@ public class NicProfileHelperImpl implements NicProfileHelper {
 
     @Override
     @DB
-    public NicProfile createPrivateNicProfileForGateway(final VpcGateway privateGateway, final VirtualRouter router) {
+    public NicProfile createPrivateNicProfileForGateway(final VpcGateway privateGateway, final VirtualRouter router) throws InsufficientAddressCapacityException {
         final Network privateNetwork = _networkModel.getNetwork(privateGateway.getNetworkId());
 
         PrivateIpVO ipVO = _privateIpDao.allocateIpAddress(privateNetwork.getDataCenterId(), privateNetwork.getId(), privateGateway.getIp4Address());
@@ -90,14 +91,14 @@ public class NicProfileHelperImpl implements NicProfileHelper {
             privateNicProfile.setDeviceId(null);
 
             if (router.getIsRedundantRouter()) {
-              String newMacAddress = NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ipVO.getMacAddress(), NetworkModel.MACIdentifier.value()));
-              privateNicProfile.setMacAddress(newMacAddress);
+                String newMacAddress = _networkModel.getUniqueMacAddress(ipVO.getMacAddress(), privateNetwork.getId(), privateNetwork.getDataCenterId());
+                privateNicProfile.setMacAddress(newMacAddress);
             }
         } else {
             final String netmask = NetUtils.getCidrNetmask(privateNetwork.getCidr());
+            String newMacAddress = _networkModel.getUniqueMacAddress(ipVO.getMacAddress(), privateNetwork.getId(), privateNetwork.getDataCenterId());
             final PrivateIpAddress ip =
-                    new PrivateIpAddress(ipVO, privateNetwork.getBroadcastUri().toString(), privateNetwork.getGateway(), netmask,
-                            NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ipVO.getMacAddress(), NetworkModel.MACIdentifier.value())));
+                    new PrivateIpAddress(ipVO, privateNetwork.getBroadcastUri().toString(), privateNetwork.getGateway(), netmask, newMacAddress);
 
             final URI netUri = BroadcastDomainType.fromString(ip.getBroadcastUri());
             privateNicProfile.setIPv4Address(ip.getIpAddress());

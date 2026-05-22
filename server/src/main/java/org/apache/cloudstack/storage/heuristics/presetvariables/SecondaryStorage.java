@@ -32,7 +32,6 @@ public class SecondaryStorage extends GenericHeuristicPresetVariable {
 
     public void setId(String id) {
         this.id = id;
-        fieldNamesToIncludeInToString.add("id");
     }
 
     public Long getUsedDiskSize() {
@@ -41,7 +40,6 @@ public class SecondaryStorage extends GenericHeuristicPresetVariable {
 
     public void setUsedDiskSize(Long usedDiskSize) {
         this.usedDiskSize = usedDiskSize;
-        fieldNamesToIncludeInToString.add("usedDiskSize");
     }
 
     public Long getTotalDiskSize() {
@@ -50,7 +48,6 @@ public class SecondaryStorage extends GenericHeuristicPresetVariable {
 
     public void setTotalDiskSize(Long totalDiskSize) {
         this.totalDiskSize = totalDiskSize;
-        fieldNamesToIncludeInToString.add("totalDiskSize");
     }
 
     public String getProtocol() {
@@ -59,6 +56,5 @@ public class SecondaryStorage extends GenericHeuristicPresetVariable {
 
     public void setProtocol(String protocol) {
         this.protocol = protocol;
-        fieldNamesToIncludeInToString.add("protocol");
     }
 }

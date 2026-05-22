@@ -457,7 +457,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         if (detailsStr == null) {
             return;
         }
-        List<VMTemplateDetailVO> details = new ArrayList<VMTemplateDetailVO>();
+        List<VMTemplateDetailVO> details = new ArrayList<>();
         for (String key : detailsStr.keySet()) {
             VMTemplateDetailVO detail = new VMTemplateDetailVO(tmpl.getId(), key, detailsStr.get(key), true);
             details.add(detail);
@@ -479,7 +479,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
             }
 
             if (tmplt.getDetails() != null) {
-                List<VMTemplateDetailVO> details = new ArrayList<VMTemplateDetailVO>();
+                List<VMTemplateDetailVO> details = new ArrayList<>();
                 for (String key : tmplt.getDetails().keySet()) {
                     details.add(new VMTemplateDetailVO(tmplt.getId(), key, tmplt.getDetails().get(key), true));
                 }

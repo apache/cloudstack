@@ -91,7 +91,7 @@ public class StopNetScalerVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "stopping Netscaler vm: " + getId();
+        return "Stopping NetScaler VM with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
@@ -110,7 +110,7 @@ public class StopNetScalerVMCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException {
-        CallContext.current().setEventDetails("NetScaler vm Id: " + getId());
+        CallContext.current().setEventDetails("NetScaler Instance ID: " + getResourceUuid(ApiConstants.ID));
         VirtualRouter result = null;
         VirtualRouter vm = _routerService.findRouter(getId());
         if (vm == null || vm.getRole() != Role.NETSCALER_VM) {

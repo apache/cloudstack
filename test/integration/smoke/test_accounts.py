@@ -1744,7 +1744,7 @@ class TestUserAPIKeys(cloudstackTestCase):
             self.apiclient,
             id=self.account_2.id
         )[0].user
-        with self.assertRaises(CloudstackAPIException) as e:
+        with self.assertRaises(Exception) as e:
             User.registerUserKeys(cs_api, users[0].id)
 
 

@@ -272,23 +272,21 @@ export default {
     },
     fetchOwnerOptions (OwnerOptions) {
       this.owner = {}
-      console.log('fetching owner')
       if (OwnerOptions.selectedAccountType === 'Account') {
         if (!OwnerOptions.selectedAccount) {
           return
         }
-        console.log('fetched account')
         this.owner.account = OwnerOptions.selectedAccount
         this.owner.domainid = OwnerOptions.selectedDomain
       } else if (OwnerOptions.selectedAccountType === 'Project') {
         if (!OwnerOptions.selectedProject) {
           return
         }
-        console.log('fetched project')
         this.owner.projectid = OwnerOptions.selectedProject
       }
-      console.log('fetched owner')
-      this.fetchData()
+      if (OwnerOptions.initialized) {
+        this.fetchData()
+      }
     },
     fetchData () {
       this.minCpu = store.getters.features.sharedfsvmmincpucount

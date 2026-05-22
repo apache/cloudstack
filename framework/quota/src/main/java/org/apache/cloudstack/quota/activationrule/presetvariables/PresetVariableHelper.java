@@ -28,12 +28,14 @@ import java.util.stream.Collectors;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.host.HostTagVO;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.vpc.VpcOfferingVO;
 import com.cloud.network.vpc.VpcVO;
 import javax.inject.Inject;
 
-import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.StoragePoolTagVO;
+import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.acl.RoleVO;
 import org.apache.cloudstack.acl.dao.RoleDao;
 import org.apache.cloudstack.backup.BackupOfferingVO;
@@ -66,6 +68,7 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostTagsDao;
+import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.server.ResourceTag;
@@ -191,6 +194,9 @@ public class PresetVariableHelper {
     @Inject
     ClusterDetailsDao clusterDetailsDao;
 
+    @Inject
+    VpcOfferingDao vpcOfferingDao;
+
     protected boolean backupSnapshotAfterTakingSnapshot = SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value();
 
     private List<Integer> runningAndAllocatedVmUsageTypes = Arrays.asList(UsageTypes.RUNNING_VM, UsageTypes.ALLOCATED_VM);
@@ -254,7 +260,7 @@ public class PresetVariableHelper {
         Role role = new Role();
         role.setId(roleVo.getUuid());
         role.setName(roleVo.getName());
-        role.setType(roleVo.getRoleType());
+        role.setType(roleVo.getRoleType().toString());
 
         return role;
     }
@@ -538,8 +544,8 @@ public class PresetVariableHelper {
         value.setDiskOffering(getPresetVariableValueDiskOffering(volumeVo.getDiskOfferingId()));
         value.setId(volumeVo.getUuid());
         value.setName(volumeVo.getName());
-        value.setProvisioningType(volumeVo.getProvisioningType());
-        value.setVolumeType(volumeVo.getVolumeType());
+        value.setVolumeType(volumeVo.getVolumeType().toString());
+        value.setProvisioningType(volumeVo.getProvisioningType().toString());
 
         Long poolId = volumeVo.getPoolId();
         if (poolId == null) {
@@ -594,7 +600,7 @@ public class PresetVariableHelper {
         storage = new Storage();
         storage.setId(storagePoolVo.getUuid());
         storage.setName(storagePoolVo.getName());
-        storage.setScope(storagePoolVo.getScope());
+        storage.setScope(storagePoolVo.getScope().toString());
         List<StoragePoolTagVO> storagePoolTagVOList = storagePoolTagsDao.findStoragePoolTags(storageId);
         List<String> storageTags = new ArrayList<>();
         boolean isTagARule = false;
@@ -663,7 +669,7 @@ public class PresetVariableHelper {
         value.setId(snapshotVo.getUuid());
         value.setName(snapshotVo.getName());
         value.setSize(ByteScaleUtils.bytesToMebibytes(snapshotVo.getSize()));
-        value.setSnapshotType(Snapshot.Type.values()[snapshotVo.getSnapshotType()]);
+        value.setSnapshotType(Snapshot.Type.values()[snapshotVo.getSnapshotType()].toString());
         value.setStorage(getPresetVariableValueStorage(getSnapshotDataStoreId(snapshotId, usageRecord.getZoneId()), usageType));
         value.setTags(getPresetVariableValueResourceTags(snapshotId, ResourceObjectType.Snapshot));
         Hypervisor.HypervisorType hypervisorType = snapshotVo.getHypervisorType();
@@ -732,7 +738,7 @@ public class PresetVariableHelper {
         value.setId(vmSnapshotVo.getUuid());
         value.setName(vmSnapshotVo.getName());
         value.setTags(getPresetVariableValueResourceTags(vmSnapshotId, ResourceObjectType.VMSnapshot));
-        value.setVmSnapshotType(vmSnapshotVo.getType());
+        value.setVmSnapshotType(vmSnapshotVo.getType().toString());
 
         VMInstanceVO vmVo = vmInstanceDao.findByIdIncludingRemoved(vmSnapshotVo.getVmId());
         if (vmVo != null && vmVo.getHypervisorType() != null) {
@@ -778,6 +784,30 @@ public class PresetVariableHelper {
         value.setId(network.getUuid());
         value.setName(network.getName());
         value.setState(usageRecord.getState());
+        value.setResourceCounting(getPresetVariableValueNetworkResourceCounting(networkId));
+        value.setNetworkOffering(getPresetVariableValueNetworkOffering(network.getNetworkOfferingId()));
+    }
+
+    protected ResourceCounting getPresetVariableValueNetworkResourceCounting(Long networkId) {
+        ResourceCounting resourceCounting = new ResourceCounting();
+        List<VMInstanceVO> vmInstancesVO = vmInstanceDao.listNonRemovedVmsByTypeAndNetwork(networkId, VirtualMachine.Type.User);
+        int runningVms = (int) vmInstancesVO.stream().filter(vm -> vm.getState().equals(VirtualMachine.State.Running)).count();
+        int stoppedVms = (int) vmInstancesVO.stream().filter(vm -> vm.getState().equals(VirtualMachine.State.Stopped)).count();
+
+        resourceCounting.setRunningVms(runningVms);
+        resourceCounting.setStoppedVms(stoppedVms);
+        return resourceCounting;
+    }
+
+    protected GenericPresetVariable getPresetVariableValueNetworkOffering(Long networkOfferingId) {
+        NetworkOfferingVO networkOfferingVo = networkOfferingDao.findByIdIncludingRemoved(networkOfferingId);
+        validateIfObjectIsNull(networkOfferingVo, networkOfferingId, "network offering");
+
+        GenericPresetVariable networkOffering = new GenericPresetVariable();
+        networkOffering.setId(networkOfferingVo.getUuid());
+        networkOffering.setName(networkOfferingVo.getName());
+
+        return networkOffering;
     }
 
     protected void loadPresetVariableValueForVpc(UsageVO usageRecord, Value value) {
@@ -793,6 +823,18 @@ public class PresetVariableHelper {
 
         value.setId(vpc.getUuid());
         value.setName(vpc.getName());
+        value.setVpcOffering(getPresetVariableValueVpcOffering(vpc.getVpcOfferingId()));
+    }
+
+    protected GenericPresetVariable getPresetVariableValueVpcOffering(Long vpcOfferingId) {
+        VpcOfferingVO vpcOfferingVo = vpcOfferingDao.findByIdIncludingRemoved(vpcOfferingId);
+        validateIfObjectIsNull(vpcOfferingVo, vpcOfferingId, "vpc offering");
+
+        GenericPresetVariable vpcOffering = new GenericPresetVariable();
+        vpcOffering.setId(vpcOfferingVo.getUuid());
+        vpcOffering.setName(vpcOfferingVo.getName());
+
+        return vpcOffering;
     }
 
     /**

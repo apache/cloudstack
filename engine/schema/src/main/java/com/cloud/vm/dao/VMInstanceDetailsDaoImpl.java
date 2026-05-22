@@ -17,10 +17,13 @@
 package com.cloud.vm.dao;
 
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.VMInstanceDetailVO;
 
 @Component
@@ -31,4 +34,18 @@ public class VMInstanceDetailsDaoImpl extends ResourceDetailsDaoBase<VMInstanceD
         super.addDetail(new VMInstanceDetailVO(resourceId, key, value, display));
     }
 
+    @Override
+    public int removeDetailsWithPrefix(long vmId, String prefix) {
+        if (StringUtils.isBlank(prefix)) {
+            return 0;
+        }
+        SearchBuilder<VMInstanceDetailVO> sb = createSearchBuilder();
+        sb.and("vmId", sb.entity().getResourceId(), SearchCriteria.Op.EQ);
+        sb.and("prefix", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.done();
+        SearchCriteria<VMInstanceDetailVO> sc = sb.create();
+        sc.setParameters("vmId", vmId);
+        sc.setParameters("prefix", prefix + "%");
+        return super.remove(sc);
+    }
 }

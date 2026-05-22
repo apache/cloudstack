@@ -71,12 +71,12 @@ public class DeleteApplicationLoadBalancerCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "deleting load balancer: " + getId();
+        return "Deleting load balancer with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Load balancer ID: " + getId());
+        CallContext.current().setEventDetails("Load balancer ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _appLbService.deleteApplicationLoadBalancer(getId());
 
         if (result) {

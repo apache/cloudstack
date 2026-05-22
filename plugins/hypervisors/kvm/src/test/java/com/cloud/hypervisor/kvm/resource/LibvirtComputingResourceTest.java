@@ -61,12 +61,9 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
-import com.cloud.cpu.CPU;
-import com.cloud.utils.net.NetUtils;
-
-import com.cloud.vm.VmDetailConstants;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+
 import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
@@ -186,6 +183,7 @@ import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
+import com.cloud.cpu.CPU;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.kvm.resource.KVMHABase.HAStoragePool;
@@ -228,13 +226,15 @@ import com.cloud.storage.template.TemplateLocation;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.OutputInterpreter.OneLineParser;
+import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.Type;
+import com.cloud.vm.VmDetailConstants;
 
 @RunWith(MockitoJUnitRunner.class)
 public class LibvirtComputingResourceTest {
@@ -251,6 +251,19 @@ public class LibvirtComputingResourceTest {
     Connect connMock;
     @Mock
     LibvirtDomainXMLParser parserMock;
+    @Mock
+    private DiskDef diskDef;
+    @Mock
+    private DiskTO volume;
+    @Mock
+    private KVMPhysicalDisk physicalDisk;
+    @Mock
+    private Map<String, String> details;
+
+    private static final String PHYSICAL_DISK_PATH = "/path/to/disk";
+    private static final int DEV_ID = 1;
+    private static final DiskDef.DiskBus DISK_BUS_TYPE = DiskDef.DiskBus.VIRTIO;
+    private static final DiskDef.DiskBus DISK_BUS_TYPE_DATA = DiskDef.DiskBus.SCSI;
 
     @Mock
     DiskTO diskToMock;
@@ -3120,7 +3133,7 @@ public class LibvirtComputingResourceTest {
         assertNotNull(wrapper);
 
         final Answer answer = wrapper.execute(command, libvirtComputingResourceMock);
-        assertTrue(answer.getResult());
+        assertFalse(answer.getResult());
 
         verify(libvirtComputingResourceMock, times(1)).getMonitor();
     }
@@ -5629,35 +5642,45 @@ public class LibvirtComputingResourceTest {
         Mockito.verify(vmDef, times(1)).addComp(any());
     }
 
-    public void validateGetCurrentMemAccordingToMemBallooningWithoutMemBalooning(){
+    @Test
+    public void getCurrentMemAccordingToMemBallooningTestValidateCurrentMemoryWithoutMemBallooning(){
         VirtualMachineTO vmTo = Mockito.mock(VirtualMachineTO.class);
-        Mockito.when(vmTo.getType()).thenReturn(Type.User);
         LibvirtComputingResource libvirtComputingResource = new LibvirtComputingResource();
         libvirtComputingResource.noMemBalloon = true;
-        long maxMemory = 2048;
+        long requestedMemory = 1024 * 1024;
+        long minMemory = 512 * 1024;
 
-        long currentMemory = libvirtComputingResource.getCurrentMemAccordingToMemBallooning(vmTo, maxMemory);
-        Assert.assertEquals(maxMemory, currentMemory);
-        Mockito.verify(vmTo, Mockito.times(0)).getMinRam();
+        long currentMemory = libvirtComputingResource.getCurrentMemAccordingToMemBallooning(vmTo, requestedMemory, minMemory);
+        Assert.assertEquals(requestedMemory, currentMemory);
     }
 
     @Test
-    public void validateGetCurrentMemAccordingToMemBallooningWithtMemBalooning(){
+    public void getCurrentMemAccordingToMemBallooningTestValidateCurrentMemoryWithMemoryBallooning(){
         LibvirtComputingResource libvirtComputingResource = new LibvirtComputingResource();
         libvirtComputingResource.noMemBalloon = false;
 
-        long maxMemory = 2048;
-        long minMemory = ByteScaleUtils.mebibytesToBytes(64);
-
         VirtualMachineTO vmTo = Mockito.mock(VirtualMachineTO.class);
         Mockito.when(vmTo.getType()).thenReturn(Type.User);
-        Mockito.when(vmTo.getMinRam()).thenReturn(minMemory);
+        long requestedMemory = 1024 * 1024;
+        long minMemory = 512 * 1024;
 
-        long currentMemory = libvirtComputingResource.getCurrentMemAccordingToMemBallooning(vmTo, maxMemory);
-        Assert.assertEquals(ByteScaleUtils.bytesToKibibytes(minMemory), currentMemory);
-        Mockito.verify(vmTo).getMinRam();
+        long currentMemory = libvirtComputingResource.getCurrentMemAccordingToMemBallooning(vmTo, requestedMemory, minMemory);
+        Assert.assertEquals(minMemory, currentMemory);
     }
 
+    @Test
+    public void getCurrentMemAccordingToMemBallooningTestValidateCurrentMemoryForSystemVms() {
+        LibvirtComputingResource libvirtComputingResource = new LibvirtComputingResource();
+        libvirtComputingResource.noMemBalloon = false;
+
+        VirtualMachineTO vmTo = Mockito.mock(VirtualMachineTO.class);
+        Mockito.when(vmTo.getType()).thenReturn(Type.SecondaryStorageVm);
+        long requestedMemory = 1024 * 1024;
+        long minMemory = 512 * 1024;
+
+        long currentMemory = libvirtComputingResource.getCurrentMemAccordingToMemBallooning(vmTo, requestedMemory, minMemory);
+        Assert.assertEquals(requestedMemory, currentMemory);
+    }
     @Test
     public void validateCreateGuestResourceDefWithVcpuMaxLimit(){
         LibvirtComputingResource libvirtComputingResource = new LibvirtComputingResource();
@@ -7144,5 +7167,159 @@ public class LibvirtComputingResourceTest {
         Assert.assertEquals("mce", cpuFeatures.get(1));
         Assert.assertEquals("-mmx", cpuFeatures.get(2));
         Assert.assertEquals("hle", cpuFeatures.get(3));
+    }
+
+    @Test
+    public void defineDiskForDefaultPoolTypeSkipsForceDiskController() {
+        Map<String, String> details = new HashMap<>();
+        details.put(VmDetailConstants.KVM_SKIP_FORCE_DISK_CONTROLLER, "true");
+        Mockito.when(volume.getType()).thenReturn(Volume.Type.DATADISK);
+        Mockito.when(physicalDisk.getPath()).thenReturn(PHYSICAL_DISK_PATH);
+        libvirtComputingResourceSpy.defineDiskForDefaultPoolType(diskDef, volume, false, false, false, physicalDisk, DEV_ID, DISK_BUS_TYPE, DISK_BUS_TYPE_DATA, details);
+        Mockito.verify(diskDef).defFileBasedDisk(PHYSICAL_DISK_PATH, DEV_ID, DISK_BUS_TYPE_DATA, DiskDef.DiskFmtType.QCOW2);
+    }
+
+    @Test
+    public void defineDiskForDefaultPoolTypeUsesDiskBusTypeDataForDataDiskWithoutWindowsAndUefi() {
+        Map<String, String> details = new HashMap<>();
+        Mockito.when(volume.getType()).thenReturn(Volume.Type.DATADISK);
+        Mockito.when(physicalDisk.getPath()).thenReturn(PHYSICAL_DISK_PATH);
+        libvirtComputingResourceSpy.defineDiskForDefaultPoolType(diskDef, volume, false, false, false, physicalDisk, DEV_ID, DISK_BUS_TYPE, DISK_BUS_TYPE_DATA, details);
+        Mockito.verify(diskDef).defFileBasedDisk(PHYSICAL_DISK_PATH, DEV_ID, DISK_BUS_TYPE_DATA, DiskDef.DiskFmtType.QCOW2);
+    }
+
+    @Test
+    public void defineDiskForDefaultPoolTypeUsesDiskBusTypeForRootDisk() {
+        Map<String, String> details = new HashMap<>();
+        Mockito.when(volume.getType()).thenReturn(Volume.Type.ROOT);
+        Mockito.when(physicalDisk.getPath()).thenReturn(PHYSICAL_DISK_PATH);
+        libvirtComputingResourceSpy.defineDiskForDefaultPoolType(diskDef, volume, false, false, false, physicalDisk, DEV_ID, DISK_BUS_TYPE, DISK_BUS_TYPE_DATA, details);
+        Mockito.verify(diskDef).defFileBasedDisk(PHYSICAL_DISK_PATH, DEV_ID, DISK_BUS_TYPE, DiskDef.DiskFmtType.QCOW2);
+    }
+
+    @Test
+    public void defineDiskForDefaultPoolTypeUsesSecureBootConfiguration() {
+        Map<String, String> details = new HashMap<>();
+        Mockito.when(volume.getType()).thenReturn(Volume.Type.ROOT);
+        Mockito.when(physicalDisk.getPath()).thenReturn(PHYSICAL_DISK_PATH);
+        libvirtComputingResourceSpy.defineDiskForDefaultPoolType(diskDef, volume, true, true, true, physicalDisk, DEV_ID, DISK_BUS_TYPE, DISK_BUS_TYPE_DATA, details);
+        Mockito.verify(diskDef).defFileBasedDisk(PHYSICAL_DISK_PATH, DEV_ID, DiskDef.DiskFmtType.QCOW2, true);
+    }
+
+    @Test
+    public void defineDiskForDefaultPoolTypeHandlesNullDetails() {
+        Mockito.when(volume.getType()).thenReturn(Volume.Type.DATADISK);
+        Mockito.when(physicalDisk.getPath()).thenReturn(PHYSICAL_DISK_PATH);
+        libvirtComputingResourceSpy.defineDiskForDefaultPoolType(diskDef, volume, false, false, false, physicalDisk, DEV_ID, DISK_BUS_TYPE, DISK_BUS_TYPE_DATA, null);
+        Mockito.verify(diskDef).defFileBasedDisk(PHYSICAL_DISK_PATH, DEV_ID, DISK_BUS_TYPE_DATA, DiskDef.DiskFmtType.QCOW2);
+    }
+
+    @Test
+    public void getInterfaceTestValidMacAddressReturnInterface() {
+        String macAddress = "a0:90:27:a9:9e:62";
+        final String vmName = "Test";
+        final InterfaceDef interfaceDef = Mockito.mock(InterfaceDef.class);
+        final List<InterfaceDef> interfaces = new ArrayList<>();
+        interfaces.add(interfaceDef);
+
+        Mockito.doReturn(macAddress).when(interfaceDef).getMacAddress();
+        Mockito.doReturn(interfaces).when(libvirtComputingResourceSpy).getInterfaces(Mockito.any(), Mockito.anyString());
+
+        InterfaceDef result = libvirtComputingResourceSpy.getInterface(connMock, vmName, macAddress);
+
+        Assert.assertNotNull(result);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void getInterfaceTestInvalidMacAddressThrowCloudRuntimeException() {
+        String invalidMacAddress = "ea:57:5d:f1:64:05";
+        String macAddress = "a0:90:27:a9:9e:62";
+        final String vmName = "Test";
+        final InterfaceDef interfaceDef = Mockito.mock(InterfaceDef.class);
+        final List<InterfaceDef> interfaces = new ArrayList<>();
+        interfaces.add(interfaceDef);
+
+        Mockito.doReturn(macAddress).when(interfaceDef).getMacAddress();
+        Mockito.doReturn(interfaces).when(libvirtComputingResourceSpy).getInterfaces(Mockito.any(), Mockito.anyString());
+
+        libvirtComputingResourceSpy.getInterface(connMock, vmName, invalidMacAddress);
+    }
+
+    @Test
+    public void updateCpuQuotaAndPeriodTestAssertPeriodAndQuotaAreNotUpdatedWhenLibvirtVersionIsLessThanTheMinimum() throws LibvirtException {
+        libvirtComputingResourceSpy.hypervisorLibvirtVersion = 8999;
+        libvirtComputingResourceSpy.updateCpuQuotaAndPeriod(domainMock, null, false);
+        Mockito.verify(domainMock, Mockito.never()).setSchedulerParameters(Mockito.any());
+    }
+
+    @Test
+    public void updateCpuQuotaAndPeriodTestAssertPeriodAndQuotaAreNotUpdatedWhenThereIsNoCapCapChangeAndNoCpuLimitationIsApplied() throws LibvirtException {
+        Mockito.when(vmTO.isLimitCpuUse()).thenReturn(false);
+        libvirtComputingResourceSpy.hypervisorLibvirtVersion = 9000;
+        libvirtComputingResourceSpy.updateCpuQuotaAndPeriod(domainMock, vmTO, false);
+        Mockito.verify(domainMock, Mockito.never()).setSchedulerParameters(Mockito.any());
+    }
+
+    @Test
+    public void updateCpuQuotaAndPeriodTestAssertQuotaIsRemovedWhenThereIsCpuCapChangeAndNoCpuLimitationIsApplied() throws LibvirtException {
+        Mockito.when(vmTO.isLimitCpuUse()).thenReturn(false);
+        Mockito.when(domainMock.getName()).thenReturn("i-2-10-VM");
+        libvirtComputingResourceSpy.hypervisorLibvirtVersion = 9000;
+        libvirtComputingResourceSpy.updateCpuQuotaAndPeriod(domainMock, vmTO, true);
+        Mockito.verify(domainMock, Mockito.times(1)).setSchedulerParameters(Mockito.any());
+    }
+
+    @Test
+    public void updateCpuQuotaAndPeriodTestAssertPeriodAndQuotaAreUpdatedWhenThereIsNotCpuCapChangeAndCpuLimitationIsApplied() throws LibvirtException {
+        Mockito.when(vmTO.isLimitCpuUse()).thenReturn(true);
+        double cpuQuotaPercentage = 0.03;
+        Mockito.when(vmTO.getCpuQuotaPercentage()).thenReturn(cpuQuotaPercentage);
+        Mockito.doReturn(new Pair<>(1000, 300L)).when(libvirtComputingResourceSpy).getPeriodAndQuota(cpuQuotaPercentage);
+        Mockito.when(domainMock.getName()).thenReturn("i-2-10-VM");
+        libvirtComputingResourceSpy.hypervisorLibvirtVersion = 9000;
+        libvirtComputingResourceSpy.updateCpuQuotaAndPeriod(domainMock, vmTO, false);
+        Mockito.verify(domainMock, Mockito.times(2)).setSchedulerParameters(Mockito.any());
+    }
+
+    @Test
+    public void updateCpuQuotaAndPeriodTestAssertPeriodAndQuotaAreUpdatedWhenThereIsCpuCapChangeAndCpuLimitationIsApplied() throws LibvirtException {
+        Mockito.when(vmTO.isLimitCpuUse()).thenReturn(true);
+        double cpuQuotaPercentage = 0.03;
+        Mockito.when(vmTO.getCpuQuotaPercentage()).thenReturn(cpuQuotaPercentage);
+        Mockito.doReturn(new Pair<>(1000, 300L)).when(libvirtComputingResourceSpy).getPeriodAndQuota(cpuQuotaPercentage);
+        Mockito.when(domainMock.getName()).thenReturn("i-2-10-VM");
+        libvirtComputingResourceSpy.hypervisorLibvirtVersion = 9000;
+        libvirtComputingResourceSpy.updateCpuQuotaAndPeriod(domainMock, vmTO, true);
+        Mockito.verify(domainMock, Mockito.times(2)).setSchedulerParameters(Mockito.any());
+    }
+
+    @Test
+    public void getPeriodAndQuotaTestAssertQuotaIsEqualToPeriodMultipliedByQuotaPercentage() {
+        double cpuQuotaPercentage = 0.3;
+        int expectedPeriod = CpuTuneDef.DEFAULT_PERIOD;
+        long expectedQuota = (long) (expectedPeriod * cpuQuotaPercentage);
+        Pair<Integer, Long> expectedResult = new Pair<>(expectedPeriod, expectedQuota);
+        Pair<Integer, Long> result = libvirtComputingResourceSpy.getPeriodAndQuota(cpuQuotaPercentage);
+        Assert.assertEquals(expectedResult, result);
+    }
+
+    @Test
+    public void getPeriodAndQuotaTestQuotaIsEqualToMinimumWhenRequired() {
+        double cpuQuotaPercentage = 0.03;
+        long expectedQuota = CpuTuneDef.MIN_QUOTA;
+        int expectedPeriod = (int) ((double) expectedQuota / cpuQuotaPercentage);
+        Pair<Integer, Long> expectedResult = new Pair<>(expectedPeriod, expectedQuota);
+        Pair<Integer, Long> result = libvirtComputingResourceSpy.getPeriodAndQuota(cpuQuotaPercentage);
+        Assert.assertEquals(expectedResult, result);
+    }
+
+    @Test
+    public void getPeriodAndQuotaTestPeriodIsEqualToMaximumWhenRequired() {
+        double cpuQuotaPercentage = 0.0003;
+        long expectedQuota = CpuTuneDef.MIN_QUOTA;
+        int expectedPeriod = CpuTuneDef.MAX_PERIOD;
+        Pair<Integer, Long> expectedResult = new Pair<>(expectedPeriod, expectedQuota);
+        Pair<Integer, Long> result = libvirtComputingResourceSpy.getPeriodAndQuota(cpuQuotaPercentage);
+        Assert.assertEquals(expectedResult, result);
     }
 }

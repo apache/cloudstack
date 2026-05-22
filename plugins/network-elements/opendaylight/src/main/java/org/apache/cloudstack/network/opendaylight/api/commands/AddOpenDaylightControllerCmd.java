@@ -83,7 +83,7 @@ public class AddOpenDaylightControllerCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Adding OpenDaylight controller";
+        return "Adding OpenDaylight controller to physical network with ID: " + getResourceUuid(ApiConstants.PHYSICAL_NETWORK_ID);
     }
 
     public Long getPhysicalNetworkId() {

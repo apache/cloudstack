@@ -32,5 +32,4 @@ public interface BackupRepositoryService {
     BackupRepository updateBackupRepository(UpdateBackupRepositoryCmd cmd);
     boolean deleteBackupRepository(DeleteBackupRepositoryCmd cmd);
     Pair<List<BackupRepository>, Integer> listBackupRepositories(ListBackupRepositoriesCmd cmd);
-
 }

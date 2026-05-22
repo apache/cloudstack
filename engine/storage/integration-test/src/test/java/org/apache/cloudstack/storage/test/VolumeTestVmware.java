@@ -247,7 +247,7 @@ public class VolumeTestVmware extends CloudStackTestNGBase {
         to.setPath(this.getImageInstallPath());
         CopyCmdAnswer answer = new CopyCmdAnswer(to);
         templateOnStore.processEvent(Event.CreateOnlyRequested);
-        templateOnStore.processEvent(Event.OperationSuccessed, answer);
+        templateOnStore.processEvent(Event.OperationSucceeded, answer);
 
     }
 

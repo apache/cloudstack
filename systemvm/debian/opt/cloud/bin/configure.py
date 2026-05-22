@@ -1233,17 +1233,21 @@ class CsRemoteAccessVpn(CsDataBag):
                 CsHelper.start_if_stopped("ipsec")
 
                 logging.debug("Remote accessvpn  data bag %s",  self.dbag)
+                config_changed = False
                 if not self.config.has_public_network():
                     interface = self.config.address().get_guest_if_by_network_id()
                     if interface:
-                        self.configure_l2tpIpsec(interface.get_ip(), self.dbag[public_ip])
+                        config_changed = self.configure_l2tpIpsec(interface.get_ip(), self.dbag[public_ip])
                         self.remoteaccessvpn_iptables(interface.get_device(), interface.get_ip(), self.dbag[public_ip])
                 else:
-                    self.configure_l2tpIpsec(public_ip, self.dbag[public_ip])
+                    config_changed = self.configure_l2tpIpsec(public_ip, self.dbag[public_ip])
                     self.remoteaccessvpn_iptables(self.dbag[public_ip]['public_interface'], public_ip, self.dbag[public_ip])
 
                 CsHelper.execute("ipsec update")
-                CsHelper.execute("systemctl start xl2tpd")
+                if config_changed:
+                    CsHelper.execute("systemctl restart xl2tpd")
+                else:
+                    CsHelper.execute("systemctl start xl2tpd")
                 CsHelper.execute("ipsec rereadsecrets")
             else:
                 logging.debug("Disabling remote access vpn .....")
@@ -1266,21 +1270,23 @@ class CsRemoteAccessVpn(CsDataBag):
         l2tpfile = CsFile(l2tpconffile)
         l2tpfile.addeq(" left=%s" % left)
         l2tpfile.addeq(" leftid=%s" % obj['vpn_server_ip'])
-        l2tpfile.commit()
+        l2tp_changed = l2tpfile.commit()
 
         secret = CsFile(vpnsecretfilte)
         secret.empty()
         secret.addeq(": PSK \"%s\"" % (psk))
-        secret.commit()
+        secret_changed = secret.commit()
 
         xl2tpdconf = CsFile(xl2tpdconffile)
         xl2tpdconf.addeq("ip range = %s" % iprange)
         xl2tpdconf.addeq("local ip = %s" % localip)
-        xl2tpdconf.commit()
+        xl2tpd_changed = xl2tpdconf.commit()
 
         xl2tpoptions = CsFile(xl2tpoptionsfile)
         xl2tpoptions.search("ms-dns ", "ms-dns %s" % localip)
-        xl2tpoptions.commit()
+        xl2tpoptions_changed = xl2tpoptions.commit()
+
+        return l2tp_changed or secret_changed or xl2tpd_changed or xl2tpoptions_changed
 
     def remoteaccessvpn_iptables(self, publicdev, publicip, obj):
         localcidr = obj['local_cidr']

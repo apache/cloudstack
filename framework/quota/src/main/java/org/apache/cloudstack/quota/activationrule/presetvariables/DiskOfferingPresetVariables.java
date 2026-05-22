@@ -61,7 +61,6 @@ public class DiskOfferingPresetVariables extends GenericPresetVariable {
 
     public void setBytesReadRate(Long bytesReadRate) {
         this.bytesReadRate = bytesReadRate;
-        fieldNamesToIncludeInToString.add("bytesReadRate");
     }
 
     public Long getBytesReadBurst() {
@@ -70,7 +69,6 @@ public class DiskOfferingPresetVariables extends GenericPresetVariable {
 
     public void setBytesReadBurst(Long bytesReadBurst) {
         this.bytesReadBurst = bytesReadBurst;
-        fieldNamesToIncludeInToString.add("bytesReadBurst");
     }
 
     public Long getBytesReadBurstLength() {
@@ -79,7 +77,6 @@ public class DiskOfferingPresetVariables extends GenericPresetVariable {
 
     public void setBytesReadBurstLength(Long bytesReadBurstLength) {
         this.bytesReadBurstLength = bytesReadBurstLength;
-        fieldNamesToIncludeInToString.add("bytesReadBurstLength");
     }
 
     public Long getBytesWriteRate() {
@@ -88,7 +85,6 @@ public class DiskOfferingPresetVariables extends GenericPresetVariable {
 
     public void setBytesWriteRate(Long bytesWriteRate) {
         this.bytesWriteRate = bytesWriteRate;
-        fieldNamesToIncludeInToString.add("bytesWriteRate");
     }
 
     public Long getBytesWriteBurst() {
@@ -97,7 +93,6 @@ public class DiskOfferingPresetVariables extends GenericPresetVariable {
 
     public void setBytesWriteBurst(Long bytesWriteBurst) {
         this.bytesWriteBurst = bytesWriteBurst;
-        fieldNamesToIncludeInToString.add("bytesWriteBurst");
     }
 
     public Long getBytesWriteBurstLength() {
@@ -106,7 +101,6 @@ public class DiskOfferingPresetVariables extends GenericPresetVariable {
 
     public void setBytesWriteBurstLength(Long bytesWriteBurstLength) {
         this.bytesWriteBurstLength = bytesWriteBurstLength;
-        fieldNamesToIncludeInToString.add("bytesWriteBurstLength");
     }
 
     public Long getIopsReadRate() {
@@ -115,7 +109,6 @@ public class DiskOfferingPresetVariables extends GenericPresetVariable {
 
     public void setIopsReadRate(Long iopsReadRate) {
         this.iopsReadRate = iopsReadRate;
-        fieldNamesToIncludeInToString.add("iopsReadRate");
     }
 
     public Long getIopsReadBurst() {
@@ -124,7 +117,6 @@ public class DiskOfferingPresetVariables extends GenericPresetVariable {
 
     public void setIopsReadBurst(Long iopsReadBurst) {
         this.iopsReadBurst = iopsReadBurst;
-        fieldNamesToIncludeInToString.add("iopsReadBurst");
     }
 
     public Long getIopsReadBurstLength() {
@@ -133,7 +125,6 @@ public class DiskOfferingPresetVariables extends GenericPresetVariable {
 
     public void setIopsReadBurstLength(Long iopsReadBurstLength) {
         this.iopsReadBurstLength = iopsReadBurstLength;
-        fieldNamesToIncludeInToString.add("iopsReadBurstLength");
     }
 
     public Long getIopsWriteRate() {
@@ -142,7 +133,6 @@ public class DiskOfferingPresetVariables extends GenericPresetVariable {
 
     public void setIopsWriteRate(Long iopsWriteRate) {
         this.iopsWriteRate = iopsWriteRate;
-        fieldNamesToIncludeInToString.add("iopsWriteRate");
     }
 
     public Long getIopsWriteBurst() {
@@ -151,7 +141,6 @@ public class DiskOfferingPresetVariables extends GenericPresetVariable {
 
     public void setIopsWriteBurst(Long iopsWriteBurst) {
         this.iopsWriteBurst = iopsWriteBurst;
-        fieldNamesToIncludeInToString.add("iopsWriteBurst");
     }
 
     public Long getIopsWriteBurstLength() {
@@ -160,6 +149,5 @@ public class DiskOfferingPresetVariables extends GenericPresetVariable {
 
     public void setIopsWriteBurstLength(Long iopsWriteBurstLength) {
         this.iopsWriteBurstLength = iopsWriteBurstLength;
-        fieldNamesToIncludeInToString.add("iopsWriteBurstLength");
     }
 }

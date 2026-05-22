@@ -30,6 +30,5 @@ public class Configuration extends GenericPresetVariable{
 
     public void setForceHa(boolean forceHa) {
         this.forceHa = forceHa;
-        fieldNamesToIncludeInToString.add("forceHa");
     }
 }

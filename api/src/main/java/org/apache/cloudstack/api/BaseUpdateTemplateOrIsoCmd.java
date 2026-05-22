@@ -42,7 +42,7 @@ public abstract class BaseUpdateTemplateOrIsoCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TemplateResponse.class, required = true, description = "The ID of the image file")
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the image file")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, length = 251, description = "The name of the image file")
     private String templateName;
 
     @Parameter(name = ApiConstants.OS_TYPE_ID,
@@ -153,8 +153,8 @@ public abstract class BaseUpdateTemplateOrIsoCmd extends BaseCmd {
         return (Map) (paramsCollection.toArray())[0];
     }
 
-    public boolean isCleanupDetails(){
-        return cleanupDetails == null ? false : cleanupDetails.booleanValue();
+    public boolean isCleanupDetails() {
+        return cleanupDetails != null && cleanupDetails;
     }
 
     public CPU.CPUArch getCPUArch() {

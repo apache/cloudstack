@@ -257,9 +257,9 @@ public class SecondaryStorageServiceImpl implements SecondaryStorageService {
                 }
             } else {
                 if (destData instanceof  VolumeInfo) {
-                    ((VolumeInfo) destData).processEventOnly(ObjectInDataStoreStateMachine.Event.OperationSuccessed, answer);
+                    ((VolumeInfo) destData).processEventOnly(ObjectInDataStoreStateMachine.Event.OperationSucceeded, answer);
                 } else {
-                    destData.processEvent(ObjectInDataStoreStateMachine.Event.OperationSuccessed, answer);
+                    destData.processEvent(ObjectInDataStoreStateMachine.Event.OperationSucceeded, answer);
                 }
                 updateDataObject(srcData, destData);
                 logger.debug("Deleting source data");
@@ -280,7 +280,7 @@ public class SecondaryStorageServiceImpl implements SecondaryStorageService {
     private void updateDataObject(DataObject srcData, DataObject destData) {
         if (destData instanceof SnapshotInfo) {
             SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findBySourceSnapshot(srcData.getId(), DataStoreRole.Image);
-            SnapshotDataStoreVO destSnapshotStore = snapshotStoreDao.findByStoreSnapshot(DataStoreRole.Image, srcData.getDataStore().getId(), srcData.getId());
+            SnapshotDataStoreVO destSnapshotStore = snapshotStoreDao.findByStoreSnapshot(DataStoreRole.Image, destData.getDataStore().getId(), destData.getId());
             if (snapshotStore != null && destSnapshotStore != null) {
                 destSnapshotStore.setPhysicalSize(snapshotStore.getPhysicalSize());
                 destSnapshotStore.setCreated(snapshotStore.getCreated());

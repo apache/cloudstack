@@ -233,7 +233,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
             makeResourceAvailable(api, foundRscName, false);
 
             if (!resources.isEmpty() && !resources.get(0).getVolumes().isEmpty()) {
-                final String devPath = resources.get(0).getVolumes().get(0).getDevicePath();
+                final String devPath = LinstorUtil.getDevicePathFromResource(resources.get(0));
                 logger.info("Linstor: Created drbd device: " + devPath);
                 final KVMPhysicalDisk kvmDisk = new KVMPhysicalDisk(devPath, name, pool);
                 kvmDisk.setFormat(QemuImg.PhysicalDiskFormat.RAW);
@@ -456,8 +456,9 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     private Optional<ResourceWithVolumes> getResourceByPathOrName(
             final List<ResourceWithVolumes> resources, String path) {
         return resources.stream()
-            .filter(rsc -> getLinstorRscName(path).equalsIgnoreCase(rsc.getName()) || rsc.getVolumes().stream()
-                .anyMatch(v -> path.equals(v.getDevicePath())))
+            .filter(rsc -> getLinstorRscName(path).equalsIgnoreCase(rsc.getName()) ||
+                    path.equals(LinstorUtil.formatDrbdByResDevicePath(rsc.getName())) ||
+                    rsc.getVolumes().stream().anyMatch(v -> path.equals(v.getDevicePath())))
             .findFirst();
     }
 
@@ -513,6 +514,17 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
                 ApiCallRcList answers = api.resourceDefinitionDelete(rd.getName());
                 checkLinstorAnswersThrow(answers);
                 deleted = true;
+
+                // LINSTOR can return success here while the resource lingers in DELETING state
+                // on the controller (down peer, lost quorum, etc.). Confirm it's actually gone
+                // — if not, log a WARN so operators can clear it manually. Don't throw: the
+                // CloudStack-side accounting has already moved on.
+                if (!LinstorUtil.waitForResourceDefinitionDeleted(api, rd.getName(),
+                        LinstorUtil.DEFAULT_RD_DELETE_VERIFY_TIMEOUT_MILLIS)) {
+                    logger.warn("Linstor: resource {} still present {}ms after delete returned success — " +
+                            "may be stuck in DELETING. Check the LINSTOR controller (linstor resource list).",
+                            rd.getName(), LinstorUtil.DEFAULT_RD_DELETE_VERIFY_TIMEOUT_MILLIS);
+                }
             }
         }
         return deleted;
@@ -584,8 +596,8 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         Path propFile = diskPath.getParent().resolve("template.properties");
         if (Files.exists(propFile)) {
             java.util.Properties templateProps = new java.util.Properties();
-            try {
-                templateProps.load(new FileInputStream(propFile.toFile()));
+            try (FileInputStream in = new FileInputStream(propFile.toFile())) {
+                templateProps.load(in);
                 String desc = templateProps.getProperty("description");
                 if (desc != null && desc.startsWith("SystemVM Template")) {
                     return true;

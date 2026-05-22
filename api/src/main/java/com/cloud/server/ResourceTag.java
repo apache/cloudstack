@@ -16,13 +16,13 @@
 // under the License.
 package com.cloud.server;
 
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
-
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
 public interface ResourceTag extends ControlledEntity, Identity, InternalIdentity {
 
@@ -70,7 +70,7 @@ public interface ResourceTag extends ControlledEntity, Identity, InternalIdentit
         GuestOs(false, true),
         NetworkOffering(false, true),
         VpcOffering(true, false),
-        Domain(false, false, true),
+        Domain(true, false, true),
         ObjectStore(false, false, true);
 
 

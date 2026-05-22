@@ -82,7 +82,7 @@ public class RevokeSecurityGroupEgressCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "revoking egress rule id: " + getId();
+        return "Revoking egress rule with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

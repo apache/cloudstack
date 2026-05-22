@@ -39,7 +39,6 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.VirtualMachineMigrationException;
-import com.cloud.offering.ServiceOffering;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
@@ -148,7 +147,7 @@ public class ScaleVMCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return  "Upgrading Instance: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()) + " to service offering: " + this._uuidMgr.getUuid(ServiceOffering.class, getServiceOfferingId());
+        return  "Upgrading Instance with ID: " + getResourceUuid(ApiConstants.ID) + " to service offering with ID: " + getResourceUuid(ApiConstants.SERVICE_OFFERING_ID);
     }
 
     @Override

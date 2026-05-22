@@ -94,7 +94,7 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
         if (snapshot == null) { //snapshot may have been removed;
             return new ArrayList<>();
         }
-        List<SnapshotDataStoreVO> allSnapshotsAndDataStore = snapshotStoreDao.findBySnapshotId(snapshotId);
+        List<SnapshotDataStoreVO> allSnapshotsAndDataStore = snapshotStoreDao.findBySnapshotIdWithNonDestroyedState(snapshotId);
         if (CollectionUtils.isEmpty(allSnapshotsAndDataStore)) {
             return new ArrayList<>();
         }
@@ -118,7 +118,23 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
         if (snapshot == null) {
             return null;
         }
-        SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findByStoreSnapshot(role, storeId, snapshotId);
+        return getSnapshotOnStore(snapshot, storeId, role);
+    }
+
+    @Override
+    public SnapshotInfo getSnapshotIncludingRemoved(long snapshotId, long storeId, DataStoreRole role) {
+        SnapshotVO snapshot = snapshotDao.findByIdIncludingRemoved(snapshotId);
+        if (snapshot == null) {
+            return null;
+        }
+        return getSnapshotOnStore(snapshot, storeId, role);
+    }
+
+    private SnapshotInfo getSnapshotOnStore(SnapshotVO snapshot, long storeId, DataStoreRole role) {
+        if (snapshot == null) {
+            return null;
+        }
+        SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findByStoreSnapshot(role, storeId, snapshot.getId());
         if (snapshotStore == null) {
             return null;
         }
@@ -207,7 +223,7 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
 
     @Override
     public void updateOperationFailed(long snapshotId) throws NoTransitionException {
-        List<SnapshotDataStoreVO> snapshotStoreRefs = snapshotStoreDao.findBySnapshotId(snapshotId);
+        List<SnapshotDataStoreVO> snapshotStoreRefs = snapshotStoreDao.findBySnapshotIdWithNonDestroyedState(snapshotId);
         for (SnapshotDataStoreVO snapshotStoreRef : snapshotStoreRefs) {
             SnapshotInfo snapshotInfo = getSnapshot(snapshotStoreRef.getSnapshotId(), snapshotStoreRef.getDataStoreId(), snapshotStoreRef.getRole());
             if (snapshotInfo != null) {

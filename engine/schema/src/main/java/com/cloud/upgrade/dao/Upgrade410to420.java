@@ -1947,7 +1947,7 @@ public class Upgrade410to420 extends DbUpgradeAbstractImpl {
 
                 Map<String, String> detailMap = new HashMap<String, String>();
                 detailMap.put(ApiConstants.S3_ACCESS_KEY, s3_accesskey);
-                detailMap.put(ApiConstants.S3_SECRET_KEY, s3_secretkey);
+                detailMap.put(ApiConstants.SECRET_KEY, s3_secretkey);
                 detailMap.put(ApiConstants.S3_BUCKET_NAME, s3_bucket);
                 detailMap.put(ApiConstants.S3_END_POINT, s3_endpoint);
                 detailMap.put(ApiConstants.S3_HTTPS_FLAG, String.valueOf(s3_https));

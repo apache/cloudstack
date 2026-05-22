@@ -146,6 +146,7 @@ jobs:
                   smoke/test_vm_snapshot_kvm
                   smoke/test_vm_snapshots
                   smoke/test_volumes
+                  smoke/test_vpc_conserve_mode
                   smoke/test_vpc_ipv6
                   smoke/test_vpc_redundant
                   smoke/test_vpc_router_nics
@@ -216,7 +217,7 @@ jobs:
                   smoke/test_list_volumes"]
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -340,7 +341,7 @@ jobs:
           echo -e "Simulator CI Test Results: (only failures listed)\n"
           python3 ./tools/marvin/xunit-reader.py integration-test-results/
 
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v6
         with:
           files: jacoco-coverage.xml
           fail_ci_if_error: true

@@ -58,7 +58,7 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
     private Integer publicEndPort;
 
     @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "The CIDR list to allow traffic from/to. Multiple entries must be separated by a single comma character (,).")
-    private List<String> cidrlist;
+    private List<String> cidrList;
 
     @Parameter(name = ApiConstants.ICMP_TYPE, type = CommandType.INTEGER, description = "Type of the ICMP message being sent")
     private Integer icmpType;
@@ -118,8 +118,8 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
     }
 
     public List<String> getSourceCidrList() {
-        if (cidrlist != null) {
-            return cidrlist;
+        if (cidrList != null) {
+            return cidrList;
         } else {
             List<String> oneCidrList = new ArrayList<String>();
             oneCidrList.add(NetUtils.ALL_IP4_CIDRS);
@@ -238,6 +238,30 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
         return reason;
     }
 
+    public void setCidrList(List<String> cidrList) {
+        this.cidrList = cidrList;
+    }
+
+    public void setIcmpType(Integer icmpType) {
+        this.icmpType = icmpType;
+    }
+
+    public void setIcmpCode(Integer icmpCode) {
+        this.icmpCode = icmpCode;
+    }
+
+    public void setNumber(Integer number) {
+        this.number = number;
+    }
+
+    public void setDisplay(Boolean display) {
+        this.display = display;
+    }
+
+    public void setReason(String reason) {
+        this.reason = reason;
+    }
+
     @Override
     public void create() {
         NetworkACLItem result = _networkACLService.createNetworkACLItem(this);
@@ -250,7 +274,7 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
         boolean success = false;
         NetworkACLItem rule = _networkACLService.getNetworkACLItem(getEntityId());
         try {
-            CallContext.current().setEventDetails("Rule ID: " + getEntityId());
+            CallContext.current().setEventDetails("Rule ID: " + getEntityUuid());
             success = _networkACLService.applyNetworkACL(rule.getAclId());
 
             // State is different after the rule is applied, so get new object here

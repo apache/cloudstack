@@ -50,6 +50,7 @@
       <template #network="{ record }">
         <a-form-item style="display: block" :name="'nic-' + record.deviceid">
           <a-select
+            disabled="templateNics && templateNics.length > 0"
             @change="updateNicNetworkValue($event, record.deviceid)"
             optionFilterProp="label"
             :filterOption="(input, option) => {
@@ -72,6 +73,10 @@ export default {
   name: 'VnfNicsSelection',
   props: {
     items: {
+      type: Array,
+      default: () => []
+    },
+    templateNics: {
       type: Array,
       default: () => []
     },

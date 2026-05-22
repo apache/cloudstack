@@ -99,27 +99,30 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
         stateMachines.addTransition(State.Allocated, Event.CreateOnlyRequested, State.Creating);
         stateMachines.addTransition(State.Allocated, Event.DestroyRequested, State.Destroying);
         stateMachines.addTransition(State.Allocated, Event.OperationFailed, State.Failed);
-        stateMachines.addTransition(State.Allocated, Event.OperationSuccessed, State.Ready);
+        stateMachines.addTransition(State.Allocated, Event.OperationSucceeded, State.Ready);
         stateMachines.addTransition(State.Creating, Event.OperationFailed, State.Allocated);
-        stateMachines.addTransition(State.Creating, Event.OperationSuccessed, State.Ready);
+        stateMachines.addTransition(State.Creating, Event.OperationSucceeded, State.Ready);
         stateMachines.addTransition(State.Ready, Event.CopyingRequested, State.Copying);
-        stateMachines.addTransition(State.Copying, Event.OperationSuccessed, State.Ready);
+        stateMachines.addTransition(State.Copying, Event.OperationSucceeded, State.Ready);
         stateMachines.addTransition(State.Copying, Event.OperationFailed, State.Ready);
         stateMachines.addTransition(State.Ready, Event.DestroyRequested, State.Destroying);
         stateMachines.addTransition(State.Destroying, Event.DestroyRequested, State.Destroying);
-        stateMachines.addTransition(State.Destroying, Event.OperationSuccessed, State.Destroyed);
+        stateMachines.addTransition(State.Destroying, Event.OperationSucceeded, State.Destroyed);
         stateMachines.addTransition(State.Destroying, Event.OperationFailed, State.Destroying);
+        stateMachines.addTransition(State.Destroyed, Event.DestroyRequested, State.Destroyed);
+        stateMachines.addTransition(State.Destroyed, Event.OperationSucceeded, State.Destroyed);
+        stateMachines.addTransition(State.Destroyed, Event.OperationFailed, State.Destroyed);
         stateMachines.addTransition(State.Failed, Event.DestroyRequested, State.Destroying);
         // TODO: further investigate why an extra event is sent when it is
         // already Ready for DownloadListener
-        stateMachines.addTransition(State.Ready, Event.OperationSuccessed, State.Ready);
+        stateMachines.addTransition(State.Ready, Event.OperationSucceeded, State.Ready);
         // State transitions for data object migration
         stateMachines.addTransition(State.Ready, Event.MigrateDataRequested, State.Migrating);
         stateMachines.addTransition(State.Ready, Event.CopyRequested, State.Copying);
         stateMachines.addTransition(State.Allocated, Event.MigrateDataRequested, State.Migrating);
         stateMachines.addTransition(State.Migrating, Event.MigrationFailed, State.Failed);
         stateMachines.addTransition(State.Migrating, Event.MigrationSucceeded, State.Destroyed);
-        stateMachines.addTransition(State.Migrating, Event.OperationSuccessed, State.Ready);
+        stateMachines.addTransition(State.Migrating, Event.OperationSucceeded, State.Ready);
         stateMachines.addTransition(State.Migrating, Event.OperationFailed, State.Ready);
         stateMachines.addTransition(State.Hidden, Event.DestroyRequested, State.Destroying);
     }
@@ -360,9 +363,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                     break;
             }
         } else if (data.getType() == DataObjectType.TEMPLATE && data.getDataStore().getRole() == DataStoreRole.Primary) {
-
             result = this.stateMachines.transitTo(obj, event, null, templatePoolDao);
-
         } else if (data.getType() == DataObjectType.SNAPSHOT && data.getDataStore().getRole() == DataStoreRole.Primary) {
             result = this.stateMachines.transitTo(obj, event, null, snapshotDataStoreDao);
         } else {
@@ -422,7 +423,5 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
         }
 
         return vo;
-
     }
-
 }

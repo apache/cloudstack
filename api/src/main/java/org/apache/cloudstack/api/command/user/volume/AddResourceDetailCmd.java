@@ -90,7 +90,7 @@ public class AddResourceDetailCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "adding details to the resource ";
+        return "Adding details to the resource ";
     }
 
     @Override

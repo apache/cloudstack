@@ -100,7 +100,7 @@ public class DeleteNiciraNvpDeviceCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Deleting Nicira Nvp Controller";
+        return "Deleting Nicira NVP Controller with ID: " + getResourceUuid(ApiConstants.NICIRA_NVP_DEVICE_ID);
     }
 
 }

@@ -202,7 +202,7 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
         sc.setParameters("dataCenterId", dataCenterId);
         sc.setParameters("protocol", protocol);
         sc.setParameters("role", DataStoreRole.Image);
-        Filter filter = new Filter(1);
+        Filter filter = new Filter(1, true);
         List<ImageStoreVO> results =  listBy(sc, filter);
         return results.size() == 0 ? null : results.get(0);
     }

@@ -116,6 +116,42 @@
             :placeholder="apiParams.maxiops.description"/>
         </a-form-item>
       </span>
+      <a-form-item name="createOnStorage" ref="createOnStorage" v-if="showStoragePoolSelect">
+        <template #label>
+          <tooltip-label :title="$t('label.create.on.storage')" :tooltip="$t('label.create.volume.on.primary.storage')" />
+        </template>
+        <a-switch
+          v-model:checked="form.createOnStorage"
+          :checked="createOnStorage"
+          @change="onChangeCreateOnStorage" />
+      </a-form-item>
+      <span v-if="showStoragePoolSelect && createOnStorage">
+        <a-form-item ref="storageid" name="storageid">
+          <template #label>
+            <tooltip-label :title="$t('label.storageid')" />
+          </template>
+          <a-select
+            v-model:value="form.storageid"
+            :loading="loading"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option
+              v-for="(pool, index) in storagePools"
+              :value="pool.id"
+              :key="index"
+              :label="pool.name">
+              <span>
+                <resource-icon v-if="pool.icon" :image="pool.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <hdd-outlined v-else style="margin-right: 5px"/>
+                {{ pool.name }}
+              </span>
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+      </span>
       <a-form-item name="attachVolume" ref="attachVolume" v-if="!createVolumeFromVM">
         <template #label>
           <tooltip-label :title="$t('label.action.attach.to.instance')" :tooltip="$t('label.attach.vol.to.instance')" />
@@ -170,6 +206,7 @@
 import { ref, reactive, toRaw } from 'vue'
 import { getAPI, postAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
+import { isAdmin } from '@/role'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import OwnershipSelection from '@/views/compute/wizard/OwnershipSelection.vue'
@@ -203,11 +240,16 @@ export default {
       loading: false,
       isCustomizedDiskIOps: false,
       virtualmachines: [],
+      createOnStorage: false,
+      storagePools: [],
       attachVolume: false,
       vmidtoattach: null
     }
   },
   computed: {
+    showStoragePoolSelect () {
+      return isAdmin() && !this.createVolumeFromSnapshot
+    },
     createVolumeFromVM () {
       return this.$route.path.startsWith('/vm/')
     },
@@ -272,7 +314,9 @@ export default {
         }
         this.owner.projectid = OwnerOptions.selectedProject
       }
-      this.fetchData()
+      if (OwnerOptions.initialized) {
+        this.fetchData()
+      }
     },
     fetchData () {
       if (this.createVolumeFromSnapshot) {
@@ -297,6 +341,9 @@ export default {
         this.zones = json.listzonesresponse.zone || []
         this.form.zoneid = this.zones[0].id || ''
         this.fetchDiskOfferings(this.form.zoneid)
+        if (this.createOnStorage) {
+          this.fetchStoragePools(this.form.zoneid)
+        }
         if (this.attachVolume) {
           this.fetchVirtualMachines(this.form.zoneid)
         }
@@ -353,6 +400,25 @@ export default {
         this.loading = false
       })
     },
+    fetchStoragePools (zoneId) {
+      if (!zoneId) {
+        this.storagePools = []
+        return
+      }
+      this.loading = true
+      getAPI('listStoragePools', {
+        zoneid: zoneId,
+        showicon: true
+      }).then(json => {
+        const pools = json.liststoragepoolsresponse.storagepool || []
+        this.storagePools = pools.filter(p => p.state === 'Up')
+      }).catch(error => {
+        this.$notifyError(error)
+        this.storagePools = []
+      }).finally(() => {
+        this.loading = false
+      })
+    },
     fetchVirtualMachines (zoneId) {
       var params = {
         zoneid: zoneId,
@@ -392,6 +458,7 @@ export default {
         if (this.customDiskOffering) {
           values.size = values.size.trim()
         }
+        delete values.createOnStorage
         if (this.createVolumeFromSnapshot) {
           values.snapshotid = this.resource.id
         }
@@ -464,6 +531,15 @@ export default {
       if (this.attachVolume) {
         this.attachVolumeApiParams = this.$getApiParams('attachVolume')
         this.fetchVirtualMachines(this.form.zoneid)
+      }
+    },
+    onChangeCreateOnStorage () {
+      this.createOnStorage = !this.createOnStorage
+      if (this.createOnStorage) {
+        this.fetchStoragePools(this.form.zoneid)
+        this.form.storageid = this.storagePools[0]?.id || undefined
+      } else {
+        this.form.storageid = undefined
       }
     }
   }

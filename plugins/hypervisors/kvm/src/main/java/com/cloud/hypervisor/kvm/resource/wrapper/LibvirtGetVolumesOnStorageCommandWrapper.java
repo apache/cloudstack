@@ -52,7 +52,7 @@ import java.util.stream.Collectors;
 public final class LibvirtGetVolumesOnStorageCommandWrapper extends CommandWrapper<GetVolumesOnStorageCommand, Answer, LibvirtComputingResource> {
 
     static final List<StoragePoolType> STORAGE_POOL_TYPES_SUPPORTED_BY_QEMU_IMG = Arrays.asList(StoragePoolType.NetworkFilesystem,
-            StoragePoolType.Filesystem, StoragePoolType.RBD);
+            StoragePoolType.Filesystem, StoragePoolType.RBD, StoragePoolType.SharedMountPoint);
 
     @Override
     public Answer execute(final GetVolumesOnStorageCommand command, final LibvirtComputingResource libvirtComputingResource) {

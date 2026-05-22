@@ -77,7 +77,7 @@ public class ReconnectHostCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "reconnecting host: " + getId();
+        return "Reconnecting host with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

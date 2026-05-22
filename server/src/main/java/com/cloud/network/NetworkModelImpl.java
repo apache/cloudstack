@@ -594,22 +594,34 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     @Override
     public String getNextAvailableMacAddressInNetwork(long networkId) throws InsufficientAddressCapacityException {
         NetworkVO network = _networksDao.findById(networkId);
-        Integer zoneIdentifier = MACIdentifier.value();
-        if (zoneIdentifier.intValue() == 0) {
-            zoneIdentifier = Long.valueOf(network.getDataCenterId()).intValue();
+        if (network == null) {
+            throw new CloudRuntimeException("Could not find network with id " + networkId);
         }
+
+        Integer zoneMacIdentifier = Long.valueOf(getMacIdentifier(network.getDataCenterId())).intValue();
         String mac;
         do {
-            mac = _networksDao.getNextAvailableMacAddress(networkId, zoneIdentifier);
+            mac = _networksDao.getNextAvailableMacAddress(networkId, zoneMacIdentifier);
             if (mac == null) {
                 throw new InsufficientAddressCapacityException("Unable to create another mac address", Network.class, networkId);
             }
-        } while(! isMACUnique(mac));
+        } while (!isMACUnique(mac, networkId));
         return mac;
     }
 
-    private boolean isMACUnique(String mac) {
-        return (_nicDao.findByMacAddress(mac) == null);
+    @Override
+    public String getUniqueMacAddress(long macAddress, long networkId, long datacenterId) throws InsufficientAddressCapacityException {
+        String macAddressStr = NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(macAddress, getMacIdentifier(datacenterId)));
+        if (!isMACUnique(macAddressStr, networkId)) {
+            macAddressStr = getNextAvailableMacAddressInNetwork(networkId);
+        }
+        return macAddressStr;
+    }
+
+    @Override
+    public boolean isMACUnique(String mac, long networkId) {
+        return (_nicDao.findByMacAddress(mac, networkId) == null);
+
     }
 
     @Override
@@ -1431,11 +1443,11 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             return null;
         }
 
+        NetworkOffering offering = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
         Long physicalNetworkId = null;
         if (effectiveTrafficType != TrafficType.Guest) {
             physicalNetworkId = getNonGuestNetworkPhysicalNetworkId(network, effectiveTrafficType);
         } else {
-            NetworkOffering offering = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
             physicalNetworkId = network.getPhysicalNetworkId();
             if (physicalNetworkId == null) {
                 physicalNetworkId = findPhysicalNetworkId(network.getDataCenterId(), offering.getTags(), offering.getTrafficType());
@@ -1448,6 +1460,10 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             return null;
         }
 
+        if (offering != null && TrafficType.Guest.equals(offering.getTrafficType()) && offering.isSystemOnly()) {
+            // For private gateway, do not check the Guest traffic type
+            return _pNTrafficTypeDao.getNetworkTag(physicalNetworkId, null, hType);
+        }
         return _pNTrafficTypeDao.getNetworkTag(physicalNetworkId, effectiveTrafficType, hType);
     }
 
@@ -2817,5 +2833,19 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             return networkWithSecurityGroup != null;
         }
         return false;
+    }
+
+    @Override
+    public long getMacIdentifier(Long dataCenterId) {
+        long macAddress = 0;
+        if (dataCenterId == null) {
+            macAddress = NetworkModel.MACIdentifier.value();
+        } else {
+            macAddress = NetworkModel.MACIdentifier.valueIn(dataCenterId);
+            if (macAddress == 0) {
+                macAddress = dataCenterId;
+            }
+        }
+        return macAddress;
     }
 }

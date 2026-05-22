@@ -301,7 +301,7 @@ CALL `cloud`.`IDEMPOTENT_DROP_FOREIGN_KEY`('cloud.service_offering','fk_service_
 CALL `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY`('cloud.service_offering', 'fk_service_offering__vgpu_profile_id', '(vgpu_profile_id)', '`vgpu_profile`(`id`)');
 
 -- Netris Plugin
-CREATE TABLE `cloud`.`netris_providers` (
+CREATE TABLE IF NOT EXISTS `cloud`.`netris_providers` (
                                             `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
                                             `uuid` varchar(40),
                                             `zone_id` bigint unsigned NOT NULL COMMENT 'Zone ID',
@@ -321,11 +321,11 @@ CREATE TABLE `cloud`.`netris_providers` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- Drop the Tungsten and NSX columns from the network offerings (replaced by checking the provider on the ntwk_offering_service_map table)
-ALTER TABLE `cloud`.`network_offerings` DROP COLUMN `for_tungsten`;
-ALTER TABLE `cloud`.`network_offerings` DROP COLUMN `for_nsx`;
+CALL `cloud`.`IDEMPOTENT_DROP_COLUMN`('cloud.network_offerings', 'for_tungsten');
+CALL `cloud`.`IDEMPOTENT_DROP_COLUMN`('cloud.network_offerings', 'for_nsx');
 
 -- Drop the Tungsten and NSX columns from the VPC offerings (replaced by checking the provider on the vpc_offering_service_map table)
-ALTER TABLE `cloud`.`vpc_offerings` DROP COLUMN `for_nsx`;
+CALL `cloud`.`IDEMPOTENT_DROP_COLUMN`('cloud.vpc_offerings', 'for_nsx');
 
 -- Add next_hop to the static_routes table
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.static_routes', 'next_hop', 'varchar(50) COMMENT "next hop of the static route" AFTER `vpc_gateway_id`');
@@ -687,22 +687,23 @@ CREATE TABLE IF NOT EXISTS `cloud`.`backup_details` (
 UPDATE `cloud`.`backups` b
 INNER JOIN `cloud`.`vm_instance` vm ON b.vm_id = vm.id
 SET b.backed_volumes = (
-    SELECT CONCAT("[",
-        GROUP_CONCAT(
-            CONCAT(
-                "{\"uuid\":\"", v.uuid, "\",",
-                "\"type\":\"", v.volume_type, "\",",
-                "\"size\":", v.`size`, ",",
-                "\"path\":\"", IFNULL(v.path, 'null'), "\",",
-                "\"deviceId\":", IFNULL(v.device_id, 'null'), ",",
-                "\"diskOfferingId\":\"", doff.uuid, "\",",
-                "\"minIops\":", IFNULL(v.min_iops, 'null'), ",",
-                "\"maxIops\":", IFNULL(v.max_iops, 'null'),
-                "}"
-            )
-            SEPARATOR ","
+    SELECT COALESCE(
+        CAST(
+            JSON_ARRAYAGG(
+                JSON_OBJECT(
+                     'uuid', v.uuid,
+                     'type', v.volume_type,
+                     'size', v.size,
+                     'path', v.path,
+                     'deviceId', v.device_id,
+                     'diskOfferingId', doff.uuid,
+                     'minIops', v.min_iops,
+                     'maxIops', v.max_iops
+                )
+            ) AS CHAR
         ),
-    "]")
+        '[]'
+    )
     FROM `cloud`.`volumes` v
     LEFT JOIN `cloud`.`disk_offering` doff ON v.disk_offering_id = doff.id
     WHERE v.instance_id = vm.id
@@ -711,22 +712,23 @@ SET b.backed_volumes = (
 -- Add diskOfferingId, deviceId, minIops and maxIops to backup_volumes in vm_instance table
 UPDATE `cloud`.`vm_instance` vm
 SET vm.backup_volumes = (
-    SELECT CONCAT("[",
-        GROUP_CONCAT(
-            CONCAT(
-                "{\"uuid\":\"", v.uuid, "\",",
-                "\"type\":\"", v.volume_type, "\",",
-                "\"size\":", v.`size`, ",",
-                "\"path\":\"", IFNULL(v.path, 'null'), "\",",
-                "\"deviceId\":", IFNULL(v.device_id, 'null'), ",",
-                "\"diskOfferingId\":\"", doff.uuid, "\",",
-                "\"minIops\":", IFNULL(v.min_iops, 'null'), ",",
-                "\"maxIops\":", IFNULL(v.max_iops, 'null'),
-                "}"
-            )
-            SEPARATOR ","
+    SELECT COALESCE(
+        CAST(
+            JSON_ARRAYAGG(
+                JSON_OBJECT(
+                     'uuid', v.uuid,
+                     'type', v.volume_type,
+                     'size', v.size,
+                     'path', v.path,
+                     'deviceId', v.device_id,
+                     'diskOfferingId', doff.uuid,
+                     'minIops', v.min_iops,
+                     'maxIops', v.max_iops
+                )
+            ) AS CHAR
         ),
-    "]")
+        '[]'
+    )
     FROM `cloud`.`volumes` v
     LEFT JOIN `cloud`.`disk_offering` doff ON v.disk_offering_id = doff.id
     WHERE v.instance_id = vm.id

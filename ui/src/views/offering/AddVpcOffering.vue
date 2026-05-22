@@ -194,6 +194,14 @@
             </a-select-option>
           </a-select>
         </a-form-item>
+        <a-form-item
+          name="conservemode"
+          ref="conservemode">
+          <template #label>
+            <tooltip-label :title="$t('label.conservemode')" :tooltip="apiParams.conservemode.description"/>
+          </template>
+          <a-switch v-model:checked="form.conservemode" />
+        </a-form-item>
         <a-form-item name="ispublic" ref="ispublic" :label="$t('label.ispublic')" v-if="isAdmin()">
           <a-switch v-model:checked="form.ispublic" />
         </a-form-item>
@@ -269,6 +277,7 @@ import { mixinForm } from '@/utils/mixin'
 import CheckBoxSelectPair from '@/components/CheckBoxSelectPair'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import { buildVpcServiceCapabilityParams } from '@/composables/useServiceCapabilityParams'
 
 export default {
   name: 'AddVpcOffering',
@@ -282,7 +291,6 @@ export default {
     return {
       selectedDomains: [],
       selectedZones: [],
-      isConserveMode: true,
       internetProtocolValue: 'ipv4',
       domains: [],
       domainLoading: false,
@@ -328,7 +336,8 @@ export default {
         description: 'Netris',
         enabled: true
       },
-      nsxSupportedServicesMap: {}
+      nsxSupportedServicesMap: {},
+      conservemode: false
     }
   },
   beforeCreate () {
@@ -719,6 +728,7 @@ export default {
           params.provider = 'Netris'
         }
         params.networkmode = values.networkmode
+        params.conservemode = values.conservemode
         if (!values.forVpc) {
           params.specifyasnumber = values.specifyasnumber
         }
@@ -733,35 +743,7 @@ export default {
             params['serviceProviderList[' + k + '].service'] = supportedServices[k]
             params['serviceProviderList[' + k + '].provider'] = this.selectedServiceProviderMap[supportedServices[k]]
           }
-          var serviceCapabilityIndex = 0
-          if (supportedServices.includes('Connectivity')) {
-            if (values.regionlevelvpc === true) {
-              params['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = 'Connectivity'
-              params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'RegionLevelVpc'
-              params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
-              serviceCapabilityIndex++
-            }
-            if (values.distributedrouter === true) {
-              params['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = 'Connectivity'
-              params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'DistributedRouter'
-              params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
-              serviceCapabilityIndex++
-            }
-          }
-          if (supportedServices.includes('SourceNat') && values.redundantrouter === true) {
-            params['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = 'SourceNat'
-            params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'RedundantRouter'
-            params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
-            serviceCapabilityIndex++
-          } else if (values.redundantrouter === true) {
-            params['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = 'Gateway'
-            params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'RedundantRouter'
-            params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
-            serviceCapabilityIndex++
-          }
-          if (values.serviceofferingid && this.isVpcVirtualRouterForAtLeastOneService) {
-            params.serviceofferingid = values.serviceofferingid
-          }
+          buildVpcServiceCapabilityParams(params, values, this.selectedServiceProviderMap, this.isVpcVirtualRouterForAtLeastOneService)
         } else {
           params.supportedservices = []
         }

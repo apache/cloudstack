@@ -427,7 +427,7 @@ public class VolumeObject implements VolumeInfo {
         }
         mapOfEvents.put(ObjectInDataStoreStateMachine.Event.DestroyRequested, Volume.Event.DestroyRequested);
         mapOfEvents.put(ObjectInDataStoreStateMachine.Event.ExpungeRequested, Volume.Event.ExpungingRequested);
-        mapOfEvents.put(ObjectInDataStoreStateMachine.Event.OperationSuccessed, Volume.Event.OperationSucceeded);
+        mapOfEvents.put(ObjectInDataStoreStateMachine.Event.OperationSucceeded, Volume.Event.OperationSucceeded);
         mapOfEvents.put(ObjectInDataStoreStateMachine.Event.MigrationCopySucceeded, Volume.Event.MigrationCopySucceeded);
         mapOfEvents.put(ObjectInDataStoreStateMachine.Event.OperationFailed, Volume.Event.OperationFailed);
         mapOfEvents.put(ObjectInDataStoreStateMachine.Event.MigrationCopyFailed, Volume.Event.MigrationCopyFailed);

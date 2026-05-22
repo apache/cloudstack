@@ -658,7 +658,7 @@ public class LibvirtMigrateCommandWrapperTest {
     @Test
     public void testReplaceIpForVNCInDescFile() {
         final String targetIp = "192.168.22.21";
-        final String result = libvirtMigrateCmdWrapper.replaceIpForVNCInDescFileAndNormalizePassword(fullfile, targetIp, null, "");
+        final String result = libvirtMigrateCmdWrapper.replaceIpForVNCInDescFileAndNormalizePassword(fullfile, targetIp, "vncSecretPwd", "");
         assertEquals("transformation does not live up to expectation:\n" + result, targetfile, result);
     }
 
@@ -1087,6 +1087,30 @@ public class LibvirtMigrateCommandWrapperTest {
         String finalXml = libvirtMigrateCmdWrapper.replaceCdromIsoPath(fullfile, null, oldIsoVolumePath, newIsoVolumePath);
 
         Assert.assertTrue(finalXml.contains(newIsoVolumePath));
+    }
+
+    @Test
+    public void testMaskVncPwdDomain() {
+        // Test case 1: Single quotes
+        String xml1 = "<graphics type='vnc' port='5900' passwd='secret123'/>";
+        String expected1 = "<graphics type='vnc' port='5900' passwd='*****'/>";
+        assertEquals(expected1, LibvirtMigrateCommandWrapper.maskSensitiveInfoInXML(xml1));
+
+        // Test case 2: Double quotes
+        String xml2 = "<graphics type=\"vnc\" port=\"5901\" passwd=\"mypassword\"/>";
+        String expected2 = "<graphics type=\"vnc\" port=\"5901\" passwd=\"*****\"/>";
+        assertEquals(expected2, LibvirtMigrateCommandWrapper.maskSensitiveInfoInXML(xml2));
+
+        // Test case 3: Non-VNC graphics (should remain unchanged)
+        String xml3 = "<graphics type='spice' port='5902' passwd='notvnc'/>";
+        assertEquals(xml3, LibvirtMigrateCommandWrapper.maskSensitiveInfoInXML(xml3));
+
+        // Test case 4: Multiple VNC entries in one string
+        String xml4 = "<graphics type='vnc' port='5900' passwd='a'/>\n" +
+                "<graphics type='vnc' port='5901' passwd='b'/>";
+        String expected4 = "<graphics type='vnc' port='5900' passwd='*****'/>\n" +
+                "<graphics type='vnc' port='5901' passwd='*****'/>";
+        assertEquals(expected4, LibvirtMigrateCommandWrapper.maskSensitiveInfoInXML(xml4));
     }
 
     @Test

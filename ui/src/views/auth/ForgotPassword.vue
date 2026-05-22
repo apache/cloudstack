@@ -162,7 +162,7 @@ export default {
         postAPI('forgotPassword', loginParams)
           .finally(() => {
             this.$message.success(this.$t('message.forgot.password.success'))
-            this.$router.push({ path: '/login' }).catch(() => {})
+            this.$router.replace({ path: '/user/login' })
           })
       }).catch(error => {
         this.formRef.value.scrollToField(error.errorFields[0].name)

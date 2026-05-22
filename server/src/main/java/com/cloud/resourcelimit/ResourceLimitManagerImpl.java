@@ -21,6 +21,7 @@ import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -36,9 +37,6 @@ import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.event.ActionEventUtils;
-import com.cloud.event.EventTypes;
-import com.cloud.utils.Ternary;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.response.AccountResponse;
@@ -56,6 +54,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.reservation.ReservationVO;
 import org.apache.cloudstack.reservation.dao.ReservationDao;
+import org.apache.cloudstack.resourcelimit.Reserver;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
@@ -86,12 +85,15 @@ import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.ActionEventUtils;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
@@ -118,6 +120,7 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -174,6 +177,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     @Inject
     private ReservationDao reservationDao;
     @Inject
+    private ResourceLimitService resourceLimitService;
+    @Inject
     protected SnapshotDao _snapshotDao;
     @Inject
     protected BackupDao backupDao;
@@ -203,6 +208,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     DiskOfferingDao diskOfferingDao;
     @Inject
     BucketDao bucketDao;
+    @Inject
+    private NetworkDomainDao networkDomainDao;
 
     protected GenericSearchBuilder<TemplateDataStoreVO, SumCount> templateSizeSearch;
     protected GenericSearchBuilder<SnapshotDataStoreVO, SumCount> snapshotSizeSearch;
@@ -266,7 +273,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
         templateSizeSearch = _vmTemplateStoreDao.createSearchBuilder(SumCount.class);
         templateSizeSearch.select("sum", Func.SUM, templateSizeSearch.entity().getSize());
-        templateSizeSearch.and("downloadState", templateSizeSearch.entity().getDownloadState(), Op.EQ);
+        templateSizeSearch.and("downloadState", templateSizeSearch.entity().getDownloadState(), Op.IN);
         templateSizeSearch.and("destroyed", templateSizeSearch.entity().getDestroyed(), Op.EQ);
         SearchBuilder<VMTemplateVO> join1 = _vmTemplateDao.createSearchBuilder();
         join1.and("accountId", join1.entity().getAccountId(), Op.EQ);
@@ -514,15 +521,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         return max;
     }
 
-    protected void checkDomainResourceLimit(final Account account, final Project project, final ResourceType type, String tag, long numResources) throws ResourceAllocationException {
-        // check all domains in the account's domain hierarchy
-        Long domainId;
-        if (project != null) {
-            domainId = project.getDomainId();
-        } else {
-            domainId = account.getDomainId();
-        }
-
+    protected void checkDomainResourceLimit(Long domainId, final ResourceType type, String tag, long numResources) throws ResourceAllocationException {
         while (domainId != null) {
             DomainVO domain = _domainDao.findById(domainId);
             // no limit check if it is ROOT domain
@@ -644,11 +643,16 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
     @Override
     public void checkResourceLimitWithTag(final Account account, final ResourceType type, String tag, long... count) throws ResourceAllocationException {
+        checkResourceLimitWithTag(account, null, false, type, tag, count);
+    }
+
+    @Override
+    public void checkResourceLimitWithTag(final Account account, Long domainId, boolean considerSystemAccount, final ResourceType type, String tag, long... count) throws ResourceAllocationException {
         final long numResources = ((count.length == 0) ? 1 : count[0]);
         Project project = null;
 
         // Don't place any limits on system or root admin accounts
-        if (_accountMgr.isRootAdmin(account.getId())) {
+        if (_accountMgr.isRootAdmin(account.getId()) && !(considerSystemAccount && Account.ACCOUNT_ID_SYSTEM == account.getId())) {
             return;
         }
 
@@ -656,6 +660,14 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             project = _projectDao.findByProjectAccountId(account.getId());
         }
 
+        if (domainId == null) {
+            if (project != null) {
+                domainId = project.getDomainId();
+            } else {
+                domainId = account.getDomainId();
+            }
+        }
+        Long domainIdFinal = domainId;
         final Project projectFinal = project;
         Transaction.execute(new TransactionCallbackWithExceptionNoReturn<ResourceAllocationException>() {
             @Override
@@ -665,7 +677,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 // Check account limits
                 checkAccountResourceLimit(account, projectFinal, type, tag, numResources);
                 // check all domains in the account's domain hierarchy
-                checkDomainResourceLimit(account, projectFinal, type, tag, numResources);
+                checkDomainResourceLimit(domainIdFinal, type, tag, numResources);
             }
         });
     }
@@ -804,42 +816,43 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 limits.addAll(foundLimits);
             }
         } else {
-            limits.addAll(foundLimits);
-
-            // see if any limits are missing from the table, and if yes - get it from the config table and add
-            ResourceType[] resourceTypes = ResourceCount.ResourceType.values();
-            if (foundLimits.size() != resourceTypes.length) {
-                List<String> accountLimitStr = new ArrayList<>();
-                List<String> domainLimitStr = new ArrayList<>();
-                for (ResourceLimitVO foundLimit : foundLimits) {
-                    if (foundLimit.getAccountId() != null) {
-                        accountLimitStr.add(foundLimit.getType().toString());
-                    } else {
-                        domainLimitStr.add(foundLimit.getType().toString());
-                    }
-                }
-
-                // get default from config values
-                if (isAccount) {
-                    if (accountLimitStr.size() < resourceTypes.length) {
-                        for (ResourceType rt : resourceTypes) {
-                            if (!accountLimitStr.contains(rt.toString())) {
-                                limits.add(new ResourceLimitVO(rt, findCorrectResourceLimitForAccount(_accountMgr.getAccount(accountId), rt, null), accountId, ResourceOwnerType.Account));
-                            }
-                        }
-                    }
-                } else {
-                    if (domainLimitStr.size() < resourceTypes.length) {
-                        for (ResourceType rt : resourceTypes) {
-                            if (!domainLimitStr.contains(rt.toString())) {
-                                limits.add(new ResourceLimitVO(rt, findCorrectResourceLimitForDomain(_domainDao.findById(domainId), rt, null), domainId, ResourceOwnerType.Domain));
-                            }
-                        }
-                    }
-                }
-            }
+            limits = getConsolidatedResourceLimitsForAllResourceTypes(accountId, domainId, foundLimits, isAccount);
         }
         addTaggedResourceLimits(limits, resourceType, isAccount ? ResourceOwnerType.Account : ResourceOwnerType.Domain, isAccount ? accountId : domainId, hostTags, storageTags);
+        return limits;
+    }
+
+    protected List<ResourceLimitVO> getConsolidatedResourceLimitsForAllResourceTypes(Long accountId, Long domainId,
+                      List<ResourceLimitVO> foundLimits, boolean isAccount) {
+        List<ResourceLimitVO> limits = new ArrayList<>(foundLimits);
+
+        Set<ResourceType> allResourceTypes = EnumSet.allOf(ResourceType.class);
+        Set<ResourceType> foundUntaggedTypes = foundLimits.stream()
+                .filter(l -> StringUtils.isEmpty(l.getTag()))
+                .map(ResourceLimitVO::getType)
+                .collect(Collectors.toSet());
+
+        if (foundUntaggedTypes.containsAll(allResourceTypes)) {
+            return limits;
+        }
+
+        ResourceOwnerType ownerType = isAccount ? ResourceOwnerType.Account : ResourceOwnerType.Domain;
+        long ownerId = isAccount ? accountId : domainId;
+
+        for (ResourceType rt : allResourceTypes) {
+            if (foundUntaggedTypes.contains(rt)) {
+                continue;
+            }
+            long max;
+            if (isAccount) {
+                Account acct = _accountMgr.getAccount(accountId);
+                max = findCorrectResourceLimitForAccount(acct, rt, null);
+            } else {
+                DomainVO dom = _domainDao.findById(domainId);
+                max = findCorrectResourceLimitForDomain(dom, rt, null);
+            }
+            limits.add(new ResourceLimitVO(rt, max, ownerId, ownerType));
+        }
         return limits;
     }
 
@@ -902,6 +915,11 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     @Override
     public ResourceLimitVO updateResourceLimit(Long accountId, Long domainId, Integer typeId, Long max, String tag) {
         Account caller = CallContext.current().getCallingAccount();
+
+        if (caller.getType().equals(Account.Type.NORMAL)) {
+            logger.info("Throwing exception because only root admins and domain admins are allowed to update resource limits.");
+            throw new PermissionDeniedException("Your account does not have the permission to update resource limits.");
+        }
 
         if (max == null) {
             max = (long)Resource.RESOURCE_UNLIMITED;
@@ -1024,7 +1042,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
         ResourceLimitVO limit = _resourceLimitDao.findByOwnerIdAndTypeAndTag(ownerId, ownerType, resourceType, tag);
 
-        ActionEventUtils.onActionEvent(caller.getId(), caller.getAccountId(),
+        Long callingUserId = CallContext.current().getCallingUserId();
+        ActionEventUtils.onActionEvent(callingUserId, caller.getAccountId(),
                 caller.getDomainId(), EventTypes.EVENT_RESOURCE_LIMIT_UPDATE,
                 "Resource limit updated. Resource Type: " + resourceType + ", New Value: " + max,
                 ownerResourceId, ownerResourceType.toString());
@@ -1201,7 +1220,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
      * @param type the resource type to do the recalculation for
      * @return the resulting new resource count
      */
-    protected long recalculateDomainResourceCount(final long domainId, final ResourceType type, String tag) {
+    public long recalculateDomainResourceCount(final long domainId, final ResourceType type, String tag) {
         List<AccountVO> accounts = _accountDao.findActiveAccountsForDomain(domainId);
         List<DomainVO> childDomains = _domainDao.findImmediateChildrenForParent(domainId);
 
@@ -1217,7 +1236,6 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
 
         return Transaction.execute((TransactionCallback<Long>) status -> {
-            long newResourceCount = 0L;
             List<Long> domainIdList = childDomains.stream().map(DomainVO::getId).collect(Collectors.toList());
             domainIdList.add(domainId);
             List<Long> accountIdList = accounts.stream().map(AccountVO::getId).collect(Collectors.toList());
@@ -1235,11 +1253,11 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             List<ResourceCountVO> resourceCounts = _resourceCountDao.lockRows(rowIdsToLock);
 
             long oldResourceCount = 0L;
+            long newResourceCount = 0L;
             ResourceCountVO domainRC = null;
 
-            // calculate project count here
-            if (type == ResourceType.project) {
-                newResourceCount += _projectDao.countProjectsForDomain(domainId);
+            if (type == ResourceType.network) {
+                newResourceCount += networkDomainDao.listDomainNetworkMapByDomain(domainId).size();
             }
 
             // TODO make sure that the resource counts are not null
@@ -1256,7 +1274,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             if (oldResourceCount != newResourceCount) {
                 domainRC.setCount(newResourceCount);
                 _resourceCountDao.update(domainRC.getId(), domainRC);
-                logger.warn("Discrepency in the resource count has been detected (original count = {} correct count = {}) for Type = {} for Domain ID = {} is fixed during resource count recalculation.",
+                logger.warn("Discrepancy in the resource count has been detected (original count = {} correct count = {}) for Type = {} for Domain ID = {} is fixed during resource count recalculation.",
                         oldResourceCount, newResourceCount, type, domainId);
             }
             return newResourceCount;
@@ -1486,7 +1504,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         long totalTemplatesSize = 0;
 
         SearchCriteria<SumCount> sc = templateSizeSearch.create();
-        sc.setParameters("downloadState", Status.DOWNLOADED);
+        sc.setParameters("downloadState", Status.DOWNLOADED, Status.DOWNLOAD_IN_PROGRESS);
         sc.setParameters("destroyed", false);
         sc.setJoinParameters("templates", "accountId", accountId);
         List<SumCount> templates = _vmTemplateStoreDao.customSearch(sc, null);
@@ -1519,16 +1537,17 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     }
 
     protected long calculatePrimaryStorageForAccount(long accountId, String tag) {
+        long snapshotsPhysicalSizeOnPrimaryStorage = _snapshotDataStoreDao.getSnapshotsPhysicalSizeOnPrimaryStorageByAccountId(accountId);
         if (StringUtils.isEmpty(tag)) {
             List<Long> virtualRouters = _vmDao.findIdsOfAllocatedVirtualRoutersForAccount(accountId);
-            return _volumeDao.primaryStorageUsedForAccount(accountId, virtualRouters);
+            return snapshotsPhysicalSizeOnPrimaryStorage + _volumeDao.primaryStorageUsedForAccount(accountId, virtualRouters);
         }
         long storage = 0;
         List<VolumeVO> volumes = getVolumesWithAccountAndTag(accountId, tag);
         for (VolumeVO volume : volumes) {
             storage += volume.getSize() == null ? 0L : volume.getSize();
         }
-        return storage;
+        return snapshotsPhysicalSizeOnPrimaryStorage + storage;
     }
 
     @Override
@@ -1722,7 +1741,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         return tags;
     }
 
-    protected List<String> getResourceLimitStorageTagsForResourceCountOperation(Boolean display, DiskOffering diskOffering) {
+    @Override
+    public List<String> getResourceLimitStorageTagsForResourceCountOperation(Boolean display, DiskOffering diskOffering) {
         if (Boolean.FALSE.equals(display)) {
             return new ArrayList<>();
         }
@@ -1736,54 +1756,53 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     }
 
     @Override
-    public void checkVolumeResourceLimit(Account owner, Boolean display, Long size, DiskOffering diskOffering) throws ResourceAllocationException {
+    public void checkVolumeResourceLimit(Account owner, Boolean display, Long size, DiskOffering diskOffering, List<Reserver> reservations) throws ResourceAllocationException {
         List<String> tags = getResourceLimitStorageTagsForResourceCountOperation(display, diskOffering);
         if (CollectionUtils.isEmpty(tags)) {
             return;
         }
-        for (String tag : tags) {
-            checkResourceLimitWithTag(owner, ResourceType.volume, tag);
-            if (size != null) {
-                checkResourceLimitWithTag(owner, ResourceType.primary_storage, tag, size);
-            }
+
+        CheckedReservation volumeReservation = new CheckedReservation(owner, ResourceType.volume, tags, 1L, reservationDao, resourceLimitService);
+        reservations.add(volumeReservation);
+
+        if (size != null) {
+            CheckedReservation primaryStorageReservation = new CheckedReservation(owner, ResourceType.primary_storage, tags, size, reservationDao, resourceLimitService);
+            reservations.add(primaryStorageReservation);
         }
     }
 
     @Override
-    public void checkPrimaryStorageResourceLimit(Account owner, Boolean display, Long size, DiskOffering diskOffering) throws ResourceAllocationException {
+    public void checkPrimaryStorageResourceLimit(Account owner, Boolean display, Long size, DiskOffering diskOffering, List<Reserver> reservations) throws ResourceAllocationException {
         List<String> tags = getResourceLimitStorageTagsForResourceCountOperation(display, diskOffering);
         if (CollectionUtils.isEmpty(tags)) {
             return;
         }
-        if (size != null) {
-            for (String tag : tags) {
-                checkResourceLimitWithTag(owner, ResourceType.primary_storage, tag, size);
-            }
-        }
+        CheckedReservation primaryStorageReservation = new CheckedReservation(owner, ResourceType.primary_storage, tags, size, reservationDao, resourceLimitService);
+        reservations.add(primaryStorageReservation);
     }
 
     @Override
     public void checkVolumeResourceLimitForDiskOfferingChange(Account owner, Boolean display, Long currentSize, Long newSize,
-            DiskOffering currentOffering, DiskOffering newOffering
+            DiskOffering currentOffering, DiskOffering newOffering, List<Reserver> reservations
     ) throws ResourceAllocationException {
         Ternary<Set<String>, Set<String>, Set<String>> updatedResourceLimitStorageTags = getResourceLimitStorageTagsForDiskOfferingChange(display, currentOffering, newOffering);
         if (updatedResourceLimitStorageTags == null) {
             return;
         }
 
-        Set<String> sameTags = updatedResourceLimitStorageTags.first();
-        Set<String> newTags = updatedResourceLimitStorageTags.second();
-
-        if (newSize > currentSize) {
-            for (String tag : sameTags) {
-                checkResourceLimitWithTag(owner, ResourceType.primary_storage, tag, newSize - currentSize);
-            }
+        List<String> currentTags = getResourceLimitStorageTagsForResourceCountOperation(true, currentOffering);
+        List<String> tagsAfterUpdate = getResourceLimitStorageTagsForResourceCountOperation(true, newOffering);
+        if (currentTags.isEmpty() && tagsAfterUpdate.isEmpty()) {
+            return;
         }
 
-        for (String tag : newTags) {
-            checkResourceLimitWithTag(owner, ResourceType.volume, tag, 1L);
-            checkResourceLimitWithTag(owner, ResourceType.primary_storage, tag, newSize);
-        }
+        CheckedReservation volumeReservation = new CheckedReservation(owner, ResourceType.volume, null, tagsAfterUpdate,
+                currentTags, 1L, 1L, reservationDao, resourceLimitService);
+        reservations.add(volumeReservation);
+
+        CheckedReservation primaryStorageReservation = new CheckedReservation(owner, ResourceType.primary_storage, null,
+                tagsAfterUpdate, currentTags, newSize, currentSize, reservationDao, resourceLimitService);
+        reservations.add(primaryStorageReservation);
     }
 
     @DB
@@ -2010,20 +2029,27 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     }
 
     @Override
-    public void checkVmResourceLimit(Account owner, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template) throws ResourceAllocationException {
+    public void checkVmResourceLimit(Account owner, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Reserver> reservations) throws ResourceAllocationException {
         List<String> tags = getResourceLimitHostTagsForResourceCountOperation(display, serviceOffering, template);
         if (CollectionUtils.isEmpty(tags)) {
             return;
         }
+
+        CheckedReservation vmReservation = new CheckedReservation(owner, ResourceType.user_vm, tags, 1L, reservationDao, resourceLimitService);
+        reservations.add(vmReservation);
+
         Long cpu = serviceOffering.getCpu() != null ? Long.valueOf(serviceOffering.getCpu()) : 0L;
+        CheckedReservation cpuReservation = new CheckedReservation(owner, ResourceType.cpu, tags, cpu, reservationDao, resourceLimitService);
+        reservations.add(cpuReservation);
+
         Long ram = serviceOffering.getRamSize() != null ? Long.valueOf(serviceOffering.getRamSize()) : 0L;
+        CheckedReservation memReservation = new CheckedReservation(owner, ResourceType.memory, tags, ram, reservationDao, resourceLimitService);
+        reservations.add(memReservation);
+
         Long gpu = serviceOffering.getGpuCount() != null ? Long.valueOf(serviceOffering.getGpuCount()) : 0L;
-        for (String tag : tags) {
-            checkResourceLimitWithTag(owner, ResourceType.user_vm, tag);
-            checkResourceLimitWithTag(owner, ResourceType.cpu, tag, cpu);
-            checkResourceLimitWithTag(owner, ResourceType.memory, tag, ram);
-            checkResourceLimitWithTag(owner, ResourceType.gpu, tag, gpu);
-        }
+        CheckedReservation gpuReservation = new CheckedReservation(owner, ResourceType.gpu, tags, gpu, reservationDao, resourceLimitService);
+        reservations.add(gpuReservation);
+
     }
 
     @Override
@@ -2073,28 +2099,33 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
     @Override
     public void checkVmResourceLimitsForTemplateChange(Account owner, Boolean display, ServiceOffering offering,
-            VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate) throws ResourceAllocationException {
+            VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate, List<Reserver> reservations) throws ResourceAllocationException {
         checkVmResourceLimitsForServiceOfferingAndTemplateChange(owner, display, null, null,
-                null, null, offering, offering, currentTemplate, newTemplate);
+                null, null, offering, offering, currentTemplate, newTemplate, reservations);
     }
 
     @Override
     public void checkVmResourceLimitsForServiceOfferingChange(Account owner, Boolean display, Long currentCpu, Long newCpu,
             Long currentMemory, Long newMemory,
-            ServiceOffering currentOffering, ServiceOffering newOffering, VirtualMachineTemplate template
+            ServiceOffering currentOffering, ServiceOffering newOffering, VirtualMachineTemplate template, List<Reserver> reservations
     ) throws ResourceAllocationException {
         checkVmResourceLimitsForServiceOfferingAndTemplateChange(owner, display, currentCpu, newCpu, currentMemory, newMemory, currentOffering,
-                newOffering != null ? newOffering : currentOffering, template, template);
+                newOffering != null ? newOffering : currentOffering, template, template, reservations);
     }
 
     private void checkVmResourceLimitsForServiceOfferingAndTemplateChange(Account owner, Boolean display, Long currentCpu, Long newCpu,
             Long currentMemory, Long newMemory, ServiceOffering currentOffering, ServiceOffering newOffering,
-            VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate
+            VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate, List<Reserver> reservations
     ) throws ResourceAllocationException {
-        Ternary<Set<String>, Set<String>, Set<String>> updatedResourceLimitHostTags = getResourceLimitHostTagsForVmServiceOfferingAndTemplateChange(display, currentOffering, newOffering, currentTemplate, newTemplate);
-        if (updatedResourceLimitHostTags == null) {
+        List<String> currentTags = getResourceLimitHostTagsForResourceCountOperation(true, currentOffering, currentTemplate);
+        List<String> tagsAfterUpdate = getResourceLimitHostTagsForResourceCountOperation(true, newOffering, newTemplate);
+        if (currentTags.isEmpty() && tagsAfterUpdate.isEmpty()) {
             return;
         }
+
+        CheckedReservation vmReservation = new CheckedReservation(owner, ResourceType.user_vm, null, tagsAfterUpdate,
+                currentTags, 1L, 1L, reservationDao, resourceLimitService);
+        reservations.add(vmReservation);
 
         if (currentCpu == null) {
             currentCpu = currentOffering.getCpu() != null ? Long.valueOf(currentOffering.getCpu()) : 0L;
@@ -2102,54 +2133,26 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         if (newCpu == null) {
             newCpu = newOffering.getCpu() != null ? Long.valueOf(newOffering.getCpu()) : 0L;
         }
+        CheckedReservation cpuReservation = new CheckedReservation(owner, ResourceType.cpu, null, tagsAfterUpdate,
+                currentTags, newCpu, currentCpu, reservationDao, resourceLimitService);
+        reservations.add(cpuReservation);
+
         if (currentMemory == null) {
             currentMemory = currentOffering.getRamSize() != null ? Long.valueOf(currentOffering.getRamSize()) : 0L;
         }
         if (newMemory == null) {
             newMemory = newOffering.getRamSize() != null ? Long.valueOf(newOffering.getRamSize()) : 0L;
         }
+        CheckedReservation memReservation = new CheckedReservation(owner, ResourceType.memory, null, tagsAfterUpdate,
+                currentTags, newMemory, currentMemory, reservationDao, resourceLimitService);
+        reservations.add(memReservation);
+
         Long currentGpu = currentOffering.getGpuCount() != null ? Long.valueOf(currentOffering.getGpuCount()) : 0L;
         Long newGpu = newOffering.getGpuCount() != null ? Long.valueOf(newOffering.getGpuCount()) : 0L;
 
-        Set<String> sameTags = updatedResourceLimitHostTags.first();
-        Set<String> newTags = updatedResourceLimitHostTags.second();
-
-        if (newCpu - currentCpu > 0 || newMemory - currentMemory > 0 || newGpu - currentGpu > 0) {
-            for (String tag : sameTags) {
-                if (newCpu - currentCpu > 0) {
-                    checkResourceLimitWithTag(owner, ResourceType.cpu, tag, newCpu - currentCpu);
-                }
-
-                if (newMemory - currentMemory > 0) {
-                    checkResourceLimitWithTag(owner, ResourceType.memory, tag, newMemory - currentMemory);
-                }
-
-                if (newGpu - currentGpu > 0) {
-                    checkResourceLimitWithTag(owner, ResourceType.gpu, tag, newGpu - currentGpu);
-                }
-            }
-        }
-
-        for (String tag : newTags) {
-            checkResourceLimitWithTag(owner, ResourceType.user_vm, tag, 1L);
-            checkResourceLimitWithTag(owner, ResourceType.cpu, tag, newCpu);
-            checkResourceLimitWithTag(owner, ResourceType.memory, tag, newMemory);
-            checkResourceLimitWithTag(owner, ResourceType.gpu, tag, newGpu);
-        }
-    }
-
-    @Override
-    public void checkVmCpuResourceLimit(Account owner, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long cpu) throws ResourceAllocationException {
-        List<String> tags = getResourceLimitHostTagsForResourceCountOperation(display, serviceOffering, template);
-        if (CollectionUtils.isEmpty(tags)) {
-            return;
-        }
-        if (cpu == null) {
-            cpu = serviceOffering.getCpu() != null ? Long.valueOf(serviceOffering.getCpu()) : 0L;
-        }
-        for (String tag : tags) {
-            checkResourceLimitWithTag(owner, ResourceType.cpu, tag, cpu);
-        }
+        CheckedReservation gpuReservation = new CheckedReservation(owner, ResourceType.gpu, null, tagsAfterUpdate,
+                currentTags, newGpu, currentGpu, reservationDao, resourceLimitService);
+        reservations.add(gpuReservation);
     }
 
     @Override
@@ -2181,20 +2184,6 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     }
 
     @Override
-    public void checkVmMemoryResourceLimit(Account owner, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long memory) throws ResourceAllocationException {
-        List<String> tags = getResourceLimitHostTagsForResourceCountOperation(display, serviceOffering, template);
-        if (CollectionUtils.isEmpty(tags)) {
-            return;
-        }
-        if (memory == null) {
-            memory = serviceOffering.getRamSize() != null ? Long.valueOf(serviceOffering.getRamSize()) : 0L;
-        }
-        for (String tag : tags) {
-            checkResourceLimitWithTag(owner, ResourceType.memory, tag, memory);
-        }
-    }
-
-    @Override
     public void incrementVmMemoryResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long memory) {
         List<String> tags = getResourceLimitHostTagsForResourceCountOperation(display, serviceOffering, template);
         if (CollectionUtils.isEmpty(tags)) {
@@ -2219,20 +2208,6 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
         for (String tag : tags) {
             decrementResourceCountWithTag(accountId, ResourceType.memory, tag, memory);
-        }
-    }
-
-    @Override
-    public void checkVmGpuResourceLimit(Account owner, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long gpu) throws ResourceAllocationException {
-        List<String> tags = getResourceLimitHostTagsForResourceCountOperation(display, serviceOffering, template);
-        if (CollectionUtils.isEmpty(tags)) {
-            return;
-        }
-        if (gpu == null) {
-            gpu = serviceOffering.getGpuCount() != null ? Long.valueOf(serviceOffering.getGpuCount()) : 0L;
-        }
-        for (String tag : tags) {
-            checkResourceLimitWithTag(owner, ResourceType.gpu, tag, gpu);
         }
     }
 
@@ -2288,7 +2263,6 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
     protected class ResourceCountCheckTask extends ManagedContextRunnable {
         public ResourceCountCheckTask() {
-
         }
 
         @Override

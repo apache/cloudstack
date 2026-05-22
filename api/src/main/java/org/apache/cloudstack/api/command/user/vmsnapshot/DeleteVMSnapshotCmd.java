@@ -62,7 +62,7 @@ public class DeleteVMSnapshotCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("vmsnapshot id: " + this._uuidMgr.getUuid(VMSnapshot.class, getId()));
+        CallContext.current().setEventDetails("Instance Snapshot ID: " + getResourceUuid(ApiConstants.VM_SNAPSHOT_ID));
         boolean result = _vmSnapshotService.deleteVMSnapshot(getId());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
@@ -74,7 +74,7 @@ public class DeleteVMSnapshotCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Delete Instance Snapshot: " + this._uuidMgr.getUuid(VMSnapshot.class, getId());
+        return "Deleting Instance Snapshot with ID: " + getResourceUuid(ApiConstants.VM_SNAPSHOT_ID);
     }
 
     @Override

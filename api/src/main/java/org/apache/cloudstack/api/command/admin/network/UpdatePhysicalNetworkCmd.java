@@ -98,7 +98,7 @@ public class UpdatePhysicalNetworkCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Updating Physical network: " + getId();
+        return "Updating Physical Network with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

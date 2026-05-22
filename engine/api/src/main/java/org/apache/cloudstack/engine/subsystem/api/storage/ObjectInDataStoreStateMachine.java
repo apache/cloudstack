@@ -35,9 +35,9 @@ public interface ObjectInDataStoreStateMachine extends StateObject<ObjectInDataS
         Failed("Failed to download Template"),
         Hidden("The object is hidden from the user");
 
-        String _description;
+        final String _description;
 
-        private State(String description) {
+        State(String description) {
             _description = description;
         }
 
@@ -50,7 +50,7 @@ public interface ObjectInDataStoreStateMachine extends StateObject<ObjectInDataS
         CreateRequested,
         CreateOnlyRequested,
         DestroyRequested,
-        OperationSuccessed,
+        OperationSucceeded,
         OperationFailed,
         CopyRequested,
         CopyingRequested,

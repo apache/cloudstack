@@ -97,6 +97,14 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
                 citrixResourceBase.createVGPU(conn, command, vm, gpuDevice);
             }
 
+            try {
+                if (citrixResourceBase.isVTPMSupported(conn, host)) {
+                    citrixResourceBase.configureVTPM(conn, vm, vmSpec);
+                }
+            } catch (Exception e) {
+                logger.warn("Failed to configure vTPM for VM " + vmName + ", continuing without vTPM", e);
+            }
+
             Host.Record record = host.getRecord(conn);
             String xenBrand = record.softwareVersion.get("product_brand");
             String xenVersion = record.softwareVersion.get("product_version");

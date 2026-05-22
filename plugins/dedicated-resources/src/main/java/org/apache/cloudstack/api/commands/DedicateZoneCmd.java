@@ -112,6 +112,12 @@ public class DedicateZoneCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "dedicating a zone";
+        String baseDescription = "Dedicating zone with ID: " + getResourceUuid(ApiConstants.ZONE_ID) + " to domain with ID: " + getResourceUuid(ApiConstants.DOMAIN_ID);
+
+        if (accountName != null) {
+            baseDescription += " and to account " + accountName;
+        }
+
+        return baseDescription;
     }
 }

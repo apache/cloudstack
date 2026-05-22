@@ -76,6 +76,7 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.dao.UserDataDao;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -160,29 +161,50 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         _count = "select count(distinct temp_zone_pair) from template_view WHERE ";
     }
 
-    private String getTemplateStatus(TemplateJoinVO template) {
-        String templateStatus = null;
-        if (template.getDownloadState() != Status.DOWNLOADED) {
-            templateStatus = "Processing";
-            if (template.getDownloadState() == Status.DOWNLOAD_IN_PROGRESS) {
-                if (template.getDownloadPercent() == 100) {
-                    templateStatus = "Installing Template";
-                } else {
-                    templateStatus = template.getDownloadPercent() + "% Downloaded";
-                }
-            } else if (template.getDownloadState() == Status.BYPASSED) {
-                templateStatus = "Bypassed Secondary Storage";
-            } else if (template.getErrorString() == null) {
-                templateStatus = template.getTemplateState().toString();
-            } else {
-                templateStatus = template.getErrorString().trim();
-            }
-        } else if (template.getDownloadState() == Status.DOWNLOADED) {
-            templateStatus = "Download Complete";
-        } else {
-            templateStatus = "Successfully Installed";
+    private enum TemplateStatus {
+        SUCCESSFULLY_INSTALLED("Successfully Installed"),
+        INSTALLING_TEMPLATE("Installing Template"),
+        INSTALLING_ISO("Installing ISO"),
+        BYPASSED_SECONDARY_STORAGE("Bypassed Secondary Storage"),
+        PROCESSING("Processing"),
+        DOWNLOADING("%d%% Downloaded"),
+        DOWNLOAD_COMPLETE("Download Complete");
+
+        private final String status;
+        TemplateStatus(String status) {
+            this.status = status;
         }
-        return templateStatus;
+        public String getStatus() {
+            return status;
+        }
+        // For statuses that have dynamic details (e.g. "75% Downloaded").
+        public String format(int percent) {
+            return String.format(status, percent);
+        }
+    }
+
+    private String getTemplateStatus(TemplateJoinVO template) {
+        if (template == null) {
+            return  null;
+        }
+        boolean isIso = Storage.ImageFormat.ISO == template.getFormat();
+        TemplateStatus templateStatus;
+        if (template.getDownloadState() == Status.DOWNLOADED) {
+            templateStatus =  isIso ? TemplateStatus.SUCCESSFULLY_INSTALLED : TemplateStatus.DOWNLOAD_COMPLETE;
+        } else if (template.getDownloadState() == Status.DOWNLOAD_IN_PROGRESS) {
+            if (template.getDownloadPercent() == 100) {
+                templateStatus = isIso ? TemplateStatus.INSTALLING_ISO : TemplateStatus.INSTALLING_TEMPLATE;
+            } else {
+                return TemplateStatus.DOWNLOADING.format(template.getDownloadPercent());
+            }
+        } else if (template.getDownloadState() == Status.BYPASSED) {
+            templateStatus = TemplateStatus.BYPASSED_SECONDARY_STORAGE;
+        } else if (StringUtils.isNotBlank(template.getErrorString())) {
+            return template.getErrorString().trim();
+        } else {
+            templateStatus = TemplateStatus.PROCESSING;
+        }
+        return templateStatus.getStatus();
     }
 
     @Override
@@ -503,24 +525,9 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         // If the user is an admin, add the template download status
         if (isAdmin || caller.getId() == iso.getAccountId()) {
             // add download status
-            if (iso.getDownloadState() != Status.DOWNLOADED) {
-                String isoStatus = "Processing";
-                if (iso.getDownloadState() == Status.DOWNLOADED) {
-                    isoStatus = "Download Complete";
-                } else if (iso.getDownloadState() == Status.DOWNLOAD_IN_PROGRESS) {
-                    if (iso.getDownloadPercent() == 100) {
-                        isoStatus = "Installing ISO";
-                    } else {
-                        isoStatus = iso.getDownloadPercent() + "% Downloaded";
-                    }
-                } else if (iso.getDownloadState() == Status.BYPASSED) {
-                    isoStatus = "Bypassed Secondary Storage";
-                } else {
-                    isoStatus = iso.getErrorString();
-                }
-                isoResponse.setStatus(isoStatus);
-            } else {
-                isoResponse.setStatus("Successfully Installed");
+            String templateStatus = getTemplateStatus(iso);
+            if (templateStatus != null) {
+                isoResponse.setStatus(templateStatus);
             }
             isoResponse.setUrl(iso.getUrl());
             List<TemplateDataStoreVO> isosInStore = _templateStoreDao.listByTemplateNotBypassed(iso.getId());

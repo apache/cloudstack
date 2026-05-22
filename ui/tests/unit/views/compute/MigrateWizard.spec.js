@@ -127,8 +127,8 @@ describe('Views > compute > MigrateWizard.vue', () => {
     if (Object.keys(originalFunc).length > 0) {
       Object.keys(originalFunc).forEach(key => {
         switch (key) {
-          case 'fetchData':
-            wrapper.vm.fetchData = originalFunc[key]
+          case 'fetchHostsForMigration':
+            wrapper.vm.fetchHostsForMigration = originalFunc[key]
             break
           default:
             break
@@ -138,11 +138,11 @@ describe('Views > compute > MigrateWizard.vue', () => {
   })
 
   describe('Methods', () => {
-    describe('fetchData()', () => {
+    describe('fetchHostsForMigration()', () => {
       it('API should be called with resource is empty and searchQuery is empty', async (done) => {
         await mockAxios.mockResolvedValue({ findhostsformigrationresponse: { count: 0, host: [] } })
         await wrapper.setProps({ resource: {} })
-        await wrapper.vm.fetchData()
+        await wrapper.vm.fetchHostsForMigration()
         await flushPromises()
 
         expect(mockAxios).toHaveBeenCalled()
@@ -164,7 +164,7 @@ describe('Views > compute > MigrateWizard.vue', () => {
       it('API should be called with resource.id is empty and searchQuery is empty', async (done) => {
         await mockAxios.mockResolvedValue({ findhostsformigrationresponse: { count: 0, host: [] } })
         await wrapper.setProps({ resource: { id: null } })
-        await wrapper.vm.fetchData()
+        await wrapper.vm.fetchHostsForMigration()
         await flushPromises()
 
         expect(mockAxios).toHaveBeenCalled()
@@ -186,7 +186,7 @@ describe('Views > compute > MigrateWizard.vue', () => {
       it('API should be called with resource.id is not empty and searchQuery is empty', async (done) => {
         await mockAxios.mockResolvedValue({ findhostsformigrationresponse: { count: 0, host: [] } })
         await wrapper.setProps({ resource: { id: 'test-id-value' } })
-        await wrapper.vm.fetchData()
+        await wrapper.vm.fetchHostsForMigration()
         await flushPromises()
 
         expect(mockAxios).toHaveBeenCalled()
@@ -209,7 +209,7 @@ describe('Views > compute > MigrateWizard.vue', () => {
         await mockAxios.mockResolvedValue({ findhostsformigrationresponse: { count: 0, host: [] } })
         await wrapper.setProps({ resource: { id: 'test-id-value' } })
         await wrapper.setData({ searchQuery: 'test-query-value' })
-        await wrapper.vm.fetchData()
+        await wrapper.vm.fetchHostsForMigration()
         await flushPromises()
 
         expect(mockAxios).toHaveBeenCalled()
@@ -236,7 +236,7 @@ describe('Views > compute > MigrateWizard.vue', () => {
           page: 2,
           pageSize: 20
         })
-        await wrapper.vm.fetchData()
+        await wrapper.vm.fetchHostsForMigration()
         await flushPromises()
 
         expect(mockAxios).toHaveBeenCalled()
@@ -258,7 +258,7 @@ describe('Views > compute > MigrateWizard.vue', () => {
       it('check hosts, totalCount when api is called with response result is empty', async (done) => {
         await mockAxios.mockResolvedValue({ findhostsformigrationresponse: { count: 0, host: [] } })
         await wrapper.setProps({ resource: {} })
-        await wrapper.vm.fetchData()
+        await wrapper.vm.fetchHostsForMigration()
         await flushPromises()
 
         expect(wrapper.vm.hosts).toEqual([])
@@ -281,7 +281,7 @@ describe('Views > compute > MigrateWizard.vue', () => {
           }
         })
         await wrapper.setProps({ resource: {} })
-        await wrapper.vm.fetchData()
+        await wrapper.vm.fetchHostsForMigration()
         await flushPromises()
 
         expect(wrapper.vm.hosts).toEqual([{
@@ -301,7 +301,7 @@ describe('Views > compute > MigrateWizard.vue', () => {
 
         await mockAxios.mockRejectedValue(mockError)
         await wrapper.setProps({ resource: {} })
-        await wrapper.vm.fetchData()
+        await wrapper.vm.fetchHostsForMigration()
         await flushPromises()
 
         expect(mocks.$notifyError).toHaveBeenCalled()
@@ -535,14 +535,14 @@ describe('Views > compute > MigrateWizard.vue', () => {
         await mockAxios.mockResolvedValue(mockData)
         await wrapper.setProps({
           resource: {
-            id: 'test-resource-id',
+            id: 'test-resource-id-err',
             name: 'test-resource-name'
           }
         })
         await wrapper.setData({
           selectedHost: {
             requiresStorageMotion: true,
-            id: 'test-host-id',
+            id: 'test-host-id-err',
             name: 'test-host-name'
           }
         })
@@ -564,14 +564,14 @@ describe('Views > compute > MigrateWizard.vue', () => {
         await mockAxios.mockResolvedValue(mockData)
         await wrapper.setProps({
           resource: {
-            id: 'test-resource-id',
+            id: 'test-resource-id-catch',
             name: 'test-resource-name'
           }
         })
         await wrapper.setData({
           selectedHost: {
             requiresStorageMotion: true,
-            id: 'test-host-id',
+            id: 'test-host-id-catch',
             name: 'test-host-name'
           }
         })
@@ -591,7 +591,7 @@ describe('Views > compute > MigrateWizard.vue', () => {
         await wrapper.setData({
           selectedHost: {
             requiresStorageMotion: true,
-            id: 'test-host-id',
+            id: 'test-host-id-no-res',
             name: 'test-host-name'
           }
         })
@@ -609,11 +609,11 @@ describe('Views > compute > MigrateWizard.vue', () => {
     })
 
     describe('handleChangePage()', () => {
-      it('check page, pageSize and fetchData() when handleChangePage() is called', async (done) => {
-        originalFunc.fetchData = wrapper.vm.fetchData
-        wrapper.vm.fetchData = jest.fn()
+      it('check page, pageSize and fetchHostsForMigration() when handleChangePage() is called', async (done) => {
+        originalFunc.fetchHostsForMigration = wrapper.vm.fetchHostsForMigration
+        wrapper.vm.fetchHostsForMigration = jest.fn()
 
-        const fetchData = jest.spyOn(wrapper.vm, 'fetchData').mockImplementation(() => {})
+        const fetchHostsForMigration = jest.spyOn(wrapper.vm, 'fetchHostsForMigration').mockImplementation(() => {})
         await wrapper.setProps({ resource: {} })
         await wrapper.setData({
           page: 1,
@@ -624,17 +624,17 @@ describe('Views > compute > MigrateWizard.vue', () => {
 
         expect(wrapper.vm.page).toEqual(2)
         expect(wrapper.vm.pageSize).toEqual(20)
-        expect(fetchData).toBeCalled()
+        expect(fetchHostsForMigration).toBeCalled()
         done()
       })
     })
 
     describe('handleChangePageSize()', () => {
-      it('check page, pageSize and fetchData() when handleChangePageSize() is called', async (done) => {
-        originalFunc.fetchData = wrapper.vm.fetchData
-        wrapper.vm.fetchData = jest.fn()
+      it('check page, pageSize and fetchHostsForMigration() when handleChangePageSize() is called', async (done) => {
+        originalFunc.fetchHostsForMigration = wrapper.vm.fetchHostsForMigration
+        wrapper.vm.fetchHostsForMigration = jest.fn()
 
-        const fetchData = jest.spyOn(wrapper.vm, 'fetchData').mockImplementation(() => {})
+        const fetchHostsForMigration = jest.spyOn(wrapper.vm, 'fetchHostsForMigration').mockImplementation(() => {})
         await wrapper.setProps({ resource: {} })
         await wrapper.setData({
           page: 1,
@@ -645,7 +645,7 @@ describe('Views > compute > MigrateWizard.vue', () => {
 
         expect(wrapper.vm.page).toEqual(2)
         expect(wrapper.vm.pageSize).toEqual(20)
-        expect(fetchData).toBeCalled()
+        expect(fetchHostsForMigration).toBeCalled()
         done()
       })
     })

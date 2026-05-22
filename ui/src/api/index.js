@@ -140,3 +140,7 @@ export function oauthlogin (arg) {
     }
   })
 }
+
+export function getBaseUrl () {
+  return vueProps.axios.defaults.baseURL
+}

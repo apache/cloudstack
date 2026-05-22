@@ -111,12 +111,12 @@ public class AttachVolumeCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return  "Attaching volume: " + this._uuidMgr.getUuid(Volume.class, getId()) + " to Instance: " + this._uuidMgr.getUuid(VirtualMachine.class, getVirtualMachineId());
+        return  "Attaching volume with ID: " + getResourceUuid(ApiConstants.ID) + " to Instance with ID: " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID);
     }
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Volume Id: " + this._uuidMgr.getUuid(Volume.class, getId()) + " Instance Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getVirtualMachineId()));
+        CallContext.current().setEventDetails("Volume ID: " + getResourceUuid(ApiConstants.ID) + " Instance ID: " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID));
         Volume result = _volumeService.attachVolumeToVM(this);
         if (result != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(getResponseView(), result);

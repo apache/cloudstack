@@ -34,7 +34,7 @@
         <span :style="record.parent ? 'padding-left: 50px; display:block' : 'padding-left: 25px; display:block'">{{ record.description }}</span>
       </template>
       <template v-if="column.key === 'value'">
-        <ConfigurationValue :configrecord="record" />
+        <ConfigurationValue :configrecord="record" @refresh="handleConfigRefresh" />
       </template>
     </template>
   </a-table>
@@ -83,6 +83,9 @@ export default {
         return 'light-row'
       }
       return 'dark-row'
+    },
+    handleConfigRefresh (name, updatedRecord) {
+      this.$emit('refresh-config', name, updatedRecord)
     }
   }
 }

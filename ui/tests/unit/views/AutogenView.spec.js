@@ -113,6 +113,10 @@ store = common.createMockStore(state, actions, mutations)
 i18n = common.createMockI18n('en', mockData.messages)
 
 mocks = {
+  $config: {
+    showSearchFilters: true,
+    docBase: 'http://docs.cloudstack.apache.org/en/latest'
+  },
   $notifyError: jest.fn((error) => {
     return error
   }),

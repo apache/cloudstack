@@ -87,6 +87,7 @@ public final class ConfigureHAForHostCmd extends BaseAsyncCmd {
         final HostHAResponse response = new HostHAResponse();
         response.setId(resourceUuid);
         response.setProvider(getHaProvider().toLowerCase());
+        response.setStatus(result);
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }
@@ -102,7 +103,7 @@ public final class ConfigureHAForHostCmd extends BaseAsyncCmd {
         if (!result) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to configure HA provider for the host");
         }
-        CallContext.current().setEventDetails("Host Id:" + host.getId() + " HA configured with provider: " + getHaProvider());
+        CallContext.current().setEventDetails("Host ID:" + host.getUuid() + " HA configured with provider: " + getHaProvider());
         CallContext.current().putContextParameter(Host.class, host.getUuid());
 
         setupResponse(result, host.getUuid());
@@ -115,6 +116,6 @@ public final class ConfigureHAForHostCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Configure HA for host: " + getHostId();
+        return "Configuring HA for host with ID: " + getResourceUuid(ApiConstants.HOST_ID);
     }
 }

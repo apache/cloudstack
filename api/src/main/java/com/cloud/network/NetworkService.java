@@ -108,6 +108,10 @@ public interface NetworkService {
            PhysicalNetwork physicalNetwork, long zoneId, ControlledEntity.ACLType aclType) throws
             InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException;
 
+    Network createGuestNetwork(long networkOfferingId, String name, String displayText, Account owner,
+                               PhysicalNetwork physicalNetwork, long zoneId, ControlledEntity.ACLType aclType, Pair<Integer, Integer> vrIfaceMTUs) throws
+            InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException;
+
     Pair<List<? extends Network>, Integer> searchForNetworks(ListNetworksCmd cmd);
 
     boolean deleteNetwork(long networkId, boolean forced);
@@ -275,4 +279,6 @@ public interface NetworkService {
     IpAddresses getIpAddressesFromIps(String ipAddress, String ip6Address, String macAddress);
 
     String getNicVlanValueForExternalVm(NicTO nic);
+
+    Long getPreferredNetworkIdForPublicIpRuleAssignment(IpAddress ip, Long networkId);
 }

@@ -22,7 +22,6 @@ import java.util.concurrent.Future;
 
 import org.apache.cloudstack.api.response.MigrationResponse;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService.TemplateApiResult;
 import org.apache.cloudstack.storage.ImageStoreService.MigrationPolicy;
 
@@ -31,5 +30,5 @@ public interface StorageOrchestrationService {
 
     MigrationResponse migrateResources(Long srcImgStoreId, Long destImgStoreId, List<Long> templateIdList, List<Long> snapshotIdList);
 
-    Future<TemplateApiResult> orchestrateTemplateCopyToImageStore(TemplateInfo source, DataStore destStore);
+    Future<TemplateApiResult> orchestrateTemplateCopyFromSecondaryStores(long templateId, DataStore destStore);
 }

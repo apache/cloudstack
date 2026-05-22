@@ -27,7 +27,7 @@ except ImportError:
         raise RuntimeError("python setuptools is required to build Marvin")
 
 
-VERSION = "4.23.0.0-SNAPSHOT"
+VERSION = "4.23.0.0"
 
 setup(name="Marvin",
       version=VERSION,
@@ -38,7 +38,7 @@ setup(name="Marvin",
       maintainer_email="dev@cloudstack.apache.org",
       long_description="Marvin is the Apache CloudStack python "
                        "client written around the unittest framework",
-      platforms=("Any",),
+      platforms=["Any"],
       url="https://builds.apache.org/job/cloudstack-marvin/",
       packages=["marvin", "marvin.cloudstackAPI",
                 "marvin.lib", "marvin.config", "marvin.sandbox",

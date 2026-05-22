@@ -16,58 +16,78 @@
 //under the License.
 package org.apache.cloudstack.api.command;
 
-import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
+
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
-import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.QuotaResponseBuilder;
 import org.apache.cloudstack.api.response.QuotaSummaryResponse;
-import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.api.response.ProjectResponse;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.quota.QuotaAccountStateFilter;
+import org.apache.cloudstack.quota.QuotaService;
+import org.apache.commons.lang3.ObjectUtils;
 
 import java.util.List;
 
 import javax.inject.Inject;
 
-@APICommand(name = "quotaSummary", responseObject = QuotaSummaryResponse.class, description = "Lists balance and quota usage for all Accounts", since = "4.7.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "quotaSummary", responseObject = QuotaSummaryResponse.class, description = "Lists Quota balance summary of Accounts and Projects.", since = "4.7.0",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, httpMethod = "GET")
 public class QuotaSummaryCmd extends BaseListCmd {
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, required = false, description = "Optional, Account Id for which statement needs to be generated")
-    private String accountName;
-
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = false, entityType = DomainResponse.class, description = "Optional, If domain Id is given and the caller is domain admin then the statement is generated for domain.")
-    private Long domainId;
-
-    @Parameter(name = ApiConstants.LIST_ALL, type = CommandType.BOOLEAN, required = false, description = "Optional, to list all Accounts irrespective of the quota activity")
-    private Boolean listAll;
+    @Inject
+    QuotaResponseBuilder quotaResponseBuilder;
 
     @Inject
-    QuotaResponseBuilder _responseBuilder;
+    QuotaService quotaService;
 
-    public QuotaSummaryCmd() {
-        super();
-    }
+    @ACL
+    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "ID of the Account for which balance will be listed. Can not be specified with projectid.", since = "4.23.0")
+    private Long accountId;
+
+    @ACL
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, required = false, description = "Name of the Account for which balance will be listed.")
+    private String accountName;
+
+    @ACL
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = false, entityType = DomainResponse.class, description = "ID of the Domain for which balance will be listed. May be used individually or with accountname.")
+    private Long domainId;
+
+    @Parameter(name = ApiConstants.LIST_ALL, type = CommandType.BOOLEAN, description = "False (default) lists the Quota balance summary for calling Account. True lists balance summary for " +
+            "Accounts which the caller has access. If domain ID is informed, this parameter is considered as true.")
+    private Boolean listAll;
+
+    @Parameter(name = ApiConstants.ACCOUNT_STATE_TO_SHOW, type = CommandType.STRING, description =  "Possible values are [ALL, ACTIVE, REMOVED]. ALL will list summaries for " +
+            "active and removed accounts; ACTIVE will list summaries only for active accounts; REMOVED will list summaries only for removed accounts. The default value is ACTIVE.",
+            since = "4.23.0")
+    private String accountStateToShow;
+
+    @ACL
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "ID of the Project for which balance will be listed. Can not be specified with accountId.", since = "4.23.0")
+    private Long projectId;
 
     @Override
     public void execute() {
-        Account caller = CallContext.current().getCallingAccount();
-        Pair<List<QuotaSummaryResponse>, Integer> responses;
-        if (caller.getType() == Account.Type.ADMIN) {
-            if (getAccountName() != null && getDomainId() != null)
-                responses = _responseBuilder.createQuotaSummaryResponse(getAccountName(), getDomainId());
-            else
-                responses = _responseBuilder.createQuotaSummaryResponse(isListAll(), getKeyword(), getStartIndex(), getPageSizeVal());
-        } else {
-            responses = _responseBuilder.createQuotaSummaryResponse(caller.getAccountName(), caller.getDomainId());
-        }
-        final ListResponse<QuotaSummaryResponse> response = new ListResponse<QuotaSummaryResponse>();
+        Pair<List<QuotaSummaryResponse>, Integer> responses = quotaResponseBuilder.createQuotaSummaryResponse(this);
+        ListResponse<QuotaSummaryResponse> response = new ListResponse<>();
         response.setResponses(responses.first(), responses.second());
         response.setResponseName(getCommandName());
         setResponseObject(response);
+    }
+
+    public Long getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(Long accountId) {
+        this.accountId = accountId;
     }
 
     public String getAccountName() {
@@ -87,16 +107,31 @@ public class QuotaSummaryCmd extends BaseListCmd {
     }
 
     public Boolean isListAll() {
-        return listAll == null ? false: listAll;
+        // If a domain ID was specified, then allow listing all summaries of domain
+        return ObjectUtils.defaultIfNull(listAll, Boolean.FALSE) || domainId != null;
     }
 
     public void setListAll(Boolean listAll) {
         this.listAll = listAll;
     }
 
-    @Override
-    public long getEntityOwnerId() {
-        return Account.ACCOUNT_ID_SYSTEM;
+    public Long getProjectId() {
+        return projectId;
     }
 
+    public QuotaAccountStateFilter getAccountStateToShow() {
+        QuotaAccountStateFilter state = QuotaAccountStateFilter.getValue(accountStateToShow);
+        if (state != null) {
+            return state;
+        }
+        return QuotaAccountStateFilter.ACTIVE;
+    }
+
+    @Override
+    public long getEntityOwnerId() {
+        if (ObjectUtils.allNull(accountId, accountName, projectId)) {
+            return -1;
+        }
+        return _accountService.finalizeAccountId(accountId, accountName, domainId, projectId);
+    }
 }

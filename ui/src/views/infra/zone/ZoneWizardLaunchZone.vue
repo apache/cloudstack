@@ -1639,6 +1639,11 @@ export default {
         params.provider = this.prefillContent.secondaryStorageProvider
         params.zoneid = this.stepData.zoneReturned.id
         params.url = url
+        if (this.prefillContent.copyTemplatesFromOtherSecondaryStorages !== undefined) {
+          params['details[0].key'] = 'copytemplatesfromothersecondarystorages'
+          params['details[0].value'] =
+            this.prefillContent.copyTemplatesFromOtherSecondaryStorages
+        }
       } else if (this.prefillContent.secondaryStorageProvider === 'SMB') {
         const nfsServer = this.prefillContent.secondaryStorageServer
         const path = this.prefillContent.secondaryStoragePath

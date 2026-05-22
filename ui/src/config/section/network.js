@@ -20,6 +20,7 @@ import store from '@/store'
 import tungsten from '@/assets/icons/tungsten.svg?inline'
 import { isAdmin } from '@/role'
 import { isZoneCreated } from '@/utils/zone'
+import { vueProps } from '@/vue-app'
 
 export default {
   name: 'network',
@@ -48,9 +49,14 @@ export default {
         return fields
       },
       details: () => {
-        var fields = ['name', 'id', 'description', 'type', 'traffictype', 'vpcid', 'vlan', 'broadcasturi', 'cidr', 'ip6cidr', 'netmask', 'gateway', 'asnumber', 'aclname', 'ispersistent', 'restartrequired', 'reservediprange', 'redundantrouter', 'networkdomain', 'egressdefaultpolicy', 'zonename', 'account', 'domainpath', 'associatednetwork', 'associatednetworkid', 'ip4routing', 'ip6firewall', 'ip6routing', 'ip6routes', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'publicmtu', 'privatemtu']
-        if (!isAdmin()) {
-          fields = fields.filter(function (e) { return e !== 'broadcasturi' })
+        const fields = ['name', 'id', 'description', 'type', 'traffictype', 'vpcid', 'vlan', 'cidr', 'ip6cidr', 'netmask', 'gateway', 'asnumber', 'aclname', 'ispersistent', 'restartrequired', 'reservediprange', 'redundantrouter', 'networkdomain', 'egressdefaultpolicy', 'zonename', 'account', 'domainpath', 'associatednetwork', 'associatednetworkid', 'ip4routing', 'ip6firewall', 'ip6routing', 'ip6routes', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'publicmtu', 'privatemtu']
+        if (isAdmin()) {
+          const vlanIndex = fields.findIndex(detail => detail === 'vlan')
+          fields.splice(vlanIndex + 1, 0, 'broadcasturi')
+          fields.push({
+            field: 'keepmacaddressonpublicnic',
+            customTitle: 'keep.mac.address.on.public.nic'
+          })
         }
         return fields
       },
@@ -171,13 +177,16 @@ export default {
             if (isGroupAction || record.vpcid == null) {
               fields.push('cleanup')
             }
+            if (!record.redundantrouter && vueProps.$config.allowMakingRouterRedundant) {
+              fields.push('makeredundant')
+            }
             fields.push('livepatch')
             return fields
           },
           show: (record) => record.type !== 'L2',
           groupAction: true,
           popup: true,
-          groupMap: (selection, values) => { return selection.map(x => { return { id: x, cleanup: values.cleanup } }) }
+          groupMap: (selection, values) => { return selection.map(x => { return { id: x, cleanup: values.cleanup, makeredundant: values.makeredundant } }) }
         },
         {
           api: 'replaceNetworkACLList',
@@ -229,7 +238,16 @@ export default {
         fields.push(...['domain', 'zonename'])
         return fields
       },
-      details: ['name', 'id', 'displaytext', 'cidr', 'networkdomain', 'ip4routing', 'ip4routes', 'ip6routes', 'ispersistent', 'redundantvpcrouter', 'restartrequired', 'zonename', 'account', 'domain', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'publicmtu'],
+      details: () => {
+        const fields = ['name', 'id', 'displaytext', 'cidr', 'networkdomain', 'ip4routing', 'ip4routes', 'ip6routes', 'ispersistent', 'redundantvpcrouter', 'restartrequired', 'zonename', 'account', 'domain', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'publicmtu']
+        if (isAdmin()) {
+          fields.push({
+            field: 'keepmacaddressonpublicnic',
+            customTitle: 'keep.mac.address.on.public.nic'
+          })
+        }
+        return fields
+      },
       searchFilters: ['name', 'zoneid', 'domainid', 'account', 'restartrequired', 'tags'],
       related: [{
         name: 'vm',
@@ -264,7 +282,13 @@ export default {
           icon: 'edit-outlined',
           label: 'label.edit',
           dataView: true,
-          args: ['name', 'displaytext', 'publicmtu', 'sourcenatipaddress']
+          args: () => {
+            const fields = ['name', 'displaytext', 'publicmtu', 'sourcenatipaddress']
+            if (isAdmin()) {
+              fields.push('keepmacaddressonpublicnic')
+            }
+            return fields
+          }
         },
         {
           api: 'restartVPC',
@@ -356,7 +380,10 @@ export default {
       permission: ['listVnfAppliances'],
       resourceType: 'UserVm',
       params: () => {
-        return { details: 'servoff,tmpl,nics', isvnf: true }
+        return {
+          details: 'group,nics,secgrp,tmpl,servoff,diskoff,iso,volume,affgrp,backoff,vnfnics',
+          isvnf: true
+        }
       },
       columns: () => {
         const fields = ['name', 'state', 'ipaddress']
@@ -1263,15 +1290,11 @@ export default {
         {
           api: 'updateVpnCustomerGateway',
           icon: 'edit-outlined',
-          label: 'label.edit',
+          label: 'label.update.vpn.customer.gateway',
           docHelp: 'adminguide/networking_and_traffic.html#updating-and-removing-a-vpn-customer-gateway',
           dataView: true,
-          args: ['name', 'gateway', 'cidrlist', 'ipsecpsk', 'ikepolicy', 'ikelifetime', 'ikeversion', 'esppolicy', 'esplifetime', 'dpd', 'splitconnections', 'forceencap'],
-          mapping: {
-            ikeversion: {
-              options: ['ike', 'ikev1', 'ikev2']
-            }
-          }
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/UpdateVpnCustomerGateway.vue')))
         },
         {
           api: 'deleteVpnCustomerGateway',

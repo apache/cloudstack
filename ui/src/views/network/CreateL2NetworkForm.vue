@@ -309,7 +309,7 @@ export default {
         this.owner.domainid = null
         this.owner.projectid = OwnerOptions.selectedProject
       }
-      if (isAdminOrDomainAdmin()) {
+      if (OwnerOptions.initialized && this.isAdminOrDomainAdmin()) {
         this.updateVPCCheckAndFetchNetworkOfferingData()
       }
     },

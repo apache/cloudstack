@@ -150,7 +150,7 @@ public class CreateBucketCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
+        Long accountId = _accountService.finalizeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }
@@ -181,7 +181,7 @@ public class CreateBucketCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Bucket Id: " + getEntityUuid());
+        CallContext.current().setEventDetails("Bucket ID: " + getEntityUuid());
 
         Bucket bucket;
         try {

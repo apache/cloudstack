@@ -118,7 +118,7 @@ public class UpdateTrafficTypeCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Updating Traffic Type: " + getId();
+        return "Updating Traffic Type with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
