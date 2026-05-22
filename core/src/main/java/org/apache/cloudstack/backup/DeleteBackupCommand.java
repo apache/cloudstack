@@ -71,6 +71,6 @@ public class DeleteBackupCommand extends Command {
 
     @Override
     public boolean executeInSequence() {
-        return false;
+        return true;
     }
 }
