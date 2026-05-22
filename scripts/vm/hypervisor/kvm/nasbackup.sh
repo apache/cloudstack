@@ -154,10 +154,11 @@ backup_running_vm() {
   esac
 
   # When incremental, verify the parent bitmap still exists on the running domain.
-  # CloudStack rebuilds the libvirt domain XML on every VM start, so persistent bitmaps
-  # are lost across stop/start. If the parent is missing, recreate it as a fresh bitmap
-  # so libvirt accepts the <incremental> reference. The first backup after a recreate
-  # captures all writes since the recreate point — slightly larger than ideal, but correct.
+  # CloudStack rebuilds the libvirt domain XML on every VM start, so libvirt's checkpoint
+  # registry is wiped — but the bitmap may still exist on the qcow2 itself (we pre-seed
+  # one on stopped-VM backups, see backup_stopped_vm). If the parent is missing from
+  # libvirt's view, recreate it. If it's missing entirely (qcow2 too), this falls through
+  # to a fresh-create which captures all writes since — slightly larger but correct.
   if [[ "$effective_mode" == "incremental" ]]; then
     if ! virsh -c qemu:///system checkpoint-list "$VM" --name 2>/dev/null | grep -qx "$BITMAP_PARENT"; then
       cat > $dest/recreate-checkpoint.xml <<XML
@@ -166,9 +167,21 @@ $(virsh -c qemu:///system domblklist "$VM" --details 2>/dev/null | awk '$2=="dis
 </disks></domaincheckpoint>
 XML
       if ! virsh -c qemu:///system checkpoint-create "$VM" --xmlfile $dest/recreate-checkpoint.xml > /dev/null 2>&1; then
-        echo "Failed to recreate parent bitmap $BITMAP_PARENT for $VM"
-        cleanup
-        exit 1
+        # If a bitmap of the same name already lives on the qcow2 (pre-seeded by an
+        # offline backup) libvirt 7.2+ should reuse it during checkpoint-create. Older
+        # libvirt fails the create — clean up the orphan bitmap and retry as a fresh.
+        local retried_ok=1
+        for disk_path in $(virsh -c qemu:///system domblklist "$VM" --details 2>/dev/null | awk '$2=="disk"{print $4}'); do
+          [[ -f "$disk_path" ]] && qemu-img bitmap --remove "$disk_path" "$BITMAP_PARENT" 2>/dev/null || true
+        done
+        if ! virsh -c qemu:///system checkpoint-create "$VM" --xmlfile $dest/recreate-checkpoint.xml > /dev/null 2>&1; then
+          retried_ok=0
+        fi
+        if [[ "$retried_ok" == "0" ]]; then
+          echo "Failed to recreate parent bitmap $BITMAP_PARENT for $VM"
+          cleanup
+          exit 1
+        fi
       fi
       # Marker for the orchestrator: this incremental is larger because the bitmap was rebuilt.
       echo "BITMAP_RECREATED=$BITMAP_PARENT"
@@ -337,6 +350,7 @@ backup_stopped_vm() {
   IFS=","
 
   name="root"
+  bitmap_seeded=0
   for disk in $DISK_PATHS; do
     if [[ "$disk" == rbd:* ]]; then
       volUuid=$(get_ceph_uuid_from_path "$disk")
@@ -350,9 +364,32 @@ backup_stopped_vm() {
       echo "qemu-img convert failed for $disk $output"
       cleanup
     fi
+
+    # Pre-seed a persistent bitmap on the source disk so the NEXT backup (taken
+    # after this VM is started again) can be incremental against the qcow2 we
+    # just wrote. Without this, every backup after a stopped-VM backup would
+    # fall back to full because no parent bitmap exists on the host yet.
+    # Addresses abh1sar review at nasbackup.sh:513.
+    # Only applies to file-backed qcow2 sources — RBD/LINSTOR have their own
+    # snapshot mechanisms and qemu-img bitmap is not the right primitive there.
+    if [[ -n "$BITMAP_NEW" && "$disk" != rbd:* && "$disk" != /dev/drbd/by-res/* ]]; then
+      if qemu-img bitmap --add "$disk" "$BITMAP_NEW" 2>>"$logFile"; then
+        bitmap_seeded=1
+      else
+        echo "WARN: failed to pre-seed bitmap $BITMAP_NEW on $disk — next backup will fall back to full" >&2
+      fi
+    fi
+
     name="datadisk"
   done
   sync
+
+  # Surface the bitmap name we created so the orchestrator can persist it as
+  # the VM's active_checkpoint_id. Empty when sources weren't file-backed or
+  # qemu-img bitmap failed — orchestrator handles either case.
+  if [[ "$bitmap_seeded" == "1" ]]; then
+    echo "BITMAP_CREATED=$BITMAP_NEW" >&2
+  fi
 
   ls -l --numeric-uid-gid $dest | awk '{print $5}'
 }
