@@ -132,9 +132,9 @@ public class KeycloakOAuth2Provider extends AdapterBase implements UserOAuth2Aut
                 JsonObject json = JsonParser.parseString(body).getAsJsonObject();
                 JsonElement fetchedIdToken = json.get("id_token");
                 if (fetchedIdToken == null) {
-                	throw new CloudRuntimeException("No id_token found in token");
+                    throw new CloudRuntimeException("No id_token found in token");
                 }
-				String idTokenAsString = fetchedIdToken.getAsString();
+                String idTokenAsString = fetchedIdToken.getAsString();
                 validateIdToken(idTokenAsString , provider);
 
                 this.idToken = idTokenAsString ;
