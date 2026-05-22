@@ -204,19 +204,23 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
      * parent bitmap and parent file path.
      */
     static final class ChainDecision {
-        final String mode;          // "full" or "incremental"
+        final String mode;            // "full" or "incremental"
         final String bitmapNew;
-        final String bitmapParent;  // null for full
-        final String parentPath;    // null for full
-        final String chainId;       // chain identifier this backup belongs to
-        final int chainPosition;    // 0 for full, N for the Nth incremental in the chain
+        final String bitmapParent;    // null for full
+        // Per-volume parent backup file paths, one per current VM volume in deviceId order.
+        // null/empty for full. Replaces the single parentPath field — each volume needs its
+        // own parent file because backup files are named after each volume's own UUID
+        // (root.<uuid>.qcow2 / datadisk.<uuid>.qcow2), abh1sar review at line 340.
+        final List<String> parentPaths;
+        final String chainId;         // chain identifier this backup belongs to
+        final int chainPosition;      // 0 for full, N for the Nth incremental in the chain
 
-        private ChainDecision(String mode, String bitmapNew, String bitmapParent, String parentPath,
+        private ChainDecision(String mode, String bitmapNew, String bitmapParent, List<String> parentPaths,
                               String chainId, int chainPosition) {
             this.mode = mode;
             this.bitmapNew = bitmapNew;
             this.bitmapParent = bitmapParent;
-            this.parentPath = parentPath;
+            this.parentPaths = parentPaths;
             this.chainId = chainId;
             this.chainPosition = chainPosition;
         }
@@ -226,10 +230,10 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
                     UUID.randomUUID().toString(), 0);
         }
 
-        static ChainDecision incremental(String bitmapNew, String bitmapParent, String parentPath,
+        static ChainDecision incremental(String bitmapNew, String bitmapParent, List<String> parentPaths,
                                          String chainId, int chainPosition) {
             return new ChainDecision(NASBackupChainKeys.TYPE_INCREMENTAL, bitmapNew, bitmapParent,
-                    parentPath, chainId, chainPosition);
+                    parentPaths, chainId, chainPosition);
         }
 
         boolean isIncremental() {
@@ -305,11 +309,18 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             return ChainDecision.fullStart(newBitmap);
         }
 
-        // The script needs the parent backup's on-NAS file path so it can rebase the new
-        // qcow2 onto it. The path is stored relative to the NAS mount point — the script
-        // resolves it inside its mount session.
-        String parentPath = composeParentBackupPath(parent);
-        return ChainDecision.incremental(newBitmap, activeCheckpoint, parentPath,
+        // The script needs the parent backup's on-NAS file path PER VOLUME so it can rebase
+        // each new qcow2 onto the matching parent. The paths are stored relative to the NAS
+        // mount root — the script resolves them inside its mount session. When alignment
+        // fails (volume count changed, etc.) compose returns null and we fall back to full
+        // so we don't risk corrupting the chain.
+        List<String> parentPaths = composeParentBackupPaths(parent, vm.getId());
+        if (parentPaths == null) {
+            LOG.debug("VM {} parent backup {} volume layout no longer matches current VM — forcing full",
+                    vm.getInstanceName(), parent.getUuid());
+            return ChainDecision.fullStart(newBitmap);
+        }
+        return ChainDecision.incremental(newBitmap, activeCheckpoint, parentPaths,
                 parentChainId, parentChainPosition + 1);
     }
 
@@ -353,15 +364,51 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     }
 
     /**
-     * Compose the on-NAS path of a parent backup's root-disk qcow2. Relative to the NAS mount,
-     * matches the layout written by {@code nasbackup.sh} ({@code <backupPath>/root.<volUuid>.qcow2}).
+     * Compose the on-NAS path of EVERY parent backup file (one per VM volume) in the same
+     * order the script will iterate the current VM's disks (deviceId asc). Relative to the
+     * NAS mount, matches the layout written by {@code nasbackup.sh}:
+     *   first  disk -> {@code <backupPath>/root.<volUuid>.qcow2}
+     *   others      -> {@code <backupPath>/datadisk.<volUuid>.qcow2}
+     *
+     * Returns {@code null} if the parent's stored volume list can't be aligned with the
+     * current VM's volumes (count mismatch / different volume identities). In that case the
+     * caller should force a fresh full so we don't accidentally rebase a data disk onto the
+     * root parent — exactly the bug abh1sar flagged at line 340.
      */
-    private String composeParentBackupPath(Backup parent) {
-        // backupPath is stored as externalId by createBackupObject — e.g. "i-2-1234-VM/2026.04.27.13.45.00".
-        // Volume UUID for the root volume is what the script keys backup files on.
-        VolumeVO rootVolume = volumeDao.getInstanceRootVolume(parent.getVmId());
-        String volUuid = rootVolume == null ? "root" : rootVolume.getUuid();
-        return parent.getExternalId() + "/root." + volUuid + ".qcow2";
+    private List<String> composeParentBackupPaths(Backup parent, long vmId) {
+        // backupPath is stored as externalId by createBackupObject — e.g.
+        // "i-2-1234-VM/2026.04.27.13.45.00".
+        String dir = parent.getExternalId();
+        if (dir == null || dir.isEmpty()) {
+            return null;
+        }
+
+        // Read the parent's backed-up volume list (uuid order = deviceId order at the time
+        // the parent was taken). The script names files as root.<uuid>.qcow2 for the first
+        // entry and datadisk.<uuid>.qcow2 for subsequent entries — match that here.
+        List<Backup.VolumeInfo> parentVols = parent.getBackedUpVolumes();
+        if (parentVols == null || parentVols.isEmpty()) {
+            return null;
+        }
+
+        // Sanity: the current VM must have the same number of volumes. If it doesn't (volume
+        // added or removed since the parent), positional alignment is unsafe — fall back to
+        // full at the caller.
+        List<VolumeVO> currentVols = volumeDao.findByInstance(vmId);
+        if (currentVols == null || currentVols.size() != parentVols.size()) {
+            return null;
+        }
+
+        List<String> paths = new ArrayList<>(parentVols.size());
+        for (int i = 0; i < parentVols.size(); i++) {
+            String volUuid = parentVols.get(i).getUuid();
+            if (volUuid == null || volUuid.isEmpty()) {
+                return null;
+            }
+            String prefix = (i == 0) ? "root" : "datadisk";
+            paths.add(dir + "/" + prefix + "." + volUuid + ".qcow2");
+        }
+        return paths;
     }
 
     /**
@@ -479,7 +526,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         command.setMode(decision.mode);
         command.setBitmapNew(decision.bitmapNew);
         command.setBitmapParent(decision.bitmapParent);
-        command.setParentPath(decision.parentPath);
+        command.setParentPaths(decision.parentPaths);
 
         if (VirtualMachine.State.Stopped.equals(vm.getState())) {
             List<VolumeVO> vmVolumes = volumeDao.findByInstance(vm.getId());

@@ -37,7 +37,11 @@ QUIESCE=""
 MODE=""               # "full" or "incremental"; empty => legacy full-only behavior (no checkpoint created)
 BITMAP_NEW=""         # Bitmap/checkpoint name to create with this backup (e.g. "backup-1711586400")
 BITMAP_PARENT=""      # For incremental: parent bitmap name to read changes since
-PARENT_PATH=""        # For incremental: parent backup file path (used as backing for qemu-img rebase)
+PARENT_PATHS=""       # For incremental: comma-separated list of parent backup file paths,
+                      # one per VM volume in the same order as DISK_PATHS. Each new qcow2
+                      # is rebased onto its corresponding parent file. Required because
+                      # data-disk backup files don't share the root volume's UUID — abh1sar
+                      # review at NASBackupProvider.java:340.
 # Rebase operation parameters (used only with -o rebase, for chain repair on delete-middle)
 REBASE_TARGET=""      # The qcow2 file to repoint at a new backing (mount-relative path)
 REBASE_NEW_BACKING="" # The new backing parent file (mount-relative path)
@@ -128,8 +132,8 @@ backup_running_vm() {
   local make_checkpoint=0
   case "$effective_mode" in
     incremental)
-      if [[ -z "$BITMAP_PARENT" || -z "$BITMAP_NEW" || -z "$PARENT_PATH" ]]; then
-        echo "incremental mode requires --bitmap-parent, --bitmap-new, and --parent-path"
+      if [[ -z "$BITMAP_PARENT" || -z "$BITMAP_NEW" || -z "$PARENT_PATHS" ]]; then
+        echo "incremental mode requires --bitmap-parent, --bitmap-new, and --parent-paths"
         cleanup
         exit 1
       fi
@@ -278,17 +282,29 @@ XML
   # - For INCREMENTAL: rebase the resulting thin qcow2 onto its parent so the chain is self-describing
   #   (so a future restore can flatten without external chain metadata).
   name="root"
+  # PARENT_PATHS arrives as a comma-separated list, one entry per VM volume in the same
+  # order as DISK_PATHS. Split into a bash array so we can index by disk position.
+  local -a parent_paths_arr=()
+  if [[ "$effective_mode" == "incremental" && -n "$PARENT_PATHS" ]]; then
+    IFS=',' read -ra parent_paths_arr <<< "$PARENT_PATHS"
+  fi
+  local disk_idx=0
   while read -r disk fullpath; do
     if [[ "$effective_mode" == "incremental" ]]; then
       volUuid="${fullpath##*/}"
       if [[ "$fullpath" == /dev/drbd/by-res/* ]]; then
         volUuid=$(get_linstor_uuid_from_path "$fullpath")
       fi
-      # PARENT_PATH from the orchestrator is the parent backup's path relative to the
-      # NAS mount root (e.g. "i-2-X/2026.04.27.12.00.00/root.UUID.qcow2"). Convert it to
-      # a path relative to THIS new qcow2's directory so the backing reference resolves
-      # correctly the next time the NAS is mounted (mount points are ephemeral).
-      local parent_abs="$mount_point/$PARENT_PATH"
+      # Pick this disk's specific parent file. Each volume's backup is named after its
+      # own UUID so a single PARENT_PATH would rebase data disks onto the root parent —
+      # exactly the bug abh1sar called out at NASBackupProvider.java:340.
+      if [[ $disk_idx -ge ${#parent_paths_arr[@]} ]]; then
+        echo "PARENT_PATHS list shorter than DISK_PATHS — missing parent for disk index $disk_idx"
+        cleanup
+        exit 1
+      fi
+      local this_parent_rel="${parent_paths_arr[$disk_idx]}"
+      local parent_abs="$mount_point/$this_parent_rel"
       if [[ ! -f "$parent_abs" ]]; then
         echo "Parent backup file does not exist on NAS: $parent_abs"
         cleanup
@@ -302,6 +318,7 @@ XML
         exit 1
       fi
       name="datadisk"
+      disk_idx=$((disk_idx + 1))
       continue
     fi
     if [[ "$fullpath" != /dev/drbd/by-res/* ]]; then
@@ -556,8 +573,8 @@ while [[ $# -gt 0 ]]; do
       shift
       shift
       ;;
-    --parent-path)
-      PARENT_PATH="$2"
+    --parent-paths)
+      PARENT_PATHS="$2"
       shift
       shift
       ;;

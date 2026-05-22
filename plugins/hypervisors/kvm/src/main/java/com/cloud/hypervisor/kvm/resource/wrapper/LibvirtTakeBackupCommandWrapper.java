@@ -93,9 +93,9 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
             argv.add("--bitmap-parent");
             argv.add(command.getBitmapParent());
         }
-        if (command.getParentPath() != null && !command.getParentPath().isEmpty()) {
-            argv.add("--parent-path");
-            argv.add(command.getParentPath());
+        if (command.getParentPaths() != null && !command.getParentPaths().isEmpty()) {
+            argv.add("--parent-paths");
+            argv.add(String.join(",", command.getParentPaths()));
         }
 
         List<String[]> commands = new ArrayList<>();
