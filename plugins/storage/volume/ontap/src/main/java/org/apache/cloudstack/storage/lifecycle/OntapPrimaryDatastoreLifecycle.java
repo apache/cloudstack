@@ -231,7 +231,7 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
             throw new CloudRuntimeException("Storage pool name is null or empty, cannot create primary storage");
         }
 
-        if (StringUtils.isBlank(providerName )) {
+        if (StringUtils.isBlank(providerName)) {
             throw new CloudRuntimeException("Provider name is null or empty, cannot create primary storage");
         }
 
