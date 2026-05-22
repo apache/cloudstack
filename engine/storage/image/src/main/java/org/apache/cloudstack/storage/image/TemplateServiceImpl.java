@@ -421,8 +421,9 @@ public class TemplateServiceImpl implements TemplateService {
             return true;
         }
 
-        logger.info("Skipping download of template [{}] to image store [{}].", template.getUniqueName(), store.getName());
-        return false;
+        logger.debug("Copying template [{}] to image store [{}] to reach the configured secondary storage copy limit in zone [{}].",
+                template.getUniqueName(), store.getName(), zoneId);
+        return true;
     }
 
     @Override
@@ -652,7 +653,7 @@ public class TemplateServiceImpl implements TemplateService {
                         availHypers.add(HypervisorType.None); // bug 9809: resume ISO
                         // download.
                         for (VMTemplateVO tmplt : toBeDownloaded) {
-                            // if this is private template, skip sync to a new image store
+                            // skip stores excluded by heuristic rules or already at the configured copy limit
                             if (!shouldDownloadTemplateToStore(tmplt, store)) {
                                 continue;
                             }

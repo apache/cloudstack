@@ -204,8 +204,10 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
     }
 
     /**
-     * If the template/ISO is marked as private, then it is allocated to a random secondary storage; otherwise, allocates to every storage pool in every zone given by the
-     * {@link TemplateProfile#getZoneIdList()}.
+     * Allocates the template/ISO to a single image store - the one the file will be uploaded to. The upload can only
+     * target one secondary store, so additional copies (up to the configured secstorage.public/private.template.copy.max)
+     * are propagated later by template sync instead of being pre-allocated here as empty placeholder entries that never
+     * receive the data.
      */
     protected void postUploadAllocation(List<DataStore> imageStores, VMTemplateVO template, List<TemplateOrVolumePostUploadCommand> payloads) {
         Map<Long, Integer> zoneCopyCount = new HashMap<>();
@@ -248,6 +250,11 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             payload.setRequiresHvm(template.requiresHvm());
             payload.setDescription(template.getDisplayText());
             payloads.add(payload);
+
+            // The file can only be uploaded to a single secondary store. Allocate just this one; additional copies
+            // up to the configured secondary storage copy limit are propagated afterwards by template sync, so we do
+            // not create empty placeholder template_store_ref rows on the other stores.
+            break;
         }
     }
 

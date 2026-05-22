@@ -153,8 +153,23 @@ public class TemplateServiceImplTest {
     }
 
     @Test
-    public void shouldDownloadTemplateToStoreTestSkipsPrivateExistingTemplate() {
+    public void shouldDownloadTemplateToStoreTestReplicatesPrivateTemplateUnderCopyLimit() {
+        DataStore storeWithCopy = Mockito.mock(DataStore.class);
+        Mockito.doReturn(10L).when(storeWithCopy).getId();
+        Mockito.when(templateManagerMock.getSecStorageCopyLimit(tmpltMock, zoneScopeMock.getScopeId())).thenReturn(2);
+        Mockito.doReturn(List.of(storeWithCopy)).when(dataStoreManagerMock).getImageStoresByScope(Mockito.any());
+        Mockito.doReturn(List.of(Mockito.mock(TemplateDataStoreVO.class))).when(templateDataStoreDao).listByTemplateStore(2L, 10L);
         Mockito.when(templateDataStoreDao.findByTemplateZone(tmpltMock.getId(), zoneScopeMock.getScopeId(), DataStoreRole.Image)).thenReturn(Mockito.mock(TemplateDataStoreVO.class));
+        Assert.assertTrue(templateService.shouldDownloadTemplateToStore(tmpltMock, dataStoreMock));
+    }
+
+    @Test
+    public void shouldDownloadTemplateToStoreTestSkipsPrivateTemplateAtCopyLimit() {
+        DataStore storeWithCopy = Mockito.mock(DataStore.class);
+        Mockito.doReturn(10L).when(storeWithCopy).getId();
+        Mockito.when(templateManagerMock.getSecStorageCopyLimit(tmpltMock, zoneScopeMock.getScopeId())).thenReturn(1);
+        Mockito.doReturn(List.of(storeWithCopy)).when(dataStoreManagerMock).getImageStoresByScope(Mockito.any());
+        Mockito.doReturn(List.of(Mockito.mock(TemplateDataStoreVO.class))).when(templateDataStoreDao).listByTemplateStore(2L, 10L);
         Assert.assertFalse(templateService.shouldDownloadTemplateToStore(tmpltMock, dataStoreMock));
     }
 
