@@ -498,7 +498,7 @@ public class LinstorUtil {
         // This happens when (a) the matched resource is a legacy template created before that
         // convention was introduced, or (b) the template was cached by a different resource
         // group and the operator hopes to share it. Log so the ambiguity is visible — silent
-        // first-match selection has previously routed clones to the wrong template when
+        // first-match fallback has previously routed clones to the wrong template when
         // multiple resource groups coexisted on the same controller.
         ResourceDefinition fallback = rdsStartingWith.get(0);
         LOGGER.warn("LINSTOR findResourceDefinition: no resource for '{}' has the expected " +
