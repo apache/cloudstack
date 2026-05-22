@@ -468,7 +468,8 @@ public class NASBackupProviderTest {
         Mockito.when(vm.getLastHostId()).thenReturn(hostId);
         HostVO host = mock(HostVO.class);
         Mockito.when(host.getStatus()).thenReturn(Status.Up);
-        Mockito.when(host.getId()).thenReturn(hostId);
+        // Note: host.getId() is intentionally not stubbed — the live-child path never
+        // contacts the agent (verified below), so the stub would be unnecessary.
         Mockito.when(hostDao.findById(hostId)).thenReturn(host);
 
         BackupRepositoryVO repo = new BackupRepositoryVO(1L, "nas", "test-repo",
