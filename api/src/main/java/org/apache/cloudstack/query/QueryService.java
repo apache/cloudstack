@@ -140,6 +140,11 @@ public interface QueryService {
     ConfigKey<Boolean> ReturnVmStatsOnVmList = new ConfigKey<>("Advanced", Boolean.class, "list.vm.default.details.stats", "true",
             "Determines whether VM stats should be returned when details are not explicitly specified in listVirtualMachines API request. When false, details default to [group, nics, secgrp, tmpl, servoff, diskoff, backoff, iso, volume, min, affgrp]. When true, all details are returned including 'stats'.", true, ConfigKey.Scope.Global);
 
+    ConfigKey<Boolean> BypassTemplateView = new ConfigKey<>("Advanced", Boolean.class, "template.list.bypass.view", "false",
+            "If true, listTemplates Phase 1 (DISTINCT temp_zone_pair) bypasses template_view and runs a hand-tuned SQL " +
+                    "against the underlying tables. Falls back to the view automatically when the request uses tags, " +
+                    "sharedAccountIds, domainPath, or featured/community-domain filters. Toggleable at runtime; flip back " +
+                    "to false to revert without a deploy if a parity bug surfaces.", true, ConfigKey.Scope.Global);
 
     ListResponse<UserResponse> searchForUsers(ResponseObject.ResponseView responseView, ListUsersCmd cmd) throws PermissionDeniedException;
 
