@@ -32,9 +32,9 @@
         :description="$t('message.ssvm.cert.trust.instructions')" />
       <div class="action-button" style="margin-top: 16px">
         <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-        <a :href="ssvmOrigin" target="_blank" rel="noopener noreferrer">
-          <a-button>{{ $t('label.ssvm.open.cert.page') }}</a-button>
-        </a>
+        <a-button :href="ssvmOrigin" target="_blank" rel="noopener noreferrer">
+          {{ $t('label.ssvm.open.cert.page') }}
+        </a-button>
         <a-button type="primary" :loading="loading" @click="retryUpload">
           {{ $t('label.retry.upload') }}
         </a-button>
