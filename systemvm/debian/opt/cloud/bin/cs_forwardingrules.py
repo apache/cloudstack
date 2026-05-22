@@ -27,8 +27,8 @@ def merge(dbag, rules):
         newrule = dict()
         newrule["public_ip"] = source_ip
         newrule["internal_ip"] = destination_ip
-        if "destination_ip_on_default_nic" in rule:
-            newrule["destination_ip_on_default_nic"] = rule["destination_ip_on_default_nic"]
+        if "should_apply_cross_network_snat" in rule:
+            newrule["should_apply_cross_network_snat"] = rule["should_apply_cross_network_snat"]
 
         if rules["type"] == "staticnatrules":
             newrule["type"] = "staticnat"

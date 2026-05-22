@@ -1563,17 +1563,18 @@ class CsForwardingRules(CsDataBag):
         self.fw.append(["filter", "",
                         "-A FORWARD -i %s -o eth0  -d %s  -m state  --state NEW -j ACCEPT " % (device, rule["internal_ip"])])
 
-        # Configure the hairpin snat
-        self.fw.append(["nat", "front", "-A POSTROUTING -s %s -d %s -j SNAT -o %s --to-source %s" %
-                        (self.getNetworkByIp(rule['internal_ip']), rule["internal_ip"], self.getDeviceByIp(rule["internal_ip"]), self.getGuestIpByIp(rule["internal_ip"]))])
-
-        destination_ip_on_default_nic = rule.get("destination_ip_on_default_nic", True)
-        if not destination_ip_on_default_nic:
+        # Configure the hairpin snat for default nic or nic-aware snat for non-default
+        apply_cross_network_snat = rule.get("should_apply_cross_network_snat", False)
+        if apply_cross_network_snat:
             internal_device = self.getDeviceByIp(rule["internal_ip"])
             internal_vr_ip = self.getGuestIpByIp(rule["internal_ip"])
             if internal_device and internal_vr_ip and internal_device != device:
                 self.fw.append(["nat", "front",
                                 "-A POSTROUTING -o %s -d %s/32 -j SNAT --to-source %s" % (internal_device, rule["internal_ip"], internal_vr_ip)])
+        else:
+            self.fw.append(["nat", "front", "-A POSTROUTING -s %s -d %s -j SNAT -o %s --to-source %s" %
+                        (self.getNetworkByIp(rule['internal_ip']), rule["internal_ip"], self.getDeviceByIp(rule["internal_ip"]), self.getGuestIpByIp(rule["internal_ip"]))])
+
 
 
 class IpTablesExecutor:

@@ -25,25 +25,25 @@ public class StaticNatRule {
     private String sourceIpAddress;
     private String sourcePortRange;
     private String destinationIpAddress;
-    private boolean destinationIpOnDefaultNic = true;
+    private boolean shouldApplyCrossNetworkSnat = false;
 
     public StaticNatRule() {
         // Empty constructor for (de)serialization
     }
 
     public StaticNatRule(boolean revoke, String protocol, String sourceIpAddress, String sourcePortRange, String destinationIpAddress) {
-        this(revoke, protocol, sourceIpAddress, sourcePortRange, destinationIpAddress, true);
+        this(revoke, protocol, sourceIpAddress, sourcePortRange, destinationIpAddress, false);
     }
 
     public StaticNatRule(boolean revoke, String protocol, String sourceIpAddress, String sourcePortRange,
-                         String destinationIpAddress, boolean destinationIpOnDefaultNic) {
+                         String destinationIpAddress, boolean shouldApplyCrossNetworkSnat) {
         super();
         this.revoke = revoke;
         this.protocol = protocol;
         this.sourceIpAddress = sourceIpAddress;
         this.sourcePortRange = sourcePortRange;
         this.destinationIpAddress = destinationIpAddress;
-        this.destinationIpOnDefaultNic = destinationIpOnDefaultNic;
+        this.shouldApplyCrossNetworkSnat = shouldApplyCrossNetworkSnat;
     }
 
     public boolean isRevoke() {
@@ -86,12 +86,12 @@ public class StaticNatRule {
         this.destinationIpAddress = destinationIpAddress;
     }
 
-    public boolean isDestinationIpOnDefaultNic() {
-        return destinationIpOnDefaultNic;
+    public boolean isShouldApplyCrossNetworkSnat() {
+        return shouldApplyCrossNetworkSnat;
     }
 
-    public void setDestinationIpOnDefaultNic(boolean destinationIpOnDefaultNic) {
-        this.destinationIpOnDefaultNic = destinationIpOnDefaultNic;
+    public void setShouldApplyCrossNetworkSnat(boolean shouldApplyCrossNetworkSnat) {
+        this.shouldApplyCrossNetworkSnat = shouldApplyCrossNetworkSnat;
     }
 
 }

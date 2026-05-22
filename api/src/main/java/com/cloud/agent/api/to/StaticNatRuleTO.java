@@ -28,7 +28,7 @@ import com.cloud.network.rules.StaticNatRule;
 
 public class StaticNatRuleTO extends FirewallRuleTO {
     String dstIp;
-    boolean destinationIpOnDefaultNic = true;
+    boolean shouldApplyCrossNetworkSnat = false;
 
     protected StaticNatRuleTO() {
     }
@@ -80,12 +80,12 @@ public class StaticNatRuleTO extends FirewallRuleTO {
         return dstIp;
     }
 
-    public boolean isDestinationIpOnDefaultNic() {
-        return destinationIpOnDefaultNic;
+    public boolean isShouldApplyCrossNetworkSnat() {
+        return shouldApplyCrossNetworkSnat;
     }
 
-    public void setDestinationIpOnDefaultNic(boolean destinationIpOnDefaultNic) {
-        this.destinationIpOnDefaultNic = destinationIpOnDefaultNic;
+    public void setShouldApplyCrossNetworkSnat(boolean shouldApplyCrossNetworkSnat) {
+        this.shouldApplyCrossNetworkSnat = shouldApplyCrossNetworkSnat;
     }
 
 }

@@ -446,7 +446,7 @@ public class CommandSetupHelper {
             for (final StaticNatRule rule : rules) {
                 final IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
                 final StaticNatRuleTO ruleTO = new StaticNatRuleTO(rule, null, sourceIp.getAddress().addr(), rule.getDestIpAddress());
-                ruleTO.setDestinationIpOnDefaultNic(isDestinationIpOnDefaultNic(guestNetworkId, rule.getDestIpAddress()));
+                ruleTO.setShouldApplyCrossNetworkSnat(requiresReturnPathSnat(guestNetworkId, rule.getDestIpAddress()));
                 rulesTO.add(ruleTO);
             }
         }
@@ -460,13 +460,23 @@ public class CommandSetupHelper {
         cmds.addCommand(cmd);
     }
 
-    private boolean isDestinationIpOnDefaultNic(final long networkId, final String destinationIp) {
+    /**
+     * This method determines whether to use network-wide SNAT or NIC aware SNAT
+     * @param networkId
+     * @param destinationIp
+     * @return
+     */
+    private boolean requiresReturnPathSnat(final long networkId, final String destinationIp) {
+        if (!VirtualNetworkApplianceManager.NicSnatEnabled.value()) {
+            return false;
+        }
+
         final NicVO destinationNic = _nicDao.findByIp4AddressAndNetworkId(destinationIp, networkId);
         if (destinationNic == null) {
             logger.debug("Unable to find destination NIC for ip [{}] in network [{}], assuming default NIC.", destinationIp, networkId);
-            return true;
+            return false;
         }
-        return destinationNic.isDefaultNic();
+        return !destinationNic.isDefaultNic();
     }
 
     public void createApplyFirewallRulesCommands(final List<? extends FirewallRule> rules, final VirtualRouter router, final Commands cmds, final long guestNetworkId) {
@@ -707,7 +717,7 @@ public class CommandSetupHelper {
                 final IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
                 final StaticNatRuleTO ruleTO = new StaticNatRuleTO(0, sourceIp.getAddress().addr(), null, null, rule.getDestIpAddress(), null, null, null, rule.isForRevoke(),
                         false);
-                ruleTO.setDestinationIpOnDefaultNic(isDestinationIpOnDefaultNic(guestNetworkId, rule.getDestIpAddress()));
+                ruleTO.setShouldApplyCrossNetworkSnat(requiresReturnPathSnat(guestNetworkId, rule.getDestIpAddress()));
                 rulesTO.add(ruleTO);
             }
         }
