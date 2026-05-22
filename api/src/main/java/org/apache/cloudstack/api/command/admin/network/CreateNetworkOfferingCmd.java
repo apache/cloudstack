@@ -60,6 +60,7 @@ import static com.cloud.network.Network.Service.PortForwarding;
 import static com.cloud.network.Network.Service.NetworkACL;
 import static com.cloud.network.Network.Service.UserData;
 import static com.cloud.network.Network.Service.Firewall;
+import static com.cloud.network.Network.Service.Vpn;
 
 @APICommand(name = "createNetworkOffering", description = "Creates a network offering.", responseObject = NetworkOfferingResponse.class, since = "3.0.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -306,8 +307,20 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
             } else {
                 services.add(Firewall.getName());
             }
+
+            if (isNetrisNatted()) {
+                services.add(Vpn.getName());
+            }
             return services;
         }
+    }
+
+    private boolean isNetris() {
+        return "Netris".equalsIgnoreCase(provider);
+    }
+
+    private boolean isNetrisNatted() {
+        return isNetris() && NetworkOffering.NetworkMode.NATTED.name().equalsIgnoreCase(networkMode);
     }
 
     public String getGuestIpType() {
@@ -415,6 +428,9 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
                     ("Netris".equalsIgnoreCase(provider) && NetworkOffering.NetworkMode.ROUTED.name().equalsIgnoreCase(getNetworkMode()))) {
                 serviceProviderMap.remove(Lb.getName());
             }
+        }
+        if (isNetrisNatted()) {
+            serviceProviderMap.put(Vpn.getName(), List.of(routerProvider));
         }
     }
 

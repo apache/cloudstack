@@ -974,7 +974,8 @@ export default {
             SourceNat: this.Netris,
             StaticNat: this.Netris,
             PortForwarding: this.Netris,
-            Lb: this.Netris
+            Lb: this.Netris,
+            Vpn: this.forVpc ? this.VPCVR : this.VR
           }),
           ...(forVpc && { NetworkACL: this.Netris }),
           ...(!forVpc && { Firewall: this.Netris })

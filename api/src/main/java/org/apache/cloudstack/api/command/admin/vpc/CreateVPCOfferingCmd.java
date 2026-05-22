@@ -61,6 +61,7 @@ import static com.cloud.network.Network.Service.PortForwarding;
 import static com.cloud.network.Network.Service.NetworkACL;
 import static com.cloud.network.Network.Service.UserData;
 import static com.cloud.network.Network.Service.Gateway;
+import static com.cloud.network.Network.Service.Vpn;
 
 @APICommand(name = "createVPCOffering", description = "Creates VPC offering", responseObject = VpcOfferingResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -198,8 +199,19 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
                     NetworkOffering.NetworkMode.NATTED.name().equalsIgnoreCase(getNetworkMode()))) {
                 supportedServices.add(Lb.getName());
             }
+            if (isNetrisNatted()) {
+                supportedServices.add(Vpn.getName());
+            }
         }
         return supportedServices;
+    }
+
+    private boolean isNetris() {
+        return "Netris".equalsIgnoreCase(provider);
+    }
+
+    private boolean isNetrisNatted() {
+        return isNetris() && NetworkOffering.NetworkMode.NATTED.name().equalsIgnoreCase(networkMode);
     }
 
     public String getProvider() {

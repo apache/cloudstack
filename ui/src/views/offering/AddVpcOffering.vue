@@ -493,6 +493,11 @@ export default {
           enabled: true,
           provider: [{ name: 'VpcVirtualRouter' }]
         })
+        services.push({
+          name: 'Vpn',
+          enabled: true,
+          provider: [{ name: 'VpcVirtualRouter' }]
+        })
       } else {
         services.push({
           name: 'Dhcp',
