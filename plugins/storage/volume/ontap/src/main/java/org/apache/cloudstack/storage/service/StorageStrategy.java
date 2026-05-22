@@ -595,7 +595,7 @@ public abstract class StorageStrategy {
      * @param values map including SVM name, LUN name, and igroup name (for SAN) or equivalent for NAS
      * @return map containing logical unit number for the new/existing mapping (SAN) or relevant info for NAS
      */
-    abstract public Map<String,String> enableLogicalAccess(Map<String,String> values);
+    abstract public String enableLogicalAccess(Map<String,String> values);
 
     /**
      * Method encapsulates the behavior based on the opted protocol in subclasses
@@ -610,7 +610,7 @@ public abstract class StorageStrategy {
      * @param values map with SVM name, LUN name, and igroup name (for SAN) or equivalent for NAS
      * @return map containing logical unit number if mapping exists; otherwise null
      */
-    abstract public Map<String, String> getLogicalAccess(Map<String, String> values);
+    abstract public String getLogicalAccess(Map<String, String> values);
 
     // ── FlexVolume Snapshot accessors ────────────────────────────────────────
 

@@ -383,10 +383,10 @@ public class UnifiedSANStrategy extends SANStrategy {
         }
     }
 
-    public Map<String, String> enableLogicalAccess(Map<String, String> values) {
+    public String enableLogicalAccess(Map<String, String> values) {
         logger.info("enableLogicalAccess : Create LunMap");
         logger.debug("enableLogicalAccess : Creating LunMap with values {} ", values);
-        Map<String, String> response = null;
+        String lunNumber = null;
         if (values == null) {
             logger.error("enableLogicalAccess: LunMap creation failed. Invalid request values: null");
             throw new CloudRuntimeException("Failed to create LunMap, invalid request");
@@ -435,9 +435,7 @@ public class UnifiedSANStrategy extends SANStrategy {
                                 OntapStorageConstants.IGROUP_DOT_NAME, igroupName,
                                 OntapStorageConstants.FIELDS, OntapStorageConstants.LOGICAL_UNIT_NUMBER
                         ));
-                response = Map.of(
-                        OntapStorageConstants.LOGICAL_UNIT_NUMBER, lunMapResponse.getRecords().get(0).getLogicalUnitNumber().toString()
-                );
+                lunNumber = lunMapResponse.getRecords().get(0).getLogicalUnitNumber().toString();
             } catch (Exception e) {
                 logger.error("enableLogicalAccess: Failed to fetch LunMap details for Lun: {} and igroup: {}, Exception: {}", lunName, igroupName, e);
                 throw new CloudRuntimeException("Failed to fetch LunMap details for Lun: " + lunName + " and igroup: " + igroupName);
@@ -448,7 +446,7 @@ public class UnifiedSANStrategy extends SANStrategy {
             logger.error("Exception occurred while creating LunMap", e);
             throw new CloudRuntimeException("Failed to create LunMap: " + e.getMessage());
         }
-        return response;
+        return lunNumber;
     }
 
     public void disableLogicalAccess(Map<String, String> values) {
@@ -482,8 +480,9 @@ public class UnifiedSANStrategy extends SANStrategy {
     }
 
     // GET-only helper: fetch LUN-map and return logical unit number if it exists; otherwise return null
-    public Map<String, String> getLogicalAccess(Map<String, String> values) {
+    public String getLogicalAccess(Map<String, String> values) {
         logger.info("getLogicalAccess : Fetch LunMap");
+        String lunNumber = null;
         logger.debug("getLogicalAccess : Fetching LunMap with values {} ", values);
         if (values == null) {
             logger.error("getLogicalAccess: Invalid request values: null");
@@ -507,13 +506,12 @@ public class UnifiedSANStrategy extends SANStrategy {
                     ));
             if (lunMapResponse != null && lunMapResponse.getRecords() != null && !lunMapResponse.getRecords().isEmpty()) {
                Integer lunLogicalUnitNum =  lunMapResponse.getRecords().get(0).getLogicalUnitNumber();
-                String lunNumber = lunLogicalUnitNum != null ? lunLogicalUnitNum.toString() : null;
-                return lunNumber != null ? Map.of(OntapStorageConstants.LOGICAL_UNIT_NUMBER, lunNumber) : null;
+               lunNumber = lunLogicalUnitNum != null ? lunLogicalUnitNum.toString() : null;
             }
         } catch (Exception e) {
             logger.warn("getLogicalAccess: LunMap not found for Lun: {} and igroup: {} ({}).", lunName, igroupName, e.getMessage());
         }
-        return null;
+        return lunNumber;
     }
 
     @Override
@@ -526,9 +524,8 @@ public class UnifiedSANStrategy extends SANStrategy {
                 OntapStorageConstants.SVM_DOT_NAME, svmName,
                 OntapStorageConstants.IGROUP_DOT_NAME, accessGroupName
         );
-        Map<String, String> mapResp = getLogicalAccess(getMap);
-        if (mapResp != null && mapResp.containsKey(OntapStorageConstants.LOGICAL_UNIT_NUMBER)) {
-            String lunNumber = mapResp.get(OntapStorageConstants.LOGICAL_UNIT_NUMBER);
+        String lunNumber = getLogicalAccess(getMap);
+        if (lunNumber != null) {
             logger.info("ensureLunMapped: Existing LunMap found for LUN [{}] in igroup [{}] with LUN number [{}]", lunName, accessGroupName, lunNumber);
             return lunNumber;
         }
@@ -539,12 +536,12 @@ public class UnifiedSANStrategy extends SANStrategy {
                 OntapStorageConstants.SVM_DOT_NAME, svmName,
                 OntapStorageConstants.IGROUP_DOT_NAME, accessGroupName
         );
-        Map<String, String> response = enableLogicalAccess(enableMap);
-        if (response == null || !response.containsKey(OntapStorageConstants.LOGICAL_UNIT_NUMBER)) {
+        String response = enableLogicalAccess(enableMap);
+        if (response == null ) {
             throw new CloudRuntimeException("Failed to map LUN [" + lunName + "] to iGroup [" + accessGroupName + "]");
         }
-        logger.info("ensureLunMapped: Successfully mapped LUN [{}] to igroup [{}] with LUN number [{}]", lunName, accessGroupName, response.get(OntapStorageConstants.LOGICAL_UNIT_NUMBER));
-        return response.get(OntapStorageConstants.LOGICAL_UNIT_NUMBER);
+        logger.info("ensureLunMapped: Successfully mapped LUN [{}] to igroup [{}] with LUN number [{}]", lunName, accessGroupName, response);
+        return response;
     }
     /**
      * Reverts a LUN to a snapshot using the ONTAP CLI-based snapshot file restore API.
