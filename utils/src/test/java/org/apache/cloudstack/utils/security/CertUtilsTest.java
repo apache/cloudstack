@@ -53,7 +53,7 @@ public class CertUtilsTest {
     public void testCertificateConversionMethods() throws Exception {
         final X509Certificate in = caCertificate;
         final String pem = CertUtils.x509CertificateToPem(in);
-        final X509Certificate out = CertUtils.pemToX509Certificate(pem);
+        final X509Certificate out = CertUtils.pemToX509Certificates(pem).get(0);
         Assert.assertTrue(pem.startsWith("-----BEGIN CERTIFICATE-----\n"));
         Assert.assertTrue(pem.endsWith("-----END CERTIFICATE-----\n"));
         Assert.assertEquals(in.getSerialNumber(), out.getSerialNumber());
@@ -85,6 +85,21 @@ public class CertUtilsTest {
     @Test
     public void testGenerateRandomBigInt() throws Exception {
         Assert.assertNotEquals(CertUtils.generateRandomBigInt(), CertUtils.generateRandomBigInt());
+    }
+
+    @Test
+    public void testPemToX509CertificatesWithChain() throws Exception {
+        final KeyPair intermediateKeyPair = CertUtils.generateRandomKeyPair(1024);
+        final X509Certificate intermediateCert = CertUtils.generateV3Certificate(caCertificate, caKeyPair,
+                intermediateKeyPair.getPublic(), "CN=intermediate", "SHA256withRSA", 365, null, null);
+
+        final String chainPem = CertUtils.x509CertificateToPem(intermediateCert)
+                + CertUtils.x509CertificateToPem(caCertificate);
+        final List<X509Certificate> parsed = CertUtils.pemToX509Certificates(chainPem);
+
+        Assert.assertEquals(2, parsed.size());
+        Assert.assertEquals(intermediateCert.getSerialNumber(), parsed.get(0).getSerialNumber());
+        Assert.assertEquals(caCertificate.getSerialNumber(), parsed.get(1).getSerialNumber());
     }
 
     @Test
