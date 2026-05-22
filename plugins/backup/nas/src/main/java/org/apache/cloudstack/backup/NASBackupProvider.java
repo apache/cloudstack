@@ -98,6 +98,17 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             ConfigKey.Scope.Zone,
             BackupFrameworkEnabled.key());
 
+    ConfigKey<Boolean> NASBackupIncrementalEnabled = new ConfigKey<>("Advanced", Boolean.class,
+            "nas.backup.incremental.enabled",
+            "true",
+            "Master switch for NAS incremental backups. When false, every NAS backup is taken as a full " +
+                    "regardless of nas.backup.full.every. Toggling this is safe at any time: switching off " +
+                    "forces the next backup to be a fresh full anchor (existing chains stay restorable), " +
+                    "switching back on resumes incrementals on the next full + incremental cycle.",
+            true,
+            ConfigKey.Scope.Zone,
+            BackupFrameworkEnabled.key());
+
     @Inject
     private BackupDao backupDao;
 
@@ -240,6 +251,16 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
      */
     protected ChainDecision decideChain(VirtualMachine vm) {
         final String newBitmap = "backup-" + System.currentTimeMillis() / 1000L;
+
+        // Master switch — when the operator disables incrementals at the zone level every
+        // backup is taken as a fresh full. Existing chains stay restorable because each
+        // backup's metadata is kept independently; restoring an incremental still walks its
+        // own chain (the per-backup chain_id / parent_backup_id details persist regardless
+        // of the live config). The next backup with this flag back on starts a new chain.
+        Boolean incrementalEnabled = NASBackupIncrementalEnabled.valueIn(vm.getDataCenterId());
+        if (incrementalEnabled == null || !incrementalEnabled) {
+            return ChainDecision.fullStart(newBitmap);
+        }
 
         // Stopped VMs cannot do incrementals — script will also fall back, but we make the
         // decision here so we register the right type up-front.
@@ -1091,7 +1112,8 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey[]{
                 NASBackupRestoreMountTimeout,
-                NASBackupFullEvery
+                NASBackupFullEvery,
+                NASBackupIncrementalEnabled
         };
     }
 

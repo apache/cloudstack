@@ -364,6 +364,36 @@ public class NASBackupProviderTest {
         Mockito.verify(resourceManager).findOneRandomRunningHostByHypervisor(Hypervisor.HypervisorType.KVM, zoneId);
     }
 
+    // -- nas.backup.incremental.enabled master switch ------------------------------------
+
+    /**
+     * When the operator sets nas.backup.incremental.enabled=false at the zone level, every
+     * backup must be a fresh full anchor, regardless of VM state or nas.backup.full.every.
+     * This is the abh1sar review item at NASBackupProvider.java:90 — a single toggle the
+     * operator can flip without having to count remaining backups in a chain.
+     */
+    @Test
+    public void decideChainReturnsFullWhenIncrementalDisabled() {
+        Long zoneId = 1L;
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        Mockito.lenient().when(vm.getDataCenterId()).thenReturn(zoneId);
+
+        // Stub the master switch to false. ConfigKey.valueIn delegates to the framework's
+        // ConfigDepot at runtime; for the unit test we override the in-memory value via the
+        // ConfigKey's local override (set by ReflectionTestUtils on the spy provider).
+        ReflectionTestUtils.setField(nasBackupProvider, "NASBackupIncrementalEnabled",
+                new org.apache.cloudstack.framework.config.ConfigKey<>("Advanced", Boolean.class,
+                        "nas.backup.incremental.enabled", "false",
+                        "test override — disabled", true,
+                        org.apache.cloudstack.framework.config.ConfigKey.Scope.Zone));
+
+        NASBackupProvider.ChainDecision decision = nasBackupProvider.decideChain(vm);
+        Assert.assertNotNull(decision);
+        Assert.assertEquals(NASBackupChainKeys.TYPE_FULL, decision.mode);
+        Assert.assertNull(decision.bitmapParent);
+        Assert.assertEquals(0, decision.chainPosition);
+    }
+
     // -- decideChain anchored on VM's active_checkpoint_id -------------------------------
 
     /**
