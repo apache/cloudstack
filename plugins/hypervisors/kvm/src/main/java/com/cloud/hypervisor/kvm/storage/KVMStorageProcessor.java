@@ -1267,7 +1267,7 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             // Use managesnapshot.sh script for deletion (consistent with create/backup)
             // Script handles MD5 transformation and pool-specific commands internally
-            Script deleteCommand = new Script(_manageSnapshotPath, 10000, logger);
+            Script deleteCommand = new Script(_manageSnapshotPath, 30000, logger);
             deleteCommand.add("-d", volumePath);
             deleteCommand.add("-n", snapshotUuid);
 
@@ -1308,7 +1308,11 @@ public class KVMStorageProcessor implements StorageProcessor {
                     // Both CLVM and CLVM_NG use the same deletion method via managesnapshot.sh script
                     boolean cleanedUp = deleteClvmSnapshot(snapshotPath, primaryPool.getType(), false);
                     if (!cleanedUp) {
-                        logger.info("No need to delete {} snapshot on primary as it doesn't exist: {}", primaryPool.getType(), snapshotPath);
+                        String[] parsedPath = parseClvmSnapshotPath(snapshotPath, primaryPool.getType());
+                        String snapMd5 = (parsedPath != null) ? computeMd5Hash(parsedPath[2]) : computeMd5Hash(snapshotPath);
+                        logger.warn("Deletion of Snapshot: {} on primary store may have failed as it doesn't exist: {} " +
+                                "(MD5 of snapshot UUID: {} - admins can use this to manually locate and delete the LV via managesnapshot.sh or lvremove)",
+                                primaryPool.getType(), snapshotPath, snapMd5);
                     }
                 } else {
                     Files.deleteIfExists(Paths.get(snapshotPath));

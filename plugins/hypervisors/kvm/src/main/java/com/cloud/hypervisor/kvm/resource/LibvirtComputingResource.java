@@ -6984,7 +6984,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         try {
             // Use vgs with --noheadings and -o attr to get VG attributes
             OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
-            Script vgsCmd = new Script("vgs", 5000, LOGGER);
+            Script vgsCmd = new Script("vgs", 10000, LOGGER);
             vgsCmd.add("--noheadings");
             vgsCmd.add("--unbuffered");
             vgsCmd.add("-o");
