@@ -29,7 +29,6 @@ function resolve (dir) {
 
 // vue.config.js
 const vueConfig = {
-  parallel: false,
   publicPath: './',
   /*
     Vue-cli3:
@@ -60,7 +59,7 @@ const vueConfig = {
       minimizer: [
         new UglifyJsPlugin({
           cache: true,
-          parallel: false,
+          parallel: true,
           uglifyOptions: {
             compress: false,
             ecma: 6,

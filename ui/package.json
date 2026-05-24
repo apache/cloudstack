@@ -25,9 +25,9 @@
   },
   "scripts": {
     "prebuild": "./prebuild.sh",
-    "start": "NODE_OPTIONS=--openssl-legacy-provider vue-cli-service lint --no-fix && NODE_OPTIONS=--openssl-legacy-provider vue-cli-service serve",
-    "serve": "NODE_OPTIONS=--openssl-legacy-provider vue-cli-service lint --no-fix && NODE_OPTIONS=--openssl-legacy-provider vue-cli-service serve",
-    "build": "NODE_OPTIONS=\"--openssl-legacy-provider --max-old-space-size=4096\" vue-cli-service build",
+    "start": "vue-cli-service lint --no-fix && vue-cli-service serve",
+    "serve": "vue-cli-service lint --no-fix && vue-cli-service serve",
+    "build": "vue-cli-service build",
     "postbuild": "./postbuild.sh",
     "lint": "vue-cli-service lint",
     "i18n:report": "vue-cli-service i18n:report --src './src/**/*.?(js|vue)' --locales './src/locales/**/*.json'",
