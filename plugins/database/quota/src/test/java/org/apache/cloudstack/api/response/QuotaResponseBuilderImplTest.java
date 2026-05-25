@@ -38,7 +38,9 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.AccountManager;
 import com.cloud.user.UserVO;
 import com.cloud.utils.Pair;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.QuotaConfigureEmailCmd;
 import org.apache.cloudstack.api.command.QuotaCreditsListCmd;
@@ -185,6 +187,9 @@ public class QuotaResponseBuilderImplTest extends TestCase {
 
     @Mock
     User callerUserMock;
+
+    @Mock
+    EntityManager entityManagerMock;
 
     @Before
     public void setup() {
@@ -1134,5 +1139,36 @@ public class QuotaResponseBuilderImplTest extends TestCase {
         Assert.assertThrows(PermissionDeniedException.class,
                 () -> quotaResponseBuilderSpy.getDomainIdsForQuotaStatement(null, 5L, false));
         Mockito.verify(accountManagerMock).checkAccess(callerAccountMock, domainVoMock);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void retrieveResourceTestThrowsExceptionForInvalidUsageType() {
+        Integer invalidUsageType = 999;
+        quotaResponseBuilderSpy.retrieveResource("validUuid", invalidUsageType);
+    }
+
+    @Test
+    public void retrieveResourceTestReturnsNullForNonexistentResource() {
+        String invalidUuid = "nonexistentUuid";
+        Integer validUsageType = QuotaTypes.ALLOCATED_VM;
+
+        Mockito.doReturn(null).when(entityManagerMock).findByUuidIncludingRemoved(Mockito.any(), Mockito.eq(invalidUuid));
+        InternalIdentity result = quotaResponseBuilderSpy.retrieveResource(invalidUuid, validUsageType);
+
+        Assert.assertNull(result);
+    }
+
+    @Test
+    public void retrieveResourceTestReturnsCorrectResource() {
+        String validUuid = "validUuid";
+        Integer validUsageType = QuotaTypes.ALLOCATED_VM;
+        InternalIdentity mockResource = Mockito.mock(InternalIdentity.class);
+
+        Mockito.doReturn(mockResource).when(entityManagerMock).findByUuidIncludingRemoved(Mockito.any(), Mockito.eq(validUuid));
+
+        InternalIdentity result = quotaResponseBuilderSpy.retrieveResource(validUuid, validUsageType);
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(mockResource, result);
     }
 }
