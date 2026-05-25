@@ -903,7 +903,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             parentVolume = _volsDao.findByIdIncludingRemoved(snapshotCheck.getVolumeId());
 
             // Don't support creating templates from encrypted volumes (yet)
-            if (parentVolume.getPassphraseId() != null) {
+            if (parentVolume.isEncrypted()) {
                 throw new UnsupportedOperationException("Cannot create new volumes from encrypted volume snapshots");
             }
 
@@ -4045,7 +4045,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         boolean isSnapshotOnStorPoolOnly = volume.getStoragePoolType() == StoragePoolType.StorPool && SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value();
-        if (volume.getPassphraseId() != null && volume.getAttachedVM() != null && volume.getAttachedVM().getState() != State.Stopped && !isSnapshotOnStorPoolOnly) {
+        if (volume.isEncrypted() && volume.getAttachedVM() != null && volume.getAttachedVM().getState() != State.Stopped && !isSnapshotOnStorPoolOnly) {
             logger.debug(String.format("Refusing to take snapshot of encrypted volume (%s) on running VM (%s)", volume, volume.getAttachedVM()));
             throw new UnsupportedOperationException("Volume snapshots for encrypted volumes are not supported if VM is running");
         }
@@ -4285,7 +4285,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw ex;
         }
 
-        if (volume.getPassphraseId() != null) {
+        if (volume.isEncrypted()) {
             throw new InvalidParameterValueException("Extraction of encrypted volumes is unsupported");
         }
 
