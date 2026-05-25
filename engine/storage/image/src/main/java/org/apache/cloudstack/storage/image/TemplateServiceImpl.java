@@ -295,18 +295,14 @@ public class TemplateServiceImpl implements TemplateService {
         }
     }
 
-    private boolean hasReachedSecStorageCopyLimit(VMTemplateVO template, long zoneId) {
-        int copyLimit = _tmpltMgr.getSecStorageCopyLimit(template, zoneId);
-        if (copyLimit <= 0) {
-            return false;
-        }
+    private int countActiveSecStorageCopies(long templateId, long zoneId) {
         List<DataStore> stores = _storeMgr.getImageStoresByScope(new ZoneScope(zoneId));
         if (stores == null || stores.isEmpty()) {
-            return false;
+            return 0;
         }
         int count = 0;
         for (DataStore ds : stores) {
-            List<TemplateDataStoreVO> rows = _vmTemplateStoreDao.listByTemplateStore(template.getId(), ds.getId());
+            List<TemplateDataStoreVO> rows = _vmTemplateStoreDao.listByTemplateStore(templateId, ds.getId());
             if (rows == null) {
                 continue;
             }
@@ -320,9 +316,39 @@ public class TemplateServiceImpl implements TemplateService {
                 }
             }
         }
+        return count;
+    }
+
+    /**
+     * Central gate for the secondary storage copy limit (secstorage.public/private.template.copy.max).
+     * Every template-landing path (periodic sync, cross-zone copy, register, upload) should consult this
+     * single method before placing another copy of a template on a secondary store in a zone, so the limit
+     * is enforced consistently instead of being re-implemented per call site.
+     *
+     * SYSTEM/ROUTING/BUILTIN templates and a limit of 0 mean "unlimited" (return true). The per-template,
+     * per-zone {@link GlobalLock} serializes concurrent placement decisions so racing SSVM syncs / copies
+     * cannot collectively exceed the limit.
+     */
+    @Override
+    public boolean canCopyTemplateToImageStore(long templateId, long zoneId) {
+        VMTemplateVO template = _templateDao.findById(templateId);
+        if (template == null) {
+            return false;
+        }
+        int copyLimit = _tmpltMgr.getSecStorageCopyLimit(template, zoneId);
+        if (copyLimit <= 0) {
+            logger.debug("Template [{}] has no secondary storage copy limit in zone [{}] (limit={}); copy allowed.",
+                    template.getUniqueName(), zoneId, copyLimit);
+            return true;
+        }
+        int count = countActiveSecStorageCopies(templateId, zoneId);
         logger.debug("Template [{}] secstorage copy check in zone [{}]: count={}, limit={}",
                 template.getUniqueName(), zoneId, count, copyLimit);
-        return count >= copyLimit;
+        return count < copyLimit;
+    }
+
+    private boolean hasReachedSecStorageCopyLimit(VMTemplateVO template, long zoneId) {
+        return !canCopyTemplateToImageStore(template.getId(), zoneId);
     }
 
     @Override

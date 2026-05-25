@@ -859,6 +859,12 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 _tmplStoreDao.removeByTemplateStore(tmpltId, dstSecStore.getId());
             }
 
+            if (!_tmpltSvr.canCopyTemplateToImageStore(tmpltId, dstZoneId)) {
+                logger.info("Not copying template {} to image store {}: zone {} has reached the configured secondary storage copy limit.",
+                        template, dstSecStore, dstZone);
+                continue;
+            }
+
             AsyncCallFuture<TemplateApiResult> future = _tmpltSvr.copyTemplate(srcTemplate, dstSecStore);
             try {
                 TemplateApiResult result = future.get();

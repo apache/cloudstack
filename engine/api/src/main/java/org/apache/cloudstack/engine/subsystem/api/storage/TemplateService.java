@@ -69,6 +69,8 @@ public interface TemplateService {
 
     void enforceSecStorageCopyLimit(long templateId, long zoneId);
 
+    boolean canCopyTemplateToImageStore(long templateId, long zoneId);
+
     void downloadBootstrapSysTemplate(DataStore store);
 
     void addSystemVMTemplatesToSecondary(DataStore store);

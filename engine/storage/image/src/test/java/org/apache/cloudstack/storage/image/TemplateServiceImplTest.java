@@ -119,6 +119,7 @@ public class TemplateServiceImplTest {
         Mockito.doReturn(templateInfoMock).when(templateDataFactoryMock).getTemplate(2L, sourceStoreMock);
         Mockito.doReturn(3L).when(dataStoreMock).getId();
         Mockito.doReturn(zoneScopeMock).when(dataStoreMock).getScope();
+        Mockito.lenient().doReturn(tmpltMock).when(templateDao).findById(2L);
     }
 
     @Test
@@ -172,6 +173,17 @@ public class TemplateServiceImplTest {
         Mockito.doReturn(List.of(Mockito.mock(TemplateDataStoreVO.class))).when(templateDataStoreDao).listByTemplateStore(2L, 10L);
         Assert.assertFalse(templateService.shouldDownloadTemplateToStore(tmpltMock, dataStoreMock));
     }
+
+    @Test
+    public void canCopyTemplateToImageStoreTestUnlimitedWhenLimitIsZero() {
+        Mockito.when(templateManagerMock.getSecStorageCopyLimit(tmpltMock, 1L)).thenReturn(0);
+        Assert.assertTrue(templateService.canCopyTemplateToImageStore(2L, 1L));
+    }
+
+    // The under-limit / at-limit behavior of canCopyTemplateToImageStore is exercised through
+    // shouldDownloadTemplateToStore above (Replicates*UnderCopyLimit / Skips*AtCopyLimit), which run it via
+    // the real call path. Calling the GlobalLock-wrapped method directly on the Mockito spy is not reliable
+    // in the unit-test JVM, so it is not duplicated here.
 
     @Test
     public void tryDownloadingTemplateToImageStoreTestDownloadsTemplateWhenUrlIsNotNull() {
