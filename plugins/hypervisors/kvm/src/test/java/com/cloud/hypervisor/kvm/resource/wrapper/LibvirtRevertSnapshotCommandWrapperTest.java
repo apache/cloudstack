@@ -18,6 +18,7 @@
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -144,28 +145,45 @@ public class LibvirtRevertSnapshotCommandWrapperTest {
     }
 
     @Test
-    public void validateRevertVolumeToSnapshotReplaceSuccessfully() throws LibvirtException, QemuImgException {
+    public void validateRevertVolumeToSnapshotReplaceSuccessfully() throws LibvirtException, QemuImgException, IOException {
         Mockito.doReturn(volumeObjectToMock).when(snapshotObjectToSecondaryMock).getVolume();
+        Mockito.doReturn(null).when(volumeObjectToMock).getPassphrase();
+        Mockito.doReturn(null).when(volumeObjectToMock).getEncryptFormat();
         Mockito.doReturn(pairStringSnapshotObjectToMock).when(libvirtRevertSnapshotCommandWrapperSpy).getSnapshot(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
-        Mockito.doNothing().when(libvirtRevertSnapshotCommandWrapperSpy).replaceVolumeWithSnapshot(Mockito.any(), Mockito.any());
+        Mockito.doNothing().when(libvirtRevertSnapshotCommandWrapperSpy).replaceVolumeWithSnapshot(Mockito.any(), Mockito.any(), Mockito.anyBoolean());
         libvirtRevertSnapshotCommandWrapperSpy.revertVolumeToSnapshot(kvmStoragePoolSecondaryMock, snapshotObjectToPrimaryMock, snapshotObjectToSecondaryMock, kvmStoragePoolPrimaryMock, resourceMock
         );
     }
 
     @Test (expected = CloudRuntimeException.class)
-    public void validateRevertVolumeToSnapshotReplaceVolumeThrowsQemuImgException() throws LibvirtException, QemuImgException {
+    public void validateRevertVolumeToSnapshotReplaceVolumeThrowsQemuImgException() throws LibvirtException, QemuImgException, IOException {
         Mockito.doReturn(volumeObjectToMock).when(snapshotObjectToSecondaryMock).getVolume();
+        Mockito.doReturn(null).when(volumeObjectToMock).getPassphrase();
+        Mockito.doReturn(null).when(volumeObjectToMock).getEncryptFormat();
         Mockito.doReturn(pairStringSnapshotObjectToMock).when(libvirtRevertSnapshotCommandWrapperSpy).getSnapshot(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
-        Mockito.doThrow(QemuImgException.class).when(libvirtRevertSnapshotCommandWrapperSpy).replaceVolumeWithSnapshot(Mockito.any(), Mockito.any());
+        Mockito.doThrow(QemuImgException.class).when(libvirtRevertSnapshotCommandWrapperSpy).replaceVolumeWithSnapshot(Mockito.any(), Mockito.any(), Mockito.anyBoolean());
         libvirtRevertSnapshotCommandWrapperSpy.revertVolumeToSnapshot(kvmStoragePoolSecondaryMock, snapshotObjectToPrimaryMock, snapshotObjectToSecondaryMock, kvmStoragePoolPrimaryMock, resourceMock
         );
     }
 
     @Test (expected = CloudRuntimeException.class)
-    public void validateRevertVolumeToSnapshotReplaceVolumeThrowsLibvirtException() throws LibvirtException, QemuImgException {
+    public void validateRevertVolumeToSnapshotReplaceVolumeThrowsLibvirtException() throws LibvirtException, QemuImgException, IOException {
         Mockito.doReturn(volumeObjectToMock).when(snapshotObjectToSecondaryMock).getVolume();
+        Mockito.doReturn(null).when(volumeObjectToMock).getPassphrase();
+        Mockito.doReturn(null).when(volumeObjectToMock).getEncryptFormat();
         Mockito.doReturn(pairStringSnapshotObjectToMock).when(libvirtRevertSnapshotCommandWrapperSpy).getSnapshot(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
-        Mockito.doThrow(LibvirtException.class).when(libvirtRevertSnapshotCommandWrapperSpy).replaceVolumeWithSnapshot(Mockito.any(), Mockito.any());
+        Mockito.doThrow(LibvirtException.class).when(libvirtRevertSnapshotCommandWrapperSpy).replaceVolumeWithSnapshot(Mockito.any(), Mockito.any(), Mockito.anyBoolean());
+        libvirtRevertSnapshotCommandWrapperSpy.revertVolumeToSnapshot(kvmStoragePoolSecondaryMock, snapshotObjectToPrimaryMock, snapshotObjectToSecondaryMock, kvmStoragePoolPrimaryMock, resourceMock
+        );
+    }
+
+    @Test
+    public void validateRevertEncryptedVolumeToSnapshotReplaceSuccessfully() throws LibvirtException, QemuImgException, IOException {
+        Mockito.doReturn(volumeObjectToMock).when(snapshotObjectToSecondaryMock).getVolume();
+        Mockito.doReturn(null).when(volumeObjectToMock).getPassphrase();
+        Mockito.doReturn("luks").when(volumeObjectToMock).getEncryptFormat();
+        Mockito.doReturn(pairStringSnapshotObjectToMock).when(libvirtRevertSnapshotCommandWrapperSpy).getSnapshot(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.doNothing().when(libvirtRevertSnapshotCommandWrapperSpy).replaceVolumeWithSnapshot(Mockito.any(), Mockito.any(), Mockito.anyBoolean());
         libvirtRevertSnapshotCommandWrapperSpy.revertVolumeToSnapshot(kvmStoragePoolSecondaryMock, snapshotObjectToPrimaryMock, snapshotObjectToSecondaryMock, kvmStoragePoolPrimaryMock, resourceMock
         );
     }
