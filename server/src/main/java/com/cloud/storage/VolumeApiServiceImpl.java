@@ -737,7 +737,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (offeringId != null) {
             return offeringId;
         }
-        List<DiskOfferingVO> offerings = _diskOfferingDao.findCustomDiskOfferings();
+        List<DiskOfferingVO> offerings = _diskOfferingDao.listCustomDiskOfferings();
         for (DiskOfferingVO offering : offerings) {
             try {
                 _configMgr.checkDiskOfferingAccess(owner, offering, zone);
