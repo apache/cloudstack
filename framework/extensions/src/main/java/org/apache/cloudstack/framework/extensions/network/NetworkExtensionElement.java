@@ -472,7 +472,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         }
 
         // Sync nic with network
-        applyNicUpdateFromNetwork(network, nic);
+        applyNicUpdateFromNetwork(network, nic.getId());
 
         final NetworkOfferingVO offering = networkOfferingDao.findById(network.getNetworkOfferingId());
         implement(network, offering, dest, context);
@@ -480,12 +480,12 @@ public class NetworkExtensionElement extends AdapterBase implements
         return true;
     }
 
-    private void applyNicUpdateFromNetwork(Network network, NicProfile nic) {
-        if (nic == null) {
+    private void applyNicUpdateFromNetwork(Network network, Long nicId) {
+        if (nicId == null) {
             return;
         }
         try {
-            NicVO nicVo = nicDao.findById(nic.getId());
+            NicVO nicVo = nicDao.findById(nicId);
             if (nicVo == null) {
                 return;
             }
@@ -493,9 +493,9 @@ public class NetworkExtensionElement extends AdapterBase implements
                 nicVo.setBroadcastUri(network.getBroadcastUri());
                 nicVo.setIsolationUri(network.getBroadcastUri());
             }
-            nicDao.update(nic.getId(), nicVo);
+            nicDao.update(nicId, nicVo);
         } catch (Exception e) {
-            logger.debug("Failed to update nic {}: {}", nic.getId(), e.getMessage());
+            logger.debug("Failed to update nic {}: {}", nicId, e.getMessage());
         }
     }
 
@@ -967,6 +967,9 @@ public class NetworkExtensionElement extends AdapterBase implements
 
             if (changed) {
                 networkDao.update(networkVo.getId(), networkVo);
+                for (NicVO nicVO : nicDao.listByNetworkId(networkVo.getId())) {
+                    applyNicUpdateFromNetwork(network, nicVO.getId());
+                }
             }
         } catch (Exception e) {
             logger.warn("Failed to update network {} from script output: {}", network.getId(), e.getMessage());
