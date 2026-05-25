@@ -596,5 +596,4 @@ public class QuotaManagerImplTest {
         Mockito.verify(quotaTariffUsageDaoMock, Mockito.times(2)).persistQuotaTariffUsage(Mockito.any());
     }
 
-
 }
