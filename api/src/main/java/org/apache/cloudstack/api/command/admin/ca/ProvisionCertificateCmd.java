@@ -63,6 +63,12 @@ public class ProvisionCertificateCmd extends BaseAsyncCmd {
             description = "Name of the CA service provider, otherwise the default configured provider plugin will be used")
     private String provider;
 
+    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN,
+            description = "When true, uses SSH to re-provision the agent's certificate, bypassing the NIO agent connection. " +
+            "Use this when agents are disconnected due to a CA change. Supported for KVM hosts and SystemVMs. Default is false",
+            since = "4.23.0")
+    private Boolean forced;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -79,6 +85,10 @@ public class ProvisionCertificateCmd extends BaseAsyncCmd {
         return provider;
     }
 
+    public boolean isForced() {
+        return forced != null && forced;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -90,7 +100,7 @@ public class ProvisionCertificateCmd extends BaseAsyncCmd {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to find host by ID: " + getHostId());
         }
 
-        boolean result = caManager.provisionCertificate(host, getReconnect(), getProvider());
+        boolean result = caManager.provisionCertificate(host, getReconnect(), getProvider(), isForced());
         SuccessResponse response = new SuccessResponse(getCommandName());
         response.setSuccess(result);
         setResponseObject(response);
