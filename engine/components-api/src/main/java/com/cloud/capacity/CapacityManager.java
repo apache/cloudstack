@@ -133,6 +133,20 @@ public interface CapacityManager {
             "capacity.calculate.workers", "1",
             "Number of worker threads to be used for capacities calculation", true);
 
+    ConfigKey<Integer> KvmMemoryDynamicScalingCapacity = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED,
+            Integer.class, "kvm.memory.dynamic.scaling.capacity", "0",
+            "Defines the maximum memory capacity in MiB for which VMs can be dynamically scaled to with KVM. " +
+                    "The 'kvm.memory.dynamic.scaling.capacity' setting's value will be used to define the value of the " +
+                    "'<maxMemory />' element of domain XMLs. If it is set to a value less than or equal to '0', then the host's memory capacity will be considered.",
+            true, ConfigKey.Scope.Cluster);
+
+    ConfigKey<Integer> KvmCpuDynamicScalingCapacity = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED,
+            Integer.class, "kvm.cpu.dynamic.scaling.capacity", "0",
+            "Defines the maximum vCPU capacity for which VMs can be dynamically scaled to with KVM. " +
+                    "The 'kvm.cpu.dynamic.scaling.capacity' setting's value will be used to define the value of the " +
+                    "'<vcpu />' element of domain XMLs. If it is set to a value less than or equal to '0', then the host's CPU cores capacity will be considered.",
+            true, ConfigKey.Scope.Cluster);
+
     public boolean releaseVmCapacity(VirtualMachine vm, boolean moveFromReserved, boolean moveToReservered, Long hostId);
 
     void allocateVmCapacity(VirtualMachine vm, boolean fromLastHost);

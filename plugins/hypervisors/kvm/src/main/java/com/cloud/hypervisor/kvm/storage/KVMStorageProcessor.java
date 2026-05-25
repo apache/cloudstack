@@ -2049,7 +2049,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             try {
                 Thread.sleep(10000);
             } catch (InterruptedException e) {
-                throw new CloudRuntimeException(e);
+                logger.trace("Thread that was tracking the progress for backup of VM [{}] was interrupted. Ignoring.", vmName);
             }
         }
 
