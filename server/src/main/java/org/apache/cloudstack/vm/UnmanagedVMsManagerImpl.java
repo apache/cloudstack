@@ -1679,6 +1679,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                             ApiConstants.FORCE_MS_TO_IMPORT_VM_FILES, ApiConstants.USE_VDDK));
         }
 
+        convertStoragePoolId = resolveImplicitConversionStoragePoolId(destinationCluster, convertStoragePoolId, forceConvertToPool);
         checkConversionStoragePool(convertStoragePoolId, forceConvertToPool);
         validateSelectedConversionStoragePoolForVddk(useVddk, convertStoragePoolId, serviceOffering, dataDiskOfferingMap);
 
@@ -1814,6 +1815,45 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                         "as its type %s", selectedStoragePool.getName(), selectedStoragePool.getPoolType().name()));
             }
         }
+    }
+
+    protected Long resolveImplicitConversionStoragePoolId(Cluster destinationCluster, Long convertStoragePoolId,
+                                                          boolean forceConvertToPool) {
+        if (!forceConvertToPool || convertStoragePoolId != null) {
+            return convertStoragePoolId;
+        }
+
+        List<StoragePoolVO> candidatePools = getImplicitForceConvertToPoolStoragePools(destinationCluster);
+        if (candidatePools.isEmpty()) {
+            logFailureAndThrowException(String.format("The parameter forceconverttopool is set to true, but no suitable primary storage pool was found in cluster %s",
+                    destinationCluster.getName()));
+        }
+        if (candidatePools.size() > 1) {
+            logFailureAndThrowException(String.format("The parameter forceconverttopool is set to true, but multiple suitable primary storage pools were found in cluster %s. Please provide convertinstancepoolid.",
+                    destinationCluster.getName()));
+        }
+
+        StoragePoolVO implicitPool = candidatePools.get(0);
+        logger.debug("The parameter forceconverttopool is set to true and no conversion storage pool was provided; using the only suitable primary storage pool [{}].",
+                implicitPool.getName());
+        return implicitPool.getId();
+    }
+
+    private List<StoragePoolVO> getImplicitForceConvertToPoolStoragePools(Cluster destinationCluster) {
+        Set<StoragePoolVO> pools = new HashSet<>();
+        for (Storage.StoragePoolType poolType : forceConvertToPoolAllowedTypes) {
+            List<StoragePoolVO> clusterPools = primaryDataStoreDao.findClusterWideStoragePoolsByHypervisorAndPoolType(destinationCluster.getId(),
+                    Hypervisor.HypervisorType.KVM, poolType);
+            if (clusterPools != null) {
+                pools.addAll(clusterPools);
+            }
+            List<StoragePoolVO> zonePools = primaryDataStoreDao.findZoneWideStoragePoolsByHypervisorAndPoolType(destinationCluster.getDataCenterId(),
+                    Hypervisor.HypervisorType.KVM, poolType);
+            if (zonePools != null) {
+                pools.addAll(zonePools);
+            }
+        }
+        return new ArrayList<>(pools);
     }
 
     protected void validateSelectedConversionStoragePoolForVddk(boolean useVddk, Long convertStoragePoolId,
