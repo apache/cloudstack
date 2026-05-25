@@ -26,8 +26,6 @@ import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.Map;
 
 import javax.net.ssl.HostnameVerifier;
@@ -478,34 +476,7 @@ public class FlashArrayAdapter implements ProviderAdapter {
         return stats;
     }
 
-    /**
-     * Cache of array total capacity keyed by FlashArray URL. The capacity of a
-     * physical FlashArray changes only when hardware is added or removed, so a
-     * several-minute TTL is safe and avoids an extra REST call on every
-     * storage stats refresh for every pool that has no pod quota set.
-     */
-    private static final ConcurrentMap<String, CachedCapacity> ARRAY_CAPACITY_CACHE = new ConcurrentHashMap<>();
-    private static final long ARRAY_CAPACITY_CACHE_TTL_MS = 5L * 60L * 1000L;
-
-    private static final class CachedCapacity {
-        final long capacityBytes;
-        final long expiresAtMs;
-
-        CachedCapacity(long capacityBytes, long ttlMs) {
-            this.capacityBytes = capacityBytes;
-            this.expiresAtMs = System.currentTimeMillis() + ttlMs;
-        }
-
-        boolean isExpired() {
-            return System.currentTimeMillis() > expiresAtMs;
-        }
-    }
-
     private Long getArrayTotalCapacity() {
-        CachedCapacity cached = ARRAY_CAPACITY_CACHE.get(this.url);
-        if (cached != null && !cached.isExpired()) {
-            return cached.capacityBytes;
-        }
         try {
             FlashArrayList<Map<String, Object>> list = GET("/arrays?space=true",
                     new TypeReference<FlashArrayList<Map<String, Object>>>() {
@@ -513,10 +484,7 @@ public class FlashArrayAdapter implements ProviderAdapter {
             if (list != null && CollectionUtils.isNotEmpty(list.getItems())) {
                 Object cap = list.getItems().get(0).get("capacity");
                 if (cap instanceof Number) {
-                    long capacityBytes = ((Number) cap).longValue();
-                    ARRAY_CAPACITY_CACHE.put(this.url,
-                            new CachedCapacity(capacityBytes, ARRAY_CAPACITY_CACHE_TTL_MS));
-                    return capacityBytes;
+                    return ((Number) cap).longValue();
                 }
             }
         } catch (Exception e) {
