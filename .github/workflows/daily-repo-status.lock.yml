@@ -54,11 +54,11 @@ jobs:
       comment_repo: ""
     steps:
       - name: Setup
-        uses: github/gh-aw/actions/setup@58d1d157fbac0f1204798500faefc4f7461ebe28 # v0.45.
+        uses: github/gh-aw/actions/setup@f01a9d118afa6e306f3645ca31e43f4ea8fb4d22 # v0.45.
         with:
           destination: /opt/gh-aw/
       - name: Check workflow file
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd #
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 #
         env:
           GH_AW_WORKFLOW_FILE: "daily-repo-status.lock.yml"
         with:
@@ -96,7 +96,7 @@ jobs:
       secret_verification_result: ${{ steps.validate-secret.outputs.verification_result }}
     steps:
       - name: Setup
-        uses: github/gh-aw/actions/setup@58d1d157fbac0f1204798500faefc4f7461ebe28 # v0.45.
+        uses: github/gh-aw/actions/setup@f01a9d118afa6e306f3645ca31e43f4ea8fb4d22 # v0.45.
         with:
           destination: /opt/gh-aw/
       - name: Checkout
@@ -120,7 +120,7 @@ jobs:
         id: checkout-
         if: |
           github.event.
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd #
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 #
         env:
           GH_TOKEN: ${{ secrets.GH_AW_GITHUB_MCP_SERVER_TOKEN || secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
         with:
@@ -132,7 +132,7 @@ jobs:
             await main();
       - name: Generate agentic run
         id:
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd #
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 #
         with:
           script: |
             const fs = require('fs');
@@ -469,7 +469,7 @@ jobs:
           }
 
       - name: Generate workflow
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd #
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 #
         with:
           script: |
             const { generateWorkflowOverview } = require('/opt/gh-aw/actions/generate_workflow_overview.cjs');
@@ -559,7 +559,7 @@ jobs:
           {{#runtime-import .github/workflows/daily-repo-status.md}}
 
       - name: Substitute
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd #
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 #
         env:
           GH_AW_PROMPT: /tmp/gh-aw/aw-prompts/prompt.
           GH_AW_GITHUB_ACTOR: ${{ github.actor }}
@@ -589,7 +589,7 @@ jobs:
               }
             });
       - name: Interpolate variables and render
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd #
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 #
         env:
           GH_AW_PROMPT: /tmp/gh-aw/aw-prompts/prompt.
         with:
@@ -667,7 +667,7 @@ jobs:
           bash /opt/gh-aw/actions/stop_mcp_gateway.sh "$GATEWAY_PID"
       - name: Redact secrets in
         if: always()
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd #
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 #
         with:
           script: |
             const { setupGlobals } = require('/opt/gh-aw/actions/setup_globals.cjs');
@@ -682,7 +682,7 @@ jobs:
           SECRET_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Upload Safe
         if: always()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v6.0.
         with:
           name: safe-
           path: ${{ env.GH_AW_SAFE_OUTPUTS }}
@@ -690,7 +690,7 @@ jobs:
       - name: Ingest agent
         id:
         if: always()
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd #
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 #
         env:
           GH_AW_SAFE_OUTPUTS: ${{ env.GH_AW_SAFE_OUTPUTS }}
           GH_AW_ALLOWED_DOMAINS: "api.business.githubcopilot.com,api.enterprise.githubcopilot.com,api.github.com,api.githubcopilot.com,api.individual.githubcopilot.com,api.snapcraft.io,archive.ubuntu.com,azure.archive.ubuntu.com,crl.geotrust.com,crl.globalsign.com,crl.identrust.com,crl.sectigo.com,crl.thawte.com,crl.usertrust.com,crl.verisign.com,crl3.digicert.com,crl4.digicert.com,crls.ssl.com,github.com,host.docker.internal,json-schema.org,json.schemastore.org,keyserver.ubuntu.com,ocsp.digicert.com,ocsp.geotrust.com,ocsp.globalsign.com,ocsp.identrust.com,ocsp.sectigo.com,ocsp.ssl.com,ocsp.thawte.com,ocsp.usertrust.com,ocsp.verisign.com,packagecloud.io,packages.cloud.google.com,packages.microsoft.com,ppa.launchpad.net,raw.githubusercontent.com,registry.npmjs.org,s.symcb.com,s.symcd.com,security.ubuntu.com,telemetry.enterprise.githubcopilot.com,ts-crl.ws.symantec.com,ts-ocsp.ws.symantec.com"
@@ -704,13 +704,13 @@ jobs:
             await main();
       - name: Upload sanitized agent
         if: always() && env.
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v6.0.
         with:
           name: agent-
           path: ${{ env.GH_AW_AGENT_OUTPUT }}
           if-no-files-found:
       - name: Upload engine output
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v6.0.
         with:
           name:
           path: |
@@ -719,7 +719,7 @@ jobs:
           if-no-files-found:
       - name: Parse agent logs for step
         if: always()
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd #
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 #
         env:
           GH_AW_AGENT_OUTPUT: /tmp/gh-aw/sandbox/agent/logs/
         with:
@@ -730,7 +730,7 @@ jobs:
             await main();
       - name: Parse MCP Gateway logs for step
         if: always()
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd #
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 #
         with:
           script: |
             const { setupGlobals } = require('/opt/gh-aw/actions/setup_globals.cjs');
@@ -755,7 +755,7 @@ jobs:
       - name: Upload agent
         if: always()
         continue-on-error:
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v6.0.
         with:
           name: agent-
           path: |
@@ -784,12 +784,12 @@ jobs:
       total_count: ${{ steps.missing_tool.outputs.total_count }}
     steps:
       - name: Setup
-        uses: github/gh-aw/actions/setup@58d1d157fbac0f1204798500faefc4f7461ebe28 # v0.45.
+        uses: github/gh-aw/actions/setup@f01a9d118afa6e306f3645ca31e43f4ea8fb4d22 # v0.45.
         with:
           destination: /opt/gh-aw/
       - name: Download agent output
         continue-on-error:
-        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v6.0.
         with:
           name: agent-
           path: /tmp/gh-aw/safeoutputs/
@@ -800,7 +800,7 @@ jobs:
           echo "GH_AW_AGENT_OUTPUT=/tmp/gh-aw/safeoutputs/agent_output.json" >> "$GITHUB_ENV"
       - name: Process No-Op
         id:
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd #
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 #
         env:
           GH_AW_AGENT_OUTPUT: ${{ env.GH_AW_AGENT_OUTPUT }}
           GH_AW_NOOP_MAX:
@@ -816,7 +816,7 @@ jobs:
             await main();
       - name: Record Missing
         id:
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd #
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 #
         env:
           GH_AW_AGENT_OUTPUT: ${{ env.GH_AW_AGENT_OUTPUT }}
           GH_AW_WORKFLOW_NAME: "Daily Repo Status"
@@ -831,7 +831,7 @@ jobs:
             await main();
       - name: Handle Agent
         id:
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd #
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 #
         env:
           GH_AW_AGENT_OUTPUT: ${{ env.GH_AW_AGENT_OUTPUT }}
           GH_AW_WORKFLOW_NAME: "Daily Repo Status"
@@ -851,7 +851,7 @@ jobs:
             await main();
       - name: Handle No-Op
         id:
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd #
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 #
         env:
           GH_AW_AGENT_OUTPUT: ${{ env.GH_AW_AGENT_OUTPUT }}
           GH_AW_WORKFLOW_NAME: "Daily Repo Status"
@@ -881,18 +881,18 @@ jobs:
       success: ${{ steps.parse_results.outputs.success }}
     steps:
       - name: Setup
-        uses: github/gh-aw/actions/setup@58d1d157fbac0f1204798500faefc4f7461ebe28 # v0.45.
+        uses: github/gh-aw/actions/setup@f01a9d118afa6e306f3645ca31e43f4ea8fb4d22 # v0.45.
         with:
           destination: /opt/gh-aw/
       - name: Download agent
         continue-on-error:
-        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v6.0.
         with:
           name: agent-
           path: /tmp/gh-aw/threat-detection/
       - name: Download agent output
         continue-on-error:
-        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v6.0.
         with:
           name: agent-
           path: /tmp/gh-aw/threat-detection/
@@ -902,7 +902,7 @@ jobs:
         run: |
           echo "Agent output-types: $AGENT_OUTPUT_TYPES"
       - name: Setup threat
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd #
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 #
         env:
           WORKFLOW_NAME: "Daily Repo Status"
           WORKFLOW_DESCRIPTION: "This workflow creates daily repo status reports. It gathers recent repository\nactivity (issues, PRs, discussions, releases, code changes) and generates\nengaging GitHub issues with productivity insights, community highlights,\nand project recommendations."
@@ -955,7 +955,7 @@ jobs:
           XDG_CONFIG_HOME: /home/
       - name: Parse threat detection
         id:
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd #
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 #
         with:
           script: |
             const { setupGlobals } = require('/opt/gh-aw/actions/setup_globals.cjs');
@@ -964,7 +964,7 @@ jobs:
             await main();
       - name: Upload threat detection
         if: always()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v6.0.
         with:
           name: threat-detection.
           path: /tmp/gh-aw/threat-detection/detection.
@@ -993,12 +993,12 @@ jobs:
       process_safe_outputs_temporary_id_map: ${{ steps.process_safe_outputs.outputs.temporary_id_map }}
     steps:
       - name: Setup
-        uses: github/gh-aw/actions/setup@58d1d157fbac0f1204798500faefc4f7461ebe28 # v0.45.
+        uses: github/gh-aw/actions/setup@f01a9d118afa6e306f3645ca31e43f4ea8fb4d22 # v0.45.
         with:
           destination: /opt/gh-aw/
       - name: Download agent output
         continue-on-error:
-        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v6.0.
         with:
           name: agent-
           path: /tmp/gh-aw/safeoutputs/
@@ -1009,7 +1009,7 @@ jobs:
           echo "GH_AW_AGENT_OUTPUT=/tmp/gh-aw/safeoutputs/agent_output.json" >> "$GITHUB_ENV"
       - name: Process Safe
         id:
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd #
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 #
         env:
           GH_AW_AGENT_OUTPUT: ${{ env.GH_AW_AGENT_OUTPUT }}
           GH_AW_SAFE_OUTPUTS_HANDLER_CONFIG: "{\"create_issue\":{\"labels\":[\"report\",\"daily-status\"],\"max\":1,\"title_prefix\":\"[repo-status] \"},\"missing_data\":{},\"missing_tool\":{}}"

@@ -443,15 +443,15 @@ public class LibvirtVMDef {
     }
 
     public static class GuestResourceDef {
-        private long memory;
+        private long maxMemory;
         private long currentMemory = -1;
         private int vcpu = -1;
         private int maxVcpu = -1;
         private boolean memoryBalloning = false;
         private int memoryBalloonStatsPeriod = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_MEMBALLOON_STATS_PERIOD);
 
-        public void setMemorySize(long mem) {
-            this.memory = mem;
+        public void setMaxMemory(long mem) {
+            this.maxMemory = mem;
         }
 
         public void setCurrentMem(long currMem) {
@@ -484,8 +484,8 @@ public class LibvirtVMDef {
             response.append(String.format("<memory>%s</memory>\n", this.currentMemory));
             response.append(String.format("<currentMemory>%s</currentMemory>\n", this.currentMemory));
 
-            if (this.memory > this.currentMemory) {
-                response.append(String.format("<maxMemory slots='16' unit='KiB'>%s</maxMemory>\n", this.memory));
+            if (this.maxMemory > this.currentMemory) {
+                response.append(String.format("<maxMemory slots='16' unit='KiB'>%s</maxMemory>\n", this.maxMemory));
                 response.append(String.format("<cpu> <numa> <cell id='0' cpus='0-%s' memory='%s' unit='KiB'/> </numa> </cpu>\n", this.maxVcpu - 1, this.currentMemory));
             }
 
@@ -1920,11 +1920,12 @@ public class LibvirtVMDef {
 
     public static class CpuTuneDef {
         private int _shares = 0;
-        private int quota = 0;
+        private long quota = 0;
         private int period = 0;
         static final int DEFAULT_PERIOD = 10000;
         static final int MIN_QUOTA = 1000;
         static final int MAX_PERIOD = 1000000;
+        public static final long MAX_CPU_QUOTA = 17592186044415L;
 
         public void setShares(int shares) {
             _shares = shares;
@@ -1934,11 +1935,11 @@ public class LibvirtVMDef {
             return _shares;
         }
 
-        public int getQuota() {
+        public long getQuota() {
             return quota;
         }
 
-        public void setQuota(int quota) {
+        public void setQuota(long quota) {
             this.quota = quota;
         }
 
