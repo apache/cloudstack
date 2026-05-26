@@ -21,6 +21,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
@@ -81,7 +82,7 @@ public class CreateBackupScheduleCmd extends BaseCmd {
     @Parameter(name = ApiConstants.QUIESCE_VM,
             type = CommandType.BOOLEAN,
             required = false,
-            description = "Quiesce the instance before checkpointing the disks for backup. Applicable only to NAS backup provider. " +
+            description = "Quiesce the Instance before checkpointing the disks for backup. Applicable only to NAS backup provider. " +
                     "The filesystem is frozen before the backup starts and thawed immediately after. " +
                     "Requires the instance to have the QEMU Guest Agent installed and running.",
             since = "4.21.0")
@@ -148,5 +149,15 @@ public class CreateBackupScheduleCmd extends BaseCmd {
     @Override
     public long getEntityOwnerId() {
         return CallContext.current().getCallingAccount().getId();
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return vmId;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.VirtualMachine;
     }
 }

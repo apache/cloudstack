@@ -133,7 +133,12 @@ public class CreateBackupCmd extends BaseAsyncCreateCmd {
 
     @Override
     public ApiCommandResourceType getApiResourceType() {
-        return ApiCommandResourceType.Backup;
+        return ApiCommandResourceType.VirtualMachine;
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return vmId;
     }
 
     @Override
