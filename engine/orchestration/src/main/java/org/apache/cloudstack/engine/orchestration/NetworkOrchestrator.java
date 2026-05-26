@@ -481,7 +481,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
      */
     private List<NetworkElement> getNetworkElementsIncludingExtensions() {
         List<Extension> extensions = extensionHelper.listExtensionsByType(Extension.Type.NetworkOrchestrator);
-        if (extensions == null || extensions.isEmpty()) {
+        if (CollectionUtils.isEmpty(extensions)) {
             return networkElements;
         }
         List<NetworkElement> combined = new ArrayList<>(networkElements);
