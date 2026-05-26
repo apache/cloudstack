@@ -2193,7 +2193,7 @@
 "label.router.health.check.success": "Success",
 "label.router.health.checks": "Health checks",
 "label.routercount": "Total of virtual routers",
-"label.routerip": "Public IPv4 address for the VR in this network",
+"label.routerip": "Public IPv4 address for the VR",
 "label.routeripv6": "IPv6 address for the VR in this Network.",
 "label.routing.firewall": "IPv4 Routing Firewall",
 "label.resourcegroup": "Resource group",
