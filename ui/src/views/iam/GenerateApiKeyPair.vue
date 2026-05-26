@@ -150,7 +150,7 @@ export default {
         id: this.resource.id,
         description: values.description ? values.description : null,
         startdate: values.startDate ? parseDayJsObject({ value: values.startDate }) : null,
-        endDate: values.endDate ? parseDayJsObject({ value: values.endDate }) : null
+        enddate: values.endDate ? parseDayJsObject({ value: values.endDate }) : null
       }
       for (const i in this.rules) {
         const rule = this.rules[i]
@@ -161,7 +161,9 @@ export default {
       return params
     },
     handleSubmit (e) {
-      e.preventDefault()
+      if (e && typeof e.preventDefault === 'function') {
+        e.preventDefault()
+      }
       if (this.loading) return
       this.formRef.value.validate().then(() => {
         const params = this.buildRequestParams()
@@ -193,14 +195,12 @@ export default {
       })
     },
     closeModal () {
-      this.form.name = ''
-      this.form.description = ''
+      this.form.name = null
+      this.form.description = null
       this.form.startDate = null
       this.form.endDate = null
+      this.rules = []
       this.$emit('close-modal')
-    },
-    handleCancel () {
-      this.$emit('handle-cancel')
     },
     fetchData () {
       this.$emit('fetch-data')

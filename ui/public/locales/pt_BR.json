@@ -2058,7 +2058,7 @@
 "label.secondarystoragelimit": "Limites do armazenamento secund\u00e1rio (GiB)",
 "label.secretkey": "Chave secreta",
 "label.secret.key": "Chave secreta",
-"label.apikeyaccess": "Accesso a pares de chaves de API",
+"label.apikeyaccess": "Acesso a pares de chaves de API",
 "label.secured": "Protegido",
 "label.security.groups": "Grupos de seguran\u00e7a",
 "label.securitygroup": "Grupo de seguran\u00e7a",

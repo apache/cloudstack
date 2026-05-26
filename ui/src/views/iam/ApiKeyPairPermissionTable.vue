@@ -33,7 +33,7 @@
         </div>
         <div class="rules-table__col rules-table__col--permission">
           <permission-editable
-            :defaultValue="newRulePermission"
+            :default-value="newRulePermission"
             :value="newRulePermission"
             @onChange="updateNewPermission()" />
         </div>
@@ -173,14 +173,12 @@
 import { getAPI } from '@/api'
 import draggable from 'vuedraggable'
 import PermissionEditable from './PermissionEditable'
-import RuleDelete from './RuleDelete'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import { genericCompare } from '@/utils/sort'
 
 export default {
   name: 'ApiKeyPairPermissionTable',
   components: {
-    RuleDelete,
     PermissionEditable,
     draggable,
     TooltipButton

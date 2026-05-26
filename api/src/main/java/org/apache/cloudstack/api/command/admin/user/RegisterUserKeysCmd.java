@@ -138,7 +138,7 @@ public class RegisterUserKeysCmd extends BaseAsyncCmd {
 
             String description = detail.get(ApiConstants.DESCRIPTION);
             if (StringUtils.isNotEmpty(description)) {
-                if (permission.length() > 255) {
+                if (description.length() > 255) {
                     throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Description cannot be longer than 255 characters.");
                 }
                 ruleDetails.put(ApiConstants.DESCRIPTION, description);

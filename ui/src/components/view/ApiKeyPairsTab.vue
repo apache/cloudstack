@@ -41,7 +41,6 @@
         :columns="columns"
         :dataSource="keypairs"
         :rowKey="item => item.id"
-        :key="item => item.id"
         :rowSelection="rowSelection()"
         :pagination="false" >
         <template #name="{ record }">
@@ -132,7 +131,6 @@
       :showAddKeyPair="showAddKeyPair"
       :resource="resource"
       @fetch-data="fetchData"
-      @handle-cancel="handleCancelAddKeyPair"
       @refresh-data="handleRefreshData"
       @close-modal="closeModalAddKeyPair" />
   </div>
@@ -145,7 +143,6 @@ import BulkActionView from '@/components/view/BulkActionView.vue'
 import eventBus from '@/config/eventBus'
 import OwnershipSelection from '@/views/compute/wizard/OwnershipSelection.vue'
 import GenerateApiKeyPair from '@/views/iam/GenerateApiKeyPair.vue'
-import store from '@/store'
 
 export default {
   name: 'ApiKeyPairsTab',
@@ -154,8 +151,7 @@ export default {
     Status,
     TooltipButton,
     BulkActionView,
-    GenerateApiKeyPair,
-    store
+    GenerateApiKeyPair
   },
   props: {
     resource: {
@@ -286,31 +282,39 @@ export default {
       }
       this.deleteKeypairs(this.selectedItems)
     },
-    deleteKeypairs (keypairs) {
+    async deleteKeypairs (keypairs) {
+      if (!keypairs || keypairs.length === 0) {
+        this.fetchLoading = false
+        return
+      }
+
       this.fetchLoading = true
-      keypairs.forEach(async keypair => {
-        try {
-          const jobId = await this.deleteKeyPair({
-            keypairid: keypair.id
-          })
-          await this.$pollJob({
-            jobId,
-            action: {
-              isFetchData: false
-            },
-            successMethod: () => {
-              eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: keypair.id, state: 'success' })
-            },
-            catchMethod: () => {
-              eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: keypair.id, state: 'failed' })
-            }
-          })
-        } catch (e) {
-          eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: keypair.id, state: 'failed' })
-        } finally {
-          this.fetchLoading = false
-        }
-      })
+      try {
+        await Promise.all(keypairs.map(async keypair => {
+          try {
+            const jobId = await this.deleteKeyPair({
+              keypairid: keypair.id
+            })
+            await this.$pollJob({
+              jobId,
+              action: {
+                isFetchData: false
+              },
+              successMethod: () => {
+                console.log('success method')
+                eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: keypair.id, state: 'success' })
+              },
+              catchMethod: () => {
+                eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: keypair.id, state: 'failed' })
+              }
+            })
+          } catch (e) {
+            eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: keypair.id, state: 'failed' })
+          }
+        }))
+      } finally {
+        this.fetchLoading = false
+      }
     },
     async deleteKeyPair (args) {
       const response = await postAPI('deleteUserKeys', args)
@@ -337,14 +341,11 @@ export default {
     closeModalAddKeyPair () {
       this.showAddKeyPair = false
     },
-    handleCancelAddKeyPair () {
-      this.showAddKeyPair = false
-    },
     handleRefreshData () {
       this.$emit('refresh-data')
     },
     rowSelection () {
-      if ('deleteUserKeys' in store.getters.apis) {
+      if ('deleteUserKeys' in this.$store.getters.apis) {
         return {
           selectedRowKeys: this.selectedRowKeys,
           onChange: this.setSelection
