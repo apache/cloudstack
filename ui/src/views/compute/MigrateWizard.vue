@@ -97,7 +97,7 @@
     </a-pagination>
 
     <a-form-item
-      v-if="isUserVm && hasVolumes"
+      v-if="hasVolumes"
       class="top-spaced">
       <template #label>
         <tooltip-label :title="$t('label.migrate.with.storage')" :tooltip="$t('message.migrate.with.storage')"/>
@@ -307,7 +307,8 @@ export default {
       this.volumes = []
       getAPI('listVolumes', {
         listAll: true,
-        virtualmachineid: this.resource.id
+        virtualmachineid: this.resource.id,
+        listsystemvms: !this.isUserVm
       }).then(response => {
         this.volumes = response?.listvolumesresponse?.volume || []
       }).finally(() => {
