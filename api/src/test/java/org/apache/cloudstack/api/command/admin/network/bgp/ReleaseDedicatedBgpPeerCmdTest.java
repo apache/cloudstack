@@ -39,7 +39,7 @@ public class ReleaseDedicatedBgpPeerCmdTest {
     @Test
     public void testReleaseDedicatedBgpPeerCmd() {
         Long id = 1L;
-        UUID uuid = UUID.randomUUID();
+        String uuid = UUID.randomUUID().toString();
 
         ReleaseDedicatedBgpPeerCmd cmd = new ReleaseDedicatedBgpPeerCmd();
         ReflectionTestUtils.setField(cmd, "id", id);

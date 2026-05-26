@@ -42,30 +42,8 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.configuration.ConfigurationManager;
-import com.cloud.configuration.ConfigurationManagerImpl;
-import com.cloud.bgp.BGPService;
-import com.cloud.dc.ASNumberVO;
-import com.cloud.dc.dao.ASNumberDao;
-import com.cloud.dc.Vlan;
-import com.cloud.network.RemoteAccessVpn;
-import com.cloud.network.Site2SiteVpnConnection;
-import com.cloud.network.dao.NetrisProviderDao;
-import com.cloud.network.dao.NsxProviderDao;
-import com.cloud.network.dao.RemoteAccessVpnDao;
-import com.cloud.network.dao.RemoteAccessVpnVO;
-import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
-import com.cloud.network.dao.Site2SiteCustomerGatewayVO;
-import com.cloud.network.dao.Site2SiteVpnConnectionDao;
-import com.cloud.network.dao.Site2SiteVpnConnectionVO;
-import com.cloud.network.element.NetrisProviderVO;
-import com.cloud.network.element.NetworkACLServiceProvider;
-import com.cloud.network.element.NsxProviderVO;
-import com.cloud.network.rules.RulesManager;
-import com.cloud.network.vpn.RemoteAccessVpnService;
-import com.cloud.utils.DomainHelper;
-import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.collect.Sets;
+
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -108,12 +86,18 @@ import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.query.dao.VpcOfferingJoinDao;
 import com.cloud.api.query.vo.VpcOfferingJoinVO;
+import com.cloud.bgp.BGPService;
 import com.cloud.configuration.Config;
+import com.cloud.configuration.ConfigurationManager;
+import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.configuration.Resource.ResourceType;
+import com.cloud.dc.ASNumberVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.Vlan;
 import com.cloud.dc.VlanVO;
+import com.cloud.dc.dao.ASNumberDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DeployDestination;
@@ -143,18 +127,33 @@ import com.cloud.network.NetworkService;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
+import com.cloud.network.RemoteAccessVpn;
+import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.dao.NetrisProviderDao;
+import com.cloud.network.dao.NsxProviderDao;
+import com.cloud.network.dao.RemoteAccessVpnDao;
+import com.cloud.network.dao.RemoteAccessVpnVO;
+import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
+import com.cloud.network.dao.Site2SiteCustomerGatewayVO;
+import com.cloud.network.dao.Site2SiteVpnConnectionDao;
+import com.cloud.network.dao.Site2SiteVpnConnectionVO;
+import com.cloud.network.element.NetrisProviderVO;
+import com.cloud.network.element.NetworkACLServiceProvider;
 import com.cloud.network.element.NetworkElement;
+import com.cloud.network.element.NsxProviderVO;
 import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.VpcProvider;
 import com.cloud.network.router.CommandSetupHelper;
 import com.cloud.network.router.NetworkHelper;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
+import com.cloud.network.rules.RulesManager;
+import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.network.vpc.VpcOffering.State;
 import com.cloud.network.vpc.dao.NetworkACLDao;
 import com.cloud.network.vpc.dao.PrivateIpDao;
@@ -173,6 +172,7 @@ import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
+import com.cloud.resourcelimit.CheckedReservation;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
@@ -180,6 +180,7 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
+import com.cloud.utils.DomainHelper;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
@@ -209,6 +210,7 @@ import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.VMInstanceDao;
 
 import static com.cloud.offering.NetworkOffering.RoutingMode.Dynamic;
 
@@ -1566,15 +1568,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @ActionEvent(eventType = EventTypes.EVENT_VPC_CREATE, eventDescription = "creating vpc", create = true)
     public Vpc createVpc(final long zoneId, final long vpcOffId, final long vpcOwnerId, final String vpcName, final String displayText, final String cidr, String networkDomain,
                          final String ip4Dns1, final String ip4Dns2, final String ip6Dns1, final String ip6Dns2, final Boolean displayVpc, Integer publicMtu,
-                         final Integer cidrSize, final Long asNumber, final List<Long> bgpPeerIds, Boolean useVrIpResolver) throws ResourceAllocationException {
+                         final Integer cidrSize, final Long asNumber, final List<Long> bgpPeerIds, Boolean useVrIpResolver, boolean keepMacAddressOnPublicNic) throws ResourceAllocationException {
         final Account caller = CallContext.current().getCallingAccount();
         final Account owner = _accountMgr.getAccount(vpcOwnerId);
 
         // Verify that caller can perform actions in behalf of vpc owner
         _accountMgr.checkAccess(caller, null, false, owner);
-
-        // check resource limit
-        _resourceLimitMgr.checkResourceLimit(owner, ResourceType.vpc);
 
         // Validate zone
         final DataCenter zone = _dcDao.findById(zoneId);
@@ -1669,26 +1668,29 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         vpc.setPublicMtu(publicMtu);
         vpc.setDisplay(Boolean.TRUE.equals(displayVpc));
         vpc.setUseRouterIpResolver(Boolean.TRUE.equals(useVrIpResolver));
+        vpc.setKeepMacAddressOnPublicNic(keepMacAddressOnPublicNic);
 
-        if (vpc.getCidr() == null && cidrSize != null) {
-            // Allocate a CIDR for VPC
-            Ipv4GuestSubnetNetworkMap subnet = routedIpv4Manager.getOrCreateIpv4SubnetForVpc(vpc, cidrSize);
-            if (subnet != null) {
-                vpc.setCidr(subnet.getSubnet());
-            } else {
-                throw new CloudRuntimeException("Failed to allocate a CIDR with requested size for VPC.");
+        try (CheckedReservation vpcReservation = new CheckedReservation(owner, ResourceType.vpc, null, null, 1L, reservationDao, _resourceLimitMgr)) {
+            if (vpc.getCidr() == null && cidrSize != null) {
+                // Allocate a CIDR for VPC
+                Ipv4GuestSubnetNetworkMap subnet = routedIpv4Manager.getOrCreateIpv4SubnetForVpc(vpc, cidrSize);
+                if (subnet != null) {
+                    vpc.setCidr(subnet.getSubnet());
+                } else {
+                    throw new CloudRuntimeException("Failed to allocate a CIDR with requested size for VPC.");
+                }
             }
-        }
 
-        Vpc newVpc = createVpc(displayVpc, vpc);
-        // assign Ipv4 subnet to Routed VPC
-        if (routedIpv4Manager.isRoutedVpc(vpc)) {
-            routedIpv4Manager.assignIpv4SubnetToVpc(newVpc);
+            Vpc newVpc = createVpc(displayVpc, vpc);
+            // assign Ipv4 subnet to Routed VPC
+            if (routedIpv4Manager.isRoutedVpc(vpc)) {
+                routedIpv4Manager.assignIpv4SubnetToVpc(newVpc);
+            }
+            if (CollectionUtils.isNotEmpty(bgpPeerIds)) {
+                routedIpv4Manager.persistBgpPeersForVpc(newVpc.getId(), bgpPeerIds);
+            }
+            return newVpc;
         }
-        if (CollectionUtils.isNotEmpty(bgpPeerIds)) {
-            routedIpv4Manager.persistBgpPeersForVpc(newVpc.getId(), bgpPeerIds);
-        }
-        return newVpc;
     }
 
     private void validateVpcCidrSize(Account caller, long accountId, VpcOffering vpcOffering, String cidr, Integer cidrSize, long zoneId) {
@@ -1727,7 +1729,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         List<Long> bgpPeerIds = (cmd instanceof CreateVPCCmdByAdmin) ? ((CreateVPCCmdByAdmin)cmd).getBgpPeerIds() : null;
         Vpc vpc = createVpc(cmd.getZoneId(), cmd.getVpcOffering(), cmd.getEntityOwnerId(), cmd.getVpcName(), cmd.getDisplayText(),
             cmd.getCidr(), cmd.getNetworkDomain(), cmd.getIp4Dns1(), cmd.getIp4Dns2(), cmd.getIp6Dns1(),
-            cmd.getIp6Dns2(), cmd.isDisplay(), cmd.getPublicMtu(), cmd.getCidrSize(), cmd.getAsNumber(), bgpPeerIds, cmd.getUseVrIpResolver());
+            cmd.getIp6Dns2(), cmd.isDisplay(), cmd.getPublicMtu(), cmd.getCidrSize(), cmd.getAsNumber(), bgpPeerIds,
+            cmd.getUseVrIpResolver(), cmd.getKeepMacAddressOnPublicNic());
 
         String sourceNatIP = cmd.getSourceNatIP();
         boolean forNsx = isVpcForProvider(Provider.Nsx, vpc);
@@ -1939,12 +1942,14 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     @Override
     public Vpc updateVpc(UpdateVPCCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException {
-        return updateVpc(cmd.getId(), cmd.getVpcName(), cmd.getDisplayText(), cmd.getCustomId(), cmd.isDisplayVpc(), cmd.getPublicMtu(), cmd.getSourceNatIP());
+        return updateVpc(cmd.getId(), cmd.getVpcName(), cmd.getDisplayText(), cmd.getCustomId(),
+                cmd.isDisplayVpc(), cmd.getPublicMtu(), cmd.getSourceNatIP(), cmd.getKeepMacAddressOnPublicNic());
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_UPDATE, eventDescription = "updating vpc")
-    public Vpc updateVpc(final long vpcId, final String vpcName, final String displayText, final String customId, final Boolean displayVpc, Integer mtu, String sourceNatIp) throws ResourceUnavailableException, InsufficientCapacityException {
+    public Vpc updateVpc(final long vpcId, final String vpcName, final String displayText, final String customId,
+                         final Boolean displayVpc, Integer mtu, String sourceNatIp, Boolean keepMacAddressOnPublicNic) throws ResourceUnavailableException, InsufficientCapacityException {
         final Account caller = CallContext.current().getCallingAccount();
 
         // Verify input parameters
@@ -1974,6 +1979,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         if (displayVpc != null) {
             vpc.setDisplay(displayVpc);
+        }
+
+        if (keepMacAddressOnPublicNic != null) {
+            vpc.setKeepMacAddressOnPublicNic(keepMacAddressOnPublicNic);
         }
 
         mtu = validateMtu(vpcToUpdate, mtu);

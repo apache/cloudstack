@@ -50,7 +50,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
-
+import com.cloud.hypervisor.KVMGuru;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -309,7 +309,6 @@ import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import com.google.gson.Gson;
-
 
 public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMachineManager, VmWorkJobHandler, Listener, Configurable {
 
@@ -588,7 +587,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         Long deviceId = dataDiskDeviceIds.get(index++);
                         String volumeName = deviceId == null ? "DATA-" + persistedVm.getId() : "DATA-" + persistedVm.getId() + "-" + String.valueOf(deviceId);
                         volumeMgr.allocateRawVolume(Type.DATADISK, volumeName, dataDiskOfferingInfo.getDiskOffering(), dataDiskOfferingInfo.getSize(),
-                                dataDiskOfferingInfo.getMinIops(), dataDiskOfferingInfo.getMaxIops(), persistedVm, template, owner, deviceId);
+                                dataDiskOfferingInfo.getMinIops(), dataDiskOfferingInfo.getMaxIops(), persistedVm, template, owner, deviceId, true);
                     }
                 }
                 if (datadiskTemplateToDiskOfferingMap != null && !datadiskTemplateToDiskOfferingMap.isEmpty()) {
@@ -598,7 +597,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         long diskOfferingSize = diskOffering.getDiskSize() / (1024 * 1024 * 1024);
                         VMTemplateVO dataDiskTemplate = _templateDao.findById(dataDiskTemplateToDiskOfferingMap.getKey());
                         volumeMgr.allocateRawVolume(Type.DATADISK, "DATA-" + persistedVm.getId() + "-" + String.valueOf( diskNumber), diskOffering, diskOfferingSize, null, null,
-                                persistedVm, dataDiskTemplate, owner, diskNumber);
+                                persistedVm, dataDiskTemplate, owner, diskNumber, true);
                         diskNumber++;
                     }
                 }
@@ -628,7 +627,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             String rootVolumeName = String.format("ROOT-%s", vm.getId());
             if (template.getFormat() == ImageFormat.ISO) {
                 volumeMgr.allocateRawVolume(Type.ROOT, rootVolumeName, rootDiskOfferingInfo.getDiskOffering(), rootDiskOfferingInfo.getSize(),
-                        rootDiskOfferingInfo.getMinIops(), rootDiskOfferingInfo.getMaxIops(), vm, template, owner, null);
+                        rootDiskOfferingInfo.getMinIops(), rootDiskOfferingInfo.getMaxIops(), vm, template, owner, null, true);
             } else if (Arrays.asList(ImageFormat.BAREMETAL, ImageFormat.EXTERNAL).contains(template.getFormat())) {
                 logger.debug("{} has format [{}]. Skipping ROOT volume [{}] allocation.", template, template.getFormat(), rootVolumeName);
             } else {
@@ -2219,7 +2218,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     protected boolean sendStop(final VirtualMachineGuru guru, final VirtualMachineProfile profile, final boolean force, final boolean checkBeforeCleanup) {
         final VirtualMachine vm = profile.getVirtualMachine();
         Map<String, Boolean> vlanToPersistenceMap = getVlanToPersistenceMapForVM(vm.getId());
-
         StopCommand stpCmd = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), checkBeforeCleanup);
         updateStopCommandForExternalHypervisorType(vm.getHypervisorType(), profile, stpCmd);
         if (MapUtils.isNotEmpty(vlanToPersistenceMap)) {
@@ -4021,19 +4019,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public boolean isVirtualMachineUpgradable(final VirtualMachine vm, final ServiceOffering offering) {
-        boolean isMachineUpgradable = true;
-        for (final HostAllocator allocator : hostAllocators) {
-            isMachineUpgradable = allocator.isVirtualMachineUpgradable(vm, offering);
-            if (!isMachineUpgradable) {
-                break;
-            }
-        }
-
-        return isMachineUpgradable;
-    }
-
-    @Override
     public void reboot(final String vmUuid, final Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException {
         try {
             advanceReboot(vmUuid, params);
@@ -4470,11 +4455,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         if (currentServiceOffering.isSystemUse() != newServiceOffering.isSystemUse()) {
             throw new InvalidParameterValueException("isSystem property is different for current service offering and new service offering");
-        }
-
-        if (!isVirtualMachineUpgradable(vmInstance, newServiceOffering)) {
-            throw new InvalidParameterValueException("Unable to upgrade virtual machine, not enough resources available " + "for an offering of " +
-                    newServiceOffering.getCpu() + " cpu(s) at " + newServiceOffering.getSpeed() + " Mhz, and " + newServiceOffering.getRamSize() + " MB of memory");
         }
 
         final List<String> currentTags = StringUtils.csvTagsToList(currentDiskOffering.getTags());
@@ -5183,7 +5163,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             try {
                 result = retrieveResultFromJobOutcomeAndThrowExceptionIfNeeded(outcome);
             } catch (Exception ex) {
-                throw new RuntimeException("Unhandled exception", ex);
+                throw new RuntimeException("Unable to reconfigure VM.", ex);
             }
 
             if (result != null) {
@@ -5196,22 +5176,29 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     private VMInstanceVO orchestrateReConfigureVm(String vmUuid, ServiceOffering oldServiceOffering, ServiceOffering newServiceOffering,
                                                   boolean reconfiguringOnExistingHost) throws ResourceUnavailableException, ConcurrentOperationException {
-        final VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
+        VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
 
         HostVO hostVo = _hostDao.findById(vm.getHostId());
 
-        Long clustedId = hostVo.getClusterId();
-        Float memoryOvercommitRatio = CapacityManager.MemOverprovisioningFactor.valueIn(clustedId);
-        Float cpuOvercommitRatio = CapacityManager.CpuOverprovisioningFactor.valueIn(clustedId);
-        boolean divideMemoryByOverprovisioning = HypervisorGuruBase.VmMinMemoryEqualsMemoryDividedByMemOverprovisioningFactor.valueIn(clustedId);
-        boolean divideCpuByOverprovisioning = HypervisorGuruBase.VmMinCpuSpeedEqualsCpuSpeedDividedByCpuOverprovisioningFactor.valueIn(clustedId);
+        Long clusterId = hostVo.getClusterId();
+        Float memoryOvercommitRatio = CapacityManager.MemOverprovisioningFactor.valueIn(clusterId);
+        Float cpuOvercommitRatio = CapacityManager.CpuOverprovisioningFactor.valueIn(clusterId);
+        boolean divideMemoryByOverprovisioning = HypervisorGuruBase.VmMinMemoryEqualsMemoryDividedByMemOverprovisioningFactor.valueIn(clusterId);
+        boolean divideCpuByOverprovisioning = HypervisorGuruBase.VmMinCpuSpeedEqualsCpuSpeedDividedByCpuOverprovisioningFactor.valueIn(clusterId);
 
         int minMemory = (int)(newServiceOffering.getRamSize() / (divideMemoryByOverprovisioning ? memoryOvercommitRatio : 1));
         int minSpeed = (int)(newServiceOffering.getSpeed() / (divideCpuByOverprovisioning ? cpuOvercommitRatio : 1));
 
-        ScaleVmCommand scaleVmCommand =
-                new ScaleVmCommand(vm.getInstanceName(), newServiceOffering.getCpu(), minSpeed,
-                        newServiceOffering.getSpeed(), minMemory * 1024L * 1024L, newServiceOffering.getRamSize() * 1024L * 1024L, newServiceOffering.getLimitCpuUse());
+        Double cpuQuotaPercentage = null;
+        if (newServiceOffering.getLimitCpuUse() && vm.getHypervisorType().equals(HypervisorType.KVM)) {
+            KVMGuru kvmGuru = (KVMGuru) _hvGuruMgr.getGuru(vm.getHypervisorType());
+            cpuQuotaPercentage = kvmGuru.getCpuQuotaPercentage(minSpeed, hostVo.getSpeed());
+        }
+
+        boolean limitCpuUseChange = oldServiceOffering.getLimitCpuUse() != newServiceOffering.getLimitCpuUse();
+        ScaleVmCommand scaleVmCommand = new ScaleVmCommand(vm.getInstanceName(), newServiceOffering.getCpu(), minSpeed, newServiceOffering.getSpeed(),
+                minMemory * 1024L * 1024L, newServiceOffering.getRamSize() * 1024L * 1024L,
+                newServiceOffering.getLimitCpuUse(), cpuQuotaPercentage, limitCpuUseChange);
 
         scaleVmCommand.getVirtualMachine().setId(vm.getId());
         scaleVmCommand.getVirtualMachine().setUuid(vm.getUuid());
@@ -5240,16 +5227,20 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 throw new CloudRuntimeException("Unable to scale vm due to " + (reconfigureAnswer == null ? "" : reconfigureAnswer.getDetails()));
             }
 
-            upgradeVmDb(vm.getId(), newServiceOffering, oldServiceOffering);
+            if (reconfiguringOnExistingHost) {
+                _capacityMgr.releaseVmCapacity(vm, false, false, vm.getHostId());
+            }
+
+            boolean vmUpgraded = upgradeVmDb(vm.getId(), newServiceOffering, oldServiceOffering);
+            if (vmUpgraded) {
+                vm = _vmDao.findById(vm.getId());
+            }
 
             if (vm.getType().equals(VirtualMachine.Type.User)) {
                 _userVmMgr.generateUsageEvent(vm, vm.isDisplayVm(), EventTypes.EVENT_VM_DYNAMIC_SCALE);
             }
 
             if (reconfiguringOnExistingHost) {
-                vm.setServiceOfferingId(oldServiceOffering.getId());
-                _capacityMgr.releaseVmCapacity(vm, false, false, vm.getHostId());
-                vm.setServiceOfferingId(newServiceOffering.getId());
                 _capacityMgr.allocateVmCapacity(vm, false);
             }
 
@@ -5278,9 +5269,20 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     private void saveCustomOfferingDetails(long vmId, ServiceOffering serviceOffering) {
         Map<String, String> details = vmInstanceDetailsDao.listDetailsKeyPairs(vmId);
-        details.put(UsageEventVO.DynamicParameters.cpuNumber.name(), serviceOffering.getCpu().toString());
-        details.put(UsageEventVO.DynamicParameters.cpuSpeed.name(), serviceOffering.getSpeed().toString());
-        details.put(UsageEventVO.DynamicParameters.memory.name(), serviceOffering.getRamSize().toString());
+
+        // We need to restore only the customizable parameters. If we save a parameter that is not customizable and attempt
+        // to restore a VM snapshot, com.cloud.vm.UserVmManagerImpl.validateCustomParameters will fail.
+        ServiceOffering unfilledOffering = _serviceOfferingDao.findByIdIncludingRemoved(serviceOffering.getId());
+        if (unfilledOffering.getCpu() == null) {
+            details.put(UsageEventVO.DynamicParameters.cpuNumber.name(), serviceOffering.getCpu().toString());
+        }
+        if (unfilledOffering.getSpeed() == null) {
+            details.put(UsageEventVO.DynamicParameters.cpuSpeed.name(), serviceOffering.getSpeed().toString());
+        }
+        if (unfilledOffering.getRamSize() == null) {
+            details.put(UsageEventVO.DynamicParameters.memory.name(), serviceOffering.getRamSize().toString());
+        }
+
         List<VMInstanceDetailVO> detailList = new ArrayList<>();
         for (Map.Entry<String, String> entry: details.entrySet()) {
             VMInstanceDetailVO detailVO = new VMInstanceDetailVO(vmId, entry.getKey(), entry.getValue(), true);

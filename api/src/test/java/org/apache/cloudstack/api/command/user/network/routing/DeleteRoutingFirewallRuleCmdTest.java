@@ -49,7 +49,7 @@ public class DeleteRoutingFirewallRuleCmdTest {
         ReflectionTestUtils.setField(cmd, "_firewallService", _firewallService);
 
         long id = 1L;
-        UUID uuid = UUID.randomUUID();
+        String uuid = UUID.randomUUID().toString();
         long accountId = 2L;
         long networkId = 3L;
 

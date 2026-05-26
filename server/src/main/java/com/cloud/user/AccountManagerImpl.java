@@ -1389,19 +1389,18 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         final String accountNameFinal = accountName;
         final Long domainIdFinal = domainId;
-        final String accountUUIDFinal = accountUUID;
+        final String resolvedAccountUUID = accountUUID != null ? accountUUID : UUID.randomUUID().toString();
+
+        // Check role escalation before the transaction — this is a read-only check
+        // that iterates all API commands and doesn't need a write transaction open.
+        AccountVO requestedAccount = new AccountVO(accountNameFinal, domainIdFinal, networkDomain, accountType, roleId, resolvedAccountUUID);
+        checkRoleEscalation(getCurrentCallingAccount(), requestedAccount);
+
         Pair<Long, Account> pair = Transaction.execute(new TransactionCallback<>() {
             @Override
             public Pair<Long, Account> doInTransaction(TransactionStatus status) {
-                // create account
-                String accountUUID = accountUUIDFinal;
-                if (accountUUID == null) {
-                    accountUUID = UUID.randomUUID().toString();
-                }
-                AccountVO account = createAccount(accountNameFinal, accountType, roleId, domainIdFinal, networkDomain, details, accountUUID);
+                AccountVO account = createAccount(accountNameFinal, accountType, roleId, domainIdFinal, networkDomain, details, resolvedAccountUUID);
                 long accountId = account.getId();
-
-                checkRoleEscalation(getCurrentCallingAccount(), account);
 
                 // create the first user for the account
                 UserVO user = createUser(accountId, userName, password, firstName, lastName, email, timezone, userUUID, source);
@@ -2214,6 +2213,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         checkIfAccountManagesProjects(accountId);
         verifyCallerPrivilegeForUserOrAccountOperations(account);
+        validateNoDeleteProtectedVmsForAccount(account);
 
         CallContext.current().putContextParameter(Account.class, account.getUuid());
 
@@ -2251,6 +2251,23 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new InvalidParameterValueException("The account is default and can't be removed");
         }
         return true;
+    }
+
+    private void validateNoDeleteProtectedVmsForAccount(Account account) {
+        long accountId = account.getId();
+        List<VMInstanceVO> deleteProtectedVms = _vmDao.listDeleteProtectedVmsByAccountId(accountId);
+        if (CollectionUtils.isEmpty(deleteProtectedVms)) {
+            return;
+        }
+
+        if (logger.isDebugEnabled()) {
+            List<String> vmUuids = deleteProtectedVms.stream().map(VMInstanceVO::getUuid).collect(Collectors.toList());
+            logger.debug("Cannot delete Account {}, delete protection enabled for Instances: {}", account, vmUuids);
+        }
+
+        throw new InvalidParameterValueException(
+                String.format("Cannot delete Account '%s'. One or more Instances have delete protection enabled.",
+                        account.getAccountName()));
     }
 
     @Override
@@ -3830,6 +3847,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     public UserAccount getUserByApiKey(String apiKey) {
         ApiKeyPairVO keyPair = apiKeyPairDao.findByApiKey(apiKey);
+
+        if (keyPair == null) {
+            return null;
+        }
+
         return userAccountDao.findById(keyPair.getUserId());
     }
 
@@ -3900,7 +3922,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             if (getActiveAccountById(accountId) != null) {
                 return accountId;
             }
-            throw new InvalidParameterValueException(String.format("Unable to find account with ID [%s].", accountId));
+            throw new InvalidParameterValueException(String.format("Unable to find account with the specified ID."));
         }
 
         if (accountName == null && domainId == null) {
@@ -3916,16 +3938,16 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Both %s and %s are needed if using either. Consider using %s instead.",
                     ApiConstants.ACCOUNT, ApiConstants.DOMAIN_ID, ApiConstants.ACCOUNT_ID));
         }
-        throw new InvalidParameterValueException(String.format("Unable to find account by name [%s] on domain [%s].", accountName, domainId));
+        throw new InvalidParameterValueException(String.format("Unable to find account with name [%s] on the specified domain.", accountName));
     }
 
     protected long getActiveProjectAccountByProjectId(long projectId) {
         Project project = _projectMgr.getProject(projectId);
         if (project == null) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Unable to find project with ID [%s].", projectId));
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to find project with the specified ID.");
         }
         if (project.getState() != Project.State.Active) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Project with ID [%s] is not active.", projectId));
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Project is not active.");
         }
         return project.getProjectAccountId();
     }

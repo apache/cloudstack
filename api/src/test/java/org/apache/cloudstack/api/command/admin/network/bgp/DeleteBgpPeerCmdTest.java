@@ -39,7 +39,7 @@ public class DeleteBgpPeerCmdTest {
     @Test
     public void testDeleteBgpPeerCmd() {
         Long id = 1L;
-        UUID uuid = UUID.randomUUID();
+        String uuid = UUID.randomUUID().toString();
 
         DeleteBgpPeerCmd cmd = new DeleteBgpPeerCmd();
         ReflectionTestUtils.setField(cmd, "id", id);
