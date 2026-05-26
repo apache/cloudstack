@@ -117,7 +117,7 @@ public class ChangeSharedFSDiskOfferingCmd extends BaseAsyncCmd implements UserC
 
     @Override
     public String getEventDescription() {
-        return "Changing disk offering for the Shared FileSystem " + id;
+        return "Changing disk offering for the Shared FileSystem with ID:" + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

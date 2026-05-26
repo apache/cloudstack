@@ -98,7 +98,7 @@ public class ScaleSystemVMCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("SystemVm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()));
+        CallContext.current().setEventDetails("System VM ID: " + getResourceUuid(ApiConstants.ID));
 
         ServiceOffering serviceOffering = _entityMgr.findById(ServiceOffering.class, serviceOfferingId);
         if (serviceOffering == null) {
@@ -137,6 +137,6 @@ public class ScaleSystemVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Upgrading system vm: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()) + " to service offering: " + this._uuidMgr.getUuid(ServiceOffering.class, getServiceOfferingId());
+        return "Upgrading System VM with ID: " + getResourceUuid(ApiConstants.ID) + " to service offering: " + getResourceUuid(ApiConstants.SERVICE_OFFERING_ID);
     }
 }

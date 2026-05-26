@@ -41,4 +41,62 @@ public class FilterTest {
         Assert.assertTrue(filter.getOrderBy().split(",").length == 3);
         Assert.assertTrue(filter.getOrderBy().split(",")[2].trim().toLowerCase().equals("test.fld_int asc"));
     }
+
+
+    @Test
+    public void testFilterWithLimitOnly() {
+        Filter filter = new Filter(5);
+
+        Assert.assertEquals(Long.valueOf(5), filter.getLimit());
+        Assert.assertNull(filter.getOrderBy());
+        Assert.assertNull(filter.getOffset());
+    }
+
+    @Test
+    public void testFilterWithLimitAndRandomizeFalse() {
+        Filter filter = new Filter(10, false);
+
+        Assert.assertEquals(Long.valueOf(10), filter.getLimit());
+        Assert.assertNull(filter.getOrderBy());
+        Assert.assertNull(filter.getOffset());
+    }
+
+    @Test
+    public void testFilterWithLimitAndRandomizeTrue() {
+        Filter filter = new Filter(3, true);
+
+        Assert.assertNull(filter.getLimit());
+        Assert.assertNotNull(filter.getOrderBy());
+        Assert.assertTrue(filter.getOrderBy().contains("ORDER BY RAND()"));
+        Assert.assertTrue(filter.getOrderBy().contains("LIMIT 3"));
+        Assert.assertEquals(" ORDER BY RAND() LIMIT 3", filter.getOrderBy());
+    }
+
+    @Test
+    public void testFilterRandomizeWithDifferentLimits() {
+        Filter filter1 = new Filter(1, true);
+        Filter filter10 = new Filter(10, true);
+        Filter filter100 = new Filter(100, true);
+
+        Assert.assertEquals(" ORDER BY RAND() LIMIT 1", filter1.getOrderBy());
+        Assert.assertEquals(" ORDER BY RAND() LIMIT 10", filter10.getOrderBy());
+        Assert.assertEquals(" ORDER BY RAND() LIMIT 100", filter100.getOrderBy());
+    }
+
+    @Test
+    public void testFilterConstructorBackwardsCompatibility() {
+        // Test that Filter(long) behaves differently now (no ORDER BY RAND())
+        // compared to Filter(long, true) which preserves old behavior
+        Filter simpleLimitFilter = new Filter(1);
+        Filter randomFilter = new Filter(1, true);
+
+        // Simple limit filter should just set limit
+        Assert.assertEquals(Long.valueOf(1), simpleLimitFilter.getLimit());
+        Assert.assertNull(simpleLimitFilter.getOrderBy());
+
+        // Random filter should set orderBy with RAND()
+        Assert.assertNull(randomFilter.getLimit());
+        Assert.assertNotNull(randomFilter.getOrderBy());
+        Assert.assertTrue(randomFilter.getOrderBy().contains("RAND()"));
+    }
 }

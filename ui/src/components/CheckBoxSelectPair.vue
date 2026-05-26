@@ -74,6 +74,10 @@ export default {
       type: Boolean,
       default: false
     },
+    defaultSelectValue: {
+      type: String,
+      default: null
+    },
     selectOptions: {
       type: Array,
       required: true
@@ -100,6 +104,9 @@ export default {
   },
   created () {
     this.checked = this.defaultCheckBoxValue
+    if (this.defaultSelectValue) {
+      this.selectedOption = this.defaultSelectValue
+    }
   },
   watch: {
     selectOptions () {

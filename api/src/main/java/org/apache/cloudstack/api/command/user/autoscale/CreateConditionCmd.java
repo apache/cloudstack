@@ -127,7 +127,7 @@ public class CreateConditionCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return "creating a condition";
+        return "Creating AutoScale condition";
     }
 
     @Override

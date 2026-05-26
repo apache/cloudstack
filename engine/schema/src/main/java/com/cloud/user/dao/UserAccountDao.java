@@ -30,6 +30,4 @@ public interface UserAccountDao extends GenericDao<UserAccountVO, Long> {
     List<UserAccountVO> getUserAccountByEmail(String email, Long domainId);
 
     boolean validateUsernameInDomain(String username, Long domainId);
-
-    UserAccount getUserByApiKey(String apiKey);
 }

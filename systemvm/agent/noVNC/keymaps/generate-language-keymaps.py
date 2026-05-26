@@ -2,7 +2,7 @@
 
 # This script
 # (1) loads keysym name and keycode mappings from noVNC/core/input/keysym.js and
-# (2) loads keysyn name to atset1 code mappings from keymap files which can be downloadeded from https://github.com/qemu/qemu/blob/master/pc-bios/keymaps
+# (2) loads keysym name to atset1 code mappings from keymap files which can be downloadeded from https://github.com/qemu/qemu/blob/master/pc-bios/keymaps
 # (3) generates the mappings of keycode and atset1 code
 #
 # Note: please add language specific mappings if needed.
@@ -96,7 +96,10 @@ def generate_js_file(keymap_file):
     js_config.append(" */\n")
     js_config.append("export default {\n")
     for keycode in dict(sorted(list(result_mappings.items()), key=lambda item: int(item[0]))):
-        js_config.append("%10s : \"%s\",\n" % ("\"" + str(keycode) + "\"", result_mappings[keycode].strip()))
+        if keycode not in list(keycode_to_x11name.keys()):
+            js_config.append("%10s : \"%s\",\n" % ("\"" + str(keycode) + "\"", result_mappings[keycode].strip()))
+        else:
+            js_config.append("%10s : \"%s\",         // %s\n" % ("\"" + str(keycode) + "\"", result_mappings[keycode].strip(), keycode_to_x11name[keycode]))
     js_config.append("}\n")
     for line in js_config:
         handle.write(line)

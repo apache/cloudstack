@@ -82,7 +82,7 @@ public class DisassociateIPAddrCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws InsufficientAddressCapacityException {
         Long ipAddressId = getIpAddressId();
-        CallContext.current().setEventDetails("IP ID: " + ipAddressId);
+        CallContext.current().setEventDetails("IP address ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = false;
         if (!isPortable()) {
             result = _networkService.releaseIpAddress(ipAddressId);
@@ -108,7 +108,7 @@ public class DisassociateIPAddrCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return ("Disassociating IP address with ID=" + id);
+        return ("Disassociating IP address with ID:" + getResourceUuid(ApiConstants.ID));
     }
 
     @Override

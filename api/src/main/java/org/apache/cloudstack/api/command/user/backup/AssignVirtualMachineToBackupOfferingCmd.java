@@ -21,6 +21,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -103,12 +104,22 @@ public class AssignVirtualMachineToBackupOfferingCmd extends BaseAsyncCmd {
     }
 
     @Override
+    public Long getApiResourceId() {
+        return vmId;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.VirtualMachine;
+    }
+
+    @Override
     public String getEventType() {
         return EventTypes.EVENT_VM_BACKUP_OFFERING_ASSIGN;
     }
 
     @Override
     public String getEventDescription() {
-        return "Assigning Instance to backup offering ID: " + offeringId;
+        return "Assigning Instance with ID " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID) + " to backup offering with ID: " + getResourceUuid(ApiConstants.BACKUP_OFFERING_ID);
     }
 }

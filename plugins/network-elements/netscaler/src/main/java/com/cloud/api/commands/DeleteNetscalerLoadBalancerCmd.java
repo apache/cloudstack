@@ -88,7 +88,7 @@ public class DeleteNetscalerLoadBalancerCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Deleting a netscaler load balancer device";
+        return "Deleting NetScaler load balancer device with ID: " + getResourceUuid(ApiConstants.LOAD_BALANCER_DEVICE_ID);
     }
 
     @Override

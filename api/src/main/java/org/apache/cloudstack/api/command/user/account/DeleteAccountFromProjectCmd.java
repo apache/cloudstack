@@ -70,7 +70,7 @@ public class DeleteAccountFromProjectCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Project ID: " + projectId + "; accountName " + accountName);
+        CallContext.current().setEventDetails("Project ID: " + getResourceUuid(ApiConstants.PROJECT_ID) + "; accountName " + accountName);
         boolean result = _projectService.deleteAccountFromProject(projectId, accountName);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
@@ -103,7 +103,7 @@ public class DeleteAccountFromProjectCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Removing Account " + accountName + " from project: " + projectId;
+        return "Removing Account " + accountName + " from project: " + getResourceUuid(ApiConstants.PROJECT_ID);
     }
 
     @Override

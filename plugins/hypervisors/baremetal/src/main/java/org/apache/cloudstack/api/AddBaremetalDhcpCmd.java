@@ -70,7 +70,7 @@ public class AddBaremetalDhcpCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Adding an external DHCP server";
+        return "Adding an external DHCP server to physical network with ID: " + getResourceUuid(ApiConstants.PHYSICAL_NETWORK_ID);
     }
 
     @Override

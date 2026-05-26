@@ -103,7 +103,7 @@ export default {
       show: (record) => {
         return record.hypervisor === 'KVM' || record.hypervisor === store.getters.customHypervisorName
       },
-      args: ['hostid'],
+      args: ['hostid', 'forced'],
       mapping: {
         hostid: {
           value: (record) => { return record.id }

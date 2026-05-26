@@ -21,6 +21,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Dhcp;
 import com.cloud.vm.VirtualMachine;
@@ -44,7 +45,6 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.vm.lease.VMLeaseManager;
 import org.apache.commons.lang3.EnumUtils;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -174,6 +174,9 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
     /////////////////////////////////////////////////////
 
     public String getDisplayName() {
+        if (StringUtils.isBlank(displayName)) {
+            displayName = name;
+        }
         return displayName;
     }
 
@@ -310,7 +313,7 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException {
-        CallContext.current().setEventDetails("Instance Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()));
+        CallContext.current().setEventDetails("Instance ID: " + ApiConstants.ID);
         UserVm result = null;
         try {
             result = _userVmService.updateVirtualMachine(this);

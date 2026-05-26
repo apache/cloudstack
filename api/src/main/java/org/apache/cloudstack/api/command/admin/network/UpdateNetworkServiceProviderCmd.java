@@ -100,7 +100,7 @@ public class UpdateNetworkServiceProviderCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Updating physical network ServiceProvider: " + getId();
+        return "Updating Physical Network ServiceProvider with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

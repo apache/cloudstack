@@ -119,12 +119,12 @@ public class UpdateLoadBalancerRuleCmd extends BaseAsyncCustomIdCmd {
 
     @Override
     public String getEventDescription() {
-        return "updating load balancer rule";
+        return "Updating load balancer rule with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Load balancer ID: " + getId());
+        CallContext.current().setEventDetails("Load balancer ID: " + getResourceUuid(ApiConstants.ID));
         LoadBalancer result = _lbService.updateLoadBalancerRule(this);
         if (result != null) {
             LoadBalancerResponse response = _responseGenerator.createLoadBalancerResponse(result);

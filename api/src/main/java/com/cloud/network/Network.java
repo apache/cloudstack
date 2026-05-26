@@ -510,4 +510,6 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
     Integer getPrivateMtu();
 
     Integer getNetworkCidrSize();
+
+    boolean getKeepMacAddressOnPublicNic();
 }

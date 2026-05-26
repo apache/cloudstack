@@ -68,7 +68,7 @@ public class DeleteRolePermissionCmd extends BaseCmd {
         if (rolePermission == null) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid role permission id provided");
         }
-        CallContext.current().setEventDetails("Role permission id: " + rolePermission.getId());
+        CallContext.current().setEventDetails("Role permission ID: " + rolePermission.getUuid());
         boolean result = roleService.deleteRolePermission(rolePermission);
         SuccessResponse response = new SuccessResponse(getCommandName());
         response.setSuccess(result);

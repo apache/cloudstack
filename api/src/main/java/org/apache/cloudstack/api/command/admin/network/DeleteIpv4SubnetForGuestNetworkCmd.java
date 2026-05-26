@@ -59,7 +59,7 @@ public class DeleteIpv4SubnetForGuestNetworkCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Deleting guest IPv4 subnet " + getId();
+        return "Deleting guest IPv4 subnet with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

@@ -18,56 +18,56 @@ package org.apache.cloudstack.api.response;
 
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.Date;
 import java.util.List;
 
 public class QuotaStatementResponse  extends BaseResponse {
 
-    @SerializedName("accountid")
-    @Param(description = "Account ID")
-    private Long accountId;
+    @SerializedName(ApiConstants.ACCOUNT_ID)
+    @Param(description = "ID of the Account.")
+    private String accountId;
 
-    @SerializedName("account")
-    @Param(description = "Account name")
+    @SerializedName(ApiConstants.ACCOUNT)
+    @Param(description = "Name of the Account.")
     private String accountName;
 
-    @SerializedName("domain")
-    @Param(description = "Domain ID")
-    private Long domainId;
+    @SerializedName(ApiConstants.DOMAIN)
+    @Param(description = "ID of the Domain.")
+    private String domainId;
 
-    @SerializedName("quotausage")
-    @Param(description = "List of quota usage under various types", responseObject = QuotaStatementItemResponse.class)
+    @SerializedName(ApiConstants.QUOTA_USAGE)
+    @Param(description = "List of Quota usage under various types.", responseObject = QuotaStatementItemResponse.class)
     private List<QuotaStatementItemResponse> lineItem;
 
-    @SerializedName("totalquota")
-    @Param(description = "Total quota used during this period")
+    @SerializedName(ApiConstants.TOTAL_QUOTA)
+    @Param(description = "Total Quota consumed during this period.")
     private BigDecimal totalQuota;
 
-    @SerializedName("startdate")
-    @Param(description = "Start date")
+    @SerializedName(ApiConstants.START_DATE)
+    @Param(description = "Start date of the Quota statement.")
     private Date startDate = null;
 
-    @SerializedName("enddate")
-    @Param(description = "End date")
+    @SerializedName(ApiConstants.END_DATE)
+    @Param(description = "End date of the Quota statement.")
     private Date endDate = null;
 
-    @SerializedName("currency")
-    @Param(description = "Currency")
+    @SerializedName(ApiConstants.CURRENCY)
+    @Param(description = "Currency of the Quota statement.")
     private String currency;
 
     public QuotaStatementResponse() {
         super();
     }
 
-    public Long getAccountId() {
+    public String getAccountId() {
         return accountId;
     }
 
-    public void setAccountId(Long accountId) {
+    public void setAccountId(String accountId) {
         this.accountId = accountId;
     }
 
@@ -79,16 +79,12 @@ public class QuotaStatementResponse  extends BaseResponse {
         this.accountName = accountName;
     }
 
-    public Long getDomainId() {
+    public String getDomainId() {
         return domainId;
     }
 
-    public void setDomainId(Long domainId) {
+    public void setDomainId(String domainId) {
         this.domainId = domainId;
-    }
-
-    public List<QuotaStatementItemResponse> getLineItem() {
-        return lineItem;
     }
 
     public void setLineItem(List<QuotaStatementItemResponse> lineItem) {
@@ -96,28 +92,23 @@ public class QuotaStatementResponse  extends BaseResponse {
     }
 
     public Date getStartDate() {
-        return startDate == null ? null : new Date(startDate.getTime());
+        return startDate;
     }
 
     public void setStartDate(Date startDate) {
-        this.startDate = startDate == null ? null : new Date(startDate.getTime());
+        this.startDate = startDate;
     }
 
     public Date getEndDate() {
-        return endDate == null ? null : new Date(endDate.getTime());
+        return endDate;
     }
 
     public void setEndDate(Date endDate) {
-        this.endDate = endDate == null ? null : new Date(endDate.getTime());
-    }
-
-
-    public BigDecimal getTotalQuota() {
-        return totalQuota;
+        this.endDate = endDate;
     }
 
     public void setTotalQuota(BigDecimal totalQuota) {
-        this.totalQuota = totalQuota.setScale(2, RoundingMode.HALF_EVEN);
+        this.totalQuota = totalQuota;
     }
 
     public String getCurrency() {

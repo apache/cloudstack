@@ -116,7 +116,7 @@ public class DestroyVMCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return  "destroying Instance: " + this._uuidMgr.getUuid(VirtualMachine.class, getId());
+        return  "Destroying Instance with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
@@ -131,7 +131,7 @@ public class DestroyVMCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, ConcurrentOperationException {
-        CallContext.current().setEventDetails("Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()));
+        CallContext.current().setEventDetails("Instance ID: " + getResourceUuid(ApiConstants.ID));
         UserVm result = _userVmService.destroyVm(this);
 
         UserVmResponse response = new UserVmResponse();

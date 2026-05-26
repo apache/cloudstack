@@ -340,6 +340,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "List of read-only Instance details as comma separated string.", since = "4.16.0")
     private String readOnlyDetails;
 
+    @SerializedName("alloweddetails")
+    @Param(description = "List of allowed Vm details as comma separated string if VM instance settings are read from OVA.", since = "4.22.1")
+    private String allowedDetails;
+
     @SerializedName(ApiConstants.SSH_KEYPAIRS)
     @Param(description = "SSH key-pairs")
     private String keyPairNames;
@@ -1091,6 +1095,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         this.readOnlyDetails = readOnlyDetails;
     }
 
+    public void setAllowedDetails(String allowedDetails) {
+        this.allowedDetails = allowedDetails;
+    }
+
     public void setOsTypeId(String osTypeId) {
         this.osTypeId = osTypeId;
     }
@@ -1113,6 +1121,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public String getReadOnlyDetails() {
         return readOnlyDetails;
+    }
+
+    public String getAllowedDetails() {
+        return allowedDetails;
     }
 
     public Boolean getDynamicallyScalable() {

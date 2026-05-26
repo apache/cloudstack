@@ -90,7 +90,7 @@ public final class DisableHAForZoneCmd extends BaseAsyncCmd {
         }
 
         final boolean result = haConfigManager.disableHA(dataCenter);
-        CallContext.current().setEventDetails("Zone Id:" + dataCenter.getId() + " HA enabled: false");
+        CallContext.current().setEventDetails("Zone ID:" + dataCenter.getUuid() + " HA enabled: false");
         CallContext.current().putContextParameter(DataCenter.class, dataCenter.getUuid());
 
         setupResponse(result);
@@ -103,7 +103,7 @@ public final class DisableHAForZoneCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Disable HA for zone: " + getZoneId();
+        return "Disabling HA for zone with ID: " + getResourceUuid(ApiConstants.ZONE_ID);
     }
 
 }

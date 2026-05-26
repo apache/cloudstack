@@ -420,6 +420,14 @@ public class ConfigKey<T> {
         return value();
     }
 
+    /**
+     * @deprecated
+     * Still used by some external code, but use {@link ConfigKey#valueInScope(Scope, Long)} instead.
+     */
+    public T valueInDomain(Long domainId) {
+        return valueInScope(Scope.Domain, domainId);
+    }
+
     public T valueInScope(Scope scope, Long id) {
         if (id == null) {
             return value();

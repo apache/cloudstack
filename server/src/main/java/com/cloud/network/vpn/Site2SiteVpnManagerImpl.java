@@ -618,11 +618,11 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_S2S_VPN_CUSTOMER_GATEWAY_DELETE, eventDescription = "deleting s2s vpn customer gateway", create = true)
     public boolean deleteCustomerGateway(DeleteVpnCustomerGatewayCmd cmd) {
-        CallContext.current().setEventDetails(" Id: " + cmd.getId());
         Account caller = CallContext.current().getCallingAccount();
 
         Long id = cmd.getId();
         Site2SiteCustomerGateway customerGateway = getAndValidateSite2SiteCustomerGateway(id, caller);
+        CallContext.current().setEventDetails(" ID: " + customerGateway.getUuid());
 
         return doDeleteCustomerGateway(customerGateway);
     }
@@ -649,11 +649,11 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_S2S_VPN_GATEWAY_DELETE, eventDescription = "deleting s2s vpn gateway", async = true)
     public boolean deleteVpnGateway(DeleteVpnGatewayCmd cmd) {
-        CallContext.current().setEventDetails(" Id: " + cmd.getId());
         Account caller = CallContext.current().getCallingAccount();
 
         Long id = cmd.getId();
         Site2SiteVpnGateway vpnGateway = getAndValidateSite2SiteVpnGateway(id, caller);
+        CallContext.current().setEventDetails(" ID: " + vpnGateway.getUuid());
 
         doDeleteVpnGateway(vpnGateway);
         return true;
@@ -662,7 +662,6 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_S2S_VPN_CUSTOMER_GATEWAY_UPDATE, eventDescription = "update s2s vpn customer gateway", create = true)
     public Site2SiteCustomerGateway updateCustomerGateway(UpdateVpnCustomerGatewayCmd cmd) {
-        CallContext.current().setEventDetails(" Id: " + cmd.getId());
         Account caller = CallContext.current().getCallingAccount();
 
         Long id = cmd.getId();
@@ -670,6 +669,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         if (gw == null) {
             throw new InvalidParameterValueException("Find to find customer gateway with id " + id);
         }
+        CallContext.current().setEventDetails(" ID: " + gw.getUuid());
         _accountMgr.checkAccess(caller, null, false, gw);
 
         String name = cmd.getName();
@@ -790,7 +790,6 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_S2S_VPN_CONNECTION_DELETE, eventDescription = "deleting s2s vpn connection", create = true)
     public boolean deleteVpnConnection(DeleteVpnConnectionCmd cmd) throws ResourceUnavailableException {
-        CallContext.current().setEventDetails(" Id: " + cmd.getId());
         Account caller = CallContext.current().getCallingAccount();
 
         Long id = cmd.getId();
@@ -798,6 +797,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         if (conn == null) {
             throw new InvalidParameterValueException("Fail to find site to site VPN connection " + id + " to delete!");
         }
+        CallContext.current().setEventDetails(" ID: " + conn.getUuid());
 
         _accountMgr.checkAccess(caller, null, false, conn);
 
@@ -852,7 +852,6 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_S2S_VPN_CONNECTION_RESET, eventDescription = "reseting s2s vpn connection", create = true)
     public Site2SiteVpnConnection resetVpnConnection(ResetVpnConnectionCmd cmd) throws ResourceUnavailableException {
-        CallContext.current().setEventDetails(" Id: " + cmd.getId());
         Account caller = CallContext.current().getCallingAccount();
 
         Long id = cmd.getId();
@@ -860,6 +859,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         if (conn == null) {
             throw new InvalidParameterValueException("Fail to find site to site VPN connection " + id + " to reset!");
         }
+        CallContext.current().setEventDetails(" ID: " + conn.getUuid());
         _accountMgr.checkAccess(caller, null, false, conn);
 
         // Set vpn state to disconnected

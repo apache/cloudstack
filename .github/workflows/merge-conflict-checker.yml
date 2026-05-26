@@ -17,28 +17,26 @@
 
 name: "PR Merge Conflict Check"
 on:
-  push:
-  pull_request_target:
-    types: [synchronize]
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
 
-permissions:  # added using https://github.com/step-security/secure-workflows
-  contents: read
+permissions: {}
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  group: "gh-aw-${{ github.workflow }}"
 
 jobs:
   triage:
     permissions:
-      pull-requests: write  # for eps1lon/actions-label-merge-conflict to label PRs
-    runs-on: ubuntu-22.04
+      pull-requests: write # for eps1lon/actions-label-merge-conflict to label PRs
+    runs-on: ubuntu-24.04
     steps:
-    - name: Conflict Check
-      uses: eps1lon/actions-label-merge-conflict@v2.0.0
-      with:
-        repoToken: "${{ secrets.GITHUB_TOKEN }}"
-        dirtyLabel: "status:has-conflicts"
-        removeOnDirtyLabel: "status:ready-for-review"
-        continueOnMissingPermissions: true
-        commentOnDirty: "This pull request has merge conflicts. Dear author, please fix the conflicts and sync your branch with the base branch."
+      - name: Conflict Check
+        uses: eps1lon/actions-label-merge-conflict@1df065ebe6e3310545d4f4c4e862e43bdca146f0 # v3.0.3
+        with:
+          repoToken: "${{ secrets.GITHUB_TOKEN }}"
+          dirtyLabel: "status:has-conflicts"
+          removeOnDirtyLabel: "status:ready-for-review"
+          continueOnMissingPermissions: true
+          commentOnDirty: "This pull request has merge conflicts. Dear author, please fix the conflicts and sync your branch with the base branch."

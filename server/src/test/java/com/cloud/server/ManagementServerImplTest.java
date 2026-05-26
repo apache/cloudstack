@@ -23,6 +23,10 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.cloud.deploy.DataCenterDeployment;
+import com.cloud.deploy.DeploymentPlanner;
+import com.cloud.deploy.DeploymentPlanningManager;
+import com.cloud.vm.VirtualMachineProfile;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -180,6 +184,24 @@ public class ManagementServerImplTest {
 
     @Mock
     HostAllocator hostAllocator;
+
+    @Mock
+    VirtualMachine virtualMachineMock;
+
+    @Mock
+    VirtualMachineProfile virtualMachineProfileMock;
+
+    @Mock
+    DataCenterDeployment dataCenterDeploymentMock;
+
+    @Mock
+    DeploymentPlanner.ExcludeList excludeListMock;
+
+    @Mock
+    Host hostMock;
+
+    @Mock
+    DeploymentPlanningManager deploymentPlanningManagerMock;
 
     private AutoCloseable closeable;
     private MockedStatic<ApiDBUtils> apiDBUtilsMock;
@@ -1053,10 +1075,19 @@ public class ManagementServerImplTest {
 
     @Test
     public void testGetExternalVmConsole() {
-        VirtualMachine virtualMachine = Mockito.mock(VirtualMachine.class);
         Host host = Mockito.mock(Host.class);
-        Mockito.when(extensionManager.getInstanceConsole(virtualMachine, host)).thenReturn(Mockito.mock(com.cloud.agent.api.Answer.class));
-        Assert.assertNotNull(spy.getExternalVmConsole(virtualMachine, host));
-        Mockito.verify(extensionManager).getInstanceConsole(virtualMachine, host);
+        Mockito.when(extensionManager.getInstanceConsole(virtualMachineMock, host)).thenReturn(Mockito.mock(com.cloud.agent.api.Answer.class));
+        Assert.assertNotNull(spy.getExternalVmConsole(virtualMachineMock, host));
+        Mockito.verify(extensionManager).getInstanceConsole(virtualMachineMock, host);
+    }
+
+    @Test
+    public void getCapableSuitableHostsTestHostArchIsNotFilteredWhenNoSuitableHostsAreFound() {
+        List<Host> compatibleHosts = List.of(hostMock);
+        Mockito.doReturn(null).when(hostAllocator).allocateTo(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyList(), Mockito.anyInt(), Mockito.anyBoolean());
+
+        spy.getCapableSuitableHosts(virtualMachineMock, virtualMachineProfileMock, dataCenterDeploymentMock, compatibleHosts, excludeListMock, hostMock);
+
+        apiDBUtilsMock.verify(() -> ApiDBUtils.listZoneClustersArchs(Mockito.anyLong()), Mockito.never());
     }
 }

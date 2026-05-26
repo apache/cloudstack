@@ -34,6 +34,19 @@ CREATE TABLE `cloud`.`backup_offering_details` (
 UPDATE `cloud`.`configuration` SET value='random' WHERE name IN ('vm.allocation.algorithm', 'volume.allocation.algorithm') AND value='userconcentratedpod_random';
 UPDATE `cloud`.`configuration` SET value='firstfit' WHERE name IN ('vm.allocation.algorithm', 'volume.allocation.algorithm') AND value='userconcentratedpod_firstfit';
 
+-- Create kubernetes_cluster_affinity_group_map table for CKS per-node-type affinity groups
+CREATE TABLE IF NOT EXISTS `cloud`.`kubernetes_cluster_affinity_group_map` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+    `cluster_id` bigint unsigned NOT NULL COMMENT 'kubernetes cluster id',
+    `node_type` varchar(32) NOT NULL COMMENT 'CONTROL, WORKER, or ETCD',
+    `affinity_group_id` bigint unsigned NOT NULL COMMENT 'affinity group id',
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_kubernetes_cluster_ag_map__cluster_id` FOREIGN KEY (`cluster_id`) REFERENCES `kubernetes_cluster`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_kubernetes_cluster_ag_map__ag_id` FOREIGN KEY (`affinity_group_id`) REFERENCES `affinity_group`(`id`) ON DELETE CASCADE,
+    INDEX `i_kubernetes_cluster_ag_map__cluster_id`(`cluster_id`),
+    INDEX `i_kubernetes_cluster_ag_map__ag_id`(`affinity_group_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 -- Create webhook_filter table
 DROP TABLE IF EXISTS `cloud`.`webhook_filter`;
 CREATE TABLE IF NOT EXISTS `cloud`.`webhook_filter` (
@@ -49,3 +62,90 @@ CREATE TABLE IF NOT EXISTS `cloud`.`webhook_filter` (
     INDEX `i_webhook_filter__webhook_id`(`webhook_id`),
     CONSTRAINT `fk_webhook_filter__webhook_id` FOREIGN KEY(`webhook_id`) REFERENCES `webhook`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- "api_keypair" table for API and secret keys
+CREATE TABLE IF NOT EXISTS `cloud`.`api_keypair` (
+    `id` bigint(20) unsigned NOT NULL auto_increment,
+    `uuid` varchar(40) UNIQUE NOT NULL,
+    `name` varchar(255) NOT NULL,
+    `domain_id` bigint(20) unsigned NOT NULL,
+    `account_id` bigint(20) unsigned NOT NULL,
+    `user_id` bigint(20) unsigned NOT NULL,
+    `start_date` datetime,
+    `end_date` datetime,
+    `description` varchar(100),
+    `api_key` varchar(255) NOT NULL,
+    `secret_key` varchar(255) NOT NULL,
+    `created` datetime NOT NULL,
+    `removed` datetime,
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_api_keypair__user_id` FOREIGN KEY(`user_id`) REFERENCES `cloud`.`user`(`id`),
+    CONSTRAINT `fk_api_keypair__account_id` FOREIGN KEY(`account_id`) REFERENCES `cloud`.`account`(`id`),
+    CONSTRAINT `fk_api_keypair__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `cloud`.`domain`(`id`)
+);
+
+-- "api_keypair_permissions" table for API key pairs permissions
+CREATE TABLE IF NOT EXISTS `cloud`.`api_keypair_permissions` (
+    `id` bigint(20) unsigned NOT NULL auto_increment,
+    `uuid` varchar(40) UNIQUE,
+    `sort_order` bigint(20) unsigned NOT NULL DEFAULT 0,
+    `rule` varchar(255) NOT NULL,
+    `api_keypair_id` bigint(20) unsigned NOT NULL,
+    `permission` varchar(255) NOT NULL,
+    `description` varchar(255),
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_keypair_permissions__api_keypair_id` FOREIGN KEY(`api_keypair_id`) REFERENCES `cloud`.`api_keypair`(`id`)
+);
+
+-- Populate "api_keypair" table with existing user API keys
+INSERT INTO `cloud`.`api_keypair` (uuid, user_id, domain_id, account_id, api_key, secret_key, created, name)
+SELECT UUID(), user.id, account.domain_id, account.id, user.api_key, user.secret_key, NOW(), 'Active key pair'
+FROM `cloud`.`user` AS user
+JOIN `cloud`.`account` AS account ON user.account_id = account.id
+WHERE user.api_key IS NOT NULL AND user.secret_key IS NOT NULL;
+
+-- Drop API keys from user table
+ALTER TABLE `cloud`.`user` DROP COLUMN api_key, DROP COLUMN secret_key;
+
+-- Grant access to the "deleteUserKeys" API to the "User", "Domain Admin" and "Resource Admin" roles, similarly to the "registerUserKeys" API
+CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('User', 'deleteUserKeys', 'ALLOW');
+CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('Domain Admin', 'deleteUserKeys', 'ALLOW');
+CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('Resource Admin', 'deleteUserKeys', 'ALLOW');
+
+-- Add conserve mode for VPC offerings
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vpc_offerings','conserve_mode', 'tinyint(1) unsigned NULL DEFAULT 0 COMMENT ''True if the VPC offering is IP conserve mode enabled, allowing public IP services to be used across multiple VPC tiers'' ');
+
+--- Disable/enable NICs
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.nics','enabled', 'TINYINT(1) NOT NULL DEFAULT 1 COMMENT ''Indicates whether the NIC is enabled or not'' ');
+
+--- Quota tariff/usage mapping
+CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_tariff_usage` (
+    `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+    `tariff_id` bigint(20) unsigned NOT NULL COMMENT 'ID of the tariff of the Quota usage detail calculated, foreign key to quota_tariff table',
+    `quota_usage_id` bigint(20) unsigned NOT NULL COMMENT 'ID of the aggregation of Quota usage details, foreign key to quota_usage table',
+    `quota_used` decimal(20,8) NOT NULL COMMENT 'Amount of quota used',
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_quota_tariff_usage__tariff_id` FOREIGN KEY (`tariff_id`) REFERENCES `cloud_usage`.`quota_tariff` (`id`),
+    CONSTRAINT `fk_quota_tariff_usage__quota_usage_id` FOREIGN KEY (`quota_usage_id`) REFERENCES `cloud_usage`.`quota_usage` (`id`));
+
+-- Add the 'keep_mac_address_on_public_nic' column to the 'cloud.networks' and 'cloud.vpc' tables
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.networks', 'keep_mac_address_on_public_nic', 'TINYINT(1) NOT NULL DEFAULT 1');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vpc', 'keep_mac_address_on_public_nic', 'TINYINT(1) NOT NULL DEFAULT 1');
+
+-- Creates the 'kvm.memory.dynamic.scaling.capacity' and, for already active ACS environments,
+-- initializes it with the value of the setting 'vm.serviceoffering.ram.size.max'
+INSERT INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `default_value`, `updated`, `scope`, `is_dynamic`, `group_id`, `subgroup_id`, `display_text`, `description`)
+SELECT 'Advanced', 'DEFAULT', 'CapacityManager', 'kvm.memory.dynamic.scaling.capacity', `cfg`.`value`, 0, NULL, 4, 1, 6, 27,
+       'KVM memory dynamic scaling capacity', 'Defines the maximum memory capacity in MiB for which VMs can be dynamically scaled to with KVM. The ''kvm.memory.dynamic.scaling.capacity'' setting''s value will be used to define the value of the ''<maxMemory />'' element of domain XMLs. If it is set to a value less than or equal to ''0'', then the host''s memory capacity will be considered.'
+FROM `cloud`.`configuration` `cfg`
+WHERE NOT EXISTS (SELECT 1 FROM `cloud`.`configuration` WHERE `name` = 'kvm.memory.dynamic.scaling.capacity')
+  AND `cfg`.`name` = 'vm.serviceoffering.ram.size.max';
+
+-- Creates the 'kvm.cpu.dynamic.scaling.capacity' and, for already active ACS environments,
+-- initializes it with the value of the setting 'vm.serviceoffering.cpu.cores.max'
+INSERT INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `default_value`, `updated`, `scope`, `is_dynamic`, `group_id`, `subgroup_id`, `display_text`, `description`)
+SELECT 'Advanced', 'DEFAULT', 'CapacityManager', 'kvm.cpu.dynamic.scaling.capacity', `cfg`.`value`, 0, NULL, 4, 1, 6, 27,
+       'KVM CPU dynamic scaling capacity', 'Defines the maximum vCPU capacity for which VMs can be dynamically scaled to with KVM. The ''kvm.cpu.dynamic.scaling.capacity'' setting''s value will be used to define the value of the ''<vcpu />'' element of domain XMLs. If it is set to a value less than or equal to ''0'', then the host''s CPU cores capacity will be considered.'
+FROM `cloud`.`configuration` `cfg`
+WHERE NOT EXISTS (SELECT 1 FROM `cloud`.`configuration` WHERE `name` = 'kvm.cpu.dynamic.scaling.capacity')
+  AND `cfg`.`name` = 'vm.serviceoffering.cpu.cores.max';

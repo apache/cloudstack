@@ -50,6 +50,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static org.apache.cloudstack.config.ApiServiceConfiguration.ManagementServerAddresses;
+import static org.apache.cloudstack.resourcedetail.UserDetailVO.PasswordChangeRequired;
 import static org.apache.cloudstack.resourcedetail.UserDetailVO.PasswordResetToken;
 import static org.apache.cloudstack.resourcedetail.UserDetailVO.PasswordResetTokenExpiryDate;
 
@@ -265,6 +266,8 @@ public class UserPasswordResetManagerImpl extends ManagerBase implements UserPas
 
         userDetailsDao.removeDetail(userAccount.getId(), PasswordResetToken);
         userDetailsDao.removeDetail(userAccount.getId(), PasswordResetTokenExpiryDate);
+        // remove password change required if user reset password
+        userDetailsDao.removeDetail(userAccount.getId(), PasswordChangeRequired);
 
         userDao.persist(user);
     }

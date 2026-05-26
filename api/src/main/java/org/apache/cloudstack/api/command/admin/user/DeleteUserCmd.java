@@ -82,7 +82,7 @@ public class DeleteUserCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("UserId: " + getId());
+        CallContext.current().setEventDetails("User ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _regionService.deleteUser(this);
         if (!result) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete user");

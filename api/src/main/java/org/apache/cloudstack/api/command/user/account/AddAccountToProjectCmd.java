@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.user.account;
 
 import java.util.List;
 
+import com.cloud.exception.ResourceAllocationException;
 import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.BaseCmd;
@@ -106,12 +107,12 @@ public class AddAccountToProjectCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() {
+    public void execute() throws ResourceAllocationException {
         if (accountName == null && email == null) {
             throw new InvalidParameterValueException("Either accountName or email is required");
         }
 
-        CallContext.current().setEventDetails("Project ID: " + projectId + "; accountName " + accountName);
+        CallContext.current().setEventDetails("Project ID: " + getResourceUuid(ApiConstants.PROJECT_ID) + "; accountName " + accountName);
         boolean result = _projectService.addAccountToProject(getProjectId(), getAccountName(), getEmail(), getProjectRoleId(), getRoleType());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
@@ -146,10 +147,12 @@ public class AddAccountToProjectCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
+        String projectUuid = getResourceUuid(ApiConstants.PROJECT_ID);
+
         if (accountName != null) {
-            return "Adding Account " + getAccountName() + " to project: " + getProjectId();
+            return "Adding account " + getAccountName() + " to project: " + projectUuid;
         } else {
-            return "Sending invitation to email " + email + " to join project: " + getProjectId();
+            return "Sending invitation to email " + email + " to join project: " + projectUuid;
         }
     }
 

@@ -70,7 +70,7 @@ public class DeleteProjectRolePermissionCmd extends BaseCmd {
         if (rolePermission == null || rolePermission.getProjectId() != getProjectId()) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid role permission id provided for the project");
         }
-        CallContext.current().setEventDetails("Deleting Project Role permission with id: " + rolePermission.getId());
+        CallContext.current().setEventDetails("Deleting Project Role permission with ID: " + rolePermission.getUuid());
         boolean result = projRoleService.deleteProjectRolePermission(rolePermission);
         SuccessResponse response = new SuccessResponse();
         response.setSuccess(result);

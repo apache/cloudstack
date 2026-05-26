@@ -220,6 +220,30 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
     @Param(description = "The date when this Kubernetes cluster was created")
     private Date created;
 
+    @SerializedName(ApiConstants.CONTROL_AFFINITY_GROUP_IDS)
+    @Param(description = "The IDs of affinity groups associated with control nodes", since = "4.23.0")
+    private String controlAffinityGroupIds;
+
+    @SerializedName(ApiConstants.CONTROL_AFFINITY_GROUP_NAMES)
+    @Param(description = "The names of affinity groups associated with control nodes", since = "4.23.0")
+    private String controlAffinityGroupNames;
+
+    @SerializedName(ApiConstants.WORKER_AFFINITY_GROUP_IDS)
+    @Param(description = "The IDs of affinity groups associated with worker nodes", since = "4.23.0")
+    private String workerAffinityGroupIds;
+
+    @SerializedName(ApiConstants.WORKER_AFFINITY_GROUP_NAMES)
+    @Param(description = "The names of affinity groups associated with worker nodes", since = "4.23.0")
+    private String workerAffinityGroupNames;
+
+    @SerializedName(ApiConstants.ETCD_AFFINITY_GROUP_IDS)
+    @Param(description = "The IDs of affinity groups associated with etcd nodes", since = "4.23.0")
+    private String etcdAffinityGroupIds;
+
+    @SerializedName(ApiConstants.ETCD_AFFINITY_GROUP_NAMES)
+    @Param(description = "The names of affinity groups associated with etcd nodes", since = "4.23.0")
+    private String etcdAffinityGroupNames;
+
     public KubernetesClusterResponse() {
     }
 
@@ -534,5 +558,29 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
 
     public void setCsiEnabled(Boolean csiEnabled) {
         isCsiEnabled = csiEnabled;
+    }
+
+    public void setControlAffinityGroupIds(String controlAffinityGroupIds) {
+        this.controlAffinityGroupIds = controlAffinityGroupIds;
+    }
+
+    public void setControlAffinityGroupNames(String controlAffinityGroupNames) {
+        this.controlAffinityGroupNames = controlAffinityGroupNames;
+    }
+
+    public void setWorkerAffinityGroupIds(String workerAffinityGroupIds) {
+        this.workerAffinityGroupIds = workerAffinityGroupIds;
+    }
+
+    public void setWorkerAffinityGroupNames(String workerAffinityGroupNames) {
+        this.workerAffinityGroupNames = workerAffinityGroupNames;
+    }
+
+    public void setEtcdAffinityGroupIds(String etcdAffinityGroupIds) {
+        this.etcdAffinityGroupIds = etcdAffinityGroupIds;
+    }
+
+    public void setEtcdAffinityGroupNames(String etcdAffinityGroupNames) {
+        this.etcdAffinityGroupNames = etcdAffinityGroupNames;
     }
 }

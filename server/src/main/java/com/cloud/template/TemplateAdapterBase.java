@@ -245,7 +245,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             Account account = _accountDao.findById(accountId);
             Domain domain = _domainDao.findById(account.getDomainId());
 
-            payload.setDefaultMaxSecondaryStorageInGB(_resourceLimitMgr.findCorrectResourceLimitForAccountAndDomain(account, domain, ResourceType.secondary_storage, null));
+            payload.setDefaultMaxSecondaryStorageInBytes(_resourceLimitMgr.findCorrectResourceLimitForAccountAndDomain(account, domain, ResourceType.secondary_storage, null));
             payload.setAccountId(accountId);
             payload.setRemoteEndPoint(ep.getPublicAddr());
             payload.setRequiresHvm(template.requiresHvm());
@@ -364,8 +364,6 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             throw new IllegalArgumentException("Unable to find user with id " + userId);
         }
 
-        _resourceLimitMgr.checkResourceLimit(templateOwner, ResourceType.template);
-
         // If a zoneId is specified, make sure it is valid
         if (zoneIdList != null) {
             for (Long zoneId :zoneIdList) {
@@ -405,7 +403,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         }
 
         Long id = _tmpltDao.getNextInSequence(Long.class, "id");
-        CallContext.current().setEventDetails("Id: " + id + " name: " + name);
+        CallContext.current().setEventDetails("ID: " + id + " name: " + name);
         TemplateProfile profile = new TemplateProfile(id, userId, name, displayText, arch, bits, passwordEnabled, requiresHVM, url, isPublic, featured, isExtractable, imgfmt, guestOSId, zoneIdList,
             hypervisorType, templateOwner.getAccountName(), templateOwner.getDomainId(), templateOwner.getAccountId(), chksum, bootable, templateTag, details,
             sshkeyEnabled, null, isDynamicallyScalable, templateType, directDownload, deployAsIs, extensionId);

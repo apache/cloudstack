@@ -78,6 +78,12 @@ public class UpdateExtensionCmd extends BaseCmd {
                     "if false or not set, no action)")
     private Boolean cleanupDetails;
 
+    @Parameter(name = ApiConstants.RESERVED_RESOURCE_DETAILS, type = CommandType.STRING,
+            description = "Resource detail names as comma separated string that should be reserved and not visible " +
+                    "to end users",
+            since = "4.22.1")
+    protected String reservedResourceDetails;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -104,6 +110,10 @@ public class UpdateExtensionCmd extends BaseCmd {
 
     public Boolean isCleanupDetails() {
         return cleanupDetails;
+    }
+
+    public String getReservedResourceDetails() {
+        return reservedResourceDetails;
     }
 
     /////////////////////////////////////////////////////

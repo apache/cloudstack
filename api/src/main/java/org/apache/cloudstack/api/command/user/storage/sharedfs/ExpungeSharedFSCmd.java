@@ -74,7 +74,7 @@ public class ExpungeSharedFSCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return "Expunging Shared FileSystem " + id;
+        return "Expunging Shared FileSystem with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

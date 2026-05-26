@@ -41,6 +41,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.resourcelimit.CheckedReservation;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.alert.AlertService;
@@ -76,6 +77,7 @@ import org.apache.cloudstack.network.NetworkPermissionVO;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.network.dao.NetworkPermissionDao;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
+import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.BooleanUtils;
@@ -280,6 +282,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     private static final ConfigKey<Boolean> AllowEmptyStartEndIpAddress = new ConfigKey<>("Advanced", Boolean.class,
             "allow.empty.start.end.ipaddress", "true", "Allow creating network without mentioning start and end IP address",
             true, ConfigKey.Scope.Account);
+    public static final ConfigKey<Boolean> AllowUsersToMakeNetworksRedundant = new ConfigKey<>("Advanced", Boolean.class,
+            "allow.users.to.make.networks.redundant", "true", "Allow Users to make Networks Redundant",
+            true, ConfigKey.Scope.Global);
     private static final long MIN_VLAN_ID = 0L;
     private static final long MAX_VLAN_ID = 4095L; // 2^12 - 1
     private static final long MIN_GRE_KEY = 0L;
@@ -334,6 +339,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     FirewallRulesDao _firewallDao;
     @Inject
     ResourceLimitService _resourceLimitMgr;
+    @Inject
+    ReservationDao reservationDao;
     @Inject
     DomainManager _domainMgr;
     @Inject
@@ -1152,28 +1159,26 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (ipDedicatedAccountId != null && !ipDedicatedAccountId.equals(account.getAccountId())) {
             throw new InvalidParameterValueException("Unable to reserve a IP because it is dedicated to another Account.");
         }
-        if (ipDedicatedAccountId == null) {
-            // Check that the maximum number of public IPs for the given accountId will not be exceeded
-            try {
-                _resourceLimitMgr.checkResourceLimit(account, Resource.ResourceType.public_ip);
-            } catch (ResourceAllocationException ex) {
-                logger.warn("Failed to allocate resource of type " + ex.getResourceType() + " for account " + account);
-                throw new AccountLimitException("Maximum number of public IP addresses for account: " + account.getAccountName() + " has been exceeded.");
+
+        long reservedIpAddressesAmount = ipDedicatedAccountId == null ? 1L : 0L;
+        try (CheckedReservation publicIpAddressReservation = new CheckedReservation(account, Resource.ResourceType.public_ip, reservedIpAddressesAmount, reservationDao, _resourceLimitMgr)) {
+            List<AccountVlanMapVO> maps = _accountVlanMapDao.listAccountVlanMapsByVlan(ipVO.getVlanId());
+            ipVO.setAllocatedTime(new Date());
+            ipVO.setAllocatedToAccountId(account.getAccountId());
+            ipVO.setAllocatedInDomainId(account.getDomainId());
+            ipVO.setState(State.Reserved);
+            if (displayIp != null) {
+                ipVO.setDisplay(displayIp);
             }
+            ipVO = _ipAddressDao.persist(ipVO);
+            if (reservedIpAddressesAmount > 0) {
+                _resourceLimitMgr.incrementResourceCount(account.getId(), Resource.ResourceType.public_ip);
+            }
+            return ipVO;
+        } catch (ResourceAllocationException ex) {
+            logger.warn("Failed to allocate resource of type " + ex.getResourceType() + " for account " + account);
+            throw new AccountLimitException("Maximum number of public IP addresses for account: " + account.getAccountName() + " has been exceeded.");
         }
-        List<AccountVlanMapVO> maps = _accountVlanMapDao.listAccountVlanMapsByVlan(ipVO.getVlanId());
-        ipVO.setAllocatedTime(new Date());
-        ipVO.setAllocatedToAccountId(account.getAccountId());
-        ipVO.setAllocatedInDomainId(account.getDomainId());
-        ipVO.setState(State.Reserved);
-        if (displayIp != null) {
-            ipVO.setDisplay(displayIp);
-        }
-        ipVO = _ipAddressDao.persist(ipVO);
-        if (ipDedicatedAccountId == null) {
-            _resourceLimitMgr.incrementResourceCount(account.getId(), Resource.ResourceType.public_ip);
-        }
-        return ipVO;
     }
 
     @Override
@@ -1544,6 +1549,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         DataCenter zone = getAndValidateZone(cmd, pNtwk);
 
+        boolean keepMacAddressOnPublicNic = getAndValidateSupportForKeepMacAddressOnPublicNicParameter(cmd.getKeepMacAddressOnPublicNic(), ntwkOff);
+
         _accountMgr.checkAccess(owner, ntwkOff, zone);
 
         validateZoneAvailability(caller, zone);
@@ -1829,7 +1836,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         Network network = commitNetwork(networkOfferingId, gateway, startIP, endIP, netmask, networkDomain, vlanId, bypassVlanOverlapCheck, name, displayText, caller, physicalNetworkId, zone.getId(),
                 domainId, isDomainSpecific, subdomainAccess, vpcId, startIPv6, endIPv6, ip6Gateway, ip6Cidr, displayNetwork, aclId, secondaryVlanId, privateVlanType, ntwkOff, pNtwk, aclType, owner, cidr, createVlan,
-                externalId, routerIPv4, routerIPv6, associatedNetwork, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2, interfaceMTUs, networkCidrSize);
+                externalId, routerIPv4, routerIPv6, associatedNetwork, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2, interfaceMTUs, networkCidrSize, keepMacAddressOnPublicNic);
 
         // retrieve, acquire and associate the correct IP addresses
         checkAndSetRouterSourceNatIp(owner, cmd, network);
@@ -1872,6 +1879,24 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                     String.format("Creation of %s networks is not supported in NSX enabled zone %s", guestType.name(), zoneName)
             );
         }
+    }
+
+    protected boolean getAndValidateSupportForKeepMacAddressOnPublicNicParameter(Boolean keepMacAddressOnPublicNic, NetworkOffering networkOffering) {
+        if (networkOffering.isForVpc() && keepMacAddressOnPublicNic != null) {
+            throw new InvalidParameterValueException(
+                    String.format("The [%s] parameter cannot be specified on the creation of VPC tiers.", ApiConstants.KEEP_MAC_ADDRESS_ON_PUBLIC_NIC)
+            );
+        }
+
+        GuestType guestType = networkOffering.getGuestType();
+        if (guestType != GuestType.Isolated && keepMacAddressOnPublicNic != null) {
+            throw new InvalidParameterValueException(String.format(
+                    "The [%s] parameter can only be specified on the creation of [%s] networks.",
+                    ApiConstants.KEEP_MAC_ADDRESS_ON_PUBLIC_NIC, GuestType.Isolated
+            ));
+        }
+
+        return keepMacAddressOnPublicNic == null || keepMacAddressOnPublicNic;
     }
 
     @Override
@@ -2277,7 +2302,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                                   final Boolean displayNetwork, final Long aclId, final String isolatedPvlan, final PVlanType isolatedPvlanType, final NetworkOffering ntwkOff, final PhysicalNetwork pNtwk, final ACLType aclType, final Account ownerFinal,
                                   final String cidr, final boolean createVlan, final String externalId, String routerIp, String routerIpv6,
                                   final Network associatedNetwork, final String ip4Dns1, final String ip4Dns2, final String ip6Dns1, final String ip6Dns2, Pair<Integer, Integer> vrIfaceMTUs,
-                                  final Integer networkCidrSize) throws InsufficientCapacityException, ResourceAllocationException {
+                                  final Integer networkCidrSize, final boolean keepMacAddressOnPublicNic) throws InsufficientCapacityException, ResourceAllocationException {
         try {
             Network network = Transaction.execute(new TransactionCallbackWithException<Network, Exception>() {
                 @Override
@@ -2343,7 +2368,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                         }
                         network = _networkMgr.createGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId, bypassVlanOverlapCheck, networkDomain, owner, sharedDomainId, pNtwk,
                                 zoneId, aclType, subdomainAccess, vpcId, ip6Gateway, ip6Cidr, displayNetwork, isolatedPvlan, isolatedPvlanType, externalId, routerIp, routerIpv6, ip4Dns1, ip4Dns2,
-                                ip6Dns1, ip6Dns2, vrIfaceMTUs, networkCidrSize);
+                                ip6Dns1, ip6Dns2, vrIfaceMTUs, networkCidrSize, keepMacAddressOnPublicNic);
                     }
 
                     if (createVlan && network != null) {
@@ -2998,8 +3023,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             throwInvalidIdException("Cannot restart a VPC tier with cleanup, please restart the whole VPC.", network.getUuid(), "network tier");
         }
         boolean makeRedundant = cmd.getMakeRedundant();
-        boolean livePatch = cmd.getLivePatch();
         User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
+        if (makeRedundant && !_accountMgr.isRootAdmin(callerUser.getAccountId()) && !AllowUsersToMakeNetworksRedundant.value() ) {
+            throw new InvalidParameterValueException("Could not make the network redundant. Please contact administrator.");
+        }
+
+        boolean livePatch = cmd.getLivePatch();
         return restartNetwork(network, cleanup, makeRedundant, livePatch, callerUser);
     }
 
@@ -3147,6 +3176,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         String ip4Dns2 = cmd.getIp4Dns2();
         String ip6Dns1 = cmd.getIp6Dns1();
         String ip6Dns2 = cmd.getIp6Dns2();
+        Boolean keepMacAddressOnPublicNic = cmd.getKeepMacAddressOnPublicNic();
 
         boolean restartNetwork = false;
 
@@ -3205,11 +3235,15 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             network.setUuid(customId);
         }
 
+        if (keepMacAddressOnPublicNic != null) {
+            network.setKeepMacAddressOnPublicNic(getAndValidateSupportForKeepMacAddressOnPublicNicParameter(keepMacAddressOnPublicNic, offering));
+        }
+
         // display flag is not null and has changed
         if (displayNetwork != null && displayNetwork != network.getDisplayNetwork()) {
             // Update resource count if it needs to be updated
             NetworkOffering networkOffering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-            if (_networkMgr.resourceCountNeedsUpdate(networkOffering, network.getAclType())) {
+            if (_networkMgr.isResourceCountUpdateNeeded(networkOffering)) {
                 _resourceLimitMgr.changeResourceCount(network.getAccountId(), Resource.ResourceType.network, displayNetwork);
             }
 
@@ -6278,7 +6312,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {AllowDuplicateNetworkName, AllowEmptyStartEndIpAddress, VRPrivateInterfaceMtu, VRPublicInterfaceMtu, AllowUsersToSpecifyVRMtu};
+        return new ConfigKey<?>[] {AllowDuplicateNetworkName, AllowEmptyStartEndIpAddress, AllowUsersToMakeNetworksRedundant, VRPrivateInterfaceMtu, VRPublicInterfaceMtu, AllowUsersToSpecifyVRMtu};
     }
 
     public boolean isDefaultAcl(Long aclId) {
@@ -6425,6 +6459,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
         }
         return Networks.BroadcastDomainType.getValue(nic.getBroadcastUri());
+    }
+
+    @Override
+    public Long getPreferredNetworkIdForPublicIpRuleAssignment(IpAddress ip, Long networkId) {
+        return _ipAddrMgr.getPreferredNetworkIdForPublicIpRuleAssignment(ip, networkId);
     }
 
     @Override

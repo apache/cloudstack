@@ -139,23 +139,23 @@ public class HeuristicRuleHelper {
      * @param presetVariables used for injecting in the JS interpreter.
      */
     protected void injectPresetVariables(JsInterpreter jsInterpreter, PresetVariables presetVariables) {
-        jsInterpreter.injectVariable("secondaryStorages", presetVariables.getSecondaryStorages().toString());
+        jsInterpreter.injectVariable("secondaryStorages", presetVariables.getSecondaryStorages());
 
         if (presetVariables.getTemplate() != null) {
-            jsInterpreter.injectVariable("template", presetVariables.getTemplate().toString());
-            jsInterpreter.injectVariable("iso", presetVariables.getTemplate().toString());
+            jsInterpreter.injectVariable("template", presetVariables.getTemplate());
+            jsInterpreter.injectVariable("iso", presetVariables.getTemplate());
         }
 
         if (presetVariables.getSnapshot() != null) {
-            jsInterpreter.injectVariable("snapshot", presetVariables.getSnapshot().toString());
+            jsInterpreter.injectVariable("snapshot", presetVariables.getSnapshot());
         }
 
         if (presetVariables.getVolume() != null) {
-            jsInterpreter.injectVariable("volume", presetVariables.getVolume().toString());
+            jsInterpreter.injectVariable("volume", presetVariables.getVolume());
         }
 
         if (presetVariables.getAccount() != null) {
-            jsInterpreter.injectVariable("account", presetVariables.getAccount().toString());
+            jsInterpreter.injectVariable("account", presetVariables.getAccount());
         }
     }
 
@@ -185,8 +185,8 @@ public class HeuristicRuleHelper {
         Template template = new Template();
 
         template.setName(templateVO.getName());
-        template.setFormat(templateVO.getFormat());
-        template.setHypervisorType(templateVO.getHypervisorType());
+        template.setFormat(templateVO.getFormat().toString());
+        template.setHypervisorType(templateVO.getHypervisorType().toString());
 
         return template;
     }
@@ -195,7 +195,7 @@ public class HeuristicRuleHelper {
         Volume volumePresetVariable = new Volume();
 
         volumePresetVariable.setName(volumeVO.getName());
-        volumePresetVariable.setFormat(volumeVO.getFormat());
+        volumePresetVariable.setFormat(volumeVO.getFormat().toString());
         volumePresetVariable.setSize(volumeVO.getSize());
 
         return volumePresetVariable;
@@ -206,7 +206,7 @@ public class HeuristicRuleHelper {
 
         snapshot.setName(snapshotInfo.getName());
         snapshot.setSize(snapshotInfo.getSize());
-        snapshot.setHypervisorType(snapshotInfo.getHypervisorType());
+        snapshot.setHypervisorType(snapshotInfo.getHypervisorType().toString());
 
         return snapshot;
     }

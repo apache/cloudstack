@@ -65,7 +65,7 @@ public class DeleteVPCCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Deleting VPC id=" + getId();
+        return "Deleting VPC with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

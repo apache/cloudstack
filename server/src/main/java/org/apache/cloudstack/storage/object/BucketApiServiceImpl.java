@@ -16,6 +16,27 @@
 // under the License.
 package org.apache.cloudstack.storage.object;
 
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.cloudstack.api.command.user.bucket.CreateBucketCmd;
+import org.apache.cloudstack.api.command.user.bucket.UpdateBucketCmd;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.reservation.dao.ReservationDao;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
+import org.apache.commons.lang3.ObjectUtils;
+import org.jetbrains.annotations.NotNull;
+
 import com.amazonaws.services.s3.internal.BucketNameUtils;
 import com.amazonaws.services.s3.model.IllegalBucketNameException;
 import com.cloud.agent.api.to.BucketTO;
@@ -24,6 +45,7 @@ import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.resourcelimit.CheckedReservation;
 import com.cloud.resourcelimit.ResourceLimitManagerImpl;
 import com.cloud.storage.BucketVO;
 import com.cloud.storage.DataStoreRole;
@@ -36,22 +58,6 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.cloudstack.api.command.user.bucket.CreateBucketCmd;
-import org.apache.cloudstack.api.command.user.bucket.UpdateBucketCmd;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
-import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 public class BucketApiServiceImpl extends ManagerBase implements BucketApiService, Configurable {
 
@@ -68,6 +74,8 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
 
     @Inject
     private BucketStatisticsDao _bucketStatisticsDao;
+    @Inject
+    ReservationDao reservationDao;
 
     private ScheduledExecutorService _executor = null;
 
@@ -136,13 +144,26 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
             return null;
         }
 
-        resourceLimitManager.checkResourceLimit(owner, Resource.ResourceType.bucket);
-        resourceLimitManager.checkResourceLimit(owner, Resource.ResourceType.object_storage, (cmd.getQuota() * Resource.ResourceType.bytesToGiB));
+        long size = ObjectUtils.defaultIfNull(cmd.getQuota(), 0) * Resource.ResourceType.bytesToGiB;
+        return createCheckedBucket(cmd, owner, size, ownerId);
+    }
 
-        BucketVO bucket = new BucketVO(ownerId, owner.getDomainId(), cmd.getObjectStoragePoolId(), cmd.getBucketName(), cmd.getQuota(),
-                                    cmd.isVersioning(), cmd.isEncryption(), cmd.isObjectLocking(), cmd.getPolicy());
-        _bucketDao.persist(bucket);
-        return bucket;
+    @NotNull
+    private BucketVO createCheckedBucket(CreateBucketCmd cmd, Account owner, long size, long ownerId) throws ResourceAllocationException {
+        try (CheckedReservation bucketReservation = new CheckedReservation(owner, Resource.ResourceType.bucket,
+                1L, reservationDao, resourceLimitManager);
+             CheckedReservation objectStorageReservation = new CheckedReservation(owner,
+                     Resource.ResourceType.object_storage, size, reservationDao, resourceLimitManager)) {
+            BucketVO bucket = new BucketVO(ownerId, owner.getDomainId(), cmd.getObjectStoragePoolId(), cmd.getBucketName(), cmd.getQuota(),
+                    cmd.isVersioning(), cmd.isEncryption(), cmd.isObjectLocking(), cmd.getPolicy());
+            _bucketDao.persist(bucket);
+            resourceLimitManager.incrementResourceCount(bucket.getAccountId(), Resource.ResourceType.bucket);
+            if (size > 0) {
+                resourceLimitManager.incrementResourceCount(bucket.getAccountId(), Resource.ResourceType.object_storage,
+                        (cmd.getQuota() * Resource.ResourceType.bytesToGiB));
+            }
+            return bucket;
+        }
     }
 
     @Override
@@ -160,7 +181,6 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
         try {
             bucketTO = new BucketTO(objectStore.createBucket(bucket, objectLock));
             bucketCreated = true;
-            resourceLimitManager.incrementResourceCount(bucket.getAccountId(), Resource.ResourceType.bucket);
 
             if (cmd.isVersioning()) {
                 objectStore.setBucketVersioning(bucketTO);
@@ -172,7 +192,6 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
 
             if (cmd.getQuota() != null) {
                 objectStore.setQuota(bucketTO, cmd.getQuota());
-                resourceLimitManager.incrementResourceCount(bucket.getAccountId(), Resource.ResourceType.object_storage, (cmd.getQuota() * Resource.ResourceType.bytesToGiB));
                 if (objectStoreVO.getTotalSize() != null && objectStoreVO.getTotalSize() != 0 && objectStoreVO.getAllocatedSize() != null) {
                     Long allocatedSize = objectStoreVO.getAllocatedSize() / Resource.ResourceType.bytesToGiB;
                     Long totalSize = objectStoreVO.getTotalSize() / Resource.ResourceType.bytesToGiB;
@@ -193,11 +212,16 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
                 _objectStoreDao.updateAllocatedSize(objectStoreVO, cmd.getQuota() * Resource.ResourceType.bytesToGiB);
             }
         } catch (Exception e) {
-            logger.debug("Failed to create bucket with name: "+bucket.getName(), e);
+            logger.debug("Failed to create bucket with name: {}", bucket.getName(), e);
             if(bucketCreated) {
                 objectStore.deleteBucket(bucketTO);
             }
             _bucketDao.remove(bucket.getId());
+            resourceLimitManager.decrementResourceCount(bucket.getAccountId(), Resource.ResourceType.bucket);
+            if (bucket.getQuota() != null) {
+                resourceLimitManager.decrementResourceCount(bucket.getAccountId(), Resource.ResourceType.object_storage,
+                        (bucket.getQuota() * Resource.ResourceType.bytesToGiB));
+            }
             throw new CloudRuntimeException("Failed to create bucket with name: "+bucket.getName()+". "+e.getMessage());
         }
         return bucket;
@@ -205,24 +229,36 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_BUCKET_DELETE, eventDescription = "deleting bucket")
-    public boolean deleteBucket(long bucketId, Account caller) {
+    public boolean deleteBucket(long bucketId, Account caller) throws ResourceAllocationException {
         Bucket bucket = _bucketDao.findById(bucketId);
-        BucketTO bucketTO = new BucketTO(bucket);
         if (bucket == null) {
             throw new InvalidParameterValueException("Unable to find bucket with ID: " + bucketId);
         }
         _accountMgr.checkAccess(caller, null, true, bucket);
         ObjectStoreVO objectStoreVO = _objectStoreDao.findById(bucket.getObjectStoreId());
         ObjectStoreEntity  objectStore = (ObjectStoreEntity)_dataStoreMgr.getDataStore(objectStoreVO.getId(), DataStoreRole.Object);
-        if (objectStore.deleteBucket(bucketTO)) {
-            resourceLimitManager.decrementResourceCount(bucket.getAccountId(), Resource.ResourceType.bucket);
-            if (bucket.getQuota() != null) {
-                resourceLimitManager.decrementResourceCount(bucket.getAccountId(), Resource.ResourceType.object_storage, (bucket.getQuota() * Resource.ResourceType.bytesToGiB));
-                _objectStoreDao.updateAllocatedSize(objectStoreVO, -(bucket.getQuota() * Resource.ResourceType.bytesToGiB));
+        return deleteCheckedBucket(objectStore, bucket, objectStoreVO);
+    }
+
+    private boolean deleteCheckedBucket(ObjectStoreEntity objectStore, Bucket bucket, ObjectStoreVO objectStoreVO) throws ResourceAllocationException {
+        Account owner = _accountMgr.getAccount(bucket.getAccountId());
+        try (CheckedReservation bucketReservation = new CheckedReservation(owner, Resource.ResourceType.bucket,
+                bucket.getId(), null, -1L, reservationDao, resourceLimitManager);
+             CheckedReservation objectStorageReservation = new CheckedReservation(owner,
+                     Resource.ResourceType.object_storage, bucket.getId(), null,
+                     -1*(ObjectUtils.defaultIfNull(bucket.getQuota(), 0) * Resource.ResourceType.bytesToGiB), reservationDao, resourceLimitManager)) {
+            BucketTO bucketTO = new BucketTO(bucket);
+            if (objectStore.deleteBucket(bucketTO)) {
+                resourceLimitManager.decrementResourceCount(bucket.getAccountId(), Resource.ResourceType.bucket);
+                if (bucket.getQuota() != null) {
+                    resourceLimitManager.decrementResourceCount(bucket.getAccountId(), Resource.ResourceType.object_storage, (bucket.getQuota() * Resource.ResourceType.bytesToGiB));
+                    _objectStoreDao.updateAllocatedSize(objectStoreVO, -(bucket.getQuota() * Resource.ResourceType.bytesToGiB));
+                }
+                _bucketDao.remove(bucket.getId());
+                return true;
             }
-            return _bucketDao.remove(bucketId);
+            return false;
         }
-        return false;
     }
 
     @Override
@@ -236,16 +272,6 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
         _accountMgr.checkAccess(caller, null, true, bucket);
         ObjectStoreVO objectStoreVO = _objectStoreDao.findById(bucket.getObjectStoreId());
         ObjectStoreEntity  objectStore = (ObjectStoreEntity)_dataStoreMgr.getDataStore(objectStoreVO.getId(), DataStoreRole.Object);
-        Integer quota = cmd.getQuota();
-        Integer quotaDelta = null;
-
-        if (quota != null) {
-            quotaDelta = quota - bucket.getQuota();
-            if (quotaDelta > 0) {
-                Account owner = _accountMgr.getActiveAccountById(bucket.getAccountId());
-                resourceLimitManager.checkResourceLimit(owner, Resource.ResourceType.object_storage, (quotaDelta * Resource.ResourceType.bytesToGiB));
-            }
-        }
 
         try {
             if (cmd.getEncryption() != null) {
@@ -271,22 +297,39 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
                 bucket.setPolicy(cmd.getPolicy());
             }
 
-            if (cmd.getQuota() != null) {
-                objectStore.setQuota(bucketTO, cmd.getQuota());
-                bucket.setQuota(cmd.getQuota());
-                if (quotaDelta > 0) {
-                    resourceLimitManager.incrementResourceCount(bucket.getAccountId(), Resource.ResourceType.object_storage, (quotaDelta * Resource.ResourceType.bytesToGiB));
-                } else {
-                    resourceLimitManager.decrementResourceCount(bucket.getAccountId(), Resource.ResourceType.object_storage, ((-quotaDelta) * Resource.ResourceType.bytesToGiB));
-                }
-                _objectStoreDao.updateAllocatedSize(objectStoreVO, (quotaDelta * Resource.ResourceType.bytesToGiB));
-            }
+            updateBucketQuota(cmd, bucket, objectStore, objectStoreVO, bucketTO);
+
             _bucketDao.update(bucket.getId(), bucket);
         } catch (Exception e) {
             throw new CloudRuntimeException("Error while updating bucket: " +bucket.getName() +". "+e.getMessage());
         }
 
         return true;
+    }
+
+    private void updateBucketQuota(UpdateBucketCmd cmd, BucketVO bucket, ObjectStoreEntity objectStore, ObjectStoreVO objectStoreVO, BucketTO bucketTO) throws ResourceAllocationException {
+        Integer quota = cmd.getQuota();
+        if (quota == null) {
+            return;
+        }
+
+        int quotaDelta = quota - bucket.getQuota();
+        objectStore.setQuota(bucketTO, quota);
+        bucket.setQuota(quota);
+
+        long diff = quotaDelta * Resource.ResourceType.bytesToGiB;
+
+        if (quotaDelta < 0) {
+            resourceLimitManager.decrementResourceCount(bucket.getAccountId(), Resource.ResourceType.object_storage, Math.abs(diff));
+            _objectStoreDao.updateAllocatedSize(objectStoreVO, diff);
+            return;
+        }
+
+        Account owner = _accountMgr.getActiveAccountById(bucket.getAccountId());
+        try (CheckedReservation objectStorageReservation = new CheckedReservation(owner, Resource.ResourceType.object_storage, diff, reservationDao, resourceLimitManager)) {
+            resourceLimitManager.incrementResourceCount(bucket.getAccountId(), Resource.ResourceType.object_storage, diff);
+            _objectStoreDao.updateAllocatedSize(objectStoreVO, diff);
+        }
     }
 
     public void getBucketUsage() {

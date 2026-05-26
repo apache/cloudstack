@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.network.lb;
 
+import com.cloud.api.ApiDBUtils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -31,6 +32,7 @@ import javax.inject.Inject;
 
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
+import org.apache.cloudstack.acl.ApiKeyPairVO;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -51,6 +53,8 @@ import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.agent.api.to.LoadBalancerTO;
@@ -347,15 +351,15 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             if (user == null) {
                 throw new InvalidParameterValueException("Unable to find user by id " + autoscaleUserId);
             }
-            apiKey = user.getApiKey();
-            secretKey = user.getSecretKey();
-            if (apiKey == null) {
-                throw new InvalidParameterValueException("apiKey for user: " + user.getUsername() + " is empty. Please generate it");
+
+            ApiKeyPairVO latestKeypair = ApiDBUtils.searchForLatestUserKeyPair(user.getId());
+
+            if (latestKeypair == null) {
+                throw new InvalidParameterValueException(String.format("No API keypair for user [%s]. Please generate it.", user.getUsername()));
             }
 
-            if (secretKey == null) {
-                throw new InvalidParameterValueException("secretKey for user: " + user.getUsername() + " is empty. Please generate it");
-            }
+            apiKey = latestKeypair.getApiKey();
+            secretKey = latestKeypair.getSecretKey();
 
             ApiServiceConfiguration.validateEndpointUrl();
         }
@@ -1016,7 +1020,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_ASSIGN_TO_LOAD_BALANCER_RULE, eventDescription = "assigning to load balancer", async = true)
-    public boolean assignToLoadBalancer(long loadBalancerId, List<Long> instanceIds, Map<Long, List<String>> vmIdIpMap, boolean isAutoScaleVM) {
+    public boolean assignToLoadBalancer(long loadBalancerId, List<Long> instanceIds, Map<Long, List<String>> vmIdIpMap, Map<Long, Long> vmIdNetworkMap, boolean isAutoScaleVM) {
         CallContext ctx = CallContext.current();
         Account caller = ctx.getCallingAccount();
 
@@ -1089,28 +1093,12 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             _rulesMgr.checkRuleAndUserVm(loadBalancer, vm, caller);
 
             Account vmOwner = _accountDao.findById(vm.getAccountId());
-            Network network = _networkDao.findById(loadBalancer.getNetworkId());
-            _accountMgr.checkAccess(vmOwner, SecurityChecker.AccessType.UseEntry, false, network);
+            Network loadBalancerNetwork = _networkDao.findById(loadBalancer.getNetworkId());
+            _accountMgr.checkAccess(vmOwner, SecurityChecker.AccessType.UseEntry, false, loadBalancerNetwork);
 
-            // Let's check to make sure the vm has a nic in the same network as
-            // the load balancing rule.
-            List<? extends Nic> nics = _networkModel.getNics(vm.getId());
-            Nic nicInSameNetwork = null;
-            for (Nic nic : nics) {
-                if (nic.getNetworkId() == loadBalancer.getNetworkId()) {
-                    nicInSameNetwork = nic;
-                    break;
-                }
-            }
+            Nic vmNicInLb = getVmNicInLoadBalancer(vm, loadBalancer, loadBalancerNetwork, vmIdNetworkMap, vmOwner);
 
-            if (nicInSameNetwork == null) {
-                InvalidParameterValueException ex =
-                        new InvalidParameterValueException("VM with id specified cannot be added because it doesn't belong in the same network.");
-                ex.addProxyObject(vm.getUuid(), "instanceId");
-                throw ex;
-            }
-
-            String priIp = nicInSameNetwork.getIPv4Address();
+            String priIp = vmNicInLb.getIPv4Address();
 
             if (existingVmIdIps.containsKey(instanceId)) {
                 // now check for ip address
@@ -1140,9 +1128,9 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                     if (ip.equals(priIp)) {
                         continue;
                     }
-                    if(_nicSecondaryIpDao.findByIp4AddressAndNicId(ip,nicInSameNetwork.getId()) == null) {
+                    if(_nicSecondaryIpDao.findByIp4AddressAndNicId(ip,vmNicInLb.getId()) == null) {
                         throw new InvalidParameterValueException("Instance IP "+ ip + " specified does not belong to " +
-                                "NIC in Network " + nicInSameNetwork.getNetworkId());
+                                "NIC in Network " + vmNicInLb.getNetworkId());
                     }
                 }
             } else {
@@ -1230,6 +1218,63 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         }
 
         return success;
+    }
+
+    protected Nic getVmNicInLoadBalancer(UserVm vm, LoadBalancerVO loadBalancer, Network loadBalancerNetwork, Map<Long, Long> vmIdNetworkMap, Account vmOwner) {
+        boolean isVpcConserveModeEnabled = _vpcMgr.isNetworkOnVpcEnabledConserveMode(loadBalancerNetwork);
+
+        boolean isNetworkPassedVpcConserveMode = isVpcConserveModeEnabled && MapUtils.isNotEmpty(vmIdNetworkMap) && vmIdNetworkMap.containsKey(vm.getId());
+        Nic vmNicInLb = isNetworkPassedVpcConserveMode ?
+                getNicForVmInVpcConserveModeTierNetwork(vm, vmIdNetworkMap, vmOwner, loadBalancerNetwork) :
+                getNicForVmLbNetwork(vm, loadBalancer);
+
+        if (vmNicInLb == null) {
+            String msg = !isVpcConserveModeEnabled ?
+                    "VM with id specified cannot be added because it doesn't belong in the same network." :
+                    "VM with id specified cannot be added to the load balancing rule for VPC Conserve Mode.";
+            InvalidParameterValueException ex = new InvalidParameterValueException(msg);
+            ex.addProxyObject(vm.getUuid(), "instanceId");
+            throw ex;
+        }
+        return vmNicInLb;
+    }
+
+    /**
+     * For Isolated Networks or Network tiers of VPCs not using Conserve mode, use the same network as the load balancer
+     * @return the nic of the VM in the load balancer network
+     */
+    protected Nic getNicForVmLbNetwork(UserVm vm, LoadBalancerVO loadBalancer) {
+        List<? extends Nic> nics = _networkModel.getNics(vm.getId());
+        for (Nic nic : nics) {
+            if (nic.getNetworkId() == loadBalancer.getNetworkId()) {
+                return nic;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * On VPC Conserve Mode, VMs from multiple VPC networks tiers can be assigned to the same load balancer.
+     * @return the nic of the VM in the specified tier network in `vmIdNetworkMap`
+     */
+    protected Nic getNicForVmInVpcConserveModeTierNetwork(UserVm vm, Map<Long, Long> vmIdNetworkMap, Account vmOwner, Network loadBalancerNetwork) {
+        Long vmNetworkId = vmIdNetworkMap.get(vm.getId());
+        Network vmNetwork = _networkDao.findById(vmNetworkId);
+        _accountMgr.checkAccess(vmOwner, SecurityChecker.AccessType.UseEntry, false, vmNetwork);
+        checkNetworkBelongsToLoadBalancerVpc(vmNetwork, loadBalancerNetwork);
+        return _networkModel.getNicInNetwork(vm.getId(), vmNetworkId);
+    }
+
+    protected void checkNetworkBelongsToLoadBalancerVpc(Network vmNetwork, Network loadBalancerNetwork) {
+        if (ObjectUtils.anyNull(vmNetwork, loadBalancerNetwork)) {
+            throw new InvalidParameterValueException("Cannot add VM to load balancer because the VM network or load balancer network is null");
+        }
+        if (ObjectUtils.anyNull(vmNetwork.getVpcId(), loadBalancerNetwork.getVpcId())) {
+            throw new InvalidParameterValueException("Cannot add VM to load balancer because the VM network or load balancer network are not part of a VPC");
+        }
+        if (!vmNetwork.getVpcId().equals(loadBalancerNetwork.getVpcId())) {
+            throw new InvalidParameterValueException("Cannot add VM to load balancer because the VM network and load balancer network are not part of the same VPC");
+        }
     }
 
     @Override
@@ -1738,6 +1783,8 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             throw new NetworkRuleConflictException("Can't do load balance on IP address: " + ipVO.getAddress());
         }
 
+        verifyLoadBalancerRuleNetwork(name, network, ipVO);
+
         String cidrString = generateCidrString(cidrList);
 
         boolean performedIpAssoc = false;
@@ -1761,7 +1808,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             }
 
             result = createPublicLoadBalancer(xId, name, description, srcPortStart, defPortStart, ipVO.getId(), protocol, algorithm, openFirewall, CallContext.current(),
-                    lbProtocol, forDisplay, cidrString);
+                    lbProtocol, forDisplay, cidrString, networkId);
         } catch (Exception ex) {
             logger.warn("Failed to create load balancer due to ", ex);
             if (ex instanceof NetworkRuleConflictException) {
@@ -1790,7 +1837,18 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         return result;
     }
-   /**
+
+    protected void verifyLoadBalancerRuleNetwork(String lbName, Network network, IPAddressVO ipVO) {
+        boolean isVpcConserveModeEnabled = _vpcMgr.isNetworkOnVpcEnabledConserveMode(network);
+        if (!isVpcConserveModeEnabled && ipVO.getAssociatedWithNetworkId() != null && network.getId() != ipVO.getAssociatedWithNetworkId()) {
+            String msg = String.format("Cannot create Load Balancer rule %s as the IP address %s is not associated " +
+                    "with the network %s (ID=%s)", lbName, ipVO.getAddress(), network.getName(), network.getUuid());
+            logger.error(msg);
+            throw new InvalidParameterValueException(msg);
+        }
+    }
+
+    /**
     * Transforms the cidrList from a List of Strings to a String which contains all the CIDRs from cidrList separated by whitespaces. This is used to facilitate both the persistence
     * in the DB and also later when building the configuration String in the getRulesForPool method of the HAProxyConfigurator class.
    */
@@ -1824,7 +1882,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     @Override
     public LoadBalancer createPublicLoadBalancer(final String xId, final String name, final String description, final int srcPort, final int destPort, final long sourceIpId,
                                                  final String protocol, final String algorithm, final boolean openFirewall, final CallContext caller, final String lbProtocol,
-                                                 final Boolean forDisplay, String cidrList) throws NetworkRuleConflictException {
+                                                 final Boolean forDisplay, String cidrList, Long networkIdParam) throws NetworkRuleConflictException {
         if (!NetUtils.isValidPort(destPort)) {
             throw new InvalidParameterValueException("privatePort is an invalid value: " + destPort);
         }
@@ -1853,7 +1911,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
             _accountMgr.checkAccess(caller.getCallingAccount(), null, true, ipAddr);
 
-            final Long networkId = ipAddr.getAssociatedWithNetworkId();
+            final Long networkId = _ipAddrMgr.getPreferredNetworkIdForPublicIpRuleAssignment(ipAddr, networkIdParam);
             if (networkId == null) {
                 InvalidParameterValueException ex =
                         new InvalidParameterValueException("Unable to create load balancer rule ; specified sourceip id is not associated with any network");
@@ -1896,7 +1954,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                         throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
                     }
                     logger.debug("Load balancer {} for Ip address: {}, public port {}, private port {} is added successfully.", newRule, ipAddr, srcPort, destPort);
-                    CallContext.current().setEventDetails("Load balancer Id: " + newRule.getId());
+                    CallContext.current().setEventDetails("Load balancer ID: " + newRule.getUuid());
                     UsageEventUtils.publishUsageEvent(EventTypes.EVENT_LOAD_BALANCER_CREATE, ipAddr.getAllocatedToAccountId(), ipAddr.getDataCenterId(), newRule.getId(),
                             null, LoadBalancingRule.class.getName(), newRule.getUuid());
 

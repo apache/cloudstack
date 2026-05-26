@@ -50,33 +50,14 @@ setup_secstorage() {
   a2enmod proxy_http
   a2enmod headers
 
-  if [ -z $USEHTTPS ] | $USEHTTPS ; then
-    if [ -f /etc/apache2/http.conf ]; then
-      rm -rf /etc/apache2/http.conf
-    fi
-      cat >/etc/apache2/https.conf <<HTTPS
-RewriteEngine On
-RewriteCond %{HTTPS} =on
-RewriteCond %{REQUEST_METHOD} =POST
-RewriteRule ^/upload/(.*) http://127.0.0.1:8210/upload?uuid=\$1 [P,L]
-Header always set Access-Control-Allow-Origin "*"
-Header always set Access-Control-Allow-Methods "POST, OPTIONS"
-Header always set Access-Control-Allow-Headers "x-requested-with, content-type, origin, authorization, accept, client-security-token, x-signature, x-metadata, x-expires"
-HTTPS
-  else
-    if [ -f /etc/apache2/https.conf ]; then
-      rm -rf /etc/apache2/https.conf
-    fi
-      cat >/etc/apache2/http.conf <<HTTP
+  cat >/etc/apache2/cors.conf <<CORS
 RewriteEngine On
 RewriteCond %{REQUEST_METHOD} =POST
 RewriteRule ^/upload/(.*) http://127.0.0.1:8210/upload?uuid=\$1 [P,L]
 Header always set Access-Control-Allow-Origin "*"
 Header always set Access-Control-Allow-Methods "POST, OPTIONS"
 Header always set Access-Control-Allow-Headers "x-requested-with, content-type, origin, authorization, accept, client-security-token, x-signature, x-metadata, x-expires"
-HTTP
-  fi
-
+CORS
 
   disable_rpfilter
   enable_fwding 0

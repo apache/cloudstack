@@ -70,7 +70,7 @@ public interface DeploymentPlanner extends Adapter {
     boolean canHandle(VirtualMachineProfile vm, DeploymentPlan plan, ExcludeList avoid);
 
     public enum AllocationAlgorithm {
-        random, firstfit, userdispersing;
+        random, firstfit, userdispersing, firstfitleastconsumed;
     }
 
     public enum PlannerResourceUsage {

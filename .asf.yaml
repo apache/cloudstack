@@ -50,16 +50,13 @@ github:
     rebase: false
 
   collaborators:
-    - acs-robot
-    - gpordeus
-    - hsato03
-    - FelipeM525
-    - lucas-a-martins
-    - nicoschmdt
-    - abh1sar
-    - rosi-shapeblue
-    - sudo87
+    - ingox
+    - gp-santos
     - erikbocks
+    - Imvedansh
+    - Damans227
+    - jmsperu
+    - GaOrtiga
 
   protected_branches: ~
 

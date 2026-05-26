@@ -55,6 +55,9 @@ import javax.xml.xpath.XPathFactory;
 
 import com.cloud.agent.api.Command;
 import com.cloud.hypervisor.kvm.resource.LibvirtXMLParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadAnswer;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.cloudstack.direct.download.DirectDownloadHelper;
@@ -182,6 +185,8 @@ public class KVMStorageProcessor implements StorageProcessor {
 
     private int incrementalSnapshotTimeout;
 
+    private int incrementalSnapshotRetryRebaseWait;
+
     private static final String CHECKPOINT_XML_TEMP_DIR = "/tmp/cloudstack/checkpointXMLs";
 
     private static final String BACKUP_XML_TEMP_DIR = "/tmp/cloudstack/backupXMLs";
@@ -249,6 +254,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         _cmdsTimeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.CMDS_TIMEOUT) * 1000;
 
         incrementalSnapshotTimeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.INCREMENTAL_SNAPSHOT_TIMEOUT) * 1000;
+        incrementalSnapshotRetryRebaseWait = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.INCREMENTAL_SNAPSHOT_RETRY_REBASE_WAIT) * 1000;
         return true;
     }
 
@@ -365,6 +371,16 @@ public class KVMStorageProcessor implements StorageProcessor {
                 newTemplate.setPath(primaryVol.getName());
                 newTemplate.setSize(primaryVol.getSize());
                 newTemplate.setFormat(getFormat(primaryPool.getType()));
+
+                if (List.of(
+                    StoragePoolType.RBD,
+                    StoragePoolType.PowerFlex,
+                    StoragePoolType.Linstor,
+                    StoragePoolType.FiberChannel).contains(primaryPool.getType())) {
+                    newTemplate.setFormat(ImageFormat.RAW);
+                } else {
+                    newTemplate.setFormat(ImageFormat.QCOW2);
+                }
                 data = newTemplate;
             } else if (destData.getObjectType() == DataObjectType.VOLUME) {
                 final VolumeObjectTO volumeObjectTO = new VolumeObjectTO();
@@ -752,7 +768,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                 templateContent += "snapshot.name=" + dateFormat.format(date) + System.getProperty("line.separator");
 
 
-                try(FileOutputStream templFo = new FileOutputStream(templateProp);){
+                try (FileOutputStream templFo = new FileOutputStream(templateProp);) {
                     templFo.write(templateContent.getBytes());
                     templFo.flush();
                 } catch (final IOException e) {
@@ -817,11 +833,9 @@ public class KVMStorageProcessor implements StorageProcessor {
 
         if (srcData instanceof VolumeObjectTO) {
             isVolume = true;
-        }
-        else if (srcData instanceof SnapshotObjectTO) {
+        } else if (srcData instanceof SnapshotObjectTO) {
             isVolume = false;
-        }
-        else {
+        } else {
             return new CopyCmdAnswer("unsupported object type");
         }
 
@@ -887,8 +901,7 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             if (isVolume) {
                 templateContent += "volume.name=" + dateFormat.format(date) + System.getProperty("line.separator");
-            }
-            else {
+            } else {
                 templateContent += "snapshot.name=" + dateFormat.format(date) + System.getProperty("line.separator");
             }
 
@@ -926,8 +939,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         } catch (Exception ex) {
             if (isVolume) {
                 logger.debug("Failed to create template from volume: ", ex);
-            }
-            else {
+            } else {
                 logger.debug("Failed to create template from snapshot: ", ex);
             }
 
@@ -1088,7 +1100,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                     q.convert(srcFile, destFile);
 
                     final File snapFile = new File(snapshotFile);
-                    if(snapFile.exists()) {
+                    if (snapFile.exists()) {
                         size = snapFile.length();
                     }
 
@@ -1121,7 +1133,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                     return new CopyCmdAnswer(result);
                 }
                 final File snapFile = new File(snapshotDestPath + "/" + descName);
-                if(snapFile.exists()){
+                if (snapFile.exists()) {
                     size = snapFile.length();
                 }
             }
@@ -1460,7 +1472,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                     if (resource.getHypervisorType() == Hypervisor.HypervisorType.LXC) {
                         final String device = resource.mapRbdDevice(attachingDisk);
                         if (device != null) {
-                            logger.debug("RBD device on host is: "+device);
+                            logger.debug("RBD device on host is: " + device);
                             attachingDisk.setPath(device);
                         }
                     }
@@ -1487,11 +1499,11 @@ public class KVMStorageProcessor implements StorageProcessor {
                 }
                 diskdef.setSerial(serial);
                 if (attachingPool.getType() == StoragePoolType.RBD) {
-                    if(resource.getHypervisorType() == Hypervisor.HypervisorType.LXC){
+                    if (resource.getHypervisorType() == Hypervisor.HypervisorType.LXC) {
                         // For LXC, map image to host and then attach to Vm
                         final String device = resource.mapRbdDevice(attachingDisk);
                         if (device != null) {
-                            logger.debug("RBD device on host is: "+device);
+                            logger.debug("RBD device on host is: " + device);
                             diskdef.defBlockBasedDisk(device, devId, busT);
                         } else {
                             throw new InternalErrorException("Error while mapping disk "+attachingDisk.getPath()+" on host");
@@ -1561,7 +1573,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                 if ((iopsWriteRateMaxLength != null) && (iopsWriteRateMaxLength > 0)) {
                     diskdef.setIopsWriteRateMaxLength(iopsWriteRateMaxLength);
                 }
-                if(cacheMode != null) {
+                if (cacheMode != null) {
                     diskdef.setCacheMode(DiskDef.DiskCacheMode.valueOf(cacheMode.toUpperCase()));
                 }
 
@@ -1748,7 +1760,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             }
 
             final VolumeObjectTO newVol = new VolumeObjectTO();
-            if(vol != null) {
+            if (vol != null) {
                 newVol.setPath(vol.getName());
                 if (vol.getQemuEncryptFormat() != null) {
                     newVol.setEncryptFormat(vol.getQemuEncryptFormat().toString());
@@ -1853,8 +1865,11 @@ public class KVMStorageProcessor implements StorageProcessor {
                 }
             } else {
                 if (primaryPool.getType() == StoragePoolType.RBD) {
-                    takeRbdVolumeSnapshotOfStoppedVm(primaryPool, disk, snapshotName);
+                    Long snapshotSize = takeRbdVolumeSnapshotOfStoppedVm(primaryPool, disk, snapshotName);
                     newSnapshot.setPath(snapshotPath);
+                    if (snapshotSize != null) {
+                        newSnapshot.setPhysicalSize(snapshotSize);
+                    }
                 } else if (primaryPool.getType() == StoragePoolType.CLVM) {
                     CreateObjectAnswer result = takeClvmVolumeSnapshotOfStoppedVm(disk, snapshotName);
                     if (result != null) return result;
@@ -2032,7 +2047,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             try {
                 Thread.sleep(10000);
             } catch (InterruptedException e) {
-                throw new CloudRuntimeException(e);
+                logger.trace("Thread that was tracking the progress for backup of VM [{}] was interrupted. Ignoring.", vmName);
             }
         }
 
@@ -2081,8 +2096,25 @@ public class KVMStorageProcessor implements StorageProcessor {
             QemuImg qemuImg = new QemuImg(wait);
             qemuImg.rebase(snapshotFile, parentSnapshotFile, PhysicalDiskFormat.QCOW2.toString(), false);
         } catch (LibvirtException | QemuImgException e) {
-            logger.error("Exception while rebasing incremental snapshot [{}] due to: [{}].", snapshotName, e.getMessage(), e);
-            throw new CloudRuntimeException(e);
+            if (!StringUtils.contains(e.getMessage(), "Is another process using the image")) {
+                logger.error("Exception while rebasing incremental snapshot [{}] due to: [{}].", snapshotName, e.getMessage(), e);
+                throw new CloudRuntimeException(e);
+            }
+            retryRebase(snapshotName, wait, e, snapshotFile, parentSnapshotFile);
+        }
+    }
+
+    private void retryRebase(String snapshotName, int wait, Exception e, QemuImgFile snapshotFile, QemuImgFile parentSnapshotFile) {
+        logger.warn("Libvirt still has not released the lock, will wait [{}] milliseconds and try again later.", incrementalSnapshotRetryRebaseWait);
+        try {
+            Thread.sleep(incrementalSnapshotRetryRebaseWait);
+            QemuImg qemuImg = new QemuImg(wait);
+            qemuImg.rebase(snapshotFile, parentSnapshotFile, PhysicalDiskFormat.QCOW2.toString(), false);
+        } catch (LibvirtException | QemuImgException | InterruptedException ex) {
+            logger.error("Unable to rebase snapshot [{}].", snapshotName, ex);
+            CloudRuntimeException cre = new CloudRuntimeException(ex);
+            cre.addSuppressed(e);
+            throw cre;
         }
     }
 
@@ -2306,7 +2338,8 @@ public class KVMStorageProcessor implements StorageProcessor {
      * barriers properly (>2.6.32) this won't be any different then pulling the power
      * cord out of a running machine.
      */
-    private void takeRbdVolumeSnapshotOfStoppedVm(KVMStoragePool primaryPool, KVMPhysicalDisk disk, String snapshotName) {
+    private Long takeRbdVolumeSnapshotOfStoppedVm(KVMStoragePool primaryPool, KVMPhysicalDisk disk, String snapshotName) {
+        Long snapshotSize = null;
         try {
             Rados r = radosConnect(primaryPool);
 
@@ -2317,11 +2350,43 @@ public class KVMStorageProcessor implements StorageProcessor {
             logger.debug("Attempting to create RBD snapshot {}@{}", disk.getName(), snapshotName);
             image.snapCreate(snapshotName);
 
+            image.snapCreate(snapshotName);
+            long rbdSnapshotSize = getRbdSnapshotSize(primaryPool.getSourceDir(), disk.getName(), snapshotName, primaryPool.getSourceHost(), primaryPool.getAuthUserName(), primaryPool.getAuthSecret());
+            if (rbdSnapshotSize > 0) {
+                snapshotSize = rbdSnapshotSize;
+            }
+
             rbd.close(image);
             r.ioCtxDestroy(io);
         } catch (final Exception e) {
             logger.error("A RBD snapshot operation on [{}] failed. The error was: {}", disk.getName(), e.getMessage(), e);
         }
+        return snapshotSize;
+    }
+
+    private long getRbdSnapshotSize(String poolPath, String diskName, String snapshotName, String rbdMonitor, String authUser, String authSecret) {
+        logger.debug("Get RBD snapshot size for {}/{}@{}", poolPath, diskName, snapshotName);
+        //cmd: rbd du <pool>/<disk-name>@<snapshot-name> --format json --mon-host <monitor-host> --id <user> --key <key> 2>/dev/null
+        String snapshotDetailsInJson = Script.runSimpleBashScript(String.format("rbd du %s/%s@%s --format json --mon-host %s --id %s --key %s 2>/dev/null", poolPath, diskName, snapshotName, rbdMonitor, authUser, authSecret));
+        if (StringUtils.isNotBlank(snapshotDetailsInJson)) {
+            ObjectMapper mapper = new ObjectMapper();
+            try {
+                JsonNode root = mapper.readTree(snapshotDetailsInJson);
+                for (JsonNode image : root.path("images")) {
+                    if (snapshotName.equals(image.path("snapshot").asText())) {
+                        long usedSizeInBytes = image.path("used_size").asLong();
+                        logger.debug("RBD snapshot {}/{}@{} used size in bytes: {}", poolPath, diskName, snapshotName, usedSizeInBytes);
+                        return usedSizeInBytes;
+                    }
+                }
+            } catch (JsonProcessingException e) {
+                logger.error("Unable to get the RBD snapshot size, RBD snapshot cmd output: {}", snapshotDetailsInJson, e);
+            }
+        } else {
+                logger.warn("Failed to get RBD snapshot size for {}/{}@{} - no output for RBD snapshot cmd", poolPath, diskName, snapshotName);
+        }
+
+        return 0;
     }
 
     /**

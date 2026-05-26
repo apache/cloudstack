@@ -38,6 +38,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.apache.cloudstack.api.APICommand;
+import com.cloud.api.auth.DefaultForgotPasswordAPIAuthenticatorCmd;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ApiServerService;
@@ -200,7 +201,6 @@ public class ApiServlet extends HttpServlet {
                 LOGGER.warn(message);
             }
         });
-
     }
 
     void processRequestInContext(final HttpServletRequest req, final HttpServletResponse resp) {
@@ -273,7 +273,6 @@ public class ApiServlet extends HttpServlet {
             }
 
             if (command != null && !command.equals(ValidateUserTwoFactorAuthenticationCodeCmd.APINAME)) {
-
                 APIAuthenticator apiAuthenticator = authManager.getAPIAuthenticator(command);
                 if (apiAuthenticator != null) {
                     auditTrailSb.append("command=");
@@ -309,7 +308,9 @@ public class ApiServlet extends HttpServlet {
                     } catch (ServerApiException e) {
                         httpResponseCode = e.getErrorCode().getHttpCode();
                         responseString = e.getMessage();
-                        LOGGER.debug("Authentication failure: " + e.getMessage());
+                        if (!DefaultForgotPasswordAPIAuthenticatorCmd.APINAME.equalsIgnoreCase(command) || StringUtils.isNotBlank(username)) {
+                            LOGGER.debug("Authentication failure: {}", e.getMessage());
+                        }
                     }
 
                     if (apiAuthenticator.getAPIType() == APIAuthenticationType.LOGOUT_API) {
@@ -342,7 +343,7 @@ public class ApiServlet extends HttpServlet {
                     return;
                 }
             } else {
-                LOGGER.trace("no command available");
+                LOGGER.trace("No command available.");
             }
             auditTrailSb.append(cleanQueryString);
             final boolean isNew = ((session == null) ? true : session.isNew());
@@ -352,7 +353,7 @@ public class ApiServlet extends HttpServlet {
             // if a API key exists
 
             if (isNew && LOGGER.isTraceEnabled()) {
-                LOGGER.trace(String.format("new session: %s", session));
+                LOGGER.trace(String.format("New session: %s.", session));
             }
 
             if (!isNew && (command.equalsIgnoreCase(ValidateUserTwoFactorAuthenticationCodeCmd.APINAME) || (!skip2FAcheckForAPIs(command) && !skip2FAcheckForUser(session)))) {
@@ -390,7 +391,7 @@ public class ApiServlet extends HttpServlet {
                     }
                 }
 
-                if (! requestChecksoutAsSane(resp, auditTrailSb, responseType, params, session, command, userId, account, accountObj))
+                if (!requestChecksoutAsSane(resp, auditTrailSb, responseType, params, session, command, userId, account, accountObj))
                     return;
             } else {
                 CallContext.register(accountMgr.getSystemUser(), accountMgr.getSystemAccount());
@@ -422,7 +423,6 @@ public class ApiServlet extends HttpServlet {
                         apiServer.getSerializedApiError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials and/or request signature", params,
                                 responseType);
                 HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType, ApiServer.JSONcontentType.value());
-
             }
         } catch (final ServerApiException se) {
             final String serializedResponseText = apiServer.getSerializedApiError(se, params, responseType);
@@ -652,6 +652,9 @@ public class ApiServlet extends HttpServlet {
         try {
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace(msg);
+            }
+            if (session == null) {
+                return;
             }
             session.invalidate();
         } catch (final IllegalStateException ise) {

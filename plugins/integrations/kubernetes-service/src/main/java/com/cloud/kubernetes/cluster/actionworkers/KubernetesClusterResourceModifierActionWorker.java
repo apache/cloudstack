@@ -26,7 +26,6 @@ import static com.cloud.utils.db.Transaction.execute;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -116,7 +115,6 @@ import com.cloud.vm.Nic;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VmDetailConstants;
-import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.logging.log4j.Level;
@@ -152,8 +150,6 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     @Inject
     protected LoadBalancerDao loadBalancerDao;
     @Inject
-    protected VMInstanceDao vmInstanceDao;
-    @Inject
     protected UserVmManager userVmManager;
     @Inject
     protected LaunchPermissionDao launchPermissionDao;
@@ -177,8 +173,33 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         kubernetesClusterNodeNamePrefix = getKubernetesClusterNodeNamePrefix();
     }
 
+    protected List<HostVO> filterHostsByAffinityConstraints(List<HostVO> hosts, AffinityConstraints constraints, DataCenter zone)
+            throws InsufficientServerCapacityException {
+        if (constraints.hasHostAffinity && Objects.nonNull(constraints.requiredHostId)) {
+            hosts = hosts.stream().filter(host -> host.getId() == constraints.requiredHostId.longValue()).collect(Collectors.toList());
+            if (CollectionUtils.isEmpty(hosts)) {
+                String msg = String.format("Cannot find capacity for Kubernetes cluster: host affinity requires all VMs on host %d but it is not available in zone %s",
+                        constraints.requiredHostId, zone.getName());
+                throw new InsufficientServerCapacityException(msg, DataCenter.class, zone.getId());
+            }
+        }
+
+        if (constraints.hasHostAntiAffinity) {
+            hosts = hosts.stream().filter(host -> !constraints.antiAffinityOccupiedHosts.contains(host.getId())).collect(Collectors.toList());
+            if (CollectionUtils.isEmpty(hosts)) {
+                String msg = String.format("Cannot find capacity for Kubernetes cluster: host anti-affinity requires each VM on a separate host, " +
+                        "but all %d available hosts in zone %s are already occupied by existing cluster VMs",
+                        constraints.antiAffinityOccupiedHosts.size(), zone.getName());
+                throw new InsufficientServerCapacityException(msg, DataCenter.class, zone.getId());
+            }
+        }
+
+        return hosts;
+    }
+
     protected DeployDestination plan(final long nodesCount, final DataCenter zone, final ServiceOffering offering,
-                                     final Long domainId, final Long accountId, final Hypervisor.HypervisorType hypervisorType, CPU.CPUArch arch) throws InsufficientServerCapacityException {
+                                     final Long domainId, final Long accountId, final Hypervisor.HypervisorType hypervisorType,
+                                     CPU.CPUArch arch, KubernetesClusterNodeType nodeType) throws InsufficientServerCapacityException {
         final int cpu_requested = offering.getCpu() * offering.getSpeed();
         final long ram_requested = offering.getRamSize() * 1024L * 1024L;
         boolean useDedicatedHosts = false;
@@ -191,25 +212,29 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             } else if (Objects.nonNull(domainId)) {
                 dedicatedHosts = dedicatedResourceDao.listByDomainId(domainId);
             }
-            for (DedicatedResourceVO dedicatedHost : dedicatedHosts) {
-                hosts.add(hostDao.findById(dedicatedHost.getHostId()));
+            for (DedicatedResourceVO dedicatedResource : dedicatedHosts) {
+                hosts.addAll(manager.getHostsForDedicatedResource(dedicatedResource, zone));
                 useDedicatedHosts = true;
             }
         }
         if (hosts.isEmpty()) {
             hosts = resourceManager.listAllHostsInOneZoneByType(Host.Type.Routing, zone.getId());
         }
-        if (hypervisorType != null) {
+        if (Objects.nonNull(hypervisorType)) {
             hosts = hosts.stream().filter(x -> x.getHypervisorType() == hypervisorType).collect(Collectors.toList());
         }
-        if (arch != null) {
+        if (Objects.nonNull(arch)) {
             hosts = hosts.stream().filter(x -> x.getArch().equals(arch)).collect(Collectors.toList());
         }
         if (CollectionUtils.isEmpty(hosts)) {
             String msg = String.format("Cannot find enough capacity for Kubernetes cluster(requested cpu=%d memory=%s) with offering: %s hypervisor: %s and arch: %s",
-                    cpu_requested * nodesCount, toHumanReadableSize(ram_requested * nodesCount), offering.getName(), clusterTemplate.getHypervisorType().toString(), arch.getType());
+                    cpu_requested * nodesCount, toHumanReadableSize(ram_requested * nodesCount), offering.getName(), clusterTemplate.getHypervisorType().toString(),
+                    Objects.nonNull(arch) ? arch.getType() : "null");
             logAndThrow(Level.WARN, msg, new InsufficientServerCapacityException(msg, DataCenter.class, zone.getId()));
         }
+
+        AffinityConstraints affinityConstraints = resolveAffinityConstraints(nodeType, domainId, accountId);
+        hosts = filterHostsByAffinityConstraints(hosts, affinityConstraints, zone);
 
         final Map<String, Pair<HostVO, Integer>> hosts_with_resevered_capacity = new ConcurrentHashMap<String, Pair<HostVO, Integer>>();
         for (HostVO h : hosts) {
@@ -230,6 +255,9 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                     continue;
                 }
                 int reserved = hp.second();
+                if (affinityConstraints.hasHostAntiAffinity && reserved > 0) {
+                    continue;
+                }
                 reserved++;
                 ClusterVO cluster = clusterDao.findById(h.getClusterId());
                 ClusterDetailsVO cluster_detail_cpu = clusterDetailsDao.findDetail(cluster.getId(), "cpuOvercommitRatio");
@@ -264,10 +292,17 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             }
             return new DeployDestination(zone, null, null, null);
         }
-        String msg = String.format("Cannot find enough capacity for Kubernetes cluster(requested cpu=%d memory=%s) with offering: %s hypervisor: %s and arch: %s",
-                cpu_requested * nodesCount, toHumanReadableSize(ram_requested * nodesCount), offering.getName(), clusterTemplate.getHypervisorType().toString(), arch.getType());
-
-        logger.warn(msg);
+        String msg;
+        if (affinityConstraints.hasHostAntiAffinity) {
+            msg = String.format("Cannot find enough capacity for Kubernetes cluster (requested cpu=%d memory=%s) with offering: %s. " +
+                    "Host anti-affinity requires %d separate hosts but not enough suitable hosts are available in zone %s",
+                    cpu_requested * nodesCount, toHumanReadableSize(ram_requested * nodesCount), offering.getName(),
+                    nodesCount, zone.getName());
+        } else {
+            msg = String.format("Cannot find enough capacity for Kubernetes cluster(requested cpu=%d memory=%s) with offering: %s hypervisor: %s and arch: %s",
+                    cpu_requested * nodesCount, toHumanReadableSize(ram_requested * nodesCount), offering.getName(), clusterTemplate.getHypervisorType().toString(),
+                    Objects.nonNull(arch) ? arch.getType() : "null");
+        }
         throw new InsufficientServerCapacityException(msg, DataCenter.class, zone.getId());
     }
 
@@ -296,7 +331,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             if (logger.isDebugEnabled()) {
                 logger.debug("Checking deployment destination for {} nodes on Kubernetes cluster : {} in zone : {}", nodeType.name(), kubernetesCluster.getName(), zone.getName());
             }
-            DeployDestination planForNodeType = plan(nodes, zone, nodeOffering, domainId, accountId, hypervisorType, arch);
+            DeployDestination planForNodeType = plan(nodes, zone, nodeOffering, domainId, accountId, hypervisorType, arch, nodeType);
             destinationMap.put(nodeType.name(), planForNodeType);
         }
         return destinationMap;
@@ -426,21 +461,19 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         if (StringUtils.isNotBlank(kubernetesCluster.getKeyPair())) {
             keypairs.add(kubernetesCluster.getKeyPair());
         }
-        Long affinityGroupId = getExplicitAffinityGroup(domainId, accountId);
+        List<Long> affinityGroupIds = getMergedAffinityGroupIds(WORKER, domainId, accountId);
         if (kubernetesCluster.getSecurityGroupId() != null && networkModel.checkSecurityGroupSupportForNetwork(owner, zone, networkIds, List.of(kubernetesCluster.getSecurityGroupId()))) {
             List<Long> securityGroupIds = new ArrayList<>();
             securityGroupIds.add(kubernetesCluster.getSecurityGroupId());
             nodeVm = userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, workerNodeTemplate, networkIds, securityGroupIds, owner,
                     hostName, hostName, null, null, null, null, Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST,base64UserData, null, null, keypairs,
-                    null, addrs, null, null, Objects.nonNull(affinityGroupId) ?
-                            Collections.singletonList(affinityGroupId) : null, customParameterMap, null, null, null,
+                    null, addrs, null, null, affinityGroupIds, customParameterMap, null, null, null,
                     null, true, null, UserVmManager.CKS_NODE, null, null);
         } else {
             nodeVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, workerNodeTemplate, networkIds, owner,
                     hostName, hostName, null, null, null, null,
                     Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, null, null, keypairs,
-                    null, addrs, null, null, Objects.nonNull(affinityGroupId) ?
-                            Collections.singletonList(affinityGroupId) : null, customParameterMap, null, null, null, null, true, UserVmManager.CKS_NODE, null, null, null);
+                    null, addrs, null, null, affinityGroupIds, customParameterMap, null, null, null, null, true, UserVmManager.CKS_NODE, null, null, null);
         }
         if (logger.isInfoEnabled()) {
             logger.info("Created node VM : {}, {} in the Kubernetes cluster : {}", hostName, nodeVm, kubernetesCluster.getName());
@@ -548,7 +581,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         List<FirewallRuleVO> firewallRules = firewallRulesDao.listByIpPurposeProtocolAndNotRevoked(publicIp.getId(), FirewallRule.Purpose.Firewall, NetUtils.TCP_PROTO);
         for (FirewallRuleVO firewallRule : firewallRules) {
             PortForwardingRuleVO pfRule = portForwardingRulesDao.findByNetworkAndPorts(networkId, firewallRule.getSourcePortStart(), firewallRule.getSourcePortEnd());
-            if (firewallRule.getSourcePortStart() == CLUSTER_NODES_DEFAULT_START_SSH_PORT || (Objects.nonNull(pfRule) && pfRule.getDestinationPortStart() == DEFAULT_SSH_PORT) ) {
+            if (Objects.equals(firewallRule.getSourcePortStart(), CLUSTER_NODES_DEFAULT_START_SSH_PORT) || (Objects.nonNull(pfRule) && pfRule.getDestinationPortStart() == DEFAULT_SSH_PORT) ) {
                 rule = firewallRule;
                 firewallService.revokeIngressFwRule(firewallRule.getId(), true);
                 logger.debug("The SSH firewall rule {} with the id {} was revoked", firewallRule.getName(), firewallRule.getId());
@@ -660,7 +693,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             ips.add(controlVmNic.getIPv4Address());
             vmIdIpMap.put(clusterVMIds.get(i), ips);
         }
-        lbService.assignToLoadBalancer(lb.getId(), null, vmIdIpMap, false);
+        lbService.assignToLoadBalancer(lb.getId(), null, vmIdIpMap, null, false);
     }
 
     protected Map<Long, Integer> createFirewallRules(IpAddress publicIp, List<Long> clusterVMIds, boolean apiRule) throws ManagementServerException {

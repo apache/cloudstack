@@ -57,7 +57,18 @@ public class Filter {
     }
 
     public Filter(long limit) {
-        _orderBy = " ORDER BY RAND()";
+        this(limit, false);
+    }
+
+    /**
+     * Constructor for creating a filter with random ordering
+     * @param limit the maximum number of results to return
+     * @param randomize if true, orders results randomly
+     */
+    public Filter(long limit, boolean randomize) {
+        if (randomize) {
+            _orderBy = " ORDER BY RAND()" ;
+        }
         _limit = limit;
     }
 

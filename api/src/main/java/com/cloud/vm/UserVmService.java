@@ -40,6 +40,7 @@ import org.apache.cloudstack.api.command.user.vm.ScaleVMCmd;
 import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
 import org.apache.cloudstack.api.command.user.vm.UpdateDefaultNicForVMCmd;
 import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
+import org.apache.cloudstack.api.command.user.vm.UpdateVmNicCmd;
 import org.apache.cloudstack.api.command.user.vm.UpdateVmNicIpCmd;
 import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
@@ -151,6 +152,8 @@ public interface UserVmService {
      * @return the vm object if successful, null otherwise
      */
     UserVm updateNicIpForVirtualMachine(UpdateVmNicIpCmd cmd);
+
+    UserVm updateVirtualMachineNic(UpdateVmNicCmd cmd);
 
     UserVm recoverVirtualMachine(RecoverVMCmd cmd) throws ResourceAllocationException;
 
@@ -524,6 +527,7 @@ public interface UserVmService {
      * @param userId user ID
      * @param serviceOffering service offering for the imported VM
      * @param sshPublicKey ssh key for the imported VM
+     * @param guestOsId guest OS ID for the imported VM (if not passed, then the guest OS of the template will be used)
      * @param hostName the name for the imported VM
      * @param hypervisorType hypervisor type for the imported VM
      * @param customParameters details for the imported VM
@@ -533,7 +537,7 @@ public interface UserVmService {
      * @throws InsufficientCapacityException in case of errors
      */
     UserVm importVM(final DataCenter zone, final Host host, final VirtualMachineTemplate template, final String instanceNameInternal, final String displayName, final Account owner, final String userData, final Account caller, final Boolean isDisplayVm, final String keyboard,
-                    final long accountId, final long userId, final ServiceOffering serviceOffering, final String sshPublicKey,
+                    final long accountId, final long userId, final ServiceOffering serviceOffering, final String sshPublicKey, final Long guestOsId,
                     final String hostName, final HypervisorType hypervisorType, final Map<String, String> customParameters,
                     final VirtualMachine.PowerState powerState, final LinkedHashMap<String, List<NicProfile>> networkNicMap) throws InsufficientCapacityException;
 

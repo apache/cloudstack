@@ -20,6 +20,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -262,5 +263,72 @@ public class GenericDaoBaseTest {
         Assert.assertEquals(" INNER JOIN tableA tableA1Alias ON tableB.column2=tableA1Alias.column1 " +
                 " INNER JOIN tableA tableA2Alias ON tableC.column3=tableA2Alias.column2 " +
                 " INNER JOIN tableA tableA3Alias ON tableD.column4=tableA3Alias.column3 AND tableD.column5=? ", joinString.toString());
+    }
+
+
+    @Test
+    public void testLockOneRandomRowUsesRandomFilter() {
+        // Create a mock DAO to test lockOneRandomRow behavior
+        GenericDaoBase<DbTestVO, Long> testDao = Mockito.mock(GenericDaoBase.class);
+
+        // Capture the filter passed to the search method
+        final Filter[] capturedFilter = new Filter[1];
+
+        Mockito.when(testDao.lockOneRandomRow(Mockito.any(SearchCriteria.class), Mockito.anyBoolean()))
+                .thenCallRealMethod();
+
+        Mockito.when(testDao.search(Mockito.any(SearchCriteria.class), Mockito.any(Filter.class),
+                        Mockito.anyBoolean(), Mockito.anyBoolean()))
+                .thenAnswer(invocation -> {
+                    capturedFilter[0] = invocation.getArgument(1);
+                    return new ArrayList<DbTestVO>();
+                });
+
+        SearchCriteria<DbTestVO> sc = Mockito.mock(SearchCriteria.class);
+        testDao.lockOneRandomRow(sc, true);
+
+        // Verify that the filter uses random ordering
+        Assert.assertNotNull(capturedFilter[0]);
+        Assert.assertNotNull(capturedFilter[0].getOrderBy());
+        Assert.assertTrue(capturedFilter[0].getOrderBy().contains("ORDER BY RAND()"));
+        Assert.assertTrue(capturedFilter[0].getOrderBy().contains("LIMIT 1"));
+    }
+
+    @Test
+    public void testLockOneRandomRowReturnsNullOnEmptyResult() {
+        GenericDaoBase<DbTestVO, Long> testDao = Mockito.mock(GenericDaoBase.class);
+
+        Mockito.when(testDao.lockOneRandomRow(Mockito.any(SearchCriteria.class), Mockito.anyBoolean()))
+                .thenCallRealMethod();
+
+        Mockito.when(testDao.search(Mockito.any(SearchCriteria.class), Mockito.any(Filter.class),
+                        Mockito.anyBoolean(), Mockito.anyBoolean()))
+                .thenReturn(new ArrayList<DbTestVO>());
+
+        SearchCriteria<DbTestVO> sc = Mockito.mock(SearchCriteria.class);
+        DbTestVO result = testDao.lockOneRandomRow(sc, true);
+
+        Assert.assertNull(result);
+    }
+
+    @Test
+    public void testLockOneRandomRowReturnsFirstElement() {
+        GenericDaoBase<DbTestVO, Long> testDao = Mockito.mock(GenericDaoBase.class);
+        DbTestVO expectedResult = new DbTestVO();
+        List<DbTestVO> resultList = new ArrayList<>();
+        resultList.add(expectedResult);
+
+        Mockito.when(testDao.lockOneRandomRow(Mockito.any(SearchCriteria.class), Mockito.anyBoolean()))
+                .thenCallRealMethod();
+
+        Mockito.when(testDao.search(Mockito.any(SearchCriteria.class), Mockito.any(Filter.class),
+                        Mockito.anyBoolean(), Mockito.anyBoolean()))
+                .thenReturn(resultList);
+
+        SearchCriteria<DbTestVO> sc = Mockito.mock(SearchCriteria.class);
+        DbTestVO result = testDao.lockOneRandomRow(sc, true);
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(expectedResult, result);
     }
 }

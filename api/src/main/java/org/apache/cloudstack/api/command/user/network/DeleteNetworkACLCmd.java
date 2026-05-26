@@ -61,7 +61,7 @@ public class DeleteNetworkACLCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return ("Deleting Network ACL ID=" + id);
+        return "Deleting Network ACL with ID:" + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
@@ -82,7 +82,7 @@ public class DeleteNetworkACLCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException {
-        CallContext.current().setEventDetails("Network ACL item ID: " + id);
+        CallContext.current().setEventDetails("Network ACL item ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _networkACLService.revokeNetworkACLItem(id);
 
         if (result) {

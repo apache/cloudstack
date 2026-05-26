@@ -32,33 +32,33 @@ import org.apache.cloudstack.api.response.UserResponse;
 import java.util.Map;
 
 @APICommand(name = "getUserKeys",
-            description = "This command allows the user to query the seceret and API keys for the account",
-            responseObject = RegisterUserKeyResponse.class,
-            requestHasSensitiveInfo = false,
-            responseHasSensitiveInfo = true,
-            authorized = {RoleType.User, RoleType.Admin, RoleType.DomainAdmin, RoleType.ResourceAdmin},
-            since = "4.10.0")
-
-public class GetUserKeysCmd extends BaseCmd{
-
-    @Parameter(name= ApiConstants.ID, type = CommandType.UUID, entityType = UserResponse.class, required = true, description = "ID of the user whose keys are required")
+        description = "Queries the last registered secret and API keys of a user.",
+        responseObject = RegisterUserKeyResponse.class,
+        requestHasSensitiveInfo = false,
+        responseHasSensitiveInfo = true,
+        authorized = {RoleType.User, RoleType.Admin, RoleType.DomainAdmin, RoleType.ResourceAdmin},
+        since = "4.10.0")
+public class GetUserKeysCmd extends BaseCmd {
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserResponse.class, required = true, description = "ID of the user whose keys are required")
     private Long id;
 
-
-    public Long getID(){
+    public Long getId() {
         return id;
-    }public long getEntityOwnerId(){
-        User user = _entityMgr.findById(User.class, getID());
-        if(user != null){
+    }
+
+    public long getEntityOwnerId() {
+        User user = _entityMgr.findById(User.class, getId());
+        if (user != null) {
             return user.getAccountId();
         }
-        else return Account.ACCOUNT_ID_SYSTEM;
+        return Account.ACCOUNT_ID_SYSTEM;
     }
-    public void execute(){
+
+    public void execute() {
         Pair<Boolean, Map<String, String>> keys = _accountService.getKeys(this);
 
         RegisterUserKeyResponse response = new RegisterUserKeyResponse();
-        if(keys != null){
+        if (keys != null){
             response.setApiKeyAccess(keys.first());
             response.setApiKey(keys.second().get("apikey"));
             response.setSecretKey(keys.second().get("secretkey"));

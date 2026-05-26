@@ -91,7 +91,7 @@ public class DeleteNetworkServiceProviderCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Deleting Physical network ServiceProvider: " + getId();
+        return "Deleting Physical network ServiceProvider with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

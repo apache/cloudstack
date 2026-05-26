@@ -181,7 +181,7 @@ public class CreateBucketCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Bucket Id: " + getEntityUuid());
+        CallContext.current().setEventDetails("Bucket ID: " + getEntityUuid());
 
         Bucket bucket;
         try {
