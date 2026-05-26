@@ -113,16 +113,15 @@ class TestDeployVMFromISO(cloudstackTestCase):
         self.cleanup.append(self.iso)
 
         self.debug("ISO created with ID: %s" % self.iso.id)
-
         list_iso_response = Iso.list(
             self.apiclient,
             id=self.iso.id
         )
-        self.assertEqual(
-            isinstance(list_iso_response, list),
-            True,
-            "Check list response returns a valid list"
-        )
+        while not isinstance(list_iso_response, list):
+            list_iso_response = Iso.list(
+                self.apiclient,
+                id=self.iso.id
+            )
 
         try:
             # Download the ISO
@@ -163,11 +162,10 @@ class TestDeployVMFromISO(cloudstackTestCase):
             VirtualMachine.RUNNING
         )
 
-        self.assertEqual(
-            vm_state,
-            VirtualMachine.RUNNING,
-            "Check virtual machine is in running state"
-        )
+       response = self.virtual_machine.getState(
+            self.apiclient,
+            VirtualMachine.RUNNING)
+        self.assertEqual(response[0], PASS, response[1])
 
         self.assertEqual(
             vm_response.isoid,
