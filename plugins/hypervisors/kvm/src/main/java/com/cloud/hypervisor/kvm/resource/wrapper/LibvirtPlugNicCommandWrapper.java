@@ -122,6 +122,14 @@ public final class LibvirtPlugNicCommandWrapper extends CommandWrapper<PlugNicCo
         try {
             String domXml = vm.getXMLDesc(0);
 
+            // Defensive: getXMLDesc can return null on certain libvirt error paths (and is
+            // null in unit tests where the Domain mock isn't stubbed for this call). Fall
+            // back to letting libvirt auto-assign the PCI slot.
+            if (domXml == null) {
+                logger.debug("Domain XML unavailable, letting libvirt auto-assign PCI slot");
+                return null;
+            }
+
             // Parse all PCI slot numbers currently in use
             Set<Integer> usedSlots = new HashSet<>();
             Pattern slotPattern = Pattern.compile("slot='0x([0-9a-fA-F]+)'");
