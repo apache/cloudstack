@@ -325,7 +325,7 @@ export default {
           'type', 'scope', 'managementserverid', 'serviceofferingid',
           'diskofferingid', 'networkid', 'usagetype', 'restartrequired', 'gpuenabled',
           'displaynetwork', 'guestiptype', 'usersource', 'arch', 'oscategoryid', 'templatetype', 'gpucardid', 'vgpuprofileid',
-          'extensionid', 'backupoffering', 'volumeid', 'virtualmachineid'].includes(item)
+          'extensionid', 'backupoffering', 'volumeid', 'virtualmachineid', 'status'].includes(item)
         ) {
           type = 'list'
         } else if (item === 'tags') {
@@ -516,6 +516,7 @@ export default {
       let gpuCardIndex = -1
       let vgpuProfileIndex = -1
       let extensionIndex = -1
+      let backupStatusIndex = -1
 
       if (arrayField.includes('type')) {
         if (this.$route.path === '/alert') {
@@ -659,6 +660,11 @@ export default {
         volumeIndex = this.fields.findIndex(item => item.name === 'volumeid')
         this.fields[volumeIndex].loading = true
         promises.push(await this.fetchVolumes(searchKeyword))
+      }
+
+      if (arrayField.includes('status')) {
+        backupStatusIndex = this.fields.findIndex(item => item.name === 'status')
+        this.fields[backupStatusIndex].opts = this.fetchAvailableBackupStatus()
       }
 
       Promise.all(promises).then(response => {
@@ -1589,6 +1595,38 @@ export default {
           reject(error.response.headers['x-description'])
         })
       })
+    },
+    fetchAvailableBackupStatus () {
+      return [
+        {
+          id: 'Allocated',
+          name: 'label.allocated'
+        },
+        {
+          id: 'Queued',
+          name: 'label.queued'
+        },
+        {
+          id: 'BackingUp',
+          name: 'label.backingup'
+        },
+        {
+          id: 'BackedUp',
+          name: 'label.backedup'
+        },
+        {
+          id: 'Error',
+          name: 'label.error'
+        },
+        {
+          id: 'Failed',
+          name: 'label.failed'
+        },
+        {
+          id: 'Restoring',
+          name: 'label.restoring'
+        }
+      ]
     },
     onSearch (value) {
       this.paramsFilter = {}

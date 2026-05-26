@@ -106,6 +106,24 @@ export default {
           case 'no':
             state = this.$t('label.no')
             break
+          case 'backedup':
+            state = this.$t('label.backedup')
+            break
+          case 'backingup':
+            state = this.$t('label.backingup')
+            break
+          case 'allocated':
+            state = this.$t('label.allocated')
+            break
+          case 'qeued':
+            state = this.$t('label.queued')
+            break
+          case 'restoring':
+            state = this.$t('label.restoring')
+            break
+          case 'failed':
+            state = this.$t('label.failed')
+            break
         }
         return state.charAt(0).toUpperCase() + state.slice(1)
       }

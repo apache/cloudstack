@@ -39,6 +39,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.utils.DomainHelper;
+import com.cloud.utils.EnumUtils;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.InternalIdentity;
@@ -255,6 +256,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
     private static Map<String, BackupProvider> backupProvidersMap = new HashMap<>();
     private List<BackupProvider> backupProviders;
+
+    private static final List<Backup.Status> INVALID_BACKUP_STATUS = List.of(Backup.Status.Expunged, Backup.Status.Removed);
 
     public AsyncJobDispatcher getAsyncJobDispatcher() {
         return asyncJobDispatcher;
@@ -1089,6 +1092,20 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
     }
 
+    private Backup.Status validateBackupStatus(final String backupStatus) {
+        if (backupStatus == null) {
+            return null;
+        }
+
+        Backup.Status status = EnumUtils.getEnumIgnoreCase(Backup.Status.class, backupStatus);
+        if (status == null || INVALID_BACKUP_STATUS.contains(status)) {
+            throw new InvalidParameterValueException(String.format("Invalid backup status: %s. Valid values are: " +
+                    "Allocated, Queued, BackingUp, BackedUp, Error, Failed, Restoring.", backupStatus));
+        }
+
+        return status;
+    }
+
     @Override
     public Pair<List<Backup>, Integer> listBackups(final ListBackupsCmd cmd) {
         final Long id = cmd.getId();
@@ -1096,6 +1113,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         final String name = cmd.getName();
         final Long zoneId = cmd.getZoneId();
         final Long backupOfferingId = cmd.getBackupOfferingId();
+        final Backup.Status backupStatus = validateBackupStatus(cmd.getBackupStatus());
         final Account caller = CallContext.current().getCallingAccount();
         final String keyword = cmd.getKeyword();
         List<Long> permittedAccounts = new ArrayList<Long>();
@@ -1124,6 +1142,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("zoneId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
         sb.and("backupOfferingId", sb.entity().getBackupOfferingId(), SearchCriteria.Op.EQ);
+        sb.and("backupStatus", sb.entity().getStatus(), SearchCriteria.Op.EQ);
 
         if (keyword != null) {
             sb.and().op("keywordName", sb.entity().getName(), SearchCriteria.Op.LIKE);
@@ -1155,6 +1174,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (backupOfferingId != null) {
             sc.setParameters("backupOfferingId", backupOfferingId);
         }
+
+        sc.setParametersIfNotNull("backupStatus", backupStatus);
 
         if (keyword != null) {
             String keywordMatch = "%" + keyword + "%";
