@@ -119,7 +119,7 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.SOURCE_NAT_IP, type = CommandType.STRING, description = "Optional IPv4 address to assign to the public interface of the VPC router. " +
             "This address will be used as the Source NAT address for the Networks in this VPC. " +
-            "\nIf an address is given and it cannot be acquired, an error will be returned and the Network will not be implemented.",
+            "\nIf an address is given and it cannot be acquired, an error will be returned and the VPC will not be implemented.",
             since = "4.19")
     private String sourceNatIP;
 
