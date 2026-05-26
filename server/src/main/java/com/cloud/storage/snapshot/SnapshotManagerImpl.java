@@ -1634,9 +1634,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         boolean backupSnapToSecondary = isBackupSnapshotToSecondaryForZone(volume.getDataCenterId());
 
         StoragePoolType poolType = volume.getStoragePoolType();
-        boolean isClvmNgIncrementalCandidate = StoragePoolType.CLVM_NG == poolType
-                && kvmIncrementalSnapshot.valueIn(clusterId);
-        if ((isKvmAndFileBasedStorage || isClvmNgIncrementalCandidate) && backupSnapToSecondary) {
+
+        if ((isKvmAndFileBasedStorage) && backupSnapToSecondary) {
             DataStore imageStore = snapshotSrv.findSnapshotImageStore(snapshot);
             if (imageStore == null) {
                 throw new CloudRuntimeException(String.format("Could not find any secondary storage to allocate snapshot [%s].", snapshot));
@@ -1660,7 +1659,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             SnapshotInfo snapshotOnPrimary = snapshotStrategy.takeSnapshot(snapshot);
 
             if (backupSnapToSecondary) {
-                if (!isKvmAndFileBasedStorage && !isClvmNgIncrementalCandidate) {
+                if (!isKvmAndFileBasedStorage) {
                     backupSnapshotToSecondary(payload.getAsyncBackup(), snapshotStrategy, snapshotOnPrimary, payload.getZoneIds(), payload.getStoragePoolIds());
                     if (storagePool.getPoolType() == StoragePoolType.CLVM || storagePool.getPoolType() == StoragePoolType.CLVM_NG) {
                         _snapshotStoreDao.removeBySnapshotStore(snapshotId, snapshotOnPrimary.getDataStore().getId(), snapshotOnPrimary.getDataStore().getRole());
@@ -1860,7 +1859,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             payload.setLocationType(null);
         }
 
-        if ((isKvmAndFileBasedStorage || StoragePoolType.CLVM_NG == poolType) && kvmIncrementalSnapshot.valueIn(clusterId)) {
+        // CLVM_NG excluded: incremental snapshots not supported in this release (handled in takeSnapshot).
+        if (isKvmAndFileBasedStorage && kvmIncrementalSnapshot.valueIn(clusterId)) {
             payload.setKvmIncrementalSnapshot(true);
         }
     }

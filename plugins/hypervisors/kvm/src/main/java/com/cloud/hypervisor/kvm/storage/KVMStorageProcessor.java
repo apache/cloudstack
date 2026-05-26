@@ -2132,11 +2132,13 @@ public class KVMStorageProcessor implements StorageProcessor {
                 ObjectUtils.defaultIfNull(secondaryPool, primaryPool));
         try {
             // For CLVM_NG incremental snapshots, validate bitmap before proceeding
+            /*
             SnapshotObjectTO bitmapValidationResult = validateClvmNgBitmapAndFallbackIfNeeded(snapshotObjectTO, primaryPool,
                     secondaryPool, secondaryPoolUrl, snapshotName, volumeObjectTo, conn, wait);
             if (bitmapValidationResult != null) {
                 return bitmapValidationResult;
             }
+             */
 
             String vmName = String.format("DUMMY-VM-%s", snapshotName);
 
