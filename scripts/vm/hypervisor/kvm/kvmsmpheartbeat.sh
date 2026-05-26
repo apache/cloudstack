@@ -207,11 +207,13 @@ then
   exit 0
 elif [ "$cflag" == "1" ]
 then
-  /usr/bin/logger -t heartbeat "kvmsmpheartbeat.sh will reboot system because it was unable to write the heartbeat to the storage."
-  sync &
-  sleep 5
-  echo b > /proc/sysrq-trigger
-  exit $?
+  # Delegate the fence action to the shared helper so this script honours the
+  # kvm.heartbeat.fence.action property (hard-reboot / graceful-reboot /
+  # restart-agent / log-only / custom) like kvmheartbeat.sh and kvmspheartbeat.sh.
+  # Default (no property set) remains hard-reboot via sysrq-trigger.
+  # shellcheck disable=SC1091
+  . "$(dirname "$0")/kvmha-fence.sh"
+  fence_action "kvmsmpheartbeat.sh"
 else
   write_hbLog
   exit $?
