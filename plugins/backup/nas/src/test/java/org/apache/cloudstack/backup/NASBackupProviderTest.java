@@ -411,6 +411,15 @@ public class NASBackupProviderTest {
         Mockito.when(vm.getDataCenterId()).thenReturn(zoneId);
         Mockito.when(vm.getState()).thenReturn(VMInstanceVO.State.Running);
 
+        // Master switch defaults to false (opt-in by zone) — explicitly enable it for this
+        // test so we exercise the "no active_checkpoint_id" branch rather than short-circuit
+        // at the master-switch gate.
+        ReflectionTestUtils.setField(nasBackupProvider, "NASBackupIncrementalEnabled",
+                new org.apache.cloudstack.framework.config.ConfigKey<>("Advanced", Boolean.class,
+                        "nas.backup.incremental.enabled", "true",
+                        "test override — enabled", true,
+                        org.apache.cloudstack.framework.config.ConfigKey.Scope.Zone));
+
         Mockito.when(vmInstanceDetailsDao.findDetail(vmId, NASBackupChainKeys.VM_ACTIVE_CHECKPOINT_ID)).thenReturn(null);
 
         NASBackupProvider.ChainDecision decision = nasBackupProvider.decideChain(vm);
