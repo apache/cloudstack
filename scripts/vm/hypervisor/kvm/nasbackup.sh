@@ -607,8 +607,13 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# Perform Initial sanity checks
-sanity_checks
+# QEMU >= 4.2 and libvirt >= 7.2 are only required for backup-begin (incremental
+# checkpoints and per-bitmap exports). Legacy full-only backups, plus delete /
+# stats / rebase operations, run on older versions just fine. Gate the version
+# check to the paths that actually need it to preserve backward compatibility.
+if [ "$OP" = "backup" ] && [ -n "$MODE" ]; then
+  sanity_checks
+fi
 
 if [ "$OP" = "backup" ]; then
   STATE=$(virsh -c qemu:///system list | awk -v vm="$VM" '$2 == vm {print $3}')

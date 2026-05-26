@@ -436,11 +436,14 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
      * other providers can implement their own chain semantics without schema changes.
      */
     private void persistChainMetadata(Backup backup, ChainDecision decision, String bitmapFromAgent) {
-        // Prefer the bitmap name confirmed by the agent (BITMAP_CREATED= line). Fall back to
-        // what we asked it to create — they should match.
-        String bitmap = bitmapFromAgent != null ? bitmapFromAgent : decision.bitmapNew;
-        if (bitmap != null) {
-            backupDetailsDao.persist(new BackupDetailVO(backup.getId(), NASBackupChainKeys.BITMAP_NAME, bitmap, true));
+        // Only persist nas.bitmap_name when the agent confirmed it via BITMAP_CREATED=. If we
+        // fall back to decision.bitmapNew when the agent didn't emit BITMAP_CREATED= (e.g.,
+        // stopped-VM path where the qemu-img pre-seed failed, or running-VM path where libvirt
+        // backup-begin succeeded but the bitmap line wasn't surfaced for any reason), we'd
+        // anchor the next incremental on a bitmap that doesn't exist on the host. Better to
+        // leave it empty so the next backup sees no checkpoint and starts a fresh full chain.
+        if (bitmapFromAgent != null && !bitmapFromAgent.isEmpty()) {
+            backupDetailsDao.persist(new BackupDetailVO(backup.getId(), NASBackupChainKeys.BITMAP_NAME, bitmapFromAgent, true));
         }
         backupDetailsDao.persist(new BackupDetailVO(backup.getId(), NASBackupChainKeys.CHAIN_ID, decision.chainId, true));
         backupDetailsDao.persist(new BackupDetailVO(backup.getId(), NASBackupChainKeys.CHAIN_POSITION,
