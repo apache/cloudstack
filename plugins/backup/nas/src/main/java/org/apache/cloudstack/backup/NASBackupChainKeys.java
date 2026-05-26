@@ -36,7 +36,13 @@ public final class NASBackupChainKeys {
     /** Position within the chain: 0 for the full, 1 for the first incremental, and so on. */
     public static final String CHAIN_POSITION = "nas.chain_position";
 
-    /** Backup type marker: {@value #TYPE_FULL} or {@value #TYPE_INCREMENTAL}. Mirrors {@code backups.type} for fast lookup without a join. */
+    /**
+     * Backup type marker: {@value #TYPE_FULL} or {@value #TYPE_INCREMENTAL}.
+     * Stored in {@code backup_details} as a lowercase string for fast lookup without a join
+     * against {@code backups.type} (which is an upper-case Backup.Status enum value).
+     * NOTE: do NOT compare directly against {@code Backup.Status} string casing; use the
+     * constants below.
+     */
     public static final String TYPE = "nas.type";
 
     public static final String TYPE_FULL = "full";

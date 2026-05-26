@@ -100,11 +100,13 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
     ConfigKey<Boolean> NASBackupIncrementalEnabled = new ConfigKey<>("Advanced", Boolean.class,
             "nas.backup.incremental.enabled",
-            "true",
-            "Master switch for NAS incremental backups. When false, every NAS backup is taken as a full " +
-                    "regardless of nas.backup.full.every. Toggling this is safe at any time: switching off " +
-                    "forces the next backup to be a fresh full anchor (existing chains stay restorable), " +
-                    "switching back on resumes incrementals on the next full + incremental cycle.",
+            "false",
+            "Master switch for NAS incremental backups. Defaults to false so existing zones keep the " +
+                    "legacy full-only behavior on upgrade; opt in per-zone when ready to use chains. " +
+                    "When false, every NAS backup is taken as a full regardless of nas.backup.full.every. " +
+                    "Toggling this is safe at any time: switching off forces the next backup to be a fresh " +
+                    "full anchor (existing chains stay restorable), switching back on resumes incrementals " +
+                    "on the next full + incremental cycle.",
             true,
             ConfigKey.Scope.Zone,
             BackupFrameworkEnabled.key());
@@ -391,20 +393,38 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             return null;
         }
 
-        // Sanity: the current VM must have the same number of volumes. If it doesn't (volume
-        // added or removed since the parent), positional alignment is unsafe — fall back to
-        // full at the caller.
+        // Sanity 1: the current VM must have the same number of volumes. If it doesn't (volume
+        // added or removed since the parent), positional alignment is unsafe — caller falls back to full.
         List<VolumeVO> currentVols = volumeDao.findByInstance(vmId);
         if (currentVols == null || currentVols.size() != parentVols.size()) {
             return null;
         }
 
+        // Sanity 2: VolumeDao.findByInstance() has no ordering guarantee. Sort the current
+        // volumes by deviceId so positional comparison against parentVols (also deviceId-ordered
+        // at backup time) is meaningful.
+        List<VolumeVO> currentSorted = new ArrayList<>(currentVols);
+        currentSorted.sort(Comparator.comparing(Volume::getDeviceId));
+
+        // Sanity 3: verify each current volume's UUID matches the parent's recorded UUID at the
+        // same position. If any disk was detached + a different one attached in its place, the
+        // chain cannot be safely continued — force a full instead of silently rebasing onto the
+        // wrong parent file.
+        for (int i = 0; i < parentVols.size(); i++) {
+            String parentUuid = parentVols.get(i).getUuid();
+            String currentUuid = currentSorted.get(i).getUuid();
+            if (parentUuid == null || parentUuid.isEmpty()
+                    || currentUuid == null || !parentUuid.equals(currentUuid)) {
+                LOG.debug("Volume identity mismatch at position {} for VM {}: parent uuid {} vs current uuid {}. " +
+                        "Forcing a full backup to start a fresh chain.",
+                        i, vmId, parentUuid, currentUuid);
+                return null;
+            }
+        }
+
         List<String> paths = new ArrayList<>(parentVols.size());
         for (int i = 0; i < parentVols.size(); i++) {
             String volUuid = parentVols.get(i).getUuid();
-            if (volUuid == null || volUuid.isEmpty()) {
-                return null;
-            }
             String prefix = (i == 0) ? "root" : "datadisk";
             paths.add(dir + "/" + prefix + "." + volUuid + ".qcow2");
         }

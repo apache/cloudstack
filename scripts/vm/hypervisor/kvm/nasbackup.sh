@@ -237,17 +237,19 @@ XML
   # Start push backup, atomically registering the new checkpoint when applicable.
   local backup_begin=0
   if [[ $make_checkpoint -eq 1 ]]; then
-    if virsh -c qemu:///system backup-begin --domain $VM --backupxml $dest/backup.xml --checkpointxml $dest/checkpoint.xml 2>&1 > /dev/null; then
+    # Order matters: redirect stdout to /dev/null first, then merge stderr into stdout.
+    # The reversed `2>&1 > /dev/null` form leaves stderr pointing at the original tty.
+    if virsh -c qemu:///system backup-begin --domain $VM --backupxml $dest/backup.xml --checkpointxml $dest/checkpoint.xml > /dev/null 2>&1; then
       backup_begin=1;
     fi
   else
-    if virsh -c qemu:///system backup-begin --domain $VM --backupxml $dest/backup.xml 2>&1 > /dev/null; then
+    if virsh -c qemu:///system backup-begin --domain $VM --backupxml $dest/backup.xml > /dev/null 2>&1; then
       backup_begin=1;
     fi
   fi
 
   if [[ $thaw -eq 1 ]]; then
-    if ! response=$(virsh -c qemu:///system qemu-agent-command "$VM" '{"execute":"guest-fsfreeze-thaw"}' 2>&1 > /dev/null); then
+    if ! response=$(virsh -c qemu:///system qemu-agent-command "$VM" '{"execute":"guest-fsfreeze-thaw"}' 2>&1); then
       echo "Failed to thaw the filesystem for vm $VM: $response"
       cleanup
       exit 1
@@ -358,7 +360,9 @@ backup_stopped_vm() {
   # to full and signal the fallback so the orchestrator can record it as a full
   # in the chain.
   if [[ "$MODE" == "incremental" ]]; then
-    echo "INCREMENTAL_FALLBACK=full (VM stopped — incremental requires running VM)" >&2
+    # Emit on stdout so Script.executePipedCommands in LibvirtTakeBackupCommandWrapper
+    # can parse it and record the backup as FULL.
+    echo "INCREMENTAL_FALLBACK=full (VM stopped — incremental requires running VM)"
   fi
 
   mount_operation
@@ -404,8 +408,10 @@ backup_stopped_vm() {
   # Surface the bitmap name we created so the orchestrator can persist it as
   # the VM's active_checkpoint_id. Empty when sources weren't file-backed or
   # qemu-img bitmap failed — orchestrator handles either case.
+  # Stdout (not stderr) so Script.executePipedCommands in the Java wrapper
+  # can parse it — matches the backup_running_vm path.
   if [[ "$bitmap_seeded" == "1" ]]; then
-    echo "BITMAP_CREATED=$BITMAP_NEW" >&2
+    echo "BITMAP_CREATED=$BITMAP_NEW"
   fi
 
   ls -l --numeric-uid-gid $dest | awk '{print $5}'
@@ -505,12 +511,14 @@ cleanup() {
 function usage {
   echo ""
   echo "Usage: $0 -o <operation> -v|--vm <domain name> -t <storage type> -s <storage address> -m <mount options> -p <backup path> -d <disks path> -q|--quiesce <true|false>"
-  echo "         [-M|--mode <full|incremental>] [--bitmap-new <name>] [--bitmap-parent <name>] [--parent-path <path>]"
+  echo "         [-M|--mode <full|incremental>] [--bitmap-new <name>] [--bitmap-parent <name>] [--parent-paths <p1,p2,...>]"
   echo ""
   echo "Incremental backup options (running VMs only; requires QEMU >= 4.2 and libvirt >= 7.2):"
   echo "  -M|--mode full          Take a full backup AND create a checkpoint (--bitmap-new required) for future incrementals."
   echo "  -M|--mode incremental   Take an incremental backup since --bitmap-parent and create new checkpoint --bitmap-new."
-  echo "                          Requires --bitmap-parent, --bitmap-new, and --parent-path (parent backup file for rebase)."
+  echo "                          Requires --bitmap-parent, --bitmap-new, and --parent-paths (comma-separated list, one"
+  echo "                          parent qcow2 path per disk: root.<uuid>.qcow2, datadisk.<uuid>.qcow2, … same order"
+  echo "                          as -d|--disks)."
   echo "  Without -M, behaves as legacy full-only backup with no checkpoint creation."
   echo ""
   exit 1

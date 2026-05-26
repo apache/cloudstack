@@ -274,12 +274,24 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
     # repair, refuse-delete-full-with-children, and stopped-VM fallback.
     #
     # All tests set nas.backup.full.every to a small value (3) so a chain
-    # forms quickly without needing many backup iterations. They restore
-    # the original value at teardown.
+    # forms quickly without needing many backup iterations. The original
+    # zone value (whatever the test environment has configured) is captured
+    # before the test runs and restored verbatim in finally, so we don't
+    # leak config changes across tests on shared environments.
 
     def _set_full_every(self, value):
         Configurations.update(self.apiclient, name='nas.backup.full.every',
                               value=str(value), zoneid=self.zone.id)
+
+    def _get_full_every(self):
+        """Read the current zone-scoped (or global fallback) value of nas.backup.full.every."""
+        configs = Configurations.list(self.apiclient, name='nas.backup.full.every',
+                                      zoneid=self.zone.id)
+        if configs and len(configs) > 0 and configs[0].value is not None:
+            return configs[0].value
+        # Fall back to global default — Configurations.list returns the global value
+        # when no zone override exists. Defensive fallback to '10' (the framework default).
+        return '10'
 
     def _backup_type(self, backup):
         # Backup objects expose `type`; for chained backups it's "INCREMENTAL", else "FULL".
@@ -292,6 +304,7 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         FULL, INCREMENTAL, INCREMENTAL, FULL, INCREMENTAL, ...
         """
         self.backup_offering.assignOffering(self.apiclient, self.vm.id)
+        original_full_every = self._get_full_every()
         self._set_full_every(3)
         try:
             ssh_client_vm = self.vm.get_ssh_client(reconnect=True)
@@ -318,7 +331,7 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
             for b in reversed(created):
                 Backup.delete(self.apiclient, b.id)
         finally:
-            self._set_full_every(10)
+            self._set_full_every(original_full_every)
             self.backup_offering.removeOffering(self.apiclient, self.vm.id)
 
     @attr(tags=["advanced", "backup"], required_hardware="true")
@@ -328,6 +341,7 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         latest incremental and verify all three markers are present (chain flatten).
         """
         self.backup_offering.assignOffering(self.apiclient, self.vm.id)
+        original_full_every = self._get_full_every()
         self._set_full_every(5)
         try:
             ssh_client_vm = self.vm.get_ssh_client(reconnect=True)
@@ -365,7 +379,7 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
             for b in reversed(backups):
                 Backup.delete(self.apiclient, b.id)
         finally:
-            self._set_full_every(10)
+            self._set_full_every(original_full_every)
             self.backup_offering.removeOffering(self.apiclient, self.vm.id)
 
     @attr(tags=["advanced", "backup"], required_hardware="true")
@@ -376,6 +390,7 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         should still produce a working VM with all expected blocks.
         """
         self.backup_offering.assignOffering(self.apiclient, self.vm.id)
+        original_full_every = self._get_full_every()
         self._set_full_every(5)
         try:
             ssh_client_vm = self.vm.get_ssh_client(reconnect=True)
@@ -416,7 +431,7 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
             Backup.delete(self.apiclient, inc2.id)
             Backup.delete(self.apiclient, full.id)
         finally:
-            self._set_full_every(10)
+            self._set_full_every(original_full_every)
             self.backup_offering.removeOffering(self.apiclient, self.vm.id)
 
     @attr(tags=["advanced", "backup"], required_hardware="true")
@@ -426,6 +441,7 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         With forced=true it must succeed and remove the entire chain.
         """
         self.backup_offering.assignOffering(self.apiclient, self.vm.id)
+        original_full_every = self._get_full_every()
         self._set_full_every(5)
         try:
             Backup.create(self.apiclient, self.vm.id, "rdc_full")
@@ -449,7 +465,7 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
             remaining = Backup.list(self.apiclient, self.vm.id)
             self.assertIsNone(remaining, "Forced delete of FULL should remove the entire chain")
         finally:
-            self._set_full_every(10)
+            self._set_full_every(original_full_every)
             self.backup_offering.removeOffering(self.apiclient, self.vm.id)
 
     @attr(tags=["advanced", "backup"], required_hardware="true")
@@ -460,6 +476,7 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         new chain. The incrementalFallback flag should be reflected in backup.type=FULL.
         """
         self.backup_offering.assignOffering(self.apiclient, self.vm.id)
+        original_full_every = self._get_full_every()
         self._set_full_every(2)  # next backup after the first should be incremental
         try:
             Backup.create(self.apiclient, self.vm.id, "svf_first")
@@ -482,5 +499,5 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
             for b in reversed(backups):
                 Backup.delete(self.apiclient, b.id)
         finally:
-            self._set_full_every(10)
+            self._set_full_every(original_full_every)
             self.backup_offering.removeOffering(self.apiclient, self.vm.id)
