@@ -30,7 +30,7 @@
         show-icon
         :message="$t('message.ssvm.cert.untrusted')"
         :description="$t('message.ssvm.cert.trust.instructions')" />
-      <div class="action-button" style="margin-top: 16px">
+      <div :span="24" class="action-button">
         <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
         <a-button :href="ssvmOrigin" target="_blank" rel="noopener noreferrer">
           {{ $t('label.ssvm.open.cert.page') }}
