@@ -344,7 +344,7 @@
             </a-row>
             <a-form-item v-if="isVirtualRouterForAtLeastOneService" name="routerip" ref="routerip">
               <template #label>
-                <tooltip-label :title="$t('label.routerip')" :tooltip="apiParams.routerip.description"/>
+                <tooltip-label :title="$t('label.sharedrouterip')" :tooltip="apiParams.routerip.description"/>
               </template>
               <a-input
                 v-model:value="form.routerip"
@@ -420,7 +420,7 @@
             </a-row>
             <a-form-item v-if="isVirtualRouterForAtLeastOneService" name="routeripv6" ref="routeripv6">
               <template #label>
-                <tooltip-label :title="$t('label.routeripv6')" :tooltip="apiParams.routeripv6.description"/>
+                <tooltip-label :title="$t('label.sharedrouteripv6')" :tooltip="apiParams.routeripv6.description"/>
               </template>
               <a-input
                 v-model:value="form.routeripv6"

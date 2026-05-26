@@ -196,7 +196,7 @@
             ref="gateway"
             name="gateway">
             <template #label>
-              <tooltip-label :title="$t('label.gateway')" :tooltip="apiParams.gateway.description"/>
+              <tooltip-label :title="gatewayLabel" :tooltip="apiParams.gateway.description"/>
             </template>
             <a-input
              v-model:value="form.gateway"
@@ -412,6 +412,11 @@ export default {
         return sourcenatService && sourcenatService.length === 1
       }
       return false
+    },
+    gatewayLabel () {
+      return this.selectedNetworkOfferingSupportsSourceNat
+        ? this.$t('label.gateway.internal.routerip')
+        : this.$t('label.gateway')
     }
   },
   methods: {
