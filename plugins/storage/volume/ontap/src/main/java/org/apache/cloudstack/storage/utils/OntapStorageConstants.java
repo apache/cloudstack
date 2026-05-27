@@ -30,6 +30,9 @@ public class OntapStorageConstants {
 
     public static final String NFS = "nfs";
     public static final String ISCSI = "iscsi";
+
+    public static final String NFS_ENABLED = "nfs.enabled";
+    public static final String ISCSI_ENABLED = "iscsi.enabled";
     public static final String SIZE = "size";
     public static final String PROTOCOL = "protocol";
     public static final String SVM_NAME = "svmName";
