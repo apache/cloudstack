@@ -32,6 +32,7 @@ import java.util.Map;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.http.Header;
 import org.apache.http.NameValuePair;
 import org.apache.cloudstack.storage.datastore.adapter.ProviderAdapter;
@@ -491,16 +492,47 @@ public class FlashArrayAdapter implements ProviderAdapter {
     @Override
     public ProviderVolumeStorageStats getManagedStorageStats() {
         FlashArrayPod pod = getVolumeNamespace(this.pod);
-        // just in case
-        if (pod == null || pod.getFootprint() == 0) {
+        if (pod == null) {
             return null;
         }
         Long capacityBytes = pod.getQuotaLimit();
-        Long usedBytes = pod.getQuotaLimit() - (pod.getQuotaLimit() - pod.getFootprint());
+        if (capacityBytes == null || capacityBytes == 0) {
+            // Pod has no explicit quota set; report the array total physical
+            // capacity so the CloudStack allocator has a real ceiling to plan
+            // against rather than bailing out with a zero-capacity pool.
+            capacityBytes = getArrayTotalCapacity();
+        }
+        if (capacityBytes == null || capacityBytes == 0) {
+            return null;
+        }
+        Long usedBytes = pod.getFootprint();
+        if (usedBytes == null) {
+            usedBytes = 0L;
+        }
         ProviderVolumeStorageStats stats = new ProviderVolumeStorageStats();
         stats.setCapacityInBytes(capacityBytes);
         stats.setActualUsedInBytes(usedBytes);
         return stats;
+    }
+
+    private Long getArrayTotalCapacity() {
+        try {
+            FlashArrayList<Map<String, Object>> list = GET("/arrays?space=true",
+                    new TypeReference<FlashArrayList<Map<String, Object>>>() {
+                    });
+            if (list != null && CollectionUtils.isNotEmpty(list.getItems())) {
+                Object cap = list.getItems().get(0).get("capacity");
+                if (cap instanceof Number) {
+                    return ((Number) cap).longValue();
+                }
+            }
+        } catch (Exception e) {
+            logger.warn("Could not retrieve total capacity for FlashArray [{}] (pod [{}]): {}",
+                    this.url, this.pod, e.getMessage());
+            logger.debug("Stack trace for array total capacity lookup failure on FlashArray [{}] (pod [{}])",
+                    this.url, this.pod, e);
+        }
+        return null;
     }
 
     @Override
