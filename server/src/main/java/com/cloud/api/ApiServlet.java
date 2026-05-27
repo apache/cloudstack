@@ -177,7 +177,7 @@ public class ApiServlet extends HttpServlet {
                     "UnknownHostException when trying to lookup remote IP-Address", null,
                     HttpUtils.RESPONSE_TYPE_XML);
             HttpUtils.writeHttpResponse(resp, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                    HttpUtils.RESPONSE_TYPE_XML, ApiServer.JSONcontentType.value());
+                    HttpUtils.RESPONSE_TYPE_XML, ApiServer.JSONContentType.value());
             return;
         }
 
@@ -292,7 +292,7 @@ public class ApiServlet extends HttpServlet {
                             }
                         }
                     }
-                    HttpUtils.writeHttpResponse(resp, responseString, httpResponseCode, responseType, ApiServer.JSONcontentType.value());
+                    HttpUtils.writeHttpResponse(resp, responseString, httpResponseCode, responseType, ApiServer.JSONContentType.value());
                     return;
                 }
             } else {
@@ -350,7 +350,7 @@ public class ApiServlet extends HttpServlet {
                 setProjectContext(params);
                 setClientAddressForConsoleEndpointAccess(command, params, req);
                 final String response = apiServer.handleRequest(params, responseType, auditTrailSb);
-                HttpUtils.writeHttpResponse(resp, response != null ? response : "", HttpServletResponse.SC_OK, responseType, ApiServer.JSONcontentType.value());
+                HttpUtils.writeHttpResponse(resp, response != null ? response : "", HttpServletResponse.SC_OK, responseType, ApiServer.JSONContentType.value());
             } else {
                 if (session != null) {
                     invalidateHttpSession(session, String.format("request verification failed for %s from %s", userId, remoteAddress.getHostAddress()));
@@ -360,12 +360,12 @@ public class ApiServlet extends HttpServlet {
                 final String serializedResponse =
                         apiServer.getSerializedApiError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials and/or request signature", params,
                                 responseType);
-                HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType, ApiServer.JSONcontentType.value());
+                HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType, ApiServer.JSONContentType.value());
             }
         } catch (final ServerApiException se) {
             final String serializedResponseText = apiServer.getSerializedApiError(se, params, responseType);
             resp.setHeader("X-Description", se.getDescription());
-            HttpUtils.writeHttpResponse(resp, serializedResponseText, se.getErrorCode().getHttpCode(), responseType, ApiServer.JSONcontentType.value());
+            HttpUtils.writeHttpResponse(resp, serializedResponseText, se.getErrorCode().getHttpCode(), responseType, ApiServer.JSONContentType.value());
             auditTrailSb.append(" " + se.getErrorCode() + " " + se.getDescription());
         } catch (final Exception ex) {
             LOGGER.error("unknown exception writing api response", ex);
@@ -452,7 +452,7 @@ public class ApiServlet extends HttpServlet {
             if (apiAuthenticator != null) {
                 String responseString = apiAuthenticator.authenticate(command, params, session, remoteAddress, responseType, auditTrailSb, req, resp);
                 session.setAttribute(ApiConstants.IS_2FA_VERIFIED, true);
-                HttpUtils.writeHttpResponse(resp, responseString, HttpServletResponse.SC_OK, responseType, ApiServer.JSONcontentType.value());
+                HttpUtils.writeHttpResponse(resp, responseString, HttpServletResponse.SC_OK, responseType, ApiServer.JSONContentType.value());
                 verify2FA = true;
             } else {
                 LOGGER.error("Cannot find API authenticator while verifying 2FA");
@@ -484,7 +484,7 @@ public class ApiServlet extends HttpServlet {
             invalidateHttpSession(session, String.format("Unable to process the API request for %s from %s due to %s", userId, remoteAddress.getHostAddress(), errorMsg));
             auditTrailSb.append(" " + ApiErrorCode.UNAUTHORIZED2FA + " " + errorMsg);
             final String serializedResponse = apiServer.getSerializedApiError(ApiErrorCode.UNAUTHORIZED2FA.getHttpCode(), "Unable to process the API request due to :" + errorMsg, params, responseType);
-            HttpUtils.writeHttpResponse(resp, serializedResponse, ApiErrorCode.UNAUTHORIZED2FA.getHttpCode(), responseType, ApiServer.JSONcontentType.value());
+            HttpUtils.writeHttpResponse(resp, serializedResponse, ApiErrorCode.UNAUTHORIZED2FA.getHttpCode(), responseType, ApiServer.JSONContentType.value());
             verify2FA = false;
         }
 
@@ -513,7 +513,7 @@ public class ApiServlet extends HttpServlet {
                 LOGGER.info("missing command, ignoring request...");
                 auditTrailSb.append(" " + HttpServletResponse.SC_BAD_REQUEST + " " + "no command specified");
                 final String serializedResponse = apiServer.getSerializedApiError(HttpServletResponse.SC_BAD_REQUEST, "no command specified", params, responseType);
-                HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_BAD_REQUEST, responseType, ApiServer.JSONcontentType.value());
+                HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_BAD_REQUEST, responseType, ApiServer.JSONContentType.value());
                 return true;
             }
             final User user = entityMgr.findById(User.class, userId);
@@ -524,7 +524,7 @@ public class ApiServlet extends HttpServlet {
             auditTrailSb.append(" " + HttpServletResponse.SC_UNAUTHORIZED + " " + "unable to verify user credentials");
             final String serializedResponse =
                     apiServer.getSerializedApiError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials", params, responseType);
-            HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType, ApiServer.JSONcontentType.value());
+            HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType, ApiServer.JSONContentType.value());
             return false;
         }
         return true;
@@ -539,7 +539,7 @@ public class ApiServlet extends HttpServlet {
             auditTrailSb.append(" " + HttpServletResponse.SC_UNAUTHORIZED + " " + "unable to verify user credentials");
             final String serializedResponse =
                     apiServer.getSerializedApiError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials", params, responseType);
-            HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType, ApiServer.JSONcontentType.value());
+            HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType, ApiServer.JSONContentType.value());
             return true;
         }
         return false;
