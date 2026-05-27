@@ -451,6 +451,12 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                             if (logger.isDebugEnabled()) {
                                 logger.debug("Template {} uploaded successfully", tmpTemplate);
                             }
+                            try {
+                                templateService.replicateTemplateUpToCap(tmpTemplate.getId(), vo.getDataCenterId());
+                            } catch (Exception e) {
+                                logger.warn("Failed to schedule additional copies for uploaded template [{}] in zone [{}]: {}",
+                                        tmpTemplate.getUuid(), vo.getDataCenterId(), e.getMessage());
+                            }
                             break;
                         case IN_PROGRESS:
                             if (tmpTemplate.getState() == VirtualMachineTemplate.State.NotUploaded) {

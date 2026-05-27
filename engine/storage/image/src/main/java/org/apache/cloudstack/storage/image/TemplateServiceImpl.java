@@ -352,6 +352,48 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
     @Override
+    public void replicateTemplateUpToCap(long templateId, long zoneId) {
+        VMTemplateVO template = _templateDao.findById(templateId);
+        if (template == null) {
+            return;
+        }
+        List<DataStore> stores = _storeMgr.getImageStoresByScope(new ZoneScope(zoneId));
+        if (stores == null || stores.isEmpty()) {
+            return;
+        }
+        for (DataStore store : stores) {
+            if (hasActiveTemplateCopyOnStore(templateId, store.getId())) {
+                continue;
+            }
+            if (!canCopyTemplateToImageStore(templateId, zoneId)) {
+                break;
+            }
+            try {
+                storageOrchestrator.orchestrateTemplateCopyFromSecondaryStores(templateId, store);
+            } catch (Exception e) {
+                logger.warn("Failed to proactively replicate template [{}] to image store [{}] in zone [{}]: {}",
+                        template.getUniqueName(), store.getName(), zoneId, e.getMessage());
+            }
+        }
+    }
+
+    private boolean hasActiveTemplateCopyOnStore(long templateId, long storeId) {
+        List<TemplateDataStoreVO> rows = _vmTemplateStoreDao.listByTemplateStore(templateId, storeId);
+        if (rows == null) {
+            return false;
+        }
+        for (TemplateDataStoreVO row : rows) {
+            State st = row.getState();
+            Status ds = row.getDownloadState();
+            if (st != State.Failed && st != State.Destroyed
+                    && ds != Status.ABANDONED && ds != Status.DOWNLOAD_ERROR) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
     public void enforceSecStorageCopyLimit(long templateId, long zoneId) {
         VMTemplateVO template = _templateDao.findById(templateId);
         if (template == null) {

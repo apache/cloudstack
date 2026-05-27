@@ -1722,10 +1722,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         Account caller = CallContext.current().getCallingAccount();
         boolean kvmSnapshotOnlyInPrimaryStorage = false;
         SnapshotInfo snapInfo = null;
+        long zoneId = 0;
 
         try {
             TemplateInfo tmplInfo = _tmplFactory.getTemplate(templateId, DataStoreRole.Image);
-            long zoneId = 0;
             if (snapshotId != null) {
                 snapshot = _snapshotDao.findById(snapshotId);
                 if (command.getZoneId() == null) {
@@ -1865,6 +1865,12 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         if (privateTemplate != null) {
+            try {
+                _tmpltSvr.replicateTemplateUpToCap(privateTemplate.getId(), zoneId);
+            } catch (Exception e) {
+                logger.warn("Failed to schedule additional copies for template [{}] in zone [{}]: {}",
+                        privateTemplate.getUniqueName(), zoneId, e.getMessage());
+            }
             return privateTemplate;
         } else {
             throw new CloudRuntimeException("Failed to create a Template");

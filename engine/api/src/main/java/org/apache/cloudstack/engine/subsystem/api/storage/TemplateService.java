@@ -71,6 +71,8 @@ public interface TemplateService {
 
     boolean canCopyTemplateToImageStore(long templateId, long zoneId);
 
+    void replicateTemplateUpToCap(long templateId, long zoneId);
+
     void downloadBootstrapSysTemplate(DataStore store);
 
     void addSystemVMTemplatesToSecondary(DataStore store);
