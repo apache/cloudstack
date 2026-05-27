@@ -2092,7 +2092,7 @@ public class KVMStorageProcessor implements StorageProcessor {
 
         logger.debug("Rebasing snapshot [{}] with parent [{}].", snapshotName, parentSnapshotPath);
 
-        int snapshotTimeoutInMillis = wait * 1000;
+        long snapshotTimeoutInMillis = wait * 1000L;
         try {
             QemuImg qemuImg = new QemuImg(snapshotTimeoutInMillis);
             qemuImg.rebase(snapshotFile, parentSnapshotFile, PhysicalDiskFormat.QCOW2.toString(), false);
@@ -2105,7 +2105,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         }
     }
 
-    private void retryRebase(String snapshotName, int waitInMilliseconds, Exception e, QemuImgFile snapshotFile, QemuImgFile parentSnapshotFile) {
+    private void retryRebase(String snapshotName, long waitInMilliseconds, Exception e, QemuImgFile snapshotFile, QemuImgFile parentSnapshotFile) {
         logger.warn("Libvirt still has not released the lock, will wait [{}] milliseconds and try again later.", incrementalSnapshotRetryRebaseWait);
         try {
             Thread.sleep(incrementalSnapshotRetryRebaseWait);
