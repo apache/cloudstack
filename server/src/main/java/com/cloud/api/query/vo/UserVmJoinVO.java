@@ -207,6 +207,9 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "template_format")
     private Storage.ImageFormat templateFormat;
 
+    @Column(name = "template_extension_id")
+    private Long templateExtensionId;
+
     @Column(name = "password_enabled")
     private boolean passwordEnabled;
 
@@ -710,6 +713,10 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     public Storage.ImageFormat getTemplateFormat() {
         return templateFormat;
+    }
+
+    public Long getTemplateExtensionId() {
+        return templateExtensionId;
     }
 
     public boolean isPasswordEnabled() {

@@ -318,6 +318,11 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
         return false;
     }
 
+    @Override
+    public boolean executeUserRequest(long hostId, Event event, boolean isForced, boolean isForceDeleteStorage) throws AgentUnavailableException {
+        return false;
+    }
+
     /* (non-Javadoc)
      * @see com.cloud.resource.ResourceManager#resourceStateTransitTo(com.cloud.host.Host, com.cloud.resource.ResourceState.Event, long)
      */

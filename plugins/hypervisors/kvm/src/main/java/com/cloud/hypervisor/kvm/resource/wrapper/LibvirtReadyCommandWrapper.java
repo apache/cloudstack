@@ -34,6 +34,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.script.Script;
+import org.apache.commons.lang3.StringUtils;
 
 @ResourceWrapper(handles =  ReadyCommand.class)
 public final class LibvirtReadyCommandWrapper extends CommandWrapper<ReadyCommand, Answer, LibvirtComputingResource> {
@@ -50,6 +51,9 @@ public final class LibvirtReadyCommandWrapper extends CommandWrapper<ReadyComman
         if (libvirtComputingResource.hostSupportsInstanceConversion()) {
             hostDetails.put(Host.HOST_VIRTV2V_VERSION, libvirtComputingResource.getHostVirtV2vVersion());
         }
+        hostDetails.put(Host.HOST_VDDK_SUPPORT, Boolean.toString(libvirtComputingResource.hostSupportsVddk()));
+        hostDetails.put(Host.HOST_VDDK_LIB_DIR, StringUtils.defaultString(libvirtComputingResource.getVddkLibDir()));
+        hostDetails.put(Host.HOST_VDDK_VERSION, StringUtils.defaultString(libvirtComputingResource.getVddkVersion()));
 
         if (libvirtComputingResource.hostSupportsOvfExport()) {
             hostDetails.put(Host.HOST_OVFTOOL_VERSION, libvirtComputingResource.getHostOvfToolVersion());

@@ -170,6 +170,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         CountSnapshotsByAccount.select(null, Func.COUNT, null);
         CountSnapshotsByAccount.and("account", CountSnapshotsByAccount.entity().getAccountId(), SearchCriteria.Op.EQ);
         CountSnapshotsByAccount.and("status", CountSnapshotsByAccount.entity().getState(), SearchCriteria.Op.NIN);
+        CountSnapshotsByAccount.and("snapshotTypeNEQ", CountSnapshotsByAccount.entity().getSnapshotType(), SearchCriteria.Op.NIN);
         CountSnapshotsByAccount.and("removed", CountSnapshotsByAccount.entity().getRemoved(), SearchCriteria.Op.NULL);
         CountSnapshotsByAccount.done();
 
@@ -220,6 +221,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         SearchCriteria<Long> sc = CountSnapshotsByAccount.create();
         sc.setParameters("account", accountId);
         sc.setParameters("status", State.Error, State.Destroyed);
+        sc.setParameters("snapshotTypeNEQ", Snapshot.Type.GROUP.ordinal());
         return customSearch(sc, null).get(0);
     }
 

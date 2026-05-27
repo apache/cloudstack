@@ -67,12 +67,14 @@ import org.w3c.dom.NodeList;
 
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.HttpClientCloudStackUserAgent;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
 public class UriUtils {
 
     protected static Logger LOGGER = LogManager.getLogger(UriUtils.class);
+    public static final String USER_AGENT = "User-Agent";
 
     public static String formNfsUri(String host, String path) {
         try {
@@ -227,6 +229,7 @@ public class UriUtils {
                 URI uri = new URI(url);
                 httpConn = (HttpURLConnection)uri.toURL().openConnection();
                 httpConn.setRequestMethod(method);
+                httpConn.setRequestProperty(USER_AGENT, HttpClientCloudStackUserAgent.CLOUDSTACK_USER_AGENT);
                 httpConn.setConnectTimeout(2000);
                 httpConn.setReadTimeout(5000);
                 httpConn.setInstanceFollowRedirects(Boolean.TRUE.equals(followRedirect));
