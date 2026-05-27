@@ -187,8 +187,6 @@ XML
           exit 1
         fi
       fi
-      # Marker for the orchestrator: this incremental is larger because the bitmap was rebuilt.
-      echo "BITMAP_RECREATED=$BITMAP_PARENT"
       rm -f $dest/recreate-checkpoint.xml
     fi
   fi

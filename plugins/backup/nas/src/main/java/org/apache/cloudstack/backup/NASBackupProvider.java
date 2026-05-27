@@ -210,9 +210,8 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         final String bitmapNew;
         final String bitmapParent;    // null for full
         // Per-volume parent backup file paths, one per current VM volume in deviceId order.
-        // null/empty for full. Replaces the single parentPath field — each volume needs its
-        // own parent file because backup files are named after each volume's own UUID
-        // (root.<uuid>.qcow2 / datadisk.<uuid>.qcow2), abh1sar review at line 340.
+        // null/empty for full. Each volume needs its own parent file because backup files
+        // are named after each volume's own UUID (root.<uuid>.qcow2 / datadisk.<uuid>.qcow2).
         final List<String> parentPaths;
         final String chainId;         // chain identifier this backup belongs to
         final int chainPosition;      // 0 for full, N for the Nth incremental in the chain
@@ -288,14 +287,13 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             return ChainDecision.fullStart(newBitmap);
         }
 
-        // 2. Find the latest BackedUp backup of this VM whose BITMAP_NAME matches the VM's
-        //    active_checkpoint_id. Only that backup is a safe parent — any earlier backup
-        //    would have a bitmap that QEMU may have rotated out. Per the review:
-        //      "The latest backup should have the bitmap_name equal to the VM's
-        //       active_checkpoint_id which will become the parent backup. If not, force full."
-        Backup parent = findLatestBackedUpBackupWithBitmap(vm.getId(), activeCheckpoint);
-        if (parent == null) {
-            LOG.debug("VM {} has active_checkpoint_id={} but no matching backup found — forcing full",
+        // 2. The most-recent BackedUp backup is the only safe parent — after restore the
+        //    next backup is always a fresh full, so anything older has a rotated-out bitmap.
+        //    If the latest backup's bitmap doesn't match the VM's active_checkpoint_id, the
+        //    chain is broken: force a full.
+        Backup parent = findLatestBackedUpBackup(vm.getId());
+        if (parent == null || !activeCheckpoint.equals(readDetail(parent, NASBackupChainKeys.BITMAP_NAME))) {
+            LOG.debug("VM {} latest backup does not match active_checkpoint_id={} — forcing full",
                     vm.getInstanceName(), activeCheckpoint);
             return ChainDecision.fullStart(newBitmap);
         }
@@ -340,24 +338,19 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     }
 
     /**
-     * Locate the most-recent {@code BackedUp} backup for {@code vmId} whose bitmap name equals
-     * {@code bitmapName}. Used by {@link #decideChain} to anchor the next incremental.
+     * Locate the most-recent {@code BackedUp} backup for {@code vmId}. The chain invariant
+     * guarantees the latest backup is the only valid incremental parent — after restore the
+     * next backup is always a fresh full, and {@link #decideChain} checks the bitmap matches.
      */
-    private Backup findLatestBackedUpBackupWithBitmap(long vmId, String bitmapName) {
+    private Backup findLatestBackedUpBackup(long vmId) {
         List<Backup> history = backupDao.listByVmId(null, vmId);
         if (history == null || history.isEmpty()) {
             return null;
         }
-        history.sort(Comparator.comparing(Backup::getDate).reversed());
-        for (Backup b : history) {
-            if (!Backup.Status.BackedUp.equals(b.getStatus())) {
-                continue;
-            }
-            if (bitmapName.equals(readDetail(b, NASBackupChainKeys.BITMAP_NAME))) {
-                return b;
-            }
-        }
-        return null;
+        return history.stream()
+                .filter(b -> Backup.Status.BackedUp.equals(b.getStatus()))
+                .max(Comparator.comparing(Backup::getDate))
+                .orElse(null);
     }
 
     private String readDetail(Backup backup, String key) {
@@ -372,10 +365,12 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
      *   first  disk -> {@code <backupPath>/root.<volUuid>.qcow2}
      *   others      -> {@code <backupPath>/datadisk.<volUuid>.qcow2}
      *
-     * Returns {@code null} if the parent's stored volume list can't be aligned with the
-     * current VM's volumes (count mismatch / different volume identities). In that case the
-     * caller should force a fresh full so we don't accidentally rebase a data disk onto the
-     * root parent — exactly the bug abh1sar flagged at line 340.
+     * Returns {@code null} if the parent's stored volume count doesn't match the current VM's
+     * volume count. Volume attach/detach is blocked while a VM is assigned to a backup offering;
+     * if the offering was removed and re-assigned the active checkpoint is cleared in
+     * {@link #removeVMFromBackupOffering}, so this method doesn't need to revalidate volume
+     * identities — a count mismatch is the only way to reach this branch with a non-null
+     * active_checkpoint_id.
      */
     private List<String> composeParentBackupPaths(Backup parent, long vmId) {
         // backupPath is stored as externalId by createBackupObject — e.g.
@@ -385,43 +380,18 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             return null;
         }
 
-        // Read the parent's backed-up volume list (uuid order = deviceId order at the time
-        // the parent was taken). The script names files as root.<uuid>.qcow2 for the first
-        // entry and datadisk.<uuid>.qcow2 for subsequent entries — match that here.
         List<Backup.VolumeInfo> parentVols = parent.getBackedUpVolumes();
         if (parentVols == null || parentVols.isEmpty()) {
             return null;
         }
 
-        // Sanity 1: the current VM must have the same number of volumes. If it doesn't (volume
-        // added or removed since the parent), positional alignment is unsafe — caller falls back to full.
         List<VolumeVO> currentVols = volumeDao.findByInstance(vmId);
         if (currentVols == null || currentVols.size() != parentVols.size()) {
             return null;
         }
 
-        // Sanity 2: VolumeDao.findByInstance() has no ordering guarantee. Sort the current
-        // volumes by deviceId so positional comparison against parentVols (also deviceId-ordered
-        // at backup time) is meaningful.
-        List<VolumeVO> currentSorted = new ArrayList<>(currentVols);
-        currentSorted.sort(Comparator.comparing(Volume::getDeviceId));
-
-        // Sanity 3: verify each current volume's UUID matches the parent's recorded UUID at the
-        // same position. If any disk was detached + a different one attached in its place, the
-        // chain cannot be safely continued — force a full instead of silently rebasing onto the
-        // wrong parent file.
-        for (int i = 0; i < parentVols.size(); i++) {
-            String parentUuid = parentVols.get(i).getUuid();
-            String currentUuid = currentSorted.get(i).getUuid();
-            if (parentUuid == null || parentUuid.isEmpty()
-                    || currentUuid == null || !parentUuid.equals(currentUuid)) {
-                LOG.debug("Volume identity mismatch at position {} for VM {}: parent uuid {} vs current uuid {}. " +
-                        "Forcing a full backup to start a fresh chain.",
-                        i, vmId, parentUuid, currentUuid);
-                return null;
-            }
-        }
-
+        // parentVols is in deviceId order at the time the parent was taken. The script names
+        // files as root.<uuid>.qcow2 for the first volume and datadisk.<uuid>.qcow2 for the rest.
         List<String> paths = new ArrayList<>(parentVols.size());
         for (int i = 0; i < parentVols.size(); i++) {
             String volUuid = parentVols.get(i).getUuid();
@@ -448,7 +418,8 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         backupDetailsDao.persist(new BackupDetailVO(backup.getId(), NASBackupChainKeys.CHAIN_ID, decision.chainId, true));
         backupDetailsDao.persist(new BackupDetailVO(backup.getId(), NASBackupChainKeys.CHAIN_POSITION,
                 String.valueOf(decision.chainPosition), true));
-        backupDetailsDao.persist(new BackupDetailVO(backup.getId(), NASBackupChainKeys.TYPE, decision.mode, true));
+        // Backup full-vs-incremental type lives on backup.type (set by takeBackup) — single
+        // source of truth. Not duplicated into backup_details.
         if (decision.isIncremental()) {
             // Resolve the parent backup's UUID so restore can walk the chain by id, not by path.
             String parentUuid = lookupParentBackupUuid(backup.getVmId(), decision.bitmapParent);
@@ -589,12 +560,6 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             backupVO.setBackedUpVolumes(backupManager.createVolumeInfoFromVolumes(volumes));
             if (backupDao.update(backupVO.getId(), backupVO)) {
                 persistChainMetadata(backupVO, effective, answer.getBitmapCreated());
-                if (answer.getBitmapRecreated() != null) {
-                    backupDetailsDao.persist(new BackupDetailVO(backupVO.getId(),
-                            NASBackupChainKeys.BITMAP_RECREATED, answer.getBitmapRecreated(), true));
-                    logger.info("NAS incremental for VM {} recreated parent bitmap {} (likely VM was restarted since last backup)",
-                            vm.getInstanceName(), answer.getBitmapRecreated());
-                }
                 // Pin the VM's active_checkpoint_id to whichever bitmap the agent actually
                 // created. This is the only valid parent for the next incremental (see
                 // decideChain). For the stopped-VM offline path BITMAP_CREATED is null —
@@ -890,7 +855,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
         // No live children — physically delete this backup, then walk up the chain and
         // collect any ancestors that were left in delete-pending state.
-        return deleteBackupAndSweepPendingAncestors(backup, backupRepository, host);
+        return deleteLeafBackupAndSweepPendingAncestors(backup, backupRepository, host);
     }
 
     /**
@@ -985,16 +950,22 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     }
 
     /**
-     * Physically delete {@code backup}, then walk up the chain while each ancestor is in
-     * delete-pending state with no other live children. Mirrors the snapshot subsystem
-     * pattern: once a leaf is gone, garbage-collect any tombstoned parents.
+     * Physically delete the leaf {@code backup}, then walk up the chain while each ancestor
+     * is in delete-pending state. Mirrors the snapshot subsystem pattern: once a leaf is
+     * gone, garbage-collect any tombstoned parents.
+     *
+     * <p>Caller must guarantee {@code backup} is a leaf (no live children). Each tombstoned
+     * ancestor is by definition childless once its sole child is deleted here, so no extra
+     * live-children check is needed inside the loop.
      */
-    private boolean deleteBackupAndSweepPendingAncestors(Backup backup, BackupRepository repo, Host host) {
+    private boolean deleteLeafBackupAndSweepPendingAncestors(Backup backup, BackupRepository repo, Host host) {
+        // Record the parent BEFORE the delete — deleteBackupFileAndRow removes the backup row,
+        // after which findChainParent can't resolve PARENT_BACKUP_ID.
+        Backup parent = findChainParent(backup);
         if (!deleteBackupFileAndRow(backup, repo, host)) {
             return false;
         }
-        Backup parent = findChainParent(backup);
-        while (parent != null && isDeletePending(parent) && findLiveChildren(parent).isEmpty()) {
+        while (parent != null && isDeletePending(parent)) {
             Backup nextParent = findChainParent(parent);
             if (!deleteBackupFileAndRow(parent, repo, host)) {
                 // Stop the sweep; the rest of the tombstoned chain will be collected on a
@@ -1007,52 +978,54 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     }
 
     /**
-     * Forced delete: remove this backup plus every descendant, leaf-first. Used when the
-     * caller explicitly passes {@code forced=true} and wants the whole subtree gone now.
+     * Forced delete of {@code root}'s entire chain, leaf-first. NAS backups form a linear
+     * chain (full → inc → inc → …), not a tree, so we don't need BFS — find the tail
+     * (highest {@code CHAIN_POSITION} for {@code root}'s {@code CHAIN_ID}) and delete down.
+     * Each {@code rm} runs against a chain that still resolves.
      */
     private boolean cascadeDeleteSubtree(Backup root, BackupRepository repo, Host host) {
-        List<Backup> subtree = collectSubtree(root);
-        // Sort by chain_position descending so leaves go first — this keeps every rm
-        // operating on a chain that still resolves, even if the user is watching mid-flight.
-        subtree.sort(Comparator.comparingInt((Backup b) -> chainPosition(b)).reversed());
-        boolean ok = true;
-        for (Backup victim : subtree) {
-            if (!deleteBackupFileAndRow(victim, repo, host)) {
-                ok = false;
-                break;
-            }
+        Backup tail = findChainTail(root);
+        if (tail == null) {
+            return false;
         }
-        return ok;
+        // Walk leaf → root via PARENT_BACKUP_ID, deleting unconditionally. We re-fetch parent
+        // before each delete because deleteBackupFileAndRow removes the backup row.
+        Backup current = tail;
+        while (current != null) {
+            Backup nextParent = findChainParent(current);
+            if (!deleteBackupFileAndRow(current, repo, host)) {
+                return false;
+            }
+            current = nextParent;
+        }
+        return true;
     }
 
     /**
-     * Collect {@code root} plus every transitive child in the same chain. BFS-style.
+     * Return the backup with the highest {@code CHAIN_POSITION} sharing {@code root}'s
+     * {@code CHAIN_ID}. Returns {@code root} if it has no chain metadata or is itself the tail.
      */
-    private List<Backup> collectSubtree(Backup root) {
-        List<Backup> result = new ArrayList<>();
-        result.add(root);
-        int idx = 0;
-        while (idx < result.size()) {
-            Backup cur = result.get(idx++);
-            // findLiveChildren skips delete-pending — for forced cascade we want them too.
-            String parentUuid = cur.getUuid();
-            String chainId = readDetail(cur, NASBackupChainKeys.CHAIN_ID);
-            if (parentUuid == null || chainId == null) {
+    private Backup findChainTail(Backup root) {
+        String chainId = readDetail(root, NASBackupChainKeys.CHAIN_ID);
+        if (chainId == null) {
+            return root;
+        }
+        Backup tail = root;
+        int tailPos = chainPosition(root);
+        for (Backup b : backupDao.listByVmId(null, root.getVmId())) {
+            if (b.getId() == root.getId()) {
                 continue;
             }
-            for (Backup b : backupDao.listByVmId(null, cur.getVmId())) {
-                if (b.getId() == cur.getId()) {
-                    continue;
-                }
-                if (!chainId.equals(readDetail(b, NASBackupChainKeys.CHAIN_ID))) {
-                    continue;
-                }
-                if (parentUuid.equals(readDetail(b, NASBackupChainKeys.PARENT_BACKUP_ID))) {
-                    result.add(b);
-                }
+            if (!chainId.equals(readDetail(b, NASBackupChainKeys.CHAIN_ID))) {
+                continue;
+            }
+            int pos = chainPosition(b);
+            if (pos > tailPos) {
+                tail = b;
+                tailPos = pos;
             }
         }
-        return result;
+        return tail;
     }
 
     private int chainPosition(Backup b) {
@@ -1095,6 +1068,11 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
     @Override
     public boolean removeVMFromBackupOffering(VirtualMachine vm) {
+        // Clear the VM's active checkpoint so any future re-assignment to a backup offering
+        // starts a fresh chain. Without this, a detach-volume + attach-different-volume cycle
+        // while the offering is unassigned would lead to the next backup trying to rebase
+        // onto a stale parent (different volume identity, same VM id).
+        clearVmActiveCheckpoint(vm.getId());
         return true;
     }
 

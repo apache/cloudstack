@@ -37,19 +37,12 @@ public final class NASBackupChainKeys {
     public static final String CHAIN_POSITION = "nas.chain_position";
 
     /**
-     * Backup type marker: {@value #TYPE_FULL} or {@value #TYPE_INCREMENTAL}.
-     * Stored in {@code backup_details} as a lowercase string for fast lookup without a join
-     * against {@code backups.type} (which is an upper-case Backup.Status enum value).
-     * NOTE: do NOT compare directly against {@code Backup.Status} string casing; use the
-     * constants below.
+     * In-memory chain-mode sentinels used by {@code ChainDecision.mode}. The persisted
+     * full-vs-incremental backup type lives on the {@code backup.type} column (set in
+     * {@code takeBackup}) — single source of truth. Not duplicated into backup_details.
      */
-    public static final String TYPE = "nas.type";
-
     public static final String TYPE_FULL = "full";
     public static final String TYPE_INCREMENTAL = "incremental";
-
-    /** Set to the bitmap name when this incremental had to recreate its parent bitmap on the host (informational; this incremental is larger than usual). */
-    public static final String BITMAP_RECREATED = "nas.bitmap_recreated";
 
     /**
      * Tombstone key stored in {@code backup_details} when a backup is requested for deletion

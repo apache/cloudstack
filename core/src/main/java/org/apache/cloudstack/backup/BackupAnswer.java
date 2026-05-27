@@ -35,11 +35,6 @@ public class BackupAnswer extends Answer {
     // Set when an incremental was requested but the agent had to fall back to a full
     // (e.g. VM was stopped). Provider should record this backup as type=full.
     private Boolean incrementalFallback;
-    // Set when the agent had to recreate the parent bitmap before this incremental
-    // (e.g. CloudStack rebuilt the domain XML on the previous VM start, losing bitmaps).
-    // The first incremental after a recreate is larger than usual; subsequent
-    // incrementals return to normal size. Informational — recorded in backup_details.
-    private String bitmapRecreated;
 
     public BackupAnswer(final Command command, final boolean success, final String details) {
         super(command, success, details);
@@ -96,11 +91,4 @@ public class BackupAnswer extends Answer {
         this.incrementalFallback = incrementalFallback;
     }
 
-    public String getBitmapRecreated() {
-        return bitmapRecreated;
-    }
-
-    public void setBitmapRecreated(String bitmapRecreated) {
-        this.bitmapRecreated = bitmapRecreated;
-    }
 }
