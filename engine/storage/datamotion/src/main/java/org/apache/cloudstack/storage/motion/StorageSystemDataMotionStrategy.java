@@ -37,6 +37,7 @@ import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.clvm.ClvmPoolManager;
+import org.apache.cloudstack.storage.clvm.command.ClvmLockTransferCommand;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
@@ -2027,6 +2028,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         String errMsg = null;
         boolean success = false;
         Map<VolumeInfo, VolumeInfo> srcVolumeInfoToDestVolumeInfo = new HashMap<>();
+        List<VolumeInfo> samePoolClvmVolumes = new ArrayList<>();
 
         try {
             if (srcHost.getHypervisorType() != HypervisorType.KVM) {
@@ -2053,6 +2055,13 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
                 // do not initiate migration for the same PowerFlex/ScaleIO pool
                 if (sourceStoragePool.getId() == destStoragePool.getId() && sourceStoragePool.getPoolType() == Storage.StoragePoolType.PowerFlex) {
+                    continue;
+                }
+
+                if (sourceStoragePool.getId() == destStoragePool.getId() &&
+                        ClvmPoolManager.isClvmPoolType(destStoragePool.getPoolType())) {
+                    logger.info("Same-pool CLVM migration for volume [{}]: skipping data copy.", srcVolumeInfo.getUuid());
+                    samePoolClvmVolumes.add(srcVolumeInfo);
                     continue;
                 }
 
@@ -2146,6 +2155,23 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 }
             } catch (final OperationTimedoutException e) {
                 throw new AgentUnavailableException("Operation timed out", destHost.getId());
+            }
+
+            for (VolumeInfo vol : samePoolClvmVolumes) {
+                StoragePoolVO samePoolClvmPool = _storagePoolDao.findById(vol.getPoolId());
+                String vgName = samePoolClvmPool.getPath();
+                if (vgName.startsWith("/")) vgName = vgName.substring(1);
+                String lvPath = String.format("/dev/%s/%s", vgName, vol.getPath());
+                logger.info("Activating CLVM volume [{}] in shared mode on dest host [{}] for same-pool migration.",
+                        vol.getUuid(), destHost.getId());
+                Answer activateAnswer = agentManager.send(destHost.getId(),
+                        new ClvmLockTransferCommand(ClvmLockTransferCommand.Operation.ACTIVATE_SHARED, lvPath, vol.getUuid()));
+                if (activateAnswer == null || !activateAnswer.getResult()) {
+                    throw new CloudRuntimeException(String.format(
+                            "Failed to activate CLVM volume [%s] in shared mode on dest host [%s]: %s",
+                            vol.getUuid(), destHost.getId(),
+                            activateAnswer != null ? activateAnswer.getDetails() : "null answer"));
+                }
             }
 
             VMInstanceVO vm = _vmDao.findById(vmTO.getId());

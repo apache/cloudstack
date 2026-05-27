@@ -1675,7 +1675,18 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             for (Map.Entry<Volume, StoragePool> entry : volumeToPool.entrySet()) {
                 Volume volume = entry.getKey();
                 StoragePool destPool = entry.getValue();
-                updateClvmLockHostAfterMigration(volume, destPool, "vm-migrated");
+                StoragePoolVO srcPool = _storagePoolDao.findById(volume.getPoolId());
+                if (srcPool != null && srcPool.getId() == destPool.getId() &&
+                        ClvmPoolManager.isClvmPoolType(srcPool.getPoolType())) {
+                    if (!clvmPoolManager.transferClvmVolumeLock(volume.getUuid(), volume.getId(),
+                            volume.getPath(), srcPool, srcHost.getId(), destHost.getId())) {
+                        throw new CloudRuntimeException(String.format(
+                                "Failed to transfer CLVM lock for volume [%s] to destination host [%s].",
+                                volume.getUuid(), destHost.getId()));
+                    }
+                } else {
+                    updateClvmLockHostAfterMigration(volume, destPool, "vm-migrated");
+                }
             }
         } catch (InterruptedException |  ExecutionException e) {
             logger.error("Failed to migrate VM [{}] along with its volumes due to [{}].", vm, e.getMessage());
