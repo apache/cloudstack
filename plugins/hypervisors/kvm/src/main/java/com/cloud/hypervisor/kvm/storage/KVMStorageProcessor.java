@@ -2061,7 +2061,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         QemuImgFile destFile = new QemuImgFile(snapshotPath);
         destFile.setFormat(PhysicalDiskFormat.QCOW2);
 
-        QemuImg q = new QemuImg(wait * 1000);
+        QemuImg q = new QemuImg(wait * 1000L);
         q.convert(srcFile, destFile, options, qemuObjects, qemuImageOpts, null, true);
     }
 
