@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.resource;
 
+import com.cloud.offering.NetworkOffering;
 import org.apache.cloudstack.agent.api.NetrisCommand;
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -99,5 +100,9 @@ public class NetrisResourceObjectUtils {
             }
         }
         return stringBuilder.toString();
+    }
+
+    public static NetworkOffering.NetworkMode getNetworkMode(NetworkOffering.NetworkMode mode) {
+        return Objects.isNull(mode) ? NetworkOffering.NetworkMode.NATTED : mode;
     }
 }

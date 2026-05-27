@@ -53,6 +53,7 @@ import com.cloud.vm.VirtualMachineProfile;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.resource.NetrisResourceObjectUtils;
 
 import javax.inject.Inject;
 import java.util.Objects;
@@ -77,10 +78,11 @@ public class NetrisGuestNetworkGuru  extends GuestNetworkGuru implements Network
     @Override
     public boolean canHandle(NetworkOffering offering, DataCenter.NetworkType networkType,
                              PhysicalNetwork physicalNetwork) {
+        NetworkOffering.NetworkMode networkMode = NetrisResourceObjectUtils.getNetworkMode(offering.getNetworkMode());
         return networkType == DataCenter.NetworkType.Advanced && isMyTrafficType(offering.getTrafficType())
-                && isMyIsolationMethod(physicalNetwork) && (NetworkOffering.NetworkMode.ROUTED.equals(offering.getNetworkMode())
+                && isMyIsolationMethod(physicalNetwork) && (NetworkOffering.NetworkMode.ROUTED.equals(networkMode)
                 || (networkOfferingServiceMapDao.isProviderForNetworkOffering(
-                offering.getId(), Network.Provider.Netris) && NetworkOffering.NetworkMode.NATTED.equals(offering.getNetworkMode()))
+                offering.getId(), Network.Provider.Netris) && NetworkOffering.NetworkMode.NATTED.equals(networkMode))
                 || (Network.GuestType.L2.equals(offering.getGuestType())));
     }
 
@@ -271,8 +273,8 @@ public class NetrisGuestNetworkGuru  extends GuestNetworkGuru implements Network
         }
 
         NetworkOfferingVO networkOfferingVO = networkOfferingDao.findById(network.getNetworkOfferingId());
-
-        if (isNull(network.getVpcId()) && networkOfferingVO.getNetworkMode().equals(NetworkOffering.NetworkMode.NATTED)) {
+        NetworkOffering.NetworkMode networkMode = NetrisResourceObjectUtils.getNetworkMode(networkOfferingVO.getNetworkMode());
+        if (isNull(network.getVpcId()) && NetworkOffering.NetworkMode.NATTED.equals(networkMode)) {
             // Netris Natted mode
             long domainId = domain.getId();
             long accountId = account.getId();

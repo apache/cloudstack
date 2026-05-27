@@ -1000,6 +1000,8 @@ export default {
           ...(!this.forVpc && { Firewall: this.NSX })
         }
       } else if (this.provider === 'Netris') {
+        this.form.networkmode = 'NATTED'
+        this.networkmode = 'NATTED'
         this.netrisSupportedServicesMap = {
           Dhcp: this.forVpc ? this.VPCVR : this.VR,
           Dns: this.forVpc ? this.VPCVR : this.VR,

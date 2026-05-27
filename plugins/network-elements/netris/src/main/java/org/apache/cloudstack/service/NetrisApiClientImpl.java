@@ -331,6 +331,11 @@ public class NetrisApiClientImpl implements NetrisApiClient {
     @Override
     public boolean createVpc(CreateNetrisVpcCommand cmd) {
         String netrisVpcName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VPC);
+        VPCListing existingNetrisVpc = getVpcByNameAndTenant(netrisVpcName);
+        if (existingNetrisVpc != null) {
+            logger.info("Netris VPC {} already exists, skipping creation", netrisVpcName);
+            return true;
+        }
         VPCResponseObjectOK createdVpc = createVpcInternal(netrisVpcName, tenantId, tenantName);
         if (createdVpc == null || !createdVpc.isIsSuccess()) {
             String reason = createdVpc == null ? "Empty response" : "Operation failed on Netris";
