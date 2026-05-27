@@ -357,19 +357,29 @@ public class TemplateServiceImpl implements TemplateService {
         if (template == null) {
             return;
         }
+        int copyLimit = _tmpltMgr.getSecStorageCopyLimit(template, zoneId);
+        if (copyLimit <= 0) {
+            return;
+        }
+        int needed = copyLimit - countActiveSecStorageCopies(templateId, zoneId);
+        if (needed <= 0) {
+            return;
+        }
         List<DataStore> stores = _storeMgr.getImageStoresByScope(new ZoneScope(zoneId));
         if (stores == null || stores.isEmpty()) {
             return;
         }
+        int kicked = 0;
         for (DataStore store : stores) {
+            if (kicked >= needed) {
+                break;
+            }
             if (hasActiveTemplateCopyOnStore(templateId, store.getId())) {
                 continue;
             }
-            if (!canCopyTemplateToImageStore(templateId, zoneId)) {
-                break;
-            }
             try {
                 storageOrchestrator.orchestrateTemplateCopyFromSecondaryStores(templateId, store);
+                kicked++;
             } catch (Exception e) {
                 logger.warn("Failed to proactively replicate template [{}] to image store [{}] in zone [{}]: {}",
                         template.getUniqueName(), store.getName(), zoneId, e.getMessage());
@@ -1602,6 +1612,15 @@ public class TemplateServiceImpl implements TemplateService {
                 destTemplate.processEvent(Event.OperationFailed);
             } else {
                 destTemplate.processEvent(Event.OperationSucceeded, result.getAnswer());
+                try {
+                    DataStore destStore = destTemplate.getDataStore();
+                    if (destStore != null && destStore.getScope() != null && destStore.getScope().getScopeId() != null) {
+                        replicateTemplateUpToCap(destTemplate.getId(), destStore.getScope().getScopeId());
+                    }
+                } catch (Exception e) {
+                    logger.warn("Failed to schedule additional copies for cross-zone copied template [{}]: {}",
+                            destTemplate.getUuid(), e.getMessage());
+                }
             }
             future.complete(res);
         } catch (Exception e) {
