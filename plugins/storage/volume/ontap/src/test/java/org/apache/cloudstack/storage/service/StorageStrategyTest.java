@@ -53,7 +53,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -239,11 +238,9 @@ public class StorageStrategyTest {
 
         when(svmFeignClient.getSvmResponse(anyMap(), anyString())).thenReturn(svmResponse);
 
-        // Execute
-        boolean result = storageStrategy.connect();
-
-        // Verify
-        assertFalse(result, "connect() should return false when SVM is not found");
+        // Execute & Verify
+        CloudRuntimeException ex = assertThrows(CloudRuntimeException.class, () -> storageStrategy.connect());
+        assertTrue(ex.getMessage().contains("No SVM found"));
     }
 
     @Test
@@ -259,11 +256,9 @@ public class StorageStrategyTest {
 
         when(svmFeignClient.getSvmResponse(anyMap(), anyString())).thenReturn(svmResponse);
 
-        // Execute
-        boolean result = storageStrategy.connect();
-
-        // Verify
-        assertFalse(result, "connect() should return false when SVM is not running");
+        // Execute & Verify
+        CloudRuntimeException ex = assertThrows(CloudRuntimeException.class, () -> storageStrategy.connect());
+        assertTrue(ex.getMessage().contains("not in running state"));
     }
 
     @Test
@@ -285,8 +280,8 @@ public class StorageStrategyTest {
         when(svmFeignClient.getSvmResponse(anyMap(), anyString())).thenReturn(svmResponse);
 
         // Execute & Verify
-        boolean result = storageStrategy.connect();
-        assertFalse(result, "connect() should fail when NFS is disabled");
+        CloudRuntimeException ex = assertThrows(CloudRuntimeException.class, () -> storageStrategy.connect());
+        assertTrue(ex.getMessage().contains("NFS protocol is not enabled"));
     }
 
     @Test
@@ -314,8 +309,8 @@ public class StorageStrategyTest {
         when(svmFeignClient.getSvmResponse(anyMap(), anyString())).thenReturn(svmResponse);
 
         // Execute & Verify
-        boolean result = storageStrategy.connect();
-        assertFalse(result, "connect() should fail when iSCSI is disabled");
+        CloudRuntimeException ex = assertThrows(CloudRuntimeException.class, () -> storageStrategy.connect());
+        assertTrue(ex.getMessage().contains("ISCSI protocol is not enabled"));
     }
 
     @Test
@@ -332,11 +327,9 @@ public class StorageStrategyTest {
 
         when(svmFeignClient.getSvmResponse(anyMap(), anyString())).thenReturn(svmResponse);
 
-        // Execute
-        boolean result = storageStrategy.connect();
-
-        // Verify
-        assertFalse(result, "connect() should return false when no aggregates are assigned");
+        // Execute & Verify
+        CloudRuntimeException ex = assertThrows(CloudRuntimeException.class, () -> storageStrategy.connect());
+        assertTrue(ex.getMessage().contains("No aggregates"));
     }
 
     @Test
@@ -344,11 +337,9 @@ public class StorageStrategyTest {
         // Setup
         when(svmFeignClient.getSvmResponse(anyMap(), anyString())).thenReturn(null);
 
-        // Execute
-        boolean result = storageStrategy.connect();
-
-        // Verify
-        assertFalse(result, "connect() should return false when SVM response is null");
+        // Execute & Verify
+        CloudRuntimeException ex = assertThrows(CloudRuntimeException.class, () -> storageStrategy.connect());
+        assertTrue(ex.getMessage().contains("No SVM found"));
     }
 
     // ========== createStorageVolume() Tests ==========

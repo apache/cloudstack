@@ -23,8 +23,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSetter;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -36,13 +38,10 @@ public class Svm {
     @JsonProperty("name")
     private String name = null;
 
-    @JsonProperty("iscsi.enabled")
     private Boolean iscsiEnabled = null;
 
-    @JsonProperty("fcp.enabled")
     private Boolean fcpEnabled = null;
 
-    @JsonProperty("nfs.enabled")
     private Boolean nfsEnabled = null;
 
     @JsonProperty("aggregates")
@@ -73,28 +72,43 @@ public class Svm {
         this.name = name;
     }
 
+    public Boolean getNfsEnabled() {
+        return Boolean.TRUE.equals(nfsEnabled);
+    }
+
+    public void setNfsEnabled(Boolean nfsEnabled) {
+        this.nfsEnabled = nfsEnabled;
+    }
+
+    @JsonSetter("nfs")
+    public void setNfs(Map<String, Object> nfs) {
+        this.nfsEnabled = nfs != null ? Boolean.TRUE.equals(nfs.get("enabled")) : false;
+    }
+
     public Boolean getIscsiEnabled() {
-        return iscsiEnabled;
+        return Boolean.TRUE.equals(iscsiEnabled);
     }
 
     public void setIscsiEnabled(Boolean iscsiEnabled) {
         this.iscsiEnabled = iscsiEnabled;
     }
 
+    @JsonSetter("iscsi")
+    public void setIscsi(Map<String, Object> iscsi) {
+        this.iscsiEnabled = iscsi != null ? Boolean.TRUE.equals(iscsi.get("enabled")) : false;
+    }
+
     public Boolean getFcpEnabled() {
-        return fcpEnabled;
+        return Boolean.TRUE.equals(fcpEnabled);
     }
 
     public void setFcpEnabled(Boolean fcpEnabled) {
         this.fcpEnabled = fcpEnabled;
     }
 
-    public Boolean getNfsEnabled() {
-        return nfsEnabled;
-    }
-
-    public void setNfsEnabled(Boolean nfsEnabled) {
-        this.nfsEnabled = nfsEnabled;
+    @JsonSetter("fcp")
+    public void setFcp(Map<String, Object> fcp) {
+        this.fcpEnabled = fcp != null ? Boolean.TRUE.equals(fcp.get("enabled")) : false;
     }
 
     public List<Aggregate> getAggregates() {
