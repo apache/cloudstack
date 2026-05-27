@@ -161,6 +161,9 @@ public class ImportVmTasksManagerImpl implements ImportVmTasksManager {
 
     @Override
     public void updateImportVMTaskErrorState(ImportVmTask importVMTask, ImportVmTask.TaskState state, String errorMsg) {
+        if (importVMTask == null) {
+            return;
+        }
         ImportVMTaskVO importVMTaskVO = (ImportVMTaskVO) importVMTask;
         Date updatedDate = DateUtil.now();
         importVMTaskVO.setUpdated(updatedDate);
