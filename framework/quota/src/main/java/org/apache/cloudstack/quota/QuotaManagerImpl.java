@@ -33,6 +33,9 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionLegacy;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.quota.activationrule.presetvariables.Configuration;
 import org.apache.cloudstack.quota.activationrule.presetvariables.GenericPresetVariable;
@@ -50,6 +53,7 @@ import org.apache.cloudstack.quota.vo.QuotaAccountVO;
 import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
 import org.apache.cloudstack.quota.vo.QuotaTariffUsageVO;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
+import org.apache.cloudstack.quota.vo.QuotaUsageJoinVO;
 import org.apache.cloudstack.quota.vo.QuotaUsageVO;
 import org.apache.cloudstack.usage.UsageUnitTypes;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
@@ -353,7 +357,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             return new ArrayList<>();
         }
 
-        return persistUsagesAndQuotaUsagesAndRetrievePersistedQuotaUsages(mapUsageAndQuotaUsage);
+        return Transaction.execute(TransactionLegacy.USAGE_DB, (TransactionCallback<List<QuotaUsageVO>>) status -> persistUsagesAndQuotaUsagesAndRetrievePersistedQuotaUsages(mapUsageAndQuotaUsage));
     }
 
     protected boolean shouldCalculateUsageRecord(AccountVO accountVO, UsageVO usageRecord) {
@@ -366,7 +370,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     }
 
     protected List<QuotaUsageVO> persistUsagesAndQuotaUsagesAndRetrievePersistedQuotaUsages(Map<UsageVO, Pair<QuotaUsageVO, List<QuotaTariffUsageVO>>> mapUsageAndQuotaTariffUsage) {
-        List<QuotaUsageVO> quotaUsages = new ArrayList<>(); // TODO: isso tem que ser em uma transação
+        List<QuotaUsageVO> quotaUsages = new ArrayList<>();
 
         for (Map.Entry<UsageVO, Pair<QuotaUsageVO, List<QuotaTariffUsageVO>>> usageAndTariffUsage : mapUsageAndQuotaTariffUsage.entrySet()) {
             UsageVO usageVo = usageAndTariffUsage.getKey();
