@@ -80,7 +80,8 @@ public class ImportVmTasksManagerImpl implements ImportVmTasksManager {
         Long pageSizeVal = cmd.getPageSizeVal();
 
         ImportVmTask.TaskState state = getStateFromFilter(cmd.getTasksFilter());
-        Pair<List<ImportVMTaskVO>, Integer> result = importVMTaskDao.listImportVMTasks(zoneId, accountId, vcenter, convertHostId, state, startIndex, pageSizeVal);
+        Pair<List<ImportVMTaskVO>, Integer> result = importVMTaskDao.listImportVMTasks(zoneId, accountId, vcenter,
+                convertHostId, state, startIndex, pageSizeVal);
         List<ImportVMTaskVO> tasks = result.first();
 
         List<ImportVMTaskResponse> responses = new ArrayList<>();
@@ -99,14 +100,16 @@ public class ImportVmTasksManagerImpl implements ImportVmTasksManager {
         try {
             return ImportVmTask.TaskState.getValue(tasksFilter);
         } catch (IllegalArgumentException e) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Invalid value for task state: %s", tasksFilter));
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+                    String.format("Invalid value for task state: %s", tasksFilter));
         }
     }
 
     @Override
-    public ImportVmTask createImportVMTaskRecord(DataCenter zone, Account owner, long userId, String displayName, String vcenter, String datacenterName, String sourceVMName, Host convertHost, Host importHost) {
+    public ImportVmTask createImportVMTaskRecord(DataCenter zone, Account owner, long userId, String displayName,
+            String vcenter, String datacenterName, String sourceVMName, Host convertHost, Host importHost) {
         logger.debug("Creating import VM task entry for VM: {} for account {} on zone {} " +
-                        "from the vCenter: {} / datacenter: {} / source VM: {}",
+                "from the vCenter: {} / datacenter: {} / source VM: {}",
                 sourceVMName, owner.getAccountName(), zone.getName(), displayName, vcenter, datacenterName);
         ImportVMTaskVO importVMTaskVO = new ImportVMTaskVO(zone.getId(), owner.getAccountId(), userId, displayName,
                 vcenter, datacenterName, sourceVMName, convertHost.getId(), importHost.getId());
@@ -115,21 +118,26 @@ public class ImportVmTasksManagerImpl implements ImportVmTasksManager {
     }
 
     private String getStepDescription(ImportVMTaskVO importVMTaskVO, Host convertHost, Host importHost,
-                                      ImportVMTaskVO.Step step, Date updatedDate) {
+            ImportVMTaskVO.Step step, Date updatedDate) {
         String sourceVMName = importVMTaskVO.getSourceVMName();
         String vcenter = importVMTaskVO.getVcenter();
         String datacenter = importVMTaskVO.getDatacenter();
 
         StringBuilder stringBuilder = new StringBuilder();
         if (Completed == step) {
-            stringBuilder.append("Completed at ").append(DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), updatedDate));
+            stringBuilder.append("Completed at ")
+                    .append(DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), updatedDate));
         } else {
             if (CloningInstance == step) {
-                stringBuilder.append(String.format("Cloning source instance: %s on vCenter: %s / datacenter: %s", sourceVMName, vcenter, datacenter));
+                stringBuilder.append(String.format("Cloning source instance: %s on vCenter: %s / datacenter: %s",
+                        sourceVMName, vcenter, datacenter));
             } else if (ConvertingInstance == step) {
-                stringBuilder.append(String.format("Converting the cloned VMware instance to a KVM instance on the host: %s", convertHost.getName()));
+                stringBuilder
+                        .append(String.format("Converting the cloned VMware instance to a KVM instance on the host: %s",
+                                convertHost.getName()));
             } else if (Importing == step) {
-                stringBuilder.append(String.format("Importing the converted KVM instance on the host: %s", importHost.getName()));
+                stringBuilder.append(
+                        String.format("Importing the converted KVM instance on the host: %s", importHost.getName()));
             } else if (Prepare == step) {
                 stringBuilder.append("Preparing to convert Vmware instance");
             }
@@ -139,11 +147,12 @@ public class ImportVmTasksManagerImpl implements ImportVmTasksManager {
 
     @Override
     public void updateImportVMTaskStep(ImportVmTask importVMTask, DataCenter zone, Account owner, Host convertHost,
-                                       Host importHost, Long vmId, ImportVmTask.Step step) {
+            Host importHost, Long vmId, ImportVmTask.Step step) {
         ImportVMTaskVO importVMTaskVO = (ImportVMTaskVO) importVMTask;
         logger.debug("Updating import VM task entry for VM: {} for account {} on zone {} " +
-                        "from the vCenter: {} / datacenter: {} / source VM: {} to step: {}",
-                importVMTaskVO.getSourceVMName(), owner.getAccountName(), zone.getName(), importVMTaskVO.getDisplayName(),
+                "from the vCenter: {} / datacenter: {} / source VM: {} to step: {}",
+                importVMTaskVO.getSourceVMName(), owner.getAccountName(), zone.getName(),
+                importVMTaskVO.getDisplayName(),
                 importVMTaskVO.getVcenter(), importVMTaskVO.getDatacenter(), step);
         Date updatedDate = DateUtil.now();
         String description = getStepDescription(importVMTaskVO, convertHost, importHost, step, updatedDate);
@@ -162,6 +171,9 @@ public class ImportVmTasksManagerImpl implements ImportVmTasksManager {
     @Override
     public void updateImportVMTaskErrorState(ImportVmTask importVMTask, ImportVmTask.TaskState state, String errorMsg) {
         if (importVMTask == null) {
+            logger.warn(
+                    "Skipping import VM task error state update because importVMTask is null; state: {}, errorMsg: {}",
+                    state, errorMsg);
             return;
         }
         ImportVMTaskVO importVMTaskVO = (ImportVMTaskVO) importVMTask;
