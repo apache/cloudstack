@@ -49,7 +49,7 @@ export default {
         return fields
       },
       details: () => {
-        const fields = ['name', 'id', 'description', 'type', 'traffictype', 'vpcid', 'vlan', 'cidr', 'ip6cidr', 'netmask', 'gateway', 'asnumber', 'aclname', 'ispersistent', 'restartrequired', 'reservediprange', 'redundantrouter', 'networkdomain', 'egressdefaultpolicy', 'zonename', 'account', 'domainpath', 'associatednetwork', 'associatednetworkid', 'ip4routing', 'ip6firewall', 'ip6routing', 'ip6routes', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'publicmtu', 'privatemtu']
+        const fields = ['name', 'id', 'description', 'type', 'traffictype', 'networkrate', 'vpcid', 'vlan', 'cidr', 'ip6cidr', 'netmask', 'gateway', 'asnumber', 'aclname', 'ispersistent', 'restartrequired', 'reservediprange', 'redundantrouter', 'networkdomain', 'egressdefaultpolicy', 'zonename', 'account', 'domainpath', 'associatednetwork', 'associatednetworkid', 'ip4routing', 'ip6firewall', 'ip6routing', 'ip6routes', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'publicmtu', 'privatemtu']
         if (isAdmin()) {
           const vlanIndex = fields.findIndex(detail => detail === 'vlan')
           fields.splice(vlanIndex + 1, 0, 'broadcasturi')

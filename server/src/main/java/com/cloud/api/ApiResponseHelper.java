@@ -2678,6 +2678,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
             response.setNetworkOfferingAvailability(networkOffering.getAvailability().toString());
             response.setIsPersistent(networkOffering.isPersistent());
             response.setSpecifyVlan(networkOffering.isSpecifyVlan());
+            response.setNetworkRate(ApiDBUtils.getNetworkRate(networkOffering.getId()));
             if (Network.GuestType.Isolated.equals(network.getGuestType()) && network.getVpcId() == null) {
                 response.setEgressDefaultPolicy(networkOffering.isEgressDefaultPolicy());
             }

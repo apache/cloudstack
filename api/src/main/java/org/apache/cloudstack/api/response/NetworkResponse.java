@@ -335,6 +335,10 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     @Param(description = ApiConstants.PARAMETER_DESCRIPTION_KEEP_MAC_ADDRESS_ON_PUBLIC_NIC, since = "4.23.0")
     private Boolean keepMacAddressOnPublicNic;
 
+    @SerializedName(ApiConstants.NETWORKRATE)
+    @Param(description = "Data transfer rate in megabits per second allowed.", since = "4.23.0")
+    private Integer networkRate;
+
     public NetworkResponse() {}
 
     public Boolean getDisplayNetwork() {
@@ -709,5 +713,13 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
 
     public void setKeepMacAddressOnPublicNic(Boolean keepMacAddressOnPublicNic) {
         this.keepMacAddressOnPublicNic = keepMacAddressOnPublicNic;
+    }
+
+    public Integer getNetworkRate() {
+        return networkRate;
+    }
+
+    public void setNetworkRate(Integer networkRate) {
+        this.networkRate = networkRate;
     }
 }
