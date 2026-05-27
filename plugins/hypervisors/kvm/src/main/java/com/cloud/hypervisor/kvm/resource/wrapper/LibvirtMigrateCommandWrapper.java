@@ -391,7 +391,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                     destDomain.free();
                 }
                 // Revert CLVM volumes to exclusive mode on failure
-                if (to != null) {
+                if (to != null && result != null) {
                     LibvirtComputingResource.modifyClvmVolumesStateForMigration(disks, libvirtComputingResource, to, LibvirtComputingResource.ClvmVolumeState.EXCLUSIVE);
                 }
             } catch (final LibvirtException e) {
