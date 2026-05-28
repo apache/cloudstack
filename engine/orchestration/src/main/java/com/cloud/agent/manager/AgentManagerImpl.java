@@ -808,8 +808,13 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 String vddkSupport = detailsMap.get(Host.HOST_VDDK_SUPPORT);
                 String vddkLibDir = detailsMap.get(Host.HOST_VDDK_LIB_DIR);
                 String vddkVersion = detailsMap.get(Host.HOST_VDDK_VERSION);
+                String virtv2vInPlaceSupport = detailsMap.get(Host.HOST_VIRTV2V_INPLACE_SUPPORT);
+                String qemuImgRbdSupport = detailsMap.get(Host.HOST_QEMU_IMG_RBD_SUPPORT);
+                String rbdQemuCopySupport = detailsMap.get(Host.HOST_RBD_QEMU_COPY_SUPPORT);
+                String vddkRbdDirectImportSupport = detailsMap.get(Host.HOST_VDDK_RBD_DIRECT_IMPORT_SUPPORT);
                 logger.debug("Got HOST_UEFI_ENABLE [{}] for host [{}]:", uefiEnabled, host);
-                if (ObjectUtils.anyNotNull(uefiEnabled, virtv2vVersion, ovftoolVersion, vddkSupport, vddkLibDir, vddkVersion)) {
+                if (ObjectUtils.anyNotNull(uefiEnabled, virtv2vVersion, ovftoolVersion, vddkSupport, vddkLibDir, vddkVersion,
+                        virtv2vInPlaceSupport, qemuImgRbdSupport, rbdQemuCopySupport, vddkRbdDirectImportSupport)) {
                     _hostDao.loadDetails(host);
                     boolean updateNeeded = false;
                     if (StringUtils.isNotBlank(uefiEnabled) && !uefiEnabled.equals(host.getDetails().get(Host.HOST_UEFI_ENABLE))) {
@@ -842,6 +847,22 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                         } else {
                             host.getDetails().put(Host.HOST_VDDK_VERSION, vddkVersion);
                         }
+                        updateNeeded = true;
+                    }
+                    if (StringUtils.isNotBlank(virtv2vInPlaceSupport) && !virtv2vInPlaceSupport.equals(host.getDetails().get(Host.HOST_VIRTV2V_INPLACE_SUPPORT))) {
+                        host.getDetails().put(Host.HOST_VIRTV2V_INPLACE_SUPPORT, virtv2vInPlaceSupport);
+                        updateNeeded = true;
+                    }
+                    if (StringUtils.isNotBlank(qemuImgRbdSupport) && !qemuImgRbdSupport.equals(host.getDetails().get(Host.HOST_QEMU_IMG_RBD_SUPPORT))) {
+                        host.getDetails().put(Host.HOST_QEMU_IMG_RBD_SUPPORT, qemuImgRbdSupport);
+                        updateNeeded = true;
+                    }
+                    if (StringUtils.isNotBlank(rbdQemuCopySupport) && !rbdQemuCopySupport.equals(host.getDetails().get(Host.HOST_RBD_QEMU_COPY_SUPPORT))) {
+                        host.getDetails().put(Host.HOST_RBD_QEMU_COPY_SUPPORT, rbdQemuCopySupport);
+                        updateNeeded = true;
+                    }
+                    if (StringUtils.isNotBlank(vddkRbdDirectImportSupport) && !vddkRbdDirectImportSupport.equals(host.getDetails().get(Host.HOST_VDDK_RBD_DIRECT_IMPORT_SUPPORT))) {
+                        host.getDetails().put(Host.HOST_VDDK_RBD_DIRECT_IMPORT_SUPPORT, vddkRbdDirectImportSupport);
                         updateNeeded = true;
                     }
                     if (updateNeeded) {

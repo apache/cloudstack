@@ -19,6 +19,7 @@ package com.cloud.agent.api;
 public class CheckConvertInstanceCommand extends Command {
     boolean checkWindowsGuestConversionSupport = false;
     boolean useVddk = false;
+    boolean checkVddkRbdDirectImportSupport = false;
     String vddkLibDir;
 
     public CheckConvertInstanceCommand() {
@@ -48,6 +49,14 @@ public class CheckConvertInstanceCommand extends Command {
 
     public void setUseVddk(boolean useVddk) {
         this.useVddk = useVddk;
+    }
+
+    public boolean isCheckVddkRbdDirectImportSupport() {
+        return checkVddkRbdDirectImportSupport;
+    }
+
+    public void setCheckVddkRbdDirectImportSupport(boolean checkVddkRbdDirectImportSupport) {
+        this.checkVddkRbdDirectImportSupport = checkVddkRbdDirectImportSupport;
     }
 
     public String getVddkLibDir() {

@@ -31,6 +31,13 @@ public class LibvirtCheckConvertInstanceCommandWrapper extends CommandWrapper<Ch
     @Override
     public Answer execute(CheckConvertInstanceCommand cmd, LibvirtComputingResource serverResource) {
         if (cmd.isUseVddk()) {
+            if (cmd.isCheckVddkRbdDirectImportSupport() && !serverResource.hostSupportsVddkRbdDirectImport(cmd.getVddkLibDir())) {
+                String msg = String.format("Cannot directly import VMware disks to RBD on host %s. Direct RBD VDDK import requires VDDK, qemu-img RBD support, and in-place virt-v2v support. " +
+                                "Use staged import with temporary conversion storage on this host, or select an EL9/Ubuntu 24.04-like conversion host with virt-v2v-in-place support.",
+                        serverResource.getPrivateIp());
+                logger.info(msg);
+                return new CheckConvertInstanceAnswer(cmd, false, msg);
+            }
             if (!serverResource.hostSupportsVddk(cmd.getVddkLibDir())) {
                 String msg = String.format("Cannot convert the instance from VMware using VDDK on host %s. " +
                                 "Please make sure virt-v2v%s, nbdkit-vddk and a valid VDDK library directory are available on the host.",

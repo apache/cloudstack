@@ -38,6 +38,7 @@ public class RemoteInstanceTO implements Serializable {
     private String datacenterName;
     private String clusterName;
     private String hostName;
+    private String vmwareMoref;
 
     public RemoteInstanceTO() {
     }
@@ -99,5 +100,13 @@ public class RemoteInstanceTO implements Serializable {
 
     public String getHostName() {
         return hostName;
+    }
+
+    public String getVmwareMoref() {
+        return vmwareMoref;
+    }
+
+    public void setVmwareMoref(String vmwareMoref) {
+        this.vmwareMoref = vmwareMoref;
     }
 }

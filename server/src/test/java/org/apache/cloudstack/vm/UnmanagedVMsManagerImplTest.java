@@ -1075,6 +1075,19 @@ public class UnmanagedVMsManagerImplTest {
                 serviceOffering, Map.of("1000-2", 32L));
     }
 
+    @Test
+    public void testValidateSelectedConversionStoragePoolForVddkSkipsTemporaryPoolForStagedImport() {
+        long poolId = 12L;
+        ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
+
+        Mockito.reset(primaryDataStoreDao, diskOfferingDao, volumeApiService);
+
+        unmanagedVMsManager.validateSelectedConversionStoragePoolForVddk(true, false, poolId,
+                serviceOffering, Map.of("1000-2", 32L));
+
+        Mockito.verifyNoInteractions(primaryDataStoreDao, diskOfferingDao, volumeApiService);
+    }
+
     private ClusterVO getClusterForTests() {
         ClusterVO cluster = mock(ClusterVO.class);
         when(cluster.getId()).thenReturn(1L);
@@ -1395,6 +1408,40 @@ public class UnmanagedVMsManagerImplTest {
     }
 
     @Test
+    public void testSelectKVMHostForConversionInClusterDirectRbdAutoSelectsHostWithDirectSupport() {
+        ClusterVO cluster = getClusterForTests();
+        HostVO hostWithVddkOnly = Mockito.mock(HostVO.class);
+        HostVO hostWithDirectRbd = Mockito.mock(HostVO.class);
+        when(hostWithVddkOnly.getDetail(Host.HOST_VDDK_SUPPORT)).thenReturn("true");
+        when(hostWithVddkOnly.getDetail(Host.HOST_VDDK_RBD_DIRECT_IMPORT_SUPPORT)).thenReturn(null);
+        when(hostWithDirectRbd.getDetail(Host.HOST_VDDK_SUPPORT)).thenReturn("true");
+        when(hostWithDirectRbd.getDetail(Host.HOST_VDDK_RBD_DIRECT_IMPORT_SUPPORT)).thenReturn("true");
+
+        when(hostDao.listByClusterHypervisorTypeAndHostCapability(cluster.getId(),
+                cluster.getHypervisorType(), Host.HOST_INSTANCE_CONVERSION))
+                .thenReturn(List.of(hostWithVddkOnly, hostWithDirectRbd));
+
+        HostVO returnedHost = unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, null, true, true);
+        Assert.assertEquals(hostWithDirectRbd, returnedHost);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testSelectKVMHostForConversionInClusterDirectRbdFailsWithoutDirectSupport() {
+        ClusterVO cluster = getClusterForTests();
+        HostVO hostWithVddkOnly = Mockito.mock(HostVO.class);
+        when(hostWithVddkOnly.getDetail(Host.HOST_VDDK_SUPPORT)).thenReturn("true");
+        when(hostWithVddkOnly.getDetail(Host.HOST_VDDK_RBD_DIRECT_IMPORT_SUPPORT)).thenReturn(null);
+
+        when(hostDao.listByClusterHypervisorTypeAndHostCapability(cluster.getId(),
+                cluster.getHypervisorType(), Host.HOST_INSTANCE_CONVERSION))
+                .thenReturn(List.of(hostWithVddkOnly));
+        when(hostDao.listByClusterAndHypervisorType(cluster.getId(), cluster.getHypervisorType()))
+                .thenReturn(List.of(hostWithVddkOnly));
+
+        unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, null, true, true);
+    }
+
+    @Test
     public void testCheckConversionStoragePoolSecondaryStorageStaging() {
         unmanagedVMsManager.checkConversionStoragePool(null, false);
         Mockito.verifyNoInteractions(primaryDataStoreDao);
@@ -1420,6 +1467,15 @@ public class UnmanagedVMsManagerImplTest {
         long destPoolId = 1L;
         Mockito.when(primaryDataStoreDao.findById(destPoolId)).thenReturn(destPool);
         unmanagedVMsManager.checkConversionStoragePool(destPoolId, true);
+    }
+
+    @Test
+    public void testCheckConversionStoragePoolRbdAllowedForVddkForceConvertToPool() {
+        StoragePoolVO destPool = mock(StoragePoolVO.class);
+        Mockito.when(destPool.getPoolType()).thenReturn(Storage.StoragePoolType.RBD);
+        long destPoolId = 1L;
+        Mockito.when(primaryDataStoreDao.findById(destPoolId)).thenReturn(destPool);
+        unmanagedVMsManager.checkConversionStoragePool(destPoolId, true, true);
     }
 
     @Test(expected = CloudRuntimeException.class)

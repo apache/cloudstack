@@ -23,6 +23,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermission;
+import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Arrays;
 import java.util.List;
@@ -42,14 +43,18 @@ import com.cloud.agent.api.ConvertInstanceCommand;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.RemoteInstanceTO;
+import com.cloud.agent.api.to.VmwareVddkSourceDiskTO;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
+import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
+import com.cloud.storage.Storage;
 import com.cloud.utils.FileUtil;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 
@@ -89,6 +94,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
 
         final KVMStoragePoolManager storagePoolMgr = serverResource.getStoragePoolMgr();
         KVMStoragePool temporaryStoragePool = getTemporaryStoragePool(conversionTemporaryLocation, storagePoolMgr);
+        boolean directRbdVddkImport = isDirectRbdVddkImport(cmd);
 
         logger.info(String.format("(%s) Attempting to convert the instance %s from %s to KVM",
                 originalVMName, sourceInstanceName, sourceHypervisorType));
@@ -114,9 +120,21 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
                 String vddkTransports = resolveVddkSetting(cmd.getVddkTransports(), serverResource.getVddkTransports());
                 String configuredVddkThumbprint = resolveVddkSetting(cmd.getVddkThumbprint(), serverResource.getVddkThumbprint());
                 String passwordOption = serverResource.getDetectedPasswordFileOption();
-                result = performInstanceConversionUsingVddk(sourceInstance, originalVMName, temporaryConvertPath,
-                        vddkLibDir, serverResource.getLibguestfsBackend(), vddkTransports, configuredVddkThumbprint,
-                        timeout, verboseModeEnabled, extraParams, temporaryConvertUuid, passwordOption);
+                if (directRbdVddkImport) {
+                    if (!serverResource.hostSupportsVddkRbdDirectImport(cmd.getVddkLibDir())) {
+                        String err = String.format("Direct RBD VDDK import requires VDDK, qemu-img RBD support, and virt-v2v in-place support on host %s. " +
+                                "Use staged import with temporary conversion storage or select a newer conversion host.", serverResource.getPrivateIp());
+                        logger.error("({}) {}", originalVMName, err);
+                        return new Answer(cmd, false, err);
+                    }
+                    result = performInstanceConversionUsingVddkDirectToRbd(cmd, temporaryStoragePool, originalVMName,
+                            vddkLibDir, serverResource.getLibguestfsBackend(), vddkTransports, configuredVddkThumbprint,
+                            timeout, verboseModeEnabled, temporaryConvertUuid, serverResource);
+                } else {
+                    result = performInstanceConversionUsingVddk(sourceInstance, originalVMName, temporaryConvertPath,
+                            vddkLibDir, serverResource.getLibguestfsBackend(), vddkTransports, configuredVddkThumbprint,
+                            timeout, verboseModeEnabled, extraParams, temporaryConvertUuid, passwordOption);
+                }
             } else {
                 logger.info("({}) Using OVF-based conversion (export + local convert)", originalVMName);
                 String sourceOVFDirPath;
@@ -175,6 +193,12 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
                 storagePoolMgr.deleteStoragePool(temporaryStoragePool.getType(), temporaryStoragePool.getUuid());
             }
         }
+    }
+
+    private boolean isDirectRbdVddkImport(ConvertInstanceCommand cmd) {
+        DataStoreTO conversionTemporaryLocation = cmd.getConversionTemporaryLocation();
+        return cmd.isUseVddk() && conversionTemporaryLocation instanceof PrimaryDataStoreTO &&
+                ((PrimaryDataStoreTO) conversionTemporaryLocation).getPoolType() == Storage.StoragePoolType.RBD;
     }
 
     protected KVMStoragePool getTemporaryStoragePool(DataStoreTO conversionTemporaryLocation, KVMStoragePoolManager storagePoolMgr) {
@@ -397,6 +421,249 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
                 logger.warn("({}) Failed to delete password file {}: {}", originalVMName, passwordFilePath, e.getMessage());
             }
         }
+    }
+
+    protected boolean performInstanceConversionUsingVddkDirectToRbd(ConvertInstanceCommand cmd,
+                                                                    KVMStoragePool targetPool,
+                                                                    String originalVMName,
+                                                                    String vddkLibDir,
+                                                                    String libguestfsBackend,
+                                                                    String vddkTransports,
+                                                                    String configuredVddkThumbprint,
+                                                                    long timeout,
+                                                                    boolean verboseModeEnabled,
+                                                                    String temporaryConvertUuid,
+                                                                    LibvirtComputingResource serverResource) {
+        RemoteInstanceTO vmwareInstance = cmd.getSourceInstance();
+        List<VmwareVddkSourceDiskTO> sourceDisks = cmd.getVmwareVddkSourceDisks();
+        if (sourceDisks == null || sourceDisks.isEmpty()) {
+            logger.error("({}) Direct RBD VDDK import requires VMware source disk metadata", originalVMName);
+            return false;
+        }
+
+        probeRbdQemuAccess(targetPool, temporaryConvertUuid);
+
+        String vcenterPassword = vmwareInstance.getVcenterPassword();
+        if (StringUtils.isBlank(vcenterPassword)) {
+            logger.error("({}) Could not determine vCenter password for {}", originalVMName, vmwareInstance.getVcenterHost());
+            return false;
+        }
+
+        String vddkThumbprint = StringUtils.trimToNull(configuredVddkThumbprint);
+        if (StringUtils.isBlank(vddkThumbprint)) {
+            vddkThumbprint = getVcenterThumbprint(vmwareInstance.getVcenterHost(), timeout, originalVMName);
+        }
+        if (StringUtils.isBlank(vddkThumbprint)) {
+            logger.error("({}) Could not determine vCenter thumbprint for {}", originalVMName, vmwareInstance.getVcenterHost());
+            return false;
+        }
+
+        String passwordFilePath = String.format("/tmp/v2v.rbd.pass.cloud.%s.%s",
+                StringUtils.defaultIfBlank(vmwareInstance.getVcenterHost(), "unknown"),
+                UUID.randomUUID());
+        List<String> createdImages = new ArrayList<>();
+        try {
+            Files.writeString(Path.of(passwordFilePath), vcenterPassword);
+            Files.setPosixFilePermissions(Path.of(passwordFilePath), Set.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE));
+
+            for (int i = 0; i < sourceDisks.size(); i++) {
+                VmwareVddkSourceDiskTO sourceDisk = sourceDisks.get(i);
+                String imageName = buildRbdImageName(temporaryConvertUuid, i);
+                createdImages.add(imageName);
+                copyVddkSourceDiskToRbd(vmwareInstance, sourceDisk, targetPool, imageName, passwordFilePath,
+                        vddkLibDir, vddkTransports, vddkThumbprint, timeout, originalVMName);
+            }
+
+            Path inputXml = Files.createTempFile("cloudstack-vddk-rbd-" + temporaryConvertUuid, ".xml");
+            Path outputXml = Files.createTempFile("cloudstack-vddk-rbd-" + temporaryConvertUuid + "-out", ".xml");
+            Files.writeString(inputXml, buildDirectRbdLibvirtXml(temporaryConvertUuid, targetPool, createdImages));
+
+            boolean finalized = runInPlaceFinalization(inputXml, outputXml, libguestfsBackend, timeout, verboseModeEnabled, originalVMName, serverResource);
+            if (!finalized) {
+                cleanupRbdImages(targetPool, createdImages, originalVMName);
+            }
+            Files.deleteIfExists(inputXml);
+            Files.deleteIfExists(outputXml);
+            return finalized;
+        } catch (Exception e) {
+            logger.error("({}) Direct RBD VDDK import failed: {}", originalVMName, e.getMessage(), e);
+            cleanupRbdImages(targetPool, createdImages, originalVMName);
+            return false;
+        } finally {
+            try {
+                Files.deleteIfExists(Path.of(passwordFilePath));
+            } catch (Exception e) {
+                logger.warn("({}) Failed to delete password file {}: {}", originalVMName, passwordFilePath, e.getMessage());
+            }
+        }
+    }
+
+    private void copyVddkSourceDiskToRbd(RemoteInstanceTO vmwareInstance, VmwareVddkSourceDiskTO sourceDisk,
+                                         KVMStoragePool targetPool, String imageName, String passwordFilePath,
+                                         String vddkLibDir, String vddkTransports, String vddkThumbprint,
+                                         long timeout, String originalVMName) {
+        if (StringUtils.isBlank(sourceDisk.getSourceDiskPath())) {
+            throw new CloudRuntimeException(String.format("VMware source disk %s does not have a VMDK path", sourceDisk.getDiskId()));
+        }
+        String rbdImagePath = targetPool.getSourceDir() + "/" + imageName;
+        String qemuRbdTarget = KVMPhysicalDisk.RBDStringBuilder(targetPool, rbdImagePath);
+        StringBuilder command = new StringBuilder();
+        command.append("nbdkit -r -U - vddk ");
+        command.append("file=").append(shellQuote(sourceDisk.getSourceDiskPath())).append(" ");
+        command.append("server=").append(shellQuote(vmwareInstance.getVcenterHost())).append(" ");
+        command.append("user=").append(shellQuote(vmwareInstance.getVcenterUsername())).append(" ");
+        command.append("password=+").append(shellQuote(passwordFilePath)).append(" ");
+        if (StringUtils.isNotBlank(vmwareInstance.getVmwareMoref())) {
+            command.append("vm=").append(shellQuote("moref=" + vmwareInstance.getVmwareMoref())).append(" ");
+        } else {
+            command.append("vm=").append(shellQuote(vmwareInstance.getInstanceName())).append(" ");
+        }
+        command.append("libdir=").append(shellQuote(vddkLibDir)).append(" ");
+        command.append("thumbprint=").append(shellQuote(vddkThumbprint)).append(" ");
+        if (StringUtils.isNotBlank(vddkTransports)) {
+            command.append("transports=").append(shellQuote(vddkTransports)).append(" ");
+        }
+        String runCommand = "qemu-img convert -f raw -O raw \"$uri\" " + shellQuote(qemuRbdTarget);
+        command.append("--run ").append(shellQuote(runCommand));
+
+        Script script = new Script("/bin/bash", timeout, logger);
+        script.add("-c");
+        script.add(command.toString());
+        String logPrefix = String.format("(%s) vddk to rbd disk %s", originalVMName, sourceDisk.getDiskId());
+        OutputInterpreter.LineByLineOutputLogger outputLogger = new OutputInterpreter.LineByLineOutputLogger(logger, logPrefix);
+        logger.info("({}) Copying VMware disk {} to RBD image {}", originalVMName, sourceDisk.getSourceDiskPath(), rbdImagePath);
+        script.execute(outputLogger);
+        if (script.getExitValue() != 0) {
+            throw new CloudRuntimeException(String.format("Failed to copy VMware disk %s to RBD image %s", sourceDisk.getSourceDiskPath(), rbdImagePath));
+        }
+    }
+
+    private boolean runInPlaceFinalization(Path inputXml, Path outputXml, String libguestfsBackend, long timeout,
+                                           boolean verboseModeEnabled, String originalVMName,
+                                           LibvirtComputingResource serverResource) {
+        StringBuilder command = new StringBuilder();
+        command.append("export LIBGUESTFS_BACKEND=").append(shellQuote(libguestfsBackend)).append(" && ");
+        if (serverResource.hostSupportsVirtV2vInPlaceBinary()) {
+            command.append("virt-v2v-in-place --root first -i libvirtxml ")
+                    .append(shellQuote(inputXml.toString())).append(" -O ")
+                    .append(shellQuote(outputXml.toString())).append(" ");
+        } else if (serverResource.hostSupportsVirtV2vInPlaceOption()) {
+            command.append("virt-v2v --root first -i libvirtxml ")
+                    .append(shellQuote(inputXml.toString())).append(" --in-place ");
+        } else {
+            logger.error("({}) No virt-v2v in-place finalization method is available", originalVMName);
+            return false;
+        }
+        if (verboseModeEnabled) {
+            command.append("-v ");
+        }
+
+        Script script = new Script("/bin/bash", timeout, logger);
+        script.add("-c");
+        script.add(command.toString());
+        OutputInterpreter.LineByLineOutputLogger outputLogger = new OutputInterpreter.LineByLineOutputLogger(logger,
+                String.format("(%s) virt-v2v rbd in-place", originalVMName));
+        script.execute(outputLogger);
+        return script.getExitValue() == 0;
+    }
+
+    private String buildDirectRbdLibvirtXml(String temporaryConvertUuid, KVMStoragePool targetPool, List<String> imageNames) {
+        StringBuilder xml = new StringBuilder();
+        xml.append("<domain type='kvm'>\n");
+        xml.append("  <name>").append(xmlEscape("cloudstack-vddk-rbd-" + temporaryConvertUuid)).append("</name>\n");
+        xml.append("  <memory unit='KiB'>1048576</memory>\n");
+        xml.append("  <vcpu>1</vcpu>\n");
+        xml.append("  <os><type>hvm</type><boot dev='hd'/></os>\n");
+        xml.append("  <devices>\n");
+        for (int i = 0; i < imageNames.size(); i++) {
+            String imageName = imageNames.get(i);
+            xml.append("    <disk type='network' device='disk'>\n");
+            xml.append("      <driver name='qemu' type='raw'/>\n");
+            xml.append("      <source protocol='rbd' name='").append(xmlEscape(targetPool.getSourceDir() + "/" + imageName)).append("'>\n");
+            for (String sourceHost : StringUtils.split(StringUtils.defaultString(targetPool.getSourceHost()), ",")) {
+                xml.append("        <host name='").append(xmlEscape(sourceHost.replace("[", "").replace("]", ""))).append("'");
+                if (targetPool.getSourcePort() != 0) {
+                    xml.append(" port='").append(targetPool.getSourcePort()).append("'");
+                }
+                xml.append("/>\n");
+            }
+            xml.append("      </source>\n");
+            if (StringUtils.isNotBlank(targetPool.getAuthUserName())) {
+                xml.append("      <auth username='").append(xmlEscape(targetPool.getAuthUserName())).append("'>\n");
+                xml.append("        <secret type='ceph' uuid='").append(xmlEscape(targetPool.getUuid())).append("'/>\n");
+                xml.append("      </auth>\n");
+            }
+            xml.append("      <target dev='").append(diskTargetName(i)).append("' bus='scsi'/>\n");
+            xml.append("    </disk>\n");
+        }
+        xml.append("  </devices>\n");
+        xml.append("</domain>\n");
+        return xml.toString();
+    }
+
+    private String buildRbdImageName(String temporaryConvertUuid, int position) {
+        return String.format("%s-disk-%03d", temporaryConvertUuid, position);
+    }
+
+    private String diskTargetName(int index) {
+        StringBuilder target = new StringBuilder("sd");
+        int value = index;
+        do {
+            target.insert(2, (char) ('a' + (value % 26)));
+            value = value / 26 - 1;
+        } while (value >= 0);
+        return target.toString();
+    }
+
+    private void probeRbdQemuAccess(KVMStoragePool pool, String temporaryConvertUuid) {
+        String probeName = temporaryConvertUuid + "-probe-" + UUID.randomUUID();
+        String rbdImagePath = pool.getSourceDir() + "/" + probeName;
+        String qemuRbdPath = KVMPhysicalDisk.RBDStringBuilder(pool, rbdImagePath);
+        try {
+            Script qemuImg = new Script("qemu-img", 120000, logger);
+            qemuImg.add("create", "-f", "raw", qemuRbdPath, "4194304");
+            qemuImg.execute();
+            if (qemuImg.getExitValue() != 0) {
+                throw new CloudRuntimeException(String.format("qemu-img could not create RBD probe image %s", rbdImagePath));
+            }
+
+            Script qemuIo = new Script("qemu-io", 120000, logger);
+            qemuIo.add("-f", "raw", "-c", "write -P 0x5a 0 4k", "-c", "read -P 0x5a 0 4k", qemuRbdPath);
+            qemuIo.execute();
+            if (qemuIo.getExitValue() != 0) {
+                throw new CloudRuntimeException(String.format("qemu-io could not verify RBD probe image %s", rbdImagePath));
+            }
+        } finally {
+            try {
+                pool.deletePhysicalDisk(probeName, Storage.ImageFormat.RAW);
+            } catch (Exception e) {
+                logger.warn("Failed to delete RBD probe image {} from pool {}: {}", probeName, pool.getUuid(), e.getMessage());
+            }
+        }
+    }
+
+    private void cleanupRbdImages(KVMStoragePool pool, List<String> imageNames, String originalVMName) {
+        for (String imageName : imageNames) {
+            try {
+                logger.info("({}) Cleaning up RBD image {} after failed direct import", originalVMName, imageName);
+                pool.deletePhysicalDisk(imageName, Storage.ImageFormat.RAW);
+            } catch (Exception e) {
+                logger.warn("({}) Failed to delete RBD image {} from pool {}: {}", originalVMName, imageName, pool.getUuid(), e.getMessage());
+            }
+        }
+    }
+
+    private String shellQuote(String value) {
+        return "'" + StringUtils.defaultString(value).replace("'", "'\"'\"'") + "'";
+    }
+
+    private String xmlEscape(String value) {
+        return StringUtils.defaultString(value)
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&apos;");
     }
 
     protected String getVcenterThumbprint(String vcenterHost, long timeout, String originalVMName) {
