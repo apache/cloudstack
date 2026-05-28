@@ -1379,17 +1379,91 @@ export default {
         this.fetchInstances()
       }
     },
-    async fetchGuestOsMappings (osIdentifier, hypervisorVersion) {
-      const params = {}
-      params.hypervisor = 'VMware'
-      params.hypervisorversion = hypervisorVersion
-      params.osnameforhypervisor = osIdentifier
+    async fetchGuestOsMappingsByParams (params) {
       return await getAPI('listGuestOsMapping', params).then(json => {
         return json.listguestosmappingresponse?.guestosmapping || []
       }).catch(error => {
         this.$notifyError(error)
         return []
       })
+    },
+    normalizeGuestOsName (name) {
+      return (name || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+    },
+    isStrongGuestOsNameMatch (osType, osDisplayName) {
+      const candidate = this.normalizeGuestOsName(osType.description || osType.osdisplayname)
+      const source = this.normalizeGuestOsName(osDisplayName)
+      if (!candidate || !source) {
+        return false
+      }
+      if (candidate === source) {
+        return true
+      }
+      if (Math.min(candidate.length, source.length) < 8) {
+        return false
+      }
+      return candidate.includes(source) || source.includes(candidate)
+    },
+    async fetchGuestOsTypeFallbackMappings (osDisplayName) {
+      if (!osDisplayName || !('listOsTypes' in this.$store.getters.apis)) {
+        return []
+      }
+      return await getAPI('listOsTypes', {
+        description: osDisplayName
+      }).then(json => {
+        const osTypes = json.listostypesresponse?.ostype || []
+        return osTypes
+          .filter(osType => this.isStrongGuestOsNameMatch(osType, osDisplayName))
+          .map(osType => {
+            return {
+              ostypeid: osType.id,
+              osdisplayname: osType.description || osType.osdisplayname
+            }
+          })
+      }).catch(error => {
+        this.$notifyError(error)
+        return []
+      })
+    },
+    async fetchGuestOsMappings (osIdentifier, osDisplayName, hypervisorVersion) {
+      const lookups = []
+      if (osDisplayName) {
+        lookups.push({
+          hypervisor: 'VMware',
+          hypervisorversion: hypervisorVersion,
+          osdisplayname: osDisplayName
+        })
+      }
+      if (osIdentifier) {
+        lookups.push({
+          hypervisor: 'VMware',
+          hypervisorversion: hypervisorVersion,
+          osnameforhypervisor: osIdentifier
+        })
+      }
+      if (osDisplayName) {
+        lookups.push({
+          hypervisor: 'VMware',
+          osdisplayname: osDisplayName
+        })
+      }
+      if (osIdentifier) {
+        lookups.push({
+          hypervisor: 'VMware',
+          osnameforhypervisor: osIdentifier
+        })
+      }
+
+      for (const params of lookups) {
+        if (!params.hypervisorversion) {
+          delete params.hypervisorversion
+        }
+        const mappings = await this.fetchGuestOsMappingsByParams(params)
+        if (mappings.length > 0) {
+          return mappings
+        }
+      }
+      return await this.fetchGuestOsTypeFallbackMappings(osDisplayName)
     },
     fetchVmwareInstanceForKVMMigration (vmname, hostname) {
       const params = {}
@@ -1411,7 +1485,10 @@ export default {
         this.selectedUnmanagedInstance = response.unmanagedinstance[0]
         this.selectedUnmanagedInstance.ostypename = this.selectedUnmanagedInstance.osdisplayname
         this.selectedUnmanagedInstance.state = this.selectedUnmanagedInstance.powerstate
-        this.selectedUnmanagedInstance.guestOsMappings = await this.fetchGuestOsMappings(this.selectedUnmanagedInstance.osid, this.selectedUnmanagedInstance.hypervisorversion)
+        this.selectedUnmanagedInstance.guestOsMappings = await this.fetchGuestOsMappings(
+          this.selectedUnmanagedInstance.osid,
+          this.selectedUnmanagedInstance.osdisplayname,
+          this.selectedUnmanagedInstance.hypervisorversion)
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
