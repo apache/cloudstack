@@ -88,9 +88,9 @@ public class ConfigDepotAdminTest extends TestCase {
         _depotAdmin._configDao = _configDao;
         _depotAdmin._configGroupDao = _configGroupDao;
         _depotAdmin._configSubGroupDao = _configSubGroupDao;
-        _depotAdmin._configurables = new ArrayList<Configurable>();
+        _depotAdmin._configurables = new ArrayList<>();
         _depotAdmin._configurables.add(_configurable);
-        _depotAdmin._scopedStorages = new ArrayList<ScopedConfigStorage>();
+        _depotAdmin._scopedStorages = new ArrayList<>();
         _depotAdmin._scopedStorages.add(_scopedStorage);
     }
 
