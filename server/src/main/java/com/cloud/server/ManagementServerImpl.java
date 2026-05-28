@@ -3077,10 +3077,11 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
 
         if (osDisplayName != null) {
             List<GuestOSVO> guestOSVOS = _guestOSDao.listLikeDisplayName(osDisplayName);
-            if (CollectionUtils.isNotEmpty(guestOSVOS)) {
-                List<Long> guestOSids = guestOSVOS.stream().map(mo -> mo.getId()).collect(Collectors.toList());
-                sc.addAnd(guestOsId, SearchCriteria.Op.IN, guestOSids.toArray());
+            if (CollectionUtils.isEmpty(guestOSVOS)) {
+                return new Pair<>(Collections.emptyList(), 0);
             }
+            List<Long> guestOSids = guestOSVOS.stream().map(mo -> mo.getId()).collect(Collectors.toList());
+            sc.addAnd(guestOsId, SearchCriteria.Op.IN, guestOSids.toArray());
         }
 
         final Pair<List<GuestOSHypervisorVO>, Integer> result = _guestOSHypervisorDao.searchAndCount(sc, searchFilter);

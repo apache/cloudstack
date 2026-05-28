@@ -1388,7 +1388,12 @@ export default {
       })
     },
     normalizeGuestOsName (name) {
-      return (name || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+      return (name || '')
+        .toLowerCase()
+        .replace(/^microsoft\s+/, '')
+        .replace(/[^a-z0-9]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
     },
     isStrongGuestOsNameMatch (osType, osDisplayName) {
       const candidate = this.normalizeGuestOsName(osType.description || osType.osdisplayname)
@@ -1425,15 +1430,31 @@ export default {
         return []
       })
     },
+    filterGuestOsMappings (mappings, params, osDisplayName) {
+      if (!mappings || mappings.length === 0) {
+        return []
+      }
+
+      const osNameForHypervisor = (params.osnameforhypervisor || '').toLowerCase()
+      let filteredMappings = mappings
+      if (osNameForHypervisor) {
+        filteredMappings = mappings.filter(mapping => (mapping.osnameforhypervisor || '').toLowerCase() === osNameForHypervisor)
+      }
+
+      if (osDisplayName) {
+        const displayNameMatches = filteredMappings.filter(mapping => this.isStrongGuestOsNameMatch(mapping, osDisplayName))
+        if (displayNameMatches.length > 0) {
+          return displayNameMatches
+        }
+        if (params.osdisplayname) {
+          return []
+        }
+      }
+
+      return filteredMappings
+    },
     async fetchGuestOsMappings (osIdentifier, osDisplayName, hypervisorVersion) {
       const lookups = []
-      if (osDisplayName) {
-        lookups.push({
-          hypervisor: 'VMware',
-          hypervisorversion: hypervisorVersion,
-          osdisplayname: osDisplayName
-        })
-      }
       if (osIdentifier) {
         lookups.push({
           hypervisor: 'VMware',
@@ -1441,16 +1462,23 @@ export default {
           osnameforhypervisor: osIdentifier
         })
       }
-      if (osDisplayName) {
-        lookups.push({
-          hypervisor: 'VMware',
-          osdisplayname: osDisplayName
-        })
-      }
       if (osIdentifier) {
         lookups.push({
           hypervisor: 'VMware',
           osnameforhypervisor: osIdentifier
+        })
+      }
+      if (osDisplayName) {
+        lookups.push({
+          hypervisor: 'VMware',
+          hypervisorversion: hypervisorVersion,
+          osdisplayname: osDisplayName
+        })
+      }
+      if (osDisplayName) {
+        lookups.push({
+          hypervisor: 'VMware',
+          osdisplayname: osDisplayName
         })
       }
 
@@ -1459,8 +1487,9 @@ export default {
           delete params.hypervisorversion
         }
         const mappings = await this.fetchGuestOsMappingsByParams(params)
-        if (mappings.length > 0) {
-          return mappings
+        const filteredMappings = this.filterGuestOsMappings(mappings, params, osDisplayName)
+        if (filteredMappings.length > 0) {
+          return filteredMappings
         }
       }
       return await this.fetchGuestOsTypeFallbackMappings(osDisplayName)
