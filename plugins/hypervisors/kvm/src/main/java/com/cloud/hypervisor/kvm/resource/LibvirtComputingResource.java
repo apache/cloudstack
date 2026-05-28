@@ -18,9 +18,13 @@ package com.cloud.hypervisor.kvm.resource;
 
 import static com.cloud.host.Host.HOST_INSTANCE_CONVERSION;
 import static com.cloud.host.Host.HOST_OVFTOOL_VERSION;
+import static com.cloud.host.Host.HOST_QEMU_IMG_RBD_SUPPORT;
+import static com.cloud.host.Host.HOST_RBD_QEMU_COPY_SUPPORT;
+import static com.cloud.host.Host.HOST_VDDK_RBD_DIRECT_IMPORT_SUPPORT;
 import static com.cloud.host.Host.HOST_VDDK_LIB_DIR;
 import static com.cloud.host.Host.HOST_VDDK_SUPPORT;
 import static com.cloud.host.Host.HOST_VDDK_VERSION;
+import static com.cloud.host.Host.HOST_VIRTV2V_INPLACE_SUPPORT;
 import static com.cloud.host.Host.HOST_VIRTV2V_VERSION;
 import static com.cloud.host.Host.HOST_VOLUME_ENCRYPTION;
 import static org.apache.cloudstack.utils.linux.KVMHostInfo.isHostS390x;
@@ -361,6 +365,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public static final String TUNGSTEN_PATH = "scripts/vm/network/tungsten";
 
     public static final String INSTANCE_CONVERSION_SUPPORTED_CHECK_CMD = "virt-v2v --version";
+    public static final String INSTANCE_CONVERSION_IN_PLACE_BINARY_SUPPORTED_CHECK_CMD = "virt-v2v-in-place --version";
+    public static final String INSTANCE_CONVERSION_IN_PLACE_OPTION_SUPPORTED_CHECK_CMD = "virt-v2v --help 2>&1 | grep -q -- '--in-place'";
+    public static final String QEMU_IMG_RBD_SUPPORTED_CHECK_CMD = "qemu-img --help 2>&1 | grep -Eq '(^|[[:space:]])rbd([[:space:]]|$)'";
     // virt-v2v --version => sample output: virt-v2v 1.42.0rhel=8,release=22.module+el8.10.0+1590+a67ab969
     public static final String OVF_EXPORT_SUPPORTED_CHECK_CMD = "ovftool --version";
     // ovftool --version => sample output: VMware ovftool 4.6.0 (build-21452615)
@@ -4345,6 +4352,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         boolean instanceConversionSupported = hostSupportsInstanceConversion();
         cmd.getHostDetails().put(HOST_INSTANCE_CONVERSION, String.valueOf(instanceConversionSupported));
         cmd.getHostDetails().put(HOST_VDDK_SUPPORT, String.valueOf(hostSupportsVddk()));
+        cmd.getHostDetails().put(HOST_VIRTV2V_INPLACE_SUPPORT, String.valueOf(hostSupportsVirtV2vInPlace()));
+        cmd.getHostDetails().put(HOST_QEMU_IMG_RBD_SUPPORT, String.valueOf(hostSupportsQemuImgRbd()));
+        cmd.getHostDetails().put(HOST_RBD_QEMU_COPY_SUPPORT, String.valueOf(hostSupportsRbdQemuCopy()));
+        cmd.getHostDetails().put(HOST_VDDK_RBD_DIRECT_IMPORT_SUPPORT, String.valueOf(hostSupportsVddkRbdDirectImport()));
         if (StringUtils.isNotBlank(vddkLibDir)) {
             cmd.getHostDetails().put(HOST_VDDK_LIB_DIR, vddkLibDir);
         }
@@ -6085,6 +6096,34 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             effectiveVddkLibDir = detectVddkLibDir();
         }
         return hostSupportsInstanceConversion() && isVddkLibDirValid(effectiveVddkLibDir) && StringUtils.isNotBlank(detectVddkVersion());
+    }
+
+    public boolean hostSupportsVirtV2vInPlace() {
+        return hostSupportsVirtV2vInPlaceBinary() || hostSupportsVirtV2vInPlaceOption();
+    }
+
+    public boolean hostSupportsVirtV2vInPlaceBinary() {
+        return Script.runSimpleBashScriptForExitValue(INSTANCE_CONVERSION_IN_PLACE_BINARY_SUPPORTED_CHECK_CMD) == 0;
+    }
+
+    public boolean hostSupportsVirtV2vInPlaceOption() {
+        return Script.runSimpleBashScriptForExitValue(INSTANCE_CONVERSION_IN_PLACE_OPTION_SUPPORTED_CHECK_CMD) == 0;
+    }
+
+    public boolean hostSupportsQemuImgRbd() {
+        return Script.runSimpleBashScriptForExitValue(QEMU_IMG_RBD_SUPPORTED_CHECK_CMD) == 0;
+    }
+
+    public boolean hostSupportsRbdQemuCopy() {
+        return hostSupportsQemuImgRbd();
+    }
+
+    public boolean hostSupportsVddkRbdDirectImport() {
+        return hostSupportsVddkRbdDirectImport(null);
+    }
+
+    public boolean hostSupportsVddkRbdDirectImport(String overriddenVddkLibDir) {
+        return hostSupportsVddk(overriddenVddkLibDir) && hostSupportsQemuImgRbd() && hostSupportsVirtV2vInPlace();
     }
 
     protected boolean isVddkLibDirValid(String path) {

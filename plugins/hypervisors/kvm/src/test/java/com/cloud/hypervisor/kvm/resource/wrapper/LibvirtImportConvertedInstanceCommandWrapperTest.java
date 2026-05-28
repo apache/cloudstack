@@ -39,6 +39,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
@@ -168,6 +169,40 @@ public class LibvirtImportConvertedInstanceCommandWrapperTest {
     }
 
     @Test
+    public void testMoveTemporaryDisksToRbdDestinationUsesDestinationPoolType() {
+        KVMPhysicalDisk sourceDisk = Mockito.mock(KVMPhysicalDisk.class);
+        Mockito.lenient().when(sourceDisk.getPool()).thenReturn(temporaryPool);
+        List<KVMPhysicalDisk> disks = List.of(sourceDisk);
+        String destinationPoolUuid = UUID.randomUUID().toString();
+        List<String> destinationPools = List.of(destinationPoolUuid);
+        List<Storage.StoragePoolType> destinationPoolTypes = List.of(Storage.StoragePoolType.RBD);
+
+        KVMPhysicalDisk destDisk = Mockito.mock(KVMPhysicalDisk.class);
+        Mockito.when(destDisk.getPath()).thenReturn("rbd/image");
+        Mockito.when(storagePoolManager.getStoragePool(Storage.StoragePoolType.RBD, destinationPoolUuid))
+                .thenReturn(destinationPool);
+        Mockito.when(destinationPool.getType()).thenReturn(Storage.StoragePoolType.RBD);
+        Mockito.when(destinationPool.getSourceDir()).thenReturn("cloudstack");
+        Mockito.when(destinationPool.getSourceHost()).thenReturn("10.0.0.1,10.0.0.2");
+        Mockito.when(destinationPool.getSourcePort()).thenReturn(6789);
+        Mockito.when(storagePoolManager.copyPhysicalDisk(Mockito.eq(sourceDisk), Mockito.anyString(), Mockito.eq(destinationPool), Mockito.anyInt()))
+                .thenReturn(destDisk);
+
+        try (MockedConstruction<Script> ignored = Mockito.mockConstruction(Script.class, (mock, context) -> {
+            Mockito.when(mock.execute()).thenReturn("");
+            Mockito.when(mock.getExitValue()).thenReturn(0);
+        })) {
+            List<KVMPhysicalDisk> movedDisks = importInstanceCommandWrapper.moveTemporaryDisksToDestination(disks,
+                    destinationPools, destinationPoolTypes, storagePoolManager);
+
+            Assert.assertEquals(1, movedDisks.size());
+            Assert.assertEquals("rbd/image", movedDisks.get(0).getPath());
+            Mockito.verify(storagePoolManager).getStoragePool(Storage.StoragePoolType.RBD, destinationPoolUuid);
+            Mockito.verify(destinationPool).deletePhysicalDisk(Mockito.endsWith("-probe"), Mockito.eq(Storage.ImageFormat.RAW));
+        }
+    }
+
+    @Test
     public void testGetUnmanagedInstanceDisks() {
         try (MockedStatic<Script> ignored = Mockito.mockStatic(Script.class)) {
             String relativePath = UUID.randomUUID().toString();
@@ -194,6 +229,31 @@ public class LibvirtImportConvertedInstanceCommandWrapperTest {
             UnmanagedInstanceTO.Disk disk = unmanagedInstanceDisks.get(0);
             Assert.assertEquals(LibvirtVMDef.DiskDef.DiskBus.IDE.toString(), disk.getController());
         }
+    }
+
+    @Test
+    public void testGetUnmanagedInstanceDisksForRbdDoesNotParseNfsMount() {
+        KVMPhysicalDisk sourceDisk = Mockito.mock(KVMPhysicalDisk.class);
+        Mockito.when(sourceDisk.getName()).thenReturn("rbd-image");
+        Mockito.when(sourceDisk.getVirtualSize()).thenReturn(5242880L);
+        Mockito.when(sourceDisk.getPool()).thenReturn(destinationPool);
+        Mockito.when(destinationPool.getType()).thenReturn(Storage.StoragePoolType.RBD);
+        Mockito.when(destinationPool.getUuid()).thenReturn("rbd-pool-uuid");
+        Mockito.when(destinationPool.getSourceHost()).thenReturn("10.0.0.1,10.0.0.2");
+        Mockito.when(destinationPool.getSourceDir()).thenReturn("cloudstack");
+
+        List<UnmanagedInstanceTO.Disk> unmanagedInstanceDisks = importInstanceCommandWrapper.getUnmanagedInstanceDisks(List.of(sourceDisk), null);
+
+        Assert.assertEquals(1, unmanagedInstanceDisks.size());
+        UnmanagedInstanceTO.Disk disk = unmanagedInstanceDisks.get(0);
+        Assert.assertEquals("rbd-image", disk.getFileBaseName());
+        Assert.assertEquals("rbd-image", disk.getImagePath());
+        Assert.assertEquals("rbd-pool-uuid", disk.getDatastoreName());
+        Assert.assertEquals(Storage.StoragePoolType.RBD.name(), disk.getDatastoreType());
+        Assert.assertEquals("10.0.0.1,10.0.0.2", disk.getDatastoreHost());
+        Assert.assertEquals("cloudstack", disk.getDatastorePath());
+        Assert.assertEquals(LibvirtVMDef.DiskDef.DiskBus.VIRTIO.toString(), disk.getController());
+        Mockito.verify(importInstanceCommandWrapper, Mockito.never()).getNfsStoragePoolHostAndPath(destinationPool);
     }
 
     @Test

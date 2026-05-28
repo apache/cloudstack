@@ -38,6 +38,7 @@ import com.cloud.agent.api.PrepareUnmanageVMInstanceCommand;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.RemoteInstanceTO;
 import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.agent.api.to.VmwareVddkSourceDiskTO;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource;
 import com.cloud.dc.DataCenter;
@@ -212,6 +213,11 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     private static final List<Storage.StoragePoolType> forceConvertToPoolAllowedTypes =
             Arrays.asList(Storage.StoragePoolType.NetworkFilesystem, Storage.StoragePoolType.Filesystem,
                     Storage.StoragePoolType.SharedMountPoint);
+    private static final List<Storage.StoragePoolType> vddkDirectConvertToPoolAllowedTypes =
+            Arrays.asList(Storage.StoragePoolType.NetworkFilesystem, Storage.StoragePoolType.Filesystem,
+                    Storage.StoragePoolType.SharedMountPoint, Storage.StoragePoolType.RBD);
+    private static final List<Storage.StoragePoolType> stagedConversionDestinationPoolTypes =
+            Arrays.asList(Storage.StoragePoolType.NetworkFilesystem, Storage.StoragePoolType.RBD);
     private static final String DETAIL_VDDK_TRANSPORTS = "vddk.transports";
     private static final String DETAIL_VDDK_THUMBPRINT = "vddk.thumbprint";
 
@@ -1679,8 +1685,12 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                             ApiConstants.FORCE_MS_TO_IMPORT_VM_FILES, ApiConstants.USE_VDDK));
         }
 
-        checkConversionStoragePool(convertStoragePoolId, forceConvertToPool);
-        validateSelectedConversionStoragePoolForVddk(useVddk, convertStoragePoolId, serviceOffering, dataDiskOfferingMap);
+        StoragePoolVO selectedConversionStoragePool = convertStoragePoolId == null ? null : primaryDataStoreDao.findById(convertStoragePoolId);
+        boolean directRbdVddkImport = useVddk && forceConvertToPool && selectedConversionStoragePool != null &&
+                selectedConversionStoragePool.getPoolType() == Storage.StoragePoolType.RBD;
+
+        checkConversionStoragePool(convertStoragePoolId, forceConvertToPool, useVddk);
+        validateSelectedConversionStoragePoolForVddk(useVddk, forceConvertToPool, convertStoragePoolId, serviceOffering, dataDiskOfferingMap);
 
         checkExtraParamsAllowed(extraParams);
 
@@ -1704,13 +1714,13 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         ImportVmTask importVMTask = null;
         List<Reserver> reservations = new ArrayList<>();
         try {
-            HostVO convertHost = selectKVMHostForConversionInCluster(destinationCluster, convertInstanceHostId, useVddk);
+            HostVO convertHost = selectKVMHostForConversionInCluster(destinationCluster, convertInstanceHostId, useVddk, directRbdVddkImport);
             HostVO importHost = (useVddk && importInstanceHostId == null)
                     ? convertHost
                     : selectKVMHostForImportingInCluster(destinationCluster, importInstanceHostId);
 
             boolean isOvfExportSupported = false;
-            CheckConvertInstanceAnswer conversionSupportAnswer = checkConversionSupportOnHost(convertHost, sourceVMName, false, useVddk, details);
+            CheckConvertInstanceAnswer conversionSupportAnswer = checkConversionSupportOnHost(convertHost, sourceVMName, false, useVddk, details, directRbdVddkImport);
             if (!useVddk) {
                 isOvfExportSupported = conversionSupportAnswer.isOvfExportSupported();
             }
@@ -1732,13 +1742,14 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             Pair<UnmanagedInstanceTO, Boolean> sourceInstanceDetails = getSourceVmwareUnmanagedInstance(vcenter, datacenterName, username, password, clusterName, sourceHostName, sourceVMName, serviceOffering);
             sourceVMwareInstance = sourceInstanceDetails.first();
             isClonedInstance = sourceInstanceDetails.second();
+            validateDirectRbdVddkSourceVm(directRbdVddkImport, sourceVMName, sourceVMwareInstance, isClonedInstance);
 
             // Ensure that the configured resource limits will not be exceeded before beginning the conversion process
             checkVmResourceLimitsForUnmanagedInstanceImport(owner, sourceVMwareInstance, serviceOffering, template, reservations);
 
             boolean isWindowsVm = sourceVMwareInstance.getOperatingSystem().toLowerCase().contains("windows");
             if (isWindowsVm) {
-                checkConversionSupportOnHost(convertHost, sourceVMName, true, useVddk, details);
+                checkConversionSupportOnHost(convertHost, sourceVMName, true, useVddk, details, directRbdVddkImport);
             }
 
             checkNetworkingBeforeConvertingVmwareInstance(zone, owner, displayName, hostName, sourceVMwareInstance, nicNetworkMap, nicIpAddressMap, forced);
@@ -1800,6 +1811,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
      * @throws CloudRuntimeException in case these requirements are not met
      */
     protected void checkConversionStoragePool(Long convertStoragePoolId, boolean forceConvertToPool) {
+        checkConversionStoragePool(convertStoragePoolId, forceConvertToPool, false);
+    }
+
+    protected void checkConversionStoragePool(Long convertStoragePoolId, boolean forceConvertToPool, boolean useVddk) {
         if (forceConvertToPool && convertStoragePoolId == null) {
             String msg = "The parameter forceconverttopool is set to true, but a primary storage pool has not been provided for conversion";
             logFailureAndThrowException(msg);
@@ -1809,16 +1824,26 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             if (selectedStoragePool == null) {
                 logFailureAndThrowException(String.format("Cannot find a storage pool with ID %s", convertStoragePoolId));
             }
-            if (forceConvertToPool && !forceConvertToPoolAllowedTypes.contains(selectedStoragePool.getPoolType())) {
+            List<Storage.StoragePoolType> allowedTypes = useVddk ? vddkDirectConvertToPoolAllowedTypes : forceConvertToPoolAllowedTypes;
+            if (forceConvertToPool && !allowedTypes.contains(selectedStoragePool.getPoolType())) {
                 logFailureAndThrowException(String.format("The selected storage pool %s does not support direct conversion " +
                         "as its type %s", selectedStoragePool.getName(), selectedStoragePool.getPoolType().name()));
+            }
+            if (forceConvertToPool && selectedStoragePool.getPoolType() == Storage.StoragePoolType.RBD && !useVddk) {
+                logFailureAndThrowException(String.format("The selected RBD storage pool %s can be used for direct conversion only with %s=true",
+                        selectedStoragePool.getName(), ApiConstants.USE_VDDK));
             }
         }
     }
 
     protected void validateSelectedConversionStoragePoolForVddk(boolean useVddk, Long convertStoragePoolId,
                                                                 ServiceOfferingVO serviceOffering, Map<String, Long> dataDiskOfferingMap) {
-        if (!useVddk || convertStoragePoolId == null) {
+        validateSelectedConversionStoragePoolForVddk(useVddk, true, convertStoragePoolId, serviceOffering, dataDiskOfferingMap);
+    }
+
+    protected void validateSelectedConversionStoragePoolForVddk(boolean useVddk, boolean forceConvertToPool, Long convertStoragePoolId,
+                                                                ServiceOfferingVO serviceOffering, Map<String, Long> dataDiskOfferingMap) {
+        if (!useVddk || !forceConvertToPool || convertStoragePoolId == null) {
             return;
         }
 
@@ -2018,6 +2043,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     }
 
     HostVO selectKVMHostForConversionInCluster(Cluster destinationCluster, Long convertInstanceHostId, boolean useVddk) {
+        return selectKVMHostForConversionInCluster(destinationCluster, convertInstanceHostId, useVddk, false);
+    }
+
+    HostVO selectKVMHostForConversionInCluster(Cluster destinationCluster, Long convertInstanceHostId, boolean useVddk, boolean requireVddkRbdDirectImportSupport) {
         if (convertInstanceHostId != null) {
             HostVO selectedHost = hostDao.findById(convertInstanceHostId);
             String err = null;
@@ -2057,6 +2086,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                     hosts = vddkHosts;
                 }
             }
+            if (requireVddkRbdDirectImportSupport) {
+                List<HostVO> directRbdHosts = filterHostsWithVddkRbdDirectImportSupport(hosts);
+                hosts = directRbdHosts;
+            }
             if (CollectionUtils.isNotEmpty(hosts)) {
                 return hosts.get(new Random().nextInt(hosts.size()));
             }
@@ -2071,12 +2104,19 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                     hosts = vddkHosts;
                 }
             }
+            if (requireVddkRbdDirectImportSupport) {
+                List<HostVO> directRbdHosts = filterHostsWithVddkRbdDirectImportSupport(hosts);
+                hosts = directRbdHosts;
+            }
             if (CollectionUtils.isNotEmpty(hosts)) {
                 return hosts.get(new Random().nextInt(hosts.size()));
             }
         }
 
-        String err = useVddk
+        String err = requireVddkRbdDirectImportSupport
+                ? String.format("Could not find any suitable %s host in cluster %s with '%s' configured to perform direct RBD VDDK import",
+                        destinationCluster.getHypervisorType(), destinationCluster, Host.HOST_VDDK_RBD_DIRECT_IMPORT_SUPPORT)
+                : useVddk
                 ? String.format("Could not find any suitable %s host in cluster %s with '%s' configured to perform the VDDK-based instance conversion",
                         destinationCluster.getHypervisorType(), destinationCluster, Host.HOST_VDDK_SUPPORT)
                 : String.format("Could not find any suitable %s host in cluster %s to perform the instance conversion",
@@ -2092,14 +2132,29 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }).collect(Collectors.toList());
     }
 
+    private List<HostVO> filterHostsWithVddkRbdDirectImportSupport(List<HostVO> hosts) {
+        return hosts.stream().filter(h -> {
+            hostDao.loadDetails(h);
+            return Boolean.parseBoolean(h.getDetail(Host.HOST_VDDK_RBD_DIRECT_IMPORT_SUPPORT));
+        }).collect(Collectors.toList());
+    }
+
     private CheckConvertInstanceAnswer checkConversionSupportOnHost(HostVO convertHost, String sourceVM,
                                                                     boolean checkWindowsGuestConversionSupport,
                                                                     boolean useVddk, Map<String, String> details) {
+        return checkConversionSupportOnHost(convertHost, sourceVM, checkWindowsGuestConversionSupport, useVddk, details, false);
+    }
+
+    private CheckConvertInstanceAnswer checkConversionSupportOnHost(HostVO convertHost, String sourceVM,
+                                                                    boolean checkWindowsGuestConversionSupport,
+                                                                    boolean useVddk, Map<String, String> details,
+                                                                    boolean checkVddkRbdDirectImportSupport) {
         logger.debug(String.format("Checking the %s%s conversion support on the host %s",
                 useVddk ? "VDDK " : "",
                 checkWindowsGuestConversionSupport ? "windows guest " : "",
                 convertHost));
         CheckConvertInstanceCommand cmd = new CheckConvertInstanceCommand(checkWindowsGuestConversionSupport, useVddk);
+        cmd.setCheckVddkRbdDirectImportSupport(checkVddkRbdDirectImportSupport);
         if (MapUtils.isNotEmpty(details)) {
             cmd.setVddkLibDir(StringUtils.trimToNull(details.get(Host.HOST_VDDK_LIB_DIR)));
         }
@@ -2137,7 +2192,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 sourceVM, convertHost, ovfTemplateDirConvertLocation);
 
         RemoteInstanceTO remoteInstanceTO = new RemoteInstanceTO(sourceVM, sourceVMwareInstance.getClusterName(), sourceVMwareInstance.getHostName());
-        List<String> destinationStoragePools = selectInstanceConversionStoragePools(convertStoragePools, sourceVMwareInstance.getDisks(), serviceOffering, dataDiskOfferingMap);
+        List<StoragePoolVO> destinationStoragePools = selectInstanceConversionDestinationStoragePools(convertStoragePools, sourceVMwareInstance.getDisks(), serviceOffering, dataDiskOfferingMap);
+        validateStagedRbdImportHostSupport(forceConvertToPool, destinationStoragePools, importHost);
         ConvertInstanceCommand cmd = new ConvertInstanceCommand(remoteInstanceTO,
                 Hypervisor.HypervisorType.KVM, temporaryConvertLocation,
                 ovfTemplateDirConvertLocation, false, false, sourceVM);
@@ -2148,7 +2204,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         cmd.setWait(timeoutSeconds);
 
         return convertAndImportToKVM(cmd, convertHost, importHost, sourceVM,
-                remoteInstanceTO, destinationStoragePools, temporaryConvertLocation, forceConvertToPool);
+                remoteInstanceTO, getStoragePoolUuids(destinationStoragePools), getStoragePoolTypes(destinationStoragePools),
+                temporaryConvertLocation, forceConvertToPool);
     }
 
     private UnmanagedInstanceTO convertVmwareInstanceToKVMUsingVDDKOrAfterExportingOVFToConvertLocation(
@@ -2161,7 +2218,9 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         logger.debug("Delegating the conversion of instance {} from VMware to KVM to the host {} after OVF export through ovftool", sourceVM, convertHost);
 
         RemoteInstanceTO remoteInstanceTO = new RemoteInstanceTO(sourceVMwareInstance.getName(), sourceVMwareInstance.getPath(), vcenterHost, vcenterUsername, vcenterPassword, datacenterName, sourceVMwareInstance.getClusterName(), sourceVMwareInstance.getHostName());
-        List<String> destinationStoragePools = selectInstanceConversionStoragePools(convertStoragePools, sourceVMwareInstance.getDisks(), serviceOffering, dataDiskOfferingMap);
+        remoteInstanceTO.setVmwareMoref(sourceVMwareInstance.getVmwareMoref());
+        List<StoragePoolVO> destinationStoragePools = selectInstanceConversionDestinationStoragePools(convertStoragePools, sourceVMwareInstance.getDisks(), serviceOffering, dataDiskOfferingMap);
+        validateStagedRbdImportHostSupport(forceConvertToPool, destinationStoragePools, importHost);
         ConvertInstanceCommand cmd = new ConvertInstanceCommand(remoteInstanceTO,
                 Hypervisor.HypervisorType.KVM, temporaryConvertLocation, null, false, true, sourceVM);
         int timeoutSeconds = UnmanagedVMsManager.ConvertVmwareInstanceToKvmTimeout.value() * 60 * 60;
@@ -2176,9 +2235,26 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             cmd.setExtraParams(extraParams);
         }
         cmd.setUseVddk(useVddk);
+        if (useVddk) {
+            cmd.setVmwareVddkSourceDisks(toVmwareVddkSourceDisks(sourceVMwareInstance.getDisks()));
+        }
         applyVddkOverridesFromDetails(cmd, details);
         return convertAndImportToKVM(cmd, convertHost, importHost, sourceVM,
-                remoteInstanceTO, destinationStoragePools, temporaryConvertLocation, forceConvertToPool);
+                remoteInstanceTO, getStoragePoolUuids(destinationStoragePools), getStoragePoolTypes(destinationStoragePools),
+                temporaryConvertLocation, forceConvertToPool);
+    }
+
+    private List<VmwareVddkSourceDiskTO> toVmwareVddkSourceDisks(List<UnmanagedInstanceTO.Disk> disks) {
+        if (CollectionUtils.isEmpty(disks)) {
+            return Collections.emptyList();
+        }
+        List<VmwareVddkSourceDiskTO> sourceDisks = new ArrayList<>(disks.size());
+        for (int i = 0; i < disks.size(); i++) {
+            UnmanagedInstanceTO.Disk disk = disks.get(i);
+            sourceDisks.add(new VmwareVddkSourceDiskTO(disk.getDiskId(), disk.getImagePath(),
+                    disk.getCapacity() == null ? 0L : disk.getCapacity(), i));
+        }
+        return sourceDisks;
     }
 
     private void applyVddkOverridesFromDetails(ConvertInstanceCommand cmd, Map<String, String> details) {
@@ -2191,10 +2267,35 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         cmd.setVddkThumbprint(StringUtils.trimToNull(details.get(DETAIL_VDDK_THUMBPRINT)));
     }
 
+    private void validateDirectRbdVddkSourceVm(boolean directRbdVddkImport, String sourceVM,
+                                               UnmanagedInstanceTO sourceVMwareInstance, boolean isClonedInstance) {
+        if (!directRbdVddkImport) {
+            return;
+        }
+        if (isClonedInstance || sourceVMwareInstance == null || sourceVMwareInstance.getPowerState() != UnmanagedInstanceTO.PowerState.PowerOff) {
+            throw new CloudRuntimeException(String.format("Direct RBD VDDK import is supported only for powered-off VMware VMs. " +
+                    "Please power off VM %s, or disable %s and use staged import with temporary conversion storage.",
+                    sourceVM, ApiConstants.FORCE_CONVERT_TO_POOL));
+        }
+    }
+
+    private void validateStagedRbdImportHostSupport(boolean forceConvertToPool, List<StoragePoolVO> destinationStoragePools, HostVO importHost) {
+        if (forceConvertToPool || destinationStoragePools.stream().noneMatch(pool -> pool.getPoolType() == Storage.StoragePoolType.RBD)) {
+            return;
+        }
+        hostDao.loadDetails(importHost);
+        if (!Boolean.parseBoolean(importHost.getDetail(Host.HOST_RBD_QEMU_COPY_SUPPORT))) {
+            throw new CloudRuntimeException(String.format("Import host %s cannot copy converted qcow2 disks to RBD. " +
+                    "Please select an import host with %s=true, or use a non-RBD destination pool.",
+                    importHost.getName(), Host.HOST_RBD_QEMU_COPY_SUPPORT));
+        }
+    }
+
     private UnmanagedInstanceTO convertAndImportToKVM(ConvertInstanceCommand convertInstanceCommand, HostVO convertHost, HostVO importHost,
                                                       String sourceVM,
                                                       RemoteInstanceTO remoteInstanceTO,
                                                       List<String> destinationStoragePools,
+                                                      List<Storage.StoragePoolType> destinationStoragePoolTypes,
                                                       DataStoreTO temporaryConvertLocation,
                                                       boolean forceConvertToPool) {
         Answer convertAnswer;
@@ -2217,7 +2318,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         Answer importAnswer;
         try {
             ImportConvertedInstanceCommand importCmd = new ImportConvertedInstanceCommand(
-                    remoteInstanceTO, destinationStoragePools, temporaryConvertLocation,
+                    remoteInstanceTO, destinationStoragePools, destinationStoragePoolTypes, temporaryConvertLocation,
                     ((ConvertInstanceAnswer)convertAnswer).getTemporaryConvertUuid(), forceConvertToPool);
             importAnswer = agentManager.send(importHost.getId(), importCmd);
         } catch (AgentUnavailableException | OperationTimedoutException e) {
@@ -2245,8 +2346,12 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             DataStoreTO temporaryConvertLocation, boolean forceConvertToPool) {
         List<StoragePoolVO> poolsList;
         if (!forceConvertToPool) {
-            Set<StoragePoolVO> pools = new HashSet<>(primaryDataStoreDao.findClusterWideStoragePoolsByHypervisorAndPoolType(destinationCluster.getId(), Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.NetworkFilesystem));
-            pools.addAll(primaryDataStoreDao.findZoneWideStoragePoolsByHypervisorAndPoolType(destinationCluster.getDataCenterId(), Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.NetworkFilesystem));
+            List<StoragePoolVO> pools = new ArrayList<>();
+            for (Storage.StoragePoolType poolType : stagedConversionDestinationPoolTypes) {
+                Set<StoragePoolVO> poolsForType = new HashSet<>(primaryDataStoreDao.findClusterWideStoragePoolsByHypervisorAndPoolType(destinationCluster.getId(), Hypervisor.HypervisorType.KVM, poolType));
+                poolsForType.addAll(primaryDataStoreDao.findZoneWideStoragePoolsByHypervisorAndPoolType(destinationCluster.getDataCenterId(), Hypervisor.HypervisorType.KVM, poolType));
+                pools.addAll(poolsForType);
+            }
             if (pools.isEmpty()) {
                 String msg = String.format("Cannot find suitable storage pools in the cluster %s for the conversion", destinationCluster.getName());
                 logger.error(msg);
@@ -2304,7 +2409,14 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             List<StoragePoolVO> pools, List<UnmanagedInstanceTO.Disk> disks,
             ServiceOfferingVO serviceOffering, Map<String, Long> dataDiskOfferingMap
     ) {
-        List<String> storagePools = new ArrayList<>(disks.size());
+        return getStoragePoolUuids(selectInstanceConversionDestinationStoragePools(pools, disks, serviceOffering, dataDiskOfferingMap));
+    }
+
+    private List<StoragePoolVO> selectInstanceConversionDestinationStoragePools(
+            List<StoragePoolVO> pools, List<UnmanagedInstanceTO.Disk> disks,
+            ServiceOfferingVO serviceOffering, Map<String, Long> dataDiskOfferingMap
+    ) {
+        List<StoragePoolVO> storagePools = new ArrayList<>(disks.size());
         Set<String> dataDiskIds = dataDiskOfferingMap.keySet();
         for (UnmanagedInstanceTO.Disk disk : disks) {
             Long diskOfferingId = null;
@@ -2316,14 +2428,22 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
             //TODO: Choose pools by capacity
             if (diskOfferingId == null) {
-                storagePools.add(pools.get(0).getUuid());
+                storagePools.add(pools.get(0));
             } else {
                 DiskOfferingVO diskOffering = diskOfferingDao.findById(diskOfferingId);
                 StoragePoolVO pool = getStoragePoolWithTags(pools, diskOffering.getTags());
-                storagePools.add(pool.getUuid());
+                storagePools.add(pool);
             }
         }
         return storagePools;
+    }
+
+    private List<String> getStoragePoolUuids(List<StoragePoolVO> pools) {
+        return pools.stream().map(StoragePoolVO::getUuid).collect(Collectors.toList());
+    }
+
+    private List<Storage.StoragePoolType> getStoragePoolTypes(List<StoragePoolVO> pools) {
+        return pools.stream().map(StoragePoolVO::getPoolType).collect(Collectors.toList());
     }
 
     private void logFailureAndThrowException(String msg) {
