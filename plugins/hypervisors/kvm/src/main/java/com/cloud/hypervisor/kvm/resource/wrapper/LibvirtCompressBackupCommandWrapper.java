@@ -98,11 +98,17 @@ public class LibvirtCompressBackupCommandWrapper extends CommandWrapper<Compress
 
         return new Answer(command);
     }
+
     private Integer validateAndGetRateLimit(CompressBackupCommand command, QemuImg qemuImg) {
+        if (command.getRateLimit() < 1) {
+            return null;
+        }
+
         if (qemuImg.getVersion() < QemuImg.QEMU_5_2) {
             throw new CloudRuntimeException("Qemu version is lower than 5.2.0, unable to set the rate limit.");
         }
-        return command.getRateLimit() < 1 ? null : command.getRateLimit();
+
+        return command.getRateLimit();
     }
 
     /**
