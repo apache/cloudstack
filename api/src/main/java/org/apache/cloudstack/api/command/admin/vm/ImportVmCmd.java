@@ -153,7 +153,8 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
     private Long importInstanceHostId;
 
     @Parameter(name = ApiConstants.CONVERT_INSTANCE_STORAGE_POOL_ID, type = CommandType.UUID, entityType = StoragePoolResponse.class,
-            description = "(only for importing VMs from VMware to KVM) optional - the temporary storage pool to perform the virt-v2v migration from VMware to KVM.")
+            description = "(only for importing VMs from VMware to KVM) optional - the temporary storage pool to perform the virt-v2v migration from VMware to KVM. " +
+                    "When " + ApiConstants.USE_VDDK + " and " + ApiConstants.FORCE_CONVERT_TO_POOL + " are true, this can be an RBD primary storage pool for direct RBD import.")
     private Long convertStoragePoolId;
 
     @Parameter(name = ApiConstants.FORCE_MS_TO_IMPORT_VM_FILES, type = CommandType.BOOLEAN,
@@ -183,7 +184,9 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
             type = CommandType.BOOLEAN,
             since = "4.22.1",
             description = "(only for importing VMs from VMware to KVM) optional - if true, uses VDDK on the KVM conversion host for converting the VM. " +
-                    "This parameter is mutually exclusive with " + ApiConstants.FORCE_MS_TO_IMPORT_VM_FILES + ".")
+                    "This parameter is mutually exclusive with " + ApiConstants.FORCE_MS_TO_IMPORT_VM_FILES + ". " +
+                    "With " + ApiConstants.FORCE_CONVERT_TO_POOL + "=true and an RBD conversion pool, the source VMware VM must be powered off and " +
+                    "the conversion host must support qemu RBD access and in-place virt-v2v finalization.")
     private Boolean useVddk;
 
 
