@@ -2316,9 +2316,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         HypervisorType hypervisorType = _volsDao.getHypervisorType(volume.getId());
 
         if (userVm != null) {
-            if (volume.getVolumeType().equals(Volume.Type.ROOT) && userVm.getPowerState() != VirtualMachine.PowerState.PowerOff && hypervisorType == HypervisorType.VMware) {
-                logger.error(" For ROOT volume resize VM should be in Power Off state.");
-                throw new InvalidParameterValueException("VM current state is : " + userVm.getPowerState() + ". But VM should be in " + VirtualMachine.PowerState.PowerOff + " state.");
+            if (Volume.Type.ROOT.equals(volume.getVolumeType())
+                    && ! State.Stopped.equals(userVm.getState())
+                    && HypervisorType.VMware.equals(hypervisorType)) {
+                logger.error("For ROOT volume resize VM should be in Stopped state.");
+                throw new InvalidParameterValueException("VM current state is : " + userVm.getState() + ". But VM should be in " + State.Stopped + " state.");
             }
             // serialize VM operation
             AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
@@ -2396,9 +2398,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         UserVmVO userVm = _userVmDao.findById(volume.getInstanceId());
         if (userVm != null) {
-            if (volume.getVolumeType().equals(Volume.Type.ROOT) && userVm.getPowerState() != VirtualMachine.PowerState.PowerOff && hypervisorType == HypervisorType.VMware) {
-                logger.error(" For ROOT volume resize VM should be in Power Off state.");
-                throw new InvalidParameterValueException("VM current state is : " + userVm.getPowerState() + ". But VM should be in " + VirtualMachine.PowerState.PowerOff + " state.");
+            if (Volume.Type.ROOT.equals(volume.getVolumeType())
+                    && !State.Stopped.equals(userVm.getState())
+                    && hypervisorType == HypervisorType.VMware) {
+                logger.error("For ROOT volume resize VM should be in Stopped state.");
+                throw new InvalidParameterValueException("VM current state is : " + userVm.getState() + ". But VM should be in " + State.Stopped + " state.");
             }
         }
     }
