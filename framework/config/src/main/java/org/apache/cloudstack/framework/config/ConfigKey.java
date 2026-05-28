@@ -434,7 +434,15 @@ public class ConfigKey<T> {
         }
         String value = s_depot != null ? s_depot.getConfigStringValue(_name, scope, id) : null;
         if (value == null) {
-            return valueInGlobalOrAvailableParentScope(scope, id);
+            T parentValue = valueInGlobalOrAvailableParentScope(scope, id);
+            // Cache the inherited value under this scope to avoid repeated hierarchy traversal.
+            // Skip this for keys with a multiplier: parentValue already has the multiplier applied,
+            // so caching its toString() and reading it back through valueOf() would apply the
+            // multiplier a second time (double scaling).
+            if (s_depot != null && parentValue != null && multiplier() == null) {
+                s_depot.cacheValue(_name, scope, id, parentValue.toString());
+            }
+            return parentValue;
         }
         logger.trace("Scope({}) value for config ({}): {}", scope, _name, _value);
 
