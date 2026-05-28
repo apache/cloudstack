@@ -334,7 +334,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStor
 
         if (existingUuid != null) {
             uuid = (String)existingUuid;
-        } else if (scheme.equalsIgnoreCase("sharedmountpoint") || scheme.equalsIgnoreCase("clvm")) {
+        } else if (scheme.equalsIgnoreCase("sharedmountpoint")) {
             uuid = UUID.randomUUID().toString();
         } else if ("PreSetup".equalsIgnoreCase(scheme) && !HypervisorType.VMware.equals(hypervisorType)) {
             uuid = hostPath.replace("/", "");
