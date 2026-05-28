@@ -110,10 +110,13 @@ public class LibvirtTakeKbossBackupCommandWrapper extends CommandWrapper<TakeKbo
                 maxWaitInMillis = calculateRemainingTime(maxWaitInMillis, startTimeMillis);
             }
         } catch (Exception ex) {
-            recoverPreviousVmStateAndDeletePartialBackup(resource, volumeTosAndNewPaths, vmName, runningVM,
-                    mapVolumeUuidToDeltaPathOnSecondaryAndDeltaSize, storagePoolManager, command.getImageStoreUrl());
-            throw new BackupException(String.format("There was an exception during the backup process for VM [%s], but the VM has been successfully normalized.", vmName),
-                    ex, true);
+            logger.error("There has been an exception during the backup creation process. We will try to revert the VM [{}] to its previous state. The exception is: {}", vmName,
+                    ex.getMessage(), ex);
+            recoverPreviousVmStateAndDeletePartialBackup(resource, volumeTosAndNewPaths, vmName, runningVM, mapVolumeUuidToDeltaPathOnSecondaryAndDeltaSize, storagePoolManager,
+                    command.getImageStoreUrl());
+
+            throw new BackupException(String.format("There was an exception during the backup process for VM [%s], but the VM has been successfully normalized.", vmName), ex,
+                    true);
         }
     }
 
@@ -317,8 +320,6 @@ public class LibvirtTakeKbossBackupCommandWrapper extends CommandWrapper<TakeKbo
      * */
     protected void recoverPreviousVmStateAndDeletePartialBackup(LibvirtComputingResource resource, List<Pair<VolumeObjectTO, String>> volumeTosAndNewPaths, String vmName,
             boolean runningVm, Map<String, Pair<String, Long>> mapVolumeUuidToDeltaPathOnSecondaryAndSize, KVMStoragePoolManager storagePoolManager, String imageStoreUrl) {
-        logger.error("There has been an exception during the backup creation process. We will try to revert the VM [{}] to its previous state.", vmName);
-
         for (Pair<VolumeObjectTO, String> volumeObjectTOAndNewPath : volumeTosAndNewPaths) {
             VolumeObjectTO volumeObjectTO = volumeObjectTOAndNewPath.first();
             String volumeUuid = volumeObjectTO.getUuid();
