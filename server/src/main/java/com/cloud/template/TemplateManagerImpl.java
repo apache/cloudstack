@@ -1703,6 +1703,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (isPublic != null || isFeatured != null || "reset".equalsIgnoreCase(operation)) {
             for (VMTemplateZoneVO templateZone : _tmpltZoneDao.listByTemplateId(template.getId())) {
                 _tmpltSvr.enforceSecStorageCopyLimit(template.getId(), templateZone.getZoneId());
+                _tmpltSvr.replicateTemplateUpToCap(template.getId(), templateZone.getZoneId());
             }
         }
         return true;

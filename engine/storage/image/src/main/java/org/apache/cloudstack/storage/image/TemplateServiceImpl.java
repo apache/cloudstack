@@ -1146,6 +1146,15 @@ public class TemplateServiceImpl implements TemplateService {
             return null;
         }
 
+        try {
+            DataStore destStore = template.getDataStore();
+            if (destStore != null && destStore.getScope() != null && destStore.getScope().getScopeId() != null) {
+                enforceSecStorageCopyLimit(template.getId(), destStore.getScope().getScopeId());
+            }
+        } catch (Exception e) {
+            logger.warn("Failed to enforce secstorage copy limit after template [{}] became Ready: {}", template.getUuid(), e.getMessage());
+        }
+
         if (parentCallback != null) {
             parentCallback.complete(result);
         }
@@ -1587,6 +1596,14 @@ public class TemplateServiceImpl implements TemplateService {
                 destTemplate.processEvent(Event.OperationFailed);
             } else {
                 destTemplate.processEvent(Event.OperationSucceeded, result.getAnswer());
+                try {
+                    DataStore destStore = destTemplate.getDataStore();
+                    if (destStore != null && destStore.getScope() != null && destStore.getScope().getScopeId() != null) {
+                        enforceSecStorageCopyLimit(destTemplate.getId(), destStore.getScope().getScopeId());
+                    }
+                } catch (Exception e) {
+                    logger.warn("Failed to enforce secstorage copy limit after copy of template [{}] became Ready: {}", destTemplate.getUuid(), e.getMessage());
+                }
             }
             future.complete(res);
         } catch (Exception e) {
