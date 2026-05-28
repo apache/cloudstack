@@ -3963,7 +3963,6 @@
 "message.success.create.keypair": "Successfully created SSH key pair",
 "message.success.create.kubernetes.cluster": "Successfully created Kubernetes Cluster",
 "message.success.create.l2.network": "Successfully created L2 Network",
-"message.success.create.password": "Successfully created API key pair for user",
 "message.success.create.snapshot.from.vmsnapshot": "Successfully created Snapshot from Instance Snapshot",
 "message.success.create.template": "Successfully created Template",
 "message.success.create.user": "Successfully created User",

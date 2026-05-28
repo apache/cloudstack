@@ -3558,7 +3558,6 @@
 "message.success.create.keypair": "Par de chaves SSH criado com sucesso",
 "message.success.create.kubernetes.cluster": "Cluster Kubernetes criado com sucesso",
 "message.success.create.l2.network": "Rede L2 criada com sucesso",
-"message.success.create.password": "Par de chave de acesso \u00e0 API criada com sucesso",
 "message.success.create.sharedfs": "Sistema de Arquivos Compartilhado criado com sucesso",
 "message.success.create.snapshot.from.vmsnapshot": "Snapshot de volume a partir da snapshot de VM criada com sucesso",
 "message.success.create.template": "Template criado com sucesso",

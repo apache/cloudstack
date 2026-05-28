@@ -139,9 +139,6 @@ export default {
       this.formRef = ref()
       this.form = reactive({})
     },
-    isValidValueForKey (obj, key) {
-      return key in obj && obj[key] != null
-    },
     buildRequestParams () {
       const values = toRaw(this.form)
       this.loading = true

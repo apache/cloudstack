@@ -137,18 +137,14 @@
 </template>
 <script>
 import { getAPI, postAPI } from '@/api'
-import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import BulkActionView from '@/components/view/BulkActionView.vue'
 import eventBus from '@/config/eventBus'
-import OwnershipSelection from '@/views/compute/wizard/OwnershipSelection.vue'
 import GenerateApiKeyPair from '@/views/iam/GenerateApiKeyPair.vue'
 
 export default {
   name: 'ApiKeyPairsTab',
   components: {
-    OwnershipSelection,
-    Status,
     TooltipButton,
     BulkActionView,
     GenerateApiKeyPair
@@ -301,7 +297,6 @@ export default {
                 isFetchData: false
               },
               successMethod: () => {
-                console.log('success method')
                 eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: keypair.id, state: 'success' })
               },
               catchMethod: () => {

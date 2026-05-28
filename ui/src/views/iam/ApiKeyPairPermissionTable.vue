@@ -28,8 +28,7 @@
             :filterOption="filterOption"
             :options="apis"
             v-model:value="newRule"
-            :placeholder="$t('label.rule')"
-            :class="{'rule-dropdown-error' : newRuleSelectError}" />
+            :placeholder="$t('label.rule')" />
         </div>
         <div class="rules-table__col rules-table__col--permission">
           <permission-editable
@@ -197,7 +196,6 @@ export default {
       newRule: '',
       newRulePermission: 'allow',
       newRuleDescription: '',
-      newRuleSelectError: false,
       drag: false,
       apis: [],
       currRules: new Set(),
