@@ -253,7 +253,7 @@
       <a-col :md="12" :lg="12">
         <a-form-item name="gpudisplay" ref="gpudisplay">
           <template #label>
-            <tooltip-label :title="$t('label.gpu.display')" :tooltip="apiParams.gpudisplay.description"/>
+            <tooltip-label :title="$t('label.gpudisplay')" :tooltip="apiParams.gpudisplay.description"/>
           </template>
           <a-switch v-model:checked="form.gpudisplay" />
         </a-form-item>
