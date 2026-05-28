@@ -6216,7 +6216,8 @@ class BackupOffering:
         return (apiclient.removeVirtualMachineFromBackupOffering(cmd))
 
     @classmethod
-    def createOffering(cls, api_client, description, name, zoneid, allowquickrestore=False, compress=False, validate=False, validationsteps=None, allowuserdrivenbackups=True):
+    def createOffering(cls, api_client, description, name, zoneid, allowquickrestore=False, compress=False, validate=False, validationsteps=None, allowuserdrivenbackups=True,
+                       compressionlibrary='zlib'):
         """Create a backup offering"""
 
         cmd = createBackupOffering.createBackupOfferingCmd()
@@ -6229,6 +6230,7 @@ class BackupOffering:
             cmd.allowquickrestore = allowquickrestore
         if compress:
             cmd.compress = compress
+            cmd.compressionlibrary = compressionlibrary
         if validate:
             cmd.validate = validate
         if validationsteps:
