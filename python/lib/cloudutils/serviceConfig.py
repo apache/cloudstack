@@ -525,6 +525,8 @@ class securityPolicyConfigUbuntu(serviceCfgBase):
         self.serviceName = "Apparmor"
 
     def config(self):
+        return True
+
         try:
             cmd = bash("service apparmor status")
             if not cmd.isSuccess() or cmd.getStdout() == "":
@@ -559,6 +561,8 @@ class securityPolicyConfigRedhat(serviceCfgBase):
         self.serviceName = "SElinux"
 
     def config(self):
+        return True
+
         selinuxEnabled = True
 
         if not bash("selinuxenabled").isSuccess():
