@@ -547,6 +547,8 @@ class securityPolicyConfigUbuntu(serviceCfgBase):
                                         or you can manually disable it before starting myCloud")
 
     def restore(self):
+        return True
+
         try:
             self.syscfg.svo.enableService("apparmor")
             self.syscfg.svo.startService("apparmor")
@@ -581,6 +583,8 @@ class securityPolicyConfigRedhat(serviceCfgBase):
             return True
 
     def restore(self):
+        return True
+
         try:
             bash("setenforce 1")
             return True
