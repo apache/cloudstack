@@ -2116,7 +2116,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
 
         String err = requireVddkRbdDirectImportSupport
-                ? String.format("Could not find any suitable %s host in cluster %s with '%s' configured to perform direct RBD VDDK import",
+                ? String.format("Could not find any suitable %s host in cluster %s with '%s' enabled, which is required to perform direct RBD VDDK import. " +
+                        "This usually means the host is missing VDDK, qemu-img RBD support, or in-place virt-v2v support through the virt-v2v-in-place binary or virt-v2v --in-place option.",
                         destinationCluster.getHypervisorType(), destinationCluster, Host.HOST_VDDK_RBD_DIRECT_IMPORT_SUPPORT)
                 : useVddk
                 ? String.format("Could not find any suitable %s host in cluster %s with '%s' configured to perform the VDDK-based instance conversion",
