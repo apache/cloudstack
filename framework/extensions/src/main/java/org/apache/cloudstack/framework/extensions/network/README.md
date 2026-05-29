@@ -260,12 +260,17 @@ The following names appear repeatedly inside the nested `payload` object.
 | `vlan` | Guest VLAN tag (for example `100`). Extracted from the broadcast URI. May be empty for flat networks. |
 | `gateway` | Guest network gateway (for example `10.0.0.1`). |
 | `cidr` | Guest network CIDR (for example `10.0.0.0/24`). |
+| `network_ip6_gateway` | Guest network IPv6 gateway, when the network has IPv6 configured. |
+| `network_ip6_cidr` | Guest network IPv6 CIDR, when the network has IPv6 configured. |
 | `extension_ip` | The IP the extension device uses on the guest side. Equals the gateway when SourceNat/Gateway is provided; otherwise it is a dedicated IP from the guest subnet. |
 | `public_ip` | A public IP address. |
 | `public_cidr` | CIDR of the public IP (for example `203.0.113.5/24`). |
 | `public_vlan` | VLAN tag of the public IP segment. |
 | `public_gateway` | Gateway of the public IP segment. |
 | `private_ip` | A VM's private guest-network IP address. |
+| `nic_ip6_address` | VM NIC IPv6 address, when the NIC has IPv6 configured. |
+| `nic_ip6_gateway` | VM NIC IPv6 gateway, when available. |
+| `nic_ip6_cidr` | VM NIC IPv6 CIDR, when available. |
 | `source_nat` | Stringified boolean (`"true"` / `"false"`) indicating whether the public IP is a source-NAT IP. |
 | `nic_uuid` | NIC UUID when the current API path has a `NicProfile` available. |
 | `dns` | Comma-separated DNS server list. |
@@ -343,6 +348,10 @@ configure the gateway.
 | `cidr` | Guest network CIDR. |
 | `extension_ip` | Device IP on the guest network. |
 | `vpc_id` | Present for VPC tier networks. |
+
+> **IPv6 note:** For network-scoped commands that already include `gateway`/`cidr`,
+> CloudStack now also includes `network_ip6_gateway` and `network_ip6_cidr`
+> when the guest network has IPv6 configured.
 
 ---
 
@@ -640,6 +649,12 @@ Rules are applied in ascending `number` order.
 network whose DHCP service is provided by this extension.
 
 **Purpose:** Add or remove a static DHCP lease for the VM.
+
+> **IPv6 note:** For NIC-scoped commands (`add/remove-dhcp-entry`,
+> `add-dns-entry`, `save-vm-data`, `save-password`, `save-userdata`,
+> `save-sshkey`, `save-hypervisor-hostname`), CloudStack includes
+> `nic_ip6_address`, `nic_ip6_gateway`, and `nic_ip6_cidr` when the NIC
+> has IPv6 information.
 
 **`add-dhcp-entry` payload fields (`payload` object):**
 
