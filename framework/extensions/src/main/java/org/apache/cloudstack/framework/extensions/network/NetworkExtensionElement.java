@@ -414,6 +414,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         implementPayload.addProperty("vlan", safeStr(vlanId));
         implementPayload.addProperty("gateway", safeStr(network.getGateway()));
         implementPayload.addProperty("cidr", safeStr(network.getCidr()));
+        addNetworkIpv6ToPayload(implementPayload, network);
         implementPayload.addProperty("extension_ip", safeStr(extensionIp));
         addVpcIdToPayload(implementPayload, network);
 
@@ -758,6 +759,7 @@ public class NetworkExtensionElement extends AdapterBase implements
             payload.addProperty("source_nat", String.valueOf(isSourceNat));
             payload.addProperty("gateway", safeStr(network.getGateway()));
             payload.addProperty("cidr", safeStr(network.getCidr()));
+            addNetworkIpv6ToPayload(payload, network);
             payload.addProperty("public_gateway", safeStr(publicGateway));
             payload.addProperty("public_cidr", safeStr(publicCidr));
             payload.addProperty("public_vlan", publicVlanTag);
@@ -1051,6 +1053,33 @@ public class NetworkExtensionElement extends AdapterBase implements
     private void addNicUuidToPayload(JsonObject payload, NicProfile nic) {
         if (payload != null && nic != null && StringUtils.isNotBlank(nic.getUuid())) {
             payload.addProperty("nic_uuid", nic.getUuid());
+        }
+    }
+
+    private void addNetworkIpv6ToPayload(JsonObject payload, Network network) {
+        if (payload == null || network == null) {
+            return;
+        }
+        if (StringUtils.isNotBlank(network.getIp6Gateway())) {
+            payload.addProperty("network_ip6_gateway", safeStr(network.getIp6Gateway()));
+        }
+        if (StringUtils.isNotBlank(network.getIp6Cidr())) {
+            payload.addProperty("network_ip6_cidr", safeStr(network.getIp6Cidr()));
+        }
+    }
+
+    private void addNicIpv6ToPayload(JsonObject payload, NicProfile nic) {
+        if (payload == null || nic == null) {
+            return;
+        }
+        if (StringUtils.isNotBlank(nic.getIPv6Address())) {
+            payload.addProperty("nic_ip6_address", safeStr(nic.getIPv6Address()));
+        }
+        if (StringUtils.isNotBlank(nic.getIPv6Gateway())) {
+            payload.addProperty("nic_ip6_gateway", safeStr(nic.getIPv6Gateway()));
+        }
+        if (StringUtils.isNotBlank(nic.getIPv6Cidr())) {
+            payload.addProperty("nic_ip6_cidr", safeStr(nic.getIPv6Cidr()));
         }
     }
 
@@ -1388,10 +1417,12 @@ public class NetworkExtensionElement extends AdapterBase implements
         payload.addProperty("hostname", safeStr(vm.getHostName()));
         payload.addProperty("gateway", safeStr(network.getGateway()));
         payload.addProperty("cidr", safeStr(network.getCidr()));
+        addNetworkIpv6ToPayload(payload, network);
         payload.addProperty("dns", safeStr(getNetworkDns(network)));
         payload.addProperty("default_nic", String.valueOf(nic.isDefaultNic()));
         payload.addProperty("domain", safeStr(network.getNetworkDomain()));
         payload.addProperty("extension_ip", safeStr(extensionIp));
+        addNicIpv6ToPayload(payload, nic);
         addNicUuidToPayload(payload, nic);
         addVpcIdToPayload(payload, network);
         return executeScript(network, CMD_ADD_DHCP_ENTRY, payload);
@@ -1410,10 +1441,12 @@ public class NetworkExtensionElement extends AdapterBase implements
         payload.addProperty("network_id", String.valueOf(network.getId()));
         payload.addProperty("gateway", safeStr(network.getGateway()));
         payload.addProperty("cidr", safeStr(network.getCidr()));
+        addNetworkIpv6ToPayload(payload, network);
         payload.addProperty("dns", safeStr(getNetworkDns(network)));
         payload.addProperty("vlan", safeStr(getVlanId(network)));
         payload.addProperty("domain", safeStr(network.getNetworkDomain()));
         payload.addProperty("extension_ip", safeStr(extensionIp));
+        addNicIpv6ToPayload(payload, nic);
         addNicUuidToPayload(payload, nic);
         addVpcIdToPayload(payload, network);
         return executeScript(network, CMD_CONFIG_DHCP_SUBNET, payload);
@@ -1481,6 +1514,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         payload.addProperty("network_id", String.valueOf(network.getId()));
         payload.addProperty("mac", safeStr(nic.getMacAddress()));
         payload.addProperty("ip", safeStr(nic.getIPv4Address()));
+        addNicIpv6ToPayload(payload, nic);
         payload.addProperty("extension_ip", safeStr(extensionIp));
         addNicUuidToPayload(payload, nic);
         addVpcIdToPayload(payload, network);
@@ -1503,6 +1537,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         JsonObject payload = new JsonObject();
         payload.addProperty("network_id", String.valueOf(network.getId()));
         payload.addProperty("ip", safeStr(nic.getIPv4Address()));
+        addNicIpv6ToPayload(payload, nic);
         payload.addProperty("hostname", safeStr(hostname));
         payload.addProperty("extension_ip", safeStr(extensionIp));
         addNicUuidToPayload(payload, nic);
@@ -1523,10 +1558,12 @@ public class NetworkExtensionElement extends AdapterBase implements
         payload.addProperty("network_id", String.valueOf(network.getId()));
         payload.addProperty("gateway", safeStr(network.getGateway()));
         payload.addProperty("cidr", safeStr(network.getCidr()));
+        addNetworkIpv6ToPayload(payload, network);
         payload.addProperty("dns", safeStr(getNetworkDns(network)));
         payload.addProperty("vlan", safeStr(getVlanId(network)));
         payload.addProperty("domain", safeStr(network.getNetworkDomain()));
         payload.addProperty("extension_ip", safeStr(extensionIp));
+        addNicIpv6ToPayload(payload, nic);
         addNicUuidToPayload(payload, nic);
         addVpcIdToPayload(payload, network);
         return executeScript(network, CMD_CONFIG_DNS_SUBNET, payload);
@@ -1682,6 +1719,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         payload.addProperty("network_id", String.valueOf(network.getId()));
         payload.addProperty("ip", safeStr(nicIpAddress));
         payload.addProperty("gateway", safeStr(nic.getIPv4Gateway()));
+        addNicIpv6ToPayload(payload, nic);
         payload.addProperty("extension_ip", safeStr(ensureExtensionIp(network)));
         payload.addProperty("vm_data", vmDataArg);
         addNicUuidToPayload(payload, nic);
@@ -1706,6 +1744,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         payload.addProperty("network_id", String.valueOf(network.getId()));
         payload.addProperty("ip", safeStr(nic.getIPv4Address()));
         payload.addProperty("gateway", safeStr(nic.getIPv4Gateway()));
+        addNicIpv6ToPayload(payload, nic);
         payload.addProperty("password", password);
         payload.addProperty("extension_ip", safeStr(extensionIp));
         addNicUuidToPayload(payload, nic);
@@ -1733,6 +1772,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         payload.addProperty("network_id", String.valueOf(network.getId()));
         payload.addProperty("ip", safeStr(nic.getIPv4Address()));
         payload.addProperty("gateway", safeStr(nic.getIPv4Gateway()));
+        addNicIpv6ToPayload(payload, nic);
         payload.addProperty("userdata", userData);
         payload.addProperty("extension_ip", safeStr(extensionIp));
         addNicUuidToPayload(payload, nic);
@@ -1757,6 +1797,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         payload.addProperty("network_id", String.valueOf(network.getId()));
         payload.addProperty("ip", safeStr(nic.getIPv4Address()));
         payload.addProperty("gateway", safeStr(nic.getIPv4Gateway()));
+        addNicIpv6ToPayload(payload, nic);
         payload.addProperty("sshkey", sshKeyBase64);
         payload.addProperty("extension_ip", safeStr(extensionIp));
         addNicUuidToPayload(payload, nic);
@@ -1781,6 +1822,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         payload.addProperty("network_id", String.valueOf(network.getId()));
         payload.addProperty("ip", safeStr(nic.getIPv4Address()));
         payload.addProperty("gateway", safeStr(nic.getIPv4Gateway()));
+        addNicIpv6ToPayload(payload, nic);
         payload.addProperty("hypervisor_hostname", hostname);
         payload.addProperty("extension_ip", safeStr(extensionIp));
         addNicUuidToPayload(payload, nic);
@@ -2025,6 +2067,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         payload.addProperty("vlan", safeStr(getVlanId(network)));
         payload.addProperty("gateway", safeStr(network.getGateway()));
         payload.addProperty("cidr", safeStr(network.getCidr()));
+        addNetworkIpv6ToPayload(payload, network);
         payload.addProperty("fw_rules", rulesBase64);
         addVpcIdToPayload(payload, network);
 
@@ -2100,6 +2143,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         payload.addProperty("network_id", String.valueOf(network.getId()));
         payload.addProperty("gateway", safeStr(network.getGateway()));
         payload.addProperty("cidr", safeStr(network.getCidr()));
+        addNetworkIpv6ToPayload(payload, network);
         payload.addProperty("vlan", safeStr(getVlanId(network)));
         payload.addProperty("extension_ip", safeStr(extensionIp));
         payload.addProperty("dns", safeStr(getNetworkDns(network)));
@@ -2623,6 +2667,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         payload.addProperty("vlan", safeStr(getVlanId(config)));
         payload.addProperty("gateway", safeStr(config.getGateway()));
         payload.addProperty("cidr", safeStr(config.getCidr()));
+        addNetworkIpv6ToPayload(payload, config);
         payload.addProperty("acl_rules", aclRulesBase64);
         addVpcIdToPayload(payload, config);
 
@@ -2664,6 +2709,7 @@ public class NetworkExtensionElement extends AdapterBase implements
                 payload.addProperty("vlan", safeStr(getVlanId(network)));
                 payload.addProperty("gateway", safeStr(network.getGateway()));
                 payload.addProperty("cidr", safeStr(network.getCidr()));
+                addNetworkIpv6ToPayload(payload, network);
                 payload.addProperty("acl_rules", aclRulesBase64);
                 addVpcIdToPayload(payload, network);
 
