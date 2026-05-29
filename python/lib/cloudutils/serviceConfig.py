@@ -660,7 +660,7 @@ class libvirtConfigRedhat(serviceCfgBase):
             filename = "/etc/libvirt/qemu.conf"
 
             cfo = configFileOps(filename, self)
-            cfo.addEntry("security_driver", "\"none\"")
+            cfo.addEntry("security_driver", "\"selinux\"")
             cfo.addEntry("user", "\"root\"")
             cfo.addEntry("group", "\"root\"")
             cfo.addEntry("vnc_listen", "\"0.0.0.0\"")
@@ -698,7 +698,7 @@ class libvirtConfigSUSE(serviceCfgBase):
 
             filename = "/etc/libvirt/qemu.conf"
             cfo = configFileOps(filename, self)
-            cfo.addEntry("security_driver", "\"none\"")
+            cfo.addEntry("security_driver", "\"apparmor\"")
             cfo.addEntry("user", "\"root\"")
             cfo.addEntry("group", "\"root\"")
             cfo.addEntry("vnc_listen", "\"0.0.0.0\"")
@@ -753,7 +753,7 @@ class libvirtConfigUbuntu(serviceCfgBase):
             filename = "/etc/libvirt/qemu.conf"
 
             cfo = configFileOps(filename, self)
-            cfo.addEntry("security_driver", "\"none\"")
+            cfo.addEntry("security_driver", "\"apparmor\"")
             cfo.addEntry("user", "\"root\"")
             cfo.addEntry("group", "\"root\"")
             configure_libvirt_tls(self.syscfg.env.secure, cfo)
