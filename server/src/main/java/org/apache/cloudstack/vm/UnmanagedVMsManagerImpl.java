@@ -1788,7 +1788,9 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             return userVm;
         } catch (CloudRuntimeException e) {
             logger.error(String.format("Error importing VM: %s", e.getMessage()), e);
-            importVmTasksManager.updateImportVMTaskErrorState(importVMTask, ImportVmTask.TaskState.Failed, e.getMessage());
+            if (importVMTask != null) {
+                importVmTasksManager.updateImportVMTaskErrorState(importVMTask, ImportVmTask.TaskState.Failed, e.getMessage());
+            }
             ActionEventUtils.onCompletedActionEvent(userId, owner.getId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_IMPORT,
                     cmd.getEventDescription(), null, null, 0);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
