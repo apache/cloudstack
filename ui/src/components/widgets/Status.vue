@@ -115,7 +115,7 @@ export default {
           case 'allocated':
             state = this.$t('label.allocated')
             break
-          case 'qeued':
+          case 'queued':
             state = this.$t('label.queued')
             break
           case 'restoring':
