@@ -399,13 +399,13 @@ is **"dev/test default, operator must flip both knobs to `true` /
 | Co-tenant (different account in same domain or different domain on same CloudStack) | **yes** | cross-tenant leakage (VM ID guessing, network bleed, storage bleed, template visibility) is in scope |
 | Guest VM workload | **partial** | hypervisor-mediated; out-of-scope for hypervisor isolation bugs (§3 item 5), in-scope for the orchestration that placed the VM (security-group rule application, VLAN tagging, public IP routing) |
 | Browser holding a valid console-proxy URL | **yes** | the URL is a bearer credential; scope of harm is one VM's console for the URL's lifetime |
-| Operator | **out of scope** — see §3 item 1 |
-| Hostile hypervisor | **out of scope** — see §3 item 3 |
-| Hostile LDAP / SAML / OAuth IdP, hostile NSX/Netscaler/Tungsten, hostile S3 endpoint | **out of scope** — see §3 item 2 |
-| Reverse proxy that should be trusted but is not in `proxy.forward.list` | **out of scope** — its forward headers are not honoured |
-| Local process on the management-server host running as a different UID | **partial** *(inferred — §14 Q24)*: same-host attackers with non-cloudstack UID can reach `:8080` unless host firewalling forbids; CloudStack does not defend against same-host `root` |
-| Side-channel observer (cache timing, network timing, hypervisor side channels) | **out of scope** *(inferred — §14 Q25)* |
-| Quantum adversary | **out of scope** |
+| Operator | **out of scope** | see §3 item 1 |
+| Hostile hypervisor | **out of scope** | see §3 item 3 |
+| Hostile LDAP / SAML / OAuth IdP, hostile NSX/Netscaler/Tungsten, hostile S3 endpoint | **out of scope** | see §3 item 2 |
+| Reverse proxy that should be trusted but is not in `proxy.forward.list` | **out of scope** | its forward headers are not honoured |
+| Local process on the management-server host running as a different UID | **partial** *(inferred — §14 Q24)* | same-host attackers with non-cloudstack UID can reach `:8080` unless host firewalling forbids; CloudStack does not defend against same-host `root` |
+| Side-channel observer (cache timing, network timing, hypervisor side channels) | **out of scope** *(inferred — §14 Q25)* | n/a |
+| Quantum adversary | **out of scope** | n/a |
 
 ### Authenticated-but-Byzantine peer (distributed-systems threshold)
 
@@ -706,7 +706,7 @@ The operator deploying CloudStack in production **must**:
   all accounts within the domain — including reading guest console URLs.
 - **Embedding console-proxy URLs in screenshots, ticketing systems, or
   chat.** Tokens are bearer credentials.
-- **Re-using `security.encryption.key` across environments of different
+- **Reusing `security.encryption.key` across environments of different
   trust levels.** A staging-env leak becomes a production-env decrypt
   primitive *(inferred — §14 Q33)*.
 - **Disabling the cluster-peer TLS by leaving `ca.plugin.root.auth.strictness`
@@ -999,7 +999,7 @@ behind TLS on `:8443` or behind a TLS-terminating reverse proxy; a bare
 `:8080` HTTP API is dev-only. *(maps to §5a, §10)*
 
 **Q33.** `security.encryption.key` reuse across environments — confirm
-that re-using the JaSypt key + IV across staging and production is a
+that reusing the JaSypt key + IV across staging and production is a
 documented misuse. *(maps to §11)*
 
 ### Wave 5 — meta
