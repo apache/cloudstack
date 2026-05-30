@@ -16,44 +16,38 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.apache.cloudstack.storage.datastore.driver;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-public class EcsXmlParser {
+/** Lightweight XML-extraction utilities for ECS API responses. */
+public final class EcsXmlParser {
 
-    public Integer parseIntTag(final String xml, final String tag) {
-        String v = extractTag(xml, tag);
-        if (v == null) return null;
-        try { return Integer.parseInt(v.trim()); } catch (NumberFormatException ignore) { return null; }
-    }
+    private EcsXmlParser() { }
 
-    public String extractTag(final String xml, final String tag) {
+    /** Returns the text content of the first occurrence of &lt;tag&gt;…&lt;/tag&gt;, or {@code null}. */
+    public static String extractTag(final String xml, final String tag) {
         if (xml == null) return null;
-        final String open = "<" + tag + ">";
-        final String close = "</" + tag + ">";
-        int i = xml.indexOf(open);
+        final String open = "<" + tag + ">", close = "</" + tag + ">";
+        final int i = xml.indexOf(open);
         if (i < 0) return null;
-        int j = xml.indexOf(close, i + open.length());
+        final int j = xml.indexOf(close, i + open.length());
         if (j < 0) return null;
         return xml.substring(i + open.length(), j).trim();
     }
 
-    public List<String> extractAllTags(final String xml, final String tag) {
+    /** Returns the text content of every occurrence of &lt;tag&gt;…&lt;/tag&gt;. */
+    public static List<String> extractAllTags(final String xml, final String tag) {
         final List<String> out = new ArrayList<>();
         if (xml == null) return out;
-
-        final String open = "<" + tag + ">";
-        final String close = "</" + tag + ">";
-
+        final String open = "<" + tag + ">", close = "</" + tag + ">";
         int from = 0;
         while (true) {
-            int i = xml.indexOf(open, from);
+            final int i = xml.indexOf(open, from);
             if (i < 0) break;
-            int j = xml.indexOf(close, i + open.length());
+            final int j = xml.indexOf(close, i + open.length());
             if (j < 0) break;
             out.add(xml.substring(i + open.length(), j).trim());
             from = j + close.length();
@@ -61,30 +55,35 @@ public class EcsXmlParser {
         return out;
     }
 
-    public void extractKeysFromListBucketXml(final String xml, final List<String> keys) {
+    /** Parses the integer value of a tag, or returns {@code null} on missing/invalid content. */
+    public static Integer parseIntTag(final String xml, final String tag) {
+        final String val = extractTag(xml, tag);
+        if (val == null) return null;
+        try { return Integer.parseInt(val); } catch (NumberFormatException ignore) { return null; }
+    }
+
+    /** Collects every {@code <Key>} value inside {@code <Contents>} blocks (S3 list-objects response). */
+    public static void extractKeysFromListBucketXml(final String xml, final List<String> keys) {
         if (xml == null) return;
-        final String contentsOpen = "<Contents>";
-        final String contentsClose = "</Contents>";
+        final String open = "<Contents>", close = "</Contents>";
         int from = 0;
         while (true) {
-            int i = xml.indexOf(contentsOpen, from);
+            final int i = xml.indexOf(open, from);
             if (i < 0) break;
-            int j = xml.indexOf(contentsClose, i + contentsOpen.length());
+            final int j = xml.indexOf(close, i + open.length());
             if (j < 0) break;
-            String block = xml.substring(i, j + contentsClose.length());
-            String key = extractTag(block, "Key");
+            final String key = extractTag(xml.substring(i, j + close.length()), "Key");
             if (key != null && !key.isEmpty()) keys.add(key.trim());
-            from = j + contentsClose.length();
+            from = j + close.length();
         }
     }
 
-    public boolean looksLikeBucketAlreadyExists400(final String respBody) {
-        final String lb = respBody == null ? "" : respBody.toLowerCase(Locale.ROOT);
-        return lb.contains("already exist")
-                || lb.contains("already_exists")
-                || lb.contains("already-exists")
-                || lb.contains("name already in use")
-                || lb.contains("bucket exists")
-                || lb.contains("duplicate");
+    /** Returns {@code true} if the HTTP 400 body looks like a "bucket already exists" error. */
+    public static boolean looksLikeBucketAlreadyExists400(final String body) {
+        if (body == null) return false;
+        final String lb = body.toLowerCase(Locale.ROOT);
+        return lb.contains("already exist") || lb.contains("already_exists") ||
+               lb.contains("already-exists") || lb.contains("name already in use") ||
+               lb.contains("bucket exists") || lb.contains("duplicate");
     }
 }

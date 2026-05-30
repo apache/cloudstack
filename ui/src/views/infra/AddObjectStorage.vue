@@ -68,100 +68,76 @@
             <!-- Use secretKey field for the password to make provider shared configuration easier -->
             <a-input-password v-model:value="form.secretKey" autocomplete="off"/>
           </a-form-item>
-          <a-form-item
-            name="s3Url"
-            ref="s3Url"
-            :label="$t('label.cloudian.s3.url')"
-            :rules="[{ required: true, message: $t('label.required') }]"
-          >
+          <a-form-item name="s3Url" ref="s3Url" :label="$t('label.cloudian.s3.url')" :rules="[{ required: true, message: $t('label.required') }]">
             <a-input v-model:value="form.s3Url" placeholder="https://s3-hostname or http://s3-hostname"/>
           </a-form-item>
-          <a-form-item
-            name="iamUrl"
-            ref="iamUrl"
-            :label="$t('label.cloudian.iam.url')"
-            :rules="[{ required: true, message: $t('label.required') }]"
-          >
+          <a-form-item name="iamUrl" ref="iamUrl" :label="$t('label.cloudian.iam.url')" :rules="[{ required: true, message: $t('label.required') }]">
             <a-input v-model:value="form.iamUrl" placeholder="https://iam-hostname:16443 or http://iam-hostname:16080"/>
           </a-form-item>
         </div>
 
         <!-- ECS Object Store Configuration -->
         <div v-else-if="form.provider === 'ECS'">
-          <!-- Keep old (existing) user-facing labels/strings here to avoid missing i18n keys -->
+          <!-- S3 URL (for UI: this becomes addObjectStoragePool url=...) -->
           <a-form-item name="url" ref="url">
             <template #label>
-              <tooltip-label
-                :title="'ECS Public URL'"
-                :tooltip="'The S3-compatible endpoint URL that clients use to connect to ECS'"
-              />
+              <tooltip-label :title="$t('label.ecs.public.url')" :tooltip="$t('label.ecs.public.url.tooltip')"/>
             </template>
             <a-input v-model:value="form.url" placeholder="https://ecs.example.com" />
           </a-form-item>
 
+          <!-- Management API URL -> details[0].value (mgmt_url) -->
           <a-form-item name="mgmtUrl" ref="mgmtUrl" :rules="[{ required: true, message: $t('label.required') }]">
             <template #label>
-              <tooltip-label
-                :title="'ECS API URL'"
-                :tooltip="'ECS management API URL'"
-              />
+              <tooltip-label :title="$t('label.ecs.api.url')" :tooltip="$t('label.ecs.api.url.tooltip')"/>
             </template>
             <a-input v-model:value="form.mgmtUrl" placeholder="https://ecs-api.elcld.net" />
           </a-form-item>
 
+          <!-- S3 host (hostname[:port], no scheme) -> details[1].value (s3_host) -->
           <a-form-item name="s3Host" ref="s3Host" :rules="[{ required: true, message: $t('label.required') }]">
             <template #label>
-              <tooltip-label
-                :title="'ECS Private URL'"
-                :tooltip="'The internal S3 endpoint URL used by CloudStack to communicate with ECS. May be the same as the Public URL.'"
-              />
+              <tooltip-label :title="$t('label.ecs.private.url')" :tooltip="$t('label.ecs.private.url.tooltip')"/>
             </template>
-            <a-input v-model:value="form.s3Host" placeholder="ecs.example.com or ecs.example.com:9020" />
+            <a-input v-model:value="form.s3Host" placeholder="https://ecs.example.com" />
           </a-form-item>
 
+          <!-- Service account user -> details[2].value (sa_user) -->
           <a-form-item name="accessKey" ref="accessKey">
             <template #label>
-              <tooltip-label
-                :title="'ECS service account user'"
-                :tooltip="'Service account user, e.g. cloudstack'"
-              />
+              <tooltip-label :title="$t('label.ecs.sa.user')" :tooltip="$t('label.ecs.sa.user.tooltip')"/>
             </template>
             <a-input v-model:value="form.accessKey" placeholder="cloudstack" />
           </a-form-item>
 
+          <!-- Service account password -> details[3].value (sa_password) -->
           <a-form-item name="secretKey" ref="secretKey">
             <template #label>
-              <tooltip-label
-                :title="'ECS service account password'"
-                :tooltip="'Service account password (sa_password)'"
-              />
+              <tooltip-label :title="$t('label.ecs.sa.password')" :tooltip="$t('label.ecs.sa.password.tooltip')"/>
             </template>
             <a-input-password v-model:value="form.secretKey" autocomplete="off" />
           </a-form-item>
 
+          <!-- Namespace -> details[4].value (namespace) -->
           <a-form-item name="namespace" ref="namespace" :rules="[{ required: true, message: $t('label.required') }]">
             <template #label>
-              <tooltip-label
-                :title="'Namespace'"
-                :tooltip="'ECS namespace (namespace), e.g. cloudstack'"
-              />
+              <tooltip-label :title="$t('label.ecs.namespace')" :tooltip="$t('label.ecs.namespace.tooltip')"/>
             </template>
             <a-input v-model:value="form.namespace" placeholder="cloudstack" />
           </a-form-item>
 
+          <!-- User prefix -> details[5].value (user_prefix) -->
           <a-form-item name="userPrefix" ref="userPrefix">
             <template #label>
-              <tooltip-label
-                :title="'User prefix'"
-                :tooltip="'Prefix used for ECS user creation. Default is cs- (user_prefix). Example: cs-'"
-              />
+              <tooltip-label :title="$t('label.ecs.user.prefix')" :tooltip="$t('label.ecs.user.prefix.tooltip')"/>
             </template>
             <a-input v-model:value="form.userPrefix" placeholder="cs-" />
           </a-form-item>
 
+          <!-- Insecure -> details[6].value (insecure) -->
           <a-form-item name="insecure" ref="insecure">
             <a-checkbox v-model:checked="form.insecure">
-              Allow insecure HTTPS (set insecure=true)
+              {{ $t('label.ecs.insecure') }}
             </a-checkbox>
           </a-form-item>
         </div>
@@ -242,7 +218,7 @@ export default {
         mgmtUrl: '',
         s3Host: '',
         namespace: '',
-        userPrefix: 'cs-',
+        userPrefix: '',
         insecure: false
       })
       this.rules = reactive({
@@ -257,72 +233,6 @@ export default {
     closeModal () {
       this.$emit('close-action')
     },
-
-    buildCloudianDetails (data, values) {
-      data['details[0].key'] = 'accesskey'
-      data['details[0].value'] = values.accessKey
-      data['details[1].key'] = 'secretkey'
-      data['details[1].value'] = values.secretKey
-      data['details[2].key'] = 'validateSSL'
-      data['details[2].value'] = values.validateSSL
-      data['details[3].key'] = 's3Url'
-      data['details[3].value'] = values.s3Url
-      data['details[4].key'] = 'iamUrl'
-      data['details[4].value'] = values.iamUrl
-    },
-
-    buildEcsDetails (data, values) {
-      data['details[0].key'] = 'mgmt_url'
-      data['details[0].value'] = values.mgmtUrl
-
-      data['details[1].key'] = 's3_host'
-      data['details[1].value'] = values.s3Host
-
-      data['details[2].key'] = 'sa_user'
-      data['details[2].value'] = values.accessKey
-
-      data['details[3].key'] = 'sa_password'
-      data['details[3].value'] = values.secretKey
-
-      data['details[4].key'] = 'namespace'
-      data['details[4].value'] = values.namespace
-
-      data['details[5].key'] = 'user_prefix'
-      data['details[5].value'] =
-        values.userPrefix && values.userPrefix.trim() !== ''
-          ? values.userPrefix.trim()
-          : 'cs-'
-
-      data['details[6].key'] = 'insecure'
-      data['details[6].value'] = values.insecure ? 'true' : 'false'
-    },
-
-    buildGenericDetails (data, values) {
-      data['details[0].key'] = 'accesskey'
-      data['details[0].value'] = values.accessKey
-      data['details[1].key'] = 'secretkey'
-      data['details[1].value'] = values.secretKey
-      if (values.size) {
-        data.size = values.size
-      }
-    },
-
-    buildDetailsByProvider (data, values) {
-      const provider = values.provider
-
-      if (provider === 'Cloudian HyperStore') {
-        this.buildCloudianDetails(data, values)
-        return
-      }
-
-      if (provider === 'ECS') {
-        this.buildEcsDetails(data, values)
-        return
-      }
-
-      this.buildGenericDetails(data, values)
-    },
-
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
@@ -331,14 +241,57 @@ export default {
         const values = this.handleRemoveFields(formRaw)
 
         const data = {
-          name: values.name,
-          size: values.size
+          name: values.name
         }
+        const provider = values.provider
 
-        data.provider = values.provider
+        data.provider = provider
         data.url = values.url
 
-        this.buildDetailsByProvider(data, values)
+        if (provider === 'Cloudian HyperStore') {
+          // Cloudian HyperStore details
+          data['details[0].key'] = 'accesskey'
+          data['details[0].value'] = values.accessKey
+          data['details[1].key'] = 'secretkey'
+          data['details[1].value'] = values.secretKey
+          data['details[2].key'] = 'validateSSL'
+          data['details[2].value'] = values.validateSSL
+          data['details[3].key'] = 's3Url'
+          data['details[3].value'] = values.s3Url
+          data['details[4].key'] = 'iamUrl'
+          data['details[4].value'] = values.iamUrl
+        } else if (provider === 'ECS') {
+          // ECS details matching your CLI example:
+          data['details[0].key'] = 'mgmt_url'
+          data['details[0].value'] = values.mgmtUrl
+
+          data['details[1].key'] = 's3_host'
+          data['details[1].value'] = values.s3Host
+
+          data['details[2].key'] = 'sa_user'
+          data['details[2].value'] = values.accessKey
+
+          data['details[3].key'] = 'sa_password'
+          data['details[3].value'] = values.secretKey
+
+          data['details[4].key'] = 'namespace'
+          data['details[4].value'] = values.namespace
+
+          data['details[5].key'] = 'user_prefix'
+          data['details[5].value'] = values.userPrefix || 'cs-'
+
+          data['details[6].key'] = 'insecure'
+          data['details[6].value'] = values.insecure ? 'true' : 'false'
+        } else {
+          // Generic non-Cloudian, non-ECS object stores
+          data['details[0].key'] = 'accesskey'
+          data['details[0].value'] = values.accessKey
+          data['details[1].key'] = 'secretkey'
+          data['details[1].value'] = values.secretKey
+          if (values.size) {
+            data.size = values.size
+          }
+        }
 
         this.loading = true
 
@@ -360,10 +313,9 @@ export default {
         this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
-
     addObjectStore (params) {
       return new Promise((resolve, reject) => {
-        getAPI('addObjectStoragePool', params).then(() => {
+        getAPI('addObjectStoragePool', params).then(json => {
           resolve()
         }).catch(error => {
           reject(error)

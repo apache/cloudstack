@@ -22,28 +22,20 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.inject.Inject;
-import javax.net.ssl.SSLContext;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
-import org.apache.cloudstack.storage.datastore.driver.EcsConstants;
+import org.apache.cloudstack.storage.datastore.driver.EcsCfg;
+import org.apache.cloudstack.storage.datastore.driver.EcsUtils;
 import org.apache.cloudstack.storage.object.datastore.ObjectStoreHelper;
 import org.apache.cloudstack.storage.object.datastore.ObjectStoreProviderManager;
 import org.apache.cloudstack.storage.object.store.lifecycle.ObjectStoreLifeCycle;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet; // change to POST if ECS needs it
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.apache.http.impl.auth.BasicScheme;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.ssl.SSLContextBuilder;
-import org.apache.http.ssl.TrustStrategy;
 
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -53,45 +45,44 @@ public class EcsObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
 
     private static final Logger LOG = LogManager.getLogger(EcsObjectStoreLifeCycleImpl.class);
 
-    private static final String PROVIDER_NAME = "ECS";
+    private static final String MGMT_URL  = "mgmt_url";
+    private static final String SA_USER   = "sa_user";
+    private static final String SA_PASS   = "sa_password";
+    private static final String INSECURE  = "insecure";
+    private static final String S3_HOST   = "s3_host";
+    private static final String NAMESPACE = "namespace";
 
-    @Inject
-    ObjectStoreHelper objectStoreHelper;
+    static final String PROVIDER_NAME = "ECS";
 
-    @Inject
-    ObjectStoreProviderManager objectStoreMgr;
+    @Inject ObjectStoreHelper objectStoreHelper;
+    @Inject ObjectStoreProviderManager objectStoreMgr;
 
-    public EcsObjectStoreLifeCycleImpl() {
-    }
+    public EcsObjectStoreLifeCycleImpl() { }
 
     @Override
     public DataStore initialize(final Map<String, Object> dsInfos) {
         requireInjected();
 
-        final String url = getString(dsInfos, "url", true);
+        final String url  = getString(dsInfos, "url", true);
         final String name = getString(dsInfos, "name", true);
-        final Long size = getLong(dsInfos, "size"); // optional
-        final String providerName = getProviderName(dsInfos);
+        final Long size   = getLong(dsInfos, "size");
 
-        final Map<String, String> details = getDetails(dsInfos); // typed map, no unchecked cast
-
-        final EcsConfig cfg = verifyAndNormalize(details);
+        final Map<String, String> details = getDetails(dsInfos);
+        final EcsCfg cfg = verifyAndNormalize(details);
 
         LOG.info("ECS initialize: provider='{}', name='{}', url='{}', mgmt_url='{}', insecure={}, s3_host='{}', namespace='{}'",
-                providerName, name, url, cfg.mgmtUrl, cfg.insecure,
-                details.get(EcsConstants.S3_HOST), details.get(EcsConstants.NAMESPACE));
+                PROVIDER_NAME, name, url, cfg.mgmtUrl, cfg.insecure,
+                details.get(S3_HOST), details.get(NAMESPACE));
 
-        // Try ECS login up-front so we fail fast on bad config
-        loginAndGetToken(cfg.mgmtUrl, cfg.saUser, cfg.saPass, cfg.insecure);
+        EcsUtils.verifyLogin(cfg.mgmtUrl, cfg.saUser, cfg.saPass, cfg.insecure);
 
-        // Put “canonical” values back into details (so DB keeps what we validated)
         applyCanonicalDetails(details, cfg);
 
-        final Map<String, Object> objectStoreParameters = buildObjectStoreParams(name, url, size, providerName);
+        final Map<String, Object> objectStoreParameters = buildObjectStoreParams(name, url, size);
 
         try {
             LOG.info("ECS: creating ObjectStore in DB: name='{}', provider='{}', url='{}'",
-                    name, providerName, url);
+                    name, PROVIDER_NAME, url);
 
             final ObjectStoreVO objectStore = objectStoreHelper.createObjectStore(objectStoreParameters, details);
             if (objectStore == null) {
@@ -112,56 +103,15 @@ public class EcsObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
         }
     }
 
-    @Override
-    public boolean attachCluster(final DataStore store, final ClusterScope scope) {
-        return false;
-    }
-
-    @Override
-    public boolean attachHost(final DataStore store, final HostScope scope, final StoragePoolInfo existingInfo) {
-        return false;
-    }
-
-    @Override
-    public boolean attachZone(final DataStore dataStore, final ZoneScope scope, final HypervisorType hypervisorType) {
-        return false;
-    }
-
-    @Override
-    public boolean maintain(final DataStore store) {
-        return false;
-    }
-
-    @Override
-    public boolean cancelMaintain(final DataStore store) {
-        return false;
-    }
-
-    @Override
-    public boolean deleteDataStore(final DataStore store) {
-        return false;
-    }
-
-    @Override
-    public boolean migrateToObjectStore(final DataStore store) {
-        return false;
-    }
+    @Override public boolean attachCluster(final DataStore store, final ClusterScope scope) { return false; }
+    @Override public boolean attachHost(final DataStore store, final HostScope scope, final StoragePoolInfo existingInfo) { return false; }
+    @Override public boolean attachZone(final DataStore dataStore, final ZoneScope scope, final HypervisorType hypervisorType) { return false; }
+    @Override public boolean maintain(final DataStore store) { return false; }
+    @Override public boolean cancelMaintain(final DataStore store) { return false; }
+    @Override public boolean deleteDataStore(final DataStore store) { return false; }
+    @Override public boolean migrateToObjectStore(final DataStore store) { return false; }
 
     // ---------- helpers ----------
-
-    private static final class EcsConfig {
-        final String mgmtUrl;
-        final String saUser;
-        final String saPass;
-        final boolean insecure;
-
-        private EcsConfig(final String mgmtUrl, final String saUser, final String saPass, final boolean insecure) {
-            this.mgmtUrl = mgmtUrl;
-            this.saUser = saUser;
-            this.saPass = saPass;
-            this.insecure = insecure;
-        }
-    }
 
     private void requireInjected() {
         if (objectStoreHelper == null) {
@@ -174,8 +124,8 @@ public class EcsObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
 
     private static String getString(final Map<String, Object> dsInfos, final String key, final boolean required) {
         final Object v = dsInfos.get(key);
-        final String s = (v == null) ? null : v.toString().trim();
-        if (required && (s == null || s.isEmpty())) {
+        final String s = v == null ? null : v.toString().trim();
+        if (required && StringUtils.isEmpty(s)) {
             throw new CloudRuntimeException("ECS: missing required parameter '" + key + "'");
         }
         return s;
@@ -183,22 +133,8 @@ public class EcsObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
 
     private static Long getLong(final Map<String, Object> dsInfos, final String key) {
         final Object v = dsInfos.get(key);
-        if (v == null) {
-            return null;
-        }
-        if (v instanceof Number) {
-            return ((Number) v).longValue();
-        }
-        try {
-            return Long.parseLong(v.toString().trim());
-        } catch (Exception e) {
-            throw new CloudRuntimeException("ECS: invalid long for '" + key + "': " + v);
-        }
-    }
-
-    private static String getProviderName(final Map<String, Object> dsInfos) {
-        final String p = getString(dsInfos, "providerName", false);
-        return (p == null || p.isEmpty()) ? PROVIDER_NAME : p;
+        if (v == null) return null;
+        return (Long) v;
     }
 
     private static Map<String, String> getDetails(final Map<String, Object> dsInfos) {
@@ -206,56 +142,48 @@ public class EcsObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
         if (!(v instanceof Map)) {
             throw new CloudRuntimeException("ECS: details map is missing");
         }
-
         final Map<?, ?> raw = (Map<?, ?>) v;
         final Map<String, String> out = new HashMap<>();
         for (Map.Entry<?, ?> e : raw.entrySet()) {
-            if (e.getKey() == null) {
-                continue;
-            }
-            final String k = e.getKey().toString();
-            final String val = e.getValue() == null ? null : e.getValue().toString();
-            out.put(k, val);
+            if (e.getKey() == null) continue;
+            out.put(e.getKey().toString(), e.getValue() == null ? null : e.getValue().toString());
         }
         return out;
     }
 
-    private static EcsConfig verifyAndNormalize(final Map<String, String> details) {
-        final String mgmtUrl = trim(details.get(EcsConstants.MGMT_URL));
-        final String saUser = safe(details.get(EcsConstants.SA_USER));
-        final String saPass = safe(details.get(EcsConstants.SA_PASS));
-        final boolean insecure = Boolean.parseBoolean(details.getOrDefault(EcsConstants.INSECURE, "false"));
+    private static EcsCfg verifyAndNormalize(final Map<String, String> details) {
+        final String mgmtUrl = EcsUtils.trimTail(details.get(MGMT_URL));
+        final String saUser  = safe(details.get(SA_USER));
+        final String saPass  = safe(details.get(SA_PASS));
+        final String ns      = StringUtils.defaultIfBlank(details.get(NAMESPACE), "default");
+        final boolean insecure = Boolean.parseBoolean(details.getOrDefault(INSECURE, "false"));
 
-        verifyRequiredDetail(EcsConstants.MGMT_URL, mgmtUrl);
-        verifyRequiredDetail(EcsConstants.SA_USER, saUser);
-        verifyRequiredDetail(EcsConstants.SA_PASS, saPass);
+        verifyRequiredDetail(MGMT_URL, mgmtUrl);
+        verifyRequiredDetail(SA_USER, saUser);
+        verifyRequiredDetail(SA_PASS, saPass);
 
-        return new EcsConfig(mgmtUrl, saUser, saPass, insecure);
+        return new EcsCfg(mgmtUrl, saUser, saPass, ns, insecure);
     }
 
     private static void verifyRequiredDetail(final String key, final String value) {
-        if (value == null || value.trim().isEmpty()) {
+        if (StringUtils.isEmpty(value)) {
             throw new CloudRuntimeException("ECS: missing required detail '" + key + "'");
         }
     }
 
-    private static void applyCanonicalDetails(final Map<String, String> details, final EcsConfig cfg) {
-        details.put(EcsConstants.MGMT_URL, cfg.mgmtUrl);
-        details.put(EcsConstants.SA_USER, cfg.saUser);
-        details.put(EcsConstants.SA_PASS, cfg.saPass);
-        details.put(EcsConstants.INSECURE, Boolean.toString(cfg.insecure));
-        // keep any optional keys already present (S3_HOST, NAMESPACE, etc.)
+    private static void applyCanonicalDetails(final Map<String, String> details, final EcsCfg cfg) {
+        details.put(MGMT_URL, cfg.mgmtUrl);
+        details.put(SA_USER, cfg.saUser);
+        details.put(SA_PASS, cfg.saPass);
+        details.put(INSECURE, Boolean.toString(cfg.insecure));
     }
 
-    private static Map<String, Object> buildObjectStoreParams(final String name,
-                                                             final String url,
-                                                             final Long size,
-                                                             final String providerName) {
+    private static Map<String, Object> buildObjectStoreParams(final String name, final String url, final Long size) {
         final Map<String, Object> p = new HashMap<>();
         p.put("name", name);
         p.put("url", url);
         p.put("size", size);
-        p.put("providerName", providerName);
+        p.put("providerName", PROVIDER_NAME);
         return p;
     }
 
@@ -263,59 +191,9 @@ public class EcsObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
         return v == null ? "" : v.trim();
     }
 
-    private static String trim(final String v) {
-        if (v == null) {
-            return null;
-        }
-        final String s = v.trim();
-        return s.endsWith("/") ? s.substring(0, s.length() - 1) : s;
-    }
-
     private static String safeMsg(final Throwable t) {
-        if (t == null) {
-            return "unknown";
-        }
+        if (t == null) return "unknown";
         final String m = t.getMessage();
-        return (m == null || m.isEmpty()) ? t.getClass().getSimpleName() : m;
-    }
-
-    private CloseableHttpClient buildHttpClient(final boolean insecure) {
-        if (!insecure) {
-            return HttpClients.createDefault();
-        }
-        try {
-            final TrustStrategy trustAll = (chain, authType) -> true;
-            final SSLContext sslContext = SSLContextBuilder.create()
-                    .loadTrustMaterial(null, trustAll)
-                    .build();
-            return HttpClients.custom()
-                    .setSSLContext(sslContext)
-                    .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
-                    .build();
-        } catch (Exception e) {
-            throw new CloudRuntimeException("ECS: failed to build HttpClient", e);
-        }
-    }
-
-    private String loginAndGetToken(final String mgmtUrl, final String user, final String pass, final boolean insecure) {
-        try (CloseableHttpClient http = buildHttpClient(insecure)) {
-            final HttpGet get = new HttpGet(mgmtUrl + "/login");
-            get.addHeader(new BasicScheme().authenticate(
-                    new UsernamePasswordCredentials(user, pass), get, null));
-            try (CloseableHttpResponse resp = http.execute(get)) {
-                final int status = resp.getStatusLine().getStatusCode();
-                if (status != 200 && status != 201) {
-                    throw new CloudRuntimeException("ECS /login failed: HTTP " + status);
-                }
-                if (resp.getFirstHeader("X-SDS-AUTH-TOKEN") == null) {
-                    throw new CloudRuntimeException("ECS /login missing X-SDS-AUTH-TOKEN");
-                }
-                return resp.getFirstHeader("X-SDS-AUTH-TOKEN").getValue();
-            }
-        } catch (Exception e) {
-            final String msg = "ECS: management login error: " + safeMsg(e);
-            LOG.error(msg, e);
-            throw new CloudRuntimeException(msg, e);
-        }
+        return StringUtils.isEmpty(m) ? t.getClass().getSimpleName() : m;
     }
 }
