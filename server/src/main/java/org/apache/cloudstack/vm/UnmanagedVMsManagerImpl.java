@@ -2374,7 +2374,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 throw new CloudRuntimeException(msg);
             }
             if (getStoragePoolWithTags(poolsList, diskOffering.getTags()) == null) {
-                String msg = String.format("Cannot find suitable storage pool for disk offering %s that belongs to the service offering %s", diskOffering.getName(), serviceOffering.getName());
+                String msg = String.format("Cannot find an Up destination primary storage pool matching storage tags '%s' required by root disk offering %s used by service offering %s",
+                        diskOffering.getTags(), diskOffering.getName(), serviceOffering.getName());
                 logger.error(msg);
                 throw new CloudRuntimeException(msg);
             }
@@ -2387,7 +2388,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 throw new CloudRuntimeException(msg);
             }
             if (getStoragePoolWithTags(poolsList, diskOffering.getTags()) == null) {
-                String msg = String.format("Cannot find suitable storage pool for disk offering %s", diskOffering.getName());
+                String msg = String.format("Cannot find an Up destination primary storage pool matching storage tags '%s' required by data disk offering %s",
+                        diskOffering.getTags(), diskOffering.getName());
                 logger.error(msg);
                 throw new CloudRuntimeException(msg);
             }
