@@ -1750,7 +1750,7 @@
 "label.vmlimit": "Limites de inst\u00e2ncias",
 "label.vmname": "Nome da VM",
 "label.vms": "VMs",
-"label.vmsnapshotlimit": "Limite de snapshots de VM",
+"label.vmsnapshotlimit": "Limite de snapshots de inst\u00e2ncias",
 "label.vmstate": "Estado da VM",
 "label.vmtotal": "VMs totais",
 "label.vmware.storage.policy": "Pol\u00edtica de armazenamento do VMWare",
