@@ -73,7 +73,7 @@ public class UpdateResourceCountCmd extends BaseCmd {
                    + "9 - Memory. Total Memory (in MB) a user can use. "
                    + "10 - PrimaryStorage. Total primary storage space (in GiB) a user can use. "
                    + "11 - SecondaryStorage. Total secondary storage space (in GiB) a user can use."
-                   + "12 - VmSnapshot. Number of VM snapshots a user can create.")
+                   + "12 - InstanceSnapshot. Number of VM snapshots a user can create.")
     private Integer resourceType;
 
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "Update resource limits for project")
