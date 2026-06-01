@@ -4305,10 +4305,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Root volume encryption is not supported for hypervisor type " + hypervisorType);
         }
 
-        kmsManager.checkKmsKeyForVolumeEncryption(caller, rootDiskKmsKeyId, zone.getId());
+        kmsManager.checkKmsKeyForVolumeEncryption(owner, rootDiskKmsKeyId, zone.getId());
         if (dataDiskInfoList != null) {
             for (VmDiskInfo diskInfo : dataDiskInfoList) {
-                kmsManager.checkKmsKeyForVolumeEncryption(caller, diskInfo.getKmsKeyId(), zone.getId());
+                kmsManager.checkKmsKeyForVolumeEncryption(owner, diskInfo.getKmsKeyId(), zone.getId());
             }
         }
 

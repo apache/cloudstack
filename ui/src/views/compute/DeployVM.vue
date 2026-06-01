@@ -341,12 +341,12 @@
                               @handle-search-filter="($event) => handleSearchFilter('diskOfferings', $event)"
                             ></disk-offering-selection>
                             <disk-size-selection
-                              v-if="overrideDiskOffering && (overrideDiskOffering.iscustomized || overrideDiskOffering.iscustomizediops || overrideDiskOffering.encrypt || (serviceOffering && serviceOffering.encryptroot))"
+                              v-if="(overrideDiskOffering && (overrideDiskOffering.iscustomized || overrideDiskOffering.iscustomizediops || overrideDiskOffering.encrypt)) || (serviceOffering && serviceOffering.encryptroot)"
                               input-decorator="rootdisksize"
                               :preFillContent="dataPreFill"
                               :minDiskSize="dataPreFill.minrootdisksize"
                               :rootDiskSelected="overrideDiskOffering"
-                              :isCustomized="overrideDiskOffering.iscustomized"
+                              :isCustomized="overrideDiskOffering && overrideDiskOffering.iscustomized"
                               :kmsKeys="options.kmsKeys"
                               :loadingKmsKeys="loading.kmsKeys"
                               :computeOfferingEncryptRoot="serviceOffering && serviceOffering.encryptroot"

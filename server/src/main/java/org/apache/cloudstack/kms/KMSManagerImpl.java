@@ -99,6 +99,7 @@ import java.util.concurrent.TimeoutException;
 public class KMSManagerImpl extends ManagerBase implements KMSManager, PluggableService {
     private static final Logger logger = LogManager.getLogger(KMSManagerImpl.class);
     private static final Map<String, KMSProvider> kmsProviderMap = new HashMap<>();
+    private static final String DATABASE_PROVIDER_NAME = "database";
     private ExecutorService kmsOperationExecutor;
 
     @Inject
@@ -130,6 +131,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
     private List<KMSProvider> kmsProviders;
     private ScheduledExecutorService rewrapExecutor;
 
+
     @Override
     public List<? extends KMSProvider> listKMSProviders() {
         return kmsProviders;
@@ -138,7 +140,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
     @Override
     public KMSProvider getKMSProvider(String name) {
         if (StringUtils.isEmpty(name)) {
-            name = "database";
+            name = DATABASE_PROVIDER_NAME;
         }
 
         String providerName = name.toLowerCase();
@@ -156,34 +158,27 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
 
     @Override
     public boolean hasPermission(Long callerAccountId, KMSKey key) {
-        if (callerAccountId == null) {
-            return false;
-        }
-        if (key == null) {
+        if (callerAccountId == null || key == null) {
             return false;
         }
         if (!key.isEnabled()) {
             throw new InvalidParameterValueException("KMS key is not enabled: " + key);
         }
-        Account caller = accountManager.getAccount(callerAccountId);
-        if (caller == null) {
-            return false;
-        }
-        Account owner = accountManager.getAccount(key.getAccountId());
-        try {
-            accountManager.checkAccess(caller, null, true, owner);
-            return true;
-        } catch (PermissionDeniedException e) {
-            return false;
-        }
+        return callerAccountId == key.getAccountId();
     }
 
     @Override
-    public void checkKmsKeyForVolumeEncryption(Account caller, Long kmsKeyId, Long zoneId) {
+    public void checkKmsKeyForVolumeEncryption(Account owner, Long kmsKeyId, Long zoneId) {
         if (kmsKeyId == null) {
             return;
         }
-        KMSKeyVO key = findKMSKeyAndCheckAccess(kmsKeyId, caller);
+        KMSKeyVO key = kmsKeyDao.findById(kmsKeyId);
+        if (key == null) {
+            throw new InvalidParameterValueException("KMS key not found: " + kmsKeyId);
+        }
+        if (key.getAccountId() != owner.getId()) {
+            throw new PermissionDeniedException("KMS key does not belong to the volume owner account");
+        }
         if (key.getZoneId() != null && zoneId != null && !key.getZoneId().equals(zoneId)) {
             throw new InvalidParameterValueException(
                     "KMS key belongs to zone " + key.getZoneId() +
@@ -338,6 +333,10 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_KMS_KEY_CREATE, eventDescription = "creating user KMS key")
     public KMSKeyResponse createKMSKey(CreateKMSKeyCmd cmd) throws KMSException {
+        if (cmd.getDomainId() != null && StringUtils.isBlank(cmd.getAccountName())) {
+            throw new InvalidParameterValueException("Account name must be provided with domain ID");
+        }
+
         Account caller = CallContext.current().getCallingAccount();
         Account targetAccount = accountManager.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(),
                 cmd.getProjectId());
@@ -463,7 +462,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
-        SearchBuilder<KMSKeyVO> sb = getSearchBuilderForKMSKeys(domainId, isRecursive, permittedAccounts,
+        SearchBuilder<KMSKeyVO> sb = getSearchBuilderForKMSKeys(cmd, domainId, isRecursive, permittedAccounts,
                 listProjectResourcesCriteria);
         SearchCriteria<KMSKeyVO> sc = getSearchCriteriaForKMSKeys(sb, cmd, domainId, isRecursive, permittedAccounts,
                 listProjectResourcesCriteria);
@@ -483,7 +482,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         return listResponse;
     }
 
-    SearchBuilder<KMSKeyVO> getSearchBuilderForKMSKeys(Long domainId, Boolean isRecursive, List<Long> permittedAccounts,
+    SearchBuilder<KMSKeyVO> getSearchBuilderForKMSKeys(ListKMSKeysCmd cmd, Long domainId, Boolean isRecursive, List<Long> permittedAccounts,
                                                        ListProjectResourcesCriteria listProjectResourcesCriteria) {
         SearchBuilder<KMSKeyVO> sb = kmsKeyDao.createSearchBuilder();
         accountManager.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts,
@@ -494,6 +493,11 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         sb.and("purpose", sb.entity().getPurpose(), SearchCriteria.Op.EQ);
         sb.and("enabled", sb.entity().isEnabled(), SearchCriteria.Op.EQ);
         sb.and("hsmProfileId", sb.entity().getHsmProfileId(), SearchCriteria.Op.EQ);
+        if (cmd.getKeyword() != null) {
+            sb.and().op("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+            sb.or("description", sb.entity().getDescription(), SearchCriteria.Op.LIKE);
+            sb.cp();
+        }
         sb.done();
         return sb;
     }
@@ -505,20 +509,14 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         accountManager.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts,
                 listProjectResourcesCriteria);
         KeyPurpose keyPurpose = parseKeyPurpose("volume");
-        if (cmd.getId() != null) {
-            sc.setParameters("id", cmd.getId());
-        }
-        if (cmd.getZoneId() != null) {
-            sc.setParameters("zoneId", cmd.getZoneId());
-        }
-        if (keyPurpose != null) {
-            sc.setParameters("purpose", keyPurpose);
-        }
-        if (cmd.getEnabled() != null) {
-            sc.setParameters("enabled", cmd.getEnabled());
-        }
-        if (cmd.getHsmProfileId() != null) {
-            sc.setParameters("hsmProfileId", cmd.getHsmProfileId());
+        sc.setParametersIfNotNull("id", cmd.getId());
+        sc.setParametersIfNotNull("zoneId", cmd.getZoneId());
+        sc.setParametersIfNotNull("purpose", keyPurpose);
+        sc.setParametersIfNotNull("enabled", cmd.getEnabled());
+        sc.setParametersIfNotNull("hsmProfileId", cmd.getHsmProfileId());
+        if (cmd.getKeyword() != null) {
+            sc.setParameters("name", "%" + cmd.getKeyword() + "%");
+            sc.setParameters("description", "%" + cmd.getKeyword() + "%");
         }
         return sc;
     }
@@ -528,7 +526,11 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         Account caller = CallContext.current().getCallingAccount();
         KMSKeyVO key = findKMSKeyAndCheckAccess(cmd.getId(), caller);
         KMSKey updatedKey = updateUserKMSKey(key, cmd.getName(), cmd.getDescription(), cmd.getEnabled());
-        CallContext.current().setEventDetails(String.format("Updated KMS key: %s (uuid: %s)", updatedKey.getName(), updatedKey.getUuid()));
+        String details = String.format("Updated KMS key: %s (uuid: %s, enabled: %s)", updatedKey.getName(), updatedKey.getUuid(), updatedKey.isEnabled());
+        CallContext.current().setEventDetails(details);
+        ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(),
+                updatedKey.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_KMS_KEY_UPDATE, true,
+                details, updatedKey.getId(), ApiCommandResourceType.Volume.toString(), CallContext.current().getStartEventId());
         return createKMSKeyResponse(updatedKey);
     }
 
@@ -747,18 +749,17 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
     @Override
     public int migrateVolumesToKMS(MigrateVolumesToKMSCmd cmd) throws KMSException {
         Account caller = CallContext.current().getCallingAccount();
-        Long zoneId = cmd.getZoneId();
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
         Long kmsKeyId = cmd.getKmsKeyId();
         List<Long> volumeIds = cmd.getVolumeIds();
 
-        if (zoneId == null && CollectionUtils.isEmpty(volumeIds)) {
-            throw new InvalidParameterValueException("Need to specify either ZoneId or Volume IDs");
+        if (domainId != null && StringUtils.isBlank(accountName)) {
+            throw new InvalidParameterValueException("accountName must be specified when domainId is provided");
         }
 
-        if (zoneId != null && CollectionUtils.isNotEmpty(volumeIds)) {
-            throw new InvalidParameterValueException("Specify either ZoneId or Volume IDs");
+        if (CollectionUtils.isEmpty(volumeIds)) {
+            throw new InvalidParameterValueException("volumeIds must be specified");
         }
 
         if (kmsKeyId == null) {
@@ -793,71 +794,55 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
             accountId = accountManager.finalizeAccountId(accountName, domainId, null, true);
         }
 
-        int pageSize = 100;
-
         int successCount = 0;
         int failureCount = 0;
-        int totalCount;
         logger.info("Starting migration of volumes to KMS (zone: {}, account: {}, domain: {})",
-                zoneId, accountId, domainId);
+                kmsKey.getZoneId(), accountId, domainId);
 
         List<VolumeVO> volumes;
-        if (CollectionUtils.isNotEmpty(volumeIds)) {
-            volumes = volumeDao.listByIds(volumeIds);
-            accountManager.checkAccess(caller, null, true, volumes.toArray(new Volume[0]));
-            totalCount = volumes.size();
-        } else {
-            Pair<List<VolumeVO>, Integer> volumeListPair = volumeDao.listVolumesForKMSMigration(zoneId, accountId,
-                    domainId,
-                    pageSize);
-            volumes = volumeListPair.first();
-            totalCount = volumeListPair.second();
-        }
-        while (true) {
+        volumes = volumeDao.listByIds(volumeIds);
+        accountManager.checkAccess(caller, null, true, volumes.toArray(new Volume[0]));
 
-            if (CollectionUtils.isEmpty(volumes) || totalCount == 0) {
-                break;
+        List<String> mismatchedVolumeUuids = new ArrayList<>();
+        for (VolumeVO volume : volumes) {
+            if (volume.getAccountId() != kmsKey.getAccountId()) {
+                mismatchedVolumeUuids.add(volume.getUuid());
             }
+        }
+        if (!mismatchedVolumeUuids.isEmpty()) {
+            throw new InvalidParameterValueException(
+                    "The following volumes do not belong to the same account as the KMS key: " +
+                            String.join(", ", mismatchedVolumeUuids));
+        }
 
-            for (VolumeVO volume : volumes) {
-                try {
-                    if (migrateVolumeToKmsKey(provider, volume, kmsKey, activeVersion)) {
-                        successCount++;
-                        logger.debug("Migrated volume's encryption {} to KMS (batch {})", volume, kmsKey);
-                    }
-                } catch (Exception e) {
-                    failureCount++;
-                    logger.warn("Failed to migrate volume {}: {}", volume.getId(), e.getMessage());
+        for (VolumeVO volume : volumes) {
+            try {
+                if (migrateVolumeToKmsKey(provider, volume, kmsKey, activeVersion)) {
+                    successCount++;
+                    logger.debug("Migrated volume's encryption {} to KMS {}", volume, kmsKey);
                 }
+            } catch (Exception e) {
+                failureCount++;
+                logger.warn("Failed to migrate volume {}: {}", volume.getId(), e.getMessage());
             }
-            logger.debug("Processed {} volumes. success: {}, failure: {}, total: {}", volumes.size(),
-                    successCount, failureCount, totalCount);
-
-            if (CollectionUtils.isNotEmpty(volumeIds)) {
-                break;
-            }
-
-            Pair<List<VolumeVO>, Integer> volumeListPair = volumeDao.listVolumesForKMSMigration(zoneId, accountId,
-                    domainId, pageSize);
-            volumes = volumeListPair.first();
-            if (totalCount == volumeListPair.second()) {
-                logger.debug(
-                        "{} volumes pending for migration because passphrase was not found or migration failed",
-                        totalCount);
-                break;
-            }
-            totalCount = volumeListPair.second();
         }
-        logger.info("Migration operation completed: {} total volumes processed, {} success, {} failures",
-                successCount + failureCount, successCount, failureCount);
 
-        CallContext.current().setEventDetails(String.format("Migrated %d volumes to KMS key: %s (uuid: %s). Success: %d, Failures: %d", successCount + failureCount, kmsKey.getName(), kmsKey.getUuid(), successCount, failureCount));
-
+        String details = String.format("Migrated %d volumes to KMS key: %s (uuid: %s). Success: %d, Failures: %d",
+                successCount + failureCount, kmsKey.getName(), kmsKey.getUuid(), successCount, failureCount);
+        logger.info(details);
+        CallContext.current().setEventDetails(details);
+        ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(),
+                kmsKey.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VOLUME_MIGRATE_TO_KMS, true,
+                details, kmsKey.getId(), ApiCommandResourceType.Volume.toString(), CallContext.current().getStartEventId());
         return successCount;
     }
 
     private boolean migrateVolumeToKmsKey(KMSProvider provider, VolumeVO volume, KMSKey kmsKey,
                                           KMSKekVersionVO activeVersion) {
+        if (volume.getAccountId() != kmsKey.getAccountId()) {
+            throw new InvalidParameterValueException(
+                    "Volume " + volume.getUuid() + " does not belong to the same account as KMS key " + kmsKey.getUuid());
+        }
         PassphraseVO passphrase = passphraseDao.findById(volume.getPassphraseId());
         if (passphrase == null) {
             logger.warn(
@@ -997,6 +982,10 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
             throw new PermissionDeniedException("Only root admins can create system HSM profiles");
         }
 
+        if (cmd.getDomainId() != null && StringUtils.isBlank(cmd.getAccountName())) {
+            throw new InvalidParameterValueException("Account name must be provided with domain ID");
+        }
+
         Account targetAccount = accountManager.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(),
                 cmd.getProjectId());
 
@@ -1091,6 +1080,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         sb.and("protocol", sb.entity().getProtocol(), SearchCriteria.Op.EQ);
         sb.and("enabled", sb.entity().isEnabled(), SearchCriteria.Op.EQ);
         sb.and("system", sb.entity().getIsPublic(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
         sb.done();
         return sb;
     }
@@ -1105,6 +1095,9 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         sc.setParametersIfNotNull("protocol", cmd.getProtocol());
         sc.setParametersIfNotNull("enabled", cmd.getEnabled());
         sc.setParametersIfNotNull("system", cmd.getIsSystem());
+        if (cmd.getKeyword() != null) {
+            sc.setParameters("name", "%" + cmd.getKeyword() + "%");
+        }
 
         // Access control for non-root-admins:
         // system profiles (null account_id/domain_id) are globally visible to all
@@ -1156,6 +1149,10 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         HSMProfileVO profile = getHSMProfile(cmd.getId());
         Account caller = CallContext.current().getCallingAccount();
         checkHSMProfileAccess(caller, profile, true);
+
+        if (profile.getProtocol().equals(DATABASE_PROVIDER_NAME)) {
+            throw new InvalidParameterValueException("Database HSM profile is default and cannot be deleted");
+        }
 
         long keyCount = kmsKeyDao.countByHsmProfileId(profile.getId());
         if (keyCount > 0) {

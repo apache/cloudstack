@@ -68,6 +68,7 @@ import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
@@ -497,6 +498,9 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
     private static class PKCS11Session {
         private static final int IV_LENGTH = 16; // 128 bits for CBC mode
 
+        // Counter to bypass JDK SunPKCS11 caching when the HSM restarts
+        private static final AtomicInteger hsmRestartCount = new AtomicInteger(0);
+
         private KeyStore keyStore;
         private Provider provider;
         private String providerName;
@@ -616,6 +620,21 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
                 throw KMSException.invalidParameter("library is required");
             }
 
+            // Bypass JDK SunPKCS11 native wrapper caching by slightly altering the path string
+            // when an HSM restart is detected. The OS dlopen() ignores extra slashes.
+            int bypass = hsmRestartCount.get();
+            if (bypass > 0) {
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < bypass; i++) {
+                    sb.append("/");
+                }
+                if (libraryPath.startsWith("/")) {
+                    libraryPath = "/" + sb.toString() + libraryPath.substring(1);
+                } else {
+                    libraryPath = "./" + sb.toString() + libraryPath;
+                }
+            }
+
             StringBuilder configBuilder = new StringBuilder();
             // Include the unique suffix so that each session is registered under a distinct
             // provider name (SunPKCS11-CloudStackHSM-{suffix}), preventing name collisions
@@ -677,7 +696,11 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
             }
             logger.warn("PKCS#11 error: {} - {}", errorMsg, context, e);
 
-            if (errorMsg.contains("CKR_PIN_INCORRECT") || errorMsg.contains("PIN_INCORRECT")) {
+            if (errorMsg.contains("CKR_CRYPTOKI_NOT_INITIALIZED") || errorMsg.contains("CRYPTOKI_NOT_INITIALIZED")) {
+                hsmRestartCount.incrementAndGet();
+                throw new KMSException(KMSException.ErrorType.CONNECTION_FAILED,
+                        context + ": HSM requires re-initialization (CRYPTOKI_NOT_INITIALIZED)", e);
+            } else if (errorMsg.contains("CKR_PIN_INCORRECT") || errorMsg.contains("PIN_INCORRECT")) {
                 throw new KMSException(KMSException.ErrorType.AUTHENTICATION_FAILED,
                         context + ": Incorrect PIN", e);
             } else if (errorMsg.contains("CKR_SLOT_ID_INVALID") || errorMsg.contains("SLOT_ID_INVALID")) {

@@ -112,6 +112,7 @@ import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.ValidatedConfigKey;
+import org.apache.cloudstack.kms.KMSManager;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.dao.ConfigurationGroupDao;
 import org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDao;
@@ -1483,6 +1484,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         if (type.equals(Integer.class)) {
             int val = Integer.parseInt(value);
+            if (KMSManager.KMSDekSizeBits.key().equalsIgnoreCase(name)) {
+                if (val != 128 && val != 192 && val != 256) {
+                    return String.format("Please enter a valid value for configuration parameter [%s]. Supported values are 128, 192, or 256.", name);
+                }
+            }
             if (NetworkModel.MACIdentifier.key().equalsIgnoreCase(name)) {
                 // The value needs to be between 0 to 255 because the MAC generation needs a value of 8 bits
                 // 0 is considered as disabled.

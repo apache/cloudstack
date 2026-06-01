@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.kms;
 
-import com.cloud.dc.DataCenter;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -29,7 +28,6 @@ import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.KMSKeyResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
-import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.kms.KMSException;
 import org.apache.cloudstack.kms.KMSKey;
@@ -50,12 +48,6 @@ public class MigrateVolumesToKMSCmd extends BaseAsyncCmd {
     @Inject
     private KMSManager kmsManager;
 
-    @Parameter(name = ApiConstants.ZONE_ID,
-               type = CommandType.UUID,
-               entityType = ZoneResponse.class,
-               description = "Zone ID")
-    private Long zoneId;
-
     @Parameter(name = ApiConstants.ACCOUNT,
                type = CommandType.STRING,
                description = "Migrate volumes for specific account")
@@ -71,6 +63,7 @@ public class MigrateVolumesToKMSCmd extends BaseAsyncCmd {
                type = CommandType.LIST,
                collectionType = CommandType.UUID,
                entityType = VolumeResponse.class,
+               required = true,
                description = "List of volume IDs to migrate")
     private List<Long> volumeIds;
 
@@ -80,10 +73,6 @@ public class MigrateVolumesToKMSCmd extends BaseAsyncCmd {
                entityType = KMSKeyResponse.class,
                description = "KMS Key ID to use for migrating volumes")
     private Long kmsKeyId;
-
-    public Long getZoneId() {
-        return zoneId;
-    }
 
     public String getAccountName() {
         return accountName;
@@ -127,7 +116,7 @@ public class MigrateVolumesToKMSCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Migrating volumes to KMS for zone: " + _uuidMgr.getUuid(DataCenter.class, zoneId);
+        return "Migrating volumes to KMS key: " + _uuidMgr.getUuid(KMSKey.class, kmsKeyId);
     }
 
     @Override

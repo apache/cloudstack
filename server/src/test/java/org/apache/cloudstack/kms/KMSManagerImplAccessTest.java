@@ -80,7 +80,6 @@ public class KMSManagerImplAccessTest {
     public void testHasPermission_ReturnsFalseWhenCallerAccountNotFound() {
         KMSKey key = mock(KMSKey.class);
         when(key.isEnabled()).thenReturn(true);
-        when(accountManager.getAccount(1L)).thenReturn(null);
 
         assertFalse(kmsManager.hasPermission(1L, key));
     }
@@ -91,13 +90,6 @@ public class KMSManagerImplAccessTest {
         when(key.isEnabled()).thenReturn(true);
         when(key.getAccountId()).thenReturn(10L);
 
-        Account caller = mock(Account.class);
-        Account owner = mock(Account.class);
-        when(accountManager.getAccount(1L)).thenReturn(caller);
-        when(accountManager.getAccount(10L)).thenReturn(owner);
-        doThrow(new PermissionDeniedException("denied"))
-                .when(accountManager).checkAccess(caller, null, true, owner);
-
         assertFalse(kmsManager.hasPermission(1L, key));
     }
 
@@ -105,13 +97,7 @@ public class KMSManagerImplAccessTest {
     public void testHasPermission_ReturnsTrueWhenAccessGranted() {
         KMSKey key = mock(KMSKey.class);
         when(key.isEnabled()).thenReturn(true);
-        when(key.getAccountId()).thenReturn(10L);
-
-        Account caller = mock(Account.class);
-        Account owner = mock(Account.class);
-        when(accountManager.getAccount(1L)).thenReturn(caller);
-        when(accountManager.getAccount(10L)).thenReturn(owner);
-
+        when(key.getAccountId()).thenReturn(1L);
         assertTrue(kmsManager.hasPermission(1L, key));
     }
 
@@ -157,12 +143,12 @@ public class KMSManagerImplAccessTest {
     @Test(expected = PermissionDeniedException.class)
     public void testCheckKmsKeyForVolumeEncryption_ThrowsWhenPermissionDenied() {
         KMSKeyVO key = mock(KMSKeyVO.class);
-        Account caller = mock(Account.class);
-        when(kmsKeyDao.findById(1L)).thenReturn(key);
-        doThrow(new PermissionDeniedException("denied"))
-                .when(accountManager).checkAccess(caller, null, true, key);
+        when(key.getAccountId()).thenReturn(2L);
 
-        kmsManager.checkKmsKeyForVolumeEncryption(caller, 1L, null);
+        Account owner = mock(Account.class);
+        when(kmsKeyDao.findById(1L)).thenReturn(key);
+
+        kmsManager.checkKmsKeyForVolumeEncryption(owner, 1L, null);
     }
 
     @Test(expected = InvalidParameterValueException.class)

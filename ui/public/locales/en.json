@@ -1433,6 +1433,7 @@
 "label.javadistribution": "Java Runtime Distribution",
 "label.javaversion": "Java Runtime Version",
 "label.keep": "Keep",
+"label.keklabel": "KEK Label",
 "label.kernelversion": "Kernel Version",
 "label.key": "Key",
 "label.keybits": "Key Bits",

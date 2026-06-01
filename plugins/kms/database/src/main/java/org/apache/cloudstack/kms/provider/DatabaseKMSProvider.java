@@ -62,7 +62,7 @@ public class DatabaseKMSProvider extends AdapterBase implements KMSProvider {
     private static final String CKO_SECRET_KEY = "CKO_SECRET_KEY";
     private static final String CKK_AES = "CKK_AES";
 
-    private static final String DEFAULT_PROFILE_NAME = "default";
+    private static final String DEFAULT_PROFILE_NAME = "HSM Database Provider";
     private static final long SYSTEM_ACCOUNT_ID = 1L;
     private static final long ROOT_DOMAIN_ID = 1L;
 

@@ -150,16 +150,15 @@ public interface KMSManager extends Manager, Configurable {
 
     /**
      * Validates that the KMS key can be used for volume encryption: key exists, not deleted,
-     * caller has access, key state is Enabled, and key purpose is VOLUME_ENCRYPTION.
+     * owner account matches the volume owner, key state is Enabled, and key purpose is VOLUME_ENCRYPTION.
      * No-op if kmsKeyId is null.
      *
-     * @param caller   the caller's account
+     * @param owner    the account that will own the volume
      * @param kmsKeyId the KMS key database ID
      * @param zoneId   the zone ID of the target resource (volume/VM)
-     * @throws InvalidParameterValueException if key not found, deleted, disabled, wrong purpose, or zone mismatch
-     * @throws PermissionDeniedException      if caller lacks access
+     * @throws InvalidParameterValueException if key not found, disabled, wrong purpose, zone mismatch, or account mismatch
      */
-    void checkKmsKeyForVolumeEncryption(Account caller, Long kmsKeyId, Long zoneId);
+    void checkKmsKeyForVolumeEncryption(Account owner, Long kmsKeyId, Long zoneId);
 
     /**
      * Unwrap a DEK by wrapped key ID, trying multiple KEK versions if needed

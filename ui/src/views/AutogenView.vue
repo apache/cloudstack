@@ -337,6 +337,7 @@
                   showSearch
                   optionFilterProp="label"
                   v-model:value="form[field.name]"
+                  @change="val => handleSelectChange(field.name, val)"
                   :loading="field.loading"
                   :placeholder="field.description"
                   :filterOption="(input, option) => {
@@ -361,6 +362,7 @@
                   showSearch
                   optionFilterProp="label"
                   v-model:value="form[field.name]"
+                  @change="val => handleSelectChange(field.name, val)"
                   :loading="field.loading"
                   :placeholder="field.description"
                   :filterOption="(input, option) => {
@@ -468,6 +470,7 @@
                   :loading="field.loading"
                   mode="multiple"
                   v-model:value="form[field.name]"
+                  @change="val => handleSelectChange(field.name, val)"
                   :placeholder="field.description"
                   v-focus="fieldIndex === firstIndex"
                   showSearch
@@ -1447,6 +1450,21 @@ export default {
         if (!(this.currentAction.mapping && field.name in this.currentAction.mapping && this.currentAction.mapping[field.name].value)) {
           this.firstIndex = fieldIndex
           break
+        }
+      }
+    },
+    handleSelectChange (name, val) {
+      if (name === 'domainid') {
+        const accountField = this.currentAction.paramFields.find(f => f.name === 'account')
+        if (accountField) {
+          this.form.account = null
+          this.listUuidOpts(accountField, { domainid: val })
+        }
+      } else if (name === 'account') {
+        const volumeField = this.currentAction.paramFields.find(f => f.name === 'volumeids')
+        if (volumeField) {
+          this.form.volumeids = null
+          this.listUuidOpts(volumeField, { domainid: this.form.domainid, account: val })
         }
       }
     },

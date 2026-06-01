@@ -989,7 +989,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             String userSpecifiedName = getVolumeNameFromCommand(cmd);
 
             if (cmd.getKmsKeyId() != null) {
-                kmsManager.checkKmsKeyForVolumeEncryption(caller, cmd.getKmsKeyId(), zoneId);
+                kmsManager.checkKmsKeyForVolumeEncryption(owner, cmd.getKmsKeyId(), zoneId);
             }
 
             return commitVolume(cmd.getSnapshotId(), caller, owner, displayVolume, zoneId, diskOfferingId, provisioningType, size, minIops, maxIops, parentVolume, userSpecifiedName,

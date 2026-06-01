@@ -43,7 +43,14 @@ export default {
         fields.push('domain')
         return fields
       },
-      details: ['id', 'name', 'description', 'version', 'enabled', 'account', 'domain', 'project', 'created', 'hsmprofile'],
+      details: () => {
+        const fields = ['id', 'name', 'description', 'version']
+        if (['Admin'].includes(store.getters.userInfo.roletype)) {
+          fields.push('keklabel')
+        }
+        fields.push('keybits', 'enabled', 'account', 'domain', 'project', 'created', 'hsmprofile')
+        return fields
+      },
       related: [
         {
           name: 'volume',
@@ -68,7 +75,7 @@ export default {
       searchFilters: () => {
         var filters = ['zoneid', 'hsmprofileid']
         if (store.getters.userInfo.roletype === 'Admin') {
-          filters.push('account', 'domainid', 'projectid')
+          filters.push('domainid', 'account', 'projectid')
         }
         return filters
       },
@@ -85,6 +92,12 @@ export default {
             return ['Admin'].includes(store.userInfo.roletype)
               ? ['zoneid', 'domainid', 'account', 'projectid', 'name', 'description', 'hsmprofileid', 'keybits']
               : ['zoneid', 'name', 'description', 'hsmprofileid', 'keybits']
+          },
+          mapping: {
+            hsmprofileid: {
+              api: 'listHSMProfiles',
+              params: (record) => { return { enabled: true } }
+            }
           }
         },
         {
@@ -126,15 +139,19 @@ export default {
             return ['Admin'].includes(store.userInfo.roletype)
           },
           args: (record, store) => {
-            var fields = ['zoneid', 'kmskeyid', 'volumeids']
-            if (['Admin'].includes(store.userInfo.roletype)) {
-              fields = fields.concat(['account', 'domainid'])
+            var fields = ['domainid', 'account', 'zoneid', 'kmskeyid', 'volumeids']
+            if (!['Admin'].includes(store.userInfo.roletype)) {
+              fields = ['zoneid', 'kmskeyid', 'volumeids']
             }
             return fields
           },
           mapping: {
             kmskeyid: {
               value: (record) => record.id
+            },
+            volumeids: {
+              api: 'listVolumes',
+              params: (record) => { return { account: record.account, domainid: record.domainid, zoneid: record.zoneid } }
             }
           }
         },
@@ -172,7 +189,7 @@ export default {
         fields.push('domain')
         return fields
       },
-      details: ['id', 'name', 'description', 'enabled', 'account', 'domain', 'project', 'created', 'details'],
+      details: ['id', 'name', 'description', 'protocol', 'enabled', 'account', 'domain', 'project', 'created', 'details'],
       related: [
         {
           name: 'kmskey',
@@ -197,7 +214,7 @@ export default {
       searchFilters: () => {
         var filters = ['zoneid']
         if (store.getters.userInfo.roletype === 'Admin') {
-          filters.push('account', 'domainid', 'projectid')
+          filters.push('domainid', 'account', 'projectid')
         }
         return filters
       },

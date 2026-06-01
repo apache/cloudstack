@@ -21,6 +21,7 @@
       <a-form-item no-style>
         <a-auto-complete
           v-if="optionalKeys && optionalKeys.length > 0"
+          :key="autoCompleteKey"
           v-model:value="newKey"
           :placeholder="$t('label.key')"
           class="input-field"
@@ -111,7 +112,8 @@ export default {
       newKey: '',
       newValue: '',
       tableData: [],
-      editBuffer: {}
+      editBuffer: {},
+      autoCompleteKey: 0
     }
   },
   created () {
@@ -144,6 +146,7 @@ export default {
       this.updateData()
       this.newKey = ''
       this.newValue = ''
+      this.autoCompleteKey++
     },
     removeEntry (key) {
       this.tableData = this.tableData.filter(item => item.key !== key)
