@@ -30,7 +30,7 @@ public interface Resource {
         project("project", 5),
         network("network", 6),
         vpc("vpc", 7),
-        vm_snapshot("vm_snapshot", 12),
+        instance_snapshot("instance_snapshot", 12),
         cpu("cpu", 8),
         memory("memory", 9),
         primary_storage("primary_storage", 10),
