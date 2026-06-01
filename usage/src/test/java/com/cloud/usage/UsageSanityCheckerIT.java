@@ -71,8 +71,8 @@ public class UsageSanityCheckerIT{
             "Error: Found 2 duplicate allocated Vm entries in vm usage helper table\n" +
             "Error: Found 1 running Vm entries without corresponding allocated entries in vm usage helper table\n" +
             "Error: Found 1 volume usage records which are created after volume is removed\n" +
-            "Error: Found 1 template/ISO usage records which are created after it is removed\n" +
-            "Error: Found 1 snapshot usage records which are created after it is removed\n";
+            "Error: Found 1 Template/ISO usage records which are created after it is removed\n" +
+            "Error: Found 1 Snapshot usage records which are created after it is removed\n";
 
     protected static final String EXPECTED_ERRORS_2 = "Error: Found 3 usage records with raw_usage > 10\n" +
             "Error: Found 1 Vm usage records which are created after Vm is destroyed\n" +
@@ -81,8 +81,8 @@ public class UsageSanityCheckerIT{
             "Error: Found 4 running Vm entries without corresponding allocated entries in vm usage helper table\n" +
             "Error: Found 2 volume usage records which are created after volume is removed\n" +
             "Error: Found 6 duplicate records in volume usage helper table\n" +
-            "Error: Found 2 template/ISO usage records which are created after it is removed\n" +
-            "Error: Found 1 snapshot usage records which are created after it is removed\n";
+            "Error: Found 2 Template/ISO usage records which are created after it is removed\n" +
+            "Error: Found 1 Snapshot usage records which are created after it is removed\n";
 
     protected static final String EXPECTED_ERRORS_3 = "";
 

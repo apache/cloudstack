@@ -17,6 +17,7 @@
 package com.cloud.dao;
 
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -54,6 +55,13 @@ public class EntityManagerImpl extends ManagerBase implements EntityManager {
         // Finds and returns a unique VO using uuid, null if entity not found in db
         GenericDao<? extends T, String> dao = (GenericDao<? extends T, String>)GenericDaoBase.getDao(entityType);
         return dao.findByUuid(uuid);
+    }
+
+    @Override
+    public <T> List<T> listByUuids(Class<T> entityType, Collection<String> uuids) {
+        // Finds and returns a unique VO using uuid, null if entity not found in db
+        GenericDao<? extends T, String> dao = (GenericDao<? extends T, String>)GenericDaoBase.getDao(entityType);
+        return (List<T>)dao.listByUuids(uuids);
     }
 
     @Override

@@ -54,25 +54,25 @@ public class CreateLBStickinessPolicyCmd extends BaseAsyncCreateCmd {
                type = CommandType.UUID,
                entityType = FirewallRuleResponse.class,
                required = true,
-               description = "the ID of the load balancer rule")
+               description = "The ID of the load balancer rule")
     private Long lbRuleId;
 
-    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "the description of the load balancer stickiness policy")
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "The description of the load balancer stickiness policy")
     private String description;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "name of the load balancer stickiness policy")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Name of the load balancer stickiness policy")
     private String lbStickinessPolicyName;
 
     @Parameter(name = ApiConstants.METHOD_NAME,
                type = CommandType.STRING,
                required = true,
-               description = "name of the load balancer stickiness policy method, possible values are LbCookie, AppCookie, SourceBased")
+               description = "Name of the load balancer stickiness policy method, possible values are LbCookie, AppCookie, SourceBased")
     private String stickinessMethodName;
 
-    @Parameter(name = ApiConstants.PARAM_LIST, type = CommandType.MAP, description = "param list. Example: param[0].name=cookiename&param[0].value=LBCookie ")
+    @Parameter(name = ApiConstants.PARAM_LIST, type = CommandType.MAP, description = "Param list. Example: param[0].name=cookiename&param[0].value=LBCookie ")
     private Map paramList;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "An optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
 
@@ -138,7 +138,7 @@ public class CreateLBStickinessPolicyCmd extends BaseAsyncCreateCmd {
         boolean success = false;
 
         try {
-            CallContext.current().setEventDetails("Rule Id: " + getEntityId());
+            CallContext.current().setEventDetails("Rule ID: " + getEntityUuid());
             success = _lbService.applyLBStickinessPolicy(this);
             if (success) {
                 // State might be different after the rule is applied, so get new object here

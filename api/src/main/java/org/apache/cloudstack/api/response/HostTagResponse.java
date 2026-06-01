@@ -24,15 +24,15 @@ import org.apache.cloudstack.api.BaseResponse;
 
 public class HostTagResponse extends BaseResponse {
     @SerializedName("id")
-    @Param(description = "the ID of the host tag")
+    @Param(description = "The ID of the host tag")
     private String id;
 
     @SerializedName("hostid")
-    @Param(description = "the host ID of the host tag")
+    @Param(description = "The host ID of the host tag")
     private long hostId;
 
     @SerializedName("name")
-    @Param(description = "the name of the host tag")
+    @Param(description = "The name of the host tag")
     private String name;
 
     @SerializedName(ApiConstants.IS_IMPLICIT)

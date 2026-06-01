@@ -32,31 +32,31 @@ import java.util.Date;
 @EntityReference(value = Annotation.class)
 public class AnnotationResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the (uu)id of the annotation")
+    @Param(description = "The UUID of the annotation")
     private String uuid;
 
     @SerializedName(ApiConstants.ENTITY_TYPE)
-    @Param(description = "the type of the annotated entity")
+    @Param(description = "The type of the annotated entity")
     private String entityType;
 
     @SerializedName(ApiConstants.ENTITY_ID)
-    @Param(description = "the (uu)id of the entity to which this annotation pertains")
+    @Param(description = "The UUID of the entity to which this annotation pertains")
     private String entityUuid;
 
     @SerializedName(ApiConstants.ENTITY_NAME)
-    @Param(description = "the name of the entity to which this annotation pertains")
+    @Param(description = "The name of the entity to which this annotation pertains")
     private String entityName;
 
     @SerializedName(ApiConstants.ANNOTATION)
-    @Param(description = "the contents of the annotation")
+    @Param(description = "The contents of the annotation")
     private String annotation;
 
     @SerializedName(ApiConstants.USER_ID)
-    @Param(description = "The (uu)id of the user that entered the annotation")
+    @Param(description = "The UUID of the User that entered the annotation")
     private String userUuid;
 
     @SerializedName(ApiConstants.USERNAME)
-    @Param(description = "The username of the user that entered the annotation")
+    @Param(description = "The username of the User that entered the annotation")
     private String username;
 
     @SerializedName(ApiConstants.ADMINS_ONLY)
@@ -64,11 +64,11 @@ public class AnnotationResponse extends BaseResponse {
     private Boolean adminsOnly;
 
     @SerializedName(ApiConstants.CREATED)
-    @Param(description = "the creation timestamp for this annotation")
+    @Param(description = "The creation timestamp for this annotation")
     private Date created;
 
     @SerializedName(ApiConstants.REMOVED)
-    @Param(description = "the removal timestamp for this annotation")
+    @Param(description = "The removal timestamp for this annotation")
     private Date removed;
 
     public String getUuid() {

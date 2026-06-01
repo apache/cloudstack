@@ -81,7 +81,7 @@ public class VolumeStateListener implements StateListener<State, Event, Volume> 
               // For the Resize Volume Event, this  publishes an event with an incorrect disk offering ID, so do nothing for now
             } else {
               UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(), vol.getDiskOfferingId(), null, vol.getSize(),
-                      Volume.class.getName(), vol.getUuid(), vol.isDisplayVolume());
+                      Volume.class.getName(), vol.getUuid(), instanceId, vol.isDisplayVolume());
             }
           } else if (transition.getToState() == State.Destroy && vol.getVolumeType() != Volume.Type.ROOT) { //Do not Publish Usage Event for ROOT Disk as it would have been published already while destroying a VM
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(),

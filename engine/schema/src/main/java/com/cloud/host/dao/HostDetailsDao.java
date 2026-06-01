@@ -32,4 +32,9 @@ public interface HostDetailsDao extends GenericDao<DetailVO, Long> {
     void deleteDetails(long hostId);
 
     List<DetailVO> findByName(String name);
+
+    void removeExternalDetails(long hostId);
+
+    void replaceExternalDetails(long hostId, Map<String, String> details);
+
 }

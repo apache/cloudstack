@@ -96,7 +96,7 @@ public class CephObjectStoreDriverImplTest {
         when(bucketDao.findById(anyLong())).thenReturn(new BucketVO(bucket.getName()));
         Bucket bucketRet = cephObjectStoreDriverImpl.createBucket(bucket, false);
         assertEquals(bucketRet.getName(), bucket.getName());
-        verify(rgwClient, times(1)).getBucketAcl(anyString());
+        verify(rgwClient, times(1)).doesBucketExistV2(anyString());
         verify(rgwClient, times(1)).createBucket(anyString());
     }
 

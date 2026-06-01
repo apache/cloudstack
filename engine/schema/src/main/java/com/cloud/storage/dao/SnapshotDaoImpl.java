@@ -19,6 +19,7 @@ package com.cloud.storage.dao;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
@@ -56,6 +57,10 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     private static final String GET_LAST_SNAPSHOT =
         "SELECT snapshots.id FROM snapshot_store_ref, snapshots where snapshots.id = snapshot_store_ref.snapshot_id AND snapshosts.volume_id = ? AND snapshot_store_ref.role = ? ORDER BY created DESC";
 
+    private static final String VOLUME_ID = "volumeId";
+    private static final String NOT_TYPE = "notType";
+    private static final String STATUS = "status";
+
     private SearchBuilder<SnapshotVO> snapshotIdsSearch;
     private SearchBuilder<SnapshotVO> VolumeIdSearch;
     private SearchBuilder<SnapshotVO> VolumeIdTypeSearch;
@@ -66,6 +71,8 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     private SearchBuilder<SnapshotVO> StatusSearch;
     private SearchBuilder<SnapshotVO> notInStatusSearch;
     private GenericSearchBuilder<SnapshotVO, Long> CountSnapshotsByAccount;
+
+    private SearchBuilder<SnapshotVO> volumeIdAndTypeNotInSearch;
     @Inject
     ResourceTagDao _tagsDao;
     @Inject
@@ -163,6 +170,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         CountSnapshotsByAccount.select(null, Func.COUNT, null);
         CountSnapshotsByAccount.and("account", CountSnapshotsByAccount.entity().getAccountId(), SearchCriteria.Op.EQ);
         CountSnapshotsByAccount.and("status", CountSnapshotsByAccount.entity().getState(), SearchCriteria.Op.NIN);
+        CountSnapshotsByAccount.and("snapshotTypeNEQ", CountSnapshotsByAccount.entity().getSnapshotType(), SearchCriteria.Op.NIN);
         CountSnapshotsByAccount.and("removed", CountSnapshotsByAccount.entity().getRemoved(), SearchCriteria.Op.NULL);
         CountSnapshotsByAccount.done();
 
@@ -181,6 +189,12 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
 
         InstanceIdSearch.join("instanceSnapshots", volumeSearch, volumeSearch.entity().getId(), InstanceIdSearch.entity().getVolumeId(), JoinType.INNER);
         InstanceIdSearch.done();
+
+        volumeIdAndTypeNotInSearch = createSearchBuilder();
+        volumeIdAndTypeNotInSearch.and(VOLUME_ID, volumeIdAndTypeNotInSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
+        volumeIdAndTypeNotInSearch.and(STATUS, volumeIdAndTypeNotInSearch.entity().getState(), SearchCriteria.Op.NEQ);
+        volumeIdAndTypeNotInSearch.and(NOT_TYPE, volumeIdAndTypeNotInSearch.entity().getTypeDescription(), SearchCriteria.Op.NOTIN);
+        volumeIdAndTypeNotInSearch.done();
     }
 
     @Override
@@ -207,6 +221,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         SearchCriteria<Long> sc = CountSnapshotsByAccount.create();
         sc.setParameters("account", accountId);
         sc.setParameters("status", State.Error, State.Destroyed);
+        sc.setParameters("snapshotTypeNEQ", Snapshot.Type.GROUP.ordinal());
         return customSearch(sc, null).get(0);
     }
 
@@ -250,6 +265,13 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         SearchCriteria<SnapshotVO> sc = StatusSearch.create();
         sc.setParameters("status", (Object[])status);
         return listBy(sc, null);
+    }
+
+    @Override
+    public List<SnapshotVO> listAllByStatusIncludingRemoved(Snapshot.State... status) {
+        SearchCriteria<SnapshotVO> sc = StatusSearch.create();
+        sc.setParameters("status", (Object[])status);
+        return listIncludingRemovedBy(sc, null);
     }
 
     @Override
@@ -298,5 +320,15 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         SearchCriteria<SnapshotVO> sc = sb.create();
         sc.setParameters("volumeIds", volumeIds.toArray());
         return search(sc, null);
+    }
+
+    @Override
+    public List<SnapshotVO> listByVolumeIdAndTypeNotInAndStateNotRemoved(long volumeId, Type... types) {
+        SearchCriteria<SnapshotVO> sc =  volumeIdAndTypeNotInSearch.create();
+        sc.setParameters(VOLUME_ID, volumeId);
+        sc.setParameters(NOT_TYPE, Arrays.stream(types).map(Type::toString).toArray());
+        sc.setParameters(STATUS, State.Destroyed);
+
+        return listBy(sc);
     }
 }

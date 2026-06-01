@@ -124,7 +124,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import store from '@/store'
 import { SERVER_MANAGER } from '@/store/mutation-types'
 import TranslationMenu from '@/components/header/TranslationMenu'
@@ -157,6 +157,7 @@ export default {
       this.form = reactive({
         server: (this.server.apiHost || '') + this.server.apiBase,
         username: this.$route.query?.username || '',
+        domain: this.$route.query?.domain || '',
         token: this.$route.query?.token || ''
       })
       this.rules = {
@@ -199,7 +200,7 @@ export default {
           loginParams.domain = '/'
         }
 
-        api('resetPassword', {}, 'POST', loginParams)
+        postAPI('resetPassword', loginParams)
           .then((res) => {
             if (res?.resetpasswordresponse?.success) {
               this.$message.success(this.$t('message.password.reset.success'))

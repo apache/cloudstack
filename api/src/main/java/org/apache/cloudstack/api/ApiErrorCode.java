@@ -22,6 +22,7 @@ package org.apache.cloudstack.api;
  */
 public enum ApiErrorCode {
 
+    BAD_REQUEST(400),
     UNAUTHORIZED(401),
     UNAUTHORIZED2FA(511),
     METHOD_NOT_ALLOWED(405),
@@ -30,6 +31,7 @@ public enum ApiErrorCode {
     UNSUPPORTED_ACTION_ERROR(432),
     API_LIMIT_EXCEED(429),
 
+    SERVICE_UNAVAILABLE(503),
     INTERNAL_ERROR(530),
     ACCOUNT_ERROR(531),
     ACCOUNT_RESOURCE_LIMIT_ERROR(532),

@@ -49,10 +49,10 @@ public class StopSystemVmCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = SystemVmResponse.class,
                required = true,
-               description = "The ID of the system virtual machine")
+               description = "The ID of the System VM")
     private Long id;
 
-    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force stop the VM (vm is marked as Stopped even when command fails to be send to the backend, otherwise a force poweroff is attempted). To be used if the caller knows the VM is stopped and should be marked as such.")
+    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force stop the Instance (Instance is marked as Stopped even when command fails to be send to the backend, otherwise a force poweroff is attempted). To be used if the caller knows the Instance is stopped and should be marked as such.")
     private Boolean forced;
 
     /////////////////////////////////////////////////////
@@ -89,7 +89,7 @@ public class StopSystemVmCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "stopping system vm: " + this._uuidMgr.getUuid(VirtualMachine.class, getId());
+        return "Stopping System VM with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
@@ -108,7 +108,7 @@ public class StopSystemVmCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, ConcurrentOperationException {
-        CallContext.current().setEventDetails("Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()));
+        CallContext.current().setEventDetails("Instance ID: " + getResourceUuid(ApiConstants.ID));
         VirtualMachine result = _mgr.stopSystemVM(this);
         if (result != null) {
             SystemVmResponse response = _responseGenerator.createSystemVmResponse(result);

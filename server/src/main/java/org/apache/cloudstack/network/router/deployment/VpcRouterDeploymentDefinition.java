@@ -23,7 +23,6 @@ import java.util.Objects;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.network.dao.IPAddressVO;
-import com.cloud.network.element.NsxProviderVO;
 
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
@@ -118,17 +117,18 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
     }
 
     @Override
-    protected void findSourceNatIP() throws InsufficientAddressCapacityException, ConcurrentOperationException {
+    public void findSourceNatIP() throws InsufficientAddressCapacityException, ConcurrentOperationException {
         sourceNatIp = null;
         DataCenter zone = dest.getDataCenter();
         Long zoneId = null;
         if (Objects.nonNull(zone)) {
             zoneId = zone.getId();
         }
-        NsxProviderVO nsxProvider = nsxProviderDao.findByZoneId(zoneId);
+
+        boolean isExternalProvider = isExternalProviderPresent(zoneId);
 
         if (isPublicNetwork) {
-            if (Objects.isNull(nsxProvider)) {
+            if (!isExternalProvider) {
                 sourceNatIp = vpcMgr.assignSourceNatIpAddressToVpc(owner, vpc, null);
             } else {
                 sourceNatIp = vpcMgr.assignSourceNatIpAddressToVpc(owner, vpc, getPodId());
@@ -218,5 +218,10 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
     @Override
     public boolean isRollingRestart() {
         return vpc.isRollingRestart();
+    }
+
+    @Override
+    public boolean getKeepMacAddressOnPublicNic() {
+        return vpc == null || vpc.getKeepMacAddressOnPublicNic();
     }
 }

@@ -140,7 +140,7 @@ public class Upgrade218to22 extends DbUpgradeAbstractImpl {
             }
 
         } catch (SQLException e) {
-            throw new CloudRuntimeException("Can't update instance groups ", e);
+            throw new CloudRuntimeException("Can't update Instance groups ", e);
         }
 
     }
@@ -464,7 +464,7 @@ public class Upgrade218to22 extends DbUpgradeAbstractImpl {
                     vm[4] = rs.getString(5); // vm state
                     vms.add(vm);
                 }
-                logger.debug("Upgrading " + vms.size() + " vms for router " + domainRouterId);
+                logger.debug("Upgrading " + vms.size() + " Instances for router " + domainRouterId);
                 for (Object[] vm : vms) {
                     String state = (String)vm[4];
 
@@ -1218,7 +1218,7 @@ public class Upgrade218to22 extends DbUpgradeAbstractImpl {
                                                 }
                                             }
                                         } else {
-                                            logger.debug("Account id=" + accountId + " doesn't own any user vms and domRs, so skipping user_statistics update");
+                                            logger.debug("Account id=" + accountId + " doesn't own any user Instances and domRs, so skipping user_statistics update");
                                             continue;
                                         }
                                     }

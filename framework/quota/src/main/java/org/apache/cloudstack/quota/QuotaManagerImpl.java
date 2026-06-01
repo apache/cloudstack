@@ -32,8 +32,8 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.user.Account;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.quota.activationrule.presetvariables.Configuration;
 import org.apache.cloudstack.quota.activationrule.presetvariables.GenericPresetVariable;
 import org.apache.cloudstack.quota.activationrule.presetvariables.PresetVariableHelper;
 import org.apache.cloudstack.quota.activationrule.presetvariables.PresetVariables;
@@ -62,6 +62,7 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.usage.UsageVO;
 import com.cloud.usage.dao.UsageDao;
+import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
@@ -149,8 +150,9 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             return;
         }
 
-        Date startDate = accountQuotaUsages.get(0).getStartDate();
-        Date endDate = accountQuotaUsages.get(0).getEndDate();
+        QuotaUsageVO firstQuotaUsage = accountQuotaUsages.get(0);
+        Date startDate = firstQuotaUsage.getStartDate();
+        Date endDate = firstQuotaUsage.getEndDate();
         Date lastQuotaUsageEndDate = accountQuotaUsages.get(accountQuotaUsages.size() - 1).getEndDate();
 
         LinkedHashSet<Pair<Date, Date>> periods = accountQuotaUsages.stream()
@@ -214,7 +216,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             logger.debug(String.format("Persisting the first quota balance [%s] for account [%s].", firstBalance, accountToString));
             _quotaBalanceDao.saveQuotaBalance(firstBalance);
         } else {
-            QuotaBalanceVO lastRealBalance = _quotaBalanceDao.findLastBalanceEntry(accountId, domainId, startDate);
+            QuotaBalanceVO lastRealBalance = _quotaBalanceDao.getLastQuotaBalanceEntry(accountId, domainId, startDate);
 
             if (lastRealBalance == null) {
                 logger.warn("Account [{}] has quota usage entries, however it does not have a quota balance.", accountToString);
@@ -243,7 +245,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     }
 
     protected BigDecimal aggregateCreditBetweenDates(Long accountId, Long domainId, Date startDate, Date endDate, String accountToString) {
-        List<QuotaBalanceVO> creditsReceived = _quotaBalanceDao.findCreditBalance(accountId, domainId, startDate, endDate);
+        List<QuotaBalanceVO> creditsReceived = _quotaBalanceDao.findCreditBalances(accountId, domainId, startDate, endDate);
         logger.debug("Account [{}] has [{}] credit entries before [{}].", accountToString, creditsReceived.size(),
                 DateUtil.displayDateInTimezone(usageAggregationTimeZone, endDate));
 
@@ -428,7 +430,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         }
 
         injectPresetVariablesIntoJsInterpreter(jsInterpreter, presetVariables);
-        jsInterpreter.injectVariable("lastTariffs", lastAppliedTariffsList.toString());
+        jsInterpreter.injectVariable("lastTariffs", lastAppliedTariffsList);
 
         String scriptResult = jsInterpreter.executeScript(activationRule).toString();
 
@@ -458,18 +460,23 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     protected void injectPresetVariablesIntoJsInterpreter(JsInterpreter jsInterpreter, PresetVariables presetVariables) {
         jsInterpreter.discardCurrentVariables();
 
-        jsInterpreter.injectVariable("account", presetVariables.getAccount().toString());
-        jsInterpreter.injectVariable("domain", presetVariables.getDomain().toString());
+        jsInterpreter.injectVariable("account", presetVariables.getAccount());
+        jsInterpreter.injectVariable("domain", presetVariables.getDomain());
 
         GenericPresetVariable project = presetVariables.getProject();
         if (project != null) {
-            jsInterpreter.injectVariable("project", project.toString());
+            jsInterpreter.injectVariable("project", project);
 
         }
 
-        jsInterpreter.injectStringVariable("resourceType", presetVariables.getResourceType());
-        jsInterpreter.injectVariable("value", presetVariables.getValue().toString());
-        jsInterpreter.injectVariable("zone", presetVariables.getZone().toString());
+        Configuration configuration = presetVariables.getConfiguration();
+        if (configuration != null) {
+            jsInterpreter.injectVariable("configuration", configuration.toString());
+        }
+
+        jsInterpreter.injectVariable("resourceType", presetVariables.getResourceType());
+        jsInterpreter.injectVariable("value", presetVariables.getValue());
+        jsInterpreter.injectVariable("zone", presetVariables.getZone());
     }
 
     /**

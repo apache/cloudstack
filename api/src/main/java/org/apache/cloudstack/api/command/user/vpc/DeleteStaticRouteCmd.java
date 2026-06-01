@@ -44,7 +44,7 @@ public class DeleteStaticRouteCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     @ACL(accessType = AccessType.OperateEntry)
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = StaticRouteResponse.class, required = true, description = "the ID of the static route")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = StaticRouteResponse.class, required = true, description = "The ID of the static route")
     private Long id;
 
     // unexposed parameter needed for events logging
@@ -69,7 +69,7 @@ public class DeleteStaticRouteCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return ("Deleting static route id=" + id);
+        return "Deleting static route with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
@@ -87,7 +87,7 @@ public class DeleteStaticRouteCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException {
-        CallContext.current().setEventDetails("Route Id: " + id);
+        CallContext.current().setEventDetails("Route ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _vpcService.revokeStaticRoute(id);
 
         if (result) {

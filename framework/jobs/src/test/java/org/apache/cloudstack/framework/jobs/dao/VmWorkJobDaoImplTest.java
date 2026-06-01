@@ -16,26 +16,68 @@
 // under the License.
 package org.apache.cloudstack.framework.jobs.dao;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.isNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO;
+import org.apache.cloudstack.jobs.JobInfo;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
+import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @RunWith(MockitoJUnitRunner.class)
 public class VmWorkJobDaoImplTest {
+    @Mock
+    AsyncJobDao asyncJobDao;
 
     @Spy
+    @InjectMocks
     VmWorkJobDaoImpl vmWorkJobDaoImpl;
+
+    private GenericSearchBuilder<VmWorkJobVO, Long> genericVmWorkJobSearchBuilder;
+    private SearchBuilder<AsyncJobVO> asyncJobSearchBuilder;
+    private SearchCriteria<Long> searchCriteria;
+
+    @Before
+    public void setUp() {
+        genericVmWorkJobSearchBuilder = mock(GenericSearchBuilder.class);
+        VmWorkJobVO entityVO = mock(VmWorkJobVO.class);
+        when(genericVmWorkJobSearchBuilder.entity()).thenReturn(entityVO);
+        asyncJobSearchBuilder = mock(SearchBuilder.class);
+        AsyncJobVO asyncJobVO = mock(AsyncJobVO.class);
+        when(asyncJobSearchBuilder.entity()).thenReturn(asyncJobVO);
+        searchCriteria = mock(SearchCriteria.class);
+        when(vmWorkJobDaoImpl.createSearchBuilder(Long.class)).thenReturn(genericVmWorkJobSearchBuilder);
+        when(asyncJobDao.createSearchBuilder()).thenReturn(asyncJobSearchBuilder);
+        when(genericVmWorkJobSearchBuilder.create()).thenReturn(searchCriteria);
+    }
 
     @Test
     public void testExpungeByVmListNoVms() {
@@ -47,22 +89,52 @@ public class VmWorkJobDaoImplTest {
 
     @Test
     public void testExpungeByVmList() {
-        SearchBuilder<VmWorkJobVO> sb = Mockito.mock(SearchBuilder.class);
-        SearchCriteria<VmWorkJobVO> sc = Mockito.mock(SearchCriteria.class);
-        Mockito.when(sb.create()).thenReturn(sc);
-        Mockito.doAnswer((Answer<Integer>) invocationOnMock -> {
+        SearchBuilder<VmWorkJobVO> sb = mock(SearchBuilder.class);
+        SearchCriteria<VmWorkJobVO> sc = mock(SearchCriteria.class);
+        when(sb.create()).thenReturn(sc);
+        doAnswer((Answer<Integer>) invocationOnMock -> {
             Long batchSize = (Long)invocationOnMock.getArguments()[1];
             return batchSize == null ? 0 : batchSize.intValue();
-        }).when(vmWorkJobDaoImpl).batchExpunge(Mockito.any(SearchCriteria.class), Mockito.anyLong());
-        Mockito.when(vmWorkJobDaoImpl.createSearchBuilder()).thenReturn(sb);
-        final VmWorkJobVO mockedVO = Mockito.mock(VmWorkJobVO.class);
-        Mockito.when(sb.entity()).thenReturn(mockedVO);
+        }).when(vmWorkJobDaoImpl).batchExpunge(any(SearchCriteria.class), anyLong());
+        when(vmWorkJobDaoImpl.createSearchBuilder()).thenReturn(sb);
+        final VmWorkJobVO mockedVO = mock(VmWorkJobVO.class);
+        when(sb.entity()).thenReturn(mockedVO);
         List<Long> vmIds = List.of(1L, 2L);
         Object[] array = vmIds.toArray();
         Long batchSize = 50L;
         Assert.assertEquals(batchSize.intValue(), vmWorkJobDaoImpl.expungeByVmList(List.of(1L, 2L), batchSize));
-        Mockito.verify(sc).setParameters("vmIds", array);
-        Mockito.verify(vmWorkJobDaoImpl, Mockito.times(1))
+        verify(sc).setParameters("vmIds", array);
+        verify(vmWorkJobDaoImpl, times(1))
                 .batchExpunge(sc, batchSize);
+    }
+
+    @Test
+    public void testListVmIdsWithPendingJob() {
+        List<Long> mockVmIds = Arrays.asList(101L, 102L, 103L);
+        doReturn(mockVmIds).when(vmWorkJobDaoImpl).customSearch(any(SearchCriteria.class), isNull());
+        List<Long> result = vmWorkJobDaoImpl.listVmIdsWithPendingJob();
+        verify(genericVmWorkJobSearchBuilder).join(eq("asyncJobSearch"), eq(asyncJobSearchBuilder), any(), any(), eq(JoinBuilder.JoinType.INNER));
+        verify(genericVmWorkJobSearchBuilder).and(eq("removed"), any(), eq(SearchCriteria.Op.NULL));
+        verify(genericVmWorkJobSearchBuilder).create();
+        verify(asyncJobSearchBuilder).and(eq("status"), any(), eq(SearchCriteria.Op.EQ));
+        verify(searchCriteria).setJoinParameters(eq("asyncJobSearch"), eq("status"), eq(JobInfo.Status.IN_PROGRESS));
+        verify(vmWorkJobDaoImpl).customSearch(searchCriteria, null);
+        assertEquals(3, result.size());
+        assertEquals(Long.valueOf(101L), result.get(0));
+        assertEquals(Long.valueOf(102L), result.get(1));
+        assertEquals(Long.valueOf(103L), result.get(2));
+    }
+
+    @Test
+    public void testListVmIdsWithPendingJobEmptyResult() {
+        doReturn(Collections.emptyList()).when(vmWorkJobDaoImpl).customSearch(any(SearchCriteria.class), isNull());
+        List<Long> result = vmWorkJobDaoImpl.listVmIdsWithPendingJob();
+        verify(genericVmWorkJobSearchBuilder).join(eq("asyncJobSearch"), eq(asyncJobSearchBuilder), any(), any(), eq(JoinBuilder.JoinType.INNER));
+        verify(genericVmWorkJobSearchBuilder).and(eq("removed"), any(), eq(SearchCriteria.Op.NULL));
+        verify(genericVmWorkJobSearchBuilder).create();
+        verify(asyncJobSearchBuilder).and(eq("status"), any(), eq(SearchCriteria.Op.EQ));
+        verify(searchCriteria).setJoinParameters(eq("asyncJobSearch"), eq("status"), eq(JobInfo.Status.IN_PROGRESS));
+        verify(vmWorkJobDaoImpl).customSearch(searchCriteria, null);
+        assertTrue(result.isEmpty());
     }
 }

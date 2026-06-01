@@ -96,6 +96,11 @@
                 {{ opt.displaytext || opt.name || opt.description }}
               </a-select-option>
             </a-select>
+            <a-alert type="warning" v-if="!this.hasVPC">
+              <template #message>
+                <span v-html="$t('message.warn.vpc.offerings')"/>
+              </template>
+            </a-alert>
           </a-form-item>
           <a-form-item ref="asnumber" name="asnumber" v-if="isASNumberRequired()">
             <template #label>
@@ -294,6 +299,15 @@
               v-model:value="form.sourcenatipaddress"
               :placeholder="apiParams.sourcenatipaddress?.description"/>
           </a-form-item>
+          <a-form-item name="keepMacAddressOnPublicNic" ref="keepMacAddressOnPublicNic" v-if="isAdmin() && !selectedNetworkOffering?.forvpc">
+            <template #label>
+              <tooltip-label
+                :title="$t('label.keep.mac.address.on.public.nic')"
+                :tooltip="apiParams.keepmacaddressonpublicnic?.description"
+              />
+            </template>
+            <a-switch v-model:checked="form.keepMacAddressOnPublicNic" />
+          </a-form-item>
           <div :span="24" class="action-button">
             <a-button
               :loading="actionLoading"
@@ -317,7 +331,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { isAdmin, isAdminOrDomainAdmin } from '@/role'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
@@ -369,7 +383,8 @@ export default {
       setMTU: false,
       asNumberLoading: false,
       selectedAsNumber: 0,
-      asNumbersZone: []
+      asNumbersZone: [],
+      hasVPC: true
     }
   },
   watch: {
@@ -408,7 +423,9 @@ export default {
   methods: {
     initForm () {
       this.formRef = ref()
-      this.form = reactive({})
+      this.form = reactive({
+        keepMacAddressOnPublicNic: true
+      })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.name') }],
         zoneid: [{ type: 'number', required: true, message: this.$t('message.error.select') }],
@@ -443,12 +460,12 @@ export default {
     fetchZoneData () {
       this.zones = []
       const params = {}
-      if (this.resource.zoneid && this.$route.name === 'deployVirtualMachine') {
+      if (this.resource.zoneid && (this.$route.name === 'deployVirtualMachine' || this.$route.path.startsWith('/backup'))) {
         params.id = this.resource.zoneid
       }
       params.showicon = true
       this.zoneLoading = true
-      api('listZones', params).then(json => {
+      getAPI('listZones', params).then(json => {
         for (const i in json.listzonesresponse.zone) {
           const zone = json.listzonesresponse.zone[i]
           if (zone.networktype === 'Advanced' && zone.securitygroupsenabled !== true && zone.type !== 'Edge') {
@@ -477,7 +494,7 @@ export default {
       this.asNumberLoading = true
       params.zoneid = this.selectedZone.id
       params.isallocated = false
-      api('listASNumbers', params).then(json => {
+      getAPI('listASNumbers', params).then(json => {
         this.asNumbersZone = json.listasnumbersresponse.asnumber
         this.asNumberLoading = false
       })
@@ -507,7 +524,7 @@ export default {
         this.owner.domainid = null
         this.owner.projectid = OwnerOptions.selectedProject
       }
-      if (isAdminOrDomainAdmin()) {
+      if (OwnerOptions.initialized && isAdminOrDomainAdmin()) {
         this.updateVPCCheckAndFetchNetworkOfferingData()
       }
     },
@@ -515,13 +532,17 @@ export default {
       if (this.vpc !== null) { // from VPC section
         this.fetchNetworkOfferingData(true)
       } else { // from guest network section
-        var params = {}
+        const params = {
+          account: this.owner.account,
+          projectid: this.owner.projectid,
+          domainid: this.owner.domainid
+        }
         this.networkOfferingLoading = true
         if ('listVPCs' in this.$store.getters.apis) {
-          api('listVPCs', params).then(json => {
+          getAPI('listVPCs', params).then(json => {
             const listVPCs = json.listvpcsresponse.vpc
-            var vpcAvailable = this.arrayHasItems(listVPCs)
-            if (vpcAvailable === false) {
+            this.hasVPC = this.arrayHasItems(listVPCs)
+            if (!this.hasVPC) {
               this.fetchNetworkOfferingData(false)
             } else {
               this.fetchNetworkOfferingData()
@@ -534,7 +555,7 @@ export default {
     },
     fetchNetworkOfferingData (forVpc) {
       this.networkOfferingLoading = true
-      var params = {
+      const params = {
         zoneid: this.selectedZone.id,
         guestiptype: 'Isolated',
         state: 'Enabled'
@@ -550,7 +571,7 @@ export default {
       }
       this.networkOfferings = []
       this.selectedNetworkOffering = {}
-      api('listNetworkOfferings', params).then(json => {
+      getAPI('listNetworkOfferings', params).then(json => {
         this.networkOfferings = json.listnetworkofferingsresponse.networkoffering
         this.networkOfferings = this.networkOfferings.filter(offering => offering.fornsx === this.selectedZone.isnsxenabled)
         if (!this.selectedZone.routedmodeenabled) {
@@ -577,14 +598,14 @@ export default {
     },
     fetchVpcData () {
       this.vpcLoading = true
-      var params = {
+      const params = {
         listAll: true,
         details: 'min'
       }
       if (this.vpc !== null) {
         params.id = this.vpc.id
       }
-      api('listVPCs', params).then(json => {
+      getAPI('listVPCs', params).then(json => {
         this.vpcs = json.listvpcsresponse.vpc
       }).finally(() => {
         this.vpcLoading = false
@@ -600,14 +621,15 @@ export default {
         const formRaw = toRaw(this.form)
         const values = this.handleRemoveFields(formRaw)
         this.actionLoading = true
-        var params = {
+        const params = {
           zoneId: this.selectedZone.id,
           name: values.name,
           displayText: values.displaytext,
-          networkOfferingId: this.selectedNetworkOffering.id
+          networkOfferingId: this.selectedNetworkOffering.id,
+          keepmacaddressonpublicnic: values.keepMacAddressOnPublicNic
         }
-        var usefulFields = ['gateway', 'netmask', 'cidrsize', 'startip', 'startipv4', 'endip', 'endipv4', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'sourcenatipaddress', 'externalid', 'vpcid', 'vlan', 'networkdomain']
-        for (var field of usefulFields) {
+        const usefulFields = ['gateway', 'netmask', 'cidrsize', 'startip', 'startipv4', 'endip', 'endipv4', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'sourcenatipaddress', 'externalid', 'vpcid', 'vlan', 'networkdomain']
+        for (const field of usefulFields) {
           if (this.isValidTextValueForKey(values, field)) {
             params[field] = values[field]
           }
@@ -634,7 +656,7 @@ export default {
           params.asnumber = values.asnumber
         }
 
-        api('createNetwork', params).then(json => {
+        postAPI('createNetwork', params).then(json => {
           this.$notification.success({
             message: 'Network',
             description: this.$t('message.success.create.isolated.network')

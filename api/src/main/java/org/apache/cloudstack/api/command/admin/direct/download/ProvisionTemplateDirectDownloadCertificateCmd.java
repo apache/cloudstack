@@ -50,11 +50,11 @@ public class ProvisionTemplateDirectDownloadCertificateCmd extends BaseCmd {
     DirectDownloadManager directDownloadManager;
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DirectDownloadCertificateResponse.class,
-            description = "the id of the direct download certificate to provision", required = true)
+            description = "The id of the direct download certificate to provision", required = true)
     private Long id;
 
     @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class,
-            description = "the host to provision the certificate", required = true)
+            description = "The host to provision the certificate", required = true)
     private Long hostId;
 
     @Override

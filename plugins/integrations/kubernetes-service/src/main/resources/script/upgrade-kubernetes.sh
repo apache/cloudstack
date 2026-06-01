@@ -18,7 +18,7 @@
 
 # Version 1.14 and below needs extra flags with kubeadm upgrade node
 if [ $# -lt 4 ]; then
-    echo "Invalid input. Valid usage: ./upgrade-kubernetes.sh UPGRADE_VERSION IS_CONTROL_NODE IS_OLD_VERSION IS_EJECT_ISO"
+    echo "Invalid input. Valid usage: ./upgrade-kubernetes.sh UPGRADE_VERSION IS_CONTROL_NODE IS_OLD_VERSION IS_EJECT_ISO IS_EXTERNAL_CNI"
     echo "eg: ./upgrade-kubernetes.sh 1.16.3 true false false"
     exit 1
 fi
@@ -34,6 +34,10 @@ fi
 EJECT_ISO_FROM_OS=false
 if [ $# -gt 3 ]; then
   EJECT_ISO_FROM_OS="${4}"
+fi
+EXTERNAL_CNI=false
+if [ $# -gt 4 ]; then
+  EXTERNAL_CNI="${5}"
 fi
 
 export PATH=$PATH:/opt/bin
@@ -144,7 +148,9 @@ if [ -d "$BINARIES_DIR" ]; then
   systemctl restart kubelet
 
   if [ "${IS_MAIN_CONTROL}" == 'true' ]; then
-    /opt/bin/kubectl apply -f ${BINARIES_DIR}/network.yaml
+    if [[ ${EXTERNAL_CNI} == true ]]; then
+      /opt/bin/kubectl apply -f ${BINARIES_DIR}/network.yaml
+    fi
     /opt/bin/kubectl apply -f ${BINARIES_DIR}/dashboard.yaml
   fi
 

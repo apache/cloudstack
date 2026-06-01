@@ -16,10 +16,15 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -33,6 +38,7 @@ import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
 import org.apache.cloudstack.api.response.BackupOfferingResponse;
+import org.apache.cloudstack.api.response.ExtensionResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.IsoVmResponse;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -41,20 +47,24 @@ import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.cloudstack.api.response.UserDataResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 
+import com.cloud.cpu.CPU;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.server.ResourceIcon;
 import com.cloud.server.ResourceTag;
+import com.cloud.storage.GuestOS;
 import com.cloud.vm.VirtualMachine;
 
 
-@APICommand(name = "listVirtualMachines", description = "List the virtual machines owned by the account.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
+@APICommand(name = "listVirtualMachines", description = "List the Instances owned by the Account.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements UserCmd {
 
@@ -63,91 +73,115 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.GROUP_ID, type = CommandType.UUID, entityType = InstanceGroupResponse.class, description = "the group ID")
+    @Parameter(name = ApiConstants.GROUP_ID, type = CommandType.UUID, entityType = InstanceGroupResponse.class, description = "The group ID")
     private Long groupId;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserVmResponse.class, description = "the ID of the virtual machine")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserVmResponse.class, description = "The ID of the Instance")
     private Long id;
 
-    @Parameter(name=ApiConstants.IDS, type=CommandType.LIST, collectionType=CommandType.UUID, entityType=UserVmResponse.class, description="the IDs of the virtual machines, mutually exclusive with id", since = "4.4")
+    @Parameter(name=ApiConstants.IDS, type=CommandType.LIST, collectionType=CommandType.UUID, entityType=UserVmResponse.class, description = "The IDs of the Instances, mutually exclusive with id", since = "4.4")
     private List<Long> ids;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "name of the virtual machine (a substring match is made against the parameter value, data for all matching VMs will be returned)")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "Name of the Instance (a substring match is made against the parameter value, data for all matching Instances will be returned)")
     private String name;
 
-    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "state of the virtual machine. Possible values are: Running, Stopped, Present, Destroyed, Expunged. Present is used for the state equal not destroyed.")
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "State of the Instance. Possible values are: Running, Stopped, Present, Destroyed, Expunged. Present is used for the state equal not destroyed.")
     private String state;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the availability zone ID")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The availability zone ID")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.FOR_VIRTUAL_NETWORK,
                type = CommandType.BOOLEAN,
-               description = "list by network type; true if need to list vms using Virtual Network, false otherwise")
+               description = "List by Network type; true if need to list Instances using Virtual Network, false otherwise")
     private Boolean forVirtualNetwork;
 
-    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "list by network id")
+    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "List by Network ID")
     private Long networkId;
 
-    @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, description = "the target hypervisor for the template")
+    @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, description = "The target hypervisor for the Template")
     private String hypervisor;
 
     @Parameter(name = ApiConstants.DETAILS,
                type = CommandType.LIST,
                collectionType = CommandType.STRING,
-               description = "comma separated list of vm details requested, "
+               description = "Comma separated list of Instance details requested, "
                    + "value can be a list of [all, group, nics, stats, secgrp, tmpl, servoff, diskoff, backoff, iso, volume, min, affgrp]."
                    + " When no parameters are passed, all the details are returned if list.vm.default.details.stats is true (default),"
                    + " otherwise when list.vm.default.details.stats is false the API response will exclude the stats details.")
     private List<String> viewDetails;
 
-    @Parameter(name = ApiConstants.TEMPLATE_ID, type = CommandType.UUID, entityType = TemplateResponse.class, description = "list vms by template")
+    @Parameter(name = ApiConstants.TEMPLATE_ID, type = CommandType.UUID, entityType = TemplateResponse.class, description = "List Instances by Template")
     private Long templateId;
 
-    @Parameter(name = ApiConstants.ISO_ID, type = CommandType.UUID, entityType = IsoVmResponse.class, description = "list vms by iso")
+    @Parameter(name = ApiConstants.ISO_ID, type = CommandType.UUID, entityType = IsoVmResponse.class, description = "List Instances by ISO")
     private Long isoId;
 
-    @Parameter(name = ApiConstants.VPC_ID, type = CommandType.UUID, entityType = VpcResponse.class, description = "list vms by vpc")
+    @Parameter(name = ApiConstants.VPC_ID, type = CommandType.UUID, entityType = VpcResponse.class, description = "List Instances by VPC")
     private Long vpcId;
 
-    @Parameter(name = ApiConstants.AFFINITY_GROUP_ID, type = CommandType.UUID, entityType = AffinityGroupResponse.class, description = "list vms by affinity group")
+    @Parameter(name = ApiConstants.AFFINITY_GROUP_ID, type = CommandType.UUID, entityType = AffinityGroupResponse.class, description = "List Instances by affinity group")
     private Long affinityGroupId;
 
-    @Parameter(name = ApiConstants.SSH_KEYPAIR, type = CommandType.STRING, description = "list vms by ssh keypair name")
+    @Parameter(name = ApiConstants.SSH_KEYPAIR, type = CommandType.STRING, description = "List Instances by SSH keypair name")
     private String keypair;
 
-    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class, description = "list by the service offering", since = "4.4")
+    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class, description = "List by the service offering", since = "4.4")
     private Long serviceOffId;
 
-    @Parameter(name = ApiConstants.BACKUP_OFFERING_ID, type = CommandType.UUID, entityType = BackupOfferingResponse.class, description = "list by the backup offering", since = "4.17")
+    @Parameter(name = ApiConstants.BACKUP_OFFERING_ID, type = CommandType.UUID, entityType = BackupOfferingResponse.class, description = "List by the backup offering", since = "4.17")
     private Long backupOffId;
 
-    @Parameter(name = ApiConstants.DISPLAY_VM, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.DISPLAY_VM, type = CommandType.BOOLEAN, description = "List resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
-    @Parameter(name = ApiConstants.USER_ID, type = CommandType.UUID, entityType = UserResponse.class, required = false, description = "the user ID that created the VM and is under the account that owns the VM")
+    @Parameter(name = ApiConstants.USER_ID, type = CommandType.UUID, entityType = UserResponse.class, required = false, description = "The user ID that created the Instance and is under the Account that owns the Instance")
     private Long userId;
 
-    @Parameter(name = ApiConstants.SECURITY_GROUP_ID, type = CommandType.UUID, entityType = SecurityGroupResponse.class, description = "the security group ID", since = "4.15")
+    @Parameter(name = ApiConstants.SECURITY_GROUP_ID, type = CommandType.UUID, entityType = SecurityGroupResponse.class, description = "The security group ID", since = "4.15")
     private Long securityGroupId;
 
-    @Parameter(name = ApiConstants.HA_ENABLE, type = CommandType.BOOLEAN, description = "list by the High Availability offering; true if filtering VMs with HA enabled; false for VMs with HA disabled", since = "4.15")
+    @Parameter(name = ApiConstants.HA_ENABLE, type = CommandType.BOOLEAN, description = "List by the High Availability offering; true if filtering Instances with HA enabled; false for Instances with HA disabled", since = "4.15")
     private Boolean haEnabled;
 
-    @Parameter(name = ApiConstants.AUTOSCALE_VMGROUP_ID, type = CommandType.UUID, entityType = AutoScaleVmGroupResponse.class, description = "the ID of AutoScaling VM Group", since = "4.18.0")
+    @Parameter(name = ApiConstants.AUTOSCALE_VMGROUP_ID, type = CommandType.UUID, entityType = AutoScaleVmGroupResponse.class, description = "The ID of AutoScaling Instance Group", since = "4.18.0")
     private Long autoScaleVmGroupId;
 
     @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN,
-            description = "flag to display the resource icon for VMs", since = "4.16.0.0")
+            description = "Flag to display the resource icon for Instances", since = "4.16.0.0")
     private Boolean showIcon;
 
     @Parameter(name = ApiConstants.ACCUMULATE, type = CommandType.BOOLEAN,
-            description = "Accumulates the VM metrics data instead of returning only the most recent data collected. The default behavior is set by the global configuration vm.stats.increment.metrics.",
+            description = "Accumulates the Instance metrics data instead of returning only the most recent data collected. The default behavior is set by the global configuration vm.stats.increment.metrics.",
             since = "4.17.0")
     private Boolean accumulate;
 
-    @Parameter(name = ApiConstants.USER_DATA, type = CommandType.BOOLEAN, description = "Whether to return the VMs' user data or not. By default, user data will not be returned.", since = "4.18.0.0")
+    @Parameter(name = ApiConstants.USER_DATA, type = CommandType.BOOLEAN, description = "Whether to return the Instances' User data or not. By default, User data will not be returned.", since = "4.18.0.0")
     private Boolean showUserData;
+
+    @Parameter(name = ApiConstants.USER_DATA_ID, type = CommandType.UUID, entityType = UserDataResponse.class, required = false, description = "the instances by userdata", since = "4.20.1")
+    private Long userdataId;
+
+    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
+            description = "CPU arch of the VM",
+            since = "4.20.1")
+    private String arch;
+
+    @Parameter(name = ApiConstants.LEASED, type = CommandType.BOOLEAN,
+            description = "Whether to return only leased instances",
+            since = "4.21.0")
+    private Boolean onlyLeasedInstances = false;
+
+    @Parameter(name = ApiConstants.GPU_ENABLED,
+            type = CommandType.BOOLEAN,
+            description = "Flag to indicate if the VMs should be filtered by GPU support. If set to true, only VMs that support GPU will be returned.",
+            since = "4.21.0")
+    private Boolean gpuEnabled;
+
+    @Parameter(name = ApiConstants.EXTENSION_ID, type = CommandType.UUID,
+            entityType = ExtensionResponse.class, description = "The ID of the Orchestrator extension for the VM",
+            since = "4.21.0")
+    private Long extensionId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -243,6 +277,10 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
         return CollectionUtils.isEmpty(viewDetails);
     }
 
+    public Long getUserdataId() {
+        return userdataId;
+    }
+
     public EnumSet<VMDetails> getDetails() throws InvalidParameterValueException {
         if (isViewDetailsEmpty()) {
             if (_queryService.ReturnVmStatsOnVmList.value()) {
@@ -284,6 +322,22 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
         return isVnf;
     }
 
+    public CPU.CPUArch getArch() {
+        return StringUtils.isBlank(arch) ? null : CPU.CPUArch.fromType(arch);
+    }
+
+    public boolean getOnlyLeasedInstances() {
+        return BooleanUtils.toBoolean(onlyLeasedInstances);
+    }
+
+    public Boolean getGpuEnabled() {
+        return gpuEnabled;
+    }
+
+    public Long getExtensionId() {
+        return extensionId;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -303,22 +357,75 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
         setResponseObject(response);
     }
 
-    protected void updateVMResponse(List<UserVmResponse> response) {
-        for (UserVmResponse vmResponse : response) {
-            ResourceIcon resourceIcon = resourceIconManager.getByResourceTypeAndUuid(ResourceTag.ResourceObjectType.UserVm, vmResponse.getId());
-            if (resourceIcon == null) {
-                ResourceTag.ResourceObjectType type = ResourceTag.ResourceObjectType.Template;
-                String uuid = vmResponse.getTemplateId();
-                if (vmResponse.getIsoId() != null) {
-                    uuid = vmResponse.getIsoId();
-                    type = ResourceTag.ResourceObjectType.ISO;
-                }
-                resourceIcon = resourceIconManager.getByResourceTypeAndUuid(type, uuid);
-                if (resourceIcon == null) {
-                    continue;
-                }
+    protected Map<String, ResourceIcon> getResourceIconsUsingOsCategory(List<UserVmResponse> responses) {
+        Set<String> guestOsIds = responses.stream().map(UserVmResponse::getGuestOsId).collect(Collectors.toSet());
+        List<GuestOS> guestOSList = _entityMgr.listByUuids(GuestOS.class, guestOsIds);
+        Map<String, GuestOS> guestOSMap = guestOSList.stream()
+                .collect(Collectors.toMap(GuestOS::getUuid, Function.identity()));
+        Set<Long> guestOsCategoryIds = guestOSMap.values().stream()
+                .map(GuestOS::getCategoryId)
+                .collect(Collectors.toSet());
+        Map<Long, ResourceIcon> guestOsCategoryIcons =
+                resourceIconManager.getByResourceTypeAndIds(ResourceTag.ResourceObjectType.GuestOsCategory,
+                        guestOsCategoryIds);
+        Map<String, ResourceIcon> vmIcons = new HashMap<>();
+        for (UserVmResponse response : responses) {
+            GuestOS guestOS = guestOSMap.get(response.getGuestOsId());
+            if (guestOS != null) {
+                vmIcons.put(response.getId(), guestOsCategoryIcons.get(guestOS.getCategoryId()));
             }
-            ResourceIconResponse iconResponse = _responseGenerator.createResourceIconResponse(resourceIcon);
+        }
+        return vmIcons;
+    }
+
+    protected Map<String, ResourceIcon> getResourceIconsForUsingTemplateIso(List<UserVmResponse> responses) {
+        Map<String, String> vmTemplateIsoIdMap = new HashMap<>();
+        Set<String> templateUuids = new HashSet<>();
+        Set<String> isoUuids = new HashSet<>();
+        for (UserVmResponse vmResponse : responses) {
+            if (vmResponse.getTemplateId() != null) {
+                templateUuids.add(vmResponse.getTemplateId());
+                vmTemplateIsoIdMap.put(vmResponse.getId(), vmResponse.getTemplateId());
+            }
+            if (vmResponse.getIsoId() != null) {
+                isoUuids.add(vmResponse.getIsoId());
+                vmTemplateIsoIdMap.put(vmResponse.getId(), vmResponse.getIsoId());
+            }
+        }
+        Map<String, ResourceIcon> templateOrIsoIcons = resourceIconManager.getByResourceTypeAndUuids(ResourceTag.ResourceObjectType.Template, templateUuids);
+        templateOrIsoIcons.putAll(resourceIconManager.getByResourceTypeAndUuids(ResourceTag.ResourceObjectType.ISO, isoUuids));
+        Map<String, ResourceIcon> vmIcons = new HashMap<>();
+        List<UserVmResponse> noTemplateIsoIconResponses = new ArrayList<>();
+        for (UserVmResponse response : responses) {
+            String uuid = vmTemplateIsoIdMap.get(response.getId());
+            if (StringUtils.isNotBlank(uuid) && templateOrIsoIcons.containsKey(uuid)) {
+                vmIcons.put(response.getId(),
+                        templateOrIsoIcons.get(vmTemplateIsoIdMap.get(response.getId())));
+                continue;
+            }
+            noTemplateIsoIconResponses.add(response);
+        }
+        vmIcons.putAll(getResourceIconsUsingOsCategory(noTemplateIsoIconResponses));
+        return vmIcons;
+    }
+
+    protected void updateVMResponse(List<UserVmResponse> responses) {
+        if (CollectionUtils.isEmpty(responses)) {
+            return;
+        }
+        Set<String> vmUuids = responses.stream().map(UserVmResponse::getId).collect(Collectors.toSet());
+        Map<String, ResourceIcon> vmIcons = resourceIconManager.getByResourceTypeAndUuids(ResourceTag.ResourceObjectType.UserVm, vmUuids);
+        List<UserVmResponse> noVmIconResponses = responses
+                .stream()
+                .filter(r -> !vmIcons.containsKey(r.getId()))
+                .collect(Collectors.toList());
+        vmIcons.putAll(getResourceIconsForUsingTemplateIso(noVmIconResponses));
+        for (UserVmResponse vmResponse : responses) {
+            ResourceIcon icon = vmIcons.get(vmResponse.getId());
+            if (icon == null) {
+                continue;
+            }
+            ResourceIconResponse iconResponse = _responseGenerator.createResourceIconResponse(icon);
             vmResponse.setResourceIconResponse(iconResponse);
         }
     }

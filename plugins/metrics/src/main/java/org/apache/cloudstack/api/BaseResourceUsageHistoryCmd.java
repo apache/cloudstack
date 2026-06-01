@@ -32,11 +32,11 @@ public abstract class BaseResourceUsageHistoryCmd extends BaseListCmd {
     // /// BaseResourceUsageHistoryCmd API parameters ////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, description = "start date to filter stats."
+    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, description = "Start date to filter stats."
             + "Use format \"yyyy-MM-dd hh:mm:ss\")")
     private Date startDate;
 
-    @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, description = "end date to filter stats."
+    @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, description = "End date to filter stats."
             + "Use format \"yyyy-MM-dd hh:mm:ss\")")
     private Date endDate;
 

@@ -145,4 +145,9 @@ public class MigrateVolumeCommand extends Command {
     }
 
     public String getChainInfo() { return chainInfo; }
+
+    @Override
+    public boolean isReconcile() {
+        return true;
+    }
 }

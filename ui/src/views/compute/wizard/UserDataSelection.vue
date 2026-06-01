@@ -18,6 +18,7 @@
 <template>
   <div>
     <a-input-search
+      v-if="showSearch"
       style="width: 25vw;float: right;margin-bottom: 10px; z-index: 8"
       :placeholder="$t('label.search')"
       v-model:value="filter"
@@ -33,7 +34,7 @@
       :scroll="{ y: 225 }"
     >
       <template #headerCell="{ column }">
-        <template v-if="column.key === 'name'"><solution-outlined /> {{ $t('label.userdata') }}</template>
+        <template v-if="column.key === 'name'"><solution-outlined /> {{ $t('label.user.data') }}</template>
         <template v-if="column.key === 'account'"><user-outlined /> {{ $t('label.account') }}</template>
         <template v-if="column.key === 'domain'"><block-outlined /> {{ $t('label.domain') }}</template>
       </template>
@@ -72,6 +73,10 @@ export default {
     zoneId: {
       type: String,
       default: () => ''
+    },
+    showSearch: {
+      type: Boolean,
+      default: true
     }
   },
   data () {
@@ -81,7 +86,7 @@ export default {
         {
           key: 'name',
           dataIndex: 'name',
-          title: this.$t('label.userdata'),
+          title: this.$t('label.user.data'),
           width: '40%'
         },
         {

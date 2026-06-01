@@ -21,6 +21,7 @@ import java.util.Map;
 
 import org.apache.cloudstack.api.ResourceDetail;
 
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 
 public interface ResourceDetailsDao<R extends ResourceDetail> extends GenericDao<R, Long> {
@@ -31,6 +32,13 @@ public interface ResourceDetailsDao<R extends ResourceDetail> extends GenericDao
      * @return
      */
     R findDetail(long resourceId, String name);
+
+    /**
+     * Find details by key
+     * @param key
+     * @return
+     */
+    List<R> findDetails(String key);
 
     /**
      * Find details by resourceId and key
@@ -53,7 +61,7 @@ public interface ResourceDetailsDao<R extends ResourceDetail> extends GenericDao
      * Removes all details for the resource specified
      * @param resourceId
      */
-    public void removeDetails(long resourceId);
+    void removeDetails(long resourceId);
 
 
     /**
@@ -76,7 +84,7 @@ public interface ResourceDetailsDao<R extends ResourceDetail> extends GenericDao
      * @param resourceId
      * @return list of details each implementing ResourceDetail interface
      */
-    public List<R> listDetails(long resourceId);
+    List<R> listDetails(long resourceId);
 
     /**
      * List details for resourceId having display field = forDisplay value passed in
@@ -84,19 +92,25 @@ public interface ResourceDetailsDao<R extends ResourceDetail> extends GenericDao
      * @param forDisplay
      * @return
      */
-    public List<R> listDetails(long resourceId, boolean forDisplay);
+    List<R> listDetails(long resourceId, boolean forDisplay);
 
-    public Map<String, String> listDetailsKeyPairs(long resourceId);
+    Map<String, String> listDetailsKeyPairs(long resourceId);
 
-    public Map<String, String> listDetailsKeyPairs(long resourceId, boolean forDisplay);
+    Map<String, String> listDetailsKeyPairs(long resourceId, List<String> keys);
+
+    Map<String, String> listDetailsKeyPairs(long resourceId, boolean forDisplay);
 
     Map<String, Boolean> listDetailsVisibility(long resourceId);
 
-    public void saveDetails(List<R> details);
+    Pair<Map<String, String>, Map<String, String>> listDetailsKeyPairsWithVisibility(long resourceId);
 
-    public void addDetail(long resourceId, String key, String value, boolean display);
+    void saveDetails(List<R> details);
 
-    public List<Long> findResourceIdsByNameAndValueIn(String name, Object[] values);
+    void addDetail(long resourceId, String key, String value, boolean display);
 
-    public long batchExpungeForResources(List<Long> ids, Long batchSize);
+    List<Long> findResourceIdsByNameAndValueIn(String name, Object[] values);
+
+    long batchExpungeForResources(List<Long> ids, Long batchSize);
+
+    String getActualValue(ResourceDetail resourceDetail);
 }

@@ -26,6 +26,9 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.Volume;
 import com.cloud.vm.VirtualMachine;
 
+import java.util.List;
+import java.util.Set;
+
 public interface VolumeInfo extends DownloadableDataInfo, Volume {
 
     boolean isAttachedVM();
@@ -96,4 +99,8 @@ public interface VolumeInfo extends DownloadableDataInfo, Volume {
     public byte[] getPassphrase();
 
     Volume getVolume();
+
+    List<String> getCheckpointPaths();
+
+    Set<String> getCheckpointImageStoreUrls();
 }

@@ -54,7 +54,7 @@ public class EnableOutOfBandManagementForClusterCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.CLUSTER_ID, type = BaseCmd.CommandType.UUID, required = true, entityType = ClusterResponse.class,
-            validations = {ApiArgValidator.PositiveNumber}, description = "the ID of the cluster")
+            validations = {ApiArgValidator.PositiveNumber}, description = "The ID of the cluster")
     private Long clusterId;
 
     /////////////////////////////////////////////////////
@@ -70,7 +70,7 @@ public class EnableOutOfBandManagementForClusterCmd extends BaseAsyncCmd {
 
         OutOfBandManagementResponse response = outOfBandManagementService.enableOutOfBandManagement(cluster);
 
-        CallContext.current().setEventDetails("Cluster Id:" + cluster.getId() + " out-of-band management enabled: true");
+        CallContext.current().setEventDetails("Cluster ID:" + cluster.getUuid() + " out-of-band management enabled: true");
         CallContext.current().putContextParameter(Cluster.class, cluster.getUuid());
 
         response.setResponseName(getCommandName());
@@ -93,7 +93,7 @@ public class EnableOutOfBandManagementForClusterCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "enable out-of-band management password for cluster: " + getClusterId();
+        return "Enabling out-of-band management password for cluster with ID: " + getResourceUuid(ApiConstants.CLUSTER_ID);
     }
 
     @Override

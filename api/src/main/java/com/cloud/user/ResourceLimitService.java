@@ -30,11 +30,12 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.template.VirtualMachineTemplate;
+import org.apache.cloudstack.resourcelimit.Reserver;
 
 public interface ResourceLimitService {
 
     static final ConfigKey<Long> MaxAccountSecondaryStorage = new ConfigKey<>("Account Defaults", Long.class, "max.account.secondary.storage", "400",
-            "The default maximum secondary storage space (in GiB) that can be used for an account", false);
+            "The default maximum secondary storage space (in GiB) that can be used for an Account", false);
     static final ConfigKey<Long> MaxProjectSecondaryStorage = new ConfigKey<>("Project Defaults", Long.class, "max.project.secondary.storage", "400",
             "The default maximum secondary storage space (in GiB) that can be used for a project", false);
     static final ConfigKey<Long> ResourceCountCheckInterval = new ConfigKey<>("Advanced", Long.class, "resourcecount.check.interval", "300",
@@ -50,8 +51,14 @@ public interface ResourceLimitService {
                 "The default maximum number of projects that can be created for an account",false);
     static final ConfigKey<Long> DefaultMaxDomainProjects = new ConfigKey<>("Domain Defaults",Long.class,"max.domain.projects","50",
                         "The default maximum number of projects that can be created for a domain",false);
+    static final ConfigKey<Long> DefaultMaxAccountGpus = new ConfigKey<>("Account Defaults",Long.class,"max.account.gpus","20",
+            "The default maximum number of GPU devices that can be used for an account", false);
+    static final ConfigKey<Long> DefaultMaxDomainGpus = new ConfigKey<>("Domain Defaults",Long.class,"max.domain.gpus","20",
+            "The default maximum number of GPU devices that can be used for a domain", false);
+    static final ConfigKey<Long> DefaultMaxProjectGpus = new ConfigKey<>("Project Defaults",Long.class,"max.project.gpus","20",
+            "The default maximum number of GPU devices that can be used for a project", false);
 
-    static final List<ResourceType> HostTagsSupportingTypes = List.of(ResourceType.user_vm, ResourceType.cpu, ResourceType.memory);
+    static final List<ResourceType> HostTagsSupportingTypes = List.of(ResourceType.user_vm, ResourceType.cpu, ResourceType.memory, ResourceType.gpu);
     static final List<ResourceType> StorageTagsSupportingTypes = List.of(ResourceType.volume, ResourceType.primary_storage);
 
     /**
@@ -185,6 +192,7 @@ public interface ResourceLimitService {
      */
     public void checkResourceLimit(Account account, ResourceCount.ResourceType type, long... count) throws ResourceAllocationException;
     public void checkResourceLimitWithTag(Account account, ResourceCount.ResourceType type, String tag, long... count) throws ResourceAllocationException;
+    public void checkResourceLimitWithTag(Account account, Long domainId, boolean considerSystemAccount, ResourceCount.ResourceType type, String tag, long... count) throws ResourceAllocationException;
 
     /**
      * Gets the count of resources for a resource type and account
@@ -245,12 +253,12 @@ public interface ResourceLimitService {
     List<String> getResourceLimitStorageTags(DiskOffering diskOffering);
     void updateTaggedResourceLimitsAndCountsForAccounts(List<AccountResponse> responses, String tag);
     void updateTaggedResourceLimitsAndCountsForDomains(List<DomainResponse> responses, String tag);
-    void checkVolumeResourceLimit(Account owner, Boolean display, Long size, DiskOffering diskOffering) throws ResourceAllocationException;
-
+    void checkVolumeResourceLimit(Account owner, Boolean display, Long size, DiskOffering diskOffering, List<Reserver> reservations) throws ResourceAllocationException;
+    List<String> getResourceLimitStorageTagsForResourceCountOperation(Boolean display, DiskOffering diskOffering);
     void checkVolumeResourceLimitForDiskOfferingChange(Account owner, Boolean display, Long currentSize, Long newSize,
-            DiskOffering currentOffering, DiskOffering newOffering) throws ResourceAllocationException;
+            DiskOffering currentOffering, DiskOffering newOffering, List<Reserver> reservations) throws ResourceAllocationException;
 
-    void checkPrimaryStorageResourceLimit(Account owner, Boolean display, Long size, DiskOffering diskOffering) throws ResourceAllocationException;
+    void checkPrimaryStorageResourceLimit(Account owner, Boolean display, Long size, DiskOffering diskOffering, List<Reserver> reservations) throws ResourceAllocationException;
 
     void incrementVolumeResourceCount(long accountId, Boolean display, Long size, DiskOffering diskOffering);
     void decrementVolumeResourceCount(long accountId, Boolean display, Long size, DiskOffering diskOffering);
@@ -267,21 +275,23 @@ public interface ResourceLimitService {
 
     void incrementVolumePrimaryStorageResourceCount(long accountId, Boolean display, Long size, DiskOffering diskOffering);
     void decrementVolumePrimaryStorageResourceCount(long accountId, Boolean display, Long size, DiskOffering diskOffering);
-    void checkVmResourceLimit(Account owner, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template) throws ResourceAllocationException;
+    void checkVmResourceLimit(Account owner, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Reserver> reservations) throws ResourceAllocationException;
     void incrementVmResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template);
     void decrementVmResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template);
 
     void checkVmResourceLimitsForServiceOfferingChange(Account owner, Boolean display, Long currentCpu, Long newCpu,
-            Long currentMemory, Long newMemory, ServiceOffering currentOffering, ServiceOffering newOffering, VirtualMachineTemplate template) throws ResourceAllocationException;
+            Long currentMemory, Long newMemory, ServiceOffering currentOffering, ServiceOffering newOffering, VirtualMachineTemplate template, List<Reserver> reservations) throws ResourceAllocationException;
 
     void checkVmResourceLimitsForTemplateChange(Account owner, Boolean display, ServiceOffering offering,
-            VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate) throws ResourceAllocationException;
+            VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate, List<Reserver> reservations) throws ResourceAllocationException;
 
-    void checkVmCpuResourceLimit(Account owner, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long cpu) throws ResourceAllocationException;
     void incrementVmCpuResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long cpu);
     void decrementVmCpuResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long cpu);
-    void checkVmMemoryResourceLimit(Account owner, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long memory) throws ResourceAllocationException;
     void incrementVmMemoryResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long memory);
     void decrementVmMemoryResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long memory);
 
+    void incrementVmGpuResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long gpu);
+    void decrementVmGpuResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long gpu);
+
+    long recalculateDomainResourceCount(final long domainId, final ResourceType type, String tag);
 }

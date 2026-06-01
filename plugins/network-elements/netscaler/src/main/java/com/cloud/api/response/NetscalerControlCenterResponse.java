@@ -25,15 +25,15 @@ import com.cloud.serializer.Param;
 public class NetscalerControlCenterResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "id")
+    @Param(description = "ID")
     private String id;
 
     @SerializedName(ApiConstants.USERNAME)
-    @Param(description = "username")
+    @Param(description = "Username")
     private String username;
 
     @SerializedName(ApiConstants.UUID)
-    @Param(description = "uuid")
+    @Param(description = "UUID")
     private String uuid;
 
     @SerializedName(ApiConstants.IP_ADDRESS)
@@ -41,7 +41,7 @@ public class NetscalerControlCenterResponse extends BaseResponse {
     private String nccip;
 
     @SerializedName(ApiConstants.NUM_RETRIES)
-    @Param(description = "num_retries")
+    @Param(description = "Number of retries")
     private String numretries;
 
     public NetscalerControlCenterResponse() {

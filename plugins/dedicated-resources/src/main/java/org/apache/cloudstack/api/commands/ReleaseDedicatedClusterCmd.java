@@ -43,7 +43,7 @@ public class ReleaseDedicatedClusterCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class, required = true, description = "the ID of the Cluster")
+    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class, required = true, description = "The ID of the Cluster")
     private Long clusterId;
 
     /////////////////////////////////////////////////////
@@ -81,6 +81,6 @@ public class ReleaseDedicatedClusterCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "releasing dedicated cluster";
+        return "Releasing dedicated cluster with ID: " + getResourceUuid(ApiConstants.CLUSTER_ID);
     }
 }

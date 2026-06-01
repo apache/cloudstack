@@ -29,6 +29,7 @@ import com.cloud.utils.db.SearchBuilder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @DB()
 public class MockNetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements NetworkDao {
@@ -265,4 +266,18 @@ public class MockNetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implemen
         return null;
     }
 
+    @Override
+    public List<NetworkVO> listByNetworkDomains(Set<String> uniqueNtwkDomains) {
+        return List.of();
+    }
+
+    @Override
+    public List<NetworkVO> listByNetworkDomainsAndAccountIds(Set<String> uniqueNtwkDomains, Set<Long> accountIds) {
+        return List.of();
+    }
+
+    @Override
+    public List<NetworkVO> listByNetworkDomainsAndDomainIds(Set<String> uniqueNtwkDomains, Set<Long> domainIds) {
+        return List.of();
+    }
 }

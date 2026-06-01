@@ -33,11 +33,10 @@ import javax.persistence.Table;
 import javax.persistence.Transient;
 
 import org.apache.cloudstack.api.InternalIdentity;
-
-import com.cloud.utils.db.Encrypt;
-import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.lang3.StringUtils;
+
+import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name = "user")
@@ -68,13 +67,6 @@ public class UserAccountVO implements UserAccount, InternalIdentity {
 
     @Column(name = "state")
     private String state;
-
-    @Column(name = "api_key")
-    private String apiKey = null;
-
-    @Encrypt
-    @Column(name = "secret_key")
-    private String secretKey = null;
 
     @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
@@ -129,12 +121,6 @@ public class UserAccountVO implements UserAccount, InternalIdentity {
         ENABLED, VERIFIED
     }
     public UserAccountVO() {
-    }
-
-    @Override
-    public String toString() {
-        return String.format("UserAccount %s.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields
-                (this, "id", "uuid", "username", "accountName"));
     }
 
     @Override
@@ -210,31 +196,9 @@ public class UserAccountVO implements UserAccount, InternalIdentity {
     }
 
     @Override
-    public String getApiKey() {
-        return apiKey;
-    }
-
-    public void setApiKey(String apiKey) {
-        this.apiKey = apiKey;
-    }
-
-    @Override
-    public String getSecretKey() {
-        return secretKey;
-    }
-
-    public void setSecretKey(String secretKey) {
-        this.secretKey = secretKey;
-    }
-
-    @Override
     public Date getCreated() {
         return created;
     }
-
-//    public void setCreated(Date created) {
-//        this.created = created;
-//    }
 
     @Override
     public Date getRemoved() {
@@ -378,5 +342,11 @@ public class UserAccountVO implements UserAccount, InternalIdentity {
     @Override
     public void setDetails(Map<String, String> details) {
         this.details = details;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("UserAccount %s.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields
+                (this, "id", "uuid", "username", "accountName"));
     }
 }

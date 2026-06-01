@@ -56,6 +56,8 @@ public class LoadBalancerConfigItem extends AbstractConfigItemFacade {
         final String[] statRules = allRules[LoadBalancerConfigurator.STATS];
 
         final LoadBalancerRule loadBalancerRule = new LoadBalancerRule(configuration, tmpCfgFilePath, tmpCfgFileName, addRules, removeRules, statRules, routerIp);
+        final LoadBalancerRule.SslCertEntry[] sslCerts = cfgtr.generateSslCertEntries(command);
+        loadBalancerRule.setSslCerts(sslCerts);
 
         final List<LoadBalancerRule> rules = new LinkedList<LoadBalancerRule>();
         rules.add(loadBalancerRule);

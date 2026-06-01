@@ -39,10 +39,19 @@
           style="width: 100%; margin-bottom: 10px"
           @click="showAddVolModal"
           :loading="loading"
-          :disabled="!('createVolume' in $store.getters.apis)">
+          :disabled="!('createVolume' in $store.getters.apis) || this.vm.state === 'Error' || resource.hypervisor === 'External'">
           <template #icon><plus-outlined /></template> {{ $t('label.action.create.volume.add') }}
         </a-button>
         <volumes-tab :resource="vm" :loading="loading" />
+      </a-tab-pane>
+      <a-tab-pane :tab="$t('label.gpu')" key="gpu" v-if="dataResource.gpucardname">
+        <GPUTab
+          apiName="listGpuDevices"
+          :resource="dataResource"
+          :params="{virtualmachineid: dataResource.id}"
+          resourceType="VirtualMachine"
+          :columns="['gpucardname', 'vgpuprofilename', 'state'].concat($store.getters.userInfo.roletype === 'Admin' ? ['id', 'hostname'] : [])"
+          :routerlinks="(record) => { return { displayname: '/gpudevice/' + record.id } }"/>
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.nics')" key="nics" v-if="'listNics' in $store.getters.apis">
         <NicsTab :resource="vm"/>
@@ -60,8 +69,8 @@
           apiName="listBackups"
           :resource="resource"
           :params="{virtualmachineid: dataResource.id}"
-          :columns="['created', 'status', 'type', 'size', 'virtualsize']"
-          :routerlinks="(record) => { return { created: '/backup/' + record.id } }"
+          :columns="['name', 'status', 'size', 'virtualsize', 'type', 'intervaltype', 'created']"
+          :routerlinks="(record) => { return { name: '/backup/' + record.id } }"
           :showSearch="false"/>
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.securitygroups')" key="securitygroups" v-if="dataResource.securitygroup && dataResource.securitygroup.length > 0 || $store.getters.showSecurityGroups">
@@ -127,7 +136,7 @@
 
 <script>
 
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import ResourceLayout from '@/layouts/ResourceLayout'
 import DetailsTab from '@/components/view/DetailsTab'
@@ -143,6 +152,7 @@ import ResourceIcon from '@/components/view/ResourceIcon'
 import AnnotationsTab from '@/components/view/AnnotationsTab'
 import VolumesTab from '@/components/view/VolumesTab.vue'
 import SecurityGroupSelection from '@views/compute/wizard/SecurityGroupSelection'
+import GPUTab from '@/components/view/GPUTab.vue'
 
 export default {
   name: 'InstanceTab',
@@ -154,6 +164,7 @@ export default {
     DetailSettings,
     CreateVolume,
     NicsTab,
+    GPUTab,
     InstanceSchedules,
     ListResourceTable,
     SecurityGroupSelection,
@@ -179,6 +190,7 @@ export default {
       vm: {},
       totalStorage: 0,
       currentTab: 'details',
+      showUpdateSecurityGroupsModal: false,
       showAddVolumeModal: false,
       diskOfferings: [],
       annotations: [],
@@ -237,14 +249,14 @@ export default {
       if (!this.vm || !this.vm.id) {
         return
       }
-      api('listAnnotations', { entityid: this.dataResource.id, entitytype: 'VM', annotationfilter: 'all' }).then(json => {
+      getAPI('listAnnotations', { entityid: this.dataResource.id, entitytype: 'VM', annotationfilter: 'all' }).then(json => {
         if (json.listannotationsresponse && json.listannotationsresponse.annotation) {
           this.annotations = json.listannotationsresponse.annotation
         }
       })
     },
     listDiskOfferings () {
-      api('listDiskOfferings', {
+      getAPI('listDiskOfferings', {
         listAll: 'true',
         zoneid: this.vm.zoneid
       }).then(response => {
@@ -275,7 +287,7 @@ export default {
       this.securitygroupids = securitygroupids || []
     },
     updateSecurityGroups () {
-      api('updateVirtualMachine', { id: this.vm.id, securitygroupids: this.securitygroupids.join(',') }).catch(error => {
+      postAPI('updateVirtualMachine', { id: this.vm.id, securitygroupids: this.securitygroupids.join(',') }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
         this.closeModals()

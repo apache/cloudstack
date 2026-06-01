@@ -38,7 +38,7 @@ public class DeleteClusterCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ClusterResponse.class, required = true, description = "the cluster ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ClusterResponse.class, required = true, description = "The cluster ID")
     private Long id;
 
     /////////////////////////////////////////////////////

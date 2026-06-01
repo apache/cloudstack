@@ -644,12 +644,12 @@ Bug ID | Description
 Version 4.2.1
 -------------
 
-Release notes contain the list of [bug fixes](http://cloudstack.apache.org/docs/en-US/Apache_CloudStack/4.2.1/html/Release_Notes/version-4.2.html#issues-fixed-4.2.1)
+Release notes contain the list of [bug fixes](https://cloudstack.apache.org/docs/en-US/Apache_CloudStack/4.2.1/html/Release_Notes/version-4.2.html#issues-fixed-4.2.1)
 
 Version 4.2.0
 -------------
 Released on October 1 2013.
-Release notes contain the list of [bug fixes](http://cloudstack.apache.org/docs/en-US/Apache_CloudStack/4.2.0/html/Release_Notes/index.html)
+Release notes contain the list of [bug fixes](https://cloudstack.apache.org/docs/en-US/Apache_CloudStack/4.2.0/html/Release_Notes/index.html)
 
 Version 4.1.0
 -------------

@@ -41,7 +41,7 @@ public class ReconnectHostCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = HostResponse.class, required = true, description = "the host ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = HostResponse.class, required = true, description = "The host ID")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -77,7 +77,7 @@ public class ReconnectHostCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "reconnecting host: " + getId();
+        return "Reconnecting host with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

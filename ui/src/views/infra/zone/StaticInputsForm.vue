@@ -96,6 +96,7 @@
           <a-input
             v-else
             v-model:value="form[field.key]"
+            :defaultValue="field.defaultValue"
             v-focus="index === 0"
           />
         </a-form-item>

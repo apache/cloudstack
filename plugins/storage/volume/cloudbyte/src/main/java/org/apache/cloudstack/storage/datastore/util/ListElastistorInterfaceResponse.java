@@ -28,15 +28,15 @@ import com.google.gson.annotations.SerializedName;
 @SuppressWarnings("unused")
 public class ListElastistorInterfaceResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the id of the NIC")
+    @Param(description = "The ID of the NIC")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the NIC")
+    @Param(description = "The name of the NIC")
     private String name;
 
     @SerializedName(ApiConstants.STATUS)
-    @Param(description = "the status of the NIC")
+    @Param(description = "The status of the NIC")
     private String status;
 
     public String getStatus() {

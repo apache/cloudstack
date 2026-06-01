@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.storage.download;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -24,10 +25,15 @@ import java.util.Timer;
 
 import javax.inject.Inject;
 
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
-
+import com.cloud.configuration.Resource;
+import com.cloud.resourcelimit.CheckedReservation;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.ResourceLimitService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -37,10 +43,17 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
+import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand.RequestType;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.cloudstack.utils.cache.LazyCache;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -54,7 +67,7 @@ import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.exception.ConnectionException;
 import com.cloud.host.Host;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.download.DownloadState.DownloadEvent;
@@ -99,12 +112,14 @@ public class DownloadListener implements Listener {
     protected Logger logger = LogManager.getLogger(getClass());
     public static final int SMALL_DELAY = 100;
     public static final long STATUS_POLL_INTERVAL = 10000L;
+    public static final long DOWNLOAD_TIMEOUT = 5 * STATUS_POLL_INTERVAL;
 
     public static final String DOWNLOADED = Status.DOWNLOADED.toString();
     public static final String NOT_DOWNLOADED = Status.NOT_DOWNLOADED.toString();
     public static final String DOWNLOAD_ERROR = Status.DOWNLOAD_ERROR.toString();
     public static final String DOWNLOAD_IN_PROGRESS = Status.DOWNLOAD_IN_PROGRESS.toString();
     public static final String DOWNLOAD_ABANDONED = Status.ABANDONED.toString();
+    public static final String DOWNLOAD_LIMIT_REACHED = Status.LIMIT_REACHED.toString();
 
     private EndPoint _ssAgent;
 
@@ -135,6 +150,32 @@ public class DownloadListener implements Listener {
     private DataStoreManager _storeMgr;
     @Inject
     private VolumeService _volumeSrv;
+    @Inject
+    private VMTemplateDao _templateDao;
+    @Inject
+    private TemplateDataStoreDao _templateDataStoreDao;
+    @Inject
+    private VolumeDao _volumeDao;
+    @Inject
+    private ResourceLimitService _resourceLimitMgr;
+    @Inject
+    private AccountManager _accountMgr;
+    @Inject
+    ReservationDao _reservationDao;
+
+    private LazyCache<Long, List<Hypervisor.HypervisorType>> zoneHypervisorsCache;
+
+    private List<Hypervisor.HypervisorType> listAvailHypervisorInZone(long zoneId) {
+        if (_resourceMgr == null) {
+            return Collections.emptyList();
+        }
+        return _resourceMgr.listAvailHypervisorInZone(zoneId);
+    }
+
+    protected void initZoneHypervisorsCache() {
+        zoneHypervisorsCache =
+                new LazyCache<>(32, 30, this::listAvailHypervisorInZone);
+    }
 
     // TODO: this constructor should be the one used for template only, remove other template constructor later
     public DownloadListener(EndPoint ssAgent, DataStore store, DataObject object, Timer timer, DownloadMonitorImpl downloadMonitor, DownloadCommand cmd,
@@ -144,13 +185,19 @@ public class DownloadListener implements Listener {
         _downloadMonitor = downloadMonitor;
         _cmd = cmd;
         initStateMachine();
-        _currState = getState(Status.NOT_DOWNLOADED.toString());
+        _currState = getState(NOT_DOWNLOADED);
         this._timer = timer;
         _timeoutTask = new TimeoutTask(this);
         this._timer.schedule(_timeoutTask, 3 * STATUS_POLL_INTERVAL);
         _callback = callback;
         DownloadAnswer answer = new DownloadAnswer("", Status.NOT_DOWNLOADED);
         callback(answer);
+        initZoneHypervisorsCache();
+    }
+
+    public DownloadListener(DownloadMonitorImpl monitor) {
+        _downloadMonitor = monitor;
+        initZoneHypervisorsCache();
     }
 
     public AsyncCompletionCallback<DownloadAnswer> getCallback() {
@@ -162,11 +209,12 @@ public class DownloadListener implements Listener {
     }
 
     private void initStateMachine() {
-        _stateMap.put(Status.NOT_DOWNLOADED.toString(), new NotDownloadedState(this));
-        _stateMap.put(Status.DOWNLOADED.toString(), new DownloadCompleteState(this));
-        _stateMap.put(Status.DOWNLOAD_ERROR.toString(), new DownloadErrorState(this));
-        _stateMap.put(Status.DOWNLOAD_IN_PROGRESS.toString(), new DownloadInProgressState(this));
-        _stateMap.put(Status.ABANDONED.toString(), new DownloadAbandonedState(this));
+        _stateMap.put(NOT_DOWNLOADED, new NotDownloadedState(this));
+        _stateMap.put(DOWNLOADED, new DownloadCompleteState(this));
+        _stateMap.put(DOWNLOAD_ERROR, new DownloadErrorState(this));
+        _stateMap.put(DOWNLOAD_IN_PROGRESS, new DownloadInProgressState(this));
+        _stateMap.put(DOWNLOAD_ABANDONED, new DownloadAbandonedState(this));
+        _stateMap.put(DOWNLOAD_LIMIT_REACHED, new DownloadLimitReachedState(this));
     }
 
     private DownloadState getState(String stateName) {
@@ -212,19 +260,58 @@ public class DownloadListener implements Listener {
                 message, object.getType(), object.getUuid(), object, _ssAgent.getId(), _ssAgent.getUuid());
     }
 
-    public DownloadListener(DownloadMonitorImpl monitor) {
-        _downloadMonitor = monitor;
-    }
-
     @Override
     public boolean isRecurring() {
         return false;
     }
 
+    private Long getAccountIdForDataObject() {
+        if (object == null) {
+            return null;
+        }
+        if (DataObjectType.TEMPLATE.equals(object.getType())) {
+            VMTemplateVO t = _templateDao.findById(object.getId());
+            return t != null ? t.getAccountId() : null;
+        } else if (DataObjectType.VOLUME.equals(object.getType())) {
+            VolumeVO v = _volumeDao.findById(object.getId());
+            return v != null ? v.getAccountId() : null;
+        }
+        return null;
+    }
+
+    private Long getSizeFromDB() {
+        Long lastSize = null;
+        if (DataObjectType.TEMPLATE.equals(object.getType())) {
+            TemplateDataStoreVO t = _templateDataStoreDao.findByStoreTemplate(object.getDataStore().getId(), object.getId());
+            lastSize = t.getSize();
+        } else if (DataObjectType.VOLUME.equals(object.getType())) {
+            VolumeVO v = _volumeDao.findById(object.getId());
+            lastSize = v.getSize();
+        }
+        return lastSize == null ? 0L : lastSize;
+    }
+
+    private Boolean checkAndUpdateResourceLimits(DownloadAnswer answer) {
+        Long lastSize = getSizeFromDB();
+        Long currentSize = answer.getTemplateSize();
+
+        if (currentSize > lastSize) {
+            Long accountId = getAccountIdForDataObject();
+            Account account = _accountMgr.getAccount(accountId);
+            Long usage = currentSize - lastSize;
+            try (CheckedReservation secStorageReservation = new CheckedReservation(account, Resource.ResourceType.secondary_storage, usage, _reservationDao, _resourceLimitMgr)) {
+                _resourceLimitMgr.incrementResourceCount(accountId, Resource.ResourceType.secondary_storage, usage);
+            } catch (Exception e) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     @Override
     public boolean processAnswers(long agentId, long seq, Answer[] answers) {
         boolean processed = false;
-        if (answers != null & answers.length > 0) {
+        if (answers != null && answers.length > 0) {
             if (answers[0] instanceof DownloadAnswer) {
                 final DownloadAnswer answer = (DownloadAnswer)answers[0];
                 if (getJobId() == null) {
@@ -232,7 +319,11 @@ public class DownloadListener implements Listener {
                 } else if (!getJobId().equalsIgnoreCase(answer.getJobId())) {
                     return false;//TODO
                 }
-                transition(DownloadEvent.DOWNLOAD_ANSWER, answer);
+                if (!checkAndUpdateResourceLimits(answer)) {
+                    transition(DownloadEvent.LIMIT_REACHED, answer);
+                } else {
+                    transition(DownloadEvent.DOWNLOAD_ANSWER, answer);
+                }
                 processed = true;
             }
         }
@@ -280,14 +371,15 @@ public class DownloadListener implements Listener {
     @Override
     public void processConnect(Host agent, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
         if (cmd instanceof StartupRoutingCommand) {
-            List<HypervisorType> hypers = _resourceMgr.listAvailHypervisorInZone(agent.getId(), agent.getDataCenterId());
-            HypervisorType hostHyper = agent.getHypervisorType();
-            if (hypers.contains(hostHyper)) {
+            List<Hypervisor.HypervisorType> hypervisors = zoneHypervisorsCache.get(agent.getDataCenterId());
+            Hypervisor.HypervisorType hostHyper = agent.getHypervisorType();
+            if (hypervisors.contains(hostHyper)) {
                 return;
             }
             _imageSrv.handleSysTemplateDownload(hostHyper, agent.getDataCenterId());
             // update template_zone_ref for cross-zone templates
             _imageSrv.associateCrosszoneTemplatesToZone(agent.getDataCenterId());
+
         }
         /* This can be removed
         else if ( cmd instanceof StartupStorageCommand) {

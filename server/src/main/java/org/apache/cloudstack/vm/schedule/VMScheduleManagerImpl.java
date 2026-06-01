@@ -18,6 +18,29 @@
  */
 package org.apache.cloudstack.vm.schedule;
 
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
+import java.util.TimeZone;
+
+import javax.inject.Inject;
+
+import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.api.command.user.vm.CreateVMScheduleCmd;
+import org.apache.cloudstack.api.command.user.vm.DeleteVMScheduleCmd;
+import org.apache.cloudstack.api.command.user.vm.ListVMScheduleCmd;
+import org.apache.cloudstack.api.command.user.vm.UpdateVMScheduleCmd;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.VMScheduleResponse;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.vm.schedule.dao.VMScheduleDao;
+import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.scheduling.support.CronExpression;
+
 import com.cloud.api.query.MutualExclusiveIdsManagerBase;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -32,26 +55,6 @@ import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
-import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.cloudstack.api.command.user.vm.CreateVMScheduleCmd;
-import org.apache.cloudstack.api.command.user.vm.DeleteVMScheduleCmd;
-import org.apache.cloudstack.api.command.user.vm.ListVMScheduleCmd;
-import org.apache.cloudstack.api.command.user.vm.UpdateVMScheduleCmd;
-import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.VMScheduleResponse;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.vm.schedule.dao.VMScheduleDao;
-import org.apache.commons.lang.time.DateUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.scheduling.support.CronExpression;
-
-import javax.inject.Inject;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
-import java.util.TimeZone;
 
 public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase implements VMScheduleManager, PluggableService {
 
@@ -205,6 +208,9 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
         Date cmdStartDate = cmd.getStartDate();
         Date cmdEndDate = cmd.getEndDate();
         Boolean enabled = cmd.getEnabled();
+        final String originalTimeZone = vmSchedule.getTimeZone();
+        final Date originalStartDate = vmSchedule.getStartDate();
+        final Date originalEndDate = vmSchedule.getEndDate();
 
         TimeZone timeZone;
         String timeZoneId;
@@ -231,7 +237,13 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
             startDate = Date.from(DateUtil.getZoneDateTime(cmdStartDate, timeZone.toZoneId()).toInstant());
         }
 
-        validateStartDateEndDate(Objects.requireNonNullElse(startDate, DateUtils.addMinutes(new Date(), 1)), endDate, timeZone);
+        if (ObjectUtils.anyNotNull(cmdStartDate, cmdEndDate, cmdTimeZone) &&
+                (!Objects.equals(originalTimeZone, timeZoneId) ||
+                        !Objects.equals(originalStartDate, startDate) ||
+                        !Objects.equals(originalEndDate, endDate))) {
+            validateStartDateEndDate(Objects.requireNonNullElse(startDate, DateUtils.addMinutes(new Date(), 1)),
+                    endDate, timeZone);
+        }
 
         if (enabled != null) {
             vmSchedule.setEnabled(enabled);

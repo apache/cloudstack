@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.storage.template;
 
+import com.cloud.agent.api.to.deployasis.OVFNetworkTO;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.VNF;
 import com.cloud.storage.Storage;
@@ -124,6 +125,9 @@ public class VnfTemplateUtils {
     public static void validateApiCommandParams(BaseCmd cmd, VirtualMachineTemplate template) {
         if (cmd instanceof RegisterVnfTemplateCmd) {
             RegisterVnfTemplateCmd registerCmd = (RegisterVnfTemplateCmd) cmd;
+            if (registerCmd.isDeployAsIs() && CollectionUtils.isNotEmpty(registerCmd.getVnfNics())) {
+                throw new InvalidParameterValueException("VNF nics cannot be specified when register a deploy-as-is Template. Please wait until Template settings are read from OVA.");
+            }
             validateApiCommandParams(registerCmd.getVnfDetails(), registerCmd.getVnfNics(), registerCmd.getTemplateType());
         } else if (cmd instanceof UpdateVnfTemplateCmd) {
             UpdateVnfTemplateCmd updateCmd = (UpdateVnfTemplateCmd) cmd;
@@ -146,6 +150,20 @@ public class VnfTemplateUtils {
         for (String cidr : cidrList) {
             if (!NetUtils.isValidIp4Cidr(cidr)) {
                 throw new InvalidParameterValueException(String.format("Invalid cidr for VNF appliance: %s", cidr));
+            }
+        }
+    }
+
+    public static void validateDeployAsIsTemplateVnfNics(List<OVFNetworkTO> ovfNetworks, List<VNF.VnfNic> vnfNics) {
+        if (CollectionUtils.isEmpty(vnfNics)) {
+            return;
+        }
+        if (CollectionUtils.isEmpty(ovfNetworks)) {
+            throw new InvalidParameterValueException("The list of networks read from OVA is empty. Please wait until the template is fully downloaded and processed.");
+        }
+        for (VNF.VnfNic vnfNic : vnfNics) {
+            if (vnfNic.getDeviceId() < ovfNetworks.size() && !vnfNic.isRequired()) {
+                throw new InvalidParameterValueException(String.format("The VNF nic [device ID: %s ] is required as it is defined in the OVA template.", vnfNic.getDeviceId()));
             }
         }
     }

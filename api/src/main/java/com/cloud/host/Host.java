@@ -53,9 +53,18 @@ public interface Host extends StateObject<Status>, Identity, Partition, HAResour
             return strs;
         }
     }
-    public static final String HOST_UEFI_ENABLE = "host.uefi.enable";
-    public static final String HOST_VOLUME_ENCRYPTION = "host.volume.encryption";
-    public static final String HOST_INSTANCE_CONVERSION = "host.instance.conversion";
+
+    String HOST_UEFI_ENABLE = "host.uefi.enable";
+    String HOST_VOLUME_ENCRYPTION = "host.volume.encryption";
+    String HOST_INSTANCE_CONVERSION = "host.instance.conversion";
+    String HOST_VDDK_SUPPORT = "host.vddk.support";
+    String HOST_VDDK_LIB_DIR = "vddk.lib.dir";
+    String HOST_VDDK_VERSION = "host.vddk.version";
+    String HOST_OVFTOOL_VERSION = "host.ovftool.version";
+    String HOST_VIRTV2V_VERSION = "host.virtv2v.version";
+    String HOST_SSH_PORT = "host.ssh.port";
+
+    int DEFAULT_SSH_PORT = 22;
 
     /**
      * @return name of the machine.
@@ -177,6 +186,8 @@ public interface Host extends StateObject<Status>, Identity, Partition, HAResour
      */
     Long getManagementServerId();
 
+    Long getLastManagementServerId();
+
     /*
      *@return removal date
      */
@@ -211,4 +222,6 @@ public interface Host extends StateObject<Status>, Identity, Partition, HAResour
     ResourceState getResourceState();
 
     CPU.CPUArch getArch();
+
+    String getStorageAccessGroups();
 }

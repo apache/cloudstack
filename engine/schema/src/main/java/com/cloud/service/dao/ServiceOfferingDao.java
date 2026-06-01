@@ -22,6 +22,7 @@ import java.util.Map;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.db.SearchBuilder;
 import com.cloud.vm.VirtualMachine;
 
 /*
@@ -54,7 +55,9 @@ public interface ServiceOfferingDao extends GenericDao<ServiceOfferingVO, Long> 
 
     List<ServiceOfferingVO> listPublicByCpuAndMemory(Integer cpus, Integer memory);
 
-    List<ServiceOfferingVO> listByHostTag(String tag);
-
     ServiceOfferingVO findServiceOfferingByComputeOnlyDiskOffering(long diskOfferingId, boolean includingRemoved);
+
+    List<Long> listIdsByHostTag(String tag);
+
+    void addCheckForGpuEnabled(SearchBuilder<ServiceOfferingVO> serviceOfferingSearch, Boolean gpuEnabled);
 }

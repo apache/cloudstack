@@ -581,7 +581,7 @@ public class HypervisorHostHelperTest {
         networkRateMbps = 200;
         prefix = "cloud.public";
         vSwitchName = "vSwitch0";
-        String cloudNetworkName = HypervisorHostHelper.composeCloudNetworkName(prefix, vlanId, svlanId, networkRateMbps, vSwitchName);
+        String cloudNetworkName = HypervisorHostHelper.composeCloudNetworkName(prefix, vlanId, svlanId, networkRateMbps, vSwitchName, VirtualSwitchType.StandardVirtualSwitch);
         assertEquals("cloud.public.100.200.1-vSwitch0", cloudNetworkName);
     }
 
@@ -591,7 +591,7 @@ public class HypervisorHostHelperTest {
         networkRateMbps = null;
         prefix = "cloud.storage";
         vSwitchName = "vSwitch1";
-        String cloudNetworkName = HypervisorHostHelper.composeCloudNetworkName(prefix, vlanId, svlanId, networkRateMbps, vSwitchName);
+        String cloudNetworkName = HypervisorHostHelper.composeCloudNetworkName(prefix, vlanId, svlanId, networkRateMbps, vSwitchName, VirtualSwitchType.StandardVirtualSwitch);
         assertEquals("cloud.storage.untagged.0.1-vSwitch1", cloudNetworkName);
     }
 
@@ -602,8 +602,58 @@ public class HypervisorHostHelperTest {
         networkRateMbps = 512;
         prefix = "cloud.guest";
         vSwitchName = "vSwitch2";
-        String cloudNetworkName = HypervisorHostHelper.composeCloudNetworkName(prefix, vlanId, svlanId, networkRateMbps, vSwitchName);
+        String cloudNetworkName = HypervisorHostHelper.composeCloudNetworkName(prefix, vlanId, svlanId, networkRateMbps, vSwitchName, VirtualSwitchType.StandardVirtualSwitch);
         assertEquals("cloud.guest.400.s123.512.1-vSwitch2", cloudNetworkName);
+    }
+
+    @Test
+    public void testComposeCloudNetworkNameVlanRangeGuestTrafficDvSwitch() {
+        vlanId = "400-500";
+        networkRateMbps = 512;
+        prefix = "cloud.guest";
+        vSwitchName = "dvSwitch0";
+        String cloudNetworkName = HypervisorHostHelper.composeCloudNetworkName(prefix, vlanId, null, networkRateMbps, vSwitchName, VirtualSwitchType.VMwareDistributedVirtualSwitch);
+        assertEquals("cloud.guest.400-500.512.1-dvSwitch0", cloudNetworkName);
+    }
+
+    @Test
+    public void testComposeCloudNetworkNameVlanNumbersGuestTrafficDvSwitch() {
+        vlanId = "3001,3002,3003,3004,3005,3006,3007,3008,3009,3010,3011,3012,3013,3014,3015,3016,3017,3018,3019,3020";
+        networkRateMbps = 512;
+        prefix = "cloud.guest";
+        vSwitchName = "dvSwitch0";
+        String cloudNetworkName = HypervisorHostHelper.composeCloudNetworkName(prefix, vlanId, null, networkRateMbps, vSwitchName, VirtualSwitchType.VMwareDistributedVirtualSwitch);
+        assertEquals("cloud.guest.3001-3020.512.1-dvSwitch0", cloudNetworkName);
+    }
+
+    @Test
+    public void testComposeCloudNetworkNameVlanNumbersAndRangeGuestTrafficDvSwitch() {
+        vlanId = "3001,3004-3006,3007,3008,3009,3010,3011,3012,3013,3014,3015,3016,3017,3018,3020";
+        networkRateMbps = 512;
+        prefix = "cloud.guest";
+        vSwitchName = "dvSwitch0";
+        String cloudNetworkName = HypervisorHostHelper.composeCloudNetworkName(prefix, vlanId, null, networkRateMbps, vSwitchName, VirtualSwitchType.VMwareDistributedVirtualSwitch);
+        assertEquals("cloud.guest.3001,3004-3018,3020.512.1-dvSwitch0", cloudNetworkName);
+    }
+
+    @Test
+    public void testComposeCloudNetworkNameUnorderedVlanNumbersAndRangeGuestTrafficDvSwitch() {
+        vlanId = "3018,3020,3011,3012,3004-3006,3007,3001,3008,3009,3010,3013,3014,3015,3016,3017";
+        networkRateMbps = 512;
+        prefix = "cloud.guest";
+        vSwitchName = "dvSwitch0";
+        String cloudNetworkName = HypervisorHostHelper.composeCloudNetworkName(prefix, vlanId, null, networkRateMbps, vSwitchName, VirtualSwitchType.VMwareDistributedVirtualSwitch);
+        assertEquals("cloud.guest.3001,3004-3018,3020.512.1-dvSwitch0", cloudNetworkName);
+    }
+
+    @Test
+    public void testComposeCloudNetworkNameOverlappingVlanNumbersAndRangeGuestTrafficDvSwitch() {
+        vlanId = "3018,3020,3011,3012,3004-3006,3007,3001,3008,3009,3010,3013,3014,3015,3016,3017,3005-3008";
+        networkRateMbps = 512;
+        prefix = "cloud.guest";
+        vSwitchName = "dvSwitch0";
+        String cloudNetworkName = HypervisorHostHelper.composeCloudNetworkName(prefix, vlanId, null, networkRateMbps, vSwitchName, VirtualSwitchType.VMwareDistributedVirtualSwitch);
+        assertEquals("cloud.guest.3001,3004-3018,3020.512.1-dvSwitch0", cloudNetworkName);
     }
 
     @Test

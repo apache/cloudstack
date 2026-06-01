@@ -164,7 +164,7 @@ def cleanPrimaryStorage(cscfg):
 def seedSecondaryStorage(cscfg, hypervisor):
     """
     erase secondary store and seed system VM template via puppet. The
-    secseeder.sh script is executed on mgmt server bootup which will mount and
+    secseeder.sh script is executed on mgmt server boot up which will mount and
     place the system VM templates on the NFS
     """
     mgmt_server = cscfg.mgtSvr[0].mgtSvrIp

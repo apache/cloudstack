@@ -139,20 +139,6 @@ public class ExternalNetworkDeviceManagerImpl extends ManagerBase implements Ext
     }
 
     private List<Host> listNetworkDevice(Long zoneId, Long physicalNetworkId, Long podId, Host.Type type) {
-//        List<Host> res = new ArrayList<Host>();
-//        if (podId != null) {
-//            List<HostVO> devs = _hostDao.listBy(type, null, podId, zoneId);
-//            if (devs.size() == 1) {
-//                res.add(devs.get(0));
-//            } else {
-//                logger.debug("List " + type + ": " + devs.size() + " found");
-//            }
-//        } else {
-//            List<HostVO> devs = _hostDao.listBy(type, zoneId);
-//            res.addAll(devs);
-        //       }
-
-        //       return res;
         return null;
     }
 

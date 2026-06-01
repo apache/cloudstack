@@ -118,7 +118,7 @@
   </div>
 </template>
 <script>
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import eventBus from '@/config/eventBus'
 
 export default {
@@ -247,7 +247,7 @@ export default {
         newImage.src = await this.getResourceIcon()
         base64Canvas = await this.getNewImage(newImage)
       }
-      api('uploadResourceIcon', {}, 'POST', {
+      postAPI('uploadResourceIcon', {
         resourceids: resourceid,
         resourcetype: resourceType,
         base64image: base64Canvas
@@ -279,7 +279,7 @@ export default {
     deleteIcon () {
       const resourceType = this.$getResourceType()
       const resourceid = this.resource.id
-      api('deleteResourceIcon', {
+      postAPI('deleteResourceIcon', {
         resourcetype: resourceType,
         resourceids: resourceid
       }).then(json => {

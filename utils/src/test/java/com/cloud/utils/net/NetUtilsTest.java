@@ -131,6 +131,10 @@ public class NetUtilsTest {
         assertTrue(NetUtils.isValidS2SVpnPolicy("ike", "3des-md5;modp1024"));
         assertTrue(NetUtils.isValidS2SVpnPolicy("ike", "3des-sha1;modp3072,aes128-sha1;modp1536"));
         assertTrue(NetUtils.isValidS2SVpnPolicy("ike", "3des-sha256;modp3072,aes128-sha512;modp1536"));
+        assertTrue(NetUtils.isValidS2SVpnPolicy("ike", "aes256-sha256;modp1024s160"));
+        assertTrue(NetUtils.isValidS2SVpnPolicy("ike", "aes256-sha256;modp2048s224"));
+        assertTrue(NetUtils.isValidS2SVpnPolicy("ike", "aes256-sha256;modp2048s256"));
+        assertTrue(NetUtils.isValidS2SVpnPolicy("ike", "aes256-sha256;curve25519"));
         assertFalse(NetUtils.isValidS2SVpnPolicy("ike", "aes128-sha1"));
         assertFalse(NetUtils.isValidS2SVpnPolicy("ike", "3des-sha1"));
         assertFalse(NetUtils.isValidS2SVpnPolicy("ike", "3des-sha1,aes256-sha1"));
@@ -306,6 +310,14 @@ public class NetUtilsTest {
         assertEquals(cidrFirst, NetUtils.getCleanIp4Cidr(cidrFirst));
         assertEquals("10.0.144.0/20", NetUtils.getCleanIp4Cidr(cidrSecond));
         assertEquals("10.0.144.0/21", NetUtils.getCleanIp4Cidr(cidrThird));;
+    }
+
+    @Test
+    public void testGetCleanIp4CidrList() {
+        final String cidrList = " 10.0.151.5/20, 10.0.144.10/21 ";
+        final String cleanCidrList = "10.0.144.0/20,10.0.144.0/21";
+
+        assertEquals(cleanCidrList, NetUtils.getCleanIp4CidrList(cidrList));
     }
 
     @Test
@@ -562,8 +574,8 @@ public class NetUtilsTest {
     }
 
     @Test
-    public void testIsNetowrkASubsetOrSupersetOfNetworkBWithEmptyValues() {
-        assertEquals(SupersetOrSubset.errorInCidrFormat, NetUtils.isNetowrkASubsetOrSupersetOfNetworkB("", null));
+    public void testIsNetworkASubsetOrSupersetOfNetworkBWithEmptyValues() {
+        assertEquals(SupersetOrSubset.errorInCidrFormat, NetUtils.isNetworkASubsetOrSupersetOfNetworkB("", null));
     }
 
     @Test
@@ -931,5 +943,16 @@ public class NetUtilsTest {
     public void testTransformCidr() {
         Assert.assertEquals("192.168.0.0/24", NetUtils.transformCidr("192.168.0.100/24"));
         Assert.assertEquals("10.10.10.10/32", NetUtils.transformCidr("10.10.10.10/32"));
+    }
+
+    @Test
+    public void testVpnIpRange() {
+        String ipRange = "10.1.2.1-10.1.2.8";
+        String startIp = ipRange.split("-")[0];
+        String endIp = ipRange.split("-")[1];
+        int cidrSize = NetUtils.getBigCidrSizeOfIpRange(NetUtils.ip2Long(startIp), NetUtils.ip2Long(endIp));
+        Assert.assertEquals(28, cidrSize);
+        String cidr = NetUtils.transformCidr(startIp + "/" + cidrSize);
+        Assert.assertEquals("10.1.2.0/28", cidr);
     }
 }

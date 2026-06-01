@@ -39,7 +39,7 @@ export function loadLanguageAsync (lang) {
     return Promise.resolve(setLanguage(lang))
   }
 
-  return fetch(`locales/${lang}.json`)
+  return fetch(`locales/${lang}.json?ts=${Date.now()}`)
     .then(response => response.json())
     .then(json => Promise.resolve(setLanguage(lang, json)))
 }

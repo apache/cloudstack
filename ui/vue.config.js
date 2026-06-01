@@ -143,7 +143,7 @@ const vueConfig = {
         ws: false,
         changeOrigin: true,
         proxyTimeout: 10 * 60 * 1000, // 10 minutes
-        cookieDomainRewrite: '*',
+        cookieDomainRewrite: process.env.CS_COOKIE_HOST || 'localhost',
         cookiePathRewrite: {
           '/client': '/'
         }

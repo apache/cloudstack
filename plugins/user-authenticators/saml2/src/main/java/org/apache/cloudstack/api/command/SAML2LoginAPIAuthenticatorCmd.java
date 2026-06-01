@@ -78,7 +78,7 @@ import com.cloud.user.UserAccountVO;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.utils.db.EntityManager;
 
-@APICommand(name = "samlSso", description = "SP initiated SAML Single Sign On", requestHasSensitiveInfo = true, responseObject = LoginCmdResponse.class, entityType = {})
+@APICommand(name = "samlSso", description = "SP initiated SAML Single Sign On", responseObject = LoginCmdResponse.class)
 public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthenticator, Configurable {
     private static final String s_name = "loginresponse";
 
@@ -97,7 +97,7 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
     @Inject
     private UserAccountDao userAccountDao;
 
-    protected static ConfigKey<String> saml2FailedLoginRedirectUrl = new ConfigKey<String>("Advanced", String.class, "saml2.failed.login.redirect.url", "",
+    protected static ConfigKey<String> saml2FailedLoginRedirectUrl = new ConfigKey<>("Advanced", String.class, "saml2.failed.login.redirect.url", "",
             "The URL to redirect the SAML2 login failed message (the default vaulue is empty).", true);
 
     SAML2AuthManager samlAuthManager;
@@ -158,11 +158,17 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
                 String domainPath = null;
 
                 if (params.containsKey(ApiConstants.IDP_ID)) {
-                    idpId = ((String[])params.get(ApiConstants.IDP_ID))[0];
+                    String[] idpIds = (String[])params.get(ApiConstants.IDP_ID);
+                    if (idpIds != null && idpIds.length > 0) {
+                        idpId = idpIds[0];
+                    }
                 }
 
                 if (params.containsKey(ApiConstants.DOMAIN)) {
-                    domainPath = ((String[])params.get(ApiConstants.DOMAIN))[0];
+                    String[] domainPaths = (String[])params.get(ApiConstants.DOMAIN);
+                    if (domainPaths != null && domainPaths.length > 0) {
+                        domainPath = domainPaths[0];
+                    }
                 }
 
                 if (domainPath != null && !domainPath.isEmpty()) {
@@ -190,7 +196,7 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
                 String authnId = SAMLUtils.generateSecureRandomId();
                 samlAuthManager.saveToken(authnId, domainPath, idpMetadata.getEntityId());
                 logger.debug("Sending SAMLRequest id=" + authnId);
-                String redirectUrl = SAMLUtils.buildAuthnRequestUrl(authnId, spMetadata, idpMetadata, SAML2AuthManager.SAMLSignatureAlgorithm.value());
+                String redirectUrl = SAMLUtils.buildAuthnRequestUrl(authnId, spMetadata, idpMetadata, SAML2AuthManager.SAMLSignatureAlgorithm.value(), SAML2AuthManager.SAMLRequirePasswordLogin.value());
                 resp.sendRedirect(redirectUrl);
                 return "";
             } if (params.containsKey("SAMLart")) {
@@ -207,7 +213,7 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
                             params, responseType));
                 }
 
-                String username = null;
+                String username;
                 Issuer issuer = processedSAMLResponse.getIssuer();
                 SAMLProviderMetadata spMetadata = samlAuthManager.getSPMetadata();
                 SAMLProviderMetadata idpMetadata = samlAuthManager.getIdPMetadata(issuer.getValue());
@@ -273,7 +279,7 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
                             try {
                                 assertion = decrypter.decrypt(encryptedAssertion);
                             } catch (DecryptionException e) {
-                                logger.warn("SAML EncryptedAssertion error: " + e.toString());
+                                logger.warn("SAML EncryptedAssertion error: " + e);
                             }
                             if (assertion == null) {
                                 continue;
@@ -310,7 +316,7 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
 
                 UserAccount userAccount = null;
                 List<UserAccountVO> possibleUserAccounts = userAccountDao.getAllUsersByNameAndEntity(username, issuer.getValue());
-                if (possibleUserAccounts != null && possibleUserAccounts.size() > 0) {
+                if (possibleUserAccounts != null && !possibleUserAccounts.isEmpty()) {
                     // Log into the first enabled user account
                     // Users can switch to other allowed accounts later
                     for (UserAccountVO possibleUserAccount : possibleUserAccounts) {
@@ -370,7 +376,7 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
     @Override
     public void setAuthenticators(List<PluggableAPIAuthenticator> authenticators) {
         for (PluggableAPIAuthenticator authManager: authenticators) {
-            if (authManager != null && authManager instanceof SAML2AuthManager) {
+            if (authManager instanceof SAML2AuthManager) {
                 samlAuthManager = (SAML2AuthManager) authManager;
             }
         }

@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import com.vmware.vim25.ManagedObjectReference;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.logging.log4j.Logger;
@@ -193,7 +194,7 @@ public class VmwareStorageLayoutHelper implements Configurable {
             if (ds.fileExists(vmdkFullCloneModeLegacyPair[i])) {
                 LOGGER.info("sync " + vmdkFullCloneModeLegacyPair[i] + "->" + vmdkFullCloneModePair[i]);
 
-                ds.moveDatastoreFile(vmdkFullCloneModeLegacyPair[i], dcMo.getMor(), ds.getMor(), vmdkFullCloneModePair[i], dcMo.getMor(), true);
+                moveDatastoreFile(ds, vmdkFullCloneModeLegacyPair[i], dcMo.getMor(), ds.getMor(), vmdkFullCloneModePair[i], dcMo.getMor(), true);
             }
         }
 
@@ -201,13 +202,13 @@ public class VmwareStorageLayoutHelper implements Configurable {
             if (ds.fileExists(vmdkLinkedCloneModeLegacyPair[i])) {
                 LOGGER.info("sync " + vmdkLinkedCloneModeLegacyPair[i] + "->" + vmdkLinkedCloneModePair[i]);
 
-                ds.moveDatastoreFile(vmdkLinkedCloneModeLegacyPair[i], dcMo.getMor(), ds.getMor(), vmdkLinkedCloneModePair[i], dcMo.getMor(), true);
+                moveDatastoreFile(ds, vmdkLinkedCloneModeLegacyPair[i], dcMo.getMor(), ds.getMor(), vmdkLinkedCloneModePair[i], dcMo.getMor(), true);
             }
         }
 
         if (ds.fileExists(vmdkLinkedCloneModeLegacyPair[0])) {
             LOGGER.info("sync " + vmdkLinkedCloneModeLegacyPair[0] + "->" + vmdkLinkedCloneModePair[0]);
-            ds.moveDatastoreFile(vmdkLinkedCloneModeLegacyPair[0], dcMo.getMor(), ds.getMor(), vmdkLinkedCloneModePair[0], dcMo.getMor(), true);
+            moveDatastoreFile(ds, vmdkLinkedCloneModeLegacyPair[0], dcMo.getMor(), ds.getMor(), vmdkLinkedCloneModePair[0], dcMo.getMor(), true);
         }
 
         // Note: we will always return a path
@@ -242,14 +243,14 @@ public class VmwareStorageLayoutHelper implements Configurable {
                 String targetPath = getDatastorePathBaseFolderFromVmdkFileName(ds, String.format("%s-%s",vmdkName, linkedCloneExtension));
 
                 LOGGER.info("Fixup folder-synchronization. move " + companionFilePath + " -> " + targetPath);
-                ds.moveDatastoreFile(companionFilePath, dcMo.getMor(), ds.getMor(), targetPath, dcMo.getMor(), true);
+                moveDatastoreFile(ds, companionFilePath, dcMo.getMor(), ds.getMor(), targetPath, dcMo.getMor(), true);
             }
         }
 
         // move the identity VMDK file the last
         String targetPath = getDatastorePathBaseFolderFromVmdkFileName(ds, vmdkName + ".vmdk");
         LOGGER.info("Fixup folder-synchronization. move " + fileDsFullPath + " -> " + targetPath);
-        ds.moveDatastoreFile(fileDsFullPath, dcMo.getMor(), ds.getMor(), targetPath, dcMo.getMor(), true);
+        moveDatastoreFile(ds, fileDsFullPath, dcMo.getMor(), ds.getMor(), targetPath, dcMo.getMor(), true);
 
         try {
             if (folderName != null) {
@@ -287,7 +288,7 @@ public class VmwareStorageLayoutHelper implements Configurable {
                     DatastoreFile targetFile = new DatastoreFile(file.getDatastoreName(), HypervisorHostHelper.VSPHERE_DATASTORE_BASE_FOLDER, file.getFileName());
                     if (!targetFile.getPath().equalsIgnoreCase(file.getPath())) {
                         LOGGER.info("Move " + file.getPath() + " -> " + targetFile.getPath());
-                        dsMo.moveDatastoreFile(file.getPath(), dcMo.getMor(), dsMo.getMor(), targetFile.getPath(), dcMo.getMor(), true);
+                        moveDatastoreFile(dsMo, file.getPath(), dcMo.getMor(), dsMo.getMor(), targetFile.getPath(), dcMo.getMor(), true);
 
                         List<String> vSphereFileExtensions = new ArrayList<>(Arrays.asList(VsphereLinkedCloneExtensions.value().trim().split("\\s*,\\s*")));
                         // add flat file format to the above list
@@ -297,7 +298,7 @@ public class VmwareStorageLayoutHelper implements Configurable {
                             String pairTargetFilePath = targetFile.getCompanionPath(String.format("%s-%s", file.getFileBaseName(), linkedCloneExtension));
                             if (dsMo.fileExists(pairSrcFilePath)) {
                                 LOGGER.info("Move " + pairSrcFilePath + " -> " + pairTargetFilePath);
-                                dsMo.moveDatastoreFile(pairSrcFilePath, dcMo.getMor(), dsMo.getMor(), pairTargetFilePath, dcMo.getMor(), true);
+                                moveDatastoreFile(dsMo, pairSrcFilePath, dcMo.getMor(), dsMo.getMor(), pairTargetFilePath, dcMo.getMor(), true);
                             }
                         }
                     }
@@ -427,6 +428,31 @@ public class VmwareStorageLayoutHelper implements Configurable {
             return datastoreVolumePath;
         }
         return dsMo.searchFileInSubFolders(volumePath + ".vmdk", false, null);
+    }
+
+    public static boolean moveDatastoreFile(final DatastoreMO dsMo, String srcFilePath, ManagedObjectReference morSrcDc, ManagedObjectReference morDestDs,
+                                                        String destFilePath, ManagedObjectReference morDestDc, boolean forceOverwrite) throws Exception {
+        final int retry = 20;
+        int retryAttempt = 0;
+        while (++retryAttempt <= retry) {
+            try {
+                LOGGER.debug(String.format("Move datastore file %s, attempt #%d", srcFilePath, retryAttempt));
+                return dsMo.moveDatastoreFile(srcFilePath, morSrcDc, morDestDs, destFilePath, morDestDc, forceOverwrite);
+            } catch (Exception e) {
+                LOGGER.info(String.format("Got exception while moving datastore file %s ", srcFilePath), e);
+                if (e.getMessage() != null && e.getMessage().contains("Unable to access file")) {
+                    LOGGER.debug(String.format("Failed to move datastore file %s. Retrying", srcFilePath));
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException ie) {
+                        LOGGER.debug(String.format("Waiting to move datastore file %s been interrupted: ", srcFilePath));
+                    }
+                } else {
+                    throw e;
+                }
+            }
+        }
+        return false;
     }
 
     @Override

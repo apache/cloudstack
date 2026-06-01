@@ -43,7 +43,7 @@ public interface AutoScaleVmGroup extends ControlledEntity, InternalIdentity, Di
             } else if (state.equalsIgnoreCase("scaling")) {
                 return SCALING;
             } else {
-                throw new IllegalArgumentException("Unexpected AutoScale VM group state : " + state);
+                throw new IllegalArgumentException("Unexpected AutoScale Instance group state : " + state);
             }
         }
     }

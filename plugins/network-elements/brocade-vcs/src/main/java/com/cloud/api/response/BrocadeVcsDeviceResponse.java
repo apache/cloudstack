@@ -32,23 +32,23 @@ import com.cloud.serializer.Param;
 @EntityReference(value = BrocadeVcsDeviceVO.class)
 public class BrocadeVcsDeviceResponse extends BaseResponse {
     @SerializedName(Constants.BROCADE_VCS_DEVICE_ID)
-    @Param(description = "device id of the Brocade Vcs")
+    @Param(description = "Device ID of the Brocade Vcs")
     private String id;
 
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID)
-    @Param(description = "the physical Network to which this Brocade VCS belongs to")
+    @Param(description = "The physical Network to which this Brocade VCS belongs to")
     private String physicalNetworkId;
 
     @SerializedName(ApiConstants.PROVIDER)
-    @Param(description = "name of the provider")
+    @Param(description = "Name of the provider")
     private String providerName;
 
     @SerializedName(Constants.BROCADE_VCS_DEVICE_NAME)
-    @Param(description = "device name")
+    @Param(description = "Device name")
     private String deviceName;
 
     @SerializedName(ApiConstants.HOST_NAME)
-    @Param(description = "the principal switch Ip address")
+    @Param(description = "The principal switch IP address")
     private String hostName;
 
     public String getId() {

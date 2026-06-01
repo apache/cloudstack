@@ -17,10 +17,12 @@
 package com.cloud.utils.server;
 
 import com.cloud.utils.crypt.EncryptionSecretKeyChecker;
+import com.cloud.utils.StringUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
@@ -28,9 +30,20 @@ import java.util.Properties;
 public class ServerProperties {
     protected Logger logger = LogManager.getLogger(getClass());
 
+    public static final String HTTP_ENABLE = "http.enable";
+    public static final String HTTP_PORT = "http.port";
+    public static final String HTTPS_ENABLE = "https.enable";
+    public static final String HTTPS_PORT = "https.port";
+    public static final String KEYSTORE_FILE = "https.keystore";
+    public static final String PASSWORD_ENCRYPTION_TYPE = "password.encryption.type";
+
     private static Properties properties = new Properties();
     private static boolean loaded = false;
-    public static final String passwordEncryptionType = "password.encryption.type";
+
+    private static int httpPort = 8080;
+
+    private static boolean httpsEnable = false;
+    private static int httpsPort = 8443;
 
     public synchronized static Properties getServerProperties(InputStream inputStream) {
         if (!loaded) {
@@ -39,7 +52,7 @@ public class ServerProperties {
                 serverProps.load(inputStream);
 
                 EncryptionSecretKeyChecker checker = new EncryptionSecretKeyChecker();
-                checker.check(serverProps, passwordEncryptionType);
+                checker.check(serverProps, PASSWORD_ENCRYPTION_TYPE);
 
                 if (EncryptionSecretKeyChecker.useEncryption()) {
                     EncryptionSecretKeyChecker.decryptAnyProperties(serverProps);
@@ -50,10 +63,29 @@ public class ServerProperties {
                 IOUtils.closeQuietly(inputStream);
             }
 
+            httpPort = Integer.parseInt(serverProps.getProperty(ServerProperties.HTTP_PORT, "8080"));
+
+            boolean httpsEnabled = Boolean.parseBoolean(serverProps.getProperty(ServerProperties.HTTPS_ENABLE, "false"));
+            String keystoreFile = serverProps.getProperty(KEYSTORE_FILE);
+            httpsEnable =  httpsEnabled && StringUtils.isNotEmpty(keystoreFile) && new File(keystoreFile).exists();
+            httpsPort = Integer.parseInt(serverProps.getProperty(ServerProperties.HTTPS_PORT, "8443"));
+
             properties = serverProps;
             loaded = true;
         }
 
         return properties;
+    }
+
+    public static int getHttpPort() {
+        return httpPort;
+    }
+
+    public static boolean isHttpsEnabled() {
+        return httpsEnable;
+    }
+
+    public static int getHttpsPort() {
+        return httpsPort;
     }
 }

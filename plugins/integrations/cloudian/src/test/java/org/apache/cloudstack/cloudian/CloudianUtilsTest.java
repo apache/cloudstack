@@ -37,7 +37,7 @@ public class CloudianUtilsTest {
 
         // test expectations
         final String expPath = "/Cloudian/ssosecurelogin.htm";
-        HashMap<String, String> expected = new HashMap();
+        HashMap<String, String> expected = new HashMap<String, String>();
         expected.put("user", user);
         expected.put("group", group);
         expected.put("timestamp", null); // null value will not be checked by this test

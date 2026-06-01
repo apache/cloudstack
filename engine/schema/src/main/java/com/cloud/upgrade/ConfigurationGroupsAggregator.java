@@ -54,7 +54,7 @@ public class ConfigurationGroupsAggregator {
 
     public void updateConfigurationGroups() {
         LOG.debug("Updating configuration groups");
-        List<ConfigurationVO> configs =  configDao.listAllIncludingRemoved();
+        List<ConfigurationVO> configs =  configDao.searchPartialConfigurations();
         if (CollectionUtils.isEmpty(configs)) {
             return;
         }

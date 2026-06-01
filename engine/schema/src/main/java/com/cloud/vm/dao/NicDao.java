@@ -46,7 +46,11 @@ public interface NicDao extends GenericDao<NicVO, Long> {
 
     NicVO findByNetworkIdAndTypeIncludingRemoved(long networkId, VirtualMachine.Type vmType);
 
+    NicVO findNonPlaceHolderByNetworkIdAndType(long networkId, VirtualMachine.Type vmType);
+
     NicVO findByIp4AddressAndNetworkId(String ip4Address, long networkId);
+
+    NicVO findNonPlaceHolderByIp4AddressAndNetworkId(String ip4Address, long networkId);
 
     NicVO findByNetworkIdAndMacAddress(long networkId, String mac);
 
@@ -91,7 +95,7 @@ public interface NicDao extends GenericDao<NicVO, Long> {
 
     List<NicVO> listByVmIdAndKeyword(long instanceId, String keyword);
 
-    NicVO findByMacAddress(String macAddress);
+    NicVO findByMacAddress(String macAddress, long networkId);
 
     NicVO findByNetworkIdAndMacAddressIncludingRemoved(long networkId, String mac);
 

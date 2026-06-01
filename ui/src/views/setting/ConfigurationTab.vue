@@ -58,7 +58,8 @@
                   :count="count"
                   :page="page"
                   :pagesize="pagesize"
-                  @change-page="changePage" />
+                  @change-page="changePage"
+                  @refresh-config="handleConfigRefresh" />
             </a-tab-pane>
             <a-tab-pane
               v-for="(group) in groups"
@@ -74,7 +75,8 @@
                   :tab="subgroup.name" >
                   <ConfigurationHierarchy
                     :columns="columns"
-                    :config="config" />
+                    :config="config"
+                    @refresh-config="handleConfigRefresh" />
                 </a-tab-pane>
               </a-tabs>
             </a-tab-pane>
@@ -86,7 +88,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import { mixin, mixinDevice } from '@/utils/mixin.js'
 import Breadcrumb from '@/components/widgets/Breadcrumb'
 import OsLogo from '@/components/widgets/OsLogo'
@@ -176,7 +178,7 @@ export default {
       const params = {
         pagesize: -1
       }
-      api('listConfigurationGroups', params).then(response => {
+      getAPI('listConfigurationGroups', params).then(response => {
         this.groups = response.listconfigurationgroupsresponse.configurationgroup
       }).catch(error => {
         console.error(error)
@@ -206,7 +208,7 @@ export default {
         params.keyword = this.filter
       }
 
-      api('listConfigurations', params).then(response => {
+      getAPI('listConfigurations', params).then(response => {
         this.config = []
         let config = response.listconfigurationsresponse.configuration || []
         this.count = response.listconfigurationsresponse.count || 0
@@ -321,6 +323,13 @@ export default {
           null,
           '#' + this.$route.path
         )
+      }
+    },
+    handleConfigRefresh (name, updatedRecord) {
+      if (!name || !updatedRecord) return
+      const index = this.config.findIndex(item => item.name === name)
+      if (index !== -1) {
+        this.config.splice(index, 1, updatedRecord)
       }
     }
   }

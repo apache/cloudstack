@@ -25,7 +25,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack</artifactId>
-        <version>4.21.0.0-SNAPSHOT</version>
+        <version>4.23.0.0-SNAPSHOT</version>
     </parent>
     <dependencies>
         <dependency>
@@ -119,6 +119,11 @@
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-storage-volume-adaptive</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-storage-volume-ontap</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -323,16 +328,6 @@
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
-            <artifactId>cloud-plugin-hypervisor-ovm</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.cloudstack</groupId>
-            <artifactId>cloud-plugin-hypervisor-ovm3</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-hypervisor-kvm</artifactId>
             <version>${project.version}</version>
             <exclusions>
@@ -345,6 +340,11 @@
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-hypervisor-hyperv</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-hypervisor-external</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -375,11 +375,6 @@
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-explicit-dedication</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.cloudstack</groupId>
-            <artifactId>cloud-plugin-host-allocator-random</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -624,7 +619,7 @@
         </dependency>
         <dependency>
            <groupId>org.apache.cloudstack</groupId>
-           <artifactId>cloud-plugin-shutdown</artifactId>
+           <artifactId>cloud-plugin-maintenance</artifactId>
            <version>${project.version}</version>
        </dependency>
         <dependency>
@@ -640,6 +635,11 @@
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-storage-object-ceph</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-storage-object-cloudian</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -666,16 +666,22 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>ru.concerteza.buildnumber</groupId>
-                <artifactId>maven-jgit-buildnumber-plugin</artifactId>
-                <version>1.2.6</version>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>buildnumber-maven-plugin</artifactId>
+                <version>3.2.0</version>
                 <executions>
                     <execution>
                         <id>git-buildnumber</id>
                         <goals>
-                            <goal>extract-buildnumber</goal>
+                            <goal>create</goal>
                         </goals>
                         <phase>prepare-package</phase>
+                        <configuration>
+                            <doCheck>false</doCheck>
+                            <doUpdate>false</doUpdate>
+                            <getRevisionOnlyOnce>true</getRevisionOnlyOnce>
+                            <revisionOnScmFailure>unknown</revisionOnScmFailure>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -688,11 +694,11 @@
                             <mainClass>org.apache.cloudstack.ServerDaemon</mainClass>
                         </manifest>
                         <manifestEntries>
-                            <X-Git-Branch>${git.branch}</X-Git-Branch>
-                            <X-Git-Tag>${git.tag}</X-Git-Tag>
-                            <X-Git-Revision>${git.revision}</X-Git-Revision>
-                            <Implementation-Revision>${git.revision}</Implementation-Revision>
-                            <Implementation-Branch>${git.branch}</Implementation-Branch>
+                            <X-Git-Branch>${scmBranch}</X-Git-Branch>
+                            <X-Git-Tag>${project.version}</X-Git-Tag>
+                            <X-Git-Revision>${buildNumber}</X-Git-Revision>
+                            <Implementation-Revision>${buildNumber}</Implementation-Revision>
+                            <Implementation-Branch>${scmBranch}</Implementation-Branch>
                         </manifestEntries>
                     </archive>
                 </configuration>
@@ -710,17 +716,17 @@
                     </dependency>
                     <dependency>
                         <groupId>org.bouncycastle</groupId>
-                        <artifactId>bcprov-jdk15on</artifactId>
+                        <artifactId>bcprov-jdk18on</artifactId>
                         <version>${cs.bcprov.version}</version>
                     </dependency>
                     <dependency>
                         <groupId>org.bouncycastle</groupId>
-                        <artifactId>bcpkix-jdk15on</artifactId>
+                        <artifactId>bcpkix-jdk18on</artifactId>
                         <version>${cs.bcprov.version}</version>
                     </dependency>
                     <dependency>
                         <groupId>org.bouncycastle</groupId>
-                        <artifactId>bctls-jdk15on</artifactId>
+                        <artifactId>bctls-jdk18on</artifactId>
                         <version>${cs.bcprov.version}</version>
                     </dependency>
                 </dependencies>
@@ -900,13 +906,13 @@
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>org.bouncycastle</groupId>
-                                    <artifactId>bcprov-jdk15on</artifactId>
+                                    <artifactId>bcprov-jdk18on</artifactId>
                                     <overWrite>false</overWrite>
                                     <outputDirectory>${project.build.directory}/lib</outputDirectory>
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>org.bouncycastle</groupId>
-                                    <artifactId>bcpkix-jdk15on</artifactId>
+                                    <artifactId>bcpkix-jdk18on</artifactId>
                                     <overWrite>false</overWrite>
                                     <outputDirectory>${project.build.directory}/lib</outputDirectory>
 			        </artifactItem>
@@ -930,7 +936,7 @@
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>org.bouncycastle</groupId>
-                                    <artifactId>bctls-jdk15on</artifactId>
+                                    <artifactId>bctls-jdk18on</artifactId>
                                     <overWrite>false</overWrite>
                                     <outputDirectory>${project.build.directory}/lib</outputDirectory>
                                 </artifactItem>
@@ -965,9 +971,9 @@
                                     <exclude>org.apache.tomcat.embed:tomcat-embed-core</exclude>
                                     <exclude>org.apache.geronimo.specs:geronimo-servlet_3.0_spec</exclude>
                                     <exclude>org.apache.geronimo.specs:geronimo-javamail_1.4_spec</exclude>
-                                    <exclude>org.bouncycastle:bcprov-jdk15on</exclude>
-                                    <exclude>org.bouncycastle:bcpkix-jdk15on</exclude>
-                                    <exclude>org.bouncycastle:bctls-jdk15on</exclude>
+                                    <exclude>org.bouncycastle:bcprov-jdk18on</exclude>
+                                    <exclude>org.bouncycastle:bcpkix-jdk18on</exclude>
+                                    <exclude>org.bouncycastle:bctls-jdk18on</exclude>
                                     <exclude>com.mysql:mysql-connector-j</exclude>
                                     <exclude>org.apache.cloudstack:cloud-plugin-storage-volume-storpool</exclude>
                                     <exclude>org.apache.cloudstack:cloud-plugin-storage-volume-linstor</exclude>
@@ -1095,6 +1101,11 @@
                 <dependency>
                     <groupId>org.apache.cloudstack</groupId>
                     <artifactId>cloud-plugin-network-nsx</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.apache.cloudstack</groupId>
+                    <artifactId>cloud-plugin-network-netris</artifactId>
                     <version>${project.version}</version>
                 </dependency>
                 <dependency>

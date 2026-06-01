@@ -53,7 +53,7 @@ public class ReflectionToStringBuilderUtilsTest extends TestCase {
     private static final String DEFAULT_MULTIPLE_VALUES_SEPARATOR = ",";
 
     @Before
-    public void setup(){
+    public void setup() {
         classToReflect = String.class;
         classToReflectFieldsNamesList = ReflectionUtils.getAllFields(classToReflect).stream().map(objectField -> objectField.getName()).collect(Collectors.toList());
         classToReflectRemovedField = classToReflectFieldsNamesList.remove(0);

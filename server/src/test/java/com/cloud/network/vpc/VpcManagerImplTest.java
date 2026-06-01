@@ -23,7 +23,6 @@ import com.cloud.agent.api.routing.UpdateNetworkCommand;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
-import com.cloud.configuration.Resource;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -54,6 +53,7 @@ import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
+import com.cloud.resourcelimit.CheckedReservation;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -81,6 +81,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -490,9 +491,8 @@ public class VpcManagerImplTest {
     public void testCreateVpcDnsOfferingServiceFailure() {
         mockVpcDnsResources(false, false);
         try {
-            doNothing().when(resourceLimitService).checkResourceLimit(account, Resource.ResourceType.vpc);
             manager.createVpc(zoneId, vpcOfferingId, vpcOwnerId, vpcName, vpcName, ip4Cidr, vpcDomain,
-                    ip4Dns[0], null, null, null, true, 1500, null, null, null);
+                    ip4Dns[0], null, null, null, true, 1500, null, null, null, false, true);
         } catch (ResourceAllocationException e) {
             Assert.fail(String.format("failure with exception: %s", e.getMessage()));
         }
@@ -502,9 +502,8 @@ public class VpcManagerImplTest {
     public void testCreateVpcDnsIpv6OfferingFailure() {
         mockVpcDnsResources(true, false);
         try {
-            doNothing().when(resourceLimitService).checkResourceLimit(account, Resource.ResourceType.vpc);
             manager.createVpc(zoneId, vpcOfferingId, vpcOwnerId, vpcName, vpcName, ip4Cidr, vpcDomain,
-                    ip4Dns[0], ip4Dns[1], ip6Dns[0], null, true, 1500, null, null, null);
+                    ip4Dns[0], ip4Dns[1], ip6Dns[0], null, true, 1500, null, null, null, false, true);
         } catch (ResourceAllocationException e) {
             Assert.fail(String.format("failure with exception: %s", e.getMessage()));
         }
@@ -516,10 +515,9 @@ public class VpcManagerImplTest {
         VpcVO vpc = Mockito.mock(VpcVO.class);
         Mockito.when(vpcDao.persist(any(), anyMap())).thenReturn(vpc);
         Mockito.when(vpc.getUuid()).thenReturn("uuid");
-        try {
-            doNothing().when(resourceLimitService).checkResourceLimit(account, Resource.ResourceType.vpc);
+        try (MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
             manager.createVpc(zoneId, vpcOfferingId, vpcOwnerId, vpcName, vpcName, ip4Cidr, vpcDomain,
-                    ip4Dns[0], ip4Dns[1], null, null, true, 1500, null, null, null);
+                    ip4Dns[0], ip4Dns[1], null, null, true, 1500, null, null, null, false, true);
         } catch (ResourceAllocationException e) {
             Assert.fail(String.format("failure with exception: %s", e.getMessage()));
         }
@@ -533,10 +531,9 @@ public class VpcManagerImplTest {
         Mockito.when(vpc.getUuid()).thenReturn("uuid");
         doReturn(true).when(routedIpv4Manager).isRoutedVpc(any());
         doNothing().when(routedIpv4Manager).getOrCreateIpv4SubnetForVpc(any(), anyString());
-        try {
-            doNothing().when(resourceLimitService).checkResourceLimit(account, Resource.ResourceType.vpc);
+        try (MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
             manager.createVpc(zoneId, vpcOfferingId, vpcOwnerId, vpcName, vpcName, ip4Cidr, vpcDomain,
-                    ip4Dns[0], ip4Dns[1], null, null, true, 1500, null, null, null);
+                    ip4Dns[0], ip4Dns[1], null, null, true, 1500, null, null, null, false, true);
         } catch (ResourceAllocationException e) {
             Assert.fail(String.format("failure with exception: %s", e.getMessage()));
         }
@@ -551,15 +548,15 @@ public class VpcManagerImplTest {
         Mockito.when(vpcDao.persist(any(), anyMap())).thenReturn(vpc);
         Mockito.when(vpc.getUuid()).thenReturn("uuid");
         doReturn(true).when(routedIpv4Manager).isRoutedVpc(any());
-        doReturn(true).when(routedIpv4Manager).isVpcVirtualRouterGateway(vpcOfferingVO);
+        doReturn(true).when(routedIpv4Manager).isValidGateway(vpcOfferingVO);
         doReturn(true).when(routedIpv4Manager).isDynamicRoutedVpc(vpcOfferingVO);
         Ipv4GuestSubnetNetworkMap ipv4GuestSubnetNetworkMap = Mockito.mock(Ipv4GuestSubnetNetworkMap.class);
         doReturn(ipv4GuestSubnetNetworkMap).when(routedIpv4Manager).getOrCreateIpv4SubnetForVpc(any(), anyInt());
         List<Long> bgpPeerIds = Arrays.asList(11L, 12L);
-        try {
-            doNothing().when(resourceLimitService).checkResourceLimit(account, Resource.ResourceType.vpc);
+        try (MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
+
             manager.createVpc(zoneId, vpcOfferingId, vpcOwnerId, vpcName, vpcName, null, vpcDomain,
-                    ip4Dns[0], ip4Dns[1], null, null, true, 1500, 24, null, bgpPeerIds);
+                    ip4Dns[0], ip4Dns[1], null, null, true, 1500, 24, null, bgpPeerIds, false, true);
         } catch (ResourceAllocationException e) {
             Assert.fail(String.format("failure with exception: %s", e.getMessage()));
         }
@@ -579,6 +576,29 @@ public class VpcManagerImplTest {
         Mockito.doReturn(2L).when(networkACLVOMock).getVpcId();
         Mockito.doReturn(networkACLVOMock).when(networkACLDaoMock).findById(differentVpcAclId);
         Assert.assertThrows(InvalidParameterValueException.class, () -> manager.validateVpcPrivateGatewayAclId(vpcId, differentVpcAclId));
+    }
+
+    @Test
+    public void testIsNetworkOnVpcEnabledConserveModeIsolatedNetwork() {
+        Network network = mock(Network.class);
+        Mockito.when(network.getVpcId()).thenReturn(null);
+        Assert.assertFalse(manager.isNetworkOnVpcEnabledConserveMode(network));
+    }
+
+    @Test
+    public void testIsNetworkOnVpcEnabledConserveModeVpcNetworkConserveMode() {
+        Network network = mock(Network.class);
+        Vpc vpc = mock(Vpc.class);
+        VpcOfferingVO vpcOffering = mock(VpcOfferingVO.class);
+        long vpcId = 10L;
+        long vpcOfferingId = 11L;
+
+        Mockito.when(network.getVpcId()).thenReturn(vpcId);
+        Mockito.when(vpcDao.getActiveVpcById(Mockito.eq(vpcId))).thenReturn(vpc);
+        Mockito.when(vpc.getVpcOfferingId()).thenReturn(vpcOfferingId);
+        Mockito.when(vpcOfferingDao.findById(Mockito.eq(vpcOfferingId))).thenReturn(vpcOffering);
+        Mockito.when(vpcOffering.isConserveMode()).thenReturn(true);
+        Assert.assertTrue(manager.isNetworkOnVpcEnabledConserveMode(network));
     }
 
 }

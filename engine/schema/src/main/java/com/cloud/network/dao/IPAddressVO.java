@@ -117,6 +117,9 @@ public class IPAddressVO implements IpAddress {
     @Column(name = "forsystemvms")
     private boolean forSystemVms = false;
 
+    @Column(name = "for_router")
+    private boolean forRouter = false;
+
     @Column(name= GenericDao.REMOVED_COLUMN)
     private Date removed;
 
@@ -387,5 +390,14 @@ public class IPAddressVO implements IpAddress {
 
     public boolean isForSystemVms() {
         return forSystemVms;
+    }
+
+    @Override
+    public boolean isForRouter() {
+        return forRouter;
+    }
+
+    public void setForRouter(boolean forRouter) {
+        this.forRouter = forRouter;
     }
 }

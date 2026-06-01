@@ -141,7 +141,7 @@ public final class CitrixStopCommandWrapper extends CommandWrapper<StopCommand, 
                             for (final VIF vif : vifs) {
                                 networks.add(vif.getNetwork(conn));
                             }
-                            vm.destroy(conn);
+                            citrixResourceBase.destroyVm(vm, conn);
                             final SR sr = citrixResourceBase.getISOSRbyVmName(conn, command.getVmName(), false);
                             citrixResourceBase.removeSR(conn, sr);
                             final SR configDriveSR = citrixResourceBase.getISOSRbyVmName(conn, command.getVmName(), true);

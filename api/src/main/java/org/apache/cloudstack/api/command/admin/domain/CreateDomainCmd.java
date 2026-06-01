@@ -40,13 +40,13 @@ public class CreateDomainCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "creates domain with this name")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Creates domain with this name")
     private String domainName;
 
     @Parameter(name = ApiConstants.PARENT_DOMAIN_ID,
             type = CommandType.UUID,
             entityType = DomainResponse.class,
-            description = "assigns new domain a parent domain by domain ID of the parent.  If no parent domain is specified, the ROOT domain is assumed.")
+            description = "Assigns new domain a parent domain by domain ID of the parent. If no parent domain is specified, the ROOT domain is assumed.")
     private Long parentDomainId;
 
     @Parameter(name = ApiConstants.NETWORK_DOMAIN, type = CommandType.STRING, description = "Network domain for networks in the domain")
@@ -86,7 +86,7 @@ public class CreateDomainCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Domain Name: " + getDomainName() + ((getParentDomainId() != null) ? ", Parent DomainId :" + getParentDomainId() : ""));
+        CallContext.current().setEventDetails("Domain Name: " + getDomainName() + ((getParentDomainId() != null) ? ", Parent Domain ID:" + getResourceUuid(ApiConstants.PARENT_DOMAIN_ID) : ""));
         Domain domain = _domainService.createDomain(getDomainName(), getParentDomainId(), getNetworkDomain(), getDomainUUID());
         if (domain != null) {
             DomainResponse response = _responseGenerator.createDomainResponse(domain);

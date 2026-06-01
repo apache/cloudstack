@@ -48,8 +48,6 @@ import java.util.List;
         authorized = {RoleType.Admin})
 public class ImportVsphereStoragePoliciesCmd extends BaseCmd {
 
-
-
     @Inject
     public VmwareDatacenterService _vmwareDatacenterService;
 

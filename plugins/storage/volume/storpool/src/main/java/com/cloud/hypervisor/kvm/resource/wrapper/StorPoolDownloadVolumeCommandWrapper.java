@@ -29,7 +29,6 @@ import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
-//import java.io.File;
 
 import com.cloud.agent.api.storage.StorPoolDownloadVolumeCommand;
 import com.cloud.agent.api.to.DataStoreTO;
@@ -114,11 +113,7 @@ public final class StorPoolDownloadVolumeCommandWrapper extends CommandWrapper<S
             if (isRBDPool) {
                 KVMStoragePool srcPool = srcDisk.getPool();
                 String rbdDestPath = srcPool.getSourceDir() + "/" + srcDisk.getName();
-                srcPath = KVMPhysicalDisk.RBDStringBuilder(srcPool.getSourceHost(),
-                        srcPool.getSourcePort(),
-                        srcPool.getAuthUserName(),
-                        srcPool.getAuthSecret(),
-                        rbdDestPath);
+                srcPath = KVMPhysicalDisk.RBDStringBuilder(srcPool, rbdDestPath);
             } else {
                 srcPath = srcDisk.getPath();
             }

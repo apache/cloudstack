@@ -27,7 +27,7 @@ import streamer.debug.MockSource;
 import common.ScreenDescription;
 
 /**
- * @see http://msdn.microsoft.com/en-us/library/cc240488.aspx
+ * @see <a href="http://msdn.microsoft.com/en-us/library/cc240488.aspx">microsoft msdn explanation</a>
  */
 public class ClientConfirmActivePDU extends BaseElement {
 

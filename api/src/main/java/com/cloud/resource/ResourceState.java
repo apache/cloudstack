@@ -76,6 +76,10 @@ public enum ResourceState {
         }
     }
 
+    public static List<ResourceState> s_maintenanceStates = List.of(ResourceState.Maintenance,
+            ResourceState.ErrorInMaintenance, ResourceState.PrepareForMaintenance,
+            ResourceState.ErrorInPrepareForMaintenance);
+
     public ResourceState getNextState(Event a) {
         return s_fsm.getNextState(this, a);
     }
@@ -98,8 +102,7 @@ public enum ResourceState {
     }
 
     public static boolean isMaintenanceState(ResourceState state) {
-        return Arrays.asList(ResourceState.Maintenance, ResourceState.ErrorInMaintenance,
-                ResourceState.PrepareForMaintenance, ResourceState.ErrorInPrepareForMaintenance).contains(state);
+        return s_maintenanceStates.contains(state);
     }
 
     public static boolean canAttemptMaintenance(ResourceState state) {

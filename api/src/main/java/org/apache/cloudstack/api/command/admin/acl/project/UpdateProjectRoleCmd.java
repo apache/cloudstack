@@ -43,7 +43,7 @@ public class UpdateProjectRoleCmd extends ProjectRoleCmd {
     private Long id;
 
     @Parameter(name = ApiConstants.NAME, type = BaseCmd.CommandType.STRING,
-            description = "creates a project role with this unique name", validations = {ApiArgValidator.NotNullOrEmpty})
+            description = "Creates a project role with this unique name", validations = {ApiArgValidator.NotNullOrEmpty})
     private String projectRoleName;
 
     /////////////////////////////////////////////////////

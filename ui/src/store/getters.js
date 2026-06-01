@@ -46,6 +46,8 @@ const getters = {
   countNotify: state => state.user.countNotify,
   customColumns: state => state.user.customColumns,
   logoutFlag: state => state.user.logoutFlag,
+  msId: state => state.user.msId,
+  maintenanceInitiated: state => state.user.maintenanceInitiated,
   shutdownTriggered: state => state.user.shutdownTriggered,
   twoFaEnabled: state => state.user.twoFaEnabled,
   twoFaProvider: state => state.user.twoFaProvider,
@@ -53,7 +55,8 @@ const getters = {
   loginFlag: state => state.user.loginFlag,
   allProjects: (state) => state.app.allProjects,
   customHypervisorName: state => state.user.customHypervisorName,
-  readyForShutdownPollingJob: state => state.user.readyForShutdownPollingJob
+  readyForShutdownPollingJob: state => state.user.readyForShutdownPollingJob,
+  passwordChangeRequired: state => state.user.passwordChangeRequired
 }
 
 export default getters

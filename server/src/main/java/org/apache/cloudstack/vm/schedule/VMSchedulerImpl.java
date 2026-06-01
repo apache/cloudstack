@@ -162,7 +162,13 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler, Configu
         }
 
         Date scheduledDateTime = Date.from(ts.toInstant());
-        VMScheduledJobVO scheduledJob = new VMScheduledJobVO(vmSchedule.getVmId(), vmSchedule.getId(), vmSchedule.getAction(), scheduledDateTime);
+        VMScheduledJobVO scheduledJob = vmScheduledJobDao.findByScheduleAndTimestamp(vmSchedule.getId(), scheduledDateTime);
+        if (scheduledJob != null) {
+            logger.trace("Job is already scheduled for schedule {} at {}", vmSchedule, scheduledDateTime);
+            return scheduledDateTime;
+        }
+
+        scheduledJob = new VMScheduledJobVO(vmSchedule.getVmId(), vmSchedule.getId(), vmSchedule.getAction(), scheduledDateTime);
         try {
             vmScheduledJobDao.persist(scheduledJob);
             ActionEventUtils.onScheduledActionEvent(User.UID_SYSTEM, vm.getAccountId(), actionEventMap.get(vmSchedule.getAction()),

@@ -38,6 +38,24 @@ public class NetworksTest {
     }
 
     @Test
+    public void nullBroadcastDomainTypeTest() throws URISyntaxException {
+        BroadcastDomainType type = BroadcastDomainType.getTypeOf(null);
+        Assert.assertEquals("a null uri should mean a broadcasttype of undecided", BroadcastDomainType.UnDecided, type);
+    }
+
+    @Test
+    public void nullBroadcastDomainTypeValueTest() {
+        URI uri = null;
+        Assert.assertNull(BroadcastDomainType.getValue(uri));
+    }
+
+    @Test
+    public void nullBroadcastDomainTypeStringValueTest() throws URISyntaxException {
+        String uriString = null;
+        Assert.assertNull(BroadcastDomainType.getValue(uriString));
+    }
+
+    @Test
     public void emptyBroadcastDomainTypeTest() throws URISyntaxException {
         BroadcastDomainType type = BroadcastDomainType.getTypeOf("");
         Assert.assertEquals("an empty uri should mean a broadcasttype of undecided", BroadcastDomainType.UnDecided, type);

@@ -29,47 +29,47 @@ import java.util.List;
 public class DirectDownloadCertificateResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the direct download certificate id")
+    @Param(description = "The direct download certificate ID")
     private String id;
 
     @SerializedName(ApiConstants.ALIAS)
-    @Param(description = "the direct download certificate alias")
+    @Param(description = "The direct download certificate alias")
     private String alias;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "the zone id where the certificate is uploaded")
+    @Param(description = "The zone ID where the certificate is uploaded")
     private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME)
-    @Param(description = "the zone name where the certificate is uploaded")
+    @Param(description = "The zone name where the certificate is uploaded")
     private String zoneName;
 
     @SerializedName(ApiConstants.VERSION)
-    @Param(description = "the direct download certificate version")
+    @Param(description = "The direct download certificate version")
     private String version;
 
     @SerializedName(ApiConstants.CERTIFICATE_SUBJECT)
-    @Param(description = "the direct download certificate subject")
+    @Param(description = "The direct download certificate subject")
     private String subject;
 
     @SerializedName(ApiConstants.CERTIFICATE_ISSUER)
-    @Param(description = "the direct download certificate issuer")
+    @Param(description = "The direct download certificate issuer")
     private String issuer;
 
     @SerializedName(ApiConstants.CERTIFICATE_VALIDITY)
-    @Param(description = "the direct download certificate issuer")
+    @Param(description = "The direct download certificate issuer")
     private String validity;
 
     @SerializedName(ApiConstants.CERTIFICATE_SERIALNUM)
-    @Param(description = "the direct download certificate serial num")
+    @Param(description = "The direct download certificate serial num")
     private String serialNum;
 
     @SerializedName(ApiConstants.HYPERVISOR)
-    @Param(description = "the hypervisor of the hosts where the certificate is uploaded")
+    @Param(description = "The hypervisor of the hosts where the certificate is uploaded")
     private String hypervisor;
 
     @SerializedName(ApiConstants.HOSTS_MAP)
-    @Param(description = "the hosts where the certificate is uploaded to", responseObject = HostResponse.class)
+    @Param(description = "The hosts where the certificate is uploaded to", responseObject = HostResponse.class)
     private List<DirectDownloadCertificateHostStatusResponse> hostsMap;
 
     public String getId() {

@@ -341,7 +341,6 @@ public class ElastistorUtil {
         String qosgroupid;
         String VolumeName = volumeName;
         String totaliops = String.valueOf(capacityIops);
-        //String totalthroughput = String.valueOf(capacityIops * 4);
         String totalthroughput = "0";
 
         String quotasize = convertCapacityBytes(capacityBytes);
@@ -679,14 +678,6 @@ public class ElastistorUtil {
         }
         LOGGER.info("tsm id is null");
         return false;
-
-        /*
-         * else { LOGGER.error("no volume is present in the tsm"); } } else {
-         * LOGGER.error(
-         * "List tsm failed, no tsm present in the eastistor for the given IP "
-         * ); return false; } return false;
-         */
-
     }
 
     public static boolean deleteElastistorVolume(String esvolumeid) throws Throwable {

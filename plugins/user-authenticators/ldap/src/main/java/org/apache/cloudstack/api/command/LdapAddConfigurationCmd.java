@@ -46,7 +46,7 @@ public class LdapAddConfigurationCmd extends BaseCmd {
     @Parameter(name = ApiConstants.PORT, type = CommandType.INTEGER, required = true, description = "Port")
     private int port;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = false, entityType = DomainResponse.class, description = "linked domain")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "Linked Domain")
     private Long domainId;
 
     public LdapAddConfigurationCmd() {

@@ -65,12 +65,14 @@ public class SimulatorObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
         String url = (String)dsInfos.get("url");
         String name = (String)dsInfos.get("name");
         String providerName = (String)dsInfos.get("providerName");
+        Long size = (Long)dsInfos.get("size");
         Map<String, String> details = (Map<String, String>)dsInfos.get("details");
 
         Map<String, Object> objectStoreParameters = new HashMap();
         objectStoreParameters.put("name", name);
         objectStoreParameters.put("url", url);
         objectStoreParameters.put("providerName", providerName);
+        objectStoreParameters.put("size", size);
 
         ObjectStoreVO ids = objectStoreHelper.createObjectStore(objectStoreParameters, details);
         return objectStoreMgr.getObjectStore(ids.getId());

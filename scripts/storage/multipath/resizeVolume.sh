@@ -51,7 +51,7 @@ systemctl is-active multipathd || systemctl restart multipathd || {
 
 logger -t "CS_SCSI_VOL_RESIZE" "${WWID} resizing disk path at /dev/mapper/3${WWID} STARTING"
 
-for device in $(multipath -ll 3${WWID} | egrep '^  ' | awk '{print $2}'); do
+for device in $(multipath -ll 3${WWID} | grep -E '^  ' | awk '{print $2}'); do
     echo "1" > /sys/bus/scsi/drivers/sd/${device}/rescan;
 done
 

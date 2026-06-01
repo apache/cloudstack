@@ -2284,12 +2284,12 @@ public class NetscalerResource implements ServerResource {
                 final nsip subnetIp = nsip.get(_netscalerService, tmpVlanSelfIp);
                 apiCallResult = nsip.delete(_netscalerService, subnetIp);
                 if (apiCallResult.errorcode != 0) {
-                    throw new ExecutionException("Failed to remove subnet ip:" + vlanSelfIp + " from the NetScaler device due to" + apiCallResult.message);
+                    throw new ExecutionException("Failed to remove subnet IP:" + vlanSelfIp + " from the NetScaler device due to" + apiCallResult.message);
                 }
             } catch (final nitro_exception e) {
                 // if subnet SNIP does not exist then ignore the exception and proceed
                 if (!(e.getErrorCode() == NitroError.NS_RESOURCE_NOT_EXISTS)) {
-                    throw new ExecutionException("Failed to remove subnet ip:" + vlanSelfIp + " from the NetScaler device due to" + e.getMessage());
+                    throw new ExecutionException("Failed to remove subnet IP:" + vlanSelfIp + " from the NetScaler device due to" + e.getMessage());
                 }
             }
 

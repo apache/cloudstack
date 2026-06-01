@@ -28,7 +28,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.RemoteAccessVpn;
 
-@APICommand(name = "updateRemoteAccessVpn", description = "Updates remote access vpn", responseObject = RemoteAccessVpnResponse.class, since = "4.4",
+@APICommand(name = "updateRemoteAccessVpn", description = "Updates remote access VPN", responseObject = RemoteAccessVpnResponse.class, since = "4.4",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateRemoteAccessVpnCmd extends BaseAsyncCustomIdCmd {
 
@@ -37,14 +37,14 @@ public class UpdateRemoteAccessVpnCmd extends BaseAsyncCustomIdCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, required = true, entityType = RemoteAccessVpnResponse.class, description = "id of the remote access vpn")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, required = true, entityType = RemoteAccessVpnResponse.class, description = "ID of the remote access VPN")
     private Long id;
 
     // unexposed parameter needed for events logging
     @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, expose = false)
     private Long ownerId;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the vpn to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "An optional field, whether to the display the VPN to the end User or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
     /////////////////////////////////////////////////////
@@ -73,7 +73,7 @@ public class UpdateRemoteAccessVpnCmd extends BaseAsyncCustomIdCmd {
 
     @Override
     public String getEventDescription() {
-        return "Updating remote access vpn id=" + id;
+        return "Updating remote access VPN id=" + id;
     }
 
     @Override

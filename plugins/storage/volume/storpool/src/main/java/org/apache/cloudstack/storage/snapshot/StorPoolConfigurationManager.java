@@ -53,6 +53,10 @@ public class StorPoolConfigurationManager implements Configurable {
             "storpool.list.snapshots.delete.after.interval", "360",
             "The interval (in seconds) to fetch the StorPool snapshots with deleteAfter flag",
             false);
+    public static final ConfigKey<String> StorPoolClusterLocation = new ConfigKey<String>(String.class, "sp.cluster.location", "Advanced", null,
+            "StorPool cluster location", true, ConfigKey.Scope.StoragePool, null);
+    public static final ConfigKey<String> StorPoolSubclusterEndpoint = new ConfigKey<>(String.class, "sp.cluster.endpoint", "Advanced", null,
+            "StorPool sub-cluster endpoint", true, ConfigKey.Scope.Cluster, null);
 
     @Override
     public String getConfigComponentName() {
@@ -61,6 +65,6 @@ public class StorPoolConfigurationManager implements Configurable {
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] { BypassSecondaryStorage, StorPoolClusterId, AlternativeEndPointEnabled, AlternativeEndpoint, VolumesStatsInterval, StorageStatsInterval, DeleteAfterInterval, ListSnapshotsWithDeleteAfterInterval };
+        return new ConfigKey<?>[] { BypassSecondaryStorage, StorPoolClusterId, AlternativeEndPointEnabled, AlternativeEndpoint, VolumesStatsInterval, StorageStatsInterval, DeleteAfterInterval, ListSnapshotsWithDeleteAfterInterval, StorPoolClusterLocation, StorPoolSubclusterEndpoint };
     }
 }

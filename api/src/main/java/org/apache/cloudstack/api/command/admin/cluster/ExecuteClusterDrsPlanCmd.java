@@ -142,6 +142,6 @@ public class ExecuteClusterDrsPlanCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return String.format("Executing DRS plan for cluster: %d", getId());
+        return "Executing DRS plan for cluster with ID: " + getResourceUuid(ApiConstants.ID);
     }
 }

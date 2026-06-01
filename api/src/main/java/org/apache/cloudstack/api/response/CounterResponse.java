@@ -30,7 +30,7 @@ import com.cloud.serializer.Param;
 @EntityReference(value = Counter.class)
 public class CounterResponse extends BaseResponse {
     @SerializedName("id")
-    @Param(description = "the id of the Counter")
+    @Param(description = "The ID of the Counter")
     private String id;
 
     @SerializedName(value = ApiConstants.NAME)
@@ -46,7 +46,7 @@ public class CounterResponse extends BaseResponse {
     private String value;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "zone id of counter")
+    @Param(description = "Zone ID of counter")
     private String zoneId;
 
     @SerializedName(value = ApiConstants.PROVIDER)

@@ -27,7 +27,7 @@ public class LdapUser implements Comparable<LdapUser> {
     private final String username;
     private final String domain;
     private final boolean disabled;
-    private List<String> memberships;
+    private final List<String> memberships;
 
     public LdapUser(final String username, final String email, final String firstname, final String lastname, final String principal, String domain, boolean disabled,
             List<String> memberships) {

@@ -17,20 +17,42 @@
 package com.cloud.hypervisor.kvm.resource;
 
 import java.io.File;
+import java.io.StringWriter;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.cpu.CPU;
 import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.utils.qemu.QemuObject;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import com.cloud.agent.api.to.VirtualMachineMetadataTO;
+
 
 import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
+import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
 public class LibvirtVMDef {
     protected static Logger LOGGER = LogManager.getLogger(LibvirtVMDef.class);
@@ -44,6 +66,157 @@ public class LibvirtVMDef {
     private String _platformEmulator;
     private final Map<String, Object> components = new HashMap<String, Object>();
     private static final int NUMBER_OF_IOTHREADS = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.IOTHREADS);
+
+    public static class MetadataDef {
+        private VirtualMachineMetadataTO metaTO;
+
+        public MetadataDef(VirtualMachineMetadataTO data) {
+            metaTO = data;
+        }
+
+        public VirtualMachineMetadataTO getMetadata() {
+            return metaTO;
+        }
+
+        @Override
+        public String toString() {
+            DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+            docFactory.setNamespaceAware(true);
+            Document doc = null;
+            try {
+                doc = docFactory.newDocumentBuilder().newDocument();
+            } catch (ParserConfigurationException e) {
+                LOGGER.warn("Could not create a new DOM XML document. The metadata will not be included in the libvirt domain XML: {}", e.getMessage());
+                return "";
+            }
+            Element metadata = doc.createElement("metadata"); // <metadata>
+            Element instance = doc.createElementNS("http://cloudstack.apache.org/instance", "cloudstack:instance"); // <cloudstack:instance>
+
+            Element zone = doc.createElement("cloudstack:zone");
+            zone.setAttribute("uuid", metaTO.getZoneUuid());
+            zone.setTextContent(metaTO.getZoneName());
+            instance.appendChild(zone);
+
+            Element pod = doc.createElement("cloudstack:pod");
+            pod.setAttribute("uuid", metaTO.getPodUuid());
+            pod.setTextContent(metaTO.getPodName());
+            instance.appendChild(pod);
+
+            Element cluster = doc.createElement("cloudstack:cluster");
+            cluster.setAttribute("uuid", metaTO.getClusterUuid());
+            cluster.setTextContent(metaTO.getClusterName());
+            instance.appendChild(cluster);
+
+            Element instanceName = doc.createElement("cloudstack:name");
+            instanceName.setTextContent(metaTO.getName());
+            instance.appendChild(instanceName);
+
+            Element instanceInternalName = doc.createElement("cloudstack:internal_name");
+            instanceInternalName.setTextContent(metaTO.getInternalName());
+            instance.appendChild(instanceInternalName);
+
+            Element instanceDisplayName = doc.createElement("cloudstack:display_name");
+            instanceDisplayName.setTextContent(metaTO.getDisplayName());
+            instance.appendChild(instanceDisplayName);
+
+            Element instanceUuid = doc.createElement("cloudstack:uuid");
+            instanceUuid.setTextContent(metaTO.getInstanceUuid());
+            instance.appendChild(instanceUuid);
+
+            Element serviceOffering = doc.createElement("cloudstack:service_offering"); // <service_offering>
+
+            Element computeOfferingName = doc.createElement("cloudstack:name");
+            computeOfferingName.setTextContent(metaTO.getserviceOfferingName());
+            serviceOffering.appendChild(computeOfferingName);
+
+            Element cpu = doc.createElement("cloudstack:cpu");
+            cpu.setTextContent(metaTO.getCpuCores().toString());
+            serviceOffering.appendChild(cpu);
+
+            Element memory = doc.createElement("cloudstack:memory");
+            memory.setTextContent(metaTO.getMemory().toString());
+            serviceOffering.appendChild(memory);
+
+            Element hostTags = doc.createElement("cloudstack:host_tags");
+            List<String> tags = metaTO.getserviceOfferingHostTags();
+            if (tags != null) {
+                for (String i : metaTO.getserviceOfferingHostTags()) {
+                    Element tag = doc.createElement("cloudstack:tag");
+                    tag.setTextContent(i);
+                    hostTags.appendChild(tag);
+                }
+            }
+            serviceOffering.appendChild(hostTags);
+
+            instance.appendChild(serviceOffering); // </service_offering>
+
+            Element creationTime = doc.createElement("cloudstack:created_at");
+            creationTime.setTextContent(
+                    LocalDateTime.ofInstant(Instant.ofEpochSecond(metaTO.getCreated()), ZoneOffset.UTC).format(ISO_LOCAL_DATE_TIME)
+            );
+            instance.appendChild(creationTime);
+
+            Element startedTime = doc.createElement("cloudstack:started_at");
+            startedTime.setTextContent(
+                    LocalDateTime.ofInstant(Instant.ofEpochSecond(metaTO.getStarted()), ZoneOffset.UTC).format(ISO_LOCAL_DATE_TIME)
+            );
+            instance.appendChild(startedTime);
+
+            Element owner = doc.createElement("cloudstack:owner"); // <owner>
+
+            Element domain = doc.createElement("cloudstack:domain");
+            domain.setAttribute("uuid", metaTO.getOwnerDomainUuid());
+            domain.setTextContent(metaTO.getOwnerDomainName());
+            owner.appendChild(domain);
+
+            Element account = doc.createElement("cloudstack:account");
+            account.setAttribute("uuid", metaTO.getOwnerAccountUuid());
+            account.setTextContent(metaTO.getOwnerAccountName());
+            owner.appendChild(account);
+
+            Element project = doc.createElement("cloudstack:project");
+            project.setAttribute("uuid", metaTO.getOwnerProjectUuid());
+            project.setTextContent(metaTO.getOwnerProjectName());
+            owner.appendChild(project);
+
+            instance.appendChild(owner); // </owner>
+
+            Element resourceTags = doc.createElement("cloudstack:resource_tags"); // <resource_tags>
+            for (Map.Entry<String, String> entry : metaTO.getResourceTags().entrySet()) {
+                Element tag = doc.createElement("cloudstack:resource_tag"); // <resource_tag>
+                tag.setAttribute("key", entry.getKey());
+                tag.setTextContent(entry.getValue());
+                resourceTags.appendChild(tag); // </resource_tag>
+            }
+            instance.appendChild(resourceTags); // </resource_tags>
+
+            metadata.appendChild(instance); // </cloudstack:instance>
+            doc.appendChild(metadata); // </metadata>
+
+            Transformer transformer = null;
+            try {
+                transformer = TransformerFactory.newInstance().newTransformer();
+            } catch (TransformerConfigurationException e) {
+                LOGGER.warn("Could not create an XML transformer. The metadata will not be included in the libvirt domain XML: {}", e.getMessage());
+                return "";
+            }
+            transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+            transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+
+            DOMSource domSource = new DOMSource(doc);
+            StringWriter writer = new StringWriter();
+            StreamResult result = new StreamResult(writer);
+            try {
+                transformer.transform(domSource, result);
+            } catch (TransformerException e) {
+                LOGGER.warn("Could not generate metadata XML. The metadata will not be included in the libvirt domain XML: {}", e.getMessage());
+                return "";
+            }
+
+            return writer.toString();
+        }
+    }
 
     public static class GuestDef {
         enum GuestType {
@@ -64,7 +237,7 @@ public class LibvirtVMDef {
             }
         }
 
-        enum BootType {
+        public enum BootType {
             UEFI("UEFI"), BIOS("BIOS");
 
             String _type;
@@ -79,7 +252,7 @@ public class LibvirtVMDef {
             }
         }
 
-        enum BootMode {
+        public enum BootMode {
             LEGACY("LEGACY"), SECURE("SECURE");
 
             String _mode;
@@ -248,7 +421,9 @@ public class LibvirtVMDef {
                         guestDef.append("<boot dev='" + bo + "'/>\n");
                     }
                 }
-                guestDef.append("<smbios mode='sysinfo'/>\n");
+                if (!CPU.CPUArch.s390x.getType().equalsIgnoreCase(_arch)) {
+                    guestDef.append("<smbios mode='sysinfo'/>\n");
+                }
                 guestDef.append("</os>\n");
                 if (iothreads) {
                     guestDef.append(String.format("<iothreads>%s</iothreads>", NUMBER_OF_IOTHREADS));
@@ -268,15 +443,15 @@ public class LibvirtVMDef {
     }
 
     public static class GuestResourceDef {
-        private long memory;
+        private long maxMemory;
         private long currentMemory = -1;
         private int vcpu = -1;
         private int maxVcpu = -1;
         private boolean memoryBalloning = false;
         private int memoryBalloonStatsPeriod = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_MEMBALLOON_STATS_PERIOD);
 
-        public void setMemorySize(long mem) {
-            this.memory = mem;
+        public void setMaxMemory(long mem) {
+            this.maxMemory = mem;
         }
 
         public void setCurrentMem(long currMem) {
@@ -309,8 +484,8 @@ public class LibvirtVMDef {
             response.append(String.format("<memory>%s</memory>\n", this.currentMemory));
             response.append(String.format("<currentMemory>%s</currentMemory>\n", this.currentMemory));
 
-            if (this.memory > this.currentMemory) {
-                response.append(String.format("<maxMemory slots='16' unit='KiB'>%s</maxMemory>\n", this.memory));
+            if (this.maxMemory > this.currentMemory) {
+                response.append(String.format("<maxMemory slots='16' unit='KiB'>%s</maxMemory>\n", this.maxMemory));
                 response.append(String.format("<cpu> <numa> <cell id='0' cpus='0-%s' memory='%s' unit='KiB'/> </numa> </cpu>\n", this.maxVcpu - 1, this.currentMemory));
             }
 
@@ -580,7 +755,7 @@ public class LibvirtVMDef {
                 }
             }
 
-            if (_emulator != null && _emulator.endsWith("aarch64")) {
+            if (_emulator != null && (_emulator.endsWith("aarch64") || _emulator.endsWith("s390x"))) {
                 devicesBuilder.append("<controller type='pci' model='pcie-root'/>\n");
                 for (int i = 0; i < 32; i++) {
                   devicesBuilder.append("<controller type='pci' model='pcie-root-port'/>\n");
@@ -678,11 +853,20 @@ public class LibvirtVMDef {
         }
 
         public enum DiskBus {
-            IDE("ide"), SCSI("scsi"), VIRTIO("virtio"), XEN("xen"), USB("usb"), UML("uml"), FDC("fdc"), SATA("sata");
+            IDE("ide"), SCSI("scsi"), VIRTIO("virtio"), XEN("xen"), USB("usb"), UML("uml"), FDC("fdc"), SATA("sata"), VIRTIOBLK("virtio-blk");
             String _bus;
 
             DiskBus(String bus) {
                 _bus = bus;
+            }
+
+            public static DiskBus fromValue(String bus) {
+                for (DiskBus b : DiskBus.values()) {
+                    if (b.toString().equalsIgnoreCase(bus)) {
+                        return b;
+                    }
+                }
+                return null;
             }
 
             @Override
@@ -706,7 +890,7 @@ public class LibvirtVMDef {
         }
 
         public enum DiskCacheMode {
-            NONE("none"), WRITEBACK("writeback"), WRITETHROUGH("writethrough");
+            NONE("none"), WRITEBACK("writeback"), WRITETHROUGH("writethrough"), HYPERVISOR_DEFAULT("default");
             String _diskCacheMode;
 
             DiskCacheMode(String cacheMode) {
@@ -1339,7 +1523,13 @@ public class LibvirtVMDef {
         @Override
         public String toString() {
             StringBuilder memBalloonBuilder = new StringBuilder();
-            memBalloonBuilder.append("<memballoon model='" + memBalloonModel + "'>\n");
+            memBalloonBuilder.append("<memballoon model='" + memBalloonModel + "'");
+            /* Version integer format: major * 1,000,000 + minor * 1,000 + release.
+             * Require: libvirt 6.9.0, qemu 5.1.0 */
+            if (memBalloonModel != MemBalloonModel.NONE && s_qemuVersion >= 5001000 && s_libvirtVersion >= 6009000) {
+                memBalloonBuilder.append(" autodeflate='on' freePageReporting='on'");
+            }
+            memBalloonBuilder.append(">\n");
             if (StringUtils.isNotBlank(memBalloonStatsPeriod)) {
                 memBalloonBuilder.append("<stats period='" + memBalloonStatsPeriod +"'/>\n");
             }
@@ -1652,7 +1842,7 @@ public class LibvirtVMDef {
             if (_scriptPath != null) {
                 netBuilder.append("<script path='" + _scriptPath + "'/>\n");
             }
-            if (_pxeDisable) {
+            if (_pxeDisable && !"s390x".equals(System.getProperty("os.arch"))) {
                 netBuilder.append("<rom bar='off' file=''/>");
             }
             if (_virtualPortType != null) {
@@ -1730,11 +1920,12 @@ public class LibvirtVMDef {
 
     public static class CpuTuneDef {
         private int _shares = 0;
-        private int quota = 0;
+        private long quota = 0;
         private int period = 0;
         static final int DEFAULT_PERIOD = 10000;
         static final int MIN_QUOTA = 1000;
         static final int MAX_PERIOD = 1000000;
+        public static final long MAX_CPU_QUOTA = 17592186044415L;
 
         public void setShares(int shares) {
             _shares = shares;
@@ -1744,11 +1935,11 @@ public class LibvirtVMDef {
             return _shares;
         }
 
-        public int getQuota() {
+        public long getQuota() {
             return quota;
         }
 
-        public void setQuota(int quota) {
+        public void setQuota(long quota) {
             this.quota = quota;
         }
 
@@ -2162,34 +2353,6 @@ public class LibvirtVMDef {
         }
     }
 
-    public class MetadataDef {
-        Map<String, Object> customNodes = new HashMap<>();
-
-        public <T> T getMetadataNode(Class<T> fieldClass) {
-            T field = (T) customNodes.get(fieldClass.getName());
-            if (field == null) {
-                try {
-                    field = fieldClass.newInstance();
-                    customNodes.put(field.getClass().getName(), field);
-                } catch (InstantiationException | IllegalAccessException e) {
-                    LOGGER.debug("No default constructor available in class " + fieldClass.getName() + ", ignoring exception", e);
-                }
-            }
-            return field;
-        }
-
-        @Override
-        public String toString() {
-            StringBuilder fsBuilder = new StringBuilder();
-            fsBuilder.append("<metadata>\n");
-            for (Object field : customNodes.values()) {
-                fsBuilder.append(field.toString());
-            }
-            fsBuilder.append("</metadata>\n");
-            return fsBuilder.toString();
-        }
-    }
-
     public static class RngDef {
         enum RngModel {
             VIRTIO("virtio");
@@ -2356,6 +2519,82 @@ public class LibvirtVMDef {
         }
     }
 
+    public static class TpmDef {
+        enum TpmModel {
+            TIS("tpm-tis"), // TPM Interface Specification (TIS)
+            CRB("tpm-crb"); // Command-Response Buffer (CRB)
+
+            final String model;
+
+            TpmModel(String model) {
+                this.model = model;
+            }
+
+            @Override
+            public String toString() {
+                return model;
+            }
+        }
+
+        enum TpmVersion {
+            V1_2("1.2"),    // 1.2
+            V2_0("2.0");    // 2.0. Default version. The CRB model is only supported with version 2.0.
+
+            final String version;
+
+            TpmVersion(String version) {
+                this.version = version;
+            }
+
+            @Override
+            public String toString() {
+                return version;
+            }
+        }
+
+        private TpmModel model;
+        private TpmVersion version = TpmVersion.V2_0;
+
+        public TpmDef(TpmModel model, TpmVersion version) {
+            this.model = model;
+            if (version != null) {
+                this.version = version;
+            }
+        }
+
+        public TpmDef(String model, String version) {
+            this.model = Arrays.stream(TpmModel.values())
+                    .filter(tpmModel -> tpmModel.toString().equals(model))
+                    .findFirst()
+                    .orElse(null);
+            if (version != null) {
+                this.version = Arrays.stream(TpmVersion.values())
+                        .filter(tpmVersion -> tpmVersion.toString().equals(version))
+                        .findFirst()
+                        .orElse(this.version);;
+            }
+        }
+
+        public TpmModel getModel() {
+            return model;
+        }
+
+        public TpmVersion getVersion() {
+            return version;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder tpmBuidler = new StringBuilder();
+            if (model != null) {
+                tpmBuidler.append("<tpm model='").append(model).append("'>\n");
+                tpmBuidler.append("<backend type='emulator' version='").append(version).append("'/>\n");
+                tpmBuidler.append("</tpm>\n");
+            }
+            return tpmBuidler.toString();
+        }
+    }
+
     public void setHvsType(String hvs) {
         _hvsType = hvs;
     }
@@ -2416,15 +2655,6 @@ public class LibvirtVMDef {
         return null;
     }
 
-    public MetadataDef getMetaData() {
-        MetadataDef o = (MetadataDef) components.get(MetadataDef.class.toString());
-        if (o == null) {
-            o = new MetadataDef();
-            addComp(o);
-        }
-        return o;
-    }
-
     @Override
     public String toString() {
         StringBuilder vmBuilder = new StringBuilder();
@@ -2436,6 +2666,7 @@ public class LibvirtVMDef {
         if (_desc != null) {
             vmBuilder.append("<description>" + _desc + "</description>\n");
         }
+
         for (Object o : components.values()) {
             vmBuilder.append(o.toString());
         }

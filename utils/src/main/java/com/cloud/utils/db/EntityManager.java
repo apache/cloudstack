@@ -20,6 +20,7 @@
 package com.cloud.utils.db;
 
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -45,6 +46,8 @@ public interface EntityManager {
      * @return T if found, null if not.
      */
     public <T> T findByUuid(Class<T> entityType, String uuid);
+
+    <T> List<T> listByUuids(Class<T> entityType, Collection<String> uuids);
 
     /**
      * Finds a unique entity by uuid string, including those removed entries

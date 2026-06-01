@@ -321,13 +321,13 @@ public class ExplicitDedicationProcessor extends AffinityProcessorBase implement
                     }
                 }
                 //add all hosts inside this in includeList
-                List<HostVO> hostList = _hostDao.listByDataCenterId(dr.getDataCenterId());
-                for (HostVO host : hostList) {
-                    DedicatedResourceVO dHost = _dedicatedDao.findByHostId(host.getId());
+                List<Long> hostList = _hostDao.listEnabledIdsByDataCenterId(dr.getDataCenterId());
+                for (Long hostId : hostList) {
+                    DedicatedResourceVO dHost = _dedicatedDao.findByHostId(hostId);
                     if (dHost != null && !dedicatedResources.contains(dHost)) {
-                        avoidList.addHost(host.getId());
+                        avoidList.addHost(hostId);
                     } else {
-                        includeList.addHost(host.getId());
+                        includeList.addHost(hostId);
                     }
                 }
             }
@@ -337,7 +337,7 @@ public class ExplicitDedicationProcessor extends AffinityProcessorBase implement
 
         List<HostPodVO> pods = _podDao.listByDataCenterId(dc.getId());
         List<ClusterVO> clusters = _clusterDao.listClustersByDcId(dc.getId());
-        List<HostVO> hosts = _hostDao.listByDataCenterId(dc.getId());
+        List<Long> hostIds = _hostDao.listEnabledIdsByDataCenterId(dc.getId());
         Set<Long> podsInIncludeList = includeList.getPodsToAvoid();
         Set<Long> clustersInIncludeList = includeList.getClustersToAvoid();
         Set<Long> hostsInIncludeList = includeList.getHostsToAvoid();
@@ -357,9 +357,9 @@ public class ExplicitDedicationProcessor extends AffinityProcessorBase implement
             }
         }
 
-        for (HostVO host : hosts) {
-            if (hostsInIncludeList != null && !hostsInIncludeList.contains(host.getId())) {
-                avoidList.addHost(host.getId());
+        for (Long hostId : hostIds) {
+            if (hostsInIncludeList != null && !hostsInIncludeList.contains(hostId)) {
+                avoidList.addHost(hostId);
             }
         }
         return avoidList;

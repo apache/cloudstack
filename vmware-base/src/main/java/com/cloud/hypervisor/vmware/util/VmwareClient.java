@@ -39,14 +39,17 @@ import javax.xml.ws.handler.PortInfo;
 
 import org.apache.cloudstack.utils.security.SSLUtils;
 import org.apache.cloudstack.utils.security.SecureSSLSocketFactory;
+
+import com.cloud.utils.StringUtils;
+
+import org.w3c.dom.Element;
+
 import com.vmware.pbm.PbmPortType;
 import com.vmware.pbm.PbmService;
 import com.vmware.pbm.PbmServiceInstanceContent;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
-import org.w3c.dom.Element;
 
 import com.vmware.vim25.DynamicProperty;
 import com.vmware.vim25.InvalidCollectorVersionFaultMsg;
@@ -93,12 +96,10 @@ public class VmwareClient {
 
         @Override
         public void checkServerTrusted(java.security.cert.X509Certificate[] certs, String authType) throws java.security.cert.CertificateException {
-            return;
         }
 
         @Override
         public void checkClientTrusted(java.security.cert.X509Certificate[] certs, String authType) throws java.security.cert.CertificateException {
-            return;
         }
     }
 
@@ -198,7 +199,7 @@ public class VmwareClient {
         cookieValue = tokenizer.nextToken();
         String pathData = "$" + tokenizer.nextToken();
         serviceCookie = "$Version=\"1\"; " + cookieValue + "; " + pathData;
-        Map<String, List<String>> map = new HashMap<String, List<String>>();
+        Map<String, List<String>> map = new HashMap<>();
         map.put("Cookie", Collections.singletonList(serviceCookie));
         ((BindingProvider)vimPort).getRequestContext().put(MessageContext.HTTP_REQUEST_HEADERS, map);
         pbmConnect(url, cookieValue);
@@ -215,8 +216,8 @@ public class VmwareClient {
             @Override
             public List<Handler> getHandlerChain(PortInfo portInfo) {
                 VcenterSessionHandler VcSessionHandler = new VcenterSessionHandler(extractedCookie);
-                List<Handler> handlerChain = new ArrayList<Handler>();
-                handlerChain.add((Handler)VcSessionHandler);
+                List<Handler> handlerChain = new ArrayList<>();
+                handlerChain.add(VcSessionHandler);
                 return handlerChain;
             }
         };
@@ -257,6 +258,7 @@ public class VmwareClient {
         try {
             return vimPort.retrieveServiceContent(svcInstRef);
         } catch (RuntimeFaultFaultMsg e) {
+            // ignored
         }
         return null;
     }
@@ -275,6 +277,7 @@ public class VmwareClient {
         try {
             return pbmPort.pbmRetrieveServiceContent(pbmSvcInstRef);
         } catch (com.vmware.pbm.RuntimeFaultFaultMsg e) {
+            // ignored
         }
         return null;
     }
@@ -323,12 +326,12 @@ public class VmwareClient {
         PropertyFilterSpec spec = new PropertyFilterSpec();
         spec.getPropSet().add(pSpec);
         spec.getObjectSet().add(oSpec);
-        List<PropertyFilterSpec> specArr = new ArrayList<PropertyFilterSpec>();
+        List<PropertyFilterSpec> specArr = new ArrayList<>();
         specArr.add(spec);
 
         try {
             List<ObjectContent> ocary = vimPort.retrieveProperties(getPropCol(), specArr);
-            if (ocary != null && ocary.size() > 0)
+            if (ocary != null && !ocary.isEmpty())
                 return true;
         } catch (Exception e) {
             return false;
@@ -345,8 +348,6 @@ public class VmwareClient {
      * @param propertyName
      *            property name.
      * @return property value.
-     * @throws Exception
-     *             in case of error.
      */
     @SuppressWarnings("unchecked")
     public <T> T getDynamicProperty(ManagedObjectReference mor, String propertyName) throws Exception {
@@ -355,9 +356,9 @@ public class VmwareClient {
         List<ObjectContent> objContent = retrieveMoRefProperties(mor, props);
 
         Object propertyValue = null;
-        if (objContent != null && objContent.size() > 0) {
+        if (objContent != null && !objContent.isEmpty()) {
             List<DynamicProperty> dynamicProperty = objContent.get(0).getPropSet();
-            if (dynamicProperty != null && dynamicProperty.size() > 0) {
+            if (dynamicProperty != null && !dynamicProperty.isEmpty()) {
                 DynamicProperty dp = dynamicProperty.get(0);
                 propertyValue = dp.getVal();
                 /*
@@ -369,7 +370,7 @@ public class VmwareClient {
                  */
                 Class dpCls = propertyValue.getClass();
                 String dynamicPropertyName = dpCls.getName();
-                if (dynamicPropertyName.indexOf("ArrayOf") != -1) {
+                if (dynamicPropertyName.contains("ArrayOf")) {
                     String methodName = "get" + dynamicPropertyName.substring(dynamicPropertyName.indexOf("ArrayOf") + "ArrayOf".length(), dynamicPropertyName.length());
 
                     Method getMorMethod = dpCls.getDeclaredMethod(methodName, null);
@@ -392,7 +393,7 @@ public class VmwareClient {
         PropertyFilterSpec spec = new PropertyFilterSpec();
         spec.getPropSet().add(pSpec);
         spec.getObjectSet().add(oSpec);
-        List<PropertyFilterSpec> specArr = new ArrayList<PropertyFilterSpec>();
+        List<PropertyFilterSpec> specArr = new ArrayList<>();
         specArr.add(spec);
 
         return vimPort.retrieveProperties(getPropCol(), specArr);
@@ -665,7 +666,7 @@ public class VmwareClient {
         visitFolders.setPath("childEntity");
         visitFolders.setSkip(Boolean.FALSE);
         visitFolders.setName("VisitFolders");
-        List<SelectionSpec> sspecarrvf = new ArrayList<SelectionSpec>();
+        List<SelectionSpec> sspecarrvf = new ArrayList<>();
         sspecarrvf.add(getSelectionSpec("crToRp"));
         sspecarrvf.add(getSelectionSpec("crToH"));
         sspecarrvf.add(getSelectionSpec("dcToVmf"));
@@ -679,7 +680,7 @@ public class VmwareClient {
 
         visitFolders.getSelectSet().addAll(sspecarrvf);
 
-        List<SelectionSpec> resultspec = new ArrayList<SelectionSpec>();
+        List<SelectionSpec> resultspec = new ArrayList<>();
         resultspec.add(visitFolders);
         resultspec.add(crToRp);
         resultspec.add(crToH);
@@ -706,7 +707,7 @@ public class VmwareClient {
      * @return First ManagedObjectReference of the type / name pair found
      */
     public ManagedObjectReference getDecendentMoRef(ManagedObjectReference root, String type, String name) throws Exception {
-        if (name == null || name.length() == 0) {
+        if (name == null || name.isEmpty()) {
             return null;
         }
 
@@ -725,13 +726,13 @@ public class VmwareClient {
             PropertyFilterSpec spec = new PropertyFilterSpec();
             spec.getPropSet().add(pSpec);
             spec.getObjectSet().add(oSpec);
-            List<PropertyFilterSpec> specArr = new ArrayList<PropertyFilterSpec>();
+            List<PropertyFilterSpec> specArr = new ArrayList<>();
             specArr.add(spec);
 
             ManagedObjectReference propCollector = getPropCol();
             List<ObjectContent> ocary = vimPort.retrieveProperties(propCollector, specArr);
 
-            if (ocary == null || ocary.size() == 0) {
+            if (ocary == null || ocary.isEmpty()) {
                 return null;
             }
 
@@ -740,19 +741,16 @@ public class VmwareClient {
                 ManagedObjectReference mor = oc.getObj();
                 List<DynamicProperty> propary = oc.getPropSet();
                 if (type == null || type.equals(mor.getType())) {
-                    if (propary.size() > 0) {
+                    if (!propary.isEmpty()) {
                         String propval = (String)propary.get(0).getVal();
-                        if (propval != null && name.equalsIgnoreCase(propval))
+                        if (name.equalsIgnoreCase(propval))
                             return mor;
                     }
                 }
             }
-        } catch (InvalidPropertyFaultMsg invalidPropertyException) {
+        } catch (InvalidPropertyFaultMsg | RuntimeFaultFaultMsg invalidPropertyException) {
             LOGGER.debug("Failed to get Vmware ManagedObjectReference for name: " + name + " and type: " + type + " due to " + invalidPropertyException.getMessage());
             throw invalidPropertyException;
-        } catch (RuntimeFaultFaultMsg runtimeFaultException) {
-            LOGGER.debug("Failed to get Vmware ManagedObjectReference for name: " + name + " and type: " + type + " due to " + runtimeFaultException.getMessage());
-            throw runtimeFaultException;
         }
 
         return null;

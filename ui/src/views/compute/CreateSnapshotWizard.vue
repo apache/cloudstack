@@ -55,13 +55,13 @@
             v-model:value="form.name"
             :placeholder="apiParams.name.description"/>
         </a-form-item>
-        <a-form-item name="quiescevm" ref="quiescevm" v-if="isQuiesceVm">
+        <a-form-item name="quiescevm" ref="quiescevm" v-if="isQuiesceVm && hypervisorSupportsQuiesceVm">
           <template #label>
             <tooltip-label :title="$t('label.quiescevm')" :tooltip="apiParams.quiescevm.description"/>
           </template>
           <a-switch v-model:checked="form.quiescevm"/>
         </a-form-item>
-        <a-form-item name="asyncbackup" ref="asyncbackup">
+        <a-form-item name="asyncbackup" ref="asyncbackup" v-if="!supportsStorageSnapshot">
           <template #label>
             <tooltip-label :title="$t('label.asyncbackup')" :tooltip="apiParams.asyncbackup.description"/>
           </template>
@@ -78,7 +78,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -98,6 +98,7 @@ export default {
     return {
       loading: false,
       isQuiesceVm: false,
+      hypervisorSupportsQuiesceVm: false,
       supportsStorageSnapshot: false,
       listVolumes: []
     }
@@ -119,8 +120,11 @@ export default {
     },
     fetchData () {
       this.loading = true
+      if (['KVM', 'VMware'].includes(this.resource.hypervisor)) {
+        this.hypervisorSupportsQuiesceVm = true
+      }
 
-      api('listVolumes', { virtualMachineId: this.resource.id, listall: true })
+      getAPI('listVolumes', { virtualMachineId: this.resource.id, listall: true })
         .then(json => {
           this.listVolumes = json.listvolumesresponse.volume || []
         })
@@ -141,14 +145,17 @@ export default {
         if (values.asyncbackup) {
           params.asyncbackup = values.asyncbackup
         }
-        params.quiescevm = values.quiescevm
+        params.quiescevm = false
+        if (values.quiescevm) {
+          params.quiescevm = values.quiescevm
+        }
 
         const title = this.$t('label.action.vmstoragesnapshot.create')
         const description = values.name || values.volumeid
 
         this.loading = true
 
-        api('createSnapshot', params)
+        postAPI('createSnapshot', params)
           .then(json => {
             const jobId = json.createsnapshotresponse.jobid
             if (jobId) {

@@ -87,8 +87,9 @@ public interface ProviderAdapter {
 
     /**
      * Copy a source object to a destination volume.  The source object can be a Volume, Snapshot, or Template
+     * @param newSize the desired size in bytes for the destination volume (supports resize-during-copy)
      */
-    public ProviderVolume copy(ProviderAdapterContext context, ProviderAdapterDataObject sourceVolume, ProviderAdapterDataObject targetVolume);
+    public ProviderVolume copy(ProviderAdapterContext context, ProviderAdapterDataObject sourceVolume, ProviderAdapterDataObject targetVolume, Long newSize);
 
     /**
      * Make a device-specific snapshot of the provided volume

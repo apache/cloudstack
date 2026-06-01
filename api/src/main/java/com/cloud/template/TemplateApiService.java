@@ -58,10 +58,23 @@ public interface TemplateApiService {
     VirtualMachineTemplate prepareTemplate(long templateId, long zoneId, Long storageId);
 
 
+    /**
+     * Detach ISO from VM
+     * @param vmId id of the VM
+     * @param isoId id of the ISO (when passed). If it is not passed, it will get it from user_vm table
+     * @param extraParams forced, isVirtualRouter
+     * @return true when operation succeeds, false if not
+     */
+    boolean detachIso(long vmId, Long isoId, Boolean... extraParams);
 
-    boolean detachIso(long vmId, boolean forced);
-
-    boolean attachIso(long isoId, long vmId, boolean forced);
+    /**
+     * Attach ISO to a VM
+     * @param isoId id of the ISO to attach
+     * @param vmId id of the VM to attach the ISO to
+     * @param extraParams: forced, isVirtualRouter
+     * @return true when operation succeeds, false if not
+     */
+    boolean attachIso(long isoId, long vmId, Boolean... extraParams);
 
     /**
      * Deletes a template

@@ -16,6 +16,7 @@
 # under the License.
 
 /etc/cloudstack/agent/agent.properties
+/etc/cloudstack/agent/uefi.properties
 /etc/cloudstack/agent/environment.properties
 /etc/cloudstack/agent/log4j-cloud.xml
 /etc/default/cloudstack-agent

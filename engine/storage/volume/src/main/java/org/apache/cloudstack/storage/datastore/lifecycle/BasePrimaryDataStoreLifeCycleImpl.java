@@ -22,14 +22,16 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import com.cloud.dc.dao.DataCenterDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -37,8 +39,12 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
+import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.template.TemplateManager;
 import com.cloud.utils.Pair;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -59,6 +65,10 @@ public class BasePrimaryDataStoreLifeCycleImpl {
     protected DataCenterDao zoneDao;
     @Inject
     protected StoragePoolHostDao storagePoolHostDao;
+    @Inject
+    private PrimaryDataStoreDao primaryDataStoreDao;
+    @Inject
+    private TemplateManager templateMgr;
 
     private List<HostVO> getPoolHostsList(ClusterScope clusterScope, HypervisorType hypervisorType) {
         List<HostVO> hosts;
@@ -81,7 +91,7 @@ public class BasePrimaryDataStoreLifeCycleImpl {
                 try {
                     storageMgr.connectHostToSharedPool(host, store.getId());
                 } catch (Exception e) {
-                    logger.warn("Unable to establish a connection between " + host + " and " + store, e);
+                    logger.warn("Unable to establish a connection between {} and {}", host, store, e);
                 }
             }
         }
@@ -99,7 +109,7 @@ public class BasePrimaryDataStoreLifeCycleImpl {
 
                 if (answer != null) {
                     if (!answer.getResult()) {
-                        logger.debug("Failed to delete storage pool: " + answer.getResult());
+                        logger.debug("Failed to delete storage pool: {}", answer.getResult());
                     } else if (HypervisorType.KVM != hypervisorType) {
                         break;
                     }
@@ -107,5 +117,43 @@ public class BasePrimaryDataStoreLifeCycleImpl {
             }
         }
         dataStoreHelper.switchToCluster(store, clusterScope);
+    }
+
+    private void evictTemplates(StoragePoolVO storagePoolVO) {
+        List<VMTemplateStoragePoolVO> unusedTemplatesInPool = templateMgr.getUnusedTemplatesInPool(storagePoolVO);
+        for (VMTemplateStoragePoolVO templatePoolVO : unusedTemplatesInPool) {
+            if (templatePoolVO.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
+                templateMgr.evictTemplateFromStoragePool(templatePoolVO);
+            }
+        }
+    }
+
+    private void deleteAgentStoragePools(StoragePool storagePool) {
+        List<StoragePoolHostVO> poolHostVOs = storagePoolHostDao.listByPoolId(storagePool.getId());
+        for (StoragePoolHostVO poolHostVO : poolHostVOs) {
+            DeleteStoragePoolCommand deleteStoragePoolCommand = new DeleteStoragePoolCommand(storagePool);
+            final Answer answer = agentMgr.easySend(poolHostVO.getHostId(), deleteStoragePoolCommand);
+            if (answer != null && answer.getResult()) {
+                logger.info("Successfully deleted storage pool: {} from host: {}", storagePool.getId(), poolHostVO.getHostId());
+            } else {
+                if (answer != null) {
+                    logger.error("Failed to delete storage pool: {} from host: {} , result: {}", storagePool.getId(), poolHostVO.getHostId(), answer.getResult());
+                } else {
+                    logger.error("Failed to delete storage pool: {} from host: {}", storagePool.getId(), poolHostVO.getHostId());
+                }
+            }
+        }
+    }
+
+    protected boolean cleanupDatastore(DataStore store) {
+        StoragePool storagePool = (StoragePool)store;
+        StoragePoolVO storagePoolVO = primaryDataStoreDao.findById(storagePool.getId());
+        if (storagePoolVO == null) {
+            return false;
+        }
+
+        evictTemplates(storagePoolVO);
+        deleteAgentStoragePools(storagePool);
+        return true;
     }
 }

@@ -35,6 +35,7 @@ import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
+import com.cloud.utils.UuidUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.xmlrpc.XmlRpcException;
@@ -71,7 +72,7 @@ public class OvmObject {
 
     /* generate a uuid */
     public String newUuid(String str) {
-        return UUID.nameUUIDFromBytes(str.getBytes(Charset.defaultCharset())).toString();
+        return UuidUtils.nameUUIDFromBytes(str.getBytes(Charset.defaultCharset())).toString();
     }
 
     /* capture most of the calls here */

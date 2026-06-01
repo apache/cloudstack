@@ -97,7 +97,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import draggable from 'vuedraggable'
 import PermissionEditable from '@/views/iam/PermissionEditable'
 import RuleDelete from '@/views/iam/RuleDelete'
@@ -164,7 +164,7 @@ export default {
     },
     fetchData (callback = null) {
       if (!this.resource.id) return
-      api('listProjectRolePermissions', {
+      getAPI('listProjectRolePermissions', {
         projectid: this.resource.id,
         projectroleid: this.role.id
       }).then(response => {
@@ -178,7 +178,7 @@ export default {
       })
     },
     changeOrder () {
-      api('updateProjectRolePermission', {}, 'POST', {
+      postAPI('updateProjectRolePermission', {
         projectid: this.resource.id,
         projectroleid: this.role.id,
         ruleorder: this.rules.map(rule => rule.id)
@@ -190,7 +190,7 @@ export default {
     },
     onRuleDelete (key) {
       this.updateTable = true
-      api('deleteProjectRolePermission', {
+      postAPI('deleteProjectRolePermission', {
         id: key,
         projectid: this.resource.id
       }).catch(error => {
@@ -203,7 +203,7 @@ export default {
       this.newRulePermission = value
       if (!record) return
       this.updateTable = true
-      api('updateProjectRolePermission', {
+      postAPI('updateProjectRolePermission', {
         projectid: this.resource.id,
         projectroleid: this.role.id,
         projectrolepermissionid: record.id,
@@ -223,7 +223,7 @@ export default {
         return
       }
       this.updateTable = true
-      api('createProjectRolePermission', {
+      postAPI('createProjectRolePermission', {
         rule: this.newRule,
         permission: this.newRulePermission,
         description: this.newRuleDescription,

@@ -61,6 +61,7 @@ public enum ApiCommandResourceType {
     AffinityGroup(org.apache.cloudstack.affinity.AffinityGroup.class),
     InternalLbVm(com.cloud.network.router.VirtualRouter.class),
     DedicatedGuestVlanRange(com.cloud.network.GuestVlan.class),
+    GuestOsCategory(com.cloud.storage.GuestOsCategory.class),
     GuestOs(com.cloud.storage.GuestOS.class),
     GuestOsMapping(com.cloud.storage.GuestOSHypervisor.class),
     Network(com.cloud.network.Network.class),
@@ -84,9 +85,11 @@ public enum ApiCommandResourceType {
     ObjectStore(org.apache.cloudstack.storage.object.ObjectStore.class),
     Bucket(org.apache.cloudstack.storage.object.Bucket.class),
     QuotaTariff(org.apache.cloudstack.quota.QuotaTariff.class),
-    KubernetesCluster(null),
+    KubernetesCluster(com.cloud.kubernetes.cluster.KubernetesCluster.class),
     KubernetesSupportedVersion(null),
-    SharedFS(org.apache.cloudstack.storage.sharedfs.SharedFS.class);
+    SharedFS(org.apache.cloudstack.storage.sharedfs.SharedFS.class),
+    Extension(org.apache.cloudstack.extension.Extension.class),
+    ExtensionCustomAction(org.apache.cloudstack.extension.ExtensionCustomAction.class);
 
     private final Class<?> clazz;
 
@@ -124,8 +127,8 @@ public enum ApiCommandResourceType {
     }
 
     public static ApiCommandResourceType fromString(String value) {
-        if (StringUtils.isNotEmpty(value) && EnumUtils.isValidEnum(ApiCommandResourceType.class, value)) {
-            return valueOf(value);
+        if (StringUtils.isNotBlank(value) && EnumUtils.isValidEnumIgnoreCase(ApiCommandResourceType.class, value)) {
+            return EnumUtils.getEnumIgnoreCase(ApiCommandResourceType.class, value);
         }
         return null;
     }

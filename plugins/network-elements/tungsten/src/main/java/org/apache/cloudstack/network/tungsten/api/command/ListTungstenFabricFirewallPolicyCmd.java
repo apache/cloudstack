@@ -42,7 +42,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-@APICommand(name = ListTungstenFabricFirewallPolicyCmd.APINAME, description = "list Tungsten-Fabric firewall policy",
+@APICommand(name = ListTungstenFabricFirewallPolicyCmd.APINAME, description = "List Tungsten-Fabric firewall policy",
     responseObject = TungstenFabricFirewallPolicyResponse.class, requestHasSensitiveInfo = false,
     responseHasSensitiveInfo = false)
 public class ListTungstenFabricFirewallPolicyCmd extends BaseListCmd {
@@ -51,13 +51,13 @@ public class ListTungstenFabricFirewallPolicyCmd extends BaseListCmd {
     @Inject
     TungstenService tungstenService;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the ID of zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The ID of zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.APPLICATION_POLICY_SET_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric application policy set")
+    @Parameter(name = ApiConstants.APPLICATION_POLICY_SET_UUID, type = CommandType.STRING, description = "The UUID of Tungsten-Fabric application policy set")
     private String applicationPolicySetUuid;
 
-    @Parameter(name = ApiConstants.FIREWALL_POLICY_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric firewall policy")
+    @Parameter(name = ApiConstants.FIREWALL_POLICY_UUID, type = CommandType.STRING, description = "The UUID of Tungsten-Fabric firewall policy")
     private String firewallPolicyUuid;
 
     @Override

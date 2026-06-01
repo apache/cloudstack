@@ -517,9 +517,11 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         final Map<Capability, String> lbCapabilities = new HashMap<Capability, String>();
         lbCapabilities.put(Capability.SupportedLBAlgorithms, "roundrobin,leastconn,source");
         lbCapabilities.put(Capability.SupportedLBIsolation, "dedicated");
-        lbCapabilities.put(Capability.SupportedProtocols, "tcp, udp, tcp-proxy");
+        lbCapabilities.put(Capability.SupportedProtocols, "tcp, udp, tcp-proxy, ssl");
         lbCapabilities.put(Capability.SupportedStickinessMethods, getHAProxyStickinessCapability());
         lbCapabilities.put(Capability.LbSchemes, LoadBalancerContainer.Scheme.Public.toString());
+        // Supports SSL offloading
+        lbCapabilities.put(Capability.SslTermination, "true");
 
         // specifies that LB rules can support autoscaling and the list of
         // counters it supports
@@ -769,7 +771,12 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
 
     @Override
     public boolean saveHypervisorHostname(NicProfile nicProfile, Network network, VirtualMachineProfile vm, DeployDestination dest) throws ResourceUnavailableException {
-        if (_networkModel.getUserDataUpdateProvider(network).getProvider().equals(Provider.VirtualRouter) && vm.getVirtualMachine().getType() == VirtualMachine.Type.User) {
+        final UserDataServiceProvider userDataUpdateProvider = _networkModel.getUserDataUpdateProvider(network);
+        if (userDataUpdateProvider == null) {
+            logger.warn("Failed to update hypervisor host details, can't get user data provider");
+            return false;
+        }
+        if (Provider.VirtualRouter.equals(userDataUpdateProvider.getProvider()) && vm.getVirtualMachine().getType() == VirtualMachine.Type.User) {
             VirtualMachine uvm = vm.getVirtualMachine();
             UserVmVO destVm = _userVmDao.findById(uvm.getId());
             VirtualMachineProfile profile = null;
@@ -941,7 +948,6 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
     ResourceUnavailableException {
         return true;
     }
-
 
     @Override
     public boolean configDhcpSupportForSubnet(final Network network, final NicProfile nic, final VirtualMachineProfile vm, final DeployDestination dest,

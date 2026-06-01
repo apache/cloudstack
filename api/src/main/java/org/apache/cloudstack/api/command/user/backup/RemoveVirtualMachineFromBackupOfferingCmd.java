@@ -21,6 +21,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -39,7 +40,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 
 @APICommand(name = "removeVirtualMachineFromBackupOffering",
-        description = "Removes a VM from any existing backup offering",
+        description = "Removes an Instance from any existing backup offering",
         responseObject = SuccessResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class RemoveVirtualMachineFromBackupOfferingCmd extends BaseAsyncCmd {
@@ -55,12 +56,12 @@ public class RemoveVirtualMachineFromBackupOfferingCmd extends BaseAsyncCmd {
             type = CommandType.UUID,
             entityType = UserVmResponse.class,
             required = true,
-            description = "ID of the virtual machine")
+            description = "ID of the  Instance")
     private Long vmId;
 
     @Parameter(name = ApiConstants.FORCED,
             type = CommandType.BOOLEAN,
-            description = "Whether to force remove VM from the backup offering that may also delete VM backups.")
+            description = "Whether to force remove Instance from the backup offering that may also delete Instance backups.")
     private Boolean forced;
 
     /////////////////////////////////////////////////////
@@ -87,7 +88,7 @@ public class RemoveVirtualMachineFromBackupOfferingCmd extends BaseAsyncCmd {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to remove VM from backup offering");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to remove Instance from backup offering");
             }
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
@@ -100,12 +101,22 @@ public class RemoveVirtualMachineFromBackupOfferingCmd extends BaseAsyncCmd {
     }
 
     @Override
+    public Long getApiResourceId() {
+        return vmId;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.VirtualMachine;
+    }
+
+    @Override
     public String getEventType() {
         return EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVE;
     }
 
     @Override
     public String getEventDescription() {
-        return "Removing VM ID" + vmId + " from backup offering";
+        return "Removing Instance with ID:" + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID) + " from backup offering";
     }
 }

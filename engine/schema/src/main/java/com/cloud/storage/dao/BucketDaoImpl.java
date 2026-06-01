@@ -16,8 +16,10 @@
 // under the License.
 package com.cloud.storage.dao;
 
+import com.cloud.configuration.Resource;
 import com.cloud.storage.BucketVO;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import org.springframework.stereotype.Component;
@@ -31,6 +33,8 @@ public class BucketDaoImpl extends GenericDaoBase<BucketVO, Long> implements Buc
     private SearchBuilder<BucketVO> searchFilteringStoreId;
 
     private SearchBuilder<BucketVO> bucketSearch;
+    private GenericSearchBuilder<BucketVO, Long> CountBucketsByAccount;
+    private GenericSearchBuilder<BucketVO, SumCount> CalculateBucketsQuotaByAccount;
 
     private static final String STORE_ID = "store_id";
     private static final String STATE = "state";
@@ -53,6 +57,20 @@ public class BucketDaoImpl extends GenericDaoBase<BucketVO, Long> implements Buc
         bucketSearch = createSearchBuilder();
         bucketSearch.and("idIN", bucketSearch.entity().getId(), SearchCriteria.Op.IN);
         bucketSearch.done();
+
+        CountBucketsByAccount = createSearchBuilder(Long.class);
+        CountBucketsByAccount.select(null, SearchCriteria.Func.COUNT, null);
+        CountBucketsByAccount.and(ACCOUNT_ID, CountBucketsByAccount.entity().getAccountId(), SearchCriteria.Op.EQ);
+        CountBucketsByAccount.and(STATE, CountBucketsByAccount.entity().getState(), SearchCriteria.Op.NIN);
+        CountBucketsByAccount.and("removed", CountBucketsByAccount.entity().getRemoved(), SearchCriteria.Op.NULL);
+        CountBucketsByAccount.done();
+
+        CalculateBucketsQuotaByAccount = createSearchBuilder(SumCount.class);
+        CalculateBucketsQuotaByAccount.select("sum", SearchCriteria.Func.SUM, CalculateBucketsQuotaByAccount.entity().getQuota());
+        CalculateBucketsQuotaByAccount.and(ACCOUNT_ID, CalculateBucketsQuotaByAccount.entity().getAccountId(), SearchCriteria.Op.EQ);
+        CalculateBucketsQuotaByAccount.and(STATE, CalculateBucketsQuotaByAccount.entity().getState(), SearchCriteria.Op.NIN);
+        CalculateBucketsQuotaByAccount.and("removed", CalculateBucketsQuotaByAccount.entity().getRemoved(), SearchCriteria.Op.NULL);
+        CalculateBucketsQuotaByAccount.done();
 
         return true;
     }
@@ -78,5 +96,22 @@ public class BucketDaoImpl extends GenericDaoBase<BucketVO, Long> implements Buc
         SearchCriteria<BucketVO> sc = bucketSearch.create();
         sc.setParameters("idIN", ids);
         return search(sc, null, null, false);
+    }
+
+    @Override
+    public Long countBucketsForAccount(long accountId) {
+        SearchCriteria<Long> sc = CountBucketsByAccount.create();
+        sc.setParameters(ACCOUNT_ID, accountId);
+        sc.setParameters(STATE, BucketVO.State.Destroyed);
+        return customSearch(sc, null).get(0);
+    }
+
+    @Override
+    public Long calculateObjectStorageAllocationForAccount(long accountId) {
+        SearchCriteria<SumCount> sc = CalculateBucketsQuotaByAccount.create();
+        sc.setParameters(ACCOUNT_ID, accountId);
+        sc.setParameters(STATE, BucketVO.State.Destroyed);
+        Long totalQuota = customSearch(sc, null).get(0).sum;
+        return (totalQuota * Resource.ResourceType.bytesToGiB);
     }
 }

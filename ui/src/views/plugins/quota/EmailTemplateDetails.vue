@@ -59,7 +59,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { postAPI } from '@/api'
 
 export default {
   name: 'EmailTemplateDetails',
@@ -82,7 +82,7 @@ export default {
       const params = {}
       params.templatetype = this.$route.params.id
 
-      api('quotaEmailTemplateList', params).then(json => {
+      postAPI('quotaEmailTemplateList', params).then(json => {
         const listTemplates = json.quotaemailtemplatelistresponse.quotaemailtemplate || []
         this.resource = listTemplates && listTemplates.length > 0 ? listTemplates[0] : {}
         this.preFillDataValues()
@@ -106,7 +106,7 @@ export default {
 
       this.loading = true
 
-      api('quotaEmailTemplateUpdate', params).then(json => {
+      postAPI('quotaEmailTemplateUpdate', params).then(json => {
         this.$message.success(this.$t('label.quota.email.edit') + ' - ' + this.resource.templatetype)
         this.$router.go(-1)
       }).catch(e => {

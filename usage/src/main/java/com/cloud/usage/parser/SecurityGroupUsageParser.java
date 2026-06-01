@@ -22,46 +22,32 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import com.cloud.usage.UsageManagerImpl;
 import com.cloud.utils.DateUtil;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.usage.UsageTypes;
 
 import com.cloud.usage.UsageSecurityGroupVO;
 import com.cloud.usage.UsageVO;
-import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsageSecurityGroupDao;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
 
 @Component
-public class SecurityGroupUsageParser {
-    protected static Logger LOGGER = LogManager.getLogger(SecurityGroupUsageParser.class);
-
-    private static UsageDao s_usageDao;
-    private static UsageSecurityGroupDao s_usageSecurityGroupDao;
-
+public class SecurityGroupUsageParser extends UsageParser {
     @Inject
-    private UsageDao _usageDao;
-    @Inject
-    private UsageSecurityGroupDao _usageSecurityGroupDao;
+    private UsageSecurityGroupDao usageSecurityGroupDao;
 
-    @PostConstruct
-    void init() {
-        s_usageDao = _usageDao;
-        s_usageSecurityGroupDao = _usageSecurityGroupDao;
+    @Override
+    public String getParserName() {
+        return "Security Group";
     }
 
-    public static boolean parse(AccountVO account, Date startDate, Date endDate) {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Parsing all SecurityGroup usage events for account: " + account.getId());
-        }
+    @Override
+    protected boolean parse(AccountVO account, Date startDate, Date endDate) {
         if ((endDate == null) || endDate.after(new Date())) {
             endDate = new Date();
         }
@@ -71,10 +57,10 @@ public class SecurityGroupUsageParser {
         //     - look for an entry for accountId with end date in the given range
         //     - look for an entry for accountId with end date null (currently running vm or owned IP)
         //     - look for an entry for accountId with start date before given range *and* end date after given range
-        List<UsageSecurityGroupVO> usageSGs = s_usageSecurityGroupDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate, false, 0);
+        List<UsageSecurityGroupVO> usageSGs = usageSecurityGroupDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate, false, 0);
 
         if (usageSGs.isEmpty()) {
-            LOGGER.debug("No SecurityGroup usage events for this period");
+            logger.debug("No SecurityGroup usage events for this period");
             return true;
         }
 
@@ -126,7 +112,7 @@ public class SecurityGroupUsageParser {
         return true;
     }
 
-    private static void updateSGUsageData(Map<String, Pair<Long, Long>> usageDataMap, String key, long vmId, long duration) {
+    private void updateSGUsageData(Map<String, Pair<Long, Long>> usageDataMap, String key, long vmId, long duration) {
         Pair<Long, Long> sgUsageInfo = usageDataMap.get(key);
         if (sgUsageInfo == null) {
             sgUsageInfo = new Pair<Long, Long>(new Long(vmId), new Long(duration));
@@ -138,18 +124,16 @@ public class SecurityGroupUsageParser {
         usageDataMap.put(key, sgUsageInfo);
     }
 
-    private static void createUsageRecord(int type, long runningTime, Date startDate, Date endDate, AccountVO account, long vmId, long sgId, long zoneId) {
+    private void createUsageRecord(int type, long runningTime, Date startDate, Date endDate, AccountVO account, long vmId, long sgId, long zoneId) {
         // Our smallest increment is hourly for now
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Total running time " + runningTime + "ms");
-        }
+        logger.debug("Total running time {} ms", runningTime);
 
         float usage = runningTime / 1000f / 60f / 60f;
 
         DecimalFormat dFormat = new DecimalFormat("#.######");
         String usageDisplay = dFormat.format(usage);
 
-        LOGGER.debug("Creating security group usage record for id [{}], vm [{}], usage [{}], startDate [{}], and endDate [{}], for account [{}].",
+        logger.debug("Creating security group usage record for id [{}], vm [{}], usage [{}], startDate [{}], and endDate [{}], for account [{}].",
                 sgId, vmId, usageDisplay, DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), startDate),
                 DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), endDate), account.getId());
 
@@ -159,7 +143,7 @@ public class SecurityGroupUsageParser {
         UsageVO usageRecord =
             new UsageVO(zoneId, account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", type, new Double(usage), vmId, null, null, null, sgId, null,
                 startDate, endDate);
-        s_usageDao.persist(usageRecord);
+        usageDao.persist(usageRecord);
     }
 
     private static class SGInfo {

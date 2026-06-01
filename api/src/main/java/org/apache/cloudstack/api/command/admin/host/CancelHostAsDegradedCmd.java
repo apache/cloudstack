@@ -47,7 +47,7 @@ public class CancelHostAsDegradedCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = BaseCmd.CommandType.UUID, entityType = HostResponse.class, description = "host ID", required = true, validations = {ApiArgValidator.PositiveNumber})
+    @Parameter(name = ApiConstants.ID, type = BaseCmd.CommandType.UUID, entityType = HostResponse.class, description = "Host ID", required = true, validations = {ApiArgValidator.PositiveNumber})
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -78,7 +78,7 @@ public class CancelHostAsDegradedCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "declaring host: " + getId() + " as Degraded";
+        return "Removing host with ID: " + getResourceUuid(ApiConstants.ID) + " from Degraded state.";
     }
 
     @Override
