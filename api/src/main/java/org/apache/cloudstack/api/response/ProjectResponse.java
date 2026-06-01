@@ -189,15 +189,16 @@ public class ProjectResponse extends BaseResponse implements ResourceLimitAndCou
     private String snapshotAvailable;
 
     @SerializedName(ApiConstants.VM_SNAPSHOT_LIMIT)
-    @Param(description = "the number of VM snapshots that can be stored by this account")
+    @SerializedName(ApiConstants.VM_SNAPSHOT_LIMIT)
+    @Param(description = "the number of VM snapshots that can be stored by this project")
     private String vmSnapshotLimit;
 
     @SerializedName(ApiConstants.VM_SNAPSHOT_TOTAL)
-    @Param(description = "the number of VM snapshots stored by this account")
+    @Param(description = "the number of VM snapshots stored by this project")
     private Long vmSnapshotTotal;
 
     @SerializedName(ApiConstants.VM_SNAPSHOT_AVAILABLE)
-    @Param(description = "the number of VM snapshots available for this account")
+    @Param(description = "the number of VM snapshots available for this project")
     private String vmSnapshotAvailable;
 
     @SerializedName("templatelimit")
