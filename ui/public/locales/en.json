@@ -2503,6 +2503,7 @@
 "label.vmfs": "VMFS",
 "label.vmipaddress": "Instance IP address",
 "label.vmlimit": "Instance limits",
+"label.maxvmsnapshot": "Max. VM snapshot",
 "label.vmname": "Instance name",
 "label.vms": "Instances",
 "label.vmsnapshotlimit": "VM snapshot limits",
