@@ -55,7 +55,7 @@ public class ListResourceLimitsCmd extends BaseListProjectAndAccountResourcesCmd
         + "9 - Memory. Amount of RAM an account can allocate for their resources. "
         + "10 - PrimaryStorage. Total primary storage space (in GiB) a user can use. "
         + "11 - SecondaryStorage. Total secondary storage space (in GiB) a user can use. "
-        + "12 - VmSnapshot. Number of instance snapshots an account can own.")
+        + "12 - instanceSnapshot. Number of instance snapshots an account can own.")
     private Integer resourceType;
 
     @Parameter(name = ApiConstants.RESOURCE_TYPE_NAME, type = CommandType.STRING, description = "Type of resource (wins over resourceType if both are provided). Values are: "
