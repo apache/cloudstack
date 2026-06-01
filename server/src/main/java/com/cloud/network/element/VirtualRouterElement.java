@@ -474,31 +474,6 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
                 + "For the record, sending 10 domains to MSIE 6 or Firefox 2 works as expected.", false);
         methodList.add(method);
 
-        method = new LbStickinessMethod(StickinessMethodType.AppCookieBased,
-                "This is App session based sticky method. Define session stickiness on an existing application cookie. " + "It can be used only for a specific http traffic");
-        method.addParam("cookie-name", false, "This is the name of the cookie used by the application and which LB will "
-                + "have to learn for each new session. Default value: Auto geneared based on ip", false);
-        method.addParam("length", false, "This is the max number of characters that will be memorized and checked in " + "each cookie value. Default value:52", false);
-        method.addParam("holdtime", false, "This is the time after which the cookie will be removed from memory if unused. The value should be in "
-                + "the format Example : 20s or 30m  or 4h or 5d . only seconds(s), minutes(m) hours(h) and days(d) are valid,"
-                + " cannot use th combinations like 20h30m. Default value:3h ", false);
-        method.addParam(
-                "request-learn",
-                false,
-                "If this option is specified, then haproxy will be able to learn the cookie found in the request in case the server does not specify any in response. This is typically what happens with PHPSESSID cookies, or when haproxy's session expires before the application's session and the correct server is selected. It is recommended to specify this option to improve reliability",
-                true);
-        method.addParam(
-                "prefix",
-                false,
-                "When this option is specified, haproxy will match on the cookie prefix (or URL parameter prefix). "
-                        + "The appsession value is the data following this prefix. Example : appsession ASPSESSIONID len 64 timeout 3h prefix  This will match the cookie ASPSESSIONIDXXXX=XXXXX, the appsession value will be XXXX=XXXXX.",
-                        true);
-        method.addParam("mode", false, "This option allows to change the URL parser mode. 2 modes are currently supported : - path-parameters "
-                + ": The parser looks for the appsession in the path parameters part (each parameter is separated by a semi-colon), "
-                + "which is convenient for JSESSIONID for example.This is the default mode if the option is not set. - query-string :"
-                + " In this mode, the parser will look for the appsession in the query string.", false);
-        methodList.add(method);
-
         method = new LbStickinessMethod(StickinessMethodType.SourceBased, "This is source based Stickiness method, " + "it can be used for any type of protocol.");
         method.addParam("tablesize", false, "Size of table to store source ip addresses. example: tablesize=200k or 300m" + " or 400g. Default value:200k", false);
         method.addParam("expire", false, "Entry in source ip table will expire after expire duration. units can be s,m,h,d ."

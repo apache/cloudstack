@@ -399,6 +399,8 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
                 sb.append("\t").append("stick-table type ip size ").append(tablesize).append(" expire ").append(expire);
                 sb.append("\n\t").append("stick on src");
             } else if (StickinessMethodType.AppCookieBased.getName().equalsIgnoreCase(stickinessPolicy.getMethodName())) {
+                // This is not needed for Virtual Router - 'appsession' is not supported since HAProxy 1.6.
+                // In case this is used only for Virtual Router, remove it in the later release.
                 /*
                  * FORMAT : appsession <cookie> len <length> timeout <holdtime>
                  * [request-learn] [prefix] [mode

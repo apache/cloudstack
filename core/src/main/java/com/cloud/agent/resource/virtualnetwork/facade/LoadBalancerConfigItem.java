@@ -38,8 +38,8 @@ public class LoadBalancerConfigItem extends AbstractConfigItemFacade {
     public List<ConfigItem> generateConfig(final NetworkElementCommand cmd) {
         final LoadBalancerConfigCommand command = (LoadBalancerConfigCommand) cmd;
 
-        final LoadBalancerConfigurator cfgtr = new HAProxyConfigurator();
-        final String[] configuration = cfgtr.generateConfiguration(command);
+        final LoadBalancerConfigurator configurator = new HAProxyConfigurator();
+        final String[] configuration = configurator.generateConfiguration(command);
 
         String routerIp = command.getNic().getIp();
         if (command.getVpcId() == null) {
@@ -49,7 +49,7 @@ public class LoadBalancerConfigItem extends AbstractConfigItemFacade {
         final String tmpCfgFilePath = "/etc/haproxy/";
         final String tmpCfgFileName = "haproxy.cfg.new." + String.valueOf(System.currentTimeMillis());
 
-        final String[][] allRules = cfgtr.generateFwRules(command);
+        final String[][] allRules = configurator.generateFwRules(command);
 
         final String[] addRules = allRules[LoadBalancerConfigurator.ADD];
         final String[] removeRules = allRules[LoadBalancerConfigurator.REMOVE];
