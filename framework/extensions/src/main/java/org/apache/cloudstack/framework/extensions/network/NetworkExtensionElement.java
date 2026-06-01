@@ -330,7 +330,7 @@ public class NetworkExtensionElement extends AdapterBase implements
             logger.warn("Network {} has no physical network — cannot resolve extension", network.getId());
             return null;
         }
-        if (providerName != null && !providerName.isBlank()) {
+        if (StringUtils.isNotBlank(providerName)) {
             Extension ext = extensionHelper.getExtensionForPhysicalNetworkAndProvider(physicalNetworkId, providerName);
             if (ext != null) {
                 return ext;

@@ -1316,15 +1316,15 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         // for extension names that are not in the built-in registry.
         try {
             List<PhysicalNetworkServiceProviderVO> nsps = _pNSPDao.listAll();
+            List<Extension> extensions = extensionHelper.listExtensionsByType(Extension.Type.NetworkOrchestrator);
             if (CollectionUtils.isNotEmpty(nsps)) {
                 Set<String> extensionProviderNames = new HashSet<>();
-                List<Extension> extensions = extensionHelper.listExtensionsByType(Extension.Type.NetworkOrchestrator);
                 if (extensions != null) {
                     for (Extension extension : extensions) {
                         if (extension == null || StringUtils.isBlank(extension.getName())) {
                             continue;
                         }
-                        extensionProviderNames.add(extension.getName().toLowerCase());
+                        extensionProviderNames.add(extension.getName());
                     }
                 }
 

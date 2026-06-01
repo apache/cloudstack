@@ -1894,7 +1894,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             accountService.checkAccess(caller, null, true, network);
             return runNetworkCustomAction(network, customActionVO, extensionVO, actionResourceType, cmdParameters);
         } else if (entity instanceof Vpc) {
-            // VPC custom action: find a tier network and dispatch to the same NetworkCustomActionProvider
+            // VPC custom action: dispatched directly to NetworkCustomActionProvider (no agent)
             Vpc vpc = (Vpc) entity;
             accountService.checkAccess(caller, null, true, vpc);
             return runVpcCustomAction(vpc, customActionVO, extensionVO, actionResourceType, cmdParameters);
@@ -2030,18 +2030,21 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             parameters = ExtensionCustomAction.Parameter.validateParameterValues(actionParameters, cmdParameters);
         }
 
-        // Find the provider name for this network (try CustomAction first, then other services)
-        String providerName = null;
-        for (Service service : new Service[]{Service.CustomAction, Service.SourceNat, Service.StaticNat,
-                Service.PortForwarding, Service.Firewall, Service.Gateway}) {
-            providerName = networkServiceMapDao.getProviderForServiceInNetwork(network.getId(), service);
-            if (StringUtils.isNotBlank(providerName)) {
-                break;
-            }
-        }
+        // Find the provider name for this network
+        String providerName = networkServiceMapDao.getProviderForServiceInNetwork(network.getId(), Service.CustomAction);;
         if (StringUtils.isBlank(providerName)) {
             logger.error("No network service provider found for network {}", network.getId());
             result.put(ApiConstants.DETAILS, "No network service provider found for this network");
+            response.setResult(result);
+            return response;
+        }
+
+        // Check if provider name matches the extension name
+        if (!providerName.equals(extensionVO.getName())) {
+            logger.error("Provider name '{}' for network {} does not match extension name '{}'",
+                    providerName, network.getId(), extensionVO.getName());
+            result.put(ApiConstants.DETAILS, "Network service provider '" + providerName +
+                    "' does not match extension '" + extensionVO.getName() + "'");
             response.setResult(result);
             return response;
         }
@@ -2116,17 +2119,20 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         }
 
         // Find the provider name for this VPC
-        String providerName = null;
-        for (Service service : new Service[]{Service.CustomAction, Service.SourceNat, Service.StaticNat,
-                Service.PortForwarding, Service.NetworkACL, Service.Gateway}) {
-            providerName = vpcServiceMapDao.getProviderForServiceInVpc(vpc.getId(), service);
-            if (StringUtils.isNotBlank(providerName)) {
-                break;
-            }
-        }
+        String providerName = vpcServiceMapDao.getProviderForServiceInVpc(vpc.getId(), Service.CustomAction);;
         if (StringUtils.isBlank(providerName)) {
             logger.error("No VPC service provider found for VPC {}", vpc.getId());
             result.put(ApiConstants.DETAILS, "No VPC service provider found for this VPC");
+            response.setResult(result);
+            return response;
+        }
+
+        // Check if provider name matches the extension name
+        if (!providerName.equals(extensionVO.getName())) {
+            logger.error("Provider name '{}' for vpc {} does not match extension name '{}'",
+                    providerName, vpc.getId(), extensionVO.getName());
+            result.put(ApiConstants.DETAILS, "Network service provider '" + providerName +
+                    "' does not match extension '" + extensionVO.getName() + "'");
             response.setResult(result);
             return response;
         }
