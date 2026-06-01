@@ -172,7 +172,7 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
         response.setSnapshotTotal(snapshotTotal);
         response.setSnapshotAvailable(snapshotAvail);
 
-        Long vmSnapshotLimit = ApiDBUtils.findCorrectResourceLimit(account.getVmSnapshotLimit(), account.getId(), ResourceType.vm_snapshot);
+        Long vmSnapshotLimit = ApiDBUtils.findCorrectResourceLimit(account.getVmSnapshotLimit(), account.getId(), ResourceType.instance_snapshot);
         String vmSnapshotLimitDisplay = (fullView || vmSnapshotLimit == -1) ? Resource.UNLIMITED : String.valueOf(vmSnapshotLimit);
         Long vmSnapshotTotal = (account.getVmSnapshotTotal() == null) ? 0 : account.getVmSnapshotTotal();
         String snapshotAvailable = (fullView || vmSnapshotLimit == -1) ? Resource.UNLIMITED : String.valueOf(vmSnapshotLimit - vmSnapshotTotal);
