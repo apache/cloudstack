@@ -20,6 +20,7 @@ package org.apache.cloudstack.backup;
 
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.DataTO;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Upload;
@@ -49,6 +50,7 @@ import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupDetailsDao;
 import org.apache.cloudstack.backup.dao.InternalBackupJoinDao;
 import org.apache.cloudstack.backup.dao.InternalBackupStoragePoolDao;
+import org.apache.cloudstack.backup.to.BackupScreenshotObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.jobs.JobInfo;
@@ -57,6 +59,7 @@ import org.apache.cloudstack.storage.command.RevertSnapshotCommand;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreObjectDownloadDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreObjectDownloadVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
+import org.apache.cloudstack.backup.to.BackupScreenshotTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
@@ -273,7 +276,9 @@ public class InternalBackupServiceImpl extends ComponentLifecycleBase implements
         ImageStoreObjectDownloadVO imageStoreObj = imageStoreObjectDownloadDao.findByStoreIdAndPath(Long.parseLong(imageStoreId.getValue()), screenshotPath);
 
         if (imageStoreObj == null) {
-            String downloadUrl = imageStore.createEntityExtractUrl(screenshotPath, Storage.ImageFormat.PNG, null);
+            BackupScreenshotTO dataTo = new BackupScreenshotTO(imageStore.getTO(), Hypervisor.HypervisorType.KVM, screenshotPath);
+            BackupScreenshotObject objectTo = new BackupScreenshotObject(dataTo, imageStore);
+            String downloadUrl = imageStore.createEntityExtractUrl(screenshotPath, Storage.ImageFormat.PNG, objectTo);
             imageStoreObj = imageStoreObjectDownloadDao.persist(new ImageStoreObjectDownloadVO(imageStore.getId(), screenshotPath, downloadUrl));
         }
 

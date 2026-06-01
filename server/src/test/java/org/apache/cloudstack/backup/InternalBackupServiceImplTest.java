@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -461,7 +462,6 @@ public class InternalBackupServiceImplTest {
         doReturn(imageStoreEntityMock).when(dataStoreMgrMock).getDataStore(IMAGE_STORE_ID, DataStoreRole.Image);
         doReturn(null).when(imageStoreObjectDownloadDaoMock).findByStoreIdAndPath(IMAGE_STORE_ID, SCREENSHOT_PATH);
         doReturn(123L).when(imageStoreEntityMock).getId();
-        doReturn("http://download/url").when(imageStoreEntityMock).createEntityExtractUrl(SCREENSHOT_PATH, Storage.ImageFormat.PNG, null);
         doReturn(imageStoreObjectDownloadVoMock).when(imageStoreObjectDownloadDaoMock).persist(any(ImageStoreObjectDownloadVO.class));
         doReturn("http://download/url").when(imageStoreObjectDownloadVoMock).getDownloadUrl();
 
@@ -470,7 +470,7 @@ public class InternalBackupServiceImplTest {
         verify(backupDetailDaoMock).findDetail(BACKUP_ID, BackupDetailsDao.SCREENSHOT_PATH);
         verify(backupDetailDaoMock).findDetail(BACKUP_ID, BackupDetailsDao.IMAGE_STORE_ID);
         verify(imageStoreObjectDownloadDaoMock).findByStoreIdAndPath(IMAGE_STORE_ID, SCREENSHOT_PATH);
-        verify(imageStoreEntityMock).createEntityExtractUrl(SCREENSHOT_PATH, Storage.ImageFormat.PNG, null);
+        verify(imageStoreEntityMock).createEntityExtractUrl(eq(SCREENSHOT_PATH), eq(Storage.ImageFormat.PNG), any());
         verify(imageStoreObjectDownloadDaoMock).persist(any(ImageStoreObjectDownloadVO.class));
         assertEquals("http://download/url", result.getUrl());
         assertEquals("screenshot.png", result.getName());
@@ -486,7 +486,6 @@ public class InternalBackupServiceImplTest {
         doReturn(imageStoreEntityMock).when(dataStoreMgrMock).getDataStore(IMAGE_STORE_ID, DataStoreRole.Image);
         doReturn(null).when(imageStoreObjectDownloadDaoMock).findByStoreIdAndPath(IMAGE_STORE_ID, SCREENSHOT_PATH);
         doReturn(123L).when(imageStoreEntityMock).getId();
-        doReturn("http://download/url").when(imageStoreEntityMock).createEntityExtractUrl(SCREENSHOT_PATH, Storage.ImageFormat.PNG, null);
         doReturn(null).when(imageStoreObjectDownloadDaoMock).persist(any(ImageStoreObjectDownloadVO.class));
 
         ExtractResponse result = internalBackupServiceImplSpy.downloadScreenshot(BACKUP_ID);
@@ -494,7 +493,7 @@ public class InternalBackupServiceImplTest {
         verify(backupDetailDaoMock).findDetail(BACKUP_ID, BackupDetailsDao.SCREENSHOT_PATH);
         verify(backupDetailDaoMock).findDetail(BACKUP_ID, BackupDetailsDao.IMAGE_STORE_ID);
         verify(imageStoreObjectDownloadDaoMock).findByStoreIdAndPath(IMAGE_STORE_ID, SCREENSHOT_PATH);
-        verify(imageStoreEntityMock).createEntityExtractUrl(SCREENSHOT_PATH, Storage.ImageFormat.PNG, null);
+        verify(imageStoreEntityMock).createEntityExtractUrl(eq(SCREENSHOT_PATH), eq(Storage.ImageFormat.PNG), any());
         verify(imageStoreObjectDownloadDaoMock).persist(any(ImageStoreObjectDownloadVO.class));
         org.junit.Assert.assertNull(result.getUrl());
         org.junit.Assert.assertNull(result.getName());
