@@ -151,7 +151,7 @@ public class DomainJoinDaoImpl extends GenericDaoBase<DomainJoinVO, Long> implem
         response.setSnapshotTotal(snapshotTotal);
         response.setSnapshotAvailable(snapshotAvail);
 
-        Long vmSnapshotLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getVmSnapshotLimit(), ResourceType.vm_snapshot, domain.getId());
+        Long vmSnapshotLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getVmSnapshotLimit(), ResourceType.instance_snapshot, domain.getId());
         String vmSnapshotLimitDisplay = (fullView || vmSnapshotLimit == -1) ? Resource.UNLIMITED : String.valueOf(vmSnapshotLimit);
         Long vmSnapshotTotal = (domain.getVmSnapshotTotal() == null) ? 0 : domain.getVmSnapshotTotal();
         String vmSnapshotAvailable = (fullView || vmSnapshotLimit == -1) ? Resource.UNLIMITED : String.valueOf(vmSnapshotLimit - vmSnapshotTotal);
