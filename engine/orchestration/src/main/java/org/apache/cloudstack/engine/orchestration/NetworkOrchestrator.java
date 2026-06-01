@@ -479,7 +479,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
      * Spring bean list free from {@code NetworkExtensionElement} and allows
      * dynamic discovery of extensions without a restart.</p>
      */
-    private List<NetworkElement> getNetworkElementsIncludingExtensions() {
+    protected List<NetworkElement> getNetworkElementsIncludingExtensions() {
         List<Extension> extensions = extensionHelper.listExtensionsByType(Extension.Type.NetworkOrchestrator);
         if (CollectionUtils.isEmpty(extensions)) {
             return networkElements;

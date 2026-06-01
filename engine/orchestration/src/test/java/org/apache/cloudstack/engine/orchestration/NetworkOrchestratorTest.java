@@ -398,7 +398,7 @@ public class NetworkOrchestratorTest extends TestCase {
             when(testOrchestrator._ipAddressDao.findByIpAndSourceNetworkId(Mockito.anyLong(), Mockito.anyString())).thenReturn(ipVoSpy);
         }
 
-        VlanVO vlanSpy = Mockito.spy(new VlanVO(Vlan.VlanType.DirectAttached, "vlanTag", vlanGateway, vlanNetmask, 0l, "192.168.100.100 - 192.168.100.200", 0l, new Long(0l),
+        VlanVO vlanSpy = Mockito.spy(new VlanVO(Vlan.VlanType.DirectAttached, "vlanTag", vlanGateway, vlanNetmask, 0l, "192.168.100.100 - 192.168.100.200", 0l, 0l,
                 "ip6Gateway", "ip6Cidr", "ip6Range"));
 
         Mockito.doReturn(0l).when(vlanSpy).getId();
@@ -1034,10 +1034,8 @@ public class NetworkOrchestratorTest extends TestCase {
         List<NetworkElement> elements = new ArrayList<>(List.of(dhcpProvider));
         testOrchestrator.networkElements = elements;
 
-        @SuppressWarnings("unchecked")
-        List<NetworkElement> result =
-                (List<NetworkElement>) ReflectionTestUtils
-                        .invokeMethod(testOrchestrator, "getNetworkElementsIncludingExtensions");
+        List<NetworkElement> result = testOrchestrator.getNetworkElementsIncludingExtensions();
+
         assertNotNull(result);
         assertEquals(elements.size(), result.size());
     }
@@ -1055,10 +1053,8 @@ public class NetworkOrchestratorTest extends TestCase {
         DhcpServiceProvider dhcpProvider = mock(DhcpServiceProvider.class);
         testOrchestrator.networkElements = new ArrayList<>(List.of(dhcpProvider));
 
-        @SuppressWarnings("unchecked")
-        List<NetworkElement> result =
-                (List<NetworkElement>) ReflectionTestUtils
-                        .invokeMethod(testOrchestrator, "getNetworkElementsIncludingExtensions");
+        List<NetworkElement> result = testOrchestrator.getNetworkElementsIncludingExtensions();
+
         assertNotNull(result);
         assertEquals(2, result.size());
         assertTrue(result.contains(extElement));
@@ -1072,10 +1068,8 @@ public class NetworkOrchestratorTest extends TestCase {
         DhcpServiceProvider dhcpProvider = mock(DhcpServiceProvider.class);
         testOrchestrator.networkElements = new ArrayList<>(List.of(dhcpProvider));
 
-        @SuppressWarnings("unchecked")
-        List<NetworkElement> result =
-                (List<NetworkElement>) ReflectionTestUtils
-                        .invokeMethod(testOrchestrator, "getNetworkElementsIncludingExtensions");
+        List<NetworkElement> result = testOrchestrator.getNetworkElementsIncludingExtensions();
+
         assertNotNull(result);
         assertEquals(1, result.size());
     }
