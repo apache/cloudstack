@@ -996,7 +996,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         if (extension == null) {
             throw new InvalidParameterValueException("Invalid extension specified");
         }
-        ExtensionResourceMap.ResourceType resType = ExtensionResourceMap.ResourceType.valueOf(resourceType);
+        ExtensionResourceMap.ResourceType resType = EnumUtils.getEnum(ExtensionResourceMap.ResourceType.class, resourceType);
         if (ExtensionResourceMap.ResourceType.PhysicalNetwork.equals(resType)) {
             PhysicalNetworkVO physicalNetwork = physicalNetworkDao.findByUuid(resourceId);
             if (physicalNetwork == null) {
@@ -1035,16 +1035,10 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             throw new InvalidParameterValueException("Invalid extension specified");
         }
 
-        ExtensionResourceMap.ResourceType resType = ExtensionResourceMap.ResourceType.valueOf(resourceType);
+        ExtensionResourceMap.ResourceType resType = EnumUtils.getEnum(ExtensionResourceMap.ResourceType.class, resourceType);
         long resolvedResourceId;
         if (ExtensionResourceMap.ResourceType.PhysicalNetwork.equals(resType)) {
             PhysicalNetworkVO physicalNetwork = physicalNetworkDao.findByUuid(resourceId);
-            if (physicalNetwork == null) {
-                try {
-                    physicalNetwork = physicalNetworkDao.findById(Long.parseLong(resourceId));
-                } catch (NumberFormatException ignored) {
-                }
-            }
             if (physicalNetwork == null) {
                 throw new InvalidParameterValueException("Invalid physical network ID specified");
             }
@@ -1378,7 +1372,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                     String.format("Currently only [%s] can be used to unregister an extension",
                             EnumSet.allOf(ExtensionResourceMap.ResourceType.class)));
         }
-        ExtensionResourceMap.ResourceType resType = ExtensionResourceMap.ResourceType.valueOf(resourceType);
+        ExtensionResourceMap.ResourceType resType = EnumUtils.getEnum(ExtensionResourceMap.ResourceType.class, resourceType);
         if (ExtensionResourceMap.ResourceType.PhysicalNetwork.equals(resType)) {
             unregisterExtensionWithPhysicalNetwork(resourceId, extensionId);
         } else {

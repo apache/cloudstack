@@ -116,10 +116,10 @@ public class NetworkModelImplTest {
         networkModel._networkOfferingDao = networkOfferingDao;
         networkModel._ntwkSrvcDao = networkServiceMapDao;
         networkModel._ntwkOfferingSrvcDao = networkOfferingServiceMapDao;
-        ReflectionTestUtils.setField(networkModel, "extensionHelper", extensionHelper);
-        ReflectionTestUtils.setField(networkModel, "networkExtensionElement", networkExtensionElement);
-        ReflectionTestUtils.setField(networkModel, "_physicalNetworkDao", physicalNetworkDao);
-        ReflectionTestUtils.setField(networkModel, "_pNSPDao", physicalNetworkServiceProviderDao);
+        networkModel.extensionHelper = extensionHelper;
+        networkModel.networkExtensionElement = networkExtensionElement;
+        networkModel._physicalNetworkDao = physicalNetworkDao;
+        networkModel._pNSPDao = physicalNetworkServiceProviderDao;
         Mockito.lenient().when(extensionHelper.isNetworkExtensionProvider(Mockito.anyString())).thenReturn(false);
     }
 

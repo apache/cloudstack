@@ -240,7 +240,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     @Inject
     ExtensionHelper extensionHelper;
     @Inject
-    private NetworkExtensionElement networkExtensionElement;
+    NetworkExtensionElement networkExtensionElement;
 
 
     private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
