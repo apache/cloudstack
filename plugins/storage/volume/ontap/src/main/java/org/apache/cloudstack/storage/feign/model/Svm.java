@@ -38,10 +38,13 @@ public class Svm {
     @JsonProperty("name")
     private String name = null;
 
+    @JsonIgnore
     private Boolean iscsiEnabled = null;
 
+    @JsonIgnore
     private Boolean fcpEnabled = null;
 
+    @JsonIgnore
     private Boolean nfsEnabled = null;
 
     @JsonProperty("aggregates")
