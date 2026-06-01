@@ -55,7 +55,7 @@ public class ListResourceLimitsCmd extends BaseListProjectAndAccountResourcesCmd
         + "9 - Memory. Amount of RAM an account can allocate for their resources. "
         + "10 - PrimaryStorage. Total primary storage space (in GiB) a user can use. "
         + "11 - SecondaryStorage. Total secondary storage space (in GiB) a user can use. "
-        + "12 - VmSnapshot. Number of VM snapshots an account can own.")
+        + "12 - VmSnapshot. Number of instance snapshots an account can own.")
     private Integer resourceType;
 
     @Parameter(name = ApiConstants.RESOURCE_TYPE_NAME, type = CommandType.STRING, description = "Type of resource (wins over resourceType if both are provided). Values are: "
@@ -71,7 +71,7 @@ public class ListResourceLimitsCmd extends BaseListProjectAndAccountResourcesCmd
             + "memory - Memory. Amount of RAM an account can allocate for their resources. "
             + "primary_storage - PrimaryStorage. Total primary storage space (in GiB) a user can use. "
             + "secondary_storage - SecondaryStorage. Total secondary storage space (in GiB) a user can use. "
-            + "vm_snapshot - VmSnapshot. Number of VM snapshots an account can own.")
+            + "instance_snapshot - InstanceSnapshot. Number of instance snapshots an account can own.")
     private String resourceTypeName;
 
     @Parameter(name = ApiConstants.TAG, type = CommandType.STRING, description = "Tag for the resource type", since = "4.20.0")
