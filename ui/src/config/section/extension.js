@@ -45,7 +45,7 @@ export default {
     return fields
   },
   details: ['name', 'description', 'id', 'type', 'details', 'path', 'pathready', 'isuserdefined', 'orchestratorrequirespreparevm', 'reservedresourcedetails', 'created'],
-  filters: ['orchestrator', 'networkorchestrator'],
+  filters: ['Orchestrator', 'NetworkOrchestrator'],
   tabs: [{
     name: 'details',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
