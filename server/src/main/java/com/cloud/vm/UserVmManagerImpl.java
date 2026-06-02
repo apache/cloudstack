@@ -4927,6 +4927,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 offering.getLimitCpuUse(), owner.getDomainId(), owner.getId(), userId, offering.getId(), userData, userDataId, userDataDetails, hostName);
         vm.setUuid(uuidName);
         vm.setDynamicallyScalable(dynamicScalingEnabled);
+        if (_itMgr.isBlankInstance(template)) {
+            vm.setUpdateParameters(false);
+        }
 
         Map<String, String> details = template.getDetails();
         if (details != null && !details.isEmpty()) {

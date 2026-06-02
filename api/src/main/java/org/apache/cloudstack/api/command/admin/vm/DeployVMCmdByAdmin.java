@@ -90,4 +90,8 @@ public class DeployVMCmdByAdmin extends DeployVMCmd implements AdminCmd {
     public void setInstanceType(String instanceType) {
         this.instanceType = instanceType;
     }
+
+    public void setCustomId(String customId) {
+        this.customId = customId;
+    }
 }

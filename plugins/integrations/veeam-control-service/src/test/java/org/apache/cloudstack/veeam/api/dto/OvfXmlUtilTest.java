@@ -65,6 +65,7 @@ public class OvfXmlUtilTest {
             assertNotNull(is);
             ovfXml = new String(is.readAllBytes(), StandardCharsets.UTF_8);
         }
+        when(configMock.getType()).thenReturn("ovf");
         when(configMock.getData()).thenReturn(ovfXml);
 
         String instanceConfig = OvfXmlUtil.getConfigMetadataXml(vm, mock(Logger.class));

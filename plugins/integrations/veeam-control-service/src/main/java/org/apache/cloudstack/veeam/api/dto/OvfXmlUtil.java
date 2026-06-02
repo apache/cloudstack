@@ -504,8 +504,11 @@ public class OvfXmlUtil {
         if (initialization == null) {
             return null;
         }
-        Vm.Initialization.Configuration configuration = vm.getInitialization().getConfiguration();
+        Vm.Initialization.Configuration configuration = initialization.getConfiguration();
         if (configuration == null) {
+            return null;
+        }
+        if (!"ovf".equalsIgnoreCase(configuration.getType())) {
             return null;
         }
         return configuration.getData();
@@ -803,11 +806,11 @@ public class OvfXmlUtil {
             return;
         }
         String instanceId = xpathString(xpath, metadataSection, ".//*[local-name()='InstanceId']/text()");
-        if (StringUtils.isNotBlank(instanceId)) {
+        if (StringUtils.isNotBlank(instanceId) && vm.isSameLocationRestore()) {
             vm.setInstanceId(instanceId);
         }
         String instanceName = xpathString(xpath, metadataSection, ".//*[local-name()='InstanceName']/text()");
-        if (StringUtils.isNotBlank(instanceName)) {
+        if (StringUtils.isNotBlank(instanceName) && vm.isSameLocationRestore()) {
             vm.setInstanceName(instanceName);
         }
         String instanceGroupId = xpathString(xpath, metadataSection, ".//*[local-name()='InstanceGroupId']/text()");

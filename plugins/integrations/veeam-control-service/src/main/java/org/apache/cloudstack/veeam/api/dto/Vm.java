@@ -513,7 +513,7 @@ public final class Vm extends BaseDto {
             if (type == Type.q35_ovmf.ordinal()) {
                 bios.setType(Type.q35_ovmf.name());
             } else if (type == Type.q35_secure_boot.ordinal()) {
-                 bios.setType(Type.q35_secure_boot.name());
+                bios.setType(Type.q35_secure_boot.name());
             }
             return bios;
         }
@@ -627,6 +627,14 @@ public final class Vm extends BaseDto {
     @JsonIgnore
     public boolean isWorkerVm() {
         return initialization != null && StringUtils.isNotEmpty(initialization.getCustomScript());
+    }
+
+    /**
+     * Whether restoring same VM. We need to preserve IDs in that case
+     */
+    @JsonIgnore
+    public boolean isSameLocationRestore() {
+        return initialization != null && !Boolean.TRUE.equals(initialization.isRegenerateIds());
     }
 
     public static Vm of(String href, String id) {

@@ -197,21 +197,25 @@ public class ServerAdapterTest {
 
 
     @Test
-    public void testGetDetailsForInstanceCreation_WithUserdata_AddsCpuMode() {
+    public void testGetDetailsForInstanceCreation_WorkerVm_AddsCpuMode() {
         ServiceOfferingVO offering = mock(ServiceOfferingVO.class);
         when(offering.isCustomized()).thenReturn(false);
+        Vm request = mock(Vm.class);
+        when(request.isWorkerVm()).thenReturn(true);
 
-        Map<String, String> result = ServerAdapter.getDetailsForInstanceCreation("#!/bin/bash", offering, null);
+        Map<String, String> result = ServerAdapter.getDetailsForInstanceCreation(request, offering, null);
 
         assertEquals("host-passthrough", result.get(VmDetailConstants.GUEST_CPU_MODE));
     }
 
     @Test
-    public void testGetDetailsForInstanceCreation_NoUserdata_NoCpuMode() {
+    public void testGetDetailsForInstanceCreation_NotWorkerVm_NoCpuMode() {
         ServiceOfferingVO offering = mock(ServiceOfferingVO.class);
         when(offering.isCustomized()).thenReturn(false);
+        Vm request = mock(Vm.class);
+        when(request.isWorkerVm()).thenReturn(false);
 
-        Map<String, String> result = ServerAdapter.getDetailsForInstanceCreation(null, offering, null);
+        Map<String, String> result = ServerAdapter.getDetailsForInstanceCreation(request, offering, null);
 
         assertFalse(result.containsKey(VmDetailConstants.GUEST_CPU_MODE));
     }
@@ -224,7 +228,10 @@ public class ServerAdapterTest {
         when(offering.getRamSize()).thenReturn(2048);
         when(offering.getSpeed()).thenReturn(null);
 
-        Map<String, String> result = ServerAdapter.getDetailsForInstanceCreation(null, offering, null);
+        Vm request = mock(Vm.class);
+        when(request.isWorkerVm()).thenReturn(false);
+
+        Map<String, String> result = ServerAdapter.getDetailsForInstanceCreation(request, offering, null);
 
         assertEquals("4", result.get(VmDetailConstants.CPU_NUMBER));
         assertEquals("2048", result.get(VmDetailConstants.MEMORY));
@@ -239,7 +246,10 @@ public class ServerAdapterTest {
         when(offering.getRamSize()).thenReturn(1024);
         when(offering.getSpeed()).thenReturn(2000);
 
-        Map<String, String> result = ServerAdapter.getDetailsForInstanceCreation(null, offering, null);
+        Vm request = mock(Vm.class);
+        when(request.isWorkerVm()).thenReturn(false);
+
+        Map<String, String> result = ServerAdapter.getDetailsForInstanceCreation(request, offering, null);
 
         assertFalse(result.containsKey(VmDetailConstants.CPU_SPEED));
     }
@@ -249,12 +259,15 @@ public class ServerAdapterTest {
         ServiceOfferingVO offering = mock(ServiceOfferingVO.class);
         when(offering.isCustomized()).thenReturn(false);
 
+        Vm request = mock(Vm.class);
+        when(request.isWorkerVm()).thenReturn(false);
+
         Map<String, String> existingDetails = new HashMap<>();
         existingDetails.put("BIOS", "bios_value");
         existingDetails.put("UEFI", "uefi_value");
         existingDetails.put("custom_key", "custom_value");
 
-        Map<String, String> result = ServerAdapter.getDetailsForInstanceCreation(null, offering, existingDetails);
+        Map<String, String> result = ServerAdapter.getDetailsForInstanceCreation(request, offering, existingDetails);
 
         assertFalse(result.containsKey("BIOS"));
         assertFalse(result.containsKey("UEFI"));
@@ -269,10 +282,13 @@ public class ServerAdapterTest {
         when(offering.getRamSize()).thenReturn(1024);
         when(offering.getSpeed()).thenReturn(null);
 
+        Vm request = mock(Vm.class);
+        when(request.isWorkerVm()).thenReturn(false);
+
         Map<String, String> existingDetails = new HashMap<>();
         existingDetails.put(VmDetailConstants.CPU_SPEED, "3000");
 
-        Map<String, String> result = ServerAdapter.getDetailsForInstanceCreation(null, offering, existingDetails);
+        Map<String, String> result = ServerAdapter.getDetailsForInstanceCreation(request, offering, existingDetails);
 
         assertEquals("3000", result.get(VmDetailConstants.CPU_SPEED));
     }
@@ -500,16 +516,16 @@ public class ServerAdapterTest {
 
     @Test
     public void testWaitForJobCompletion_JobNotFound_Returns() {
-        when(asyncJobDao.findById(99L)).thenReturn(null);
+        when(asyncJobDao.findByIdIncludingRemoved(99L)).thenReturn(null);
         serverAdapter.waitForJobCompletion(99L);
-        verify(asyncJobDao).findById(99L);
+        verify(asyncJobDao).findByIdIncludingRemoved(99L);
     }
 
     @Test
     public void testWaitForJobCompletion_JobAlreadySucceeded_Returns() {
         AsyncJobVO job = mock(AsyncJobVO.class);
         when(job.getStatus()).thenReturn(AsyncJobVO.Status.SUCCEEDED);
-        when(asyncJobDao.findById(1L)).thenReturn(job);
+        when(asyncJobDao.findByIdIncludingRemoved(1L)).thenReturn(job);
         serverAdapter.waitForJobCompletion(1L);
     }
 
@@ -517,7 +533,7 @@ public class ServerAdapterTest {
     public void testWaitForJobCompletion_JobAlreadyFailed_Returns() {
         AsyncJobVO job = mock(AsyncJobVO.class);
         when(job.getStatus()).thenReturn(AsyncJobVO.Status.FAILED);
-        when(asyncJobDao.findById(2L)).thenReturn(job);
+        when(asyncJobDao.findByIdIncludingRemoved(2L)).thenReturn(job);
         serverAdapter.waitForJobCompletion(2L);
     }
 
@@ -536,11 +552,11 @@ public class ServerAdapterTest {
 
         AsyncJobVO job = mock(AsyncJobVO.class);
         when(job.getStatus()).thenReturn(AsyncJobVO.Status.SUCCEEDED);
-        when(asyncJobDao.findById(5L)).thenReturn(job);
+        when(asyncJobDao.findByIdIncludingRemoved(5L)).thenReturn(job);
 
         serverAdapter.waitForJobCompletion(jobVO);
 
-        verify(asyncJobDao).findById(5L);
+        verify(asyncJobDao).findByIdIncludingRemoved(5L);
     }
 
 

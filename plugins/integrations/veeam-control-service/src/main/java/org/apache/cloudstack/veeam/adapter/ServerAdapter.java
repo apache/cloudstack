@@ -214,6 +214,8 @@ import com.cloud.utils.UuidUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmManager;
@@ -377,7 +379,7 @@ public class ServerAdapter extends ManagerBase {
         final long deadline = System.nanoTime() + timeoutNanos;
         long sleepMillis = 500;
         while (true) {
-            AsyncJobVO job = asyncJobDao.findById(jobId);
+            AsyncJobVO job = asyncJobDao.findByIdIncludingRemoved(jobId);
             if (job == null) {
                 logger.warn("Async job with ID {} not found", jobId);
                 return;
@@ -568,8 +570,8 @@ public class ServerAdapter extends ManagerBase {
         return offering;
     }
 
-    protected GuestOS getGuestOsForInstance(Vm request, boolean isWorkerVm) {
-        if (isWorkerVm) {
+    protected GuestOS getGuestOsForInstance(Vm request) {
+        if (request.isWorkerVm()) {
             GuestOS os = guestOSDao.findOneByDisplayName(WORKER_VM_GUEST_OS);
             if (os == null) {
                 logger.warn("Guest OS with name {} for worker VM not found, VM will be created with default guest OS",
@@ -719,11 +721,48 @@ public class ServerAdapter extends ManagerBase {
         return instanceType;
     }
 
+    protected UserVm createVmWithForRestoreIfNeeded(DeployVMCmdByAdmin cmd, Vm request) {
+        return Transaction.execute((TransactionCallbackWithException<UserVm, CloudRuntimeException>) status -> {
+            final String uuid = request.getInstanceId();
+            if (StringUtils.isNotBlank(uuid)) {
+                logger.debug("UUID for new VM needs to be {}", uuid);
+                updateOldInstanceUuid(uuid);
+                cmd.setCustomId(uuid);
+            }
+            try {
+                return userVmManager.createVirtualMachine(cmd);
+            } catch (InsufficientCapacityException | ResourceUnavailableException |
+                     ResourceAllocationException | CloudRuntimeException e) {
+                throw new CloudRuntimeException("Failed to create VM: " + e.getMessage(), e);
+            }
+        });
+    }
+
+    private void updateOldInstanceUuid(String uuid) {
+        UserVmVO oldVM = userVmDao.findByUuidIncludingRemoved(uuid);
+        if (oldVM == null) {
+            return;
+        }
+        if (oldVM.getRemoved() == null) {
+            logger.error("Found existing VM with the UUID from request data and it is not removed. Cannot " +
+                    "proceed with UUID update. VM with conflicting UUID: {}", oldVM);
+            throw new CloudRuntimeException("VM with ID " + uuid + " already exists and is not removed. Cannot proceed with VM creation for restore.");
+        }
+        logger.debug("Found removed VM with UUID from request data. Updating its UUID to a new random " +
+                "value to free up the requested UUID for the new VM. Old VM: {}", uuid, oldVM);
+        UserVmVO updateObj = userVmDao.createForUpdate(oldVM.getId());
+        updateObj.setUuid(UUID.randomUUID().toString());
+        userVmDao.update(updateObj.getId(), updateObj);
+    }
+
     protected Pair<Vm, UserVm> createInstance(com.cloud.dc.DataCenter zone, Long clusterId, Account owner, Long domainId,
                 String accountName, Long projectId, String name, String displayName, String serviceOfferingUuid,
                 int cpu, int memory, String templateUuid, GuestOS guestOs, String userdata, ApiConstants.BootType bootType,
-                ApiConstants.BootMode bootMode, String affinityGroupId, String userDataId, String sshKeyPairNames,
-                String instanceType, Map<String, String> details) {
+                ApiConstants.BootMode bootMode, Vm request) {
+        final String affinityGroupId = request.getAffinityGroupId();
+        final String userDataId = request.getUserDataId();
+        final String sshKeyPairNames = request.getSshKeyPairNames();
+        final Map<String, String> details = request.getDetails();
         Account account = owner != null ? owner : CallContext.current().getCallingAccount();
         ServiceOffering serviceOffering = getServiceOfferingIdForVmCreation(zone, account, serviceOfferingUuid, cpu,
                 memory);
@@ -773,30 +812,27 @@ public class ServerAdapter extends ManagerBase {
         if (StringUtils.isNotBlank(sshKeyPairNames)) {
             cmd.setSshKeyPairNames(getValidatedSshKeyPairNames(sshKeyPairNames, owner));
         }
+        final String instanceType = getValidatedInstanceType(request);
         cmd.setInstanceType(StringUtils.trimToNull(instanceType));
         cmd.setHypervisor(Hypervisor.HypervisorType.KVM.name());
-        Map<String, String> instanceDetails = getDetailsForInstanceCreation(userdata, serviceOffering, details);
+        Map<String, String> instanceDetails = getDetailsForInstanceCreation(request, serviceOffering, details);
         if (MapUtils.isNotEmpty(instanceDetails)) {
             Map<Integer, Map<String, String>> map = new HashMap<>();
             map.put(0, instanceDetails);
             cmd.setDetails(map);
         }
         cmd.setBlankInstance(true);
-        try {
-            UserVm vm = userVmManager.createVirtualMachine(cmd);
-            vm = userVmManager.finalizeCreateVirtualMachine(vm.getId());
-            UserVmJoinVO vo = userVmJoinDao.findById(vm.getId());
-            Vm vmObj = UserVmJoinVOToVmConverter.toVm(vo, this::getHostById, this::getDetailsByInstanceId,
-                    this::listTagsByInstanceId, this::listDiskAttachmentsByInstanceId, this::listNicsByInstance,
-                    null, null, false);
-            return new Pair<>(vmObj, vm);
-        } catch (InsufficientCapacityException | ResourceUnavailableException | ResourceAllocationException | CloudRuntimeException e) {
-            throw new CloudRuntimeException("Failed to create VM: " + e.getMessage(), e);
-        }
+        UserVm vm = createVmWithForRestoreIfNeeded(cmd, request);
+        vm = userVmManager.finalizeCreateVirtualMachine(vm.getId());
+        UserVmJoinVO vo = userVmJoinDao.findById(vm.getId());
+        Vm vmObj = UserVmJoinVOToVmConverter.toVm(vo, this::getHostById, this::getDetailsByInstanceId,
+                this::listTagsByInstanceId, this::listDiskAttachmentsByInstanceId, this::listNicsByInstance,
+                null, null, false);
+        return new Pair<>(vmObj, vm);
     }
 
     @NotNull
-    protected static Map<String, String> getDetailsForInstanceCreation(String userdata, ServiceOffering serviceOffering,
+    protected static Map<String, String> getDetailsForInstanceCreation(Vm request, ServiceOffering serviceOffering,
                            Map<String, String> existingDetails) {
         Map<String, String> details = new HashMap<>();
         List<String> detailsTobeSkipped = List.of(
@@ -810,7 +846,7 @@ public class ServerAdapter extends ManagerBase {
                 details.put(entry.getKey(), entry.getValue());
             }
         }
-        if (StringUtils.isNotEmpty(userdata)) {
+        if (request.isWorkerVm()) {
             // Assumption: Only worker VM will have userdata and it needs CPU mode
             details.put(VmDetailConstants.GUEST_CPU_MODE, WORKER_VM_GUEST_CPU_MODE);
         }
@@ -1277,8 +1313,9 @@ public class ServerAdapter extends ManagerBase {
     @ApiAccess(command = DeployVMCmd.class)
     public Vm createInstance(Vm request) {
         if (request == null) {
-            throw new InvalidParameterValueException("Request disk data is empty");
+            throw new InvalidParameterValueException("Request VM data is empty");
         }
+        logger.debug("VM create request [worker-vm: {}]", request.isWorkerVm());
         OvfXmlUtil.updateFromConfiguration(request);
         String name = request.getName();
         if (StringUtils.isBlank(name)) {
@@ -1334,13 +1371,11 @@ public class ServerAdapter extends ManagerBase {
         if (request.getTemplate() != null && StringUtils.isNotEmpty(request.getTemplate().getId())) {
             templateUuid = request.getTemplate().getId();
         }
-        GuestOS guestOs = getGuestOsForInstance(request, request.isWorkerVm());
-        String instanceType = getValidatedInstanceType(request);
+        GuestOS guestOs = getGuestOsForInstance(request);
         Pair<Vm, UserVm> result = createInstance(zone, clusterId, owner, ownerDetails.first(), ownerDetails.second(),
                 ownerDetails.third(), name, displayName, serviceOfferingUuid, cpu, memoryMB, templateUuid, guestOs,
-                userdata, bootOptions.first(), bootOptions.second(), request.getAffinityGroupId(),
-                request.getUserDataId(), request.getSshKeyPairNames(), instanceType, request.getDetails());
-        saveInstanceAdditionalDetails(request, result.second());
+                userdata, bootOptions.first(), bootOptions.second(), request);
+        saveInstanceRestoreConfig(request, result.second());
         return result.first();
     }
 
