@@ -711,11 +711,11 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         Network network = _networkDao.findById(lbRule.getNetworkId());
         Purpose purpose = lbRule.getPurpose();
         if (purpose != Purpose.LoadBalancing) {
-            logger.debug("Unable to validate network rules for purpose: " + purpose.toString());
+            logger.debug("Unable to validate network rules for purpose: {}", purpose.toString());
             return false;
         }
-        for (LoadBalancingServiceProvider ne : _lbProviders) {
-            boolean validated = ne.validateLBRule(network, lbRule);
+        for (LoadBalancingServiceProvider lbProvider : _lbProviders) {
+            boolean validated = lbProvider.validateLBRule(network, lbRule);
             if (!validated)
                 return false;
         }
