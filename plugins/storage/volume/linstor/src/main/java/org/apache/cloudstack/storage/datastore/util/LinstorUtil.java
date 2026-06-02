@@ -402,6 +402,58 @@ public class LinstorUtil {
     }
 
     /**
+     * Default per-call timeout for {@link #waitForResourceDefinitionDeleted}. Long enough for a
+     * healthy LINSTOR controller to finish a normal delete; short enough not to block the calling
+     * thread for too long if the delete is genuinely stuck. Used both from the management server
+     * (e.g. {@code LinstorPrimaryDataStoreDriverImpl}) and from KVM agent paths.
+     */
+    public static final long DEFAULT_RD_DELETE_VERIFY_TIMEOUT_MILLIS = 30_000L;
+
+    /**
+     * Returns {@code true} if the named resource definition is no longer present on the LINSTOR
+     * controller. Used after a {@code resourceDefinitionDelete} to verify the delete actually
+     * completed (LINSTOR can return success on the API call while the resource lingers in
+     * DELETING state due to peer issues, lost quorum, or down satellites). Uses the
+     * controller-side name filter rather than scanning every RD on the cluster (cheap even
+     * when polled once per second from {@link #waitForResourceDefinitionDeleted}).
+     */
+    public static boolean isResourceDefinitionGone(DevelopersApi api, String rscName) throws ApiException {
+        List<ResourceDefinition> matching =
+                api.resourceDefinitionList(Collections.singletonList(rscName), false, null, null, null);
+        return matching == null || matching.isEmpty();
+    }
+
+    /**
+     * Polls the controller until the named resource definition is gone or the timeout elapses.
+     * Returns {@code true} if the resource was confirmed gone, {@code false} if it was still
+     * present (or the controller kept erroring) at the deadline. Callers should NOT throw on a
+     * {@code false} return — the upstream API call already reported success and the operator
+     * may need to investigate manually. Log a WARN with the resource name instead.
+     */
+    public static boolean waitForResourceDefinitionDeleted(DevelopersApi api, String rscName, long timeoutMillis) {
+        final long deadline = System.currentTimeMillis() + timeoutMillis;
+        while (true) {
+            try {
+                if (isResourceDefinitionGone(api, rscName)) {
+                    return true;
+                }
+            } catch (ApiException e) {
+                LOGGER.debug("LINSTOR delete-verify poll failed for {}: {}", rscName, e.getMessage());
+                // Keep polling — controller may be transiently unavailable.
+            }
+            if (System.currentTimeMillis() >= deadline) {
+                return false;
+            }
+            try {
+                Thread.sleep(1_000L);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                return false;
+            }
+        }
+    }
+
+    /**
      * Returns a pair list of resource-definitions with ther 1:1 mapped resource-group objects that start with the
      * resource name `startWith`
      * @param api
@@ -491,7 +543,26 @@ public class LinstorUtil {
                 .filter(rscDfn -> rscDfn.getProps().containsKey(LinstorUtil.getTemplateForAuxPropKey(rscGrpName)))
                 .findFirst();
 
-        return rd.orElseGet(() -> rdsStartingWith.get(0));
+        if (rd.isPresent()) {
+            return rd.get();
+        }
+        // Fallback: no resource has the exact "_cs-template-for-<rscGrpName>" property.
+        // This happens when (a) the matched resource is a legacy template created before that
+        // convention was introduced, or (b) the template was cached by a different resource
+        // group and the operator hopes to share it. Log so the ambiguity is visible — silent
+        // first-match fallback has previously routed clones to the wrong template when
+        // multiple resource groups coexisted on the same controller.
+        ResourceDefinition fallback = rdsStartingWith.get(0);
+        LOGGER.warn("LINSTOR findResourceDefinition: no resource for '{}' has the expected " +
+                        "Aux property '{}' for resource group '{}'; falling back to first match '{}' " +
+                        "(present aux properties: {}). If this is wrong, set the property explicitly " +
+                        "or remove the unrelated resource definition.",
+                rscName, getTemplateForAuxPropKey(rscGrpName), rscGrpName,
+                fallback.getName(),
+                fallback.getProps().keySet().stream()
+                        .filter(k -> k.startsWith("Aux/" + CS_TEMPLATE_FOR_PREFIX))
+                        .collect(Collectors.toList()));
+        return fallback;
     }
 
     public static boolean isRscDiskless(ResourceWithVolumes rsc) {

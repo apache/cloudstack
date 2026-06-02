@@ -69,6 +69,8 @@ public class ApiConstants {
     public static final String BACKUP_VM_OFFERING_REMOVED = "vmbackupofferingremoved";
     public static final String IS_BACKUP_VM_EXPUNGED = "isbackupvmexpunged";
     public static final String BACKUP_TOTAL = "backuptotal";
+    public static final String BALANCE = "balance";
+    public static final String BALANCES = "balances";
     public static final String BASE64_IMAGE = "base64image";
     public static final String BGP_PEERS = "bgppeers";
     public static final String BGP_PEER_IDS = "bgppeerids";
@@ -171,6 +173,7 @@ public class ApiConstants {
     public static final String DATACENTER_NAME = "datacentername";
     public static final String DATADISKS_DETAILS = "datadisksdetails";
     public static final String DATADISK_OFFERING_LIST = "datadiskofferinglist";
+    public static final String DATE = "date";
     public static final String DEFAULT_VALUE = "defaultvalue";
     public static final String DELETE_PROTECTION = "deleteprotection";
     public static final String DESCRIPTION = "description";
@@ -1363,6 +1366,13 @@ public class ApiConstants {
     public static final String OBJECT_STORAGE_AVAILABLE = "objectstorageavailable";
     public static final String OBJECT_STORAGE_LIMIT = "objectstoragelimit";
     public static final String OBJECT_STORAGE_TOTAL = "objectstoragetotal";
+
+    public static final String KEEP_MAC_ADDRESS_ON_PUBLIC_NIC = "keepmacaddressonpublicnic";
+
+    public static final String PARAMETER_DESCRIPTION_KEEP_MAC_ADDRESS_ON_PUBLIC_NIC =
+            "Indicates whether to use the same MAC address for the public NIC of VRs on the same network. If \"true\", when creating redundant routers or recreating" +
+                    " a VR, CloudStack will use the same MAC address for the public NIC of all VRs. Otherwise, if \"false\", new public NICs will always have " +
+                    " a new MAC address.";
 
     public static final String PARAMETER_DESCRIPTION_ACTIVATION_RULE = "Quota tariff's activation rule. It can receive a JS script that results in either " +
             "a boolean or a numeric value: if it results in a boolean value, the tariff value will be applied according to the result; if it results in a numeric value, the " +
