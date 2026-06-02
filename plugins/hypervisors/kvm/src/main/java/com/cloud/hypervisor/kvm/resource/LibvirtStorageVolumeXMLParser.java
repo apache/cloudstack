@@ -44,10 +44,19 @@ public class LibvirtStorageVolumeXMLParser {
             Document doc = builder.parse(is);
 
             Element rootElement = doc.getDocumentElement();
-            Element backingStore = (Element)rootElement.getElementsByTagName("backingStore").item(0);
-            if (backingStore != null) {
-                String[] paths = getTagValue("path", backingStore).split("/");
-                return paths[paths.length-1];
+            NodeList backingStores = rootElement.getElementsByTagName("backingStore");
+            if (backingStores.getLength() > 0) {
+                Element backingStore = (Element) backingStores.item(0);
+                NodeList pathNodes = backingStore.getElementsByTagName("path");
+                if (pathNodes.getLength() > 0) {
+                    String path = pathNodes.item(0).getTextContent();
+                    if (path == null || path.trim().isEmpty()) {
+                        return null;
+                    }
+                    path = path.trim();
+                    int lastSlash = path.lastIndexOf('/');
+                    return lastSlash >= 0 ? path.substring(lastSlash + 1) : path;
+                }
             }
         } catch (ParserConfigurationException | SAXException | IOException e) {
             logger.error(e.toString(), e);
