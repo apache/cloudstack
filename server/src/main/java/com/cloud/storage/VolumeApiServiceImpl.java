@@ -3531,9 +3531,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     StoragePoolVO destinationStoragePoolVo = _storagePoolDao.findById(storagePoolId);
 
                     if (isSourceOrDestNotOnStorPool(srcStoragePoolVO, destinationStoragePoolVo)) {
-                        throw new InvalidParameterValueException("KVM does not support volume live migration due to the limited possibility to refresh VM XML domain. " +
-                                "Therefore, to live migrate a volume between storage pools, one must migrate the VM to a different host as well to force the VM XML domain update. " +
-                                "Use 'migrateVirtualMachineWithVolumes' instead.");
+                        logger.debug("Allowing KVM live volume migration between different storage pools. VM [{}], volume [{}], source pool [{}], destination pool [{}].",
+                                vm, vol, srcStoragePoolVO, destinationStoragePoolVo);
                     }
                     srcAndDestOnStorPool = isSourceAndDestOnStorPool(srcStoragePoolVO, destinationStoragePoolVo);
                 }
