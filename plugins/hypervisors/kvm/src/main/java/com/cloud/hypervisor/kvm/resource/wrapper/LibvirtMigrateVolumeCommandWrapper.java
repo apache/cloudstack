@@ -75,6 +75,11 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
     @Override
     public Answer execute(final MigrateVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {
         VolumeObjectTO srcVolumeObjectTO = (VolumeObjectTO)command.getSrcData();
+
+        if (srcVolumeObjectTO == null) {
+            return migrateRegularVolume(command, libvirtComputingResource);
+        }
+
         PrimaryDataStoreTO srcPrimaryDataStore = (PrimaryDataStoreTO)srcVolumeObjectTO.getDataStore();
 
         MigrateVolumeAnswer answer;
