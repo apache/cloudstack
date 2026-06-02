@@ -21,6 +21,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
@@ -363,6 +364,7 @@ public class KVMBackupExportServiceImplTest {
 
             when(volumeDao.findById(601L)).thenReturn(volume);
             when(volume.getId()).thenReturn(601L);
+            when(volume.getState()).thenReturn(Volume.State.Ready);
             when(volume.getDataCenterId()).thenReturn(1L);
             when(volume.getPoolId()).thenReturn(701L);
             when(volume.getPath()).thenReturn("vol-601.qcow2");
@@ -398,6 +400,7 @@ public class KVMBackupExportServiceImplTest {
             assertNotNull(created);
             assertEquals(901L, created.getId());
             assertEquals(ImageTransfer.Direction.upload, created.getDirection());
+            verify(volumeDao).updateState(eq(Volume.State.Ready), eq(Volume.Event.RestoreRequested), eq(Volume.State.Restoring), eq(volume), isNull());
             verify(agentManager, times(1)).send(eq(801L), any(Command.class));
         }
     }

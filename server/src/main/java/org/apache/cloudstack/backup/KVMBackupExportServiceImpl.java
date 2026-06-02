@@ -33,6 +33,8 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.utils.fsm.StateMachine2;
 import org.apache.cloudstack.api.command.admin.backup.CreateImageTransferCmd;
 import org.apache.cloudstack.api.command.admin.backup.DeleteVmCheckpointCmd;
 import org.apache.cloudstack.api.command.admin.backup.FinalizeBackupCmd;
@@ -639,6 +641,14 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         imageTransfer.setTransferUrl(transferAnswer.getTransferUrl());
         imageTransfer.setSignedTicketId(transferAnswer.getImageTransferId());
         imageTransfer = imageTransferDao.persist(imageTransfer);
+
+        try {
+            final StateMachine2<Volume.State, Volume.Event, Volume> stateMachine = Volume.State.getStateMachine();
+            stateMachine.transitTo(volume, Volume.Event.RestoreRequested, null, volumeDao);
+        } catch (NoTransitionException e) {
+            throw new CloudRuntimeException("Failed to transition volume  " + volume.getUuid(), e);
+        }
+
         return imageTransfer;
 
     }
@@ -742,12 +752,11 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         return answer.getResult();
     }
 
-    private void finalizeUploadImageTransfer(ImageTransferVO imageTransfer) {
+    private String finalizeUploadImageTransferWithResult(ImageTransferVO imageTransfer) {
         String transferId = imageTransfer.getUuid();
-
         boolean stopNbdServerResult = stopNBDServer(imageTransfer);
         if (!stopNbdServerResult) {
-            throw new CloudRuntimeException("Failed to stop the nbd server");
+            return "Failed to stop the nbd server";
         }
 
         FinalizeImageTransferCommand finalizeCmd = new FinalizeImageTransferCommand(transferId);
@@ -755,11 +764,29 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         try {
             answer = agentManager.send(imageTransfer.getHostId(), finalizeCmd);
         } catch (AgentUnavailableException | OperationTimedoutException e) {
-            throw new CloudRuntimeException("Failed to communicate with agent", e);
+            return "Failed to communicate with agent";
         }
 
         if (!answer.getResult()) {
-            throw new CloudRuntimeException("Failed to finalize image transfer: " + answer.getDetails());
+            return "Failed to finalize image transfer: " + answer.getDetails();
+        }
+        return null;
+    }
+
+    private void finalizeUploadImageTransfer(ImageTransferVO imageTransfer) {
+        String failureReason = finalizeUploadImageTransferWithResult(imageTransfer);
+        Volume.Event event = failureReason == null ? Volume.Event.RestoreSucceeded : Volume.Event.RestoreFailed;
+
+        VolumeVO volume = volumeDao.findById(imageTransfer.getVolumeId());
+        try {
+            final StateMachine2<Volume.State, Volume.Event, Volume> stateMachine = Volume.State.getStateMachine();
+            stateMachine.transitTo(volume, event, null, volumeDao);
+        } catch (NoTransitionException e) {
+            throw new CloudRuntimeException("Failed to transition state during upload finalize image transfer for volume " + volume.getUuid(), e);
+        }
+
+        if (failureReason != null) {
+            throw new CloudRuntimeException(failureReason);
         }
     }
 
