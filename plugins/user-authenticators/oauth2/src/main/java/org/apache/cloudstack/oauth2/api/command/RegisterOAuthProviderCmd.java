@@ -30,6 +30,7 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.oauth2.OAuth2AuthManager;
 import org.apache.cloudstack.oauth2.api.response.OauthProviderResponse;
+import org.apache.cloudstack.oauth2.keycloak.KeycloakOAuth2Provider;
 import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -114,7 +115,7 @@ public class RegisterOAuthProviderCmd extends BaseCmd {
 
     @Override
     public void execute() throws ServerApiException, ConcurrentOperationException, EntityExistsException {
-        if (StringUtils.equals("keycloak", getProvider())) {
+        if (StringUtils.equals(KeycloakOAuth2Provider.KEYCLOAK_PROVIDER, getProvider())) {
             if (StringUtils.isBlank(getAuthorizeUrl())) {
                 throw new ServerApiException(ApiErrorCode.BAD_REQUEST, "Parameter authorizeurl is mandatory for keycloak OAuth Provider");
             }

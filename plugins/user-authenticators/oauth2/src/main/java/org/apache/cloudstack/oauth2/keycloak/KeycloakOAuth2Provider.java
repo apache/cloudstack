@@ -52,6 +52,8 @@ import com.google.gson.JsonParser;
 
 public class KeycloakOAuth2Provider extends AdapterBase implements UserOAuth2Authenticator {
 
+    public static final String KEYCLOAK_PROVIDER = "keycloak";
+
     protected String idToken = null;
 
     @Inject
@@ -69,7 +71,7 @@ public class KeycloakOAuth2Provider extends AdapterBase implements UserOAuth2Aut
 
     @Override
     public String getName() {
-        return "keycloak";
+        return KEYCLOAK_PROVIDER;
     }
 
     @Override
