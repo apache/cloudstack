@@ -117,6 +117,51 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
         return result;
     }
 
+    private void setNewCoreHostResponse(HostJoinVO host, HostResponse hostResponse) {
+        hostResponse.setId(host.getUuid());
+        hostResponse.setName(host.getName());
+        hostResponse.setState(host.getStatus());
+        hostResponse.setResourceState(host.getResourceState().toString());
+        hostResponse.setDisconnectedOn(host.getDisconnectedOn());
+        hostResponse.setHostType(host.getType());
+        hostResponse.setIpAddress(host.getPrivateIpAddress());
+        hostResponse.setVersion(host.getVersion());
+        hostResponse.setCreated(host.getCreated());
+        hostResponse.setRemoved(host.getRemoved());
+        hostResponse.setLastPinged(new Date(host.getLastPinged()));
+        if (host.getHypervisorType() != null) {
+            hostResponse.setHypervisor(host.getHypervisorType().getHypervisorDisplayName());
+        }
+
+        hostResponse.setZoneId(host.getZoneUuid());
+        hostResponse.setZoneName(host.getZoneName());
+        hostResponse.setPodId(host.getPodUuid());
+        hostResponse.setPodName(host.getPodName());
+        if (host.getClusterId() > 0) {
+            hostResponse.setClusterId(host.getClusterUuid());
+            hostResponse.setClusterName(host.getClusterName());
+            if (host.getClusterType() != null) {
+                hostResponse.setClusterType(host.getClusterType().toString());
+            }
+        }
+
+        String hostTags = host.getTag();
+        hostResponse.setHostTags(hostTags);
+        hostResponse.setExplicitHostTags(host.getExplicitTag());
+        hostResponse.setImplicitHostTags(host.getImplicitTag());
+        hostResponse.setStorageAccessGroups(host.getStorageAccessGroups());
+        hostResponse.setClusterStorageAccessGroups(host.getClusterStorageAccessGroups());
+        hostResponse.setPodStorageAccessGroups(host.getPodStorageAccessGroups());
+        hostResponse.setZoneStorageAccessGroups(host.getZoneStorageAccessGroups());
+
+        // msid is returned as-is; callers resolve it to avoid a per-host lookup
+        if (host.getManagementServerId() != null) {
+            hostResponse.setManagementServerId(host.getManagementServerId().toString());
+        }
+
+        hostResponse.setObjectName("host");
+    }
+
     private void setNewHostResponseBase(HostJoinVO host, EnumSet<HostDetails> details, HostResponse hostResponse) {
         hostResponse.setId(host.getUuid());
         hostResponse.setCapabilities(host.getCapabilities());
@@ -334,7 +379,11 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
     @Override
     public HostResponse newHostResponse(HostJoinVO host, EnumSet<HostDetails> details) {
         HostResponse hostResponse = new HostResponse();
-        setNewHostResponseBase(host, details, hostResponse);
+        if (details.contains(HostDetails.core)) {
+            setNewCoreHostResponse(host, hostResponse);
+        } else {
+            setNewHostResponseBase(host, details, hostResponse);
+        }
         return hostResponse;
     }
 
