@@ -124,6 +124,6 @@ public class ApiRouteHandler extends ManagerBase implements RouteHandler {
     }
 
     private static void add(List<Link> links, String href, String rel) {
-        links.add(Link.of(href, rel));
+        links.add(Link.of(rel, href));
     }
 }

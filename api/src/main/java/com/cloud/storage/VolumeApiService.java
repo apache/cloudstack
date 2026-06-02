@@ -211,5 +211,5 @@ public interface VolumeApiService {
 
     Long getVolumePhysicalSize(Storage.ImageFormat format, String path, String chainInfo);
 
-    Long getCustomDiskOfferingIdForVolumeUpload(Account owner, DataCenter zone);
+    Long getCustomDiskOfferingIdForVolumeUpload(Account owner, DataCenter zone, boolean encryptEnabledOnly);
 }

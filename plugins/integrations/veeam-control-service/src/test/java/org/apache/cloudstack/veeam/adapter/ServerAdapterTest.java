@@ -643,8 +643,9 @@ public class ServerAdapterTest {
         when(offering.isCustomized()).thenReturn(false);
         when(offering.getCpu()).thenReturn(2);
         when(offering.getRamSize()).thenReturn(1024);
+        DataCenterVO zone = mock(DataCenterVO.class);
 
-        assertEquals(offering, serverAdapter.getServiceOfferingFromRequest(null, account, "uuid4", 2, 1024));
+        assertEquals(offering, serverAdapter.getServiceOfferingFromRequest(zone, account, "uuid4", 2, 1024));
     }
 
     @Test
@@ -655,8 +656,9 @@ public class ServerAdapterTest {
         doNothing().when(accountService).checkAccess(eq(account), eq(offering), any());
         when(offering.isCustomized()).thenReturn(true);
         doNothing().when(userVmManager).validateCustomParameters(eq(offering), any());
+        DataCenterVO zone = mock(DataCenterVO.class);
 
-        ServiceOfferingVO result = serverAdapter.getServiceOfferingFromRequest(null, account, "uuid5", 2, 1024);
+        ServiceOfferingVO result = serverAdapter.getServiceOfferingFromRequest(zone, account, "uuid5", 2, 1024);
 
         assertEquals(offering, result);
         verify(offering).setCpu(2);

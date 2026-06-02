@@ -673,7 +673,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                 Long volumeDiskOfferingId = diskOfferingId;
                 if (volumeDiskOfferingId == null) {
-                    volumeDiskOfferingId = getCustomDiskOfferingIdForVolumeUpload(owner, zone);
+                    volumeDiskOfferingId = getCustomDiskOfferingIdForVolumeUpload(owner, zone, false);
                     if (volumeDiskOfferingId == null) {
                         throw new CloudRuntimeException(String.format("Unable to find custom disk offering in zone: %s for volume upload", zone.getUuid()));
                     }
@@ -732,13 +732,23 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     @Override
-    public Long getCustomDiskOfferingIdForVolumeUpload(Account owner, DataCenter zone) {
+    public Long getCustomDiskOfferingIdForVolumeUpload(Account owner, DataCenter zone, boolean encryptEnabledOnly) {
         Long offeringId = getDefaultCustomOfferingId(owner, zone);
         if (offeringId != null) {
-            return offeringId;
+            if (encryptEnabledOnly) {
+                DiskOfferingVO offering = _diskOfferingDao.findById(offeringId);
+                if (offering != null && offering.getEncrypt()) {
+                    return offeringId;
+                }
+            } else {
+                return offeringId;
+            }
         }
         List<DiskOfferingVO> offerings = _diskOfferingDao.listCustomDiskOfferings();
         for (DiskOfferingVO offering : offerings) {
+            if (encryptEnabledOnly && !offering.getEncrypt()) {
+                continue;
+            }
             try {
                 _configMgr.checkDiskOfferingAccess(owner, offering, zone);
                 return offering.getId();

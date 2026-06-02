@@ -205,6 +205,10 @@ public class ListServiceOfferingsCmd extends BaseListProjectAndAccountResourcesC
         this.memory = memory;
     }
 
+    public void setEncryptRoot(Boolean encryptRoot) {
+        this.encryptRoot = encryptRoot;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

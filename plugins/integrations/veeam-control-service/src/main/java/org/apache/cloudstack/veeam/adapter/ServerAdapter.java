@@ -184,12 +184,14 @@ import com.cloud.server.ResourceTag;
 import com.cloud.server.TaggedResourceService;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -360,6 +362,9 @@ public class ServerAdapter extends ManagerBase {
     @Inject
     AutoScaleVmGroupVmMapDao autoScaleVmGroupVmMapDao;
 
+    @Inject
+    DiskOfferingDao diskOfferingDao;
+
     protected static Map<String, Tag> getDummyTags() {
         Map<String, Tag> tags = new HashMap<>();
         Tag rootTag = ResourceTagVOToTagConverter.getRootTag();
@@ -499,13 +504,13 @@ public class ServerAdapter extends ManagerBase {
         try {
             accountService.checkAccess(account, offering, zone);
         } catch (PermissionDeniedException e) {
-            logger.warn("Service offering with ID {} linked with the VM request is not accessible for the account {}. Offering: {}, zone: {}",
-                    uuid, account, offering, zone);
+            logger.warn("{} linked with the VM request is not accessible for the account {} in zone: {}",
+                    offering, account, zone);
             return null;
         }
         if (!offering.isCustomized() && (offering.getCpu() != cpu || offering.getRamSize() != memory)) {
-            logger.warn("Service offering with ID {} linked with the VM request has different CPU or memory than requested. Offering: {}, requested CPU: {}, requested memory: {}",
-                    uuid, offering, cpu, memory);
+            logger.warn("{} linked with the VM request has different CPU or memory than requested. Requested CPU: {}, requested memory: {}",
+                    offering, cpu, memory);
             return null;
         }
         if (offering.isCustomized()) {
@@ -518,8 +523,16 @@ public class ServerAdapter extends ManagerBase {
                 offering.setCpu(cpu);
                 offering.setRamSize(memory);
             } catch (InvalidParameterValueException e) {
-                logger.warn("Service offering with ID {} linked with the VM request is customized but does not support requested CPU or memory. Offering: {}, requested CPU: {}, requested memory: {}",
-                        uuid, offering, cpu, memory);
+                logger.warn("{} linked with the VM request is customized but does not support requested CPU or memory. Requested CPU: {}, requested memory: {}",
+                        offering, cpu, memory);
+                return null;
+            }
+        }
+        if (VeeamControlService.InstanceEncryptVolumes.valueIn(zone.getId())) {
+            DiskOfferingVO diskOfferingVO = diskOfferingDao.findById(offering.getDiskOfferingId());
+            if (!diskOfferingVO.getEncrypt()) {
+                logger.warn("{} is set to true, but {} linked with the VM request does not support encrypted volumes.",
+                        VeeamControlService.InstanceEncryptVolumes.key(), offering);
                 return null;
             }
         }
@@ -537,6 +550,11 @@ public class ServerAdapter extends ManagerBase {
         cmd.setZoneId(zone.getId());
         cmd.setCpuNumber(cpu);
         cmd.setMemory(memory);
+        if (VeeamControlService.InstanceEncryptVolumes.valueIn(zone.getId())) {
+            logger.debug("{} is set to true, filtering service offerings that support encrypted volumes",
+                    VeeamControlService.InstanceEncryptVolumes.key());
+            cmd.setEncryptRoot(true);
+        }
         ListResponse<ServiceOfferingResponse> offerings = queryService.searchForServiceOfferings(cmd);
         if (offerings.getResponses().isEmpty()) {
             return null;
@@ -1625,7 +1643,8 @@ public class ServerAdapter extends ManagerBase {
         if (zone == null || !Grouping.AllocationState.Enabled.equals(zone.getAllocationState())) {
             throw new InvalidParameterValueException("Datacenter for the specified storage domain is not found or not active");
         }
-        Long diskOfferingId = volumeApiService.getCustomDiskOfferingIdForVolumeUpload(caller, zone);
+        Long diskOfferingId = volumeApiService.getCustomDiskOfferingIdForVolumeUpload(caller, zone,
+                VeeamControlService.InstanceEncryptVolumes.valueIn(zone.getId()));
         if (diskOfferingId == null) {
             throw new CloudRuntimeException("Failed to find custom offering for disk" + zone.getName());
         }

@@ -149,6 +149,7 @@ public class VeeamControlServiceImpl extends ManagerBase implements VeeamControl
                 Password,
                 ServiceAccountId,
                 InstanceRestoreAssignOwner,
+                InstanceEncryptVolumes,
                 AllowedClientCidrs,
                 DeveloperLogs
         };

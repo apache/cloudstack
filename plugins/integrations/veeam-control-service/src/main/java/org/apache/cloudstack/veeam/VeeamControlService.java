@@ -51,6 +51,11 @@ public interface VeeamControlService extends PluggableService, Configurable {
             "false", "Attempt to assign restored Instance to the owner based on OVF and network " +
             "details. If the assignment fails or set to false then the Instance will remain owned by the service " +
             "account", true);
+    ConfigKey<Boolean> InstanceEncryptVolumes = new ConfigKey<>("Advanced", Boolean.class,
+            "integration.veeam.control.instance.encrypt.volumes",
+            "false", "Whether to always use offerings with encryption enabled when creating volumes " +
+            "and Instances. If false, offerings will be selected without explicitly considering encryption based on " +
+            "backup metadata, availability and order.", true, ConfigKey.Scope.Zone);
     ConfigKey<String> AllowedClientCidrs = new ConfigKey<>("Advanced", String.class,
             "integration.veeam.control.allowed.client.cidrs",
             "", "Comma-separated list of CIDR blocks representing clients allowed to access the API. " +
