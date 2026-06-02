@@ -28,7 +28,7 @@ public interface ExtensionResourceMapDao extends GenericDao<ExtensionResourceMap
 
     ExtensionResourceMapVO findByResourceIdAndType(long resourceId, ExtensionResourceMap.ResourceType resourceType);
 
-    List<ExtensionResourceMapVO> listByResourceIdAndType(long resourceId, ExtensionResourceMap.ResourceType resourceType);
+    ExtensionResourceMapVO findResourceByExtensionIdAndResourceIdAndType(long extensionId, long resourceId, ExtensionResourceMap.ResourceType resourceType);
 
     List<Long> listResourceIdsByExtensionIdAndType(long extensionId, ExtensionResourceMap.ResourceType resourceType);
 

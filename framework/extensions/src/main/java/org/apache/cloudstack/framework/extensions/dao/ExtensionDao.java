@@ -28,4 +28,6 @@ public interface ExtensionDao extends GenericDao<ExtensionVO, Long> {
     ExtensionVO findByName(String name);
 
     List<ExtensionVO> listByType(Extension.Type type);
+
+    ExtensionVO findByNameAndType(String name, Extension.Type type);
 }

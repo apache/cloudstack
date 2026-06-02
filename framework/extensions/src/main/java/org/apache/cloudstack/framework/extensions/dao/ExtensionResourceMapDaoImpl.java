@@ -55,13 +55,15 @@ public class ExtensionResourceMapDaoImpl extends GenericDaoBase<ExtensionResourc
         return findOneBy(sc);
     }
 
+
     @Override
-    public List<ExtensionResourceMapVO> listByResourceIdAndType(long resourceId,
+    public ExtensionResourceMapVO findResourceByExtensionIdAndResourceIdAndType(long extensionId, long resourceId,
               ExtensionResourceMap.ResourceType resourceType) {
         SearchCriteria<ExtensionResourceMapVO> sc = genericSearch.create();
+        sc.setParameters("extensionId", extensionId);
         sc.setParameters("resourceId", resourceId);
         sc.setParameters("resourceType", resourceType);
-        return listBy(sc);
+        return findOneBy(sc);
     }
 
     @Override
