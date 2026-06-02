@@ -85,39 +85,36 @@ public class ExtensionResourceMapDaoImplTest {
     }
 
     // -----------------------------------------------------------------------
-    // Tests for new methods: listByResourceIdAndType, listResourceIdsByType
+    // Tests for new methods: findResourceByExtensionIdAndResourceIdAndType, listResourceIdsByType
     // -----------------------------------------------------------------------
 
     @Test
-    public void listByResourceIdAndTypeReturnsEmptyListWhenNoMatch() {
-        when(dao.listByResourceIdAndType(999L, ExtensionResourceMap.ResourceType.PhysicalNetwork)).thenReturn(List.of());
-        assertTrue(dao.listByResourceIdAndType(999L, ExtensionResourceMap.ResourceType.PhysicalNetwork).isEmpty());
+    public void findResourceByExtensionIdAndResourceIdAndTypeReturnsNullWhenNoMatch() {
+        when(dao.findResourceByExtensionIdAndResourceIdAndType(999L, 77L, ExtensionResourceMap.ResourceType.PhysicalNetwork)).thenReturn(null);
+        assertNull(dao.findResourceByExtensionIdAndResourceIdAndType(999L, 77L, ExtensionResourceMap.ResourceType.PhysicalNetwork));
     }
 
     @Test
-    public void listByResourceIdAndTypeReturnsMatchingEntries() {
+    public void findResourceByExtensionIdAndResourceIdAndTypeReturnsMatchingEntry() {
         ExtensionResourceMapVO map1 = new ExtensionResourceMapVO();
-        map1.setResourceId(42L);
+        map1.setExtensionId(42L);
+        map1.setResourceId(7L);
         map1.setResourceType(ExtensionResourceMap.ResourceType.PhysicalNetwork);
-        ExtensionResourceMapVO map2 = new ExtensionResourceMapVO();
-        map2.setResourceId(42L);
-        map2.setResourceType(ExtensionResourceMap.ResourceType.PhysicalNetwork);
-        List<ExtensionResourceMapVO> expected = List.of(map1, map2);
-        when(dao.listByResourceIdAndType(42L, ExtensionResourceMap.ResourceType.PhysicalNetwork)).thenReturn(expected);
-        List<ExtensionResourceMapVO> result = dao.listByResourceIdAndType(42L, ExtensionResourceMap.ResourceType.PhysicalNetwork);
-        assertEquals(2, result.size());
+        ExtensionResourceMapVO expected = map1;
+        when(dao.findResourceByExtensionIdAndResourceIdAndType(42L, 7L, ExtensionResourceMap.ResourceType.PhysicalNetwork)).thenReturn(expected);
+        ExtensionResourceMapVO result = dao.findResourceByExtensionIdAndResourceIdAndType(42L, 7L, ExtensionResourceMap.ResourceType.PhysicalNetwork);
         assertEquals(expected, result);
     }
 
     @Test
-    public void listByResourceIdAndTypeDifferentiatesResourceTypes() {
+    public void findResourceByExtensionIdAndResourceIdAndTypeDifferentiatesResourceTypes() {
         ExtensionResourceMapVO clusterMap = new ExtensionResourceMapVO();
         clusterMap.setResourceType(ExtensionResourceMap.ResourceType.Cluster);
-        when(dao.listByResourceIdAndType(10L, ExtensionResourceMap.ResourceType.Cluster)).thenReturn(List.of(clusterMap));
-        when(dao.listByResourceIdAndType(10L, ExtensionResourceMap.ResourceType.PhysicalNetwork)).thenReturn(List.of());
+        when(dao.findResourceByExtensionIdAndResourceIdAndType(10L, 55L, ExtensionResourceMap.ResourceType.Cluster)).thenReturn(clusterMap);
+        when(dao.findResourceByExtensionIdAndResourceIdAndType(10L, 55L, ExtensionResourceMap.ResourceType.PhysicalNetwork)).thenReturn(null);
 
-        assertEquals(1, dao.listByResourceIdAndType(10L, ExtensionResourceMap.ResourceType.Cluster).size());
-        assertTrue(dao.listByResourceIdAndType(10L, ExtensionResourceMap.ResourceType.PhysicalNetwork).isEmpty());
+        assertEquals(clusterMap, dao.findResourceByExtensionIdAndResourceIdAndType(10L, 55L, ExtensionResourceMap.ResourceType.Cluster));
+        assertNull(dao.findResourceByExtensionIdAndResourceIdAndType(10L, 55L, ExtensionResourceMap.ResourceType.PhysicalNetwork));
     }
 
     @Test

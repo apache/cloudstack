@@ -51,4 +51,12 @@ public class ExtensionDaoImpl extends GenericDaoBase<ExtensionVO, Long> implemen
         sc.setParameters("type", type);
         return listBy(sc);
     }
+
+    @Override
+    public ExtensionVO findByNameAndType(String name, Extension.Type type) {
+        SearchCriteria<ExtensionVO> sc = AllFieldSearch.create();
+        sc.setParameters("name", name);
+        sc.setParameters("type", type);
+        return findOneBy(sc);
+    }
 }
