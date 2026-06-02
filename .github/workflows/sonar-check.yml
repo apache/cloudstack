@@ -29,9 +29,9 @@ concurrency:
 
 jobs:
   sonar:
-    if: github.repository == 'apache/cloudstack' && github.event.pull_request.head.repo.full_name == github.repository
     uses: ./.github/workflows/sonar-reusable.yml
     with:
       is_pr: true
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
