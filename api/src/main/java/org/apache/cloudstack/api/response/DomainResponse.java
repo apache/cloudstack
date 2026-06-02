@@ -106,15 +106,15 @@ public class DomainResponse extends BaseResponseWithAnnotations implements Resou
     private String snapshotAvailable;
 
     @SerializedName(ApiConstants.VM_SNAPSHOT_LIMIT)
-    @Param(description = "the number of Instance snapshots that can be stored by this account")
+    @Param(description = "the number of Instance snapshots that can be stored by this domain")
     private String vmSnapshotLimit;
 
     @SerializedName(ApiConstants.VM_SNAPSHOT_TOTAL)
-    @Param(description = "the number of Instance snapshots stored by this account")
+    @Param(description = "the number of Instance snapshots stored by this domain")
     private Long vmSnapshotTotal;
 
     @SerializedName(ApiConstants.VM_SNAPSHOT_AVAILABLE)
-    @Param(description = "the number of Instance snapshots available for this account")
+    @Param(description = "the number of Instance snapshots available for this domain")
     private String vmSnapshotAvailable;
 
     @SerializedName("templatelimit") @Param(description = "The total number of Templates which can be created by this domain")
