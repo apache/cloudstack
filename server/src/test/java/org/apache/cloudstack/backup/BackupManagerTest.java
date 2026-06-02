@@ -578,7 +578,7 @@ public class BackupManagerTest {
                 backupManager.tryRestoreVM(backup, vm, offering, "Checking message error.");
                 fail("An exception is needed.");
             } catch (CloudRuntimeException e) {
-                assertEquals("Error restoring VM from backup [Checking message error.].", e.getMessage());
+                assertEquals("Error restoring Instance from Backup [Checking message error.].", e.getMessage());
             }
         }
     }
@@ -2215,7 +2215,7 @@ public class BackupManagerTest {
         CloudRuntimeException exception = Assert.assertThrows(CloudRuntimeException.class,
                 () -> backupManager.restoreBackup(backupId));
 
-        assertEquals("Existing VM should be stopped before being restored from backup", exception.getMessage());
+        assertEquals("Existing Instance should be stopped before being restored from Backup", exception.getMessage());
         verify(backupDao, times(1)).findById(backupId);
         verify(vmInstanceDao, times(1)).findByIdIncludingRemoved(vmId);
     }
@@ -2252,7 +2252,7 @@ public class BackupManagerTest {
             CloudRuntimeException exception = Assert.assertThrows(CloudRuntimeException.class,
                     () -> backupManager.restoreBackup(backupId));
 
-            assertEquals("Unable to restore VM with the current backup as the backup has different number of disks as the VM", exception.getMessage());
+            assertEquals("Unable to restore Instance with the current Backup as the Backup has different number of disks to the Instance", exception.getMessage());
         }
         verify(backupDao, times(1)).findById(backupId);
         verify(vmInstanceDao, times(1)).findByIdIncludingRemoved(vmId);

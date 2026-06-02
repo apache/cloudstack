@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-name: Main Branch Sonar Quality Check
+name: Sonar Quality Check (Main)
 
 on:
   push:
@@ -26,6 +26,10 @@ permissions:
   contents: read
   pull-requests: write
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   sonar:
     if: github.repository == 'apache/cloudstack'
@@ -33,5 +37,4 @@ jobs:
     with:
       is_pr: false
     secrets:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
