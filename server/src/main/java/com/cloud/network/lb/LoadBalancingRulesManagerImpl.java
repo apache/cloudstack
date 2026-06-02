@@ -2684,7 +2684,12 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
     @Override
     public void removeLBRule(LoadBalancer rule) {
-        // remove the rule
+        FirewallRule relatedFirewallRule = _firewallDao.findByRelatedId(rule.getId());
+        if (relatedFirewallRule != null) {
+            logger.debug("Load balancer [{}] has a related firewall rule [{}]. Removing it.", rule.getUuid(), relatedFirewallRule.getUuid());
+            _firewallDao.remove(relatedFirewallRule.getId());
+        }
+
         _lbDao.remove(rule.getId());
     }
 
