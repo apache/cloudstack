@@ -1666,6 +1666,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 ConcurrentSnapshotsThresholdPerHost,
                 EncodeApiResponse,
                 EnableSecureSessionCookie,
+                JSONContentType,
                 proxyForwardList,
                 useForwardHeader,
                 listOfForwardHeaders,
