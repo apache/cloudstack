@@ -3992,7 +3992,7 @@ public class UserVmManagerImplTest {
         when(_dcMock.getNetworkType()).thenReturn(DataCenter.NetworkType.Basic);
         Mockito.doReturn(userVmVoMock).when(userVmManagerImpl).createBasicSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), nullable(Boolean.class), any(), any(), any(),
-                any(), any(), any(), any(), eq(true), any(), any(), any());
+                any(), any(), any(), any(), eq(true), any(), any(), any(), any());
 
         // Must NOT throw "Deployment of virtual machine is supported only for Zone-wide storage pools"
         userVmManagerImpl.createVirtualMachine(deployVMCmd);
@@ -4022,7 +4022,7 @@ public class UserVmManagerImplTest {
         when(_dcMock.getNetworkType()).thenReturn(DataCenter.NetworkType.Basic);
         Mockito.doReturn(userVmVoMock).when(userVmManagerImpl).createBasicSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), nullable(Boolean.class), any(), any(), any(),
-                any(), any(), any(), any(), eq(true), any(), any(), any());
+                any(), any(), any(), any(), eq(true), any(), any(), any(), any());
 
         // Must NOT throw "Deployment of virtual machine is supported only for Zone-wide storage pools"
         userVmManagerImpl.createVirtualMachine(deployVMCmd);
