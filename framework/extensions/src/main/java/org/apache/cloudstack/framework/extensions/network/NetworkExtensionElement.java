@@ -1377,8 +1377,8 @@ public class NetworkExtensionElement extends AdapterBase implements
             return false;
         }
         String extensionIp = ensureExtensionIp(network);
-        logger.debug("addDhcpEntry: network={} mac={} ip={}", network,
-                nic.getMacAddress(), nic.getIPv4Address());
+        logger.debug("addDhcpEntry: network={} mac={} ip={} ipv6={}", network,
+                nic.getMacAddress(), nic.getIPv4Address(), nic.getIPv6Address());
         JsonObject payload = new JsonObject();
         payload.addProperty("network_id", String.valueOf(network.getId()));
         payload.addProperty("mac", safeStr(nic.getMacAddress()));
@@ -1476,8 +1476,8 @@ public class NetworkExtensionElement extends AdapterBase implements
         if (!canHandle(network, Service.Dhcp)) {
             return false;
         }
-        logger.debug("removeDhcpEntry: network={} mac={} ip={}", network,
-                nic.getMacAddress(), nic.getIPv4Address());
+        logger.debug("removeDhcpEntry: network={} mac={} ip={} ipv6={}", network,
+                nic.getMacAddress(), nic.getIPv4Address(), nic.getIPv6Address());
         String extensionIp = ensureExtensionIp(network);
         JsonObject payload = new JsonObject();
         payload.addProperty("network_id", String.valueOf(network.getId()));
@@ -1500,8 +1500,8 @@ public class NetworkExtensionElement extends AdapterBase implements
             return false;
         }
         String hostname = vm.getHostName();
-        logger.debug("addDnsEntry: network={} hostname={} ip={}", network,
-                hostname, nic.getIPv4Address());
+        logger.debug("addDnsEntry: network={} hostname={} ip={} ipv6={}", network,
+                hostname, nic.getIPv4Address(), nic.getIPv6Address());
         String extensionIp = ensureExtensionIp(network);
         JsonObject payload = new JsonObject();
         payload.addProperty("network_id", String.valueOf(network.getId()));
@@ -1614,8 +1614,8 @@ public class NetworkExtensionElement extends AdapterBase implements
         // default NIC IP), so we always key metadata by the NIC's IP on this network.
         String nicIpAddress = nic.getIPv4Address();
 
-        logger.debug("addPasswordAndUserdata: network={} ip={} hasPassword={} hasSshKey={}",
-                network.getId(), nicIpAddress,
+        logger.debug("addPasswordAndUserdata: network={} ip={} ipv6={} hasPassword={} hasSshKey={}",
+                network.getId(), nicIpAddress, nic.getIPv6Address(),
                 StringUtils.isNotEmpty(password),
                 StringUtils.isNotEmpty(sshPublicKey));
 
@@ -1641,7 +1641,7 @@ public class NetworkExtensionElement extends AdapterBase implements
                 destHostname);
 
         if (CollectionUtils.isEmpty(vmData)) {
-            logger.debug("addPasswordAndUserdata: no VM data generated for network={} ip={}", network, nicIpAddress);
+            logger.debug("addPasswordAndUserdata: no VM data generated for network={} ip={} ipv6={}", network, nicIpAddress, nic.getIPv6Address());
             return true;
         }
 
@@ -1707,7 +1707,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         if (StringUtils.isEmpty(password)) {
             return true;
         }
-        logger.debug("savePassword: network={} ip={}", network, nic.getIPv4Address());
+        logger.debug("savePassword: network={} ip={} ipv6={}", network, nic.getIPv4Address(), nic.getIPv6Address());
         String extensionIp = ensureExtensionIp(network);
         JsonObject payload = new JsonObject();
         payload.addProperty("network_id", String.valueOf(network.getId()));
@@ -1734,7 +1734,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         if (StringUtils.isEmpty(userData)) {
             return true;
         }
-        logger.debug("saveUserData: network={} ip={}", network, nic.getIPv4Address());
+        logger.debug("saveUserData: network={} ip={} ipv6={}", network, nic.getIPv4Address(), nic.getIPv6Address());
         // userData is stored as base64; pass it directly so the script can decode it
         String extensionIp = ensureExtensionIp(network);
         JsonObject payload = new JsonObject();
@@ -1758,7 +1758,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         if (StringUtils.isEmpty(sshPublicKey)) {
             return true;
         }
-        logger.debug("saveSSHKey: network={} ip={}", network, nic.getIPv4Address());
+        logger.debug("saveSSHKey: network={} ip={} ipv6={}", network, nic.getIPv4Address(), nic.getIPv6Address());
         // Encode SSH key as base64 to safely pass via CLI
         String sshKeyBase64 = Base64.getEncoder().encodeToString(sshPublicKey.getBytes(java.nio.charset.StandardCharsets.UTF_8));
         String extensionIp = ensureExtensionIp(network);
@@ -1784,8 +1784,8 @@ public class NetworkExtensionElement extends AdapterBase implements
         if (StringUtils.isBlank(hostname)) {
             return true;
         }
-        logger.debug("saveHypervisorHostname: network={} ip={} host={}", network,
-                nic.getIPv4Address(), hostname);
+        logger.debug("saveHypervisorHostname: network={} ip={} ipv6={} host={}", network,
+                nic.getIPv4Address(), nic.getIPv6Address(), hostname);
         String extensionIp = ensureExtensionIp(network);
         JsonObject payload = new JsonObject();
         payload.addProperty("network_id", String.valueOf(network.getId()));
@@ -2259,6 +2259,7 @@ public class NetworkExtensionElement extends AdapterBase implements
 
             json.append("{");
             json.append("\"ip\":\"").append(jsonEscape(nic.getIPv4Address())).append("\",");
+            json.append("\"ip6_address\":\"").append(jsonEscape(nic.getIPv6Address())).append("\",");
             json.append("\"mac\":\"").append(jsonEscape(nic.getMacAddress())).append("\",");
             json.append("\"hostname\":\"").append(jsonEscape(safeStr(userVm.getHostName()))).append("\",");
             json.append("\"default_nic\":").append(nic.isDefaultNic()).append(",");
