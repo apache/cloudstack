@@ -124,6 +124,8 @@ import org.apache.cloudstack.extension.ExtensionHelper;
 import org.apache.cloudstack.extension.NetworkCustomActionProvider;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.VpcDetailsDao;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -301,9 +303,9 @@ public class NetworkExtensionElement extends AdapterBase implements
             // If this element is scoped to a provider name, prefer capabilities stored
             // in the extension's "network.service.capabilities" detail.  The ExtensionHelper
             // exposes a helper that loads the Service→Capability map from the DB.
-            if (providerName != null && !providerName.isBlank()) {
+            if (StringUtils.isNotBlank(providerName)) {
                 Map<Service, Map<Capability, String>> caps = extensionHelper.getNetworkCapabilitiesForProvider(null, providerName);
-                if (caps != null && !caps.isEmpty()) {
+                if (MapUtils.isNotEmpty(caps)) {
                     return caps;
                 }
             }
@@ -327,25 +329,14 @@ public class NetworkExtensionElement extends AdapterBase implements
     protected Extension resolveExtension(Network network) {
         Long physicalNetworkId = network.getPhysicalNetworkId();
         if (physicalNetworkId == null) {
-            logger.warn("Network {} has no physical network — cannot resolve extension", network.getId());
+            logger.warn("Network {} has no physical network — cannot resolve extension", network);
             return null;
         }
-        if (StringUtils.isNotBlank(providerName)) {
-            Extension ext = extensionHelper.getExtensionForPhysicalNetworkAndProvider(physicalNetworkId, providerName);
-            if (ext != null) {
-                return ext;
-            }
-            logger.warn("No extension found for scoped provider '{}' on physical network {}", providerName, physicalNetworkId);
+        Extension ext = extensionHelper.getExtensionForPhysicalNetworkAndProvider(physicalNetworkId, providerName);
+        if (ext != null) {
+            return ext;
         }
-        List<String> providers = ntwkSrvcDao.getDistinctProviders(network.getId());
-        if (providers != null) {
-            for (String p : providers) {
-                Extension ext = extensionHelper.getExtensionForPhysicalNetworkAndProvider(physicalNetworkId, p);
-                if (ext != null) {
-                    return ext;
-                }
-            }
-        }
+        logger.warn("No extension found for scoped provider '{}' on physical network {}", providerName, physicalNetworkId);
         return null;
     }
 
@@ -354,25 +345,8 @@ public class NetworkExtensionElement extends AdapterBase implements
         if (physicalNetworkId == null) {
             return false;
         }
-        if (providerName != null && !providerName.isBlank()) {
-            boolean hasExt = extensionHelper.getExtensionForPhysicalNetworkAndProvider(physicalNetworkId, providerName) != null;
-            if (!hasExt) {
-                return false;
-            }
-            if (service == null) {
-                return true;
-            }
-            List<String> sp = ntwkSrvcDao.getProvidersForServiceInNetwork(network.getId(), service);
-            return sp != null && sp.stream()
-                    .anyMatch(p -> extensionHelper.getExtensionForPhysicalNetworkAndProvider(physicalNetworkId, p) != null);
-        }
-        List<String> providers = ntwkSrvcDao.getDistinctProviders(network.getId());
-        if (providers == null || providers.isEmpty()) {
-            return false;
-        }
-        boolean hasExtProv = providers.stream().anyMatch(
-                p -> extensionHelper.getExtensionForPhysicalNetworkAndProvider(physicalNetworkId, p) != null);
-        if (!hasExtProv) {
+        boolean hasExt = extensionHelper.getExtensionForPhysicalNetworkAndProvider(physicalNetworkId, providerName) != null;
+        if (!hasExt) {
             return false;
         }
         if (service == null) {
@@ -398,7 +372,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         if (!canHandle(network, null)) {
             return false;
         }
-        logger.info("Implementing network extension for network {} (VLAN {})", network.getId(), network.getBroadcastUri());
+        logger.info("Implementing network extension for network {} (VLAN {})", network, network.getBroadcastUri());
 
         // Step 1: Ensure a network device is selected and its details stored.
         ensureExtensionDetails(network);
@@ -448,7 +422,7 @@ public class NetworkExtensionElement extends AdapterBase implements
                     }
                 }
             } catch (Exception e) {
-                logger.warn("Failed to configure source NAT IP for network {}: {}", network.getId(), e.getMessage(), e);
+                logger.warn("Failed to configure source NAT IP for network {}: {}", network, e.getMessage());
             }
         }
 
@@ -476,27 +450,22 @@ public class NetworkExtensionElement extends AdapterBase implements
         applyNicUpdateFromNetwork(network, nic.getId());
 
         final NetworkOfferingVO offering = networkOfferingDao.findById(network.getNetworkOfferingId());
-        implement(network, offering, dest, context);
 
-        return true;
+        return implement(network, offering, dest, context);
     }
 
     private void applyNicUpdateFromNetwork(Network network, Long nicId) {
         if (nicId == null) {
             return;
         }
-        try {
-            NicVO nicVo = nicDao.findById(nicId);
-            if (nicVo == null) {
-                return;
-            }
-            if (network.getBroadcastUri() != null) {
-                nicVo.setBroadcastUri(network.getBroadcastUri());
-                nicVo.setIsolationUri(network.getBroadcastUri());
-            }
+        NicVO nicVo = nicDao.findById(nicId);
+        if (nicVo == null) {
+            return;
+        }
+        if (network.getBroadcastUri() != null) {
+            nicVo.setBroadcastUri(network.getBroadcastUri());
+            nicVo.setIsolationUri(network.getBroadcastUri());
             nicDao.update(nicId, nicVo);
-        } catch (Exception e) {
-            logger.debug("Failed to update nic {}: {}", nicId, e.getMessage());
         }
     }
 
@@ -509,7 +478,7 @@ public class NetworkExtensionElement extends AdapterBase implements
     @Override
     public boolean shutdown(Network network, ReservationContext context, boolean cleanup)
             throws ConcurrentOperationException, ResourceUnavailableException {
-        logger.info("Shutting down network extension for network {}", network.getId());
+        logger.info("Shutting down network extension for network {}", network);
         JsonObject payload = new JsonObject();
         payload.addProperty("network_id", String.valueOf(network.getId()));
         payload.addProperty("vlan", safeStr(getVlanId(network)));
@@ -522,7 +491,7 @@ public class NetworkExtensionElement extends AdapterBase implements
             try {
                 networkDetailsDao.removeDetail(network.getId(), NETWORK_DETAIL_EXTENSION_DETAILS);
             } catch (Exception e) {
-                logger.warn("Failed to remove network extension details for network {}: {}", network.getId(), e.getMessage());
+                logger.warn("Failed to remove network extension details for network {}: {}", network, e.getMessage());
             }
         }
         return result;
@@ -531,7 +500,7 @@ public class NetworkExtensionElement extends AdapterBase implements
     @Override
     public boolean destroy(Network network, ReservationContext context)
             throws ConcurrentOperationException, ResourceUnavailableException {
-        logger.info("Destroying network extension for network {}", network.getId());
+        logger.info("Destroying network extension for network {}", network);
         JsonObject payload = new JsonObject();
         payload.addProperty("network_id", String.valueOf(network.getId()));
         payload.addProperty("vlan", safeStr(getVlanId(network)));
@@ -554,7 +523,7 @@ public class NetworkExtensionElement extends AdapterBase implements
     protected void cleanupPlaceholderNicIp(Network network, ReservationContext context) {
         List<NicVO> placeholderNics = nicDao.listPlaceholderNicsByNetworkIdAndVmType(
                 network.getId(), VirtualMachine.Type.DomainRouter);
-        if (placeholderNics == null || placeholderNics.isEmpty()) {
+        if (CollectionUtils.isEmpty(placeholderNics)) {
             return;
         }
 
@@ -567,8 +536,8 @@ public class NetworkExtensionElement extends AdapterBase implements
         for (NicVO placeholderNic : placeholderNics) {
             try {
                 String ip = placeholderNic.getIPv4Address();
-                if (ip != null && !ip.isBlank()) {
-                    logger.debug("Cleaning up PlaceHolder IP {} on network {}", ip, network.getId());
+                if (StringUtils.isNotBlank(ip)) {
+                    logger.debug("Cleaning up PlaceHolder IP {} on network {}", ip, network);
                     IPAddressVO ipAddress = ipAddressDao.findByIpAndSourceNetworkId(network.getId(), ip);
                     if (ipAddress != null) {
                         if (Network.GuestType.Shared.equals(network.getGuestType())) {
@@ -581,14 +550,14 @@ public class NetworkExtensionElement extends AdapterBase implements
                 }
             } catch (Exception e) {
                 logger.warn("Failed to release placeholder IP for network {} and nic {}: {}",
-                        network.getId(), placeholderNic.getId(), e.getMessage());
+                        network, placeholderNic, e.getMessage());
             }
 
             try {
                 nicDao.remove(placeholderNic.getId());
             } catch (Exception e) {
                 logger.warn("Failed to remove placeholder nic {} for network {}: {}",
-                        placeholderNic.getId(), network.getId(), e.getMessage());
+                        placeholderNic, network, e.getMessage());
             }
         }
     }
@@ -641,7 +610,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         String currentDetails = stored != null
                 ? stored.getOrDefault(NETWORK_DETAIL_EXTENSION_DETAILS, "{}") : "{}";
 
-        logger.info("Ensuring network device for network {} (current={})", network.getId(), currentDetails);
+        logger.info("Ensuring network device for network {} (current={})", network, currentDetails);
 
         Extension extension = resolveExtension(network);
         File scriptFile = resolveScriptFile(network, extension);
@@ -661,7 +630,7 @@ public class NetworkExtensionElement extends AdapterBase implements
 
             if (result.first() != EXIT_CODE_SUCCESS) {
                 logger.warn("ensure-network-device exited {} for network {} — keeping current details",
-                        -1, network.getId());
+                        -1, network);
                 if ("{}".equals(currentDetails)) {
                     networkDetailsDao.addDetail(network.getId(), NETWORK_DETAIL_EXTENSION_DETAILS, "{}", false);
                 }
@@ -671,13 +640,13 @@ public class NetworkExtensionElement extends AdapterBase implements
                 output = "{}".equals(currentDetails) ? "{}" : currentDetails;
             }
             if (!output.equals(currentDetails)) {
-                logger.info("Network device updated for network {}: {}", network.getId(), output);
+                logger.info("Network device updated for network {}: {}", network, output);
                 networkDetailsDao.addDetail(network.getId(), NETWORK_DETAIL_EXTENSION_DETAILS, output, false);
             } else {
-                logger.debug("Network device unchanged for network {}: {}", network.getId(), output);
+                logger.debug("Network device unchanged for network {}: {}", network, output);
             }
         } catch (Exception e) {
-            logger.warn("Failed ensure-network-device for network {}: {}", network.getId(), e.getMessage());
+            logger.warn("Failed ensure-network-device for network {}: {}", network, e.getMessage());
             if ("{}".equals(currentDetails)) {
                 networkDetailsDao.addDetail(network.getId(), NETWORK_DETAIL_EXTENSION_DETAILS, "{}", false);
             }
@@ -714,7 +683,7 @@ public class NetworkExtensionElement extends AdapterBase implements
                     }
                     return placeholderNic.getIPv4Address();
                 } catch (Exception e) {
-                    logger.warn("Failed to acquire extension IP for network {}: {}", network.getId(), e.getMessage());
+                    logger.warn("Failed to acquire extension IP for network {}: {}", network, e.getMessage());
                 }
         }
         return null;
@@ -725,10 +694,10 @@ public class NetworkExtensionElement extends AdapterBase implements
     @Override
     public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress, Set<Service> services)
             throws ResourceUnavailableException {
-        if (ipAddress == null || ipAddress.isEmpty()) {
+        if (CollectionUtils.isEmpty(ipAddress)) {
             return true;
         }
-        logger.info("Applying {} IPs for network {}", ipAddress.size(), network.getId());
+        logger.info("Applying {} IPs for network {}", ipAddress.size(), network);
         String vlanId = getVlanId(network);
 
         for (PublicIpAddress ip : ipAddress) {
@@ -780,7 +749,7 @@ public class NetworkExtensionElement extends AdapterBase implements
      * Returns "" if either value is null or parsing fails.
      */
     private String buildCidrFromIpAndNetmask(String ipStr, String netmaskStr) {
-        if (ipStr == null || ipStr.isEmpty() || netmaskStr == null || netmaskStr.isEmpty()) {
+        if (StringUtils.isEmpty(ipStr) || StringUtils.isEmpty(netmaskStr)) {
             return "";
         }
         // If netmask is already CIDR (contains '/'), try to return network/prefix
@@ -805,13 +774,13 @@ public class NetworkExtensionElement extends AdapterBase implements
     @Override
     public boolean applyStaticNats(Network config, List<? extends StaticNat> rules)
             throws ResourceUnavailableException {
-        if (rules == null || rules.isEmpty()) {
+        if (CollectionUtils.isEmpty(rules)) {
             return true;
         }
         if (!canHandle(config, Service.StaticNat)) {
             return false;
         }
-        logger.info("Applying {} static NAT rules for network {}", rules.size(), config.getId());
+        logger.info("Applying {} static NAT rules for network {}", rules.size(), config);
         String vlanId = getVlanId(config);
         for (StaticNat rule : rules) {
             String action = rule.isForRevoke() ? CMD_DELETE_STATIC_NAT : CMD_ADD_STATIC_NAT;
@@ -840,13 +809,13 @@ public class NetworkExtensionElement extends AdapterBase implements
     @Override
     public boolean applyPFRules(Network network, List<PortForwardingRule> rules)
             throws ResourceUnavailableException {
-        if (rules == null || rules.isEmpty()) {
+        if (CollectionUtils.isEmpty(rules)) {
             return true;
         }
         if (!canHandle(network, Service.PortForwarding)) {
             return false;
         }
-        logger.info("Applying {} port forwarding rules for network {}", rules.size(), network.getId());
+        logger.info("Applying {} port forwarding rules for network {}", rules.size(), network);
         String vlanId = getVlanId(network);
         for (PortForwardingRule rule : rules) {
             boolean isRevoke = rule.getState() == FirewallRule.State.Revoke;
@@ -958,7 +927,7 @@ public class NetworkExtensionElement extends AdapterBase implements
                     changed = true;
                 } else {
                     logger.warn("Ignoring unknown broadcast domain type '{}' for network {}",
-                            networkBroadcastDomainType, network.getId());
+                            networkBroadcastDomainType, network);
                 }
             }
 
@@ -974,7 +943,7 @@ public class NetworkExtensionElement extends AdapterBase implements
                 }
             }
         } catch (Exception e) {
-            logger.warn("Failed to update network {} from script output: {}", network.getId(), e.getMessage());
+            logger.warn("Failed to update network {} from script output: {}", network, e.getMessage());
         }
     }
 
@@ -1164,7 +1133,7 @@ public class NetworkExtensionElement extends AdapterBase implements
      */
     private JsonObject buildActionParamsPayload(Map<String, Object> parameters) {
         JsonObject obj = new JsonObject();
-        if (parameters == null || parameters.isEmpty()) {
+        if (MapUtils.isEmpty(parameters)) {
             return obj;
         }
         for (Map.Entry<String, Object> entry : parameters.entrySet()) {
@@ -1180,14 +1149,14 @@ public class NetworkExtensionElement extends AdapterBase implements
      * or not a valid JSON object.
      */
     private JsonObject parseJsonObjectOrEmpty(String json) {
-        if (json == null || json.isBlank()) {
+        if (StringUtils.isBlank(json)) {
             return new JsonObject();
         }
         try {
             JsonElement element = JsonParser.parseString(json);
             return element.isJsonObject() ? element.getAsJsonObject() : new JsonObject();
         } catch (Exception e) {
-            return new JsonObject();
+            throw new CloudRuntimeException("Failed to parse JSON: " + json, e);
         }
     }
 
@@ -1211,7 +1180,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         JsonObject payload = buildCustomActionPayload(network, extension, actionName, parameters);
 
         logger.info("Running custom action '{}' on network {} (extension: {}, params: {} key(s))",
-                actionName, network.getId(), extension != null ? extension.getName() : "unknown",
+                actionName, network, extension != null ? extension.getName() : "unknown",
                 parameters != null ? parameters.size() : 0);
 
         try {
@@ -1220,14 +1189,14 @@ public class NetworkExtensionElement extends AdapterBase implements
             String outputStr = result.second() != null ? result.second().trim() : "";
 
             if (result.first() != EXIT_CODE_SUCCESS) {
-                logger.error("Custom action '{}' failed: {}", actionName, outputStr);
+                logger.error("Custom action '{}' on network {} failed: {}", actionName, network, outputStr);
                 return null;
             }
-            logger.info("Custom action '{}' completed successfully", actionName);
+            logger.info("Custom action '{}' on network {} completed successfully", actionName, network);
             return outputStr.isEmpty() ? "OK" : outputStr;
         } catch (Exception e) {
-            logger.error("Failed to execute custom action '{}': {}", actionName, e.getMessage(), e);
-            throw new CloudRuntimeException("Failed to execute custom action: " + actionName, e);
+            logger.error("Failed to execute custom action '{}' on network {}: {}", actionName, network, e.getMessage());
+            throw new CloudRuntimeException(String.format("Failed to execute custom action %s on network %s", actionName, network.getUuid()), e);
         }
     }
 
@@ -1245,7 +1214,7 @@ public class NetworkExtensionElement extends AdapterBase implements
     public String runCustomAction(Vpc vpc, String actionName, Map<String, Object> parameters) {
         Pair<Long, Extension> physNetAndExt = resolveExtensionForVpc(vpc);
         if (physNetAndExt == null) {
-            throw new CloudRuntimeException("No extension found for VPC " + vpc.getId());
+            throw new CloudRuntimeException("No extension found for VPC " + vpc.getUuid());
         }
         Long physicalNetworkId = physNetAndExt.first();
         Extension extension = physNetAndExt.second();
@@ -1254,7 +1223,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         JsonObject payload = buildCustomActionPayload(vpc, physicalNetworkId, extension, actionName, parameters);
 
         logger.info("Running custom action '{}' on VPC {} (extension: {}, params: {} key(s))",
-                actionName, vpc.getId(), extension != null ? extension.getName() : "unknown",
+                actionName, vpc, extension != null ? extension.getName() : "unknown",
                 parameters != null ? parameters.size() : 0);
 
         try {
@@ -1263,14 +1232,14 @@ public class NetworkExtensionElement extends AdapterBase implements
             String outputStr = result.second() != null ? result.second().trim() : "";
 
             if (result.first() != EXIT_CODE_SUCCESS) {
-                logger.error("VPC custom action '{}' failed: {}", actionName, outputStr);
+                logger.error("VPC custom action '{}' on VPC {} failed: {}", actionName, vpc, outputStr);
                 return null;
             }
-            logger.info("VPC custom action '{}' completed successfully", actionName);
+            logger.info("VPC custom action '{}' on VPC {} completed successfully", actionName, vpc);
             return outputStr.isEmpty() ? "OK" : outputStr;
         } catch (Exception e) {
-            logger.error("Failed to execute VPC custom action '{}': {}", actionName, e.getMessage(), e);
-            throw new CloudRuntimeException("Failed to execute VPC custom action: " + actionName, e);
+            logger.error("Failed to execute VPC custom action '{}' on VPC {}: {}", actionName, vpc, e.getMessage());
+            throw new CloudRuntimeException(String.format("Failed to execute VPC custom action %s on VPC %s ", actionName, vpc.getUuid()), e);
         }
     }
 
@@ -1317,11 +1286,11 @@ public class NetworkExtensionElement extends AdapterBase implements
     protected File resolveScriptFile(Network network, Extension extension) {
         Long physicalNetworkId = network.getPhysicalNetworkId();
         if (physicalNetworkId == null) {
-            throw new CloudRuntimeException("Network " + network.getId() + " has no physical network");
+            throw new CloudRuntimeException("Network " + network.getUuid() + " has no physical network");
         }
         if (extension == null) {
             throw new CloudRuntimeException(
-                    "No NetworkOrchestrator extension found for network " + network.getId()
+                    "No NetworkOrchestrator extension found for network " + network.getUuid()
                     + " on physical network " + physicalNetworkId);
         }
         if (!Extension.Type.NetworkOrchestrator.equals(extension.getType())) {
@@ -1339,9 +1308,9 @@ public class NetworkExtensionElement extends AdapterBase implements
             throw new CloudRuntimeException("Could not resolve path for extension " + extension.getName());
         }
 
-        File extensionDir = new File(extensionPath);
-        if (extensionDir.isFile() && extensionDir.canExecute()) {
-            return extensionDir;
+        File extensionFile = new File(extensionPath);
+        if (extensionFile.isFile() && extensionFile.canExecute()) {
+            return extensionFile;
         }
 
         throw new CloudRuntimeException(
@@ -1408,7 +1377,7 @@ public class NetworkExtensionElement extends AdapterBase implements
             return false;
         }
         String extensionIp = ensureExtensionIp(network);
-        logger.debug("addDhcpEntry: network={} mac={} ip={}", network.getId(),
+        logger.debug("addDhcpEntry: network={} mac={} ip={}", network,
                 nic.getMacAddress(), nic.getIPv4Address());
         JsonObject payload = new JsonObject();
         payload.addProperty("network_id", String.valueOf(network.getId()));
@@ -1435,7 +1404,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         if (!canHandle(network, Service.Dhcp)) {
             return false;
         }
-        logger.debug("configDhcpSupportForSubnet: network={}", network.getId());
+        logger.debug("configDhcpSupportForSubnet: network={}", network);
         String extensionIp = ensureExtensionIp(network);
         JsonObject payload = new JsonObject();
         payload.addProperty("network_id", String.valueOf(network.getId()));
@@ -1457,7 +1426,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         if (!canHandle(network, Service.Dhcp)) {
             return false;
         }
-        logger.debug("removeDhcpSupportForSubnet: network={}", network.getId());
+        logger.debug("removeDhcpSupportForSubnet: network={}", network);
         String extensionIp = ensureExtensionIp(network);
         JsonObject payload = new JsonObject();
         payload.addProperty("network_id", String.valueOf(network.getId()));
@@ -1471,10 +1440,10 @@ public class NetworkExtensionElement extends AdapterBase implements
         if (!canHandle(network, Service.Dhcp)) {
             return false;
         }
-        if (dhcpOptions == null || dhcpOptions.isEmpty()) {
+        if (MapUtils.isEmpty(dhcpOptions)) {
             return true;
         }
-        logger.debug("setExtraDhcpOptions: network={} nicId={} options={}", network.getId(), nicId, dhcpOptions.size());
+        logger.debug("setExtraDhcpOptions: network={} nicId={} options={}", network, nicId, dhcpOptions.size());
         // Serialise options as a compact JSON object: {"<code>":"<value>", ...}
         StringBuilder json = new StringBuilder("{");
         boolean first = true;
@@ -1496,7 +1465,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         try {
             return executeScript(network, CMD_SET_DHCP_OPTIONS, payload);
         } catch (Exception e) {
-            logger.warn("setExtraDhcpOptions failed for network {}: {}", network.getId(), e.getMessage());
+            logger.warn("setExtraDhcpOptions failed for network {}: {}", network, e.getMessage());
             return false;
         }
     }
@@ -1507,7 +1476,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         if (!canHandle(network, Service.Dhcp)) {
             return false;
         }
-        logger.debug("removeDhcpEntry: network={} mac={} ip={}", network.getId(),
+        logger.debug("removeDhcpEntry: network={} mac={} ip={}", network,
                 nic.getMacAddress(), nic.getIPv4Address());
         String extensionIp = ensureExtensionIp(network);
         JsonObject payload = new JsonObject();
@@ -1531,7 +1500,7 @@ public class NetworkExtensionElement extends AdapterBase implements
             return false;
         }
         String hostname = vm.getHostName();
-        logger.debug("addDnsEntry: network={} hostname={} ip={}", network.getId(),
+        logger.debug("addDnsEntry: network={} hostname={} ip={}", network,
                 hostname, nic.getIPv4Address());
         String extensionIp = ensureExtensionIp(network);
         JsonObject payload = new JsonObject();
@@ -1552,7 +1521,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         if (!canHandle(network, Service.Dns)) {
             return false;
         }
-        logger.debug("configDnsSupportForSubnet: network={}", network.getId());
+        logger.debug("configDnsSupportForSubnet: network={}", network);
         String extensionIp = ensureExtensionIp(network);
         JsonObject payload = new JsonObject();
         payload.addProperty("network_id", String.valueOf(network.getId()));
@@ -1574,7 +1543,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         if (!canHandle(network, Service.Dns)) {
             return false;
         }
-        logger.debug("removeDnsSupportForSubnet: network={}", network.getId());
+        logger.debug("removeDnsSupportForSubnet: network={}", network);
         String extensionIp = ensureExtensionIp(network);
         JsonObject payload = new JsonObject();
         payload.addProperty("network_id", String.valueOf(network.getId()));
@@ -1603,7 +1572,7 @@ public class NetworkExtensionElement extends AdapterBase implements
                 sshPublicKey = sshKeyDetail.getValue();
             }
         } catch (Exception e) {
-            logger.debug("Could not fetch SSH public key for VM {}: {}", profile.getId(), e.getMessage());
+            logger.debug("Could not fetch SSH public key for VM {}: {}", profile, e.getMessage());
         }
 
         // Service offering display name
@@ -1611,7 +1580,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         try {
             serviceOfferingName = profile.getServiceOffering().getDisplayText();
         } catch (Exception e) {
-            logger.debug("Could not fetch service offering for VM {}: {}", profile.getId(), e.getMessage());
+            logger.debug("Could not fetch service offering for VM {}: {}", profile, e.getMessage());
         }
 
         // Is Windows guest?
@@ -1621,7 +1590,7 @@ public class NetworkExtensionElement extends AdapterBase implements
                     .findById(guestOSDao.findById(vm.getGuestOSId()).getCategoryId())
                     .getName().equalsIgnoreCase("Windows");
         } catch (Exception e) {
-            logger.debug("Could not determine OS type for VM {}: {}", profile.getId(), e.getMessage());
+            logger.debug("Could not determine OS type for VM {}: {}", profile, e.getMessage());
         }
 
         // Hypervisor hostname – prefer dest host, fall back to current host
@@ -1634,7 +1603,7 @@ public class NetworkExtensionElement extends AdapterBase implements
                         hostDao.findById(vm.getHostId()).getName());
             }
         } catch (Exception e) {
-            logger.debug("Could not resolve hypervisor hostname for VM {}: {}", profile.getId(), e.getMessage());
+            logger.debug("Could not resolve hypervisor hostname for VM {}: {}", profile, e.getMessage());
         }
 
         // Password from the VM profile parameter (set by UserVmManager before deployment)
@@ -1647,12 +1616,12 @@ public class NetworkExtensionElement extends AdapterBase implements
 
         logger.debug("addPasswordAndUserdata: network={} ip={} hasPassword={} hasSshKey={}",
                 network.getId(), nicIpAddress,
-                password != null && !password.isEmpty(),
-                sshPublicKey != null && !sshPublicKey.isEmpty());
+                StringUtils.isNotEmpty(password),
+                StringUtils.isNotEmpty(sshPublicKey));
 
         final UserVmVO userVm = userVmDao.findById(vm.getId());
         if (userVm == null) {
-            throw new CloudRuntimeException("Could not find UserVmVO for VM " + vm.getId());
+            throw new CloudRuntimeException("Could not find UserVmVO for VM " + vm.getUuid());
         }
 
         // Generate the full metadata set (userdata, meta-data/*, password) in one go
@@ -1671,8 +1640,8 @@ public class NetworkExtensionElement extends AdapterBase implements
                 isWindows,
                 destHostname);
 
-        if (vmData == null || vmData.isEmpty()) {
-            logger.debug("addPasswordAndUserdata: no VM data generated for network={} ip={}", network.getId(), nicIpAddress);
+        if (CollectionUtils.isEmpty(vmData)) {
+            logger.debug("addPasswordAndUserdata: no VM data generated for network={} ip={}", network, nicIpAddress);
             return true;
         }
 
@@ -1735,10 +1704,10 @@ public class NetworkExtensionElement extends AdapterBase implements
             return false;
         }
         String password = (String) vm.getParameter(VirtualMachineProfile.Param.VmPassword);
-        if (password == null || password.isEmpty()) {
+        if (StringUtils.isEmpty(password)) {
             return true;
         }
-        logger.debug("savePassword: network={} ip={}", network.getId(), nic.getIPv4Address());
+        logger.debug("savePassword: network={} ip={}", network, nic.getIPv4Address());
         String extensionIp = ensureExtensionIp(network);
         JsonObject payload = new JsonObject();
         payload.addProperty("network_id", String.valueOf(network.getId()));
@@ -1762,10 +1731,10 @@ public class NetworkExtensionElement extends AdapterBase implements
         if (vm.getVirtualMachine() instanceof UserVm) {
             userData = ((UserVm) vm.getVirtualMachine()).getUserData();
         }
-        if (userData == null || userData.isEmpty()) {
+        if (StringUtils.isEmpty(userData)) {
             return true;
         }
-        logger.debug("saveUserData: network={} ip={}", network.getId(), nic.getIPv4Address());
+        logger.debug("saveUserData: network={} ip={}", network, nic.getIPv4Address());
         // userData is stored as base64; pass it directly so the script can decode it
         String extensionIp = ensureExtensionIp(network);
         JsonObject payload = new JsonObject();
@@ -1786,10 +1755,10 @@ public class NetworkExtensionElement extends AdapterBase implements
         if (!canHandle(network, Service.UserData)) {
             return false;
         }
-        if (sshPublicKey == null || sshPublicKey.isEmpty()) {
+        if (StringUtils.isEmpty(sshPublicKey)) {
             return true;
         }
-        logger.debug("saveSSHKey: network={} ip={}", network.getId(), nic.getIPv4Address());
+        logger.debug("saveSSHKey: network={} ip={}", network, nic.getIPv4Address());
         // Encode SSH key as base64 to safely pass via CLI
         String sshKeyBase64 = Base64.getEncoder().encodeToString(sshPublicKey.getBytes(java.nio.charset.StandardCharsets.UTF_8));
         String extensionIp = ensureExtensionIp(network);
@@ -1812,10 +1781,10 @@ public class NetworkExtensionElement extends AdapterBase implements
             return false;
         }
         String hostname = dest != null && dest.getHost() != null ? dest.getHost().getName() : null;
-        if (hostname == null || hostname.isEmpty()) {
+        if (StringUtils.isBlank(hostname)) {
             return true;
         }
-        logger.debug("saveHypervisorHostname: network={} ip={} host={}", network.getId(),
+        logger.debug("saveHypervisorHostname: network={} ip={} host={}", network,
                 nic.getIPv4Address(), hostname);
         String extensionIp = ensureExtensionIp(network);
         JsonObject payload = new JsonObject();
@@ -1835,13 +1804,13 @@ public class NetworkExtensionElement extends AdapterBase implements
     @Override
     public boolean applyLBRules(Network network, List<LoadBalancingRule> rules)
             throws ResourceUnavailableException {
-        if (rules == null || rules.isEmpty()) {
+        if (CollectionUtils.isEmpty(rules)) {
             return true;
         }
         if (!canHandle(network, Service.Lb)) {
             return false;
         }
-        logger.info("Applying {} LB rules for network {}", rules.size(), network.getId());
+        logger.info("Applying {} LB rules for network {}", rules.size(), network);
         String vlanId = getVlanId(network);
 
         // Serialise all rules as a JSON array and pass as a single --lb-rules argument
@@ -1885,7 +1854,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         addVpcIdToPayload(payload, network);
         boolean result = executeScript(network, CMD_APPLY_LB_RULES, payload);
         if (!result) {
-            throw new ResourceUnavailableException("Failed to apply LB rules for network " + network.getId(),
+            throw new ResourceUnavailableException("Failed to apply LB rules for network " + network.getUuid(),
                     Network.class, network.getId());
         }
         return true;
@@ -1993,7 +1962,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         }
 
         logger.info("applyFWRules: network={} activeRules={} defaultEgressAllow={}",
-                network.getId(), allRules.size(), defaultEgressAllow);
+                network, allRules.size(), defaultEgressAllow);
 
         // Build JSON payload: { "default_egress_allow": <bool>, "cidr": "...", "rules": [...] }
         StringBuilder json = new StringBuilder();
@@ -2034,7 +2003,7 @@ public class NetworkExtensionElement extends AdapterBase implements
             //              for egress  = allowed VM source IP ranges
             json.append("\"sourceCidrs\":[");
             List<String> sourceCidrs = rule.getSourceCidrList();
-            if (sourceCidrs != null && !sourceCidrs.isEmpty()) {
+            if (CollectionUtils.isNotEmpty(sourceCidrs)) {
                 boolean firstCidr = true;
                 for (String cidr : sourceCidrs) {
                     if (!firstCidr) json.append(",");
@@ -2046,7 +2015,7 @@ public class NetworkExtensionElement extends AdapterBase implements
             // destCidrs: optional destination CIDR filter (meaningful for egress rules)
             List<String> destCidrs = rule.getDestinationCidrList();
             json.append(",\"destCidrs\":[");
-            if (destCidrs != null && !destCidrs.isEmpty()) {
+            if (CollectionUtils.isNotEmpty(destCidrs)) {
                 boolean firstCidr = true;
                 for (String cidr : destCidrs) {
                     if (!firstCidr) json.append(",");
@@ -2074,7 +2043,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         boolean result = executeScript(network, CMD_APPLY_FW_RULES, payload);
         if (!result) {
             throw new ResourceUnavailableException(
-                    "Failed to apply firewall rules for network " + network.getId(),
+                    "Failed to apply firewall rules for network " + network,
                     Network.class, network.getId());
         }
         return true;
@@ -2093,7 +2062,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         if (!canHandle(network, null)) {
             return true;
         }
-        logger.debug("prepareAggregatedExecution: network={}", network.getId());
+        logger.debug("prepareAggregatedExecution: network={} dest={}", network, dest);
         return true;
     }
 
@@ -2112,7 +2081,7 @@ public class NetworkExtensionElement extends AdapterBase implements
             return true;
         }
 
-        logger.info("completeAggregatedExecution: restoring all VM network data for network={}", network.getId());
+        logger.debug("completeAggregatedExecution: restoring all VM network data for network={} dest={}", network, dest);
 
         boolean dhcpEnabled     = networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dhcp)
                 && networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dhcp, getProvider());
@@ -2122,19 +2091,19 @@ public class NetworkExtensionElement extends AdapterBase implements
                 && networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.UserData, getProvider());
 
         if (!dhcpEnabled && !dnsEnabled && !userdataEnabled) {
-            logger.debug("completeAggregatedExecution: no DHCP/DNS/UserData service for network={}, skipping", network.getId());
+            logger.debug("completeAggregatedExecution: no DHCP/DNS/UserData service for network={}, skipping", network);
             return true;
         }
 
         // Query all active User-VM NICs on this network
         List<NicVO> nics = nicDao.listByNetworkIdAndType(network.getId(), VirtualMachine.Type.User);
-        if (nics == null || nics.isEmpty()) {
-            logger.debug("completeAggregatedExecution: no user VM NICs on network={}, skipping", network.getId());
+        if (CollectionUtils.isEmpty(nics)) {
+            logger.debug("completeAggregatedExecution: no user VM NICs on network={}, skipping", network);
             return true;
         }
 
         logger.info("completeAggregatedExecution: building batch restore for {} VMs on network={}",
-                nics.size(), network.getId());
+                nics.size(), network);
 
         String restoreDataBase64 = buildRestoreNetworkData(network, nics, dhcpEnabled, dnsEnabled, userdataEnabled);
 
@@ -2245,14 +2214,14 @@ public class NetworkExtensionElement extends AdapterBase implements
                             sshPublicKey = sshKeyDetail.getValue();
                         }
                     } catch (Exception e) {
-                        logger.debug("Could not fetch SSH key for VM {}: {}", instanceId, e.getMessage());
+                        logger.debug("Could not fetch SSH key for VM {}: {}", userVm, e.getMessage());
                     }
 
                     // Is Windows?
                     boolean isWindows = false;
                     try {
                         isWindows = guestOSCategoryDao
-                                .findById(guestOSDao.findById(userVm.getGuestOSId()).getCategoryId())
+                                .findByIdIncludingRemoved(guestOSDao.findByIdIncludingRemoved(userVm.getGuestOSId()).getCategoryId())
                                 .getName().equalsIgnoreCase("Windows");
                     } catch (Exception ignored) { }
 
@@ -2280,7 +2249,7 @@ public class NetworkExtensionElement extends AdapterBase implements
                             isWindows,
                             destHostname);
                 } catch (Exception e) {
-                    logger.warn("Could not generate vmData for VM {} on network {}: {}", instanceId, network.getId(), e.getMessage());
+                    logger.warn("Could not generate vmData for VM {} on network {}: {}", userVm, network, e.getMessage());
                 }
             }
 
@@ -2295,7 +2264,7 @@ public class NetworkExtensionElement extends AdapterBase implements
             json.append("\"default_nic\":").append(nic.isDefaultNic()).append(",");
             json.append("\"vm_data\":[");
 
-            if (vmData != null && !vmData.isEmpty()) {
+            if (CollectionUtils.isNotEmpty(vmData)) {
                 boolean firstEntry = true;
                 for (String[] entry : vmData) {
                     String dir     = entry[NetworkModel.CONFIGDATA_DIR];
@@ -2344,15 +2313,13 @@ public class NetworkExtensionElement extends AdapterBase implements
      */
     protected Pair<Long, Extension> resolveExtensionForVpc(Vpc vpc) {
         List<PhysicalNetworkVO> physNetworks = physicalNetworkDao.listByZone(vpc.getZoneId());
-        if (physNetworks == null || physNetworks.isEmpty()) {
+        if (CollectionUtils.isEmpty(physNetworks)) {
             return null;
         }
-        if (StringUtils.isNotBlank(providerName)) {
-            for (PhysicalNetworkVO pn : physNetworks) {
-                Extension ext = extensionHelper.getExtensionForPhysicalNetworkAndProvider(pn.getId(), providerName);
-                if (ext != null) {
-                    return new Pair<>(pn.getId(), ext);
-                }
+        for (PhysicalNetworkVO pn : physNetworks) {
+            Extension ext = extensionHelper.getExtensionForPhysicalNetworkAndProvider(pn.getId(), providerName);
+            if (ext != null) {
+                return new Pair<>(pn.getId(), ext);
             }
         }
         return null;
@@ -2381,9 +2348,9 @@ public class NetworkExtensionElement extends AdapterBase implements
         if (extensionPath == null) {
             throw new CloudRuntimeException("Could not resolve path for extension " + extension.getName());
         }
-        File extensionDir = new File(extensionPath);
-        if (extensionDir.isFile() && extensionDir.canExecute()) {
-            return extensionDir;
+        File extensionFile = new File(extensionPath);
+        if (extensionFile.isFile() && extensionFile.canExecute()) {
+            return extensionFile;
         }
         throw new CloudRuntimeException(
                 "No executable script found in extension path " + extensionPath
@@ -2401,12 +2368,12 @@ public class NetworkExtensionElement extends AdapterBase implements
         String currentDetails = stored != null
                 ? stored.getOrDefault(NETWORK_DETAIL_EXTENSION_DETAILS, "{}") : "{}";
 
-        logger.info("Ensuring extension device for VPC {} (current={})", vpc.getId(), currentDetails);
+        logger.info("Ensuring extension device for VPC {} (current={})", vpc, currentDetails);
 
         Pair<Long, Extension> physNetAndExt = resolveExtensionForVpc(vpc);
         if (physNetAndExt == null) {
             logger.warn("ensureExtensionDetails(vpc): no extension found for VPC {} zone {}",
-                    vpc.getId(), vpc.getZoneId());
+                    vpc, vpc.getZoneId());
             return;
         }
         JsonObject argsPayload = new JsonObject();
@@ -2420,7 +2387,7 @@ public class NetworkExtensionElement extends AdapterBase implements
 
             if (result.first() != EXIT_CODE_SUCCESS) {
                 logger.warn("ensure-network-device exited {} for VPC {} — keeping current details",
-                        -1, vpc.getId());
+                        -1, vpc);
                 if ("{}".equals(currentDetails)) {
                     vpcDetailsDao.addDetail(vpc.getId(), NETWORK_DETAIL_EXTENSION_DETAILS, "{}", false);
                 }
@@ -2430,13 +2397,13 @@ public class NetworkExtensionElement extends AdapterBase implements
                 output = "{}".equals(currentDetails) ? "{}" : currentDetails;
             }
             if (!output.equals(currentDetails)) {
-                logger.info("VPC extension device updated for VPC {}: {}", vpc.getId(), output);
+                logger.info("VPC extension device updated for VPC {}: {}", vpc, output);
                 vpcDetailsDao.addDetail(vpc.getId(), NETWORK_DETAIL_EXTENSION_DETAILS, output, false);
             } else {
-                logger.debug("VPC extension device unchanged for VPC {}: {}", vpc.getId(), output);
+                logger.debug("VPC extension device unchanged for VPC {}: {}", vpc, output);
             }
         } catch (Exception e) {
-            logger.warn("Failed ensure-network-device for VPC {}: {}", vpc.getId(), e.getMessage());
+            logger.warn("Failed ensure-network-device for VPC {}: {}", vpc, e.getMessage());
             if ("{}".equals(currentDetails)) {
                 vpcDetailsDao.addDetail(vpc.getId(), NETWORK_DETAIL_EXTENSION_DETAILS, "{}", false);
             }
@@ -2454,8 +2421,8 @@ public class NetworkExtensionElement extends AdapterBase implements
     protected Pair<Integer, String> executeVpcScriptAndReturnOutput(Vpc vpc, String command, JsonObject argsPayload) {
         Pair<Long, Extension> physNetAndExt = resolveExtensionForVpc(vpc);
         if (physNetAndExt == null) {
-            logger.warn("executeVpcScript: no extension found for VPC {} zone {}", vpc.getId(), vpc.getZoneId());
-            return new Pair<>(EXIT_CODE_FAILURE, "No extension found for VPC " + vpc.getId());
+            logger.warn("executeVpcScript: no extension found for VPC {} zone {}", vpc, vpc.getZoneId());
+            return new Pair<>(EXIT_CODE_FAILURE, "No extension found for VPC " + vpc.getUuid());
         }
         Long physicalNetworkId = physNetAndExt.first();
         Extension extension = physNetAndExt.second();
@@ -2480,7 +2447,7 @@ public class NetworkExtensionElement extends AdapterBase implements
 
     protected PublicIpAddress getVpcSourceNatIp(long vpcId) {
         final List<IPAddressVO> ips = ipAddressDao.listByAssociatedVpc(vpcId, true);
-        if (ips == null || ips.isEmpty()) {
+        if (CollectionUtils.isEmpty(ips)) {
             return null;
         }
         IPAddressVO selected = null;
@@ -2578,7 +2545,7 @@ public class NetworkExtensionElement extends AdapterBase implements
             try {
                 vpcDetailsDao.removeDetail(vpc.getId(), NETWORK_DETAIL_EXTENSION_DETAILS);
             } catch (Exception e) {
-                logger.warn("Failed to remove VPC extension details for VPC {}: {}", vpc.getId(), e.getMessage());
+                logger.warn("Failed to remove VPC extension details for VPC {}: {}", vpc, e.getMessage());
             }
         }
         result = result && vpcResult;
@@ -2633,7 +2600,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         final boolean result = executeVpcScript(vpc, CMD_UPDATE_VPC_SOURCE_NAT_IP, payload);
         if (!result) {
             logger.warn("updateVpcSourceNatIp: failed to update source NAT IP for VPC {} to {}",
-                    vpc.getId(), address.getAddress().addr());
+                    vpc, address.getAddress().addr());
         }
         return result;
     }
@@ -2658,7 +2625,7 @@ public class NetworkExtensionElement extends AdapterBase implements
                      .filter(r -> r.getState() != NetworkACLItem.State.Revoke)
                      .collect(Collectors.toList());
 
-        logger.info("applyNetworkACLs: network={} activeRules={}", config.getId(), activeRules.size());
+        logger.info("applyNetworkACLs: network={} activeRules={}", config, activeRules.size());
 
         String aclRulesBase64 = buildAclRulesBase64(activeRules);
 
@@ -2674,7 +2641,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         boolean result = executeScript(config, CMD_APPLY_NETWORK_ACL, payload);
         if (!result) {
             throw new ResourceUnavailableException(
-                    "Failed to apply network ACL rules for network " + config.getId(),
+                    "Failed to apply network ACL rules for network " + config.getUuid(),
                     Network.class, config.getId());
         }
         return true;
@@ -2687,7 +2654,7 @@ public class NetworkExtensionElement extends AdapterBase implements
     @Override
     public boolean reorderAclRules(Vpc vpc, List<? extends Network> networks,
             List<? extends NetworkACLItem> networkACLItems) {
-        if (networks == null || networks.isEmpty()) {
+        if (CollectionUtils.isEmpty(networks)) {
             return true;
         }
 
@@ -2716,7 +2683,7 @@ public class NetworkExtensionElement extends AdapterBase implements
                 boolean r = executeScript(network, CMD_APPLY_NETWORK_ACL, payload);
                 result = result && r;
             } catch (Exception e) {
-                logger.warn("reorderAclRules: failed for network {}: {}", network.getId(), e.getMessage());
+                logger.warn("reorderAclRules: failed for network {}: {}", network, e.getMessage());
                 result = false;
             }
         }
@@ -2756,7 +2723,7 @@ public class NetworkExtensionElement extends AdapterBase implements
             }
             json.append(",\"sourceCidrs\":[");
             List<String> sourceCidrs = rule.getSourceCidrList();
-            if (sourceCidrs != null && !sourceCidrs.isEmpty()) {
+            if (CollectionUtils.isNotEmpty(sourceCidrs)) {
                 boolean firstCidr = true;
                 for (String cidr : sourceCidrs) {
                     if (!firstCidr) json.append(",");

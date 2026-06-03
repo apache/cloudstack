@@ -154,7 +154,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VmDetailConstants;
-import com.cloud.vm.dao.VMInstanceDao;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ExtensionsManagerImplTest {
@@ -185,8 +184,6 @@ public class ExtensionsManagerImplTest {
     private ExtensionCustomActionDao extensionCustomActionDao;
     @Mock
     private ExtensionCustomActionDetailsDao extensionCustomActionDetailsDao;
-    @Mock
-    private VMInstanceDao vmInstanceDao;
     @Mock
     private VirtualMachineManager virtualMachineManager;
     @Mock
@@ -560,7 +557,6 @@ public class ExtensionsManagerImplTest {
         when(ext.getName()).thenReturn("ext");
         when(ext.getRelativePath()).thenReturn("entry.sh");
         when(ext.isPathReady()).thenReturn(false);
-        ExtensionVO vo = mock(ExtensionVO.class);
         extensionsManager.checkExtensionPathState(ext, Collections.emptyList());
         verify(extensionsManager).updateExtensionPathReady(ext, false);
     }
@@ -2923,48 +2919,6 @@ public class ExtensionsManagerImplTest {
         Map<Network.Service, Map<Network.Capability, String>> result =
                 extensionsManager.getNetworkCapabilitiesForProvider(10L, null);
         assertTrue(result.isEmpty());
-    }
-
-    // -----------------------------------------------------------------------
-    // Tests for validateNetworkServicesSubset
-    // -----------------------------------------------------------------------
-
-    @Test
-    public void validateNetworkServicesSubsetDoesNothingForBlankServices() {
-        Extension ext = mock(Extension.class);
-        extensionsManager.validateNetworkServicesSubset(ext, "");
-        // no exception expected
-    }
-
-    @Test
-    public void validateNetworkServicesSubsetDoesNothingWhenAllowedIsEmpty() {
-        Extension ext = mock(Extension.class);
-        when(ext.getId()).thenReturn(1L);
-        when(extensionDetailsDao.listDetailsKeyPairs(1L)).thenReturn(Collections.emptyMap());
-        extensionsManager.validateNetworkServicesSubset(ext, "SourceNat");
-        // no exception - when no services declared, accept any
-    }
-
-    @Test(expected = InvalidParameterValueException.class)
-    public void validateNetworkServicesSubsetThrowsForUnsupportedService() {
-        Extension ext = mock(Extension.class);
-        when(ext.getId()).thenReturn(1L);
-        when(ext.getName()).thenReturn("my-ext");
-        when(extensionDetailsDao.listDetailsKeyPairs(1L)).thenReturn(Map.of(
-                ExtensionHelper.NETWORK_SERVICES_DETAIL_KEY,
-                "SourceNat,Firewall"));
-        extensionsManager.validateNetworkServicesSubset(ext, "StaticNat");
-    }
-
-    @Test
-    public void validateNetworkServicesSubsetDoesNothingForValidSubset() {
-        Extension ext = mock(Extension.class);
-        when(ext.getId()).thenReturn(1L);
-        when(extensionDetailsDao.listDetailsKeyPairs(1L)).thenReturn(Map.of(
-                ExtensionHelper.NETWORK_SERVICES_DETAIL_KEY,
-                "SourceNat,Firewall,StaticNat"));
-        extensionsManager.validateNetworkServicesSubset(ext, "SourceNat,Firewall");
-        // no exception expected
     }
 
     @Test

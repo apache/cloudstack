@@ -635,13 +635,13 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
                 if (supportedProtocolsStr == null) {
                     throw new CloudRuntimeException("Supported egress protocols capability is not defined for Firewall service");
                 }
-                supportedProtocols = caps.get(Capability.SupportedEgressProtocols).toLowerCase();
+                supportedProtocols = supportedProtocolsStr.toLowerCase();
             } else {
                 String supportedProtocolsStr = caps.get(Capability.SupportedProtocols);
                 if (supportedProtocolsStr == null) {
                     throw new CloudRuntimeException("Supported protocols capability is not defined for " + purpose + " service");
                 }
-                supportedProtocols = caps.get(Capability.SupportedProtocols).toLowerCase();
+                supportedProtocols = supportedProtocolsStr.toLowerCase();
             }
 
             if (!supportedProtocols.contains(proto.toLowerCase())) {
