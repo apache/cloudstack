@@ -128,7 +128,7 @@ public final class UserVmJoinVOToVmConverter {
         cpu.setTopology(new Topology(src.getCpu(), 1, 1));
         dst.setCpu(cpu);
         Os os = new Os();
-        os.setType(src.getGuestOsDisplayName());
+        os.setType(Os.inferTypeFromOsName(src.getGuestOsDisplayName()));
         Os.Boot boot = new Os.Boot();
         boot.setDevices(NamedList.of("device", List.of("hd")));
         os.setBoot(boot);

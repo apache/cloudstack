@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.veeam.api.dto;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -51,5 +53,62 @@ public final class Os {
         public void setDevices(NamedList<String> devices) {
             this.devices = devices;
         }
+    }
+
+    /**
+     * Infers the oVirt guest OS identifier expected by Veeam from the operating system name.
+     * This allows Veeam to correctly recognize Windows virtual machines and enable features
+     * such as file-level restore.
+     *<p>
+     * Identifier values are derived from the
+     * <a href="https://github.com/oVirt/ovirt-engine/blob/master/packaging/conf/osinfo-defaults.properties">
+     * oVirt OS defaults
+     * </a>.
+     *</p>
+     *
+     * @param name normalized operating system name
+     * @return the matching oVirt Windows OS identifier
+     */
+    public static String getWindowsOsKey(final String name) {
+        if (name.contains("2025")) {
+            return "windows_2025";
+        }
+
+        if (name.contains("2022")) {
+            return "windows_2022";
+        }
+
+        if (name.contains("11")) {
+            return "windows_11";
+        }
+
+        if (name.contains("2019")) {
+            return "windows_2019x64";
+        }
+
+        if (name.contains("2016")) {
+            return "windows_2016x64";
+        }
+
+        if (name.contains("10") && name.contains("64")) {
+            return "windows_10x64";
+        }
+
+        return "windows_10";
+    }
+
+    public static String inferTypeFromOsName(String name) {
+        if (StringUtils.isBlank(name)) {
+            return "other";
+        }
+        String normalized = name.trim().toLowerCase();
+        if (normalized.contains("windows")) {
+            return getWindowsOsKey(normalized);
+        }
+        if (normalized.contains("linux") || normalized.contains("ubuntu") || normalized.contains("debian") ||
+                normalized.contains("centos") || normalized.contains("red hat") || normalized.contains("suse")) {
+            return "linux";
+        }
+        return "other";
     }
 }
