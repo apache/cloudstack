@@ -3604,6 +3604,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                                     UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), nicIdString, networkOfferingId,
                                             null, isDefault, VirtualMachine.class.getName(), vm.getUuid(), vm.isDisplay());
                                 }
+                                Integer rate = _configMgr.getNetworkOfferingNetworkRate(networkOfferingId, network.getDataCenterId());
+                                String networkRate = (rate == null || rate <= 0) ? ApiConstants.UNLIMITED : String.valueOf(rate);
+                                _networkDetailsDao.addDetail(networkId, ApiConstants.NETWORKRATE, networkRate, true);
                             }
                         });
                     } else {
