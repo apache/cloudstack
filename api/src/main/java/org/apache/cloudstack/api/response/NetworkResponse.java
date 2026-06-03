@@ -311,6 +311,10 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     @Param(description = "MTU configured on the network VR's private interfaces")
     private Integer privateMtu;
 
+    @SerializedName(ApiConstants.NETWORKRATE)
+    @Param(description = "Network rate (in Mb/s) configured for the Guest interface of this network", since = "4.24.0")
+    private String networkRate;
+
     @SerializedName(ApiConstants.IP6_DNS1)
     @Param(description = "The first IPv6 DNS for the network", since = "4.18.0")
     private String ipv6Dns1;
@@ -697,6 +701,14 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
 
     public void setPrivateMtu(Integer privateMtu) {
         this.privateMtu = privateMtu;
+    }
+
+    public String getNetworkRate() {
+        return networkRate;
+    }
+
+    public void setNetworkRate(String networkRate) {
+        this.networkRate = networkRate;
     }
 
     public void setIpv6Dns1(String ipv6Dns1) {

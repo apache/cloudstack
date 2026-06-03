@@ -87,6 +87,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.net.Dhcp;
+import com.cloud.vm.NicDetailVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VirtualMachine;
@@ -404,6 +405,10 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
                         .collect(Collectors.toList());
                 nicResponse.setExtraDhcpOptions(nicExtraDhcpOptionResponses);
 
+                NicDetailVO nicNetworkRateDetail = ApiDBUtils.findNicDetailByName(userVm.getNicId(), ApiConstants.NETWORKRATE);
+                if (nicNetworkRateDetail != null) {
+                    nicResponse.setNetworkRate(nicNetworkRateDetail.getValue());
+                }
                 userVmResponse.addNic(nicResponse);
             }
         }
@@ -660,6 +665,11 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
                     .map(vo -> new NicExtraDhcpOptionResponse(Dhcp.DhcpOptionCode.valueOfInt(vo.getCode()).getName(), vo.getCode(), vo.getValue()))
                     .collect(Collectors.toList());
             nicResponse.setExtraDhcpOptions(nicExtraDhcpOptionResponses);
+
+            NicDetailVO nicNetworkRateDetail = ApiDBUtils.findNicDetailByName(uvo.getNicId(), ApiConstants.NETWORKRATE);
+            if (nicNetworkRateDetail != null) {
+                nicResponse.setNetworkRate(nicNetworkRateDetail.getValue());
+            }
             userVmData.addNic(nicResponse);
         }
 

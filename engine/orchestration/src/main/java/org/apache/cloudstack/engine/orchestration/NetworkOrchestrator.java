@@ -744,6 +744,12 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
     }
 
+    private void saveNetworkRateInDetails(long networkId, NetworkOffering offering, long dataCenterId) {
+        Integer rate = _configMgr.getNetworkOfferingNetworkRate(offering.getId(), dataCenterId);
+        String networkRate = (rate == null || rate <= 0) ? ApiConstants.UNLIMITED : String.valueOf(rate);
+        networkDetailsDao.addDetail(networkId, ApiConstants.NETWORKRATE, networkRate, true);
+    }
+
     @Override
     public List<? extends Network> setupNetwork(final Account owner, final NetworkOffering offering, final DeploymentPlan plan, final String name, final String displayText, final boolean isDefault)
             throws ConcurrentOperationException {
@@ -819,6 +825,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         }
 
                         updateRouterIpInNetworkDetails(networkPersisted.getId(), network.getRouterIp(), network.getRouterIpv6());
+                        saveNetworkRateInDetails(networkPersisted.getId(), offering, plan.getDataCenterId());
 
                         if (predefined instanceof NetworkVO && guru instanceof NetworkGuruAdditionalFunctions) {
                             final NetworkGuruAdditionalFunctions functions = (NetworkGuruAdditionalFunctions) guru;
