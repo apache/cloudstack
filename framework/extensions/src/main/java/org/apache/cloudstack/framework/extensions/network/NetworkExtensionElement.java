@@ -226,7 +226,6 @@ public class NetworkExtensionElement extends AdapterBase implements
     public static final String CMD_ADD_DHCP_ENTRY = "add-dhcp-entry";
     public static final String CMD_CONFIG_DHCP_SUBNET = "config-dhcp-subnet";
     public static final String CMD_REMOVE_DHCP_SUBNET = "remove-dhcp-subnet";
-    public static final String CMD_SET_DHCP_OPTIONS = "set-dhcp-options";
     public static final String CMD_REMOVE_DHCP_ENTRY = "remove-dhcp-entry";
     public static final String CMD_ADD_DNS_ENTRY = "add-dns-entry";
     public static final String CMD_CONFIG_DNS_SUBNET = "config-dns-subnet";
@@ -1437,37 +1436,7 @@ public class NetworkExtensionElement extends AdapterBase implements
 
     @Override
     public boolean setExtraDhcpOptions(Network network, long nicId, Map<Integer, String> dhcpOptions) {
-        if (!canHandle(network, Service.Dhcp)) {
-            return false;
-        }
-        if (MapUtils.isEmpty(dhcpOptions)) {
-            return true;
-        }
-        logger.debug("setExtraDhcpOptions: network={} nicId={} options={}", network, nicId, dhcpOptions.size());
-        // Serialise options as a compact JSON object: {"<code>":"<value>", ...}
-        StringBuilder json = new StringBuilder("{");
-        boolean first = true;
-        for (Map.Entry<Integer, String> e : dhcpOptions.entrySet()) {
-            if (!first) json.append(",");
-            json.append("\"").append(e.getKey()).append("\":\"")
-                .append(e.getValue() != null ? e.getValue().replace("\"", "\\\"") : "")
-                .append("\"");
-            first = false;
-        }
-        json.append("}");
-        String extensionIp = ensureExtensionIp(network);
-        JsonObject payload = new JsonObject();
-        payload.addProperty("network_id", String.valueOf(network.getId()));
-        payload.addProperty("nic_id", String.valueOf(nicId));
-        payload.addProperty("options", json.toString());
-        payload.addProperty("extension_ip", safeStr(extensionIp));
-        addVpcIdToPayload(payload, network);
-        try {
-            return executeScript(network, CMD_SET_DHCP_OPTIONS, payload);
-        } catch (Exception e) {
-            logger.warn("setExtraDhcpOptions failed for network {}: {}", network, e.getMessage());
-            return false;
-        }
+        return false;
     }
 
     @Override
