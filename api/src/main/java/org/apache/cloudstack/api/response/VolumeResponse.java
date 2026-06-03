@@ -880,6 +880,10 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
         this.volumeRepairResult = volumeRepairResult;
     }
 
+    public String getEncryptionFormat() {
+        return encryptionFormat;
+    }
+
     public void setEncryptionFormat(String encryptionFormat) {
         this.encryptionFormat = encryptionFormat;
     }

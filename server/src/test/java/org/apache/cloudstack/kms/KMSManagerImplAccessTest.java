@@ -20,7 +20,9 @@ package org.apache.cloudstack.kms;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.user.AccountManager;
+import com.cloud.user.dao.AccountDao;
 import org.apache.cloudstack.framework.kms.KeyPurpose;
 import org.apache.cloudstack.kms.dao.HSMProfileDao;
 import org.apache.cloudstack.kms.dao.KMSKeyDao;
@@ -55,6 +57,10 @@ public class KMSManagerImplAccessTest {
 
     @Mock
     private HSMProfileDao hsmProfileDao;
+    @Mock
+    private AccountDao accountDao;
+    @Mock
+    private DomainDao domainDao;
 
     @Mock
     private AccountManager accountManager;

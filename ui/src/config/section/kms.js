@@ -139,9 +139,9 @@ export default {
             return ['Admin'].includes(store.userInfo.roletype)
           },
           args: (record, store) => {
-            var fields = ['domainid', 'account', 'zoneid', 'kmskeyid', 'volumeids']
+            var fields = ['domainid', 'account', 'kmskeyid', 'volumeids']
             if (!['Admin'].includes(store.userInfo.roletype)) {
-              fields = ['zoneid', 'kmskeyid', 'volumeids']
+              fields = ['kmskeyid', 'volumeids']
             }
             return fields
           },
@@ -179,7 +179,7 @@ export default {
       show: () => { return ['Admin'].includes(store.getters.userInfo.roletype) },
       resourceType: 'HSMProfile',
       columns: () => {
-        const fields = ['name', 'enabled']
+        const fields = ['name', 'enabled', 'ispublic']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           fields.push('account')
         }
@@ -189,7 +189,7 @@ export default {
         fields.push('domain')
         return fields
       },
-      details: ['id', 'name', 'description', 'protocol', 'enabled', 'account', 'domain', 'project', 'created', 'details'],
+      details: ['id', 'name', 'description', 'protocol', 'enabled', 'ispublic', 'account', 'domain', 'project', 'created', 'details'],
       related: [
         {
           name: 'kmskey',

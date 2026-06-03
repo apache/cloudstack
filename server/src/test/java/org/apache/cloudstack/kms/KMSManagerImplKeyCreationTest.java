@@ -18,6 +18,8 @@
 package org.apache.cloudstack.kms;
 
 import com.cloud.event.ActionEventUtils;
+import com.cloud.domain.dao.DomainDao;
+import com.cloud.user.dao.AccountDao;
 import org.apache.cloudstack.framework.kms.KMSException;
 import org.apache.cloudstack.framework.kms.KMSProvider;
 import org.apache.cloudstack.framework.kms.KeyPurpose;
@@ -71,6 +73,10 @@ public class KMSManagerImplKeyCreationTest {
     private KMSKekVersionDao kmsKekVersionDao;
     @Mock
     private HSMProfileDao hsmProfileDao;
+    @Mock
+    private AccountDao accountDao;
+    @Mock
+    private DomainDao domainDao;
     @Mock
     private KMSProvider kmsProvider;
 

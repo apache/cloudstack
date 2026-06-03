@@ -22,6 +22,9 @@ import com.cloud.api.ApiResponseHelper;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.domain.dao.DomainDao;
+import com.cloud.user.AccountVO;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
@@ -95,6 +98,7 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 
 public class KMSManagerImpl extends ManagerBase implements KMSManager, PluggableService {
     private static final Logger logger = LogManager.getLogger(KMSManagerImpl.class);
@@ -125,6 +129,10 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
 
     @Inject
     private VolumeDao volumeDao;
+    @Inject
+    private AccountDao accountDao;
+    @Inject
+    private DomainDao domainDao;
 
     @Inject
     private PassphraseDao passphraseDao;
@@ -522,6 +530,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_KMS_KEY_UPDATE, eventDescription = "updating KMS Key")
     public KMSKeyResponse updateKMSKey(UpdateKMSKeyCmd cmd) throws KMSException {
         Account caller = CallContext.current().getCallingAccount();
         KMSKeyVO key = findKMSKeyAndCheckAccess(cmd.getId(), caller);
@@ -747,6 +756,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_MIGRATE_TO_KMS, eventDescription = "Migrating Volumes to KMS")
     public int migrateVolumesToKMS(MigrateVolumesToKMSCmd cmd) throws KMSException {
         Account caller = CallContext.current().getCallingAccount();
         String accountName = cmd.getAccountName();
@@ -831,9 +841,6 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
                 successCount + failureCount, kmsKey.getName(), kmsKey.getUuid(), successCount, failureCount);
         logger.info(details);
         CallContext.current().setEventDetails(details);
-        ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(),
-                kmsKey.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VOLUME_MIGRATE_TO_KMS, true,
-                details, kmsKey.getId(), ApiCommandResourceType.Volume.toString(), CallContext.current().getStartEventId());
         return successCount;
     }
 
@@ -1039,8 +1046,8 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
-        SearchBuilder<HSMProfileVO> sb = getSearchBuilderForHSMProfiles(domainId, isRecursive, permittedAccounts,
-                listProjectResourcesCriteria);
+        SearchBuilder<HSMProfileVO> sb = getSearchBuilderForHSMProfiles(caller, domainId, isRecursive,
+                permittedAccounts, listProjectResourcesCriteria, cmd.listAll());
         SearchCriteria<HSMProfileVO> sc = getSearchCriteriaForHSMProfiles(sb, cmd, caller, domainId, isRecursive,
                 permittedAccounts, listProjectResourcesCriteria);
 
@@ -1053,14 +1060,13 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
 
         boolean isRootAdmin = accountManager.isRootAdmin(caller.getId());
         for (HSMProfileVO profile : profiles) {
-            // When isSystem=true, non-admin users explicitly requested system profiles, so
+            // When isPublic=true, non-admin users explicitly requested public profiles, so
             // don't mark as limited
             // When listall=true, also don't mark as limited since user requested all
             // profiles
             // If the profile is owned by the user, they should see full details even if it
             // is a system profile
-            boolean limited = profile.getIsPublic() && !isRootAdmin && !(cmd.getIsSystem() || cmd.listAll())
-                    && profile.getAccountId() != caller.getId();
+            boolean limited = profile.getIsPublic() && !isRootAdmin && profile.getAccountId() != caller.getId();
             responses.add(createHSMProfileResponse(profile, limited));
         }
 
@@ -1069,18 +1075,65 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         return listResponse;
     }
 
-    SearchBuilder<HSMProfileVO> getSearchBuilderForHSMProfiles(Long domainId, Boolean isRecursive,
-                                                               List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria) {
+    SearchBuilder<HSMProfileVO> getSearchBuilderForHSMProfiles(Account caller, Long domainId, Boolean isRecursive,
+                                                               List<Long> permittedAccounts,
+                                                               ListProjectResourcesCriteria listProjectResourcesCriteria,
+                                                               boolean listAll) {
         SearchBuilder<HSMProfileVO> sb = hsmProfileDao.createSearchBuilder();
-        accountManager.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts,
-                listProjectResourcesCriteria);
 
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("zoneId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
         sb.and("protocol", sb.entity().getProtocol(), SearchCriteria.Op.EQ);
         sb.and("enabled", sb.entity().isEnabled(), SearchCriteria.Op.EQ);
-        sb.and("system", sb.entity().getIsPublic(), SearchCriteria.Op.EQ);
+        sb.and("isPublic", sb.entity().getIsPublic(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+
+        if (listProjectResourcesCriteria == ListProjectResourcesCriteria.SkipProjectResources) {
+            sb.and().op("accountIdNIN", sb.entity().getAccountId(), SearchCriteria.Op.NIN);
+            sb.or("accountIdNULL", sb.entity().getAccountId(), SearchCriteria.Op.NULL);
+            sb.cp();
+        }
+
+        boolean isRootAdmin = accountManager.isRootAdmin(caller.getId());
+
+        if (!isRootAdmin) {
+            if (listAll) {
+                // (isPublic = true OR accountId IN (...) OR domainId IN (...))
+                sb.and().op("isPublicACL", sb.entity().getIsPublic(), SearchCriteria.Op.EQ);
+                if (!permittedAccounts.isEmpty()) {
+                    sb.or("accountIdIN", sb.entity().getAccountId(), SearchCriteria.Op.IN);
+                } else if (domainId != null) {
+                    if (isRecursive) {
+                        sb.or("domainIdIN", sb.entity().getDomainId(), SearchCriteria.Op.IN);
+                    } else {
+                        sb.or("domainIdEQ", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
+                    }
+                }
+                sb.cp();
+            } else {
+                // No listAll: only show profiles the user/domain owns
+                if (!permittedAccounts.isEmpty()) {
+                    sb.and("accountIdIN", sb.entity().getAccountId(), SearchCriteria.Op.IN);
+                } else if (domainId != null) {
+                    if (isRecursive) {
+                        sb.and("domainIdIN", sb.entity().getDomainId(), SearchCriteria.Op.IN);
+                    } else {
+                        sb.and("domainIdEQ", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
+                    }
+                }
+            }
+        } else {
+            if (!permittedAccounts.isEmpty()) {
+                sb.and("accountIdIN", sb.entity().getAccountId(), SearchCriteria.Op.IN);
+            } else if (domainId != null) {
+                if (isRecursive) {
+                    sb.and("domainIdIN", sb.entity().getDomainId(), SearchCriteria.Op.IN);
+                } else {
+                    sb.and("domainIdEQ", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
+                }
+            }
+        }
+
         sb.done();
         return sb;
     }
@@ -1089,55 +1142,63 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
                                                                  ListHSMProfilesCmd cmd, Account caller, Long domainId, Boolean isRecursive, List<Long> permittedAccounts,
                                                                  ListProjectResourcesCriteria listProjectResourcesCriteria) {
         SearchCriteria<HSMProfileVO> sc = searchBuilder.create();
-
         sc.setParametersIfNotNull("id", cmd.getId());
         sc.setParametersIfNotNull("zoneId", cmd.getZoneId());
         sc.setParametersIfNotNull("protocol", cmd.getProtocol());
         sc.setParametersIfNotNull("enabled", cmd.getEnabled());
-        sc.setParametersIfNotNull("system", cmd.getIsSystem());
+        sc.setParametersIfNotNull("isPublic", cmd.getIsPublic());
         if (cmd.getKeyword() != null) {
             sc.setParameters("name", "%" + cmd.getKeyword() + "%");
         }
 
-        // Access control for non-root-admins:
-        // system profiles (null account_id/domain_id) are globally visible to all
-        // users,
-        // so they must always be reachable via "system=true OR <ACL conditions>".
-        // ANDing ACL criteria directly onto sc would exclude them because their
-        // account_id is NULL.
-        //
-        // The `system` field filter already set above (line sc.setParametersIfNotNull)
-        // correctly
-        // narrows the final result when the caller passes isSystem=true/false:
-        // isSystem=true → sc already has system=true → effective: WHERE system=true
-        // isSystem=false → sc already has system=false → effective: WHERE system=false
-        // AND ACL
-        // isSystem=null → no extra filter → effective: WHERE (system=true OR ACL)
-        //
-        // Root admins bypass ACL entirely and see everything filtered only by explicit
-        // params.
+        if (listProjectResourcesCriteria == ListProjectResourcesCriteria.SkipProjectResources) {
+            SearchCriteria<AccountVO> projectAcctSC = accountDao.createSearchCriteria();
+            projectAcctSC.addAnd("type", SearchCriteria.Op.EQ, Account.Type.PROJECT);
+            if (domainId != null) {
+                if (isRecursive) {
+                    List<Long> domainIds = domainDao.getDomainAndChildrenIds(domainId);
+                    projectAcctSC.addAnd("domainId", SearchCriteria.Op.IN, domainIds.toArray());
+                } else {
+                    projectAcctSC.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+                }
+            }
+            List<AccountVO> projectAccounts = accountDao.search(projectAcctSC, null);
+            if (CollectionUtils.isNotEmpty(projectAccounts)) {
+                List<Long> projectAccountIds = projectAccounts.stream().map(AccountVO::getId).collect(Collectors.toList());
+                sc.setParameters("accountIdNIN", projectAccountIds.toArray());
+            } else {
+                // No project accounts exist; use a dummy ID so the NIN condition has no effect
+                sc.setParameters("accountIdNIN", -1L);
+            }
+        }
+
         boolean isRootAdmin = accountManager.isRootAdmin(caller.getId());
 
         if (!isRootAdmin) {
-            SearchCriteria<HSMProfileVO> systemOrAclSC = hsmProfileDao.createSearchCriteria();
             if (cmd.listAll()) {
-                systemOrAclSC.addOr("system", SearchCriteria.Op.EQ, true);
+                sc.setParameters("isPublicACL", true);
             }
 
-            SearchCriteria<HSMProfileVO> aclSC = searchBuilder.create();
-            accountManager.buildACLSearchCriteria(aclSC, domainId, isRecursive, permittedAccounts,
-                    listProjectResourcesCriteria);
-
-            if (StringUtils.isNotBlank(aclSC.getWhereClause()) && StringUtils.isNotBlank(
-                    systemOrAclSC.getWhereClause())) {
-                systemOrAclSC.addOr("id", SearchCriteria.Op.SC, aclSC);
-            } else if (StringUtils.isNotBlank(aclSC.getWhereClause()) && StringUtils.isBlank(
-                    systemOrAclSC.getWhereClause())) {
-                systemOrAclSC = aclSC;
+            if (!permittedAccounts.isEmpty()) {
+                sc.setParameters("accountIdIN", permittedAccounts.toArray());
+            } else if (domainId != null) {
+                if (isRecursive) {
+                    List<Long> domainIds = domainDao.getDomainAndChildrenIds(domainId);
+                    sc.setParameters("domainIdIN", domainIds.toArray());
+                } else {
+                    sc.setParameters("domainIdEQ", domainId);
+                }
             }
-
-            if (StringUtils.isNotBlank(systemOrAclSC.getWhereClause())) {
-                sc.addAnd("id", SearchCriteria.Op.SC, systemOrAclSC);
+        } else {
+            if (!permittedAccounts.isEmpty()) {
+                sc.setParameters("accountIdIN", permittedAccounts.toArray());
+            } else if (domainId != null) {
+                if (isRecursive) {
+                    List<Long> domainIds = domainDao.getDomainAndChildrenIds(domainId);
+                    sc.setParameters("domainIdIN", domainIds.toArray());
+                } else {
+                    sc.setParameters("domainIdEQ", domainId);
+                }
             }
         }
         return sc;
@@ -1231,22 +1292,20 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
             }
         }
 
-        if (limited) {
-            return response;
-        }
-
         response.setProtocol(profile.getProtocol());
         response.setEnabled(profile.isEnabled());
         response.setCreated(profile.getCreated());
 
         ApiResponseHelper.populateOwner(response, profile);
 
-        List<HSMProfileDetailsVO> details = hsmProfileDetailsDao.listByProfileId(profile.getId());
-        Map<String, String> detailsMap = new HashMap<>();
-        for (HSMProfileDetailsVO detail : details) {
-            detailsMap.put(detail.getName(), detail.getValue());
+        if (!limited) {
+            List<HSMProfileDetailsVO> details = hsmProfileDetailsDao.listByProfileId(profile.getId());
+            Map<String, String> detailsMap = new HashMap<>();
+            for (HSMProfileDetailsVO detail : details) {
+                detailsMap.put(detail.getName(), detail.getValue());
+            }
+            response.setDetails(detailsMap);
         }
-        response.setDetails(detailsMap);
         response.setObjectName("hsmprofile");
         return response;
     }

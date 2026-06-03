@@ -19,16 +19,14 @@
 
 package org.apache.cloudstack.api.command.user.kms;
 
-import com.cloud.event.EventTypes;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.KMSKeyResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.kms.KMSException;
@@ -43,7 +41,7 @@ import javax.inject.Inject;
             authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
-public class UpdateKMSKeyCmd extends BaseAsyncCmd implements UserCmd {
+public class UpdateKMSKeyCmd extends BaseCmd {
 
     @Inject
     private KMSManager kmsManager;
@@ -107,16 +105,6 @@ public class UpdateKMSKeyCmd extends BaseAsyncCmd implements UserCmd {
     @Override
     public Long getApiResourceId() {
         return getId();
-    }
-
-    @Override
-    public String getEventType() {
-        return EventTypes.EVENT_KMS_KEY_UPDATE;
-    }
-
-    @Override
-    public String getEventDescription() {
-        return "updating KMS key: " + getId();
     }
 
     public Long getId() {

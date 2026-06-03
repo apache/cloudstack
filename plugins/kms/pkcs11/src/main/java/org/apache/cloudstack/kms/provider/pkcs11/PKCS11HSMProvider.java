@@ -691,29 +691,30 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
          */
         private void handlePKCS11Exception(Exception e, String context) throws KMSException {
             String errorMsg = e.getMessage();
+            String causeErrorMessage = e.getCause() != null ? e.getCause().getMessage() : "";
             if (errorMsg == null) {
                 errorMsg = e.getClass().getSimpleName();
             }
             logger.warn("PKCS#11 error: {} - {}", errorMsg, context, e);
 
-            if (errorMsg.contains("CKR_CRYPTOKI_NOT_INITIALIZED") || errorMsg.contains("CRYPTOKI_NOT_INITIALIZED")) {
+            if (causeErrorMessage.contains("CRYPTOKI_NOT_INITIALIZED") || errorMsg.contains("CRYPTOKI_NOT_INITIALIZED")) {
                 hsmRestartCount.incrementAndGet();
                 throw new KMSException(KMSException.ErrorType.CONNECTION_FAILED,
                         context + ": HSM requires re-initialization (CRYPTOKI_NOT_INITIALIZED)", e);
-            } else if (errorMsg.contains("CKR_PIN_INCORRECT") || errorMsg.contains("PIN_INCORRECT")) {
+            } else if (causeErrorMessage.contains("PIN_INCORRECT") || errorMsg.contains("PIN_INCORRECT")) {
                 throw new KMSException(KMSException.ErrorType.AUTHENTICATION_FAILED,
                         context + ": Incorrect PIN", e);
-            } else if (errorMsg.contains("CKR_SLOT_ID_INVALID") || errorMsg.contains("SLOT_ID_INVALID")) {
+            } else if (causeErrorMessage.contains("SLOT_ID_INVALID") || errorMsg.contains("SLOT_ID_INVALID")) {
                 throw KMSException.invalidParameter(context + ": Invalid slot ID");
-            } else if (errorMsg.contains("CKR_KEY_NOT_FOUND") || errorMsg.contains("KEY_NOT_FOUND")) {
+            } else if (causeErrorMessage.contains("KEY_NOT_FOUND") || errorMsg.contains("KEY_NOT_FOUND")) {
                 throw KMSException.kekNotFound(context + ": Key not found");
-            } else if (errorMsg.contains("CKR_DEVICE_ERROR") || errorMsg.contains("DEVICE_ERROR")) {
+            } else if (causeErrorMessage.contains("DEVICE_ERROR") || errorMsg.contains("DEVICE_ERROR")) {
                 throw new KMSException(KMSException.ErrorType.CONNECTION_FAILED,
                         context + ": HSM device error", e);
-            } else if (errorMsg.contains("CKR_SESSION_HANDLE_INVALID") || errorMsg.contains("SESSION_HANDLE_INVALID")) {
+            } else if (causeErrorMessage.contains("SESSION_HANDLE_INVALID") || errorMsg.contains("SESSION_HANDLE_INVALID")) {
                 throw new KMSException(KMSException.ErrorType.CONNECTION_FAILED,
                         context + ": Invalid session handle", e);
-            } else if (errorMsg.contains("CKR_KEY_ALREADY_EXISTS") || errorMsg.contains("KEY_ALREADY_EXISTS")) {
+            } else if (causeErrorMessage.contains("KEY_ALREADY_EXISTS") || errorMsg.contains("KEY_ALREADY_EXISTS")) {
                 throw KMSException.keyAlreadyExists(context);
             } else if (e instanceof KeyStoreException) {
                 throw new KMSException(KMSException.ErrorType.WRAP_UNWRAP_FAILED,

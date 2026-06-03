@@ -51,10 +51,10 @@ public class ListHSMProfilesCmd extends BaseListProjectAndAccountResourcesCmd {
     @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, description = "list only enabled profiles")
     private Boolean enabled;
 
-    @Parameter(name = ApiConstants.IS_SYSTEM,
+    @Parameter(name = ApiConstants.IS_PUBLIC,
                type = CommandType.BOOLEAN,
                description = "when true, non-admin users see only system (global) profiles")
-    private Boolean isSystem;
+    private Boolean isPublic;
 
     public Long getId() {
         return id;
@@ -72,8 +72,8 @@ public class ListHSMProfilesCmd extends BaseListProjectAndAccountResourcesCmd {
         return enabled;
     }
 
-    public Boolean getIsSystem() {
-        return isSystem;
+    public Boolean getIsPublic() {
+        return isPublic;
     }
 
     @Override

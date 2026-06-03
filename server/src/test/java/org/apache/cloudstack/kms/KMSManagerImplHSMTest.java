@@ -21,6 +21,7 @@ import com.cloud.api.ApiResponseHelper;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.user.AccountManager;
+import com.cloud.user.dao.AccountDao;
 import org.apache.cloudstack.api.response.HSMProfileResponse;
 import org.apache.cloudstack.kms.dao.HSMProfileDao;
 import org.apache.cloudstack.kms.dao.HSMProfileDetailsDao;
@@ -63,6 +64,8 @@ public class KMSManagerImplHSMTest {
     private DataCenterDao dataCenterDao;
     @Mock
     private DomainDao domainDao;
+    @Mock
+    private AccountDao accountDao;
 
     /**
      * Test: isSensitiveKey correctly identifies "pin" as sensitive
