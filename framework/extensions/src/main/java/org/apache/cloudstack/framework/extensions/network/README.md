@@ -538,13 +538,10 @@ rules for the network, so a full rebuild is always safe.
 | `vlan` | Guest VLAN tag. |
 | `gateway` | Guest network gateway. |
 | `cidr` | Guest network CIDR. |
-| `fw_rules` | Base64-encoded JSON string containing the firewall payload shown below. |
+| `fw_rules` | JSON object containing the firewall payload shown below. |
 | `vpc_id` | Present for VPC tier networks. |
 
-> **Note:** The outer command invocation uses a payload file, but `fw_rules`
-> itself is a Base64-encoded string inside the nested `payload` object.
-
-**Decoded `fw_rules` JSON:**
+**`fw_rules` JSON:**
 
 ```json
 {
@@ -605,10 +602,10 @@ Rules are applied in ascending `number` order.
 | `vlan` | Guest VLAN tag. |
 | `gateway` | Guest network gateway. |
 | `cidr` | Guest network CIDR. |
-| `acl_rules` | Base64-encoded JSON array of ACL rules shown below. |
+| `acl_rules` | JSON array of ACL rules shown below. |
 | `vpc_id` | VPC ID. Always present for VPC tiers. |
 
-**Decoded `acl_rules` JSON:**
+**`acl_rules` JSON:**
 
 ```json
 [
@@ -796,27 +793,23 @@ meta-data/*, password) for the VM so the metadata HTTP server can serve it.
 | `ip` | VM IP. |
 | `gateway` | Gateway of the VM NIC on this network. |
 | `extension_ip` | Extension IP. |
-| `vm_data` | Base64-encoded JSON array shown below. |
+| `vm_data` | JSON array shown below. |
 | `nic_uuid` | NIC UUID, when available. |
 | `vpc_id` | Present for VPC tier networks. |
 
-> **Note:** The outer command invocation uses a payload file, but `vm_data`
-> itself is a Base64-encoded string inside the nested `payload` object.
-
-**Decoded `vm_data` JSON:**
+**`vm_data` JSON:**
 
 ```json
 [
-  {"dir":"userdata",   "file":"user-data",       "content":"<base64>"},
-  {"dir":"meta-data",  "file":"instance-id",      "content":"<base64>"},
-  {"dir":"meta-data",  "file":"local-hostname",   "content":"<base64>"},
-  {"dir":"meta-data",  "file":"public-keys/0/openssh-key", "content":"<base64>"},
-  {"dir":"password",   "file":"vm_password",      "content":"<base64>"}
+  {"dir":"userdata",   "file":"user-data",       "content":"<plain text>"},
+  {"dir":"meta-data",  "file":"instance-id",      "content":"<plain text>"},
+  {"dir":"meta-data",  "file":"local-hostname",   "content":"<plain text>"},
+  {"dir":"meta-data",  "file":"public-keys/0/openssh-key", "content":"<plain text>"},
+  {"dir":"password",   "file":"vm_password",      "content":"<plain text>"}
 ]
 ```
 
-Each `content` field is **base64-encoded** binary (raw bytes for user-data;
-UTF-8 text for all others).  Decode `content` before writing to disk.
+Each `content` field is a plain UTF-8 string.  Write it directly to disk.
 
 Your metadata HTTP server should serve each entry at:
 `http://<extension-ip>/latest/<dir>/<file>`
@@ -854,7 +847,7 @@ Your metadata HTTP server should serve each entry at:
 | `network_id` | Network ID. |
 | `ip` | VM IP. |
 | `gateway` | Gateway of the VM NIC. |
-| `userdata` | Base64-encoded raw user-data bytes. |
+| `userdata` | User-data as plain text. |
 | `extension_ip` | Extension IP. |
 | `nic_uuid` | NIC UUID, when available. |
 | `vpc_id` | Present for VPC tier networks. |
@@ -873,7 +866,7 @@ Your metadata HTTP server should serve each entry at:
 | `network_id` | Network ID. |
 | `ip` | VM IP. |
 | `gateway` | Gateway of the VM NIC. |
-| `sshkey` | Base64-encoded SSH public key (UTF-8 text). Decode to get the key string. |
+| `sshkey` | SSH public key (plain text). |
 | `extension_ip` | Extension IP. |
 | `nic_uuid` | NIC UUID, when available. |
 | `vpc_id` | Present for VPC tier networks. |
@@ -916,7 +909,7 @@ virtual server → backend pool mappings.
 |---|---|
 | `network_id` | Network ID. |
 | `vlan` | Guest VLAN tag. |
-| `lb_rules` | JSON array string of LB rules shown below. It is **not** Base64-encoded. |
+| `lb_rules` | JSON array of LB rules shown below. |
 | `vpc_id` | Present for VPC tier networks. |
 
 **Decoded `lb_rules` JSON:**
@@ -969,13 +962,10 @@ calls).
 | `extension_ip` | Extension IP. |
 | `dns` | Comma-separated DNS server list. |
 | `domain` | Network domain suffix. |
-| `restore_data` | Base64-encoded JSON restore payload shown below. |
+| `restore_data` | JSON restore payload shown below. |
 | `vpc_id` | Present for VPC tier networks. |
 
-> **Note:** The outer command invocation uses a payload file, but `restore_data`
-> itself is a Base64-encoded string inside the nested `payload` object.
-
-**Decoded `restore_data` JSON:**
+**`restore_data` JSON:**
 
 ```json
 {
@@ -989,16 +979,16 @@ calls).
       "hostname":    "vm-1",
       "default_nic": true,
       "vm_data": [
-        {"dir": "userdata",  "file": "user-data",    "content": "<base64>"},
-        {"dir": "meta-data", "file": "instance-id",  "content": "<base64>"},
-        {"dir": "meta-data", "file": "local-hostname","content": "<base64>"}
+        {"dir": "userdata",  "file": "user-data",    "content": "<plain text>"},
+        {"dir": "meta-data", "file": "instance-id",  "content": "<plain text>"},
+        {"dir": "meta-data", "file": "local-hostname","content": "<plain text>"}
       ]
     }
   ]
 }
 ```
 
-Each `vm_data[].content` is **base64-encoded** (same as in `save-vm-data`).
+Each `vm_data[].content` is a plain UTF-8 string (same encoding as in `save-vm-data`).
 
 ---
 
@@ -1225,11 +1215,6 @@ else:
 PY
 }
 
-decode_b64_field() {
-    python3 -c 'import base64, sys; raw = sys.argv[1].strip(); print(base64.b64decode(raw).decode("utf-8") if raw else "")' \
-        "$(payload_field "$1")"
-}
-
 case "${COMMAND}" in
 
     ensure-network-device)
@@ -1285,12 +1270,12 @@ case "${COMMAND}" in
         ;;
 
     apply-fw-rules)
-        FW_JSON=$(decode_b64_field fw_rules)
+        FW_JSON=$(payload_field fw_rules)
         # TODO: parse $FW_JSON and apply to device
         ;;
 
     apply-network-acl)
-        ACL_JSON=$(decode_b64_field acl_rules)
+        ACL_JSON=$(payload_field acl_rules)
         # TODO: parse $ACL_JSON and apply to VPC tier
         ;;
 
@@ -1313,7 +1298,7 @@ case "${COMMAND}" in
     config-dns-subnet|remove-dns-subnet) ;;
 
     save-vm-data)
-        VM_DATA_JSON=$(decode_b64_field vm_data)
+        VM_DATA_JSON=$(payload_field vm_data)
         # TODO: iterate entries and write to metadata store
         ;;
 
@@ -1325,7 +1310,7 @@ case "${COMMAND}" in
         ;;
 
     restore-network)
-        RESTORE_JSON=$(decode_b64_field restore_data)
+        RESTORE_JSON=$(payload_field restore_data)
         # TODO: iterate vms and restore leases / DNS / metadata
         ;;
 

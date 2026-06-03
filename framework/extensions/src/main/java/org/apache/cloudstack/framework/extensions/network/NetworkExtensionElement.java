@@ -41,7 +41,6 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
@@ -113,6 +112,7 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -1659,12 +1659,7 @@ public class NetworkExtensionElement extends AdapterBase implements
             return true;
         }
 
-        // Serialise vmData as JSON array.
-        // For the userdata entry CloudStack stores user-data base64-encoded; decode it so the
-        // wrapper writes the actual bytes. All other fields are plain strings. In both cases we
-        // then re-encode with Base64 so the single --vm-data argument is shell-safe.
-        StringBuilder json = new StringBuilder("[");
-        boolean first = true;
+        JsonArray vmDataArray = new JsonArray();
         for (String[] entry : vmData) {
             String dir     = entry[NetworkModel.CONFIGDATA_DIR];
             String file    = entry[NetworkModel.CONFIGDATA_FILE];
@@ -1672,31 +1667,23 @@ public class NetworkExtensionElement extends AdapterBase implements
                     ? entry[NetworkModel.CONFIGDATA_CONTENT] : null;
             if (content == null) content = "";
 
-            byte[] contentBytes;
+            String contentStr;
             if (NetworkModel.USERDATA_DIR.equals(dir) && NetworkModel.USERDATA_FILE.equals(file)) {
-                // user-data is stored as base64 in CloudStack DB; decode it for the wrapper
                 try {
-                    contentBytes = Base64.getDecoder().decode(content);
+                    contentStr = new String(Base64.getDecoder().decode(content), StandardCharsets.UTF_8);
                 } catch (Exception e) {
-                    contentBytes = content.getBytes(StandardCharsets.UTF_8);
+                    contentStr = content;
                 }
             } else {
-                contentBytes = content.getBytes(StandardCharsets.UTF_8);
+                contentStr = content;
             }
 
-            if (!first) json.append(",");
-            first = false;
-            json.append("{\"dir\":\"").append(jsonEscape(dir))
-                .append("\",\"file\":\"").append(jsonEscape(file))
-                .append("\",\"content\":\"")
-                .append(Base64.getEncoder().encodeToString(contentBytes))
-                .append("\"}");
+            JsonObject entryObj = new JsonObject();
+            entryObj.addProperty("dir", dir);
+            entryObj.addProperty("file", file);
+            entryObj.addProperty("content", contentStr);
+            vmDataArray.add(entryObj);
         }
-        json.append("]");
-
-        // Wrap the entire JSON as base64 to avoid any shell quoting / escaping issues
-        String vmDataArg = Base64.getEncoder().encodeToString(
-                json.toString().getBytes(StandardCharsets.UTF_8));
 
         JsonObject payload = new JsonObject();
         payload.addProperty("network_id", String.valueOf(network.getId()));
@@ -1704,7 +1691,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         payload.addProperty("gateway", safeStr(nic.getIPv4Gateway()));
         addNicIpv6ToPayload(payload, nic);
         payload.addProperty("extension_ip", safeStr(ensureExtensionIp(network)));
-        payload.addProperty("vm_data", vmDataArg);
+        payload.add("vm_data", vmDataArray);
         addNicUuidToPayload(payload, nic);
         addVpcIdToPayload(payload, network);
 
@@ -1749,14 +1736,19 @@ public class NetworkExtensionElement extends AdapterBase implements
             return true;
         }
         logger.debug("saveUserData: network={} ip={} ipv6={}", network, nic.getIPv4Address(), nic.getIPv6Address());
-        // userData is stored as base64; pass it directly so the script can decode it
         String extensionIp = ensureExtensionIp(network);
+        String userDataDecoded;
+        try {
+            userDataDecoded = new String(Base64.getDecoder().decode(userData), StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            userDataDecoded = userData;
+        }
         JsonObject payload = new JsonObject();
         payload.addProperty("network_id", String.valueOf(network.getId()));
         payload.addProperty("ip", safeStr(nic.getIPv4Address()));
         payload.addProperty("gateway", safeStr(nic.getIPv4Gateway()));
         addNicIpv6ToPayload(payload, nic);
-        payload.addProperty("userdata", userData);
+        payload.addProperty("userdata", userDataDecoded);
         payload.addProperty("extension_ip", safeStr(extensionIp));
         addNicUuidToPayload(payload, nic);
         addVpcIdToPayload(payload, network);
@@ -1773,15 +1765,13 @@ public class NetworkExtensionElement extends AdapterBase implements
             return true;
         }
         logger.debug("saveSSHKey: network={} ip={} ipv6={}", network, nic.getIPv4Address(), nic.getIPv6Address());
-        // Encode SSH key as base64 to safely pass via CLI
-        String sshKeyBase64 = Base64.getEncoder().encodeToString(sshPublicKey.getBytes(java.nio.charset.StandardCharsets.UTF_8));
         String extensionIp = ensureExtensionIp(network);
         JsonObject payload = new JsonObject();
         payload.addProperty("network_id", String.valueOf(network.getId()));
         payload.addProperty("ip", safeStr(nic.getIPv4Address()));
         payload.addProperty("gateway", safeStr(nic.getIPv4Gateway()));
         addNicIpv6ToPayload(payload, nic);
-        payload.addProperty("sshkey", sshKeyBase64);
+        payload.addProperty("sshkey", sshPublicKey);
         payload.addProperty("extension_ip", safeStr(extensionIp));
         addNicUuidToPayload(payload, nic);
         addVpcIdToPayload(payload, network);
@@ -1827,44 +1817,36 @@ public class NetworkExtensionElement extends AdapterBase implements
         logger.info("Applying {} LB rules for network {}", rules.size(), network);
         String vlanId = getVlanId(network);
 
-        // Serialise all rules as a JSON array and pass as a single --lb-rules argument
-        StringBuilder json = new StringBuilder("[");
-        boolean firstRule = true;
+        JsonArray lbRulesArray = new JsonArray();
         for (LoadBalancingRule rule : rules) {
-            if (!firstRule) json.append(",");
-            firstRule = false;
             boolean revoke = rule.getState() == FirewallRule.State.Revoke;
-            json.append("{");
-            json.append("\"id\":").append(rule.getId()).append(",");
-            json.append("\"name\":\"").append(jsonEscape(rule.getName())).append("\",");
-            json.append("\"publicIp\":\"").append(jsonEscape(rule.getSourceIp() != null ? rule.getSourceIp().addr() : "")).append("\",");
-            json.append("\"publicPort\":").append(rule.getSourcePortStart()).append(",");
-            json.append("\"privatePort\":").append(rule.getDefaultPortStart()).append(",");
-            json.append("\"protocol\":\"").append(jsonEscape(safeStr(rule.getProtocol()))).append("\",");
-            json.append("\"algorithm\":\"").append(jsonEscape(safeStr(rule.getAlgorithm()))).append("\",");
-            json.append("\"revoke\":").append(revoke).append(",");
-            json.append("\"backends\":[");
+            JsonObject ruleObj = new JsonObject();
+            ruleObj.addProperty("id", rule.getId());
+            ruleObj.addProperty("name", rule.getName());
+            ruleObj.addProperty("publicIp", rule.getSourceIp() != null ? rule.getSourceIp().addr() : "");
+            ruleObj.addProperty("publicPort", rule.getSourcePortStart());
+            ruleObj.addProperty("privatePort", rule.getDefaultPortStart());
+            ruleObj.addProperty("protocol", safeStr(rule.getProtocol()));
+            ruleObj.addProperty("algorithm", safeStr(rule.getAlgorithm()));
+            ruleObj.addProperty("revoke", revoke);
+            JsonArray backendsArray = new JsonArray();
             if (rule.getDestinations() != null) {
-                boolean firstDest = true;
                 for (LoadBalancingRule.LbDestination dest : rule.getDestinations()) {
-                    if (!firstDest) json.append(",");
-                    firstDest = false;
-                    json.append("{");
-                    json.append("\"ip\":\"").append(jsonEscape(dest.getIpAddress())).append("\",");
-                    json.append("\"port\":").append(dest.getDestinationPortStart()).append(",");
-                    json.append("\"revoked\":").append(dest.isRevoked());
-                    json.append("}");
+                    JsonObject destObj = new JsonObject();
+                    destObj.addProperty("ip", dest.getIpAddress());
+                    destObj.addProperty("port", dest.getDestinationPortStart());
+                    destObj.addProperty("revoked", dest.isRevoked());
+                    backendsArray.add(destObj);
                 }
             }
-            json.append("]");
-            json.append("}");
+            ruleObj.add("backends", backendsArray);
+            lbRulesArray.add(ruleObj);
         }
-        json.append("]");
 
         JsonObject payload = new JsonObject();
         payload.addProperty("network_id", String.valueOf(network.getId()));
         payload.addProperty("vlan", safeStr(vlanId));
-        payload.addProperty("lb_rules", json.toString());
+        payload.add("lb_rules", lbRulesArray);
         addVpcIdToPayload(payload, network);
         boolean result = executeScript(network, CMD_APPLY_LB_RULES, payload);
         if (!result) {
@@ -1890,12 +1872,6 @@ public class NetworkExtensionElement extends AdapterBase implements
     @Override
     public boolean handlesOnlyRulesInTransitionState() {
         return false;
-    }
-
-    /** Escapes a string for embedding in a JSON string literal. */
-    private static String jsonEscape(String s) {
-        if (s == null) return "";
-        return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
     }
 
     @Override
@@ -1978,72 +1954,40 @@ public class NetworkExtensionElement extends AdapterBase implements
         logger.info("applyFWRules: network={} activeRules={} defaultEgressAllow={}",
                 network, allRules.size(), defaultEgressAllow);
 
-        // Build JSON payload: { "default_egress_allow": <bool>, "cidr": "...", "rules": [...] }
-        StringBuilder json = new StringBuilder();
-        json.append("{\"default_egress_allow\":").append(defaultEgressAllow).append(",");
-        json.append("\"cidr\":\"").append(jsonEscape(safeStr(network.getCidr()))).append("\",");
-        json.append("\"rules\":[");
-
-        boolean first = true;
+        JsonObject fwRules = new JsonObject();
+        fwRules.addProperty("default_egress_allow", defaultEgressAllow);
+        fwRules.addProperty("cidr", safeStr(network.getCidr()));
+        JsonArray rulesArray = new JsonArray();
         for (FirewallRuleVO rule : allRules) {
-            if (!first) json.append(",");
-            first = false;
-
             boolean isEgress = FirewallRule.TrafficType.Egress.equals(rule.getTrafficType());
-
-            json.append("{");
-            json.append("\"id\":").append(rule.getId()).append(",");
-            json.append("\"type\":\"").append(isEgress ? "egress" : "ingress").append("\",");
-            json.append("\"protocol\":\"").append(jsonEscape(safeStr(rule.getProtocol()))).append("\",");
-            if (rule.getSourcePortStart() != null) {
-                json.append("\"portStart\":").append(rule.getSourcePortStart()).append(",");
-            }
-            if (rule.getSourcePortEnd() != null) {
-                json.append("\"portEnd\":").append(rule.getSourcePortEnd()).append(",");
-            }
-            if (rule.getIcmpType() != null) {
-                json.append("\"icmpType\":").append(rule.getIcmpType()).append(",");
-            }
-            if (rule.getIcmpCode() != null) {
-                json.append("\"icmpCode\":").append(rule.getIcmpCode()).append(",");
-            }
+            JsonObject ruleObj = new JsonObject();
+            ruleObj.addProperty("id", rule.getId());
+            ruleObj.addProperty("type", isEgress ? "egress" : "ingress");
+            ruleObj.addProperty("protocol", safeStr(rule.getProtocol()));
+            if (rule.getSourcePortStart() != null) ruleObj.addProperty("portStart", rule.getSourcePortStart());
+            if (rule.getSourcePortEnd() != null) ruleObj.addProperty("portEnd", rule.getSourcePortEnd());
+            if (rule.getIcmpType() != null) ruleObj.addProperty("icmpType", rule.getIcmpType());
+            if (rule.getIcmpCode() != null) ruleObj.addProperty("icmpCode", rule.getIcmpCode());
             // For ingress rules include the public IP the rule is associated with.
-            if (!isEgress) {
-                json.append("\"publicIp\":\"")
-                    .append(jsonEscape(getIpAddress(rule.getSourceIpAddressId())))
-                    .append("\",");
-            }
+            if (!isEgress) ruleObj.addProperty("publicIp", getIpAddress(rule.getSourceIpAddressId()));
             // sourceCidrs: for ingress = allowed external source IPs;
             //              for egress  = allowed VM source IP ranges
-            json.append("\"sourceCidrs\":[");
+            JsonArray sourceCidrsArray = new JsonArray();
             List<String> sourceCidrs = rule.getSourceCidrList();
             if (CollectionUtils.isNotEmpty(sourceCidrs)) {
-                boolean firstCidr = true;
-                for (String cidr : sourceCidrs) {
-                    if (!firstCidr) json.append(",");
-                    firstCidr = false;
-                    json.append("\"").append(jsonEscape(cidr)).append("\"");
-                }
+                for (String cidr : sourceCidrs) sourceCidrsArray.add(cidr);
             }
-            json.append("]");
+            ruleObj.add("sourceCidrs", sourceCidrsArray);
             // destCidrs: optional destination CIDR filter (meaningful for egress rules)
+            JsonArray destCidrsArray = new JsonArray();
             List<String> destCidrs = rule.getDestinationCidrList();
-            json.append(",\"destCidrs\":[");
             if (CollectionUtils.isNotEmpty(destCidrs)) {
-                boolean firstCidr = true;
-                for (String cidr : destCidrs) {
-                    if (!firstCidr) json.append(",");
-                    firstCidr = false;
-                    json.append("\"").append(jsonEscape(cidr)).append("\"");
-                }
+                for (String cidr : destCidrs) destCidrsArray.add(cidr);
             }
-            json.append("]");
-            json.append("}");
+            ruleObj.add("destCidrs", destCidrsArray);
+            rulesArray.add(ruleObj);
         }
-        json.append("]}");
-
-        String rulesBase64 = Base64.getEncoder().encodeToString(
-                json.toString().getBytes(StandardCharsets.UTF_8));
+        fwRules.add("rules", rulesArray);
 
         JsonObject payload = new JsonObject();
         payload.addProperty("network_id", String.valueOf(network.getId()));
@@ -2051,7 +1995,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         payload.addProperty("gateway", safeStr(network.getGateway()));
         payload.addProperty("cidr", safeStr(network.getCidr()));
         addNetworkIpv6ToPayload(payload, network);
-        payload.addProperty("fw_rules", rulesBase64);
+        payload.add("fw_rules", fwRules);
         addVpcIdToPayload(payload, network);
 
         boolean result = executeScript(network, CMD_APPLY_FW_RULES, payload);
@@ -2119,7 +2063,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         logger.info("completeAggregatedExecution: building batch restore for {} VMs on network={}",
                 nics.size(), network);
 
-        String restoreDataBase64 = buildRestoreNetworkData(network, nics, dhcpEnabled, dnsEnabled, userdataEnabled);
+        JsonObject restoreData = buildRestoreNetworkData(network, nics, dhcpEnabled, dnsEnabled, userdataEnabled);
 
         String extensionIp = ensureExtensionIp(network);
         JsonObject payload = new JsonObject();
@@ -2131,7 +2075,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         payload.addProperty("extension_ip", safeStr(extensionIp));
         payload.addProperty("dns", safeStr(getNetworkDns(network)));
         payload.addProperty("domain", safeStr(network.getNetworkDomain()));
-        payload.addProperty("restore_data", restoreDataBase64);
+        payload.add("restore_data", restoreData);
         addVpcIdToPayload(payload, network);
 
         return executeScript(network, CMD_RESTORE_NETWORK, payload);
@@ -2164,8 +2108,8 @@ public class NetworkExtensionElement extends AdapterBase implements
      *       "hostname":    "vm-1",
      *       "default_nic": true,
      *       "vm_data": [
-     *         { "dir": "userdata", "file": "user-data", "content": "<base64>" },
-     *         { "dir": "meta-data", "file": "instance-id", "content": "<base64>" },
+     *         { "dir": "userdata", "file": "user-data", "content": "<plain text>" },
+     *         { "dir": "meta-data", "file": "instance-id", "content": "<plain text>" },
      *         ...
      *       ]
      *     },
@@ -2174,23 +2118,20 @@ public class NetworkExtensionElement extends AdapterBase implements
      * }
      * </pre>
      *
-     * <p>Each {@code vm_data} entry has its {@code content} base64-encoded (the same
-     * encoding used by the per-VM {@code save-vm-data} command), so the wrapper script
-     * can handle both paths with the same decoder.</p>
+     * <p>Each {@code vm_data} entry has its {@code content} as a plain UTF-8 string,
+     * matching the encoding used by the per-VM {@code save-vm-data} command.</p>
      */
-    private String buildRestoreNetworkData(Network network, List<NicVO> nics,
+    private JsonObject buildRestoreNetworkData(Network network, List<NicVO> nics,
             boolean dhcpEnabled, boolean dnsEnabled, boolean userdataEnabled) {
 
-        // Precompute service-offering display text keyed by offering ID to avoid repeated DB hits
         Map<Long, String> offeringNameCache = new HashMap<>();
 
-        StringBuilder json = new StringBuilder("{");
-        json.append("\"dhcp_enabled\":").append(dhcpEnabled).append(",");
-        json.append("\"dns_enabled\":").append(dnsEnabled).append(",");
-        json.append("\"userdata_enabled\":").append(userdataEnabled).append(",");
-        json.append("\"vms\":[");
+        JsonObject root = new JsonObject();
+        root.addProperty("dhcp_enabled", dhcpEnabled);
+        root.addProperty("dns_enabled", dnsEnabled);
+        root.addProperty("userdata_enabled", userdataEnabled);
+        JsonArray vmsArray = new JsonArray();
 
-        boolean firstVm = true;
         for (NicVO nic : nics) {
             if (nic.getState() != Nic.State.Reserved && nic.getState() != Nic.State.Allocated) {
                 continue;
@@ -2267,20 +2208,15 @@ public class NetworkExtensionElement extends AdapterBase implements
                 }
             }
 
-            // Build VM JSON entry
-            if (!firstVm) json.append(",");
-            firstVm = false;
+            JsonObject vmObj = new JsonObject();
+            vmObj.addProperty("ip", nic.getIPv4Address());
+            vmObj.addProperty("ip6_address", safeStr(nic.getIPv6Address()));
+            vmObj.addProperty("mac", nic.getMacAddress());
+            vmObj.addProperty("hostname", safeStr(userVm.getHostName()));
+            vmObj.addProperty("default_nic", nic.isDefaultNic());
 
-            json.append("{");
-            json.append("\"ip\":\"").append(jsonEscape(nic.getIPv4Address())).append("\",");
-            json.append("\"ip6_address\":\"").append(jsonEscape(nic.getIPv6Address())).append("\",");
-            json.append("\"mac\":\"").append(jsonEscape(nic.getMacAddress())).append("\",");
-            json.append("\"hostname\":\"").append(jsonEscape(safeStr(userVm.getHostName()))).append("\",");
-            json.append("\"default_nic\":").append(nic.isDefaultNic()).append(",");
-            json.append("\"vm_data\":[");
-
+            JsonArray vmDataArray = new JsonArray();
             if (CollectionUtils.isNotEmpty(vmData)) {
-                boolean firstEntry = true;
                 for (String[] entry : vmData) {
                     String dir     = entry[NetworkModel.CONFIGDATA_DIR];
                     String file    = entry[NetworkModel.CONFIGDATA_FILE];
@@ -2288,35 +2224,30 @@ public class NetworkExtensionElement extends AdapterBase implements
                             ? entry[NetworkModel.CONFIGDATA_CONTENT] : null;
                     if (content == null) content = "";
 
-                    byte[] contentBytes;
+                    String contentStr;
                     if (NetworkModel.USERDATA_DIR.equals(dir) && NetworkModel.USERDATA_FILE.equals(file)) {
                         try {
-                            contentBytes = Base64.getDecoder().decode(content);
+                            contentStr = new String(Base64.getDecoder().decode(content), StandardCharsets.UTF_8);
                         } catch (Exception e) {
-                            contentBytes = content.getBytes(StandardCharsets.UTF_8);
+                            contentStr = content;
                         }
                     } else {
-                        contentBytes = content.getBytes(StandardCharsets.UTF_8);
+                        contentStr = content;
                     }
 
-                    if (!firstEntry) json.append(",");
-                    firstEntry = false;
-                    json.append("{\"dir\":\"").append(jsonEscape(dir))
-                        .append("\",\"file\":\"").append(jsonEscape(file))
-                        .append("\",\"content\":\"")
-                        .append(Base64.getEncoder().encodeToString(contentBytes))
-                        .append("\"}");
+                    JsonObject entryObj = new JsonObject();
+                    entryObj.addProperty("dir", dir);
+                    entryObj.addProperty("file", file);
+                    entryObj.addProperty("content", contentStr);
+                    vmDataArray.add(entryObj);
                 }
             }
-
-            json.append("]"); // vm_data
-            json.append("}"); // vm object
+            vmObj.add("vm_data", vmDataArray);
+            vmsArray.add(vmObj);
         }
 
-        json.append("]"); // vms
-        json.append("}"); // root
-
-        return Base64.getEncoder().encodeToString(json.toString().getBytes(StandardCharsets.UTF_8));
+        root.add("vms", vmsArray);
+        return root;
     }
 
     // ---- VpcProvider ----
@@ -2622,8 +2553,8 @@ public class NetworkExtensionElement extends AdapterBase implements
 
     /**
      * Applies VPC network ACL rules for a VPC tier network via the script's
-     * {@code apply-network-acl} command.  Rules are serialised as a Base64-encoded
-     * JSON array and passed via a temporary payload file.
+     * {@code apply-network-acl} command.  Rules are serialised as a JSON array
+     * and passed via a temporary payload file.
      *
      * <p>Script command: {@code apply-network-acl}</p>
      */
@@ -2642,7 +2573,7 @@ public class NetworkExtensionElement extends AdapterBase implements
 
         logger.info("applyNetworkACLs: network={} activeRules={}", config, activeRules.size());
 
-        String aclRulesBase64 = buildAclRulesBase64(activeRules);
+        JsonArray aclRules = buildAclRulesArray(activeRules);
 
         JsonObject payload = new JsonObject();
         payload.addProperty("network_id", String.valueOf(config.getId()));
@@ -2650,7 +2581,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         payload.addProperty("gateway", safeStr(config.getGateway()));
         payload.addProperty("cidr", safeStr(config.getCidr()));
         addNetworkIpv6ToPayload(payload, config);
-        payload.addProperty("acl_rules", aclRulesBase64);
+        payload.add("acl_rules", aclRules);
         addVpcIdToPayload(payload, config);
 
         boolean result = executeScript(config, CMD_APPLY_NETWORK_ACL, payload);
@@ -2684,7 +2615,7 @@ public class NetworkExtensionElement extends AdapterBase implements
                 continue;
             }
             try {
-                String aclRulesBase64 = buildAclRulesBase64(activeRules);
+                JsonArray aclRules = buildAclRulesArray(activeRules);
 
                 JsonObject payload = new JsonObject();
                 payload.addProperty("network_id", String.valueOf(network.getId()));
@@ -2692,7 +2623,7 @@ public class NetworkExtensionElement extends AdapterBase implements
                 payload.addProperty("gateway", safeStr(network.getGateway()));
                 payload.addProperty("cidr", safeStr(network.getCidr()));
                 addNetworkIpv6ToPayload(payload, network);
-                payload.addProperty("acl_rules", aclRulesBase64);
+                payload.add("acl_rules", aclRules);
                 addVpcIdToPayload(payload, network);
 
                 boolean r = executeScript(network, CMD_APPLY_NETWORK_ACL, payload);
@@ -2706,51 +2637,33 @@ public class NetworkExtensionElement extends AdapterBase implements
     }
 
     /**
-     * Serialises a list of {@link NetworkACLItem}s to a Base64-encoded JSON array
+     * Serialises a list of {@link NetworkACLItem}s to a {@link JsonArray}
      * suitable for passing to the {@code apply-network-acl} script command.
      * Rules are sorted by their number (priority order).
      */
-    private String buildAclRulesBase64(List<? extends NetworkACLItem> rules) {
-        StringBuilder json = new StringBuilder("[");
-        boolean first = true;
+    private JsonArray buildAclRulesArray(List<? extends NetworkACLItem> rules) {
+        JsonArray array = new JsonArray();
         List<? extends NetworkACLItem> sorted = rules.stream()
                 .sorted(java.util.Comparator.comparingInt(NetworkACLItem::getNumber))
                 .collect(Collectors.toList());
         for (NetworkACLItem rule : sorted) {
-            if (!first) json.append(",");
-            first = false;
-            json.append("{");
-            json.append("\"number\":").append(rule.getNumber()).append(",");
-            json.append("\"action\":\"").append(rule.getAction().name().toLowerCase()).append("\",");
-            json.append("\"trafficType\":\"").append(rule.getTrafficType().name().toLowerCase()).append("\",");
-            json.append("\"protocol\":\"").append(jsonEscape(safeStr(rule.getProtocol()))).append("\"");
-            if (rule.getSourcePortStart() != null) {
-                json.append(",\"portStart\":").append(rule.getSourcePortStart());
-            }
-            if (rule.getSourcePortEnd() != null) {
-                json.append(",\"portEnd\":").append(rule.getSourcePortEnd());
-            }
-            if (rule.getIcmpType() != null) {
-                json.append(",\"icmpType\":").append(rule.getIcmpType());
-            }
-            if (rule.getIcmpCode() != null) {
-                json.append(",\"icmpCode\":").append(rule.getIcmpCode());
-            }
-            json.append(",\"sourceCidrs\":[");
+            JsonObject ruleObj = new JsonObject();
+            ruleObj.addProperty("number", rule.getNumber());
+            ruleObj.addProperty("action", rule.getAction().name().toLowerCase());
+            ruleObj.addProperty("trafficType", rule.getTrafficType().name().toLowerCase());
+            ruleObj.addProperty("protocol", safeStr(rule.getProtocol()));
+            if (rule.getSourcePortStart() != null) ruleObj.addProperty("portStart", rule.getSourcePortStart());
+            if (rule.getSourcePortEnd() != null) ruleObj.addProperty("portEnd", rule.getSourcePortEnd());
+            if (rule.getIcmpType() != null) ruleObj.addProperty("icmpType", rule.getIcmpType());
+            if (rule.getIcmpCode() != null) ruleObj.addProperty("icmpCode", rule.getIcmpCode());
+            JsonArray sourceCidrsArray = new JsonArray();
             List<String> sourceCidrs = rule.getSourceCidrList();
             if (CollectionUtils.isNotEmpty(sourceCidrs)) {
-                boolean firstCidr = true;
-                for (String cidr : sourceCidrs) {
-                    if (!firstCidr) json.append(",");
-                    firstCidr = false;
-                    json.append("\"").append(jsonEscape(cidr)).append("\"");
-                }
+                for (String cidr : sourceCidrs) sourceCidrsArray.add(cidr);
             }
-            json.append("]");
-            json.append("}");
+            ruleObj.add("sourceCidrs", sourceCidrsArray);
+            array.add(ruleObj);
         }
-        json.append("]");
-        return Base64.getEncoder().encodeToString(
-                json.toString().getBytes(StandardCharsets.UTF_8));
+        return array;
     }
 }
