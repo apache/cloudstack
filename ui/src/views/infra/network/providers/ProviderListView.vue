@@ -67,7 +67,6 @@
               <span v-else-if="resource.name==='CiscoVnmc' && title==='listCiscoAsa1000vResources'">
                 {{ $t('label.delete.ciscoasa1000v') }}
               </span>
-              <!-- External network device UI removed: use extension registration details instead -->
             </template>
             <tooltip-button
               v-if="resource.name==='Ovs'"
@@ -276,7 +275,6 @@ export default {
           name = record.hostname
           params.resourceid = record.resourceid
           break
-        // ExternalNetwork provider action removed; use extension registration/unregister instead
         default:
           break
       }

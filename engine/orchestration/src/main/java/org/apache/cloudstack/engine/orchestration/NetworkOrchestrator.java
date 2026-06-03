@@ -1716,7 +1716,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
         }
 
-        for (final NetworkElement element : getNetworkElementsIncludingExtensions()) {
+        List<NetworkElement> allNetworkElements = getNetworkElementsIncludingExtensions();
+        for (final NetworkElement element : allNetworkElements) {
             if (element instanceof AggregatedCommandExecutor && providersToImplement.contains(element.getProvider())) {
                 ((AggregatedCommandExecutor) element).prepareAggregatedExecution(network, dest);
             }
@@ -1733,7 +1734,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 ex.addProxyObject(_entityMgr.findById(DataCenter.class, network.getDataCenterId()).getUuid());
                 throw ex;
             }
-            for (final NetworkElement element : getNetworkElementsIncludingExtensions()) {
+            for (final NetworkElement element : allNetworkElements) {
                 if (element instanceof AggregatedCommandExecutor && providersToImplement.contains(element.getProvider())) {
                     if (!((AggregatedCommandExecutor) element).completeAggregatedExecution(network, dest)) {
                         logger.warn("Failed to re-program the network as a part of network {} implement due to aggregated commands execution failure!", network);
@@ -1747,7 +1748,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
             reconfigureAndApplyStaticRouteForVpcVpn(network);
         } finally {
-            for (final NetworkElement element : getNetworkElementsIncludingExtensions()) {
+            for (final NetworkElement element : allNetworkElements) {
                 if (element instanceof AggregatedCommandExecutor && providersToImplement.contains(element.getProvider())) {
                     ((AggregatedCommandExecutor) element).cleanupAggregatedExecution(network, dest);
                 }

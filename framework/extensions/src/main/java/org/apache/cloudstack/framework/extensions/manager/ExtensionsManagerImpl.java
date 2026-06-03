@@ -26,7 +26,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -158,7 +157,6 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackWithException;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -168,7 +166,6 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.VmDetailConstants;
-import com.cloud.vm.dao.VMInstanceDao;
 
 public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsManager, ExtensionHelper, PluggableService, Configurable {
 
@@ -215,9 +212,6 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
 
     @Inject
     ExtensionCustomActionDetailsDao extensionCustomActionDetailsDao;
-
-    @Inject
-    VMInstanceDao vmInstanceDao;
 
     @Inject
     VirtualMachineManager virtualMachineManager;
@@ -288,7 +282,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
 
     protected Pair<Boolean, String> getResultFromAnswersString(String answersStr, Extension extension,
                    ManagementServerHostVO msHost, String op) {
-        Answer[] answers = null;
+        Answer[] answers;
         try {
             answers = GsonHelper.getGson().fromJson(answersStr, Answer[].class);
         } catch (Exception e) {
@@ -461,10 +455,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             // This correctly handles multiple different extensions on the same physical network.
             String providerName = networkServiceMapDao.getProviderForServiceInNetwork(network.getId(), Service.CustomAction);
             if (providerName != null) {
-                Extension ext = getExtensionForPhysicalNetworkAndProvider(physicalNetworkId, providerName);
-                if (ext != null) {
-                    return ext;
-                }
+                return getExtensionForPhysicalNetworkAndProvider(physicalNetworkId, providerName);
             }
             return null;
         } else if (ExtensionCustomAction.ResourceType.Vpc.equals(resourceType)) {
@@ -1135,7 +1126,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         }
 
         // Resolve which services this extension provides from its network.services detail
-        Set<String> services = resolveExtensionServices(extension);
+        Set<Service> services = resolveExtensionServices(extension);
 
         return Transaction.execute((TransactionCallbackWithException<ExtensionResourceMap, CloudRuntimeException>) status -> {
             // 1. Persist the extension<->physical-network mapping
@@ -1178,9 +1169,9 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
      * Resolves the set of network service names declared in the extension's
      * {@code network.services} detail. Falls back to an empty set if not present
      */
-    private Set<String> resolveExtensionServices(Extension extension) {
+    private Set<Service> resolveExtensionServices(Extension extension) {
         Map<String, String> extDetails = extensionDetailsDao.listDetailsKeyPairs(extension.getId());
-        Set<String> parsed = parseNetworkServicesFromDetailKeys(extDetails);
+        Set<Service> parsed = parseNetworkServicesFromDetailKeys(extDetails);
         if (!parsed.isEmpty()) {
             return parsed;
         }
@@ -1192,7 +1183,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
      * Resolves the set of service names from the extension detail map.
      * From {@code network.services} comma-separated key.
      */
-    private Set<String> parseNetworkServicesFromDetailKeys(Map<String, String> extDetails) {
+    private Set<Service> parseNetworkServicesFromDetailKeys(Map<String, String> extDetails) {
         if (extDetails == null) {
             return Collections.emptySet();
         }
@@ -1200,11 +1191,11 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         if (extDetails.containsKey(ExtensionHelper.NETWORK_SERVICES_DETAIL_KEY)) {
             String value = extDetails.get(ExtensionHelper.NETWORK_SERVICES_DETAIL_KEY);
             if (StringUtils.isNotBlank(value)) {
-                Set<String> services = new HashSet<>();
+                Set<Service> services = new HashSet<>();
                 for (String s : value.split(",")) {
-                    String trimmed = s.trim();
-                    if (!trimmed.isEmpty()) {
-                        services.add(trimmed);
+                    Service service = Network.Service.getService(s.trim());
+                    if (service != null) {
+                        services.add(service);
                     }
                 }
                 if (!services.isEmpty()) {
@@ -1228,7 +1219,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         }
         // New split format
         if (extDetails.containsKey(ExtensionHelper.NETWORK_SERVICES_DETAIL_KEY)) {
-            Set<String> serviceNames = parseNetworkServicesFromDetailKeys(extDetails);
+            Set<Service> serviceNames = parseNetworkServicesFromDetailKeys(extDetails);
             if (!serviceNames.isEmpty()) {
                 JsonObject capsObj = null;
                 if (extDetails.containsKey(ExtensionHelper.NETWORK_SERVICE_CAPABILITIES_DETAIL_KEY)) {
@@ -1241,15 +1232,10 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                     }
                 }
                 Map<Service, Map<Capability, String>> result = new HashMap<>();
-                for (String svcName : serviceNames) {
-                    Service service = Service.getService(svcName);
-                    if (service == null) {
-                        logger.warn("Unknown network service '{}' in network.services — skipping", svcName);
-                        continue;
-                    }
+                for (Service service : serviceNames) {
                     Map<Capability, String> capMap = new HashMap<>();
-                    if (capsObj != null && capsObj.has(svcName)) {
-                        JsonObject svcCaps = capsObj.getAsJsonObject(svcName);
+                    if (capsObj != null && capsObj.has(service.getName())) {
+                        JsonObject svcCaps = capsObj.getAsJsonObject(service.getName());
                         for (Map.Entry<String, JsonElement> entry : svcCaps.entrySet()) {
                             Capability cap = Capability.getCapability(entry.getKey());
                             if (cap != null) {
@@ -1270,84 +1256,25 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
      * Sets the boolean service-provided flags on a {@link PhysicalNetworkServiceProviderVO}
      * based on a set of service names.
      */
-    private void applyServicesToNsp(PhysicalNetworkServiceProviderVO nsp, Set<String> services) {
-        nsp.setSourcenatServiceProvided(services.contains("SourceNat"));
-        nsp.setStaticnatServiceProvided(services.contains("StaticNat"));
-        nsp.setPortForwardingServiceProvided(services.contains("PortForwarding"));
-        nsp.setFirewallServiceProvided(services.contains("Firewall"));
-        nsp.setGatewayServiceProvided(services.contains("Gateway"));
-        nsp.setDnsServiceProvided(services.contains("Dns"));
-        nsp.setDhcpServiceProvided(services.contains("Dhcp"));
-        nsp.setUserdataServiceProvided(services.contains("UserData"));
-        nsp.setLbServiceProvided(services.contains("Lb"));
-        nsp.setVpnServiceProvided(services.contains("Vpn"));
-        nsp.setSecuritygroupServiceProvided(services.contains("SecurityGroup"));
-        nsp.setNetworkAclServiceProvided(services.contains("NetworkACL"));
-        nsp.setCustomActionServiceProvided(services.contains("CustomAction"));
+    private void applyServicesToNsp(PhysicalNetworkServiceProviderVO nsp, Set<Service> services) {
+        nsp.setSourcenatServiceProvided(services.contains(Service.SourceNat));
+        nsp.setStaticnatServiceProvided(services.contains(Service.StaticNat));
+        nsp.setPortForwardingServiceProvided(services.contains(Service.PortForwarding));
+        nsp.setFirewallServiceProvided(services.contains(Service.Firewall));
+        nsp.setGatewayServiceProvided(services.contains(Service.Gateway));
+        nsp.setDnsServiceProvided(services.contains(Service.Dns));
+        nsp.setDhcpServiceProvided(services.contains(Service.Dhcp));
+        nsp.setUserdataServiceProvided(services.contains(Service.UserData));
+        nsp.setLbServiceProvided(services.contains(Service.Lb));
+        nsp.setVpnServiceProvided(services.contains(Service.Vpn));
+        nsp.setSecuritygroupServiceProvided(services.contains(Service.SecurityGroup));
+        nsp.setNetworkAclServiceProvided(services.contains(Service.NetworkACL));
+        nsp.setCustomActionServiceProvided(services.contains(Service.CustomAction));
     }
 
     /** Keys that are always stored with display=false (sensitive). */
     private static final Set<String> SENSITIVE_DETAIL_KEYS =
             Set.of("password", "sshkey");
-
-    /**
-     * Validates that the comma-separated or JSON-array {@code servicesValue} is a
-     * subset of the services declared in the extension's {@code network.services}
-     * Throws {@link InvalidParameterValueException} if any service in the request is not
-     * offered by the extension.
-     */
-    protected void validateNetworkServicesSubset(Extension extension, String servicesValue) {
-        if (StringUtils.isBlank(servicesValue)) {
-            return;
-        }
-        Map<String, String> extDetails = extensionDetailsDao.listDetailsKeyPairs(extension.getId());
-        Set<String> allowedServices = parseNetworkServicesFromDetailKeys(extDetails);
-        if (allowedServices.isEmpty()) {
-            // No services declared → accept any
-            return;
-        }
-
-        // Parse the requested services: either comma-separated string or JSON array
-        List<String> requested = parseServicesList(servicesValue);
-        List<String> invalid = requested.stream()
-                .filter(s -> !allowedServices.contains(s))
-                .collect(Collectors.toList());
-        if (!invalid.isEmpty()) {
-            throw new InvalidParameterValueException(String.format(
-                    "The following services are not supported by extension '%s': %s. "
-                    + "Supported services are: %s",
-                    extension.getName(), invalid, allowedServices));
-        }
-    }
-
-    /**
-     * Parses a services list from either a comma-separated string (e.g.
-     * {@code "SourceNat,StaticNat"}) or a JSON array (e.g.
-     * {@code ["SourceNat","StaticNat"]}).
-     */
-    private List<String> parseServicesList(String value) {
-        if (StringUtils.isBlank(value)) {
-            return Collections.emptyList();
-        }
-        value = value.trim();
-        if (value.startsWith("[")) {
-            try {
-                JsonArray arr = JsonParser.parseString(value).getAsJsonArray();
-                List<String> result = new ArrayList<>();
-                for (JsonElement el : arr) {
-                    result.add(el.getAsString().trim());
-                }
-                return result;
-            } catch (Exception e) {
-                // fall through to comma-split
-            }
-        }
-        // Comma-separated
-        return Arrays.stream(value.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .collect(Collectors.toList());
-    }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_EXTENSION_RESOURCE_UNREGISTER, eventDescription = "unregistering extension resource")
@@ -1894,7 +1821,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         runCustomActionCommand.setVmTO(virtualMachineTO);
         Pair<Long, Long> clusterAndHostId = virtualMachineManager.findClusterAndHostIdForVm(virtualMachine, false);
 
-        Long clusterId = clusterAndHostId.first();;
+        Long clusterId = clusterAndHostId.first();
         Long hostId = clusterAndHostId.second();
         if (clusterId == null || hostId == null) {
             logger.error(
@@ -1944,7 +1871,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         runCustomActionCommand.setWait(customActionVO.getTimeout());
         try {
             logger.info("Running custom action: {} with {} parameters", actionName,
-                    (parameters != null ? parameters.keySet().size() : 0));
+                    (parameters != null ? parameters.size() : 0));
             Answer answer = agentMgr.send(hostId, runCustomActionCommand);
             if (!(answer instanceof RunCustomActionAnswer)) {
                 logger.error("Unexpected answer [{}] received for {}", answer.getClass().getSimpleName(),
@@ -2003,7 +1930,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         }
 
         // Find the provider name for this network
-        String providerName = networkServiceMapDao.getProviderForServiceInNetwork(network.getId(), Service.CustomAction);;
+        String providerName = networkServiceMapDao.getProviderForServiceInNetwork(network.getId(), Service.CustomAction);
         if (StringUtils.isBlank(providerName)) {
             logger.error("No network service provider found for network {}", network);
             result.put(ApiConstants.DETAILS, "No network service provider found for this network");
@@ -2091,7 +2018,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         }
 
         // Find the provider name for this VPC
-        String providerName = vpcServiceMapDao.getProviderForServiceInVpc(vpc.getId(), Service.CustomAction);;
+        String providerName = vpcServiceMapDao.getProviderForServiceInVpc(vpc.getId(), Service.CustomAction);
         if (StringUtils.isBlank(providerName)) {
             logger.error("No VPC service provider found for VPC {}", vpc.getId());
             result.put(ApiConstants.DETAILS, "No VPC service provider found for this VPC");
