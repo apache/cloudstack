@@ -403,6 +403,7 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.InstanceGroupVMMapDao;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.NicDetailsDao;
 import com.cloud.vm.dao.NicExtraDhcpOptionDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -498,6 +499,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private NetworkDao _networkDao;
     @Inject
     private NicDao _nicDao;
+    @Inject
+    private NicDetailsDao nicDetailsDao;
     @Inject
     private RulesManager _rulesMgr;
     @Inject
@@ -1532,6 +1535,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             saveExtraDhcpOptions(guestNic.getId(), cmd.getDhcpOptionsMap());
             _networkMgr.configureExtraDhcpOptions(network, guestNic.getId(), cmd.getDhcpOptionsMap());
             cleanUp = false;
+            saveNetworkRateInDetails(guestNic.getId(), guestNic.getNetworkRate());
         } catch (ResourceUnavailableException e) {
             throw new CloudRuntimeException("Unable to add NIC to " + vmInstance + ": " + e);
         } catch (InsufficientCapacityException e) {
@@ -1550,6 +1554,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         CallContext.current().putContextParameter(Nic.class, guestNic.getUuid());
         logger.debug(String.format("Successful addition of %s from %s through %s", network, vmInstance, guestNic));
         return _vmDao.findById(vmInstance.getId());
+    }
+
+    private void saveNetworkRateInDetails(long nicId, Integer rate) {
+        String networkRate = (rate == null || rate <= 0) ? ApiConstants.UNLIMITED : String.valueOf(rate);
+        nicDetailsDao.addDetail(nicId, ApiConstants.NETWORKRATE, networkRate, true);
+    }
+
+    private void refreshNicNetworkRates(long vmId) {
+        List<NicVO> nics = _nicDao.listByVmId(vmId);
+        for (NicVO nic : nics) {
+            saveNetworkRateInDetails(nic.getId(), _networkModel.getNetworkRate(nic.getNetworkId(), vmId));
+        }
     }
 
     /**
@@ -1665,6 +1681,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new CloudRuntimeException("Unable to remove " + network + " from " + vmInstance);
         }
 
+        nicDetailsDao.removeDetails(nicId);
         logger.debug("Successful removal of " + network + " from " + vmInstance);
         return _vmDao.findById(vmInstance.getId());
     }
@@ -3466,7 +3483,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             additonalParams.put(VirtualMachineProfile.Param.ConsiderLastHost, cmd.getConsiderLastHost().toString());
         }
 
-        return startVirtualMachine(cmd.getId(), cmd.getPodId(), cmd.getClusterId(), cmd.getHostId(), additonalParams, cmd.getDeploymentPlanner()).first();
+        UserVm vm = startVirtualMachine(cmd.getId(), cmd.getPodId(), cmd.getClusterId(), cmd.getHostId(), additonalParams, cmd.getDeploymentPlanner()).first();
+        // Refresh nic_details with current network rates — the network offering may have changed since the VM was last running
+        refreshNicNetworkRates(vm.getId());
+        return vm;
     }
 
     @Override

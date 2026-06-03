@@ -57,6 +57,9 @@
           <a-descriptions-item :label="$t('label.isolationuri')" v-if="record.isolationuri">
             {{ record.isolationuri }}
           </a-descriptions-item>
+          <a-descriptions-item :label="$t('label.networkrate')">
+            {{ record.networkrate }}
+          </a-descriptions-item>
         </template>
       </a-descriptions>
     </template>
