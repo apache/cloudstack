@@ -243,6 +243,8 @@ public class NetworkExtensionElement extends AdapterBase implements
     public static final String CMD_UPDATE_VPC_SOURCE_NAT_IP = "update-vpc-source-nat-ip";
     public static final String CMD_APPLY_NETWORK_ACL = "apply-network-acl";
     public static final String CMD_CUSTOM_ACTION = "custom-action";
+    public static final String CMD_PREPARE_NIC = "prepare-nic";
+    public static final String CMD_RELEASE_NIC = "release-nic";
 
     // ---- Network detail key ----
 
@@ -432,10 +434,6 @@ public class NetworkExtensionElement extends AdapterBase implements
     public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vm,
             DeployDestination dest, ReservationContext context)
             throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-        // Copy from VirtualRouterElement.java
-        if (vm.getType() != VirtualMachine.Type.User || vm.getHypervisorType() == Hypervisor.HypervisorType.BareMetal) {
-            return false;
-        }
 
         if (!canHandle(network, null)) {
             return false;
@@ -448,9 +446,33 @@ public class NetworkExtensionElement extends AdapterBase implements
         // Sync nic with network
         applyNicUpdateFromNetwork(network, nic.getId());
 
-        final NetworkOfferingVO offering = networkOfferingDao.findById(network.getNetworkOfferingId());
+        // Build payload for prepare-nic script command
+        try {
+            JsonObject payload = new JsonObject();
+            payload.addProperty("network_id", String.valueOf(network.getId()));
+            payload.addProperty("vlan", safeStr(getVlanId(network)));
+            if (nic != null) {
+                payload.addProperty("mac", safeStr(nic.getMacAddress()));
+                payload.addProperty("ip", safeStr(nic.getIPv4Address()));
+                addNicIpv6ToPayload(payload, nic);
+                addNicUuidToPayload(payload, nic);
+                payload.addProperty("default_nic", String.valueOf(nic.isDefaultNic()));
+            }
+            if (vm != null) {
+                payload.addProperty("hostname", safeStr(vm.getHostName()));
+            }
+            payload.addProperty("gateway", safeStr(network.getGateway()));
+            payload.addProperty("cidr", safeStr(network.getCidr()));
+            payload.addProperty("extension_ip", safeStr(ensureExtensionIp(network)));
+            addVpcIdToPayload(payload, network);
 
-        return implement(network, offering, dest, context);
+            logger.debug("Preparing NIC via extension script: network={} nicMac={} nicIp={}", network, nic != null ? nic.getMacAddress() : null, nic != null ? nic.getIPv4Address() : null);
+
+            return executeScript(network, CMD_PREPARE_NIC, payload);
+        } catch (Exception e) {
+            logger.warn("prepare: failed to prepare NIC for network {}: {}", network, e.getMessage());
+            return false;
+        }
     }
 
     private void applyNicUpdateFromNetwork(Network network, Long nicId) {
@@ -471,7 +493,30 @@ public class NetworkExtensionElement extends AdapterBase implements
     @Override
     public boolean release(Network network, NicProfile nic, VirtualMachineProfile vm,
             ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
-        return true;
+        if (!canHandle(network, null)) {
+            return true;
+        }
+
+        try {
+            JsonObject payload = new JsonObject();
+            payload.addProperty("network_id", String.valueOf(network.getId()));
+            payload.addProperty("vlan", safeStr(getVlanId(network)));
+            if (nic != null) {
+                payload.addProperty("mac", safeStr(nic.getMacAddress()));
+                payload.addProperty("ip", safeStr(nic.getIPv4Address()));
+                addNicIpv6ToPayload(payload, nic);
+                addNicUuidToPayload(payload, nic);
+            }
+            payload.addProperty("extension_ip", safeStr(ensureExtensionIp(network)));
+            addVpcIdToPayload(payload, network);
+
+            logger.debug("Releasing NIC via extension script: network={} nicMac={} nicIp={}", network, nic != null ? nic.getMacAddress() : null, nic != null ? nic.getIPv4Address() : null);
+
+            return executeScript(network, CMD_RELEASE_NIC, payload);
+        } catch (Exception e) {
+            logger.warn("release: failed to release NIC for network {}: {}", network, e.getMessage());
+            return false;
+        }
     }
 
     @Override
