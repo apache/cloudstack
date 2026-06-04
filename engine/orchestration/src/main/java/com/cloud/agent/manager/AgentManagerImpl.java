@@ -1409,6 +1409,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             logger.debug("Handling disconnect without investigation for {}", attache);
             if (joinLock.lock(getTimeoutSec())) {
                 result = disconnectAgent(attache, event, transitState, hostId, joinLock);
+            } else {
+                logger.warn("Failed to acquire join lock for {} within timeout, " +
+                        "disconnect event {} may be lost; another MS node may be processing it", attache, event);
             }
         } finally {
             joinLock.releaseRef();
@@ -2269,8 +2272,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         private boolean sendRequestStartupCommand(long hostId, HostVO host) {
             boolean requestStartup = false;
             Set<Status> aliveStatuses = getAliveHostStatuses();
-            boolean lockAvailable = GlobalLock.isLockAvailable(getHostJoinLockName(hostId));
             if (host.getStatus() == null || !aliveStatuses.contains(host.getStatus())) {
+                boolean lockAvailable = GlobalLock.isLockAvailable(getHostJoinLockName(hostId));
                 if (!lockAvailable) {
                     logger.debug("Ping from host {}: requesting startup command " +
                             "due to host status ({}) is not considered as alive ({}), " +
