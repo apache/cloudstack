@@ -54,6 +54,7 @@ hosts.  Use it as a working example.
    - [add-port-forward / delete-port-forward](#add-port-forward--delete-port-forward)
    - [apply-fw-rules](#apply-fw-rules)
    - [apply-network-acl](#apply-network-acl)
+   - [prepare-nic / release-nic](#prepare-nic--release-nic)
    - [add-dhcp-entry / remove-dhcp-entry](#add-dhcp-entry--remove-dhcp-entry)
    - [config-dhcp-subnet / remove-dhcp-subnet](#config-dhcp-subnet--remove-dhcp-subnet)
    - [set-dhcp-options](#set-dhcp-options)
@@ -324,7 +325,7 @@ ID, namespace name, etc.).
 {"host":"192.168.1.10","device_id":"vrf-42","namespace":"cs-net-42"}
 ```
 
-**Exit 0:** JSON written to stdout is persisted.  
+**Exit 0:** JSON written to stdout is persisted.
 **Exit non-zero:** Existing details are kept unchanged; a warning is logged.
 
 ---
@@ -450,9 +451,9 @@ The `extension.details` blob is removed from CloudStack after a successful retur
 **Called:** When a public IP is associated with or disassociated from a
 network (source NAT, static NAT, PF, LB allocation).
 
-**Purpose:**  
+**Purpose:**
 - `assign-ip` — attach the public IP to the device; add the necessary routing
-  entry so the device can receive traffic for this IP.  
+  entry so the device can receive traffic for this IP.
 - `release-ip` — detach the public IP; remove routing.
 
 **Payload fields (`payload` object):**
@@ -637,6 +638,56 @@ Rules are applied in ascending `number` order.
 | `portStart` / `portEnd` | TCP/UDP port range (absent for ICMP/all). |
 | `icmpType` / `icmpCode` | ICMP type/code (absent for TCP/UDP). |
 | `sourceCidrs` | Source CIDR filter list. |
+
+---
+
+### `prepare-nic` / `release-nic`
+
+**Called:** On every NIC attach (`prepare`) and detach (`release`) regardless
+of which services the extension provides.
+
+**Purpose:**
+- `prepare-nic` — set up per-NIC state before the VM boots: create the port
+  binding on the device (OVN `Logical_Switch_Port`, dnsmasq entry, …).
+- `release-nic` — tear down per-NIC state after the VM is destroyed: remove the
+  port binding and associated metadata.
+
+These commands fire for **all** NICs on extension-managed networks, not just
+those belonging to DHCP/DNS-enabled offerings.
+
+**`prepare-nic` payload fields (`payload` object):**
+
+| Field | Description |
+|---|---|
+| `network_id` | Network ID. |
+| `vlan` | Guest VLAN tag. |
+| `mac` | VM NIC MAC address. |
+| `ip` | VM NIC IPv4 address. |
+| `nic_ip6_address` | NIC IPv6 address, when configured. |
+| `nic_ip6_gateway` | NIC IPv6 gateway, when available. |
+| `nic_ip6_cidr` | NIC IPv6 CIDR, when available. |
+| `nic_uuid` | NIC UUID — matches `external_ids:iface-id` written by the KVM agent for OVN port binding. |
+| `default_nic` | Stringified boolean — `"false"` for secondary NICs. |
+| `hostname` | VM hostname. |
+| `gateway` | Guest network gateway. |
+| `cidr` | Guest network CIDR. |
+| `extension_ip` | Extension IP. |
+| `vpc_id` | Present for VPC tier networks. |
+
+**`release-nic` payload fields (`payload` object):**
+
+| Field | Description |
+|---|---|
+| `network_id` | Network ID. |
+| `vlan` | Guest VLAN tag. |
+| `mac` | VM NIC MAC address. |
+| `ip` | VM NIC IPv4 address. |
+| `nic_ip6_address` | NIC IPv6 address, when configured. |
+| `nic_ip6_gateway` | NIC IPv6 gateway, when available. |
+| `nic_ip6_cidr` | NIC IPv6 CIDR, when available. |
+| `nic_uuid` | NIC UUID. |
+| `extension_ip` | Extension IP. |
+| `vpc_id` | Present for VPC tier networks. |
 
 ---
 
@@ -1047,6 +1098,7 @@ Hook scripts should parse the payload file directly.
 | **Dhcp** | `add-dhcp-entry`, `remove-dhcp-entry`, `config-dhcp-subnet`, `remove-dhcp-subnet`, `set-dhcp-options` |
 | **Dns** | `add-dns-entry`, `config-dns-subnet`, `remove-dns-subnet` |
 | **UserData** | `save-vm-data`, `save-password`, `save-userdata`, `save-sshkey`, `save-hypervisor-hostname` |
+| *(NIC lifecycle — all)* | `prepare-nic`, `release-nic` |
 | *(network lifecycle — all)* | `ensure-network-device`, `implement-network`, `shutdown-network`, `destroy-network`, `restore-network` |
 | *(VPC lifecycle)* | `ensure-network-device`, `implement-vpc`, `shutdown-vpc`, `update-vpc-source-nat-ip` |
 | *(operator)* | `custom-action` |
@@ -1277,6 +1329,14 @@ case "${COMMAND}" in
     apply-network-acl)
         ACL_JSON=$(payload_field acl_rules)
         # TODO: parse $ACL_JSON and apply to VPC tier
+        ;;
+
+    prepare-nic)
+        # TODO: create port binding mac=$(payload_field mac) ip=$(payload_field ip) nic_uuid=$(payload_field nic_uuid)
+        ;;
+
+    release-nic)
+        # TODO: remove port binding mac=$(payload_field mac) ip=$(payload_field ip)
         ;;
 
     add-dhcp-entry)
