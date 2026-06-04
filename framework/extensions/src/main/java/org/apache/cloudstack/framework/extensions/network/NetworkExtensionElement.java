@@ -18,8 +18,6 @@ package org.apache.cloudstack.framework.extensions.network;
 
 import java.io.File;
 import java.net.URI;
-import java.net.InetAddress;
-import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -98,6 +96,7 @@ import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
@@ -714,29 +713,9 @@ public class NetworkExtensionElement extends AdapterBase implements
             boolean isRevoke = ip.getState() == IpAddress.State.Releasing;
             String action = isRevoke ? CMD_RELEASE_IP : CMD_ASSIGN_IP;
 
-            // Public VLAN tag (e.g. "101") from the IP's VLAN record.
-            String publicVlanTag = safeStr(ip.getVlanTag());
-
-            // Compute public IP gateway and CIDR (from the PublicIpAddress if available)
-            String publicGateway;
-            String publicCidr;
-            try {
-                publicGateway = ip.getGateway();
-                String publicIpStr = ip.getAddress() != null ? ip.getAddress().addr() : null;
-                String publicNetmask = ip.getNetmask();
-                publicCidr = buildCidrFromIpAndNetmask(publicIpStr, publicNetmask);
-            } catch (Exception e) {
-                publicGateway = null;
-                publicCidr = null;
-            }
-
             JsonObject payload = new JsonObject();
             addNetworkToPayload(payload, network);
-            payload.addProperty("public_ip", ip.getAddress().addr());
-            payload.addProperty("source_nat", String.valueOf(isSourceNat));
-            payload.addProperty("public_gateway", safeStr(publicGateway));
-            payload.addProperty("public_cidr", safeStr(publicCidr));
-            payload.addProperty("public_vlan", publicVlanTag);
+            addPublicIpToPayload(payload, ip.getId(), isSourceNat);
 
              boolean result = executeScript(network, action, payload);
              if (!result) {
@@ -747,31 +726,6 @@ public class NetworkExtensionElement extends AdapterBase implements
          }
          return true;
      }
-
-    /**
-     * Build a CIDR string from IP address and dotted netmask (or prefix).
-     * Returns "" if either value is null or parsing fails.
-     */
-    private String buildCidrFromIpAndNetmask(String ipStr, String netmaskStr) {
-        if (StringUtils.isEmpty(ipStr) || StringUtils.isEmpty(netmaskStr)) {
-            return "";
-        }
-        // If netmask is already CIDR (contains '/'), try to return network/prefix
-        if (netmaskStr.contains("/")) {
-            return netmaskStr;
-        }
-        try {
-            InetAddress ip = InetAddress.getByName(ipStr);
-            InetAddress mask = InetAddress.getByName(netmaskStr);
-            int maskInt = ByteBuffer.wrap(mask.getAddress()).getInt();
-            int prefix = Integer.bitCount(maskInt);
-            // Return the provided IP with the calculated prefix so the address retains its host value
-            return ip.getHostAddress() + "/" + prefix;
-        } catch (Exception e) {
-            logger.debug("Failed to compute CIDR from ip/netmask {} {}: {}", ipStr, netmaskStr, e.getMessage());
-            return "";
-        }
-    }
 
     // ---- StaticNatServiceProvider ----
 
@@ -787,14 +741,9 @@ public class NetworkExtensionElement extends AdapterBase implements
         logger.info("Applying {} static NAT rules for network {}", rules.size(), config);
         for (StaticNat rule : rules) {
             String action = rule.isForRevoke() ? CMD_DELETE_STATIC_NAT : CMD_ADD_STATIC_NAT;
-            String publicCidr = getPublicCidr(rule.getSourceIpAddressId());
-            String publicVlanTag = getPublicVlanTag(rule.getSourceIpAddressId());
-
             JsonObject payload = new JsonObject();
             addNetworkToPayload(payload, config);
-            payload.addProperty("public_ip", getIpAddress(rule.getSourceIpAddressId()));
-            payload.addProperty("public_cidr", safeStr(publicCidr));
-            payload.addProperty("public_vlan", publicVlanTag);
+            addPublicIpToPayload(payload, rule.getSourceIpAddressId(), false);
             payload.addProperty("private_ip", safeStr(rule.getDestIpAddress()));
             boolean result = executeScript(config, action, payload);
             if (!result) {
@@ -822,14 +771,9 @@ public class NetworkExtensionElement extends AdapterBase implements
             String action = isRevoke ? CMD_DELETE_PORT_FORWARD : CMD_ADD_PORT_FORWARD;
             String publicPort  = PortForwardingServiceProvider.getPublicPortRange(rule);
             String privatePort = PortForwardingServiceProvider.getPrivatePFPortRange(rule);
-            String publicCidr  = getPublicCidr(rule.getSourceIpAddressId());
-            String publicVlanTag = getPublicVlanTag(rule.getSourceIpAddressId());
-
             JsonObject payload = new JsonObject();
             addNetworkToPayload(payload, network);
-            payload.addProperty("public_ip", getIpAddress(rule.getSourceIpAddressId()));
-            payload.addProperty("public_cidr", safeStr(publicCidr));
-            payload.addProperty("public_vlan", publicVlanTag);
+            addPublicIpToPayload(payload, rule.getSourceIpAddressId(), false);
             payload.addProperty("public_port", safeStr(publicPort));
             payload.addProperty("private_ip", safeStr(rule.getDestinationIpAddress() != null
                     ? rule.getDestinationIpAddress().addr() : null));
@@ -1384,28 +1328,29 @@ public class NetworkExtensionElement extends AdapterBase implements
         return ip != null ? ip.getAddress().addr() : "";
     }
 
-    private String getPublicCidr(Long ipAddressId) {
-        if (ipAddressId == null) {
-            return "";
+    /**
+     * Adds all standard public-IP fields to the payload.
+     * Makes exactly two DB calls: one for the {@link IpAddress} and one for
+     * its {@link VlanVO}. All five fields are then derived from those two
+     * objects in memory — no further DB calls are made.
+     * Fields: {@code public_ip}, {@code public_vlan}, {@code public_gateway},
+     * {@code public_cidr}, {@code source_nat}.
+     */
+    private void addPublicIpToPayload(JsonObject payload, Long ipAddressId, boolean sourceNat) {
+        if (payload == null || ipAddressId == null) {
+            return;
         }
         IpAddress ip = networkModel.getIp(ipAddressId);
-        if (ip.getAddress() == null) {
-            return "";
+        if (ip == null || ip.getAddress() == null) {
+            return;
         }
         VlanVO vlan = vlanDao.findById(ip.getVlanId());
-        return buildCidrFromIpAndNetmask(ip.getAddress().addr(), vlan.getVlanNetmask());
-    }
-
-    private String getPublicVlanTag(Long ipAddressId) {
-        if (ipAddressId == null) {
-            return "";
-        }
-        IpAddress ip = networkModel.getIp(ipAddressId);
-        if (ip == null) {
-            return "";
-        }
-        VlanVO vlan = vlanDao.findById(ip.getVlanId());
-        return vlan != null ? safeStr(vlan.getVlanTag()) : "";
+        payload.addProperty("public_ip", safeStr(ip.getAddress().addr()));
+        payload.addProperty("public_vlan", vlan != null ? safeStr(vlan.getVlanTag()) : "");
+        payload.addProperty("public_gateway", vlan != null ? safeStr(vlan.getVlanGateway()) : "");
+        payload.addProperty("public_cidr", vlan != null
+                ? StringUtils.defaultString(NetUtils.ipAndNetMaskToCidr(ip.getAddress().addr(), vlan.getVlanNetmask())) : "");
+        payload.addProperty("source_nat", String.valueOf(sourceNat));
     }
 
     private String safeStr(String value) {
@@ -2384,11 +2329,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         // VPC-level SNAT rule for the entire VPC CIDR.
         final PublicIpAddress sourceNatIp = getVpcSourceNatIp(vpc.getId());
         if (sourceNatIp != null) {
-            implPayload.addProperty("public_ip", safeStr(sourceNatIp.getAddress().addr()));
-            implPayload.addProperty("public_vlan", safeStr(getPublicVlanTag(sourceNatIp.getId())));
-            implPayload.addProperty("public_gateway", safeStr(sourceNatIp.getGateway()));
-            implPayload.addProperty("public_cidr", safeStr(getPublicCidr(sourceNatIp.getId())));
-            implPayload.addProperty("source_nat", "true");
+            addPublicIpToPayload(implPayload, sourceNatIp.getId(), true);
         }
 
         return executeVpcScript(vpc, CMD_IMPLEMENT_VPC, implPayload);
@@ -2474,14 +2415,9 @@ public class NetworkExtensionElement extends AdapterBase implements
         }
 
         final JsonObject payload = new JsonObject();
-        final VlanVO vlan = vlanDao.findById(address.getVlanId());
         payload.addProperty("vpc_id", String.valueOf(vpc.getId()));
         payload.addProperty("cidr", safeStr(vpc.getCidr()));
-        payload.addProperty("public_ip", safeStr(address.getAddress().addr()));
-        payload.addProperty("public_vlan", safeStr(getPublicVlanTag(address.getId())));
-        payload.addProperty("public_gateway", vlan != null ? safeStr(vlan.getVlanGateway()) : "");
-        payload.addProperty("public_cidr", safeStr(getPublicCidr(address.getId())));
-        payload.addProperty("source_nat", "true");
+        addPublicIpToPayload(payload, address.getId(), true);
 
         final boolean result = executeVpcScript(vpc, CMD_UPDATE_VPC_SOURCE_NAT_IP, payload);
         if (!result) {
