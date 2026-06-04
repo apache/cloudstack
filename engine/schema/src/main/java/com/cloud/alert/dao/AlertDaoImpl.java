@@ -20,6 +20,7 @@ import java.util.Date;
 import java.util.List;
 
 
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.alert.AlertVO;
@@ -107,20 +108,20 @@ public class AlertDaoImpl extends GenericDaoBase<AlertVO, Long> implements Alert
         }
         sc.setParameters("archived", false);
 
-        boolean result = true;
-
         List<AlertVO> alerts = listBy(sc);
         if (ids != null && alerts.size() < ids.size()) {
-            result = false;
-            return result;
+            return false;
         }
-        if (alerts != null && !alerts.isEmpty()) {
-            AlertVO alertForUpdate = createForUpdate();
-            alertForUpdate.setArchived(true);
-            UpdateBuilder ub = getUpdateBuilder(alertForUpdate);
-            update(ub, sc, null);
+
+        if (CollectionUtils.isEmpty(alerts)) {
+            return true;
         }
-        return result;
+
+        AlertVO alertForUpdate = createForUpdate();
+        alertForUpdate.setArchived(true);
+        UpdateBuilder ub = getUpdateBuilder(alertForUpdate);
+        update(ub, sc, null);
+        return true;
     }
 
     @Override
