@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.event.Event.State;
@@ -106,14 +107,16 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
 
     @Override
     public void archiveEvents(List<EventVO> events) {
-        if (events != null && !events.isEmpty()) {
-            List<Long> ids = events.stream().map(EventVO::getId).collect(Collectors.toList());
-            SearchCriteria<EventVO> sc = ArchiveByIdsSearch.create();
-            sc.setParameters("id", ids.toArray(new Object[ids.size()]));
-            EventVO eventForUpdate = createForUpdate();
-            eventForUpdate.setArchived(true);
-            UpdateBuilder ub = getUpdateBuilder(eventForUpdate);
-            update(ub, sc, null);
+        if (CollectionUtils.isEmpty(events)) {
+            return;
         }
+
+        List<Long> ids = events.stream().map(EventVO::getId).collect(Collectors.toList());
+        SearchCriteria<EventVO> sc = ArchiveByIdsSearch.create();
+        sc.setParameters("id", ids.toArray(new Object[ids.size()]));
+        EventVO eventForUpdate = createForUpdate();
+        eventForUpdate.setArchived(true);
+        UpdateBuilder ub = getUpdateBuilder(eventForUpdate);
+        update(ub, sc, null);
     }
 }
