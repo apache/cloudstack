@@ -378,20 +378,10 @@ public class NetworkExtensionElement extends AdapterBase implements
         // Step 1: Ensure a network device is selected and its details stored.
         ensureExtensionDetails(network);
 
-        // Step 2: Allocate the IPs for DHCP/DNS/UserData service if needed
-        String extensionIp = ensureExtensionIp(network);
-
-        String vlanId = getVlanId(network);
-
         // Step 2: Create the network on the device.
         JsonObject implementPayload = new JsonObject();
-        implementPayload.addProperty("network_id", String.valueOf(network.getId()));
-        implementPayload.addProperty("vlan", safeStr(vlanId));
-        implementPayload.addProperty("gateway", safeStr(network.getGateway()));
-        implementPayload.addProperty("cidr", safeStr(network.getCidr()));
-        addNetworkIpv6ToPayload(implementPayload, network);
-        implementPayload.addProperty("extension_ip", safeStr(extensionIp));
-        addVpcIdToPayload(implementPayload, network);
+        addNetworkToPayload(implementPayload, network);
+        addExtensionIpToPayload(implementPayload, network);
 
         Pair<Integer, String> result = executeScriptAndReturnOutput(network, CMD_IMPLEMENT_NETWORK, implementPayload);
 
@@ -449,16 +439,12 @@ public class NetworkExtensionElement extends AdapterBase implements
         // Build payload for prepare-nic script command
         try {
             JsonObject payload = new JsonObject();
-            payload.addProperty("network_id", String.valueOf(network.getId()));
-            payload.addProperty("vlan", safeStr(getVlanId(network)));
+            addNetworkToPayload(payload, network);
             addNicToPayload(payload, nic);
             if (vm != null) {
                 payload.addProperty("hostname", safeStr(vm.getHostName()));
             }
-            payload.addProperty("gateway", safeStr(network.getGateway()));
-            payload.addProperty("cidr", safeStr(network.getCidr()));
-            payload.addProperty("extension_ip", safeStr(ensureExtensionIp(network)));
-            addVpcIdToPayload(payload, network);
+            addExtensionIpToPayload(payload, network);
 
             logger.debug("Preparing NIC via extension script: network={} nicMac={} nicIp={}", network, nic != null ? nic.getMacAddress() : null, nic != null ? nic.getIPv4Address() : null);
 
@@ -493,11 +479,9 @@ public class NetworkExtensionElement extends AdapterBase implements
 
         try {
             JsonObject payload = new JsonObject();
-            payload.addProperty("network_id", String.valueOf(network.getId()));
-            payload.addProperty("vlan", safeStr(getVlanId(network)));
+            addNetworkToPayload(payload, network);
             addNicToPayload(payload, nic);
-            payload.addProperty("extension_ip", safeStr(ensureExtensionIp(network)));
-            addVpcIdToPayload(payload, network);
+            addExtensionIpToPayload(payload, network);
 
             logger.debug("Releasing NIC via extension script: network={} nicMac={} nicIp={}", network, nic != null ? nic.getMacAddress() : null, nic != null ? nic.getIPv4Address() : null);
 
@@ -513,9 +497,7 @@ public class NetworkExtensionElement extends AdapterBase implements
             throws ConcurrentOperationException, ResourceUnavailableException {
         logger.info("Shutting down network extension for network {}", network);
         JsonObject payload = new JsonObject();
-        payload.addProperty("network_id", String.valueOf(network.getId()));
-        payload.addProperty("vlan", safeStr(getVlanId(network)));
-        addVpcIdToPayload(payload, network);
+        addNetworkToPayload(payload, network);
         boolean result = executeScript(network, CMD_SHUTDOWN_NETWORK, payload);
         if (result) {
             // Remove stored per-network extension details (e.g. namespace). For VPC-backed networks
@@ -535,9 +517,7 @@ public class NetworkExtensionElement extends AdapterBase implements
             throws ConcurrentOperationException, ResourceUnavailableException {
         logger.info("Destroying network extension for network {}", network);
         JsonObject payload = new JsonObject();
-        payload.addProperty("network_id", String.valueOf(network.getId()));
-        payload.addProperty("vlan", safeStr(getVlanId(network)));
-        addVpcIdToPayload(payload, network);
+        addNetworkToPayload(payload, network);
         // For both isolated and VPC tier networks, use destroy-network.
         // For VPC tiers, the script preserves the shared namespace;
         // the VPC namespace is removed only when shutdownVpc() calls shutdown-vpc.
@@ -649,11 +629,8 @@ public class NetworkExtensionElement extends AdapterBase implements
         File scriptFile = resolveScriptFile(network, extension);
 
         JsonObject argsPayload = new JsonObject();
-        argsPayload.addProperty("network_id", String.valueOf(network.getId()));
-        argsPayload.addProperty("vlan", safeStr(getVlanId(network)));
-        argsPayload.addProperty("zone_id", String.valueOf(network.getDataCenterId()));
+        addNetworkToPayload(argsPayload, network);
         argsPayload.addProperty("current_details", currentDetails);
-        addVpcIdToPayload(argsPayload, network);
         JsonObject payload = buildNetworkScriptPayload(network, argsPayload, extension);
 
         try {
@@ -731,7 +708,6 @@ public class NetworkExtensionElement extends AdapterBase implements
             return true;
         }
         logger.info("Applying {} IPs for network {}", ipAddress.size(), network);
-        String vlanId = getVlanId(network);
 
         for (PublicIpAddress ip : ipAddress) {
             boolean isSourceNat = ip.isSourceNat();
@@ -755,17 +731,12 @@ public class NetworkExtensionElement extends AdapterBase implements
             }
 
             JsonObject payload = new JsonObject();
-            payload.addProperty("network_id", String.valueOf(network.getId()));
-            payload.addProperty("vlan", safeStr(vlanId));
+            addNetworkToPayload(payload, network);
             payload.addProperty("public_ip", ip.getAddress().addr());
             payload.addProperty("source_nat", String.valueOf(isSourceNat));
-            payload.addProperty("gateway", safeStr(network.getGateway()));
-            payload.addProperty("cidr", safeStr(network.getCidr()));
-            addNetworkIpv6ToPayload(payload, network);
             payload.addProperty("public_gateway", safeStr(publicGateway));
             payload.addProperty("public_cidr", safeStr(publicCidr));
             payload.addProperty("public_vlan", publicVlanTag);
-            addVpcIdToPayload(payload, network);
 
              boolean result = executeScript(network, action, payload);
              if (!result) {
@@ -814,20 +785,17 @@ public class NetworkExtensionElement extends AdapterBase implements
             return false;
         }
         logger.info("Applying {} static NAT rules for network {}", rules.size(), config);
-        String vlanId = getVlanId(config);
         for (StaticNat rule : rules) {
             String action = rule.isForRevoke() ? CMD_DELETE_STATIC_NAT : CMD_ADD_STATIC_NAT;
             String publicCidr = getPublicCidr(rule.getSourceIpAddressId());
             String publicVlanTag = getPublicVlanTag(rule.getSourceIpAddressId());
 
             JsonObject payload = new JsonObject();
-            payload.addProperty("network_id", String.valueOf(config.getId()));
-            payload.addProperty("vlan", safeStr(vlanId));
+            addNetworkToPayload(payload, config);
             payload.addProperty("public_ip", getIpAddress(rule.getSourceIpAddressId()));
             payload.addProperty("public_cidr", safeStr(publicCidr));
             payload.addProperty("public_vlan", publicVlanTag);
             payload.addProperty("private_ip", safeStr(rule.getDestIpAddress()));
-            addVpcIdToPayload(payload, config);
             boolean result = executeScript(config, action, payload);
             if (!result) {
                 throw new ResourceUnavailableException("Failed to " + action + " for static NAT rule",
@@ -849,7 +817,6 @@ public class NetworkExtensionElement extends AdapterBase implements
             return false;
         }
         logger.info("Applying {} port forwarding rules for network {}", rules.size(), network);
-        String vlanId = getVlanId(network);
         for (PortForwardingRule rule : rules) {
             boolean isRevoke = rule.getState() == FirewallRule.State.Revoke;
             String action = isRevoke ? CMD_DELETE_PORT_FORWARD : CMD_ADD_PORT_FORWARD;
@@ -859,8 +826,7 @@ public class NetworkExtensionElement extends AdapterBase implements
             String publicVlanTag = getPublicVlanTag(rule.getSourceIpAddressId());
 
             JsonObject payload = new JsonObject();
-            payload.addProperty("network_id", String.valueOf(network.getId()));
-            payload.addProperty("vlan", safeStr(vlanId));
+            addNetworkToPayload(payload, network);
             payload.addProperty("public_ip", getIpAddress(rule.getSourceIpAddressId()));
             payload.addProperty("public_cidr", safeStr(publicCidr));
             payload.addProperty("public_vlan", publicVlanTag);
@@ -869,7 +835,6 @@ public class NetworkExtensionElement extends AdapterBase implements
                     ? rule.getDestinationIpAddress().addr() : null));
             payload.addProperty("private_port", safeStr(privatePort));
             payload.addProperty("protocol", safeStr(rule.getProtocol()));
-            addVpcIdToPayload(payload, network);
             boolean result = executeScript(network, action, payload);
             if (!result) {
                 throw new ResourceUnavailableException("Failed to " + action + " for port forwarding rule",
@@ -1046,9 +1011,33 @@ public class NetworkExtensionElement extends AdapterBase implements
         return payload;
     }
 
-    private void addVpcIdToPayload(JsonObject payload, Network network) {
-        if (payload != null && network != null && network.getVpcId() != null) {
+    /**
+     * Adds all standard network-level fields to the payload.
+     * Always-present: network_id, vlan, zone_id.
+     * Conditional (only when non-blank): gateway, cidr, vpc_id, and the two
+     * IPv6 network fields (network_ip6_gateway, network_ip6_cidr).
+     */
+    private void addNetworkToPayload(JsonObject payload, Network network) {
+        if (payload == null || network == null) {
+            return;
+        }
+        payload.addProperty("network_id", String.valueOf(network.getId()));
+        payload.addProperty("vlan", safeStr(getVlanId(network)));
+        payload.addProperty("zone_id", String.valueOf(network.getDataCenterId()));
+        if (StringUtils.isNotBlank(network.getGateway())) {
+            payload.addProperty("gateway", safeStr(network.getGateway()));
+        }
+        if (StringUtils.isNotBlank(network.getCidr())) {
+            payload.addProperty("cidr", safeStr(network.getCidr()));
+        }
+        if (network.getVpcId() != null) {
             payload.addProperty("vpc_id", String.valueOf(network.getVpcId()));
+        }
+        if (StringUtils.isNotBlank(network.getIp6Gateway())) {
+            payload.addProperty("network_ip6_gateway", safeStr(network.getIp6Gateway()));
+        }
+        if (StringUtils.isNotBlank(network.getIp6Cidr())) {
+            payload.addProperty("network_ip6_cidr", safeStr(network.getIp6Cidr()));
         }
     }
 
@@ -1089,15 +1078,29 @@ public class NetworkExtensionElement extends AdapterBase implements
         }
     }
 
-    private void addNetworkIpv6ToPayload(JsonObject payload, Network network) {
+    /**
+     * Adds the network DNS fields to the payload: {@code dns} (comma-separated
+     * resolver list) and {@code domain} (network domain suffix).
+     */
+    private void addNetworkDnsToPayload(JsonObject payload, Network network) {
         if (payload == null || network == null) {
             return;
         }
-        if (StringUtils.isNotBlank(network.getIp6Gateway())) {
-            payload.addProperty("network_ip6_gateway", safeStr(network.getIp6Gateway()));
+        payload.addProperty("dns", safeStr(getNetworkDns(network)));
+        payload.addProperty("domain", safeStr(network.getNetworkDomain()));
+    }
+
+    /**
+     * Resolves the extension IP for {@code network} via {@link #ensureExtensionIp}
+     * and adds it to the payload as {@code extension_ip}.
+     */
+    private void addExtensionIpToPayload(JsonObject payload, Network network) {
+        if (payload == null || network == null) {
+            return;
         }
-        if (StringUtils.isNotBlank(network.getIp6Cidr())) {
-            payload.addProperty("network_ip6_cidr", safeStr(network.getIp6Cidr()));
+        String extensionIp = ensureExtensionIp(network);
+        if (StringUtils.isNotBlank(extensionIp)) {
+            payload.addProperty("extension_ip", extensionIp);
         }
     }
 
@@ -1295,8 +1298,7 @@ public class NetworkExtensionElement extends AdapterBase implements
     private JsonObject buildCustomActionPayload(Network network, Extension extension, String actionName,
             Map<String, Object> parameters) {
         JsonObject payload = new JsonObject();
-        payload.addProperty("network_id", String.valueOf(network.getId()));
-        addVpcIdToPayload(payload, network);
+        addNetworkToPayload(payload, network);
         payload.addProperty("action", actionName);
         payload.add(ARG_ACTION_PARAMS, buildActionParamsPayload(parameters));
         payload.add(ARG_PHYSICAL_NETWORK_EXTENSION_DETAILS,
@@ -1425,20 +1427,14 @@ public class NetworkExtensionElement extends AdapterBase implements
         if (!canHandle(network, Service.Dhcp)) {
             return false;
         }
-        String extensionIp = ensureExtensionIp(network);
         logger.debug("addDhcpEntry: network={} mac={} ip={} ipv6={}", network,
                 nic.getMacAddress(), nic.getIPv4Address(), nic.getIPv6Address());
         JsonObject payload = new JsonObject();
-        payload.addProperty("network_id", String.valueOf(network.getId()));
+        addNetworkToPayload(payload, network);
         addNicToPayload(payload, nic);
         payload.addProperty("hostname", safeStr(vm.getHostName()));
-        payload.addProperty("gateway", safeStr(network.getGateway()));
-        payload.addProperty("cidr", safeStr(network.getCidr()));
-        addNetworkIpv6ToPayload(payload, network);
-        payload.addProperty("dns", safeStr(getNetworkDns(network)));
-        payload.addProperty("domain", safeStr(network.getNetworkDomain()));
-        payload.addProperty("extension_ip", safeStr(extensionIp));
-        addVpcIdToPayload(payload, network);
+        addNetworkDnsToPayload(payload, network);
+        addExtensionIpToPayload(payload, network);
         return executeScript(network, CMD_ADD_DHCP_ENTRY, payload);
     }
 
@@ -1450,18 +1446,11 @@ public class NetworkExtensionElement extends AdapterBase implements
             return false;
         }
         logger.debug("configDhcpSupportForSubnet: network={}", network);
-        String extensionIp = ensureExtensionIp(network);
         JsonObject payload = new JsonObject();
-        payload.addProperty("network_id", String.valueOf(network.getId()));
-        payload.addProperty("gateway", safeStr(network.getGateway()));
-        payload.addProperty("cidr", safeStr(network.getCidr()));
-        addNetworkIpv6ToPayload(payload, network);
-        payload.addProperty("dns", safeStr(getNetworkDns(network)));
-        payload.addProperty("vlan", safeStr(getVlanId(network)));
-        payload.addProperty("domain", safeStr(network.getNetworkDomain()));
-        payload.addProperty("extension_ip", safeStr(extensionIp));
+        addNetworkToPayload(payload, network);
+        addNetworkDnsToPayload(payload, network);
+        addExtensionIpToPayload(payload, network);
         addNicToPayload(payload, nic);
-        addVpcIdToPayload(payload, network);
         return executeScript(network, CMD_CONFIG_DHCP_SUBNET, payload);
     }
 
@@ -1471,11 +1460,9 @@ public class NetworkExtensionElement extends AdapterBase implements
             return false;
         }
         logger.debug("removeDhcpSupportForSubnet: network={}", network);
-        String extensionIp = ensureExtensionIp(network);
         JsonObject payload = new JsonObject();
-        payload.addProperty("network_id", String.valueOf(network.getId()));
-        payload.addProperty("extension_ip", safeStr(extensionIp));
-        addVpcIdToPayload(payload, network);
+        addNetworkToPayload(payload, network);
+        addExtensionIpToPayload(payload, network);
         return executeScript(network, CMD_REMOVE_DHCP_SUBNET, payload);
     }
 
@@ -1492,12 +1479,10 @@ public class NetworkExtensionElement extends AdapterBase implements
         }
         logger.debug("removeDhcpEntry: network={} mac={} ip={} ipv6={}", network,
                 nic.getMacAddress(), nic.getIPv4Address(), nic.getIPv6Address());
-        String extensionIp = ensureExtensionIp(network);
         JsonObject payload = new JsonObject();
-        payload.addProperty("network_id", String.valueOf(network.getId()));
+        addNetworkToPayload(payload, network);
         addNicToPayload(payload, nic);
-        payload.addProperty("extension_ip", safeStr(extensionIp));
-        addVpcIdToPayload(payload, network);
+        addExtensionIpToPayload(payload, network);
         return executeScript(network, CMD_REMOVE_DHCP_ENTRY, payload);
     }
 
@@ -1513,13 +1498,11 @@ public class NetworkExtensionElement extends AdapterBase implements
         String hostname = vm.getHostName();
         logger.debug("addDnsEntry: network={} hostname={} ip={} ipv6={}", network,
                 hostname, nic.getIPv4Address(), nic.getIPv6Address());
-        String extensionIp = ensureExtensionIp(network);
         JsonObject payload = new JsonObject();
-        payload.addProperty("network_id", String.valueOf(network.getId()));
+        addNetworkToPayload(payload, network);
         addNicToPayload(payload, nic);
         payload.addProperty("hostname", safeStr(hostname));
-        payload.addProperty("extension_ip", safeStr(extensionIp));
-        addVpcIdToPayload(payload, network);
+        addExtensionIpToPayload(payload, network);
         return executeScript(network, CMD_ADD_DNS_ENTRY, payload);
     }
 
@@ -1531,18 +1514,11 @@ public class NetworkExtensionElement extends AdapterBase implements
             return false;
         }
         logger.debug("configDnsSupportForSubnet: network={}", network);
-        String extensionIp = ensureExtensionIp(network);
         JsonObject payload = new JsonObject();
-        payload.addProperty("network_id", String.valueOf(network.getId()));
-        payload.addProperty("gateway", safeStr(network.getGateway()));
-        payload.addProperty("cidr", safeStr(network.getCidr()));
-        addNetworkIpv6ToPayload(payload, network);
-        payload.addProperty("dns", safeStr(getNetworkDns(network)));
-        payload.addProperty("vlan", safeStr(getVlanId(network)));
-        payload.addProperty("domain", safeStr(network.getNetworkDomain()));
-        payload.addProperty("extension_ip", safeStr(extensionIp));
+        addNetworkToPayload(payload, network);
+        addNetworkDnsToPayload(payload, network);
+        addExtensionIpToPayload(payload, network);
         addNicToPayload(payload, nic);
-        addVpcIdToPayload(payload, network);
         return executeScript(network, CMD_CONFIG_DNS_SUBNET, payload);
     }
 
@@ -1552,11 +1528,9 @@ public class NetworkExtensionElement extends AdapterBase implements
             return false;
         }
         logger.debug("removeDnsSupportForSubnet: network={}", network);
-        String extensionIp = ensureExtensionIp(network);
         JsonObject payload = new JsonObject();
-        payload.addProperty("network_id", String.valueOf(network.getId()));
-        payload.addProperty("extension_ip", safeStr(extensionIp));
-        addVpcIdToPayload(payload, network);
+        addNetworkToPayload(payload, network);
+        addExtensionIpToPayload(payload, network);
         return executeScript(network, CMD_REMOVE_DNS_SUBNET, payload);
     }
 
@@ -1680,12 +1654,11 @@ public class NetworkExtensionElement extends AdapterBase implements
         }
 
         JsonObject payload = new JsonObject();
-        payload.addProperty("network_id", String.valueOf(network.getId()));
+        addNetworkToPayload(payload, network);
         addNicToPayload(payload, nic);
         payload.addProperty("ip", safeStr(nicIpAddress));
-        payload.addProperty("extension_ip", safeStr(ensureExtensionIp(network)));
+        addExtensionIpToPayload(payload, network);
         payload.add("vm_data", vmDataArray);
-        addVpcIdToPayload(payload, network);
 
         return executeScript(network, CMD_SAVE_VM_DATA, payload);
     }
@@ -1701,13 +1674,11 @@ public class NetworkExtensionElement extends AdapterBase implements
             return true;
         }
         logger.debug("savePassword: network={} ip={} ipv6={}", network, nic.getIPv4Address(), nic.getIPv6Address());
-        String extensionIp = ensureExtensionIp(network);
         JsonObject payload = new JsonObject();
-        payload.addProperty("network_id", String.valueOf(network.getId()));
+        addNetworkToPayload(payload, network);
         addNicToPayload(payload, nic);
         payload.addProperty("password", password);
-        payload.addProperty("extension_ip", safeStr(extensionIp));
-        addVpcIdToPayload(payload, network);
+        addExtensionIpToPayload(payload, network);
         return executeScript(network, CMD_SAVE_PASSWORD, payload);
     }
 
@@ -1725,7 +1696,6 @@ public class NetworkExtensionElement extends AdapterBase implements
             return true;
         }
         logger.debug("saveUserData: network={} ip={} ipv6={}", network, nic.getIPv4Address(), nic.getIPv6Address());
-        String extensionIp = ensureExtensionIp(network);
         String userDataDecoded;
         try {
             userDataDecoded = new String(Base64.getDecoder().decode(userData), StandardCharsets.UTF_8);
@@ -1733,11 +1703,10 @@ public class NetworkExtensionElement extends AdapterBase implements
             userDataDecoded = userData;
         }
         JsonObject payload = new JsonObject();
-        payload.addProperty("network_id", String.valueOf(network.getId()));
+        addNetworkToPayload(payload, network);
         addNicToPayload(payload, nic);
         payload.addProperty("userdata", userDataDecoded);
-        payload.addProperty("extension_ip", safeStr(extensionIp));
-        addVpcIdToPayload(payload, network);
+        addExtensionIpToPayload(payload, network);
         return executeScript(network, CMD_SAVE_USERDATA, payload);
     }
 
@@ -1751,13 +1720,11 @@ public class NetworkExtensionElement extends AdapterBase implements
             return true;
         }
         logger.debug("saveSSHKey: network={} ip={} ipv6={}", network, nic.getIPv4Address(), nic.getIPv6Address());
-        String extensionIp = ensureExtensionIp(network);
         JsonObject payload = new JsonObject();
-        payload.addProperty("network_id", String.valueOf(network.getId()));
+        addNetworkToPayload(payload, network);
         addNicToPayload(payload, nic);
         payload.addProperty("sshkey", sshPublicKey);
-        payload.addProperty("extension_ip", safeStr(extensionIp));
-        addVpcIdToPayload(payload, network);
+        addExtensionIpToPayload(payload, network);
         return executeScript(network, CMD_SAVE_SSHKEY, payload);
     }
 
@@ -1773,13 +1740,11 @@ public class NetworkExtensionElement extends AdapterBase implements
         }
         logger.debug("saveHypervisorHostname: network={} ip={} ipv6={} host={}", network,
                 nic.getIPv4Address(), nic.getIPv6Address(), hostname);
-        String extensionIp = ensureExtensionIp(network);
         JsonObject payload = new JsonObject();
-        payload.addProperty("network_id", String.valueOf(network.getId()));
+        addNetworkToPayload(payload, network);
         addNicToPayload(payload, nic);
         payload.addProperty("hypervisor_hostname", hostname);
-        payload.addProperty("extension_ip", safeStr(extensionIp));
-        addVpcIdToPayload(payload, network);
+        addExtensionIpToPayload(payload, network);
         return executeScript(network, CMD_SAVE_HYPERVISOR_HOSTNAME, payload);
     }
 
@@ -1795,7 +1760,6 @@ public class NetworkExtensionElement extends AdapterBase implements
             return false;
         }
         logger.info("Applying {} LB rules for network {}", rules.size(), network);
-        String vlanId = getVlanId(network);
 
         JsonArray lbRulesArray = new JsonArray();
         for (LoadBalancingRule rule : rules) {
@@ -1824,10 +1788,8 @@ public class NetworkExtensionElement extends AdapterBase implements
         }
 
         JsonObject payload = new JsonObject();
-        payload.addProperty("network_id", String.valueOf(network.getId()));
-        payload.addProperty("vlan", safeStr(vlanId));
+        addNetworkToPayload(payload, network);
         payload.add("lb_rules", lbRulesArray);
-        addVpcIdToPayload(payload, network);
         boolean result = executeScript(network, CMD_APPLY_LB_RULES, payload);
         if (!result) {
             throw new ResourceUnavailableException("Failed to apply LB rules for network " + network.getUuid(),
@@ -1970,13 +1932,8 @@ public class NetworkExtensionElement extends AdapterBase implements
         fwRules.add("rules", rulesArray);
 
         JsonObject payload = new JsonObject();
-        payload.addProperty("network_id", String.valueOf(network.getId()));
-        payload.addProperty("vlan", safeStr(getVlanId(network)));
-        payload.addProperty("gateway", safeStr(network.getGateway()));
-        payload.addProperty("cidr", safeStr(network.getCidr()));
-        addNetworkIpv6ToPayload(payload, network);
+        addNetworkToPayload(payload, network);
         payload.add("fw_rules", fwRules);
-        addVpcIdToPayload(payload, network);
 
         boolean result = executeScript(network, CMD_APPLY_FW_RULES, payload);
         if (!result) {
@@ -2045,18 +2002,11 @@ public class NetworkExtensionElement extends AdapterBase implements
 
         JsonObject restoreData = buildRestoreNetworkData(network, nics, dhcpEnabled, dnsEnabled, userdataEnabled);
 
-        String extensionIp = ensureExtensionIp(network);
         JsonObject payload = new JsonObject();
-        payload.addProperty("network_id", String.valueOf(network.getId()));
-        payload.addProperty("gateway", safeStr(network.getGateway()));
-        payload.addProperty("cidr", safeStr(network.getCidr()));
-        addNetworkIpv6ToPayload(payload, network);
-        payload.addProperty("vlan", safeStr(getVlanId(network)));
-        payload.addProperty("extension_ip", safeStr(extensionIp));
-        payload.addProperty("dns", safeStr(getNetworkDns(network)));
-        payload.addProperty("domain", safeStr(network.getNetworkDomain()));
+        addNetworkToPayload(payload, network);
+        addExtensionIpToPayload(payload, network);
+        addNetworkDnsToPayload(payload, network);
         payload.add("restore_data", restoreData);
-        addVpcIdToPayload(payload, network);
 
         return executeScript(network, CMD_RESTORE_NETWORK, payload);
     }
@@ -2466,9 +2416,7 @@ public class NetworkExtensionElement extends AdapterBase implements
                 }
 
                 final JsonObject payload = new JsonObject();
-                payload.addProperty("network_id", String.valueOf(network.getId()));
-                payload.addProperty("vlan", safeStr(getVlanId(network)));
-                addVpcIdToPayload(payload, network);
+                addNetworkToPayload(payload, network);
 
                 final boolean tierResult = executeScript(network, CMD_DESTROY_NETWORK, payload);
                 result = result && tierResult;
@@ -2568,13 +2516,8 @@ public class NetworkExtensionElement extends AdapterBase implements
         JsonArray aclRules = buildAclRulesArray(activeRules);
 
         JsonObject payload = new JsonObject();
-        payload.addProperty("network_id", String.valueOf(config.getId()));
-        payload.addProperty("vlan", safeStr(getVlanId(config)));
-        payload.addProperty("gateway", safeStr(config.getGateway()));
-        payload.addProperty("cidr", safeStr(config.getCidr()));
-        addNetworkIpv6ToPayload(payload, config);
+        addNetworkToPayload(payload, config);
         payload.add("acl_rules", aclRules);
-        addVpcIdToPayload(payload, config);
 
         boolean result = executeScript(config, CMD_APPLY_NETWORK_ACL, payload);
         if (!result) {
@@ -2610,13 +2553,8 @@ public class NetworkExtensionElement extends AdapterBase implements
                 JsonArray aclRules = buildAclRulesArray(activeRules);
 
                 JsonObject payload = new JsonObject();
-                payload.addProperty("network_id", String.valueOf(network.getId()));
-                payload.addProperty("vlan", safeStr(getVlanId(network)));
-                payload.addProperty("gateway", safeStr(network.getGateway()));
-                payload.addProperty("cidr", safeStr(network.getCidr()));
-                addNetworkIpv6ToPayload(payload, network);
+                addNetworkToPayload(payload, network);
                 payload.add("acl_rules", aclRules);
-                addVpcIdToPayload(payload, network);
 
                 boolean r = executeScript(network, CMD_APPLY_NETWORK_ACL, payload);
                 result = result && r;
