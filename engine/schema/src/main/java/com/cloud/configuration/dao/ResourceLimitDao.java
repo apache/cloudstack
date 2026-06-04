@@ -17,6 +17,7 @@
 package com.cloud.configuration.dao;
 
 import java.util.List;
+import java.util.Set;
 
 import com.cloud.configuration.Resource;
 import com.cloud.configuration.Resource.ResourceOwnerType;
@@ -36,4 +37,14 @@ public interface ResourceLimitDao extends GenericDao<ResourceLimitVO, Long> {
 
     long removeEntriesByOwner(Long ownerId, ResourceOwnerType ownerType);
     void removeResourceLimitsForNonMatchingTags(Long ownerId, ResourceOwnerType ownerType, List<Resource.ResourceType> types, List<String> tags);
+
+    /**
+     * Returns the subset of {@code domainIds} that have an explicit
+     * {@code resource_limit} row whose {@code max} is not
+     * {@link Resource#RESOURCE_UNLIMITED} for the supplied
+     * ({@code type}, {@code tag}). Domains that rely on the global default
+     * are NOT returned — the caller checks
+     * {@code findDefaultResourceLimitForDomain} separately.
+     */
+    Set<Long> listDomainIdsWithFiniteLimit(Set<Long> domainIds, Resource.ResourceType type, String tag);
 }

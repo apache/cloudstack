@@ -19,9 +19,12 @@ package com.cloud.resourcelimit;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
@@ -572,6 +575,137 @@ public class ResourceLimitManagerImplTest extends TestCase {
         } catch (ResourceAllocationException e) {
             Assert.fail(e.getMessage());
         }
+    }
+
+    private ResourceCountVO mockCountRow(long id) {
+        ResourceCountVO row = Mockito.mock(ResourceCountVO.class);
+        Mockito.when(row.getId()).thenReturn(id);
+        return row;
+    }
+
+    @Test
+    public void testListRowsToLockForLimitCheckOnlyAccountDomainHasFiniteLimit() {
+        // Account-domain has a finite limit; zone-domain (parent) is UNLIMITED.
+        // Expected lock set = {account row, account-domain row}.
+        long accountId = 1L;
+        long accountDomainId = 7L;
+        Resource.ResourceType type = Resource.ResourceType.volume;
+        AccountVO account = Mockito.mock(AccountVO.class);
+        Mockito.when(account.getDomainId()).thenReturn(accountDomainId);
+        Mockito.when(accountDao.findByIdIncludingRemoved(accountId)).thenReturn(account);
+
+        ResourceCountVO accountRow = mockCountRow(100L);
+        ResourceCountVO accountDomainRow = mockCountRow(200L);
+        Mockito.when(resourceCountDao.findByOwnerAndTypeAndTag(accountId, Resource.ResourceOwnerType.Account, type, null))
+                .thenReturn(accountRow);
+
+        Set<Long> ancestors = new HashSet<>(Arrays.asList(accountDomainId, 3L, Domain.ROOT_DOMAIN));
+        Mockito.when(domainDao.getDomainParentIds(accountDomainId)).thenReturn(ancestors);
+        Mockito.when(resourceLimitDao.listDomainIdsWithFiniteLimit(ancestors, type, null))
+                .thenReturn(Collections.singleton(accountDomainId));
+        Mockito.when(resourceCountDao.findByOwnerAndTypeAndTag(accountDomainId, Resource.ResourceOwnerType.Domain, type, null))
+                .thenReturn(accountDomainRow);
+
+        Set<Long> rowIds = resourceLimitManager.listRowsToLockForLimitCheck(accountId, type, null);
+
+        Assert.assertEquals(new HashSet<>(Arrays.asList(100L, 200L)), rowIds);
+        Mockito.verify(resourceCountDao, Mockito.never()).listAllRowsToUpdate(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(resourceCountDao, Mockito.never()).findByOwnerAndTypeAndTag(Mockito.eq(3L), Mockito.eq(Resource.ResourceOwnerType.Domain), Mockito.eq(type), Mockito.any());
+        Mockito.verify(resourceCountDao, Mockito.never()).findByOwnerAndTypeAndTag(Mockito.eq(Domain.ROOT_DOMAIN), Mockito.eq(Resource.ResourceOwnerType.Domain), Mockito.eq(type), Mockito.any());
+    }
+
+    @Test
+    public void testListRowsToLockForLimitCheckMultipleFiniteAncestors() {
+        // Both ancestor-domain rows have finite limits; both must be locked.
+        long accountId = 1L;
+        long accountDomainId = 7L;
+        long zoneDomainId = 3L;
+        Resource.ResourceType type = Resource.ResourceType.cpu;
+        AccountVO account = Mockito.mock(AccountVO.class);
+        Mockito.when(account.getDomainId()).thenReturn(accountDomainId);
+        Mockito.when(accountDao.findByIdIncludingRemoved(accountId)).thenReturn(account);
+
+        ResourceCountVO accountRow = mockCountRow(100L);
+        ResourceCountVO accountDomainRow = mockCountRow(200L);
+        ResourceCountVO zoneDomainRow = mockCountRow(300L);
+        Mockito.when(resourceCountDao.findByOwnerAndTypeAndTag(accountId, Resource.ResourceOwnerType.Account, type, null))
+                .thenReturn(accountRow);
+
+        Set<Long> ancestors = new HashSet<>(Arrays.asList(accountDomainId, zoneDomainId, Domain.ROOT_DOMAIN));
+        Mockito.when(domainDao.getDomainParentIds(accountDomainId)).thenReturn(ancestors);
+        Mockito.when(resourceLimitDao.listDomainIdsWithFiniteLimit(ancestors, type, null))
+                .thenReturn(new HashSet<>(Arrays.asList(accountDomainId, zoneDomainId)));
+        Mockito.when(resourceCountDao.findByOwnerAndTypeAndTag(accountDomainId, Resource.ResourceOwnerType.Domain, type, null))
+                .thenReturn(accountDomainRow);
+        Mockito.when(resourceCountDao.findByOwnerAndTypeAndTag(zoneDomainId, Resource.ResourceOwnerType.Domain, type, null))
+                .thenReturn(zoneDomainRow);
+
+        Set<Long> rowIds = resourceLimitManager.listRowsToLockForLimitCheck(accountId, type, null);
+
+        Assert.assertEquals(new HashSet<>(Arrays.asList(100L, 200L, 300L)), rowIds);
+    }
+
+    @Test
+    public void testListRowsToLockForLimitCheckAllUnlimited() {
+        // No ancestor has a finite limit; only the account row is locked.
+        long accountId = 1L;
+        long accountDomainId = 7L;
+        Resource.ResourceType type = Resource.ResourceType.cpu;
+        AccountVO account = Mockito.mock(AccountVO.class);
+        Mockito.when(account.getDomainId()).thenReturn(accountDomainId);
+        Mockito.when(accountDao.findByIdIncludingRemoved(accountId)).thenReturn(account);
+
+        ResourceCountVO accountRow = mockCountRow(100L);
+        Mockito.when(resourceCountDao.findByOwnerAndTypeAndTag(accountId, Resource.ResourceOwnerType.Account, type, null))
+                .thenReturn(accountRow);
+
+        Set<Long> ancestors = new HashSet<>(Arrays.asList(accountDomainId, Domain.ROOT_DOMAIN));
+        Mockito.when(domainDao.getDomainParentIds(accountDomainId)).thenReturn(ancestors);
+        Mockito.when(resourceLimitDao.listDomainIdsWithFiniteLimit(ancestors, type, null))
+                .thenReturn(Collections.emptySet());
+
+        Set<Long> rowIds = resourceLimitManager.listRowsToLockForLimitCheck(accountId, type, null);
+
+        Assert.assertEquals(Collections.singleton(100L), rowIds);
+    }
+
+    @Test
+    public void testListRowsToLockForLimitCheckFiniteGlobalDefaultFallsBack() {
+        // primary_storage with a finite global default → fall back to listAllRowsToUpdate
+        // to preserve upstream behavior (every ancestor inherits the finite default).
+        long accountId = 1L;
+        Resource.ResourceType type = Resource.ResourceType.primary_storage;
+        Set<Long> fullChain = new HashSet<>(Arrays.asList(100L, 200L, 300L, 400L));
+
+        Mockito.doReturn(1024L).when(resourceLimitManager).findDefaultResourceLimitForDomain(type);
+        Mockito.when(resourceCountDao.listAllRowsToUpdate(accountId, Resource.ResourceOwnerType.Account, type, null))
+                .thenReturn(fullChain);
+
+        Set<Long> rowIds = resourceLimitManager.listRowsToLockForLimitCheck(accountId, type, null);
+
+        Assert.assertEquals(fullChain, rowIds);
+        Mockito.verify(resourceLimitDao, Mockito.never()).listDomainIdsWithFiniteLimit(Mockito.anySet(), Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void testListRowsToLockForLimitCheckTaggedAccountRowMissingFallsBack() {
+        // Tagged limit, account row not yet materialized → fall back to listAllRowsToUpdate
+        // so the create-on-miss tagged-row materialization still fires.
+        long accountId = 1L;
+        Resource.ResourceType type = Resource.ResourceType.cpu;
+        String tag = hostTags.get(0);
+        Set<Long> fullChain = new HashSet<>(Arrays.asList(101L, 201L));
+
+        Mockito.when(resourceCountDao.findByOwnerAndTypeAndTag(accountId, Resource.ResourceOwnerType.Account, type, tag))
+                .thenReturn(null);
+        Mockito.when(resourceCountDao.listAllRowsToUpdate(accountId, Resource.ResourceOwnerType.Account, type, tag))
+                .thenReturn(fullChain);
+
+        Set<Long> rowIds = resourceLimitManager.listRowsToLockForLimitCheck(accountId, type, tag);
+
+        Assert.assertEquals(fullChain, rowIds);
+        Mockito.verify(resourceCountDao, Mockito.times(1)).listAllRowsToUpdate(accountId, Resource.ResourceOwnerType.Account, type, tag);
+        Mockito.verify(resourceLimitDao, Mockito.never()).listDomainIdsWithFiniteLimit(Mockito.anySet(), Mockito.any(), Mockito.any());
     }
 
     @Test

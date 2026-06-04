@@ -20,6 +20,7 @@ import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -577,10 +578,72 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     }
 
     protected List<ResourceCountVO> lockAccountAndOwnerDomainRows(long accountId, final ResourceType type, String tag) {
-        Set<Long> rowIdsToLock = _resourceCountDao.listAllRowsToUpdate(accountId, ResourceOwnerType.Account, type, tag);
+        Set<Long> rowIdsToLock = listRowsToLockForLimitCheck(accountId, type, tag);
+        if (rowIdsToLock.isEmpty()) {
+            return Collections.emptyList();
+        }
         SearchCriteria<ResourceCountVO> sc = ResourceCountSearch.create();
         sc.setParameters("id", rowIdsToLock.toArray());
         return _resourceCountDao.lockRows(sc, null, true);
+    }
+
+    /**
+     * Returns the {@code resource_count} row IDs that need {@code FOR UPDATE}
+     * locks for a limit check: always the account row, plus ancestor-domain
+     * rows ONLY when their effective limit for ({@code type}, {@code tag})
+     * is finite. Ancestors with an UNLIMITED (or absent) explicit limit are
+     * excluded — locking them would only create cross-tenant InnoDB row-lock
+     * contention with no effect on the check outcome (see
+     * {@link #checkDomainResourceLimit} which short-circuits when the
+     * domain's limit is {@link Resource#RESOURCE_UNLIMITED} and skips the
+     * ROOT domain entirely).
+     *
+     * <p>The account row is always included so two concurrent reservations
+     * against the same account still serialize at the InnoDB level.
+     *
+     * <p>If the global default for this type is itself finite (only possible
+     * for {@code primary_storage}/{@code secondary_storage} via
+     * {@code domainResourceLimitMap}), every ancestor inherits that finite
+     * default and we fall back to {@link ResourceCountDao#listAllRowsToUpdate}
+     * to lock the full chain. Same fallback applies when a tagged account
+     * row does not yet exist, so the create-on-miss materialization in
+     * {@code listAllRowsToUpdate} still fires.
+     *
+     * <p>This is a READ-PATH helper. The write path
+     * ({@link #updateResourceCountForAccount}) keeps using
+     * {@code listAllRowsToUpdate} directly so counts at unconstrained
+     * ancestors stay accurate for audit/aggregation.
+     */
+    protected Set<Long> listRowsToLockForLimitCheck(long accountId, ResourceType type, String tag) {
+        if (findDefaultResourceLimitForDomain(type) != Resource.RESOURCE_UNLIMITED) {
+            return _resourceCountDao.listAllRowsToUpdate(accountId, ResourceOwnerType.Account, type, tag);
+        }
+
+        Set<Long> rowIds = new HashSet<>();
+
+        ResourceCountVO accountRow = _resourceCountDao.findByOwnerAndTypeAndTag(accountId, ResourceOwnerType.Account, type, tag);
+        if (accountRow != null) {
+            rowIds.add(accountRow.getId());
+        } else if (StringUtils.isNotEmpty(tag)) {
+            // Preserve the tagged-row create-on-miss side effect from
+            // ResourceCountDaoImpl.listAllRowsToUpdate.
+            return _resourceCountDao.listAllRowsToUpdate(accountId, ResourceOwnerType.Account, type, tag);
+        }
+
+        AccountVO account = _accountDao.findByIdIncludingRemoved(accountId);
+        if (account == null) {
+            return rowIds;
+        }
+        Set<Long> ancestorDomainIds = _domainDao.getDomainParentIds(account.getDomainId());
+        Set<Long> finiteLimitDomainIds = _resourceLimitDao.listDomainIdsWithFiniteLimit(ancestorDomainIds, type, tag);
+
+        for (Long ancestorDomainId : finiteLimitDomainIds) {
+            ResourceCountVO row = _resourceCountDao.findByOwnerAndTypeAndTag(ancestorDomainId, ResourceOwnerType.Domain, type, tag);
+            if (row != null) {
+                rowIds.add(row.getId());
+            }
+        }
+        return rowIds;
     }
 
     @Override
