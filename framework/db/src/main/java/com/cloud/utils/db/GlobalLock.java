@@ -138,14 +138,14 @@ public class GlobalLock {
 
     public static boolean isLockAvailable(String name) {
         if (logger.isDebugEnabled()) {
-            logger.debug("Checking lock present for {}", name);
+            logger.debug("Checking lock availability for {}", name);
         }
         boolean result = false;
         try {
             result = DbUtil.isFreeLock(name);
         } finally {
             if (logger.isDebugEnabled()) {
-                logger.debug("Result of checking lock present for {}: {}", name, result);
+                logger.debug("Result of checking lock availability for {}: {}", name, result);
             }
         }
         return result;

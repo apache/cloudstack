@@ -582,6 +582,11 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
     private AgentConnectStatusAnswer handleAgentConnectStatusCommand(AgentAttache attache, AgentConnectStatusCommand cmd) {
         HostVO hostVo = _hostDao.findById(attache.getId());
+        if (hostVo == null) {
+            String details = String.format("Unable to find Host in DB with id %s for AgentConnectStatusCommand hostId=%s guid=%s name=%s",
+                    attache.getId(), cmd.getHostId(), cmd.getHostGuid(), cmd.getHostName());
+            return new AgentConnectStatusAnswer(cmd, false, details);
+        }
         return getConnectStatusAnswer(hostVo, cmd);
     }
 
@@ -592,7 +597,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         Status status = hostVo.getStatus();
         try {
             boolean lockAvailable = GlobalLock.isLockAvailable(lockName);
-            String details = String.format("Global lock %s is%s present for %s", lockName, lockAvailable ? "" : " not",
+            String details = String.format("Global lock %s is %s present for %s", lockName, lockAvailable ? "" : " not",
                     hostName);
             logger.debug(details);
             return getAgentConnectStatusAnswer(cmd, lockName, hostName, lockAvailable, status, details);
@@ -612,7 +617,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                                                                  boolean lockAvailable,
                                                                  Status status,
                                                                  String details) {
-        logger.debug(String.format("Checking whether global lock %s is present for %s", lockName, hostName));
+        logger.debug("Checking whether global lock {} is present for {}", lockName, hostName);
         AgentConnectStatusAnswer answer = new AgentConnectStatusAnswer(cmd, true, details);
         answer.setLockAvailable(lockAvailable);
         answer.setHostStatus(status);
@@ -2024,7 +2029,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 answers[i] = answer;
             }
         }
-        Response response = new Response(request, answers, _nodeId, -1);
+        Response response = new Response(request, answers[0], _nodeId, -1);
         try {
             link.send(response.toBytes());
         } catch (ClosedChannelException e) {
