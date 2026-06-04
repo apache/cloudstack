@@ -401,7 +401,7 @@ can set up the VPC-level SNAT rule at this stage.
 | Field | Description |
 |---|---|
 | `vpc_id` | VPC ID. |
-| `cidr` | VPC supernet CIDR. |
+| `vpc_cidr` | VPC supernet CIDR. |
 | `public_ip` | Source-NAT IP, when already allocated. |
 | `public_vlan` | VLAN of the source-NAT IP, when present. |
 | `public_gateway` | Gateway of the source-NAT IP segment, when present. |
@@ -437,7 +437,7 @@ The `extension.details` blob is removed from CloudStack after a successful retur
 | Field | Description |
 |---|---|
 | `vpc_id` | VPC ID. |
-| `cidr` | VPC supernet CIDR. |
+| `vpc_cidr` | VPC supernet CIDR. |
 | `public_ip` | New source-NAT IP. |
 | `public_vlan` | VLAN of the new source-NAT IP. |
 | `public_gateway` | Gateway of the new source-NAT IP segment. |
