@@ -840,7 +840,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         boolean currentLinkTerminated = this.link != null && this.link.isTerminated();
         boolean reconnectForNewHost = this.hostname != null && this.hostname.equals(preferredHost);
         // if none of the above is true
-        boolean stormDetected = ! (reconnectForCurrentLink || currentLinkTerminated || reconnectForNewHost);
+        boolean stormDetected = !(reconnectForCurrentLink || currentLinkTerminated || reconnectForNewHost);
         // connection storm guard
         if (stormDetected) {
             logger.warn("Reconnect requested for the connection {} but current connection is " +

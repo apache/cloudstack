@@ -19,6 +19,7 @@ package com.cloud.agent;
 import com.cloud.exception.CloudException;
 import com.cloud.utils.nio.Link;
 import org.apache.logging.log4j.Logger;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -50,9 +51,13 @@ public class HostConnectProcessTest {
         ReflectionTestUtils.setField(agent, "logger", logger);
     }
 
+    @After
+    public void tearDown() {
+        hostConnectProcess.stop();
+    }
+
     @Test
     public void testScheduleConnectProcess() throws InterruptedException, CloudException {
-
         hostConnectProcess.scheduleConnectProcess(link, connectionTransfer);
         Assert.assertTrue(hostConnectProcess.isInProgress());
     }
