@@ -94,7 +94,7 @@ public class HostConnectProcess {
 
     private void stopHostStatusExecutor() {
         if (hostStatusExecutor != null) {
-            hostStatusExecutor.shutdown();
+            hostStatusExecutor.shutdownNow();
             hostStatusExecutor = null;
         }
     }

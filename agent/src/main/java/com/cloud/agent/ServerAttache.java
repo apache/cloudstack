@@ -86,6 +86,7 @@ public class ServerAttache {
     protected String _name;
     private Link _link;
     protected ConcurrentHashMap<Long, ServerListener> _waitForList;
+    protected ConcurrentHashMap<Long, java.util.concurrent.ScheduledFuture<?>> _alarmFutures;
     protected LinkedList<Request> _requests;
     protected Long _currentSequence;
     protected long _nextSequence;
@@ -94,6 +95,7 @@ public class ServerAttache {
         _name = link.getIpAddress();
         _link = link;
         _waitForList = new ConcurrentHashMap<>();
+        _alarmFutures = new ConcurrentHashMap<>();
         _requests = new LinkedList<>();
         _nextSequence = Long.valueOf(s_rand.nextInt(Short.MAX_VALUE)) << 48;
     }
@@ -148,7 +150,9 @@ public class ServerAttache {
             logger.trace(log(seq, "Registering listener"));
         }
         if (listener.getTimeout() != -1) {
-            s_listenerExecutor.schedule(new Alarm(seq), listener.getTimeout(), TimeUnit.SECONDS);
+            java.util.concurrent.ScheduledFuture<?> alarmFuture =
+                    s_listenerExecutor.schedule(new Alarm(seq), listener.getTimeout(), TimeUnit.SECONDS);
+            _alarmFutures.put(seq, alarmFuture);
         }
         _waitForList.put(seq, listener);
     }
@@ -156,6 +160,10 @@ public class ServerAttache {
     protected ServerListener unregisterListener(long sequence) {
         if (logger.isTraceEnabled()) {
             logger.trace(log(sequence, "Unregistering listener"));
+        }
+        java.util.concurrent.ScheduledFuture<?> alarmFuture = _alarmFutures.remove(sequence);
+        if (alarmFuture != null) {
+            alarmFuture.cancel(false);
         }
         return _waitForList.remove(sequence);
     }
@@ -205,8 +213,13 @@ public class ServerAttache {
             Map.Entry<Long, ServerListener> entry = it.next();
             it.remove();
 
+            long seq = entry.getKey();
+            java.util.concurrent.ScheduledFuture<?> alarmFuture = _alarmFutures.remove(seq);
+            if (alarmFuture != null) {
+                alarmFuture.cancel(false);
+            }
             ServerListener monitor = entry.getValue();
-            logger.debug(log(entry.getKey(), "Sending disconnect to " + monitor.getClass()));
+            logger.debug(log(seq, "Sending disconnect to " + monitor.getClass()));
             monitor.processDisconnect();
         }
     }
