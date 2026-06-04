@@ -887,7 +887,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         }
         String hostName = startup.getHostName();
         if (org.apache.commons.lang3.StringUtils.isNotEmpty(hostName)) {
-            setName(hostUuid);
+            setName(hostName);
         }
         pingInterval = startup.getPingInterval() * 1000L; // change to ms.
 

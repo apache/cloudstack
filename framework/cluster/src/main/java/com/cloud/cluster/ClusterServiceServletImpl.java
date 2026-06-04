@@ -141,11 +141,15 @@ public class ClusterServiceServletImpl implements ClusterService {
     private String executePostMethod(final CloseableHttpClient client, final HttpPost method) {
         String result = null;
         String request = null;
-        try {
-            request = EntityUtils.toString(method.getEntity(), Charset.defaultCharset());
-        } catch (Exception e) {
-            logger.warn("Failed to retrieve request entity for POST {}", serviceUrl, e);
+
+        if (logger.isDebugEnabled()) {
+            try {
+                request = EntityUtils.toString(method.getEntity(), Charset.defaultCharset());
+            } catch (Exception e) {
+                logger.warn("Failed to retrieve request entity for POST {}", serviceUrl, e);
+            }
         }
+
         try {
             final Profiler profiler = new Profiler();
             profiler.start();
@@ -155,15 +159,14 @@ public class ClusterServiceServletImpl implements ClusterService {
                 result = EntityUtils.toString(httpResponse.getEntity());
                 profiler.stop();
                 if (logger.isDebugEnabled()) {
-                    logger.debug("POST " + serviceUrl + " request: " + request + ", response :" + result + ", responding time: " + profiler.getDurationInMillis() + " ms");
+                    logger.debug("POST {} request: {}, response :{}, responding time: {} ms", serviceUrl, request, result, profiler.getDurationInMillis());
                 }
             } else {
                 profiler.stop();
-                logger.error("Invalid response code : " + response + ", from : " + serviceUrl + " request: " + request +  ", method : " + method.getParams().getParameter("method") + " responding time: " +
-                        profiler.getDurationInMillis());
+                logger.error("Invalid response code : {}, from : {} request: {}, method : {} responding time: {}", response, serviceUrl, request, method.getParams().getParameter("method"), profiler.getDurationInMillis());
             }
         } catch (IOException e) {
-            logger.error("Exception from : " + serviceUrl + " request: " + request +  ", method : " + method.getParams().getParameter("method") + ", exception :", e);
+            logger.error("Exception from : {} request: {}, method : {}, exception :", serviceUrl, request, method.getParams().getParameter("method"), e);
         } finally {
             method.releaseConnection();
         }

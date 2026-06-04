@@ -142,7 +142,9 @@ public abstract class NioConnection implements Callable<Boolean> {
             _sslHandshakeExecutor.shutdownNow();
         }
         if (_threadExecutor != null) {
-            _futureTask.cancel(false);
+            if (_futureTask != null) {
+                _futureTask.cancel(false);
+            }
             _threadExecutor.shutdownNow();
         }
         _isRunning = false;
