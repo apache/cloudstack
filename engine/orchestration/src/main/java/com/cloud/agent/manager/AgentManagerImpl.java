@@ -1768,7 +1768,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         GlobalLock joinLock = getHostJoinLock(host.getId());
         try {
             long processStart = System.currentTimeMillis();
-            if (joinLock.lock(getTimeoutSec())) {
+            int timeOutSec = getTimeoutSec();
+            if (joinLock.lock(timeOutSec)) {
                 logProcessingStart(host, joinLock);
                 try {
                     updateReadyCommandWithMSList(host, ready, startup);
@@ -1778,7 +1779,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     joinLock.unlock();
                 }
             } else {
-                throw createLockAcquisitionException(host, joinLock, processStart);
+                throw createLockAcquisitionException(host, joinLock, timeOutSec, processStart);
             }
         } finally {
             joinLock.releaseRef();
@@ -1798,14 +1799,14 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         StringBuilder msgBuilder = getSummaryMsgBuilder("Processing Host connection finished",
                 EventTypes.EVENT_HOST_RECONNECT, host.getUuid(), host.getName(), joinLock.getName(), null, null,
                 processFinish);
-        logger.fatal(msgBuilder.toString());
+        logger.info(msgBuilder.toString());
     }
 
     private void updateReadyCommandWithMSList(HostVO host, ReadyCommand ready, StartupCommand[] startup) {
         List<String> agentMSHostList = new ArrayList<>();
         String lbAlgorithm = null;
 
-        if (startup != null) {
+        if (startup != null && startup.length > 0) {
             String agentMSHosts = startup[0].getMsHostList();
             if (StringUtils.isNotEmpty(agentMSHosts)) {
                 String[] msHosts = agentMSHosts.split("@");
@@ -1828,7 +1829,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         ready.setAvoidMsHostList(avoidMsList);
         ready.setLbAlgorithm(indirectAgentLB.getLBAlgorithmName());
         ready.setLbCheckInterval(indirectAgentLB.getLBPreferredHostCheckInterval(host.getClusterId()));
-        logger.debug("Agent's management server host list is not up to date, sending list update:" + newMSList);
+        logger.debug("Agent's management server host list is not up to date, sending list update:{}", newMSList);
     }
 
     private AgentAttache createAndNotifyAttache(HostVO host, Link link, StartupCommand[] startup) throws ConnectionException {
@@ -1836,11 +1837,11 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         return notifyMonitorsOfConnection(attache, startup, false);
     }
 
-    private ConnectionException createLockAcquisitionException(HostVO host, GlobalLock joinLock, long processStart) {
+    private ConnectionException createLockAcquisitionException(HostVO host, GlobalLock joinLock, int timeOutSec, long processStart) {
         long processFinish = System.currentTimeMillis() - processStart;
         String title = "Failed to connect Host";
-        String summary = String.format("Failure due to unable to acquire lock %s during %s seconds",
-                joinLock.getName(), 60);
+        String summary = String.format("Failure due to unable to acquire lock %s during %d seconds",
+                joinLock.getName(), timeOutSec);
 
         StringBuilder msgBuilder = getSummaryMsgBuilder(title, EventTypes.EVENT_HOST_RECONNECT, host.getUuid(),
                 host.getName(), joinLock.getName(), summary, null, processFinish);
@@ -2023,7 +2024,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 answers[i] = answer;
             }
         }
-        Response response = new Response(request, answers[0], _nodeId, -1);
+        Response response = new Response(request, answers, _nodeId, -1);
         try {
             link.send(response.toBytes());
         } catch (ClosedChannelException e) {

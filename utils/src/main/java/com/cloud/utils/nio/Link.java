@@ -386,7 +386,7 @@ public class Link {
 
     public synchronized void terminated() {
         if (LOGGER.isTraceEnabled()) {
-            LOGGER.debug("Terminating connection to {}", _addr);
+            LOGGER.trace("Terminating connection to {}", _addr);
         }
         _key = null;
     }

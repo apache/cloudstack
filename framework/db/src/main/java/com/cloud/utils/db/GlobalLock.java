@@ -223,7 +223,7 @@ public class GlobalLock {
                 synchronized (this) {
                     if (ownerThread == Thread.currentThread()) {
                         logger.warn("Global lock {} re-entrance detected, owner thread: {}, reference count: {}, " +
-                                "lock count: {}", getThreadName(ownerThread), name, referenceCount, lockCount);
+                                "lock count: {}", name, getThreadName(ownerThread), referenceCount, lockCount);
                         // if it is re-entrance, then we may have more lock counts than needed?
                         lockCount++;
 
