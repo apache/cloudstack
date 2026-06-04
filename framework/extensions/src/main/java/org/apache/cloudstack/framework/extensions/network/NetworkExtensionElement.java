@@ -2258,9 +2258,21 @@ public class NetworkExtensionElement extends AdapterBase implements
      * Returns {@code null} when no suitable extension is found.
      */
     protected Pair<Long, Extension> resolveExtensionForVpc(Vpc vpc) {
-        List<PhysicalNetworkVO> physNetworks = physicalNetworkDao.listByZone(vpc.getZoneId());
-        if (CollectionUtils.isEmpty(physNetworks)) {
-            return null;
+        List<PhysicalNetworkVO> physNetworks;
+        List<NetworkVO> networks = networkDao.listByVpc(vpc.getId());
+        if (CollectionUtils.isNotEmpty(networks)) {
+            physNetworks = new ArrayList<>();
+            for (NetworkVO network : networks) {
+                PhysicalNetworkVO pn = physicalNetworkDao.findById(network.getPhysicalNetworkId());
+                if (pn != null && !physNetworks.contains(pn)) {
+                    physNetworks.add(pn);
+                }
+            }
+        } else {
+            physNetworks = physicalNetworkDao.listByZoneAndTrafficType(vpc.getZoneId(), Networks.TrafficType.Guest);
+            if (CollectionUtils.isEmpty(physNetworks)) {
+                return null;
+            }
         }
         for (PhysicalNetworkVO pn : physNetworks) {
             Extension ext = extensionHelper.getExtensionForPhysicalNetworkAndProvider(pn.getId(), providerName);
