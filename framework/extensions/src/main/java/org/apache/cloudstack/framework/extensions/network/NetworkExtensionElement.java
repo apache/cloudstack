@@ -2323,7 +2323,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         // Step 2: Create the VPC namespace (no anchor tier network needed).
         JsonObject implPayload = new JsonObject();
         implPayload.addProperty("vpc_id", String.valueOf(vpc.getId()));
-        implPayload.addProperty("cidr", safeStr(vpc.getCidr()));
+        implPayload.addProperty("vpc_cidr", safeStr(vpc.getCidr()));
 
         // Include source NAT IP if already allocated, so the script can set up the
         // VPC-level SNAT rule for the entire VPC CIDR.
@@ -2416,7 +2416,7 @@ public class NetworkExtensionElement extends AdapterBase implements
 
         final JsonObject payload = new JsonObject();
         payload.addProperty("vpc_id", String.valueOf(vpc.getId()));
-        payload.addProperty("cidr", safeStr(vpc.getCidr()));
+        payload.addProperty("vpc_cidr", safeStr(vpc.getCidr()));
         addPublicIpToPayload(payload, address.getId(), true);
 
         final boolean result = executeVpcScript(vpc, CMD_UPDATE_VPC_SOURCE_NAT_IP, payload);
