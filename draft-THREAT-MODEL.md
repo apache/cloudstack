@@ -29,6 +29,9 @@
 > document and add only what each satellite uniquely introduces (`§4 B1`
 > reachability, the credential file shape, the wrapper-of-SDK contract,
 > etc.). The deltas live at `/tmp/claude/cloudstack-<repo>-threat-model-draft.md`.
+> The satellite clients' interfaces point **inward** at the management-server
+> API; some satellites additionally expose **outward** interfaces that are
+> designed to be safe to expose *(maintainer: DaanHoogland)*.
 > An umbrella model was rejected because the satellites are uniformly thin
 > "HMAC-SHA1-signing HTTP client" wrappers — a single document either
 > drowns them in CloudStack-server content or, worse, drowns the
@@ -60,7 +63,11 @@
   response to this draft; *(inferred)* = synthesized by the producer from
   code structure or domain knowledge, awaiting PMC ratification (every
   *(inferred)* tag has a matching §14 question).
-- **Draft confidence:** 36 documented / 0 maintainer / 41 inferred.
+- **Draft confidence (provenance-tag tally):** 51 *(documented)* / 35
+  *(maintainer)* / 45 *(inferred)*. Five formerly-open questions (Q1, Q2,
+  Q4, Q5, Q12 — including the highest-leverage Root-CA strictness default)
+  were resolved by the CloudStack PMC review (DaanHoogland, vishesh92) and
+  their tags promoted from *(inferred)* to *(maintainer)*.
 
 **About the project.** Apache CloudStack is an open-source Infrastructure-as-a-
 Service (IaaS) orchestration platform *(documented: `README.md`,
@@ -92,15 +99,19 @@ private/public cloud control plane", not a hosted-as-a-service appliance.
 
 CloudStack is **not** an in-process library, **not** a single-binary
 appliance, and **not** a hosted SaaS. It is a distributed control plane:
-one or more management-server instances (clustered behind a load balancer
-in production), a MariaDB/MySQL database, one usage server, an optional
+one or more management-server instances — **a single management-server
+instance for smaller clouds, or a cluster behind a load balancer for
+larger deployments** *(maintainer: DaanHoogland)* — a MariaDB/MySQL
+database, one usage server, an optional
 SecondaryStorageVM/ConsoleProxyVM/VirtualRouter set of system VMs, and a
-per-hypervisor-host `cloudstack-agent` (for KVM/Hyper-V/baremetal) or
-out-of-process resource bridges (for VMware / XenServer / XCP-ng). The
-operator owns the surrounding L2/L3 network (the **management network**,
+per-hypervisor-host `cloudstack-agent` (for KVM/baremetal) or
+out-of-process resource bridges (for VMware / XenServer / XCP-ng / Hyper-V).
+The operator owns the surrounding L2/L3 network (the **management network**,
 the **public network**, the **guest network**, the **storage network**)
-and the physical hosts. The threat model is therefore that of a clustered
-distributed service, not a library *(inferred — §14 Q1)*.
+and the physical hosts. The threat model is therefore that of a
+distributed service (single-instance or clustered), not a library
+*(maintainer: DaanHoogland — confirms the distributed control-plane shape;
+single-instance is also a supported topology)*.
 
 ### Caller roles
 
@@ -110,11 +121,11 @@ distributed service, not a library *(inferred — §14 Q1)*.
 | **Domain / Project admin** | partial trust within their domain | Bounded by RBAC (`plugins/acl/{static,dynamic,project}-role-based`) and the domain hierarchy; can manage users / VMs / networks within a domain. |
 | **Root admin** | trusted control plane | Global RBAC role; can change global configuration, upload templates/ISOs, run privileged orchestration. |
 | **Operator / cluster admin** | trusted | OS-level access to management-server hosts, the MariaDB database, the keystore, and the agent hosts. Sets `agent.properties`, manages `cloudstack-agent` packages, manages the JCEKS keystore used by the agent for TLS *(documented: `agent/conf/agent.properties`, `framework/security/.../KeystoreManager.java`)*. |
-| **Hypervisor agent (cloudstack-agent on KVM/Hyper-V/baremetal)** | trusted-once-enrolled peer | Mutually authenticated via X.509 client cert signed by the management server's Root CA *(documented: `framework/ca/`, `plugins/ca/root-ca/`, `agent/src/main/java/com/cloud/agent/Agent.java` `setupAgentKeystore`)*. |
-| **System VM (SSVM / CPVM / VR)** | trusted-once-enrolled peer | Same X.509 enrolment shape as the agent; carries the agent binary inside *(inferred — §14 Q2)*. |
+| **Hypervisor agent (cloudstack-agent on KVM/baremetal)** | trusted-once-enrolled peer | Mutually authenticated via X.509 client cert signed by the management server's Root CA *(documented: `framework/ca/`, `plugins/ca/root-ca/`, `agent/src/main/java/com/cloud/agent/Agent.java` `setupAgentKeystore`)*. |
+| **System VM (SSVM / CPVM / VR)** | trusted-once-enrolled peer | Same X.509 enrolment shape as the agent; carries the agent binary inside *(maintainer: confirmed — same trust tier as agents, not a separate tier)*. |
 | **Hypervisor host (the underlying KVM/VMware/etc.)** | trusted by virtue of operator-controlled provisioning | CloudStack expects to drive the hypervisor via libvirt / VMware vSphere SDK / XenAPI as a privileged user *(documented: `plugins/hypervisors/kvm/`, `plugins/hypervisors/vmware/`, `plugins/hypervisors/xenserver/`)*. |
 | **Hypervisor-managed guest VM (end-user workload)** | **untrusted** | A guest VM is an attacker's workload; the model defends against it. |
-| **Reverse proxy / load balancer in front of management server** | trusted *(if `useForwardHeader=true`)* | When the operator enables forward-header processing, only requests from IPs in `proxy.forward.list` have their forward header honoured *(documented: `server/src/main/java/com/cloud/api/ApiServlet.java` `getClientAddress`)*. |
+| **Reverse proxy / load balancer in front of management server** | trusted *(if `proxy.header.verify=true`)* | When the operator enables forward-header processing, only requests whose `Remote_Addr` ∈ `proxy.cidr` have their `proxy.header.names` header honoured *(documented: `server/src/main/java/com/cloud/api/ApiServlet.java` `getClientAddress`; setting names maintainer: vishesh92)*. |
 | **Underlying storage (primary / secondary)** | trusted by virtue of operator-granted credentials | CloudStack reads/writes via NFS / RBD / iSCSI / S3 with operator-supplied credentials *(documented: primary/secondary storage plugins under `plugins/storage/`)*. |
 | **External integrations (Tungsten, NSX, Netscaler, Palo Alto, …)** | trusted control-plane peers | Operator-configured; CloudStack assumes truthful responses *(inferred — §14 Q3)*. |
 
@@ -126,10 +137,10 @@ distributed service, not a library *(inferred — §14 Q1)*.
 | Management server Web UI | Vue.js SPA under `ui/`, served by the same servlet container *(documented: `ui/`)* | network | **yes** (auth is the API auth) |
 | Management server cluster RPC (peer-to-peer) | NIO + TLS between management-server replicas, `:9090` *(documented: `framework/cluster/`, `utils/.../nio/`)* | network | **yes** (peer auth via Root CA) |
 | Management server → agent RPC | NIO + TLS on `:8250` (default `agent.properties`) *(documented: `agent/conf/agent.properties` line 47, `utils/.../nio/NioServer.java`)* | network | **yes** (mutually authenticated via Root CA) |
-| `cloudstack-agent` (KVM/Hyper-V/baremetal) | reverse-connects to management server, runs commands via libvirt / hypervisor SDK *(documented: `agent/`, `plugins/hypervisors/kvm/`)* | network + hypervisor + OS | **yes** |
+| `cloudstack-agent` (KVM/baremetal) | reverse-connects to management server, runs commands via libvirt / hypervisor SDK *(documented: `agent/`, `plugins/hypervisors/kvm/`)* | network + hypervisor + OS | **yes** |
 | System VMs — SecondaryStorageVM, ConsoleProxyVM, Virtual Router | shipped images under `systemvm/`; agent binaries inside them *(documented: `systemvm/`)* | network (storage / public / guest) | **yes** |
 | Console proxy data path | browser ↔ ConsoleProxyVM ↔ hypervisor VNC/SPICE socket; signed token issued by management server *(documented: `server/src/main/java/com/cloud/servlet/ConsoleProxyServlet.java`, `server/src/main/java/com/cloud/servlet/ConsoleProxyPasswordBasedEncryptor.java`)* | network | **yes** |
-| Secondary-storage HTTP (templates, ISO downloads, snapshot copies) | SSVM serves HTTPS *(inferred — §14 Q4)* | network | **yes** |
+| Secondary-storage HTTP (templates, ISO downloads, snapshot copies) | download links are UUID-named symlinks served by an Apache httpd, with **no auth on the link**; the UUID format prevents enumeration and the symlinks are removed after a period *(maintainer: vishesh92, DaanHoogland)* | network | **yes** |
 | Hypervisor plugins (`plugins/hypervisors/{kvm,vmware,xenserver,hyperv,ovm,ovm3,baremetal,ucs,simulator}`) | invoked by agent or by management server *(documented: `plugins/hypervisors/`)* | hypervisor APIs | **yes** for the call shape; **out-of-model** for the upstream hypervisor's own bugs |
 | Network plugins (`plugins/network-elements/{netscaler,nsx,palo-alto,tungsten,nicira-nvp,...}`) | management server outbound | external SDN/firewall APIs | **yes** for credential handling and request construction; **out-of-model** for the external endpoint |
 | Storage plugins (`plugins/storage/{volume,image,object}`) | management server / agent | NFS, RBD, iSCSI, S3 endpoints | **yes** for credential handling; **out-of-model** for the storage endpoint |
@@ -140,7 +151,7 @@ distributed service, not a library *(inferred — §14 Q1)*.
 | Quota / metrics / DRS / HA planners | internal | none | **yes** as orchestration only; not a security boundary |
 | Database layer (MariaDB/MySQL, Jasypt-encrypted secrets) | management server | network to DB | **yes** for credential handling; DB itself is trusted *(documented: `README.md` "Notice of Cryptographic Software" — JaSypt, native DB encryption)* |
 | `cloud-cli`, `tools/marvin`, `test/`, `developer/`, `quickcloud/` | integration / test tooling | varies | **out of model** *(§3)* |
-| `systemvm/agent/noVNC/vendor/pako`, other vendored JS / shell scripts | vendored upstream | n/a | in-model only at the wrapper boundary; upstream bugs go upstream *(inferred — §14 Q5)* |
+| `systemvm/agent/noVNC` (a vendored fork of `github.com/novnc/novnc` with CloudStack-specific changes on top *(maintainer: vishesh92)*), `…/vendor/pako`, other vendored JS / shell scripts | vendored upstream | n/a | in-model only at the wrapper boundary; upstream bugs go upstream. No automated vendored-dependency update procedure exists today (dependabot does not produce viable PRs); the PMC would prefer to have one *(maintainer: DaanHoogland)* |
 
 ## §3 Out of scope (explicit non-goals)
 
@@ -200,9 +211,14 @@ requiring any of these will be closed with the cited disposition:
 8. **Bundled / vendored upstream libraries** — JaSypt, Bouncy Castle,
    JSch, OpenSwan, noVNC + `pako`, MariaDB Connector/J, Spring,
    Apache Commons, log4j, etc. *(documented: `README.md` Cryptographic
-   Software notice)*. Where CloudStack vendors source, the vendored code
-   is modeled at the wrapper boundary; vulnerabilities intrinsic to the
-   upstream project should be reported upstream *(inferred — §14 Q5)*.
+   Software notice)*. `systemvm/agent/noVNC` is specifically a **vendored
+   fork of `github.com/novnc/novnc`** carrying CloudStack-specific changes
+   *(maintainer: vishesh92)*. Where CloudStack vendors source, the vendored
+   code is modeled at the wrapper boundary; vulnerabilities intrinsic to the
+   upstream project should be reported upstream. There is currently **no
+   automated procedure** to pull upstream fixes into the vendored copies
+   (dependabot has not produced viable PRs); the PMC would prefer to
+   establish one *(maintainer: DaanHoogland)*.
    → `OUT-OF-MODEL: unsupported-component` (with an upstream pointer).
 9. **The four satellite repos** (`apache/cloudstack-cloudmonkey`,
    `apache/cloudstack-go`, `apache/cloudstack-terraform-provider`,
@@ -224,7 +240,7 @@ in-model only when it cleanly maps to one of them.
 | B2 | Web UI → management server (`:8080`) | same as B1 plus session cookie | same as B1 |
 | B3 | Browser → ConsoleProxyVM → hypervisor VNC socket | signed token issued by management server, embedded in URL; encrypted with `ConsoleProxyPasswordBasedEncryptor` *(documented: `server/src/main/java/com/cloud/servlet/ConsoleProxyServlet.java`, `ConsoleProxyPasswordBasedEncryptor.java`)* | implicit (signed-token possession) |
 | B4 | Management server ↔ management server (cluster peers) | NIO + TLS, Root CA-issued certs *(documented: `framework/cluster/`, `framework/ca/`)* | peer-trust by valid cert |
-| B5 | Management server → `cloudstack-agent` (KVM/Hyper-V/baremetal) | NIO + TLS on `:8250`; agent uses X.509 client cert issued by Root CA on first connect; cert provisioning is the `SetupKeyStoreCommand` shape *(documented: `agent/src/main/java/com/cloud/agent/Agent.java` `setupAgentKeystore`, `framework/ca/.../CAService.java`, `plugins/ca/root-ca/.../RootCAProvider.java`)*; trust strictness governed by `ca.plugin.root.auth.strictness` (**default `false`** — see §5a) and `ca.plugin.root.allow.expired.cert` (**default `true`** — see §5a) | peer-trust by valid cert |
+| B5 | Management server → `cloudstack-agent` (KVM/baremetal) | NIO + TLS on `:8250`; agent uses X.509 client cert issued by Root CA on first connect; cert provisioning is the `SetupKeyStoreCommand` shape *(documented: `agent/src/main/java/com/cloud/agent/Agent.java` `setupAgentKeystore`, `framework/ca/.../CAService.java`, `plugins/ca/root-ca/.../RootCAProvider.java`)*; trust strictness governed by `ca.plugin.root.auth.strictness` (**default `true` for new setups; `false` only on upgrade from pre-Aug-2017 versions** — see §5a) and `ca.plugin.root.allow.expired.cert` | peer-trust by valid cert |
 | B6 | Management server → external services (LDAP / SAML2 / OAuth2 IdP, NSX, Netscaler, Tungsten, S3, backup providers) | per-provider (service account, OAuth token, etc.) | external-service-side |
 | B7 | Agent → hypervisor (libvirt / vSphere SDK / XenAPI) | local Unix socket (libvirt) or operator-supplied SDK credentials | hypervisor-side |
 | B8 | Management server / agent → primary/secondary storage (NFS, RBD, iSCSI, S3) | OS-level (NFS), Ceph cephx, iSCSI CHAP, IAM key / static credential (S3) | storage-side |
@@ -245,15 +261,20 @@ follows:
 - **Cluster RPC (B4)**: reachable from a peer that has cleared the Root CA
   trust check. A flat "cluster RPC has no auth" finding is `OUT-OF-MODEL:
   adversary-not-in-scope` because the model *requires* the Root CA to be
-  enrolled across peers; a *cleartext* cluster RPC finding is gated by the
-  `ca.plugin.root.auth.strictness` default (see §5a, §14 Q12).
+  enrolled across peers; a *cleartext*/un-certed cluster RPC finding is
+  gated by `ca.plugin.root.auth.strictness`, which defaults to `true` on
+  new setups (see §5a).
 - **Management ↔ agent (B5)**: reachable from a peer that presents a
-  Root-CA-signed certificate the management server accepts. Crucially, the
-  default of `ca.plugin.root.auth.strictness = false` means the management
-  server *does not require* a client certificate from the connecting agent
-  by default *(documented: `plugins/ca/root-ca/.../RootCAProvider.java`
-  line 132–135; `RootCACustomTrustManager.java`)*; this is the highest-
-  leverage configuration default in the model.
+  Root-CA-signed certificate the management server accepts. By default on
+  new setups `ca.plugin.root.auth.strictness = true`, so the management
+  server **does require** a client certificate from the connecting agent
+  *(maintainer: vishesh92 —
+  `https://github.com/apache/cloudstack/pull/2239`)*. The value remains
+  `false` only when upgrading from versions released before Aug 2017 that
+  predate the setting; that upgrade case is documented in the upgrade
+  instructions and is therefore not a concern *(maintainer: DaanHoogland)*
+  *(documented: `plugins/ca/root-ca/.../RootCAProvider.java`,
+  `RootCACustomTrustManager.java`)*.
 - **Console proxy (B3)**: reachable by anyone who holds a valid signed
   token. The token is the entire authorization gate.
 - **Agent → hypervisor (B7)**: reachable only on the agent host, by code
@@ -267,7 +288,7 @@ follows:
 - **Operating system (management server / usage server)**: RHEL 8/9/10,
   CentOS 8/9, Rocky 9/10, Ubuntu 22.04/24.04, SUSE 15, openSUSE Leap 15;
   Java 17 (`README.md`, `INSTALL.md`, `packaging/{el8,el9,el10,debian,suse15}`).
-- **Operating system (agent)**: same family on KVM/Hyper-V/baremetal hosts;
+- **Operating system (agent)**: same family on KVM/baremetal hosts;
   agent ships as `cloudstack-agent` package *(documented: `debian/`,
   `packaging/`)*.
 - **Database**: MariaDB or MySQL-compatible, accessible from each
@@ -322,30 +343,39 @@ security-relevant subset:
 
 | Knob | Default | Maintainer stance | Effect |
 | --- | --- | --- | --- |
-| `ca.plugin.root.auth.strictness` | **`false`** *(documented: `RootCAProvider.java` line 132)* | **maintainer ruling required**: is the default a supported production posture or a dev-mode setting operators must flip per §10? *(inferred — §14 Q12)* | When `false`, the management server's `RootCACustomTrustManager` does **not** require a client certificate from a peer attempting to connect on `:8250` (agent port) or cluster ports. A peer without a cert is allowed in. |
-| `ca.plugin.root.allow.expired.cert` | **`true`** *(documented: `RootCAProvider.java` line 138)* | **maintainer ruling required** *(inferred — §14 Q12)* | When `true`, an expired client cert is accepted during SSL handshake. |
-| `ca.plugin.root.issuer.dn` | `CN=ca.cloudstack.apache.org` *(documented: same file line 128)* | configured at first management-server boot | Subject DN of the auto-generated self-signed Root CA. |
-| `useforwardheader` (`use.forward.header`) | `false` *(inferred — §14 Q17)* | When `true`, the operator must restrict `proxy.forward.list` to the trusted reverse-proxy CIDR | When set, `ApiServlet.getClientAddress` honours `X-Forwarded-For` / configured headers *only* for source IPs in `proxy.forward.list` *(documented: `server/src/main/java/com/cloud/api/ApiServlet.java` lines 700–725)*. |
-| `proxy.forward.list` | unset *(inferred — §14 Q17)* | required when `useforwardheader=true` | CIDR list of trusted reverse proxies. |
+| `ca.plugin.root.auth.strictness` | **`true` for new setups; `false` only on upgrade from pre-Aug-2017 versions** *(maintainer: vishesh92 — `https://github.com/apache/cloudstack/pull/2239`)* | New setups are strict by default; the `false`-on-upgrade case is called out in the upgrade instructions and is therefore not a concern *(maintainer: DaanHoogland)* | When `false`, the management server's `RootCACustomTrustManager` does **not** require a client certificate from a peer attempting to connect on `:8250` (agent port) or cluster ports. A peer without a cert is allowed in. |
+| `ca.plugin.root.allow.expired.cert` | **`true`** *(documented: `RootCAProvider.java`)* | operational default to survive cert-rotation lag *(maintainer: paired with the strictness ruling above)* | When `true`, an expired client cert is accepted during SSL handshake. |
+| `ca.plugin.root.issuer.dn` | `CN=ca.cloudstack.apache.org` *(documented: same file)* | configured at first management-server boot | Subject DN of the auto-generated self-signed Root CA. |
+| `proxy.header.verify` | off by default *(inferred — §14 Q17; setting name maintainer: vishesh92)* | When on, the operator must restrict `proxy.cidr` to the trusted reverse-proxy CIDR | When set, `ApiServlet.getClientAddress` honours proxy-set forward headers *only* for source IPs in `proxy.cidr` *(documented: `server/src/main/java/com/cloud/api/ApiServlet.java` `getClientAddress`; setting name maintainer: vishesh92)*. |
+| `proxy.header.names` | list of header names; semantics: names to check for allowed IP addresses from a proxy-set header *(maintainer: vishesh92)* | list of header names to consult for the allowed client address when set by a proxy | Names the request header(s) carrying the proxy-set client IP. |
+| `proxy.cidr` | unset *(inferred — §14 Q17; setting name maintainer: vishesh92)* | required when `proxy.header.verify` is on | List of CIDRs for which `proxy.header.names` headers are honoured when the connecting `Remote_Addr` is in this list *(semantics maintainer: vishesh92)*. |
 | `enable.2fa.for.users` / `enable.2fa.for.api` | per-domain toggle *(documented: `plugins/user-two-factor-authenticators/`)* | dev-test default off; production posture depends on PMC ruling *(inferred — §14 Q18)* | When on, users must complete static-pin or TOTP 2FA after login. |
 | `security.encryption.key`, `security.encryption.iv` | auto-generated at first boot *(documented: `framework/security/.../KeysManager.java`)* | trusted secret | Base64-encoded JaSypt master key + IV used to encrypt application-level secrets in the DB. |
-| `auth.password.algorithm` (`hash.user.password`) | bcrypt / pbkdf2 / sha256salted *(documented: `plugins/user-authenticators/{pbkdf2,sha256salted}`)* | **maintainer ruling required**: which is the supported default for new deployments? `md5` and `plain-text` plugins still ship *(documented: `plugins/user-authenticators/{md5,plain-text}`)* — are these legacy-compat-only or in supported production? *(inferred — §14 Q19)* | governs how user passwords are stored |
-| `api.signature.version` | accepts both v1 and v3 *(documented: `ApiServer.java` line ~1053)* | v1 lacks an `expires` parameter; v3 requires expiration | A request with v3 + an expired `expires` is rejected; a v1 request without `expires` is accepted |
-| `post.requests.and.timestamps.enforced` | per `isPostRequestsAndTimestampsEnforced` *(documented: `ApiServer.java` line ~1074)* | bounds `expires` to a maximum future offset | Prevents an attacker who steals a signed URL with a 10-year expiration from using it forever |
-| `integration.api.port` (`:8096`) | typically disabled *(inferred — §14 Q20)* | When non-zero, exposes an *unauthenticated* admin API for integration testing | An open integration port is a complete RBAC bypass on the management server |
-| Hypervisor enablement (which `plugins/hypervisors/*` are installed and configured) | per zone | operator-driven | An unused hypervisor plugin still ships but is not connected to any host |
-| Hostname / SAN of management-server cert (`ca.plugin.root.management.cert.custom.san`) | unset *(inferred — §14 Q15)* | when set, included in the auto-generated cert SAN | governs which hostnames clients can use to reach the management server |
-| SAML2 / OAuth2 enablement (`plugins/user-authenticators/{saml2,oauth2}`) | off *(inferred — §14 Q19)* | turning on adds an external IdP trust dependency | adds B6 transitions |
-| LDAP enablement (`plugins/user-authenticators/ldap`) | off *(inferred — §14 Q19)* | turning on adds an external LDAP trust dependency | adds B6 transitions |
+| `user.password.encoders.order` | `PBKDF2,SHA256SALT,MD5,LDAP,SAML2,PLAINTEXT` *(maintainer: vishesh92)* | first encoder in the order is used to hash new passwords; the list also defines the verification fall-through order | Governs how user passwords are stored and which encoders are accepted on verify. |
+| `user.password.encoders.exclude` | `MD5,LDAP,PLAINTEXT` *(maintainer: vishesh92)* | excluded encoders are not used to (re)hash passwords | Excludes weak/legacy encoders from being chosen, even though they remain in the order list for verifying already-stored hashes. |
+| `enforce.post.requests.and.timestamps` | per `isPostRequestsAndTimestampsEnforced` *(documented: `ApiServer.java`; setting name maintainer: vishesh92)* | bounds `expires` to a maximum future offset | Prevents an attacker who steals a signed URL with a 10-year expiration from using it forever. |
+| `integration.api.port` (`:8096`) | typically disabled *(inferred — §14 Q20)* | When non-zero, exposes an *unauthenticated* admin API for integration testing | An open integration port is a complete RBAC bypass on the management server. |
+| Hypervisor enablement (which `plugins/hypervisors/*` are installed and configured) | per zone | operator-driven | An unused hypervisor plugin still ships but is not connected to any host. |
+| Hostname / SAN of management-server cert (`ca.framework.cert.management.custom.san`) | unset *(maintainer: vishesh92)* | when set, included in the auto-generated cert SAN | governs which hostnames clients can use to reach the management server. |
+| SAML2 / OAuth2 enablement (`plugins/user-authenticators/{saml2,oauth2}`) | off *(inferred — §14 Q19)* | turning on adds an external IdP trust dependency | adds B6 transitions. |
+| LDAP enablement (`plugins/user-authenticators/ldap`) | off *(inferred — §14 Q19)* | turning on adds an external LDAP trust dependency | adds B6 transitions. |
 
-**The insecure-default case (highest leverage).** `ca.plugin.root.auth.strictness`
-defaulting to `false` and `ca.plugin.root.allow.expired.cert` defaulting to
-`true` are the two highest-leverage defaults in the entire model. Whether a
-report against an open `:8250` accepting an un-certed peer is `VALID` or
-`OUT-OF-MODEL: non-default-build` depends on the maintainer ruling in
-§14 Q12. The text of §3 item 1, §10, and §11a assume the answer
-is **"dev/test default, operator must flip both knobs to `true` /
-`false` respectively per §10 for production"**.
+**The Root-CA strictness default (resolved).** Earlier drafts treated
+`ca.plugin.root.auth.strictness = false` as the shipped default and the
+single highest-leverage open question. The PMC has clarified that **new
+setups default to `true`** — the management server *does* require a
+Root-CA-signed client cert on `:8250` and the cluster ports — and the
+value is `false` **only** when upgrading from versions released before
+Aug 2017 that predate the setting *(maintainer: vishesh92 —
+`https://github.com/apache/cloudstack/pull/2239`)*. That upgrade case is
+documented in the upgrade instructions, so a leftover `false` after such
+an upgrade is an operator-hardening/upgrade-hygiene item, not a shipped
+insecure default *(maintainer: DaanHoogland)*. A report against an open
+`:8250` accepting an un-certed peer on a **new** install is therefore
+`MODEL-GAP`/`VALID` (strictness should be on), whereas the same on an
+**upgraded** pre-2017 install is `OUT-OF-MODEL: non-default-build`
+(documented upgrade step not applied). `ca.plugin.root.allow.expired.cert`
+remains `true` as an operational concession to cert-rotation lag.
 
 ## §6 Assumptions about inputs
 
@@ -355,14 +385,14 @@ is **"dev/test default, operator must flip both knobs to `true` /
 | --- | --- | --- | --- |
 | Management server `:8080`/`:8443` JSON API | command name + params | **yes** | nothing — CloudStack parses, authenticates (B1), applies RBAC, dispatches |
 | Management server `:8080`/`:8443` JSON API | `signature` parameter | **yes** | HMAC-SHA1 verified *constant-time* against expected signature *(documented: `ApiServer.java` line 1137 `ConstantTimeComparator.compareStrings`)* |
-| Management server `:8080`/`:8443` JSON API | `expires` parameter (sig v3) | **yes** | rejected if past, or beyond `post.requests.and.timestamps.enforced` ceiling *(documented: same file)* |
-| Management server `:8080`/`:8443` JSON API | `X-Forwarded-For` and other configured forward headers | **yes** if `useforwardheader=true` | honoured **only** if request source IP ∈ `proxy.forward.list` *(documented: `ApiServlet.java` line 712)* |
+| Management server `:8080`/`:8443` JSON API | `expires` parameter (sig v3) | **yes** | rejected if past, or beyond the `enforce.post.requests.and.timestamps` ceiling *(documented: same file; setting name maintainer: vishesh92)* |
+| Management server `:8080`/`:8443` JSON API | proxy-set forward headers (`proxy.header.names`) | **yes** if `proxy.header.verify=true` | honoured **only** if the connecting `Remote_Addr` ∈ `proxy.cidr` *(documented: `ApiServlet.java` `getClientAddress`; setting names maintainer: vishesh92)* |
 | Management server `:8080`/`:8443` Web UI | session cookie | **yes** | session-fixation / invalidation handled via `invalidateHttpSession` on auth failure *(documented: `ApiServlet.java` line 418)* |
 | Integration API `:8096` (if enabled) | command name + params | **yes** | **no signature check** — integration port is unauthenticated by design |
 | Management ↔ agent `:8250` | NIO Thrift-like payload | **only by a peer that has cleared B5 trust** | client cert via `RootCACustomTrustManager` |
 | Management ↔ cluster peer | NIO payload | **only by a peer that has cleared B4 trust** | client cert via `RootCACustomTrustManager` |
 | Console proxy URL | encrypted token (containing VM identity + endpoint + duration) | **yes** | token MUST decrypt + verify with `ConsoleProxyPasswordBasedEncryptor` keys *(documented: `ConsoleProxyPasswordBasedEncryptor.java`)* |
-| Secondary-storage HTTP download URL | path + signed parameters | **yes** | token / per-template ACL check *(inferred — §14 Q4)* |
+| Secondary-storage HTTP download URL | UUID-named symlink path | **yes** | **no auth on the download link**; the UUID format is the anti-enumeration control and the symlink is removed after a period — timed availability of the download token is the mitigation *(maintainer: vishesh92, DaanHoogland)* |
 | Template / ISO upload | URL of remote source | **yes** within RBAC | upload-gated by `registerTemplate` RBAC; bytes are then served to hypervisors as image data |
 | User-data / metadata service (`169.254.169.254` from inside guests) | guest-controlled bytes (the request) | **yes from the guest**, but the service is reached *from the guest* and serves only that guest's data | guest-VM-side isolation by virtual router |
 | Hypervisor agent log / event stream | bytes from hypervisor | trusted operator surface | none — assumed truthful |
@@ -390,7 +420,7 @@ is **"dev/test default, operator must flip both knobs to `true` /
 | Actor | In scope? | Capabilities granted |
 | --- | --- | --- |
 | Unauthenticated network peer reaching `:8080`/`:8443` | **yes** | TCP to the listening ports; may attempt authentication; may attempt to violate the protocol pre-auth |
-| Unauthenticated peer reaching `:8250` (agent port) | **yes** *if* `ca.plugin.root.auth.strictness` is at default `false` (§5a) | TCP to the listening port; may attempt to connect as a peer without presenting a cert |
+| Unauthenticated peer reaching `:8250` (agent port) | **only if** `ca.plugin.root.auth.strictness = false`, which on new setups it is **not** (default `true`); `false` arises only on un-remediated pre-Aug-2017 upgrades (§5a) | TCP to the listening port; may attempt to connect as a peer without presenting a cert |
 | Unauthenticated peer reaching `:8096` (integration port) | **yes** *if* the port is open (typically not in production) | full unauthenticated admin API |
 | Authenticated end user with limited RBAC role | **yes** | call APIs their role permits; manage VMs/networks/storage in their domain/account/project |
 | Authenticated end user with broad RBAC role | partial | only RBAC-envelope escapes are in scope |
@@ -402,7 +432,7 @@ is **"dev/test default, operator must flip both knobs to `true` /
 | Operator | **out of scope** | see §3 item 1 |
 | Hostile hypervisor | **out of scope** | see §3 item 3 |
 | Hostile LDAP / SAML / OAuth IdP, hostile NSX/Netscaler/Tungsten, hostile S3 endpoint | **out of scope** | see §3 item 2 |
-| Reverse proxy that should be trusted but is not in `proxy.forward.list` | **out of scope** | its forward headers are not honoured |
+| Reverse proxy that should be trusted but is not in `proxy.cidr` | **out of scope** | its forward headers are not honoured |
 | Local process on the management-server host running as a different UID | **partial** *(inferred — §14 Q24)* | same-host attackers with non-cloudstack UID can reach `:8080` unless host firewalling forbids; CloudStack does not defend against same-host `root` |
 | Side-channel observer (cache timing, network timing, hypervisor side channels) | **out of scope** *(inferred — §14 Q25)* | n/a |
 | Quantum adversary | **out of scope** | n/a |
@@ -469,26 +499,29 @@ For each property: condition, violation symptom, severity tier, provenance.
 
 ### P5 — Mutual TLS on management ↔ agent, management ↔ cluster peer, *when configured*
 
-- **Condition**: `ca.plugin.root.auth.strictness = true` and
-  `ca.plugin.root.allow.expired.cert = false` *(documented:
-  `RootCAProvider.java` lines 132–142)*. Without these (i.e., at default)
-  the property is voided per §5a / §14 Q12; the management server still
-  accepts cleartext-/un-certed peers.
-- **Violation symptom**: a peer without a Root-CA-issued cert (or with an
-  expired one) successfully completes a session on `:8250` or the
-  cluster port despite both flags being flipped to strict.
+- **Condition**: `ca.plugin.root.auth.strictness = true` — **the default
+  on new setups** *(maintainer: vishesh92 —
+  `https://github.com/apache/cloudstack/pull/2239`)*. Pre-Aug-2017
+  upgrades may leave it `false` until the documented upgrade step is
+  applied *(maintainer: DaanHoogland)*. `ca.plugin.root.allow.expired.cert`
+  remains `true` (cert-rotation concession), so the property covers
+  *peer-cert presence and Root-CA chain*, not cert freshness.
+- **Violation symptom**: a peer without a Root-CA-issued cert successfully
+  completes a session on `:8250` or the cluster port on a setup where
+  strictness is on.
 - **Severity**: **security-critical**, `VALID` per §13.
-- *(documented for the strict configuration; the default-state coverage
-  depends on the §14 Q12 ruling.)*
+- *(documented; default resolved by maintainer.)*
 
 ### P6 — Reverse-proxy IP-trust gating for forward headers
 
-- **Condition**: `useforwardheader = true` *(inferred — §14 Q17)*; only
-  source IPs in `proxy.forward.list` have their `X-Forwarded-For` (or
-  configured equivalent) header consulted *(documented: `ApiServlet.java`
-  line 712 `NetUtils.isIpInCidrList`)*.
+- **Condition**: `proxy.header.verify` on *(inferred — §14 Q17; setting
+  name maintainer: vishesh92)*;
+  only requests whose `Remote_Addr` falls in `proxy.cidr` have their
+  `proxy.header.names` forward header(s) consulted *(documented:
+  `ApiServlet.java` `getClientAddress` `NetUtils.isIpInCidrList`; setting
+  names maintainer: vishesh92)*.
 - **Violation symptom**: a request from a source IP **outside**
-  `proxy.forward.list` succeeds with an attacker-supplied forward header
+  `proxy.cidr` succeeds with an attacker-supplied forward header
   taking effect.
 - **Severity**: **security-critical**, `VALID` per §13.
 - *(documented)*
@@ -604,8 +637,10 @@ disclaimer.
 - **`ca.plugin.root.auth.strictness = false` is not "TLS off" — it is
   "client cert not required"** *(documented: `RootCAProvider.java`)*. TLS
   on the wire is still there; what is missing is the peer-cert check.
-  A scanner that flags "client cert not requested" is *correctly*
-  identifying a §5a knob default, not a transport-encryption bug.
+  Note the value is `true` on new setups *(maintainer: vishesh92)*; a
+  scanner that flags "client cert not requested" is only correct on an
+  un-remediated pre-Aug-2017 upgrade, and even then it identifies a
+  documented upgrade step, not a transport-encryption bug.
 - **`ca.plugin.root.allow.expired.cert = true` is the operational default
   to survive cert-rotation lag** but is not a security boundary.
 - **The HMAC-SHA1 signature is request-integrity over the URL, not
@@ -644,10 +679,13 @@ disclaimer.
 
 The operator deploying CloudStack in production **must**:
 
-1. Set `ca.plugin.root.auth.strictness = true` and
-   `ca.plugin.root.allow.expired.cert = false`. Without these, agent and
-   cluster-peer ports accept peers without a cert / with expired certs
-   *(documented: `RootCAProvider.java`; pending §14 Q12 ruling)*.
+1. Keep `ca.plugin.root.auth.strictness = true` (the default on new
+   setups). When **upgrading from a pre-Aug-2017 version**, follow the
+   documented upgrade step to turn strictness on — otherwise agent and
+   cluster-peer ports accept peers without a cert *(maintainer: vishesh92,
+   DaanHoogland — `https://github.com/apache/cloudstack/pull/2239`)*.
+   Consider tightening `ca.plugin.root.allow.expired.cert` (default `true`)
+   once cert rotation is reliable.
 2. Restrict the management network at L2/L3 so that `:8250` (agent),
    `:9090` (cluster), and the MariaDB port are reachable only from the
    intended peers *(inferred — §14 Q13)*.
@@ -656,16 +694,22 @@ The operator deploying CloudStack in production **must**:
 4. Terminate TLS for the JSON API and Web UI on `:8443` (not `:8080`); if
    `:8080` is exposed at all, only behind a TLS-terminating reverse
    proxy *(inferred — §14 Q32)*.
-5. When using a reverse proxy, set `useforwardheader = true` *and*
-   `proxy.forward.list` to the proxy's CIDR — failing to set
-   `proxy.forward.list` means the header is ignored (safe-default per P6),
-   but a misconfigured wide CIDR is a trust-bypass.
+5. When using a reverse proxy, set `proxy.header.verify = true`,
+   `proxy.header.names` to the forward header(s) the proxy sets, *and*
+   `proxy.cidr` to the proxy's CIDR — leaving `proxy.cidr` unset/empty
+   means the header is ignored (safe-default per P6), but a misconfigured
+   wide CIDR is a trust-bypass *(setting names maintainer: vishesh92)*.
 6. Protect the `security.encryption.key` / `security.encryption.iv`
    files, the JaSypt-encrypted DB, the Root CA private key, and the
    `cloudstack-management` Unix user's home directory at OS level.
-7. Configure a password authenticator from the supported set (bcrypt /
-   pbkdf2 / sha256salted) — **not** `md5` or `plain-text` *(pending §14
-   Q19 ruling on whether the legacy plugins are supported)*.
+7. Keep the password-encoder configuration at safe defaults:
+   `user.password.encoders.order` defaults to
+   `PBKDF2,SHA256SALT,MD5,LDAP,SAML2,PLAINTEXT` (so PBKDF2 is used to hash
+   new passwords) and `user.password.encoders.exclude` defaults to
+   `MD5,LDAP,PLAINTEXT` (so the weak encoders are not chosen for hashing,
+   only retained for verifying already-stored hashes) *(maintainer:
+   vishesh92)*. Do not remove `MD5`/`PLAINTEXT` from the exclude list in
+   production *(pending §14 Q19 ruling on the supported greenfield set)*.
 8. Enable 2FA (`totp` or `static-pin`) for administrators and ideally for
    all users *(pending §14 Q18 ruling)*.
 9. Rotate per-user API secret keys on personnel change and on suspected
@@ -685,23 +729,27 @@ The operator deploying CloudStack in production **must**:
 
 ## §11 Known misuse patterns
 
-- **Leaving `:8250` open to the world with `ca.plugin.root.auth.strictness=false`.**
-  Any peer can connect as an agent on the default. Pending §14 Q12,
-  this is either a `VALID` operator-hardening report or `OUT-OF-MODEL:
-  non-default-build`.
+- **Leaving `:8250` open to the world with `ca.plugin.root.auth.strictness=false`
+  on an upgraded pre-Aug-2017 cluster.** New setups default to `true`;
+  the `false` value only survives an upgrade where the documented step
+  was skipped *(maintainer: vishesh92, DaanHoogland)*. In that state any
+  peer can connect as an agent — an upgrade-hygiene gap, dispositioned
+  `OUT-OF-MODEL: non-default-build` (documented upgrade step not applied).
 - **Exposing `:8096` (integration API) publicly.** Anyone reaching the
   port executes admin API commands without auth.
 - **Exposing `:8080` (HTTP JSON API) publicly without a TLS-terminating
   reverse proxy.** Signed-request integrity holds, but the API secret-
   key-derived signature is visible to any wire observer; replay within
   the `expires` window is trivial.
-- **Setting `useforwardheader=true` with `proxy.forward.list` wider than
+- **Setting `proxy.header.verify=true` with `proxy.cidr` wider than
   the actual reverse-proxy CIDR.** An attacker outside the proxy can
-  spoof `X-Forwarded-For` and claim any IP address for audit logs and
-  authentication-IP checks.
-- **Using the `md5` or `plain-text` user authenticator plugin in
-  production.** Both still ship in `plugins/user-authenticators/`. Pending
-  §14 Q19 on whether they are legacy-compat-only.
+  spoof a `proxy.header.names` header and claim any IP address for audit
+  logs and authentication-IP checks *(setting names maintainer: vishesh92)*.
+- **Removing `MD5`/`PLAINTEXT` from `user.password.encoders.exclude` (or
+  reordering them to the front of `user.password.encoders.order`) in
+  production.** The encoders ship for verifying legacy hashes; promoting
+  them to hash new passwords stores weakly-protected credentials
+  *(maintainer: vishesh92)*. Pending §14 Q19 on the greenfield-supported set.
 - **Granting domain admin to too many users.** A domain admin can manage
   all accounts within the domain — including reading guest console URLs.
 - **Embedding console-proxy URLs in screenshots, ticketing systems, or
@@ -709,9 +757,10 @@ The operator deploying CloudStack in production **must**:
 - **Reusing `security.encryption.key` across environments of different
   trust levels.** A staging-env leak becomes a production-env decrypt
   primitive *(inferred — §14 Q33)*.
-- **Disabling the cluster-peer TLS by leaving `ca.plugin.root.auth.strictness`
-  default in a multi-management-server deployment.** A peer can join the
-  cluster without a cert.
+- **Leaving `ca.plugin.root.auth.strictness=false` after a pre-Aug-2017
+  upgrade in a multi-management-server deployment.** A peer can join the
+  cluster without a cert until the documented upgrade step flips it to the
+  new-setup default of `true` *(maintainer: vishesh92, DaanHoogland)*.
 - **Uploading large or pathological templates and relying on hypervisor
   to enforce size.** Per-account resource limits, not the engine, are the
   enforcement.
@@ -722,12 +771,15 @@ This section is the highest-leverage input for automated agentic security
 scans. Each entry: tool symptom, why it is safe under the model, the §
 that licenses the call.
 
-- **"Management ↔ agent port `:8250` accepts plaintext / no client cert"
-  against a default `ca.plugin.root.auth.strictness=false`.** This is the
-  *documented default*. Pending §14 Q12, this is either `OUT-OF-MODEL:
-  non-default-build` (operator must flip) or `VALID-HARDENING` (default
-  should change). The model assumes the former until the PMC rules
-  otherwise.
+- **"Management ↔ agent port `:8250` accepts no client cert" reported
+  against a setup with `ca.plugin.root.auth.strictness=false`.** New setups
+  default to `true` and **do** require a Root-CA-signed client cert
+  *(maintainer: vishesh92 — `https://github.com/apache/cloudstack/pull/2239`)*.
+  The value is `false` only on an upgrade from a pre-Aug-2017 version that
+  predates the setting, and the upgrade instructions document turning it on
+  *(maintainer: DaanHoogland)*. → On a new install: `KNOWN-NON-FINDING`
+  (strictness is on). On an upgraded install with the step skipped:
+  `OUT-OF-MODEL: non-default-build` (documented upgrade step not applied).
 - **"Integration port `:8096` is unauthenticated."** The port is
   unauthenticated by design; operator responsibility per §10 to close /
   bind to localhost. → `OUT-OF-MODEL: non-default-build` once the PMC
@@ -745,8 +797,9 @@ that licenses the call.
   first boot per `RootCAProvider.java`. Browsers will warn until the
   operator bootstraps trust. → `BY-DESIGN: property-disclaimed`.
 - **"Expired agent cert is accepted (`ca.plugin.root.allow.expired.cert=true`)."**
-  Documented default. Pending §14 Q12. → `OUT-OF-MODEL:
-  non-default-build` once the PMC confirms.
+  Documented default — an operational concession to cert-rotation lag, paired
+  with the strictness default *(maintainer: vishesh92, DaanHoogland)*. →
+  `VALID-HARDENING` at most; tightening it is an operator choice per §10.
 - **"Hardcoded password / keytab in `tools/marvin/`, `test/`, `developer/`,
   `quickcloud/`."** These directories are unsupported components per §3
   item 7. → `OUT-OF-MODEL: unsupported-component`.
@@ -764,12 +817,22 @@ that licenses the call.
   resource limits are the bound. → `VALID-HARDENING` at most, unless the
   decompression reaches §8 P9 memory-safety violations.
 - **"Vendored Bouncy Castle / JaSypt / noVNC / `pako` has CVE-X."** Report
-  upstream; CloudStack picks up the fix on the next vendored sync. →
-  `OUT-OF-MODEL: unsupported-component` (upstream pointer) *(inferred —
-  §14 Q5)*.
-- **"`X-Forwarded-For` is honoured without authentication."** Honoured
-  only if (a) `useforwardheader=true` *and* (b) source IP ∈
-  `proxy.forward.list`. → `KNOWN-NON-FINDING`.
+  upstream; `systemvm/agent/noVNC` is a vendored fork of
+  `github.com/novnc/novnc` with CloudStack changes, and there is no
+  automated sync procedure today *(maintainer: vishesh92, DaanHoogland)*. →
+  `OUT-OF-MODEL: unsupported-component` (upstream pointer); a
+  CloudStack-introduced change *to* the fork is in-model.
+- **"Secondary-storage download URL has no authentication / can be replayed."**
+  By design: download links are UUID-named symlinks served by an Apache
+  httpd with no auth on the link; the UUID format defeats enumeration and
+  the symlink is removed after a period, so timed availability is the
+  mitigation *(maintainer: vishesh92, DaanHoogland)*. → `BY-DESIGN:
+  property-disclaimed` for the no-auth aspect; a link that is *not* removed
+  after its window, or a guessable (non-UUID) name, is `VALID-HARDENING`.
+- **"A proxy-set forward header is honoured without authentication."**
+  Honoured only if (a) `proxy.header.verify=true`, (b) the header is one of
+  `proxy.header.names`, *and* (c) the connecting `Remote_Addr` ∈
+  `proxy.cidr` *(setting names maintainer: vishesh92)*. → `KNOWN-NON-FINDING`.
 - **"Session-fixation: a session ID is reusable after failed login."**
   `invalidateHttpSession` is called on each auth failure path per
   `ApiServlet.java`. → `KNOWN-NON-FINDING` (verify the symptom; if
@@ -809,7 +872,7 @@ following:
 | `OUT-OF-MODEL: trusted-input` | Requires attacker control of a §6 parameter the model marks trusted (e.g. operator-supplied config flag, hostile LDAP/SAML/NSX/etc.). | §6 |
 | `OUT-OF-MODEL: adversary-not-in-scope` | Requires a §7 actor the model excludes (operator, hostile hypervisor, hostile external IdP / SDN, Byzantine peer, side-channel observer, same-host non-`cloudstack` `root`). | §7 |
 | `OUT-OF-MODEL: unsupported-component` | Lands in `tools/marvin/`, `test/`, `developer/`, `quickcloud/`, vendored upstream code, `simulator` hypervisor, etc. | §3 items 7–8 |
-| `OUT-OF-MODEL: non-default-build` | Only manifests under a §5a flag the maintainer has ruled is dev/test (e.g. `ca.plugin.root.auth.strictness=false` if so ruled, integration port `:8096` open). | §5a |
+| `OUT-OF-MODEL: non-default-build` | Only manifests under a §5a flag that is not the new-setup default (e.g. `ca.plugin.root.auth.strictness=false` surviving an un-remediated pre-Aug-2017 upgrade, integration port `:8096` open). | §5a |
 | `OUT-OF-MODEL: equivalent-harm` | An actor already-authorized under the model can cause the same harm via a documented path (root admin doing root-admin things, RBAC-licensed user using their RBAC-licensed commands). | §3 items 4, 5 |
 | `BY-DESIGN: property-disclaimed` | Concerns a §9 property the project explicitly does not provide (template sandboxing, side-channel resistance, hypervisor isolation, etc.). | §9 |
 | `KNOWN-NON-FINDING` | Matches a §11a recurring false positive. | §11a |
@@ -822,14 +885,17 @@ are inline; please confirm, correct, or strike.
 
 ### Wave 1 — scope, intended use, the two big insecure defaults
 
-**Q1.** The model assumes CloudStack is "a clustered distributed
+**Q1.** ~~The model assumes CloudStack is "a clustered distributed
 control plane deployed inside an operator-controlled datacenter
-network", not a single-host appliance or a hosted SaaS. Confirm? *(maps
-to §2)*
+network", not a single-host appliance or a hosted SaaS. Confirm?~~
+**RESOLVED** *(maintainer: DaanHoogland)* — distributed control plane;
+**both** a single management-server instance (smaller clouds) and a
+clustered deployment are supported topologies. Folded into §2.
 
-**Q2.** Are the SecondaryStorageVM, ConsoleProxyVM, and Virtual Router
-treated as trusted-once-enrolled peers (proposed: **yes**, same shape as
-agents), or do they get their own trust tier? *(maps to §2, §4 B5)*
+**Q2.** ~~Are the SecondaryStorageVM, ConsoleProxyVM, and Virtual Router
+treated as trusted-once-enrolled peers, or do they get their own trust
+tier?~~ **RESOLVED** *(maintainer)* — **yes**, same trust tier as agents,
+not a separate tier. Folded into §2 caller-roles.
 
 **Q3.** Are external integrations (LDAP, SAML2 IdP, OAuth2 IdP, NSX
 controller, Netscaler, Tungsten, S3-compatible storage, backup
@@ -837,14 +903,23 @@ providers) modeled as trusted control-plane peers (proposed: **yes**)? If
 trusted, that licenses §3 item 2 and §11a trusted-input dispositions.
 *(maps to §2, §3, §11a)*
 
-**Q4.** SecondaryStorageVM HTTP download surface — is the URL token
-per-template ACL-checked, or is the SSVM URL itself a bearer credential
-that any holder can replay? *(maps to §6, §11a)*
+**Q4.** ~~SecondaryStorageVM HTTP download surface — is the URL token
+per-template ACL-checked, or is the SSVM URL itself a bearer credential?~~
+**RESOLVED** *(maintainer: vishesh92, DaanHoogland)* — download links are
+UUID-named symlinks served by an Apache httpd with **no auth on the link**;
+the UUID format defeats enumeration and the symlink is removed after a
+period (timed availability is the mitigation). The PMC noted this should
+be re-tested/confirmed in code. Folded into §6, §11a. *(Daan also asked
+why static code analysis did not surface this — a note for the scan
+agent, not a model gap.)*
 
-**Q5.** Vendored upstream code under `systemvm/agent/noVNC/vendor/pako`
-and bundled JaSypt / Bouncy Castle / JSch — is the policy "report
-upstream; we pick up fixes on next sync" (proposed)? *(maps to §3 item 8,
-§11a)*
+**Q5.** ~~Vendored upstream code under `systemvm/agent/noVNC` and bundled
+JaSypt / Bouncy Castle / JSch — is the policy "report upstream; we pick up
+fixes on next sync"?~~ **RESOLVED** *(maintainer: vishesh92, DaanHoogland)*
+— `systemvm/agent/noVNC` is a **vendored fork of `github.com/novnc/novnc`**
+with CloudStack changes; vendored bugs go upstream. There is **no automated
+update procedure today** (dependabot has not produced viable PRs); the PMC
+would prefer to establish one. Folded into §3 item 8, §11a.
 
 **Q6.** Is "an operator with `root` on a management-server host, the
 JCEKS keystore + encryption keys, the Root CA private key, or MariaDB
@@ -857,24 +932,23 @@ KVM/QEMU itself) — out of scope, report upstream (proposed)? *(maps to
 
 ### Wave 2 — the two big insecure defaults
 
-**Q12.** **Highest-leverage question in the model.** Two Root-CA defaults:
+**Q12.** ~~**Highest-leverage question in the model.** Are
+`ca.plugin.root.auth.strictness` and `ca.plugin.root.allow.expired.cert`
+shipped insecure-by-default?~~ **RESOLVED** *(maintainer: vishesh92,
+DaanHoogland — `https://github.com/apache/cloudstack/pull/2239`)*:
 
-- `ca.plugin.root.auth.strictness` = `false` *(documented:
-  `RootCAProvider.java` line 132)* — the management server does **not**
-  require a client cert from peers on `:8250` (agent port) and cluster
-  ports by default. Is this **(a)** the supported production posture (so
-  a report of "agent port accepts un-certed peer" is `VALID` against the
-  default, meaning the default should be flipped), or **(b)** a dev/test
-  convenience that operators are documented as required to flip per
-  §10 (so the report is `OUT-OF-MODEL: non-default-build`)?
-- `ca.plugin.root.allow.expired.cert` = `true` *(documented: same file
-  line 138)* — expired client certs are accepted. Same question.
+- `ca.plugin.root.auth.strictness` defaults to **`true` on new setups** —
+  the management server **does** require a Root-CA-signed client cert on
+  `:8250` and the cluster ports. It is `false` **only** after upgrading
+  from a version released before Aug 2017 that predates the setting; the
+  upgrade instructions document turning it on, so a leftover `false` is an
+  upgrade-hygiene gap, not a shipped insecure default.
+- `ca.plugin.root.allow.expired.cert` defaults to `true` as an operational
+  concession to cert-rotation lag.
 
-This single ruling reshapes §3 item 1, §5a, §7 (the un-certed peer
-row), §8 P5, §10, §11 first/penultimate bullets, §11a first two
-bullets, and §13. The text of §3 / §10 / §11a in this draft
-**assumes the answer is (b)** — operator must flip both per §10.
-*(maps to §5a, §10, §11a, §13)*
+This resolution reshaped §3 item 1, §5a, §7 (the un-certed peer row),
+§8 P5, §9 false-friends, §10, §11, §11a, and §13. The earlier
+"assumes operator must flip per §10" framing is withdrawn.
 
 ### Wave 3 — adjacent insecure defaults and admin-only surfaces
 
@@ -901,23 +975,29 @@ a code-execution channel into the guest (proposed)? *(maps to §3 item 6,
 `simulator` hypervisor plugin. Anything to add or remove? *(maps to §3
 item 7)*
 
-**Q17.** `useforwardheader` (`use.forward.header`) default — proposed:
-**`false`** by default; operator turns it on only when a reverse proxy
-is in front. Confirm, and confirm `proxy.forward.list` is required when
-the flag is on. *(maps to §5a, §6, §10)*
+**Q17.** Forward-header gating — the **setting names are confirmed**
+*(maintainer: vishesh92)*: `proxy.header.verify` (the on/off gate),
+`proxy.header.names` (header names to consult), and `proxy.cidr` (CIDRs of
+the `Remote_Addr` values for which those headers are honoured). **Still
+open:** confirm `proxy.header.verify` is **off by default** and that
+`proxy.cidr` must be set for the headers to take effect. *(maps to §5a,
+§6, §10)*
 
 **Q18.** 2FA — proposed: off by default, operator turns it on per
 domain / per user via `enable.2fa.*`. Confirm; and is "2FA disabled in
 production" a §10 violation or a deployment choice? *(maps to §5a,
 §10)*
 
-**Q19.** User-authenticator plugins — the repo still ships
-`plain-text`, `md5`, `sha256salted`, `pbkdf2`, plus `ldap`, `saml2`,
-`oauth2`. Which are supported for new production deployments? Proposed:
-`pbkdf2` and `sha256salted` are supported; `md5` and `plain-text` are
-legacy-compat for upgrade paths only and a report against them in a
-greenfield install is `OUT-OF-MODEL: non-default-build`. Confirm.
-*(maps to §5a, §10, §11)*
+**Q19.** User-authenticator plugins — encoder selection is governed by
+`user.password.encoders.order` (default
+`PBKDF2,SHA256SALT,MD5,LDAP,SAML2,PLAINTEXT`) and
+`user.password.encoders.exclude` (default `MD5,LDAP,PLAINTEXT`), so PBKDF2
+is the effective hashing default and `MD5`/`PLAINTEXT` are retained only
+for verifying legacy hashes *(maintainer: vishesh92)*. **Still open:**
+confirm that a report against `md5`/`plain-text` being *used to hash new
+passwords* in a greenfield install is `OUT-OF-MODEL: non-default-build`
+(they are excluded by default), and confirm the supported greenfield
+encoder set. *(maps to §5a, §10, §11)*
 
 **Q20.** Integration API port `:8096` — proposed: closed (port-zero) by
 default in production packaging, open only when explicitly configured;
@@ -1047,13 +1127,13 @@ landing page. The de facto security-policy artifacts are scattered:
 | `README.md` "Reporting Security Vulnerabilities" | report to `security@apache.org`; canonical page at `cloudstack.apache.org/security.html` | §1 reporting cross-reference |
 | `README.md` "Notice of Cryptographic Software" | JaSypt, Bouncy Castle, JSch, OpenSwan, MySQL native encryption | §5 cryptography assumption, §8 P8 |
 | `agent/conf/agent.properties` (`host`, `port`, `ssl.handshake.timeout`, …) | agent ↔ management server transport on `:8250` | §2 component table, §4 B5 |
-| `server/src/main/java/com/cloud/api/ApiServer.java` `verifyRequest` (lines ~980–1156) | HMAC-SHA1 signature + `expires` enforcement + constant-time compare | §8 P1, §8 P3, §5a "api.signature.version", §11a "SHA1 / constant-time" entries |
-| `server/src/main/java/com/cloud/api/ApiServlet.java` `getClientAddress` (lines 700–725) | forward-header gating by `proxy.forward.list` | §8 P6, §5a "useforwardheader" row |
+| `server/src/main/java/com/cloud/api/ApiServer.java` `verifyRequest` (lines ~980–1156) | HMAC-SHA1 signature + `expires` enforcement (`enforce.post.requests.and.timestamps`) + constant-time compare | §8 P1, §8 P3, §5a "enforce.post.requests.and.timestamps" row, §11a "SHA1 / constant-time" entries |
+| `server/src/main/java/com/cloud/api/ApiServlet.java` `getClientAddress` (lines 700–725) | forward-header gating by `proxy.cidr` / `proxy.header.names` when `proxy.header.verify=true` | §8 P6, §5a "proxy.header.verify" row |
 | `server/src/main/java/com/cloud/api/ApiServlet.java` 2FA path (lines 360–582) | password + 2FA flow | §8 P2 |
 | `framework/ca/.../CAService.java`, `plugins/ca/root-ca/.../RootCAProvider.java` | Root CA generated at first boot; agent enrolment via `SetupKeyStoreCommand` | §4 B5, §8 P5, §5a strictness/allow-expired rows |
 | `plugins/ca/root-ca/.../RootCACustomTrustManager.java` | `authStrictness` and `allowExpiredCertificate` semantics | §5a, §8 P5 |
 | `plugins/acl/{static,dynamic,project}-role-based` | RBAC backends | §8 P4 |
-| `plugins/user-authenticators/{md5,sha256salted,pbkdf2,plain-text,ldap,saml2,oauth2}` | pluggable user auth | §2 caller-roles row, §5a "auth.password.algorithm", §10 item 7 |
+| `plugins/user-authenticators/{md5,sha256salted,pbkdf2,plain-text,ldap,saml2,oauth2}` | pluggable user auth; selection via `user.password.encoders.order` / `user.password.encoders.exclude` | §2 caller-roles row, §5a "user.password.encoders.*" rows, §10 item 7 |
 | `plugins/user-two-factor-authenticators/{static-pin,totp}` | 2FA backends | §5a "enable.2fa.*", §10 item 8 |
 | `framework/security/.../KeysManager.java`, `KeystoreManager.java` | `security.encryption.key`, `security.encryption.iv` (Hidden), application-secret JaSypt encryption | §8 P8, §5a, §10 item 6 |
 | `agent/src/main/java/com/cloud/agent/Agent.java` `setupAgentKeystore` (lines ~793–916) | agent receives Root CA-signed cert via `SetupKeyStoreCommand` and imports it | §4 B5, §8 P5 |
