@@ -74,11 +74,12 @@ public class ExponentialWithJitterBackoff extends AdapterBase implements Backoff
         Thread current = Thread.currentThread();
         try {
             asleep.put(current.getName(), current);
-            logger.debug(String.format("Going to sleep for %s", DateUtil.formatMillis(waitMs)));
+            logger.debug("Going to sleep for {}", DateUtil.formatMillis(waitMs));
             Thread.sleep(waitMs);
-            logger.debug(String.format("Sleep done for %s", DateUtil.formatMillis(waitMs)));
+            logger.debug("Sleep done for {}", DateUtil.formatMillis(waitMs));
         } catch (InterruptedException e) {
-            logger.info(String.format("Thread %s interrupted while waiting for retry", current.getName()), e);
+            interrupted = true;
+            logger.info("Thread {} interrupted while waiting for retry", current.getName(), e);
         } finally {
             asleep.remove(current.getName());
             calculateNextAttempt();
@@ -154,8 +155,9 @@ public class ExponentialWithJitterBackoff extends AdapterBase implements Backoff
 
     @Override
     public long getTimeToWait() {
-        long delay = getNextDelay();
-        int jitter = random.nextInt((int) delay / 2);
+        long delay = Math.max(1L, getNextDelay());
+        int jitterBound = (int) Math.max(1L, delay / 2);
+        int jitter = random.nextInt(jitterBound);
         return delay + jitter;
     }
 
