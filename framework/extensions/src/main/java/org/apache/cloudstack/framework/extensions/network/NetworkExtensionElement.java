@@ -445,7 +445,7 @@ public class NetworkExtensionElement extends AdapterBase implements
             }
             addExtensionIpToPayload(payload, network);
 
-            logger.debug("Preparing NIC via extension script: network={} nicMac={} nicIp={}", network, nic != null ? nic.getMacAddress() : null, nic != null ? nic.getIPv4Address() : null);
+            logger.debug("Preparing NIC via extension script: network={} nicMac={} nicIp={}", network, nic.getMacAddress(), nic.getIPv4Address());
 
             return executeScript(network, CMD_PREPARE_NIC, payload);
         } catch (Exception e) {
@@ -968,6 +968,9 @@ public class NetworkExtensionElement extends AdapterBase implements
         payload.addProperty("network_id", String.valueOf(network.getId()));
         payload.addProperty("vlan", safeStr(getVlanId(network)));
         payload.addProperty("zone_id", String.valueOf(network.getDataCenterId()));
+        if (network.getGuestType() != null) {
+            payload.addProperty("guest_type", network.getGuestType().toString().toLowerCase());
+        }
         if (StringUtils.isNotBlank(network.getGateway())) {
             payload.addProperty("gateway", safeStr(network.getGateway()));
         }
@@ -1718,16 +1721,7 @@ public class NetworkExtensionElement extends AdapterBase implements
             ruleObj.addProperty("protocol", safeStr(rule.getProtocol()));
             ruleObj.addProperty("algorithm", safeStr(rule.getAlgorithm()));
             ruleObj.addProperty("revoke", revoke);
-            JsonArray backendsArray = new JsonArray();
-            if (rule.getDestinations() != null) {
-                for (LoadBalancingRule.LbDestination dest : rule.getDestinations()) {
-                    JsonObject destObj = new JsonObject();
-                    destObj.addProperty("ip", dest.getIpAddress());
-                    destObj.addProperty("port", dest.getDestinationPortStart());
-                    destObj.addProperty("revoked", dest.isRevoked());
-                    backendsArray.add(destObj);
-                }
-            }
+            JsonArray backendsArray = buildLBRuleBackendArray(rule);
             ruleObj.add("backends", backendsArray);
             lbRulesArray.add(ruleObj);
         }
@@ -1741,6 +1735,20 @@ public class NetworkExtensionElement extends AdapterBase implements
                     Network.class, network.getId());
         }
         return true;
+    }
+
+    private static JsonArray buildLBRuleBackendArray(LoadBalancingRule rule) {
+        JsonArray backendsArray = new JsonArray();
+        if (rule.getDestinations() != null) {
+            for (LoadBalancingRule.LbDestination dest : rule.getDestinations()) {
+                JsonObject destObj = new JsonObject();
+                destObj.addProperty("ip", dest.getIpAddress());
+                destObj.addProperty("port", dest.getDestinationPortStart());
+                destObj.addProperty("revoked", dest.isRevoked());
+                backendsArray.add(destObj);
+            }
+        }
+        return backendsArray;
     }
 
     @Override
@@ -2015,7 +2023,7 @@ public class NetworkExtensionElement extends AdapterBase implements
                 continue;
             }
 
-            Long instanceId = nic.getInstanceId();
+            long instanceId = nic.getInstanceId();
 
             UserVmVO userVm = userVmDao.findById(instanceId);
             if (userVm == null) {
@@ -2513,15 +2521,7 @@ public class NetworkExtensionElement extends AdapterBase implements
                 .sorted(java.util.Comparator.comparingInt(NetworkACLItem::getNumber))
                 .collect(Collectors.toList());
         for (NetworkACLItem rule : sorted) {
-            JsonObject ruleObj = new JsonObject();
-            ruleObj.addProperty("number", rule.getNumber());
-            ruleObj.addProperty("action", rule.getAction().name().toLowerCase());
-            ruleObj.addProperty("trafficType", rule.getTrafficType().name().toLowerCase());
-            ruleObj.addProperty("protocol", safeStr(rule.getProtocol()));
-            if (rule.getSourcePortStart() != null) ruleObj.addProperty("portStart", rule.getSourcePortStart());
-            if (rule.getSourcePortEnd() != null) ruleObj.addProperty("portEnd", rule.getSourcePortEnd());
-            if (rule.getIcmpType() != null) ruleObj.addProperty("icmpType", rule.getIcmpType());
-            if (rule.getIcmpCode() != null) ruleObj.addProperty("icmpCode", rule.getIcmpCode());
+            JsonObject ruleObj = buildAclRuleObject(rule);
             JsonArray sourceCidrsArray = new JsonArray();
             List<String> sourceCidrs = rule.getSourceCidrList();
             if (CollectionUtils.isNotEmpty(sourceCidrs)) {
@@ -2531,5 +2531,18 @@ public class NetworkExtensionElement extends AdapterBase implements
             array.add(ruleObj);
         }
         return array;
+    }
+
+    private JsonObject buildAclRuleObject(NetworkACLItem rule) {
+        JsonObject ruleObj = new JsonObject();
+        ruleObj.addProperty("number", rule.getNumber());
+        ruleObj.addProperty("action", rule.getAction().name().toLowerCase());
+        ruleObj.addProperty("trafficType", rule.getTrafficType().name().toLowerCase());
+        ruleObj.addProperty("protocol", safeStr(rule.getProtocol()));
+        if (rule.getSourcePortStart() != null) ruleObj.addProperty("portStart", rule.getSourcePortStart());
+        if (rule.getSourcePortEnd() != null) ruleObj.addProperty("portEnd", rule.getSourcePortEnd());
+        if (rule.getIcmpType() != null) ruleObj.addProperty("icmpType", rule.getIcmpType());
+        if (rule.getIcmpCode() != null) ruleObj.addProperty("icmpCode", rule.getIcmpCode());
+        return ruleObj;
     }
 }

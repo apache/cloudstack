@@ -254,26 +254,52 @@ For all standard network / VPC commands, CloudStack now executes the script as:
 
 The following names appear repeatedly inside the nested `payload` object.
 
+### Network-level fields (added by `addNetworkToPayload`)
+
 | Field | Description |
 |---|---|
 | `network_id` | CloudStack numeric network ID. |
-| `vpc_id` | CloudStack numeric VPC ID. Present for VPC tier networks and VPC-scoped commands. |
 | `vlan` | Guest VLAN tag (for example `100`). Extracted from the broadcast URI. May be empty for flat networks. |
-| `gateway` | Guest network gateway (for example `10.0.0.1`). |
-| `cidr` | Guest network CIDR (for example `10.0.0.0/24`). |
+| `zone_id` | CloudStack zone ID. |
+| `guest_type` | Guest network type: `"isolated"`, `"shared"`, or `"l2"`. Scripts should use this to skip NAT/firewall operations that are not applicable to Shared or L2 networks. |
+| `gateway` | Guest network gateway (for example `10.0.0.1`). Omitted when blank. |
+| `cidr` | Guest network CIDR (for example `10.0.0.0/24`). Omitted when blank. |
+| `vpc_id` | CloudStack numeric VPC ID. Present for VPC tier networks and VPC-scoped commands. |
 | `network_ip6_gateway` | Guest network IPv6 gateway, when the network has IPv6 configured. |
 | `network_ip6_cidr` | Guest network IPv6 CIDR, when the network has IPv6 configured. |
-| `extension_ip` | The IP the extension device uses on the guest side. Equals the gateway when SourceNat/Gateway is provided; otherwise it is a dedicated IP from the guest subnet. |
-| `public_ip` | A public IP address. |
-| `public_cidr` | CIDR of the public IP (for example `203.0.113.5/24`). |
-| `public_vlan` | VLAN tag of the public IP segment. |
-| `public_gateway` | Gateway of the public IP segment. |
-| `private_ip` | A VM's private guest-network IP address. |
+
+### NIC-level fields (added by `addNicToPayload`)
+
+| Field | Description |
+|---|---|
+| `nic_id` | CloudStack numeric NIC ID. |
+| `nic_uuid` | NIC UUID — matches `external_ids:iface-id` written by the KVM agent for OVN port binding. |
+| `mac` | VM NIC MAC address. |
+| `ip` | VM NIC IPv4 address. |
+| `gateway` | VM NIC IPv4 gateway (NIC-level; equals the network gateway for normal guest networks). |
+| `netmask` | VM NIC IPv4 netmask (for example `255.255.255.0`). |
+| `default_nic` | Stringified boolean — `"false"` for secondary NICs. |
+| `device_id` | NIC device index in the VM (slot number). |
 | `nic_ip6_address` | VM NIC IPv6 address, when the NIC has IPv6 configured. |
 | `nic_ip6_gateway` | VM NIC IPv6 gateway, when available. |
 | `nic_ip6_cidr` | VM NIC IPv6 CIDR, when available. |
-| `source_nat` | Stringified boolean (`"true"` / `"false"`) indicating whether the public IP is a source-NAT IP. |
-| `nic_uuid` | NIC UUID when the current API path has a `NicProfile` available. |
+
+### Public-IP fields (added by `addPublicIpToPayload`)
+
+| Field | Description |
+|---|---|
+| `public_ip` | A public IP address. |
+| `public_vlan` | VLAN tag of the public IP segment. |
+| `public_gateway` | Gateway of the public IP segment. |
+| `public_cidr` | CIDR of the public IP (for example `203.0.113.0/24`). |
+| `source_nat` | Stringified boolean (`"true"` / `"false"`) indicating whether the public IP is the source-NAT IP. |
+| `private_ip` | A VM's private guest-network IP address (NAT target). |
+
+### DNS / extension-IP fields
+
+| Field | Description |
+|---|---|
+| `extension_ip` | The IP the extension device uses on the guest side. Equals the gateway when SourceNat/Gateway is provided; otherwise it is a dedicated IP from the guest subnet. |
 | `dns` | Comma-separated DNS server list. |
 | `domain` | Network domain suffix. |
 

@@ -2193,7 +2193,7 @@ class TestNetworkExtensionNamespace(cloudstackTestCase):
         self.cleanup = [o for o in self.cleanup if o != tier2]
 
         vpc.delete(self.apiclient)
-        self.cleanup = [o for o in self.cleanup if o != vpc]
+        self.cleanup = [o for o in self.cleanup if o != vpc and o != acl1 and o != acl2]
 
         self._teardown_extension()
         self.logger.info("test_07 PASSED")
