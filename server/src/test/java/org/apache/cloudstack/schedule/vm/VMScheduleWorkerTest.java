@@ -20,6 +20,7 @@ package org.apache.cloudstack.schedule.vm;
 
 import com.cloud.event.ActionEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.network.as.dao.AutoScaleVmGroupVmMapDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.vm.UserVmManager;
@@ -67,6 +68,9 @@ public class VMScheduleWorkerTest {
 
     @Mock
     private UserVmManager userVmManager;
+
+    @Mock
+    private AutoScaleVmGroupVmMapDao autoScaleVmGroupVmMapDao;
 
     @Mock
     private ResourceScheduleDao resourceScheduleDao;

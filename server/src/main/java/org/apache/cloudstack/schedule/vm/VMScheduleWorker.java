@@ -20,7 +20,10 @@ package org.apache.cloudstack.schedule.vm;
 
 import com.cloud.event.ActionEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.network.as.AutoScaleVmGroupVmMapVO;
+import com.cloud.network.as.dao.AutoScaleVmGroupVmMapDao;
 import com.cloud.user.User;
+import com.cloud.uservm.UserVm;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -31,17 +34,22 @@ import org.apache.cloudstack.api.command.user.vm.StopVMCmd;
 import org.apache.cloudstack.schedule.BaseScheduleWorker;
 import org.apache.cloudstack.schedule.ResourceSchedule;
 import org.apache.cloudstack.schedule.ResourceScheduledJobVO;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.EnumUtils;
 
 import javax.inject.Inject;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 public class VMScheduleWorker extends BaseScheduleWorker {
 
     @Inject
     private UserVmManager userVmManager;
+
+    @Inject
+    private AutoScaleVmGroupVmMapDao autoScaleVmGroupVmMapDao;
 
     @Override
     public ApiCommandResourceType getApiResourceType() {
@@ -50,7 +58,12 @@ public class VMScheduleWorker extends BaseScheduleWorker {
 
     @Override
     public boolean isResourceValid(long resourceId) {
-        return userVmManager.getUserVm(resourceId) != null;
+        UserVm userVm = userVmManager.getUserVm(resourceId);
+        if (userVm != null) {
+            List<AutoScaleVmGroupVmMapVO> autoScalingGroups = autoScaleVmGroupVmMapDao.listByVm(resourceId);
+            return CollectionUtils.isEmpty(autoScalingGroups);
+        }
+        return false;
     }
 
     @Override

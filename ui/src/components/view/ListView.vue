@@ -800,7 +800,7 @@
         {{ text && $toLocaleDate(text) }}
       </template>
       <template
-        v-if="['startdate', 'enddate'].includes(column.key) && ['vm', 'vnfapp'].includes($route.path.split('/')[1])"
+        v-if="['startdate', 'enddate'].includes(column.key) && ['vm', 'vnfapp', 'autoscalevmgroup'].includes($route.path.split('/')[1])"
       >
         {{ getDateAtTimeZone(text, record.timezone) }}
       </template>

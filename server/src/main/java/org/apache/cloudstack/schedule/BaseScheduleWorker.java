@@ -105,6 +105,13 @@ public abstract class BaseScheduleWorker extends ManagerBase {
      */
     protected abstract Long processJob(ResourceScheduledJobVO job);
 
+    /**
+     * Get a human-readable description of the schedule, for use in the UI and audit logs.
+     */
+    public String getDescription(ResourceSchedule.Action parsedAction, CronExpression cronExpression, Map<String, String> details) {
+        return String.format("%s - %s", parsedAction.name(), DateUtil.getHumanReadableSchedule(cronExpression));
+    }
+
     // -------------------------------------------------------------------------
     // Lifecycle
     // -------------------------------------------------------------------------
@@ -234,6 +241,11 @@ public abstract class BaseScheduleWorker extends ManagerBase {
             return null;
         }
 
+        if (zonedEnd != null && ts.isAfter(zonedEnd)) {
+            logger.info("Next schedule time {} is after end time {}. No more jobs to schedule for {}.", ts, zonedEnd, schedule);
+            return null;
+        }
+
         Date scheduledDateTime = Date.from(ts.toInstant());
         ResourceScheduledJobVO existingJob = resourceScheduledJobDao.findByScheduleAndTimestamp(schedule.getId(), scheduledDateTime);
         if (existingJob != null) {
@@ -250,8 +262,9 @@ public abstract class BaseScheduleWorker extends ManagerBase {
             ActionEventUtils.onScheduledActionEvent(
                     User.UID_SYSTEM, accountId,
                     parseAction(schedule.getActionName()).getEventType(),
-                    String.format("Scheduled action (%s) [resource: %d, schedule: %s] at %s",
-                            schedule.getActionName(), schedule.getResourceId(), schedule, scheduledDateTime),
+                    String.format("Scheduled action %s as part of Resource Schedule (uuid=%s description='%s' schedule='%s') for %s (id=%d) at %s",
+                            schedule.getActionName(), schedule.getUuid(), schedule.getDescription(),
+                            schedule.getSchedule(), getResourceTypeName(), schedule.getResourceId(), scheduledDateTime),
                     schedule.getResourceId(), getResourceTypeName(), true, 0);
         } catch (EntityExistsException e) {
             logger.debug("Job already scheduled (concurrent insert).");

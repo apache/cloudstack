@@ -43,14 +43,20 @@
           icon="edit-outlined"
           @onClick="updateSchedule(record)"
         />
-        <tooltip-button
-          :tooltip="$t('label.remove')"
-          :disabled="!('deleteResourceSchedule' in $store.getters.apis)"
-          icon="delete-outlined"
-          :danger="true"
-          type="primary"
-          @onClick="removeSchedule(record)"
-        />
+        <a-popconfirm
+          :title="$t('label.delete') + ' ' + $t('label.schedule') + '?'"
+          :okText="$t('label.yes')"
+          :cancelText="$t('label.no')"
+          @confirm="removeSchedule(record)"
+        >
+          <tooltip-button
+            :tooltip="$t('label.remove')"
+            :disabled="!('deleteResourceSchedule' in $store.getters.apis)"
+            icon="delete-outlined"
+            :danger="true"
+            type="primary"
+          />
+        </a-popconfirm>
       </template>
     </list-view>
     <a-pagination
@@ -399,6 +405,12 @@ export default {
   },
   created () {
     this.selectedColumnKeys = this.columnKeys
+    if (this.resourceType === 'AutoScaleVmGroup') {
+      this.columnKeys = ['enabled', 'description', 'schedule', 'minmembers',
+        'maxmembers', 'timezone', 'startdate', 'enddate', 'created',
+        'scheduleActions']
+      this.selectedColumnKeys = [...this.columnKeys]
+    }
     this.updateColumns()
     this.pageSize = this.pageSizeOptions[0] * 1
     this.initForm()
@@ -525,7 +537,6 @@ export default {
         if (error.errorFields !== undefined) {
           this.formRef.value.scrollToField(error.errorFields[0].name)
         }
-      }).finally(() => {
         this.isSubmitted = false
       })
     },
@@ -568,7 +579,12 @@ export default {
       getAPI('listResourceSchedule', params).then(json => {
         this.schedules = []
         this.totalCount = json?.listresourcescheduleresponse?.count || 0
-        this.schedules = json?.listresourcescheduleresponse?.resourceschedule || []
+        const rawSchedules = json?.listresourcescheduleresponse?.resourceschedule || []
+        this.schedules = rawSchedules.map(s => ({
+          ...s,
+          minmembers: s.details?.minmembers,
+          maxmembers: s.details?.maxmembers
+        }))
       }).catch(error => {
         console.error(error)
         this.$notifyError(error)
@@ -594,20 +610,16 @@ export default {
     },
     updateColumns () {
       this.columns = []
+      const columnTitleMap = {
+        enabled: this.$t('label.state'),
+        startdate: this.$t('label.start.date.and.time'),
+        enddate: this.$t('label.end.date.and.time')
+      }
       for (var columnKey of this.columnKeys) {
         if (!this.selectedColumnKeys.includes(columnKey)) continue
         this.columns.push({
           key: columnKey,
-          // If columnKey is 'enabled', then title is 'state'
-          // If columnKey is 'startdate', then the title is `start.date.and.time`
-          // else title is columnKey
-          title: columnKey === 'enabled'
-            ? this.$t('label.state')
-            : columnKey === 'startdate'
-              ? this.$t('label.start.date.and.time')
-              : columnKey === 'enddate'
-                ? this.$t('label.end.date.and.time')
-                : this.$t('label.' + String(columnKey).toLowerCase()),
+          title: columnTitleMap[columnKey] || this.$t('label.' + String(columnKey).toLowerCase()),
           dataIndex: columnKey
         })
       }

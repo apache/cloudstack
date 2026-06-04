@@ -105,7 +105,7 @@ public class ResourceScheduleVO implements ResourceSchedule {
     @Override
     public String toString() {
         return String.format("ResourceSchedule %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                this, "id", "uuid", "resourceType", "actionName", "description"));
+                this, "id", "uuid", "resourceType", "actionName", "description", "enabled"));
     }
 
     @Override

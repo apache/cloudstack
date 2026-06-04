@@ -23,6 +23,7 @@ import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.network.as.AutoScaleVmGroupVO;
 import com.cloud.network.as.dao.AutoScaleVmGroupDao;
 import com.cloud.user.User;
+import com.cloud.utils.DateUtil;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmGroupCmd;
 import org.apache.cloudstack.schedule.BaseScheduleWorker;
@@ -32,6 +33,7 @@ import org.apache.cloudstack.schedule.dao.ResourceScheduleDetailsDao;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.scheduling.support.CronExpression;
 
 import javax.inject.Inject;
 import java.util.Arrays;
@@ -55,6 +57,11 @@ public class AutoScaleScheduleWorker extends BaseScheduleWorker {
     @Override
     public ApiCommandResourceType getApiResourceType() {
         return ApiCommandResourceType.AutoScaleVmGroup;
+    }
+
+    @Override
+    public String getDescription(ResourceSchedule.Action parsedAction, CronExpression cronExpression, Map<String, String> details) {
+        return String.format("%s Min (%s) Max (%s) - %s", parsedAction.name(), details.get(MIN_MEMBERS), details.get(MAX_MEMBERS), DateUtil.getHumanReadableSchedule(cronExpression));
     }
 
     @Override
@@ -122,15 +129,18 @@ public class AutoScaleScheduleWorker extends BaseScheduleWorker {
         Map<String, String> details = resourceScheduleDetailsDao.listDetailsKeyPairs(job.getScheduleId(), true);
         validateDetails(action, details);
 
+        String minMembers = details.get(MIN_MEMBERS);
+        String maxMembers = details.get(MAX_MEMBERS);
         long eventId = ActionEventUtils.onCompletedActionEvent(
                 User.UID_SYSTEM, group.getAccountId(), null,
                 action.getEventType(), true,
-                String.format("Executing action (%s) for AutoScaleVmGroup: %s", action, group.getUuid()),
+                String.format("Executing action %s (min=%s max=%s) for AutoScaleVmGroup: %s (min=%s max=%s)",
+                        action, minMembers, maxMembers, group.getUuid(), group.getMinMembers(), group.getMaxMembers()),
                 group.getId(), ApiCommandResourceType.AutoScaleVmGroup.toString(), 0);
 
         Map<String, String> params = new HashMap<>();
-        params.put(MIN_MEMBERS, details.get(MIN_MEMBERS));
-        params.put(MAX_MEMBERS, details.get(MAX_MEMBERS));
+        params.put(MIN_MEMBERS, minMembers);
+        params.put(MAX_MEMBERS, maxMembers);
         return submitAsyncJob(UpdateAutoScaleVmGroupCmd.class, group.getAccountId(), group.getId(), eventId, params);
     }
 }

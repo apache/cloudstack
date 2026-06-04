@@ -46,6 +46,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.schedule.dao.ResourceScheduleDao;
 import org.apache.cloudstack.schedule.dao.ResourceScheduleDetailsDao;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -193,10 +194,11 @@ public class ResourceScheduleManagerImpl extends MutualExclusiveIdsManagerBase i
         validateStartDateEndDate(startDate, endDate, timeZone);
 
         if (StringUtils.isBlank(description)) {
-            description = String.format("%s - %s", parsedAction.name(), DateUtil.getHumanReadableSchedule(cronExpression));
+            description = worker.getDescription(parsedAction, cronExpression, details);
         }
 
-        logger.warn("Using timezone [{}] for running the schedule for resource [{}], as an equivalent of [{}].", timeZoneId, resourceUuid, timeZoneStr);
+        logger.warn("Using timezone [{}] for running the schedule for resource [{}], as an equivalent of [{}].",
+                timeZoneId, resourceUuid, timeZoneStr);
 
         String finalDescription = description;
         String finalAction = parsedAction.name();
@@ -209,7 +211,7 @@ public class ResourceScheduleManagerImpl extends MutualExclusiveIdsManagerBase i
                     finalDescription, cronExpression.toString(), timeZoneId,
                     finalAction, finalStartDate, finalEndDate, enabled));
 
-            if (details != null && !details.isEmpty()) {
+            if (MapUtils.isNotEmpty(details)) {
                 List<ResourceScheduleDetailVO> detailVOs = new ArrayList<>();
                 for (Map.Entry<String, String> entry : details.entrySet()) {
                     detailVOs.add(new ResourceScheduleDetailVO(scheduleVO.getId(), entry.getKey(), entry.getValue(), true));
@@ -221,6 +223,7 @@ public class ResourceScheduleManagerImpl extends MutualExclusiveIdsManagerBase i
 
             CallContext.current().setEventResourceId(internalResourceId);
             CallContext.current().setEventResourceType(worker.getApiResourceType());
+            CallContext.current().setEventDetails(String.format("Created resource schedule %s", scheduleVO));
             return createResponse(scheduleVO, details);
         });
     }
@@ -298,8 +301,9 @@ public class ResourceScheduleManagerImpl extends MutualExclusiveIdsManagerBase i
         long ownerId = worker.getEntityOwnerId(scheduleVO.getResourceId());
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, false, accountManager.getAccount(ownerId));
 
-        if (details != null && !details.isEmpty()) {
-            worker.validateDetails(worker.parseAction(scheduleVO.getActionName()), details);
+        ResourceSchedule.Action parsedAction = worker.parseAction(scheduleVO.getActionName());
+        if (MapUtils.isNotEmpty(details)) {
+            worker.validateDetails(parsedAction, details);
         }
 
         CronExpression cronExpression = Objects.requireNonNullElse(
@@ -308,7 +312,10 @@ public class ResourceScheduleManagerImpl extends MutualExclusiveIdsManagerBase i
         );
 
         if (description == null && scheduleVO.getDescription() == null) {
-            description = String.format("%s - %s", scheduleVO.getActionName(), DateUtil.getHumanReadableSchedule(cronExpression));
+            Map<String, String> effectiveDetails = MapUtils.isNotEmpty(details)
+                    ? details
+                    : resourceScheduleDetailsDao.listDetailsKeyPairs(id, true);
+            description = worker.getDescription(parsedAction, cronExpression, effectiveDetails);
         }
 
         final String originalTimeZone = scheduleVO.getTimeZone();
@@ -365,22 +372,20 @@ public class ResourceScheduleManagerImpl extends MutualExclusiveIdsManagerBase i
         return Transaction.execute((TransactionCallback<ResourceScheduleResponse>) status -> {
             resourceScheduleDao.update(id, scheduleVO);
 
-            if (details != null) {
-                if (details.isEmpty()) {
-                    resourceScheduleDetailsDao.removeDetails(id);
-                } else {
-                    List<ResourceScheduleDetailVO> detailVOs = new ArrayList<>();
-                    for (Map.Entry<String, String> entry : details.entrySet()) {
-                        detailVOs.add(new ResourceScheduleDetailVO(id, entry.getKey(), entry.getValue(), true));
-                    }
-                    resourceScheduleDetailsDao.saveDetails(detailVOs);
+            if (MapUtils.isNotEmpty(details)) {
+                List<ResourceScheduleDetailVO> detailVOs = new ArrayList<>();
+                for (Map.Entry<String, String> entry : details.entrySet()) {
+                    detailVOs.add(new ResourceScheduleDetailVO(id, entry.getKey(), entry.getValue(), true));
                 }
+                resourceScheduleDetailsDao.saveDetails(detailVOs);
             }
 
             worker.updateScheduledJob(scheduleVO);
 
             CallContext.current().setEventResourceId(scheduleVO.getResourceId());
             CallContext.current().setEventResourceType(worker.getApiResourceType());
+
+            CallContext.current().setEventDetails(String.format("Updated resource schedule %s", scheduleVO));
 
             // Re-load details if they weren't fully replaced
             Map<String, String> currentDetails = resourceScheduleDetailsDao.listDetailsKeyPairs(id, true);

@@ -90,7 +90,7 @@
       <a-tab-pane
         :tab="$t('label.schedules')"
         key="schedules"
-        v-if="'listResourceSchedule' in $store.getters.apis"
+        v-if="'listResourceSchedule' in $store.getters.apis && !dataResource.autoscalevmgroupid"
       >
         <ResourceSchedules
           :resource="vm"
