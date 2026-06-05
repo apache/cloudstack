@@ -20,7 +20,9 @@ package com.cloud.storage.clvm;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 
 import com.cloud.agent.AgentManager;
@@ -138,12 +140,16 @@ public class ClvmPoolManager implements Configurable {
      * Query LVM to find the actual current lock holder for a volume.
      * This is the SOURCE OF TRUTH - it queries the actual LVM state via sanlock/lvmlockd.
      *
+     * <p>If no host holds the exclusive lock (e.g. after a storage outage), this method attempts
+     * an exclusive activation on the best available host before giving up. Activation failure
+     * is non-fatal: the method returns null so callers can apply their own fallback logic.
+     *
      * @param volumeId The volume ID
      * @param volumeUuid The volume UUID
      * @param volumePath The LV path (e.g., "vm-123-disk-0")
      * @param pool The storage pool
-     * @param updateDatabase If true, updates the database with the actual value (for debugging/audit)
-     * @return Host ID of current lock holder, or null if no lock is held or query failed
+     * @param updateDatabase If true, persists the discovered or newly-activated lock host to the DB
+     * @return Host ID of current or newly-activated lock holder, or null if none found/activated
      */
     public Long queryCurrentLockHolder(Long volumeId, String volumeUuid, String volumePath,
                                        StoragePool pool, boolean updateDatabase) {
@@ -169,7 +175,7 @@ public class ClvmPoolManager implements Configurable {
                     logger.debug("Fast path: volume {} confirmed active on DB host {}", volumeUuid, dbHostId);
                     return dbHostId;
                 }
-                logger.info("Fast path miss: volume {} not active on DB host {} — falling back to full fan-out",
+                logger.info("Fast path miss: volume {} not active on DB host {} - falling back to full fan-out",
                         volumeUuid, dbHostId);
             } else {
                 logger.info("Fast path skip: DB host {} for volume {} is down/missing — falling back to full fan-out",
@@ -212,9 +218,21 @@ public class ClvmPoolManager implements Configurable {
 
         if (activeHostIds.isEmpty()) {
             logger.debug("Volume {} is not active on any reachable host — no exclusive lock held", volumeUuid);
+
+            // Recovery: attempt exclusive activation on the best available host before giving up.
+            Long targetHostId = selectActivationTargetHost(dbHostId, hosts);
+            if (targetHostId != null) {
+                Long recoveredHostId = tryActivateExclusivelyOnHost(volumeId, volumeUuid, lvPath,
+                        targetHostId, updateDatabase);
+                if (recoveredHostId != null) {
+                    return recoveredHostId;
+                }
+            }
+
+            // Activation failed or no eligible host - clean up stale DB record and give up
             if (updateDatabase && dbHostId != null) {
                 VolumeDetailVO detail = _volsDetailsDao.findDetail(volumeId, CLVM_LOCK_HOST_ID);
-                if (detail != null) {
+                if (detail != null && String.valueOf(dbHostId).equals(detail.getValue())) {
                     _volsDetailsDao.remove(detail.getId());
                 }
             }
@@ -274,6 +292,82 @@ public class ClvmPoolManager implements Configurable {
             logger.debug("Could not query host {} for lock state: {}", hostId, e.getMessage());
             return null;
         }
+    }
+
+    /**
+     * Selects the best host on which to exclusively activate an inactive CLVM volume.
+     *
+     * <p>Priority 1: the last known lock holder ({@code clvmLockHostId} from DB), if that host
+     * is UP and KVM.
+     *
+     * <p>Priority 2: a random UP KVM routing host from the cluster/zone list (fallback).
+     *
+     * @param dbHostId last known lock holder host ID from the DB (may be null)
+     * @param hosts    routing hosts in the cluster or zone collected during fan-out
+     * @return host ID to activate on, or null if no eligible host found
+     */
+    private Long selectActivationTargetHost(Long dbHostId, List<HostVO> hosts) {
+        if (dbHostId != null) {
+            HostVO dbHost = _hostDao.findById(dbHostId);
+            if (dbHost != null && dbHost.getStatus() == Status.Up
+                    && dbHost.getHypervisorType() == Hypervisor.HypervisorType.KVM) {
+                logger.debug("selectActivationTargetHost: preferring DB host {} (last known lock holder)", dbHostId);
+                return dbHostId;
+            }
+        }
+        if (hosts != null) {
+            List<HostVO> eligible = hosts.stream()
+                    .filter(h -> h.getStatus() == Status.Up
+                            && h.getType() == Host.Type.Routing
+                            && h.getHypervisorType() == Hypervisor.HypervisorType.KVM)
+                    .collect(Collectors.toList());
+            if (!eligible.isEmpty()) {
+                Collections.shuffle(eligible);
+                HostVO chosen = eligible.get(0);
+                logger.debug("selectActivationTargetHost: falling back to random UP KVM host {} in cluster/zone",
+                        chosen.getId());
+                return chosen.getId();
+            }
+        }
+        logger.warn("selectActivationTargetHost: no eligible UP KVM host found");
+        return null;
+    }
+
+    /**
+     * Sends an {@code ACTIVATE_EXCLUSIVE} command to {@code targetHostId} and optionally
+     * persists the new lock host to the database.
+     *
+     * <p>Activation failure is non-fatal: returns null so the caller can apply its own fallback.
+     *
+     * @param volumeId       volume DB ID
+     * @param volumeUuid     volume UUID (for logging)
+     * @param lvPath         full LV device path, e.g. {@code /dev/vgname/vol-path}
+     * @param targetHostId   host to activate on
+     * @param updateDatabase if true, persists the new lock host on success
+     * @return {@code targetHostId} on success, {@code null} if the command failed or threw
+     */
+    private Long tryActivateExclusivelyOnHost(Long volumeId, String volumeUuid, String lvPath,
+                                              Long targetHostId, boolean updateDatabase) {
+        try {
+            ClvmLockTransferCommand activateCmd = new ClvmLockTransferCommand(
+                    ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE, lvPath, volumeUuid);
+            Answer activateAnswer = _agentMgr.send(targetHostId, activateCmd);
+            if (activateAnswer != null && activateAnswer.getResult()) {
+                logger.info("Recovery: exclusively activated volume {} on host {} (was inactive on all hosts)",
+                        volumeUuid, targetHostId);
+                if (updateDatabase) {
+                    setClvmLockHostId(volumeId, targetHostId);
+                }
+                return targetHostId;
+            }
+            logger.warn("Recovery activation of volume {} on host {} failed: {}",
+                    volumeUuid, targetHostId,
+                    activateAnswer != null ? activateAnswer.getDetails() : "null answer");
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
+            logger.warn("Recovery activation of volume {} on host {} threw exception: {}",
+                    volumeUuid, targetHostId, e.getMessage());
+        }
+        return null;
     }
 
     /**

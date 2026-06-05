@@ -19,6 +19,7 @@ package com.cloud.storage;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
@@ -316,8 +317,13 @@ public class ClvmPoolManagerTest {
         HostVO host = createMockHost(HOST_ID_1, "host1", Status.Up, Hypervisor.HypervisorType.KVM);
         when(hostDao.findByClusterId(10L, Host.Type.Routing)).thenReturn(Collections.singletonList(host));
 
-        ClvmLockTransferAnswer answer = new ClvmLockTransferAnswer(null, true, null, null, false, false, null);
-        when(agentMgr.send(eq(HOST_ID_1), any(ClvmLockTransferCommand.class))).thenReturn(answer);
+        // QUERY reports inactive; ACTIVATE_EXCLUSIVE left unstubbed → null answer → recovery fails → returns null
+        ClvmLockTransferAnswer inactiveAnswer = new ClvmLockTransferAnswer(null, true, null, null, false, false, null);
+        when(agentMgr.send(eq(HOST_ID_1), Mockito.<Command>argThat(cmd ->
+                cmd instanceof ClvmLockTransferCommand
+                        && ((ClvmLockTransferCommand) cmd).getOperation()
+                                == ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE)))
+                .thenReturn(inactiveAnswer);
 
         Long result = clvmPoolManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
 
@@ -336,8 +342,13 @@ public class ClvmPoolManagerTest {
         HostVO host = createMockHost(HOST_ID_1, "host1", Status.Up, Hypervisor.HypervisorType.KVM);
         when(hostDao.findByClusterId(10L, Host.Type.Routing)).thenReturn(Collections.singletonList(host));
 
+        // QUERY reports inactive with empty hostname; ACTIVATE_EXCLUSIVE left unstubbed → null answer → recovery fails → returns null
         ClvmLockTransferAnswer answer = new ClvmLockTransferAnswer(null, true, null, "", false, false, null);
-        when(agentMgr.send(eq(HOST_ID_1), any(ClvmLockTransferCommand.class))).thenReturn(answer);
+        when(agentMgr.send(eq(HOST_ID_1), Mockito.<Command>argThat(cmd ->
+                cmd instanceof ClvmLockTransferCommand
+                        && ((ClvmLockTransferCommand) cmd).getOperation()
+                                == ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE)))
+                .thenReturn(answer);
 
         Long result = clvmPoolManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
 
@@ -545,9 +556,21 @@ public class ClvmPoolManagerTest {
         when(hostDao.findById(HOST_ID_1)).thenReturn(host);
         when(hostDao.findByClusterId(10L, Host.Type.Routing)).thenReturn(Collections.singletonList(host));
 
-        // Both fast path and fan-out report inactive
-        ClvmLockTransferAnswer answer = new ClvmLockTransferAnswer(null, true, null, null, false, false, null);
-        when(agentMgr.send(eq(HOST_ID_1), any(ClvmLockTransferCommand.class))).thenReturn(answer);
+        // QUERY_LOCK_STATE: inactive (fast path miss; HOST_ID_1 skipped in fan-out as dbHostId)
+        ClvmLockTransferAnswer inactiveAnswer = new ClvmLockTransferAnswer(null, true, null, null, false, false, null);
+        when(agentMgr.send(eq(HOST_ID_1), Mockito.<Command>argThat(cmd ->
+                cmd instanceof ClvmLockTransferCommand
+                        && ((ClvmLockTransferCommand) cmd).getOperation()
+                                == ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE)))
+                .thenReturn(inactiveAnswer);
+
+        // ACTIVATE_EXCLUSIVE: recovery attempt fails — stale DB record must still be removed
+        Answer failedActivation = new Answer(null, false, "Simulated activation failure for test");
+        when(agentMgr.send(eq(HOST_ID_1), Mockito.<Command>argThat(cmd ->
+                cmd instanceof ClvmLockTransferCommand
+                        && ((ClvmLockTransferCommand) cmd).getOperation()
+                                == ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE)))
+                .thenReturn(failedActivation);
 
         Long result = clvmPoolManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, true);
 
@@ -712,6 +735,193 @@ public class ClvmPoolManagerTest {
         verify(agentMgr, times(1)).send(eq(HOST_ID_2), any(ClvmLockTransferCommand.class));
     }
 
+
+    /**
+     * Inactive everywhere, DB host is UP: recovery activates exclusively on the DB host.
+     */
+    @Test
+    public void testQueryCurrentLockHolder_InactiveEverywhere_ActivatesOnDbHost()
+            throws AgentUnavailableException, OperationTimedoutException {
+        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+        when(pool.getClusterId()).thenReturn(10L);
+        Mockito.lenient().when(pool.getName()).thenReturn("cluster-pool");
+        when(pool.getPath()).thenReturn(VG_NAME);
+
+        VolumeDetailVO detail = Mockito.mock(VolumeDetailVO.class);
+        when(detail.getId()).thenReturn(99L);
+        when(detail.getValue()).thenReturn(String.valueOf(HOST_ID_1));
+        when(volsDetailsDao.findDetail(VOLUME_ID, ClvmPoolManager.CLVM_LOCK_HOST_ID)).thenReturn(detail);
+
+        HostVO host1 = createMockHost(HOST_ID_1, "host1", Status.Up, Hypervisor.HypervisorType.KVM);
+        when(hostDao.findById(HOST_ID_1)).thenReturn(host1);
+        when(hostDao.findByClusterId(10L, Host.Type.Routing)).thenReturn(Collections.singletonList(host1));
+
+        // Fast path QUERY → inactive
+        ClvmLockTransferAnswer inactiveAnswer = new ClvmLockTransferAnswer(null, true, null, null, false, false, null);
+        when(agentMgr.send(eq(HOST_ID_1), Mockito.<Command>argThat(cmd ->
+                cmd instanceof ClvmLockTransferCommand
+                        && ((ClvmLockTransferCommand) cmd).getOperation()
+                                == ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE)))
+                .thenReturn(inactiveAnswer);
+
+        // Recovery ACTIVATE_EXCLUSIVE → succeeds
+        Answer activateAnswer = new Answer(null, true, null);
+        when(agentMgr.send(eq(HOST_ID_1), Mockito.<Command>argThat(cmd ->
+                cmd instanceof ClvmLockTransferCommand
+                        && ((ClvmLockTransferCommand) cmd).getOperation()
+                                == ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE)))
+                .thenReturn(activateAnswer);
+
+        Long result = clvmPoolManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, true);
+
+        Assert.assertEquals(HOST_ID_1, result);
+        verify(detail, times(1)).setValue(String.valueOf(HOST_ID_1));
+        verify(volsDetailsDao, times(1)).update(eq(99L), eq(detail));
+        verify(volsDetailsDao, never()).remove(anyLong());
+    }
+
+    /**
+     * Inactive everywhere, no DB record: recovery falls back to the first UP KVM host in cluster.
+     */
+    @Test
+    public void testQueryCurrentLockHolder_InactiveEverywhere_ActivatesOnClusterHostWhenNoDbRecord()
+            throws AgentUnavailableException, OperationTimedoutException {
+        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+        when(pool.getClusterId()).thenReturn(10L);
+        Mockito.lenient().when(pool.getName()).thenReturn("cluster-pool");
+        when(pool.getPath()).thenReturn(VG_NAME);
+
+        when(volsDetailsDao.findDetail(VOLUME_ID, ClvmPoolManager.CLVM_LOCK_HOST_ID)).thenReturn(null);
+
+        HostVO host1 = createMockHost(HOST_ID_1, "host1", Status.Up, Hypervisor.HypervisorType.KVM);
+        when(hostDao.findByClusterId(10L, Host.Type.Routing)).thenReturn(Collections.singletonList(host1));
+
+        // Fan-out QUERY → inactive
+        ClvmLockTransferAnswer inactiveAnswer = new ClvmLockTransferAnswer(null, true, null, null, false, false, null);
+        when(agentMgr.send(eq(HOST_ID_1), Mockito.<Command>argThat(cmd ->
+                cmd instanceof ClvmLockTransferCommand
+                        && ((ClvmLockTransferCommand) cmd).getOperation()
+                                == ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE)))
+                .thenReturn(inactiveAnswer);
+
+        // Recovery ACTIVATE_EXCLUSIVE → succeeds
+        Answer activateAnswer = new Answer(null, true, null);
+        when(agentMgr.send(eq(HOST_ID_1), Mockito.<Command>argThat(cmd ->
+                cmd instanceof ClvmLockTransferCommand
+                        && ((ClvmLockTransferCommand) cmd).getOperation()
+                                == ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE)))
+                .thenReturn(activateAnswer);
+
+        Long result = clvmPoolManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, true);
+
+        Assert.assertEquals(HOST_ID_1, result);
+        verify(volsDetailsDao, times(1)).addDetail(eq(VOLUME_ID), eq(ClvmPoolManager.CLVM_LOCK_HOST_ID),
+                eq(String.valueOf(HOST_ID_1)), eq(false));
+    }
+
+    /**
+     * Inactive everywhere, DB host is DOWN: selectActivationTargetHost skips it and picks
+     * the first UP host from the cluster list.
+     */
+    @Test
+    public void testQueryCurrentLockHolder_InactiveEverywhere_SkipsDownDbHost_ActivatesOnClusterHost()
+            throws AgentUnavailableException, OperationTimedoutException {
+        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+        when(pool.getClusterId()).thenReturn(10L);
+        Mockito.lenient().when(pool.getName()).thenReturn("cluster-pool");
+        when(pool.getPath()).thenReturn(VG_NAME);
+
+        VolumeDetailVO detail = new VolumeDetailVO();
+        detail.setValue(String.valueOf(HOST_ID_1));
+        when(volsDetailsDao.findDetail(VOLUME_ID, ClvmPoolManager.CLVM_LOCK_HOST_ID)).thenReturn(detail);
+
+        HostVO downHost = createMockHost(HOST_ID_1, "host1", Status.Down, Hypervisor.HypervisorType.KVM);
+        HostVO upHost   = createMockHost(HOST_ID_2, "host2", Status.Up,   Hypervisor.HypervisorType.KVM);
+        when(hostDao.findById(HOST_ID_1)).thenReturn(downHost);
+        when(hostDao.findByClusterId(10L, Host.Type.Routing)).thenReturn(Arrays.asList(downHost, upHost));
+
+        // Fan-out QUERY on HOST_ID_2 → inactive (HOST_ID_1 filtered by Status.Down)
+        ClvmLockTransferAnswer inactiveAnswer = new ClvmLockTransferAnswer(null, true, null, null, false, false, null);
+        when(agentMgr.send(eq(HOST_ID_2), Mockito.<Command>argThat(cmd ->
+                cmd instanceof ClvmLockTransferCommand
+                        && ((ClvmLockTransferCommand) cmd).getOperation()
+                                == ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE)))
+                .thenReturn(inactiveAnswer);
+
+        // Recovery ACTIVATE_EXCLUSIVE on HOST_ID_2 → succeeds
+        Answer activateAnswer = new Answer(null, true, null);
+        when(agentMgr.send(eq(HOST_ID_2), Mockito.<Command>argThat(cmd ->
+                cmd instanceof ClvmLockTransferCommand
+                        && ((ClvmLockTransferCommand) cmd).getOperation()
+                                == ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE)))
+                .thenReturn(activateAnswer);
+
+        Long result = clvmPoolManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, true);
+
+        Assert.assertEquals(HOST_ID_2, result);
+        verify(agentMgr, never()).send(eq(HOST_ID_1), any(ClvmLockTransferCommand.class));
+    }
+
+    /**
+     * Inactive everywhere, recovery activation throws AgentUnavailableException: returns null,
+     * no crash, no DB side-effects (updateDatabase=false).
+     */
+    @Test
+    public void testQueryCurrentLockHolder_InactiveEverywhere_ActivationThrows_ReturnsNull()
+            throws AgentUnavailableException, OperationTimedoutException {
+        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+        when(pool.getClusterId()).thenReturn(10L);
+        Mockito.lenient().when(pool.getName()).thenReturn("cluster-pool");
+        when(pool.getPath()).thenReturn(VG_NAME);
+
+        when(volsDetailsDao.findDetail(VOLUME_ID, ClvmPoolManager.CLVM_LOCK_HOST_ID)).thenReturn(null);
+
+        HostVO host1 = createMockHost(HOST_ID_1, "host1", Status.Up, Hypervisor.HypervisorType.KVM);
+        when(hostDao.findByClusterId(10L, Host.Type.Routing)).thenReturn(Collections.singletonList(host1));
+
+        ClvmLockTransferAnswer inactiveAnswer = new ClvmLockTransferAnswer(null, true, null, null, false, false, null);
+        when(agentMgr.send(eq(HOST_ID_1), Mockito.<Command>argThat(cmd ->
+                cmd instanceof ClvmLockTransferCommand
+                        && ((ClvmLockTransferCommand) cmd).getOperation()
+                                == ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE)))
+                .thenReturn(inactiveAnswer);
+
+        when(agentMgr.send(eq(HOST_ID_1), Mockito.<Command>argThat(cmd ->
+                cmd instanceof ClvmLockTransferCommand
+                        && ((ClvmLockTransferCommand) cmd).getOperation()
+                                == ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE)))
+                .thenThrow(new AgentUnavailableException("Host unreachable during recovery", HOST_ID_1));
+
+        Long result = clvmPoolManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
+
+        Assert.assertNull(result);
+        verify(volsDetailsDao, never()).remove(anyLong());
+        verify(volsDetailsDao, never()).addDetail(anyLong(), any(), any(), Mockito.anyBoolean());
+    }
+
+    /**
+     * Inactive everywhere, no UP KVM host available: selectActivationTargetHost returns null,
+     * no activation is attempted, returns null immediately.
+     */
+    @Test
+    public void testQueryCurrentLockHolder_InactiveEverywhere_NoEligibleHost_ReturnsNull()
+            throws AgentUnavailableException, OperationTimedoutException {
+        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+        when(pool.getClusterId()).thenReturn(10L);
+        Mockito.lenient().when(pool.getName()).thenReturn("cluster-pool");
+        when(pool.getPath()).thenReturn(VG_NAME);
+
+        when(volsDetailsDao.findDetail(VOLUME_ID, ClvmPoolManager.CLVM_LOCK_HOST_ID)).thenReturn(null);
+
+        // Only a DOWN host exists — selectActivationTargetHost finds no eligible host
+        HostVO downHost = createMockHost(HOST_ID_1, "host1", Status.Down, Hypervisor.HypervisorType.KVM);
+        when(hostDao.findByClusterId(10L, Host.Type.Routing)).thenReturn(Collections.singletonList(downHost));
+
+        Long result = clvmPoolManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
+
+        Assert.assertNull(result);
+        verify(agentMgr, never()).send(anyLong(), any(ClvmLockTransferCommand.class));
+    }
 
     // Helper method to create mock hosts
     private HostVO createMockHost(Long id, String name, Status status, Hypervisor.HypervisorType hypervisor) {
