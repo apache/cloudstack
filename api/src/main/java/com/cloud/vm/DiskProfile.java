@@ -82,7 +82,7 @@ public class DiskProfile {
             null);
         this.hyperType = hyperType;
         this.provisioningType = offering.getProvisioningType();
-        this.requiresEncryption = offering.getEncrypt() || vol.getPassphraseId() != null;
+        this.requiresEncryption = offering.getEncrypt() || vol.getPassphraseId() != null || vol.getKmsKeyId() != null;
     }
 
     public DiskProfile(DiskProfile dp) {

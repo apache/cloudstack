@@ -399,7 +399,7 @@ public class LinstorDataMotionStrategy implements DataMotionStrategy {
                 VolumeVO srcVolume = _volumeDao.findById(srcVolumeInfo.getId());
                 StoragePoolVO destStoragePool = _storagePool.findById(destDataStore.getId());
 
-                if (srcVolumeInfo.getPassphraseId() != null) {
+                if (srcVolumeInfo.getPassphraseId() != null || srcVolumeInfo.getKmsKeyId() != null) {
                     throw new CloudRuntimeException(
                             String.format("Cannot live migrate encrypted volume: %s", srcVolumeInfo.getVolume()));
                 }

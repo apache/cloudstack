@@ -187,4 +187,6 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
      * @return Volume Object of matching search criteria
      */
     VolumeVO findByExternalUuid(String externalUuid);
+
+    List<VolumeVO> findByKmsWrappedKeyId(Long kmsWrappedKeyId);
 }

@@ -350,14 +350,10 @@ public class DatabaseKMSProvider extends AdapterBase implements KMSProvider {
     private void ensureDefaultHSMProfile() {
         try {
             SearchBuilder<HSMProfileVO> sb = hsmProfileDao.createSearchBuilder();
-            sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
-            sb.and("system", sb.entity().getIsPublic(), SearchCriteria.Op.EQ);
             sb.and("protocol", sb.entity().getProtocol(), SearchCriteria.Op.EQ);
             sb.done();
 
             SearchCriteria<HSMProfileVO> sc = sb.create();
-            sc.setParameters("name", DEFAULT_PROFILE_NAME);
-            sc.setParameters("system", true);
             sc.setParameters("protocol", PROVIDER_NAME);
 
             List<HSMProfileVO> existing = hsmProfileDao.customSearchIncludingRemoved(sc, null);

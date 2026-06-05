@@ -567,6 +567,30 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
     }
 
     @Override
+    public boolean deleteKMSWrappedKey(Volume vol) throws KMSException {
+        if (vol.getKmsWrappedKeyId() == null) {
+            return true;
+        }
+
+        KMSWrappedKeyVO wrappedKey = kmsWrappedKeyDao.findById(vol.getKmsWrappedKeyId());
+        if (wrappedKey != null) {
+            List<VolumeVO> volumes = volumeDao.findByKmsWrappedKeyId(vol.getKmsWrappedKeyId());
+            if (CollectionUtils.isNotEmpty(volumes)) {
+                for (VolumeVO volume : volumes) {
+                    if (volume.getId() != vol.getId()) {
+                        logger.warn("KMS Wrapped Key {} is still in use by volume {}, cannot delete",
+                                wrappedKey, volume);
+                        return false;
+                    }
+                }
+            }
+            logger.info("Deleted KMS Wrapped Key {} for volume {}", wrappedKey, vol);
+            return kmsWrappedKeyDao.remove(wrappedKey.getId());
+        }
+        return true;
+    }
+
+    @Override
     public SuccessResponse deleteKMSKey(DeleteKMSKeyCmd cmd) throws KMSException {
         Account caller = CallContext.current().getCallingAccount();
 

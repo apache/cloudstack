@@ -64,6 +64,7 @@ import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.kms.KMSManager;
 import org.apache.cloudstack.secret.dao.PassphraseDao;
 import org.apache.cloudstack.storage.RemoteHostEndPoint;
 import org.apache.cloudstack.storage.command.CommandResult;
@@ -221,6 +222,9 @@ public class VolumeServiceImpl implements VolumeService {
     private PassphraseDao passphraseDao;
     @Inject
     protected DiskOfferingDao diskOfferingDao;
+
+    @Inject
+    private KMSManager kmsManager;
 
     public VolumeServiceImpl() {
     }
@@ -501,6 +505,13 @@ public class VolumeServiceImpl implements VolumeService {
 
                 if (vo.getPassphraseId() != null) {
                     vo.deletePassphrase();
+                }
+                if (vo.getKmsWrappedKeyId() != null) {
+                    try {
+                        kmsManager.deleteKMSWrappedKey(vo);
+                    } catch (Exception e) {
+                        logger.warn("Failed to delete KMS wrapped key for volume {}", vo, e);
+                    }
                 }
 
                 if (canVolumeBeRemoved(vo.getId())) {
@@ -1754,6 +1765,11 @@ public class VolumeServiceImpl implements VolumeService {
         newVol.setPoolType(pool.getPoolType());
         newVol.setLastPoolId(lastPoolId);
         newVol.setPodId(pool.getPodId());
+        if (volume.getKmsKeyId() != null) {
+            newVol.setKmsKeyId(volume.getKmsKeyId());
+            newVol.setKmsWrappedKeyId(volume.getKmsWrappedKeyId());
+            newVol.setEncryptFormat(volume.getEncryptFormat());
+        }
         if (volume.getPassphraseId() != null) {
             newVol.setPassphraseId(volume.getPassphraseId());
             newVol.setEncryptFormat(volume.getEncryptFormat());

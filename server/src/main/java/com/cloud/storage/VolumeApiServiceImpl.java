@@ -908,7 +908,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             parentVolume = _volsDao.findByIdIncludingRemoved(snapshotCheck.getVolumeId());
 
             // Don't support creating templates from encrypted volumes (yet)
-            if (parentVolume.getPassphraseId() != null) {
+            if (parentVolume.getPassphraseId() != null || parentVolume.getKmsKeyId() != null) {
                 throw new UnsupportedOperationException("Cannot create new volumes from encrypted volume snapshots");
             }
 
@@ -1350,7 +1350,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         long currentSize = volume.getSize();
         VolumeInfo volInfo = volFactory.getVolume(volume.getId());
-        boolean isEncryptionRequired = volume.getPassphraseId() != null;
+        boolean isEncryptionRequired = volume.getPassphraseId() != null || volume.getKmsKeyId() != null;
         if (newDiskOffering != null) {
             isEncryptionRequired = newDiskOffering.getEncrypt();
         }
@@ -3562,7 +3562,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         }
 
-        if (vol.getPassphraseId() != null && !srcAndDestOnStorPool && !srcStoragePoolVO.getPoolType().equals(Storage.StoragePoolType.PowerFlex)) {
+        if ((vol.getPassphraseId() != null || vol.getKmsKeyId() != null) && !srcAndDestOnStorPool && !srcStoragePoolVO.getPoolType().equals(Storage.StoragePoolType.PowerFlex)) {
             throw new InvalidParameterValueException("Migration of encrypted volumes is unsupported");
         }
 
@@ -4344,7 +4344,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw ex;
         }
 
-        if (volume.getPassphraseId() != null) {
+        if (volume.getPassphraseId() != null || volume.getKmsKeyId() != null) {
             throw new InvalidParameterValueException("Extraction of encrypted volumes is unsupported");
         }
 
@@ -4829,7 +4829,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (host != null) {
             _hostDao.loadDetails(host);
             boolean hostSupportsEncryption = Boolean.parseBoolean(host.getDetail(Host.HOST_VOLUME_ENCRYPTION));
-            if (volumeToAttach.getPassphraseId() != null && !hostSupportsEncryption) {
+            if ((volumeToAttach.getPassphraseId() != null || volumeToAttach.getKmsKeyId() != null) && !hostSupportsEncryption) {
                 throw new CloudRuntimeException(errorMsg + " because target host " + host + " doesn't support volume encryption");
             }
         }

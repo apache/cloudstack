@@ -758,9 +758,9 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     private boolean anyVolumeRequiresEncryption(DataObject ... objects) {
         for (DataObject o : objects) {
             // this fails code smell for returning true twice, but it is more readable than combining all tests into one statement
-            if (o instanceof VolumeInfo && ((VolumeInfo) o).getPassphraseId() != null) {
+            if (o instanceof VolumeInfo && (((VolumeInfo) o).getPassphraseId() != null || ((VolumeInfo) o).getKmsKeyId() != null)) {
                 return true;
-            } else if (o instanceof SnapshotInfo && ((SnapshotInfo) o).getBaseVolume().getPassphraseId() != null) {
+            } else if (o instanceof SnapshotInfo && (((SnapshotInfo) o).getBaseVolume().getPassphraseId() != null || ((SnapshotInfo) o).getBaseVolume().getKmsKeyId() != null)) {
                 return true;
             }
         }

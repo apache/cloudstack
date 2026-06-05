@@ -681,7 +681,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
     protected boolean anyVolumeRequiresEncryption(List<? extends Volume> volumes) {
         for (Volume volume : volumes) {
-            if (volume.getPassphraseId() != null) {
+            if (volume.getPassphraseId() != null || volume.getKmsKeyId() != null) {
                 return true;
             }
         }

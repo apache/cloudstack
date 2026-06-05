@@ -330,7 +330,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         // Find a destination storage pool with the specified criteria
         DiskOffering diskOffering = _entityMgr.findById(DiskOffering.class, volumeInfo.getDiskOfferingId());
         DiskProfile dskCh = new DiskProfile(volumeInfo.getId(), volumeInfo.getVolumeType(), volumeInfo.getName(), diskOffering.getId(), diskOffering.getDiskSize(), diskOffering.getTagsArray(),
-                diskOffering.isUseLocalStorage(), diskOffering.isRecreatable(), null, (diskOffering.getEncrypt() || volumeInfo.getPassphraseId() != null));
+                diskOffering.isUseLocalStorage(), diskOffering.isRecreatable(), null, (diskOffering.getEncrypt() || volumeInfo.getPassphraseId() != null || volumeInfo.getKmsKeyId() != null));
 
         dskCh.setHyperType(dataDiskHyperType);
         storageMgr.setDiskProfileThrottling(dskCh, null, diskOffering);
@@ -365,9 +365,13 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         newVol.setInstanceId(oldVol.getInstanceId());
         newVol.setRecreatable(oldVol.isRecreatable());
         newVol.setFormat(oldVol.getFormat());
-        if ((diskOffering == null || diskOffering.getEncrypt()) && oldVol.getPassphraseId() != null) {
-            PassphraseVO passphrase = passphraseDao.persist(new PassphraseVO(true));
-            newVol.setPassphraseId(passphrase.getId());
+        if ((diskOffering == null || diskOffering.getEncrypt())) {
+            if (oldVol.getKmsKeyId() != null) {
+                newVol.setKmsKeyId(oldVol.getKmsKeyId());
+            } else if (oldVol.getPassphraseId() != null) {
+                PassphraseVO passphrase = passphraseDao.persist(new PassphraseVO(true));
+                newVol.setPassphraseId(passphrase.getId());
+            }
         }
 
         return _volsDao.persist(newVol);
@@ -661,7 +665,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     }
 
     protected DiskProfile createDiskCharacteristics(VolumeInfo volumeInfo, VirtualMachineTemplate template, DataCenter dc, DiskOffering diskOffering) {
-        boolean requiresEncryption = diskOffering.getEncrypt() || volumeInfo.getPassphraseId() != null;
+        boolean requiresEncryption = diskOffering.getEncrypt() || volumeInfo.getPassphraseId() != null || volumeInfo.getKmsKeyId() != null;
         if (volumeInfo.getVolumeType() == Type.ROOT && Storage.ImageFormat.ISO != template.getFormat()) {
             String templateToString = getReflectOnlySelectedFields(template);
             String zoneToString = getReflectOnlySelectedFields(dc);
@@ -2025,7 +2029,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         PrimaryDataStoreDriver driver = (PrimaryDataStoreDriver) store.getDriver();
         long newSize = driver.getVolumeSizeRequiredOnPool(vol.getSize(),
                 template == null ? null : template.getSize(),
-                vol.getPassphraseId() != null);
+                vol.getPassphraseId() != null || vol.getKmsKeyId() != null);
 
         if (newSize == vol.getSize()) {
             return;

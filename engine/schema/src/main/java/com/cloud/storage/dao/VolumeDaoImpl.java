@@ -406,6 +406,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         AllFieldsSearch.and("iScsiName", AllFieldsSearch.entity().get_iScsiName(), Op.EQ);
         AllFieldsSearch.and("path", AllFieldsSearch.entity().getPath(), Op.EQ);
         AllFieldsSearch.and("kmsKeyId", AllFieldsSearch.entity().getKmsKeyId(), Op.EQ);
+        AllFieldsSearch.and("kmsWrappedKeyId", AllFieldsSearch.entity().getKmsWrappedKeyId(), Op.EQ);
         AllFieldsSearch.done();
 
         RootDiskStateSearch = createSearchBuilder();
@@ -990,5 +991,13 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         SearchCriteria<VolumeVO> sc = ExternalUuidSearch.create();
         sc.setParameters("externalUuid", externalUuid);
         return findOneBy(sc);
+    }
+
+    @Override
+    public List<VolumeVO> findByKmsWrappedKeyId(Long kmsWrappedKeyId) {
+        SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
+        sc.setParameters("kmsWrappedKeyId", kmsWrappedKeyId);
+        sc.setParameters("notDestroyed", Volume.State.Expunged);
+        return listBy(sc);
     }
 }

@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.kms;
 
+import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 import com.cloud.utils.component.Manager;
 import org.apache.cloudstack.api.command.admin.kms.MigrateVolumesToKMSCmd;
@@ -207,6 +208,8 @@ public interface KMSManager extends Manager, Configurable {
      * @throws KMSException if update fails
      */
     KMSKeyResponse updateKMSKey(UpdateKMSKeyCmd cmd) throws KMSException;
+
+    boolean deleteKMSWrappedKey(Volume vol) throws KMSException;
 
     /**
      * Delete a KMS key and return the response object.
