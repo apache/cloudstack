@@ -59,7 +59,7 @@ public class RegisterOAuthProviderCmd extends BaseCmd {
     @Parameter(name = ApiConstants.REDIRECT_URI, type = CommandType.STRING, description = "Redirect URI pre-registered in the specific OAuth provider", required = true)
     private String redirectUri;
 
-    @Parameter(name = ApiConstants.AUTHORIZE_URL, type = CommandType.STRING, description = "Authorize URL for OAuth initialization (only required for keycloack provider)")
+    @Parameter(name = ApiConstants.AUTHORIZE_URL, type = CommandType.STRING, description = "Authorize URL for OAuth initialization (only required for keycloak provider)")
     private String authorizeUrl;
 
     @Parameter(name = ApiConstants.TOKEN_URL, type = CommandType.STRING, description = "Token URL for OAuth finalization (only required for keycloak provider)")

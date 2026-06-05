@@ -186,8 +186,8 @@
           :href="getGitHubUrl(from)"
           class="auth-btn github-auth"
           style="height: 38px; width: 185px; padding: 0; margin-bottom: 5px;" >
-          <img src="/assets/github.svg" alt="Github" style="width: 32px; padding: 5px" />
-          <a-typography-text>Sign in with Github</a-typography-text>
+          <img src="/assets/github.svg" alt="GitHub" style="width: 32px; padding: 5px" />
+          <a-typography-text>Sign in with GitHub</a-typography-text>
         </a-button>
       </div>
       <div class="social-auth" v-if="googleprovider">
