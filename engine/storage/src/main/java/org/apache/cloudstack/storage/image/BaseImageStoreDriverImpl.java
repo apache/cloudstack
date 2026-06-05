@@ -44,7 +44,6 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
@@ -127,8 +126,6 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     AgentManager agentMgr;
     @Inject
     DataStoreManager dataStoreManager;
-    @Inject
-    ImageStoreDao imageStoreDao;
 
     protected String _proxy = null;
 
@@ -178,13 +175,10 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         AsyncCallbackDispatcher<BaseImageStoreDriverImpl, DownloadAnswer> caller = AsyncCallbackDispatcher.create(this);
         caller.setContext(context);
         if (data.getType() == DataObjectType.TEMPLATE) {
-            if (dataStoreManager.isRemovedOrReadonly(dataStore)) {
-                DownloadAnswer ans = new DownloadAnswer("Data store is removed or in read-only mode", VMTemplateStorageResourceAssoc.Status.UNKNOWN);
-                caller.complete(ans);
-                return;
-            }
             caller.setCallback(caller.getTarget().createTemplateAsyncCallback(null, null));
-            logger.debug("Downloading template [{}] to data store [{}].", data.getName(), dataStore.getName());
+            if (logger.isDebugEnabled()) {
+                logger.debug("Downloading template to data store {}", dataStore);
+            }
             _downloadMonitor.downloadTemplateToStorage(data, caller);
         } else if (data.getType() == DataObjectType.VOLUME) {
             caller.setCallback(caller.getTarget().createVolumeAsyncCallback(null, null));
