@@ -23,7 +23,7 @@
         :model="form"
         :rules="rules"
         layout="vertical"
-        :disabled="loading">
+        @finish="handleSubmit">
 
         <a-form-item name="name" ref="name">
           <template #label>
@@ -68,12 +68,14 @@
           <a-input-password v-model:value="form.dnsapikey" :placeholder="apiParams.dnsapikey?.description" />
         </a-form-item>
 
-        <a-form-item v-if="isAdminOrDomainAdmin()" name="publicdomainsuffix">
-          <template #label>
-            <tooltip-label :title="$t('label.dns.publicdomainsuffix')" :tooltip="apiParams.publicdomainsuffix?.description" />
-          </template>
-          <a-input v-model:value="form.publicdomainsuffix" :placeholder="apiParams.publicdomainsuffix?.description" />
-        </a-form-item>
+        <Transition name="slide-down">
+          <a-form-item v-if="isAdminOrDomainAdmin() && form.ispublic" name="publicdomainsuffix">
+            <template #label>
+              <tooltip-label :title="$t('label.dns.publicdomainsuffix')" :tooltip="apiParams.publicdomainsuffix?.description" />
+            </template>
+            <a-input v-model:value="form.publicdomainsuffix" :placeholder="apiParams.publicdomainsuffix?.description" />
+          </a-form-item>
+        </Transition>
 
         <a-form-item name="nameservers" ref="nameservers">
           <template #label>
@@ -105,7 +107,7 @@
           <a-button
             type="primary"
             :loading="loading"
-            @click="handleSubmit">
+            htmlType="submit">
             {{ $t('label.ok') }}
           </a-button>
         </div>
@@ -207,9 +209,9 @@ export default {
         await postAPI('updateDnsServer', params)
         this.$notification.success({
           message: this.$t('label.dns.update.server'),
-          description: this.$t('message.success.update.dns.server')
+          description: `${this.$t('message.success.update.dns.server')} ${params.name}`
         })
-
+        this.loading = false
         this.$emit('refresh-data')
         this.closeAction()
       } catch (error) {
@@ -218,7 +220,6 @@ export default {
           description: error?.response?.headers['x-description'] || error.message,
           duration: 0
         })
-      } finally {
         this.loading = false
       }
     },
@@ -303,5 +304,17 @@ export default {
 }
 .action-button button {
   margin-left: 8px;
+}
+
+.slide-down-enter-active,
+.slide-down-leave-active {
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+  overflow: hidden;
+  max-height: 120px;
+}
+.slide-down-enter-from,
+.slide-down-leave-to {
+  max-height: 0;
+  opacity: 0;
 }
 </style>

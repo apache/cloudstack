@@ -50,7 +50,8 @@
         ref="formRef"
         :model="form"
         :rules="rules"
-        layout="vertical">
+        layout="vertical"
+        @finish="handleSubmit">
 
         <a-form-item name="name" ref="name">
           <a-input
@@ -82,7 +83,7 @@
             danger
             :disabled="form.name !== resource.name"
             :loading="loading"
-            @click="handleSubmit">
+            htmlType="submit">
             {{ $t('label.delete') }}
           </a-button>
         </div>
@@ -162,36 +163,50 @@ export default {
 
         const response = await postAPI('deleteDnsServer', params)
         const jobId = response?.deletednsserverresponse?.jobid
-        if (jobId) {
-          this.$pollJob({
-            jobId: jobId,
-            title: this.$t('label.dns.delete.server'),
-            description: this.resource.name,
-            successMethod: () => {
-              this.$notification.success({
-                message: this.$t('label.dns.delete.server'),
-                description: `Successfully deleted DNS server ${this.resource.name}`
-              })
-            },
-            loadingMessage: `${this.$t('label.dns.delete.server')} ${this.$t('label.in.progress')}`,
-            catchMessage: this.$t('error.fetching.async.job.result')
+        if (!jobId) {
+          this.$notification.error({
+            message: this.$t('message.request.failed'),
+            description: 'Failed to get jobid for DeleteDnsServer',
+            duration: 0
           })
+          this.loading = false
+          return
         }
+        this.$pollJob({
+          jobId: jobId,
+          title: this.$t('label.dns.delete.server'),
+          description: this.resource.name,
+          successMethod: () => {
+            this.loading = false
+            this.$notification.success({
+              message: this.$t('label.dns.delete.server'),
+              description: `${this.$t('message.success.delete.dns.server')} ${this.resource.name}`
+            })
 
-        if (this.$route.path !== '/dnsserver') {
-          this.$router.push({ path: '/dnsserver' })
-        } else {
-          this.$emit('refresh-data')
-        }
+            if (this.$route.path !== '/dnsserver') {
+              this.$router.push({ path: '/dnsserver' })
+            } else {
+              this.$emit('refresh-data')
+            }
+          },
+          errorMethod: () => {
+            this.loading = false
+            this.$notification.error({
+              message: this.$t('label.dns.delete.server'),
+              description: this.$t('message.error.delete.dns.server')
+            })
+          },
+          loadingMessage: `${this.$t('label.dns.delete.server')} ${this.resource.name} ${this.$t('label.in.progress')}`,
+          catchMessage: this.$t('error.fetching.async.job.result')
+        })
         this.closeAction()
       } catch (error) {
+        this.loading = false
         this.$notification.error({
           message: this.$t('message.request.failed'),
           description: error?.response?.headers['x-description'] || error.message,
           duration: 0
         })
-      } finally {
-        this.loading = false
       }
     },
     closeAction () {

@@ -22,7 +22,8 @@
         ref="formRef"
         :model="form"
         :rules="rules"
-        layout="vertical">
+        layout="vertical"
+        @finish="handleSubmit">
 
         <a-form-item name="name" ref="name">
           <template #label>
@@ -83,13 +84,13 @@
         </a-form-item>
 
         <div class="action-button">
-          <a-button @click="closeAction">
+          <a-button @click="$emit('close-action')">
             {{ $t('label.cancel') }}
           </a-button>
           <a-button
             type="primary"
             :loading="loading"
-            @click="handleSubmit">
+            htmlType="submit">
             {{ $t('label.ok') }}
           </a-button>
         </div>
@@ -165,35 +166,18 @@ export default {
             description: 'Failed to get jobid for createDnsRecord',
             duration: 0
           })
+          this.loading = false
+          return
         }
-        await this.$pollJob({
-          jobId: jobId,
-          title: this.$t('label.dns.create.record'),
-          description: this.$t('label.creating.dns.record'),
-          successMethod: () => {
-            this.$notification.success({
-              message: this.$t('label.dns.create.record'),
-              description: this.$t('message.success.create.dns.record')
-            })
-          },
-          loadingMessage: `${this.$t('label.dns.create.record')} ${this.$t('label.in.progress')}`,
-          catchMessage: this.$t('error.fetching.async.job.result'),
-          action: { isFetchData: false }
-        })
-        this.$emit('refresh-data')
-        this.closeAction()
+        this.$emit('close-action', { jobId, recordName: params.name })
       } catch (error) {
         this.$notification.error({
           message: this.$t('message.request.failed'),
           description: error?.response?.headers['x-description'] || error.message,
           duration: 0
         })
-      } finally {
         this.loading = false
       }
-    },
-    closeAction () {
-      this.$emit('close-action')
     },
     async validateNumber (rule, value) {
       if (value && (isNaN(value) || value <= 0)) {

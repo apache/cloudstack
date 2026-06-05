@@ -43,7 +43,7 @@ import com.cloud.utils.EnumUtils;
         description = "Adds a new external DNS server",
         responseObject = DnsServerResponse.class,
         entityType = {DnsServer.class},
-        requestHasSensitiveInfo = false,
+        requestHasSensitiveInfo = true,
         responseHasSensitiveInfo = false,
         since = "4.23.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})

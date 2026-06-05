@@ -18,27 +18,31 @@
 <template>
   <div>
     <a-spin :spinning="fetchLoading">
-      <a-button
-        shape="round"
-        style="float: right;margin-bottom: 10px; z-index: 8"
-        @click="() => { showAddForm = true }">
-        {{ $t('label.dns.create.record') }}
-        <plus-outlined style="margin-left: 5px;" />
-      </a-button>
-      <br />
-      <br />
+      <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+        <a-input-search
+          v-model:value="searchText"
+          :placeholder="$t('label.search')"
+          style="width: 250px;"
+          allow-clear />
+        <a-button
+          shape="round"
+          @click="() => { showAddForm = true }">
+          {{ $t('label.dns.create.record') }}
+          <plus-outlined style="margin-left: 5px;" />
+        </a-button>
+      </div>
 
       <a-table
         size="small"
         style="overflow-y: auto; width: 100%;"
         :columns="columns"
-        :dataSource="records"
-        :rowKey="item => item.id"
-        :pagination="false">
+        :dataSource="filteredRecords"
+        :rowKey="item => `${item.name}-${item.type}`"
+        :pagination="tablePagination">
 
         <template #bodyCell="{ column, record }">
           <template v-if="column.dataIndex === 'contents'">
-            <a-tag v-for="item in record.contents" :key="item">{{ item }}</a-tag>
+            <a-tag v-for="(item, idx) in record.contents" :key="idx">{{ item }}</a-tag>
           </template>
           <template v-if="column.dataIndex === 'ttl'">
             {{ record.ttl }}
@@ -59,24 +63,6 @@
           </template>
         </template>
       </a-table>
-
-      <a-divider/>
-
-      <a-pagination
-        class="row-element pagination"
-        size="small"
-        :current="page"
-        :pageSize="pageSize"
-        :total="total"
-        :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
-        :pageSizeOptions="['10', '20', '40', '80', '100']"
-        @change="changePage"
-        @showSizeChange="changePageSize"
-        showSizeChanger>
-        <template #buildOptionText="props">
-          <span>{{ props.value }} / {{ $t('label.page') }}</span>
-        </template>
-      </a-pagination>
     </a-spin>
 
     <a-modal
@@ -91,8 +77,7 @@
       width="auto">
       <CreateDnsRecord
         :resource="resource"
-        @refresh-data="fetchData"
-        @close-action="showAddForm = false" />
+        @close-action="handleCloseCreateForm" />
     </a-modal>
   </div>
 </template>
@@ -121,19 +106,26 @@ export default {
   data () {
     return {
       fetchLoading: false,
+      deleteLoading: false,
       showAddForm: false,
-      total: 0,
+      searchText: '',
       records: [],
-      page: 1,
-      pageSize: 10,
+      tablePagination: {
+        defaultPageSize: 10,
+        showSizeChanger: true,
+        pageSizeOptions: ['10', '20', '40', '80', '100'],
+        showTotal: (total) => `${this.$t('label.total')} ${total} ${this.$t('label.items')}`
+      },
       columns: [
         {
           title: this.$t('label.name'),
-          dataIndex: 'name'
+          dataIndex: 'name',
+          sorter: (a, b) => a.name.localeCompare(b.name)
         },
         {
           title: this.$t('label.type'),
-          dataIndex: 'type'
+          dataIndex: 'type',
+          sorter: (a, b) => a.type.localeCompare(b.type)
         },
         {
           title: this.$t('label.contents'),
@@ -141,7 +133,8 @@ export default {
         },
         {
           title: this.$t('label.ttl') + ' (' + this.$t('label.seconds') + ')',
-          dataIndex: 'ttl'
+          dataIndex: 'ttl',
+          sorter: (a, b) => a.ttl - b.ttl
         },
         {
           key: 'actions',
@@ -150,31 +143,36 @@ export default {
       ]
     }
   },
+  computed: {
+    filteredRecords () {
+      const q = this.searchText.trim().toLowerCase()
+      if (!q) return this.records
+      return this.records.filter(r =>
+        r.name?.toLowerCase().includes(q) ||
+        r.type?.toLowerCase().includes(q) ||
+        r.contents?.some(c => c.toLowerCase().includes(q))
+      )
+    }
+  },
   created () {
     this.fetchData()
   },
   watch: {
-    resource: {
-      deep: true,
-      handler (newItem) {
-        if (!newItem || !newItem.id) {
-          return
-        }
-        this.fetchData()
-      }
+    'resource.id' (newId) {
+      if (!newId) return
+      this.fetchData()
     }
   },
   methods: {
     fetchData () {
+      if (this.fetchLoading) return
+
       const params = {
-        dnszoneid: this.resource.id,
-        page: this.page,
-        pagesize: this.pageSize
+        dnszoneid: this.resource.id
       }
       this.fetchLoading = true
       getAPI('listDnsRecords', params).then(json => {
         const response = json.listdnsrecordsresponse || {}
-        this.total = response.count || 0
         this.records = response.dnsrecord || []
       }).catch(error => {
         this.$notifyError(error)
@@ -183,15 +181,46 @@ export default {
       })
     },
     handleDeleteRecord (record) {
+      if (this.deleteLoading) return
+      this.deleteLoading = true
+
       const params = {
         dnszoneid: this.resource.id,
         name: record.name,
         type: record.type
       }
 
-      postAPI('deleteDnsRecord', params).then(() => {
-        this.$notification.success({
-          message: this.$t('message.success.delete.dns.record')
+      postAPI('deleteDnsRecord', params).then(response => {
+        const jobId = response?.deletednsrecordresponse?.jobid
+        if (!jobId) {
+          this.$notification.error({
+            message: this.$t('message.request.failed'),
+            description: 'Failed to get jobid for DeleteDnsRecord',
+            duration: 0
+          })
+          this.deleteLoading = false
+          return
+        }
+        this.$pollJob({
+          jobId,
+          title: this.$t('label.dns.delete.record'),
+          description: record.name,
+          successMethod: () => {
+            this.$notification.success({
+              message: this.$t('message.success.delete.dns.record'),
+              description: `${this.$t('message.success.delete.dns.record')} ${record.name}`
+            })
+            this.records = this.records.filter(r => !(r.name === record.name && r.type === record.type))
+            this.deleteLoading = false
+          },
+          errorMethod: () => {
+            this.deleteLoading = false
+          },
+          loadingMessage: `${this.$t('label.dns.delete.record')} ${record.name} ${this.$t('label.in.progress')}`,
+          catchMessage: this.$t('error.fetching.async.job.result'),
+          action: {
+            isFetchData: false
+          }
         })
       }).catch(error => {
         this.$notification.error({
@@ -199,19 +228,34 @@ export default {
           description: error?.response?.headers['x-description'] || error.message,
           duration: 0
         })
-      }).finally(() => {
-        this.fetchData()
+        this.deleteLoading = false
       })
     },
-    changePage (page, pageSize) {
-      this.page = page
-      this.pageSize = pageSize
-      this.fetchData()
-    },
-    changePageSize (currentPage, pageSize) {
-      this.page = currentPage
-      this.pageSize = pageSize
-      this.fetchData()
+    handleCloseCreateForm (payload) {
+      this.showAddForm = false
+      const jobId = payload?.jobId
+      if (!jobId) return
+      const recordName = payload?.recordName || ''
+      this.$pollJob({
+        jobId,
+        title: this.$t('label.dns.create.record'),
+        description: recordName,
+        successMethod: () => {
+          this.$notification.success({
+            message: this.$t('label.dns.create.record'),
+            description: `${this.$t('message.success.create.dns.record')} ${recordName}`
+          })
+          this.fetchData()
+        },
+        errorMethod: () => {
+          this.fetchData()
+        },
+        loadingMessage: `${this.$t('label.dns.create.record')} ${recordName} ${this.$t('label.in.progress')}`,
+        catchMessage: this.$t('error.fetching.async.job.result'),
+        action: {
+          isFetchData: false
+        }
+      })
     }
   }
 }

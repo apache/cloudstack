@@ -22,7 +22,8 @@
         ref="formRef"
         :model="form"
         :rules="rules"
-        layout="vertical">
+        layout="vertical"
+        @finish="handleSubmit">
 
         <a-form-item name="description" ref="description">
           <template #label>
@@ -43,7 +44,7 @@
           <a-button
             type="primary"
             :loading="loading"
-            @click="handleSubmit">
+            htmlType="submit">
             {{ $t('label.ok') }}
           </a-button>
         </div>
@@ -96,13 +97,25 @@ export default {
 
       this.loading = true
       try {
-        await postAPI('updateDnsZone', { id: this.resource.id, description: this.form.description })
-
+        const response = await postAPI('updateDnsZone', {
+          id: this.resource.id,
+          description: this.form.description?.trim()
+        })
+        const zone = response?.updatednszoneresponse?.dnszone
+        if (!zone) {
+          this.$notification.error({
+            message: this.$t('message.request.failed'),
+            description: 'Failed to get updated DNS zone from response',
+            duration: 0
+          })
+          this.loading = false
+          return
+        }
         this.$notification.success({
           message: this.$t('label.dns.update.zone'),
-          description: this.$t('message.success.update.dns.zone')
+          description: `${this.$t('message.success.update.dns.zone')} ${this.resource.name}`
         })
-
+        this.loading = false
         this.$emit('refresh-data')
         this.closeAction()
       } catch (error) {
@@ -111,7 +124,6 @@ export default {
           description: error?.response?.headers['x-description'] || error.message,
           duration: 0
         })
-      } finally {
         this.loading = false
       }
     },

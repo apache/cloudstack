@@ -717,7 +717,7 @@ public class DnsProviderManagerImplTest {
     public void testAddDnsServerSuccess() throws Exception {
         org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd cmd = mock(
                 org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd.class);
-        when(callerMock.getType()).thenReturn(Account.Type.ADMIN);
+        when(accountMgr.isRootAdmin(callerMock.getId())).thenReturn(true);
         when(cmd.getUrl()).thenReturn("http://newpdns:8081");
         when(cmd.getProvider()).thenReturn(DnsProviderType.PowerDNS);
         when(dnsServerDao.findByUrlAndAccount(anyString(), anyLong())).thenReturn(null);
@@ -764,6 +764,7 @@ public class DnsProviderManagerImplTest {
         org.apache.cloudstack.api.command.user.dns.ListDnsZonesCmd cmd = mock(
                 org.apache.cloudstack.api.command.user.dns.ListDnsZonesCmd.class);
         when(cmd.getId()).thenReturn(null);
+        when(cmd.getDnsServerId()).thenReturn(null);
         when(dnsServerDao.listDnsServerIdsByAccountId(anyLong())).thenReturn(Collections.emptyList());
         List<DnsZoneVO> zones = Collections.singletonList(zoneVO);
         com.cloud.utils.Pair<List<DnsZoneVO>, Integer> searchPair = new com.cloud.utils.Pair<>(zones, 1);
@@ -789,7 +790,8 @@ public class DnsProviderManagerImplTest {
     public void testAddDnsServerNormalUser() throws Exception {
         org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd cmd = mock(
                 org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd.class);
-        when(callerMock.getType()).thenReturn(Account.Type.NORMAL);
+        when(accountMgr.isRootAdmin(callerMock.getId())).thenReturn(false);
+        when(accountMgr.isDomainAdmin(callerMock.getId())).thenReturn(false);
         when(cmd.getUrl()).thenReturn("http://newpdns:8081");
         when(cmd.getProvider()).thenReturn(DnsProviderType.PowerDNS);
         when(cmd.getNameServers()).thenReturn(Collections.emptyList());
@@ -808,7 +810,7 @@ public class DnsProviderManagerImplTest {
     public void testAddDnsServerValidationFailure() throws Exception {
         org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd cmd = mock(
                 org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd.class);
-        when(callerMock.getType()).thenReturn(Account.Type.ADMIN);
+        when(accountMgr.isRootAdmin(callerMock.getId())).thenReturn(true);
         when(cmd.getUrl()).thenReturn("http://newpdns:8081");
         when(cmd.getProvider()).thenReturn(DnsProviderType.PowerDNS);
         when(cmd.getNameServers()).thenReturn(Collections.emptyList());

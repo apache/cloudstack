@@ -34,6 +34,7 @@ class TestCloudStackDNSFramework(cloudstackTestCase):
         """
         super(TestCloudStackDNSFramework, cls).setUpClass()
         cls.api_client = cls.testClient.getApiClient()
+        cls.pdns_unavailable = False
 
         cls.logger = logging.getLogger("TestCloudStackDNSFramework")
         cls.stream_handler = logging.StreamHandler()
@@ -77,14 +78,41 @@ class TestCloudStackDNSFramework(cloudstackTestCase):
             cls.tearDownClass()
             raise Exception(f"Failed to start PDNS:\n{result.stderr}")
 
-        # Allow PDNS to initialize
-        time.sleep(15)
-
-        cls.logger.info("PDNS is up and running")
-
-        # Construct PDNS URL once
+        # Wait for PDNS to be ready with polling
         cls.pdns_url = f"http://{cls.marvin_vm_ip}"
-        cls.logger.info(f"PDNS endpoint: {cls.pdns_url}")
+        cls.logger.info(f"PDNS endpoint: {cls.pdns_url}:8081")
+        cls._wait_for_pdns_ready()
+
+    @classmethod
+    def _wait_for_pdns_ready(cls, timeout=90, interval=1):
+        """
+        Poll PDNS API until it responds or timeout is reached.
+        Logs a message and sets cls.pdns_unavailable if PDNS is not reachable.
+        """
+        import urllib.request
+        api_url = f"{cls.pdns_url}:8081/api/v1/servers"
+        cls.logger.info(f"Waiting for PDNS to be ready at {api_url} (timeout: {timeout}s)")
+        for _ in range(timeout // interval):
+            try:
+                req = urllib.request.Request(api_url)
+                req.add_header("X-API-Key", "supersecretapikey")
+                resp = urllib.request.urlopen(req, timeout=2)
+                if resp.status == 200:
+                    cls.logger.info("PDNS is up and running")
+                    cls.pdns_unavailable = False
+                    return
+            except Exception:
+                pass
+            time.sleep(interval)
+
+        cls.logger.warning("PDNS did not become ready within timeout; skipping tests")
+        cls.pdns_unavailable = True
+
+    def setUp(self):
+        if self.__class__.pdns_unavailable:
+            import unittest
+            raise unittest.SkipTest("PDNS is unavailable; skipping test")
+
 
     @attr(tags=["advanced"], required_hardware="true")
     def test_01_list_dns_providers(self):

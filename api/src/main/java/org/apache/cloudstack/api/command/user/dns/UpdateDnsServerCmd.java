@@ -30,7 +30,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DnsServerResponse;
 import org.apache.cloudstack.dns.DnsServer;
-import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.user.Account;
@@ -40,7 +39,7 @@ import com.cloud.utils.EnumUtils;
         description = "Update DNS server",
         responseObject = DnsServerResponse.class,
         entityType = {DnsServer.class},
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+        requestHasSensitiveInfo = true, responseHasSensitiveInfo = false,
         since = "4.23.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class UpdateDnsServerCmd extends BaseCmd {
@@ -96,7 +95,7 @@ public class UpdateDnsServerCmd extends BaseCmd {
         return port;
     }
     public Boolean isPublic() {
-        return BooleanUtils.isTrue(isPublic);
+        return isPublic;
     }
     public String getPublicDomainSuffix() {
         return publicDomainSuffix;

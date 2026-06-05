@@ -22,7 +22,8 @@
         ref="formRef"
         :model="form"
         :rules="rules"
-        layout="vertical">
+        layout="vertical"
+        @finish="handleSubmit">
 
         <a-form-item name="dnsserverid" ref="dnsserverid">
           <template #label>
@@ -81,7 +82,7 @@
           <a-button
             type="primary"
             :loading="loading"
-            @click="handleSubmit">
+            htmlType="submit">
             {{ $t('label.ok') }}
           </a-button>
         </div>
@@ -154,22 +155,22 @@ export default {
             description: 'Failed to get jobid for CreateDnsZone',
             duration: 0
           })
+          this.loading = false
+          return
         }
-        await this.$pollJob({
+        this.$pollJob({
           jobId: jobId,
           title: this.$t('label.dns.create.zone'),
-          description: this.$t('label.creating.dns.zone'),
+          description: params.name,
           successMethod: () => {
             this.$notification.success({
               message: this.$t('label.dns.create.zone'),
-              description: this.$t('message.success.create.dns.zone')
+              description: `${this.$t('message.success.create.dns.zone')} ${params.name}`
             })
           },
-          loadingMessage: `${this.$t('label.dns.create.zone')} ${this.$t('label.in.progress')}`,
-          catchMessage: this.$t('error.fetching.async.job.result'),
-          action: { isFetchData: false }
+          loadingMessage: `${this.$t('label.dns.create.zone')} ${params.name} ${this.$t('label.in.progress')}`,
+          catchMessage: this.$t('error.fetching.async.job.result')
         })
-        this.$emit('refresh-data')
         this.closeAction()
       } catch (error) {
         this.$notification.error({
@@ -177,7 +178,6 @@ export default {
           description: error?.response?.headers['x-description'] || error.message,
           duration: 0
         })
-      } finally {
         this.loading = false
       }
     },

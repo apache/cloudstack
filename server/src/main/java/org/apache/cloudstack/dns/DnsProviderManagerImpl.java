@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -77,6 +78,7 @@ import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.domain.Domain;
@@ -172,8 +174,8 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
 
         boolean isDnsPublic = cmd.isPublic();
         String publicDomainSuffix = cmd.getPublicDomainSuffix();
-        if (caller.getType().equals(Account.Type.NORMAL)) {
-            logger.info("Only admin and domain admin users are allowed to configure a public DNS server");
+        if (!accountMgr.isRootAdmin(caller.getId()) && !accountMgr.isDomainAdmin(caller.getId())) {
+            logger.info("Only root admin and domain admin users are allowed to configure a public DNS server");
             isDnsPublic = false;
             publicDomainSuffix = null;
         }
@@ -264,15 +266,21 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
             validationRequired = true;
         }
 
-        if (cmd.getPort() != null) {
+        if (cmd.getPort() != null && !Objects.equals(cmd.getPort(), dnsServer.getPort())) {
             dnsServer.setPort(cmd.getPort());
+            validationRequired = true;
         }
-        if (cmd.isPublic() != null) {
-            dnsServer.setPublicServer(cmd.isPublic());
-        }
+        if (accountMgr.isRootAdmin(caller.getId()) || accountMgr.isDomainAdmin(caller.getId())) {
+            if (cmd.isPublic() != null) {
+                boolean isPublic = BooleanUtils.isTrue(cmd.isPublic());
+                dnsServer.setPublicServer(isPublic);
 
-        if (cmd.getPublicDomainSuffix() != null) {
-            dnsServer.setPublicDomainSuffix(DnsProviderUtil.normalizeDomainForDb(cmd.getPublicDomainSuffix()));
+                String publicDomainSuffix = null;
+                if (isPublic && StringUtils.isNotBlank(cmd.getPublicDomainSuffix())) {
+                    publicDomainSuffix = DnsProviderUtil.normalizeDomainForDb(cmd.getPublicDomainSuffix());
+                }
+                dnsServer.setPublicDomainSuffix(publicDomainSuffix);
+            }
         }
 
         if (cmd.getNameServers() != null) {
@@ -440,6 +448,9 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         Account caller = CallContext.current().getCallingAccount();
         if (cmd.getDnsServerId() != null) {
             DnsServer dnsServer = dnsServerDao.findById(cmd.getDnsServerId());
+            if (dnsServer == null) {
+                throw new InvalidParameterValueException("DNS server not found for the provided ID");
+            }
             accountMgr.checkAccess(caller, null, true, dnsServer);
         }
         List<Long> ownDnsServerIds = dnsServerDao.listDnsServerIdsByAccountId(caller.getAccountId());
@@ -501,6 +512,9 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         Account caller = CallContext.current().getCallingAccount();
         accountMgr.checkAccess(caller, null, true, dnsZone);
         DnsServerVO server = dnsServerDao.findById(dnsZone.getDnsServerId());
+        if (server == null) {
+            throw new CloudRuntimeException("The underlying DNS server for this DNS Record is missing.");
+        }
         DnsRecord.RecordType recordType = cmd.getType();
         try {
             DnsRecord record = new DnsRecord();
@@ -593,6 +607,10 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
             throw new CloudRuntimeException("DNS zone not found during provisioning");
         }
         DnsServerVO server = dnsServerDao.findById(dnsZone.getDnsServerId());
+        if (server == null) {
+            dnsZoneDao.remove(dnsZoneId);
+            throw new CloudRuntimeException(String.format("DNS server for zone '%s' no longer exists", dnsZone.getName()));
+        }
         try {
             DnsProvider provider = getProviderByType(server.getProviderType());
             if (isExistingZone) {
@@ -626,6 +644,9 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
 
     public DnsServerResponse createDnsServerResponse(DnsServer dnsServer) {
         DnsServerJoinVO serverJoin = dnsServerJoinDao.findById(dnsServer.getId());
+        if (serverJoin == null) {
+            throw new CloudRuntimeException(String.format("DNS server not found for ID: %s", dnsServer.getId()));
+        }
         return createDnsServerResponse(serverJoin);
     }
 
@@ -650,6 +671,9 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     @Override
     public DnsZoneResponse createDnsZoneResponse(DnsZone dnsZone) {
         DnsZoneJoinVO zoneJoinVO = dnsZoneJoinDao.findById(dnsZone.getId());
+        if (zoneJoinVO == null) {
+            throw new CloudRuntimeException(String.format("DNS zone join view not found for ID: %s", dnsZone.getId()));
+        }
         return createDnsZoneResponse(zoneJoinVO);
     }
 

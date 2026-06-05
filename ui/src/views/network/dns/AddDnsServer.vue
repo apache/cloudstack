@@ -22,7 +22,8 @@
         ref="formRef"
         :model="form"
         :rules="rules"
-        layout="vertical">
+        layout="vertical"
+        @finish="handleSubmit">
 
         <a-form-item name="name" ref="name">
           <template #label>
@@ -102,16 +103,18 @@
             :placeholder="'Enter PowerDNS Server ID (optional if localhost)'" />
         </a-form-item>
 
-        <a-form-item v-if="isAdminOrDomainAdmin()" name="publicdomainsuffix" ref="publicdomainsuffix">
-          <template #label>
-            <tooltip-label
-              :title="$t('label.dns.publicdomainsuffix')"
-              :tooltip="apiParams.publicdomainsuffix?.description" />
-          </template>
-          <a-input
-            v-model:value="form.publicdomainsuffix"
-            :placeholder="apiParams.publicdomainsuffix?.description || 'Enter Public Domain Suffix e.g. example.com'" />
-        </a-form-item>
+        <Transition name="slide-down">
+          <a-form-item v-if="isAdminOrDomainAdmin() && form.ispublic" name="publicdomainsuffix" ref="publicdomainsuffix">
+            <template #label>
+              <tooltip-label
+                :title="$t('label.dns.publicdomainsuffix')"
+                :tooltip="apiParams.publicdomainsuffix?.description" />
+            </template>
+            <a-input
+              v-model:value="form.publicdomainsuffix"
+              :placeholder="apiParams.publicdomainsuffix?.description || 'Enter Public Domain Suffix e.g. example.com'" />
+          </a-form-item>
+        </Transition>
 
         <a-form-item name="nameservers" ref="nameservers">
           <template #label>
@@ -143,7 +146,7 @@
           <a-button
             type="primary"
             :loading="loading"
-            @click="handleSubmit">
+            htmlType="submit">
             {{ $t('label.ok') }}
           </a-button>
         </div>
@@ -234,11 +237,22 @@ export default {
         if (this.form.pdnsserverid) {
           params['details[0].pdnsServerId'] = this.form.pdnsserverid?.trim()
         }
-        await postAPI('addDnsServer', params)
+        const response = await postAPI('addDnsServer', params)
+        const serverData = response?.adddnsserverresponse?.dnsserver || response?.adddnsserverresponse
+        if (!serverData?.id) {
+          this.$notification.error({
+            message: this.$t('message.request.failed'),
+            description: 'Failed to get server from response',
+            duration: 0
+          })
+          this.loading = false
+          return
+        }
         this.$notification.success({
           message: this.$t('label.dns.add.server'),
-          description: this.$t('message.success.add.dns.server')
+          description: `${this.$t('message.success.add.dns.server')} ${params.name}`
         })
+        this.loading = false
         this.$emit('refresh-data')
         this.closeAction()
       } catch (error) {
@@ -247,7 +261,6 @@ export default {
           description: error?.response?.headers['x-description'] || error.message,
           duration: 0
         })
-      } finally {
         this.loading = false
       }
     },
@@ -352,5 +365,17 @@ export default {
 }
 .action-button button {
   margin-left: 8px;
+}
+
+.slide-down-enter-active,
+.slide-down-leave-active {
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+  overflow: hidden;
+  max-height: 120px;
+}
+.slide-down-enter-from,
+.slide-down-leave-to {
+  max-height: 0;
+  opacity: 0;
 }
 </style>

@@ -34,7 +34,8 @@
         ref="formRef"
         :model="form"
         :rules="rules"
-        layout="vertical">
+        layout="vertical"
+        @finish="handleSubmit">
 
         <a-form-item name="name" ref="name">
           <a-input
@@ -59,7 +60,7 @@
             danger
             :disabled="form.name !== resource.name"
             :loading="loading"
-            @click="handleSubmit">
+            htmlType="submit">
             {{ $t('label.delete') }}
           </a-button>
         </div>
@@ -113,36 +114,49 @@ export default {
 
         const response = await postAPI('deleteDnsZone', params)
         const jobId = response?.deletednszoneresponse?.jobid
-        const isDetailView = this.$route.path !== '/dnszone'
-        if (jobId) {
-          this.$pollJob({
-            jobId: jobId,
-            title: this.$t('label.dns.delete.zone'),
-            description: this.resource.name,
-            successMethod: () => {
-              this.$notification.success({
-                message: this.$t('label.dns.delete.zone'),
-                description: `Successfully deleted DNS zone ${this.resource.name}`
-              })
-            },
-            loadingMessage: `${this.$t('label.dns.delete.zone')} ${this.$t('label.in.progress')}`,
-            catchMessage: this.$t('error.fetching.async.job.result')
+        if (!jobId) {
+          this.$notification.error({
+            message: this.$t('message.request.failed'),
+            description: 'Failed to get jobid for DeleteDnsZone',
+            duration: 0
           })
+          this.loading = false
+          return
         }
-        if (isDetailView) {
-          this.$router.push({ path: '/dnszone' })
-        } else {
-          this.$emit('refresh-data')
-        }
+        const onListPage = this.$route.path === '/dnszone'
+        this.$pollJob({
+          jobId: jobId,
+          title: this.$t('label.dns.delete.zone'),
+          description: this.resource.name,
+          successMethod: () => {
+            this.loading = false
+            this.$notification.success({
+              message: this.$t('label.dns.delete.zone'),
+              description: `${this.$t('message.success.delete.dns.zone')} ${this.resource.name}`
+            })
+            if (!onListPage) {
+              this.$router.push({ path: '/dnszone' })
+            }
+          },
+          errorMethod: () => {
+            this.loading = false
+            this.$notification.error({
+              message: this.$t('label.dns.delete.zone'),
+              description: `${this.$t('message.error.delete.dns.zone')} ${this.resource.name}`
+            })
+          },
+          loadingMessage: `${this.$t('label.dns.delete.zone')} ${this.resource.name} ${this.$t('label.in.progress')}`,
+          catchMessage: this.$t('error.fetching.async.job.result'),
+          action: { isFetchData: onListPage }
+        })
         this.closeAction()
       } catch (error) {
+        this.loading = false
         this.$notification.error({
           message: this.$t('message.request.failed'),
           description: error?.response?.headers['x-description'] || error.message,
           duration: 0
         })
-      } finally {
-        this.loading = false
       }
     },
     closeAction () {
