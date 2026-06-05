@@ -897,11 +897,11 @@ treated as trusted-once-enrolled peers, or do they get their own trust
 tier?~~ **RESOLVED** *(maintainer)* — **yes**, same trust tier as agents,
 not a separate tier. Folded into §2 caller-roles.
 
-**Q3.** Are external integrations (LDAP, SAML2 IdP, OAuth2 IdP, NSX
+**Q3.** ~~Are external integrations (LDAP, SAML2 IdP, OAuth2 IdP, NSX
 controller, Netscaler, Tungsten, S3-compatible storage, backup
-providers) modeled as trusted control-plane peers (proposed: **yes**)? If
-trusted, that licenses §3 item 2 and §11a trusted-input dispositions.
-*(maps to §2, §3, §11a)*
+providers) modeled as trusted control-plane peers?~~ **RESOLVED**
+*(maintainer: DaanHoogland — yes)* — trusted control-plane peers; this
+licenses §3 item 2 and §11a trusted-input dispositions. *(maps to §2, §3, §11a)*
 
 **Q4.** ~~SecondaryStorageVM HTTP download surface — is the URL token
 per-template ACL-checked, or is the SSVM URL itself a bearer credential?~~
@@ -921,14 +921,14 @@ with CloudStack changes; vendored bugs go upstream. There is **no automated
 update procedure today** (dependabot has not produced viable PRs); the PMC
 would prefer to establish one. Folded into §3 item 8, §11a.
 
-**Q6.** Is "an operator with `root` on a management-server host, the
+**Q6.** ~~Is "an operator with `root` on a management-server host, the
 JCEKS keystore + encryption keys, the Root CA private key, or MariaDB
-credentials" out of scope (proposed: **yes**, `OUT-OF-MODEL:
-adversary-not-in-scope`)? *(maps to §3 item 1, §9)*
+credentials" out of scope?~~ **RESOLVED** *(maintainer: DaanHoogland — yes)*
+— `OUT-OF-MODEL: adversary-not-in-scope`. *(maps to §3 item 1, §9)*
 
-**Q7.** Hypervisor bugs (libvirt / vSphere SDK / XenAPI / Hyper-V API /
-KVM/QEMU itself) — out of scope, report upstream (proposed)? *(maps to
-§3 item 3)*
+**Q7.** ~~Hypervisor bugs (libvirt / vSphere SDK / XenAPI / Hyper-V API /
+KVM/QEMU itself) — out of scope, report upstream?~~ **RESOLVED**
+*(maintainer: DaanHoogland — yes, out of scope; report upstream)*. *(maps to §3 item 3)*
 
 ### Wave 2 — the two big insecure defaults
 
