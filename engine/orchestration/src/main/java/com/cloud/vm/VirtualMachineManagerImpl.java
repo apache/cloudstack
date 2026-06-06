@@ -5241,7 +5241,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
 
             if (reconfiguringOnExistingHost) {
-                _capacityMgr.allocateVmCapacity(vm, false);
+                _capacityMgr.allocateVmCapacity(vm);
             }
 
         } catch (final OperationTimedoutException e) {
