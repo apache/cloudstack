@@ -236,6 +236,150 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         });
     }
 
+    /**
+     * Batched increment for one ResourceType across multiple tags.
+     *
+     * <p>Why: a per-(type, tag) call chain (incrementResourceCountWithTag → ... → updateCountByDeltaForIds)
+     * issues one UPDATE per tag, each acquiring X-locks on resource_count rows that are then held for the
+     * remainder of the surrounding transaction. With tagged storage limits enabled, a single
+     * incrementVolumeResourceCount runs four sequential UPDATEs — concurrent callers serialize on the
+     * shared rows and exceed innodb_lock_wait_timeout (50 s default). This helper aggregates the row IDs
+     * for all (accountId, type, tag) entries and issues a single UPDATE, shortening the in-transaction
+     * lock-acquire chain.
+     *
+     * <p>Behavior:
+     * <ul>
+     *   <li>System accounts ({@link Account#ACCOUNT_ID_SYSTEM}) are skipped silently.</li>
+     *   <li>Empty tag list is a no-op.</li>
+     *   <li>Non-positive {@code numToIncrement} is logged at WARN and the call returns without updating.</li>
+     *   <li>If row ID resolution returns no rows (no count records exist for any tag), the call logs a
+     *       WARN and returns without updating — preserving fail-loud visibility for an unexpected state.</li>
+     *   <li>Reservation entries (if any) for {@code type} on the current {@link CallContext} are removed
+     *       once per invocation, inside the same nested transaction as the UPDATE.</li>
+     *   <li>If the batched UPDATE fails, throws {@link CloudRuntimeException} to roll back the
+     *       surrounding orchestration transaction.</li>
+     * </ul>
+     *
+     * @param accountId       the account whose count is being incremented; system accounts are skipped
+     * @param type            the {@link ResourceType} whose count is being incremented
+     * @param tags            the list of resource-limit tags to update; the empty string sentinel
+     *                        denotes the untagged row, non-empty entries denote tagged rows
+     * @param numToIncrement  positive delta to add; non-positive values are logged and ignored
+     */
+    @SuppressWarnings("unchecked")
+    protected void removeResourceReservationIfNeededAndIncrementResourceCountForTags(
+            final long accountId, final ResourceType type, final List<String> tags, final long numToIncrement) {
+        if (accountId == Account.ACCOUNT_ID_SYSTEM) {
+            s_logger.trace("Not incrementing resource count for system accounts, returning");
+            return;
+        }
+        if (CollectionUtils.isEmpty(tags)) {
+            return;
+        }
+        if (numToIncrement <= 0) {
+            s_logger.warn(String.format("Skipping increment of resource count: non-positive delta = %d for Account = %d Type = %s",
+                    numToIncrement, accountId, type));
+            return;
+        }
+        Object obj = CallContext.current().getContextParameter(CheckedReservation.getResourceReservationContextParameterKey(type));
+        final List<Long> reservationIds = (List<Long>) obj;
+        Transaction.execute(new TransactionCallbackWithExceptionNoReturn<CloudRuntimeException>() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) throws CloudRuntimeException {
+                reservationDao.removeByIds(reservationIds);
+                Set<Long> rowIds = collectRowIdsForTags(accountId, type, tags, numToIncrement, true);
+                if (rowIds.isEmpty()) {
+                    s_logger.warn("No resource_count rows resolved to increment for Account = " + accountId
+                            + " Type = " + type + " tags = " + tags + "; skipping update");
+                    return;
+                }
+                if (!_resourceCountDao.updateCountByDeltaForIds(new ArrayList<>(rowIds), true, numToIncrement)) {
+                    throw new CloudRuntimeException("Failed to increment resource count of type " + type
+                            + " for account id=" + accountId);
+                }
+            }
+        });
+    }
+
+    /**
+     * Batched decrement counterpart of {@link #removeResourceReservationIfNeededAndIncrementResourceCountForTags}.
+     *
+     * <p>Behavior mirrors the increment helper, with one difference: a failed UPDATE raises an
+     * {@link AlertManager.AlertType#ALERT_TYPE_UPDATE_RESOURCE_COUNT} alert rather than throwing.
+     * This matches the historical per-tag {@code decrementResourceCountWithTag} semantics — a stale
+     * count is recoverable via the {@code updateResourceCount} API, so the orchestration transaction
+     * is not aborted on a decrement failure.
+     *
+     * <p>No nested transaction is opened — callers that need atomicity with surrounding work should
+     * wrap the call in their own {@link Transaction#execute}.
+     *
+     * @param accountId       the account whose count is being decremented; system accounts are skipped
+     * @param type            the {@link ResourceType} whose count is being decremented
+     * @param tags            the list of resource-limit tags to update; the empty string sentinel
+     *                        denotes the untagged row
+     * @param numToDecrement  positive delta to subtract; non-positive values are logged and ignored
+     */
+    protected void decrementResourceCountForTags(final long accountId, final ResourceType type,
+            final List<String> tags, final long numToDecrement) {
+        if (accountId == Account.ACCOUNT_ID_SYSTEM) {
+            s_logger.trace("Not decrementing resource count for system accounts, returning");
+            return;
+        }
+        if (CollectionUtils.isEmpty(tags)) {
+            return;
+        }
+        if (numToDecrement <= 0) {
+            s_logger.warn(String.format("Skipping decrement of resource count: non-positive delta = %d for Account = %d Type = %s",
+                    numToDecrement, accountId, type));
+            return;
+        }
+        Set<Long> rowIds = collectRowIdsForTags(accountId, type, tags, numToDecrement, false);
+        if (rowIds.isEmpty()) {
+            s_logger.warn("No resource_count rows resolved to decrement for Account = " + accountId
+                    + " Type = " + type + " tags = " + tags + "; skipping update");
+            return;
+        }
+        if (!_resourceCountDao.updateCountByDeltaForIds(new ArrayList<>(rowIds), false, numToDecrement)) {
+            _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_UPDATE_RESOURCE_COUNT, 0L, 0L,
+                    "Failed to decrement resource count of type " + type + " for account id=" + accountId,
+                    "Failed to decrement resource count of type " + type + " for account id=" + accountId
+                            + "; use updateResourceCount API to recalculate/fix the problem");
+        }
+    }
+
+    /**
+     * Resolve the union of {@code resource_count} row IDs that need to be updated for an account
+     * across a list of tags, deduplicated. Logs the per-tag debug line that the legacy per-tag
+     * path emitted from {@link #updateResourceCountForAccount}, preserving log parity for operators.
+     *
+     * <p>The empty string in {@code tags} is a sentinel for the untagged row. Each tag is resolved
+     * via {@link ResourceCountDao#listAllRowsToUpdate} which returns the account's own row plus the
+     * row for every parent domain in the chain.
+     *
+     * @param accountId  account owner of the resource counts
+     * @param type       resource type
+     * @param tags       tag list ({@code ""} sentinel for untagged, plus any tagged entries)
+     * @param delta      delta value, used only for the human-readable debug log
+     * @param increment  {@code true} for an upcoming increment, {@code false} for decrement; affects
+     *                   the debug log wording only
+     * @return deduplicated set of row IDs across all tags; may be empty if no count records exist
+     */
+    private Set<Long> collectRowIdsForTags(long accountId, ResourceType type, List<String> tags, long delta, boolean increment) {
+        Set<Long> rowIds = new HashSet<>();
+        for (String tag : tags) {
+            if (s_logger.isDebugEnabled()) {
+                String convertedDelta = (type == ResourceType.secondary_storage || type == ResourceType.primary_storage)
+                        ? toHumanReadableSize(delta) : String.valueOf(delta);
+                String typeStr = StringUtils.isNotEmpty(tag)
+                        ? String.format("%s (tag: %s)", type, tag) : type.getName();
+                s_logger.debug("Updating resource Type = " + typeStr + " count for Account = " + accountId
+                        + " Operation = " + (increment ? "increasing" : "decreasing") + " Amount = " + convertedDelta);
+            }
+            rowIds.addAll(_resourceCountDao.listAllRowsToUpdate(accountId, ResourceOwnerType.Account, type, tag));
+        }
+        return rowIds;
+    }
+
     private void cleanupResourceReservationsForMs() {
         int reservationsRemoved = reservationDao.removeByMsId(ManagementServerNode.getManagementServerId());
         if (reservationsRemoved > 0) {
@@ -1810,11 +1954,12 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 if (CollectionUtils.isEmpty(tags)) {
                     return;
                 }
-                for (String tag : tags) {
-                    incrementResourceCountWithTag(accountId, ResourceType.volume, tag);
-                    if (size != null) {
-                        incrementResourceCountWithTag(accountId, ResourceType.primary_storage, tag, size);
-                    }
+                // Single batched UPDATE per ResourceType across the full (untagged + tagged) tag list,
+                // instead of one UPDATE per tag. Cuts the in-transaction row-lock acquire chain in half
+                // and avoids cross-tag waits exceeding innodb_lock_wait_timeout under concurrent restores.
+                removeResourceReservationIfNeededAndIncrementResourceCountForTags(accountId, ResourceType.volume, tags, 1L);
+                if (size != null) {
+                    removeResourceReservationIfNeededAndIncrementResourceCountForTags(accountId, ResourceType.primary_storage, tags, size);
                 }
             }
         });
@@ -1830,11 +1975,9 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 if (CollectionUtils.isEmpty(tags)) {
                     return;
                 }
-                for (String tag : tags) {
-                    decrementResourceCountWithTag(accountId, ResourceType.volume, tag);
-                    if (size != null) {
-                        decrementResourceCountWithTag(accountId, ResourceType.primary_storage, tag, size);
-                    }
+                decrementResourceCountForTags(accountId, ResourceType.volume, tags, 1L);
+                if (size != null) {
+                    decrementResourceCountForTags(accountId, ResourceType.primary_storage, tags, size);
                 }
             }
         });
@@ -1991,9 +2134,9 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         if (CollectionUtils.isEmpty(tags)) {
             return;
         }
-        for (String tag : tags) {
-            incrementResourceCountWithTag(accountId, ResourceType.primary_storage, tag, size);
-        }
+        // Batched: one UPDATE across all (untagged + tagged) rows for primary_storage. Same rationale
+        // as incrementVolumeResourceCount — reduces in-transaction lock-acquire chain on resize paths.
+        removeResourceReservationIfNeededAndIncrementResourceCountForTags(accountId, ResourceType.primary_storage, tags, size);
     }
 
     @Override
@@ -2005,9 +2148,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         if (CollectionUtils.isEmpty(tags)) {
             return;
         }
-        for (String tag : tags) {
-            decrementResourceCountWithTag(accountId, ResourceType.primary_storage, tag, size);
-        }
+        decrementResourceCountForTags(accountId, ResourceType.primary_storage, tags, size);
     }
 
     protected List<String> getResourceLimitHostTagsForResourceCountOperation(Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template) {

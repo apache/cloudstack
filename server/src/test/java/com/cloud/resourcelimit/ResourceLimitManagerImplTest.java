@@ -975,19 +975,42 @@ public class ResourceLimitManagerImplTest {
         Mockito.doReturn(new ArrayList<>()).when(resourceLimitManager)
                 .getResourceLimitStorageTagsForResourceCountOperation(Mockito.anyBoolean(), Mockito.any(DiskOffering.class));
         resourceLimitManager.incrementVolumeResourceCount(accountId, false, delta, Mockito.mock(DiskOffering.class));
-        Mockito.verify(resourceLimitManager, Mockito.never()).incrementResourceCountWithTag(Mockito.anyLong(),
-                Mockito.eq(Resource.ResourceType.volume), Mockito.anyString());
-        Mockito.verify(resourceLimitManager, Mockito.never()).incrementResourceCountWithTag(Mockito.anyLong(),
-                Mockito.eq(Resource.ResourceType.primary_storage), Mockito.anyString(), Mockito.anyLong());
+        Mockito.verify(resourceLimitManager, Mockito.never()).removeResourceReservationIfNeededAndIncrementResourceCountForTags(
+                Mockito.anyLong(), Mockito.any(Resource.ResourceType.class), Mockito.anyList(), Mockito.anyLong());
 
         Mockito.doReturn(List.of(tag)).when(resourceLimitManager)
                 .getResourceLimitStorageTagsForResourceCountOperation(Mockito.anyBoolean(), Mockito.any(DiskOffering.class));
-        mockIncrementResourceCountWithTag();
+        Mockito.doNothing().when(resourceLimitManager).removeResourceReservationIfNeededAndIncrementResourceCountForTags(
+                Mockito.anyLong(), Mockito.any(Resource.ResourceType.class), Mockito.anyList(), Mockito.anyLong());
         resourceLimitManager.incrementVolumeResourceCount(accountId, false, delta, Mockito.mock(DiskOffering.class));
-        Mockito.verify(resourceLimitManager, Mockito.times(1)).incrementResourceCountWithTag(
-                1L, Resource.ResourceType.volume, tag);
+        Mockito.verify(resourceLimitManager, Mockito.times(1)).removeResourceReservationIfNeededAndIncrementResourceCountForTags(
+                accountId, Resource.ResourceType.volume, List.of(tag), 1L);
         Mockito.verify(resourceLimitManager, Mockito.times(1))
-                .incrementResourceCountWithTag(accountId, Resource.ResourceType.primary_storage, tag, delta);
+                .removeResourceReservationIfNeededAndIncrementResourceCountForTags(accountId, Resource.ResourceType.primary_storage, List.of(tag), delta);
+    }
+
+    @Test
+    public void testIncrementVolumeResourceCountBatchesAcrossAllTags() {
+        long accountId = 1L;
+        long delta = 32L * 1024 * 1024 * 1024;
+        List<String> tags = List.of("", "ed1", "ed2");
+        Mockito.doReturn(tags).when(resourceLimitManager)
+                .getResourceLimitStorageTagsForResourceCountOperation(Mockito.anyBoolean(), Mockito.any(DiskOffering.class));
+        Mockito.doNothing().when(resourceLimitManager).removeResourceReservationIfNeededAndIncrementResourceCountForTags(
+                Mockito.anyLong(), Mockito.any(Resource.ResourceType.class), Mockito.anyList(), Mockito.anyLong());
+
+        resourceLimitManager.incrementVolumeResourceCount(accountId, false, delta, Mockito.mock(DiskOffering.class));
+
+        // Exactly two batched calls — one per ResourceType — regardless of how many tags are configured.
+        Mockito.verify(resourceLimitManager, Mockito.times(1))
+                .removeResourceReservationIfNeededAndIncrementResourceCountForTags(accountId, Resource.ResourceType.volume, tags, 1L);
+        Mockito.verify(resourceLimitManager, Mockito.times(1))
+                .removeResourceReservationIfNeededAndIncrementResourceCountForTags(accountId, Resource.ResourceType.primary_storage, tags, delta);
+        // Per-tag pathway must not be invoked — this is the regression guard for the lock-contention fix.
+        Mockito.verify(resourceLimitManager, Mockito.never()).incrementResourceCountWithTag(
+                Mockito.anyLong(), Mockito.any(Resource.ResourceType.class), Mockito.anyString());
+        Mockito.verify(resourceLimitManager, Mockito.never()).incrementResourceCountWithTag(
+                Mockito.anyLong(), Mockito.any(Resource.ResourceType.class), Mockito.anyString(), Mockito.anyLong());
     }
 
     @Test
@@ -998,19 +1021,18 @@ public class ResourceLimitManagerImplTest {
         Mockito.doReturn(new ArrayList<>()).when(resourceLimitManager)
                 .getResourceLimitStorageTagsForResourceCountOperation(Mockito.anyBoolean(), Mockito.any(DiskOffering.class));
         resourceLimitManager.decrementVolumeResourceCount(accountId, false, delta, Mockito.mock(DiskOffering.class));
-        Mockito.verify(resourceLimitManager, Mockito.never()).decrementResourceCountWithTag(Mockito.anyLong(),
-                Mockito.eq(Resource.ResourceType.volume), Mockito.anyString());
-        Mockito.verify(resourceLimitManager, Mockito.never()).decrementResourceCountWithTag(Mockito.anyLong(),
-                Mockito.eq(Resource.ResourceType.primary_storage), Mockito.anyString(), Mockito.anyLong());
+        Mockito.verify(resourceLimitManager, Mockito.never()).decrementResourceCountForTags(
+                Mockito.anyLong(), Mockito.any(Resource.ResourceType.class), Mockito.anyList(), Mockito.anyLong());
 
         Mockito.doReturn(List.of(tag)).when(resourceLimitManager)
                 .getResourceLimitStorageTagsForResourceCountOperation(Mockito.anyBoolean(), Mockito.any(DiskOffering.class));
-        mockDecrementResourceCountWithTag();
+        Mockito.doNothing().when(resourceLimitManager).decrementResourceCountForTags(
+                Mockito.anyLong(), Mockito.any(Resource.ResourceType.class), Mockito.anyList(), Mockito.anyLong());
         resourceLimitManager.decrementVolumeResourceCount(accountId, false, delta, Mockito.mock(DiskOffering.class));
-        Mockito.verify(resourceLimitManager, Mockito.times(1)).decrementResourceCountWithTag(
-                1L, Resource.ResourceType.volume, tag);
+        Mockito.verify(resourceLimitManager, Mockito.times(1)).decrementResourceCountForTags(
+                accountId, Resource.ResourceType.volume, List.of(tag), 1L);
         Mockito.verify(resourceLimitManager, Mockito.times(1))
-                .decrementResourceCountWithTag(accountId, Resource.ResourceType.primary_storage, tag, delta);
+                .decrementResourceCountForTags(accountId, Resource.ResourceType.primary_storage, List.of(tag), delta);
     }
 
     @Test
@@ -1021,15 +1043,37 @@ public class ResourceLimitManagerImplTest {
         Mockito.doReturn(new ArrayList<>()).when(resourceLimitManager)
                 .getResourceLimitStorageTagsForResourceCountOperation(Mockito.anyBoolean(), Mockito.any(DiskOffering.class));
         resourceLimitManager.incrementVolumePrimaryStorageResourceCount(accountId, false, delta, Mockito.mock(DiskOffering.class));
-        Mockito.verify(resourceLimitManager, Mockito.never()).incrementResourceCountWithTag(Mockito.anyLong(),
-                Mockito.eq(Resource.ResourceType.primary_storage), Mockito.anyString(), Mockito.anyLong());
+        Mockito.verify(resourceLimitManager, Mockito.never()).removeResourceReservationIfNeededAndIncrementResourceCountForTags(
+                Mockito.anyLong(), Mockito.any(Resource.ResourceType.class), Mockito.anyList(), Mockito.anyLong());
 
         Mockito.doReturn(List.of(tag)).when(resourceLimitManager)
                 .getResourceLimitStorageTagsForResourceCountOperation(Mockito.anyBoolean(), Mockito.any(DiskOffering.class));
-        mockIncrementResourceCountWithTag();
+        Mockito.doNothing().when(resourceLimitManager).removeResourceReservationIfNeededAndIncrementResourceCountForTags(
+                Mockito.anyLong(), Mockito.any(Resource.ResourceType.class), Mockito.anyList(), Mockito.anyLong());
         resourceLimitManager.incrementVolumePrimaryStorageResourceCount(accountId, false, delta, Mockito.mock(DiskOffering.class));
         Mockito.verify(resourceLimitManager, Mockito.times(1))
-                .incrementResourceCountWithTag(accountId, Resource.ResourceType.primary_storage, tag, delta);
+                .removeResourceReservationIfNeededAndIncrementResourceCountForTags(accountId, Resource.ResourceType.primary_storage, List.of(tag), delta);
+    }
+
+    @Test
+    public void testIncrementVolumePrimaryStorageResourceCountBatchesAcrossAllTags() {
+        long accountId = 1L;
+        long delta = 16L * 1024 * 1024 * 1024;
+        List<String> tags = List.of("", "ed1", "ed2");
+        Mockito.doReturn(tags).when(resourceLimitManager)
+                .getResourceLimitStorageTagsForResourceCountOperation(Mockito.anyBoolean(), Mockito.any(DiskOffering.class));
+        Mockito.doNothing().when(resourceLimitManager).removeResourceReservationIfNeededAndIncrementResourceCountForTags(
+                Mockito.anyLong(), Mockito.any(Resource.ResourceType.class), Mockito.anyList(), Mockito.anyLong());
+
+        resourceLimitManager.incrementVolumePrimaryStorageResourceCount(accountId, false, delta, Mockito.mock(DiskOffering.class));
+
+        // Single batched call regardless of tag count, and the per-tag pathway must not run.
+        Mockito.verify(resourceLimitManager, Mockito.times(1))
+                .removeResourceReservationIfNeededAndIncrementResourceCountForTags(accountId, Resource.ResourceType.primary_storage, tags, delta);
+        Mockito.verify(resourceLimitManager, Mockito.never()).incrementResourceCountWithTag(
+                Mockito.anyLong(), Mockito.any(Resource.ResourceType.class), Mockito.anyString());
+        Mockito.verify(resourceLimitManager, Mockito.never()).incrementResourceCountWithTag(
+                Mockito.anyLong(), Mockito.any(Resource.ResourceType.class), Mockito.anyString(), Mockito.anyLong());
     }
 
     @Test
@@ -1040,15 +1084,16 @@ public class ResourceLimitManagerImplTest {
         Mockito.doReturn(new ArrayList<>()).when(resourceLimitManager)
                 .getResourceLimitStorageTagsForResourceCountOperation(Mockito.anyBoolean(), Mockito.any(DiskOffering.class));
         resourceLimitManager.decrementVolumePrimaryStorageResourceCount(accountId, false, delta, Mockito.mock(DiskOffering.class));
-        Mockito.verify(resourceLimitManager, Mockito.never()).decrementResourceCountWithTag(Mockito.anyLong(),
-                Mockito.eq(Resource.ResourceType.primary_storage), Mockito.anyString(), Mockito.anyLong());
+        Mockito.verify(resourceLimitManager, Mockito.never()).decrementResourceCountForTags(
+                Mockito.anyLong(), Mockito.any(Resource.ResourceType.class), Mockito.anyList(), Mockito.anyLong());
 
         Mockito.doReturn(List.of(tag)).when(resourceLimitManager)
                 .getResourceLimitStorageTagsForResourceCountOperation(Mockito.anyBoolean(), Mockito.any(DiskOffering.class));
-        mockDecrementResourceCountWithTag();
+        Mockito.doNothing().when(resourceLimitManager).decrementResourceCountForTags(
+                Mockito.anyLong(), Mockito.any(Resource.ResourceType.class), Mockito.anyList(), Mockito.anyLong());
         resourceLimitManager.decrementVolumePrimaryStorageResourceCount(accountId, false, delta, Mockito.mock(DiskOffering.class));
         Mockito.verify(resourceLimitManager, Mockito.times(1))
-                .decrementResourceCountWithTag(accountId, Resource.ResourceType.primary_storage, tag, delta);
+                .decrementResourceCountForTags(accountId, Resource.ResourceType.primary_storage, List.of(tag), delta);
     }
 
     @Test
