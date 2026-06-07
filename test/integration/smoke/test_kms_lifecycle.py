@@ -69,14 +69,14 @@ class TestKMSLifecycle(cloudstackTestCase):
         cls._cleanup = []
 
         cls.default_profile = None
-        profiles = HSMProfile.list(cls.apiclient, name="default")
+        profiles = HSMProfile.list(cls.apiclient, name="HSM Database Provider")
         if profiles and len(profiles) > 0:
             cls.default_profile = profiles[0]
             if hasattr(cls.default_profile, 'enabled') and not cls.default_profile.enabled:
                 hsm = HSMProfile({"id": cls.default_profile.id})
                 hsm.update(cls.apiclient, enabled=True)
             # Re-fetch to get updated state
-            profiles = HSMProfile.list(cls.apiclient, name="default")
+            profiles = HSMProfile.list(cls.apiclient, name="HSM Database Provider")
             if profiles and len(profiles) > 0:
                 cls.default_profile = profiles[0]
 
