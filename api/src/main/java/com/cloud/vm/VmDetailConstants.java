@@ -131,6 +131,12 @@ public interface VmDetailConstants {
     String CLOUDSTACK_VM_DETAILS = "cloudstack.vm.details";
     String CLOUDSTACK_VLAN = "cloudstack.vlan";
 
+    // KVM Checkpoints related
+    String ACTIVE_CHECKPOINT_ID = "active.checkpoint.id";
+    String ACTIVE_CHECKPOINT_CREATE_TIME = "active.checkpoint.create.time";
+    String LAST_CHECKPOINT_ID = "last.checkpoint.id";
+    String LAST_CHECKPOINT_CREATE_TIME = "last.checkpoint.create.time";
+
     // KBOSS specific
     String LINKED_VOLUMES_SECONDARY_STORAGE_UUIDS = "linkedVolumesSecondaryStorageUuids";
     String VALIDATION_COMMAND = "backupValidationCommand";

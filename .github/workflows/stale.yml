@@ -28,7 +28,7 @@ jobs:
       issues: write
       pull-requests: write
     steps:
-      - uses: actions/stale@b5d41d4e1d5dceea10e7104786b73624c18a190f # v10.2.0
+      - uses: actions/stale@eb5cf3af3ac0a1aa4c9c45633dd1ae542a27a899 # v10.3.0
         with:
           stale-issue-message: 'This issue is stale because it has been open for 120 days with no activity. It may be removed by administrators of this project at any time. Remove the stale label or comment to request for removal of it to prevent this.'
           stale-pr-message: 'This PR is stale because it has been open for 120 days with no activity. It may be removed by administrators of this project at any time. Remove the stale label or comment to request for removal of it to prevent this.'
@@ -41,7 +41,7 @@ jobs:
           days-before-pr-close: 240
           exempt-issue-labels: 'gsoc,good-first-issue,long-term-plan'
           exempt-pr-labels: 'status:ready-for-merge,status:needs-testing,status:on-hold'
-      - uses: actions/stale@b5d41d4e1d5dceea10e7104786b73624c18a190f # v10.2.0
+      - uses: actions/stale@eb5cf3af3ac0a1aa4c9c45633dd1ae542a27a899 # v10.3.0
         with:
           stale-issue-label: 'archive'
           days-before-stale: 240

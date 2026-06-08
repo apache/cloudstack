@@ -111,6 +111,18 @@ public class BackupVO implements Backup {
     @Column(name = "validation_status")
     private ValidationStatus validationStatus;
 
+    @Column(name = "from_checkpoint_id")
+    private String fromCheckpointId;
+
+    @Column(name = "to_checkpoint_id")
+    private String toCheckpointId;
+
+    @Column(name = "checkpoint_create_time")
+    private Long checkpointCreateTime;
+
+    @Column(name = "host_id")
+    private Long hostId;
+
     @Transient
     Map<String, String> details;
 
@@ -340,5 +352,41 @@ public class BackupVO implements Backup {
 
     public void setUncompressedSize(Long uncompressedSize) {
         this.uncompressedSize = uncompressedSize;
+    }
+
+    @Override
+    public String getFromCheckpointId() {
+        return fromCheckpointId;
+    }
+
+    public void setFromCheckpointId(String fromCheckpointId) {
+        this.fromCheckpointId = fromCheckpointId;
+    }
+
+    @Override
+    public String getToCheckpointId() {
+        return toCheckpointId;
+    }
+
+    public void setToCheckpointId(String toCheckpointId) {
+        this.toCheckpointId = toCheckpointId;
+    }
+
+    @Override
+    public Long getCheckpointCreateTime() {
+        return checkpointCreateTime;
+    }
+
+    public void setCheckpointCreateTime(Long checkpointCreateTime) {
+        this.checkpointCreateTime = checkpointCreateTime;
+    }
+
+    @Override
+    public Long getHostId() {
+        return hostId;
+    }
+
+    public void setHostId(Long hostId) {
+        this.hostId = hostId;
     }
 }

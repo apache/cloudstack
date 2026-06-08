@@ -31,8 +31,16 @@ import com.cloud.storage.Volume;
 
 public interface Backup extends ControlledEntity, InternalIdentity, Identity {
 
+    String getFromCheckpointId();
+
+    String getToCheckpointId();
+
+    Long getCheckpointCreateTime();
+
+    Long getHostId();
+
     enum Status {
-        Allocated, Queued, BackingUp, BackedUp, Error, Failed, Restoring, Removed, Expunged
+        Allocated, Queued, BackingUp, ReadyForImageTransfer, FinalizingImageTransfer, BackedUp, Error, Failed, Restoring, Removed, Expunged
     }
 
     enum CompressionStatus {
