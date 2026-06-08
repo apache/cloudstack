@@ -29,7 +29,6 @@ import org.apache.cloudstack.schedule.ResourceScheduleVO;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Component;
 
-import java.util.Date;
 import java.util.List;
 
 @Component
@@ -47,9 +46,6 @@ public class ResourceScheduleDaoImpl extends GenericDaoBase<ResourceScheduleVO, 
         activeScheduleSearch = createSearchBuilder();
         activeScheduleSearch.and(RESOURCE_TYPE, activeScheduleSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
         activeScheduleSearch.and(ApiConstants.ENABLED, activeScheduleSearch.entity().getEnabled(), SearchCriteria.Op.EQ);
-        activeScheduleSearch.and().op(activeScheduleSearch.entity().getEndDate(), SearchCriteria.Op.NULL);
-        activeScheduleSearch.or(ApiConstants.END_DATE, activeScheduleSearch.entity().getEndDate(), SearchCriteria.Op.GT);
-        activeScheduleSearch.cp();
         activeScheduleSearch.done();
 
         allSearch = createSearchBuilder();
@@ -66,7 +62,6 @@ public class ResourceScheduleDaoImpl extends GenericDaoBase<ResourceScheduleVO, 
         SearchCriteria<ResourceScheduleVO> sc = activeScheduleSearch.create();
         sc.setParameters(RESOURCE_TYPE, resourceType);
         sc.setParameters(ApiConstants.ENABLED, true);
-        sc.setParameters(ApiConstants.END_DATE, new Date());
         return search(sc, null);
     }
 

@@ -293,6 +293,29 @@ public class VMScheduleWorkerTest {
     }
 
     @Test
+    public void testScheduleNextJobNextOccurrenceAfterEndDate() {
+        Date now = DateUtils.setSeconds(new Date(), 0);
+        ResourceScheduleVO schedule = Mockito.mock(ResourceScheduleVO.class);
+        Mockito.when(schedule.getEnabled()).thenReturn(true);
+        Mockito.when(schedule.getSchedule()).thenReturn("* * * * *");
+        Mockito.when(schedule.getTimeZoneId()).thenReturn(TimeZone.getTimeZone("UTC").toZoneId());
+        // endDate is in the future (now < endDate), but the first occurrence (>= startDate)
+        // falls after endDate, so no further jobs can ever be scheduled. The schedule's
+        // declared lifetime hasn't ended yet though, so it must remain enabled until
+        // endDate actually passes (handled separately by the "end time has passed" branch).
+        Mockito.when(schedule.getStartDate()).thenReturn(DateUtils.addDays(now, 10));
+        Mockito.when(schedule.getEndDate()).thenReturn(DateUtils.addDays(now, 5));
+        Mockito.when(schedule.getResourceId()).thenReturn(1L);
+        Mockito.when(userVmManager.getUserVm(Mockito.anyLong())).thenReturn(Mockito.mock(UserVm.class));
+
+        Date actualDate = vmScheduleWorker.scheduleNextJob(schedule, new Date());
+
+        Assert.assertNull(actualDate);
+        Mockito.verify(schedule, Mockito.never()).setEnabled(Mockito.anyBoolean());
+        Mockito.verify(resourceScheduleDao, Mockito.never()).persist(Mockito.any());
+    }
+
+    @Test
     public void testScheduleNextJobScheduleDisabled() {
         ResourceScheduleVO schedule = Mockito.mock(ResourceScheduleVO.class);
         Mockito.when(schedule.getEnabled()).thenReturn(false);

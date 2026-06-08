@@ -482,9 +482,8 @@ export default {
       Object.assign(this.form, schedule)
       this.form.minMembers = schedule?.details?.minmembers ? Number(schedule.details.minmembers) : null
       this.form.maxMembers = schedule?.details?.maxmembers ? Number(schedule.details.maxmembers) : null
-      // Some weird issue when we directly pass in the moment with tz object
-      this.form.startDate = dayjs(schedule.startdate).tz(schedule.timezone)
-      this.form.endDate = schedule.enddate ? dayjs(dayjs(schedule.enddate).tz(schedule.timezone)) : null
+      this.form.startDate = dayjs(schedule.startdate)
+      this.form.endDate = schedule.enddate ? dayjs(schedule.enddate) : null
       this.showAddModal()
     },
     showAddModal () {
