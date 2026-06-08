@@ -6642,12 +6642,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         return createVirtualMachine(cmd, zone, owner, serviceOffering, template, cmd.getHypervisor(), diskOfferingId, cmd.getSize(), overrideDiskOfferingId, dataDiskInfoList,
-                networkIds, cmd.getIpToNetworkMap(), volume, snapshot, null);
+                networkIds, cmd.getIpToNetworkMap(), volume, snapshot);
     }
 
     private UserVm createVirtualMachine(BaseDeployVMCmd cmd, DataCenter zone, Account owner, ServiceOffering serviceOffering, VirtualMachineTemplate template,
                                         HypervisorType hypervisor, Long diskOfferingId, Long size, Long overrideDiskOfferingId, List<VmDiskInfo> dataDiskInfoList,
-                                        List<Long> networkIds, Map<Long, IpAddresses> ipToNetworkMap, Volume volume, Snapshot snapshot, String userVmType) throws InsufficientCapacityException,
+                                        List<Long> networkIds, Map<Long, IpAddresses> ipToNetworkMap, Volume volume, Snapshot snapshot) throws InsufficientCapacityException,
                                          ResourceUnavailableException, ConcurrentOperationException, ResourceAllocationException {
 
         ServiceOfferingJoinVO svcOffering = serviceOfferingJoinDao.findById(serviceOffering.getId());
@@ -9973,7 +9973,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         UserVm vm = createVirtualMachine(cmd, targetZone, owner, serviceOffering, template, hypervisorType, diskOfferingId, size, overrideDiskOfferingId, dataDiskInfoList,
-                networkIds, ipToNetworkMap, null, null, null);
+                networkIds, ipToNetworkMap, null, null);
 
         String vmSettingsFromBackup = backup.getDetail(ApiConstants.VM_SETTINGS);
         if (vm != null && vmSettingsFromBackup != null) {
@@ -10280,9 +10280,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         networkIds.add(network.getId());
 
         Account owner = _accountService.getActiveAccountById(backup.getAccountId());
-        CreateVMFromBackupCmd cmd = new CreateVMFromBackupCmdByAdmin(hypervisor.name());
-        UserVm vm = createVirtualMachine(cmd, zone, owner, serviceOffering, template, hypervisorType, null, size, null, dataDiskInfoList, networkIds, null, null, null,
-                VALIDATION_VM);
+        CreateVMFromBackupCmd cmd = new CreateVMFromBackupCmdByAdmin(hypervisor.name(), VALIDATION_VM);
+        UserVm vm = createVirtualMachine(cmd, zone, owner, serviceOffering, template, hypervisorType, null, size, null, dataDiskInfoList, networkIds, null, null, null);
 
         String vmSettingsFromBackup = backup.getDetail(ApiConstants.VM_SETTINGS);
         UserVmVO vmVO = null;
