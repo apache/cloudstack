@@ -90,6 +90,10 @@ public class DestroyVMCmd extends BaseAsyncCmd implements UserCmd {
         return volumeIds;
     }
 
+    public boolean isForced() {
+        return false;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

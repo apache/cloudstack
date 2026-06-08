@@ -62,6 +62,7 @@ import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.gpu.GPU;
 import com.cloud.gpu.dao.VgpuProfileDao;
 import com.cloud.host.ControlState;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -90,6 +91,7 @@ import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
@@ -537,7 +539,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         }
 
         if (userVm.getUserDataId() != null) {
-            userVmResponse.setUserDataId(userVm.getUserDataUUid());
+            userVmResponse.setUserDataId(userVm.getUserDataUuid());
             userVmResponse.setUserDataName(userVm.getUserDataName());
             userVmResponse.setUserDataDetails(userVm.getUserDataDetails());
             userVmResponse.setUserDataPolicy(userVm.getUserDataPolicy());
@@ -908,5 +910,44 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             sc.setParameters("leaseExpiryEndDate", nextDate);
         }
         return listBy(sc);
+    }
+
+    @Override
+    public List<UserVmJoinVO> listByZonesHypervisorNotTypesAndOwners(List<Long> zoneIds,
+                                                                     Hypervisor.HypervisorType hypervisorType,
+                                                                     List<String> excludeTypes, List<Long> accountIds,
+                                                                     String domainPath, Filter filter) {
+        if (CollectionUtils.isEmpty(zoneIds)) {
+            return Collections.emptyList();
+        }
+        SearchBuilder<UserVmJoinVO> sb = createSearchBuilder();
+        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.IN);
+        sb.and("hypervisorType", sb.entity().getHypervisorType(), Op.EQ);
+        if (CollectionUtils.isNotEmpty(excludeTypes)) {
+            sb.and().op("typeNull", sb.entity().getUserVmType(), Op.NULL);
+            sb.or("type", sb.entity().getUserVmType(), Op.NOTIN);
+            sb.cp();
+        }
+        boolean accountIdsNotEmpty = CollectionUtils.isNotEmpty(accountIds);
+        boolean domainPathNotBlank = StringUtils.isNotBlank(domainPath);
+        if (accountIdsNotEmpty || domainPathNotBlank) {
+            sb.and().op("account", sb.entity().getAccountId(), Op.IN);
+            sb.or("domainPath", sb.entity().getDomainPath(), Op.LIKE);
+            sb.cp();
+        }
+        sb.done();
+        SearchCriteria<UserVmJoinVO> sc = sb.create();
+        sc.setParameters("dataCenterId", zoneIds.toArray());
+        sc.setParameters("hypervisorType", hypervisorType);
+        if (CollectionUtils.isNotEmpty(excludeTypes)) {
+            sc.setParameters("type", excludeTypes.toArray());
+        }
+        if (accountIdsNotEmpty) {
+            sc.setParameters("account", accountIds.toArray());
+        }
+        if (domainPathNotBlank) {
+            sc.setParameters("domainPath", domainPath + "%");
+        }
+        return listBy(sc, filter);
     }
 }

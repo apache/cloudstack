@@ -22,6 +22,7 @@ import javax.inject.Inject;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -126,5 +127,15 @@ public class RestoreVolumeFromBackupAndAttachToVMCmd extends BaseAsyncCmd {
     @Override
     public String getEventDescription() {
         return "Restoring volume "+ volumeUuid + " from backup " + getResourceUuid(ApiConstants.BACKUP_ID) + " and attaching it to Instance " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID);
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return vmId;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.VirtualMachine;
     }
 }

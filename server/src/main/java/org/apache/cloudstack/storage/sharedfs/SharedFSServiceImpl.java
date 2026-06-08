@@ -661,6 +661,39 @@ public class SharedFSServiceImpl extends ManagerBase implements SharedFSService,
     }
 
     @Override
+    public SharedFS getSharedFSByUuid(String uuid) {
+        return sharedFSDao.findByUuid(uuid);
+    }
+
+    @Override
+    public SharedFS getSharedFSForVmId(long vmId) {
+        return sharedFSDao.findByVm(vmId);
+    }
+
+    public SharedFS updateSharedFSPostRestore(long sharedFsId, long volumeId) {
+        SharedFSVO sharedFS = sharedFSDao.findById(sharedFsId);
+        if (sharedFS == null) {
+            throw new CloudRuntimeException("Unable to find the Shared FileSystem");
+        }
+        VolumeVO volume = volumeDao.findById(volumeId);
+        if (volume == null) {
+            throw new CloudRuntimeException("Unable to find the Volume");
+        }
+        if (volume.getInstanceId() == null) {
+            throw new CloudRuntimeException("Volume is not attached to any Instance");
+        }
+        if (sharedFS.getAccountId() != volume.getAccountId() || sharedFS.getDomainId() != volume.getDomainId()) {
+            throw new CloudRuntimeException("Shared FileSystem and the Volume do not belong to the same account");
+        }
+        sharedFS.setVolumeId(volume.getId());
+        sharedFS.setVmId(volume.getInstanceId());
+        if (!sharedFSDao.update(sharedFS.getId(), sharedFS)) {
+            throw new CloudRuntimeException("Failed to update Shared FileSystem with the restored Volume information");
+        }
+        return sharedFS;
+    }
+
+    @Override
     public String getConfigComponentName() {
         return SharedFSService.class.getSimpleName();
     }

@@ -288,6 +288,14 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
         return Boolean.TRUE.equals(cleanupExtraConfig);
     }
 
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setSecurityGroupIdList(List<Long> securityGroupIdList) {
+        this.securityGroupIdList = securityGroupIdList;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
