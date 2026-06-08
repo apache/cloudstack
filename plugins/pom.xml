@@ -94,6 +94,7 @@
         <module>integrations/cloudian</module>
         <module>integrations/prometheus</module>
         <module>integrations/kubernetes-service</module>
+        <module>integrations/veeam-control-service</module>
 
         <module>metrics</module>
 
@@ -202,13 +203,13 @@
         <dependency>
             <groupId>io.minio</groupId>
             <artifactId>minio</artifactId>
-            <version>8.5.2</version>
+            <version>${cs.minio.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>io.minio</groupId>
             <artifactId>minio-admin</artifactId>
-            <version>8.5.2</version>
+            <version>${cs.minio.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>

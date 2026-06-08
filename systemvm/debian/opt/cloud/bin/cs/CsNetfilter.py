@@ -232,7 +232,7 @@ class CsNetfilters(object):
         if hook == "input" or hook == "output":
             CsHelper.execute("nft add rule %s %s %s icmpv6 type { echo-request, echo-reply, \
                 nd-neighbor-solicit, nd-router-advert, nd-neighbor-advert } accept" % (address_family, table, chain))
-        elif hook == "forward":
+        if hook == "input" or hook == "forward":
             CsHelper.execute("nft add rule %s %s %s ct state established,related accept" % (address_family, table, chain))
 
     def add_ip4_chain(self, address_family, table, chain, hook, action):

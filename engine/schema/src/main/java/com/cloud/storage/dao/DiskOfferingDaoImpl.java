@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.storage.dao;
 
+import static org.apache.cloudstack.query.QueryService.SortKeyAscending;
+
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -33,6 +35,7 @@ import org.springframework.stereotype.Component;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage;
 import com.cloud.utils.db.Attribute;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -138,13 +141,14 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
     }
 
     @Override
-    public List<DiskOfferingVO> findCustomDiskOfferings() {
+    public List<DiskOfferingVO> listCustomDiskOfferings() {
         SearchBuilder<DiskOfferingVO> sb = createSearchBuilder();
         sb.and("customized", sb.entity().isCustomized(), SearchCriteria.Op.EQ);
         sb.done();
         SearchCriteria<DiskOfferingVO> sc = sb.create();
         sc.setParameters("customized", true);
-        return listBy(sc);
+        Filter searchFilter = new Filter(DiskOfferingVO.class, "sortKey", SortKeyAscending.value());
+        return listBy(sc, searchFilter);
     }
 
     @Override
