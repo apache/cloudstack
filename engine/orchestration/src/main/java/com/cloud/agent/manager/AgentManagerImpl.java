@@ -248,6 +248,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             "Percentage (as a value between 0 and 1) of direct.agent.pool.size to be used as upper thread cap for a single direct agent to process requests", false);
     protected final ConfigKey<Boolean> CheckTxnBeforeSending = new ConfigKey<>("Developer", Boolean.class, "check.txn.before.sending.agent.commands", "false",
             "This parameter allows developers to enable a check to see if a transaction wraps commands that are sent to the resource.  This is not to be enabled on production systems.", true);
+    protected final ConfigKey<Integer> AgentConnectExecutorCorePoolSize = new ConfigKey<>("Advanced", Integer.class, "agent.connect.executor.core.pool.size", "100",
+            "Core pool size for the thread pool that handles agent connect tasks.", false);
+    protected final ConfigKey<Integer> AgentConnectExecutorMaxPoolSize = new ConfigKey<>("Advanced", Integer.class, "agent.connect.executor.max.pool.size", "500",
+            "Maximum pool size for the thread pool that handles agent connect tasks.", false);
 
     public static final List<Host.Type> HOST_DOWN_ALERT_UNSUPPORTED_HOST_TYPES = Arrays.asList(
             Host.Type.SecondaryStorage,
@@ -423,7 +427,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     }
 
     private void initConnectExecutor() {
-        _connectExecutor = new ThreadPoolExecutor(100, 500, 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<>(), new NamedThreadFactory("AgentConnectTaskPool"));
+        _connectExecutor = new ThreadPoolExecutor(AgentConnectExecutorCorePoolSize.value(), AgentConnectExecutorMaxPoolSize.value(), 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<>(), new NamedThreadFactory("AgentConnectTaskPool"));
         // allow core threads to time out even when there are no items in the queue
         _connectExecutor.allowCoreThreadTimeOut(true);
     }
@@ -2136,7 +2140,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         return new ConfigKey<?>[] { CheckTxnBeforeSending, Workers, Port, Wait, AlertWait, DirectAgentLoadSize,
                 DirectAgentPoolSize, DirectAgentThreadCap, EnableKVMAutoEnableDisable, ReadyCommandWait,
                 GranularWaitTimeForCommands, RemoteAgentSslHandshakeTimeout, RemoteAgentMaxConcurrentNewConnections,
-                RemoteAgentNewConnectionsMonitorInterval, KVMHostDiscoverySshPort };
+                RemoteAgentNewConnectionsMonitorInterval, KVMHostDiscoverySshPort, AgentConnectExecutorCorePoolSize, AgentConnectExecutorMaxPoolSize };
     }
 
     protected class SetHostParamsListener implements Listener {
