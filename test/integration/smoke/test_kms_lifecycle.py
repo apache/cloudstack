@@ -68,17 +68,27 @@ class TestKMSLifecycle(cloudstackTestCase):
 
         cls._cleanup = []
 
-        cls.default_profile = None
-        profiles = HSMProfile.list(cls.apiclient, name="HSM Database Provider")
-        if profiles and len(profiles) > 0:
-            cls.default_profile = profiles[0]
-            if hasattr(cls.default_profile, 'enabled') and not cls.default_profile.enabled:
-                hsm = HSMProfile({"id": cls.default_profile.id})
-                hsm.update(cls.apiclient, enabled=True)
+        # The built-in database provider is seeded as a public, system-owned profile named
+        # "HSM Database Provider". listHSMProfiles has no server-side name filter, and a root
+        # admin's listing without listall is restricted to admin-owned profiles, so we must
+        # pass listall=True and match the name client-side.
+        cls.default_profile = cls._find_default_profile(cls.apiclient)
+        if cls.default_profile and not cls.default_profile.enabled:
+            hsm = HSMProfile({"id": cls.default_profile.id})
+            hsm.update(cls.apiclient, enabled=True)
             # Re-fetch to get updated state
-            profiles = HSMProfile.list(cls.apiclient, name="HSM Database Provider")
-            if profiles and len(profiles) > 0:
-                cls.default_profile = profiles[0]
+            cls.default_profile = cls._find_default_profile(cls.apiclient)
+
+    @staticmethod
+    def _find_default_profile(apiclient):
+        """Locate the seeded public 'HSM Database Provider' profile."""
+        profiles = HSMProfile.list(
+            apiclient, listall=True, keyword="HSM Database Provider"
+        ) or []
+        for profile in profiles:
+            if profile.name == "HSM Database Provider":
+                return profile
+        return None
 
 
     @classmethod
@@ -139,13 +149,12 @@ class TestKMSLifecycle(cloudstackTestCase):
         self.cleanup.append(key)
         return key
 
-    def _create_hsm_profile(self, name, protocol="database", system=True, zoneid=None):
+    def _create_hsm_profile(self, name, protocol="database", zoneid=None):
         zone_id = zoneid or self.zone.id
         profile = HSMProfile.create(
             self.apiclient,
             name=name,
             protocol=protocol,
-            system=system,
             zoneid=zone_id,
         )
         self.cleanup.append(profile)
@@ -344,6 +353,7 @@ class TestKMSLifecycle(cloudstackTestCase):
         key = self._create_kms_key(name=_random_name("key-del"), profile_id=profile.id)
 
         key.delete(self.apiclient)
+        self.cleanup.remove(key)
 
         # Verify the key no longer appears in listings
         keys = KMSKey.list(self.apiclient, id=key.id)
@@ -480,6 +490,7 @@ class TestKMSLifecycle(cloudstackTestCase):
         profile = self._create_hsm_profile(name=_random_name("hsm-gone"))
 
         profile.delete(self.apiclient)
+        self.cleanup.remove(profile)
 
         profiles = HSMProfile.list(self.apiclient, id=profile.id)
         self.assertTrue(

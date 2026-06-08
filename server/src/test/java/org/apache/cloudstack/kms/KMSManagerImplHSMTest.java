@@ -20,11 +20,19 @@ package org.apache.cloudstack.kms;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.dao.AccountDao;
+import org.apache.cloudstack.api.command.user.kms.hsm.DeleteHSMProfileCmd;
 import org.apache.cloudstack.api.response.HSMProfileResponse;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.kms.KMSProvider;
 import org.apache.cloudstack.kms.dao.HSMProfileDao;
 import org.apache.cloudstack.kms.dao.HSMProfileDetailsDao;
+import org.apache.cloudstack.kms.dao.KMSKekVersionDao;
+import org.apache.cloudstack.kms.dao.KMSKeyDao;
+import org.apache.cloudstack.kms.dao.KMSWrappedKeyDao;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -35,10 +43,12 @@ import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Arrays;
+import java.util.Collections;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -66,6 +76,12 @@ public class KMSManagerImplHSMTest {
     private DomainDao domainDao;
     @Mock
     private AccountDao accountDao;
+    @Mock
+    private KMSKeyDao kmsKeyDao;
+    @Mock
+    private KMSKekVersionDao kmsKekVersionDao;
+    @Mock
+    private KMSWrappedKeyDao kmsWrappedKeyDao;
 
     /**
      * Test: isSensitiveKey correctly identifies "pin" as sensitive
@@ -155,6 +171,72 @@ public class KMSManagerImplHSMTest {
 
             assertNotNull("Response should not be null", response);
             verify(hsmProfileDetailsDao).listByProfileId(profileId);
+        }
+    }
+
+    /**
+     * Test: the seeded default (system-owned) database profile cannot be deleted.
+     */
+    @Test(expected = InvalidParameterValueException.class)
+    public void testDeleteHSMProfile_RejectsSystemOwnedDatabaseProfile() {
+        Long profileId = 10L;
+        HSMProfileVO profile = mock(HSMProfileVO.class);
+        when(profile.getProtocol()).thenReturn("database");
+        when(profile.getAccountId()).thenReturn(Account.ACCOUNT_ID_SYSTEM);
+        when(profile.getIsPublic()).thenReturn(true);
+        when(hsmProfileDao.findById(profileId)).thenReturn(profile);
+
+        Account caller = mock(Account.class);
+        when(caller.getId()).thenReturn(2L);
+        when(accountManager.isRootAdmin(2L)).thenReturn(true);
+
+        DeleteHSMProfileCmd cmd = mock(DeleteHSMProfileCmd.class);
+        when(cmd.getId()).thenReturn(profileId);
+
+        try (MockedStatic<CallContext> mockedCallContext = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContext = mock(CallContext.class);
+            mockedCallContext.when(CallContext::current).thenReturn(callContext);
+            when(callContext.getCallingAccount()).thenReturn(caller);
+
+            kmsManager.deleteHSMProfile(cmd);
+        }
+    }
+
+    /**
+     * Test: an admin-created (non-system) database profile with no keys can be deleted.
+     */
+    @Test
+    public void testDeleteHSMProfile_AllowsAdminOwnedDatabaseProfile() {
+        Long profileId = 10L;
+        HSMProfileVO profile = mock(HSMProfileVO.class);
+        when(profile.getId()).thenReturn(profileId);
+        when(profile.getProtocol()).thenReturn("database");
+        when(profile.getAccountId()).thenReturn(200L);
+        when(profile.getIsPublic()).thenReturn(false);
+        when(hsmProfileDao.findById(profileId)).thenReturn(profile);
+
+        when(kmsKeyDao.countByHsmProfileId(profileId)).thenReturn(0L);
+        when(kmsKekVersionDao.listByHsmProfileId(profileId)).thenReturn(Collections.emptyList());
+
+        KMSProvider kmsProvider = mock(KMSProvider.class);
+        doReturn(kmsProvider).when(kmsManager).getKMSProvider("database");
+        when(hsmProfileDao.remove(profileId)).thenReturn(true);
+
+        Account caller = mock(Account.class);
+
+        DeleteHSMProfileCmd cmd = mock(DeleteHSMProfileCmd.class);
+        when(cmd.getId()).thenReturn(profileId);
+
+        try (MockedStatic<CallContext> mockedCallContext = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContext = mock(CallContext.class);
+            mockedCallContext.when(CallContext::current).thenReturn(callContext);
+            when(callContext.getCallingAccount()).thenReturn(caller);
+
+            boolean result = kmsManager.deleteHSMProfile(cmd);
+
+            assertTrue("Admin-owned database profile should be deletable", result);
+            verify(kmsProvider).invalidateProfileCache(profileId);
+            verify(hsmProfileDao).remove(profileId);
         }
     }
 }

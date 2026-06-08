@@ -1235,8 +1235,9 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         Account caller = CallContext.current().getCallingAccount();
         checkHSMProfileAccess(caller, profile, true);
 
-        if (profile.getProtocol().equals(DATABASE_PROVIDER_NAME)) {
-            throw new InvalidParameterValueException("Database HSM profile is default and cannot be deleted");
+        if (profile.getProtocol().equals(DATABASE_PROVIDER_NAME)
+                && profile.getAccountId() == Account.ACCOUNT_ID_SYSTEM) {
+            throw new InvalidParameterValueException("Default database HSM profile cannot be deleted");
         }
 
         long keyCount = kmsKeyDao.countByHsmProfileId(profile.getId());
