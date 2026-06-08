@@ -55,7 +55,7 @@ public final class LibvirtCheckOnHostCommandWrapper extends CommandWrapper<Check
             if (hasHeartBeat) {
                 return new CheckOnHostAnswer(command, true, "Heart is beating");
             } else {
-                return new CheckOnHostAnswer(command, "Heart is not beating");
+                return new CheckOnHostAnswer(command, false, "Heart is not beating");
             }
         } catch (final InterruptedException e) {
             return new CheckOnHostAnswer(command, "CheckOnHostCommand: can't get status of host: InterruptedException");
