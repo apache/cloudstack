@@ -1822,9 +1822,9 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     public BackupProvider getBackupProvider(final String name) {
-        if (StringUtils.isEmpty(name)) {
-            throw new CloudRuntimeException("Invalid backup provider name provided");
-        }
+       if (StringUtils.isEmpty(name)) {
+           throw new CloudRuntimeException("Invalid backup provider name provided");
+       }
        if (!backupProvidersMap.containsKey(name)) {
            throw new CloudRuntimeException("Failed to find backup provider by the name: " + name);
        }
@@ -2436,8 +2436,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             backedUpVolumes = new Gson().toJson(backup.getBackedUpVolumes().toArray(), Backup.VolumeInfo[].class);
         }
         response.setVolumes(backedUpVolumes);
-        response.setBackupOfferingId(offering.getUuid());
-        response.setBackupOffering(offering.getName());
+        if (offering != null) {
+            response.setBackupOfferingId(offering.getUuid());
+            response.setBackupOffering(offering.getName());
+        }
         response.setAccountId(account.getUuid());
         response.setAccount(account.getAccountName());
         response.setDomainId(domain.getUuid());
@@ -2453,6 +2455,13 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             Map<String, String> details = getDetailsFromBackupDetails(backup.getId());
             vmDetails.putAll(details);
             response.setVmDetails(vmDetails);
+        }
+
+        if (backup.getFromCheckpointId() != null) {
+            response.setFromCheckpointId(backup.getFromCheckpointId());
+        }
+        if (backup.getToCheckpointId() != null) {
+            response.setToCheckpointId(backup.getToCheckpointId());
         }
 
         response.setObjectName("backup");
