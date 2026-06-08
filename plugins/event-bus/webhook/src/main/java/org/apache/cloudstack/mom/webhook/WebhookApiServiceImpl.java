@@ -61,7 +61,6 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
@@ -221,8 +220,15 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
             return;
         }
         String error = String.format("Payload URL: %s is already in use by another webhook", payloadUrl);
-        logger.error(String.format("%s: %s for Account [%s]", error, webhookVO, owner));
+        logger.error("{}: {} for Account [{}]", error, webhookVO, owner);
         throw new InvalidParameterValueException(error);
+    }
+
+    protected URI validatePayloadUrlByDeliverySecurityPolicy(String payloadUrl, long domainId) {
+        return WebhookUrlValidator.validateWebhookDestinationUrl(payloadUrl,
+                WebhookService.WebhookDeliveryAllowHttp.valueIn(domainId),
+                WebhookService.WebhookDeliveryBlocklist.valueIn(domainId),
+                WebhookService.WebhookDeliveryBlockLocalAddresses.value());
     }
 
     @Override
@@ -338,7 +344,7 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
                 throw new InvalidParameterValueException("Invalid state specified");
             }
         }
-        UriUtils.validateUrl(payloadUrl);
+        validatePayloadUrlByDeliverySecurityPolicy(payloadUrl, owner.getDomainId());
         validateWebhookOwnerPayloadUrl(owner, payloadUrl, null);
         URI uri = URI.create(payloadUrl);
         if (sslVerification && !HttpConstants.HTTPS.equalsIgnoreCase(uri.getScheme())) {
@@ -421,7 +427,7 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         }
         URI uri = URI.create(webhook.getPayloadUrl());
         if (StringUtils.isNotEmpty(payloadUrl)) {
-            UriUtils.validateUrl(payloadUrl);
+            validatePayloadUrlByDeliverySecurityPolicy(payloadUrl, owner.getDomainId());
             validateWebhookOwnerPayloadUrl(owner, payloadUrl, webhook);
             uri = URI.create(payloadUrl);
             webhook.setPayloadUrl(payloadUrl);
@@ -540,8 +546,13 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
             }
             webhook = webhookDao.findById(existingDelivery.getWebhookId());
         }
+        URI uri = null;
         if (StringUtils.isNotBlank(payloadUrl)) {
-            UriUtils.validateUrl(payloadUrl);
+            long domainId = owner.getDomainId();
+            if (webhook != null) {
+                domainId = webhook.getDomainId();
+            }
+            uri = validatePayloadUrlByDeliverySecurityPolicy(payloadUrl, domainId);
         }
         if (webhookId != null) {
             webhook = webhookDao.findById(webhookId);
@@ -562,7 +573,7 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
             webhook = new WebhookVO(owner.getDomainId(), owner.getId(), payloadUrl, secretKey,
                     Boolean.TRUE.equals(sslVerification));
         }
-        WebhookDelivery webhookDelivery = webhookService.executeWebhookDelivery(existingDelivery, webhook, payload);
+        WebhookDelivery webhookDelivery = webhookService.executeWebhookDelivery(existingDelivery, webhook, payload, uri);
         if (webhookDelivery.getId() != WebhookDelivery.ID_DUMMY) {
             return createWebhookDeliveryResponse(webhookDeliveryJoinDao.findById(webhookDelivery.getId()));
         }
