@@ -85,6 +85,9 @@ public class AssignVMCmd extends BaseCmd  {
                    "In case no security groups are provided the Instance is part of the default security group.")
     private List<Long> securityGroupIdList;
 
+    // Internal flag to allow assignment without adding a network
+    private boolean  skipNetwork = false;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -111,6 +114,34 @@ public class AssignVMCmd extends BaseCmd  {
 
     public List<Long> getSecurityGroupIdList() {
         return securityGroupIdList;
+    }
+
+    public boolean isSkipNetwork() {
+        return skipNetwork;
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////////// Setters /////////////////////////
+    /////////////////////////////////////////////////////
+
+    public void setVirtualMachineId(Long virtualMachineId) {
+        this.virtualMachineId = virtualMachineId;
+    }
+
+    public void setAccountName(String accountName) {
+        this.accountName = accountName;
+    }
+
+    public void setDomainId(Long domainId) {
+        this.domainId = domainId;
+    }
+
+    public void setProjectId(Long projectId) {
+        this.projectId = projectId;
+    }
+
+    public void setSkipNetwork(boolean skipNetwork) {
+        this.skipNetwork = skipNetwork;
     }
 
     /////////////////////////////////////////////////////
