@@ -915,6 +915,12 @@ export default {
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/AutoScaleDownPolicyTab.vue')))
         },
         {
+          name: 'schedules',
+          resourceType: 'AutoScaleVmGroup',
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ResourceSchedules.vue'))),
+          show: () => { return 'listResourceSchedule' in store.getters.apis }
+        },
+        {
           name: 'events',
           resourceType: 'AutoScaleVmGroup',
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
@@ -963,9 +969,9 @@ export default {
           dataView: true,
           args: (record, store) => {
             var args = ['name']
+            args.push('maxmembers')
+            args.push('minmembers')
             if (record.state === 'DISABLED') {
-              args.push('maxmembers')
-              args.push('minmembers')
               args.push('interval')
             }
             return args

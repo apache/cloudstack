@@ -16,8 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.vm.schedule;
+package org.apache.cloudstack.schedule;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import javax.persistence.Column;
@@ -34,8 +35,8 @@ import java.util.Date;
 import java.util.UUID;
 
 @Entity
-@Table(name = "vm_scheduled_job")
-public class VMScheduledJobVO implements VMScheduledJob {
+@Table(name = "resource_scheduled_job")
+public class ResourceScheduledJobVO implements ResourceScheduledJob {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -44,41 +45,44 @@ public class VMScheduledJobVO implements VMScheduledJob {
     @Column(name = "uuid", nullable = false)
     String uuid;
 
-    @Column(name = "vm_id", nullable = false)
-    long vmId;
+    @Enumerated(value = EnumType.STRING)
+    @Column(name = "resource_type", nullable = false)
+    ApiCommandResourceType resourceType;
 
-    @Column(name = "vm_schedule_id", nullable = false)
-    long vmScheduleId;
+    @Column(name = "resource_id", nullable = false)
+    long resourceId;
+
+    @Column(name = "schedule_id", nullable = false)
+    long scheduleId;
 
     @Column(name = "async_job_id")
     Long asyncJobId;
 
     @Column(name = "action", nullable = false)
-    @Enumerated(value = EnumType.STRING)
-    VMSchedule.Action action;
+    String actionName;
 
     @Column(name = "scheduled_timestamp")
     @Temporal(value = TemporalType.TIMESTAMP)
     Date scheduledTime;
 
-    public VMScheduledJobVO() {
+    public ResourceScheduledJobVO() {
         uuid = UUID.randomUUID().toString();
     }
 
-    public VMScheduledJobVO(long vmId, long vmScheduleId, VMSchedule.Action action, Date scheduledTime) {
+    public ResourceScheduledJobVO(ApiCommandResourceType resourceType, long resourceId, long scheduleId, String action, Date scheduledTime) {
         uuid = UUID.randomUUID().toString();
-        this.vmId = vmId;
-        this.vmScheduleId = vmScheduleId;
-        this.action = action;
+        this.resourceType = resourceType;
+        this.resourceId = resourceId;
+        this.scheduleId = scheduleId;
+        this.actionName = action;
         this.scheduledTime = scheduledTime;
     }
 
-
     @Override
     public String toString() {
-        return String.format("VMScheduledJob %s",
+        return String.format("ResourceScheduledJob %s",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                        this, "id", "uuid", "action", "vmScheduleId", "vmId", "asyncJobId"));
+                        this, "id", "uuid", "resourceType", "actionName", "scheduleId", "resourceId", "asyncJobId"));
     }
 
     @Override
@@ -92,13 +96,18 @@ public class VMScheduledJobVO implements VMScheduledJob {
     }
 
     @Override
-    public long getVmId() {
-        return vmId;
+    public ApiCommandResourceType getResourceType() {
+        return resourceType;
     }
 
     @Override
-    public long getVmScheduleId() {
-        return vmScheduleId;
+    public long getResourceId() {
+        return resourceId;
+    }
+
+    @Override
+    public long getScheduleId() {
+        return scheduleId;
     }
 
     @Override
@@ -112,8 +121,12 @@ public class VMScheduledJobVO implements VMScheduledJob {
     }
 
     @Override
-    public VMSchedule.Action getAction() {
-        return action;
+    public String getActionName() {
+        return actionName;
+    }
+
+    public void setActionName(String action) {
+        this.actionName = action;
     }
 
     @Override
