@@ -3049,10 +3049,11 @@ class TestResourceTags(cloudstackTestCase):
         self.cleanup.append(iso)
         self.debug("ISO created with ID: %s" % iso.id)
 
-        list_iso_response = Iso.list(self.apiclient,
-                                     id=iso.id)
-
-        if not isinstance(list_iso_response, list):
-            raise unittest.SkipTest("Registered ISO can not be found/listed for tagging")
+        try:
+            iso.download(self.apiclient)
+        except Exception as e:
+            raise unittest.SkipTest(
+                "ISO download failed: %s" % e
+            )
 
         return iso
