@@ -435,7 +435,14 @@ public class UnifiedSANStrategy extends SANStrategy {
                                 OntapStorageConstants.IGROUP_DOT_NAME, igroupName,
                                 OntapStorageConstants.FIELDS, OntapStorageConstants.LOGICAL_UNIT_NUMBER
                         ));
-                lunNumber = lunMapResponse.getRecords().get(0).getLogicalUnitNumber().toString();
+                if(lunMapResponse != null && lunMapResponse.getRecords() != null && !lunMapResponse.getRecords().isEmpty()
+                         && lunMapResponse.getRecords().get(0).getLogicalUnitNumber() != null) {
+                    lunNumber =  lunMapResponse.getRecords().get(0).getLogicalUnitNumber().toString();
+
+                } else {
+                    logger.error("enableLogicalAccess: Failed to fetch LunMap details for Lun: {} and igroup: {}. LunMap response is null or empty.", lunName, igroupName);
+                    throw new CloudRuntimeException("Failed to fetch LunMap details for Lun: " + lunName + " and igroup: " + igroupName);
+                }
             } catch (Exception e) {
                 logger.error("enableLogicalAccess: Failed to fetch LunMap details for Lun: {} and igroup: {}, Exception: {}", lunName, igroupName, e);
                 throw new CloudRuntimeException("Failed to fetch LunMap details for Lun: " + lunName + " and igroup: " + igroupName);
