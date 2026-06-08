@@ -165,6 +165,7 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -1661,7 +1662,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             if (backupSnapToSecondary) {
                 if (!isKvmAndFileBasedStorage) {
                     backupSnapshotToSecondary(payload.getAsyncBackup(), snapshotStrategy, snapshotOnPrimary, payload.getZoneIds(), payload.getStoragePoolIds());
-                    if (storagePool.getPoolType() == StoragePoolType.CLVM || storagePool.getPoolType() == StoragePoolType.CLVM_NG) {
+                    if (!payload.getAsyncBackup() && (storagePool.getPoolType() == StoragePoolType.CLVM || storagePool.getPoolType() == StoragePoolType.CLVM_NG)) {
                         _snapshotStoreDao.removeBySnapshotStore(snapshotId, snapshotOnPrimary.getDataStore().getId(), snapshotOnPrimary.getDataStore().getRole());
                     }
                 } else {
@@ -1683,7 +1684,12 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                 postCreateSnapshot(volume.getId(), snapshotId, payload.getSnapshotPolicyId(), clusterId);
                 snapshotZoneDao.addSnapshotToZone(snapshotId, snapshot.getDataCenterId());
 
-                DataStoreRole dataStoreRole = backupSnapToSecondary ? snapshotHelper.getDataStoreRole(snapshot) : DataStoreRole.Primary;
+                DataStoreRole dataStoreRole;
+                if (payload.getAsyncBackup() && backupSnapToSecondary && !isKvmAndFileBasedStorage) {
+                    dataStoreRole = DataStoreRole.Primary;
+                } else {
+                    dataStoreRole = backupSnapToSecondary ? snapshotHelper.getDataStoreRole(snapshot) : DataStoreRole.Primary;
+                }
 
                 List<SnapshotDataStoreVO> snapshotStoreRefs = _snapshotStoreDao.listReadyBySnapshot(snapshotId, dataStoreRole);
                 if (CollectionUtils.isEmpty(snapshotStoreRefs)) {
@@ -1821,6 +1827,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                     SnapshotInfo backupedSnapshot = snapshotStrategy.backupSnapshot(snapshotOnPrimary);
                     if (backupedSnapshot != null) {
                         snapshotStrategy.postSnapshotCreation(snapshotOnPrimary);
+                        removeClvmPrimarySnapshotStoreRefIfNeeded(snapshotOnPrimary);
                         copyNewSnapshotToZones(snapshotOnPrimary.getId(), snapshotOnPrimary.getDataCenterId(), zoneIds);
                     }
                 }
@@ -1843,6 +1850,14 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                 logger.debug("Done with {} attempts in  backing up of snapshot {}", snapshotBackupRetries, snapshotOnPrimary.getSnapshotVO());
                 snapshotSrv.cleanupOnSnapshotBackupFailure(snapshotOnPrimary);
             }
+        }
+    }
+
+    void removeClvmPrimarySnapshotStoreRefIfNeeded(SnapshotInfo snapshotOnPrimary) {
+        DataStore dataStore = snapshotOnPrimary.getDataStore();
+        StoragePoolVO pool = _storagePoolDao.findById(dataStore.getId());
+        if (pool != null && ClvmPoolManager.isClvmPoolType(pool.getPoolType())) {
+            _snapshotStoreDao.removeBySnapshotStore(snapshotOnPrimary.getId(), dataStore.getId(), dataStore.getRole());
         }
     }
 
