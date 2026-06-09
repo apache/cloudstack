@@ -70,6 +70,7 @@ import org.apache.cloudstack.storage.utils.OntapStorageUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -110,7 +111,7 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
 
     @Override
     public boolean volumesRequireGrantAccessWhenUsed() {
-        logger.info("OntapPrimaryDatastoreDriver: volumesRequireGrantAccessWhenUsed: Called");
+        logger.trace("volumesRequireGrantAccessWhenUsed invoked");
         return true;
     }
 
@@ -389,44 +390,7 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
 
                 if (ProtocolType.ISCSI.name().equalsIgnoreCase(details.get(OntapStorageConstants.PROTOCOL))) {
                     // Only retrieve LUN name for iSCSI volumes
-                    String cloudStackVolumeName = volumeDetailsDao.findDetail(volumeVO.getId(), OntapStorageConstants.LUN_DOT_NAME).getValue();
-                    UnifiedSANStrategy sanStrategy = (UnifiedSANStrategy) OntapStorageUtils.getStrategyByStoragePoolDetails(details);
-                    String accessGroupName = OntapStorageUtils.getIgroupName(svmName, host.getName());
-
-                    // Validate if Igroup exist ONTAP for this host as we may be using delete_on_unmap= true and igroup may be deleted by ONTAP automatically
-                    Map<String, String> getAccessGroupMap = Map.of(
-                            OntapStorageConstants.NAME, accessGroupName,
-                            OntapStorageConstants.SVM_DOT_NAME, svmName
-                    );
-                    AccessGroup accessGroup = sanStrategy.getAccessGroup(getAccessGroupMap);
-                    if(accessGroup == null || accessGroup.getIgroup() == null) {
-                        logger.info("grantAccess: Igroup {} does not exist for the host {} : Need to create Igroup for the host ", accessGroupName, host.getName());
-                        // create the igroup for the host and perform lun-mapping
-                        accessGroup = new AccessGroup();
-                        List<HostVO> hosts = new ArrayList<>();
-                        hosts.add((HostVO) host);
-                        accessGroup.setHostsToConnect(hosts);
-                        accessGroup.setStoragePoolId(storagePool.getId());
-                        accessGroup = sanStrategy.createAccessGroup(accessGroup);
-                    }else{
-                        logger.info("grantAccess: Igroup {} already exist for the host {}: ", accessGroup.getIgroup().getName() ,host.getName());
-                        /* TODO Below cases will be covered later, for now they will be a pre-requisite on customer side
-                          1. Igroup exist with the same name but host initiator has been rempved
-                          2.  Igroup exist with the same name but host initiator has been changed may be due to new NIC or new adapter
-                          In both cases we need to verify current host initiator is registered in the igroup before allowing access
-                          Incase it is not , add it and proceed for lun-mapping
-                         */
-                    }
-                    logger.info("grantAccess: Igroup {}  is present now with initiators {} ", accessGroup.getIgroup().getName(), accessGroup.getIgroup().getInitiators());
-                    // Create or retrieve existing LUN mapping
-                    String lunNumber = sanStrategy.ensureLunMapped(svmName, cloudStackVolumeName, accessGroupName);
-
-                    // Update volume path if changed (e.g., after migration or re-mapping)
-                    String iscsiPath = OntapStorageConstants.SLASH + storagePool.getPath() + OntapStorageConstants.SLASH + lunNumber;
-                    if (volumeVO.getPath() == null || !volumeVO.getPath().equals(iscsiPath)) {
-                        volumeVO.set_iScsiName(iscsiPath);
-                        volumeVO.setPath(iscsiPath);
-                    }
+                    grantAccessIscsi(host, volumeVO, details, svmName, storagePool);
                 } else if (ProtocolType.NFS3.name().equalsIgnoreCase(details.get(OntapStorageConstants.PROTOCOL))) {
                     // For NFS, no access grant needed - file is accessible via mount
                     logger.debug("grantAccess: NFS volume [{}], no igroup mapping required", volumeVO.getUuid());
@@ -443,6 +407,47 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
         } catch (Exception e) {
             logger.error("grantAccess: Failed for dataObject [{}]: {}", dataObject, e.getMessage());
             throw new CloudRuntimeException("Failed with error: " + e.getMessage(), e);
+        }
+    }
+
+    private void grantAccessIscsi(Host host, VolumeVO volumeVO, Map<String, String> details, String svmName, StoragePoolVO storagePool) {
+        String cloudStackVolumeName = volumeDetailsDao.findDetail(volumeVO.getId(), OntapStorageConstants.LUN_DOT_NAME).getValue();
+        UnifiedSANStrategy sanStrategy = (UnifiedSANStrategy) OntapStorageUtils.getStrategyByStoragePoolDetails(details);
+        String accessGroupName = OntapStorageUtils.getIgroupName(svmName, host.getName());
+
+        // Validate if Igroup exist ONTAP for this host as we may be using delete_on_unmap= true and igroup may be deleted by ONTAP automatically
+        Map<String, String> getAccessGroupMap = Map.of(
+                OntapStorageConstants.NAME, accessGroupName,
+                OntapStorageConstants.SVM_DOT_NAME, svmName
+        );
+        AccessGroup accessGroup = sanStrategy.getAccessGroup(getAccessGroupMap);
+        if(accessGroup == null || accessGroup.getIgroup() == null) {
+            logger.info("grantAccess: Igroup {} does not exist for the host {} : Need to create Igroup for the host ", accessGroupName, host.getName());
+            // create the igroup for the host and perform lun-mapping
+            accessGroup = new AccessGroup();
+            List<HostVO> hosts = new ArrayList<>();
+            hosts.add((HostVO) host);
+            accessGroup.setHostsToConnect(hosts);
+            accessGroup.setStoragePoolId(storagePool.getId());
+            accessGroup = sanStrategy.createAccessGroup(accessGroup);
+        }else{
+            logger.info("grantAccess: Igroup {} already exist for the host {}: ", accessGroup.getIgroup().getName() , host.getName());
+            /* TODO Below cases will be covered later, for now they will be a pre-requisite on customer side
+              1. Igroup exist with the same name but host initiator has been rempved
+              2.  Igroup exist with the same name but host initiator has been changed may be due to new NIC or new adapter
+              In both cases we need to verify current host initiator is registered in the igroup before allowing access
+              Incase it is not , add it and proceed for lun-mapping
+             */
+        }
+        logger.info("grantAccess: Igroup {}  is present now with initiators {} ", accessGroup.getIgroup().getName(), accessGroup.getIgroup().getInitiators());
+        // Create or retrieve existing LUN mapping
+        String lunNumber = sanStrategy.ensureLunMapped(svmName, cloudStackVolumeName, accessGroupName);
+
+        // Update volume path if changed (e.g., after migration or re-mapping)
+        String iscsiPath = OntapStorageConstants.SLASH + storagePool.getPath() + OntapStorageConstants.SLASH + lunNumber;
+        if (volumeVO.getPath() == null || !volumeVO.getPath().equals(iscsiPath)) {
+            volumeVO.set_iScsiName(iscsiPath);
+            volumeVO.setPath(iscsiPath);
         }
     }
 
@@ -505,42 +510,61 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
 
             // Retrieve LUN name from volume details; if missing, volume may not have been fully created
             VolumeDetailVO lunDetail = volumeDetailsDao.findDetail(volumeVO.getId(), OntapStorageConstants.LUN_DOT_NAME);
-            String lunName = lunDetail != null ? lunDetail.getValue() : null;
-            if (lunName == null) {
-                logger.warn("revokeAccessForVolume: No LUN name found for volume [{}]; skipping revoke", volumeVO.getId());
-                return;
-            }
-
-            // Verify LUN still exists on ONTAP (may have been manually deleted)
-            CloudStackVolume cloudStackVolume = getCloudStackVolumeByName(storageStrategy, svmName, lunName);
-            if (cloudStackVolume == null || cloudStackVolume.getLun() == null || cloudStackVolume.getLun().getUuid() == null) {
-                logger.warn("revokeAccessForVolume: LUN for volume [{}] not found on ONTAP, skipping revoke", volumeVO.getId());
-                return;
-            }
-
-            // Verify igroup still exists on ONTAP
-            AccessGroup accessGroup = getAccessGroupByName(storageStrategy, svmName, accessGroupName);
-            if (accessGroup == null || accessGroup.getIgroup() == null || accessGroup.getIgroup().getUuid() == null) {
-                logger.warn("revokeAccessForVolume: iGroup [{}] not found on ONTAP, skipping revoke", accessGroupName);
-                return;
-            }
-
-            // Verify host initiator is in the igroup before attempting to remove mapping
-            SANStrategy sanStrategy = (UnifiedSANStrategy) storageStrategy;
-            if (!sanStrategy.validateInitiatorInAccessGroup(host.getStorageUrl(), svmName, accessGroup.getIgroup())) {
-                logger.warn("revokeAccessForVolume: Initiator [{}] is not in iGroup [{}], skipping revoke",
-                        host.getStorageUrl(), accessGroupName);
-                return;
-            }
+            ValidateRevoke result = getValidateRevoke(volumeVO, host, lunDetail, storageStrategy, svmName, accessGroupName);
+            if (result == null) return;
 
             // Remove the LUN mapping from the igroup
             Map<String, String> disableLogicalAccessMap = new HashMap<>();
-            disableLogicalAccessMap.put(OntapStorageConstants.LUN_DOT_UUID, cloudStackVolume.getLun().getUuid());
-            disableLogicalAccessMap.put(OntapStorageConstants.IGROUP_DOT_UUID, accessGroup.getIgroup().getUuid());
+            disableLogicalAccessMap.put(OntapStorageConstants.LUN_DOT_UUID, result.cloudStackVolume.getLun().getUuid());
+            disableLogicalAccessMap.put(OntapStorageConstants.IGROUP_DOT_UUID, result.accessGroup.getIgroup().getUuid());
             storageStrategy.disableLogicalAccess(disableLogicalAccessMap);
 
             logger.info("revokeAccessForVolume: Successfully revoked access to LUN [{}] for host [{}]",
-                    lunName, host.getName());
+                    result.lunName, host.getName());
+        }
+    }
+
+    @Nullable
+    private ValidateRevoke getValidateRevoke(VolumeVO volumeVO, Host host, VolumeDetailVO lunDetail, StorageStrategy storageStrategy, String svmName, String accessGroupName) {
+        String lunName = lunDetail != null ? lunDetail.getValue() : null;
+        if (lunName == null) {
+            logger.warn("revokeAccessForVolume: No LUN name found for volume [{}]; skipping revoke", volumeVO.getId());
+            return null;
+        }
+
+        // Verify LUN still exists on ONTAP (may have been manually deleted)
+        CloudStackVolume cloudStackVolume = getCloudStackVolumeByName(storageStrategy, svmName, lunName);
+        if (cloudStackVolume == null || cloudStackVolume.getLun() == null || cloudStackVolume.getLun().getUuid() == null) {
+            logger.warn("revokeAccessForVolume: LUN for volume [{}] not found on ONTAP, skipping revoke", volumeVO.getId());
+            return null;
+        }
+
+        // Verify igroup still exists on ONTAP
+        AccessGroup accessGroup = getAccessGroupByName(storageStrategy, svmName, accessGroupName);
+        if (accessGroup == null || accessGroup.getIgroup() == null || accessGroup.getIgroup().getUuid() == null) {
+            logger.warn("revokeAccessForVolume: iGroup [{}] not found on ONTAP, skipping revoke", accessGroupName);
+            return null;
+        }
+
+        // Verify host initiator is in the igroup before attempting to remove mapping
+        SANStrategy sanStrategy = (UnifiedSANStrategy) storageStrategy;
+        if (!sanStrategy.validateInitiatorInAccessGroup(host.getStorageUrl(), svmName, accessGroup.getIgroup())) {
+            logger.warn("revokeAccessForVolume: Initiator [{}] is not in iGroup [{}], skipping revoke",
+                    host.getStorageUrl(), accessGroupName);
+            return null;
+        }
+        return new ValidateRevoke(lunName, cloudStackVolume, accessGroup);
+    }
+
+    private static class ValidateRevoke {
+        public final String lunName;
+        public final CloudStackVolume cloudStackVolume;
+        public final AccessGroup accessGroup;
+
+        public ValidateRevoke(String lunName, CloudStackVolume cloudStackVolume, AccessGroup accessGroup) {
+            this.lunName = lunName;
+            this.cloudStackVolume = cloudStackVolume;
+            this.accessGroup = accessGroup;
         }
     }
 

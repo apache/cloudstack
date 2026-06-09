@@ -210,7 +210,7 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
     }
 
     private void waitForDiskToBecomeAvailable(String volumeUuid, KVMStoragePool pool) {
-        int numberOfTries = 30;
+        int numberOfTries = 10;
         int timeBetweenTries = 1000;
 
         while (getPhysicalDisk(volumeUuid, pool).getSize() == 0 && numberOfTries > 0) {
@@ -294,8 +294,9 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
                 logger.debug("Device by-path does not exist yet: " + deviceByPath);
                 return 0L;
             }
-        } catch (Exception ignore) {
+        } catch (Exception ex) {
             // If FS check fails for any reason, fall back to blockdev call
+            logger.error("Error fetching device size for {}", deviceByPath, ex);
         }
 
         Script iScsiAdmCmd = new Script(true, "blockdev", 0, logger);
