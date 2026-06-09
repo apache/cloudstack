@@ -844,9 +844,9 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
         List<HostVO> incompatibleHosts = _hostDao.findHostsWithGuestOsRulesThatDidNotMatchOsOfGuestVm(templateGuestOSName);
 
-        boolean isIncompatibleHost = incompatibleHosts.stream().noneMatch(incompatibleHost -> incompatibleHost.getId() == host.getId());
+        boolean isHostCompatible = incompatibleHosts.stream().noneMatch(incompatibleHost -> incompatibleHost.getId() == host.getId());
 
-        if (!isIncompatibleHost) {
+        if (!isHostCompatible) {
             logger.debug("The template [{}] is incompatible with the host [{}] due to the guest OS rule [{}].", template, host, guestOsRule);
             return false;
         }
