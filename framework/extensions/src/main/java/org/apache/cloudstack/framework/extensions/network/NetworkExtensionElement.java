@@ -1449,6 +1449,7 @@ public class NetworkExtensionElement extends AdapterBase implements
                 hostname, nic.getIPv4Address(), nic.getIPv6Address());
         JsonObject payload = new JsonObject();
         addNetworkToPayload(payload, network);
+        addNetworkDnsToPayload(payload, network);
         addNicToPayload(payload, nic);
         payload.addProperty("hostname", safeStr(hostname));
         addExtensionIpToPayload(payload, network);
@@ -1464,6 +1465,7 @@ public class NetworkExtensionElement extends AdapterBase implements
                 nic.getMacAddress(), nic.getIPv4Address(), nic.getIPv6Address());
         JsonObject payload = new JsonObject();
         addNetworkToPayload(payload, network);
+        addNetworkDnsToPayload(payload, network);
         addNicToPayload(payload, nic);
         addExtensionIpToPayload(payload, network);
         return executeScript(network, CMD_REMOVE_DNS_ENTRY, payload);
@@ -1493,6 +1495,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         logger.debug("removeDnsSupportForSubnet: network={}", network);
         JsonObject payload = new JsonObject();
         addNetworkToPayload(payload, network);
+        addNetworkDnsToPayload(payload, network);
         addExtensionIpToPayload(payload, network);
         return executeScript(network, CMD_REMOVE_DNS_SUBNET, payload);
     }
