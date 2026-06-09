@@ -974,7 +974,7 @@ public class VolumeObject implements VolumeInfo {
                 return base64Dek.getBytes(java.nio.charset.StandardCharsets.UTF_8);
             } catch (KMSException e) {
                 logger.error("Failed to unwrap KMS key for volume {}: {}", volumeVO, e.getMessage(), e);
-                return new byte[0];
+                throw e;
             }
         }
 

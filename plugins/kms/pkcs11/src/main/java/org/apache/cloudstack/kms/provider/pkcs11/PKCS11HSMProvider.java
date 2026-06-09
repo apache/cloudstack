@@ -59,8 +59,10 @@ import java.security.SecureRandom;
 import java.security.Security;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
+import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -336,7 +338,24 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
         try {
             session = pool.acquireSession(SESSION_ACQUIRE_TIMEOUT_MS);
             return operation.execute(session);
+        } catch (KMSException e) {
+            // Only tear down the pool when a session we actually acquired failed with a
+            // connection error (e.g. the HSM restarted mid-operation). This proactively
+            // drops all the other now-stale idle sessions so concurrent callers don't each
+            // rediscover the breakage one session at a time.
+            //
+            // Deliberately NOT invalidating when session == null: acquireSession() reports
+            // CONNECTION_FAILED for capacity timeouts and interrupts too, which are not HSM
+            // failures — tearing down a healthy pool there would cause needless churn. An
+            // acquire-time connect() failure self-heals via the hsmRestartCount bump and the
+            // isValid() check that discards stale idle sessions on the next poll.
+            if (session != null && e.getErrorType() == KMSException.ErrorType.CONNECTION_FAILED) {
+                invalidateProfileCache(hsmProfileId);
+            }
+            throw e;
         } finally {
+            // releaseSession is safe even after invalidateProfileCache: the invalidated
+            // flag causes it to close the session and release the semaphore permit.
             pool.releaseSession(session);
         }
     }
@@ -501,6 +520,12 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
         // Counter to bypass JDK SunPKCS11 caching when the HSM restarts
         private static final AtomicInteger hsmRestartCount = new AtomicInteger(0);
 
+        // Holds strong references to recently-closed SunPKCS11 providers until a new
+        // session has successfully completed C_Initialize + C_OpenSession. This prevents
+        // GC from running the old provider's finalizer (which calls C_Finalize on the
+        // shared native PKCS11 module) while a new session is still initialising.
+        private static final Deque<Provider> pendingFinalization = new ArrayDeque<>();
+
         private KeyStore keyStore;
         private Provider provider;
         private String providerName;
@@ -589,6 +614,13 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
                 Files.deleteIfExists(tempConfigFile);
                 tempConfigFile = null;
 
+                // New session is fully initialised (C_Initialize + C_OpenSession succeeded).
+                // Release the deferred old providers so they can now be GC'd and finalised
+                // without racing against this session's initialisation.
+                synchronized (pendingFinalization) {
+                    pendingFinalization.clear();
+                }
+
                 logger.debug("Successfully connected to PKCS#11 HSM at {}", config.get("library"));
             } catch (KeyStoreException | CertificateException | NoSuchAlgorithmException e) {
                 handlePKCS11Exception(e, "Failed to initialize PKCS#11 connection");
@@ -624,14 +656,11 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
             // when an HSM restart is detected. The OS dlopen() ignores extra slashes.
             int bypass = hsmRestartCount.get();
             if (bypass > 0) {
-                StringBuilder sb = new StringBuilder();
-                for (int i = 0; i < bypass; i++) {
-                    sb.append("/");
-                }
+                String extraSlashes = "/".repeat(bypass);
                 if (libraryPath.startsWith("/")) {
-                    libraryPath = "/" + sb.toString() + libraryPath.substring(1);
+                    libraryPath = "/" + extraSlashes + libraryPath.substring(1);
                 } else {
-                    libraryPath = "./" + sb.toString() + libraryPath;
+                    libraryPath = "./" + extraSlashes + libraryPath;
                 }
             }
 
@@ -771,6 +800,12 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
                 if (provider != null && providerName != null) {
                     try {
                         Security.removeProvider(providerName);
+                        // Keep a strong reference so GC cannot finalize this provider
+                        // (and call C_Finalize on the shared native module) until the
+                        // next session has fully initialised. Drained in connect().
+                        synchronized (pendingFinalization) {
+                            pendingFinalization.addLast(provider);
+                        }
                     } catch (Exception e) {
                         logger.debug("Failed to remove provider {}: {}", providerName, e.getMessage());
                     }

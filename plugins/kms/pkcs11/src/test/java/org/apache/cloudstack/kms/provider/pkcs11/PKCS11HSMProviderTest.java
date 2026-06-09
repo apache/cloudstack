@@ -37,6 +37,7 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -260,5 +261,34 @@ public class PKCS11HSMProviderTest {
         assertEquals("Should reuse same pool", pool1, pool2);
         // Config should only be loaded once
         verify(hsmProfileDetailsDao, times(1)).listByProfileId(testProfileId);
+    }
+
+    @Test
+    public void testInvalidateProfileCache_ForcesFreshPool() {
+        // Setup
+        HSMProfileDetailsVO libraryDetail = mock(HSMProfileDetailsVO.class);
+        when(libraryDetail.getName()).thenReturn("library");
+        when(libraryDetail.getValue()).thenReturn("/path/to/lib.so");
+        HSMProfileDetailsVO slotDetail = mock(HSMProfileDetailsVO.class);
+        when(slotDetail.getName()).thenReturn("slot");
+        when(slotDetail.getValue()).thenReturn("1");
+        HSMProfileDetailsVO pinDetail = mock(HSMProfileDetailsVO.class);
+        when(pinDetail.getName()).thenReturn("pin");
+        when(pinDetail.getValue()).thenReturn("1234");
+        when(hsmProfileDetailsDao.listByProfileId(testProfileId)).thenReturn(
+                Arrays.asList(libraryDetail, slotDetail, pinDetail));
+
+        // Test: build a pool, invalidate it, then build again
+        Object poolBefore = provider.getSessionPool(testProfileId);
+        provider.invalidateProfileCache(testProfileId);
+        Object poolAfter = provider.getSessionPool(testProfileId);
+
+        // Verify: a brand-new pool instance is created after invalidation
+        assertNotNull("Pool should be created before invalidation", poolBefore);
+        assertNotNull("Pool should be recreated after invalidation", poolAfter);
+        assertNotSame("Invalidation must force a fresh pool, not reuse the stale one",
+                poolBefore, poolAfter);
+        // Config is reloaded for each freshly-built pool (twice total)
+        verify(hsmProfileDetailsDao, times(2)).listByProfileId(testProfileId);
     }
 }

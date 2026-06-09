@@ -218,8 +218,12 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         if (wrappedVO.getKekVersionId() != null) {
             KMSKekVersionVO version = kmsKekVersionDao.findById(wrappedVO.getKekVersionId());
             if (version != null && version.getStatus() != KMSKekVersionVO.Status.Archived) {
+                HSMProfileVO hsmProfile = hsmProfileDao.findById(version.getHsmProfileId());
+                if (!hsmProfile.isEnabled()) {
+                    throw KMSException.providerNotInitialized("HSM profile is not enabled for wrapped key: " + version);
+                }
                 try {
-                    byte[] dek = getUnwrappedKey(wrappedVO, kmsKey, version);
+                    byte[] dek = getUnwrappedKey(wrappedVO, kmsKey, version, hsmProfile);
 
                     CallContext.current().setEventResourceId(kmsKey.getId());
                     CallContext.current().setEventResourceType(ApiCommandResourceType.KmsKey);
@@ -238,8 +242,12 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         // Fallback: try all available versions for decryption
         List<KMSKekVersionVO> versions = kmsKekVersionDao.getVersionsForDecryption(kmsKey.getId());
         for (KMSKekVersionVO version : versions) {
+            HSMProfileVO hsmProfile = hsmProfileDao.findById(version.getHsmProfileId());
+            if (!hsmProfile.isEnabled()) {
+                throw KMSException.providerNotInitialized("HSM profile is not enabled for wrapped key: " + version);
+            }
             try {
-                byte[] dek = getUnwrappedKey(wrappedVO, kmsKey, version);
+                byte[] dek = getUnwrappedKey(wrappedVO, kmsKey, version, hsmProfile);
 
                 CallContext.current().setEventResourceId(kmsKey.getId());
                 CallContext.current().setEventResourceType(ApiCommandResourceType.KmsKey);
@@ -259,8 +267,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
     }
 
     private byte[] getUnwrappedKey(KMSWrappedKeyVO wrappedVO, KMSKeyVO kmsKey,
-                                   KMSKekVersionVO version) throws Exception {
-        HSMProfileVO hsmProfile = hsmProfileDao.findById(version.getHsmProfileId());
+                                   KMSKekVersionVO version, HSMProfileVO hsmProfile) throws Exception {
         KMSProvider provider = getKMSProvider(hsmProfile.getProtocol());
 
         WrappedKey wrapped = new WrappedKey(wrappedVO.getUuid(), version.getKekLabel(), kmsKey.getPurpose(),

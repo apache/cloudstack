@@ -40,7 +40,7 @@ export default {
         if (store.getters.listAllProjects) {
           fields.push('project')
         }
-        fields.push('domain')
+        fields.push('domainpath')
         return fields
       },
       details: () => {
@@ -48,7 +48,7 @@ export default {
         if (['Admin'].includes(store.getters.userInfo.roletype)) {
           fields.push('keklabel')
         }
-        fields.push('keybits', 'enabled', 'account', 'domain', 'project', 'created', 'hsmprofile')
+        fields.push('keybits', 'enabled', 'account', 'domainpath', 'project', 'created', 'hsmprofile')
         return fields
       },
       related: [
@@ -186,10 +186,10 @@ export default {
         if (store.getters.listAllProjects) {
           fields.push('project')
         }
-        fields.push('domain')
+        fields.push('domainpath')
         return fields
       },
-      details: ['id', 'name', 'description', 'protocol', 'enabled', 'ispublic', 'account', 'domain', 'project', 'created', 'details'],
+      details: ['id', 'name', 'description', 'protocol', 'enabled', 'ispublic', 'account', 'domainpath', 'project', 'created', 'details'],
       related: [
         {
           name: 'kmskey',

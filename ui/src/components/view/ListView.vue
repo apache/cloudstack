@@ -458,6 +458,9 @@
       <template v-if="column.key === 'isuserdefined'">
         <span>{{ text ? $t('label.yes') : $t('label.no') }}</span>
       </template>
+      <template v-if="column.key === 'ispublic'">
+        <span>{{ text ? $t('label.yes') : $t('label.no') }}</span>
+      </template>
       <template v-if="column.key === 'state'">
         <status
           v-if="$route.path.startsWith('/host')"
