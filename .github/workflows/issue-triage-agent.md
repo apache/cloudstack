@@ -1,11 +1,11 @@
 ---
 on:
-  schedule: 0 14 * * 1-5
+  schedule: daily around 14:00 on weekdays
   workflow_dispatch: null
 permissions:
   issues: read
 imports:
-- github/gh-aw/.github/workflows/shared/reporting.md@94662b1dee8ce96c876ba9f33b3ab8be32de82a4
+- github/gh-aw/.github/workflows/shared/reporting.md@359795d49ada21681ab616bd4cbcb144a7387115
 safe-outputs:
   add-comment: {}
   add-labels:
@@ -17,10 +17,12 @@ safe-outputs:
     - question
     - help-wanted
     - good-first-issue
-source: github/gh-aw/.github/workflows/issue-triage-agent.md@94662b1dee8ce96c876ba9f33b3ab8be32de82a4
+emoji: 🔧
+source: github/gh-aw/.github/workflows/issue-triage-agent.md@359795d49ada21681ab616bd4cbcb144a7387115
 strict: true
 timeout-minutes: 5
 tools:
+  cli-proxy: true
   github:
     toolsets:
     - issues
@@ -45,7 +47,7 @@ Hi @{author}! I've categorized this issue as **{label_name}** based on the follo
 **Reasoning**: {brief_explanation_of_why_this_label}
 
 <details>
-<summary><b>View Triage Details</b></summary>
+<summary>View Triage Details</summary>
 
 #### Analysis
 - **Keywords detected**: {list_of_keywords_that_matched}
@@ -76,3 +78,15 @@ For efficiency, if multiple issues are triaged in a single run:
 3. Optionally: Create a discussion summarizing all triage actions for that run
 
 This provides both per-issue context and batch visibility.
+
+## Labels
+
+- `bug`: Indicates a problem or error in the code that needs fixing.
+- `feature`: Represents a new feature request or enhancement to existing functionality.
+- `enhancement`: Suggests improvements to existing features or code.
+- `documentation`: Pertains to issues related to documentation, such as missing or unclear docs.
+- `question`: Used for issues that are asking for clarification or have questions about the project.
+- `help-wanted`: Indicates that the issue is a good candidate for external contributions and help
+- `good-first-issue`: Marks issues that are suitable for newcomers to the project, often with simpler scope.
+
+{{#runtime-import shared/noop-reminder.md}}

@@ -29,14 +29,14 @@ concurrency:
 jobs:
   triage:
     permissions:
-      pull-requests: write  # for eps1lon/actions-label-merge-conflict to label PRs
-    runs-on: ubuntu-22.04
+      pull-requests: write # for eps1lon/actions-label-merge-conflict to label PRs
+    runs-on: ubuntu-24.04
     steps:
-    - name: Conflict Check
-      uses: eps1lon/actions-label-merge-conflict@v3.0.3
-      with:
-        repoToken: "${{ secrets.GITHUB_TOKEN }}"
-        dirtyLabel: "status:has-conflicts"
-        removeOnDirtyLabel: "status:ready-for-review"
-        continueOnMissingPermissions: true
-        commentOnDirty: "This pull request has merge conflicts. Dear author, please fix the conflicts and sync your branch with the base branch."
+      - name: Conflict Check
+        uses: eps1lon/actions-label-merge-conflict@1df065ebe6e3310545d4f4c4e862e43bdca146f0 # v3.0.3
+        with:
+          repoToken: "${{ secrets.GITHUB_TOKEN }}"
+          dirtyLabel: "status:has-conflicts"
+          removeOnDirtyLabel: "status:ready-for-review"
+          continueOnMissingPermissions: true
+          commentOnDirty: "This pull request has merge conflicts. Dear author, please fix the conflicts and sync your branch with the base branch."

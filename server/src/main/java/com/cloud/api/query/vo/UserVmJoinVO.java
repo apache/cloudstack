@@ -132,6 +132,9 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "guest_os_uuid")
     private String guestOsUuid;
 
+    @Column(name = "guest_os_display_name")
+    private String guestOsDisplayName;
+
     @Column(name = "hypervisor_type")
     @Convert(converter = HypervisorTypeConverter.class)
     private HypervisorType hypervisorType;
@@ -436,7 +439,7 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     private int jobStatus;
 
     @Column(name = "affinity_group_id")
-    private long affinityGroupId;
+    private Long affinityGroupId;
 
     @Column(name = "affinity_group_uuid")
     private String affinityGroupUuid;
@@ -617,6 +620,10 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     public String getGuestOsUuid() {
         return guestOsUuid;
+    }
+
+    public String getGuestOsDisplayName() {
+        return guestOsDisplayName;
     }
 
     public HypervisorType getHypervisorType() {
@@ -1023,7 +1030,7 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
         return ip6Cidr;
     }
 
-    public long getAffinityGroupId() {
+    public Long getAffinityGroupId() {
         return affinityGroupId;
     }
 
@@ -1068,7 +1075,7 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
         return userDataId;
     }
 
-    public String getUserDataUUid() {
+    public String getUserDataUuid() {
         return userDataUuid;
     }
 
