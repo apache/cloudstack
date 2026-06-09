@@ -31,4 +31,6 @@ public interface SecurityGroupDao extends GenericDao<SecurityGroupVO, Long> {
     List<SecurityGroupVO> findByAccountAndNames(Long accountId, String... names);
 
     int removeByAccountId(long accountId);
+
+    List<SecurityGroupVO> listByIds(List<Long> ids);
 }
