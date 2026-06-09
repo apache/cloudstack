@@ -3858,6 +3858,17 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         }
                     }
                 }
+                if (vmProfile.getType() == Type.User && element.getProvider() != null) {
+                    if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dns)
+                            && _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dns, element.getProvider()) && element instanceof DnsServiceProvider) {
+                        final DnsServiceProvider sp = (DnsServiceProvider) element;
+                        try {
+                            sp.removeDnsEntry(network, nicProfile, vmProfile);
+                        } catch (ResourceUnavailableException e) {
+                            logger.error("Failed to remove dns entry due to: ", e);
+                        }
+                    }
+                }
             }
         }
     }
