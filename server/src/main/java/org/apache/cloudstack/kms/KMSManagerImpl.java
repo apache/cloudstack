@@ -22,6 +22,7 @@ import com.cloud.api.ApiResponseHelper;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
@@ -1020,15 +1021,27 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
             throw new PermissionDeniedException("Only root admins can create system HSM profiles");
         }
 
-        if (cmd.getDomainId() != null && StringUtils.isBlank(cmd.getAccountName())) {
-            throw new InvalidParameterValueException("Account name must be provided with domain ID");
+        Long accountId;
+        Long domainId;
+        if (StringUtils.isNotBlank(cmd.getAccountName()) || cmd.getProjectId() != null) {
+            // Account- or project-scoped profile
+            Account targetAccount = accountManager.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(),
+                    cmd.getProjectId());
+            accountId = targetAccount.getId();
+            domainId = targetAccount.getDomainId();
+        } else if (cmd.getDomainId() != null) {
+            // Domain-scoped profile: account-less, usable by all accounts directly in the domain.
+            if (domainDao.findById(cmd.getDomainId()) == null) {
+                throw new InvalidParameterValueException("Domain not found: " + cmd.getDomainId());
+            }
+            accountId = null;
+            domainId = cmd.getDomainId();
+        } else {
+            // Fallback: owned by the caller's account.
+            Account targetAccount = accountManager.finalizeOwner(caller, null, null, null);
+            accountId = targetAccount.getId();
+            domainId = targetAccount.getDomainId();
         }
-
-        Account targetAccount = accountManager.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(),
-                cmd.getProjectId());
-
-        Long accountId = targetAccount.getId();
-        Long domainId = targetAccount.getDomainId();
 
         HSMProfileVO profile = new HSMProfileVO(
                 cmd.getName(),
@@ -1129,7 +1142,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
 
         if (!isRootAdmin) {
             if (listAll) {
-                // (isPublic = true OR accountId IN (...) OR domainId IN (...))
+                // (isPublic = true OR accountId/domainId IN (...) OR (account_id IS NULL AND domain_id = ?))
                 sb.and().op("isPublicACL", sb.entity().getIsPublic(), SearchCriteria.Op.EQ);
                 if (!permittedAccounts.isEmpty()) {
                     sb.or("accountIdIN", sb.entity().getAccountId(), SearchCriteria.Op.IN);
@@ -1140,17 +1153,28 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
                         sb.or("domainIdEQ", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
                     }
                 }
+                sb.or().op("sharedAccountNull", sb.entity().getAccountId(), SearchCriteria.Op.NULL);
+                sb.and("sharedDomainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
+                sb.cp();
                 sb.cp();
             } else {
-                // No listAll: only show profiles the user/domain owns
+                // No listAll: profiles the user/domain owns, OR domain-shared for caller's domain
                 if (!permittedAccounts.isEmpty()) {
-                    sb.and("accountIdIN", sb.entity().getAccountId(), SearchCriteria.Op.IN);
+                    sb.and().op("accountIdIN", sb.entity().getAccountId(), SearchCriteria.Op.IN);
+                    sb.or().op("sharedAccountNull", sb.entity().getAccountId(), SearchCriteria.Op.NULL);
+                    sb.and("sharedDomainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
+                    sb.cp();
+                    sb.cp();
                 } else if (domainId != null) {
                     if (isRecursive) {
-                        sb.and("domainIdIN", sb.entity().getDomainId(), SearchCriteria.Op.IN);
+                        sb.and().op("domainIdIN", sb.entity().getDomainId(), SearchCriteria.Op.IN);
                     } else {
-                        sb.and("domainIdEQ", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
+                        sb.and().op("domainIdEQ", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
                     }
+                    sb.or().op("sharedAccountNull", sb.entity().getAccountId(), SearchCriteria.Op.NULL);
+                    sb.and("sharedDomainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
+                    sb.cp();
+                    sb.cp();
                 }
             }
         } else {
@@ -1209,6 +1233,10 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
             if (cmd.listAll()) {
                 sc.setParameters("isPublicACL", true);
             }
+
+            // Domain-shared profiles (account_id IS NULL AND domain_id = caller's domain) are visible
+            // to all accounts directly in the caller's domain, alongside public and owned profiles.
+            sc.setParameters("sharedDomainId", caller.getDomainId());
 
             if (!permittedAccounts.isEmpty()) {
                 sc.setParameters("accountIdIN", permittedAccounts.toArray());
@@ -1328,7 +1356,17 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         response.setEnabled(profile.isEnabled());
         response.setCreated(profile.getCreated());
 
-        ApiResponseHelper.populateOwner(response, profile);
+        if (profile.getAccountId() == -1) {
+            // Domain-scoped (account-less) profile: populateOwner would NPE on findAccountById(-1).
+            DomainVO domain = profile.getDomainId() == -1 ? null : domainDao.findById(profile.getDomainId());
+            if (domain != null) {
+                response.setDomainId(domain.getUuid());
+                response.setDomainName(domain.getName());
+                response.setDomainPath(domain.getPath());
+            }
+        } else {
+            ApiResponseHelper.populateOwner(response, profile);
+        }
 
         if (!limited) {
             List<HSMProfileDetailsVO> details = hsmProfileDetailsDao.listByProfileId(profile.getId());
@@ -1368,6 +1406,18 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         if (profile.getIsPublic()) {
             if (requireModifyAccess && !accountManager.isRootAdmin(caller.getId())) {
                 throw new PermissionDeniedException("Only root admins can modify system HSM profiles");
+            }
+        } else if (profile.getAccountId() == -1 && profile.getDomainId() != -1) {
+            // Domain-scoped (account-less) profile: usable by accounts directly in the domain,
+            // modifiable only by root admins. Cannot route through accountManager.checkAccess
+            // because findById(-1) on the null owner would deny everyone.
+            boolean isRootAdmin = accountManager.isRootAdmin(caller.getId());
+            if (requireModifyAccess) {
+                if (!isRootAdmin) {
+                    throw new PermissionDeniedException("Only root admins can modify domain-scoped HSM profiles");
+                }
+            } else if (!isRootAdmin && caller.getDomainId() != profile.getDomainId()) {
+                throw new PermissionDeniedException("Access denied to HSM profile");
             }
         } else {
             accountManager.checkAccess(caller, null, requireModifyAccess, profile);

@@ -64,11 +64,14 @@ public class CreateHSMProfileCmd extends BaseCmd {
     private Long zoneId;
 
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class,
-               description = "the domain ID where the HSM profile is available")
+               description = "the domain ID where the HSM profile is available. If specified without an account, "
+                             + "the profile is domain-scoped and usable by all accounts directly in that domain.")
     private Long domainId;
 
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING,
-               description = "the account name of the HSM profile owner. Must be used with domainId.")
+               description = "the account name of the HSM profile owner. Must be used with domainId. "
+                             + "Leave empty (with a domainId) to create a domain-scoped profile shared by all "
+                             + "accounts in that domain.")
     private String accountName;
 
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class,

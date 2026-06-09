@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.kms;
 
+import com.cloud.event.ActionEventUtils;
 import org.apache.cloudstack.framework.kms.KMSException;
 import org.apache.cloudstack.framework.kms.KMSProvider;
 import org.apache.cloudstack.framework.kms.KeyPurpose;
@@ -25,7 +26,6 @@ import org.apache.cloudstack.kms.dao.HSMProfileDao;
 import org.apache.cloudstack.kms.dao.KMSKekVersionDao;
 import org.apache.cloudstack.kms.dao.KMSKeyDao;
 import org.apache.cloudstack.kms.dao.KMSWrappedKeyDao;
-import com.cloud.event.ActionEventUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

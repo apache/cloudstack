@@ -17,8 +17,8 @@
 
 package org.apache.cloudstack.kms;
 
-import com.cloud.event.ActionEventUtils;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.ActionEventUtils;
 import com.cloud.user.dao.AccountDao;
 import org.apache.cloudstack.framework.kms.KMSException;
 import org.apache.cloudstack.framework.kms.KMSProvider;
@@ -64,19 +64,26 @@ public class KMSManagerImplKeyCreationTest {
     private final Long testDomainId = 1L;
     private final Long testZoneId = 1L;
     private final String testProviderName = "pkcs11";
+
     @Spy
     @InjectMocks
     private KMSManagerImpl kmsManager;
+
     @Mock
     private KMSKeyDao kmsKeyDao;
+
     @Mock
     private KMSKekVersionDao kmsKekVersionDao;
+
     @Mock
     private HSMProfileDao hsmProfileDao;
+
     @Mock
     private AccountDao accountDao;
+
     @Mock
     private DomainDao domainDao;
+
     @Mock
     private KMSProvider kmsProvider;
 

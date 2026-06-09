@@ -19,8 +19,10 @@ package org.apache.cloudstack.kms;
 
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.dao.AccountDao;
@@ -61,25 +63,35 @@ import static org.mockito.Mockito.when;
 public class KMSManagerImplHSMTest {
 
     private final Long testAccountId = 100L;
+
     @Spy
     @InjectMocks
     private KMSManagerImpl kmsManager;
+
     @Mock
     private HSMProfileDao hsmProfileDao;
+
     @Mock
     private HSMProfileDetailsDao hsmProfileDetailsDao;
+
     @Mock
     private AccountManager accountManager;
+
     @Mock
     private DataCenterDao dataCenterDao;
+
     @Mock
     private DomainDao domainDao;
+
     @Mock
     private AccountDao accountDao;
+
     @Mock
     private KMSKeyDao kmsKeyDao;
+
     @Mock
     private KMSKekVersionDao kmsKekVersionDao;
+
     @Mock
     private KMSWrappedKeyDao kmsWrappedKeyDao;
 
@@ -237,6 +249,124 @@ public class KMSManagerImplHSMTest {
             assertTrue("Admin-owned database profile should be deletable", result);
             verify(kmsProvider).invalidateProfileCache(profileId);
             verify(hsmProfileDao).remove(profileId);
+        }
+    }
+
+    private HSMProfileVO domainScopedProfile(long domainId) {
+        HSMProfileVO profile = mock(HSMProfileVO.class);
+        when(profile.getIsPublic()).thenReturn(false);
+        when(profile.getAccountId()).thenReturn(-1L);
+        when(profile.getDomainId()).thenReturn(domainId);
+        return profile;
+    }
+
+    /**
+     * Test: a non-admin caller in the same domain may use a domain-scoped profile.
+     */
+    @Test
+    public void testCheckHSMProfileAccess_DomainScoped_AllowsUseBySameDomain() {
+        HSMProfileVO profile = domainScopedProfile(5L);
+
+        Account caller = mock(Account.class);
+        when(caller.getId()).thenReturn(2L);
+        when(caller.getDomainId()).thenReturn(5L);
+        when(accountManager.isRootAdmin(2L)).thenReturn(false);
+
+        kmsManager.checkHSMProfileAccess(caller, profile, false);
+
+        verify(accountManager, Mockito.never()).checkAccess(Mockito.any(Account.class), Mockito.any(), Mockito.anyBoolean(), Mockito.any());
+    }
+
+    /**
+     * Test: a non-admin caller in a different domain is denied use of a domain-scoped profile.
+     */
+    @Test(expected = PermissionDeniedException.class)
+    public void testCheckHSMProfileAccess_DomainScoped_DeniesUseByOtherDomain() {
+        HSMProfileVO profile = domainScopedProfile(5L);
+
+        Account caller = mock(Account.class);
+        when(caller.getId()).thenReturn(2L);
+        when(caller.getDomainId()).thenReturn(7L);
+        when(accountManager.isRootAdmin(2L)).thenReturn(false);
+
+        kmsManager.checkHSMProfileAccess(caller, profile, false);
+    }
+
+    /**
+     * Test: a root admin may use a domain-scoped profile from any domain.
+     */
+    @Test
+    public void testCheckHSMProfileAccess_DomainScoped_AllowsRootAdminFromAnyDomain() {
+        HSMProfileVO profile = domainScopedProfile(5L);
+
+        Account caller = mock(Account.class);
+        when(caller.getId()).thenReturn(2L);
+        when(accountManager.isRootAdmin(2L)).thenReturn(true);
+
+        kmsManager.checkHSMProfileAccess(caller, profile, false);
+    }
+
+    /**
+     * Test: a non-admin caller in the same domain may NOT modify a domain-scoped profile.
+     */
+    @Test(expected = PermissionDeniedException.class)
+    public void testCheckHSMProfileAccess_DomainScoped_DeniesModifyByNonAdmin() {
+        HSMProfileVO profile = domainScopedProfile(5L);
+
+        Account caller = mock(Account.class);
+        when(caller.getId()).thenReturn(2L);
+        when(accountManager.isRootAdmin(2L)).thenReturn(false);
+
+        kmsManager.checkHSMProfileAccess(caller, profile, true);
+    }
+
+    /**
+     * Test: a root admin may modify a domain-scoped profile.
+     */
+    @Test
+    public void testCheckHSMProfileAccess_DomainScoped_AllowsModifyByRootAdmin() {
+        HSMProfileVO profile = domainScopedProfile(5L);
+
+        Account caller = mock(Account.class);
+        when(caller.getId()).thenReturn(2L);
+        when(accountManager.isRootAdmin(2L)).thenReturn(true);
+
+        kmsManager.checkHSMProfileAccess(caller, profile, true);
+    }
+
+    /**
+     * Test: createHSMProfileResponse for a domain-scoped (account-less) profile populates the
+     * domain fields directly and does not route through populateOwner (which would NPE on a null owner).
+     */
+    @Test
+    public void testCreateHSMProfileResponse_DomainScoped_PopulatesDomainFields() {
+        Long profileId = 11L;
+        Long domainId = 5L;
+
+        HSMProfileVO profile = mock(HSMProfileVO.class);
+        when(profile.getId()).thenReturn(profileId);
+        when(profile.getUuid()).thenReturn("profile-uuid");
+        when(profile.getName()).thenReturn("domain-profile");
+        when(profile.getProtocol()).thenReturn("PKCS11");
+        when(profile.getVendorName()).thenReturn("TestVendor");
+        when(profile.isEnabled()).thenReturn(true);
+        when(profile.getCreated()).thenReturn(new java.util.Date());
+        when(profile.getAccountId()).thenReturn(-1L);
+        when(profile.getDomainId()).thenReturn(domainId);
+
+        DomainVO domain = mock(DomainVO.class);
+        when(domain.getUuid()).thenReturn("domain-uuid");
+        when(domain.getName()).thenReturn("D");
+        when(domain.getPath()).thenReturn("/D/");
+        when(domainDao.findById(domainId)).thenReturn(domain);
+
+        when(hsmProfileDetailsDao.listByProfileId(profileId)).thenReturn(Collections.emptyList());
+
+        try (MockedStatic<ApiResponseHelper> mockedApiResponseHelper = Mockito.mockStatic(ApiResponseHelper.class)) {
+            HSMProfileResponse response = kmsManager.createHSMProfileResponse(profile);
+
+            assertNotNull("Response should not be null", response);
+            mockedApiResponseHelper.verify(() -> ApiResponseHelper.populateOwner(Mockito.any(), Mockito.any()), Mockito.never());
         }
     }
 }

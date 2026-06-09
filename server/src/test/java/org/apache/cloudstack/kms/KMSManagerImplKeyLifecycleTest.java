@@ -34,8 +34,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -149,6 +149,7 @@ public class KMSManagerImplKeyLifecycleTest {
 
         HSMProfileVO profile = mock(HSMProfileVO.class);
         when(profile.getProtocol()).thenReturn("database");
+        when(profile.isEnabled()).thenReturn(true);
         when(hsmProfileDao.findById(20L)).thenReturn(profile);
 
         when(kmsProvider.unwrapKey(any(WrappedKey.class), anyLong())).thenReturn(new byte[]{1, 2, 3});
