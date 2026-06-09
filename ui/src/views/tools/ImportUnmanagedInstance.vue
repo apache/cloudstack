@@ -266,7 +266,7 @@
                   :items="nics"
                   :zoneId="cluster.zoneid"
                   :domainid="this.owner.domainid"
-                  :accountid="this.owner.account"
+                  :account="this.owner.account"
                   :selectionEnabled="false"
                   :filterUnimplementedNetworks="true"
                   :hypervisor="this.cluster.hypervisortype"
