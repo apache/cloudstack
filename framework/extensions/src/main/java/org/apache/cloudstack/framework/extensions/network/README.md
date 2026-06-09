@@ -280,9 +280,9 @@ The following names appear repeatedly inside the nested `payload` object.
 | `netmask` | VM NIC IPv4 netmask (for example `255.255.255.0`). |
 | `default_nic` | Stringified boolean — `"false"` for secondary NICs. |
 | `device_id` | NIC device index in the VM (slot number). |
-| `nic_ip6_address` | VM NIC IPv6 address, when the NIC has IPv6 configured. |
-| `nic_ip6_gateway` | VM NIC IPv6 gateway, when available. |
-| `nic_ip6_cidr` | VM NIC IPv6 CIDR, when available. |
+| `ip6_address` | VM NIC IPv6 address, when the NIC has IPv6 configured. |
+| `ip6_gateway` | VM NIC IPv6 gateway, when available. |
+| `ip6_cidr` | VM NIC IPv6 CIDR, when available. |
 
 ### Public-IP fields (added by `addPublicIpToPayload`)
 
