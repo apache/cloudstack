@@ -2765,7 +2765,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
 
             boolean isClvmLightweightMigration = isClvmLightweightMigrationNeeded(
-                    newVolumeOnPrimaryStorage, existingVolumeOfVm, vm);
+                    newVolumeOnPrimaryStorage, existingVolumeOfVm);
 
             if (isClvmLightweightMigration) {
                 newVolumeOnPrimaryStorage = executeLightweightLockMigration(
@@ -2819,18 +2819,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     /**
-     * Checks if both storage pools are CLVM type (CLVM or CLVM_NG).
-     * Delegates to VolumeService for the actual check.
-     *
-     * @param volumePool Storage pool for the volume
-     * @param vmPool Storage pool for the VM
-     * @return true if both pools are CLVM type (CLVM or CLVM_NG)
-     */
-    private boolean areBothPoolsClvmType(StoragePoolVO volumePool, StoragePoolVO vmPool) {
-        return volService.areBothPoolsClvmType(volumePool.getPoolType(), vmPool.getPoolType());
-    }
-
-    /**
      * Determines if a CLVM volume needs lightweight lock migration instead of full data copy.
      *
      * Lightweight migration is needed when:
@@ -2843,7 +2831,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      * @param vm The VM to attach the volume to
      * @return true if lightweight CLVM lock migration should be used
      */
-    private boolean isClvmLightweightMigrationNeeded(VolumeInfo volumeToAttach, VolumeVO vmExistingVolume, UserVmVO vm) {
+    private boolean isClvmLightweightMigrationNeeded(VolumeInfo volumeToAttach, VolumeVO vmExistingVolume) {
         Pair<StoragePoolVO, StoragePoolVO> pools = getStoragePoolsForVolumeAttachment(volumeToAttach, vmExistingVolume);
         if (pools == null) {
             return false;
@@ -2907,21 +2895,24 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             return destHostId;
         }
 
-        if (vmExistingVolume != null && vmExistingVolume.getPoolId() != null) {
-            StoragePoolVO pool = _storagePoolDao.findById(vmExistingVolume.getPoolId());
-            if (pool != null && pool.getClusterId() != null) {
-                List<HostVO> hosts = _hostDao.findByClusterId(pool.getClusterId());
-                if (hosts != null && !hosts.isEmpty()) {
-                    // Pick first available UP host
-                    for (HostVO host : hosts) {
-                        if (host.getStatus() == Status.Up) {
-                            destHostId = host.getId();
-                            logger.debug("VM {} is stopped, selected host {} from cluster {} for CLVM lock migration",
-                                    vm.getUuid(), destHostId, pool.getClusterId());
-                            return destHostId;
-                        }
-                    }
-                }
+        if (vmExistingVolume == null || vmExistingVolume.getPoolId() == null) {
+            return null;
+        }
+        StoragePoolVO pool = _storagePoolDao.findById(vmExistingVolume.getPoolId());
+        if (pool == null || pool.getClusterId() == null) {
+            return null;
+        }
+        List<HostVO> hosts = _hostDao.findByClusterId(pool.getClusterId());
+        if (hosts == null || hosts.isEmpty()) {
+            return null;
+        }
+        // Pick first available UP host
+        for (HostVO host : hosts) {
+            if (host.getStatus() == Status.Up) {
+                destHostId = host.getId();
+                logger.debug("VM {} is stopped, selected host {} from cluster {} for CLVM lock migration",
+                        vm.getUuid(), destHostId, pool.getClusterId());
+                return destHostId;
             }
         }
 
@@ -2980,17 +2971,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             logger.error("CLVM lock migration failed for volume {}: {}", volume.getUuid(), e.getMessage(), e);
             throw e;
         }
-    }
-
-    /**
-     * Finds which host currently has the exclusive lock on a CLVM volume.
-     * Delegates to VolumeService for the actual lookup.
-     *
-     * @param volume The CLVM volume
-     * @return Host ID that has the exclusive lock, or null if cannot be determined
-     */
-    private Long findVolumeLockHost(VolumeInfo volume) {
-        return volService.findVolumeLockHost(volume);
     }
 
     @Override
