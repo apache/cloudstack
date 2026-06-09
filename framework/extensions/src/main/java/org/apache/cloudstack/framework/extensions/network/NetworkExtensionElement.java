@@ -227,6 +227,7 @@ public class NetworkExtensionElement extends AdapterBase implements
     public static final String CMD_REMOVE_DHCP_SUBNET = "remove-dhcp-subnet";
     public static final String CMD_REMOVE_DHCP_ENTRY = "remove-dhcp-entry";
     public static final String CMD_ADD_DNS_ENTRY = "add-dns-entry";
+    public static final String CMD_REMOVE_DNS_ENTRY = "remove-dns-entry";
     public static final String CMD_CONFIG_DNS_SUBNET = "config-dns-subnet";
     public static final String CMD_REMOVE_DNS_SUBNET = "remove-dns-subnet";
     public static final String CMD_SAVE_VM_DATA = "save-vm-data";
@@ -1452,6 +1453,20 @@ public class NetworkExtensionElement extends AdapterBase implements
         payload.addProperty("hostname", safeStr(hostname));
         addExtensionIpToPayload(payload, network);
         return executeScript(network, CMD_ADD_DNS_ENTRY, payload);
+    }
+
+    @Override
+    public boolean removeDnsEntry(Network network, NicProfile nic, VirtualMachineProfile vmProfile) throws ResourceUnavailableException {
+        if (!canHandle(network, Service.Dns)) {
+            return false;
+        }
+        logger.debug("removeDnsEntry: network={} mac={} ip={} ipv6={}", network,
+                nic.getMacAddress(), nic.getIPv4Address(), nic.getIPv6Address());
+        JsonObject payload = new JsonObject();
+        addNetworkToPayload(payload, network);
+        addNicToPayload(payload, nic);
+        addExtensionIpToPayload(payload, network);
+        return executeScript(network, CMD_REMOVE_DNS_ENTRY, payload);
     }
 
     @Override
