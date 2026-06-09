@@ -2386,6 +2386,19 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     }
 
     @Override
+    public boolean usesNetworkExtensionIsolation(String providerName) {
+        Extension extension = extensionDao.findByName(providerName);
+        if (extension == null) {
+            return false;
+        }
+        Map<String, String> extDetails = extensionDetailsDao.listDetailsKeyPairs(extension.getId());
+        if (MapUtils.isEmpty(extDetails)) {
+            return false;
+        }
+        return NETWORK_EXTENSION_ISOLATION_METHOD.equalsIgnoreCase(extDetails.get(NETWORK_ISOLATION_METHOD_DETAIL_KEY));
+    }
+
+    @Override
     public List<Extension> listExtensionsByType(Extension.Type type) {
         if (type == null) {
             return new ArrayList<>();

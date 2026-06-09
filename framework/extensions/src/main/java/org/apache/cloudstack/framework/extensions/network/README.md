@@ -146,7 +146,9 @@ cmk createExtension \
     "details[0].key=network.services" \
     "details[0].value=SourceNat,StaticNat,PortForwarding,Firewall,Lb,Dhcp,Dns,UserData" \
     "details[1].key=network.service.capabilities" \
-    "details[1].value=$(cat my-sdn-capabilities.json)"
+    "details[1].value=$(cat my-sdn-capabilities.json)" \
+    "details[2].key=network.isolation.method" \
+    "details[2].value=NetworkExtension"
 ```
 
 `network.service.capabilities` is a JSON object — see
@@ -176,15 +178,23 @@ cmk registerExtension \
     id=${EXT_ID} \
     resourcetype=PhysicalNetwork \
     resourceid=${PHYS_ID} \
-    "details[0].key=hosts"    "details[0].value=192.168.1.10,192.168.1.11" \
-    "details[1].key=username" "details[1].value=admin" \
-    "details[2].key=password" "details[2].value=s3cr3t"
+    "details[0].key=hosts"             "details[0].value=192.168.1.10,192.168.1.11" \
+    "details[1].key=username"          "details[1].value=admin" \
+    "details[2].key=password"          "details[2].value=s3cr3t"
 ```
 
 Any key/value pairs you pass here are stored with the physical-network
 registration as extension metadata. The `custom-action` path embeds them
 directly into the payload file under `physical-network-extension-details`.
 The schema is entirely yours — CloudStack treats it as opaque.
+
+> **`isolation_method=NetworkExtension`** tells CloudStack to select
+> `NetworkExtensionGuestNetworkGuru` when designing guest networks backed by
+> this extension.  This is required whenever your `implement-network` handler
+> outputs JSON that updates the network's broadcast domain type (e.g.
+> `"network.broadcast_domain_type": "Lswitch"` for OVN-backed extensions).
+> Without it the script output is accepted but silently ignored — the network
+> record in the CloudStack database is not updated.
 
 ### Step 4 – Enable the Network Service Provider
 
