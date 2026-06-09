@@ -2428,72 +2428,6 @@ public class VolumeApiServiceImplTest {
     }
 
     @Test
-    public void testAreBothPoolsClvmType_BothCLVM() {
-        StoragePoolVO volumePool = Mockito.mock(StoragePoolVO.class);
-        StoragePoolVO vmPool = Mockito.mock(StoragePoolVO.class);
-
-        Mockito.when(volumePool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
-        Mockito.when(vmPool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
-        Mockito.when(volumeServiceMock.areBothPoolsClvmType(
-                Storage.StoragePoolType.CLVM, Storage.StoragePoolType.CLVM)).thenReturn(true);
-
-        boolean result = invokePrivateMethod("areBothPoolsClvmType",
-                new Class[]{StoragePoolVO.class, StoragePoolVO.class}, volumePool, vmPool);
-
-        Assert.assertTrue(result);
-        Mockito.verify(volumeServiceMock).areBothPoolsClvmType(
-                Storage.StoragePoolType.CLVM, Storage.StoragePoolType.CLVM);
-    }
-
-    @Test
-    public void testAreBothPoolsClvmType_BothCLVM_NG() {
-        StoragePoolVO volumePool = Mockito.mock(StoragePoolVO.class);
-        StoragePoolVO vmPool = Mockito.mock(StoragePoolVO.class);
-
-        Mockito.when(volumePool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM_NG);
-        Mockito.when(vmPool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM_NG);
-        Mockito.when(volumeServiceMock.areBothPoolsClvmType(
-                Storage.StoragePoolType.CLVM_NG, Storage.StoragePoolType.CLVM_NG)).thenReturn(true);
-
-        boolean result = invokePrivateMethod("areBothPoolsClvmType",
-                new Class[]{StoragePoolVO.class, StoragePoolVO.class}, volumePool, vmPool);
-
-        Assert.assertTrue(result);
-    }
-
-    @Test
-    public void testAreBothPoolsClvmType_MixedCLVMAndCLVM_NG() {
-        StoragePoolVO volumePool = Mockito.mock(StoragePoolVO.class);
-        StoragePoolVO vmPool = Mockito.mock(StoragePoolVO.class);
-
-        Mockito.when(volumePool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
-        Mockito.when(vmPool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM_NG);
-        Mockito.when(volumeServiceMock.areBothPoolsClvmType(
-                Storage.StoragePoolType.CLVM, Storage.StoragePoolType.CLVM_NG)).thenReturn(true);
-
-        boolean result = invokePrivateMethod("areBothPoolsClvmType",
-                new Class[]{StoragePoolVO.class, StoragePoolVO.class}, volumePool, vmPool);
-
-        Assert.assertTrue(result);
-    }
-
-    @Test
-    public void testAreBothPoolsClvmType_OneCLVMOneNFS() {
-        StoragePoolVO volumePool = Mockito.mock(StoragePoolVO.class);
-        StoragePoolVO vmPool = Mockito.mock(StoragePoolVO.class);
-
-        Mockito.when(volumePool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
-        Mockito.when(vmPool.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
-        Mockito.when(volumeServiceMock.areBothPoolsClvmType(
-                Storage.StoragePoolType.CLVM, Storage.StoragePoolType.NetworkFilesystem)).thenReturn(false);
-
-        boolean result = invokePrivateMethod("areBothPoolsClvmType",
-                new Class[]{StoragePoolVO.class, StoragePoolVO.class}, volumePool, vmPool);
-
-        Assert.assertFalse(result);
-    }
-
-    @Test
     public void testIsClvmLightweightMigrationNeeded_SameVG() {
         VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
         VolumeVO vmExistingVolume = Mockito.mock(VolumeVO.class);
@@ -2519,8 +2453,8 @@ public class VolumeApiServiceImplTest {
                 "/vg1", "/vg1")).thenReturn(true);
 
         boolean result = invokePrivateMethod("isClvmLightweightMigrationNeeded",
-                new Class[]{VolumeInfo.class, VolumeVO.class, UserVmVO.class},
-                volumeInfo, vmExistingVolume, vm);
+                new Class[]{VolumeInfo.class, VolumeVO.class},
+                volumeInfo, vmExistingVolume);
 
         Assert.assertTrue(result);
         Mockito.verify(volumeServiceMock).isLightweightMigrationNeeded(
@@ -2553,8 +2487,8 @@ public class VolumeApiServiceImplTest {
                 "/vg1", "/vg2")).thenReturn(false);
 
         boolean result = invokePrivateMethod("isClvmLightweightMigrationNeeded",
-                new Class[]{VolumeInfo.class, VolumeVO.class, UserVmVO.class},
-                volumeInfo, vmExistingVolume, vm);
+                new Class[]{VolumeInfo.class, VolumeVO.class},
+                volumeInfo, vmExistingVolume);
 
         Assert.assertFalse(result);
     }
@@ -2585,8 +2519,8 @@ public class VolumeApiServiceImplTest {
                 "/vg1", "/vg1")).thenReturn(true);
 
         boolean result = invokePrivateMethod("isClvmLightweightMigrationNeeded",
-                new Class[]{VolumeInfo.class, VolumeVO.class, UserVmVO.class},
-                volumeInfo, vmExistingVolume, vm);
+                new Class[]{VolumeInfo.class, VolumeVO.class},
+                volumeInfo, vmExistingVolume);
 
         Assert.assertTrue(result);
     }
