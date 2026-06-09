@@ -2113,6 +2113,7 @@ public class NetworkExtensionElement extends AdapterBase implements
             vmObj.addProperty("ip", nic.getIPv4Address());
             vmObj.addProperty("ip6_address", safeStr(nic.getIPv6Address()));
             vmObj.addProperty("mac", nic.getMacAddress());
+            vmObj.addProperty("nic_uuid", safeStr(nic.getUuid()));
             vmObj.addProperty("hostname", safeStr(userVm.getHostName()));
             vmObj.addProperty("default_nic", nic.isDefaultNic());
 
