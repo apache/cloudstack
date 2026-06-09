@@ -1016,13 +1016,13 @@ public class NetworkExtensionElement extends AdapterBase implements
             payload.addProperty("device_id", String.valueOf(nic.getDeviceId()));
         }
         if (StringUtils.isNotBlank(nic.getIPv6Address())) {
-            payload.addProperty("nic_ip6_address", safeStr(nic.getIPv6Address()));
+            payload.addProperty("ip6_address", safeStr(nic.getIPv6Address()));
         }
         if (StringUtils.isNotBlank(nic.getIPv6Gateway())) {
-            payload.addProperty("nic_ip6_gateway", safeStr(nic.getIPv6Gateway()));
+            payload.addProperty("ip6_gateway", safeStr(nic.getIPv6Gateway()));
         }
         if (StringUtils.isNotBlank(nic.getIPv6Cidr())) {
-            payload.addProperty("nic_ip6_cidr", safeStr(nic.getIPv6Cidr()));
+            payload.addProperty("ip6_cidr", safeStr(nic.getIPv6Cidr()));
         }
     }
 
@@ -2110,11 +2110,13 @@ public class NetworkExtensionElement extends AdapterBase implements
             }
 
             JsonObject vmObj = new JsonObject();
+            addNetworkDnsToPayload(vmObj, network);
             vmObj.addProperty("ip", nic.getIPv4Address());
             vmObj.addProperty("ip6_address", safeStr(nic.getIPv6Address()));
             vmObj.addProperty("mac", nic.getMacAddress());
             vmObj.addProperty("nic_uuid", safeStr(nic.getUuid()));
             vmObj.addProperty("hostname", safeStr(userVm.getHostName()));
+            vmObj.addProperty("device_id", String.valueOf(nic.getDeviceId()));
             vmObj.addProperty("default_nic", nic.isDefaultNic());
 
             JsonArray vmDataArray = new JsonArray();
