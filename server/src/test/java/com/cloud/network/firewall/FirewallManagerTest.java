@@ -550,6 +550,17 @@ public class FirewallManagerTest {
     }
 
     @Test(expected = InvalidParameterValueException.class)
+    public void testValidateFirewallRuleForVpcThrowsWhenFirewallServiceNotSupported() {
+        Account caller = Mockito.mock(Account.class);
+        IPAddressVO ipAddress = Mockito.mock(IPAddressVO.class);
+        Vpc vpc = Mockito.mock(Vpc.class);
+        when(_vpcMgr.getActiveVpc(10L)).thenReturn(vpc);
+        _firewallMgr._firewallElements = Collections.emptyList();
+
+        _firewallMgr.validateFirewallRuleForVpc(caller, ipAddress, 80, 80, "tcp", Purpose.Firewall, FirewallRuleType.User, 10L, FirewallRule.TrafficType.Ingress);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
     public void testValidateFirewallRuleForVpcThrowsOnUnsupportedProtocol() {
         Account caller = Mockito.mock(Account.class);
         IPAddressVO ipAddress = Mockito.mock(IPAddressVO.class);

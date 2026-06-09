@@ -434,6 +434,9 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         Map<Network.Capability, String> caps = null;
         if (purpose == Purpose.Firewall) {
             caps = getFirewallServiceCapabilitiesForVpc(vpcId);
+            if (caps == null) {
+                throw new InvalidParameterValueException("Firewall service is not supported in VPC " + vpc);
+            }
         }
 
         if (caps != null) {
