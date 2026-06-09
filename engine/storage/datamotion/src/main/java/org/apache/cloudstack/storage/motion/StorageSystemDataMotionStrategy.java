@@ -2160,7 +2160,9 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             for (VolumeInfo vol : samePoolClvmVolumes) {
                 StoragePoolVO samePoolClvmPool = _storagePoolDao.findById(vol.getPoolId());
                 String vgName = samePoolClvmPool.getPath();
-                if (vgName.startsWith("/")) vgName = vgName.substring(1);
+                if (vgName.startsWith("/")) {
+                    vgName = vgName.substring(1);
+                }
                 String lvPath = String.format("/dev/%s/%s", vgName, vol.getPath());
                 logger.info("Activating CLVM volume [{}] in shared mode on dest host [{}] for same-pool migration.",
                         vol.getUuid(), destHost.getId());

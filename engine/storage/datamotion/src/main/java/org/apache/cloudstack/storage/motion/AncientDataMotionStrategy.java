@@ -337,23 +337,25 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     }
 
     private void updateLockHostForVolume(EndPoint ep, DataObject volObj) {
-        if (ep != null && volObj instanceof VolumeInfo) {
-            VolumeInfo volumeInfo = (VolumeInfo) volObj;
-            StoragePool destPool = (StoragePool) volObj.getDataStore();
-            if (destPool != null && ClvmPoolManager.isClvmPoolType(destPool.getPoolType())) {
-                Long hostId = ep.getId();
-                Long existingHostId = clvmPoolManager.getClvmLockHostId(
-                        volumeInfo.getId(),
-                        volumeInfo.getUuid(),
-                        volumeInfo.getPath(),
-                        destPool,
-                        true
-                );
-                if (existingHostId == null) {
-                    clvmPoolManager.setClvmLockHostId(volumeInfo.getId(), hostId);
-                    logger.debug("Set lock host ID {} for CLVM volume {} being created from snapshot", hostId, volumeInfo.getId());
-                }
-            }
+        if (ep == null || !(volObj instanceof VolumeInfo)) {
+            return;
+        }
+        VolumeInfo volumeInfo = (VolumeInfo) volObj;
+        StoragePool destPool = (StoragePool) volObj.getDataStore();
+        if (destPool == null || !ClvmPoolManager.isClvmPoolType(destPool.getPoolType())) {
+            return;
+        }
+        Long hostId = ep.getId();
+        Long existingHostId = clvmPoolManager.getClvmLockHostId(
+                volumeInfo.getId(),
+                volumeInfo.getUuid(),
+                volumeInfo.getPath(),
+                destPool,
+                true
+        );
+        if (existingHostId == null) {
+            clvmPoolManager.setClvmLockHostId(volumeInfo.getId(), hostId);
+            logger.debug("Set lock host ID {} for CLVM volume {} being created from snapshot", hostId, volumeInfo.getId());
         }
     }
 
