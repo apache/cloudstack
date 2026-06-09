@@ -30,6 +30,24 @@ public interface ExtensionHelper {
     List<String> getExtensionReservedResourceDetails(long extensionId);
 
     /**
+     * Network Guru of Network Extension
+     */
+    String NETWORK_EXTENSION_GURU_NAME = "NetworkExtensionGuestNetworkGuru";
+
+    /**
+     * Extension resource-map detail key holding the isolation method for the physical
+     * network (e.g. {@code "NetworkExtension"}).
+     * If not specified, the isolation method of physical network will be used.
+     */
+    String NETWORK_ISOLATION_METHOD_DETAIL_KEY = "network.isolation.method";
+
+    /**
+     * Value of {@link #NETWORK_ISOLATION_METHOD_DETAIL_KEY} that indicates
+     * the extension owns the network isolation.
+     */
+    String NETWORK_EXTENSION_ISOLATION_METHOD = "NetworkExtension";
+
+    /**
      * Detail key used to store the comma-separated list of network services provided
      * by a NetworkOrchestrator extension (e.g. {@code "SourceNat,StaticNat,Firewall"}).
      */
@@ -94,6 +112,16 @@ public interface ExtensionHelper {
      * @return list of matching {@link Extension} instances (empty list if none)
      */
     List<Extension> listExtensionsByType(Extension.Type type);
+
+    /**
+     * Returns {@code true} when the extension registered for {@code providerName} on
+     * the given physical network has its {@link #NETWORK_ISOLATION_METHOD_DETAIL_KEY}
+     * resource-map detail set to {@link #NETWORK_EXTENSION_ISOLATION_METHOD}.
+     *
+     * @param providerName      provider / extension name
+     * @return true if the extension uses NetworkExtension isolation
+     */
+    boolean usesNetworkExtensionIsolation(String providerName);
 
     /**
      * Returns the effective {@link Service} → ({@link Capability} → value) capabilities

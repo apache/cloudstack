@@ -317,6 +317,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     @Inject
     NetworkOfferingDetailsDao _ntwkOffDetailsDao;
     @Inject
+    NetworkOfferingServiceMapDao networkOfferingServiceMapDao;
+    @Inject
     AccountGuestVlanMapDao _accountGuestVlanMapDao;
     @Inject
     DataCenterVnetDao _datacenterVnetDao;
@@ -806,7 +808,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
             long related = -1;
 
-            for (final NetworkGuru guru : networkGurus) {
+            for (final NetworkGuru guru : getDesignNetworkGurus(offering)) {
                 final Network network = guru.design(offering, plan, predefined, name, vpcId, owner);
                 if (network == null) {
                     continue;
@@ -880,6 +882,46 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             logger.debug("Releasing lock for {}", locked);
             _accountDao.releaseFromLockTable(locked.getId());
         }
+    }
+
+    private List<NetworkGuru> getDesignNetworkGurus(final NetworkOffering offering) {
+        if (!isIsolationMethodNetworkExtension(offering.getId())) {
+            return networkGurus;
+        }
+
+        List<NetworkGuru> extensionGurus = networkGurus.stream()
+                .filter(guru -> ExtensionHelper.NETWORK_EXTENSION_GURU_NAME.equals(guru.getName()))
+                .collect(Collectors.toList());
+        if (CollectionUtils.isNotEmpty(extensionGurus)) {
+            return extensionGurus;
+        }
+
+        logger.warn("Network offering {} requests {}={}, but {} is not registered; using default guru ordering",
+                offering.getUuid(), ExtensionHelper.NETWORK_ISOLATION_METHOD_DETAIL_KEY,
+                ExtensionHelper.NETWORK_EXTENSION_ISOLATION_METHOD, ExtensionHelper.NETWORK_EXTENSION_GURU_NAME);
+        return networkGurus;
+    }
+
+    @Override
+    public boolean isIsolationMethodNetworkExtension(final Long networkOfferingId) {
+        if (networkOfferingId == null) {
+            return false;
+        }
+
+        List<String> providers = networkOfferingServiceMapDao.getDistinctProviders(networkOfferingId);
+        if (CollectionUtils.isEmpty(providers)) {
+            return false;
+        }
+
+        for (String providerName : providers) {
+            if (!extensionHelper.isNetworkExtensionProvider(providerName)) {
+                continue;
+            }
+            if (extensionHelper.usesNetworkExtensionIsolation(providerName)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @NotNull

@@ -848,6 +848,11 @@ public class NetworkExtensionElement extends AdapterBase implements
     }
 
     private void applyNetworkUpdateFromScriptOutput(Network network, String outputStr) {
+        if (!ExtensionHelper.NETWORK_EXTENSION_GURU_NAME.equals(network.getGuruName())) {
+            logger.debug("Network {} is not managed by NetworkExtensionGuru, skipping script output processing", network.getId());
+            return;
+        }
+
         JsonObject outputJson = parseJsonOutput(outputStr);
 
         String networkBroadcastUri = getJsonString(outputJson, "network.broadcast_uri");
@@ -882,7 +887,7 @@ public class NetworkExtensionElement extends AdapterBase implements
             if (changed) {
                 networkDao.update(networkVo.getId(), networkVo);
                 for (NicVO nicVO : nicDao.listByNetworkId(networkVo.getId())) {
-                    applyNicUpdateFromNetwork(network, nicVO.getId());
+                    applyNicUpdateFromNetwork(networkVo, nicVO.getId());
                 }
             }
         } catch (Exception e) {
@@ -1313,8 +1318,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         }
 
         throw new CloudRuntimeException(
-                "No executable script found in extension path " + extensionPath
-                + ". Expected '" + extension.getName() + ".sh' inside the extension directory.");
+                "No executable script found in extension path " + extensionPath + " inside the extension directory.");
     }
 
     // ---- Helpers ----
