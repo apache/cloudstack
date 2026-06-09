@@ -703,30 +703,28 @@ class CsAcl(CsDataBag):
             self.add_routing_rules()
             return
 
-        desired_firewall_ips = self._get_desired_vpc_firewall_ips()
+        desired_firewall_ips = set()
+        if self.config.is_vpc() and self.config.is_vpc_firewall_enabled():
+            desired_firewall_ips = self._get_desired_vpc_firewall_ips()
+
         fw_chains_created = set()
+
         for item in self.dbag:
             if item == "id":
                 continue
             if self.config.is_vpc() and not ("purpose" in self.dbag[item] and self.dbag[item]["purpose"] == "Firewall"):
                 self.AclDevice(self.dbag[item], self.config).create()
             else:
+                if self.config.is_vpc() and self.dbag[item].get("purpose") == "Firewall" and not self.config.is_vpc_firewall_enabled():
+                    continue
                 # For VPC firewall rules, create the PREROUTING jump and chain skeleton
                 # once per public IP before adding the individual rule
-                if self.config.is_vpc() and self.dbag[item].get("purpose") == "Firewall":
+                if self.config.is_vpc() and self.config.is_vpc_firewall_enabled() and self.dbag[item].get("purpose") == "Firewall":
                     src_ip = self.dbag[item].get("src_ip")
-                    if src_ip and src_ip not in fw_chains_created:
-                        fw = self.config.get_fw()
-                        fw.append(["mangle", "front",
-                                   "-A PREROUTING -d %s/32 -j FIREWALL_%s" % (src_ip, src_ip)])
-                        fw.append(["mangle", "front",
-                                   "-A FIREWALL_%s -m state --state RELATED,ESTABLISHED -j RETURN" % src_ip])
-                        fw.append(["mangle", "",
-                                   "-A FIREWALL_%s -j DROP" % src_ip])
-                        fw_chains_created.add(src_ip)
+                    self._ensure_vpc_firewall_chains([src_ip], fw_chains_created)
                 self.AclIP(self.dbag[item], self.config).create()
 
-        if self.config.is_vpc():
+        if self.config.is_vpc() and self.config.is_vpc_firewall_enabled():
             self._cleanup_removed_vpc_firewall_chains(desired_firewall_ips)
 
     def _get_desired_vpc_firewall_ips(self):
@@ -744,8 +742,20 @@ class CsAcl(CsDataBag):
                     desired_firewall_ips.add(src_ip)
         return desired_firewall_ips
 
+    def _ensure_vpc_firewall_chains(self, source_ips, fw_chains_created):
+        fw = self.config.get_fw()
+        for src_ip in source_ips:
+            if not src_ip or src_ip in fw_chains_created:
+                continue
+            fw.append(["mangle", "front",
+                       "-A PREROUTING -d %s/32 -j FIREWALL_%s" % (src_ip, src_ip)])
+            fw.append(["mangle", "front",
+                       "-A FIREWALL_%s -m state --state RELATED,ESTABLISHED -j RETURN" % src_ip])
+            fw.append(["mangle", "",
+                       "-A FIREWALL_%s -j DROP" % src_ip])
+            fw_chains_created.add(src_ip)
+
     def _cleanup_removed_vpc_firewall_chains(self, desired_firewall_ips):
-        """Delete FIREWALL_<ip> chain only when no firewall rule remains for that VPC public IP."""
         try:
             mangle_save = CsHelper.execute("iptables-save -t mangle")
             existing_firewall_ips = []

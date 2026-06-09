@@ -647,7 +647,6 @@ class CsIP:
                                 (self.address['network'], self.address['network'])])
 
         if self.get_type() in ["public"]:
-
             self.fw.append(
                 ["mangle", "", "-A FORWARD -j VPN_STATS_%s" % self.dev])
             self.fw.append(
@@ -680,6 +679,7 @@ class CsIP:
 
         self.fw.append(["filter", "", "-P INPUT DROP"])
         self.fw.append(["filter", "", "-P FORWARD DROP"])
+
 
     def fw_router_routing(self):
         if self.config.is_vpc() or not self.config.is_routed():
