@@ -2168,6 +2168,11 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             buf.append(" ip6firewall=true");
         }
 
+        if (guestNetwork.getVpcId() != null) {
+            boolean isVpcFirewallEnabled = vpcManager.isProviderSupportServiceInVpc(guestNetwork.getVpcId(), Service.Firewall, Provider.VPCVirtualRouter);
+            buf.append(" vpc_firewall_enabled=").append(isVpcFirewallEnabled);
+        }
+
         final boolean isRedundant = router.getIsRedundantRouter();
         if (isRedundant) {
             buf.append(createRedundantRouterArgs(guestNic, router));
