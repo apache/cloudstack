@@ -33,6 +33,7 @@
           <usb-outlined />
           <router-link :to="{ path: '/iso/' + iso.id }">{{ iso.displaytext || iso.name }}</router-link>
           <a-tag style="margin-left: 8px;">{{ slotLabel(iso.deviceseq) }}</a-tag>
+          <a-tag v-if="iso.bootable" color="blue" style="margin-left: 4px;">{{ $t('label.bootable') }}</a-tag>
           <br/>
           <barcode-outlined /> {{ iso.id }}
         </div>

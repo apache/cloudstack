@@ -39,14 +39,19 @@ public class AttachedIsoResponse extends BaseResponse {
     @Param(description = "The cdrom slot that holds this ISO (3=hdc, 4=hdd, ...)")
     private Integer deviceSeq;
 
+    @SerializedName("bootable")
+    @Param(description = "Whether this is the bootable ISO for the VM")
+    private Boolean bootable;
+
     public AttachedIsoResponse() {
     }
 
-    public AttachedIsoResponse(String id, String name, String displayText, Integer deviceSeq) {
+    public AttachedIsoResponse(String id, String name, String displayText, Integer deviceSeq, boolean bootable) {
         this.id = id;
         this.name = name;
         this.displayText = displayText;
         this.deviceSeq = deviceSeq;
+        this.bootable = bootable;
     }
 
     public String getId() {
@@ -63,5 +68,9 @@ public class AttachedIsoResponse extends BaseResponse {
 
     public Integer getDeviceSeq() {
         return deviceSeq;
+    }
+
+    public Boolean getBootable() {
+        return bootable;
     }
 }
