@@ -26,11 +26,12 @@ public final class AttachedIsoResponseTest {
 
     @Test
     public void testFullConstructorPopulatesAllFields() {
-        AttachedIsoResponse response = new AttachedIsoResponse("uuid-1", "alpine-iso", "Alpine boot", 3);
+        AttachedIsoResponse response = new AttachedIsoResponse("uuid-1", "alpine-iso", "Alpine boot", 3, true);
         Assert.assertEquals("uuid-1", response.getId());
         Assert.assertEquals("alpine-iso", response.getName());
         Assert.assertEquals("Alpine boot", response.getDisplayText());
         Assert.assertEquals(Integer.valueOf(3), response.getDeviceSeq());
+        Assert.assertTrue(response.getBootable());
     }
 
     @Test
@@ -40,5 +41,6 @@ public final class AttachedIsoResponseTest {
         Assert.assertNull(response.getName());
         Assert.assertNull(response.getDisplayText());
         Assert.assertNull(response.getDeviceSeq());
+        Assert.assertNull(response.getBootable());
     }
 }
