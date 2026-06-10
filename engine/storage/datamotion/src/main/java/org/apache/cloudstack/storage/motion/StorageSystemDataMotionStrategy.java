@@ -2215,7 +2215,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 }
             }
 
-            handlePostMigration(success, srcVolumeInfoToDestVolumeInfo, vmTO, destHost);
+            handlePostMigration(success, srcVolumeInfoToDestVolumeInfo, vmTO, srcHost, destHost);
 
             if (!success) {
                 if (migrateAnswer == null) {
@@ -2434,7 +2434,26 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         return null;
     }
 
-    private void handlePostMigration(boolean success, Map<VolumeInfo, VolumeInfo> srcVolumeInfoToDestVolumeInfo, VirtualMachineTO vmTO, Host destHost) {
+    private void sendClvmLockCommand(long hostId, StoragePoolVO pool, VolumeInfo volumeInfo,
+            ClvmLockTransferCommand.Operation operation) {
+        String vgName = pool.getPath();
+        if (vgName.startsWith("/")) {
+            vgName = vgName.substring(1);
+        }
+        String lvPath = String.format("/dev/%s/%s", vgName, volumeInfo.getPath());
+        try {
+            Answer answer = agentManager.send(hostId,
+                    new ClvmLockTransferCommand(operation, lvPath, volumeInfo.getUuid()));
+            if (answer == null || !answer.getResult()) {
+                String details = answer != null ? answer.getDetails() : "null answer";
+                logger.warn("CLVM lock command [{}] failed for LV [{}] on host [{}]: {}", operation, lvPath, hostId, details);
+            }
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
+            logger.warn("Exception sending CLVM lock command [{}] for LV [{}] on host [{}]: {}", operation, lvPath, hostId, e.getMessage());
+        }
+    }
+
+    private void handlePostMigration(boolean success, Map<VolumeInfo, VolumeInfo> srcVolumeInfoToDestVolumeInfo, VirtualMachineTO vmTO, Host srcHost, Host destHost) {
         if (!success) {
             try {
                 PrepareForMigrationCommand pfmc = new PrepareForMigrationCommand(vmTO);
@@ -2452,6 +2471,17 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             }
             catch (Exception e) {
                 logger.debug("Failed to disconnect one or more (original) dest volumes", e);
+            }
+
+            if (srcHost != null && srcHost.getHypervisorType() == HypervisorType.KVM) {
+                for (VolumeInfo srcVolumeInfo : srcVolumeInfoToDestVolumeInfo.keySet()) {
+                    StoragePoolVO srcPool = _storagePoolDao.findById(srcVolumeInfo.getPoolId());
+                    if (srcPool == null || !ClvmPoolManager.isClvmPoolType(srcPool.getPoolType())) {
+                        continue;
+                    }
+                    sendClvmLockCommand(srcHost.getId(), srcPool, srcVolumeInfo,
+                            ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE);
+                }
             }
         }
 
@@ -2479,6 +2509,15 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 }
 
                 _volumeDao.update(volumeVO.getId(), volumeVO);
+
+                StoragePoolVO srcPoolVO = _storagePoolDao.findById(srcVolumeInfo.getPoolId());
+                StoragePoolVO destPoolVO = _storagePoolDao.findById(destVolumeInfo.getPoolId());
+                if (destPoolVO != null && ClvmPoolManager.isClvmPoolType(destPoolVO.getPoolType())
+                        && (srcPoolVO == null || srcPoolVO.getId() != destPoolVO.getId())) {
+                    sendClvmLockCommand(destHost.getId(), destPoolVO, destVolumeInfo,
+                            ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE);
+                    clvmPoolManager.setClvmLockHostId(destVolumeInfo.getId(), destHost.getId());
+                }
 
                 _volumeService.copyPoliciesBetweenVolumesAndDestroySourceVolumeAfterMigration(Event.OperationSucceeded, null, srcVolumeInfo, destVolumeInfo, false);
 
