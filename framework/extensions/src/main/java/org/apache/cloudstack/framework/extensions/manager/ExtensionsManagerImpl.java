@@ -2419,18 +2419,9 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         Extension extension = null;
         if (physicalNetworkId != null) {
             extension = getExtensionForPhysicalNetworkAndProvider(physicalNetworkId, providerName);
-        }
-        if (extension == null) {
+        } else {
             // Search across all physical networks
-            List<ExtensionVO> networkOrchExtensions = extensionDao.listByType(Extension.Type.NetworkOrchestrator);
-            if (networkOrchExtensions != null) {
-                for (ExtensionVO ext : networkOrchExtensions) {
-                    if (providerName.equalsIgnoreCase(ext.getName())) {
-                        extension = ext;
-                        break;
-                    }
-                }
-            }
+            extension = extensionDao.findByNameAndType(providerName, Extension.Type.NetworkOrchestrator);
         }
         if (extension == null) {
             return new HashMap<>();
