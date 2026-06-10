@@ -95,9 +95,8 @@ public class LibvirtPostMigrationCommandWrapperTest {
             mockedConnection.when(() -> LibvirtConnection.getConnectionByVmName(VM_NAME)).thenReturn(connect);
             when(libvirtComputingResource.getDisks(connect, VM_NAME)).thenReturn(disks);
 
-            mockedResource.when(() -> libvirtComputingResource.modifyClvmVolumesStateForMigration(
+            mockedResource.when(() -> LibvirtComputingResource.modifyClvmVolumesStateForMigration(
                     eq(disks),
-                    eq(libvirtComputingResource),
                     eq(virtualMachineTO),
                     eq(LibvirtComputingResource.ClvmVolumeState.EXCLUSIVE)
             )).then(invocation -> null);
@@ -105,9 +104,8 @@ public class LibvirtPostMigrationCommandWrapperTest {
             Answer answer = wrapper.execute(postMigrationCommand, libvirtComputingResource);
 
             Assert.assertTrue(answer.getResult());
-            mockedResource.verify(() -> libvirtComputingResource.modifyClvmVolumesStateForMigration(
+            mockedResource.verify(() -> LibvirtComputingResource.modifyClvmVolumesStateForMigration(
                     eq(disks),
-                    eq(libvirtComputingResource),
                     eq(virtualMachineTO),
                     eq(LibvirtComputingResource.ClvmVolumeState.EXCLUSIVE)
             ), times(1));
@@ -124,8 +122,7 @@ public class LibvirtPostMigrationCommandWrapperTest {
             mockedConnection.when(() -> LibvirtConnection.getConnectionByVmName(VM_NAME)).thenReturn(connect);
             when(libvirtComputingResource.getDisks(connect, VM_NAME)).thenReturn(disks);
 
-            mockedResource.when(() -> libvirtComputingResource.modifyClvmVolumesStateForMigration(
-                    any(),
+            mockedResource.when(() -> LibvirtComputingResource.modifyClvmVolumesStateForMigration(
                     any(),
                     any(),
                     any()
@@ -134,9 +131,8 @@ public class LibvirtPostMigrationCommandWrapperTest {
             Answer answer = wrapper.execute(postMigrationCommand, libvirtComputingResource);
 
             Assert.assertTrue(answer.getResult());
-            mockedResource.verify(() -> libvirtComputingResource.modifyClvmVolumesStateForMigration(
+            mockedResource.verify(() -> LibvirtComputingResource.modifyClvmVolumesStateForMigration(
                     eq(disks),
-                    eq(libvirtComputingResource),
                     eq(virtualMachineTO),
                     eq(LibvirtComputingResource.ClvmVolumeState.EXCLUSIVE)
             ), times(1));
@@ -153,8 +149,7 @@ public class LibvirtPostMigrationCommandWrapperTest {
             mockedConnection.when(() -> LibvirtConnection.getConnectionByVmName(VM_NAME)).thenReturn(connect);
             when(libvirtComputingResource.getDisks(connect, VM_NAME)).thenReturn(disks);
 
-            mockedResource.when(() -> libvirtComputingResource.modifyClvmVolumesStateForMigration(
-                    any(),
+            mockedResource.when(() -> LibvirtComputingResource.modifyClvmVolumesStateForMigration(
                     any(),
                     any(),
                     any()
@@ -163,9 +158,8 @@ public class LibvirtPostMigrationCommandWrapperTest {
             Answer answer = wrapper.execute(postMigrationCommand, libvirtComputingResource);
 
             Assert.assertTrue(answer.getResult());
-            mockedResource.verify(() -> libvirtComputingResource.modifyClvmVolumesStateForMigration(
+            mockedResource.verify(() -> LibvirtComputingResource.modifyClvmVolumesStateForMigration(
                     eq(disks),
-                    eq(libvirtComputingResource),
                     eq(virtualMachineTO),
                     eq(LibvirtComputingResource.ClvmVolumeState.EXCLUSIVE)
             ), times(1));
@@ -251,8 +245,7 @@ public class LibvirtPostMigrationCommandWrapperTest {
             mockedConnection.when(() -> LibvirtConnection.getConnectionByVmName(VM_NAME)).thenReturn(connect);
             when(libvirtComputingResource.getDisks(connect, VM_NAME)).thenReturn(disks);
 
-            mockedResource.when(() -> libvirtComputingResource.modifyClvmVolumesStateForMigration(
-                    any(),
+            mockedResource.when(() -> LibvirtComputingResource.modifyClvmVolumesStateForMigration(
                     any(),
                     any(),
                     any()
@@ -261,9 +254,8 @@ public class LibvirtPostMigrationCommandWrapperTest {
             Answer answer = wrapper.execute(postMigrationCommand, libvirtComputingResource);
 
             Assert.assertTrue(answer.getResult());
-            mockedResource.verify(() -> libvirtComputingResource.modifyClvmVolumesStateForMigration(
+            mockedResource.verify(() -> LibvirtComputingResource.modifyClvmVolumesStateForMigration(
                     eq(disks),
-                    eq(libvirtComputingResource),
                     eq(virtualMachineTO),
                     eq(LibvirtComputingResource.ClvmVolumeState.EXCLUSIVE)
             ), times(1));
@@ -292,8 +284,7 @@ public class LibvirtPostMigrationCommandWrapperTest {
             mockedConnection.when(() -> LibvirtConnection.getConnectionByVmName(VM_NAME)).thenReturn(connect);
             when(libvirtComputingResource.getDisks(connect, VM_NAME)).thenReturn(disks);
 
-            mockedResource.when(() -> libvirtComputingResource.modifyClvmVolumesStateForMigration(
-                    any(),
+            mockedResource.when(() -> LibvirtComputingResource.modifyClvmVolumesStateForMigration(
                     any(),
                     any(),
                     any()
@@ -302,9 +293,8 @@ public class LibvirtPostMigrationCommandWrapperTest {
             Answer answer = wrapper.execute(postMigrationCommand, libvirtComputingResource);
 
             Assert.assertTrue(answer.getResult());
-            mockedResource.verify(() -> libvirtComputingResource.modifyClvmVolumesStateForMigration(
+            mockedResource.verify(() -> LibvirtComputingResource.modifyClvmVolumesStateForMigration(
                     eq(disks),
-                    eq(libvirtComputingResource),
                     eq(virtualMachineTO),
                     eq(LibvirtComputingResource.ClvmVolumeState.EXCLUSIVE)
             ), times(1));

@@ -62,9 +62,8 @@ public final class LibvirtPostMigrationCommandWrapper extends CommandWrapper<Pos
 
             List<DiskDef> disks = libvirtComputingResource.getDisks(conn, vmName);
             logger.debug("[CLVM Post-Migration] Processing volumes for VM {} to claim exclusive locks on any CLVM volumes", vmName);
-            libvirtComputingResource.modifyClvmVolumesStateForMigration(
+            LibvirtComputingResource.modifyClvmVolumesStateForMigration(
                 disks,
-                libvirtComputingResource,
                 vm,
                 LibvirtComputingResource.ClvmVolumeState.EXCLUSIVE
             );

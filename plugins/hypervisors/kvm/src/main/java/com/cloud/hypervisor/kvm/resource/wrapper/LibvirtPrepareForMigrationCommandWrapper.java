@@ -128,9 +128,8 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
             // Activate CLVM volumes in shared mode on destination host for live migration
             try {
                 List<LibvirtVMDef.DiskDef> disks = libvirtComputingResource.getDisks(conn, vm.getName());
-                libvirtComputingResource.modifyClvmVolumesStateForMigration(
+                LibvirtComputingResource.modifyClvmVolumesStateForMigration(
                     disks,
-                    libvirtComputingResource,
                     vm,
                     LibvirtComputingResource.ClvmVolumeState.SHARED
                 );

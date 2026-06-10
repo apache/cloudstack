@@ -59,9 +59,8 @@ public class LibvirtPreMigrationCommandWrapper extends CommandWrapper<PreMigrati
 
             List<DiskDef> disks = libvirtComputingResource.getDisks(conn, vmName);
             logger.info("Converting CLVM volumes to shared mode for VM: {}", vmName);
-            libvirtComputingResource.modifyClvmVolumesStateForMigration(
+            LibvirtComputingResource.modifyClvmVolumesStateForMigration(
                 disks,
-                libvirtComputingResource,
                 vmSpec,
                 LibvirtComputingResource.ClvmVolumeState.SHARED
             );

@@ -343,7 +343,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                 // active (in shared mode) and deletion can route directly to the source host
                 // without fanning out across the cluster to find an inactive LV.
                 if (to != null && !command.isClvmCrossPoolMigration()) {
-                    libvirtComputingResource.modifyClvmVolumesStateForMigration(disks, libvirtComputingResource, to, LibvirtComputingResource.ClvmVolumeState.DEACTIVATE);
+                    LibvirtComputingResource.modifyClvmVolumesStateForMigration(disks, to, LibvirtComputingResource.ClvmVolumeState.DEACTIVATE);
                 }
 
                 deleteOrDisconnectDisksOnSourcePool(libvirtComputingResource, migrateDiskInfoList, disks);
@@ -394,7 +394,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                 }
                 // Revert CLVM volumes to exclusive mode on failure
                 if (to != null && result != null) {
-                    libvirtComputingResource.modifyClvmVolumesStateForMigration(disks, libvirtComputingResource, to, LibvirtComputingResource.ClvmVolumeState.EXCLUSIVE);
+                    LibvirtComputingResource.modifyClvmVolumesStateForMigration(disks, to, LibvirtComputingResource.ClvmVolumeState.EXCLUSIVE);
                 }
             } catch (final LibvirtException e) {
                 logger.trace("Ignoring libvirt error.", e);

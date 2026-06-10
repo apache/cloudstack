@@ -6864,8 +6864,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
-    public void modifyClvmVolumesStateForMigration(List<DiskDef> disks, LibvirtComputingResource resource,
-                                                             VirtualMachineTO vmSpec, ClvmVolumeState state) {
+    public static void modifyClvmVolumesStateForMigration(List<DiskDef> disks, VirtualMachineTO vmSpec, ClvmVolumeState state) {
         for (DiskDef disk : disks) {
             if (isClvmVolume(disk, vmSpec)) {
                 String volumePath = disk.getDiskPath();
