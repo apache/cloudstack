@@ -1049,6 +1049,10 @@ public class TransactionLegacy implements Closeable {
         }
     }
 
+    private static Boolean parseBoolean(String value) {
+        return value == null ? null : Boolean.parseBoolean(value);
+    }
+
     @SuppressWarnings({"rawtypes", "unchecked"})
     public static void initDataSource(Properties dbProps) {
         try {
@@ -1065,6 +1069,8 @@ public class TransactionLegacy implements Closeable {
             final Integer cloudMinIdleConnections = parseNumber(dbProps.getProperty("db.cloud.minIdleConnections"), Integer.class);
             final Long cloudConnectionTimeout = parseNumber(dbProps.getProperty("db.cloud.connectionTimeout"), Long.class);
             final Long cloudKeepAliveTimeout = parseNumber(dbProps.getProperty("db.cloud.keepAliveTime"), Long.class);
+            final Long cloudLeakDetectionThreshold = parseNumber(dbProps.getProperty("db.cloud.leakDetectionThreshold"), Long.class);
+            final Boolean cloudRegisterMbeans = parseBoolean(dbProps.getProperty("db.cloud.registerMbeans"));
             final String cloudUsername = dbProps.getProperty("db.cloud.username");
             final String cloudPassword = dbProps.getProperty("db.cloud.password");
             final String cloudValidationQuery = dbProps.getProperty("db.cloud.validationQuery");
@@ -1107,7 +1113,7 @@ public class TransactionLegacy implements Closeable {
                     cloudUsername, cloudPassword, cloudMaxActive, cloudMaxIdle, cloudMaxWait,
                     cloudTimeBtwEvictionRunsMillis, cloudMinEvcitableIdleTimeMillis, cloudTestWhileIdle,
                     cloudTestOnBorrow, cloudValidationQuery, cloudMinIdleConnections, cloudConnectionTimeout,
-                    cloudKeepAliveTimeout, isolationLevel, "cloud");
+                    cloudKeepAliveTimeout, cloudLeakDetectionThreshold, cloudRegisterMbeans, isolationLevel, "cloud");
 
             // Configure the usage db
             final Integer usageMaxActive = parseNumber(dbProps.getProperty("db.usage.maxActive"), Integer.class);
@@ -1127,7 +1133,7 @@ public class TransactionLegacy implements Closeable {
             s_usageDS = createDataSource(dbProps.getProperty("db.usage.connectionPoolLib"), usageUriAndDriver.first(),
                     usageUsername, usagePassword, usageMaxActive, usageMaxIdle, usageMaxWait, null,
                     null, null, null, null,
-                    usageMinIdleConnections, usageConnectionTimeout, usageKeepAliveTimeout, isolationLevel, "usage");
+                    usageMinIdleConnections, usageConnectionTimeout, usageKeepAliveTimeout, null, null, isolationLevel, "usage");
 
             try {
                 // Configure the simulator db
@@ -1167,7 +1173,7 @@ public class TransactionLegacy implements Closeable {
                         simulatorConnectionUri, simulatorUsername, simulatorPassword, simulatorMaxActive,
                         simulatorMaxIdle, simulatorMaxWait, null, null, null, null,
                         cloudValidationQuery, simulatorMinIdleConnections, simulatorConnectionTimeout,
-                        simulatorKeepAliveTimeout, isolationLevel, "simulator");
+                        simulatorKeepAliveTimeout, null, null, isolationLevel, "simulator");
             } catch (Exception e) {
                 LOGGER.debug("Simulator DB properties are not available. Not initializing simulator DS");
             }
@@ -1269,7 +1275,7 @@ public class TransactionLegacy implements Closeable {
     private static DataSource createDataSource(String connectionPoolLib, String uri, String username, String password,
                Integer maxActive, Integer maxIdle, Long maxWait, Long timeBtwnEvictionRuns, Long minEvictableIdleTime,
                Boolean testWhileIdle, Boolean testOnBorrow, String validationQuery, Integer minIdleConnections,
-               Long connectionTimeout, Long keepAliveTime, Integer isolationLevel, String dsName) {
+               Long connectionTimeout, Long keepAliveTime, Long leakDetectionThreshold, Boolean registerMbeans, Integer isolationLevel, String dsName) {
         LOGGER.debug("Creating datasource for database: {} with connection pool lib: {}", dsName,
                 connectionPoolLib);
         if (CONNECTION_POOL_LIB_DBCP.equals(connectionPoolLib)) {
@@ -1277,13 +1283,13 @@ public class TransactionLegacy implements Closeable {
                     minEvictableIdleTime, testWhileIdle, testOnBorrow, validationQuery, isolationLevel);
         }
         return createHikaricpDataSource(uri, username, password, maxActive, maxIdle, maxWait, minIdleConnections,
-                connectionTimeout, keepAliveTime, isolationLevel, dsName);
+                connectionTimeout, keepAliveTime, leakDetectionThreshold, registerMbeans, isolationLevel, dsName);
     }
 
     private static DataSource createHikaricpDataSource(String uri, String username, String password,
-                                               Integer maxActive, Integer maxIdle, Long maxWait,
-                                               Integer minIdleConnections, Long connectionTimeout, Long keepAliveTime,
-                                               Integer isolationLevel, String dsName) {
+                                                Integer maxActive, Integer maxIdle, Long maxWait,
+                                                Integer minIdleConnections, Long connectionTimeout, Long keepAliveTime,
+                                                Long leakDetectionThreshold, Boolean registerMbeans, Integer isolationLevel, String dsName) {
         HikariConfig config = new HikariConfig();
         config.setJdbcUrl(uri);
         config.setUsername(username);
@@ -1298,6 +1304,7 @@ public class TransactionLegacy implements Closeable {
         config.setMinimumIdle(ObjectUtils.defaultIfNull(minIdleConnections, 5));
         config.setConnectionTimeout(ObjectUtils.defaultIfNull(connectionTimeout, 30000L));
         config.setKeepaliveTime(ObjectUtils.defaultIfNull(keepAliveTime, 600000L));
+        applyHikariDebugSettings(config, leakDetectionThreshold, registerMbeans, dsName);
 
         String isolationLevelString = "TRANSACTION_READ_COMMITTED";
         if (isolationLevel == Connection.TRANSACTION_SERIALIZABLE) {
@@ -1324,6 +1331,17 @@ public class TransactionLegacy implements Closeable {
 
         HikariDataSource dataSource = new HikariDataSource(config);
         return dataSource;
+    }
+
+    static void applyHikariDebugSettings(HikariConfig config, Long leakDetectionThreshold, Boolean registerMbeans, String dsName) {
+        long effectiveLeakDetectionThreshold = ObjectUtils.defaultIfNull(leakDetectionThreshold, 0L);
+        boolean effectiveRegisterMbeans = ObjectUtils.defaultIfNull(registerMbeans, false);
+
+        config.setLeakDetectionThreshold(effectiveLeakDetectionThreshold);
+        config.setRegisterMbeans(effectiveRegisterMbeans);
+
+        LOGGER.debug("HikariCP datasource {} leakDetectionThreshold={} ms, registerMbeans={}",
+                dsName, effectiveLeakDetectionThreshold, effectiveRegisterMbeans);
     }
 
     private static DataSource createDbcpDataSource(String uri, String username, String password,

@@ -29,7 +29,7 @@ db.cloud.driver=@DBDRIVER@
 db.cloud.port=3306
 db.cloud.name=cloud
 
-# Connection URI to the database "cloud". When this property is set, only the following properties will be used along with it: db.cloud.maxActive, db.cloud.maxIdle, db.cloud.maxWait, db.cloud.username, db.cloud.password, db.cloud.driver, db.cloud.validationQuery, db.cloud.isolation.level. Other properties will be ignored.
+# Connection URI to the database "cloud". When this property is set, only the following properties will be used along with it: db.cloud.maxActive, db.cloud.maxIdle, db.cloud.maxWait, db.cloud.minIdleConnections, db.cloud.connectionTimeout, db.cloud.keepAliveTime, db.cloud.leakDetectionThreshold, db.cloud.registerMbeans, db.cloud.username, db.cloud.password, db.cloud.driver, db.cloud.validationQuery, db.cloud.isolation.level. Other properties will be ignored.
 db.cloud.uri=
 
 
@@ -41,6 +41,12 @@ db.cloud.maxWait=600000
 db.cloud.minIdleConnections=5
 db.cloud.connectionTimeout=30000
 db.cloud.keepAliveTime=600000
+# HikariCP leak detection threshold in milliseconds.
+# A value of 0 disables leak detection.
+# Useful for debugging borrowed DB connections that are not returned to the pool.
+# db.cloud.leakDetectionThreshold=0
+# Enable HikariCP JMX MBeans for observing pool counters.
+# db.cloud.registerMbeans=false
 db.cloud.validationQuery=/* ping */ SELECT 1
 db.cloud.testOnBorrow=true
 db.cloud.testWhileIdle=true

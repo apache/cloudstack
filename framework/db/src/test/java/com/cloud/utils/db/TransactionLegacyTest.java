@@ -17,6 +17,7 @@
 package com.cloud.utils.db;
 
 import com.cloud.utils.Pair;
+import com.zaxxer.hikari.HikariConfig;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,6 +28,8 @@ import java.util.Properties;
 
 @RunWith(MockitoJUnitRunner.class)
 public class TransactionLegacyTest {
+
+    private static final String CONNECTION_PARAMS = "&" + TransactionLegacy.CONNECTION_PARAMS;
 
     Properties properties;
 
@@ -47,7 +50,7 @@ public class TransactionLegacyTest {
 
         Pair<String, String> result = TransactionLegacy.getConnectionUriAndDriver(properties, null, false, "cloud");
 
-        Assert.assertEquals("driver://host:5555/name?autoReconnect=false&someParams", result.first());
+        Assert.assertEquals("driver://host:5555/name?autoReconnect=false&someParams" + CONNECTION_PARAMS, result.first());
         Assert.assertEquals("driver", result.second());
     }
 
@@ -65,7 +68,7 @@ public class TransactionLegacyTest {
     public void getPropertiesAndBuildConnectionUriTestDbHaDisabled() {
         String result = TransactionLegacy.getPropertiesAndBuildConnectionUri(properties, "strat", "driver", true, "cloud");
 
-        Assert.assertEquals("driver://host:5555/name?autoReconnect=false&someParams&useSSL=true", result);
+        Assert.assertEquals("driver://host:5555/name?autoReconnect=false&someParams&useSSL=true" + CONNECTION_PARAMS, result);
     }
 
     @Test
@@ -82,14 +85,14 @@ public class TransactionLegacyTest {
         String result = TransactionLegacy.getPropertiesAndBuildConnectionUri(properties, "strat", "driver", true, "cloud");
 
         Assert.assertEquals("driver://host,second_host:5555/name?autoReconnect=false&someParams&useSSL=true&failOverReadOnly=true&reconnectAtTxEnd=false&autoReconnectFor"
-                + "Pools=true&secondsBeforeRetrySource=25&queriesBeforeRetrySource=105&initialTimeout=1000&loadBalanceStrategy=strat", result);
+                + "Pools=true&secondsBeforeRetrySource=25&queriesBeforeRetrySource=105&initialTimeout=1000&loadBalanceStrategy=strat" + CONNECTION_PARAMS, result);
     }
 
     @Test
     public void buildConnectionUriTestDbHaDisabled() {
         String result = TransactionLegacy.buildConnectionUri(null, "driver", false, "host", null, 5555, "cloud", false, null, null);
 
-        Assert.assertEquals("driver://host:5555/cloud?autoReconnect=false", result);
+        Assert.assertEquals("driver://host:5555/cloud?autoReconnect=false" + CONNECTION_PARAMS, result);
     }
 
     @Test
@@ -98,20 +101,60 @@ public class TransactionLegacyTest {
 
         String result = TransactionLegacy.buildConnectionUri("strat", "driver", false, "host", "second_host", 5555, "cloud", false, null, "dbHaParams");
 
-        Assert.assertEquals("driver://host,second_host:5555/cloud?autoReconnect=false&dbHaParams&loadBalanceStrategy=strat", result);
+        Assert.assertEquals("driver://host,second_host:5555/cloud?autoReconnect=false&dbHaParams&loadBalanceStrategy=strat" + CONNECTION_PARAMS, result);
     }
 
     @Test
     public void buildConnectionUriTestUrlParamsNotNull() {
         String result = TransactionLegacy.buildConnectionUri(null, "driver", false, "host", null, 5555, "cloud", false, "urlParams", null);
 
-        Assert.assertEquals("driver://host:5555/cloud?autoReconnect=false&urlParams", result);
+        Assert.assertEquals("driver://host:5555/cloud?autoReconnect=false&urlParams" + CONNECTION_PARAMS, result);
     }
 
     @Test
     public void buildConnectionUriTestUseSslTrue() {
         String result = TransactionLegacy.buildConnectionUri(null, "driver", true, "host", null, 5555, "cloud", false, null, null);
 
-        Assert.assertEquals("driver://host:5555/cloud?autoReconnect=false&useSSL=true", result);
+        Assert.assertEquals("driver://host:5555/cloud?autoReconnect=false&useSSL=true" + CONNECTION_PARAMS, result);
+    }
+
+    @Test
+    public void applyHikariDebugSettingsDefaultsWhenUnset() {
+        HikariConfig config = new HikariConfig();
+
+        TransactionLegacy.applyHikariDebugSettings(config, null, null, "cloud");
+
+        Assert.assertEquals(0L, config.getLeakDetectionThreshold());
+        Assert.assertFalse(config.isRegisterMbeans());
+    }
+
+    @Test
+    public void applyHikariDebugSettingsKeepsZeroLeakDetectionDisabled() {
+        HikariConfig config = new HikariConfig();
+
+        TransactionLegacy.applyHikariDebugSettings(config, 0L, false, "cloud");
+
+        Assert.assertEquals(0L, config.getLeakDetectionThreshold());
+        Assert.assertFalse(config.isRegisterMbeans());
+    }
+
+    @Test
+    public void applyHikariDebugSettingsAppliesPositiveLeakDetectionThreshold() {
+        HikariConfig config = new HikariConfig();
+
+        TransactionLegacy.applyHikariDebugSettings(config, 60000L, false, "cloud");
+
+        Assert.assertEquals(60000L, config.getLeakDetectionThreshold());
+        Assert.assertFalse(config.isRegisterMbeans());
+    }
+
+    @Test
+    public void applyHikariDebugSettingsEnablesRegisterMbeans() {
+        HikariConfig config = new HikariConfig();
+
+        TransactionLegacy.applyHikariDebugSettings(config, null, true, "cloud");
+
+        Assert.assertEquals(0L, config.getLeakDetectionThreshold());
+        Assert.assertTrue(config.isRegisterMbeans());
     }
 }
