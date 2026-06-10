@@ -390,6 +390,31 @@ configure the gateway.
 > CloudStack now also includes `network_ip6_gateway` and `network_ip6_cidr`
 > when the guest network has IPv6 configured.
 
+**Stdout (required when `isolation_method=NetworkExtension`):**
+
+When the physical-network registration detail `isolation_method=NetworkExtension`
+is set, CloudStack selects `NetworkExtensionGuestNetworkGuru` and applies the
+JSON object printed to stdout back to the network record.  The following two
+fields **must** be present in the output so that CloudStack stores the correct
+broadcast type and URI — without them the KVM agent (`OvsVifDriver`) will not
+set `external_ids:iface-id` on the OVS tap port and OVN port-binding will fail:
+
+| Output key | Required value | Description |
+|---|---|---|
+| `network.broadcast_domain_type` | `"Lswitch"` (OVN) or appropriate type | Sets `BroadcastDomainType` on the network record. |
+| `network.broadcast_uri` | e.g. `"ovn://cs-net-<networkId>"` | Sets the broadcast URI used by the hypervisor agent. |
+
+Example stdout:
+
+```json
+{"network.broadcast_domain_type": "Lswitch", "network.broadcast_uri": "ovn://cs-net-42"}
+```
+
+> **Note:** These fields are only consumed when `isolation_method=NetworkExtension`
+> is set on the physical-network registration.  Without that detail, the script
+> output is accepted but the network record is **not** updated (the update is
+> silently skipped).
+
 ---
 
 ### `shutdown-network`
