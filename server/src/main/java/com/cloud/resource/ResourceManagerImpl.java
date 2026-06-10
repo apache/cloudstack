@@ -946,7 +946,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
                 host.setGuid(null);
                 final Long clusterId = host.getClusterId();
-                host.setClusterId(null);
                 _hostDao.update(host.getId(), host);
 
                 Host hostRemoved = _hostDao.findById(hostId);
@@ -2852,7 +2851,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                         logger.debug("Cannot transmit host {} to Disabled state", host, e);
                     }
                     for (final VMInstanceVO vm : vms) {
-                        if ((!HighAvailabilityManager.ForceHA.value() && !vm.isHaEnabled()) || vm.getState() == State.Stopping) {
+                        if ((! HighAvailabilityManager.ForceHA.valueIn(host.getClusterId()) && !vm.isHaEnabled()) || vm.getState() == State.Stopping) {
                             logger.debug(String.format("Stopping %s as a part of hostDelete for %s",vm, host));
                             try {
                                 _haMgr.scheduleStop(vm, host.getId(), WorkType.Stop);
@@ -2861,7 +2860,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                                 logger.debug(errorMsg, e);
                                 throw new UnableDeleteHostException(errorMsg + "," + e.getMessage());
                             }
-                        } else if ((HighAvailabilityManager.ForceHA.value() || vm.isHaEnabled()) && (vm.getState() == State.Running || vm.getState() == State.Starting)) {
+                        } else if ((HighAvailabilityManager.ForceHA.valueIn(host.getClusterId()) || vm.isHaEnabled()) && (vm.getState() == State.Running || vm.getState() == State.Starting)) {
                             logger.debug(String.format("Scheduling restart for %s, state: %s on host: %s.", vm, vm.getState(), host));
                             _haMgr.scheduleRestart(vm, false);
                         }
