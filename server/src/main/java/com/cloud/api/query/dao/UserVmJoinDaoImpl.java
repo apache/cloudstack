@@ -264,8 +264,10 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
 
             List<AttachedIsoResponse> attachedIsos = new ArrayList<>();
             if (userVm.getIsoUuid() != null) {
+                VMTemplateVO bootIso = vmTemplateDao.findById(userVm.getIsoId());
+                boolean bootIsoBootable = bootIso != null && bootIso.isBootable();
                 attachedIsos.add(new AttachedIsoResponse(userVm.getIsoUuid(), userVm.getIsoName(),
-                        userVm.getIsoDisplayText(), TemplateManager.CDROM_PRIMARY_DEVICE_SEQ, true));
+                        userVm.getIsoDisplayText(), TemplateManager.CDROM_PRIMARY_DEVICE_SEQ, bootIsoBootable));
             }
             for (VmIsoMapVO row : vmIsoMapDao.listByVmId(userVm.getId())) {
                 VMTemplateVO tmpl = vmTemplateDao.findById(row.getIsoId());
