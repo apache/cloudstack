@@ -122,7 +122,11 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
         for (String line : stdout.split("\n")) {
             String trimmed = line.trim();
             if (trimmed.startsWith("BITMAP_CREATED=")) {
-                bitmapCreated = trimmed.substring("BITMAP_CREATED=".length());
+                // The marker only confirms the bitmap was actually created on the disks
+                // (it isn't, e.g., for stopped-VM RBD/LINSTOR sources). The name itself is
+                // the value we already passed via --bitmap-new, so use that rather than
+                // re-parsing the echoed value.
+                bitmapCreated = command.getBitmapNew();
                 continue;
             }
             if (trimmed.startsWith("INCREMENTAL_FALLBACK=")) {
