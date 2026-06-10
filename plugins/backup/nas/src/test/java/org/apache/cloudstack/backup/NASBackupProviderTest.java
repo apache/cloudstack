@@ -369,7 +369,7 @@ public class NASBackupProviderTest {
     /**
      * When the operator sets nas.backup.incremental.enabled=false at the zone level, every
      * backup must be a fresh full anchor, regardless of VM state or nas.backup.full.every.
-     * This is the abh1sar review item at NASBackupProvider.java:90 — a single toggle the
+     * This is a single toggle the
      * operator can flip without having to count remaining backups in a chain.
      */
     @Test
@@ -398,9 +398,8 @@ public class NASBackupProviderTest {
 
     /**
      * No active_checkpoint_id on the VM (post-restore, first-ever backup, or detail purged) =>
-     * decideChain must return a fresh full. This is the regression abh1sar called out at
-     * NASBackupProvider.java:251 ("This logic breaks after restore. We can't use the last
-     * backup taken as parent in that case.").
+     * decideChain must return a fresh full. Relying on the last backup taken as the parent
+     * breaks after a restore, so the decision is anchored on the active checkpoint instead.
      */
     @Test
     public void decideChainReturnsFullWhenVmHasNoActiveCheckpoint() {
@@ -485,7 +484,7 @@ public class NASBackupProviderTest {
     /**
      * Deleting an incremental that has a live child must mark the incremental as
      * delete-pending in backup_details and NOT touch the on-NAS file or the backups row.
-     * This is the snapshot-style pattern abh1sar requested at NASBackupProvider.java:696.
+     * A parent with live children is soft-deleted (delete-pending) rather than removed.
      */
     @Test
     public void deleteWithLiveChildMarksDeletePendingAndPreservesFile()

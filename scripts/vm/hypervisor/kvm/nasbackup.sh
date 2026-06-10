@@ -40,8 +40,8 @@ BITMAP_PARENT=""      # For incremental: parent bitmap name to read changes sinc
 PARENT_PATHS=""       # For incremental: comma-separated list of parent backup file paths,
                       # one per VM volume in the same order as DISK_PATHS. Each new qcow2
                       # is rebased onto its corresponding parent file. Required because
-                      # data-disk backup files don't share the root volume's UUID — abh1sar
-                      # review at NASBackupProvider.java:340.
+                      # data-disk backup files don't share the root volume's UUID, so
+                      # each disk must be rebased onto its own parent.
 # Rebase operation parameters (used only with -o rebase, for chain repair on delete-middle)
 REBASE_TARGET=""      # The qcow2 file to repoint at a new backing (mount-relative path)
 REBASE_NEW_BACKING="" # The new backing parent file (mount-relative path)
@@ -296,8 +296,8 @@ XML
         volUuid=$(get_linstor_uuid_from_path "$fullpath")
       fi
       # Pick this disk's specific parent file. Each volume's backup is named after its
-      # own UUID so a single PARENT_PATH would rebase data disks onto the root parent —
-      # exactly the bug abh1sar called out at NASBackupProvider.java:340.
+      # own UUID, so a single PARENT_PATH would wrongly rebase data disks onto the root
+      # parent.
       if [[ $disk_idx -ge ${#parent_paths_arr[@]} ]]; then
         echo "PARENT_PATHS list shorter than DISK_PATHS — missing parent for disk index $disk_idx"
         cleanup
@@ -388,7 +388,6 @@ backup_stopped_vm() {
     # after this VM is started again) can be incremental against the qcow2 we
     # just wrote. Without this, every backup after a stopped-VM backup would
     # fall back to full because no parent bitmap exists on the host yet.
-    # Addresses abh1sar review at nasbackup.sh:513.
     # Only applies to file-backed qcow2 sources — RBD/LINSTOR have their own
     # snapshot mechanisms and qemu-img bitmap is not the right primitive there.
     if [[ -n "$BITMAP_NEW" && "$disk" != rbd:* && "$disk" != /dev/drbd/by-res/* ]]; then

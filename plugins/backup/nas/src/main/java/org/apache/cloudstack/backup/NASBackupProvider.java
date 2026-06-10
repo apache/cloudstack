@@ -251,8 +251,8 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
      * <p>The decision is anchored on the VM's {@code nas.active_checkpoint_id} detail, which
      * records the bitmap that currently exists on the running QEMU. After a restore that
      * detail is cleared, so the next backup is automatically full — even though there may be
-     * a more recent "last backup taken" row in the database. This matches the prescription in
-     * the PR review (avoid relying on "last backup" because that breaks after restore).</p>
+     * a more recent "last backup taken" row in the database. The decision deliberately avoids
+     * relying on "last backup taken", because that row is misleading after a restore.</p>
      */
     protected ChainDecision decideChain(VirtualMachine vm) {
         final String newBitmap = "backup-" + System.currentTimeMillis() / 1000L;

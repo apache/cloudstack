@@ -43,9 +43,8 @@ public class TakeBackupCommand extends Command {
 
     // Per-volume parent backup file paths (one per VM volume, ordered by deviceId — same
     // order as volumePaths). The script rebases each new qcow2 onto the matching parent.
-    // Addresses abh1sar review at NASBackupProvider.java:340 — backup file UUIDs differ
-    // across volumes, so a single parentPath would have rebased every data disk onto the
-    // root file. New callers MUST populate parentPaths.
+    // Backup file UUIDs differ across volumes, so a single parentPath would have rebased
+    // every data disk onto the root file. New callers MUST populate parentPaths.
     private List<String> parentPaths;
 
     public TakeBackupCommand(String vmName, String backupPath) {
