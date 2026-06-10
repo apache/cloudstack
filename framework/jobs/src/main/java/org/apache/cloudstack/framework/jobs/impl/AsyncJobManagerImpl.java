@@ -31,6 +31,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -114,6 +116,8 @@ import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.logging.log4j.ThreadContext;
 
 public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager, ClusterManagerListener, Configurable {
+    private static final Pattern PASSWORD_FIELD_PATTERN = Pattern.compile("\\\"password\\\":\\\"([^\\\"]*)\\\"+");
+
     // Advanced
     public static final ConfigKey<Long> JobExpireMinutes = new ConfigKey<Long>("Advanced", Long.class, "job.expire.minutes", "1440",
         "Time (in minutes) for async-jobs to be kept in system", true, ConfigKey.Scope.Global);
@@ -517,22 +521,26 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     }
 
     public String obfuscatePassword(String result, boolean hidePassword) {
-        if (hidePassword) {
-            String pattern = "\"password\":";
-            if (result != null) {
-                if (result.contains(pattern)) {
-                    String[] resp = result.split(pattern);
-                    String psswd = resp[1].toString().split(",")[0];
-                    if (psswd.endsWith("}")) {
-                        psswd = psswd.substring(0, psswd.length() - 1);
-                        result = resp[0] + pattern + psswd.replace(psswd.substring(2, psswd.length() - 1), "*****") + "}," + resp[1].split(",", 2)[1];
-                    } else {
-                        result = resp[0] + pattern + psswd.replace(psswd.substring(2, psswd.length() - 1), "*****") + "," + resp[1].split(",", 2)[1];
-                    }
-                }
-            }
+        if (!hidePassword || StringUtils.isBlank(result)) {
+            return result;
         }
-        return result;
+
+        Matcher matcher = PASSWORD_FIELD_PATTERN.matcher(result);
+        StringBuilder obfuscatedResult = new StringBuilder();
+        while (matcher.find()) {
+            String password = matcher.group(1);
+            String replacement = "\"password\":\"" + obfuscatePasswordValue(password) + "\"";
+            matcher.appendReplacement(obfuscatedResult, Matcher.quoteReplacement(replacement));
+        }
+        matcher.appendTail(obfuscatedResult);
+        return obfuscatedResult.toString();
+    }
+
+    private String obfuscatePasswordValue(String password) {
+        if (StringUtils.isEmpty(password)) {
+            return password;
+        }
+        return password.charAt(0) + "*****";
     }
 
     private void scheduleExecution(final AsyncJobVO job) {
