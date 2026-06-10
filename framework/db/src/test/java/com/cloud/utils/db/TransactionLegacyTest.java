@@ -17,6 +17,7 @@
 package com.cloud.utils.db;
 
 import com.cloud.utils.Pair;
+import com.zaxxer.hikari.HikariConfig;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -113,5 +114,45 @@ public class TransactionLegacyTest {
         String result = TransactionLegacy.buildConnectionUri(null, "driver", true, "host", null, 5555, "cloud", false, null, null);
 
         Assert.assertEquals("driver://host:5555/cloud?autoReconnect=false&useSSL=true", result);
+    }
+
+    @Test
+    public void applyHikariDebugSettingsDisabledByDefault() {
+        HikariConfig config = new HikariConfig();
+
+        TransactionLegacy.applyHikariDebugSettings(config, null, null, "cloud");
+
+        Assert.assertEquals(0L, config.getLeakDetectionThreshold());
+        Assert.assertFalse(config.isRegisterMbeans());
+    }
+
+    @Test
+    public void applyHikariDebugSettingsZeroThresholdKeepsLeakDetectionDisabled() {
+        HikariConfig config = new HikariConfig();
+
+        TransactionLegacy.applyHikariDebugSettings(config, 0L, false, "cloud");
+
+        Assert.assertEquals(0L, config.getLeakDetectionThreshold());
+        Assert.assertFalse(config.isRegisterMbeans());
+    }
+
+    @Test
+    public void applyHikariDebugSettingsEnablesLeakDetection() {
+        HikariConfig config = new HikariConfig();
+
+        TransactionLegacy.applyHikariDebugSettings(config, 60000L, null, "cloud");
+
+        Assert.assertEquals(60000L, config.getLeakDetectionThreshold());
+        Assert.assertFalse(config.isRegisterMbeans());
+    }
+
+    @Test
+    public void applyHikariDebugSettingsEnablesRegisterMbeans() {
+        HikariConfig config = new HikariConfig();
+
+        TransactionLegacy.applyHikariDebugSettings(config, null, true, "cloud");
+
+        Assert.assertEquals(0L, config.getLeakDetectionThreshold());
+        Assert.assertTrue(config.isRegisterMbeans());
     }
 }

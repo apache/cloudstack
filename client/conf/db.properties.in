@@ -41,6 +41,11 @@ db.cloud.maxWait=600000
 db.cloud.minIdleConnections=5
 db.cloud.connectionTimeout=30000
 db.cloud.keepAliveTime=600000
+# HikariCP leak detection threshold in milliseconds. A value of 0 (or unset) disables leak detection.
+# Useful for debugging borrowed DB connections that are not returned to the pool. HikariCP ignores values below 2000.
+# db.cloud.leakDetectionThreshold=0
+# Enable HikariCP JMX MBeans for observing pool counters. Disabled by default.
+# db.cloud.registerMbeans=false
 db.cloud.validationQuery=/* ping */ SELECT 1
 db.cloud.testOnBorrow=true
 db.cloud.testWhileIdle=true
