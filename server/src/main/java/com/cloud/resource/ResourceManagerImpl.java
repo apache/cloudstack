@@ -2851,7 +2851,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                         logger.debug("Cannot transmit host {} to Disabled state", host, e);
                     }
                     for (final VMInstanceVO vm : vms) {
-                        if ((! HighAvailabilityManager.ForceHA.valueIn(host.getClusterId()) && !vm.isHaEnabled()) || vm.getState() == State.Stopping) {
+                        if ((!HighAvailabilityManager.ForceHA.valueIn(host.getClusterId()) && !vm.isHaEnabled()) || vm.getState() == State.Stopping) {
                             logger.debug(String.format("Stopping %s as a part of hostDelete for %s",vm, host));
                             try {
                                 _haMgr.scheduleStop(vm, host.getId(), WorkType.Stop);
