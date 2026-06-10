@@ -226,6 +226,7 @@ import com.cloud.resource.ResourceStatusUpdater;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.storage.JavaStorageLayer;
+import com.cloud.template.TemplateManager;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
@@ -3693,6 +3694,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (vmSpec.getOs().toLowerCase().contains("window")) {
             isWindowsTemplate = true;
         }
+        final Set<Integer> definedCdromSlots = new HashSet<>();
         for (final DiskTO volume : disks) {
             KVMPhysicalDisk physicalDisk = null;
             KVMStoragePool pool = null;
@@ -3771,6 +3773,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             if (volume.getType() == Volume.Type.ISO) {
                 final DiskDef.DiskType diskType = getDiskType(physicalDisk);
                 disk.defISODisk(volPath, devId, isUefiEnabled, diskType);
+                definedCdromSlots.add(devId);
 
                 if (guestCpuArch != null && (guestCpuArch.equals("aarch64") || guestCpuArch.equals("s390x"))) {
                     disk.setBusType(DiskDef.DiskBus.SCSI);
@@ -3861,6 +3864,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 throw new RuntimeException("There is no devices for" + vm);
             }
             vm.getDevices().addDevice(disk);
+        }
+
+        if (vmSpec.getType() == VirtualMachine.Type.User) {
+            for (int slot = TemplateManager.CDROM_PRIMARY_DEVICE_SEQ;
+                    slot < TemplateManager.CDROM_PRIMARY_DEVICE_SEQ + LibvirtVMDef.MAX_CDROMS_PER_VM; slot++) {
+                if (!definedCdromSlots.contains(slot)) {
+                    final DiskDef emptyCdrom = new DiskDef();
+                    emptyCdrom.defISODisk(null, slot, isUefiEnabled, DiskDef.DiskType.FILE);
+                    vm.getDevices().addDevice(emptyCdrom);
+                }
+            }
         }
 
         if (vmSpec.getType() != VirtualMachine.Type.User) {
