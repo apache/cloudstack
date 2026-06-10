@@ -179,4 +179,76 @@ public class HSMProfileResponse extends BaseResponse implements ControlledViewEn
     public void setDetails(Map<String, String> details) {
         this.details = details;
     }
+
+    public String getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getProtocol() {
+        return protocol;
+    }
+
+    public String getAccountId() {
+        return accountId;
+    }
+
+    public String getAccountName() {
+        return accountName;
+    }
+
+    public String getDomainId() {
+        return domainId;
+    }
+
+    public String getDomainName() {
+        return domainName;
+    }
+
+    public String getDomainPath() {
+        return domainPath;
+    }
+
+    public String getProjectId() {
+        return projectId;
+    }
+
+    public String getProjectName() {
+        return projectName;
+    }
+
+    public String getZoneId() {
+        return zoneId;
+    }
+
+    public String getZoneName() {
+        return zoneName;
+    }
+
+    public String getVendorName() {
+        return vendorName;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public Boolean getEnabled() {
+        return enabled;
+    }
+
+    public Boolean getPublic() {
+        return isPublic;
+    }
+
+    public Date getCreated() {
+        return created;
+    }
+
+    public Map<String, String> getDetails() {
+        return details;
+    }
 }

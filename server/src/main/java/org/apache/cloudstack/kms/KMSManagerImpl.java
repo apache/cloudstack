@@ -216,6 +216,8 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
             throw KMSException.kekNotFound("KMS key not found for wrapped key: " + wrappedKeyId);
         }
 
+        Exception lastException = null;
+
         if (wrappedVO.getKekVersionId() != null) {
             KMSKekVersionVO version = kmsKekVersionDao.findById(wrappedVO.getKekVersionId());
             if (version != null && version.getStatus() != KMSKekVersionVO.Status.Archived) {
@@ -235,7 +237,8 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
                     logger.debug("Successfully unwrapped key {} with KEK version {}", wrappedKeyId, version.getVersionNumber());
                     return dek;
                 } catch (Exception e) {
-                    logger.warn("Failed to unwrap with version {}: {}", version.getVersionNumber(), e.getMessage());
+                    lastException = e;
+                    logger.warn("Failed to unwrap with version {}: {}", version.getVersionNumber(), e.getMessage(), e);
                 }
             }
         }
@@ -260,11 +263,12 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
                         wrappedKeyId, version.getVersionNumber());
                 return dek;
             } catch (Exception e) {
-                logger.debug("Failed to unwrap with version {}: {}", version.getVersionNumber(), e.getMessage());
+                lastException = e;
+                logger.warn("Failed to unwrap with version {}: {}", version.getVersionNumber(), e.getMessage(), e);
             }
         }
 
-        throw KMSException.wrapUnwrapFailed("Failed to unwrap key with any available KEK version");
+        throw KMSException.wrapUnwrapFailed("Failed to unwrap key: no available KEK version for wrapped key " + wrappedKeyId, lastException);
     }
 
     private byte[] getUnwrappedKey(KMSWrappedKeyVO wrappedVO, KMSKeyVO kmsKey,
@@ -366,6 +370,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
 
         HSMProfileVO profile = getHSMProfile(cmd.getHsmProfileId());
         checkHSMProfileAccess(caller, profile, false);
+        validateProfileScopeForOwner(profile, targetAccount.getId(), targetAccount.getDomainId());
         if (!profile.isEnabled()) {
             throw new InvalidParameterValueException("HSM profile is not enabled: " + profile.getName());
         }
@@ -665,6 +670,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
                 throw new InvalidParameterValueException("Target HSM Profile not found: " + hsmProfileId);
             }
             checkHSMProfileAccess(caller, profile, false);
+            validateProfileScopeForOwner(profile, kmsKey.getAccountId(), kmsKey.getDomainId());
             if (!profile.isEnabled()) {
                 throw new InvalidParameterValueException("HSM profile is not enabled: " + profile.getName());
             }
@@ -1362,7 +1368,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
             if (domain != null) {
                 response.setDomainId(domain.getUuid());
                 response.setDomainName(domain.getName());
-                response.setDomainPath(domain.getPath());
+                response.setDomainPath(ApiResponseHelper.getPrettyDomainPath(domain.getPath()));
             }
         } else {
             ApiResponseHelper.populateOwner(response, profile);
@@ -1421,6 +1427,33 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
             }
         } else {
             accountManager.checkAccess(caller, null, requireModifyAccess, profile);
+        }
+    }
+
+    /**
+     * Validate that an HSM profile's scope is compatible with a prospective KMS key owner.
+     * This is a consistency rule (not a caller-permission check): it applies to all callers,
+     * including root admins, so a key cannot be bound to a profile outside its scope.
+     * - public profile: usable by any owner.
+     * - domain-scoped (account-less) profile: the owner must be directly in the profile's domain.
+     * - account-owned profile: the owner must be that account.
+     */
+    void validateProfileScopeForOwner(HSMProfileVO profile, long ownerAccountId, long ownerDomainId) {
+        if (profile.getIsPublic()) {
+            return;
+        }
+        if (profile.getAccountId() == -1 && profile.getDomainId() != -1) {
+            if (ownerDomainId != profile.getDomainId()) {
+                throw new InvalidParameterValueException(String.format(
+                        "HSM profile '%s' is domain-scoped and can only be used by accounts in its domain",
+                        profile.getName()));
+            }
+        } else if (profile.getAccountId() != -1) {
+            if (ownerAccountId != profile.getAccountId()) {
+                throw new InvalidParameterValueException(String.format(
+                        "HSM profile '%s' is owned by another account and cannot be used for this key's owner",
+                        profile.getName()));
+            }
         }
     }
 

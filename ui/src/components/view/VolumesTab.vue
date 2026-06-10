@@ -44,6 +44,10 @@
         <router-link v-if="record.storageid" :to="{ path: '/storagepool/' + encodeURIComponent(record.storageid) }">{{ text }}</router-link>
         <span v-else>{{ text }}</span>
       </template>
+      <template v-if="column.key === 'kmskey'">
+        <router-link v-if="record.kmskeyid" :to="{ path: '/kmskey/' + encodeURIComponent(record.kmskeyid) }">{{ text }}</router-link>
+        <span v-else>{{ text }}</span>
+      </template>
     </template>
   </a-table>
 </template>

@@ -47,6 +47,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import java.util.Arrays;
 import java.util.Collections;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -363,10 +364,79 @@ public class KMSManagerImplHSMTest {
         when(hsmProfileDetailsDao.listByProfileId(profileId)).thenReturn(Collections.emptyList());
 
         try (MockedStatic<ApiResponseHelper> mockedApiResponseHelper = Mockito.mockStatic(ApiResponseHelper.class)) {
+            mockedApiResponseHelper.when(() -> ApiResponseHelper.getPrettyDomainPath("/D/")).thenReturn("ROOT/D");
+
             HSMProfileResponse response = kmsManager.createHSMProfileResponse(profile);
 
             assertNotNull("Response should not be null", response);
+            assertEquals("domain-uuid", response.getDomainId());
+            assertEquals("D", response.getDomainName());
+            assertEquals("Domain path should use the pretty (ROOT/...) form", "ROOT/D", response.getDomainPath());
+            // populateOwner would NPE on a null owner; the account-less branch must avoid it.
             mockedApiResponseHelper.verify(() -> ApiResponseHelper.populateOwner(Mockito.any(), Mockito.any()), Mockito.never());
         }
+    }
+
+    /**
+     * Test: validateProfileScopeForOwner allows any owner for a public profile.
+     */
+    @Test
+    public void testValidateProfileScopeForOwner_PublicAllowsAnyOwner() {
+        HSMProfileVO profile = mock(HSMProfileVO.class);
+        when(profile.getIsPublic()).thenReturn(true);
+
+        kmsManager.validateProfileScopeForOwner(profile, 200L, 9L);
+    }
+
+    /**
+     * Test: a domain-scoped profile permits a key owner in the same domain.
+     */
+    @Test
+    public void testValidateProfileScopeForOwner_DomainScopedAllowsSameDomain() {
+        HSMProfileVO profile = mock(HSMProfileVO.class);
+        when(profile.getIsPublic()).thenReturn(false);
+        when(profile.getAccountId()).thenReturn(-1L);
+        when(profile.getDomainId()).thenReturn(5L);
+
+        kmsManager.validateProfileScopeForOwner(profile, 200L, 5L);
+    }
+
+    /**
+     * Test: a domain-scoped profile rejects a key owner in a different domain.
+     */
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateProfileScopeForOwner_DomainScopedRejectsOtherDomain() {
+        HSMProfileVO profile = mock(HSMProfileVO.class);
+        when(profile.getIsPublic()).thenReturn(false);
+        when(profile.getAccountId()).thenReturn(-1L);
+        when(profile.getDomainId()).thenReturn(5L);
+        when(profile.getName()).thenReturn("domain-profile");
+
+        kmsManager.validateProfileScopeForOwner(profile, 200L, 7L);
+    }
+
+    /**
+     * Test: an account-owned profile permits a key owned by that account.
+     */
+    @Test
+    public void testValidateProfileScopeForOwner_AccountOwnedAllowsSameAccount() {
+        HSMProfileVO profile = mock(HSMProfileVO.class);
+        when(profile.getIsPublic()).thenReturn(false);
+        when(profile.getAccountId()).thenReturn(200L);
+
+        kmsManager.validateProfileScopeForOwner(profile, 200L, 5L);
+    }
+
+    /**
+     * Test: an account-owned profile rejects a key owned by a different account.
+     */
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateProfileScopeForOwner_AccountOwnedRejectsOtherAccount() {
+        HSMProfileVO profile = mock(HSMProfileVO.class);
+        when(profile.getIsPublic()).thenReturn(false);
+        when(profile.getAccountId()).thenReturn(200L);
+        when(profile.getName()).thenReturn("account-profile");
+
+        kmsManager.validateProfileScopeForOwner(profile, 201L, 5L);
     }
 }

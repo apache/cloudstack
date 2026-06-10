@@ -55,14 +55,13 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
+import java.security.ProviderException;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
-import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -427,6 +426,7 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
                     return session;
                 }
                 // Stale idle session: discard it and free its permit so a new one can be created.
+                logger.debug("Discarding stale idle PKCS#11 session for profile {}", profileId);
                 session.close();
                 sessionPermits.release();
             }
@@ -517,14 +517,12 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
     private static class PKCS11Session {
         private static final int IV_LENGTH = 16; // 128 bits for CBC mode
 
-        // Counter to bypass JDK SunPKCS11 caching when the HSM restarts
+        // Counter to bypass JDK SunPKCS11 caching when the HSM restarts. The JDK's
+        // PKCS11.getInstance caches the native module in a static map keyed by the library
+        // path string and never removes entries, so a module attached to a dead HSM can
+        // never be re-initialized under its original path. Each bump adds an extra slash
+        // to the path (a distinct map key for the same file), forcing a fresh C_Initialize.
         private static final AtomicInteger hsmRestartCount = new AtomicInteger(0);
-
-        // Holds strong references to recently-closed SunPKCS11 providers until a new
-        // session has successfully completed C_Initialize + C_OpenSession. This prevents
-        // GC from running the old provider's finalizer (which calls C_Finalize on the
-        // shared native PKCS11 module) while a new session is still initialising.
-        private static final Deque<Provider> pendingFinalization = new ArrayDeque<>();
 
         private KeyStore keyStore;
         private Provider provider;
@@ -568,6 +566,7 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
          *                      </ul>
          */
         private void connect(Map<String, String> config) throws KMSException {
+            boolean connected = false;
             try {
                 // Unique suffix ensures each session gets its own provider name in java.security.Security,
                 // allowing Security.removeProvider() in close() to target exactly this session's provider.
@@ -606,20 +605,20 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
                     throw KMSException.invalidParameter("pin is required");
                 }
                 char[] pinChars = pin.toCharArray();
-                keyStore.load(null, pinChars);
-                Arrays.fill(pinChars, '\0');
+                try {
+                    keyStore.load(null, pinChars);
+                } finally {
+                    // Wipe the PIN copy on every path, including load() failures
+                    // (wrong PIN, CRYPTOKI_NOT_INITIALIZED after an HSM restart, etc.).
+                    Arrays.fill(pinChars, '\0');
+                }
 
                 // The temp file is only needed during configure()/load(); delete it immediately
                 // rather than holding it until the session is eventually closed.
                 Files.deleteIfExists(tempConfigFile);
                 tempConfigFile = null;
 
-                // New session is fully initialised (C_Initialize + C_OpenSession succeeded).
-                // Release the deferred old providers so they can now be GC'd and finalised
-                // without racing against this session's initialisation.
-                synchronized (pendingFinalization) {
-                    pendingFinalization.clear();
-                }
+                connected = true;
 
                 logger.debug("Successfully connected to PKCS#11 HSM at {}", config.get("library"));
             } catch (KeyStoreException | CertificateException | NoSuchAlgorithmException e) {
@@ -636,6 +635,12 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
                 }
             } catch (Exception e) {
                 handlePKCS11Exception(e, "Unexpected error during PKCS#11 connection");
+            } finally {
+                if (!connected) {
+                    // connect that failed after Security.addProvider() would otherwise leave
+                    // the half-initialized provider registered in java.security.Security.
+                    close();
+                }
             }
         }
 
@@ -663,7 +668,6 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
                     libraryPath = "./" + extraSlashes + libraryPath;
                 }
             }
-
             StringBuilder configBuilder = new StringBuilder();
             // Include the unique suffix so that each session is registered under a distinct
             // provider name (SunPKCS11-CloudStackHSM-{suffix}), preventing name collisions
@@ -720,30 +724,36 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
          */
         private void handlePKCS11Exception(Exception e, String context) throws KMSException {
             String errorMsg = e.getMessage();
-            String causeErrorMessage = e.getCause() != null ? e.getCause().getMessage() : "";
             if (errorMsg == null) {
                 errorMsg = e.getClass().getSimpleName();
             }
             logger.warn("PKCS#11 error: {} - {}", errorMsg, context, e);
 
-            if (causeErrorMessage.contains("CRYPTOKI_NOT_INITIALIZED") || errorMsg.contains("CRYPTOKI_NOT_INITIALIZED")) {
+            // The PKCS#11 error code (CKR_*) may be on the exception itself or its cause, so
+            // match against both. KeyStore.getKey/load wrap the real code in a ProviderException.
+            String causeMsg = e.getCause() != null ? e.getCause().getMessage() : null;
+            String combinedMsg = errorMsg + " " + (causeMsg != null ? causeMsg : "");
+
+            if (combinedMsg.contains("CRYPTOKI_NOT_INITIALIZED")) {
                 hsmRestartCount.incrementAndGet();
                 throw new KMSException(KMSException.ErrorType.CONNECTION_FAILED,
                         context + ": HSM requires re-initialization (CRYPTOKI_NOT_INITIALIZED)", e);
-            } else if (causeErrorMessage.contains("PIN_INCORRECT") || errorMsg.contains("PIN_INCORRECT")) {
+            } else if (combinedMsg.contains("PIN_INCORRECT")) {
                 throw new KMSException(KMSException.ErrorType.AUTHENTICATION_FAILED,
                         context + ": Incorrect PIN", e);
-            } else if (causeErrorMessage.contains("SLOT_ID_INVALID") || errorMsg.contains("SLOT_ID_INVALID")) {
+            } else if (combinedMsg.contains("SLOT_ID_INVALID")) {
                 throw KMSException.invalidParameter(context + ": Invalid slot ID");
-            } else if (causeErrorMessage.contains("KEY_NOT_FOUND") || errorMsg.contains("KEY_NOT_FOUND")) {
+            } else if (combinedMsg.contains("KEY_NOT_FOUND")) {
                 throw KMSException.kekNotFound(context + ": Key not found");
-            } else if (causeErrorMessage.contains("DEVICE_ERROR") || errorMsg.contains("DEVICE_ERROR")) {
+            } else if (combinedMsg.contains("DEVICE_ERROR")) {
+                hsmRestartCount.incrementAndGet();
                 throw new KMSException(KMSException.ErrorType.CONNECTION_FAILED,
                         context + ": HSM device error", e);
-            } else if (causeErrorMessage.contains("SESSION_HANDLE_INVALID") || errorMsg.contains("SESSION_HANDLE_INVALID")) {
+            } else if (combinedMsg.contains("SESSION_HANDLE_INVALID")) {
+                hsmRestartCount.incrementAndGet();
                 throw new KMSException(KMSException.ErrorType.CONNECTION_FAILED,
                         context + ": Invalid session handle", e);
-            } else if (causeErrorMessage.contains("KEY_ALREADY_EXISTS") || errorMsg.contains("KEY_ALREADY_EXISTS")) {
+            } else if (combinedMsg.contains("KEY_ALREADY_EXISTS")) {
                 throw KMSException.keyAlreadyExists(context);
             } else if (e instanceof KeyStoreException) {
                 throw new KMSException(KMSException.ErrorType.WRAP_UNWRAP_FAILED,
@@ -800,12 +810,6 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
                 if (provider != null && providerName != null) {
                     try {
                         Security.removeProvider(providerName);
-                        // Keep a strong reference so GC cannot finalize this provider
-                        // (and call C_Finalize on the shared native module) until the
-                        // next session has fully initialised. Drained in connect().
-                        synchronized (pendingFinalization) {
-                            pendingFinalization.addLast(provider);
-                        }
                     } catch (Exception e) {
                         logger.debug("Failed to remove provider {}: {}", providerName, e.getMessage());
                     }
@@ -971,8 +975,6 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
                 handlePKCS11Exception(e, "Invalid IV for CBC mode");
             } catch (Exception e) {
                 handlePKCS11Exception(e, "Failed to wrap key with HSM");
-            } finally {
-                kek = null;
             }
             return null;
         }
@@ -999,6 +1001,11 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
             } catch (NoSuchAlgorithmException e) {
                 handlePKCS11Exception(e, "Algorithm not supported");
             } catch (KeyStoreException e) {
+                handlePKCS11Exception(e, "Failed to retrieve KEK from HSM");
+            } catch (ProviderException e) {
+                // KeyStore.getKey() wraps PKCS#11 errors (e.g. CKR_CRYPTOKI_NOT_INITIALIZED after
+                // an HSM restart) in ProviderException, an unchecked RuntimeException. Route it
+                // through handlePKCS11Exception so hsmRestartCount is bumped and the caller retries.
                 handlePKCS11Exception(e, "Failed to retrieve KEK from HSM");
             }
             return null;
@@ -1061,8 +1068,6 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
                 handlePKCS11Exception(e, "Invalid IV for CBC mode");
             } catch (Exception e) {
                 handlePKCS11Exception(e, "Failed to unwrap key with HSM");
-            } finally {
-                kek = null;
             }
             return null;
         }
