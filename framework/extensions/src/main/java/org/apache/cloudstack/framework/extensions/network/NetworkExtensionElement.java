@@ -857,8 +857,10 @@ public class NetworkExtensionElement extends AdapterBase implements
 
         String networkBroadcastUri = getJsonString(outputJson, "network.broadcast_uri");
         String networkBroadcastDomainType = getJsonString(outputJson, "network.broadcast_domain_type");
-        if (networkBroadcastUri == null && networkBroadcastDomainType == null) {
-            return;
+        if (networkBroadcastUri == null || networkBroadcastDomainType == null) {
+            throw new CloudRuntimeException(String.format(
+                    "Script output is missing required network properties 'network.broadcast_uri' and 'network.broadcast_domain_type'" +
+                            " for network %s: %s", network, outputStr));
         }
 
         try {
