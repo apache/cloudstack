@@ -1636,7 +1636,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
         StoragePoolType poolType = volume.getStoragePoolType();
 
-        if ((isKvmAndFileBasedStorage) && backupSnapToSecondary) {
+        if (isKvmAndFileBasedStorage && backupSnapToSecondary) {
             DataStore imageStore = snapshotSrv.findSnapshotImageStore(snapshot);
             if (imageStore == null) {
                 throw new CloudRuntimeException(String.format("Could not find any secondary storage to allocate snapshot [%s].", snapshot));
@@ -1874,7 +1874,6 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             payload.setLocationType(null);
         }
 
-        // CLVM_NG excluded: incremental snapshots not supported in this release (handled in takeSnapshot).
         if (isKvmAndFileBasedStorage && kvmIncrementalSnapshot.valueIn(clusterId)) {
             payload.setKvmIncrementalSnapshot(true);
         }

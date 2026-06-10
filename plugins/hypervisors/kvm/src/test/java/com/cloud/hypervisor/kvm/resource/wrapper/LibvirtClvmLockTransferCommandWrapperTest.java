@@ -25,7 +25,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.apache.cloudstack.storage.clvm.command.ClvmLockTransferCommand;
-import org.apache.logging.log4j.Logger;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -47,9 +46,6 @@ public class LibvirtClvmLockTransferCommandWrapperTest {
     @Mock
     private LibvirtComputingResource libvirtComputingResource;
 
-    @Mock
-    private Logger logger;
-
     private LibvirtClvmLockTransferCommandWrapper wrapper;
 
     private static final String TEST_LV_PATH = "/dev/vg1/volume-123";
@@ -58,7 +54,6 @@ public class LibvirtClvmLockTransferCommandWrapperTest {
     @Before
     public void setUp() {
         wrapper = new LibvirtClvmLockTransferCommandWrapper();
-        wrapper.logger = logger;
     }
 
     @Test

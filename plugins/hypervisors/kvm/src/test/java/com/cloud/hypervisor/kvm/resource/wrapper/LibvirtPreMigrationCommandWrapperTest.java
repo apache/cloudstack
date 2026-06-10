@@ -100,7 +100,7 @@ public class LibvirtPreMigrationCommandWrapperTest {
         when(libvirtComputingResource.getDisks(connect, VM_NAME)).thenReturn(disks);
 
         try (MockedStatic<LibvirtComputingResource> mockedStatic = Mockito.mockStatic(LibvirtComputingResource.class)) {
-            mockedStatic.when(() -> LibvirtComputingResource.modifyClvmVolumesStateForMigration(
+            mockedStatic.when(() -> libvirtComputingResource.modifyClvmVolumesStateForMigration(
                     eq(disks),
                     eq(libvirtComputingResource),
                     eq(virtualMachineTO),
@@ -110,7 +110,7 @@ public class LibvirtPreMigrationCommandWrapperTest {
             Answer answer = wrapper.execute(preMigrationCommand, libvirtComputingResource);
 
             Assert.assertTrue(answer.getResult());
-            mockedStatic.verify(() -> LibvirtComputingResource.modifyClvmVolumesStateForMigration(
+            mockedStatic.verify(() -> libvirtComputingResource.modifyClvmVolumesStateForMigration(
                     eq(disks),
                     eq(libvirtComputingResource),
                     eq(virtualMachineTO),
@@ -128,7 +128,7 @@ public class LibvirtPreMigrationCommandWrapperTest {
         when(libvirtComputingResource.getDisks(connect, VM_NAME)).thenReturn(disks);
 
         try (MockedStatic<LibvirtComputingResource> mockedStatic = Mockito.mockStatic(LibvirtComputingResource.class)) {
-            mockedStatic.when(() -> LibvirtComputingResource.modifyClvmVolumesStateForMigration(
+            mockedStatic.when(() -> libvirtComputingResource.modifyClvmVolumesStateForMigration(
                     any(),
                     any(),
                     any(),
@@ -138,7 +138,7 @@ public class LibvirtPreMigrationCommandWrapperTest {
             Answer answer = wrapper.execute(preMigrationCommand, libvirtComputingResource);
 
             Assert.assertTrue(answer.getResult());
-            mockedStatic.verify(() -> LibvirtComputingResource.modifyClvmVolumesStateForMigration(
+            mockedStatic.verify(() -> libvirtComputingResource.modifyClvmVolumesStateForMigration(
                     eq(disks),
                     eq(libvirtComputingResource),
                     eq(virtualMachineTO),
@@ -155,7 +155,7 @@ public class LibvirtPreMigrationCommandWrapperTest {
         when(libvirtComputingResource.getDisks(connect, VM_NAME)).thenReturn(disks);
 
         try (MockedStatic<LibvirtComputingResource> mockedStatic = Mockito.mockStatic(LibvirtComputingResource.class)) {
-            mockedStatic.when(() -> LibvirtComputingResource.modifyClvmVolumesStateForMigration(
+            mockedStatic.when(() -> libvirtComputingResource.modifyClvmVolumesStateForMigration(
                     any(),
                     any(),
                     any(),
@@ -165,7 +165,7 @@ public class LibvirtPreMigrationCommandWrapperTest {
             Answer answer = wrapper.execute(preMigrationCommand, libvirtComputingResource);
 
             Assert.assertTrue(answer.getResult());
-            mockedStatic.verify(() -> LibvirtComputingResource.modifyClvmVolumesStateForMigration(
+            mockedStatic.verify(() -> libvirtComputingResource.modifyClvmVolumesStateForMigration(
                     eq(disks),
                     eq(libvirtComputingResource),
                     eq(virtualMachineTO),

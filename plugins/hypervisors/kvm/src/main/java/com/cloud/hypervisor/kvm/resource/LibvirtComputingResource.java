@@ -6864,10 +6864,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
-    public static void modifyClvmVolumesStateForMigration(List<DiskDef> disks, LibvirtComputingResource resource,
+    public void modifyClvmVolumesStateForMigration(List<DiskDef> disks, LibvirtComputingResource resource,
                                                              VirtualMachineTO vmSpec, ClvmVolumeState state) {
         for (DiskDef disk : disks) {
-            if (isClvmVolume(disk, resource, vmSpec)) {
+            if (isClvmVolume(disk, vmSpec)) {
                 String volumePath = disk.getDiskPath();
                 try {
                     modifyClvmVolumeState(volumePath, state.getLvchangeFlag(), state.getDescription(), state.getLogMessage());
@@ -6945,7 +6945,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * @param vmSpec The VirtualMachineTO specification containing disk and pool information
      * @return true if the disk is on a CLVM storage pool, false otherwise
      */
-    private static boolean isClvmVolume(DiskDef disk, LibvirtComputingResource resource, VirtualMachineTO vmSpec) {
+    private static boolean isClvmVolume(DiskDef disk, VirtualMachineTO vmSpec) {
         String diskPath = disk.getDiskPath();
         if (diskPath == null || vmSpec == null) {
             return false;
@@ -6954,26 +6954,26 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         try {
             if (vmSpec.getDisks() != null) {
                 for (DiskTO diskTO : vmSpec.getDisks()) {
-                    if (diskTO.getData() instanceof VolumeObjectTO) {
-                        VolumeObjectTO volumeTO = (VolumeObjectTO) diskTO.getData();
-                        if (diskPath.equals(volumeTO.getPath()) || diskPath.equals(diskTO.getPath())) {
-                            DataStoreTO dataStore = volumeTO.getDataStore();
-                            if (dataStore instanceof PrimaryDataStoreTO) {
-                                PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO) dataStore;
-                                boolean isClvm = StoragePoolType.CLVM == primaryStore.getPoolType() ||
-                                                StoragePoolType.CLVM_NG == primaryStore.getPoolType();
-                                LOGGER.debug("Disk {} identified as CLVM/CLVM_NG={} via VirtualMachineTO pool type: {}",
-                                            diskPath, isClvm, primaryStore.getPoolType());
-                                return isClvm;
-                            }
-                        }
+                    if (!(diskTO.getData() instanceof VolumeObjectTO)) {
+                        continue;
                     }
+                    VolumeObjectTO volumeTO = (VolumeObjectTO) diskTO.getData();
+                    if (!diskPath.equals(volumeTO.getPath()) && !diskPath.equals(diskTO.getPath())) {
+                        continue;
+                    }
+                    DataStoreTO dataStore = volumeTO.getDataStore();
+                    if (!(dataStore instanceof PrimaryDataStoreTO)) {
+                        continue;
+                    }
+                    PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO) dataStore;
+                    boolean isClvm = StoragePoolType.CLVM == primaryStore.getPoolType() ||
+                                     StoragePoolType.CLVM_NG == primaryStore.getPoolType();
+                    LOGGER.debug("Disk {} identified as CLVM/CLVM_NG={} via VirtualMachineTO pool type: {}",
+                                diskPath, isClvm, primaryStore.getPoolType());
+                    return isClvm;
                 }
             }
 
-            // Fallback: Check VG attributes using vgs command (reliable)
-            // CLVM VGs have the 'c' (clustered) or 's' (shared) flag in their attributes
-            // Example: 'wz--ns' = shared, 'wz--n-' = not clustered
             if (diskPath.startsWith("/dev/") && !diskPath.contains("/dev/mapper/")) {
                 String vgName = extractVolumeGroupFromPath(diskPath);
                 if (vgName != null) {
@@ -7027,7 +7027,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         try {
-            // Use vgs with --noheadings and -o attr to get VG attributes
             OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
             Script vgsCmd = new Script("vgs", 10000, LOGGER);
             vgsCmd.add("--noheadings");
@@ -7041,9 +7040,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             if (result == null && parser.getLines() != null) {
                 String output = parser.getLines();
                 if (output != null && !output.isEmpty()) {
-                    // Parse VG attributes (format: wz--nc or wz--ns or wz--n-)
-                    // Position 6 (0-indexed 5) indicates clustering/sharing:
-                    // 'c' = clustered (CLVM) or 's' = shared (lvmlockd) or '-' = not clustered/shared
                     String vgAttr = output.trim();
                     if (vgAttr.length() >= 6) {
                         char clusterFlag = vgAttr.charAt(5);  // Position 6 (0-indexed 5)

@@ -683,19 +683,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
     /**
      * adjust refcount
      */
@@ -1115,7 +1102,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         return true;
     }
 
-
     @Override
     public boolean disconnectPhysicalDisk(String uuid, KVMStoragePool pool) {
         // this is for managed storage that needs to cleanup disks after use
@@ -1241,8 +1227,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
     }
 
-
-
     /**
      * This function copies a physical disk from Secondary Storage to Primary Storage
      * or from Primary to Primary Storage
@@ -1340,9 +1324,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
         return disk;
     }
-
-
-
 
     private KVMPhysicalDisk createDiskFromTemplateOnRBD(KVMPhysicalDisk template,
             String name, PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, KVMStoragePool destPool, int timeout){

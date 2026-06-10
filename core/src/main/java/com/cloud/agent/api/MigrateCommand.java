@@ -43,6 +43,7 @@ public class MigrateCommand extends Command {
     private Map<String, DpdkTO> dpdkInterfaceMapping = new HashMap<>();
 
     private int newVmCpuShares;
+    private boolean clvmCrossPoolMigration;
 
     Map<String, Boolean> vlanToPersistenceMap = new HashMap<>();
 
@@ -148,6 +149,14 @@ public class MigrateCommand extends Command {
 
     public void setNewVmCpuShares(int newVmCpuShares) {
         this.newVmCpuShares = newVmCpuShares;
+    }
+
+    public boolean isClvmCrossPoolMigration() {
+        return clvmCrossPoolMigration;
+    }
+
+    public void setClvmCrossPoolMigration(boolean clvmCrossPoolMigration) {
+        this.clvmCrossPoolMigration = clvmCrossPoolMigration;
     }
 
     public static class MigrateDiskInfo {

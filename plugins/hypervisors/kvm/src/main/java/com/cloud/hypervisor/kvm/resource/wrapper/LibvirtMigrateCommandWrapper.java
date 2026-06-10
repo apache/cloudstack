@@ -339,9 +339,11 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                 }
                 resumeDomainIfPaused(destDomain, vmName);
 
-                // Deactivate CLVM volumes on source host after successful migration
-                if (to != null) {
-                    LibvirtComputingResource.modifyClvmVolumesStateForMigration(disks, libvirtComputingResource, to, LibvirtComputingResource.ClvmVolumeState.DEACTIVATE);
+                // For cross-pool CLVM migration, skip deactivation so the source LV stays
+                // active (in shared mode) and deletion can route directly to the source host
+                // without fanning out across the cluster to find an inactive LV.
+                if (to != null && !command.isClvmCrossPoolMigration()) {
+                    libvirtComputingResource.modifyClvmVolumesStateForMigration(disks, libvirtComputingResource, to, LibvirtComputingResource.ClvmVolumeState.DEACTIVATE);
                 }
 
                 deleteOrDisconnectDisksOnSourcePool(libvirtComputingResource, migrateDiskInfoList, disks);
@@ -392,7 +394,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                 }
                 // Revert CLVM volumes to exclusive mode on failure
                 if (to != null && result != null) {
-                    LibvirtComputingResource.modifyClvmVolumesStateForMigration(disks, libvirtComputingResource, to, LibvirtComputingResource.ClvmVolumeState.EXCLUSIVE);
+                    libvirtComputingResource.modifyClvmVolumesStateForMigration(disks, libvirtComputingResource, to, LibvirtComputingResource.ClvmVolumeState.EXCLUSIVE);
                 }
             } catch (final LibvirtException e) {
                 logger.trace("Ignoring libvirt error.", e);
@@ -1099,67 +1101,13 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                if (isClvmBlockDevice(diskInfo)) {
                     logger.debug("Found disk targeting CLVM/CLVM_NG destination pool");
                     return true;
-                }
+               }
             }
         } catch (final Exception e) {
             logger.debug("Failed to check for CLVM destination disks: {}. Assuming no CLVM disks.", e.getMessage());
         }
 
         return false;
-    }
-
-    /**
-     * Filters out disk labels that target CLVM or CLVM_NG destination pools from the migration disk labels set.
-     * CLVM/CLVM_NG disks are pre-created/activated on the destination before VM migration,
-     * so they should not be migrated by libvirt.
-     *
-     * @param migrateDiskLabels the original set of disk labels to migrate
-     * @param diskDefinitions the list of disk definitions to map labels to paths
-     * @param mapMigrateStorage the map containing migration disk information with destination pool types
-     * @return a new set with CLVM/CLVM_NG disk labels removed
-     */
-    protected Set<String> filterOutClvmDisks(Set<String> migrateDiskLabels,
-                                              List<DiskDef> diskDefinitions,
-                                              Map<String, MigrateCommand.MigrateDiskInfo> mapMigrateStorage) {
-        if (migrateDiskLabels == null || migrateDiskLabels.isEmpty()) {
-            return migrateDiskLabels;
-        }
-
-        Set<String> filteredLabels = new HashSet<>(migrateDiskLabels);
-
-        try {
-            Set<String> clvmDiskPaths = new HashSet<>();
-            for (Map.Entry<String, MigrateCommand.MigrateDiskInfo> entry : mapMigrateStorage.entrySet()) {
-                MigrateCommand.MigrateDiskInfo diskInfo = entry.getValue();
-                if (isClvmBlockDevice(diskInfo)) {
-                        clvmDiskPaths.add(entry.getKey());
-                        logger.debug("Identified CLVM/CLVM_NG destination disk: {}", entry.getKey());
-                }
-            }
-
-            // Map disk paths to labels and remove CLVM disk labels from the migration set
-            if (!clvmDiskPaths.isEmpty()) {
-                for (String clvmDiskPath : clvmDiskPaths) {
-                    for (DiskDef diskDef : diskDefinitions) {
-                        String diskPath = diskDef.getDiskPath();
-                        if (diskPath != null && diskPath.contains(clvmDiskPath)) {
-                            String label = diskDef.getDiskLabel();
-                            if (filteredLabels.remove(label)) {
-                                logger.info("Excluded disk label {} (path: {}) from libvirt migration - CLVM/CLVM_NG destination",
-                                          label, clvmDiskPath);
-                            }
-                            break;
-                        }
-                    }
-                }
-            }
-
-        } catch (final Exception e) {
-            logger.warn("Failed to filter CLVM disks: {}. Proceeding with original disk list.", e.getMessage());
-            return migrateDiskLabels;
-        }
-
-        return filteredLabels;
     }
 
     private boolean isClvmBlockDevice(MigrateCommand.MigrateDiskInfo diskInfo) {

@@ -17,9 +17,6 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
-
 import com.cloud.agent.api.Answer;
 import org.apache.cloudstack.storage.clvm.command.ClvmLockTransferCommand;
 import org.apache.cloudstack.storage.clvm.command.ClvmLockTransferAnswer;
@@ -32,8 +29,6 @@ import com.cloud.utils.script.OutputInterpreter;
 @ResourceWrapper(handles = ClvmLockTransferCommand.class)
 public class LibvirtClvmLockTransferCommandWrapper
         extends CommandWrapper<ClvmLockTransferCommand, Answer, LibvirtComputingResource> {
-
-    protected Logger logger = LogManager.getLogger(getClass());
 
     @Override
     public Answer execute(ClvmLockTransferCommand cmd, LibvirtComputingResource serverResource) {
@@ -130,11 +125,7 @@ public class LibvirtClvmLockTransferCommandWrapper
                 String trimmed = line.trim();
                 if (!trimmed.isEmpty() &&
                     trimmed.length() >= 10 &&
-                    (trimmed.charAt(0) == '-' || trimmed.charAt(0) == 'w' ||
-                     trimmed.charAt(0) == 'r' || trimmed.charAt(0) == 's' ||
-                     trimmed.charAt(0) == 'v' || trimmed.charAt(0) == 'm' ||
-                     trimmed.charAt(0) == 'p' || trimmed.charAt(0) == 'c' ||
-                     trimmed.charAt(0) == 'o')) {
+                    "-wrsvmpco".indexOf(trimmed.charAt(0)) >= 0) {
                     dataLine = trimmed;
                     break;
                 }

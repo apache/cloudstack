@@ -123,7 +123,6 @@ public class ClvmStorageAdaptor extends LibvirtStorageAdaptor {
 
             return pool;
         } catch (LibvirtException e) {
-            // Pool not in libvirt - return virtual pool backed only by LVM
             logger.debug("CLVM/CLVM_NG pool {} not found in libvirt, creating virtual pool", uuid);
             throw new CloudRuntimeException(e.toString(), e);
         }

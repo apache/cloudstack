@@ -2185,6 +2185,9 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             migrateCommand.setMigrateDiskInfoList(migrateDiskInfoList);
             migrateCommand.setMigrateStorageManaged(managedStorageDestination);
             migrateCommand.setMigrateNonSharedInc(migrateNonSharedInc);
+            boolean hasClvmCrossPoolVolume = migrateStorage.values().stream()
+                    .anyMatch(info -> ClvmPoolManager.isClvmPoolType(info.getSourcePoolType()));
+            migrateCommand.setClvmCrossPoolMigration(hasClvmCrossPoolVolume);
 
             Integer newVmCpuShares = ((PrepareForMigrationAnswer) pfma).getNewVmCpuShares();
             if (newVmCpuShares != null) {
