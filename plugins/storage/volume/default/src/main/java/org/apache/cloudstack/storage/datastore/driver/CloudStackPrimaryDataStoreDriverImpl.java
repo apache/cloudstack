@@ -29,6 +29,7 @@ import javax.inject.Inject;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.storage.VolumeVO;
+import org.apache.cloudstack.backup.InternalBackupService;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
@@ -132,6 +133,9 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 
     @Inject
     private VolumeOrchestrationService volumeOrchestrationService;
+
+    @Inject
+    private InternalBackupService internalBackupService;
 
     @Override
     public DataTO getTO(DataObject data) {
@@ -240,12 +244,14 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 
     @Override
     public void deleteAsync(DataStore dataStore, DataObject data, AsyncCompletionCallback<CommandResult> callback) {
-        DeleteCommand cmd = new DeleteCommand(data.getTO());
+        DataTO dataTO = data.getTO();
+        DeleteCommand cmd = new DeleteCommand(dataTO);
         cmd.setBypassHostMaintenance(commandCanBypassHostMaintenance(data));
         CommandResult result = new CommandResult();
         try {
             EndPoint ep;
             if (data.getType() == DataObjectType.VOLUME) {
+                internalBackupService.configureChainInfo(dataTO, cmd);
                 ep = epSelector.select(data, StorageAction.DELETEVOLUME);
             } else if (data.getType() == DataObjectType.SNAPSHOT) {
                 ep = epSelector.select(data, StorageAction.DELETESNAPSHOT);
@@ -418,7 +424,11 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
         if (snapshotOnPrimaryStore != null) {
             dataOnPrimaryStorage = (SnapshotObjectTO)snapshotOnPrimaryStore.getTO();
         }
-        RevertSnapshotCommand cmd = new RevertSnapshotCommand((SnapshotObjectTO)snapshot.getTO(), dataOnPrimaryStorage);
+
+        SnapshotObjectTO snapshotObjectTO = (SnapshotObjectTO)snapshot.getTO();
+
+        RevertSnapshotCommand cmd = new RevertSnapshotCommand(snapshotObjectTO, dataOnPrimaryStorage);
+        internalBackupService.configureChainInfo(snapshotObjectTO.getVolume(), cmd);
 
         CommandResult result = new CommandResult();
         try {

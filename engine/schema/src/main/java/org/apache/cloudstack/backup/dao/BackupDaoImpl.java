@@ -90,6 +90,8 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
         backupSearch.and("external_id", backupSearch.entity().getExternalId(), SearchCriteria.Op.EQ);
         backupSearch.and("backup_offering_id", backupSearch.entity().getBackupOfferingId(), SearchCriteria.Op.EQ);
         backupSearch.and("zone_id", backupSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
+        backupSearch.and("status", backupSearch.entity().getStatus(), SearchCriteria.Op.IN);
+        backupSearch.and("created_before", backupSearch.entity().getDate(), SearchCriteria.Op.LT);
         backupSearch.done();
 
         backupVmSearchInZone = createSearchBuilder(Long.class);
@@ -279,5 +281,14 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
         SearchCriteria<Long> sc = backupVmSearchInZone.create();
         sc.setParameters("zone_id", zoneId);
         return customSearchIncludingRemoved(sc, null);
+    }
+
+    @Override
+    public BackupVO findLatestByStatusAndVmId(Backup.Status status, long vmId) {
+        SearchCriteria<BackupVO> sc = backupSearch.create();
+        sc.setParameters("vm_id", vmId);
+        sc.setParameters("status", status);
+        Filter filter = new Filter(BackupVO.class, "date", false, 0L, 1L);
+        return findOneBy(sc, filter);
     }
 }

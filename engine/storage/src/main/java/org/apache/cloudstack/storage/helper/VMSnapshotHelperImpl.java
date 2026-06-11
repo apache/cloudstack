@@ -26,9 +26,16 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import com.cloud.uservm.UserVm;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.VolumeApiServiceImpl;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.storage.vmsnapshot.VMSnapshotHelper;
@@ -63,6 +70,12 @@ public class VMSnapshotHelperImpl implements VMSnapshotHelper {
     PrimaryDataStoreDao primaryDataStoreDao;
     @Inject
     VolumeDataFactory volumeDataFactory;
+
+    @Inject
+    private VMSnapshotDetailsDao vmSnapshotDetailsDao;
+
+    @Inject
+    private SnapshotDataStoreDao snapshotDataStoreDao;
 
     StateMachine2<VMSnapshot.State, VMSnapshot.Event, VMSnapshot> _vmSnapshottateMachine;
 
@@ -115,10 +128,14 @@ public class VMSnapshotHelperImpl implements VMSnapshotHelper {
         List<VolumeObjectTO> volumeTOs = new ArrayList<VolumeObjectTO>();
         List<VolumeVO> volumeVos = volumeDao.findByInstance(vmId);
         VolumeInfo volumeInfo = null;
-        for (VolumeVO volume : volumeVos) {
-            volumeInfo = volumeDataFactory.getVolume(volume.getId());
+        try {
+            for (VolumeVO volume : volumeVos) {
+                volumeInfo = volumeDataFactory.getVolume(volume.getId());
 
-            volumeTOs.add((VolumeObjectTO)volumeInfo.getTO());
+                volumeTOs.add((VolumeObjectTO)volumeInfo.getTO());
+            }
+        } catch (NullPointerException npe) {
+            throw new CloudRuntimeException(String.format("Unable to get list of volumeTOs for VM [%s]. Are the volumes created on storage already?", vmId), npe);
         }
         return volumeTOs;
     }
@@ -148,6 +165,26 @@ public class VMSnapshotHelperImpl implements VMSnapshotHelper {
             currentTO = currentTO.getParent();
         }
         return result;
+    }
+
+    /**
+     * For a given {@code vmSnapshotId}, gets the list with all the volume snapshots that are part of the VMSnapshot.
+     *
+     * @param vmSnapshotId  the id of the VM snapshot;
+     * @return the list that will be populated with the volume snapshots associated with the VM snapshot.
+     */
+    @Override
+    public List<SnapshotDataStoreVO> getVolumeSnapshotsAssociatedWithKvmDiskOnlyVmSnapshot(long vmSnapshotId) {
+        List<SnapshotDataStoreVO> associatedVolumeSnapshots = new ArrayList<>();
+        List<VMSnapshotDetailsVO> snapshotDetailList = vmSnapshotDetailsDao.findDetails(vmSnapshotId, VolumeApiServiceImpl.KVM_FILE_BASED_STORAGE_SNAPSHOT);
+        for (VMSnapshotDetailsVO vmSnapshotDetailsVO : snapshotDetailList) {
+            SnapshotDataStoreVO snapshot = snapshotDataStoreDao.findOneBySnapshotAndDatastoreRole(Long.parseLong(vmSnapshotDetailsVO.getValue()), DataStoreRole.Primary);
+            if (snapshot == null) {
+                throw new CloudRuntimeException(String.format("Could not find snapshot for VM snapshot [%s].", vmSnapshotId));
+            }
+            associatedVolumeSnapshots.add(snapshot);
+        }
+        return associatedVolumeSnapshots;
     }
 
     @Override

@@ -35,7 +35,8 @@ public class Storage {
         VDI(true, true, false, "vdi"),
         TAR(false, false, false, "tar"),
         ZIP(false, false, false, "zip"),
-        DIR(false, false, false, "dir");
+        DIR(false, false, false, "dir"),
+        PNG(false, false, false, "png");
 
         private final boolean supportThinProvisioning;
         private final boolean supportSparse;

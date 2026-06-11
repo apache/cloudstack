@@ -269,10 +269,10 @@ public class KVMStoragePoolManager {
     }
 
     public KVMStoragePool getStoragePool(StoragePoolType type, String uuid) {
-        return this.getStoragePool(type, uuid, false);
+        return this.getStoragePool(type, uuid, false, true);
     }
 
-    public KVMStoragePool getStoragePool(StoragePoolType type, String uuid, boolean refreshInfo) {
+    public synchronized KVMStoragePool getStoragePool(StoragePoolType type, String uuid, boolean refreshInfo, boolean addDetails) {
 
         StorageAdaptor adaptor = getStorageAdaptor(type);
         KVMStoragePool pool = null;
@@ -287,7 +287,7 @@ public class KVMStoragePoolManager {
             }
         }
 
-        if (pool instanceof LibvirtStoragePool) {
+        if (pool instanceof LibvirtStoragePool && addDetails) {
             addPoolDetails(uuid, (LibvirtStoragePool) pool);
             ((LibvirtStoragePool) pool).setType(type);
         }
@@ -412,7 +412,7 @@ public class KVMStoragePoolManager {
         return adaptor.disconnectPhysicalDisk(volPath, pool);
     }
 
-    public boolean deleteStoragePool(StoragePoolType type, String uuid) {
+    public synchronized boolean deleteStoragePool(StoragePoolType type, String uuid) {
         StorageAdaptor adaptor = getStorageAdaptor(type);
         if (type == StoragePoolType.NetworkFilesystem) {
             _haMonitor.removeStoragePool(uuid);

@@ -116,6 +116,8 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     List<Long> listIdsForUpEnabledByZoneAndHypervisor(Long zoneId, HypervisorType hypervisorType);
 
+    List<HostVO> findRoutingByClusterId(Long clusterId);
+
     List<HostVO> findByClusterIdAndEncryptionSupport(Long clusterId);
 
     /**
@@ -133,6 +135,8 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
     List<Long> listAllHosts(long zoneId);
 
     List<HostVO> listAllHostsByZoneAndHypervisorType(long zoneId, HypervisorType hypervisorType);
+
+    List<HostVO> listAllRoutingHostsByZoneAndHypervisorType(long zoneId, HypervisorType hypervisorType);
 
     List<HostVO> listAllHostsThatHaveNoRuleTag(Host.Type type, Long clusterId, Long podId, Long dcId);
 
