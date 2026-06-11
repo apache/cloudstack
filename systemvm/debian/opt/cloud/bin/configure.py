@@ -704,10 +704,13 @@ class CsAcl(CsDataBag):
             return
 
         desired_firewall_ips = set()
+        fw_chains_created = set()
         if self.config.is_vpc() and self.config.is_vpc_firewall_enabled():
             desired_firewall_ips = self._get_desired_vpc_firewall_ips()
-
-        fw_chains_created = set()
+            # Pre-create FIREWALL chains for ALL public IPs that have any active rule
+            # (static NAT, port forwarding, LB, or explicit firewall rule) so that the
+            # default DROP is always in place even before any explicit firewall rule exists.
+            self._ensure_vpc_firewall_chains(desired_firewall_ips, fw_chains_created)
 
         for item in self.dbag:
             if item == "id":
@@ -717,8 +720,8 @@ class CsAcl(CsDataBag):
             else:
                 if self.config.is_vpc() and self.dbag[item].get("purpose") == "Firewall" and not self.config.is_vpc_firewall_enabled():
                     continue
-                # For VPC firewall rules, create the PREROUTING jump and chain skeleton
-                # once per public IP before adding the individual rule
+                # Chain skeleton is already ensured by the pre-creation pass above;
+                # _ensure_vpc_firewall_chains is idempotent (skips IPs in fw_chains_created).
                 if self.config.is_vpc() and self.config.is_vpc_firewall_enabled() and self.dbag[item].get("purpose") == "Firewall":
                     src_ip = self.dbag[item].get("src_ip")
                     self._ensure_vpc_firewall_chains([src_ip], fw_chains_created)
@@ -728,10 +731,23 @@ class CsAcl(CsDataBag):
             self._cleanup_removed_vpc_firewall_chains(desired_firewall_ips)
 
     def _get_desired_vpc_firewall_ips(self):
-        desired_firewall_ips = set()
+        """
+        Collect the full set of public IPs that should have a FIREWALL mangle chain
+        in a VPC with firewall capability. This includes IPs from explicit firewall
+        rules, forwarding/static-NAT rules, and load-balancer rules.
+        """
         if not self.config.is_vpc():
-            return desired_firewall_ips
+            return set()
 
+        ips = set()
+        ips.update(self._get_firewall_rule_ips())
+        ips.update(self._get_forwarding_rule_ips())
+        ips.update(self._get_loadbalancer_ips())
+        return ips
+
+    def _get_firewall_rule_ips(self):
+        """Return public IPs that have explicit firewall rules in this data bag."""
+        ips = set()
         for item in self.dbag:
             if item == "id":
                 continue
@@ -739,8 +755,42 @@ class CsAcl(CsDataBag):
             if rule.get("purpose") == "Firewall":
                 src_ip = rule.get("src_ip")
                 if src_ip:
-                    desired_firewall_ips.add(src_ip)
-        return desired_firewall_ips
+                    ips.add(src_ip)
+        return ips
+
+    def _get_forwarding_rule_ips(self):
+        """
+        Return public IPs from the forwardingrules bag (static NAT and port forwarding).
+        That bag is keyed by public IP, so each key (other than 'id') is a public IP.
+        """
+        ips = set()
+        try:
+            fwd_bag = CsDataBag("forwardingrules", self.config)
+            for public_ip in fwd_bag.get_bag():
+                if public_ip == "id":
+                    continue
+                ips.add(public_ip)
+        except Exception as e:
+            logging.debug("Could not load forwardingrules for VPC firewall chain collection: %s", e)
+        return ips
+
+    def _get_loadbalancer_ips(self):
+        """
+        Return public IPs from the loadbalancer bag.
+        add_rules entries are formatted as 'ip:port', so the IP is the first segment.
+        """
+        ips = set()
+        try:
+            lb_bag = CsDataBag("loadbalancer", self.config)
+            lb_data = lb_bag.get_bag()
+            if "config" in lb_data and lb_data["config"]:
+                for rule_str in lb_data["config"][0].get("add_rules", []):
+                    ip = rule_str.split(":")[0]
+                    if ip:
+                        ips.add(ip)
+        except Exception as e:
+            logging.debug("Could not load loadbalancer for VPC firewall chain collection: %s", e)
+        return ips
 
     def _ensure_vpc_firewall_chains(self, source_ips, fw_chains_created):
         fw = self.config.get_fw()
