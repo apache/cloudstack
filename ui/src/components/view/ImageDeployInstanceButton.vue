@@ -83,7 +83,8 @@ export default {
   computed: {
     allowed () {
       return (this.$route.meta.name === 'template' ||
-        (this.$route.meta.name === 'iso' && this.resource.bootable))
+        (this.$route.meta.name === 'iso' && this.resource?.bootable)) &&
+        !!this.resource?.isready
     }
   },
   methods: {
@@ -91,7 +92,7 @@ export default {
       this.fetchResourceData()
     },
     fetchResourceData () {
-      if (!this.resource || !this.resource.id) {
+      if (!this.resource || !this.resource.id || !this.resource.isready) {
         return
       }
       const params = {
