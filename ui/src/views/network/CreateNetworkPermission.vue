@@ -49,6 +49,7 @@
               api="listProjects"
               :apiParams="projectsApiParams"
               resourceType="project"
+              :pageSize="100"
               defaultIcon="project-outlined" />
           </a-form-item>
           <a-form-item v-if="!isAdminOrDomainAdmin()">
@@ -121,7 +122,9 @@ export default {
     },
     projectsApiParams () {
       return {
-        details: 'min'
+        details: 'min',
+        listall: true,
+        timestamp: this.timestamp
       }
     }
   },
