@@ -2836,19 +2836,15 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
                 Ipv4RouteResponse route = new Ipv4RouteResponse(network.getCidr(), ip.getAddress().addr());
                 response.addIpv4Route(route);
             }
-
-            if (view == ResponseView.Full) {
-                List<BgpPeerVO> bgpPeerVOS = bgpPeerDao.listNonRevokeByNetworkId(network.getId());
-                for (BgpPeerVO bgpPeerVO : bgpPeerVOS) {
-                    BgpPeerResponse bgpPeerResponse = routedIpv4Manager.createBgpPeerResponse(bgpPeerVO);
-                    response.addBgpPeer(bgpPeerResponse);
-                }
-            }
         }
 
         if (networkOfferingDao.isIpv6Supported(network.getNetworkOfferingId())) {
             response.setInternetProtocol(networkOfferingDao.getNetworkOfferingInternetProtocol(network.getNetworkOfferingId(), NetUtils.InternetProtocol.IPv4).toString());
-            response.setIpv6Routing(Network.Routing.Static.toString());
+            if (networkOffering != null && networkOffering.getRoutingMode() != null) {
+                response.setIpv6Routing(networkOffering.getRoutingMode().name());
+            } else {
+                response.setIpv6Routing(Network.Routing.Static.toString());
+            }
             response.setIpv6Routes(new LinkedHashSet<>());
             if (Network.GuestType.Isolated.equals(networkOffering.getGuestType())) {
                 List<String> ipv6Addresses = ipv6Service.getPublicIpv6AddressesForNetwork(network);
@@ -2856,6 +2852,15 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
                     Ipv6RouteResponse route = new Ipv6RouteResponse(network.getIp6Cidr(), address);
                     response.addIpv6Route(route);
                 }
+            }
+        }
+
+        // Add BGP peer information for full view
+        if (view == ResponseView.Full) {
+            List<BgpPeerVO> bgpPeerVOS = bgpPeerDao.listNonRevokeByNetworkId(network.getId());
+            for (BgpPeerVO bgpPeerVO : bgpPeerVOS) {
+                BgpPeerResponse bgpPeerResponse = routedIpv4Manager.createBgpPeerResponse(bgpPeerVO);
+                response.addBgpPeer(bgpPeerResponse);
             }
         }
 
@@ -3573,7 +3578,6 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         response.setTags(tagResponses);
         response.setHasAnnotation(annotationDao.hasAnnotations(vpc.getUuid(), AnnotationService.EntityType.VPC.name(),
                 _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
-        ipv6Service.updateIpv6RoutesForVpcResponse(vpc, response);
         response.setDns1(vpc.getIp4Dns1());
         response.setDns2(vpc.getIp4Dns2());
         response.setIpv6Dns1(vpc.getIp6Dns1());
@@ -3594,12 +3598,22 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
                     response.addIpv4Route(route);
                 }
             }
-            if (view == ResponseView.Full) {
-                List<BgpPeerVO> bgpPeerVOS = bgpPeerDao.listNonRevokeByVpcId(vpc.getId());
-                for (BgpPeerVO bgpPeerVO : bgpPeerVOS) {
-                    BgpPeerResponse bgpPeerResponse = routedIpv4Manager.createBgpPeerResponse(bgpPeerVO);
-                    response.addBgpPeer(bgpPeerResponse);
-                }
+        }
+
+        // add IPv6 routes
+        ipv6Service.updateIpv6RoutesForVpcResponse(vpc, response);
+        if (Objects.nonNull(asNumberVO)) {
+            response.setIpv6Routing(Network.Routing.Dynamic.name());
+        } else {
+            response.setIpv6Routing(Network.Routing.Static.name());
+        }
+
+        // Add BGP peer information for full view
+        if (view == ResponseView.Full && Objects.nonNull(asNumberVO)) {
+            List<BgpPeerVO> bgpPeerVOS = bgpPeerDao.listNonRevokeByVpcId(vpc.getId());
+            for (BgpPeerVO bgpPeerVO : bgpPeerVOS) {
+                BgpPeerResponse bgpPeerResponse = routedIpv4Manager.createBgpPeerResponse(bgpPeerVO);
+                response.addBgpPeer(bgpPeerResponse);
             }
         }
 
