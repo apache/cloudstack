@@ -1943,7 +1943,11 @@ public class KVMStorageProcessor implements StorageProcessor {
                     format = vol.getFormat();
                 }
             }
-            newVol.setSize(volume.getSize());
+            if (StoragePoolType.CLVM_NG.equals(primaryStore.getPoolType()) && vol != null && vol.getVirtualSize() > 0) {
+                newVol.setSize(vol.getVirtualSize());
+            } else {
+                newVol.setSize(volume.getSize());
+            }
             newVol.setFormat(ImageFormat.valueOf(format.toString().toUpperCase()));
 
             return new CreateObjectAnswer(newVol);

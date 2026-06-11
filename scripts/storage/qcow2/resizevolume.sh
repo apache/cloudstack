@@ -208,8 +208,9 @@ resizeclvmng() {
   target_lv_size=$(( newsize + metadata_overhead ))
   # Round up to PE boundary
   lv_size=$(( ((target_lv_size + pe_size - 1) / pe_size) * pe_size ))
+  pe_aligned_newsize=$(( ((newsize + pe_size - 1) / pe_size) * pe_size ))
 
-  log "CLVM_NG resize: path=$path vg=$vgname pe_size=${pe_size}B virtual=${newsize}B metadata=${metadata_overhead}B lv_size=${lv_size}B"
+  log "CLVM_NG resize: path=$path vg=$vgname pe_size=${pe_size}B virtual=${newsize}B pe_aligned_virtual=${pe_aligned_newsize}B metadata=${metadata_overhead}B lv_size=${lv_size}B"
 
   # Use -U (force-share) if qemu-img >= 2.10 so we can read info even when
   # QEMU has the file open with an exclusive lock (VM running case)
@@ -265,7 +266,7 @@ resizeclvmng() {
   if `virsh domstate $vmname >/dev/null 2>&1`
   then
     log "VM $vmname is running, using virsh blockresize for safe live QCOW2 resize"
-    sizeinkb=$(($newsize/1024))
+    sizeinkb=$(($pe_aligned_newsize/1024))
     devicepath=$(virsh domblklist $vmname | grep $path | awk '{print $1}')
     if [[ -z "$devicepath" ]]
     then
@@ -283,14 +284,14 @@ resizeclvmng() {
     log "virsh blockresize succeeded: $vmname $devicepath to ${sizeinkb}KiB virtual"
   else
     log "VM $vmname is not running, using qemu-img resize"
-    output=`qemu-img resize $path $newsize 2>&1`
+    output=`qemu-img resize $path $pe_aligned_newsize 2>&1`
     retval=$?
     if [ -z $retval ] || [ $retval -ne 0 ]
     then
       log "qemu-img resize failed: $output" 1
       exit 1
     fi
-    log "qemu-img resize succeeded: $path to ${newsize}B virtual"
+    log "qemu-img resize succeeded: $path to ${pe_aligned_newsize}B virtual"
   fi
 
   log "performed successful CLVM_NG resize - currentsize:$currentsize newsize:$newsize lv_size:$lv_size path:$path vmname:$vmname live:$liveresize shrink:$shrink"

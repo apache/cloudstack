@@ -18,15 +18,21 @@
 package com.cloud.hypervisor.kvm.storage;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.After;
@@ -45,6 +51,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
 import com.cloud.storage.Storage;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 
@@ -575,6 +582,18 @@ public class ClvmStorageAdaptorTest {
 
         Mockito.when(mockPool.getType()).thenReturn(Storage.StoragePoolType.CLVM_NG);
 
+        mockScriptConstruction = Mockito.mockConstruction(Script.class,
+            (mock, context) -> {
+                when(mock.execute()).thenReturn(null);
+                Mockito.doAnswer(invocation -> {
+                    OutputInterpreter.AllLinesParser parser = invocation.getArgument(0);
+                    Field allLinesField = OutputInterpreter.AllLinesParser.class.getDeclaredField("allLines");
+                    allLinesField.setAccessible(true);
+                    allLinesField.set(parser, "{\"virtual-size\": " + size + "}");
+                    return null;
+                }).when(mock).execute(Mockito.any(OutputInterpreter.AllLinesParser.class));
+            });
+
         Method method = ClvmStorageAdaptor.class.getDeclaredMethod(
             "createPhysicalDiskFromClvmLv",
             String.class, String.class, KVMStoragePool.class, long.class);
@@ -1042,5 +1061,44 @@ public class ClvmStorageAdaptorTest {
 
         assertNotNull("Local path should not be null", localPath);
         assert !localPath.isEmpty() : "Local path should not be empty";
+    }
+
+    @Test
+    public void testCreateClvmNgDiskWithBacking_NonPeAlignedSizeIsRoundedUp() throws Exception {
+        String volumeUuid = UUID.randomUUID().toString();
+        int timeout = 30000;
+        // 50 MiB is not a multiple of the default 4 MiB PE, so lvcreate on a CLVM
+        // destination would round it up to 52 MiB.  The QCOW2 must be created with
+        // the same 52 MiB so libvirt does not abort migration with "different sizes".
+        long nonAlignedVirtualSize = 52428800L;   // 50 MiB
+        long peAlignedVirtualSize  = 54525952L;   // 52 MiB = 13 × 4 MiB (default PE)
+        String vgName = "testvg";
+
+        Mockito.when(mockPool.getLocalPath()).thenReturn(vgName);
+
+        List<String> qemuImgAddArgs = new ArrayList<>();
+
+        mockScriptConstruction = Mockito.mockConstruction(Script.class,
+            (mock, context) -> {
+                when(mock.execute()).thenReturn(null);
+                if (!context.arguments().isEmpty() && "qemu-img".equals(context.arguments().get(0))) {
+                    doAnswer(inv -> { qemuImgAddArgs.add(inv.getArgument(0)); return null; })
+                        .when(mock).add(anyString());
+                }
+            });
+
+        Method method = ClvmStorageAdaptor.class.getDeclaredMethod(
+            "createClvmNgDiskWithBacking",
+            String.class, int.class, long.class, String.class,
+            KVMStoragePool.class, Storage.ProvisioningType.class);
+        method.setAccessible(true);
+
+        method.invoke(clvmStorageAdaptor, volumeUuid, timeout, nonAlignedVirtualSize, null,
+            mockPool, Storage.ProvisioningType.THIN);
+
+        assertTrue("qemu-img create must use PE-aligned virtual size to match CLVM destination LV",
+            qemuImgAddArgs.contains(String.valueOf(peAlignedVirtualSize)));
+        assertFalse("qemu-img create must not use non-PE-aligned virtual size",
+            qemuImgAddArgs.contains(String.valueOf(nonAlignedVirtualSize)));
     }
 }

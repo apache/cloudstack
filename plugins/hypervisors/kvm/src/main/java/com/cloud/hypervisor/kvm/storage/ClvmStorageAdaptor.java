@@ -27,7 +27,6 @@ import java.util.stream.Collectors;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
 import com.cloud.hypervisor.kvm.resource.LibvirtStoragePoolDef;
-import com.cloud.hypervisor.kvm.resource.LibvirtStorageVolumeDef;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
@@ -145,12 +144,11 @@ public class ClvmStorageAdaptor extends LibvirtStorageAdaptor {
                 return getPhysicalDiskWithClvmFallback(volumeUuid, pool, libvirtPool);
             }
 
-            LibvirtStorageVolumeDef voldef = getStorageVolumeDef(libvirtPool.getPool().getConnect(), vol);
+            boolean isQcow2 = StoragePoolType.CLVM_NG.equals(pool.getType());
             KVMPhysicalDisk disk = new KVMPhysicalDisk(vol.getPath(), vol.getName(), pool);
             disk.setSize(vol.getInfo().allocation);
-            disk.setVirtualSize(vol.getInfo().capacity);
-            disk.setFormat(voldef.getFormat() == LibvirtStorageVolumeDef.VolumeFormat.QCOW2
-                    ? PhysicalDiskFormat.QCOW2 : PhysicalDiskFormat.RAW);
+            disk.setVirtualSize(isQcow2 ? getQcow2VirtualSize(vol.getPath()) : vol.getInfo().capacity);
+            disk.setFormat(isQcow2 ? PhysicalDiskFormat.QCOW2 : PhysicalDiskFormat.RAW);
             return disk;
         } catch (LibvirtException e) {
             logger.warn("LibvirtException looking up volume {}: {}", volumeUuid, e.getMessage());
@@ -400,12 +398,11 @@ public class ClvmStorageAdaptor extends LibvirtStorageAdaptor {
             StorageVol vol = getVolume(libvirtPool.getPool(), volumeUuid);
             if (vol != null) {
                 logger.info("Volume found after pool refresh: {}", volumeUuid);
-                LibvirtStorageVolumeDef voldef = getStorageVolumeDef(libvirtPool.getPool().getConnect(), vol);
+                boolean isQcow2 = StoragePoolType.CLVM_NG.equals(pool.getType());
                 KVMPhysicalDisk disk = new KVMPhysicalDisk(vol.getPath(), vol.getName(), pool);
                 disk.setSize(vol.getInfo().allocation);
-                disk.setVirtualSize(vol.getInfo().capacity);
-                disk.setFormat(voldef.getFormat() == LibvirtStorageVolumeDef.VolumeFormat.QCOW2
-                        ? PhysicalDiskFormat.QCOW2 : PhysicalDiskFormat.RAW);
+                disk.setVirtualSize(isQcow2 ? getQcow2VirtualSize(vol.getPath()) : vol.getInfo().capacity);
+                disk.setFormat(isQcow2 ? PhysicalDiskFormat.QCOW2 : PhysicalDiskFormat.RAW);
                 return disk;
             }
         } catch (LibvirtException refreshEx) {
@@ -588,7 +585,7 @@ public class ClvmStorageAdaptor extends LibvirtStorageAdaptor {
         KVMPhysicalDisk disk = new KVMPhysicalDisk(lvPath, volumeUuid, pool);
         disk.setFormat(diskFormat);
         disk.setSize(size);
-        disk.setVirtualSize(size);
+        disk.setVirtualSize(diskFormat == PhysicalDiskFormat.QCOW2 ? getQcow2VirtualSize(lvPath) : size);
 
         logger.info("Successfully accessed CLVM/CLVM_NG volume via direct block device: {} with format: {} and size: {} bytes",
                 lvPath, diskFormat, size);
@@ -753,10 +750,9 @@ public class ClvmStorageAdaptor extends LibvirtStorageAdaptor {
 
     /**
      * Calculate LVM LV size for CLVM_NG volume allocation.
+     * {@code peSize} must be the Physical Extent size of the VG (from {@link #getVgPhysicalExtentSize}).
      */
-    private long calculateClvmNgLvSize(long virtualSize, String vgName) {
-        long peSize = getVgPhysicalExtentSize(vgName);
-
+    private long calculateClvmNgLvSize(long virtualSize, long peSize) {
         long clusterSize = 64 * 1024L;
         long l2Multiplier = 4096L;
 
@@ -782,6 +778,7 @@ public class ClvmStorageAdaptor extends LibvirtStorageAdaptor {
         Script qemuImg = new Script("qemu-img", 300000, logger);
         qemuImg.add("info");
         qemuImg.add("--output=json");
+        qemuImg.add("-U");
         qemuImg.add(imagePath);
 
         OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
@@ -825,11 +822,14 @@ public class ClvmStorageAdaptor extends LibvirtStorageAdaptor {
     private KVMPhysicalDisk createClvmNgDiskWithBacking(String volumeUuid, int timeout, long virtualSize, String backingFile,
                                                          KVMStoragePool pool, Storage.ProvisioningType provisioningType) {
         String vgName = getVgName(pool.getLocalPath());
-        long lvSize = calculateClvmNgLvSize(virtualSize, vgName);
+        // Query PE size once and reuse for both the QCOW2 virtual-size alignment and the
+        long peSize = getVgPhysicalExtentSize(vgName);
+        long peAlignedVirtualSize = ((virtualSize + peSize - 1) / peSize) * peSize;
+        long lvSize = calculateClvmNgLvSize(peAlignedVirtualSize, peSize);
         String volumePath = "/dev/" + vgName + "/" + volumeUuid;
 
-        logger.debug("Creating CLVM_NG volume {} with LV size {} bytes (virtual size: {} bytes, provisioning: {})",
-                volumeUuid, lvSize, virtualSize, provisioningType);
+        logger.debug("Creating CLVM_NG volume {} with LV size {} bytes (requested virtual: {} bytes, PE-aligned virtual: {} bytes, provisioning: {})",
+                volumeUuid, lvSize, virtualSize, peAlignedVirtualSize, provisioningType);
 
         Script lvcreate = new Script("lvcreate", Duration.millis(timeout), logger);
         lvcreate.add("-n", volumeUuid);
@@ -860,7 +860,7 @@ public class ClvmStorageAdaptor extends LibvirtStorageAdaptor {
 
         qemuImg.add("-o", qcow2Options.toString());
         qemuImg.add(volumePath);
-        qemuImg.add(virtualSize + "");
+        qemuImg.add(peAlignedVirtualSize + "");
 
         result = qemuImg.execute();
         if (result != null) {
@@ -872,10 +872,10 @@ public class ClvmStorageAdaptor extends LibvirtStorageAdaptor {
         KVMPhysicalDisk disk = new KVMPhysicalDisk(volumePath, volumeUuid, pool);
         disk.setFormat(PhysicalDiskFormat.QCOW2);
         disk.setSize(actualSize);
-        disk.setVirtualSize(actualSize);
+        disk.setVirtualSize(peAlignedVirtualSize);
 
-        logger.info("Successfully created CLVM_NG volume {} (LV size: {}, virtual size: {}, provisioning: {}, preallocation: {})",
-                volumeUuid, lvSize, virtualSize, provisioningType, preallocation);
+        logger.info("Successfully created CLVM_NG volume {} (LV size: {}, PE-aligned virtual size: {}, provisioning: {}, preallocation: {})",
+                volumeUuid, lvSize, peAlignedVirtualSize, provisioningType, preallocation);
 
         return disk;
     }
