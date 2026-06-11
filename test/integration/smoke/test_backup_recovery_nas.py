@@ -335,6 +335,90 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
             self.backup_offering.removeOffering(self.apiclient, self.vm.id)
 
     @attr(tags=["advanced", "backup"], required_hardware="true")
+    def test_incremental_after_vm_restart(self):
+        """
+        Regression for the parent-checkpoint recreation bug (PR #13074): an incremental
+        backup taken AFTER the VM has been restarted must still succeed and restore
+        correctly.
+
+        A VM (re)start rebuilds the libvirt domain XML and wipes libvirt's checkpoint
+        registry, while the dirty bitmap persists on the qcow2. The agent must then
+        re-register the parent checkpoint with `checkpoint-create --redefine` (from the
+        saved checkpoint XML) rather than a fresh create — a fresh create fails with
+        "Bitmap already exists", and qemu-img cannot drop the bitmap on a running disk.
+
+        How this was reproduced manually on a libvirt 10.0.0 host, and what this test
+        automates:
+            FULL + marker1  ->  stop/start the VM (wipes the checkpoint registry)
+            ->  INCREMENTAL + marker2  ->  restore the tip  ->  both markers present.
+        """
+        self.backup_offering.assignOffering(self.apiclient, self.vm.id)
+        original_full_every = self._get_full_every()
+        # High cadence so the post-restart backup is INCREMENTAL, not a periodic FULL.
+        self._set_full_every(100)
+        backups = []
+        try:
+            ssh_client_vm = self.vm.get_ssh_client(reconnect=True)
+            ssh_client_vm.execute("echo restart-test-1 > /root/restart_marker_1.txt; sync")
+
+            # 1) FULL anchor
+            Backup.create(self.apiclient, self.vm.id, "restart_full")
+            time.sleep(2)
+
+            # 2) Restart the VM — wipes libvirt's checkpoint registry (the bug trigger).
+            self.vm.stop(self.apiclient)
+            self.vm.start(self.apiclient)
+            ssh_client_vm = self.vm.get_ssh_client(reconnect=True)
+            ssh_client_vm.execute("echo restart-test-2 > /root/restart_marker_2.txt; sync")
+
+            # 3) INCREMENTAL after the restart — the previously-broken path.
+            Backup.create(self.apiclient, self.vm.id, "restart_incr")
+            time.sleep(2)
+
+            backups = Backup.list(self.apiclient, self.vm.id)
+            self.assertEqual(len(backups), 2,
+                "Expected FULL + INCREMENTAL after restart, got %d" % len(backups))
+            backups.sort(key=lambda b: b.created)
+            self.assertEqual(self._backup_type(backups[0]).upper(), 'FULL',
+                "First backup should be FULL")
+            self.assertEqual(self._backup_type(backups[1]).upper(), 'INCREMENTAL',
+                "Backup taken after the VM restart must be INCREMENTAL, not silently a FULL")
+
+            # 4) Restore the tip (incremental) and verify BOTH markers survived the chain
+            #    across the restart — i.e. the post-restart incremental really captured data.
+            new_vm_name = "vm-restart-restore-" + str(int(time.time()))
+            new_vm = Backup.createVMFromBackup(
+                self.apiclient,
+                self.services["small"],
+                mode=self.services["mode"],
+                backupid=backups[1].id,
+                vmname=new_vm_name,
+                accountname=self.account.name,
+                domainid=self.account.domainid,
+                zoneid=self.zone.id
+            )
+            self.cleanup.append(new_vm)
+            self.assertIsNotNone(new_vm, "Failed to create VM from the post-restart incremental backup")
+            self.assertEqual(new_vm.state, "Running", "Restored VM should be Running")
+
+            ssh_new = new_vm.get_ssh_client(reconnect=True)
+            r1 = "".join(ssh_new.execute("cat /root/restart_marker_1.txt"))
+            r2 = "".join(ssh_new.execute("cat /root/restart_marker_2.txt"))
+            self.assertIn("restart-test-1", r1,
+                "Marker written before the restart is missing from the restore")
+            self.assertIn("restart-test-2", r2,
+                "Marker written after the restart (captured by the post-restart incremental) "
+                "is missing from the restore")
+        finally:
+            for b in reversed(backups):
+                try:
+                    Backup.delete(self.apiclient, b.id)
+                except Exception:
+                    pass
+            self._set_full_every(original_full_every)
+            self.backup_offering.removeOffering(self.apiclient, self.vm.id)
+
+    @attr(tags=["advanced", "backup"], required_hardware="true")
     def test_restore_from_incremental(self):
         """
         Take FULL + 2 INCREMENTAL backups, each with a marker file. Restore from the
