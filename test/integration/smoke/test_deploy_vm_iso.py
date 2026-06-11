@@ -44,6 +44,7 @@ class TestDeployVMFromISO(cloudstackTestCase):
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls.hypervisor = cls.testClient.getHypervisorInfo()
+        cls._cleanup = []
 
         cls.template = get_test_template(
             cls.apiclient,
@@ -56,16 +57,14 @@ class TestDeployVMFromISO(cloudstackTestCase):
             cls.apiclient,
             cls.testdata["service_offering"]
         )
+        cls._cleanup.append(cls.service_offering)
 
         cls.disk_offering = DiskOffering.create(
             cls.apiclient,
             cls.testdata["disk_offering"]
         )
+        cls._cleanup.append(cls.disk_offering)
 
-        cls._cleanup = [
-            cls.service_offering,
-            cls.disk_offering
-        ]
         return
 
     def setUp(self):
@@ -73,6 +72,7 @@ class TestDeployVMFromISO(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.hypervisor = self.testClient.getHypervisorInfo()
+        self.cleanup = []
         self.testdata["virtual_machine"]["zoneid"] = self.zone.id
         self.testdata["virtual_machine"]["template"] = self.template.id
         self.testdata["iso"]["zoneid"] = self.zone.id
@@ -81,7 +81,7 @@ class TestDeployVMFromISO(cloudstackTestCase):
             self.testdata["account"],
             domainid=self.domain.id
         )
-        self.cleanup = [self.account]
+        self.cleanup.append(self.account)
         return
 
     @attr(
@@ -162,7 +162,7 @@ class TestDeployVMFromISO(cloudstackTestCase):
             VirtualMachine.RUNNING
         )
 
-       response = self.virtual_machine.getState(
+        response = self.virtual_machine.getState(
             self.apiclient,
             VirtualMachine.RUNNING)
         self.assertEqual(response[0], PASS, response[1])
