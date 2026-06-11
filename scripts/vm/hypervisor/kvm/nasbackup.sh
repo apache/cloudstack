@@ -157,37 +157,28 @@ backup_running_vm() {
       ;;
   esac
 
-  # When incremental, verify the parent bitmap still exists on the running domain.
-  # CloudStack rebuilds the libvirt domain XML on every VM start, so libvirt's checkpoint
-  # registry is wiped — but the bitmap may still exist on the qcow2 itself (we pre-seed
-  # one on stopped-VM backups, see backup_stopped_vm). If the parent is missing from
-  # libvirt's view, recreate it. If it's missing entirely (qcow2 too), this falls through
-  # to a fresh-create which captures all writes since — slightly larger but correct.
+  # When incremental, make sure the parent checkpoint is registered with libvirt. CloudStack
+  # rebuilds the domain XML on every VM start, which wipes libvirt's in-memory checkpoint
+  # registry, while the dirty bitmap persists on the qcow2 (QEMU re-loads it on start). A
+  # fresh checkpoint-create cannot be used then — QEMU reports "Bitmap already exists" — and
+  # qemu-img cannot drop the bitmap on a running disk (the image is write-locked). The parent
+  # must instead be re-registered with --redefine, using the FULL checkpoint XML this script
+  # saved alongside the parent backup when it was taken (a minimal/synthesized XML is rejected
+  # by libvirt's checkpoint schema on redefine, so the full dump is required).
   if [[ "$effective_mode" == "incremental" ]]; then
     if ! virsh -c qemu:///system checkpoint-list "$VM" --name 2>/dev/null | grep -qx "$BITMAP_PARENT"; then
-      cat > $dest/recreate-checkpoint.xml <<XML
-<domaincheckpoint><name>$BITMAP_PARENT</name><disks>
-$(virsh -c qemu:///system domblklist "$VM" --details 2>/dev/null | awk '$2=="disk"{printf "<disk name=\"%s\"/>\n", $3}')
-</disks></domaincheckpoint>
-XML
-      if ! virsh -c qemu:///system checkpoint-create "$VM" --xmlfile $dest/recreate-checkpoint.xml > /dev/null 2>&1; then
-        # If a bitmap of the same name already lives on the qcow2 (pre-seeded by an
-        # offline backup) libvirt 7.2+ should reuse it during checkpoint-create. Older
-        # libvirt fails the create — clean up the orphan bitmap and retry as a fresh.
-        local retried_ok=1
-        for disk_path in $(virsh -c qemu:///system domblklist "$VM" --details 2>/dev/null | awk '$2=="disk"{print $4}'); do
-          [[ -f "$disk_path" ]] && qemu-img bitmap --remove "$disk_path" "$BITMAP_PARENT" 2>/dev/null || true
-        done
-        if ! virsh -c qemu:///system checkpoint-create "$VM" --xmlfile $dest/recreate-checkpoint.xml > /dev/null 2>&1; then
-          retried_ok=0
-        fi
-        if [[ "$retried_ok" == "0" ]]; then
-          echo "Failed to recreate parent bitmap $BITMAP_PARENT for $VM"
-          cleanup
-          exit 1
-        fi
+      parent_first="${PARENT_PATHS%%,*}"
+      parent_cp_xml="$(dirname "$parent_first")/$BITMAP_PARENT.checkpoint.xml"
+      if [[ -f "$parent_cp_xml" ]] && \
+         virsh -c qemu:///system checkpoint-create "$VM" --xmlfile "$parent_cp_xml" --redefine > /dev/null 2>&1; then
+        : # parent checkpoint re-registered; the incremental can proceed against it
+      else
+        # No saved checkpoint XML (e.g. a backup taken before this fix) or redefine failed.
+        # Fall back to a full so the chain restarts cleanly instead of failing the backup.
+        echo "INCREMENTAL_FALLBACK=full (parent checkpoint $BITMAP_PARENT could not be re-registered)"
+        effective_mode="full"
+        BITMAP_PARENT=""
       fi
-      rm -f $dest/recreate-checkpoint.xml
     fi
   fi
 
@@ -344,6 +335,10 @@ XML
   virsh -c qemu:///system domjobinfo $VM --completed
   du -sb $dest | cut -f1
   if [[ -n "$BITMAP_NEW" ]]; then
+    # Persist the FULL checkpoint XML next to this backup so a later incremental can
+    # re-register this checkpoint with --redefine after the VM restarts (which wipes
+    # libvirt's checkpoint registry but leaves the bitmap on the qcow2).
+    virsh -c qemu:///system checkpoint-dumpxml "$VM" "$BITMAP_NEW" > "$dest/$BITMAP_NEW.checkpoint.xml" 2>/dev/null || true
     # Echo the bitmap name on its own line so the Java caller can capture it for backup_details.
     echo "BITMAP_CREATED=$BITMAP_NEW"
   fi
