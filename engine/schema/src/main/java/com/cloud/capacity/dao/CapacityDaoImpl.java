@@ -87,7 +87,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
                     "LEFT JOIN dedicated_resources dr_cluster ON dr_cluster.cluster_id IS NOT NULL AND dr_cluster.cluster_id = host.cluster_id " +
                     "LEFT JOIN dedicated_resources dr_host ON dr_host.host_id IS NOT NULL AND dr_host.host_id = host.id ";
 
-    private static final String ORDER_CLUSTERS_BY_AGGREGATE_CAPACITY_INCLUDE_DEDICATED_JOIN_1 =
+    private static final String ORDER_CLUSTERS_BY_AGGREGATE_CAPACITY_INCLUDE_DEDICATED_JOIN_CLAUSE =
             "JOIN host ON capacity.host_id = host.id " +
                     "LEFT JOIN (SELECT affinity_group.id, agvm.instance_id FROM affinity_group_vm_map agvm JOIN affinity_group ON agvm.affinity_group_id = affinity_group.id AND affinity_group.type='ExplicitDedication') AS ag ON ag.instance_id = ? " +
                     "LEFT JOIN dedicated_resources dr_pod ON dr_pod.pod_id IS NOT NULL AND dr_pod.pod_id = host.pod_id AND dr_pod.account_id IS NOT NULL AND dr_pod.account_id != ownerId " +
