@@ -123,7 +123,7 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
 
     private Status checkHostStatusWithSameHost(Host host) {
         Status hostStatus;
-        boolean reportFailureIfOneStorageIsDown = HighAvailabilityManager.KvmHAFenceHostIfHeartbeatFailsOnStorage.value();
+        boolean reportFailureIfOneStorageIsDown = HighAvailabilityManager.KvmHAFenceHostIfHeartbeatFailsOnStorage.valueIn(host.getDataCenterId());
         final CheckOnHostCommand cmd = new CheckOnHostCommand(host, reportFailureIfOneStorageIsDown);
         try {
             logger.debug("Checking {} status...", host.toString());
@@ -150,7 +150,7 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
 
     private Status checkHostStatusWithNeighbourHosts(Host host) {
         Status hostStatusFromNeighbour = Status.Unknown;
-        boolean reportFailureIfOneStorageIsDown = HighAvailabilityManager.KvmHAFenceHostIfHeartbeatFailsOnStorage.value();
+        boolean reportFailureIfOneStorageIsDown = HighAvailabilityManager.KvmHAFenceHostIfHeartbeatFailsOnStorage.valueIn(host.getDataCenterId());
         final CheckOnHostCommand cmd = new CheckOnHostCommand(host, reportFailureIfOneStorageIsDown);
         List<HostVO> neighbors = resourceManager.listHostsInClusterByStatus(host.getClusterId(), Status.Up);
         for (HostVO neighbor : neighbors) {
