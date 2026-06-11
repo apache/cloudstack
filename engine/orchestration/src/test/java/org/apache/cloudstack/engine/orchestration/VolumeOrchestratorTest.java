@@ -274,7 +274,7 @@ public class VolumeOrchestratorTest {
         Mockito.when(oldVol.getInstanceId()).thenReturn(6L);
         Mockito.when(oldVol.isRecreatable()).thenReturn(false);
         Mockito.when(oldVol.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
-        Mockito.when(oldVol.getPassphraseId()).thenReturn(null); // no encryption
+        Mockito.when(oldVol.isEncrypted()).thenReturn(false); // no encryption
 
         VolumeVO persistedVol = Mockito.mock(VolumeVO.class);
         Mockito.when(volumeDao.persist(Mockito.any(VolumeVO.class))).thenReturn(persistedVol);
@@ -303,7 +303,7 @@ public class VolumeOrchestratorTest {
         Mockito.when(oldVol.getInstanceId()).thenReturn(7L);
         Mockito.when(oldVol.isRecreatable()).thenReturn(true);
         Mockito.when(oldVol.getFormat()).thenReturn(Storage.ImageFormat.RAW);
-        Mockito.when(oldVol.getPassphraseId()).thenReturn(42L);
+        Mockito.when(oldVol.isEncrypted()).thenReturn(true);
 
         PassphraseVO passphrase = Mockito.mock(PassphraseVO.class);
         Mockito.when(passphrase.getId()).thenReturn(999L);
@@ -335,9 +335,6 @@ public class VolumeOrchestratorTest {
 
         VolumeVO persistedVol = Mockito.mock(VolumeVO.class);
         Mockito.when(volumeDao.persist(Mockito.any())).thenReturn(persistedVol);
-
-        PassphraseVO mockPassPhrase = Mockito.mock(PassphraseVO.class);
-        Mockito.when(passphraseDao.persist(Mockito.any())).thenReturn(mockPassPhrase);
 
         VolumeVO result = volumeOrchestrator.allocateDuplicateVolumeVO(oldVol, null, 222L);
         assertNotNull(result);
