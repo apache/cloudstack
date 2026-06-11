@@ -83,7 +83,7 @@ public class DeletePortableIpRangeCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "deleting a portable public ip range";
+        return "Deleting a portable public ip range with ID: " + getResourceUuid(ApiConstants.ID) ;
     }
 
     @Override

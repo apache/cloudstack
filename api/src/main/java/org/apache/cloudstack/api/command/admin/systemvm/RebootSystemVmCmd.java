@@ -86,7 +86,7 @@ public class RebootSystemVmCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "rebooting system vm: " + this._uuidMgr.getUuid(VirtualMachine.class, getId());
+        return "Rebooting System VM with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
@@ -105,14 +105,14 @@ public class RebootSystemVmCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()));
+        CallContext.current().setEventDetails("Instance ID: " + getResourceUuid(ApiConstants.ID));
         VirtualMachine result = _mgr.rebootSystemVM(this);
         if (result != null) {
             SystemVmResponse response = _responseGenerator.createSystemVmResponse(result);
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Fail to reboot system vm");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to reboot System Instance");
         }
     }
 }

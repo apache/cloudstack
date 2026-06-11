@@ -59,7 +59,7 @@ export default {
   props: {
     error: {
       type: Boolean,
-      requried: true
+      required: true
     }
   },
   data () {

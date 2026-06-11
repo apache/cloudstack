@@ -147,7 +147,7 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
         boolean success = false;
         FirewallRule rule = _entityMgr.findById(FirewallRule.class, getEntityId());
         try {
-            CallContext.current().setEventDetails("Rule Id: " + getEntityId());
+            CallContext.current().setEventDetails("Rule ID: " + getEntityUuid());
             success = _firewallService.applyEgressFirewallRules(rule, callerContext.getCallingAccount());
             // State is different after the rule is applied, so get new object here
             rule = _entityMgr.findById(FirewallRule.class, getEntityId());
@@ -255,11 +255,8 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
             }
         } catch (NetworkRuleConflictException ex) {
             String message = "Network rule conflict: ";
-            if (!logger.isTraceEnabled()) {
-                logger.info(message + ex.getMessage());
-            } else {
-                logger.trace(message, ex);
-            }
+            logger.error("{}{}", message, ex.getMessage());
+            logger.trace(message, ex);
             throw new ServerApiException(ApiErrorCode.NETWORK_RULE_CONFLICT_ERROR, ex.getMessage());
         }
     }

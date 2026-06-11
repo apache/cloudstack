@@ -19,6 +19,8 @@ package org.apache.cloudstack.api;
 public class ApiConstants {
     public static final String ACCOUNT = "account";
     public static final String ACCOUNTS = "accounts";
+    public static final String ACCOUNT_NAME = "accountname";
+    public static final String ACCOUNT_STATE_TO_SHOW = "accountstatetoshow";
     public static final String ACCOUNT_TYPE = "accounttype";
     public static final String ACCOUNT_ID = "accountid";
     public static final String ACCOUNT_IDS = "accountids";
@@ -46,6 +48,7 @@ public class ApiConstants {
     public static final String AS_NUMBER_ID = "asnumberid";
     public static final String ASN_RANGE = "asnrange";
     public static final String ASN_RANGE_ID = "asnrangeid";
+    public static final String API_KEY_FILTER = "apikeyfilter";
     public static final String ASYNC_BACKUP = "asyncbackup";
     public static final String AUTO_SELECT = "autoselect";
     public static final String USER_API_KEY = "userapikey";
@@ -66,6 +69,8 @@ public class ApiConstants {
     public static final String BACKUP_VM_OFFERING_REMOVED = "vmbackupofferingremoved";
     public static final String IS_BACKUP_VM_EXPUNGED = "isbackupvmexpunged";
     public static final String BACKUP_TOTAL = "backuptotal";
+    public static final String BALANCE = "balance";
+    public static final String BALANCES = "balances";
     public static final String BASE64_IMAGE = "base64image";
     public static final String BGP_PEERS = "bgppeers";
     public static final String BGP_PEER_IDS = "bgppeerids";
@@ -154,6 +159,7 @@ public class ApiConstants {
     public static final String CUSTOM_ID = "customid";
     public static final String CUSTOM_ACTION_ID = "customactionid";
     public static final String CUSTOM_JOB_ID = "customjobid";
+    public static final String CURRENCY = "currency";
     public static final String CURRENT_START_IP = "currentstartip";
     public static final String CURRENT_END_IP = "currentendip";
     public static final String ENCRYPT = "encrypt";
@@ -167,6 +173,7 @@ public class ApiConstants {
     public static final String DATACENTER_NAME = "datacentername";
     public static final String DATADISKS_DETAILS = "datadisksdetails";
     public static final String DATADISK_OFFERING_LIST = "datadiskofferinglist";
+    public static final String DATE = "date";
     public static final String DEFAULT_VALUE = "defaultvalue";
     public static final String DELETE_PROTECTION = "deleteprotection";
     public static final String DESCRIPTION = "description";
@@ -282,6 +289,7 @@ public class ApiConstants {
     public static final String HOST = "host";
     public static final String HOST_CONTROL_STATE = "hostcontrolstate";
     public static final String HOSTS_MAP = "hostsmap";
+    public static final String HTTP_REQUEST_TYPE = "httprequesttype";
     public static final String HYPERVISOR = "hypervisor";
     public static final String INLINE = "inline";
     public static final String INSTANCE = "instance";
@@ -355,6 +363,7 @@ public class ApiConstants {
     public static final String JOB_STATUS = "jobstatus";
     public static final String KEEPALIVE_ENABLED = "keepaliveenabled";
     public static final String KERNEL_VERSION = "kernelversion";
+    public static final String KEYPAIR_ID = "keypairid";
     public static final String KEY = "key";
     public static final String LABEL = "label";
     public static final String LASTNAME = "lastname";
@@ -375,6 +384,7 @@ public class ApiConstants {
     public static final String MAC_ADDRESS = "macaddress";
     public static final String MAC_ADDRESSES = "macaddresses";
     public static final String MANUAL_UPGRADE = "manualupgrade";
+    public static final String MATCH_TYPE = "matchtype";
     public static final String MAX = "max";
     public static final String MAX_SNAPS = "maxsnaps";
     public static final String MAX_BACKUPS = "maxbackups";
@@ -501,6 +511,7 @@ public class ApiConstants {
     public static final String RECONNECT = "reconnect";
     public static final String RECOVER = "recover";
     public static final String REPAIR = "repair";
+    public static final String REPETITION_ALLOWED = "repetitionallowed";
     public static final String REQUIRES_HVM = "requireshvm";
     public static final String RESERVED_RESOURCE_DETAILS = "reservedresourcedetails";
     public static final String RESOURCES = "resources";
@@ -521,7 +532,6 @@ public class ApiConstants {
     public static final String SCOPE = "scope";
     public static final String SEARCH_BASE = "searchbase";
     public static final String SECONDARY_IP = "secondaryip";
-    public static final String SECRET_KEY = "secretkey";
     public static final String SECURITY_GROUP_IDS = "securitygroupids";
     public static final String SECURITY_GROUP_NAMES = "securitygroupnames";
     public static final String SECURITY_GROUP_NAME = "securitygroupname";
@@ -535,9 +545,11 @@ public class ApiConstants {
     public static final String SESSIONKEY = "sessionkey";
     public static final String SHOW_CAPACITIES = "showcapacities";
     public static final String SHOW_REMOVED = "showremoved";
+    public static final String SHOW_RESOURCES = "showresources";
     public static final String SHOW_RESOURCE_ICON = "showicon";
     public static final String SHOW_INACTIVE = "showinactive";
     public static final String SHOW_UNIQUE = "showunique";
+    public static final String SHOW_PERMISSIONS = "showpermissions";
     public static final String SIGNATURE = "signature";
     public static final String SIGNATURE_VERSION = "signatureversion";
     public static final String SINCE = "since";
@@ -553,6 +565,7 @@ public class ApiConstants {
     public static final String USE_STORAGE_REPLICATION = "usestoragereplication";
 
     public static final String SOURCE_CIDR_LIST = "sourcecidrlist";
+    public static final String SOURCE_OFFERING_ID = "sourceofferingid";
     public static final String SOURCE_ZONE_ID = "sourcezoneid";
     public static final String SSL_VERIFICATION = "sslverification";
     public static final String START_ASN = "startasn";
@@ -598,9 +611,11 @@ public class ApiConstants {
     public static final String TENANT_NAME = "tenantname";
     public static final String TOTAL = "total";
     public static final String TOTAL_SUBNETS = "totalsubnets";
+    public static final String TOTAL_QUOTA = "totalquota";
     public static final String TYPE = "type";
     public static final String TRUST_STORE = "truststore";
     public static final String TRUST_STORE_PASSWORD = "truststorepass";
+    public static final String UNIT = "unit";
     public static final String URL = "url";
     public static final String USAGE_INTERFACE = "usageinterface";
     public static final String USED = "used";
@@ -764,6 +779,7 @@ public class ApiConstants {
     public static final String ROLE_TYPE = "roletype";
     public static final String ROLE_NAME = "rolename";
     public static final String PERMISSION = "permission";
+    public static final String PERMISSIONS = "permissions";
     public static final String RULE = "rule";
     public static final String RULES = "rules";
     public static final String RULE_ID = "ruleid";
@@ -981,6 +997,7 @@ public class ApiConstants {
     public static final String REGION_ID = "regionid";
     public static final String VPC_OFF_ID = "vpcofferingid";
     public static final String VPC_OFF_NAME = "vpcofferingname";
+    public static final String VPC_OFFERING_CONSERVE_MODE = "vpcofferingconservemode";
     public static final String NETWORK = "network";
     public static final String VPC_ID = "vpcid";
     public static final String VPC_NAME = "vpcname";
@@ -1027,7 +1044,7 @@ public class ApiConstants {
     public static final String NSX_PROVIDER_PORT = "nsxproviderport";
     public static final String NSX_CONTROLLER_ID = "nsxcontrollerid";
     public static final String S3_ACCESS_KEY = "accesskey";
-    public static final String S3_SECRET_KEY = "secretkey";
+    public static final String SECRET_KEY = "secretkey";
     public static final String S3_END_POINT = "endpoint";
     public static final String S3_BUCKET_NAME = "bucket";
     public static final String S3_SIGNER = "s3signer";
@@ -1167,6 +1184,7 @@ public class ApiConstants {
     public static final String OVM3_VIP = "ovm3vip";
     public static final String CLEAN_UP_DETAILS = "cleanupdetails";
     public static final String CLEAN_UP_EXTERNAL_DETAILS = "cleanupexternaldetails";
+    public static final String CLEAN_UP_EXTRA_CONFIG = "cleanupextraconfig";
     public static final String CLEAN_UP_PARAMETERS = "cleanupparameters";
     public static final String VIRTUAL_SIZE = "virtualsize";
     public static final String NETSCALER_CONTROLCENTER_ID = "netscalercontrolcenterid";
@@ -1238,6 +1256,13 @@ public class ApiConstants {
     public static final String MAX_SIZE = "maxsize";
     public static final String NODE_TYPE_OFFERING_MAP = "nodeofferings";
     public static final String NODE_TYPE_TEMPLATE_MAP = "nodetemplates";
+    public static final String NODE_TYPE_AFFINITY_GROUP_MAP = "nodeaffinitygroups";
+    public static final String CONTROL_AFFINITY_GROUP_IDS = "controlaffinitygroupids";
+    public static final String CONTROL_AFFINITY_GROUP_NAMES = "controlaffinitygroupnames";
+    public static final String WORKER_AFFINITY_GROUP_IDS = "workeraffinitygroupids";
+    public static final String WORKER_AFFINITY_GROUP_NAMES = "workeraffinitygroupnames";
+    public static final String ETCD_AFFINITY_GROUP_IDS = "etcdaffinitygroupids";
+    public static final String ETCD_AFFINITY_GROUP_NAMES = "etcdaffinitygroupnames";
 
     public static final String BOOT_TYPE = "boottype";
     public static final String BOOT_MODE = "bootmode";
@@ -1259,6 +1284,7 @@ public class ApiConstants {
     public static final String PROVIDER_FOR_2FA = "providerfor2fa";
     public static final String ISSUER_FOR_2FA = "issuerfor2fa";
     public static final String MANDATE_2FA = "mandate2fa";
+    public static final String PASSWORD_CHANGE_REQUIRED = "passwordchangerequired";
     public static final String SECRET_CODE = "secretcode";
     public static final String LOGIN = "login";
     public static final String LOGOUT = "logout";
@@ -1281,6 +1307,8 @@ public class ApiConstants {
     public static final String OBJECT_LOCKING = "objectlocking";
     public static final String ENCRYPTION = "encryption";
     public static final String QUOTA = "quota";
+    public static final String QUOTA_CONSUMED = "quotaconsumed";
+    public static final String QUOTA_USAGE = "quotausage";
     public static final String ACCESS_KEY = "accesskey";
 
     public static final String SOURCE_NAT_IP = "sourcenatipaddress";
@@ -1331,6 +1359,13 @@ public class ApiConstants {
     public static final String OBJECT_STORAGE_LIMIT = "objectstoragelimit";
     public static final String OBJECT_STORAGE_TOTAL = "objectstoragetotal";
 
+    public static final String KEEP_MAC_ADDRESS_ON_PUBLIC_NIC = "keepmacaddressonpublicnic";
+
+    public static final String PARAMETER_DESCRIPTION_KEEP_MAC_ADDRESS_ON_PUBLIC_NIC =
+            "Indicates whether to use the same MAC address for the public NIC of VRs on the same network. If \"true\", when creating redundant routers or recreating" +
+                    " a VR, CloudStack will use the same MAC address for the public NIC of all VRs. Otherwise, if \"false\", new public NICs will always have " +
+                    " a new MAC address.";
+
     public static final String PARAMETER_DESCRIPTION_ACTIVATION_RULE = "Quota tariff's activation rule. It can receive a JS script that results in either " +
             "a boolean or a numeric value: if it results in a boolean value, the tariff value will be applied according to the result; if it results in a numeric value, the " +
             "numeric value will be applied; if the result is neither a boolean nor a numeric value, the tariff will not be applied. If the rule is not informed, the tariff " +
@@ -1365,6 +1400,10 @@ public class ApiConstants {
     public static final String LIST_ONLY_DEFAULT_THEME = "listonlydefaulttheme";
 
     public static final String RECURSIVE_DOMAINS = "recursivedomains";
+
+    public static final String VPN_CUSTOMER_GATEWAY_PARAMETERS = "vpncustomergatewayparameters";
+    public static final String OBSOLETE_PARAMETERS = "obsoleteparameters";
+    public static final String EXCLUDED_PARAMETERS = "excludedparameters";
 
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.

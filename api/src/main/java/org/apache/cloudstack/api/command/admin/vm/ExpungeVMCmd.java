@@ -81,7 +81,7 @@ public class ExpungeVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Expunging Instance: " + this._uuidMgr.getUuid(VirtualMachine.class, getId());
+        return "Expunging Instance with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
@@ -96,7 +96,7 @@ public class ExpungeVMCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, ConcurrentOperationException {
-        CallContext.current().setEventDetails("Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()));
+        CallContext.current().setEventDetails("Instance ID: " + getResourceUuid(ApiConstants.ID));
         try {
             UserVm result = _userVmService.expungeVm(this.getId());
 

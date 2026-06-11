@@ -128,7 +128,7 @@ public class Storage {
     public static enum TemplateType {
         ROUTING, // Router template
         SYSTEM, /* routing, system vm template */
-        BUILTIN, /* buildin template */
+        BUILTIN, /* builtin template */
         PERHOST, /* every host has this template, don't need to install it in secondary storage */
         USER, /* User supplied template/iso */
         VNF,    /* VNFs (virtual network functions) template */

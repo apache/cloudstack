@@ -2196,7 +2196,7 @@
 "message.success.create.internallb": "\ub0b4\ubd80 LB\ub97c \uc0dd\uc131\ud588\uc2b5\ub2c8\ub2e4.",
 "message.success.create.isolated.network": "isolated \ub124\ud2b8\uc6cc\ud06c\ub97c \uc0dd\uc131\ud588\uc2b5\ub2c8\ub2e4.",
 "message.success.create.keypair": "SSH \ud0a4 \uc30d\uc744 \uc0dd\uc131\ud588\uc2b5\ub2c8\ub2e4.",
-"message.success.create.kubernetes.cluter": "\ucfe0\ubc84\ub124\ud14c\uc2a4 \ud074\ub7ec\uc2a4\ud130\ub97c \uc0dd\uc131\ud588\uc2b5\ub2c8\ub2e4.",
+"message.success.create.kubernetes.cluster": "\ucfe0\ubc84\ub124\ud14c\uc2a4 \ud074\ub7ec\uc2a4\ud130\ub97c \uc0dd\uc131\ud588\uc2b5\ub2c8\ub2e4.",
 "message.success.create.l2.network": "L2 \ub124\ud2b8\uc6cc\ud06c\ub97c \uc0dd\uc131\ud588\uc2b5\ub2c8\ub2e4.",
 "message.success.create.snapshot.from.vmsnapshot": "VM \uc2a4\ub0c5\uc0f7\uc5d0\uc11c \uc2a4\ub0c5\uc0f7\uc744 \uc0dd\uc131\ud588\uc2b5\ub2c8\ub2e4.",
 "message.success.create.user": "\uc0ac\uc6a9\uc790\uac00 \uc0dd\uc131\ub418\uc5c8\uc2b5\ub2c8\ub2e4.",

@@ -131,7 +131,7 @@ public class ImageStoreHelper {
                 String key = keyIter.next().toString();
                 String value = details.get(key);
                 // encrypt swift key or s3 secret key
-                if (key.equals(ApiConstants.KEY) || key.equals(ApiConstants.S3_SECRET_KEY)) {
+                if (key.equals(ApiConstants.KEY) || key.equals(ApiConstants.SECRET_KEY)) {
                     value = DBEncryptionUtil.encrypt(value);
                 }
                 ImageStoreDetailVO detail = new ImageStoreDetailVO(store.getId(), key, value, true);

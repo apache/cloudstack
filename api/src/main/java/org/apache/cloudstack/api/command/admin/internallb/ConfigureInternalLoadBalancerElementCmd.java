@@ -84,12 +84,12 @@ public class ConfigureInternalLoadBalancerElementCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "configuring internal load balancer element: " + id;
+        return "Configuring internal load balancer element with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-        CallContext.current().setEventDetails("Internal load balancer element: " + id);
+        CallContext.current().setEventDetails("Internal load balancer element: " + getResourceUuid(ApiConstants.ID));
         InternalLoadBalancerElementService service = _networkService.getInternalLoadBalancerElementById(id);
         VirtualRouterProvider result = service.configureInternalLoadBalancerElement(getId(), getEnabled());
         if (result != null) {

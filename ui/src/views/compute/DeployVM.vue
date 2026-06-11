@@ -1926,7 +1926,7 @@ export default {
       }
       this.fetchBootTypes()
       this.fetchBootModes()
-      this.fetchInstaceGroups()
+      this.fetchInstanceGroups()
       this.fetchIoPolicyTypes()
       nextTick().then(() => {
         ['name', 'keyboard', 'boottype', 'bootmode', 'userdata', 'iothreadsenabled', 'iodriverpolicy', 'nicmultiqueuenumber', 'nicpackedvirtqueues'].forEach(this.fillValue)
@@ -1982,7 +1982,7 @@ export default {
         { id: 'storage_specific', description: 'storage_specific' }
       ]
     },
-    fetchInstaceGroups () {
+    fetchInstanceGroups () {
       this.options.instanceGroups = []
       getAPI('listInstanceGroups', {
         account: this.$store.getters.project?.id ? null : this.$store.getters.userInfo.account,
@@ -3232,12 +3232,12 @@ export default {
           configuration.cpunumber = 0
           configuration.cpuspeed = 0
           configuration.memory = 0
-          for (var harwareItem of configuration.hardwareItems) {
-            if (harwareItem.resourceType === 'Processor') {
-              configuration.cpunumber = harwareItem.virtualQuantity
-              configuration.cpuspeed = harwareItem.reservation
-            } else if (harwareItem.resourceType === 'Memory') {
-              configuration.memory = harwareItem.virtualQuantity
+          for (var hardwareItem of configuration.hardwareItems) {
+            if (hardwareItem.resourceType === 'Processor') {
+              configuration.cpunumber = hardwareItem.virtualQuantity
+              configuration.cpuspeed = hardwareItem.reservation
+            } else if (hardwareItem.resourceType === 'Memory') {
+              configuration.memory = hardwareItem.virtualQuantity
             }
           }
           configurations.push(configuration)

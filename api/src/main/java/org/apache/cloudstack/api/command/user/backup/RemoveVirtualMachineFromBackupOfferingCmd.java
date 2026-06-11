@@ -21,6 +21,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -100,12 +101,22 @@ public class RemoveVirtualMachineFromBackupOfferingCmd extends BaseAsyncCmd {
     }
 
     @Override
+    public Long getApiResourceId() {
+        return vmId;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.VirtualMachine;
+    }
+
+    @Override
     public String getEventType() {
         return EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVE;
     }
 
     @Override
     public String getEventDescription() {
-        return "Removing Instance ID" + vmId + " from backup offering";
+        return "Removing Instance with ID:" + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID) + " from backup offering";
     }
 }

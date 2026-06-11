@@ -16,8 +16,9 @@
 // under the License.
 package com.cloud.network.as;
 
-import com.cloud.user.Account;
 import org.apache.cloudstack.framework.config.ConfigKey;
+
+import com.cloud.user.Account;
 
 public interface AutoScaleManager extends AutoScaleService {
 
@@ -62,8 +63,6 @@ public interface AutoScaleManager extends AutoScaleService {
     void checkIfVmActionAllowed(Long vmId);
 
     void removeVmFromVmGroup(Long vmId);
-
-    String getNextVmHostName(AutoScaleVmGroupVO asGroup);
 
     void checkAutoScaleVmGroupName(String groupName);
 }

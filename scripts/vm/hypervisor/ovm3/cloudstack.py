@@ -67,10 +67,6 @@ class CloudStack(Agent):
             'get_module_version': getModuleVersion,
             'get_ovs_version': ovmVersion,
             'ping': ping,
-#            'patch': ovmCsPatch,
-#            'ovs_agent_set_ssl': ovsAgentSetSsl,
-#            'ovs_agent_set_port': ovsAgentSetPort,
-#            'ovs_restart_agent': ovsRestartAgent,
         }
 
     def getName(self):

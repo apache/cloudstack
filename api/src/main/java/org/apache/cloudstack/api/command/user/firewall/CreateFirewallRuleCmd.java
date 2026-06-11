@@ -150,7 +150,7 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
         boolean success = false;
         FirewallRule rule = _entityMgr.findById(FirewallRule.class, getEntityId());
         try {
-            CallContext.current().setEventDetails("Rule ID: " + getEntityId());
+            CallContext.current().setEventDetails("Rule ID: " + getEntityUuid());
             success = _firewallService.applyIngressFwRules(rule.getSourceIpAddressId(), callerContext.getCallingAccount());
 
             // State is different after the rule is applied, so get new object here
@@ -271,7 +271,7 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
                 setEntityUuid(result.getUuid());
             }
         } catch (NetworkRuleConflictException ex) {
-            logger.trace("Network Rule Conflict: ", ex);
+            logger.error("Network Rule Conflict: ", ex);
             throw new ServerApiException(ApiErrorCode.NETWORK_RULE_CONFLICT_ERROR, ex.getMessage(), ex);
         }
     }

@@ -150,7 +150,7 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd implements UserCmd {
     private String accountName;
 
     @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
-            description = "the CPU arch of the template. Valid options are: x86_64, aarch64. Defaults to x86_64",
+            description = "the CPU arch of the template. Valid options are: x86_64, aarch64, s390x. Defaults to x86_64",
             since = "4.20.2")
     private String arch;
 
@@ -301,7 +301,7 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd implements UserCmd {
     @Override
     public void execute() {
         CallContext.current().setEventDetails(
-            "Template Id: " + getEntityUuid() + ((getSnapshotId() == null) ? " from volume Id: " + this._uuidMgr.getUuid(Volume.class, getVolumeId()) : " from Snapshot Id: " + this._uuidMgr.getUuid(Snapshot.class, getSnapshotId())));
+            "Template ID: " + getEntityUuid() + ((getSnapshotId() == null) ? " from volume with ID: " + getResourceUuid(ApiConstants.VOLUME_ID) : " from Snapshot with ID: " + getResourceUuid(ApiConstants.SNAPSHOT_ID)));
         VirtualMachineTemplate template = _templateService.createPrivateTemplate(this);
 
         if (template != null) {
@@ -354,14 +354,12 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd implements UserCmd {
     private Long findAccountIdToUse(Account callingAccount) {
         Long accountIdToUse = null;
         try {
-            accountIdToUse = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
+            accountIdToUse = _accountService.finalizeAccountId(accountName, domainId, projectId, true);
         } catch (InvalidParameterValueException | PermissionDeniedException ex) {
-            if (logger.isDebugEnabled()) {
-                logger.debug(String.format("An exception occurred while finalizing account id with accountName, domainId and projectId" +
-                      "using callingAccountId=%s", callingAccount.getUuid()), ex);
-            }
-            logger.warn("Unable to find accountId associated with accountName=" + accountName + " and domainId="
-                  + domainId + " or projectId=" + projectId + ", using callingAccountId=" + callingAccount.getUuid());
+            logger.error("Unable to find accountId associated with accountName={} and domainId={} or projectId={}" +
+                    ", using callingAccountId={}", accountName, domainId, projectId, callingAccount.getUuid());
+            logger.debug("An exception occurred while finalizing account id with accountName, domainId and projectId" +
+                    "using callingAccountId={}", callingAccount.getUuid(), ex);
         }
         return accountIdToUse != null ? accountIdToUse : callingAccount.getAccountId();
     }

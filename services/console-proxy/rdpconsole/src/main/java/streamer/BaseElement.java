@@ -187,7 +187,6 @@ public class BaseElement implements Element {
 
         if (buf == null)
             throw new NullPointerException();
-        //return;
 
         if (outputPads.size() == 0)
             throw new RuntimeException("Number of outgoing connection is zero. Cannot send data to output. Data: " + buf + ".");
