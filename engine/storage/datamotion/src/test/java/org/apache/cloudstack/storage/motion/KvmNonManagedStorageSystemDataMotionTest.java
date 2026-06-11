@@ -338,6 +338,29 @@ public class KvmNonManagedStorageSystemDataMotionTest {
     }
 
     @Test
+    public void copyTemplateToTargetStorageIfNeededTestDirectDownloadTemplateAlreadyStaged() {
+        DataStore destDataStore = Mockito.mock(DataStore.class);
+        Host destHost = Mockito.mock(Host.class);
+        VolumeInfo srcVolumeInfo = Mockito.mock(VolumeInfo.class);
+        StoragePool srcStoragePool = Mockito.mock(StoragePool.class);
+        StoragePool destStoragePool = Mockito.mock(StoragePool.class);
+        TemplateInfo directDownloadTemplateInfo = Mockito.mock(TemplateInfo.class);
+
+        Mockito.when(destDataStore.getId()).thenReturn(11L);
+        Mockito.when(destHost.getId()).thenReturn(12L);
+        Mockito.when(srcVolumeInfo.getTemplateId()).thenReturn(13L);
+        Mockito.when(srcVolumeInfo.getVolumeType()).thenReturn(Volume.Type.ROOT);
+        Mockito.when(templateDataFactory.getReadyBypassedTemplateOnPrimaryStore(13L, 11L, 12L)).thenReturn(directDownloadTemplateInfo);
+
+        kvmNonManagedStorageDataMotionStrategy.copyTemplateToTargetFilesystemStorageIfNeeded(srcVolumeInfo, srcStoragePool, destDataStore, destStoragePool, destHost);
+
+        Mockito.verify(templateDataFactory).getReadyBypassedTemplateOnPrimaryStore(13L, 11L, 12L);
+        Mockito.verify(vmTemplatePoolDao, Mockito.never()).findByPoolTemplate(Mockito.anyLong(), Mockito.anyLong(), nullable(String.class));
+        Mockito.verify(dataStoreManagerImpl, Mockito.never()).getRandomImageStore(Mockito.anyLong());
+        Mockito.verify(kvmNonManagedStorageDataMotionStrategy, Mockito.never()).sendCopyCommand(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    @Test
     public void migrateTemplateToTargetStorageIfNeededTestNonDesiredStoragePoolType() throws AgentUnavailableException, OperationTimedoutException {
         StoragePoolType[] storagePoolTypeArray = StoragePoolType.values();
         for (int i = 0; i < storagePoolTypeArray.length; i++) {
