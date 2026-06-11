@@ -104,9 +104,11 @@ import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcGatewayVO;
+import com.cloud.network.vpc.VpcOfferingServiceMapVO;
 import com.cloud.network.vpc.dao.PrivateIpDao;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcGatewayDao;
+import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Detail;
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
@@ -183,6 +185,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     NetworkPermissionDao _networkPermissionDao;
     @Inject
     VpcDao vpcDao;
+    @Inject
+    VpcOfferingServiceMapDao _vpcOffSvcMapDao;
 
     private List<NetworkElement> networkElements;
 
@@ -457,12 +461,16 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         // We only support one provider for one service now
         Map<Service, Set<Provider>> serviceToProviders = getServiceProvidersMap(networkId);
         // Since IP already has service to bind with, the oldProvider can't be null
-        Set<Provider> newProviders = serviceToProviders.get(service);
+        Set<Provider> newProviders = getProvidersForServiceWithVpcFallback(serviceToProviders, service, publicIp.getVpcId());
         if (newProviders == null || newProviders.isEmpty()) {
             throw new InvalidParameterValueException("There is no new provider for IP " + publicIp.getAddress() + " of service " + service.getName() + "!");
         }
         Provider newProvider = (Provider)newProviders.toArray()[0];
-        Set<Provider> oldProviders = serviceToProviders.get(services.toArray()[0]);
+        Service existingService = (Service) services.toArray()[0];
+        Set<Provider> oldProviders = getProvidersForServiceWithVpcFallback(serviceToProviders, existingService, publicIp.getVpcId());
+        if (oldProviders == null || oldProviders.isEmpty()) {
+            throw new InvalidParameterValueException("There is no existing provider for IP " + publicIp.getAddress() + " of service " + existingService.getName() + "!");
+        }
         Provider oldProvider = (Provider)oldProviders.toArray()[0];
         Network network = _networksDao.findById(networkId);
         NetworkElement oldElement = getElementImplementingProvider(oldProvider.getName());
@@ -475,6 +483,35 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             throw new InvalidParameterValueException("Ip cannot be applied for new provider!");
         }
         return true;
+    }
+
+    private Set<Provider> getProvidersForServiceWithVpcFallback(Map<Service, Set<Provider>> serviceToProviders, Service service, Long vpcId) {
+        Set<Provider> providers = serviceToProviders.get(service);
+        if (providers != null && !providers.isEmpty()) {
+            return providers;
+        }
+
+        if (vpcId == null || service != Service.Firewall) {
+            return providers;
+        }
+
+        Set<Provider> vpcProviders = new HashSet<Provider>();
+        Vpc vpc = vpcDao.findById(vpcId);
+        if (vpc == null) {
+            return vpcProviders;
+        }
+
+        List<VpcOfferingServiceMapVO> offeringProviders = _vpcOffSvcMapDao.listProvidersForServiceForVpcOffering(vpc.getVpcOfferingId(), Service.Firewall);
+        if (offeringProviders != null) {
+            for (VpcOfferingServiceMapVO offeringProvider : offeringProviders) {
+                Provider provider = Provider.getProvider(offeringProvider.getProvider());
+                if (provider != null) {
+                    vpcProviders.add(provider);
+                }
+            }
+        }
+
+        return vpcProviders;
     }
 
     Map<Provider, Set<Service>> getProviderServicesMap(long networkId) {

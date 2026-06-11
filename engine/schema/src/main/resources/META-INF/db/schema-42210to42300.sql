@@ -202,3 +202,6 @@ CREATE TABLE IF NOT EXISTS `cloud`.`image_transfer`(
     CONSTRAINT `fk_image_transfer__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
     INDEX `i_image_transfer__backup_id`(`backup_id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- This is part of allowing firewall rules on public IP addresses in VPC network
+ALTER TABLE `cloud`.`firewall_rules` MODIFY COLUMN `network_id` BIGINT UNSIGNED NULL;
