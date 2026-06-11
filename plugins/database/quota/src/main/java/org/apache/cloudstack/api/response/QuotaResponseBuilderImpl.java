@@ -1250,8 +1250,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             Domain domain = domainDao.findByIdIncludingRemoved(domainId);
             _accountMgr.checkAccess(caller, domain);
             logger.debug("Limiting the Quota statement for the provided Domain [{}].", domainId);
-        }
-        if (domainId == null) {
+        } else {
             domainId = caller.getDomainId();
             logger.debug("Limiting the Quota statement for the caller's Domain [{}], as no 'domainid' was provided.", domainId);
         }
