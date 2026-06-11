@@ -489,36 +489,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return serviceOffering;
     }
 
-    /**
-     * Merges caller-supplied MAC addresses into the NIC IP address map.
-     * For each NIC entry in {@code nicMacAddressMap}, the MAC address is set on the corresponding
-     * {@link Network.IpAddresses} object. If no IP address entry exists for a given NIC, a new
-     * {@link Network.IpAddresses} object is created to carry the MAC.
-     *
-     * @param nicIpAddressMap  map of NIC ID to IP addresses (may be empty, never null after cmd getter)
-     * @param nicMacAddressMap map of NIC ID to validated/standardized MAC address strings
-     * @return merged map with MAC addresses populated where supplied by the caller
-     */
-    protected Map<String, Network.IpAddresses> mergeNicMacAddresses(
-            final Map<String, Network.IpAddresses> nicIpAddressMap,
-            final Map<String, String> nicMacAddressMap) {
-        if (MapUtils.isEmpty(nicMacAddressMap)) {
-            return nicIpAddressMap;
-        }
-        Map<String, Network.IpAddresses> merged = new HashMap<>(nicIpAddressMap);
-        for (Map.Entry<String, String> entry : nicMacAddressMap.entrySet()) {
-            String nicId = entry.getKey();
-            String mac = entry.getValue();
-            Network.IpAddresses existing = merged.get(nicId);
-            if (existing != null) {
-                existing.setMacAddress(mac);
-            } else {
-                merged.put(nicId, new Network.IpAddresses(null, null, mac));
-            }
-        }
-        return merged;
-    }
-
     private Map<String, Network.IpAddresses> getNicIpAddresses(final List<UnmanagedInstanceTO.Nic> nics, final Map<String, Network.IpAddresses> callerNicIpAddressMap) {
         Map<String, Network.IpAddresses> nicIpAddresses = new HashMap<>();
         for (UnmanagedInstanceTO.Nic nic : nics) {
@@ -890,6 +860,36 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return result.first();
     }
 
+
+    /**
+     * Merges caller-supplied MAC addresses into the NIC IP address map.
+     * For each NIC entry in {@code nicMacAddressMap}, the MAC address is set on the corresponding
+     * {@link Network.IpAddresses} object. If no IP address entry exists for a given NIC, a new
+     * {@link Network.IpAddresses} object is created to carry the MAC.
+     *
+     * @param nicIpAddressMap  map of NIC ID to IP addresses (may be empty, never null after cmd getter)
+     * @param nicMacAddressMap map of NIC ID to validated/standardized MAC address strings
+     * @return merged map with MAC addresses populated where supplied by the caller
+     */
+    protected Map<String, Network.IpAddresses> mergeNicMacAddresses(
+            final Map<String, Network.IpAddresses> nicIpAddressMap,
+            final Map<String, String> nicMacAddressMap) {
+        if (MapUtils.isEmpty(nicMacAddressMap)) {
+            return nicIpAddressMap;
+        }
+        Map<String, Network.IpAddresses> merged = new HashMap<>(nicIpAddressMap);
+        for (Map.Entry<String, String> entry : nicMacAddressMap.entrySet()) {
+            String nicId = entry.getKey();
+            String mac = entry.getValue();
+            Network.IpAddresses existing = merged.get(nicId);
+            if (existing != null) {
+                existing.setMacAddress(mac);
+            } else {
+                merged.put(nicId, new Network.IpAddresses(null, null, mac));
+            }
+        }
+        return merged;
+    }
     private void cleanupFailedImportVM(final UserVm userVm) {
         if (userVm == null) {
             return;
@@ -3174,4 +3174,44 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                     !instance.getName().toLowerCase().contains(keyword)) {
                 continue;
             }
-            responses.add(responseGenerator.createUnmanagedInstanceResp
+            responses.add(responseGenerator.createUnmanagedInstanceResponse(instance, null, null));
+        }
+        ListResponse<UnmanagedInstanceResponse> listResponses = new ListResponse<>();
+        listResponses.setResponses(responses, responses.size());
+        return listResponses;
+    }
+
+    private HashMap<String, UnmanagedInstanceTO> getRemoteVmsOnKVMHost(long zoneId, String remoteHostUrl, String username, String password) {
+        //ToDo: add option to list one Vm by name
+        List<HostVO> hosts = resourceManager.listAllUpAndEnabledHostsInOneZoneByHypervisor(Hypervisor.HypervisorType.KVM, zoneId);
+        if (hosts.size() < 1) {
+            throw new CloudRuntimeException("No hosts available to list VMs on remote host " + remoteHostUrl);
+        }
+        HostVO host = hosts.get(0);
+        GetRemoteVmsCommand getRemoteVmsCommand = new GetRemoteVmsCommand(remoteHostUrl, username, password);
+        Answer answer = agentManager.easySend(host.getId(), getRemoteVmsCommand);
+        if (!(answer instanceof GetRemoteVmsAnswer)) {
+            throw new CloudRuntimeException("Failed to list VMs, due to: " + answer.getDetails());
+        }
+        GetRemoteVmsAnswer getRemoteVmsAnswer = (GetRemoteVmsAnswer) answer;
+        return getRemoteVmsAnswer.getUnmanagedInstances();
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return UnmanagedVMsManagerImpl.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[]{
+                UnmanageVMPreserveNic,
+                RemoteKvmInstanceDisksCopyTimeout,
+                ConvertVmwareInstanceToKvmTimeout,
+                ThreadsOnMSToImportVMwareVMFiles,
+                ThreadsOnKVMHostToImportVMwareVMFiles,
+                ConvertVmwareInstanceToKvmExtraParamsAllowed,
+                ConvertVmwareInstanceToKvmExtraParamsAllowedList
+        };
+    }
+}
