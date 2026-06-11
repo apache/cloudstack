@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -65,6 +66,7 @@ public class LibvirtImportConvertedInstanceCommandWrapper extends CommandWrapper
         Hypervisor.HypervisorType sourceHypervisorType = sourceInstance.getHypervisorType();
         String sourceInstanceName = sourceInstance.getInstanceName();
         List<String> destinationStoragePools = cmd.getDestinationStoragePools();
+        List<Storage.StoragePoolType> destinationStoragePoolTypes = cmd.getDestinationStoragePoolTypes();
         DataStoreTO conversionTemporaryLocation = cmd.getConversionTemporaryLocation();
         final String temporaryConvertUuid = cmd.getTemporaryConvertUuid();
         final boolean forceConvertToPool = cmd.isForceConvertToPool();
@@ -74,6 +76,12 @@ public class LibvirtImportConvertedInstanceCommandWrapper extends CommandWrapper
         final String temporaryConvertPath = temporaryStoragePool.getLocalPath();
 
         try {
+            if (isForcedRbdConversion(conversionTemporaryLocation, forceConvertToPool)) {
+                List<KVMPhysicalDisk> disks = getTemporaryDisksWithPrefixFromTemporaryPool(temporaryStoragePool, temporaryConvertPath, temporaryConvertUuid);
+                UnmanagedInstanceTO convertedInstanceTO = getConvertedUnmanagedInstance(temporaryConvertUuid, disks, null);
+                return new ImportConvertedInstanceAnswer(cmd, convertedInstanceTO);
+            }
+
             String convertedBasePath = String.format("%s/%s", temporaryConvertPath, temporaryConvertUuid);
             LibvirtDomainXMLParser xmlParser = parseMigratedVMXmlDomain(convertedBasePath);
 
@@ -87,7 +95,7 @@ public class LibvirtImportConvertedInstanceCommandWrapper extends CommandWrapper
                 disks = temporaryDisks;
             } else {
                 disks = moveTemporaryDisksToDestination(temporaryDisks,
-                        destinationStoragePools, storagePoolMgr);
+                        destinationStoragePools, destinationStoragePoolTypes, storagePoolMgr);
                 cleanupDisksAndDomainFromTemporaryLocation(temporaryDisks, temporaryStoragePool, temporaryConvertUuid);
             }
 
@@ -105,6 +113,11 @@ public class LibvirtImportConvertedInstanceCommandWrapper extends CommandWrapper
                 storagePoolMgr.deleteStoragePool(temporaryStoragePool.getType(), temporaryStoragePool.getUuid());
             }
         }
+    }
+
+    private boolean isForcedRbdConversion(DataStoreTO conversionTemporaryLocation, boolean forceConvertToPool) {
+        return forceConvertToPool && conversionTemporaryLocation instanceof PrimaryDataStoreTO &&
+                ((PrimaryDataStoreTO) conversionTemporaryLocation).getPoolType() == Storage.StoragePoolType.RBD;
     }
 
     protected KVMStoragePool getTemporaryStoragePool(DataStoreTO conversionTemporaryLocation, KVMStoragePoolManager storagePoolMgr) {
@@ -146,6 +159,7 @@ public class LibvirtImportConvertedInstanceCommandWrapper extends CommandWrapper
         List<KVMPhysicalDisk> disksWithPrefix = pool.listPhysicalDisks()
                 .stream()
                 .filter(x -> x.getName().startsWith(prefix) && !x.getName().endsWith(".xml"))
+                .sorted(Comparator.comparing(KVMPhysicalDisk::getName))
                 .collect(Collectors.toList());
         if (CollectionUtils.isEmpty(disksWithPrefix)) {
             msg = String.format("Could not find any converted disk with prefix %s on temporary location %s", prefix, path);
@@ -177,6 +191,13 @@ public class LibvirtImportConvertedInstanceCommandWrapper extends CommandWrapper
     protected List<KVMPhysicalDisk> moveTemporaryDisksToDestination(List<KVMPhysicalDisk> temporaryDisks,
                                                                     List<String> destinationStoragePools,
                                                                     KVMStoragePoolManager storagePoolMgr) {
+        return moveTemporaryDisksToDestination(temporaryDisks, destinationStoragePools, null, storagePoolMgr);
+    }
+
+    protected List<KVMPhysicalDisk> moveTemporaryDisksToDestination(List<KVMPhysicalDisk> temporaryDisks,
+                                                                    List<String> destinationStoragePools,
+                                                                    List<Storage.StoragePoolType> destinationStoragePoolTypes,
+                                                                    KVMStoragePoolManager storagePoolMgr) {
         List<KVMPhysicalDisk> targetDisks = new ArrayList<>();
         if (temporaryDisks.size() != destinationStoragePools.size()) {
             String warn = String.format("Discrepancy between the converted instance disks (%s) " +
@@ -185,16 +206,12 @@ public class LibvirtImportConvertedInstanceCommandWrapper extends CommandWrapper
         }
         for (int i = 0; i < temporaryDisks.size(); i++) {
             String poolPath = destinationStoragePools.get(i);
-            KVMStoragePool destinationPool = storagePoolMgr.getStoragePool(Storage.StoragePoolType.NetworkFilesystem, poolPath);
+            Storage.StoragePoolType poolType = getDestinationStoragePoolType(destinationStoragePoolTypes, i);
+            KVMStoragePool destinationPool = storagePoolMgr.getStoragePool(poolType, poolPath);
             if (destinationPool == null) {
                 String err = String.format("Could not find a storage pool by URI: %s", poolPath);
                 logger.error(err);
-                continue;
-            }
-            if (destinationPool.getType() != Storage.StoragePoolType.NetworkFilesystem) {
-                String err = String.format("Storage pool by URI: %s is not an NFS storage", poolPath);
-                logger.error(err);
-                continue;
+                throw new CloudRuntimeException(err);
             }
             KVMPhysicalDisk sourceDisk = temporaryDisks.get(i);
             if (logger.isDebugEnabled()) {
@@ -204,11 +221,48 @@ public class LibvirtImportConvertedInstanceCommandWrapper extends CommandWrapper
             }
 
             String destinationName = UUID.randomUUID().toString();
+            if (destinationPool.getType() == Storage.StoragePoolType.RBD) {
+                probeRbdQemuAccess(destinationPool, destinationName);
+            }
 
             KVMPhysicalDisk destinationDisk = storagePoolMgr.copyPhysicalDisk(sourceDisk, destinationName, destinationPool, 7200 * 1000);
             targetDisks.add(destinationDisk);
         }
         return targetDisks;
+    }
+
+    private Storage.StoragePoolType getDestinationStoragePoolType(List<Storage.StoragePoolType> destinationStoragePoolTypes, int index) {
+        if (CollectionUtils.isEmpty(destinationStoragePoolTypes) || destinationStoragePoolTypes.size() <= index || destinationStoragePoolTypes.get(index) == null) {
+            return Storage.StoragePoolType.NetworkFilesystem;
+        }
+        return destinationStoragePoolTypes.get(index);
+    }
+
+    private void probeRbdQemuAccess(KVMStoragePool pool, String destinationName) {
+        String probeName = destinationName + "-probe";
+        String rbdImagePath = pool.getSourceDir() + "/" + probeName;
+        String qemuRbdPath = KVMPhysicalDisk.RBDStringBuilder(pool, rbdImagePath);
+        try {
+            Script qemuImg = new Script("qemu-img", 120000, logger);
+            qemuImg.add("create", "-f", "raw", qemuRbdPath, "4194304");
+            qemuImg.execute();
+            if (qemuImg.getExitValue() != 0) {
+                throw new CloudRuntimeException(String.format("qemu-img could not create RBD probe image %s", rbdImagePath));
+            }
+
+            Script qemuIo = new Script("qemu-io", 120000, logger);
+            qemuIo.add("-f", "raw", "-c", "write -P 0x5a 0 4k", "-c", "read -P 0x5a 0 4k", qemuRbdPath);
+            qemuIo.execute();
+            if (qemuIo.getExitValue() != 0) {
+                throw new CloudRuntimeException(String.format("qemu-io could not verify RBD probe image %s", rbdImagePath));
+            }
+        } finally {
+            try {
+                pool.deletePhysicalDisk(probeName, Storage.ImageFormat.RAW);
+            } catch (Exception e) {
+                logger.warn("Failed to delete RBD probe image {} from pool {}: {}", probeName, pool.getUuid(), e.getMessage());
+            }
+        }
     }
 
     private UnmanagedInstanceTO getConvertedUnmanagedInstance(String baseName,
@@ -244,9 +298,15 @@ public class LibvirtImportConvertedInstanceCommandWrapper extends CommandWrapper
             KVMStoragePool storagePool = physicalDisk.getPool();
             UnmanagedInstanceTO.Disk disk = new UnmanagedInstanceTO.Disk();
             disk.setPosition(i);
-            Pair<String, String> storagePoolHostAndPath = getNfsStoragePoolHostAndPath(storagePool);
-            disk.setDatastoreHost(storagePoolHostAndPath.first());
-            disk.setDatastorePath(storagePoolHostAndPath.second());
+            if (storagePool.getType() == Storage.StoragePoolType.RBD) {
+                disk.setDatastoreHost(storagePool.getSourceHost());
+                disk.setDatastorePath(storagePool.getSourceDir());
+                disk.setImagePath(physicalDisk.getName());
+            } else {
+                Pair<String, String> storagePoolHostAndPath = getNfsStoragePoolHostAndPath(storagePool);
+                disk.setDatastoreHost(storagePoolHostAndPath.first());
+                disk.setDatastorePath(storagePoolHostAndPath.second());
+            }
             disk.setDatastoreName(storagePool.getUuid());
             disk.setDatastoreType(storagePool.getType().name());
             disk.setCapacity(physicalDisk.getVirtualSize());

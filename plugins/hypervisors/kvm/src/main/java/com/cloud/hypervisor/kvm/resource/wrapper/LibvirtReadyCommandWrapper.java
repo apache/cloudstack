@@ -54,6 +54,10 @@ public final class LibvirtReadyCommandWrapper extends CommandWrapper<ReadyComman
         hostDetails.put(Host.HOST_VDDK_SUPPORT, Boolean.toString(libvirtComputingResource.hostSupportsVddk()));
         hostDetails.put(Host.HOST_VDDK_LIB_DIR, StringUtils.defaultString(libvirtComputingResource.getVddkLibDir()));
         hostDetails.put(Host.HOST_VDDK_VERSION, StringUtils.defaultString(libvirtComputingResource.getVddkVersion()));
+        hostDetails.put(Host.HOST_VIRTV2V_INPLACE_SUPPORT, Boolean.toString(libvirtComputingResource.hostSupportsVirtV2vInPlace()));
+        hostDetails.put(Host.HOST_QEMU_IMG_RBD_SUPPORT, Boolean.toString(libvirtComputingResource.hostSupportsQemuImgRbd()));
+        hostDetails.put(Host.HOST_RBD_QEMU_COPY_SUPPORT, Boolean.toString(libvirtComputingResource.hostSupportsRbdQemuCopy()));
+        hostDetails.put(Host.HOST_VDDK_RBD_DIRECT_IMPORT_SUPPORT, Boolean.toString(libvirtComputingResource.hostSupportsVddkRbdDirectImport()));
 
         if (libvirtComputingResource.hostSupportsOvfExport()) {
             hostDetails.put(Host.HOST_OVFTOOL_VERSION, libvirtComputingResource.getHostOvfToolVersion());

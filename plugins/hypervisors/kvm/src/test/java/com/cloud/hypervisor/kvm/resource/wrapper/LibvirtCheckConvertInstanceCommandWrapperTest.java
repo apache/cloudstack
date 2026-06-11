@@ -79,6 +79,32 @@ public class LibvirtCheckConvertInstanceCommandWrapperTest {
     }
 
     @Test
+    public void testCheckInstanceCommand_vddkDirectRbdSuccess() {
+        Mockito.when(checkConvertInstanceCommandMock.isUseVddk()).thenReturn(true);
+        Mockito.when(checkConvertInstanceCommandMock.isCheckVddkRbdDirectImportSupport()).thenReturn(true);
+        Mockito.when(checkConvertInstanceCommandMock.getVddkLibDir()).thenReturn("/opt/vmware-vddk/vmware-vix-disklib-distrib");
+        Mockito.when(libvirtComputingResourceMock.hostSupportsVddkRbdDirectImport("/opt/vmware-vddk/vmware-vix-disklib-distrib")).thenReturn(true);
+        Mockito.when(libvirtComputingResourceMock.hostSupportsVddk("/opt/vmware-vddk/vmware-vix-disklib-distrib")).thenReturn(true);
+
+        Answer answer = checkConvertInstanceCommandWrapper.execute(checkConvertInstanceCommandMock, libvirtComputingResourceMock);
+
+        assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void testCheckInstanceCommand_vddkDirectRbdFailure() {
+        Mockito.when(checkConvertInstanceCommandMock.isUseVddk()).thenReturn(true);
+        Mockito.when(checkConvertInstanceCommandMock.isCheckVddkRbdDirectImportSupport()).thenReturn(true);
+        Mockito.when(checkConvertInstanceCommandMock.getVddkLibDir()).thenReturn("/opt/vmware-vddk/vmware-vix-disklib-distrib");
+        Mockito.when(libvirtComputingResourceMock.hostSupportsVddkRbdDirectImport("/opt/vmware-vddk/vmware-vix-disklib-distrib")).thenReturn(false);
+
+        Answer answer = checkConvertInstanceCommandWrapper.execute(checkConvertInstanceCommandMock, libvirtComputingResourceMock);
+
+        assertFalse(answer.getResult());
+        assertTrue(StringUtils.isNotBlank(answer.getDetails()));
+    }
+
+    @Test
     public void testCheckInstanceCommand_vddkFailure() {
         Mockito.when(checkConvertInstanceCommandMock.isUseVddk()).thenReturn(true);
         Mockito.when(checkConvertInstanceCommandMock.getVddkLibDir()).thenReturn("/opt/vmware-vddk/vmware-vix-disklib-distrib");
