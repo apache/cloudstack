@@ -76,6 +76,29 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
         return allowedApis;
     }
 
+    @Override
+    public List<String> getApisAllowedToAccount(Account account, List<String> apiNames) {
+        if (!isEnabled()) {
+            return apiNames;
+        }
+        Pair<Role, List<RolePermission>> roleAndPermissions = getRolePermissionsUsingCache(account.getRoleId());
+        final Role accountRole = roleAndPermissions.first();
+        if (accountRole == null) {
+            throw new PermissionDeniedException("The account [" + account + "] has role null or unknown.");
+        }
+        if (accountRole.getRoleType() == RoleType.Admin && accountRole.getId() == RoleType.Admin.getId()) {
+            return apiNames;
+        }
+        List<RolePermission> allPermissions = roleAndPermissions.second();
+        List<String> allowedApis = new ArrayList<>();
+        for (String api : apiNames) {
+            if (checkApiPermissionByRole(accountRole, api, allPermissions)) {
+                allowedApis.add(api);
+            }
+        }
+        return allowedApis;
+    }
+
     /**
      * Checks if the given Role of an Account has the allowed permission for the given API.
      *
@@ -173,7 +196,7 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
             return true;
         }
 
-        List<RolePermission> allPermissions = roleService.findAllPermissionsBy(accountRole.getId());
+        List<RolePermission> allPermissions = roleAndPermissions.second();
         if (checkApiPermissionByRole(accountRole, commandName, allPermissions)) {
             return true;
         }

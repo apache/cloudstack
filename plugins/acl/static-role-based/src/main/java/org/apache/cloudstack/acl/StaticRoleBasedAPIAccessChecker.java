@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.acl;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -119,6 +120,21 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
         } else {
             throw new UnavailableCommandException(String.format("The API [%s] does not exist or is not available for this account.", commandName));
         }
+    }
+
+    @Override
+    public List<String> getApisAllowedToAccount(Account account, List<String> apiNames) {
+        if (!isEnabled()) {
+            return apiNames;
+        }
+        RoleType roleType = accountService.getRoleType(account);
+        List<String> allowedApis = new ArrayList<>();
+        for (String apiName : apiNames) {
+            if (isApiAllowed(apiName, roleType)) {
+                allowedApis.add(apiName);
+            }
+        }
+        return allowedApis;
     }
 
     /**
