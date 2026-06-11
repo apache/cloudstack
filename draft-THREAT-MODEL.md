@@ -63,9 +63,10 @@
   response to this draft; *(inferred)* = synthesized by the producer from
   code structure or domain knowledge, awaiting PMC ratification (every
   *(inferred)* tag has a matching §14 question).
-- **Draft confidence (provenance-tag tally):** 51 *(documented)* / 35
-  *(maintainer)* / 45 *(inferred)*. Five formerly-open questions (Q1, Q2,
-  Q4, Q5, Q12 — including the highest-leverage Root-CA strictness default)
+- **Draft confidence (provenance-tag tally):** 51 *(documented)* / 42
+  *(maintainer)* / 38 *(inferred)*. Eleven formerly-open questions (Q1,
+  Q2, Q4, Q5, Q12 — including the highest-leverage Root-CA strictness
+  default — plus Q8, Q9, Q10, Q17, Q18, Q19 from the 2026-06-08 review)
   were resolved by the CloudStack PMC review (DaanHoogland, vishesh92) and
   their tags promoted from *(inferred)* to *(maintainer)*.
 
@@ -183,7 +184,7 @@ requiring any of these will be closed with the cited disposition:
    configuration, upload templates and scripts to system VMs, register
    arbitrary network/storage plugins, and run `runCustomAction`-style
    commands. A new way for a root admin to do something they are already
-   authorized to do is not a vulnerability *(inferred — §14 Q8)*. →
+   authorized to do is not a vulnerability *(maintainer: vishesh92 — §14 Q8)*. →
    `OUT-OF-MODEL: equivalent-harm`.
 5. **A defender against a guest VM doing things the hypervisor allows it
    to do.** A guest VM consuming CPU, memory, or disk up to its allocated
@@ -191,8 +192,9 @@ requiring any of these will be closed with the cited disposition:
    security group, or exploiting another VM via the hypervisor's own
    shared surfaces (sidechannel, RowHammer, GPU passthrough leak) is out
    of model. CloudStack is responsible only for the orchestration that
-   *places* the guest, not for hypervisor-level isolation *(inferred —
-   §14 Q9)*. → `OUT-OF-MODEL: adversary-not-in-scope` for the
+   *places* the guest, not for hypervisor-level isolation *(maintainer:
+   vishesh92 — §14 Q9; the in-model case is CloudStack applying
+   wrong/insecure hypervisor settings — Daan to confirm boundary)*. → `OUT-OF-MODEL: adversary-not-in-scope` for the
    side-channel case, `BY-DESIGN: property-disclaimed` for the
    resource-limit case.
 6. **A sandbox for templates, ISO images, or user-data scripts.** A
@@ -200,7 +202,7 @@ requiring any of these will be closed with the cited disposition:
    hypervisor with the privileges the offering grants. cloud-init /
    user-data / metadata is passed through to the guest; CloudStack does
    not parse or sanitize its semantics *(documented: kubernetes-service
-   plugin `userdata` references; inferred — §14 Q10)*. →
+   plugin `userdata` references; maintainer: vishesh92 — §14 Q10, end-user guest customization)*. →
    `BY-DESIGN: property-disclaimed`.
 7. **Code that ships but is not part of the supported product:**
    `tools/marvin/`, `test/`, `developer/`, `quickcloud/`, `cloud-cli/`,
@@ -346,10 +348,10 @@ security-relevant subset:
 | `ca.plugin.root.auth.strictness` | **`true` for new setups; `false` only on upgrade from pre-Aug-2017 versions** *(maintainer: vishesh92 — `https://github.com/apache/cloudstack/pull/2239`)* | New setups are strict by default; the `false`-on-upgrade case is called out in the upgrade instructions and is therefore not a concern *(maintainer: DaanHoogland)* | When `false`, the management server's `RootCACustomTrustManager` does **not** require a client certificate from a peer attempting to connect on `:8250` (agent port) or cluster ports. A peer without a cert is allowed in. |
 | `ca.plugin.root.allow.expired.cert` | **`true`** *(documented: `RootCAProvider.java`)* | operational default to survive cert-rotation lag *(maintainer: paired with the strictness ruling above)* | When `true`, an expired client cert is accepted during SSL handshake. |
 | `ca.plugin.root.issuer.dn` | `CN=ca.cloudstack.apache.org` *(documented: same file)* | configured at first management-server boot | Subject DN of the auto-generated self-signed Root CA. |
-| `proxy.header.verify` | off by default *(inferred — §14 Q17; setting name maintainer: vishesh92)* | When on, the operator must restrict `proxy.cidr` to the trusted reverse-proxy CIDR | When set, `ApiServlet.getClientAddress` honours proxy-set forward headers *only* for source IPs in `proxy.cidr` *(documented: `server/src/main/java/com/cloud/api/ApiServlet.java` `getClientAddress`; setting name maintainer: vishesh92)*. |
+| `proxy.header.verify` | `false` by default *(maintainer: vishesh92 — §14 Q17)* | When on, the operator must restrict `proxy.cidr` to the trusted reverse-proxy CIDR | When set, `ApiServlet.getClientAddress` honours proxy-set forward headers *only* for source IPs in `proxy.cidr` *(documented: `server/src/main/java/com/cloud/api/ApiServlet.java` `getClientAddress`; setting name maintainer: vishesh92)*. |
 | `proxy.header.names` | list of header names; semantics: names to check for allowed IP addresses from a proxy-set header *(maintainer: vishesh92)* | list of header names to consult for the allowed client address when set by a proxy | Names the request header(s) carrying the proxy-set client IP. |
-| `proxy.cidr` | unset *(inferred — §14 Q17; setting name maintainer: vishesh92)* | required when `proxy.header.verify` is on | List of CIDRs for which `proxy.header.names` headers are honoured when the connecting `Remote_Addr` is in this list *(semantics maintainer: vishesh92)*. |
-| `enable.2fa.for.users` / `enable.2fa.for.api` | per-domain toggle *(documented: `plugins/user-two-factor-authenticators/`)* | dev-test default off; production posture depends on PMC ruling *(inferred — §14 Q18)* | When on, users must complete static-pin or TOTP 2FA after login. |
+| `proxy.cidr` | unset *(maintainer: vishesh92 — §14 Q17; headers honoured only when `Remote_Addr` ∈ this list)* | required when `proxy.header.verify` is on | List of CIDRs for which `proxy.header.names` headers are honoured when the connecting `Remote_Addr` is in this list *(semantics maintainer: vishesh92)*. |
+| `enable.user.2fa` / `mandate.user.2fa` | both default `false`; domain-configurable *(maintainer: vishesh92 — §14 Q18)* | `enable.user.2fa` turns 2FA on; `mandate.user.2fa` makes it mandatory (only when `enable.user.2fa` is true) — a deployment choice, not a §10 violation when off | When on, users must complete static-pin or TOTP 2FA after login. |
 | `security.encryption.key`, `security.encryption.iv` | auto-generated at first boot *(documented: `framework/security/.../KeysManager.java`)* | trusted secret | Base64-encoded JaSypt master key + IV used to encrypt application-level secrets in the DB. |
 | `user.password.encoders.order` | `PBKDF2,SHA256SALT,MD5,LDAP,SAML2,PLAINTEXT` *(maintainer: vishesh92)* | first encoder in the order is used to hash new passwords; the list also defines the verification fall-through order | Governs how user passwords are stored and which encoders are accepted on verify. |
 | `user.password.encoders.exclude` | `MD5,LDAP,PLAINTEXT` *(maintainer: vishesh92)* | excluded encoders are not used to (re)hash passwords | Excludes weak/legacy encoders from being chosen, even though they remain in the order list for verifying already-stored hashes. |
@@ -514,8 +516,8 @@ For each property: condition, violation symptom, severity tier, provenance.
 
 ### P6 — Reverse-proxy IP-trust gating for forward headers
 
-- **Condition**: `proxy.header.verify` on *(inferred — §14 Q17; setting
-  name maintainer: vishesh92)*;
+- **Condition**: `proxy.header.verify` on (default `false`) *(maintainer:
+  vishesh92 — §14 Q17)*;
   only requests whose `Remote_Addr` falls in `proxy.cidr` have their
   `proxy.header.names` forward header(s) consulted *(documented:
   `ApiServlet.java` `getClientAddress` `NetUtils.isIpInCidrList`; setting
@@ -709,9 +711,12 @@ The operator deploying CloudStack in production **must**:
    `MD5,LDAP,PLAINTEXT` (so the weak encoders are not chosen for hashing,
    only retained for verifying already-stored hashes) *(maintainer:
    vishesh92)*. Do not remove `MD5`/`PLAINTEXT` from the exclude list in
-   production *(pending §14 Q19 ruling on the supported greenfield set)*.
+   production — the supported greenfield encoder set is
+   `PBKDF2,SHA256SALT,SAML2` *(maintainer: vishesh92 — §14 Q19)*.
 8. Enable 2FA (`totp` or `static-pin`) for administrators and ideally for
-   all users *(pending §14 Q18 ruling)*.
+   all users — 2FA on/off is a deployment choice via `enable.user.2fa`
+   and `mandate.user.2fa` (both default `false`) *(maintainer: vishesh92 —
+   §14 Q18)*.
 9. Rotate per-user API secret keys on personnel change and on suspected
    compromise.
 10. Treat user-uploaded templates and ISOs as crossing a trust boundary —
@@ -749,7 +754,7 @@ The operator deploying CloudStack in production **must**:
   reordering them to the front of `user.password.encoders.order`) in
   production.** The encoders ship for verifying legacy hashes; promoting
   them to hash new passwords stores weakly-protected credentials
-  *(maintainer: vishesh92)*. Pending §14 Q19 on the greenfield-supported set.
+  *(maintainer: vishesh92 — §14 Q19; the supported greenfield encoder set is `PBKDF2,SHA256SALT,SAML2`)*.
 - **Granting domain admin to too many users.** A domain admin can manage
   all accounts within the domain — including reading guest console URLs.
 - **Embedding console-proxy URLs in screenshots, ticketing systems, or
@@ -952,22 +957,31 @@ This resolution reshaped §3 item 1, §5a, §7 (the un-certed peer row),
 
 ### Wave 3 — adjacent insecure defaults and admin-only surfaces
 
-**Q8.** Is "a root admin with full RBAC role causes harm Y via a
+**Q8.** ~~Is "a root admin with full RBAC role causes harm Y via a
 documented path Z" out of scope (proposed: **yes**, `OUT-OF-MODEL:
 equivalent-harm`)? In particular: `runCustomAction`, template upload,
 plugin registration, global config change, system-VM patching, system-VM
-console access. *(maps to §3 item 4, §9)*
+console access.~~ **RESOLVED** *(maintainer: vishesh92)* — yes; a root
+admin generally has direct access to most of these resources anyway →
+`OUT-OF-MODEL: equivalent-harm`. *(maps to §3 item 4, §9)*
 
-**Q9.** Guest VM workloads — confirm that hypervisor-mediated side
+**Q9.** ~~Guest VM workloads — confirm that hypervisor-mediated side
 channels and resource-exhaustion-within-allocation are out of scope, and
 that the in-scope orchestration concerns are limited to "did CloudStack
 place the VM in the right VLAN / apply the right security group / route
-the right IP" (proposed)? *(maps to §3 item 5, §7, §9)*
+the right IP" (proposed)?~~ **RESOLVED** *(maintainer: vishesh92)* — yes;
+side channels + resource-exhaustion-within-allocation are out of scope.
+The one in-model case: CloudStack applying a wrong/insecure setting while
+launching or managing the guest (CloudStack must use correct/secure
+hypervisor settings). *(DaanHoogland to confirm the boundary.)* *(maps to
+§3 item 5, §7, §9)*
 
-**Q10.** Templates / ISOs / user-data — confirm that there is no
+**Q10.** ~~Templates / ISOs / user-data — confirm that there is no
 sandboxing of user-supplied OS images, and that user-data is intentionally
-a code-execution channel into the guest (proposed)? *(maps to §3 item 6,
-§9)*
+a code-execution channel into the guest (proposed)?~~ **RESOLVED**
+*(maintainer: vishesh92)* — yes; userdata is the end user customizing
+their own guest OS (tenant-controlled data inside their own boundary), not
+a CloudStack-side injection surface. *(maps to §3 item 6, §9)*
 
 **Q11.** Confirm the unsupported-component list: `tools/marvin/`,
 `test/`, `developer/`, `quickcloud/`, `cloud-cli/`,
@@ -978,26 +992,31 @@ item 7)*
 **Q17.** Forward-header gating — the **setting names are confirmed**
 *(maintainer: vishesh92)*: `proxy.header.verify` (the on/off gate),
 `proxy.header.names` (header names to consult), and `proxy.cidr` (CIDRs of
-the `Remote_Addr` values for which those headers are honoured). **Still
-open:** confirm `proxy.header.verify` is **off by default** and that
-`proxy.cidr` must be set for the headers to take effect. *(maps to §5a,
-§6, §10)*
+the `Remote_Addr` values for which those headers are honoured). **RESOLVED** *(maintainer: vishesh92)* — `proxy.header.verify` is
+**`false` by default**; only when the connecting `Remote_Addr` ∈
+`proxy.cidr` does CloudStack read the client IP from `proxy.header.names`.
+*(maps to §5a, §6, §10)*
 
-**Q18.** 2FA — proposed: off by default, operator turns it on per
+**Q18.** ~~2FA — proposed: off by default, operator turns it on per
 domain / per user via `enable.2fa.*`. Confirm; and is "2FA disabled in
-production" a §10 violation or a deployment choice? *(maps to §5a,
-§10)*
+production" a §10 violation or a deployment choice?~~ **RESOLVED**
+*(maintainer: vishesh92)* — deployment choice, not a §10 violation. Two
+domain-configurable global settings: `enable.user.2fa` (default `false`;
+whether 2FA is enabled) and `mandate.user.2fa` (default `false`; whether
+2FA is mandatory — applies only when `enable.user.2fa` is true). *(maps to
+§5a, §10)*
 
 **Q19.** User-authenticator plugins — encoder selection is governed by
 `user.password.encoders.order` (default
 `PBKDF2,SHA256SALT,MD5,LDAP,SAML2,PLAINTEXT`) and
 `user.password.encoders.exclude` (default `MD5,LDAP,PLAINTEXT`), so PBKDF2
 is the effective hashing default and `MD5`/`PLAINTEXT` are retained only
-for verifying legacy hashes *(maintainer: vishesh92)*. **Still open:**
-confirm that a report against `md5`/`plain-text` being *used to hash new
-passwords* in a greenfield install is `OUT-OF-MODEL: non-default-build`
-(they are excluded by default), and confirm the supported greenfield
-encoder set. *(maps to §5a, §10, §11)*
+for verifying legacy hashes *(maintainer: vishesh92)*. **RESOLVED** *(maintainer: vishesh92)* — a
+report against `md5`/`plain-text` hashing *new* passwords in a greenfield
+install is `OUT-OF-MODEL: non-default-build`: the default
+`user.password.encoders.exclude` (`MD5,LDAP,PLAINTEXT`) removes them from
+the effective set, so the supported greenfield encoders are
+`PBKDF2,SHA256SALT,SAML2`. *(maps to §5a, §10, §11)*
 
 **Q20.** Integration API port `:8096` — proposed: closed (port-zero) by
 default in production packaging, open only when explicitly configured;
@@ -1134,7 +1153,7 @@ landing page. The de facto security-policy artifacts are scattered:
 | `plugins/ca/root-ca/.../RootCACustomTrustManager.java` | `authStrictness` and `allowExpiredCertificate` semantics | §5a, §8 P5 |
 | `plugins/acl/{static,dynamic,project}-role-based` | RBAC backends | §8 P4 |
 | `plugins/user-authenticators/{md5,sha256salted,pbkdf2,plain-text,ldap,saml2,oauth2}` | pluggable user auth; selection via `user.password.encoders.order` / `user.password.encoders.exclude` | §2 caller-roles row, §5a "user.password.encoders.*" rows, §10 item 7 |
-| `plugins/user-two-factor-authenticators/{static-pin,totp}` | 2FA backends | §5a "enable.2fa.*", §10 item 8 |
+| `plugins/user-two-factor-authenticators/{static-pin,totp}` | 2FA backends | §5a "enable.user.2fa / mandate.user.2fa", §10 item 8 |
 | `framework/security/.../KeysManager.java`, `KeystoreManager.java` | `security.encryption.key`, `security.encryption.iv` (Hidden), application-secret JaSypt encryption | §8 P8, §5a, §10 item 6 |
 | `agent/src/main/java/com/cloud/agent/Agent.java` `setupAgentKeystore` (lines ~793–916) | agent receives Root CA-signed cert via `SetupKeyStoreCommand` and imports it | §4 B5, §8 P5 |
 | `server/src/main/java/com/cloud/servlet/ConsoleProxyServlet.java`, `ConsoleProxyPasswordBasedEncryptor.java` | signed encrypted console-proxy URL token | §4 B3, §8 P7 |
