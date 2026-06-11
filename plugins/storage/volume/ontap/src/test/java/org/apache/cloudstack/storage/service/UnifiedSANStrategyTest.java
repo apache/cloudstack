@@ -520,7 +520,7 @@ class UnifiedSANStrategyTest {
 
             // Verify
             assertNotNull(result);
-
+            assertEquals("0", result);
             verify(sanFeignClient).createLunMap(eq(authHeader), eq(true), any(LunMap.class));
         }
     }
@@ -552,6 +552,7 @@ class UnifiedSANStrategyTest {
 
             // Verify
             assertNotNull(result);
+            assertEquals("5", result);
         }
     }
 
