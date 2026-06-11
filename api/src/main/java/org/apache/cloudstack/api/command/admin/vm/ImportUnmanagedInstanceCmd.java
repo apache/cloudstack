@@ -135,6 +135,14 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
             description = "VM NIC to ip address mapping using keys NIC, ip4Address")
     private Map nicIpAddressList;
 
+    @Parameter(name = ApiConstants.NIC_MAC_ADDRESS_LIST,
+            type = CommandType.MAP,
+            description = "VM NIC to MAC address mapping using keys nic and mac. " +
+                    "Example: nicmacaddresslist[0].nic=nic1&nicmacaddresslist[0].mac=aa:bb:cc:dd:ee:ff. " +
+                    "Overrides the MAC address reported by the hypervisor for the given NIC.",
+            since = "4.21.0")
+    private Map nicMacAddressList;
+
     @Parameter(name = ApiConstants.DATADISK_OFFERING_LIST,
             type = CommandType.MAP,
             description = "Datadisk Template to disk-offering mapping using keys disk and diskOffering")
@@ -234,6 +242,32 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
         return nicIpAddressMap;
     }
 
+    public Map<String, String> getNicMacAddressList() {
+        Map<String, String> nicMacMap = new HashMap<>();
+        if (MapUtils.isEmpty(nicMacAddressList)) {
+            return nicMacMap;
+        }
+        for (Map<String, String> entry : (Collection<Map<String, String>>) nicMacAddressList.values()) {
+            String nic = entry.get(VmDetailConstants.NIC);
+            String mac = entry.get(VmDetailConstants.NIC_MAC_ADDRESS);
+            logger.debug("Checking if MAC address '{}' can be mapped to NIC '{}'", mac, nic);
+            if (StringUtils.isEmpty(nic)) {
+                throw new InvalidParameterValueException(String.format("NIC ID: '%s' is invalid for MAC address mapping", nic));
+            }
+            if (StringUtils.isEmpty(mac)) {
+                throw new InvalidParameterValueException(String.format("Empty MAC address for NIC ID: %s is invalid", nic));
+            }
+            if (!NetUtils.isValidMac(mac)) {
+                throw new InvalidParameterValueException(String.format("MAC address '%s' for NIC ID: %s is not valid", mac, nic));
+            }
+            if (!NetUtils.isUnicastMac(mac)) {
+                throw new InvalidParameterValueException(String.format("MAC address '%s' for NIC ID: %s is not a unicast address", mac, nic));
+            }
+            nicMacMap.put(nic, NetUtils.standardizeMacAddress(mac));
+        }
+        return nicMacMap;
+    }
+
     public Map<String, Long> getDataDiskToDiskOfferingList() {
         Map<String, Long> dataDiskToDiskOfferingMap = new HashMap<>();
         if (MapUtils.isNotEmpty(dataDiskToDiskOfferingList)) {
@@ -245,61 +279,4 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
                     throw new InvalidParameterValueException(String.format("Disk offering ID: %s for disk ID: %s is invalid", offeringUuid, disk));
                 }
                 dataDiskToDiskOfferingMap.put(disk, _entityMgr.findByUuid(DiskOffering.class, offeringUuid).getId());
-            }
-        }
-        return dataDiskToDiskOfferingMap;
-    }
-
-    public Map<String, String> getDetails() {
-        if (MapUtils.isEmpty(details)) {
-            return new HashMap<String, String>();
-        }
-
-        Collection<String> paramsCollection = details.values();
-        Map<String, String> params = (Map<String, String>) (paramsCollection.toArray())[0];
-        return params;
-    }
-
-    public Boolean getMigrateAllowed() {
-        return migrateAllowed == Boolean.TRUE;
-    }
-
-    @Override
-    public String getEventType() {
-        return EventTypes.EVENT_VM_IMPORT;
-    }
-
-    @Override
-    public String getEventDescription() {
-        return "Importing unmanaged Instance: " + name;
-    }
-
-    public boolean isForced() {
-        return BooleanUtils.isTrue(forced);
-    }
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
-
-    @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        UserVmResponse response = vmImportService.importUnmanagedInstance(this);
-        response.setResponseName(getCommandName());
-        setResponseObject(response);
-    }
-
-    @Override
-    public long getEntityOwnerId() {
-        Long accountId = _accountService.finalizeAccountId(accountName, domainId, projectId, true);
-        if (accountId == null) {
-            Account account = CallContext.current().getCallingAccount();
-            if (account != null) {
-                accountId = account.getId();
-            } else {
-                accountId = Account.ACCOUNT_ID_SYSTEM;
-            }
-        }
-        return accountId;
-    }
-}
+            
