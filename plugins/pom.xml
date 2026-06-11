@@ -154,6 +154,7 @@
 
         <module>user-two-factor-authenticators/totp</module>
         <module>user-two-factor-authenticators/static-pin</module>
+        <module>dns/powerdns</module>
 
     </modules>
     <dependencies>

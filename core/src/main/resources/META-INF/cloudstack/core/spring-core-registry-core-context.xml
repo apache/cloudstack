@@ -366,4 +366,6 @@
 
     <bean id="sharedFSProvidersRegistry" class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
     </bean>
+
+    <bean id="dnsProvidersRegistry" class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry" />
 </beans>
