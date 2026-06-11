@@ -174,6 +174,28 @@ public class VolumeOrchestratorTest {
     }
 
     @Test
+    public void testGetSupportedImageFormatForClusterKvmRbdIsRaw() {
+        Assert.assertEquals(Storage.ImageFormat.RAW,
+                volumeOrchestrator.getSupportedImageFormatForCluster(Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.RBD));
+    }
+
+    @Test
+    public void testGetSupportedImageFormatForClusterKvmNonRbdIsQcow2() {
+        Assert.assertEquals(Storage.ImageFormat.QCOW2,
+                volumeOrchestrator.getSupportedImageFormatForCluster(Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.NetworkFilesystem));
+        Assert.assertEquals(Storage.ImageFormat.QCOW2,
+                volumeOrchestrator.getSupportedImageFormatForCluster(Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.Filesystem));
+    }
+
+    @Test
+    public void testGetSupportedImageFormatForClusterNonKvmIgnoresPoolType() {
+        Assert.assertEquals(Storage.ImageFormat.VHD,
+                volumeOrchestrator.getSupportedImageFormatForCluster(Hypervisor.HypervisorType.XenServer, Storage.StoragePoolType.RBD));
+        Assert.assertEquals(Storage.ImageFormat.OVA,
+                volumeOrchestrator.getSupportedImageFormatForCluster(Hypervisor.HypervisorType.VMware, Storage.StoragePoolType.RBD));
+    }
+
+    @Test
     public void testGrantVolumeAccessToHostIfNeededDriverNoNeed() {
         PrimaryDataStore store = Mockito.mock(PrimaryDataStore.class);
         PrimaryDataStoreDriver driver = Mockito.mock(PrimaryDataStoreDriver.class);
