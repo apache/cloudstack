@@ -2018,6 +2018,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             } else {
                 buf.append(" has_public_network=false");
             }
+            boolean isVpcFirewallEnabled = vpcManager.isProviderSupportServiceInVpc(vpc.getId(), Service.Firewall, Provider.VPCVirtualRouter);
+            buf.append(" vpc_firewall_enabled=").append(isVpcFirewallEnabled);
         } else if (!publicNetwork) {
             type = "dhcpsrvr";
         } else {
@@ -2166,11 +2168,6 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         boolean isIpv6Supported = _networkOfferingDao.isIpv6Supported(guestNetwork.getNetworkOfferingId());
         if (isIpv6Supported) {
             buf.append(" ip6firewall=true");
-        }
-
-        if (guestNetwork.getVpcId() != null) {
-            boolean isVpcFirewallEnabled = vpcManager.isProviderSupportServiceInVpc(guestNetwork.getVpcId(), Service.Firewall, Provider.VPCVirtualRouter);
-            buf.append(" vpc_firewall_enabled=").append(isVpcFirewallEnabled);
         }
 
         final boolean isRedundant = router.getIsRedundantRouter();
