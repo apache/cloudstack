@@ -988,41 +988,43 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
     @Override
     @DB
-    public void setManagementState(final ConsoleProxyManagementState state) {
+    public void setManagementState(final ConsoleProxyManagementState newState) {
         try {
-            final ConsoleProxyManagementState lastState = getManagementState();
-            if (lastState == null) {
+            final ConsoleProxyManagementState currentState = getManagementState();
+            if (currentState == null) {
                 return;
             }
 
-            if (lastState != state) {
+            if (currentState != newState) {
+                logger.debug("Updating console proxy management state config to new state: {}, it's current state is {} and last management state config to {}.", newState, currentState, currentState);
                 Transaction.execute(new TransactionCallbackNoReturn() {
                     @Override
                     public void doInTransactionWithoutResult(TransactionStatus status) {
-                        configurationDao.update(ConsoleProxyManagementLastState.key(), ConsoleProxyManagementLastState.category(), lastState.toString());
-                        configurationDao.update(ConsoleProxyServiceManagementState.key(), ConsoleProxyServiceManagementState.category(), state.toString());
+                        configurationDao.update(ConsoleProxyServiceManagementLastState.key(), ConsoleProxyServiceManagementLastState.category(), currentState.toString());
+                        configurationDao.update(ConsoleProxyServiceManagementState.key(), ConsoleProxyServiceManagementState.category(), newState.toString());
                     }
                 });
+            } else {
+                logger.debug("Console proxy management state is already set to {}, no need to update.", newState);
             }
         } catch (Exception e) {
-            logger.error(String.format("Unable to set console proxy management state to [%s] due to [%s].", state, e.getMessage()), e);
+            logger.error("Unable to update console proxy management state to [{}] due to [{}].", newState, e.getMessage(), e);
         }
     }
 
     @Override
     public ConsoleProxyManagementState getManagementState() {
-        String configKey = ConsoleProxyServiceManagementState.key();
-        String value = ConsoleProxyServiceManagementState.value();
+        String stateConfigKey = ConsoleProxyServiceManagementState.key();
+        String stateConfigValue = ConsoleProxyServiceManagementState.value();
 
-        if (value != null) {
-            ConsoleProxyManagementState state = ConsoleProxyManagementState.valueOf(value);
-
+        if (stateConfigValue != null) {
+            ConsoleProxyManagementState state = ConsoleProxyManagementState.valueOf(stateConfigValue);
             if (state != null) {
                 return state;
             }
         }
 
-        logger.error(String.format("Value [%s] set in global configuration [%s] is not a valid console proxy management state.", value, configKey));
+        logger.error("Console proxy management state value is null in the global configuration [{}].", stateConfigKey);
         return null;
     }
 
@@ -1037,26 +1039,26 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             }
 
             if (lastState != state) {
+                logger.debug("Resuming console proxy management state to last state {}, current state is {}.", lastState, state);
                 configurationDao.update(ConsoleProxyServiceManagementState.key(), ConsoleProxyServiceManagementState.category(), lastState.toString());
             }
         } catch (Exception e) {
-            logger.error(String.format("Unable to resume last management state due to [%s].", e.getMessage()), e);
+            logger.error("Unable to resume last management state due to [{}].", e.getMessage(), e);
         }
     }
 
     private ConsoleProxyManagementState getLastManagementState() {
-        String configKey = ConsoleProxyManagementLastState.key();
-        String value = ConsoleProxyManagementLastState.value();
+        String lastStateConfigKey = ConsoleProxyServiceManagementLastState.key();
+        String lastStateConfigValue = ConsoleProxyServiceManagementLastState.value();
 
-        if (value != null) {
-            ConsoleProxyManagementState state = ConsoleProxyManagementState.valueOf(value);
-
-            if (state != null) {
-                return state;
+        if (lastStateConfigValue != null) {
+            ConsoleProxyManagementState lastState = ConsoleProxyManagementState.valueOf(lastStateConfigValue);
+            if (lastState != null) {
+                return lastState;
             }
         }
 
-        logger.error(String.format("Value [%s] set in global configuration [%s] is not a valid console proxy management state.", value, configKey));
+        logger.error("Console proxy last management state value is null in the global configuration [{}].", lastStateConfigKey);
         return null;
     }
 
@@ -1074,7 +1076,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
             if (answer != null && answer.getResult()) {
                 if (logger.isDebugEnabled()) {
-                    logger.debug("Successfully reboot console proxy " + proxy.getHostName());
+                    logger.debug("Successfully reboot console proxy {}", proxy.getHostName());
                 }
 
                 SubscriptionMgr.getInstance().notifySubscribers(ConsoleProxyManager.ALERT_SUBJECT, this,
@@ -1083,7 +1085,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
                 return true;
             } else {
                 if (logger.isDebugEnabled()) {
-                    logger.debug("failed to reboot console proxy : " + proxy.getHostName());
+                    logger.debug("Failed to reboot console proxy : {}", proxy.getHostName());
                 }
 
                 return false;
@@ -1113,7 +1115,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
             return true;
         } catch (ResourceUnavailableException e) {
-            logger.warn(String.format("Unable to destroy console proxy [%s] due to [%s].", proxy, e.getMessage()), e);
+            logger.warn("Unable to destroy console proxy [{}] due to [{}].", proxy, e.getMessage(), e);
             return false;
         }
     }
@@ -1590,7 +1592,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {ConsoleProxySslEnabled, NoVncConsoleDefault, NoVncConsoleSourceIpCheckEnabled, ConsoleProxyServiceOffering,
                                    ConsoleProxyCapacityStandby, ConsoleProxyCapacityScanInterval, ConsoleProxyRestart, ConsoleProxyUrlDomain, ConsoleProxySessionMax, ConsoleProxySessionTimeout, ConsoleProxyDisableRpFilter, ConsoleProxyLaunchMax,
-                                   ConsoleProxyManagementLastState, ConsoleProxyServiceManagementState, NoVncConsoleShowDot,
+                ConsoleProxyServiceManagementLastState, ConsoleProxyServiceManagementState, NoVncConsoleShowDot,
                                    ConsoleProxyVmUserData};
     }
 
