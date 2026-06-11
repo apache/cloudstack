@@ -377,6 +377,7 @@ public class UnifiedSANStrategy extends SANStrategy {
         }
     }
 
+    @Override
     public String enableLogicalAccess(Map<String, String> values) {
         logger.trace("enableLogicalAccess : Creating LunMap with values {} ", values);
         String lunNumber = null;
@@ -478,6 +479,7 @@ public class UnifiedSANStrategy extends SANStrategy {
     }
 
     // GET-only helper: fetch LUN-map and return logical unit number if it exists; otherwise return null
+    @Override
     public String getLogicalAccess(Map<String, String> values) {
         String lunNumber = null;
         logger.trace("getLogicalAccess : Fetching LunMap with values {} ", values);

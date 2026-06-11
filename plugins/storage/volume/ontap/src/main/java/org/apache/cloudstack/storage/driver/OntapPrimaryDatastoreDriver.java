@@ -433,7 +433,7 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
         }else{
             logger.info("grantAccess: Igroup {} already exist for the host {}: ", accessGroup.getIgroup().getName() , host.getName());
             /* TODO Below cases will be covered later, for now they will be a pre-requisite on customer side
-              1. Igroup exist with the same name but host initiator has been rempved
+              1. Igroup exist with the same name but host initiator has been removed
               2.  Igroup exist with the same name but host initiator has been changed may be due to new NIC or new adapter
               In both cases we need to verify current host initiator is registered in the igroup before allowing access
               Incase it is not , add it and proceed for lun-mapping
