@@ -2886,6 +2886,7 @@
 "label.bucket.delete": "Delete Bucket",
 "label.quotagib": "Quota in GiB",
 "label.quotagb": "Quota in GB",
+"label.quarantined": "Quarantined",
 "label.edgecluster": "Edge Cluster",
 "label.encryption": "Encryption",
 "label.etcdnodes": "Number of etcd nodes",

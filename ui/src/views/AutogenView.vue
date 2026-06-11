@@ -1030,6 +1030,10 @@ export default {
         }
       }
 
+      if (this.apiName === 'listPublicIpAddresses' && this.$route.query.filter === 'quarantined') {
+        this.apiName = 'listQuarantinedIps'
+      }
+
       if (this.apiName === '' || this.apiName === undefined) {
         return
       }
@@ -1973,6 +1977,9 @@ export default {
       } else if (['account', 'publicip', 'systemvm', 'router'].includes(this.$route.name)) {
         if (filter !== 'all') {
           query.state = filter
+        }
+        if (filter === 'quarantined') {
+          delete query.state
         }
       } else if (this.$route.name === 'storagepool') {
         if (filter === 'all') {
