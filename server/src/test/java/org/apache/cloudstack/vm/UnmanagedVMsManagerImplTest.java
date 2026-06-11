@@ -1695,16 +1695,6 @@ public class UnmanagedVMsManagerImplTest {
 
         NetworkVO networkVO = Mockito.mock(NetworkVO.class);
         when(networkVO.getDataCenterId()).thenReturn(1L);
-        DataCenterVO dcVO = Mockito.mock(DataCenterVO.class);
-        when(dataCenterDao.findById(1L)).thenReturn(dcVO);
-
-        NicProfile profile = Mockito.mock(NicProfile.class);
-        Pair<NicProfile, Integer> pair = new Pair<>(profile, 0);
-        when(networkOrchestrationService.importNic(
-                Mockito.eq("aa:bb:cc:dd:ee:ff"),
-                Mockito.anyInt(), Mockito.eq(networkVO), Mockito.anyBoolean(),
-                Mockito.any(), Mockito.eq(ipAddresses), Mockito.eq(dcVO), Mockito.anyBoolean()))
-                .thenReturn(pair);
 
         UserVmVO vm = Mockito.mock(UserVmVO.class);
         NicProfile result = unmanagedVMsManager.importNic(nic, vm, networkVO, ipAddresses, 0, true, false);
@@ -1726,16 +1716,6 @@ public class UnmanagedVMsManagerImplTest {
 
         NetworkVO networkVO = Mockito.mock(NetworkVO.class);
         when(networkVO.getDataCenterId()).thenReturn(1L);
-        DataCenterVO dcVO = Mockito.mock(DataCenterVO.class);
-        when(dataCenterDao.findById(1L)).thenReturn(dcVO);
-
-        NicProfile profile = Mockito.mock(NicProfile.class);
-        Pair<NicProfile, Integer> pair = new Pair<>(profile, 0);
-        when(networkOrchestrationService.importNic(
-                Mockito.eq("11:22:33:44:55:66"),
-                Mockito.anyInt(), Mockito.eq(networkVO), Mockito.anyBoolean(),
-                Mockito.any(), Mockito.eq(ipAddresses), Mockito.eq(dcVO), Mockito.anyBoolean()))
-                .thenReturn(pair);
 
         UserVmVO vm = Mockito.mock(UserVmVO.class);
         NicProfile result = unmanagedVMsManager.importNic(nic, vm, networkVO, ipAddresses, 0, true, false);
@@ -1755,16 +1735,6 @@ public class UnmanagedVMsManagerImplTest {
 
         NetworkVO networkVO = Mockito.mock(NetworkVO.class);
         when(networkVO.getDataCenterId()).thenReturn(1L);
-        DataCenterVO dcVO = Mockito.mock(DataCenterVO.class);
-        when(dataCenterDao.findById(1L)).thenReturn(dcVO);
-
-        NicProfile profile = Mockito.mock(NicProfile.class);
-        Pair<NicProfile, Integer> pair = new Pair<>(profile, 0);
-        when(networkOrchestrationService.importNic(
-                Mockito.eq("11:22:33:44:55:66"),
-                Mockito.anyInt(), Mockito.eq(networkVO), Mockito.anyBoolean(),
-                Mockito.any(), Mockito.isNull(), Mockito.eq(dcVO), Mockito.anyBoolean()))
-                .thenReturn(pair);
 
         UserVmVO vm = Mockito.mock(UserVmVO.class);
         NicProfile result = unmanagedVMsManager.importNic(nic, vm, networkVO, null, 0, true, false);
@@ -1776,3 +1746,4 @@ public class UnmanagedVMsManagerImplTest {
                 Mockito.any(), Mockito.isNull(), Mockito.any(), Mockito.anyBoolean());
     }
 }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
