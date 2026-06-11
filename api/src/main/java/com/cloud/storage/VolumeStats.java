@@ -26,4 +26,6 @@ public interface VolumeStats {
      * @return bytes allocated
      */
     long getPhysicalSize();
+
+    Long getTotalPhysicalSize();
 }
