@@ -279,4 +279,3 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
                     throw new InvalidParameterValueException(String.format("Disk offering ID: %s for disk ID: %s is invalid", offeringUuid, disk));
                 }
                 dataDiskToDiskOfferingMap.put(disk, _entityMgr.findByUuid(DiskOffering.class, offeringUuid).getId());
-            
