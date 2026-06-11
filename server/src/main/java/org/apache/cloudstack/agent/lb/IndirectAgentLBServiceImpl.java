@@ -446,6 +446,7 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
                 break;
             }
 
+            // FIXME: it is fire and forget, Management Server will never know if task failed
             migrateAgentsExecutorService.submit(new MigrateAgentConnectionTask(fromMsId, hostId, dc.getId(), orderedHostIdList, avoidMsList, lbCheckInterval, lbAlgorithm, lbAlgorithmChanged));
         }
 
@@ -465,6 +466,7 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
             logger.debug(String.format("Force shutdown migrate non-routing agents service as it did not shutdown in the desired time due to: %s", e.getMessage()));
         }
 
+        // FIXME: This task can fail only if it is timed out, otherwise it is always succeeds no matter what is the migration result.
         return true;
     }
 
@@ -595,7 +597,9 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
                     msList = getManagementServerList(hostId, dcId, orderedHostIdList, lbAlgorithm);
                 }
 
+                // ask Host to reconnect to another Management Server
                 final MigrateAgentConnectionCommand cmd = new MigrateAgentConnectionCommand(msList, avoidMsList, lbAlgorithm, lbCheckInterval);
+                // timeout 1 minute (FIXME: should it be configurable?)
                 cmd.setWait(60);
                 final Answer answer = agentManager.easySend(hostId, cmd); //may not receive answer when the agent disconnects immediately and try reconnecting to other ms host
                 if (answer == null) {

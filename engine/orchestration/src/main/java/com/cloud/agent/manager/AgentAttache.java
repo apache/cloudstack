@@ -120,6 +120,7 @@ public abstract class AgentAttache {
     protected String _name = null;
     protected HypervisorType _hypervisorType;
     protected final ConcurrentHashMap<Long, Listener> _waitForList;
+    protected ConcurrentHashMap<Long, java.util.concurrent.ScheduledFuture<?>> _alarmFutures;
     protected final LinkedList<Request> _requests;
     protected Long _currentSequence;
     protected Status _status = Status.Connecting;
@@ -146,6 +147,7 @@ public abstract class AgentAttache {
         _name = name;
         _hypervisorType = hypervisorType;
         _waitForList = new ConcurrentHashMap<Long, Listener>();
+        _alarmFutures = new ConcurrentHashMap<>();
         _currentSequence = null;
         _maintenance = maintenance;
         _requests = new LinkedList<Request>();
@@ -193,7 +195,7 @@ public abstract class AgentAttache {
         if (_maintenance) {
             for (final Command cmd : cmds) {
                 if (Arrays.binarySearch(s_commandsAllowedInMaintenanceMode, cmd.getClass().toString()) < 0 && !cmd.isBypassHostMaintenance()) {
-                    throw new AgentUnavailableException("Unable to send " + cmd.getClass().toString() + " because agent " + _name + " is in maintenance mode", _id);
+                    throw new AgentUnavailableException("Unable to send " + cmd.getClass() + " because agent " + _name + " is in maintenance mode", _id);
                 }
             }
         }
@@ -201,7 +203,7 @@ public abstract class AgentAttache {
         if (_status == Status.Connecting) {
             for (final Command cmd : cmds) {
                 if (Arrays.binarySearch(s_commandsNotAllowedInConnectingMode, cmd.getClass().toString()) >= 0) {
-                    throw new AgentUnavailableException("Unable to send " + cmd.getClass().toString() + " because agent " + _name + " is in connecting mode", _id);
+                    throw new AgentUnavailableException("Unable to send " + cmd.getClass() + " because agent " + _name + " is in connecting mode", _id);
                 }
             }
         }
@@ -241,13 +243,19 @@ public abstract class AgentAttache {
     protected void registerListener(final long seq, final Listener listener) {
         logger.trace(LOG_SEQ_FORMATTED_STRING, seq, "Registering listener");
         if (listener.getTimeout() != -1) {
-            s_listenerExecutor.schedule(new Alarm(seq), listener.getTimeout(), TimeUnit.SECONDS);
+            java.util.concurrent.ScheduledFuture<?> alarmFuture =
+                    s_listenerExecutor.schedule(new Alarm(seq), listener.getTimeout(), TimeUnit.SECONDS);
+            _alarmFutures.put(seq, alarmFuture);
         }
         _waitForList.put(seq, listener);
     }
 
     protected Listener unregisterListener(final long sequence) {
         logger.trace(LOG_SEQ_FORMATTED_STRING, sequence, "Unregistering listener");
+        java.util.concurrent.ScheduledFuture<?> alarmFuture = _alarmFutures.remove(sequence);
+        if (alarmFuture != null) {
+            alarmFuture.cancel(false);
+        }
         return _waitForList.remove(sequence);
     }
 
@@ -338,8 +346,13 @@ public abstract class AgentAttache {
             while (it.hasNext()) {
                 final Map.Entry<Long, Listener> entry = it.next();
                 it.remove();
+                long seq = entry.getKey();
+                java.util.concurrent.ScheduledFuture<?> alarmFuture = _alarmFutures.remove(seq);
+                if (alarmFuture != null) {
+                    alarmFuture.cancel(false);
+                }
                 final Listener monitor = entry.getValue();
-                logger.debug(LOG_SEQ_FORMATTED_STRING, entry.getKey(), "Sending disconnect to " + monitor.getClass());
+                logger.debug(LOG_SEQ_FORMATTED_STRING, seq, "Sending disconnect to " + monitor.getClass());
                 monitor.processDisconnect(_id,  _uuid, _name, state);
             }
         }
@@ -396,13 +409,13 @@ public abstract class AgentAttache {
                     logger.trace(LOG_SEQ_FORMATTED_STRING, seq, " is current sequence");
                 }
             } catch (AgentUnavailableException e) {
-                logger.info(LOG_SEQ_FORMATTED_STRING, seq, "Unable to send due to " + e.getMessage());
+                logger.info(LOG_SEQ_FORMATTED_STRING, seq, "Unable to send due to " + e.getMessage(), e);
                 cancel(seq);
                 throw e;
             } catch (Exception e) {
                 logger.warn(LOG_SEQ_FORMATTED_STRING, seq, "Unable to send due to " + e.getMessage(), e);
                 cancel(seq);
-                throw new AgentUnavailableException("Problem due to other exception " + e.getMessage(), _id);
+                throw new AgentUnavailableException("Problem due to other exception " + e.getMessage(), _id, e);
             }
         }
     }
