@@ -31,7 +31,9 @@ public class RedfishWrapper {
         case ON:
             return RedfishClient.RedfishResetCmd.On;
         case OFF:
-            return RedfishClient.RedfishResetCmd.GracefulShutdown;
+            // OFF is a hard power-off (consistent with the ipmitool driver and required for HA
+            // fencing of an unresponsive host); SOFT performs the graceful ACPI shutdown.
+            return RedfishClient.RedfishResetCmd.ForceOff;
         case CYCLE:
             return RedfishClient.RedfishResetCmd.PowerCycle;
         case RESET:
@@ -39,7 +41,7 @@ public class RedfishWrapper {
         case SOFT:
             return RedfishClient.RedfishResetCmd.GracefulShutdown;
         case STATUS:
-            throw new IllegalStateException(String.format("%s is not a valid Redfish Reset command [%s]", operation));
+            throw new IllegalStateException(String.format("%s is not a valid Redfish Reset command", operation));
         default:
             throw new IllegalStateException(String.format("Redfish does not support operation [%s]", operation));
         }
