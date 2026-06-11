@@ -145,16 +145,21 @@ export default {
           return
         }
 
-        // VPC IPs with static nat keep existing VPN behavior and always show firewall
+        // VPC IPs with static nat keep existing VPN behavior; show firewall only when capability exists
         if (this.resource.isstaticnat) {
-          const tabs = this.addFirewallTab(this.$route.meta.tabs).map(tab => {
-            if (tab.name !== 'firewall') {
-              return tab
-            }
-            const staticNatFirewallTab = { ...tab }
-            delete staticNatFirewallTab.networkServiceFilter
-            return staticNatFirewallTab
-          })
+          let tabs = this.$route.meta.tabs
+          if (hasFirewallCapability) {
+            tabs = this.addFirewallTab(tabs).map(tab => {
+              if (tab.name !== 'firewall') {
+                return tab
+              }
+              const staticNatFirewallTab = { ...tab }
+              delete staticNatFirewallTab.networkServiceFilter
+              return staticNatFirewallTab
+            })
+          } else {
+            tabs = tabs.filter(tab => tab.name !== 'firewall')
+          }
           this.tabs = tabs
           return
         }
