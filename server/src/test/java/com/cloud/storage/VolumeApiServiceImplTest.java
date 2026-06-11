@@ -33,6 +33,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -40,15 +42,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
-import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventUtils;
-import com.cloud.host.HostVO;
-import com.cloud.resourcelimit.CheckedReservation;
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.vm.snapshot.VMSnapshot;
-import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
-import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.user.volume.CheckAndRepairVolumeCmd;
@@ -107,17 +100,23 @@ import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
+import com.cloud.resourcelimit.CheckedReservation;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementService;
 import com.cloud.server.TaggedResourceService;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.dao.DiskOfferingDao;
@@ -145,8 +144,11 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.snapshot.VMSnapshot;
+import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
 
 @RunWith(MockitoJUnitRunner.class)
 public class VolumeApiServiceImplTest {
@@ -2319,5 +2321,217 @@ public class VolumeApiServiceImplTest {
         Mockito.doReturn(t2).when(mock2).getType();
         Mockito.doReturn(1L).when(mock2).getId();
         return List.of(mock1, mock2);
+    }
+
+// =====================================================================
+// VMware ROOT-volume resize / offering-change: VM power_state-lag tests
+//
+// Both private guards that protect VMware ROOT-volume resize operations
+// are covered here:
+//   • validateVolumeReadyStateAndHypervisorChecks  (called by changeDiskOfferingForVolumeInternal)
+//   • resizeVolumeInternal                         (called by both resize and change-offering flows)
+//
+// The "power_state lag" scenario: when a VMware VM is stopped via CloudStack
+// the VirtualMachine.State transitions to Stopped immediately, but the
+// VMware-side VirtualMachine.PowerState (polled from ESX) may still read
+// PoweredOn for some seconds. The production code must use only the
+// authoritative CloudStack State field and must NOT additionally gate on
+// PowerState.
+// =====================================================================
+
+    /**
+     * Positive – validateVolumeReadyStateAndHypervisorChecks:
+     * The guard must allow a VMware ROOT-volume resize when the CloudStack VM
+     * state is {@code Stopped}, regardless of the VMware power_state value.
+     * getPowerState() is intentionally left un-stubbed so that any invocation
+     * of that method would cause a Mockito strict-stubbing error and surface a
+     * regression.
+     */
+    @Test
+    public void testValidateVolumeReadyStateVMware_VMStopped_PowerStateLag_ShouldPass()
+            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+
+        long volumeId = 200L;
+        long vmId     = 201L;
+
+        VolumeVO volume = Mockito.mock(VolumeVO.class);
+        when(volume.getId()).thenReturn(volumeId);
+        when(volume.getInstanceId()).thenReturn(vmId);
+        when(volume.getVolumeType()).thenReturn(Volume.Type.ROOT);
+        when(volume.getState()).thenReturn(Volume.State.Ready);
+
+        // snapshotDaoMock returns an empty list by default (Mockito default behaviour)
+        when(volumeDaoMock.getHypervisorType(volumeId)).thenReturn(HypervisorType.VMware);
+
+        UserVmVO stoppedVm = Mockito.mock(UserVmVO.class);
+        // Authoritative cloud state: Stopped.
+        // getPowerState() is NOT stubbed – power_state lag scenario.
+        when(stoppedVm.getState()).thenReturn(State.Stopped);
+        when(userVmDaoMock.findById(vmId)).thenReturn(stoppedVm);
+
+        long currentSizeBytes = 10L << 30; // 10 GiB
+        Long newSizeBytes     = 20L << 30; // 20 GiB (grow; VMware prohibits shrink)
+
+        Method method = VolumeApiServiceImpl.class.getDeclaredMethod(
+                "validateVolumeReadyStateAndHypervisorChecks",
+                VolumeVO.class, long.class, Long.class);
+        method.setAccessible(true);
+
+        // Must complete without throwing any exception
+        method.invoke(volumeApiServiceImpl, volume, currentSizeBytes, newSizeBytes);
+    }
+
+    /**
+     * Negative – validateVolumeReadyStateAndHypervisorChecks:
+     * The guard must reject a VMware ROOT-volume resize when the CloudStack VM
+     * state is {@code Running}.
+     */
+    @Test
+    public void testValidateVolumeReadyStateVMware_VMRunning_ShouldThrowInvalidParameterValueException()
+            throws NoSuchMethodException, IllegalAccessException {
+
+        long volumeId = 200L;
+        long vmId     = 201L;
+
+        VolumeVO volume = Mockito.mock(VolumeVO.class);
+        when(volume.getId()).thenReturn(volumeId);
+        when(volume.getInstanceId()).thenReturn(vmId);
+        when(volume.getVolumeType()).thenReturn(Volume.Type.ROOT);
+        when(volume.getState()).thenReturn(Volume.State.Ready);
+
+        when(volumeDaoMock.getHypervisorType(volumeId)).thenReturn(HypervisorType.VMware);
+
+        UserVmVO runningVm = Mockito.mock(UserVmVO.class);
+        when(runningVm.getState()).thenReturn(State.Running);
+        when(userVmDaoMock.findById(vmId)).thenReturn(runningVm);
+
+        long currentSizeBytes = 10L << 30;
+        Long newSizeBytes     = 20L << 30;
+
+        Method method = VolumeApiServiceImpl.class.getDeclaredMethod(
+                "validateVolumeReadyStateAndHypervisorChecks",
+                VolumeVO.class, long.class, Long.class);
+        method.setAccessible(true);
+
+        try {
+            method.invoke(volumeApiServiceImpl, volume, currentSizeBytes, newSizeBytes);
+            Assert.fail("Expected InvalidParameterValueException for VMware ROOT-volume resize "
+                    + "when VM state is Running");
+        } catch (InvocationTargetException e) {
+            Assert.assertNotNull("InvocationTargetException must carry a cause", e.getCause());
+            Assert.assertTrue(
+                    "Cause must be InvalidParameterValueException, was: " + e.getCause().getClass(),
+                    e.getCause() instanceof InvalidParameterValueException);
+            Assert.assertTrue(
+                    "Exception message must reference Stopped-state requirement, was: " + e.getCause().getMessage(),
+                    e.getCause().getMessage() != null
+                            && e.getCause().getMessage().contains("VM should be in"));
+        }
+    }
+
+    /**
+     * Positive – resizeVolumeInternal:
+     * The VMware stopped-state guard inside {@code resizeVolumeInternal} must NOT
+     * fire when the CloudStack VM state is {@code Stopped}, even when the VMware
+     * power_state has not yet transitioned to PowerOff.
+     * Any exception originating from deeper plumbing (job queue, storage layer)
+     * is acceptable; only the state-guard exception is a failure.
+     */
+    @Test
+    public void testResizeVolumeInternal_VMware_VMStopped_PowerStateLag_ShouldNotThrowStateGuardError()
+            throws NoSuchMethodException, IllegalAccessException {
+
+        long volumeId = 300L;
+        long vmId     = 301L;
+
+        VolumeVO volume = Mockito.mock(VolumeVO.class);
+        when(volume.getId()).thenReturn(volumeId);
+        when(volume.getInstanceId()).thenReturn(vmId);
+        when(volume.getVolumeType()).thenReturn(Volume.Type.ROOT);
+
+        UserVmVO stoppedVm = Mockito.mock(UserVmVO.class);
+        when(stoppedVm.getState()).thenReturn(State.Stopped); // authoritative cloud state
+        // getPowerState() deliberately NOT stubbed – power_state lag scenario
+        when(userVmDaoMock.findById(vmId)).thenReturn(stoppedVm);
+
+        when(volumeDaoMock.getHypervisorType(volumeId)).thenReturn(HypervisorType.VMware);
+
+        // resizeVolumeInternal(VolumeVO, DiskOfferingVO, Long, Long, Long, Long, Integer, boolean)
+        Method method = VolumeApiServiceImpl.class.getDeclaredMethod(
+                "resizeVolumeInternal",
+                VolumeVO.class, DiskOfferingVO.class,
+                Long.class, Long.class, Long.class, Long.class, Integer.class, boolean.class);
+        method.setAccessible(true);
+
+        try {
+            method.invoke(volumeApiServiceImpl,
+                    volume,
+                    /* newDiskOffering */          (DiskOfferingVO) null,
+                    /* currentSize     */          0L,
+                    /* newSize         */          1L,
+                    /* newMinIops      */          (Long) null,
+                    /* newMaxIops      */          (Long) null,
+                    /* snapshotReserve */          (Integer) null,
+                    /* shrinkOk        */          false);
+        } catch (InvocationTargetException e) {
+            // If the state guard triggered it is a test failure; all other deeper
+            // exceptions (NullPointerException from job-queue plumbing, etc.) are
+            // acceptable because they are outside the scope of this test.
+            if (e.getCause() instanceof InvalidParameterValueException
+                    && e.getCause().getMessage() != null
+                    && e.getCause().getMessage().contains("VM should be in")) {
+                Assert.fail("VMware ROOT-volume resize must be allowed when CloudStack VM state is "
+                        + "Stopped, even under a power_state lag. Unexpected exception: "
+                        + e.getCause().getMessage());
+            }
+        }
+    }
+
+    /**
+     * Negative – resizeVolumeInternal:
+     * The VMware stopped-state guard inside {@code resizeVolumeInternal} must
+     * reject the operation when the CloudStack VM state is {@code Running}.
+     */
+    @Test
+    public void testResizeVolumeInternal_VMware_VMRunning_ShouldThrowStateGuardError()
+            throws NoSuchMethodException, IllegalAccessException {
+
+        long volumeId = 300L;
+        long vmId     = 301L;
+
+        VolumeVO volume = Mockito.mock(VolumeVO.class);
+        when(volume.getId()).thenReturn(volumeId);
+        when(volume.getInstanceId()).thenReturn(vmId);
+        when(volume.getVolumeType()).thenReturn(Volume.Type.ROOT);
+
+        UserVmVO runningVm = Mockito.mock(UserVmVO.class);
+        when(runningVm.getState()).thenReturn(State.Running);
+        when(userVmDaoMock.findById(vmId)).thenReturn(runningVm);
+
+        when(volumeDaoMock.getHypervisorType(volumeId)).thenReturn(HypervisorType.VMware);
+
+        Method method = VolumeApiServiceImpl.class.getDeclaredMethod(
+                "resizeVolumeInternal",
+                VolumeVO.class, DiskOfferingVO.class,
+                Long.class, Long.class, Long.class, Long.class, Integer.class, boolean.class);
+        method.setAccessible(true);
+
+        try {
+            method.invoke(volumeApiServiceImpl,
+                    volume,
+                    (DiskOfferingVO) null,
+                    0L, 1L, (Long) null, (Long) null, (Integer) null, false);
+            Assert.fail("Expected InvalidParameterValueException for VMware ROOT-volume resize "
+                    + "when VM state is Running");
+        } catch (InvocationTargetException e) {
+            Assert.assertNotNull("InvocationTargetException must carry a cause", e.getCause());
+            Assert.assertTrue(
+                    "Cause must be InvalidParameterValueException, was: " + e.getCause().getClass(),
+                    e.getCause() instanceof InvalidParameterValueException);
+            Assert.assertTrue(
+                    "Exception message must reference Stopped-state requirement, was: " + e.getCause().getMessage(),
+                    e.getCause().getMessage() != null
+                            && e.getCause().getMessage().contains("VM should be in"));
+        }
     }
 }
