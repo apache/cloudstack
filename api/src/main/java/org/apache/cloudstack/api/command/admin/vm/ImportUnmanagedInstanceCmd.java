@@ -279,3 +279,61 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
                     throw new InvalidParameterValueException(String.format("Disk offering ID: %s for disk ID: %s is invalid", offeringUuid, disk));
                 }
                 dataDiskToDiskOfferingMap.put(disk, _entityMgr.findByUuid(DiskOffering.class, offeringUuid).getId());
+            }
+        }
+        return dataDiskToDiskOfferingMap;
+    }
+
+    public Map<String, String> getDetails() {
+        if (MapUtils.isEmpty(details)) {
+            return new HashMap<String, String>();
+        }
+
+        Collection<String> paramsCollection = details.values();
+        Map<String, String> params = (Map<String, String>) (paramsCollection.toArray())[0];
+        return params;
+    }
+
+    public Boolean getMigrateAllowed() {
+        return migrateAllowed == Boolean.TRUE;
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_VM_IMPORT;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return "Importing unmanaged Instance: " + name;
+    }
+
+    public boolean isForced() {
+        return BooleanUtils.isTrue(forced);
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
+
+    @Override
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
+        UserVmResponse response = vmImportService.importUnmanagedInstance(this);
+        response.setResponseName(getCommandName());
+        setResponseObject(response);
+    }
+
+    @Override
+    public long getEntityOwnerId() {
+        Long accountId = _accountService.finalizeAccountId(accountName, domainId, projectId, true);
+        if (accountId == null) {
+            Account account = CallContext.current().getCallingAccount();
+            if (account != null) {
+                accountId = account.getId();
+            } else {
+                accountId = Account.ACCOUNT_ID_SYSTEM;
+            }
+        }
+        return accountId;
+    }
+}
