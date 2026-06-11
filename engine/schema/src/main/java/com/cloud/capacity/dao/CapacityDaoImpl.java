@@ -1006,7 +1006,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
         }
 
         if (isVr && allowRoutersOnDedicatedResources) {
-            sql.append(ORDER_CLUSTERS_BY_AGGREGATE_CAPACITY_INCLUDE_DEDICATED_JOIN_1.replace("ownerId", ownerId.toString()));
+            sql.append(ORDER_CLUSTERS_BY_AGGREGATE_CAPACITY_INCLUDE_DEDICATED_JOIN_CLAUSE.replace("ownerId", ownerId.toString()));
         } else {
             sql.append(ORDER_CLUSTERS_BY_AGGREGATE_CAPACITY_JOIN_1);
         }
