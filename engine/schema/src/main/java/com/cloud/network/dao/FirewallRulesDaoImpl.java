@@ -18,6 +18,7 @@ package com.cloud.network.dao;
 
 import java.util.List;
 
+import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.springframework.stereotype.Component;
@@ -47,8 +48,8 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
     protected final SearchBuilder<FirewallRuleVO> AllFieldsSearch;
     protected final SearchBuilder<FirewallRuleVO> NotRevokedSearch;
     protected final SearchBuilder<FirewallRuleVO> ReleaseSearch;
-    protected SearchBuilder<FirewallRuleVO> VmSearch;
-    protected SearchBuilder<FirewallRuleVO> FirewallByPortsAndNetwork;
+    protected final SearchBuilder<FirewallRuleVO> VmSearch = createSearchBuilder();;
+    protected final SearchBuilder<FirewallRuleVO> FirewallByPortsAndNetwork;
     protected final SearchBuilder<FirewallRuleVO> SystemRuleSearch;
     protected final GenericSearchBuilder<FirewallRuleVO, Long> RulesByIpCount;
     protected final SearchBuilder<FirewallRuleVO> RoutingFirewallRulesSearch;
@@ -119,6 +120,17 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         RoutingFirewallRulesSearch.and("trafficType", RoutingFirewallRulesSearch.entity().getTrafficType(), Op.EQ);
         RoutingFirewallRulesSearch.and("ipId", RoutingFirewallRulesSearch.entity().getSourceIpAddressId(), Op.NULL);
         RoutingFirewallRulesSearch.done();
+    }
+
+    @PostConstruct
+    public void init() {
+        SearchBuilder<IPAddressVO> IpSearch = _ipDao.createSearchBuilder();
+        IpSearch.and("associatedWithVmId", IpSearch.entity().getAssociatedWithVmId(), SearchCriteria.Op.EQ);
+        IpSearch.and("oneToOneNat", IpSearch.entity().isOneToOneNat(), SearchCriteria.Op.NNULL);
+
+        VmSearch.and("purpose", VmSearch.entity().getPurpose(), Op.EQ);
+        VmSearch.join("ipSearch", IpSearch, VmSearch.entity().getSourceIpAddressId(), IpSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        VmSearch.done();
     }
 
     @Override
@@ -216,17 +228,6 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
 
     @Override
     public List<FirewallRuleVO> listStaticNatByVmId(long vmId) {
-        if (VmSearch == null) {
-            SearchBuilder<IPAddressVO> IpSearch = _ipDao.createSearchBuilder();
-            IpSearch.and("associatedWithVmId", IpSearch.entity().getAssociatedWithVmId(), SearchCriteria.Op.EQ);
-            IpSearch.and("oneToOneNat", IpSearch.entity().isOneToOneNat(), SearchCriteria.Op.NNULL);
-
-            VmSearch = createSearchBuilder();
-            VmSearch.and("purpose", VmSearch.entity().getPurpose(), Op.EQ);
-            VmSearch.join("ipSearch", IpSearch, VmSearch.entity().getSourceIpAddressId(), IpSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-            VmSearch.done();
-        }
-
         SearchCriteria<FirewallRuleVO> sc = VmSearch.create();
         sc.setParameters("purpose", Purpose.StaticNat);
         sc.setJoinParameters("ipSearch", "associatedWithVmId", vmId);
