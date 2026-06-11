@@ -516,13 +516,11 @@ class UnifiedSANStrategyTest {
             when(sanFeignClient.getLunMapResponse(eq(authHeader), anyMap())).thenReturn(response);
 
             // Execute
-            Map<String, String> result = unifiedSANStrategy.enableLogicalAccess(values);
+            String result = unifiedSANStrategy.enableLogicalAccess(values);
 
             // Verify
             assertNotNull(result);
-            assertTrue(result.containsKey(OntapStorageConstants.LOGICAL_UNIT_NUMBER));
-            assertEquals("0", result.get(OntapStorageConstants.LOGICAL_UNIT_NUMBER));
-
+            assertEquals("0", result);
             verify(sanFeignClient).createLunMap(eq(authHeader), eq(true), any(LunMap.class));
         }
     }
@@ -550,11 +548,11 @@ class UnifiedSANStrategyTest {
             when(sanFeignClient.getLunMapResponse(eq(authHeader), anyMap())).thenReturn(response);
 
             // Execute
-            Map<String, String> result = unifiedSANStrategy.enableLogicalAccess(values);
+            String result = unifiedSANStrategy.enableLogicalAccess(values);
 
             // Verify
             assertNotNull(result);
-            assertEquals("5", result.get(OntapStorageConstants.LOGICAL_UNIT_NUMBER));
+            assertEquals("5", result);
         }
     }
 
@@ -621,11 +619,11 @@ class UnifiedSANStrategyTest {
             when(sanFeignClient.getLunMapResponse(eq(authHeader), anyMap())).thenReturn(response);
 
             // Execute
-            Map<String, String> result = unifiedSANStrategy.getLogicalAccess(values);
+            String result = unifiedSANStrategy.getLogicalAccess(values);
 
             // Verify
             assertNotNull(result);
-            assertEquals("3", result.get(OntapStorageConstants.LOGICAL_UNIT_NUMBER));
+            assertEquals("3", result);
         }
     }
 
@@ -645,7 +643,7 @@ class UnifiedSANStrategyTest {
                     .thenThrow(new RuntimeException("Not found"));
 
             // Execute
-            Map<String, String> result = unifiedSANStrategy.getLogicalAccess(values);
+            String result = unifiedSANStrategy.getLogicalAccess(values);
 
             // Verify
             assertNull(result);
@@ -1671,7 +1669,7 @@ class UnifiedSANStrategyTest {
 
             when(sanFeignClient.getLunMapResponse(eq(authHeader), anyMap())).thenReturn(emptyResponse);
 
-            Map<String, String> result = unifiedSANStrategy.getLogicalAccess(values);
+            String result = unifiedSANStrategy.getLogicalAccess(values);
 
             assertNull(result);
         }
@@ -1691,7 +1689,7 @@ class UnifiedSANStrategyTest {
             when(sanFeignClient.getLunMapResponse(eq(authHeader), anyMap()))
                     .thenThrow(new RuntimeException("Connection failed"));
 
-            Map<String, String> result = unifiedSANStrategy.getLogicalAccess(values);
+            String result = unifiedSANStrategy.getLogicalAccess(values);
 
             assertNull(result);
         }

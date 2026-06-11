@@ -168,7 +168,7 @@ public class StorageStrategyTest {
         }
 
         @Override
-        public Map<String, String> enableLogicalAccess(Map<String, String> values) {
+        public String enableLogicalAccess(Map<String, String> values) {
             return null;
         }
 
@@ -177,7 +177,7 @@ public class StorageStrategyTest {
         }
 
         @Override
-        public Map<String, String> getLogicalAccess(Map<String, String> values) {
+        public String getLogicalAccess(Map<String, String> values) {
             return null;
         }
     }
