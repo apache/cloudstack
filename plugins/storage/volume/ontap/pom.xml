@@ -39,6 +39,7 @@
         <junit-jupiter.version>5.8.1</junit-jupiter.version>
         <mockito.version>3.12.4</mockito.version>
         <mockito-junit-jupiter.version>5.2.0</mockito-junit-jupiter.version>
+        <byte-buddy-agent.version>1.11.13</byte-buddy-agent.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -122,10 +123,22 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>net.bytebuddy</groupId>
+            <artifactId>byte-buddy-agent</artifactId>
+            <version>${byte-buddy-agent.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
             <version>${assertj.version}</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-engine-storage-snapshot</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
     <repositories>
@@ -151,6 +164,7 @@
                 <version>${maven-surefire-plugin.version}</version>
                 <configuration>
                     <skipTests>false</skipTests>
+                    <argLine>-javaagent:${settings.localRepository}/net/bytebuddy/byte-buddy-agent/${byte-buddy-agent.version}/byte-buddy-agent-${byte-buddy-agent.version}.jar</argLine>
                     <includes>
                         <include>**/*Test.java</include>
                     </includes>
