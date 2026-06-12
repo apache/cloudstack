@@ -1789,10 +1789,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 createVlan = true;
             }
         }
-        // Do not create vlan if isolation method is NetworkExtension
-        if (createVlan && _networkMgr.isIsolationMethodNetworkExtension(ntwkOff.getId())) {
-            createVlan = false;
-        }
 
         // Can add vlan range only to the network which allows it
         if (createVlan && !ntwkOff.isSpecifyIpRanges()) {
