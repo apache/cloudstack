@@ -37,6 +37,20 @@ logFile="/var/log/cloudstack/agent/agent.log"
 
 EXIT_CLEANUP_FAILED=20
 
+# Backup job timeout in seconds (default: 6 hours). Guards the libvirt
+# domjobinfo wait loop so a stuck QEMU backup eventually fails the script
+# instead of holding the agent's command slot indefinitely.
+BACKUP_TIMEOUT=${BACKUP_TIMEOUT:-21600}
+
+# Minimum free space required on the mounted backup target, in bytes
+# (default: 1 GiB). Checked after mount, before any qemu-img convert, so
+# we fail fast rather than mid-write when the NAS is near-full.
+MIN_FREE_SPACE=${MIN_FREE_SPACE:-1073741824}
+
+# Guards cleanup() against double-execution when both an explicit call
+# and the EXIT trap fire (e.g. error path calls cleanup; exit 1 → trap).
+CLEANUP_DONE=0
+
 log() {
   [[ "$verb" -eq 1 ]] && builtin echo "$@"
   if [[ "$1" == "-ne"  || "$1" == "-e" || "$1" == "-n" ]]; then
@@ -111,6 +125,7 @@ get_linstor_uuid_from_path() {
 
 backup_running_vm() {
   mount_operation
+  check_free_space
   mkdir -p "$dest" || { echo "Failed to create backup directory $dest"; exit 1; }
 
   name="root"
@@ -160,6 +175,9 @@ backup_running_vm() {
   virsh -c qemu:///system domiflist $VM > $dest/domiflist.xml 2>/dev/null
   virsh -c qemu:///system domblklist $VM > $dest/domblklist.xml 2>/dev/null
 
+  # Bound the wait so a stuck QEMU backup eventually aborts instead of holding
+  # the agent's command slot until the orchestrator-level timeout fires.
+  local elapsed=0
   while true; do
     status=$(virsh -c qemu:///system domjobinfo $VM --completed --keep-completed | awk '/Job type:/ {print $3}')
     case "$status" in
@@ -169,7 +187,13 @@ backup_running_vm() {
         echo "Virsh backup job failed"
         cleanup ;;
     esac
+    if [[ $elapsed -ge $BACKUP_TIMEOUT ]]; then
+      echo "Backup timed out after ${BACKUP_TIMEOUT}s for VM $VM"
+      virsh -c qemu:///system domjobabort $VM > /dev/null 2>&1 || true
+      exit 1
+    fi
     sleep 5
+    elapsed=$((elapsed + 5))
   done
 
   # Use qemu-img convert to sparsify linstor backups which get bloated due to virsh backup-begin.
@@ -204,6 +228,7 @@ backup_running_vm() {
 
 backup_stopped_vm() {
   mount_operation
+  check_free_space
   mkdir -p "$dest" || { echo "Failed to create backup directory $dest"; exit 1; }
 
   IFS=","
@@ -262,18 +287,61 @@ mount_operation() {
   fi
 }
 
+check_free_space() {
+  local free_bytes
+  free_bytes=$(df -P "$mount_point" 2>/dev/null | awk 'NR==2 {print $4}')
+  if [[ -n "$free_bytes" ]]; then
+    # df -P reports 1K blocks; convert to bytes.
+    free_bytes=$((free_bytes * 1024))
+    if [[ $free_bytes -lt $MIN_FREE_SPACE ]]; then
+      echo "Insufficient free space on backup target: $((free_bytes / 1048576)) MB available, $((MIN_FREE_SPACE / 1048576)) MB required"
+      exit 1
+    fi
+    log -ne "Backup target has $((free_bytes / 1073741824)) GB free space"
+  fi
+}
+
 cleanup() {
+  # Idempotent: skip if a prior explicit call already ran. Without this guard,
+  # the EXIT trap would re-run cleanup and fail on the already-unmounted point.
+  [[ $CLEANUP_DONE -eq 1 ]] && return 0
+  CLEANUP_DONE=1
+
   local status=0
 
-  rm -rf "$dest" || { echo "Failed to delete $dest"; status=1; }
-  umount "$mount_point" || { echo "Failed to unmount $mount_point"; status=1; }
-  rmdir "$mount_point" || { echo "Failed to remove mount point $mount_point"; status=1; }
+  # If the VM was paused mid-backup (e.g. backup-begin succeeded but the script
+  # is exiting on error or signal), resume it. Without this a failed backup
+  # leaves the guest stuck in 'paused' state until an operator intervenes.
+  if [[ -n "$VM" ]]; then
+    local vm_state
+    vm_state=$(virsh -c qemu:///system domstate "$VM" 2>/dev/null || true)
+    if [[ "$vm_state" == "paused" ]]; then
+      log -ne "Resuming paused VM $VM during backup cleanup"
+      if ! virsh -c qemu:///system resume "$VM" > /dev/null 2>&1; then
+        echo "Failed to resume VM $VM"
+        status=1
+      fi
+    fi
+  fi
+
+  if [[ -n "$dest" && -d "$dest" ]]; then
+    rm -rf "$dest" || { echo "Failed to delete $dest"; status=1; }
+  fi
+  if [[ -n "$mount_point" && -d "$mount_point" ]]; then
+    umount "$mount_point" 2>/dev/null || { echo "Failed to unmount $mount_point"; status=1; }
+    rmdir "$mount_point" 2>/dev/null || true
+  fi
 
   if [[ $status -ne 0 ]]; then
     echo "Backup cleanup failed"
     exit $EXIT_CLEANUP_FAILED
   fi
 }
+
+# Trap ensures cleanup runs on any exit path — including SIGTERM/SIGINT and
+# unexpected errors caught by set -e — not just the explicit failure branches.
+# Prevents orphan NFS mounts from accumulating after non-graceful exits.
+trap cleanup EXIT
 
 function usage {
   echo ""
