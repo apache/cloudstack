@@ -65,6 +65,7 @@ public class GuiThemeServiceImplTest {
 
     private static final String ACCOUNT_IDS = "4,5,6";
 
+    private static final String LOGIN_BASE_DOMAIN = "acmedomain";
     private static final String BLANK_STRING = "";
 
     @Test
@@ -170,6 +171,26 @@ public class GuiThemeServiceImplTest {
     public void validateObjectUuidsTestProvidedUuidsAreNotValidShouldThrowCloudRuntimeException() {
         Mockito.when(entityManagerMock.findByUuid(Mockito.any(Class.class), Mockito.anyString())).thenReturn(null);
         guiThemeServiceSpy.validateObjectUuids(ACCOUNT_IDS, Account.class);
+    }
+
+    @Test
+    public void validateLoginBaseDomainTestBaseDomainIsNullCommonNamesIsNullShouldNotThrowCloudRuntimeException() {
+        guiThemeServiceSpy.validateLoginBaseDomain(null, null);
+    }
+
+    @Test
+    public void validateLoginBaseDomainTestBaseDomainIsNullCommonNamesIsNotNullShouldNotThrowCloudRuntimeException() {
+        guiThemeServiceSpy.validateLoginBaseDomain(null, COMMON_NAME);
+    }
+
+    @Test
+    public void validateLoginBaseDomainTestBaseDomainIsNotNullCommonNamesIsNotNullShouldNotThrowCloudRuntimeException() {
+        guiThemeServiceSpy.validateLoginBaseDomain(LOGIN_BASE_DOMAIN, COMMON_NAME);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void validateLoginBaseDomainTestBaseDomainIsNotNullCommonNamesIsNullShouldNotThrowCloudRuntimeException() {
+        guiThemeServiceSpy.validateLoginBaseDomain(LOGIN_BASE_DOMAIN, null);
     }
 
     @Test
