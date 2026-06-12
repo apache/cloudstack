@@ -31,7 +31,7 @@ import logging
 import logging.handlers
 
 from xen.util.xmlrpcclient import ServerProxy
-from xmlrpclib import Error
+from xmlrpc.client import Error
 from xen.xend import XendClient
 from agent.api.base import Agent
 from agent.lib.settings import get_api_version
@@ -134,7 +134,7 @@ def domrSftp(host, localfile, remotefile, timeout=10, username=domrRoot, port=do
         # rf.close()
         sftp.close()
         ssh.close()
-    except Exception, e:
+    except Exception as e:
         raise e
     return True
 
@@ -145,7 +145,7 @@ def domrScp(host, localfile, remotefile, timeout=10, username=domrRoot, port=dom
         rc = subprocess.call(cmd, shell=False)
         if rc == 0:
             return True
-    except Exception, e:
+    except Exception as e:
         raise e
     return False
 
@@ -236,7 +236,7 @@ def _replaceInFile(file, orig, set, full=False):
                 if re.search(orig, line):
                     line = line.replace(orig, set)
                     replaced = True
-            print line
+            print(line)
     return replaced
 
 def _ovsIni(setting, change):
@@ -278,7 +278,7 @@ def ovsControlInterface(dev, cidr):
             if re.search("%s" % (cidr), line) and not re.search("%s" % (dev), line):
                 command = ['ip', 'route', 'del', cidr]
                 subprocess.call(command, shell=False)
-                print "removed: %s" % (line)
+                print("removed: %s" % (line))
             elif re.search("%s" % (cidr), line) and re.search("%s" % (dev), line):
                 controlRoute = True
 
@@ -354,7 +354,7 @@ def dom0CheckStorageHealth(path, script, guid, timeout):
     # return True
 
 # create a dir if we need it
-def ovsMkdirs(dir, mode=0700):
+def ovsMkdirs(dir, mode=0o700):
     if not os.path.exists(dir):
         return os.makedirs(dir, mode)
     return True
@@ -369,15 +369,15 @@ def ovsUploadFile(path, filename, content):
     file = "%s/%s" % (path, filename)
     try:
         ovsMkdirs(os.path.expanduser(path))
-    except Error, v:
-        print "path was already there %s" % path
+    except Error as v:
+        print("path was already there %s" % path)
 
     try:
         text_file = open("%s" % file, "w")
         text_file.write("%s" % content)
         text_file.close()
-    except Error, v:
-        print "something went wrong creating %s: %s" % (file, v)
+    except Error as v:
+        print("something went wrong creating %s: %s" % (file, v))
         return False
     return True
 
@@ -390,8 +390,8 @@ def ovsDomrUploadFile(domr, path, file, content):
         # domrSftp(domr, temp.name, remotefile)
         domrScp(domr, temp.name, remotefile)
         temp.close
-    except Exception, e:
-        print "problem uploading file %s/%s to %s, %s" % (path, file, domr, e)
+    except Exception as e:
+        print("problem uploading file %s/%s to %s, %s" % (path, file, domr, e))
         raise e
     return True
 
@@ -417,13 +417,13 @@ def getVncPort(domain):
         dom = server.xend.domain(domain, 1)
         devices = [child for child in sxp.children(dom)
             if len(child) > 0 and child[0] == "device"]
-        vfbs_sxp = map(lambda x: x[1], [device for device in devices
-            if device[1][0] == "vfb"])[0]
+        vfbs_sxp = [x[1] for x in [device for device in devices
+            if device[1][0] == "vfb"]][0]
         loc = [child for child in vfbs_sxp
             if child[0] == "location"][0][1]
         listner, port = loc.split(":")
     else:
-        print "no valid domain: %s" % domain
+        print("no valid domain: %s" % domain)
     return port
 
 def get_child_by_name(exp, childname, default=None):
@@ -450,10 +450,10 @@ def ovsDomUStats(domain):
     devids = [dev[0] for dev in devs]
     for dev in devids:
         sys_path = "/sys/devices/%s-%s-%s/statistics" % ("vbd", domid, dev)
-        _rd_bytes += long(open("%s/rd_sect" % sys_path).readline().strip())
-        _wr_bytes += long(open("%s/wr_sect" % sys_path).readline().strip())
-        _rd_ops += long(open("%s/rd_req" % sys_path).readline().strip())
-        _wr_ops += long(open("%s/wr_req" % sys_path).readline().strip())
+        _rd_bytes += int(open("%s/rd_sect" % sys_path).readline().strip())
+        _wr_bytes += int(open("%s/wr_sect" % sys_path).readline().strip())
+        _rd_ops += int(open("%s/rd_req" % sys_path).readline().strip())
+        _wr_ops += int(open("%s/wr_req" % sys_path).readline().strip())
 
     # vifs
     devs = server.xend.domain.getDeviceSxprs(domain, 'vif')
@@ -461,8 +461,8 @@ def ovsDomUStats(domain):
     for dev in devids:
         vif = "vif%s.%s" % (domid, dev)
         sys_path = "/sys/devices/%s-%s-%s/net/%s/statistics" % ("vif", domid, dev, vif)
-        _tx_bytes += long(open("%s/tx_bytes" % sys_path).readline().strip())
-        _rx_bytes += long(open("%s/rx_bytes" % sys_path).readline().strip())
+        _tx_bytes += int(open("%s/tx_bytes" % sys_path).readline().strip())
+        _rx_bytes += int(open("%s/rx_bytes" % sys_path).readline().strip())
 
     epoch = time.time()
     stats['rd_bytes'] = "%s" % (_rd_bytes * 512)
@@ -513,7 +513,7 @@ if __name__ == '__main__':
         opts, args = getopt.getopt(sys.argv[1:], "eosp::",
             [ 'port=', 'ssl=', 'exec=', 'opts='])
     except getopt.GetoptError:
-        print "Available Options: --port=<number>, --ssl=<true|false>, --exec=<method>, --opts=<arg1,arg2..>"
+        print("Available Options: --port=<number>, --ssl=<true|false>, --exec=<method>, --opts=<arg1,arg2..>")
         sys.exit()
 
     for o, a in opts:
@@ -528,12 +528,12 @@ if __name__ == '__main__':
 
     if exec_sub != "":
         func = "%s(%s)" % (exec_sub, exec_opts)
-        print "exec: %s" % (func)
+        print("exec: %s" % (func))
         if exec_opts:
             opts = exec_opts.split(',')
         else:
             opts = ""
-        print locals()[exec_sub](*opts)
+        print(locals()[exec_sub](*opts))
         sys.exit()
 
     # check if we're in the modules already
@@ -553,24 +553,24 @@ if __name__ == '__main__':
                 if re.search("MODULES", line):
                     n = cs.getName()
                     line = "%s\n\t%s.%s," % (line, n.lower(), n)
-                print line
-            print "Api inserted, %s in %s" % (cs.getName(), api)
+                print(line)
+            print("Api inserted, %s in %s" % (cs.getName(), api))
         else:
-            print "Api missing, %s" % (api)
+            print("Api missing, %s" % (api))
     else:
-        print "Api present, %s in %s" % (cs.getName(), api)
+        print("Api present, %s in %s" % (cs.getName(), api))
 
     # either way check our version and install if checksum differs
     modfile = "%s/%s.py" % (modpath, cs.getName().lower())
     me = os.path.abspath(__file__)
     if os.path.isfile(modfile):
         if hashlib.md5(open(me).read()).hexdigest() != hashlib.md5(open(modfile).read()).hexdigest():
-            print "Module copy, %s" % (modfile)
+            print("Module copy, %s" % (modfile))
             copyfile(me, modfile)
         else:
-            print "Module correct, %s" % (modfile)
+            print("Module correct, %s" % (modfile))
     else:
-        print "Module copy, %s" % (modfile)
+        print("Module copy, %s" % (modfile))
         copyfile(me, modfile)
 
     # setup ssl and port

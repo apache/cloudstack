@@ -26,5 +26,5 @@ def randomMAC():
 		random.randint(0x00, 0x7f),
 		random.randint(0x00, 0xff),
 		random.randint(0x00, 0xff) ]
-	return ':'.join(map(lambda x: "%02x" % x, mac))
-print randomMAC()
+	return ':'.join(["%02x" % x for x in mac])
+print(randomMAC())
