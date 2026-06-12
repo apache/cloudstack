@@ -129,6 +129,14 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     }
 
     @Override
+    public List<VolumeVO> findByInstanceAndNotDestroyed(long id) {
+        SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
+        sc.setParameters("instanceId", id);
+        sc.setParameters("notDestroyed", Volume.State.Destroy, Volume.State.Expunged);
+        return listBy(sc);
+    }
+
+    @Override
     public List<VolumeVO> findByInstanceAndDeviceId(long instanceId, long deviceId) {
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("instanceId", instanceId);
