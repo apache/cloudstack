@@ -545,7 +545,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         VolumeInfo volume = (VolumeInfo)srcData;
         StoragePool srcPool = (StoragePool)dataStoreMgr.getDataStore(srcData.getDataStore().getId(), DataStoreRole.Primary);
         StoragePool destPool = (StoragePool)dataStoreMgr.getDataStore(destData.getDataStore().getId(), DataStoreRole.Primary);
-        MigrateVolumeCommand command = new MigrateVolumeCommand(volume.getId(), volume.getPath(), destPool, volume.getAttachedVmName(), volume.getVolumeType(), waitInterval, volume.getChainInfo());
+        MigrateVolumeCommand command = new MigrateVolumeCommand(srcData.getTO(), destData.getTO(), null, null, waitInterval);
         if (srcPool.getParent() != 0) {
             command.setContextParam(DiskTO.PROTOCOL_TYPE, Storage.StoragePoolType.DatastoreCluster.toString());
         }
