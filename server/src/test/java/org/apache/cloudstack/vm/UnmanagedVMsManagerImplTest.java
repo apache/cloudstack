@@ -107,7 +107,6 @@ import com.cloud.deploy.DeploymentPlanningManager;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.AgentUnavailableException;
-import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceAllocationException;
@@ -385,6 +384,7 @@ public class UnmanagedVMsManagerImplTest {
         networks.add(networkVO);
         when(networkDao.listByZone(anyLong())).thenReturn(networks);
         doNothing().when(networkModel).checkNetworkPermissions(any(Account.class), any(Network.class));
+        when(networkModel.getNextAvailableMacAddressInNetwork(anyLong())).thenReturn("02:00:00:00:00:01");
         NicProfile profile = Mockito.mock(NicProfile.class);
         Integer deviceId = 100;
         Pair<NicProfile, Integer> pair = new Pair<>(profile, deviceId);
@@ -653,7 +653,7 @@ public class UnmanagedVMsManagerImplTest {
         unmanagedVMsManager.listVmsForImport(cmd);
     }
     @Test
-    public void testImportFromExternalTest() throws InsufficientServerCapacityException {
+    public void testImportFromExternalTest() throws Exception {
         String vmname = "TestInstance";
         ImportVmCmd cmd = Mockito.mock(ImportVmCmd.class);
         when(cmd.getHypervisor()).thenReturn(Hypervisor.HypervisorType.KVM.toString());
@@ -662,6 +662,7 @@ public class UnmanagedVMsManagerImplTest {
         when(cmd.getPassword()).thenReturn("pass");
         when(cmd.getImportSource()).thenReturn("external");
         when(cmd.getDomainId()).thenReturn(null);
+        when(cmd.getGuestOsId()).thenReturn(99L);
         HostVO host = Mockito.mock(HostVO.class);
         DeployDestination mockDest = Mockito.mock(DeployDestination.class);
         when(deploymentPlanningManager.planDeployment(any(), any(), any(), any())).thenReturn(mockDest);
@@ -682,6 +683,10 @@ public class UnmanagedVMsManagerImplTest {
              MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
             unmanagedVMsManager.importVm(cmd);
         }
+        verify(userVmManager).importVM(nullable(DataCenter.class), nullable(Host.class), nullable(VirtualMachineTemplate.class), nullable(String.class), nullable(String.class),
+                nullable(Account.class), nullable(String.class), nullable(Account.class), nullable(Boolean.class), nullable(String.class),
+                nullable(Long.class), nullable(Long.class), nullable(ServiceOffering.class), nullable(String.class), Mockito.eq(99L),
+                nullable(String.class), nullable(Hypervisor.HypervisorType.class), nullable(Map.class), nullable(VirtualMachine.PowerState.class), nullable(LinkedHashMap.class));
     }
 
     private void baseBasicParametersCheckForImportInstance(String name, Long domainId, String accountName) {
@@ -943,16 +948,16 @@ public class UnmanagedVMsManagerImplTest {
     }
 
     @Test
-    public void importFromLocalDisk() throws InsufficientServerCapacityException {
+    public void importFromLocalDisk() throws Exception {
         importFromDisk("local");
     }
 
     @Test
-    public void importFromsharedStorage() throws InsufficientServerCapacityException {
+    public void importFromsharedStorage() throws Exception {
         importFromDisk("shared");
     }
 
-    private void importFromDisk(String source) throws InsufficientServerCapacityException {
+    private void importFromDisk(String source) throws Exception {
         String vmname = "testVm";
         ImportVmCmd cmd = Mockito.mock(ImportVmCmd.class);
         when(cmd.getHypervisor()).thenReturn(Hypervisor.HypervisorType.KVM.toString());
@@ -960,6 +965,9 @@ public class UnmanagedVMsManagerImplTest {
         when(cmd.getImportSource()).thenReturn(source);
         when(cmd.getDiskPath()).thenReturn("/var/lib/libvirt/images/test.qcow2");
         when(cmd.getDomainId()).thenReturn(null);
+        when(cmd.getMacAddress()).thenReturn("02:00:00:00:00:05");
+        when(cmd.getIpAddress()).thenReturn("192.0.2.10");
+        when(cmd.getGuestOsId()).thenReturn(99L);
         HostVO host = Mockito.mock(HostVO.class);
         when(hostDao.findById(anyLong())).thenReturn(host);
         NetworkOffering netOffering = Mockito.mock(NetworkOffering.class);
@@ -990,6 +998,9 @@ public class UnmanagedVMsManagerImplTest {
              MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
                 unmanagedVMsManager.importVm(cmd);
         }
+        verify(networkOrchestrationService).importNic(Mockito.eq("02:00:00:00:00:05"), Mockito.eq(0), any(Network.class), Mockito.eq(true), any(VirtualMachine.class),
+                Mockito.argThat(ipAddresses -> "192.0.2.10".equals(ipAddresses.getIp4Address()) && "02:00:00:00:00:05".equals(ipAddresses.getMacAddress())),
+                any(DataCenter.class), Mockito.eq(true));
     }
 
     @Test
