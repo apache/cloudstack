@@ -80,7 +80,7 @@ public class QuotaCreditsCmdTest extends TestCase {
 
         Mockito.when(accountService.getActiveAccountByName(nullable(String.class), nullable(Long.class))).thenReturn(acc);
 
-        Mockito.when(responseBuilder.addQuotaCredits(nullable(Long.class), nullable(Long.class), nullable(Double.class), nullable(Long.class), nullable(Boolean.class))).thenReturn(new QuotaCreditsResponse());
+        Mockito.when(responseBuilder.addQuotaCredits(cmd)).thenReturn(new QuotaCreditsResponse());
 
         // No value provided test
         try {
@@ -94,7 +94,7 @@ public class QuotaCreditsCmdTest extends TestCase {
         cmd.execute();
         Mockito.verify(quotaService, Mockito.times(0)).setLockAccount(anyLong(), anyBoolean());
         Mockito.verify(quotaService, Mockito.times(1)).setMinBalance(anyLong(), anyDouble());
-        Mockito.verify(responseBuilder, Mockito.times(1)).addQuotaCredits(nullable(Long.class), nullable(Long.class), nullable(Double.class), nullable(Long.class), nullable(Boolean.class));
+        Mockito.verify(responseBuilder, Mockito.times(1)).addQuotaCredits(cmd);
     }
 
 }

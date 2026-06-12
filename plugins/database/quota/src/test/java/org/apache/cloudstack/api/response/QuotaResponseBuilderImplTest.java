@@ -44,6 +44,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.QuotaBalanceCmd;
 import org.apache.cloudstack.api.command.QuotaConfigureEmailCmd;
+import org.apache.cloudstack.api.command.QuotaCreditsCmd;
 import org.apache.cloudstack.api.command.QuotaCreditsListCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateListCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateUpdateCmd;
@@ -52,6 +53,7 @@ import org.apache.cloudstack.api.command.QuotaValidateActivationRuleCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.discovery.ApiDiscoveryService;
 import org.apache.cloudstack.jsinterpreter.JsInterpreterHelper;
+import org.apache.cloudstack.quota.QuotaManager;
 import org.apache.cloudstack.quota.QuotaService;
 import org.apache.cloudstack.quota.QuotaStatement;
 import org.apache.cloudstack.quota.activationrule.presetvariables.PresetVariableDefinition;
@@ -192,6 +194,12 @@ public class QuotaResponseBuilderImplTest extends TestCase {
     @Mock
     EntityManager entityManagerMock;
 
+    @Mock
+    QuotaManager quotaManagerMock;
+
+    @Mock
+    QuotaBalanceVO quotaBalanceVoMock;
+
     @Before
     public void setup() {
         CallContext.register(callerUserMock, callerAccountMock);
@@ -241,28 +249,6 @@ public class QuotaResponseBuilderImplTest extends TestCase {
 
         QuotaTariffResponse tariffResponse = quotaResponseBuilderSpy.createQuotaTariffResponse(tariff, false);
         assertNull(tariffResponse.getActivationRule());
-    }
-
-    @Test
-    public void testAddQuotaCredits() {
-        final long accountId = 2L;
-        final long domainId = 1L;
-        final double amount = 11.0;
-        final long updatedBy = 2L;
-
-        QuotaCreditsVO credit = new QuotaCreditsVO();
-        credit.setCredit(new BigDecimal(amount));
-
-        Mockito.when(quotaCreditsDaoMock.saveCredits(Mockito.any(QuotaCreditsVO.class))).thenReturn(credit);
-        Mockito.when(quotaBalanceDaoMock.getLastQuotaBalance(Mockito.anyLong(), Mockito.anyLong())).thenReturn(new BigDecimal(111));
-        Mockito.doReturn(userVoMock).when(quotaResponseBuilderSpy).getCreditorForQuotaCredits(credit);
-
-        AccountVO account = new AccountVO();
-        account.setState(Account.State.LOCKED);
-        Mockito.when(accountDaoMock.findById(Mockito.anyLong())).thenReturn(account);
-
-        QuotaCreditsResponse resp = quotaResponseBuilderSpy.addQuotaCredits(accountId, domainId, amount, updatedBy, true);
-        assertTrue(resp.getCredit().compareTo(credit.getCredit()) == 0);
     }
 
     @Test
@@ -710,33 +696,18 @@ public class QuotaResponseBuilderImplTest extends TestCase {
     }
 
     private QuotaCreditsListCmd createQuotaCreditsListCmdForTests() {
-        Mockito.doReturn(false).when(accountManagerMock).isNormalUser(Mockito.anyLong());
-        QuotaCreditsListCmd cmd = new QuotaCreditsListCmd();
-        cmd.setAccountId(1L);
-        cmd.setDomainId(2L);
+        QuotaCreditsListCmd cmd = Mockito.mock(QuotaCreditsListCmd.class);
+        Mockito.doReturn(1L).when(cmd).getEntityOwnerId();
+        Mockito.doReturn(2L).when(cmd).getDomainId();
+        Mockito.doReturn(new Date()).when(cmd).getStartDate();
+        Mockito.doReturn(new Date()).when(cmd).getEndDate();
         return cmd;
-    }
-
-    @Test(expected = InvalidParameterValueException.class)
-    public void getCreditsForQuotaCreditsListTestThrowsInvalidParameterValueExceptionWhenBothAccountIdAndDomainIdAreNull() {
-        QuotaCreditsListCmd cmd = new QuotaCreditsListCmd();
-
-        quotaResponseBuilderSpy.getCreditsForQuotaCreditsList(cmd);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void getCreditsForQuotaCreditsListTestThrowsInvalidParameterValueExceptionWhenStartDateIsAfterEndDate() {
         QuotaCreditsListCmd cmd = createQuotaCreditsListCmdForTests();
-        cmd.setStartDate(new Date());
-        cmd.setEndDate(DateUtils.addDays(new Date(), -1));
-
-        quotaResponseBuilderSpy.getCreditsForQuotaCreditsList(cmd);
-    }
-
-    @Test(expected = PermissionDeniedException.class)
-    public void getCreditsForQuotaCreditsListTestThrowsPermissionDeniedExceptionWhenDomainIdIsProvidedAndCallerIsNormalUser() {
-        QuotaCreditsListCmd cmd = createQuotaCreditsListCmdForTests();
-        Mockito.doReturn(true).when(accountManagerMock).isNormalUser(Mockito.anyLong());
+        Mockito.doReturn(DateUtils.addDays(new Date(), -1)).when(cmd).getEndDate();
 
         quotaResponseBuilderSpy.getCreditsForQuotaCreditsList(cmd);
     }
@@ -747,7 +718,7 @@ public class QuotaResponseBuilderImplTest extends TestCase {
         List<QuotaCreditsVO> expected = new ArrayList<>();
         expected.add(new QuotaCreditsVO());
 
-        Mockito.doReturn(expected).when(quotaCreditsDaoMock).findCredits(Mockito.anyLong(), Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.anyBoolean());
+        Mockito.doReturn(expected).when(quotaCreditsDaoMock).findCredits(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any());
 
         List<QuotaCreditsVO> result = quotaResponseBuilderSpy.getCreditsForQuotaCreditsList(cmd);
 
@@ -1007,7 +978,6 @@ public class QuotaResponseBuilderImplTest extends TestCase {
     @Test
     public void createStatementItemTestReturnItem() {
         List<QuotaUsageJoinVO> quotaUsages = getQuotaUsagesForTest();
-        Mockito.doNothing().when(quotaResponseBuilderSpy).setStatementItemResources(Mockito.any(), Mockito.anyInt(), Mockito.any(), Mockito.anyBoolean());
 
         QuotaStatementItemResponse result = quotaResponseBuilderSpy.createStatementItem(0, quotaUsages, false);
 
@@ -1016,15 +986,6 @@ public class QuotaResponseBuilderImplTest extends TestCase {
         Assert.assertEquals(BigDecimal.valueOf(15), result.getQuotaUsed());
         Assert.assertEquals(quotaTypeExpected.getQuotaUnit(), result.getUsageUnit());
         Assert.assertEquals(quotaTypeExpected.getQuotaName(), result.getUsageName());
-    }
-
-    @Test
-    public void setStatementItemResourcesTestDoNotShowResourcesDoNothing() {
-        QuotaStatementItemResponse item = new QuotaStatementItemResponse(1);
-
-        quotaResponseBuilderSpy.setStatementItemResources(item, 0, getQuotaUsagesForTest(), false);
-
-        Assert.assertNull(item.getResources());
     }
 
     @Test
@@ -1184,5 +1145,222 @@ public class QuotaResponseBuilderImplTest extends TestCase {
 
         Assert.assertNotNull(result);
         Assert.assertEquals(mockResource, result);
+    }
+
+    @Test
+    public void lockOrUnlockAccountIfRequiredTestPositiveBalanceUnlocksAccount() {
+        Mockito.doReturn(Account.State.LOCKED).when(accountMock).getState();
+
+        quotaResponseBuilderSpy.lockOrUnlockAccountIfRequired(BigDecimal.TEN, accountMock, true);
+
+        Mockito.verify(accountManagerMock).enableAccount(accountMock.getAccountName(), domainVoMock.getId(), accountMock.getId());
+        Mockito.verify(accountManagerMock, Mockito.never()).lockAccount(Mockito.anyString(), Mockito.anyLong(), Mockito.anyLong());
+    }
+
+    @Test
+    public void lockOrUnlockAccountIfRequiredTestNegativeBalanceLocksAccount() {
+        Mockito.doReturn(Account.State.ENABLED).when(accountMock).getState();
+        Mockito.doReturn(true).when(quotaManagerMock).isLockable(accountMock);
+
+        quotaResponseBuilderSpy.lockOrUnlockAccountIfRequired(BigDecimal.valueOf(-10), accountMock, true);
+
+        Mockito.verify(accountManagerMock).lockAccount(accountMock.getAccountName(), domainVoMock.getId(), accountMock.getId());
+        Mockito.verify(accountManagerMock, Mockito.never()).enableAccount(Mockito.anyString(), Mockito.anyLong(), Mockito.anyLong());
+    }
+
+    @Test
+    public void addQuotaCreditsTestValidParameters() {
+        QuotaCreditsCmd cmd = Mockito.mock(QuotaCreditsCmd.class);
+        Mockito.doReturn(10D).when(cmd).getValue();
+        Mockito.doReturn(BigDecimal.TEN).when(quotaCreditsVoMock).getCredit();
+        Mockito.doReturn(accountMock).when(accountDaoMock).findById(Mockito.anyLong());
+        Mockito.doReturn(null).when(quotaBalanceDaoMock).findLaterBalanceEntry(Mockito.anyLong(), Mockito.anyLong(),
+                Mockito.any());
+        Mockito.doReturn(quotaCreditsVoMock).when(quotaResponseBuilderSpy).persistQuotaCredits(Mockito.any(), Mockito.anyDouble(),
+                Mockito.any(), Mockito.any(), Mockito.anyBoolean());
+        Mockito.doReturn(userVoMock).when(quotaResponseBuilderSpy).getCreditorForQuotaCredits(Mockito.any());
+
+        QuotaCreditsResponse response = quotaResponseBuilderSpy.addQuotaCredits(cmd);
+
+        Assert.assertEquals(BigDecimal.TEN, response.getCredit());
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void addQuotaCreditsTestThrowsExceptionWhenValueIsNull() {
+        QuotaCreditsCmd cmd = Mockito.mock(QuotaCreditsCmd.class);
+        Mockito.doReturn(null).when(cmd).getValue();
+
+        quotaResponseBuilderSpy.addQuotaCredits(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void addQuotaCreditsTestThrowsExceptionWhenDepositDateIsIncorrect() {
+        QuotaCreditsCmd cmd = Mockito.mock(QuotaCreditsCmd.class);
+        Mockito.doReturn(100.0).when(cmd).getValue();
+        Mockito.doReturn(accountMock).when(accountDaoMock).findById(Mockito.anyLong());
+        Mockito.doReturn(quotaBalanceVoMock).when(quotaBalanceDaoMock).findLaterBalanceEntry(Mockito.anyLong(), Mockito.anyLong(), Mockito.any());
+
+        quotaResponseBuilderSpy.addQuotaCredits(cmd);
+    }
+
+    @Test
+    public void persistQuotaCreditsTestSavesCreditsAndBalanceSuccessfully() {
+        QuotaCreditsCmd cmd = Mockito.mock(QuotaCreditsCmd.class);
+        Long accountId = 1L;
+        Long domainId = 2L;
+        Double value = 10D;
+        Date depositedOn = new Date();
+        AccountVO account = Mockito.mock(AccountVO.class);
+        BigDecimal currentBalance = BigDecimal.ZERO;
+
+        Mockito.doReturn(accountId).when(account).getId();
+        Mockito.doReturn(domainId).when(account).getDomainId();
+        Mockito.doReturn(null).when(cmd).getQuotaEnforce();
+        Mockito.doReturn(null).when(cmd).getMinBalance();
+        Mockito.when(quotaCreditsDaoMock.saveCredits(Mockito.any(QuotaCreditsVO.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        Mockito.when(quotaBalanceDaoMock.getLastQuotaBalance(accountId, domainId)).thenReturn(currentBalance);
+
+        QuotaCreditsVO result = quotaResponseBuilderSpy.persistQuotaCredits(cmd, value, depositedOn, account, false);
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(BigDecimal.TEN, result.getCredit());
+        Assert.assertEquals(accountId, result.getAccountId());
+        Assert.assertEquals(depositedOn, result.getUpdatedOn());
+        Mockito.verify(quotaServiceMock).saveQuotaAccount(account, currentBalance, depositedOn);
+        Mockito.verify(quotaServiceMock, Mockito.never()).setLockAccount(Mockito.anyLong(), Mockito.anyBoolean());
+        Mockito.verify(quotaServiceMock, Mockito.never()).setMinBalance(Mockito.anyLong(), Mockito.anyDouble());
+        Mockito.verify(quotaResponseBuilderSpy, Mockito.never()).lockOrUnlockAccountIfRequired(Mockito.any(), Mockito.any(), Mockito.anyBoolean());
+    }
+
+    @Test
+    public void persistQuotaCreditsTestCallsSetLockAccountWhenQuotaEnforceProvided() {
+        QuotaCreditsCmd cmd = Mockito.mock(QuotaCreditsCmd.class);
+        Long accountId = 1L;
+        Double value = 100.0;
+        Date depositedOn = new Date();
+        AccountVO account = Mockito.mock(AccountVO.class);
+
+        Mockito.doReturn(accountId).when(account).getId();
+        Mockito.when(cmd.getQuotaEnforce()).thenReturn(Boolean.TRUE);
+        Mockito.when(quotaCreditsDaoMock.saveCredits(Mockito.any(QuotaCreditsVO.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        quotaResponseBuilderSpy.persistQuotaCredits(cmd, value, depositedOn, account, false);
+
+        Mockito.verify(quotaServiceMock).setLockAccount(accountId, Boolean.TRUE);
+    }
+
+    @Test
+    public void persistQuotaCreditsTestCallsSetMinBalanceWhenProvided() {
+        QuotaCreditsCmd cmd = Mockito.mock(QuotaCreditsCmd.class);
+        Long accountId = 1L;
+        Double value = 100.0;
+        Date depositedOn = new Date();
+        AccountVO account = Mockito.mock(AccountVO.class);
+
+        Mockito.when(cmd.getMinBalance()).thenReturn(50.0);
+        Mockito.doReturn(accountId).when(account).getId();
+        Mockito.when(quotaCreditsDaoMock.saveCredits(Mockito.any(QuotaCreditsVO.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        quotaResponseBuilderSpy.persistQuotaCredits(cmd, value, depositedOn, account, false);
+
+        Mockito.verify(quotaServiceMock).setMinBalance(accountId, 50.0);
+    }
+
+    @Test
+    public void persistQuotaCreditsTestLocksOrUnlocksAccountWhenEnforcementIsEnabledGlobally() {
+        QuotaCreditsCmd cmd = Mockito.mock(QuotaCreditsCmd.class);
+        Long accountId = 1L;
+        Long domainId = 2L;
+        Double value = 100.0;
+        Date depositedOn = new Date();
+        AccountVO account = Mockito.mock(AccountVO.class);
+        BigDecimal currentBalance = BigDecimal.ZERO;
+
+        Mockito.doReturn(accountId).when(account).getId();
+        Mockito.doReturn(domainId).when(account).getDomainId();
+        Mockito.when(cmd.getMinBalance()).thenReturn(50.0);
+        Mockito.when(quotaCreditsDaoMock.saveCredits(Mockito.any(QuotaCreditsVO.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        Mockito.when(quotaBalanceDaoMock.getLastQuotaBalance(accountId, domainId)).thenReturn(currentBalance);
+
+        quotaResponseBuilderSpy.persistQuotaCredits(cmd, value, depositedOn, account, true);
+
+        Mockito.verify(quotaResponseBuilderSpy).lockOrUnlockAccountIfRequired(currentBalance, account, false);
+    }
+
+    @Test
+    public void createQuotaConsumptionHistoryTestReturnsNullForZeroQuotaUsed() {
+        List<QuotaStatementItemHistoryResponse> result = quotaResponseBuilderSpy.createQuotaConsumptionHistory(new ArrayList<>(), BigDecimal.ZERO);
+
+        Assert.assertNull(result);
+    }
+
+    @Test
+    public void createQuotaConsumptionHistoryTestIgnoresNullQuotaUsed() {
+        Date now = new Date();
+
+        List<QuotaUsageJoinVO> usageRecords = new ArrayList<>();
+        QuotaUsageJoinVO record1 = new QuotaUsageJoinVO();
+        record1.setStartDate(now);
+        record1.setEndDate(now);
+        record1.setQuotaUsed(null);
+
+        QuotaUsageJoinVO record2 = new QuotaUsageJoinVO();
+        record2.setStartDate(new Date(now.getTime() + 1000));
+        record2.setEndDate(new Date(now.getTime() + 1000));
+        record2.setQuotaUsed(BigDecimal.valueOf(10));
+
+        usageRecords.add(record1);
+        usageRecords.add(record2);
+
+        BigDecimal totalQuotaUsed = BigDecimal.valueOf(10);
+
+        List<QuotaStatementItemHistoryResponse> result = quotaResponseBuilderSpy.createQuotaConsumptionHistory(usageRecords, totalQuotaUsed);
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(1, result.size());
+        Assert.assertEquals(BigDecimal.valueOf(10), result.get(0).getQuotaConsumed());
+    }
+
+    @Test
+    public void createQuotaConsumptionHistoryTestCorrectlyAggregatesRecords() {
+        List<QuotaUsageJoinVO> usageRecords = new ArrayList<>();
+        Date now = new Date();
+
+        QuotaUsageJoinVO record1 = new QuotaUsageJoinVO();
+        record1.setStartDate(now);
+        record1.setEndDate(new Date(now.getTime() + 1000));
+        record1.setQuotaUsed(BigDecimal.valueOf(5));
+
+        QuotaUsageJoinVO record2 = new QuotaUsageJoinVO();
+        record2.setStartDate(new Date(now.getTime() + 2000));
+        record2.setEndDate(new Date(now.getTime() + 3000));
+        record2.setQuotaUsed(BigDecimal.valueOf(15));
+
+        QuotaUsageJoinVO record3 = new QuotaUsageJoinVO();
+        record3.setStartDate(new Date(now.getTime() + 2000));
+        record3.setEndDate(new Date(now.getTime() + 3000));
+        record3.setQuotaUsed(BigDecimal.valueOf(5));
+
+        usageRecords.add(record1);
+        usageRecords.add(record2);
+        usageRecords.add(record3);
+
+        BigDecimal totalQuotaUsed = BigDecimal.valueOf(20);
+
+        List<QuotaStatementItemHistoryResponse> result = quotaResponseBuilderSpy.createQuotaConsumptionHistory(usageRecords, totalQuotaUsed);
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(2, result.size());
+
+        QuotaStatementItemHistoryResponse firstHistory = result.get(0);
+        QuotaStatementItemHistoryResponse secondHistory = result.get(1);
+
+        Assert.assertEquals(BigDecimal.valueOf(5), firstHistory.getQuotaConsumed());
+        Assert.assertEquals(record1.getStartDate(), firstHistory.getStartDate());
+        Assert.assertEquals(record1.getEndDate(), firstHistory.getEndDate());
+
+        Assert.assertEquals(BigDecimal.valueOf(20), secondHistory.getQuotaConsumed());
+        Assert.assertEquals(record2.getStartDate(), secondHistory.getStartDate());
+        Assert.assertEquals(record2.getEndDate(), secondHistory.getEndDate());
     }
 }

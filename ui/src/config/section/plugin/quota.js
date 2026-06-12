@@ -30,29 +30,37 @@ export default {
       title: 'label.quota.summary',
       icon: 'bars-outlined',
       permission: ['quotaSummary'],
-      columns: ['account',
-        {
-          state: (record) => record.state.toLowerCase()
-        },
-        {
-          quotastate: (record) => record.quotaenabled ? 'Enabled' : 'Disabled'
-        }, 'domain', 'currency', 'balance'
-      ],
-      columnNames: ['account', 'accountstate', 'quotastate', 'domain', 'currency', 'currentbalance'],
-      details: ['account', 'domain', 'state', 'currency', 'balance', 'quota', 'startdate', 'enddate'],
-      component: shallowRef(() => import('@/views/plugins/quota/QuotaSummary.vue')),
       tabs: [
         {
-          name: 'details',
-          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+          name: 'consumption',
+          component: shallowRef(defineAsyncComponent(() => import('@/views/plugins/quota/QuotaUsageTab.vue')))
         },
         {
-          name: 'quota.statement.quota',
-          component: shallowRef(defineAsyncComponent(() => import('@/views/plugins/quota/QuotaUsage.vue')))
+          name: 'balance',
+          component: shallowRef(defineAsyncComponent(() => import('@/views/plugins/quota/QuotaBalanceTab.vue')))
         },
         {
-          name: 'quota.statement.balance',
-          component: shallowRef(defineAsyncComponent(() => import('@/views/plugins/quota/QuotaBalance.vue')))
+          name: 'credits',
+          component: shallowRef(defineAsyncComponent(() => import('@/views/plugins/quota/QuotaCreditTab.vue')))
+        }
+      ],
+      columns: [
+        'account',
+        {
+          field: 'state',
+          customTitle: 'accountState',
+          state: (record) => record.accountremoved || (record.projectid && record.projectremoved) ? 'disabled' : 'enabled'
+        },
+        {
+          field: 'quotastate',
+          customTitle: 'quotaState',
+          quotastate: (record) => !record.quotaenabled || record.accountremoved || (record.projectid && record.projectremoved) ? 'disabled' : 'enabled'
+        },
+        'domain',
+        'currency',
+        {
+          field: 'balance',
+          customTitle: 'quota.current.balance'
         }
       ],
       actions: [
@@ -61,16 +69,9 @@ export default {
           icon: 'plus-outlined',
           docHelp: 'plugins/quota.html#quota-credits',
           label: 'label.quota.add.credits',
-          dataView: true,
-          args: ['value', 'min_balance', 'quota_enforce'],
-          mapping: {
-            account: {
-              value: (record) => { return record.account }
-            },
-            domainid: {
-              value: (record) => { return record.domainid }
-            }
-          }
+          listView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/plugins/quota/AddQuotaCredit.vue')))
         }
       ]
     },
@@ -83,7 +84,7 @@ export default {
       customParamHandler: (params, query) => {
         params.listall = false
 
-        if (['all', 'removed'].includes(query.filter) || params.id) {
+        if (['all', 'removed'].includes(query.filter) || params.uuid) {
           params.listall = true
         }
 
@@ -108,6 +109,11 @@ export default {
         {
           field: 'tariffValue',
           customTitle: 'quota.tariff.value'
+        },
+        {
+          field: 'hasActivationRule',
+          customTitle: 'quota.tariff.hasactivationrule',
+          hasActivationRule: (record) => record.activationRule ? i18n.global.t('label.yes') : i18n.global.t('label.no')
         },
         {
           field: 'executionPosition',
@@ -145,7 +151,11 @@ export default {
           field: 'endDate',
           customTitle: 'end.date'
         },
-        'removed'
+        'removed',
+        {
+          field: 'activationRule',
+          customTitle: 'quota.tariff.activationrule'
+        }
       ],
       filters: ['all', 'active', 'removed'],
       searchFilters: ['usagetype'],
@@ -173,13 +183,16 @@ export default {
           label: 'label.action.quota.tariff.remove',
           message: 'message.action.quota.tariff.remove',
           dataView: true,
-          show: (record) => !record.removed
+          show: (record) => !record.removed,
+          groupAction: true,
+          popup: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         }
       ]
     },
     {
       name: 'quotaemailtemplate',
-      title: 'label.templatetype',
+      title: 'label.emailtemplate',
       icon: 'mail-outlined',
       permission: ['quotaEmailTemplateList'],
       columns: ['templatetype', 'templatesubject', 'templatebody'],
