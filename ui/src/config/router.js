@@ -44,6 +44,8 @@ import tools from '@/config/section/tools'
 import quota from '@/config/section/plugin/quota'
 import cloudian from '@/config/section/plugin/cloudian'
 
+const isAdvisoriesDisabled = () => vueProps.$config.advisoriesDisabled ?? false
+
 function generateRouterMap (section) {
   var map = {
     name: section.name,
@@ -81,7 +83,7 @@ function generateRouterMap (section) {
           filters: child.filters,
           params: child.params ? child.params : {},
           columns: child.columns,
-          advisories: !vueProps.$config.advisoriesDisabled ? child.advisories : undefined,
+          advisories: !isAdvisoriesDisabled() ? child.advisories : undefined,
           details: child.details,
           searchFilters: child.searchFilters,
           related: child.related,
@@ -181,7 +183,7 @@ function generateRouterMap (section) {
     map.meta.columns = section.columns
   }
 
-  if (!vueProps.$config.advisoriesDisabled && section.advisories) {
+  if (!isAdvisoriesDisabled() && section.advisories) {
     map.meta.advisories = section.advisories
   }
 
