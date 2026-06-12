@@ -91,6 +91,10 @@ public interface NetworkOrchestrationService {
     ConfigKey<Integer> NetworkThrottlingRate = new ConfigKey<>("Network", Integer.class, NetworkThrottlingRateCK, "200",
             "Default data transfer rate in megabits per second allowed in network.", true, ConfigKey.Scope.Zone);
 
+    ConfigKey<Integer> DhcpLeaseTimeout = new ConfigKey<>("Network", Integer.class, "dhcp.lease.timeout", "0",
+            "DHCP lease time in seconds for VMs. Use 0 for infinite lease time (default). A non-zero value sets the lease duration in seconds.",
+            true, ConfigKey.Scope.Zone, "0-");
+
     ConfigKey<Boolean> PromiscuousMode = new ConfigKey<>("Advanced", Boolean.class, "network.promiscuous.mode", "false",
             "Whether to allow or deny promiscuous mode on NICs for applicable network elements such as for vswitch/dvswitch portgroups.", true);
 
