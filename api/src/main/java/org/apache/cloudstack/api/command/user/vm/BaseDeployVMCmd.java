@@ -648,7 +648,8 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
             try {
                 networkId = Long.parseLong(networkid);
             } catch (NumberFormatException e) {
-                throw new InvalidParameterValueException("Unable to translate and find entity with networkId: " + networkid);
+                throw new InvalidParameterValueException("vm.deploy.network.not.found.ip.map",
+                        Map.of("networkId", networkid));
             }
         }
         return networkId;
