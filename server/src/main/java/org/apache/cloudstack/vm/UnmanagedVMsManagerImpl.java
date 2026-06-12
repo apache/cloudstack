@@ -847,15 +847,49 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return new Pair<DiskProfile, StoragePool>(profile, storagePool);
     }
 
-    private NicProfile importNic(UnmanagedInstanceTO.Nic nic, VirtualMachine vm, Network network, Network.IpAddresses ipAddresses, int deviceId, boolean isDefaultNic, boolean forced) throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
+    protected NicProfile importNic(UnmanagedInstanceTO.Nic nic, VirtualMachine vm, Network network, Network.IpAddresses ipAddresses, int deviceId, boolean isDefaultNic, boolean forced) throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
+        // Prefer caller-supplied MAC (from nicmacaddresslist); fall back to hypervisor-reported MAC
+        String macAddress = (ipAddresses != null && StringUtils.isNotEmpty(ipAddresses.getMacAddress()))
+                ? ipAddresses.getMacAddress()
+                : nic.getMacAddress();
         DataCenterVO dataCenterVO = dataCenterDao.findById(network.getDataCenterId());
-        Pair<NicProfile, Integer> result = networkOrchestrationService.importNic(nic.getMacAddress(), deviceId, network, isDefaultNic, vm, ipAddresses, dataCenterVO, forced);
+        Pair<NicProfile, Integer> result = networkOrchestrationService.importNic(macAddress, deviceId, network, isDefaultNic, vm, ipAddresses, dataCenterVO, forced);
         if (result == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("NIC ID: %s import failed", nic.getNicId()));
         }
         return result.first();
     }
 
+
+    /**
+     * Merges caller-supplied MAC addresses into the NIC IP address map.
+     * For each NIC entry in {@code nicMacAddressMap}, the MAC address is set on the corresponding
+     * {@link Network.IpAddresses} object. If no IP address entry exists for a given NIC, a new
+     * {@link Network.IpAddresses} object is created to carry the MAC.
+     *
+     * @param nicIpAddressMap  map of NIC ID to IP addresses (may be empty, never null after cmd getter)
+     * @param nicMacAddressMap map of NIC ID to validated/standardized MAC address strings
+     * @return merged map with MAC addresses populated where supplied by the caller
+     */
+    protected Map<String, Network.IpAddresses> mergeNicMacAddresses(
+            final Map<String, Network.IpAddresses> nicIpAddressMap,
+            final Map<String, String> nicMacAddressMap) {
+        if (MapUtils.isEmpty(nicMacAddressMap)) {
+            return nicIpAddressMap;
+        }
+        Map<String, Network.IpAddresses> merged = new HashMap<>(nicIpAddressMap);
+        for (Map.Entry<String, String> entry : nicMacAddressMap.entrySet()) {
+            String nicId = entry.getKey();
+            String mac = entry.getValue();
+            Network.IpAddresses existing = merged.get(nicId);
+            if (existing != null) {
+                existing.setMacAddress(mac);
+            } else {
+                merged.put(nicId, new Network.IpAddresses(null, null, mac));
+            }
+        }
+        return merged;
+    }
     private void cleanupFailedImportVM(final UserVm userVm) {
         if (userVm == null) {
             return;
@@ -1315,7 +1349,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
         checkVmwareInstanceNameForImportInstance(cluster.getHypervisorType(), instanceName, hostName, zone);
         final Map<String, Long> nicNetworkMap = cmd.getNicNetworkList();
-        final Map<String, Network.IpAddresses> nicIpAddressMap = cmd.getNicIpAddressList();
+        final Map<String, Network.IpAddresses> nicIpAddressMap = mergeNicMacAddresses(cmd.getNicIpAddressList(), cmd.getNicMacAddressList());
         final Map<String, Long> dataDiskOfferingMap = cmd.getDataDiskToDiskOfferingList();
         final Map<String, String> details = cmd.getDetails();
         final boolean forced = cmd.isForced();
@@ -2600,7 +2634,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
 
         final Map<String, Long> nicNetworkMap = cmd.getNicNetworkList();
-        final Map<String, Network.IpAddresses> nicIpAddressMap = cmd.getNicIpAddressList();
+        final Map<String, Network.IpAddresses> nicIpAddressMap = mergeNicMacAddresses(cmd.getNicIpAddressList(), cmd.getNicMacAddressList());
         final Map<String, Long> dataDiskOfferingMap = cmd.getDataDiskToDiskOfferingList();
         final Map<String, String> details = cmd.getDetails();
 
