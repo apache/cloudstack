@@ -398,9 +398,11 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
         DataCenter dc = dcDao.findById(vm.getDataCenterId());
         int requiredCpu = offering.getCpu() * offering.getSpeed();
         long requiredRam = offering.getRamSize() * 1024L * 1024L;
+        boolean isVr  = VirtualMachine.Type.DomainRouter.equals(vmProfile.getType());
+        Long ownerId = vm.getAccountId();
 
         //list clusters under this zone by cpu and ram capacity
-        Pair<List<Long>, Map<Long, Double>> clusterCapacityInfo = listClustersByCapacity(id, vmProfile.getId(), requiredCpu, requiredRam, avoid, isZone);
+        Pair<List<Long>, Map<Long, Double>> clusterCapacityInfo = listClustersByCapacity(id, vmProfile.getId(), ownerId, requiredCpu, requiredRam, isVr, isZone);
         List<Long> prioritizedClusterIds = clusterCapacityInfo.first();
         if (!prioritizedClusterIds.isEmpty()) {
             if (avoid.getClustersToAvoid() != null) {
@@ -458,7 +460,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
         return podIdsByCapacity;
     }
 
-    protected Pair<List<Long>, Map<Long, Double>> listClustersByCapacity(long id, long vmId, int requiredCpu, long requiredRam, ExcludeList avoid, boolean isZone) {
+    protected Pair<List<Long>, Map<Long, Double>> listClustersByCapacity(long id, long vmId, Long ownerId, int requiredCpu, long requiredRam, boolean isVr, boolean isZone) {
         //look at the aggregate available cpu and ram per cluster
         //although an aggregate value may be false indicator that a cluster can host a vm, it will at the least eliminate those clusters which definitely cannot
 
@@ -474,7 +476,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
         }
 
 
-        Pair<List<Long>, Map<Long, Double>> result = getOrderedClustersByCapacity(id, vmId, isZone);
+        Pair<List<Long>, Map<Long, Double>> result = getOrderedClustersByCapacity(id, vmId, ownerId, isVr, isZone);
         List<Long> clusterIdsOrderedByAggregateCapacity = result.first();
         //only keep the clusters that have enough capacity to host this VM
         if (logger.isTraceEnabled()) {
@@ -554,14 +556,14 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
     }
 
 
-    private Pair<List<Long>, Map<Long, Double>> getOrderedClustersByCapacity(long id, long vmId, boolean isZone) {
+    private Pair<List<Long>, Map<Long, Double>> getOrderedClustersByCapacity(long id, long vmId, Long ownerId, boolean isVr, boolean isZone) {
         double cpuToMemoryWeight = ConfigurationManager.HostCapacityTypeCpuMemoryWeight.value();
         short capacityType = getHostCapacityTypeToOrderCluster(
                 configDao.getValue(Config.HostCapacityTypeToOrderClusters.key()), cpuToMemoryWeight);
 
         logger.debug("CapacityType: {} is used for Cluster ordering", getCapacityTypeName(capacityType));
         if (capacityType >= 0) { // for capacityType other than COMBINED
-            return capacityDao.orderClustersByAggregateCapacity(id, vmId, capacityType, isZone);
+            return capacityDao.orderClustersByAggregateCapacity(id, vmId, ownerId, capacityType, isVr, allowRoutersOnDedicatedResources.value(), isZone);
         }
 
         Long zoneId = isZone ? id : null;
@@ -694,6 +696,6 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {ClusterCPUCapacityDisableThreshold, ClusterMemoryCapacityDisableThreshold, ClusterThresholdEnabled, VmAllocationAlgorithm};
+        return new ConfigKey<?>[] {ClusterCPUCapacityDisableThreshold, ClusterMemoryCapacityDisableThreshold, ClusterThresholdEnabled, VmAllocationAlgorithm, allowRoutersOnDedicatedResources};
     }
 }
