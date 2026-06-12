@@ -410,7 +410,8 @@ public class KVMStorageProcessor implements StorageProcessor {
                     StoragePoolType.RBD,
                     StoragePoolType.PowerFlex,
                     StoragePoolType.Linstor,
-                    StoragePoolType.FiberChannel).contains(primaryPool.getType())) {
+                    StoragePoolType.FiberChannel,
+                    StoragePoolType.CLVM).contains(primaryPool.getType())) {
                     newTemplate.setFormat(ImageFormat.RAW);
                 } else {
                     newTemplate.setFormat(ImageFormat.QCOW2);
@@ -3413,7 +3414,8 @@ public class KVMStorageProcessor implements StorageProcessor {
                 StoragePoolType.RBD,
                 StoragePoolType.PowerFlex,
                 StoragePoolType.Linstor,
-                StoragePoolType.FiberChannel).contains(poolType)) {
+                StoragePoolType.FiberChannel,
+                StoragePoolType.CLVM).contains(poolType)) {
             return ImageFormat.RAW;
         } else {
             return ImageFormat.QCOW2;

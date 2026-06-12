@@ -2496,12 +2496,13 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             if (success) {
                 VolumeVO volumeVO = _volumeDao.findById(destVolumeInfo.getId());
-                volumeVO.setFormat(ImageFormat.QCOW2);
+                StoragePoolVO srcPoolVO = _storagePoolDao.findById(srcVolumeInfo.getPoolId());
+                StoragePoolVO destPoolVO = _storagePoolDao.findById(destVolumeInfo.getPoolId());
+                volumeVO.setFormat(destPoolVO != null && destPoolVO.getPoolType() == StoragePoolType.CLVM
+                        ? ImageFormat.RAW : ImageFormat.QCOW2);
                 volumeVO.setLastId(srcVolumeInfo.getId());
 
                 if (Objects.equals(srcVolumeInfo.getDiskOfferingId(), destVolumeInfo.getDiskOfferingId())) {
-                    StoragePoolVO srcPoolVO = _storagePoolDao.findById(srcVolumeInfo.getPoolId());
-                    StoragePoolVO destPoolVO = _storagePoolDao.findById(destVolumeInfo.getPoolId());
                     if (srcPoolVO != null && destPoolVO != null &&
                             ((srcPoolVO.isShared() && destPoolVO.isLocal()) || (srcPoolVO.isLocal() && destPoolVO.isShared()))) {
                         Long offeringId = getSuitableDiskOfferingForVolumeOnPool(volumeVO, destPoolVO);
@@ -2512,9 +2513,6 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 }
 
                 _volumeDao.update(volumeVO.getId(), volumeVO);
-
-                StoragePoolVO srcPoolVO = _storagePoolDao.findById(srcVolumeInfo.getPoolId());
-                StoragePoolVO destPoolVO = _storagePoolDao.findById(destVolumeInfo.getPoolId());
                 if (destPoolVO != null && ClvmPoolManager.isClvmPoolType(destPoolVO.getPoolType())
                         && (srcPoolVO == null || srcPoolVO.getId() != destPoolVO.getId())) {
                     sendClvmLockCommand(destHost.getId(), destPoolVO, destVolumeInfo,

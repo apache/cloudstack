@@ -76,6 +76,7 @@ import com.cloud.storage.ScopeType;
 import com.cloud.storage.Snapshot.Type;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.StorageManager;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VolumeVO;
@@ -609,6 +610,9 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             volumeVo.setPoolId(destPool.getId());
             volumeVo.setPoolType(destPool.getPoolType());
             volumeVo.setLastPoolId(oldPoolId);
+            if (destPool.getPoolType() == StoragePoolType.CLVM) {
+                volumeVo.setFormat(ImageFormat.RAW);
+            }
             // For SMB, pool credentials are also stored in the uri query string.  We trim the query string
             // part  here to make sure the credentials do not get stored in the db unencrypted.
             String folder = destPool.getPath();
