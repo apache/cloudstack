@@ -136,4 +136,5 @@ public interface VmDetailConstants {
     String ACTIVE_CHECKPOINT_ID = "active.checkpoint.id";
     String ACTIVE_CHECKPOINT_CREATE_TIME = "active.checkpoint.create.time";
     String LAST_CHECKPOINT_ID = "last.checkpoint.id";
-    String LAST_CHECKPOINT_CREATE_TIME = "last.checkpoint.create.ti
+    String LAST_CHECKPOINT_CREATE_TIME = "last.checkpoint.create.time";
+}
