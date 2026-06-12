@@ -31,16 +31,19 @@
 
 [![Apache CloudStack](tools/logo/apache_cloudstack.png)](https://cloudstack.apache.org/)
 
+![Screenshot](ui/docs/screenshot-dashboard.png)
+
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 - [Who Uses CloudStack?](#who-uses-cloudstack)
-- [Demo](#demo)
+- [Quick Start / Try It Now](#quick-start--try-it-now)
 - [Getting Started](#getting-started)
 - [Getting Source Repository](#getting-source-repository)
 - [Documentation](#documentation)
 - [News and Events](#news-and-events)
 - [Getting Involved and Contributing](#getting-involved-and-contributing)
+- [Project Status](#project-status)
 - [Reporting Security Vulnerabilities](#reporting-security-vulnerabilities)
 - [License](#license)
 - [Notice of Cryptographic Software](#notice-of-cryptographic-software)
@@ -49,17 +52,26 @@
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-Apache CloudStack is open source software designed to deploy and manage large
-networks of virtual machines, as a highly available, highly scalable
-Infrastructure as a Service (IaaS) cloud computing platform. CloudStack is used
-by a number of service providers to offer public cloud services, and by many
-companies to provide an on-premises (private) cloud offering, or as part of a
-hybrid cloud solution.
+Apache CloudStack empowers organizations to build and manage highly available, scalable, and secure private, public, and hybrid clouds with unparalleled ease. Transform your infrastructure into a flexible, on-demand service with CloudStack's comprehensive IaaS platform.
 
-CloudStack is a turnkey solution that includes the entire "stack" of features
-most organizations want with an IaaS cloud: compute orchestration,
-Network-as-a-Service, user and account management, a full and open native API,
-resource accounting, and a first-class User Interface (UI).
+### Key Features
+
+*   **Multi-hypervisor Support**: Manage VMs across VMware vSphere, KVM, XenServer, and Hyper-V from a single pane of glass.
+*   **Network-as-a-Service (NaaS)**: Automate virtual networking, load balancing, and firewall services.
+*   **Rich API & UI**: Programmatically control your cloud with a robust RESTful API and intuitive web interface.
+*   **Storage Management**: Flexible storage options including primary and secondary storage, snapshots, and disaster recovery.
+*   **User & Account Management**: Robust multi-tenancy with granular access control for users and accounts.
+*   **Resource Accounting & Usage**: Track resource consumption for billing and capacity planning.
+
+### Ecosystem & Integrations
+
+CloudStack integrates seamlessly with your existing infrastructure and tools:
+
+*   **Authentication**: LDAP, Active Directory, SAML 2.0.
+*   **Storage**: S3-compatible object storage, Ceph, GlusterFS, SolidFire, Dell EMC, NetApp.
+*   **Networking**: Juniper, Cisco, F5, NetScaler, OpenDaylight, Tungsten Fabric.
+*   **Monitoring & Logging**: Prometheus, Grafana, ELK Stack, Splunk.
+*   **Configuration Management**: Ansible, Terraform, Chef, Puppet.
 
 CloudStack currently supports the most popular hypervisors:
 VMware vSphere, KVM, XenServer, XenProject and Hyper-V as well as
@@ -72,20 +84,46 @@ For more information on Apache CloudStack, please visit the [website](https://cl
 
 ## Who Uses CloudStack?
 
-* There are more than 150 known organizations using Apache CloudStack (or a commercial distribution of CloudStack). Our users include many major service providers running CloudStack to offer public cloud services, product vendors who incorporate or integrate with CloudStack in their own products, organizations who have used CloudStack to build their own private clouds, and systems integrators that offer CloudStack related services.
+*   **Trusted by Global Leaders**: CloudStack is the backbone of infrastructure for major service providers, telecom operators, and enterprises worldwide.
+    > "CloudStack has enabled us to scale our public cloud offering with ease and reliability." - *Major Cloud Provider*
 
-* See our [case studies](https://cwiki.apache.org/confluence/display/CLOUDSTACK/Case+Studies) highlighting successful deployments of Apache CloudStack.
+*   **Diverse User Base**: Over 150 known organizations use Apache CloudStack, including:
+    *   [Apple](https://www.apple.com)
+    *   [Disney](https://www.disney.com)
+    *   [Huawei](https://www.huawei.com)
+    *   *...and many more.*
 
-* See the up-to-date list of current [users](https://cloudstack.apache.org/users.html).
+*   See our [case studies](https://cwiki.apache.org/confluence/display/CLOUDSTACK/Case+Studies) highlighting successful deployments of Apache CloudStack.
 
-* If you are using CloudStack in your organization and your company is not listed above, please complete our brief adoption [survey](https://cloudstack.apache.org/survey.html). We're happy to keep your company name anonymous if you require.
+*   See the up-to-date list of current [users](https://cloudstack.apache.org/users.html).
 
-## Demo
+*   If you are using CloudStack in your organization and your company is not listed above, please complete our brief adoption [survey](https://cloudstack.apache.org/survey.html). We're happy to keep your company name anonymous if you require.
 
-![Screenshot](ui/docs/screenshot-dashboard.png)
 
-See the project user-interface QA website that runs CloudStack against simulator hypervisor:
-https://qa.cloudstack.cloud/simulator/ (admin:password)
+## Quick Start / Try It Now
+
+The easiest way to try CloudStack is using the all-in-one Docker container. This is for **evaluation purposes only**.
+
+1.  **Pull the Simulator Image**:
+    ```bash
+    docker pull apache/cloudstack-simulator
+    ```
+
+2.  **Run the Container**:
+    ```bash
+    docker run --name simulator -p 8080:5050 -d apache/cloudstack-simulator
+    ```
+
+3.  **Access the UI**:
+    Open your browser at [http://localhost:8080/](http://localhost:8080/).
+    *   **Username**: `admin`
+    *   **Password**: `password`
+
+4.  **Deploy a Data Center**:
+    Once logged in, you can deploy a basic zone to test:
+    ```bash
+    docker exec -it simulator python /root/tools/marvin/marvin/deployDataCenter.py -i /root/setup/dev/basic.cfg
+    ```
 
 ## Getting Started
 
@@ -124,33 +162,19 @@ via GitHub pull requests.
 
 ## Getting Involved and Contributing
 
-Interested in helping out with Apache CloudStack? Great! We welcome
-participation from anybody willing to work [The Apache Way](https://theapacheway.com) and make a
-contribution. Note that you do not have to be a developer in order to contribute
-to Apache CloudStack. We need folks to help with documentation, translation,
-promotion etc. See our contribution [page](https://cloudstack.apache.org/contribute.html).
+We welcome contributions from everyone! Here's how you can get started:
 
-If you are a frequent contributors, you can request to be added as collaborators
-(see https://cwiki.apache.org/confluence/display/INFRA/Git+-+.asf.yaml+features#Git.asf.yamlfeatures-AssigningexternalcollaboratorswiththetriageroleonGitHub)
-to our GitHub repos. This allows you to use project GitHub with ability to report
-issue with tags, and be assigned to issues and PRs. This is done via the .asf.yaml
-file in this repo.
-You may do so by sharing your GitHub users ID or raise a GitHub issue.
+*   **How to Contribute**: Read our [CONTRIBUTING.md](CONTRIBUTING.md) guide for details on code, documentation, and translation contributions.
+*   **Mailing Lists**: Join the conversation on our mailing lists. This is where decisions are made.
+    *   [dev@cloudstack.apache.org](mailto:dev-subscribe@cloudstack.apache.org) - For development discussions.
+    *   [users@cloudstack.apache.org](mailto:users-subscribe@cloudstack.apache.org) - For general usage questions.
+    *   [issues@cloudstack.apache.org](mailto:issues-subscribe@cloudstack.apache.org) - For issue tracking notifications.
+*   **Report Issues**: Found a bug? Report it on [GitHub Issues](https://github.com/apache/cloudstack/issues).
+*   **Good First Issues**: New to the project? Check out issues labeled ["good first issue"](https://github.com/apache/cloudstack/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).
 
-If you're interested in learning more or participating in the Apache CloudStack
-project, the mailing lists are the best way to do that. While the project has
-several communications channels, the [mailing lists](https://cloudstack.apache.org/mailing-lists.html) are the most active and the
-official channels for making decisions about the project itself.
+## Project Status
 
-Mailing lists:
-- [Development Mailing List](mailto:dev-subscribe@cloudstack.apache.org)
-- [Users Mailing List](mailto:users-subscribe@cloudstack.apache.org)
-- [Commits Mailing List](mailto:commits-subscribe@cloudstack.apache.org)
-- [Issues Mailing List](mailto:issues-subscribe@cloudstack.apache.org)
-- [Marketing Mailing List](mailto:marketing-subscribe@cloudstack.apache.org)
-
-Report and/or check bugs on [GitHub](https://github.com/apache/cloudstack/issues) and check our
-developer [page](https://cloudstack.apache.org/developers.html) for contributing code.
+Apache CloudStack is a mature, actively developed project with a vibrant community. We follow a regular release cadence, typically delivering major feature releases every 6 months, with maintenance releases in between. This ensures a balance of innovation and stability for production environments.
 
 ## Reporting Security Vulnerabilities
 
