@@ -137,8 +137,8 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.NIC_MAC_ADDRESS_LIST,
             type = CommandType.MAP,
-            description = "VM NIC to MAC address mapping using keys nic and mac. " +
-                    "Example: nicmacaddresslist[0].nic=nic1&nicmacaddresslist[0].mac=aa:bb:cc:dd:ee:ff. " +
+            description = "VM NIC to MAC address mapping using keys nic and macAddress. " +
+                    "Example: nicmacaddresslist[0].nic=nic1&nicmacaddresslist[0].macAddress=aa:bb:cc:dd:ee:ff. " +
                     "Overrides the MAC address reported by the hypervisor for the given NIC.",
             since = "4.21.0")
     private Map nicMacAddressList;
@@ -334,6 +334,4 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
                 accountId = Account.ACCOUNT_ID_SYSTEM;
             }
         }
-        return accountId;
-    }
-}
+        return accou

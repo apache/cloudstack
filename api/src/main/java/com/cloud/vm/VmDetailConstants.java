@@ -87,7 +87,7 @@ public interface VmDetailConstants {
     String NETWORK = "network";
     String IP4_ADDRESS = "ip4Address";
     String IP6_ADDRESS = "ip6Address";
-    String NIC_MAC_ADDRESS = "mac";
+    String NIC_MAC_ADDRESS = "macAddress";
     String DISK = "disk";
     String DISK_OFFERING = "diskOffering";
 
@@ -136,5 +136,4 @@ public interface VmDetailConstants {
     String ACTIVE_CHECKPOINT_ID = "active.checkpoint.id";
     String ACTIVE_CHECKPOINT_CREATE_TIME = "active.checkpoint.create.time";
     String LAST_CHECKPOINT_ID = "last.checkpoint.id";
-    String LAST_CHECKPOINT_CREATE_TIME = "last.checkpoint.create.time";
-}
+    String LAST_CHECKPOINT_CREATE_TIME = "last.checkpoint.create.ti
