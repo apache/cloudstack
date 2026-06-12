@@ -330,6 +330,11 @@
         <property name="caProviders" value="#{caProvidersRegistry.registered}" />
     </bean>
 
+    <!-- KMS manager -->
+    <bean id="kmsManager" class="org.apache.cloudstack.kms.KMSManagerImpl">
+        <property name="kmsProviders" value="#{kmsProvidersRegistry.registered}" />
+    </bean>
+
     <bean id="annotationService" class="org.apache.cloudstack.annotation.AnnotationManagerImpl">
         <property name="kubernetesServiceHelpers" value="#{kubernetesServiceHelperRegistry.registered}" />
     </bean>
