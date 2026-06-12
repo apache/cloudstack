@@ -19,11 +19,14 @@
 package org.apache.cloudstack.oauth2;
 
 import com.cloud.domain.Domain;
+import com.cloud.domain.DomainVO;
+import com.cloud.user.DomainManager;
 import com.cloud.user.DomainService;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.auth.UserOAuth2Authenticator;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -58,6 +61,9 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
     @Inject
     private DomainService _domainService;
 
+    @Inject
+    private MessageBus _messageBus;
+
     protected static Map<String, UserOAuth2Authenticator> userOAuth2AuthenticationProvidersMap = new HashMap<>();
 
     private List<UserOAuth2Authenticator> userOAuth2AuthenticationProviders;
@@ -74,8 +80,24 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
     @Override
     public boolean start() {
         initializeUserOAuth2AuthenticationProvidersMap();
+        addDomainRemovalListener();
         logger.info("OAUTH plugin loaded");
         return true;
+    }
+
+    private void addDomainRemovalListener() {
+        _messageBus.subscribe(DomainManager.MESSAGE_PRE_REMOVE_DOMAIN_EVENT, (senderAddress, subject, args) -> {
+            try {
+                long domainId = ((DomainVO) args).getId();
+                List<OauthProviderVO> providers = _oauthProviderDao.listByDomain(domainId);
+                for (OauthProviderVO provider : providers) {
+                    _oauthProviderDao.expunge(provider.getId());
+                    logger.debug("Removed OAuth provider {} for deleted domain {}", provider.getProvider(), domainId);
+                }
+            } catch (Exception e) {
+                logger.error("Failed to remove OAuth providers for deleted domain", e);
+            }
+        });
     }
 
     protected boolean isOAuthPluginEnabled(Long domainId) {

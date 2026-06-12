@@ -20,9 +20,12 @@
 package org.apache.cloudstack.oauth2;
 
 import com.cloud.domain.Domain;
+import com.cloud.domain.DomainVO;
 import com.cloud.user.DomainService;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.cloudstack.oauth2.api.command.DeleteOAuthProviderCmd;
 import org.apache.cloudstack.oauth2.api.command.RegisterOAuthProviderCmd;
 import org.apache.cloudstack.oauth2.api.command.UpdateOAuthProviderCmd;
@@ -49,6 +52,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class OAuth2AuthManagerImplTest {
@@ -62,6 +66,9 @@ public class OAuth2AuthManagerImplTest {
 
     @Mock
     DomainService _domainService;
+
+    @Mock
+    MessageBus _messageBus;
 
     AutoCloseable closeable;
     @Before
@@ -634,6 +641,39 @@ public class OAuth2AuthManagerImplTest {
         } catch (CloudRuntimeException e) {
             assertEquals("Global provider with the name google is already registered", e.getMessage());
         }
+    }
+
+    @Test
+    public void testDomainDeletionCleansUpOAuthProviders() {
+        Long domainId = 42L;
+
+        OauthProviderVO provider1 = new OauthProviderVO();
+        provider1.setProvider("github");
+        provider1.setDomainId(domainId);
+
+        OauthProviderVO provider2 = new OauthProviderVO();
+        provider2.setProvider("google");
+        provider2.setDomainId(domainId);
+
+        when(_oauthProviderDao.listByDomain(domainId)).thenReturn(Arrays.asList(provider1, provider2));
+        when(_oauthProviderDao.expunge(Mockito.anyLong())).thenReturn(true);
+
+        // Capture the subscriber registered during start()
+        doNothing().when(_authManager).initializeUserOAuth2AuthenticationProvidersMap();
+        Mockito.doAnswer(invocation -> {
+            String subject = invocation.getArgument(0);
+            MessageSubscriber subscriber = invocation.getArgument(1);
+            // Simulate domain removal event
+            DomainVO domain = Mockito.mock(DomainVO.class);
+            when(domain.getId()).thenReturn(domainId);
+            subscriber.onPublishMessage("", subject, domain);
+            return null;
+        }).when(_messageBus).subscribe(Mockito.eq(com.cloud.user.DomainManager.MESSAGE_PRE_REMOVE_DOMAIN_EVENT), Mockito.any());
+
+        _authManager.start();
+
+        verify(_oauthProviderDao).listByDomain(domainId);
+        verify(_oauthProviderDao, Mockito.times(2)).expunge(Mockito.anyLong());
     }
 
 }

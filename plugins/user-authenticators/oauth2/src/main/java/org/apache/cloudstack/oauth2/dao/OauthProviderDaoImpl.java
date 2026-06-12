@@ -55,6 +55,13 @@ public class OauthProviderDaoImpl extends GenericDaoBase<OauthProviderVO, Long> 
     }
 
     @Override
+    public List<OauthProviderVO> listByDomain(Long domainId) {
+        SearchCriteria<OauthProviderVO> sc = createSearchCriteria();
+        sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+        return listBy(sc);
+    }
+
+    @Override
     public OauthProviderVO findByProviderAndDomainWithGlobalFallback(String provider, Long domainId) {
         OauthProviderVO providerVO = null;
         if (Objects.nonNull(domainId)) {
