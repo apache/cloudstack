@@ -378,8 +378,6 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        // _setupAgentPath = Script.findScript(getPatchPath(),
-        // "setup_agent.sh");
         _kvmPrivateNic = _configDao.getValue(Config.KvmPrivateNetwork.key());
         if (_kvmPrivateNic == null) {
             _kvmPrivateNic = "cloudbr0";
