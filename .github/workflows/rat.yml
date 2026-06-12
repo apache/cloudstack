@@ -37,7 +37,7 @@ jobs:
         uses: ./.github/actions/install-nonoss
       - name: RAT licence checks
         run: |
-          mvn -P developer,systemvm -Dsimulator -Dnoredist -pl . org.apache.rat:apache-rat-plugin:0.12:check
+          mvn -P developer,systemvm -Dsimulator -Dnoredist -pl . org.apache.rat:apache-rat-plugin:0.18:check
       - name: Rat Report
         if: always()
         run: |
