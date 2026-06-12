@@ -216,6 +216,7 @@ public class ApiServlet extends HttpServlet {
                     HttpUtils.RESPONSE_TYPE_XML, ApiServer.JSONcontentType.value());
             return;
         }
+        CallContext.current().setRequestRemoteAddress(req.getServerName());
 
         final StringBuilder auditTrailSb = new StringBuilder(128);
         auditTrailSb.append(" ").append(remoteAddress.getHostAddress());
