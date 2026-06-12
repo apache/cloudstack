@@ -119,6 +119,7 @@ import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.SslCertVO;
 import com.cloud.network.element.LoadBalancingServiceProvider;
+import com.cloud.network.element.NetworkElement;
 import com.cloud.network.lb.LoadBalancingRule.LbAutoScalePolicy;
 import com.cloud.network.lb.LoadBalancingRule.LbAutoScaleVmGroup;
 import com.cloud.network.lb.LoadBalancingRule.LbAutoScaleVmProfile;
@@ -2048,6 +2049,16 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             handled = lbElement.applyLBRules(network, rules);
             if (handled)
                 break;
+        }
+        if (!handled) {
+            // Get provider name and get the element by provider name (it could be an external provider)
+            String lbProviderName = _ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Service.Lb);
+            if (lbProviderName != null) {
+                NetworkElement element = _networkModel.getElementImplementingProvider(lbProviderName);
+                if (element instanceof LoadBalancingServiceProvider) {
+                    handled = ((LoadBalancingServiceProvider) element).applyLBRules(network, rules);
+                }
+            }
         }
         return handled;
     }
