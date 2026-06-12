@@ -22,6 +22,7 @@ import java.io.StringReader;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -50,7 +51,7 @@ public class LibvirtStorageVolumeXMLParser {
                 NodeList pathNodes = backingStore.getElementsByTagName("path");
                 if (pathNodes.getLength() > 0) {
                     String path = pathNodes.item(0).getTextContent();
-                    if (path == null || path.trim().isEmpty()) {
+                    if (StringUtils.isEmpty(path)) {
                         return null;
                     }
                     path = path.trim();
