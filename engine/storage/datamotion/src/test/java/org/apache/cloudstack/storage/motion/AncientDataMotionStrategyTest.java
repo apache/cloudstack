@@ -102,6 +102,14 @@ public class AncientDataMotionStrategyTest {
     }
 
     @Test
+    public void testAddFullCloneFlagOnXenServerDest() throws IllegalAccessException, NoSuchFieldException {
+        overrideDefaultConfigValue(StorageManager.XenserverCreateCloneFull, String.valueOf(FULL_CLONE_FLAG));
+        when(dataTO.getHypervisorType()).thenReturn(HypervisorType.XenServer);
+        strategy.addFullCloneAndDiskprovisiongStrictnessFlagOnXenServerDest(dataTO);
+        verify(dataStoreTO).setFullCloneFlag(FULL_CLONE_FLAG);
+    }
+
+    @Test
     public void testAddFullCloneFlagOnNotVmwareDest(){
         verify(dataStoreTO, never()).setFullCloneFlag(any(Boolean.class));
     }
