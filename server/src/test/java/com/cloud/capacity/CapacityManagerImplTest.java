@@ -19,9 +19,12 @@ package com.cloud.capacity;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -43,10 +46,15 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.host.Host;
+import com.cloud.host.dao.HostDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.utils.Pair;
+import com.cloud.utils.fsm.StateMachine2;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.Event;
+import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VmDetailConstants;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -55,6 +63,8 @@ public class CapacityManagerImplTest {
     ClusterDetailsDao clusterDetailsDao;
     @Mock
     ServiceOfferingDao serviceOfferingDao;
+    @Mock
+    HostDao hostDao;
 
     @Spy
     @InjectMocks
@@ -158,6 +168,51 @@ public class CapacityManagerImplTest {
         verify(capacityManager).checkIfHostHasCapacity(eq(host), eq(OFFERING_CPU * OFFERING_CPU_SPEED),
                 eq(ByteScaleUtils.mebibytesToBytes(OFFERING_MEMORY)),
                 eq(false), eq(cpuOvercommit), eq(memoryOvercommit), eq(false));
+    }
+
+    @Test
+    public void testPostStateTransitionReleasesStaleReservationWhenStartingOnDifferentHost() {
+        final Long oldHostId = 1L;
+        final Long newHostId = 2L;
+
+        VirtualMachine vm = mock(VirtualMachine.class);
+        when(vm.getHostId()).thenReturn(newHostId);
+        when(vm.getLastHostId()).thenReturn(oldHostId);
+
+        doNothing().when(capacityManager).allocateVmCapacity(any(VirtualMachine.class));
+        doReturn(true).when(capacityManager).releaseVmCapacity(
+                any(VirtualMachine.class), anyBoolean(), anyBoolean(), anyLong());
+
+        StateMachine2.Transition<State, Event> transition = new StateMachine2.Transition<>(
+                State.Stopped, Event.StartRequested, State.Starting, Collections.emptyList());
+        Pair<Long, Long> opaque = new Pair<>(null, 0L);
+
+        capacityManager.postStateTransitionEvent(transition, vm, true, opaque);
+
+        verify(capacityManager).releaseVmCapacity(vm, true, false, oldHostId);
+        verify(capacityManager).allocateVmCapacity(vm);
+    }
+
+    @Test
+    public void testPostStateTransitionReleasesReservationWhenStartingOnSameHost() {
+        final Long hostId = 1L;
+
+        VirtualMachine vm = mock(VirtualMachine.class);
+        when(vm.getHostId()).thenReturn(hostId);
+        when(vm.getLastHostId()).thenReturn(hostId);
+
+        doNothing().when(capacityManager).allocateVmCapacity(any(VirtualMachine.class));
+        doReturn(true).when(capacityManager).releaseVmCapacity(
+                any(VirtualMachine.class), anyBoolean(), anyBoolean(), anyLong());
+
+        StateMachine2.Transition<State, Event> transition = new StateMachine2.Transition<>(
+                State.Stopped, Event.StartRequested, State.Starting, Collections.emptyList());
+        Pair<Long, Long> opaque = new Pair<>(null, 0L);
+
+        capacityManager.postStateTransitionEvent(transition, vm, true, opaque);
+
+        verify(capacityManager).releaseVmCapacity(vm, true, false, hostId);
+        verify(capacityManager).allocateVmCapacity(vm);
     }
 
     @Test

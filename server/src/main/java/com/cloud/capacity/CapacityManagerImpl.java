@@ -167,7 +167,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
     @DB
     @Override
-    public boolean releaseVmCapacity(VirtualMachine vm, final boolean moveFromReserved, final boolean moveToReservered, final Long hostId) {
+    public boolean releaseVmCapacity(VirtualMachine vm, final boolean moveFromReserved, final boolean moveToReserved, final Long hostId) {
         if (hostId == null) {
             return true;
         }
@@ -175,11 +175,11 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         if (HypervisorType.External.equals(host.getHypervisorType())) {
             return true;
         }
-        return releaseVmCapacity(vm, moveFromReserved, moveToReservered, host);
+        return releaseVmCapacity(vm, moveFromReserved, moveToReserved, host);
     }
 
     @DB
-    public boolean releaseVmCapacity(VirtualMachine vm, final boolean moveFromReserved, final boolean moveToReservered, final Host host) {
+    public boolean releaseVmCapacity(VirtualMachine vm, final boolean moveFromReserved, final boolean moveToReserved, final Host host) {
         if (host == null) {
             return true;
         }
@@ -241,7 +241,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                             capacityCpuCore.setUsedCapacity(usedCpuCore - vmCPUCore);
                         }
 
-                        if (moveToReservered) {
+                        if (moveToReserved) {
                             if (reservedCpu + vmCPU <= totalCpu) {
                                 capacityCpu.setReservedCapacity(reservedCpu + vmCPU);
                             }
@@ -264,11 +264,11 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
                     logger.debug("release cpu from host: {}, old used: {}, " +
                             "reserved: {}, actual total: {}, total with overprovisioning: {}; " +
-                            "new used: {},reserved:{}; movedfromreserved: {},moveToReservered: {}", host, usedCpu, reservedCpu, actualTotalCpu, totalCpu, capacityCpu.getUsedCapacity(), capacityCpu.getReservedCapacity(), moveFromReserved, moveToReservered);
+                            "new used: {},reserved:{}; movedfromreserved: {},moveToReserved: {}", host, usedCpu, reservedCpu, actualTotalCpu, totalCpu, capacityCpu.getUsedCapacity(), capacityCpu.getReservedCapacity(), moveFromReserved, moveToReserved);
 
                     logger.debug("release mem from host: {}, old used: {}, " +
                             "reserved: {}, total: {}; new used: {}, reserved: {}; " +
-                            "movedfromreserved: {}, moveToReservered: {}", host, toHumanReadableSize(usedMem), toHumanReadableSize(reservedMem), toHumanReadableSize(totalMem), toHumanReadableSize(capacityMemory.getUsedCapacity()), toHumanReadableSize(capacityMemory.getReservedCapacity()), moveFromReserved, moveToReservered);
+                            "movedfromreserved: {}, moveToReserved: {}", host, toHumanReadableSize(usedMem), toHumanReadableSize(reservedMem), toHumanReadableSize(totalMem), toHumanReadableSize(capacityMemory.getUsedCapacity()), toHumanReadableSize(capacityMemory.getReservedCapacity()), moveFromReserved, moveToReserved);
 
                     _capacityDao.update(capacityCpu.getId(), capacityCpu);
                     _capacityDao.update(capacityMemory.getId(), capacityMemory);
@@ -285,7 +285,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
     @DB
     @Override
-    public void allocateVmCapacity(VirtualMachine vm, final boolean fromLastHost) {
+    public void allocateVmCapacity(VirtualMachine vm) {
 
         final long hostId = vm.getHostId();
         final HostVO host = _hostDao.findById(hostId);
@@ -328,7 +328,6 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                     long usedCpuCore = capacityCpuCore.getUsedCapacity();
                     long reservedCpu = capacityCpu.getReservedCapacity();
                     long reservedMem = capacityMem.getReservedCapacity();
-                    long reservedCpuCore = capacityCpuCore.getReservedCapacity();
                     long actualTotalCpu = capacityCpu.getTotalCapacity();
                     long actualTotalMem = capacityMem.getTotalCapacity();
                     long totalCpu = (long)(actualTotalCpu * cpuOvercommitRatio);
@@ -349,41 +348,25 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                     capacityMem.setUsedCapacity(usedMem + ram);
                     capacityCpuCore.setUsedCapacity(usedCpuCore + cpucore);
 
-                    if (fromLastHost) {
-                        /* alloc from reserved */
-                        if (logger.isDebugEnabled()) {
-                            logger.debug("We are allocating VM to the last host again, so adjusting the reserved capacity if it is not less than required");
-                            logger.debug("Reserved CPU: " + reservedCpu + " , Requested CPU: " + cpu);
-                            logger.debug("Reserved RAM: " + toHumanReadableSize(reservedMem) + " , Requested RAM: " + toHumanReadableSize(ram));
-                        }
-                        if (reservedCpu >= cpu && reservedMem >= ram) {
-                            capacityCpu.setReservedCapacity(reservedCpu - cpu);
-                            capacityMem.setReservedCapacity(reservedMem - ram);
-                            capacityCpuCore.setReservedCapacity(reservedCpuCore - cpucore);
-                        }
-                    } else {
-                        /* alloc from free resource */
-                        if (!((reservedCpu + usedCpu + cpu <= totalCpu) && (reservedMem + usedMem + ram <= totalMem))) {
-                            if (logger.isDebugEnabled()) {
-                                logger.debug("Host doesn't seem to have enough free capacity, but increasing the used capacity anyways, " +
-                                    "since the VM is already starting on this host ");
-                            }
-                        }
+                    /* alloc from free resource */
+                    if (!((reservedCpu + usedCpu + cpu <= totalCpu) && (reservedMem + usedMem + ram <= totalMem))) {
+                        logger.debug("Host doesn't seem to have enough free capacity, but increasing the used capacity anyways, " +
+                                "since the VM is already starting on this host");
                     }
 
-                    logger.debug(String.format("CPU STATS after allocation: for host: %s, " +
-                                    "old used: %d, old reserved: %d, actual total: %d, " +
-                                    "total with overprovisioning: %d; new used: %d, reserved: %d; " +
-                                    "requested cpu: %d, alloc_from_last: %s",
+                    logger.debug("CPU STATS after allocation: for host: {}, " +
+                                    "old used: {}, old reserved: {}, actual total: {}, " +
+                                    "total with overprovisioning: {}; new used: {}, reserved: {}; " +
+                                    "requested cpu: {}",
                             host, usedCpu, reservedCpu, actualTotalCpu, totalCpu,
-                            capacityCpu.getUsedCapacity(), capacityCpu.getReservedCapacity(), cpu, fromLastHost));
+                            capacityCpu.getUsedCapacity(), capacityCpu.getReservedCapacity(), cpu);
 
                     logger.debug("RAM STATS after allocation: for host: {}, " +
                             "old used: {}, old reserved: {}, total: {}; new used: {}, reserved: {}; " +
-                            "requested mem: {}, alloc_from_last: {}",
+                            "requested mem: {}",
                             host, toHumanReadableSize(usedMem), toHumanReadableSize(reservedMem),
                             toHumanReadableSize(totalMem), toHumanReadableSize(capacityMem.getUsedCapacity()),
-                            toHumanReadableSize(capacityMem.getReservedCapacity()), toHumanReadableSize(ram), fromLastHost);
+                            toHumanReadableSize(capacityMem.getReservedCapacity()), toHumanReadableSize(ram));
 
                     long cluster_id = host.getClusterId();
                     ClusterDetailsVO cluster_detail_cpu = _clusterDetailsDao.findDetail(cluster_id, VmDetailConstants.CPU_OVER_COMMIT_RATIO);
@@ -959,8 +942,8 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
       Host lastHost = _hostDao.findById(vm.getLastHostId());
       Host oldHost = _hostDao.findById(oldHostId);
       Host newHost = _hostDao.findById(vm.getHostId());
-      logger.debug(String.format("%s state transited from [%s] to [%s] with event [%s]. VM's original host: %s, new host: %s, host before state transition: %s", vm, oldState,
-                newState, event, lastHost, newHost, oldHost));
+      logger.debug("{} state transited from [{}] to [{}] with event [{}]. VM's original host: {}, new host: {}, host before state transition: {}",
+              vm, oldState, newState, event, lastHost, newHost, oldHost);
 
       if (oldState == State.Starting) {
         if (newState != State.Running) {
@@ -1000,12 +983,10 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
       }
 
       if ((newState == State.Starting || newState == State.Migrating || event == Event.AgentReportMigrated) && vm.getHostId() != null) {
-        boolean fromLastHost = false;
-        if (vm.getHostId().equals(vm.getLastHostId())) {
-          logger.debug("VM starting again on the last host it was stopped on");
-          fromLastHost = true;
+        if (vm.getLastHostId() != null) {
+          releaseVmCapacity(vm, true, false, vm.getLastHostId());
         }
-        allocateVmCapacity(vm, fromLastHost);
+        allocateVmCapacity(vm);
       }
 
       if (newState == State.Stopped && event != Event.RestoringFailed && event != Event.RestoringSuccess && vm.getType() == VirtualMachine.Type.User) {
