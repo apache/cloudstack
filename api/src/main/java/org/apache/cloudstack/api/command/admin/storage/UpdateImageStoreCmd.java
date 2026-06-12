@@ -50,6 +50,13 @@ public class UpdateImageStoreCmd extends BaseCmd {
             description = "The number of bytes CloudStack can use on this image storage.\n\tNOTE: this will be overwritten by the StatsCollector as soon as there is a SSVM to query the storage.")
     private Long capacityBytes;
 
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = false,
+            description = "The new URL for the image store (e.g. nfs://new-host/export). " +
+                    "The image store must be in read-only state before its URL can be changed. " +
+                    "After updating, destroy and recreate any Secondary Storage VMs so they remount the new path.",
+            since = "4.23.0")
+    private String url;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -68,6 +75,10 @@ public class UpdateImageStoreCmd extends BaseCmd {
 
     public Long getCapacityBytes() {
         return capacityBytes;
+    }
+
+    public String getUrl() {
+        return url;
     }
 
     /////////////////////////////////////////////////////

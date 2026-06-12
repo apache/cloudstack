@@ -411,7 +411,7 @@ public interface StorageManager extends StorageService {
 
     Long getDiskIopsWriteRate(ServiceOffering offering, DiskOffering diskOffering);
 
-    ImageStore updateImageStoreStatus(Long id, String name, Boolean readonly, Long capacityBytes);
+    ImageStore updateImageStoreStatus(Long id, String name, Boolean readonly, Long capacityBytes, String url);
 
     void cleanupDownloadUrls();
 
