@@ -364,11 +364,20 @@ export default {
     },
     handleDomain () {
       const values = toRaw(this.form)
-      if (!values.domain) {
-        this.$store.commit('SET_DOMAIN_USED_TO_LOGIN', '/')
-      } else {
-        this.$store.commit('SET_DOMAIN_USED_TO_LOGIN', values.domain)
+      const domain = this.getLoginDomain(values.domain)
+      this.$store.commit('SET_DOMAIN_USED_TO_LOGIN', domain)
+    },
+    getLoginDomain (domain) {
+      if (this.$config.loginBaseDomain) {
+        if (domain) {
+          return this.$config.loginBaseDomain + '/' + domain
+        }
+        return this.$config.loginBaseDomain
       }
+      if (domain) {
+        return domain
+      }
+      return '/'
     },
     getGitHubUrl (from) {
       const rootURl = 'https://github.com/login/oauth/authorize'
@@ -417,10 +426,7 @@ export default {
           delete loginParams.username
           loginParams[!this.state.loginType ? 'email' : 'username'] = values.username
           loginParams.password = values.password
-          loginParams.domain = values.domain
-          if (!loginParams.domain) {
-            loginParams.domain = '/'
-          }
+          loginParams.domain = this.getLoginDomain(values.domain)
           this.Login(loginParams)
             .then((res) => this.loginSuccess(res))
             .catch(err => {
@@ -449,10 +455,7 @@ export default {
         loginParams.email = this.email
         loginParams.provider = provider
         loginParams.secretcode = this.secretcode
-        loginParams.domain = values.domain
-        if (!loginParams.domain) {
-          loginParams.domain = '/'
-        }
+        loginParams.domain = this.getLoginDomain(values.domain)
         this.OauthLogin(loginParams)
           .then((res) => this.loginSuccess(res))
           .catch(err => {

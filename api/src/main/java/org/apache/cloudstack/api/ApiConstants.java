@@ -1397,6 +1397,7 @@ public class ApiConstants {
     public static final String CSS = "css";
 
     public static final String JSON_CONFIGURATION = "jsonconfiguration";
+    public static final String LOGIN_BASE_DOMAIN = "loginbasedomain";
 
     public static final String COMMON_NAMES = "commonnames";
 
