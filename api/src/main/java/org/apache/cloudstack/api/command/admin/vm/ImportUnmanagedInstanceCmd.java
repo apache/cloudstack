@@ -334,4 +334,6 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
                 accountId = Account.ACCOUNT_ID_SYSTEM;
             }
         }
-        return accou
+        return accountId;
+    }
+}
