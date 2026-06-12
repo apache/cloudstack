@@ -560,9 +560,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                     String message = "Maximum" + messageSuffix;
                     Map<String, Object> details = new HashMap<>();
                     details.put("resourceTypeDisplay", StringUtils.isBlank(tag) ? type.getDisplayName() : type.getDisplayName() + " (tag: " + tag + ")");
-                    details.put("resourceOwner", ObjectUtils.firstNonNull(project, account));
                     details.put("resourceOwnerDomain", domain);
-                    details.put("resourceOwnerType", project == null ? "Account" : "Project");
                     details.put("resourceLimit", convDomainResourceLimit);
                     details.put("resourceAmount", convCurrentDomainResourceCount);
                     details.put("resourceReserved", convCurrentResourceReservation);
