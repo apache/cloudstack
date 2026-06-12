@@ -1397,6 +1397,7 @@ public class ApiConstants {
     public static final String CSS = "css";
 
     public static final String JSON_CONFIGURATION = "jsonconfiguration";
+    public static final String CUSTOM_LABELS_PATH = "customlabelspath";
 
     public static final String COMMON_NAMES = "commonnames";
 

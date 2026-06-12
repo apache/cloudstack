@@ -48,6 +48,9 @@ public class GuiThemeJoinVO implements GuiThemeJoin {
     @Column(name = "json_configuration", nullable = false, length = 65535)
     private String jsonConfiguration;
 
+    @Column(name = "custom_labels_path", nullable = false, length = 65535)
+    private String customLabelsPath;
+
     @Column(name = "common_names", length = 65535)
     private String commonNames;
 
@@ -72,6 +75,24 @@ public class GuiThemeJoinVO implements GuiThemeJoin {
     private Date removed = null;
 
     public GuiThemeJoinVO() {
+    }
+
+    public GuiThemeJoinVO(Long id, String uuid, String name, String description, String css, String jsonConfiguration, String customLabelsPath, String commonNames, String domains,
+                          String accounts, boolean recursiveDomains, boolean isPublic, Date created, Date removed) {
+        this.id = id;
+        this.uuid = uuid;
+        this.name = name;
+        this.description = description;
+        this.css = css;
+        this.jsonConfiguration = jsonConfiguration;
+        this.customLabelsPath = customLabelsPath;
+        this.commonNames = commonNames;
+        this.domains = domains;
+        this.accounts = accounts;
+        this.recursiveDomains = recursiveDomains;
+        this.isPublic = isPublic;
+        this.created = created;
+        this.removed = removed;
     }
 
     @Override
@@ -137,5 +158,10 @@ public class GuiThemeJoinVO implements GuiThemeJoin {
     @Override
     public Date getRemoved() {
         return removed;
+    }
+
+    @Override
+    public String getCustomLabelsPath() {
+        return customLabelsPath;
     }
 }

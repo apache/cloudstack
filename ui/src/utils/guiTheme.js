@@ -17,7 +17,7 @@
 
 import { vueProps } from '@/vue-app'
 import { getAPI } from '@/api'
-import { loadLanguageAsync } from '../locales'
+import { loadLanguageAsync, updateMessages } from '../locales'
 
 export async function applyCustomGuiTheme (accountid, domainid) {
   await fetch('config.json').then(response => response.json()).then(config => {
@@ -61,6 +61,10 @@ async function applyDynamicCustomization (response) {
 
   if (response?.jsonconfiguration) {
     jsonConfig = JSON.parse(response?.jsonconfiguration)
+  }
+
+  if (response?.customlabelspath) {
+    updateMessages(response.customlabelspath)
   }
 
   // Sets custom GUI fields only if is not nullish.

@@ -48,6 +48,10 @@ public class GuiThemeResponse extends BaseResponse {
     @Param(description = "The JSON with the configurations to be retrieved and imported into the GUI when matching the theme access configurations.")
     private String jsonConfiguration;
 
+    @SerializedName(ApiConstants.CUSTOM_LABELS_PATH)
+    @Param(description = "The JSON with the custom labels to be retrieved and imported into the GUI when matching the theme access configurations.")
+    private String customLabelsPath;
+
     @SerializedName(ApiConstants.COMMON_NAMES)
     @Param(description = "A set of Common Names (CN) (fixed or wildcard) separated by comma that can retrieve the theme; e.g.: *acme.com,acme2.com")
     private String commonNames;
@@ -119,6 +123,14 @@ public class GuiThemeResponse extends BaseResponse {
 
     public void setJsonConfiguration(String jsonConfiguration) {
         this.jsonConfiguration = jsonConfiguration;
+    }
+
+    public String getCustomLabelsPath() {
+        return customLabelsPath;
+    }
+
+    public void setCustomLabelsPath(String customLabelsPath) {
+        this.customLabelsPath = customLabelsPath;
     }
 
     public String getCommonNames() {

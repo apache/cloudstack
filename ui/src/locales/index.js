@@ -20,6 +20,7 @@ import { vueProps } from '@/vue-app'
 
 const loadedLanguage = []
 const messages = {}
+let systemLang
 
 export const i18n = createI18n({
   locale: 'en',
@@ -39,9 +40,21 @@ export function loadLanguageAsync (lang) {
     return Promise.resolve(setLanguage(lang))
   }
 
+  systemLang = lang
   return fetch(`locales/${lang}.json?ts=${Date.now()}`)
     .then(response => response.json())
     .then(json => Promise.resolve(setLanguage(lang, json)))
+}
+
+export function updateMessages (customPath) {
+  fetch(`${customPath}/${systemLang}.json`)
+    .then(response => response.json())
+    .then((data) => {
+      const keys = Object.keys(data)
+      keys.forEach(x => {
+        messages[systemLang][x] = data[x]
+      })
+    })
 }
 
 function setLanguage (lang, message) {
@@ -60,4 +73,6 @@ function setLanguage (lang, message) {
   if (message && Object.keys(message).length > 0) {
     messages[lang] = message
   }
+
+  systemLang = lang
 }

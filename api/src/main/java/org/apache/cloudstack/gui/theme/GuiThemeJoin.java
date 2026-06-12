@@ -44,4 +44,6 @@ public interface GuiThemeJoin extends InternalIdentity, Identity {
     Date getCreated();
 
     Date getRemoved();
+
+    String getCustomLabelsPath();
 }

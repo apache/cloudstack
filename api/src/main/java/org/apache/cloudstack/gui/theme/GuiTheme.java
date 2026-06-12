@@ -37,6 +37,8 @@ public interface GuiTheme extends InternalIdentity, Identity {
 
     boolean getIsPublic();
 
+    String getCustomLabelsPath();
+
     void setId(Long id);
 
     void setUuid(String uuid);
@@ -58,4 +60,6 @@ public interface GuiTheme extends InternalIdentity, Identity {
     boolean isRecursiveDomains();
 
     void setRecursiveDomains(boolean recursiveDomains);
+
+    void setCustomLabelsPath(String customLabelsPath);
 }
