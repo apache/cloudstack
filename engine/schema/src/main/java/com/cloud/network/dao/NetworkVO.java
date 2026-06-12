@@ -182,6 +182,9 @@ public class NetworkVO implements Network {
     @Column(name = "external_id")
     String externalId;
 
+    @Column(name = "description")
+    String description;
+
     @Transient
     String routerIp;
 
@@ -711,6 +714,14 @@ public class NetworkVO implements Network {
 
     public void setExternalId(String externalId) {
         this.externalId = externalId;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public String getVlanIdAsUUID() {
