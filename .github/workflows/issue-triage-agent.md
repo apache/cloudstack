@@ -6,6 +6,7 @@ permissions:
   issues: read
 imports:
 - github/gh-aw/.github/workflows/shared/reporting.md@359795d49ada21681ab616bd4cbcb144a7387115
+- github/gh-aw/.github/workflows/shared/noop-reminder.md@359795d49ada21681ab616bd4cbcb144a7387115
 safe-outputs:
   add-comment: {}
   add-labels:
@@ -88,5 +89,3 @@ This provides both per-issue context and batch visibility.
 - `question`: Used for issues that are asking for clarification or have questions about the project.
 - `help-wanted`: Indicates that the issue is a good candidate for external contributions and help
 - `good-first-issue`: Marks issues that are suitable for newcomers to the project, often with simpler scope.
-
-{{#runtime-import shared/noop-reminder.md}}
