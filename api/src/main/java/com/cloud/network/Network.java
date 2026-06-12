@@ -487,8 +487,6 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
 
     boolean isStrechedL2Network();
 
-    String getExternalId();
-
     PVlanType getPvlanType();
 
     String getRouterIp();

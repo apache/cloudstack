@@ -3105,7 +3105,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         logger.debug("Creating network for account {} from the network offering {} as a part of deployVM process", owner, requiredOfferings.get(0));
         Network newNetwork = networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network",
                 null, null, null, false, null, owner, null, physicalNetwork, zone.getId(), ControlledEntity.ACLType.Account, null, null, null, null, true, null, null,
-                null, null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null);
         if (newNetwork != null) {
             defaultNetwork = networkDao.findById(newNetwork.getId());
         }

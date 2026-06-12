@@ -3821,7 +3821,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Override
     public Network createVpcGuestNetwork(final long ntwkOffId, final String name, final String displayText, final String gateway, final String cidr, final String vlanId,
             String networkDomain, final Account owner, final Long domainId, final PhysicalNetwork pNtwk, final long zoneId, final ACLType aclType, final Boolean subdomainAccess,
-            final long vpcId, final Long aclId, final Account caller, final Boolean isDisplayNetworkEnabled, String externalId, String ip6Gateway, String ip6Cidr,
+            final long vpcId, final Long aclId, final Account caller, final Boolean isDisplayNetworkEnabled, String ip6Gateway, String ip6Cidr,
             final String ip4Dns1, final String ip4Dns2, final String ip6Dns1, final String ip6Dns2, Pair<Integer, Integer> vrIfaceMTUs, Integer networkCidrSize)
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
 
@@ -3847,7 +3847,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         // 2) Create network
         final Network guestNetwork = _ntwkMgr.createGuestNetwork(ntwkOffId, name, displayText, gateway, cidr, vlanId, false, networkDomain, owner, domainId, pNtwk, zoneId, aclType,
-                subdomainAccess, vpcId, ip6Gateway, ip6Cidr, isDisplayNetworkEnabled, null, null, externalId, null, null, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2, vrIfaceMTUs, networkCidrSize);
+                subdomainAccess, vpcId, ip6Gateway, ip6Cidr, isDisplayNetworkEnabled, null, null, null, null, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2, vrIfaceMTUs, networkCidrSize);
 
         if (guestNetwork != null) {
             guestNetwork.setNetworkACLId(aclId);
