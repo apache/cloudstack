@@ -89,6 +89,12 @@ public class ListBackupsCmd extends BaseListProjectAndAccountResourcesCmd {
             description = "list backups by backup offering")
     private Long backupOfferingId;
 
+    @Parameter(name = ApiConstants.STATUS,
+            type = CommandType.STRING,
+            since = "4.23.0",
+            description = "list backups by status")
+    private String backupStatus;
+
     @Parameter(name = ApiConstants.LIST_VM_DETAILS,
             type = CommandType.BOOLEAN,
             since = "4.21.0",
@@ -117,6 +123,10 @@ public class ListBackupsCmd extends BaseListProjectAndAccountResourcesCmd {
 
     public Long getZoneId() {
         return zoneId;
+    }
+
+    public String getBackupStatus() {
+        return backupStatus;
     }
 
     public Boolean getListVmDetails() {
