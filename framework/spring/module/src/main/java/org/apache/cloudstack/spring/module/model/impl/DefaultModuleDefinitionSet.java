@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EmptyStackException;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -61,6 +62,9 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
     String root;
     Map<String, ModuleDefinition> modules;
     Map<String, ApplicationContext> contexts = new HashMap<String, ApplicationContext>();
+
+    Map<String, Set<Resource>> configResourcesMap = new HashMap<String, Set<Resource>>();
+
     ApplicationContext rootContext = null;
     Set<String> excludes = new HashSet<String>();
     Properties configProperties = null;
@@ -314,24 +318,35 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
 
     @Override
     public Resource[] getConfigResources(String name) {
-        Set<Resource> resources = new LinkedHashSet<Resource>();
-
-        ModuleDefinition original = null;
-        ModuleDefinition def = original = modules.get(name);
-
-        if (def == null)
+        ModuleDefinition def = modules.get(name);
+        if (def == null) {
             return new Resource[] {};
+        }
+
+        Set<Resource> resources = new LinkedHashSet<>();
 
         resources.addAll(def.getContextLocations());
 
-        while (def != null) {
-            resources.addAll(def.getInheritableContextLocations());
-            def = modules.get(def.getParentName());
+        resources.addAll(collectInheritedResources(def));
+
+        resources.addAll(def.getOverrideContextLocations());
+
+        return resources.toArray(Resource[]::new);
+    }
+
+    private Set<Resource> collectInheritedResources(final ModuleDefinition def) {
+        if (def == null) {
+            return Collections.emptySet();
         }
 
-        resources.addAll(original.getOverrideContextLocations());
+        if (configResourcesMap.containsKey(def.getName())) {
+            return configResourcesMap.get(def.getName());
+        }
 
-        return resources.toArray(new Resource[resources.size()]);
+        final Set<Resource> inheritableResources = new LinkedHashSet<>(def.getInheritableContextLocations());
+        inheritableResources.addAll(collectInheritedResources(modules.get(def.getParentName())));
+        configResourcesMap.put(def.getName(), inheritableResources);
+        return inheritableResources;
     }
 
     @Override
