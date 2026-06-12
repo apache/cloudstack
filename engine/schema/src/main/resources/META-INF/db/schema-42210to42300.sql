@@ -202,3 +202,9 @@ CREATE TABLE IF NOT EXISTS `cloud`.`image_transfer`(
     CONSTRAINT `fk_image_transfer__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
     INDEX `i_image_transfer__backup_id`(`backup_id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--- Quota resource statement
+INSERT INTO cloud.role_permissions (uuid, role_id, rule, permission, sort_order)
+SELECT uuid(), role_id, 'quotaResourceStatement', permission, sort_order
+FROM cloud.role_permissions rp
+WHERE rule = 'quotaStatement' AND NOT EXISTS(SELECT 1 FROM cloud.role_permissions rp_ WHERE rp.role_id = rp_.role_id AND rp_.rule = 'quotaResourceStatement');

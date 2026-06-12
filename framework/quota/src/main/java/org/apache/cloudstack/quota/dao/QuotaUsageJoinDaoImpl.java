@@ -61,7 +61,7 @@ public class QuotaUsageJoinDaoImpl extends GenericDaoBase<QuotaUsageJoinVO, Long
 
     private void prepareQuotaUsageSearchBuilder(SearchBuilder<QuotaUsageJoinVO> searchBuilder) {
         searchBuilder.and("accountId", searchBuilder.entity().getAccountId(), SearchCriteria.Op.EQ);
-        searchBuilder.and("domainId", searchBuilder.entity().getDomainId(), SearchCriteria.Op.EQ);
+        searchBuilder.and("domainIds", searchBuilder.entity().getDomainId(), SearchCriteria.Op.IN);
         searchBuilder.and("usageType", searchBuilder.entity().getUsageType(), SearchCriteria.Op.EQ);
         searchBuilder.and("resourceId", searchBuilder.entity().getResourceId(), SearchCriteria.Op.EQ);
         searchBuilder.and("networkId", searchBuilder.entity().getNetworkId(), SearchCriteria.Op.EQ);
@@ -71,11 +71,13 @@ public class QuotaUsageJoinDaoImpl extends GenericDaoBase<QuotaUsageJoinVO, Long
     }
 
     @Override
-    public List<QuotaUsageJoinVO> findQuotaUsage(Long accountId, Long domainId, Integer usageType, Long resourceId, Long networkId, Long offeringId, Date startDate, Date endDate, Long tariffId) {
+    public List<QuotaUsageJoinVO> findQuotaUsage(Long accountId, List<Long> domainIds, Integer usageType, Long resourceId, Long networkId, Long offeringId, Date startDate, Date endDate, Long tariffId) {
         SearchCriteria<QuotaUsageJoinVO> sc = tariffId == null ? searchQuotaUsages.create() : searchQuotaUsagesJoinTariffUsages.create();
 
         sc.setParametersIfNotNull("accountId", accountId);
-        sc.setParametersIfNotNull("domainId", domainId);
+        if (domainIds != null) {
+            sc.setParameters("domainIds", domainIds.toArray());
+        }
         sc.setParametersIfNotNull("usageType", usageType);
         sc.setParametersIfNotNull("resourceId", resourceId);
         sc.setParametersIfNotNull("networkId", networkId);

@@ -66,11 +66,14 @@ import com.cloud.user.User;
 import com.cloud.user.UserVO;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.QuotaBalanceCmd;
 import org.apache.cloudstack.api.command.QuotaConfigureEmailCmd;
@@ -78,6 +81,7 @@ import org.apache.cloudstack.api.command.QuotaCreditsListCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateListCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateUpdateCmd;
 import org.apache.cloudstack.api.command.QuotaPresetVariablesListCmd;
+import org.apache.cloudstack.api.command.QuotaResourceStatementCmd;
 import org.apache.cloudstack.api.command.QuotaStatementCmd;
 import org.apache.cloudstack.api.command.QuotaSummaryCmd;
 import org.apache.cloudstack.api.command.QuotaTariffCreateCmd;
@@ -107,16 +111,20 @@ import org.apache.cloudstack.quota.dao.QuotaEmailConfigurationDao;
 import org.apache.cloudstack.quota.dao.QuotaEmailTemplatesDao;
 import org.apache.cloudstack.quota.dao.QuotaSummaryDao;
 import org.apache.cloudstack.quota.dao.QuotaTariffDao;
+import org.apache.cloudstack.quota.dao.QuotaTariffUsageDao;
 import org.apache.cloudstack.quota.dao.QuotaUsageDao;
+import org.apache.cloudstack.quota.dao.QuotaUsageJoinDao;
 import org.apache.cloudstack.quota.vo.QuotaAccountVO;
 import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
 import org.apache.cloudstack.quota.vo.QuotaCreditsVO;
 import org.apache.cloudstack.quota.vo.QuotaEmailConfigurationVO;
 import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
 import org.apache.cloudstack.quota.vo.QuotaSummaryVO;
+import org.apache.cloudstack.quota.vo.QuotaTariffUsageVO;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
 import org.apache.cloudstack.quota.vo.QuotaUsageJoinVO;
 import org.apache.cloudstack.quota.vo.QuotaUsageResourceVO;
+import org.apache.cloudstack.usage.UsageTypes;
 import org.apache.cloudstack.utils.jsinterpreter.JsInterpreter;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections4.CollectionUtils;
@@ -181,7 +189,12 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     private VMTemplateDao vmTemplateDao;
     @Inject
     private VolumeDao volumeDao;
-
+    @Inject
+    private QuotaUsageJoinDao quotaUsageJoinDao;
+    @Inject
+    private QuotaTariffUsageDao quotaTariffUsageDao;
+    @Inject
+    private EntityManager entityMgr;
 
     private final Class<?>[] assignableClasses = {GenericPresetVariable.class, ComputingResources.class, ResourceCounting.class};
 
@@ -342,9 +355,9 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
     @Override
     public QuotaStatementResponse createQuotaStatementResponse(QuotaStatementCmd cmd) {
-        Long accountId = getAccountIdForQuotaStatement(cmd);
-        Long domainId = getDomainIdForQuotaStatement(cmd, accountId);
-        List<QuotaUsageJoinVO> quotaUsages = _quotaService.getQuotaUsage(accountId, null, domainId, cmd.getUsageType(), cmd.getStartDate(), cmd.getEndDate());
+        Long accountId = getAccountIdForQuotaStatement(cmd.getEntityOwnerId(), null);
+        Pair<Long, List<Long>> baseDomainAndFilteredDomains = getDomainIdsForQuotaStatement(accountId, cmd.getDomainId(), cmd.isRecursive());
+        List<QuotaUsageJoinVO> quotaUsages = _quotaService.getQuotaUsage(accountId, null, baseDomainAndFilteredDomains.second(), cmd.getUsageType(), cmd.getStartDate(), cmd.getEndDate());
 
         logger.debug("Creating quota statement from [{}] usage records for parameters [{}].", quotaUsages.size(),
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(cmd, "accountName", "accountId", "projectId", "domainId", "startDate", "endDate", "usageType", "showResources"));
@@ -367,50 +380,14 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             Account account = _accountDao.findByIdIncludingRemoved(accountId);
             statement.setAccountId(account.getUuid());
             statement.setAccountName(account.getAccountName());
-            domainId = account.getDomainId();
         }
-        if (domainId != null) {
-            DomainVO domain = domainDao.findByIdIncludingRemoved(domainId);
+        Long baseDomainId = baseDomainAndFilteredDomains.first();
+        if (baseDomainId != null) {
+            DomainVO domain = domainDao.findByIdIncludingRemoved(baseDomainId);
             statement.setDomainId(domain.getUuid());
         }
 
         return statement;
-    }
-
-    protected Long getAccountIdForQuotaStatement(QuotaStatementCmd cmd) {
-        if (Account.Type.NORMAL.equals(CallContext.current().getCallingAccount().getType())) {
-            logger.debug("Limiting the Quota statement for the calling Account, as they are a User Account.");
-            return CallContext.current().getCallingAccountId();
-        }
-
-        long accountId = cmd.getEntityOwnerId();
-        if (accountId != -1) {
-            return accountId;
-        }
-
-        if (cmd.getDomainId() == null) {
-            logger.debug("Limiting the Quota statement for the calling Account, as 'domainid' was not informed.");
-            return CallContext.current().getCallingAccountId();
-        }
-
-        logger.debug("Allowing admin/domain admin to generate the Quota statement for the provided Domain.");
-        return null;
-    }
-
-    protected Long getDomainIdForQuotaStatement(QuotaStatementCmd cmd, Long accountId) {
-        if (accountId != null) {
-            logger.debug("Quota statement is already limited to Account [{}].", accountId);
-            Account account = _accountDao.findByIdIncludingRemoved(accountId);
-            return account.getDomainId();
-        }
-
-        Long domainId = cmd.getDomainId();
-        if (domainId != null) {
-            return domainId;
-        }
-
-        logger.debug("Limiting the Quota statement for the calling Account's Domain.");
-        return CallContext.current().getCallingAccount().getDomainId();
     }
 
     protected void createDummyRecordForEachQuotaTypeIfUsageTypeIsNotInformed(List<QuotaUsageJoinVO> quotaUsages, Integer usageType) {
@@ -1156,6 +1133,184 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
         message = "Found variables that are not compatible with the given usage type.";
         return createValidateActivationRuleResponse(activationRule, quotaName, false, message);
+    }
+
+    @Override
+    public QuotaResourceStatementResponse createQuotaResourceStatement(QuotaResourceStatementCmd cmd) {
+        String resourceUuid = cmd.getId();
+        Integer usageType = cmd.getUsageType();
+        Date startDate = cmd.getStartDate();
+        Date endDate = cmd.getEndDate();
+
+        if (startDate.after(endDate)) {
+            throw new InvalidParameterValueException(String.format("The start date [%s] must be before the end date [%s].", startDate, endDate));
+        }
+
+        InternalIdentity resource = retrieveResource(resourceUuid, usageType);
+        if (resource == null) {
+            logger.error("Could not find resource [{}] of type [{}]. Returning an empty list.", resourceUuid, usageType);
+            return createQuotaResourceStatementResponse(resourceUuid, usageType,  new ArrayList<>(), new BigDecimal(0));
+        }
+
+        long id = resource.getId();
+
+        Long currentOwnerId = null;
+        if (resource instanceof ControlledEntity) {
+            currentOwnerId = ((ControlledEntity) resource).getAccountId();
+        }
+        Long accountId = getAccountIdForQuotaStatement(cmd.getEntityOwnerId(), currentOwnerId);
+        Pair<Long, List<Long>> baseDomainAndFilteredDomains = getDomainIdsForQuotaStatement(accountId, cmd.getDomainId(), cmd.isRecursive());
+
+        Long resourceId = null;
+        Long networkId = null;
+        Long offeringId = null;
+
+        switch (usageType) {
+            case UsageTypes.NETWORK_OFFERING:
+            case UsageTypes.BACKUP:
+                offeringId = id;
+                break;
+            case UsageTypes.NETWORK_BYTES_RECEIVED:
+            case UsageTypes.NETWORK_BYTES_SENT:
+                networkId = id;
+                break;
+            default:
+                resourceId = id;
+        }
+
+        logger.debug("Attempting to find quota usages with parameters usage type [{}], usage id [{}], network id [{}], offering id [{}], and between [{}] and [{}].",
+                usageType, resourceId, networkId, offeringId, startDate, endDate);
+
+        List<QuotaUsageJoinVO> quotaUsageJoinList = quotaUsageJoinDao.findQuotaUsage(accountId, baseDomainAndFilteredDomains.second(), usageType, resourceId, networkId, offeringId, startDate, endDate, null);
+
+        logger.debug("Found [{}] quota usages using as parameter usage type [{}], usage id [{}], network id [{}], offering id [{}], and between [{}] and [{}].",
+                quotaUsageJoinList.size(), usageType, resourceId, networkId, offeringId, startDate, endDate);
+
+        List<QuotaResourceStatementItemResponse> quotaResourceStatementItemResponseList = new ArrayList<>();
+        BigDecimal totalQuotaUsed = new BigDecimal(0);
+        List<QuotaTariffVO> quotaTariffs = _quotaTariffDao.listQuotaTariffs(null, null, usageType, null, null, true, null, null).first();
+
+        for (QuotaUsageJoinVO quotaUsageJoin : quotaUsageJoinList) {
+            Account account = _accountMgr.getAccount(quotaUsageJoin.getAccountId());
+            String accountUuid = account.getUuid();
+
+            List<QuotaTariffUsageVO> quotaTariffUsageList = quotaTariffUsageDao.listQuotaTariffUsages(quotaUsageJoin.getId());
+            logger.debug("Found [{}] quota tariff usages associated to the quota usage [{}] of resource [{}] and type [{}] between [{}] and [{}].",
+                    quotaTariffUsageList.size(), quotaUsageJoin, resourceUuid, usageType, startDate, endDate);
+            for (QuotaTariffUsageVO quotaTariffUsage: quotaTariffUsageList) {
+                quotaResourceStatementItemResponseList.add(createQuotaResourceStatementItemResponse(quotaTariffUsage, quotaTariffs, quotaUsageJoin.getStartDate(),
+                        quotaUsageJoin.getEndDate(), accountUuid));
+                totalQuotaUsed = totalQuotaUsed.add(quotaTariffUsage.getQuotaUsed());
+            }
+        }
+        logger.debug("The total quota used of type [{}] between [{}] and [{}] for the resource [{}] was [{}].", usageType, startDate, endDate, resourceUuid, totalQuotaUsed);
+
+        return createQuotaResourceStatementResponse(resourceUuid, usageType, quotaResourceStatementItemResponseList, totalQuotaUsed);
+    }
+
+    protected Long getAccountIdForQuotaStatement(long providedAccountId, Long fallbackAccountId) {
+        Account caller = CallContext.current().getCallingAccount();
+
+        if (providedAccountId != -1L) {
+            Account account = _accountDao.findByIdIncludingRemoved(providedAccountId);
+            _accountMgr.checkAccess(caller, null, false, account);
+            logger.debug("Limiting the Quota resource statement for the provided Account [{}].", providedAccountId);
+            return providedAccountId;
+        }
+
+        Account.Type callerType = caller.getType();
+        if (Account.Type.ADMIN.equals(callerType) || Account.Type.DOMAIN_ADMIN.equals(callerType)) {
+            logger.debug("Not limiting the Quota resource statement for a specific Account, as no specific Account was provided and the caller is either an admin or domain admin.");
+            return null;
+        }
+
+        if (fallbackAccountId != null) {
+            Account fallbackAccount = _accountDao.findByIdIncludingRemoved(fallbackAccountId);
+            _accountMgr.checkAccess(caller, null, false, fallbackAccount);
+            logger.debug("Limiting the Quota statement for the fallback Account [{}], as no specific Account was provided.", fallbackAccountId);
+            return fallbackAccountId;
+        }
+
+        logger.debug("Limiting the Quota resource statement for the calling account, as no specific Account was provided and no fallback account was provided.");
+        return caller.getAccountId();
+    }
+
+    protected Pair<Long, List<Long>> getDomainIdsForQuotaStatement(Long finalAccountId, Long providedDomainId, boolean isRecursive) {
+        if (finalAccountId != null) {
+            // Access to the provided account has already been validated
+            logger.debug("Not limiting the Quota statement for a specific Domain, as we are already limiting by Account.");
+            return new Pair<>(null, null);
+        }
+
+        // User accounts will have already been limited to themselves
+        Account caller = CallContext.current().getCallingAccount();
+        Long domainId = providedDomainId;
+
+        if (domainId != null) {
+            Domain domain = domainDao.findByIdIncludingRemoved(domainId);
+            _accountMgr.checkAccess(caller, domain);
+            logger.debug("Limiting the Quota statement for the provided Domain [{}].", domainId);
+        } else {
+            domainId = caller.getDomainId();
+            logger.debug("Limiting the Quota statement for the caller's Domain [{}], as no 'domainid' was provided.", domainId);
+        }
+
+        if (isRecursive) {
+            logger.debug("Allowing the Quota statement for the Domain's children, as the 'isrecursive' parameter was provided.");
+            return new Pair<>(domainId, domainDao.getDomainAndChildrenIds(domainId));
+        }
+
+        return new Pair<>(domainId, List.of(domainId));
+    }
+
+    protected InternalIdentity retrieveResource(String resourceUuid, Integer usageType) {
+        Class<?> clazz = QuotaTypes.getClazz(usageType);
+        if (clazz == null) {
+            throw new InvalidParameterValueException(String.format("Invalid usage type [%s] provided.", usageType));
+        }
+
+        logger.debug("Attempting to find a resource with ID [{}] and of type [{}].", resourceUuid, usageType);
+        Object object = entityMgr.findByUuidIncludingRemoved(clazz, resourceUuid);
+        if (object == null) {
+            return null;
+        }
+        return (InternalIdentity) object;
+    }
+
+    protected QuotaResourceStatementItemResponse createQuotaResourceStatementItemResponse(QuotaTariffUsageVO quotaTariffUsage, List<QuotaTariffVO> quotaTariffs,
+                                                                                          Date startDate, Date endDate, String accountUuid) {
+        logger.trace("Creating quota resource statement item associated to quota tariff usage [{}].", quotaTariffUsage);
+        QuotaResourceStatementItemResponse quotaResourceStatementItemResponse = new QuotaResourceStatementItemResponse();
+
+        QuotaTariffVO quotaTariff = quotaTariffs.stream().filter(quotaTariffVO -> quotaTariffUsage.getTariffId().equals(quotaTariffVO.getId())).findAny().orElse(null);
+
+        quotaResourceStatementItemResponse.setQuotaUsed(quotaTariffUsage.getQuotaUsed());
+        quotaResourceStatementItemResponse.setStartDate(startDate);
+        quotaResourceStatementItemResponse.setEndDate(endDate);
+        quotaResourceStatementItemResponse.setAccountId(accountUuid);
+        if (quotaTariff != null) {
+            logger.trace("Quota usage details item will be associated to the quota tariff [{}].", quotaTariff);
+            quotaResourceStatementItemResponse.setTariffId(quotaTariff.getUuid());
+            quotaResourceStatementItemResponse.setTariffName(quotaTariff.getName());
+        }
+
+        return quotaResourceStatementItemResponse;
+    }
+
+    protected QuotaResourceStatementResponse createQuotaResourceStatementResponse(String resourceUuid, Integer usageType,
+                                                                                  List<QuotaResourceStatementItemResponse> quotaUsageDetailsItems, BigDecimal totalQuotaUsed) {
+        logger.trace("Creating quota usage details list response associated to the resource of  UUID [{}], with an usage type of [{}], [{}] quota" +
+                " usage details items, and a total quota used of [{}].", resourceUuid, usageType, quotaUsageDetailsItems.size(), totalQuotaUsed);
+        QuotaResourceStatementResponse quotaResourceStatementResponse = new QuotaResourceStatementResponse();
+
+        QuotaTypes quotaType = QuotaTypes.getQuotaType(usageType);
+        quotaResourceStatementResponse.setUsageName(quotaType.getQuotaName());
+        quotaResourceStatementResponse.setUnit(quotaType.getQuotaUnit());
+
+        quotaResourceStatementResponse.setQuotaUsageDetails(quotaUsageDetailsItems);
+        quotaResourceStatementResponse.setTotalQuotaUsed(totalQuotaUsed);
+
+        return quotaResourceStatementResponse;
     }
 
     /**
