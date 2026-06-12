@@ -507,7 +507,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         return parser.parseStoragePoolXML(poolDefXML);
     }
 
-    public String getBackingFileOfVolumeIfExists(StorageVol vol) throws LibvirtException {
+    private String getBackingFileOfVolumeIfExists(StorageVol vol) throws LibvirtException {
         String volDefXML = vol.getXMLDesc(0);
         LibvirtStorageVolumeXMLParser parser = new LibvirtStorageVolumeXMLParser();
         return parser.getBackingFileNameIfExists(volDefXML);
@@ -663,7 +663,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
     }
 
-    public Long getBackingFileSizes(StoragePool pool, StorageVol vol) throws LibvirtException {
+    private Long getBackingFileSizes(StoragePool pool, StorageVol vol) throws LibvirtException {
         long size = vol.getInfo().allocation;
         String backingFileOfVolumeIfExists = getBackingFileOfVolumeIfExists(vol);
         if (backingFileOfVolumeIfExists != null) {
