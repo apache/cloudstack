@@ -3382,7 +3382,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 ExposeDnsAndBootpServer,
                 RouterLogrotateFrequency,
                 RemoveControlIpOnStop,
-                VirtualRouterUserData
+                VirtualRouterUserData,
+                NicSnatEnabled
         };
     }
 
