@@ -644,16 +644,22 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         sc.setParameters("lastPinged", lastPingSecondsAfter);
         sc.setParameters("status", Status.Disconnected, Status.Down, Status.Alert);
 
-        StringBuilder sb = new StringBuilder();
-        List<HostVO> hosts = lockRows(sc, null, true); // exclusive lock
-        for (HostVO host : hosts) {
-            host.setManagementServerId(null);
-            update(host.getId(), host);
-            sb.append(host.getId());
-            sb.append(" ");
+        // SELECT before bulk UPDATE to preserve per-host-ID trace logging — the bulk UPDATE
+        // cannot return which rows it matched since the WHERE column is being set to NULL
+        if (logger.isTraceEnabled()) {
+            List<HostVO> hosts = listBy(sc);
+            StringBuilder sb = new StringBuilder();
+            for (HostVO host : hosts) {
+                sb.append(host.getId());
+                sb.append(" ");
+            }
+            logger.trace("Following hosts will be reset: {}", sb);
         }
 
-        logger.trace("Following hosts got reset: {}", sb);
+        HostVO host = createForUpdate();
+        host.setManagementServerId(null);
+        UpdateBuilder ub = getUpdateBuilder(host);
+        update(ub, sc, null);
     }
 
     /*

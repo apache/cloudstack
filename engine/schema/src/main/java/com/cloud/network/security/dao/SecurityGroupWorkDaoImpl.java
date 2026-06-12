@@ -116,7 +116,7 @@ public class SecurityGroupWorkDaoImpl extends GenericDaoBase<SecurityGroupWorkVO
                 //ensure that there is no job in Processing state for the same VM
                 processing = true;
                 if (logger.isTraceEnabled()) {
-                    logger.trace("Security Group work take: found a job in Scheduled and Processing  vmid=" + work.getInstanceId());
+                    logger.trace("Security Group work take: found a job in Scheduled and Processing  vmid={}", work.getInstanceId());
                 }
             }
             work.setServerId(serverId);
@@ -141,7 +141,6 @@ public class SecurityGroupWorkDaoImpl extends GenericDaoBase<SecurityGroupWorkVO
     }
 
     @Override
-    @DB
     public void updateStep(Long vmId, Long logSequenceNumber, Step step) {
         final TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
@@ -172,21 +171,10 @@ public class SecurityGroupWorkDaoImpl extends GenericDaoBase<SecurityGroupWorkVO
     }
 
     @Override
-    @DB
     public void updateStep(Long workId, Step step) {
-        final TransactionLegacy txn = TransactionLegacy.currentTxn();
-        txn.start();
-
-        SecurityGroupWorkVO work = lockRow(workId, true);
-        if (work == null) {
-            txn.commit();
-            return;
-        }
-        work.setStep(step);
-        update(work.getId(), work);
-
-        txn.commit();
-
+        SecurityGroupWorkVO workForUpdate = createForUpdate();
+        workForUpdate.setStep(step);
+        update(workId, workForUpdate);
     }
 
     @Override
