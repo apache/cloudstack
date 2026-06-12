@@ -1,0 +1,14 @@
+Added commands:
+
+Removed commands:
+
+Changes in command type (sync versus async)
+
+
+Changes in commands arguments:
+
+	importLdapUsers
+
+		Request:
+
+			New parameters: account (optional) 

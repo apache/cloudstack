@@ -1,0 +1,618 @@
+Added commands:
+
+    listTemplateOvfProperties (List template OVF properties if available.)
+
+    listDetailOptions (Lists all possible details and their options for a resource type such as a VM or a template)
+
+    revokeTemplateDirectDownloadCertificate (Revoke a certificate alias from a KVM host)
+
+    getUploadParamsForIso (upload an existing ISO into the CloudStack cloud.)
+
+Removed commands:
+
+	listNuageVspDomainTemplates (Lists Nuage VSP domain templates)
+
+	listNuageUnderlayVlanIpRanges (enable Nuage underlay on vlan ip range)
+
+	disableNuageUnderlayVlanIpRange (disable Nuage underlay on vlan ip range)
+
+	addNuageVspDevice (Adds a Nuage VSP device)
+
+	deleteNuageVspDevice (delete a nuage vsp device)
+
+	enableNuageUnderlayVlanIpRange (enable Nuage underlay on vlan ip range)
+
+	listNuageVspDevices (Lists Nuage VSP devices)
+
+	listNuageVspGlobalDomainTemplate (Lists Nuage VSP domain templates)
+
+	associateNuageVspDomainTemplate (associate a vpc with a domain template)
+
+	updateNuageVspDevice (Update a Nuage VSP device)
+
+Changes in command type (sync versus async)
+
+
+Changes in commands arguments:
+
+	createVPCOffering
+
+		Request:
+
+			New parameters: domainid (optional), zoneid (optional) 
+
+		Response:
+
+			New parameters: domain, domainid, zone, zoneid 
+
+	ldapCreateAccount
+
+		Response:
+
+			New parameters: domainpath 
+
+	rebootSystemVm
+
+		Response:
+
+			New parameters: agentstate, disconnected, version 
+
+	listNetworks
+
+		Response:
+
+			New parameters: details 
+
+	restoreVirtualMachine
+
+		Response:
+
+			New parameters: readonlyuidetails 
+
+	listVPCOfferings
+
+		Request:
+
+			New parameters: zoneid (optional) 
+
+		Response:
+
+			New parameters: domain, domainid, zone, zoneid 
+
+	uploadVolume
+
+		Response:
+
+			New parameters: diskioread, diskiowrite, diskkbsread, diskkbswrite 
+
+	destroySystemVm
+
+		Response:
+
+			New parameters: agentstate, disconnected, version 
+
+	scaleSystemVm
+
+		Response:
+
+			New parameters: agentstate, disconnected, version 
+
+	lockAccount
+
+		Response:
+
+			New parameters: domainpath 
+
+	changeServiceForVirtualMachine
+
+		Response:
+
+			New parameters: readonlyuidetails 
+
+	rebootVirtualMachine
+
+		Response:
+
+			New parameters: readonlyuidetails 
+
+	updateNetworkOffering
+
+		Request:
+
+			New parameters: domainid (optional), zoneid (optional) 
+
+		Response:
+
+			New parameters: domain, domainid, zone, zoneid 
+
+	stopSystemVm
+
+		Response:
+
+			New parameters: agentstate, disconnected, version 
+
+	createNetworkOffering
+
+		Request:
+
+			New parameters: domainid (optional), zoneid (optional) 
+
+		Response:
+
+			New parameters: domain, domainid, zone, zoneid 
+
+	listVolumesMetrics
+
+		Response:
+
+			New parameters: diskiopstotal 
+
+	updateVmNicIp
+
+		Response:
+
+			New parameters: readonlyuidetails 
+
+	updateDiskOffering
+
+		Request:
+
+			New parameters: domainid (optional), zoneid (optional) 
+
+		Response:
+
+			New parameters: zone, zoneid 
+
+	listSnapshots
+
+		Response:
+
+			Removed parameters: tags(*) 
+
+	listConfigurations
+
+		Response:
+
+			New parameters: isdynamic 
+
+	listCapabilities
+
+		Response:
+
+			New parameters: allowuserviewalldomainaccounts 
+
+	createSnapshotPolicy
+
+		Request:
+
+			New parameters: tags (optional) 
+
+	listSystemVms
+
+		Response:
+
+			New parameters: agentstate, disconnected, version 
+
+	detachVolume
+
+		Response:
+
+			New parameters: diskioread, diskiowrite, diskkbsread, diskkbswrite 
+
+	markDefaultZoneForAccount
+
+		Response:
+
+			New parameters: domainpath 
+
+	changeServiceForSystemVm
+
+		Response:
+
+			New parameters: agentstate, disconnected, version 
+
+	createSnapshot
+
+		Request:
+
+			New parameters: tags (optional) 
+
+		Response:
+
+			Removed parameters: tags(*) 
+
+	createSnapshotFromVMSnapshot
+
+		Response:
+
+			Removed parameters: tags(*) 
+
+	addNicToVirtualMachine
+
+		Response:
+
+			New parameters: readonlyuidetails 
+
+	listPublicIpAddresses
+
+		Request:
+
+			New parameters: networkid (optional) 
+
+	updateDefaultNicForVirtualMachine
+
+		Response:
+
+			New parameters: readonlyuidetails 
+
+	createServiceOffering
+
+		Request:
+
+			New parameters: customized (optional), maxcpunumber (optional), maxmemory (optional), mincpunumber (optional), minmemory (optional), zoneid (optional) 
+
+		Response:
+
+			New parameters: zone, zoneid 
+
+	listNiciraNvpDeviceNetworks
+
+		Response:
+
+			New parameters: details 
+
+	assignVirtualMachine
+
+		Response:
+
+			New parameters: readonlyuidetails 
+
+	resizeVolume
+
+		Response:
+
+			New parameters: diskioread, diskiowrite, diskkbsread, diskkbswrite 
+
+	listPaloAltoFirewallNetworks
+
+		Response:
+
+			New parameters: details 
+
+	updateVolume
+
+		Response:
+
+			New parameters: diskioread, diskiowrite, diskkbsread, diskkbswrite 
+
+	updateAccount
+
+		Response:
+
+			New parameters: domainpath 
+
+	updateVirtualMachine
+
+		Response:
+
+			New parameters: readonlyuidetails 
+
+	disableAccount
+
+		Response:
+
+			New parameters: domainpath 
+
+	updateNetwork
+
+		Request:
+
+			New parameters: hideipaddressusage (optional) 
+
+		Response:
+
+			New parameters: details 
+
+	archiveSnapshot
+
+		Response:
+
+			Removed parameters: tags(*) 
+
+	migrateVirtualMachine
+
+		Response:
+
+			New parameters: readonlyuidetails 
+
+	resetPasswordForVirtualMachine
+
+		Response:
+
+			New parameters: readonlyuidetails 
+
+	resetSSHKeyForVirtualMachine
+
+		Response:
+
+			New parameters: readonlyuidetails 
+
+	listSrxFirewallNetworks
+
+		Response:
+
+			New parameters: details 
+
+	detachIso
+
+		Response:
+
+			New parameters: readonlyuidetails 
+
+	listVirtualMachines
+
+		Response:
+
+			New parameters: readonlyuidetails 
+
+	listDiskOfferings
+
+		Request:
+
+			New parameters: zoneid (optional) 
+
+		Response:
+
+			New parameters: zone, zoneid 
+
+	listProjects
+
+		Request:
+
+			New parameters: details (optional) 
+
+	createAccount
+
+		Response:
+
+			New parameters: domainpath 
+
+	revertToVMSnapshot
+
+		Response:
+
+			New parameters: readonlyuidetails 
+
+	deployVirtualMachine
+
+		Request:
+
+			New parameters: clusterid (optional), copyimagetags (optional), ovfproperties (optional), podid (optional) 
+
+		Response:
+
+			New parameters: readonlyuidetails 
+
+	updateZone
+
+		Request:
+
+			New parameters: sortkey (optional) 
+
+	createDiskOffering
+
+		Request:
+
+			New parameters: zoneid (optional) 
+
+		Response:
+
+			New parameters: zone, zoneid 
+
+	listVolumes
+
+		Response:
+
+			New parameters: diskioread, diskiowrite, diskkbsread, diskkbswrite 
+
+	listNetworkOfferings
+
+		Request:
+
+			New parameters: domainid (optional) 
+
+		Response:
+
+			New parameters: domain, domainid, zone, zoneid 
+
+	createNetwork
+
+		Request:
+
+			New parameters: hideipaddressusage (optional) 
+
+		Response:
+
+			New parameters: details 
+
+	migrateVirtualMachineWithVolume
+
+		Response:
+
+			New parameters: readonlyuidetails 
+
+	attachVolume
+
+		Response:
+
+			New parameters: diskioread, diskiowrite, diskkbsread, diskkbswrite 
+
+	listNetscalerLoadBalancerNetworks
+
+		Response:
+
+			New parameters: details 
+
+	startSystemVm
+
+		Response:
+
+			New parameters: agentstate, disconnected, version 
+
+	migrateVolume
+
+		Response:
+
+			New parameters: diskioread, diskiowrite, diskkbsread, diskkbswrite 
+
+	updateVMAffinityGroup
+
+		Response:
+
+			New parameters: readonlyuidetails 
+
+	updateConfiguration
+
+		Response:
+
+			New parameters: isdynamic 
+
+	recoverVirtualMachine
+
+		Response:
+
+			New parameters: readonlyuidetails 
+
+	revertSnapshot
+
+		Response:
+
+			Removed parameters: tags(*) 
+
+	migrateSystemVm
+
+		Response:
+
+			New parameters: agentstate, disconnected, version 
+
+	listBrocadeVcsDeviceNetworks
+
+		Response:
+
+			New parameters: details 
+
+	listInfrastructure
+
+		Response:
+
+			New parameters: alerts, ilbvms 
+
+	listUsageRecords
+
+		Request:
+
+			New parameters: oldformat (optional) 
+
+	migrateNetwork
+
+		Response:
+
+			New parameters: details 
+
+	uploadTemplateDirectDownloadCertificate
+
+		Request:
+
+			New parameters: zoneid (required), hostid (optional) 
+
+	listF5LoadBalancerNetworks
+
+		Response:
+
+			New parameters: details 
+
+	createVolume
+
+		Response:
+
+			New parameters: diskioread, diskiowrite, diskkbsread, diskkbswrite 
+
+	attachIso
+
+		Response:
+
+			New parameters: readonlyuidetails 
+
+	listAccounts
+
+		Request:
+
+			New parameters: details (optional) 
+
+		Response:
+
+			New parameters: domainpath 
+
+	removeNicFromVirtualMachine
+
+		Response:
+
+			New parameters: readonlyuidetails 
+
+	enableAccount
+
+		Response:
+
+			New parameters: domainpath 
+
+	updateVPCOffering
+
+		Request:
+
+			New parameters: domainid (optional), sortkey (optional), zoneid (optional) 
+
+		Response:
+
+			New parameters: domain, domainid, zone, zoneid 
+
+	destroyVirtualMachine
+
+		Response:
+
+			New parameters: readonlyuidetails 
+
+	listServiceOfferings
+
+		Request:
+
+			New parameters: zoneid (optional) 
+
+		Response:
+
+			New parameters: zone, zoneid 
+
+	startVirtualMachine
+
+		Request:
+
+			New parameters: clusterid (optional), podid (optional) 
+
+		Response:
+
+			New parameters: readonlyuidetails 
+
+	stopVirtualMachine
+
+		Response:
+
+			New parameters: readonlyuidetails 
+
+	updateServiceOffering
+
+		Request:
+
+			New parameters: domainid (optional), zoneid (optional) 
+
+		Response:
+
+			New parameters: zone, zoneid 
