@@ -1181,7 +1181,7 @@
 "label.gpu.devices.delete": "Delete GPU Device",
 "label.gpu.devices.manage": "Manage GPU Device",
 "label.gpu.devices.unmanage": "Unmanage GPU Device",
-"label.gpu.display": "GPU Display",
+"label.gpudisplay": "GPU Display",
 "label.gpulimit": "GPU limits",
 "label.gpu.summary": "Summary",
 "label.gputotal": "GPU Total",
