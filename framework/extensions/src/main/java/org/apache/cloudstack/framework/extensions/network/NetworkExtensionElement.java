@@ -975,6 +975,9 @@ public class NetworkExtensionElement extends AdapterBase implements
         if (network.getGuestType() != null) {
             payload.addProperty("guest_type", network.getGuestType().toString().toLowerCase());
         }
+        if (network.getState() != null) {
+            payload.addProperty("network_state", network.getState().toString().toLowerCase());
+        }
         if (StringUtils.isNotBlank(network.getGateway())) {
             payload.addProperty("gateway", safeStr(network.getGateway()));
         }

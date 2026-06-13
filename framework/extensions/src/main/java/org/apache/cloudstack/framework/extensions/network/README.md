@@ -272,6 +272,7 @@ The following names appear repeatedly inside the nested `payload` object.
 | `vlan` | Guest VLAN tag (for example `100`). Extracted from the broadcast URI. May be empty for flat networks. |
 | `zone_id` | CloudStack zone ID. |
 | `guest_type` | Guest network type: `"isolated"`, `"shared"`, or `"l2"`. Scripts should use this to skip NAT/firewall operations that are not applicable to Shared or L2 networks. |
+| `network_state` | Guest network state: `"allocated"`, `"setup"`, `"implementing"`, `"implemented"`, `"shutdown"` or `"destroy"`. |
 | `gateway` | Guest network gateway (for example `10.0.0.1`). Omitted when blank. |
 | `cidr` | Guest network CIDR (for example `10.0.0.0/24`). Omitted when blank. |
 | `vpc_id` | CloudStack numeric VPC ID. Present for VPC tier networks and VPC-scoped commands. |
