@@ -1665,6 +1665,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             // implement network elements and re-apply all the network rules
             implementNetworkElementsAndResources(dest, context, network, offering);
 
+            // reload network after implementing the network
+            network = _networksDao.findById(networkId);
+
             long dcId = dest.getDataCenter().getId();
             if (networkMeetsPersistenceCriteria(network, offering, false)) {
                 setupPersistentNetwork(network, offering, dcId);
