@@ -848,16 +848,12 @@ public class NetworkExtensionElement extends AdapterBase implements
     }
 
     private void applyNetworkUpdateFromScriptOutput(Network network, String outputStr) {
-        if (!ExtensionHelper.NETWORK_EXTENSION_GURU_NAME.equals(network.getGuruName())) {
-            logger.debug("Network {} is not managed by NetworkExtensionGuru, skipping script output processing", network.getId());
-            return;
-        }
-
         JsonObject outputJson = parseJsonOutput(outputStr);
-
         String networkBroadcastUri = getJsonString(outputJson, "network.broadcast_uri");
         String networkBroadcastDomainType = getJsonString(outputJson, "network.broadcast_domain_type");
-        if (networkBroadcastUri == null || networkBroadcastDomainType == null) {
+
+        if (ExtensionHelper.NETWORK_EXTENSION_GURU_NAME.equals(network.getGuruName()) &&
+                (networkBroadcastUri == null || networkBroadcastDomainType == null)) {
             throw new CloudRuntimeException(String.format(
                     "Script output is missing required network properties 'network.broadcast_uri' and 'network.broadcast_domain_type'" +
                             " for network %s: %s", network, outputStr));
