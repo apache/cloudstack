@@ -84,6 +84,12 @@ public interface ResourceLimitAndCountResponse {
 
     public void setSnapshotAvailable(String snapshotAvailable);
 
+    public void setVmSnapshotLimit(String vmSnapshotLimit);
+
+    public void setVmSnapshotTotal(Long vmSnapshotTotal);
+
+    public void setVmSnapshotAvailable(String vmSnapshotAvailable);
+
     public void setTemplateLimit(String templateLimit);
 
     public void setTemplateTotal(Long templateTotal);
