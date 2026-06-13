@@ -26,6 +26,14 @@
 #########################################################################################
 
 WWID=${1:?"WWID required"}
+BACKGROUND="${2}"
+
+# move the script to run in the background, no need to block other flows for this to complete
+if [ -z "${BACKGROUND}" ]; then
+   nohup "$0" "${WWID}" --background &
+   exit 0
+fi
+
 WWID=$(echo $WWID | tr '[:upper:]' '[:lower:]')
 
 echo "$(date): Removing ${WWID}"
@@ -35,6 +43,9 @@ systemctl is-active multipathd || systemctl restart multipathd || {
    logger -t "CS_SCSI_VOL_REMOVE" "${WWID} cannot be disconnected from this host because multipathd is not currently running and cannot be started"
    exit 1
 }
+
+# Remove any active IO on the device so it can be removed.
+multipathd disablequeueing map 3${WWID}
 
 # first get dm- name
 DM_NAME=$(ls -lrt /dev/mapper/3${WWID} | awk '{ print $NF }' | awk -F'/' '{print $NF}')
@@ -65,9 +76,6 @@ if [ ! -z "${SLAVE_DEVS}" ]; then
 fi
 
 logger -t CS_SCSI_VOL_REMOVE "${WWID} successfully purged from multipath along with slave devices"
-
-# Added to give time for the event to be fired to the server
-sleep 10
 
 echo "$(date): ${WWID} removed"
 
