@@ -38,8 +38,10 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
 import com.cloud.vm.snapshot.VMSnapshotVO;
@@ -48,6 +50,7 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
 
 
 import org.apache.cloudstack.backup.dao.BackupDao;
+import org.apache.cloudstack.backup.dao.BackupDetailsDao;
 import org.apache.cloudstack.backup.dao.BackupRepositoryDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -85,6 +88,29 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             true,
             BackupFrameworkEnabled.key());
 
+    ConfigKey<Integer> NASBackupFullEvery = new ConfigKey<>("Advanced", Integer.class,
+            "nas.backup.full.every",
+            "10",
+            "Take a full NAS backup every Nth backup; remaining backups in between are incremental. " +
+                    "Counts backups, not days, so it works for hourly, daily, and ad-hoc schedules. " +
+                    "Set to 1 to disable incrementals (every backup is full).",
+            true,
+            ConfigKey.Scope.Zone,
+            BackupFrameworkEnabled.key());
+
+    ConfigKey<Boolean> NASBackupIncrementalEnabled = new ConfigKey<>("Advanced", Boolean.class,
+            "nas.backup.incremental.enabled",
+            "false",
+            "Master switch for NAS incremental backups. Defaults to false so existing zones keep the " +
+                    "legacy full-only behavior on upgrade; opt in per-zone when ready to use chains. " +
+                    "When false, every NAS backup is taken as a full regardless of nas.backup.full.every. " +
+                    "Toggling this is safe at any time: switching off forces the next backup to be a fresh " +
+                    "full anchor (existing chains stay restorable), switching back on resumes incrementals " +
+                    "on the next full + incremental cycle.",
+            true,
+            ConfigKey.Scope.Zone,
+            BackupFrameworkEnabled.key());
+
     @Inject
     private BackupDao backupDao;
 
@@ -105,6 +131,9 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
     @Inject
     private VMInstanceDao vmInstanceDao;
+
+    @Inject
+    private VMInstanceDetailsDao vmInstanceDetailsDao;
 
     @Inject
     private PrimaryDataStoreDao primaryDataStoreDao;
@@ -129,6 +158,9 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
     @Inject
     private DiskOfferingDao diskOfferingDao;
+
+    @Inject
+    private BackupDetailsDao backupDetailsDao;
 
     private Long getClusterIdFromRootVolume(VirtualMachine vm) {
         VolumeVO rootVolume = volumeDao.getInstanceRootVolume(vm.getId());
@@ -168,6 +200,276 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         return resourceManager.findOneRandomRunningHostByHypervisor(Hypervisor.HypervisorType.KVM, vm.getDataCenterId());
     }
 
+    /**
+     * Returned by {@link #decideChain(VirtualMachine)} to describe the next backup's place in
+     * the chain: full vs incremental, the bitmap name to create, and (for incrementals) the
+     * parent bitmap and parent file path.
+     */
+    static final class ChainDecision {
+        final String mode;            // "full" or "incremental"
+        final String bitmapNew;
+        final String bitmapParent;    // null for full
+        // Per-volume parent backup file paths, one per current VM volume in deviceId order.
+        // null/empty for full. Each volume needs its own parent file because backup files
+        // are named after each volume's own UUID (root.<uuid>.qcow2 / datadisk.<uuid>.qcow2).
+        final List<String> parentPaths;
+        final String chainId;         // chain identifier this backup belongs to
+        final int chainPosition;      // 0 for full, N for the Nth incremental in the chain
+
+        private ChainDecision(String mode, String bitmapNew, String bitmapParent, List<String> parentPaths,
+                              String chainId, int chainPosition) {
+            this.mode = mode;
+            this.bitmapNew = bitmapNew;
+            this.bitmapParent = bitmapParent;
+            this.parentPaths = parentPaths;
+            this.chainId = chainId;
+            this.chainPosition = chainPosition;
+        }
+
+        static ChainDecision fullStart(String bitmapName) {
+            return new ChainDecision(NASBackupChainKeys.TYPE_FULL, bitmapName, null, null,
+                    UUID.randomUUID().toString(), 0);
+        }
+
+        static ChainDecision incremental(String bitmapNew, String bitmapParent, List<String> parentPaths,
+                                         String chainId, int chainPosition) {
+            return new ChainDecision(NASBackupChainKeys.TYPE_INCREMENTAL, bitmapNew, bitmapParent,
+                    parentPaths, chainId, chainPosition);
+        }
+
+        boolean isIncremental() {
+            return NASBackupChainKeys.TYPE_INCREMENTAL.equals(mode);
+        }
+    }
+
+    /**
+     * Decides whether the next backup for {@code vm} should be a fresh full or an incremental
+     * appended to the existing chain. Stopped VMs are always full (libvirt {@code backup-begin}
+     * requires a running QEMU process). The {@code nas.backup.full.every} ConfigKey controls
+     * how many backups (full + incrementals) form one chain before a new full is forced.
+     *
+     * <p>The decision is anchored on the VM's {@code nas.active_checkpoint_id} detail, which
+     * records the bitmap that currently exists on the running QEMU. After a restore that
+     * detail is cleared, so the next backup is automatically full — even though there may be
+     * a more recent "last backup taken" row in the database. The decision deliberately avoids
+     * relying on "last backup taken", because that row is misleading after a restore.</p>
+     */
+    protected ChainDecision decideChain(VirtualMachine vm) {
+        final String newBitmap = "backup-" + System.currentTimeMillis() / 1000L;
+
+        // Master switch — when the operator disables incrementals at the zone level every
+        // backup is taken as a fresh full. Existing chains stay restorable because each
+        // backup's metadata is kept independently; restoring an incremental still walks its
+        // own chain (the per-backup chain_id / parent_backup_id details persist regardless
+        // of the live config). The next backup with this flag back on starts a new chain.
+        Boolean incrementalEnabled = NASBackupIncrementalEnabled.valueIn(vm.getDataCenterId());
+        if (incrementalEnabled == null || !incrementalEnabled) {
+            return ChainDecision.fullStart(newBitmap);
+        }
+
+        // Stopped VMs cannot do incrementals — script will also fall back, but we make the
+        // decision here so we register the right type up-front.
+        if (VirtualMachine.State.Stopped.equals(vm.getState())) {
+            return ChainDecision.fullStart(newBitmap);
+        }
+
+        Integer fullEvery = NASBackupFullEvery.valueIn(vm.getDataCenterId());
+        if (fullEvery == null || fullEvery <= 1) {
+            // Disabled or every-backup-is-full mode.
+            return ChainDecision.fullStart(newBitmap);
+        }
+
+        // 1. If the VM has no active_checkpoint_id, there is no bitmap on the host to use as
+        //    a parent. This is the case after restore (we clear it), after VM was just assigned
+        //    to the offering, or on the very first backup.
+        String activeCheckpoint = readVmActiveCheckpoint(vm.getId());
+        if (activeCheckpoint == null) {
+            return ChainDecision.fullStart(newBitmap);
+        }
+
+        // 2. The most-recent BackedUp backup is the only safe parent — after restore the
+        //    next backup is always a fresh full, so anything older has a rotated-out bitmap.
+        //    If the latest backup's bitmap doesn't match the VM's active_checkpoint_id, the
+        //    chain is broken: force a full.
+        Backup parent = findLatestBackedUpBackup(vm.getId());
+        if (parent == null || !activeCheckpoint.equals(readDetail(parent, NASBackupChainKeys.BITMAP_NAME))) {
+            LOG.debug("VM {} latest backup does not match active_checkpoint_id={} — forcing full",
+                    vm.getInstanceName(), activeCheckpoint);
+            return ChainDecision.fullStart(newBitmap);
+        }
+
+        String parentChainId = readDetail(parent, NASBackupChainKeys.CHAIN_ID);
+        int parentChainPosition = chainPosition(parent);
+        if (parentChainId == null || parentChainPosition == Integer.MAX_VALUE) {
+            return ChainDecision.fullStart(newBitmap);
+        }
+
+        // Force a fresh full when the chain has reached the configured length.
+        if (parentChainPosition + 1 >= fullEvery) {
+            return ChainDecision.fullStart(newBitmap);
+        }
+
+        // The script needs the parent backup's on-NAS file path PER VOLUME so it can rebase
+        // each new qcow2 onto the matching parent. The paths are stored relative to the NAS
+        // mount root — the script resolves them inside its mount session. When alignment
+        // fails (volume count changed, etc.) compose returns null and we fall back to full
+        // so we don't risk corrupting the chain.
+        List<String> parentPaths = composeParentBackupPaths(parent, vm.getId());
+        if (parentPaths == null) {
+            LOG.debug("VM {} parent backup {} volume layout no longer matches current VM — forcing full",
+                    vm.getInstanceName(), parent.getUuid());
+            return ChainDecision.fullStart(newBitmap);
+        }
+        return ChainDecision.incremental(newBitmap, activeCheckpoint, parentPaths,
+                parentChainId, parentChainPosition + 1);
+    }
+
+    /**
+     * Read the {@code nas.active_checkpoint_id} VM detail. Returns {@code null} when no detail
+     * exists (post-restore, first backup, or after explicit reset).
+     */
+    private String readVmActiveCheckpoint(long vmId) {
+        VMInstanceDetailVO d = vmInstanceDetailsDao.findDetail(vmId, NASBackupChainKeys.VM_ACTIVE_CHECKPOINT_ID);
+        if (d == null) {
+            return null;
+        }
+        String v = d.getValue();
+        return (v == null || v.isEmpty()) ? null : v;
+    }
+
+    /**
+     * Locate the most-recent {@code BackedUp} backup for {@code vmId}. The chain invariant
+     * guarantees the latest backup is the only valid incremental parent — after restore the
+     * next backup is always a fresh full, and {@link #decideChain} checks the bitmap matches.
+     */
+    private Backup findLatestBackedUpBackup(long vmId) {
+        List<Backup> history = backupDao.listByVmId(null, vmId);
+        if (history == null || history.isEmpty()) {
+            return null;
+        }
+        return history.stream()
+                .filter(b -> Backup.Status.BackedUp.equals(b.getStatus()))
+                .max(Comparator.comparing(Backup::getDate))
+                .orElse(null);
+    }
+
+    private String readDetail(Backup backup, String key) {
+        BackupDetailVO d = backupDetailsDao.findDetail(backup.getId(), key);
+        return d == null ? null : d.getValue();
+    }
+
+    /**
+     * Compose the on-NAS path of EVERY parent backup file (one per VM volume) in the same
+     * order the script will iterate the current VM's disks (deviceId asc). Relative to the
+     * NAS mount, matches the layout written by {@code nasbackup.sh}:
+     *   first  disk -> {@code <backupPath>/root.<volUuid>.qcow2}
+     *   others      -> {@code <backupPath>/datadisk.<volUuid>.qcow2}
+     *
+     * Returns {@code null} if the parent's stored volume count doesn't match the current VM's
+     * volume count. Volume attach/detach is blocked while a VM is assigned to a backup offering;
+     * if the offering was removed and re-assigned the active checkpoint is cleared in
+     * {@link #removeVMFromBackupOffering}, so this method doesn't need to revalidate volume
+     * identities — a count mismatch is the only way to reach this branch with a non-null
+     * active_checkpoint_id.
+     */
+    private List<String> composeParentBackupPaths(Backup parent, long vmId) {
+        // backupPath is stored as externalId by createBackupObject — e.g.
+        // "i-2-1234-VM/2026.04.27.13.45.00".
+        String dir = parent.getExternalId();
+        if (dir == null || dir.isEmpty()) {
+            return null;
+        }
+
+        List<Backup.VolumeInfo> parentVols = parent.getBackedUpVolumes();
+        if (parentVols == null || parentVols.isEmpty()) {
+            return null;
+        }
+
+        List<VolumeVO> currentVols = volumeDao.findByInstance(vmId);
+        if (currentVols == null || currentVols.size() != parentVols.size()) {
+            return null;
+        }
+
+        // parentVols is in deviceId order at the time the parent was taken. The script names
+        // files as root.<uuid>.qcow2 for the first volume and datadisk.<uuid>.qcow2 for the rest.
+        List<String> paths = new ArrayList<>(parentVols.size());
+        for (int i = 0; i < parentVols.size(); i++) {
+            String volUuid = parentVols.get(i).getUuid();
+            String prefix = (i == 0) ? "root" : "datadisk";
+            paths.add(dir + "/" + prefix + "." + volUuid + ".qcow2");
+        }
+        return paths;
+    }
+
+    /**
+     * Persist chain metadata under backup_details. Stored here (not on the backups table) so
+     * other providers can implement their own chain semantics without schema changes.
+     */
+    private void persistChainMetadata(Backup backup, ChainDecision decision, String bitmapFromAgent) {
+        // Only persist nas.bitmap_name when the agent confirmed the bitmap exists on the host.
+        // The agent wrapper sets bitmapFromAgent=null when nasbackup.sh exits
+        // EXIT_BITMAP_NOT_SEEDED (=22) — currently only the stopped-VM path where qemu-img
+        // bitmap --add failed on every source disk. Anchoring the next incremental on a
+        // bitmap that doesn't exist would force a non-recoverable failure, so we leave the
+        // detail empty and let the next backup start a fresh full chain.
+        if (bitmapFromAgent != null && !bitmapFromAgent.isEmpty()) {
+            backupDetailsDao.persist(new BackupDetailVO(backup.getId(), NASBackupChainKeys.BITMAP_NAME, bitmapFromAgent, true));
+        }
+        backupDetailsDao.persist(new BackupDetailVO(backup.getId(), NASBackupChainKeys.CHAIN_ID, decision.chainId, true));
+        backupDetailsDao.persist(new BackupDetailVO(backup.getId(), NASBackupChainKeys.CHAIN_POSITION,
+                String.valueOf(decision.chainPosition), true));
+        // Backup full-vs-incremental type lives on backup.type (set by takeBackup) — single
+        // source of truth. Not duplicated into backup_details.
+        if (decision.isIncremental()) {
+            // Resolve the parent backup's UUID so restore can walk the chain by id, not by path.
+            String parentUuid = lookupParentBackupUuid(backup.getVmId(), decision.bitmapParent);
+            if (parentUuid != null) {
+                backupDetailsDao.persist(new BackupDetailVO(backup.getId(), NASBackupChainKeys.PARENT_BACKUP_ID, parentUuid, true));
+            }
+        }
+    }
+
+    /**
+     * Upsert the VM's {@code nas.active_checkpoint_id} detail to {@code bitmapName}. Called
+     * after every successful backup so the next backup's parent-bitmap decision is anchored
+     * on what actually exists on QEMU, not on "last backup taken".
+     */
+    private void upsertVmActiveCheckpoint(long vmId, String bitmapName) {
+        VMInstanceDetailVO existing = vmInstanceDetailsDao.findDetail(vmId, NASBackupChainKeys.VM_ACTIVE_CHECKPOINT_ID);
+        if (existing == null) {
+            vmInstanceDetailsDao.addDetail(vmId, NASBackupChainKeys.VM_ACTIVE_CHECKPOINT_ID, bitmapName, false);
+            return;
+        }
+        existing.setValue(bitmapName);
+        vmInstanceDetailsDao.update(existing.getId(), existing);
+    }
+
+    /**
+     * Remove the VM's {@code nas.active_checkpoint_id} detail. Called from the restore paths:
+     * after restore the disk image has no QEMU bitmap attached, so any future incremental
+     * would be based on stale state. Clearing forces the next backup to be a fresh full.
+     */
+    private void clearVmActiveCheckpoint(long vmId) {
+        VMInstanceDetailVO existing = vmInstanceDetailsDao.findDetail(vmId, NASBackupChainKeys.VM_ACTIVE_CHECKPOINT_ID);
+        if (existing != null) {
+            vmInstanceDetailsDao.removeDetail(vmId, NASBackupChainKeys.VM_ACTIVE_CHECKPOINT_ID);
+            LOG.debug("Cleared nas.active_checkpoint_id for VM id={} (was {})", vmId, existing.getValue());
+        }
+    }
+
+    private String lookupParentBackupUuid(long vmId, String parentBitmap) {
+        if (parentBitmap == null) {
+            return null;
+        }
+        for (Backup b : backupDao.listByVmId(null, vmId)) {
+            String bm = readDetail(b, NASBackupChainKeys.BITMAP_NAME);
+            if (parentBitmap.equals(bm)) {
+                return b.getUuid();
+            }
+        }
+        return null;
+    }
+
     protected Host getVMHypervisorHostForBackup(VirtualMachine vm) {
         Long hostId = vm.getHostId();
         if (hostId == null && VirtualMachine.State.Running.equals(vm.getState())) {
@@ -205,12 +507,20 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         final String backupPath = String.format("%s/%s", vm.getInstanceName(),
                 new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(creationDate));
 
-        BackupVO backupVO = createBackupObject(vm, backupPath);
+        // Decide full vs incremental for this backup. Stopped VMs are always full
+        // (libvirt backup-begin requires a running QEMU process).
+        ChainDecision decision = decideChain(vm);
+
+        BackupVO backupVO = createBackupObject(vm, backupPath, decision.isIncremental() ? "INCREMENTAL" : "FULL");
         TakeBackupCommand command = new TakeBackupCommand(vm.getInstanceName(), backupPath);
         command.setBackupRepoType(backupRepository.getType());
         command.setBackupRepoAddress(backupRepository.getAddress());
         command.setMountOptions(backupRepository.getMountOptions());
         command.setQuiesce(quiesceVM);
+        command.setMode(decision.mode);
+        command.setBitmapNew(decision.bitmapNew);
+        command.setBitmapParent(decision.bitmapParent);
+        command.setParentPaths(decision.parentPaths);
 
         if (VirtualMachine.State.Stopped.equals(vm.getState())) {
             List<VolumeVO> vmVolumes = volumeDao.findByInstance(vm.getId());
@@ -239,9 +549,30 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             backupVO.setDate(new Date());
             backupVO.setSize(answer.getSize());
             backupVO.setStatus(Backup.Status.BackedUp);
+            // If the agent fell back to full (stopped VM mid-incremental cycle), record this
+            // backup as a full and start a new chain.
+            ChainDecision effective = decision;
+            if (answer.getIncrementalFallback()) {
+                effective = ChainDecision.fullStart(decision.bitmapNew);
+                backupVO.setType("FULL");
+            }
             List<Volume> volumes = new ArrayList<>(volumeDao.findByInstance(vm.getId()));
             backupVO.setBackedUpVolumes(backupManager.createVolumeInfoFromVolumes(volumes));
             if (backupDao.update(backupVO.getId(), backupVO)) {
+                persistChainMetadata(backupVO, effective, answer.getBitmapCreated());
+                // Pin the VM's active_checkpoint_id to whichever bitmap the agent actually
+                // created. This is the only valid parent for the next incremental (see
+                // decideChain). When the agent wrapper sets bitmapCreated=null (script exited
+                // EXIT_BITMAP_NOT_SEEDED — stopped-VM path where qemu-img bitmap --add failed),
+                // no bitmap exists on the host, so we also clear any stale detail from a prior
+                // online backup. Either way, after this step the detail accurately reflects
+                // what's on the running QEMU (or absence thereof).
+                String confirmedBitmap = answer.getBitmapCreated();
+                if (confirmedBitmap != null) {
+                    upsertVmActiveCheckpoint(vm.getId(), confirmedBitmap);
+                } else {
+                    clearVmActiveCheckpoint(vm.getId());
+                }
                 return new Pair<>(true, backupVO);
             } else {
                 throw new CloudRuntimeException("Failed to update backup");
@@ -260,11 +591,11 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         }
     }
 
-    private BackupVO createBackupObject(VirtualMachine vm, String backupPath) {
+    private BackupVO createBackupObject(VirtualMachine vm, String backupPath, String type) {
         BackupVO backup = new BackupVO();
         backup.setVmId(vm.getId());
         backup.setExternalId(backupPath);
-        backup.setType("FULL");
+        backup.setType(type);
         backup.setDate(new Date());
         long virtualSize = 0L;
         for (final Volume volume: volumeDao.findByInstance(vm.getId())) {
@@ -332,6 +663,11 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             throw new CloudRuntimeException("Unable to contact backend control plane to initiate backup");
         } catch (OperationTimedoutException e) {
             throw new CloudRuntimeException("Operation to restore backup timed out, please try again");
+        }
+        // After a restore the QEMU dirty-bitmap chain is gone — clear active_checkpoint_id so
+        // the next backup is taken as a fresh full and starts a new chain. See decideChain.
+        if (answer != null && answer.getResult()) {
+            clearVmActiveCheckpoint(vm.getId());
         }
         return new Pair<>(answer.getResult(), answer.getDetails());
     }
@@ -495,9 +831,42 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             throw new CloudRuntimeException(String.format("Unable to find a running KVM host in zone %d to delete backup %s", backup.getZoneId(), backup.getUuid()));
         }
 
-        DeleteBackupCommand command = new DeleteBackupCommand(backup.getExternalId(), backupRepository.getType(),
-                backupRepository.getAddress(), backupRepository.getMountOptions());
+        // Backups outside any tracked chain (legacy or non-incremental providers) are
+        // deleted straight away — no children semantics apply.
+        if (readDetail(backup, NASBackupChainKeys.CHAIN_ID) == null) {
+            return deleteBackupFileAndRow(backup, backupRepository, host);
+        }
 
+        // Snapshot-style cascade: defer the on-NAS rm + DB row while there are live children,
+        // mark this backup as delete-pending, and let the leaf's deletion sweep it up later.
+        // See DefaultSnapshotStrategy#deleteSnapshotChain for the same pattern on incremental
+        // snapshots. forced=true means the caller wants the entire subtree gone right now.
+        if (forced) {
+            return cascadeDeleteSubtree(backup, backupRepository, host);
+        }
+
+        List<Backup> liveChildren = findLiveChildren(backup);
+        if (!liveChildren.isEmpty()) {
+            markDeletePending(backup);
+            LOG.debug("Backup {} has {} live child backup(s); marking as delete-pending. The on-NAS file " +
+                            "and DB row will be removed once the last descendant is gone, or pass forced=true.",
+                    backup.getUuid(), liveChildren.size());
+            return true;
+        }
+
+        // No live children — physically delete this backup, then walk up the chain and
+        // collect any ancestors that were left in delete-pending state.
+        return deleteLeafBackupAndSweepPendingAncestors(backup, backupRepository, host);
+    }
+
+    /**
+     * The single physical-delete step: rm the on-NAS directory, then remove the DB row.
+     * Returns {@code false} (and leaves both intact) if the agent reports failure, so the
+     * caller's recursion stops cleanly.
+     */
+    private boolean deleteBackupFileAndRow(Backup backup, BackupRepository repo, Host host) {
+        DeleteBackupCommand command = new DeleteBackupCommand(backup.getExternalId(), repo.getType(),
+                repo.getAddress(), repo.getMountOptions());
         BackupAnswer answer;
         try {
             answer = (BackupAnswer) agentManager.send(host.getId(), command);
@@ -506,13 +875,208 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         } catch (OperationTimedoutException e) {
             throw new CloudRuntimeException("Operation to delete backup timed out, please try again");
         }
-
-        if (answer != null && answer.getResult()) {
-            return backupDao.remove(backup.getId());
+        if (answer == null || !answer.getResult()) {
+            logger.warn("Failed to delete backup file for {} ({}); leaving DB row intact",
+                    backup.getUuid(), backup.getExternalId());
+            return false;
         }
+        backupDao.remove(backup.getId());
+        return true;
+    }
 
-        logger.debug("There was an error removing the backup with id {}", backup.getId());
-        return false;
+    /**
+     * Mark {@code backup} as delete-pending in {@code backup_details}. Idempotent.
+     */
+    private void markDeletePending(Backup backup) {
+        BackupDetailVO existing = backupDetailsDao.findDetail(backup.getId(), NASBackupChainKeys.DELETE_PENDING);
+        if (existing == null) {
+            backupDetailsDao.persist(new BackupDetailVO(backup.getId(),
+                    NASBackupChainKeys.DELETE_PENDING, "true", true));
+        }
+    }
+
+    /**
+     * @return true if this backup carries the delete-pending tombstone.
+     */
+    private boolean isDeletePending(Backup backup) {
+        BackupDetailVO d = backupDetailsDao.findDetail(backup.getId(), NASBackupChainKeys.DELETE_PENDING);
+        return d != null && "true".equalsIgnoreCase(d.getValue());
+    }
+
+    /**
+     * Return the live (not delete-pending, not Removed) children of {@code parent} within the
+     * same chain. Equivalent to "incrementals whose parent_backup_id points at parent".
+     */
+    private List<Backup> findLiveChildren(Backup parent) {
+        String parentUuid = parent.getUuid();
+        String chainId = readDetail(parent, NASBackupChainKeys.CHAIN_ID);
+        if (parentUuid == null || chainId == null) {
+            return Collections.emptyList();
+        }
+        List<Backup> children = new ArrayList<>();
+        for (Backup b : backupDao.listByVmId(null, parent.getVmId())) {
+            if (b.getId() == parent.getId()) {
+                continue;
+            }
+            if (!chainId.equals(readDetail(b, NASBackupChainKeys.CHAIN_ID))) {
+                continue;
+            }
+            if (!parentUuid.equals(readDetail(b, NASBackupChainKeys.PARENT_BACKUP_ID))) {
+                continue;
+            }
+            if (isDeletePending(b)) {
+                // Tombstoned children don't keep us alive — they're already on the way out.
+                continue;
+            }
+            children.add(b);
+        }
+        return children;
+    }
+
+    /**
+     * Look up this backup's immediate parent in the chain (by {@code PARENT_BACKUP_ID}).
+     * Returns {@code null} if this is the full (no parent) or the parent row is gone.
+     *
+     * <p>Prefer {@link #getChainOrderedLeafToRoot(Backup)} when walking the whole chain —
+     * this method hits the DB on each call and is O(N²) when used in a loop.
+     */
+    private Backup findChainParent(Backup backup) {
+        String parentUuid = readDetail(backup, NASBackupChainKeys.PARENT_BACKUP_ID);
+        if (parentUuid == null || parentUuid.isEmpty()) {
+            return null;
+        }
+        for (Backup b : backupDao.listByVmId(null, backup.getVmId())) {
+            if (parentUuid.equals(b.getUuid())) {
+                return b;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Return the chain containing {@code member}, ordered leaf-first
+     * (highest {@code CHAIN_POSITION} → root).
+     *
+     * <p>Materialises the chain via a single {@link BackupDao#listByVmId} call. Callers that
+     * previously walked the chain by repeatedly calling {@link #findChainParent} were doing
+     * O(N) {@code listByVmId} calls (one per ancestor); this collapses that to one.
+     *
+     * <p>If {@code member} has no {@code CHAIN_ID} metadata it is returned as a one-element
+     * list (it is its own degenerate chain).
+     */
+    private List<Backup> getChainOrderedLeafToRoot(Backup member) {
+        String chainId = readDetail(member, NASBackupChainKeys.CHAIN_ID);
+        if (chainId == null) {
+            return Collections.singletonList(member);
+        }
+        List<Backup> chain = new ArrayList<>();
+        for (Backup b : backupDao.listByVmId(null, member.getVmId())) {
+            if (chainId.equals(readDetail(b, NASBackupChainKeys.CHAIN_ID))) {
+                chain.add(b);
+            }
+        }
+        // Descending CHAIN_POSITION = leaf-first (highest position = furthest from root).
+        chain.sort((a, b) -> Integer.compare(chainPosition(b), chainPosition(a)));
+        return chain;
+    }
+
+    /**
+     * Physically delete the leaf {@code backup}, then walk up the chain while each ancestor
+     * is in delete-pending state. Mirrors the snapshot subsystem pattern: once a leaf is
+     * gone, garbage-collect any tombstoned parents.
+     *
+     * <p>Caller must guarantee {@code backup} is a leaf (no live children). Each tombstoned
+     * ancestor is by definition childless once its sole child is deleted here, so no extra
+     * live-children check is needed inside the loop.
+     */
+    private boolean deleteLeafBackupAndSweepPendingAncestors(Backup backup, BackupRepository repo, Host host) {
+        // Snapshot the chain BEFORE the leaf delete — deleteBackupFileAndRow removes the row,
+        // after which the in-memory list still resolves but the DB no longer would.
+        List<Backup> chain = getChainOrderedLeafToRoot(backup);
+        if (!deleteBackupFileAndRow(backup, repo, host)) {
+            return false;
+        }
+        // Walk the snapshot from leaf+1 upward, deleting tombstoned ancestors until a live
+        // one is reached or the root is past.
+        int leafIdx = indexOfBackupById(chain, backup.getId());
+        if (leafIdx < 0) {
+            // Leaf wasn't in its own CHAIN_ID list — degenerate case, nothing more to sweep.
+            return true;
+        }
+        for (int i = leafIdx + 1; i < chain.size(); i++) {
+            Backup ancestor = chain.get(i);
+            if (!isDeletePending(ancestor)) {
+                break;
+            }
+            if (!deleteBackupFileAndRow(ancestor, repo, host)) {
+                // Stop the sweep; the rest of the tombstoned chain will be collected on a
+                // future delete that re-runs the sweep.
+                return true;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Forced delete of {@code root}'s entire chain, leaf-first. NAS backups form a linear
+     * chain (full → inc → inc → …), not a tree, so we just walk the ordered chain and
+     * delete each member without re-querying parents.
+     */
+    private boolean cascadeDeleteSubtree(Backup root, BackupRepository repo, Host host) {
+        for (Backup b : getChainOrderedLeafToRoot(root)) {
+            if (!deleteBackupFileAndRow(b, repo, host)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static int indexOfBackupById(List<Backup> chain, long id) {
+        for (int i = 0; i < chain.size(); i++) {
+            if (chain.get(i).getId() == id) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Return the backup with the highest {@code CHAIN_POSITION} sharing {@code root}'s
+     * {@code CHAIN_ID}. Returns {@code root} if it has no chain metadata or is itself the tail.
+     */
+    private Backup findChainTail(Backup root) {
+        String chainId = readDetail(root, NASBackupChainKeys.CHAIN_ID);
+        if (chainId == null) {
+            return root;
+        }
+        Backup tail = root;
+        int tailPos = chainPosition(root);
+        for (Backup b : backupDao.listByVmId(null, root.getVmId())) {
+            if (b.getId() == root.getId()) {
+                continue;
+            }
+            if (!chainId.equals(readDetail(b, NASBackupChainKeys.CHAIN_ID))) {
+                continue;
+            }
+            int pos = chainPosition(b);
+            if (pos > tailPos) {
+                tail = b;
+                tailPos = pos;
+            }
+        }
+        return tail;
+    }
+
+    private int chainPosition(Backup b) {
+        String s = readDetail(b, NASBackupChainKeys.CHAIN_POSITION);
+        if (s == null) {
+            return Integer.MAX_VALUE; // no metadata => sort to end
+        }
+        try {
+            return Integer.parseInt(s);
+        } catch (NumberFormatException e) {
+            return Integer.MAX_VALUE;
+        }
     }
 
     public void syncBackupMetrics(Long zoneId) {
@@ -543,6 +1107,11 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
     @Override
     public boolean removeVMFromBackupOffering(VirtualMachine vm) {
+        // Clear the VM's active checkpoint so any future re-assignment to a backup offering
+        // starts a fresh chain. Without this, a detach-volume + attach-different-volume cycle
+        // while the offering is unassigned would lead to the next backup trying to rebase
+        // onto a stale parent (different volume identity, same VM id).
+        clearVmActiveCheckpoint(vm.getId());
         return true;
     }
 
@@ -629,7 +1198,9 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey[]{
-                NASBackupRestoreMountTimeout
+                NASBackupRestoreMountTimeout,
+                NASBackupFullEvery,
+                NASBackupIncrementalEnabled
         };
     }
 

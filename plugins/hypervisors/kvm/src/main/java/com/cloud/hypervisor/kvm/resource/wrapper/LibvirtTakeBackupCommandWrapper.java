@@ -42,6 +42,14 @@ import java.util.Objects;
 @ResourceWrapper(handles = TakeBackupCommand.class)
 public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCommand, Answer, LibvirtComputingResource> {
     private static final Integer EXIT_CLEANUP_FAILED = 20;
+    private static final Integer EXIT_INCREMENTAL_UNSUPPORTED = 21;
+    // Backup file is valid, but the host has no bitmap to anchor the next incremental on.
+    // Used by the stopped-VM path when qemu-img bitmap --add failed for every source disk.
+    private static final Integer EXIT_BITMAP_NOT_SEEDED = 22;
+
+    private static final String MODE_FULL = "full";
+    private static final String MODE_INCREMENTAL = "incremental";
+
     @Override
     public Answer execute(TakeBackupCommand command, LibvirtComputingResource libvirtComputingResource) {
         final String vmName = command.getVmName();
@@ -53,6 +61,13 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
         final List<String> volumePaths = command.getVolumePaths();
         KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
         int timeout = command.getWait() > 0 ? command.getWait() * 1000 : libvirtComputingResource.getCmdsTimeout();
+
+        // Pre-validate incremental args here rather than relying on the script to error out.
+        // Keeps the script agnostic to caller policy (it just does what it's told).
+        String validationError = validateBackupArgs(command);
+        if (validationError != null) {
+            return new BackupAnswer(command, false, validationError);
+        }
 
         List<String> diskPaths = new ArrayList<>();
         if (Objects.nonNull(volumePaths)) {
@@ -69,22 +84,30 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
             }
         }
 
-        List<String[]> commands = new ArrayList<>();
-        commands.add(new String[]{
-                libvirtComputingResource.getNasBackupPath(),
-                "-o", "backup",
-                "-v", vmName,
-                "-t", backupRepoType,
-                "-s", backupRepoAddress,
-                "-m", Objects.nonNull(mountOptions) ? mountOptions : "",
-                "-p", backupPath,
-                "-q", command.getQuiesce() != null && command.getQuiesce() ? "true" : "false",
-                "-d", diskPaths.isEmpty() ? "" : String.join(",", diskPaths)
-        });
+        final String requestedMode = command.getMode();
+        Pair<Integer, String> result = runBackupScript(libvirtComputingResource, command, vmName, backupRepoType, backupRepoAddress,
+                mountOptions, backupPath, diskPaths, requestedMode,
+                command.getBitmapNew(), command.getBitmapParent(), command.getParentPaths(), timeout);
 
-        Pair<Integer, String> result = Script.executePipedCommands(commands, timeout);
+        boolean incrementalFallback = false;
+        if (result.first() == EXIT_INCREMENTAL_UNSUPPORTED && MODE_INCREMENTAL.equals(requestedMode)) {
+            // Script told us the incremental can't proceed (parent checkpoint can't be
+            // re-registered, or VM is stopped). Re-invoke as full with the same --bitmap-new
+            // so the chain restarts cleanly. Drop --bitmap-parent + --parent-paths since
+            // they no longer apply.
+            logger.info("nasbackup.sh signalled incremental unsupported for VM " + vmName + " — retrying as full");
+            result = runBackupScript(libvirtComputingResource, command, vmName, backupRepoType, backupRepoAddress,
+                    mountOptions, backupPath, diskPaths, MODE_FULL,
+                    command.getBitmapNew(), null, null, timeout);
+            incrementalFallback = true;
+        }
 
-        if (result.first() != 0) {
+        boolean bitmapSeeded = true;
+        if (result.first() == EXIT_BITMAP_NOT_SEEDED) {
+            // Backup file is valid; the host just has no bitmap. Treat as success but
+            // mark bitmapCreated=null so the orchestrator clears active_checkpoint_id.
+            bitmapSeeded = false;
+        } else if (result.first() != 0) {
             logger.debug("Failed to take VM backup: " + result.second());
             BackupAnswer answer = new BackupAnswer(command, false, result.second().trim());
             if (result.first() == EXIT_CLEANUP_FAILED) {
@@ -94,21 +117,106 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
             return answer;
         }
 
+        String stdout = result.second().trim();
+        long backupSize = parseBackupSize(stdout, diskPaths);
+
+        BackupAnswer answer = new BackupAnswer(command, true, stdout);
+        answer.setSize(backupSize);
+        // bitmapCreated mirrors what we asked the script to create — except when the
+        // script exited EXIT_BITMAP_NOT_SEEDED, in which case the host has no bitmap
+        // and the orchestrator must clear active_checkpoint_id.
+        answer.setBitmapCreated(bitmapSeeded ? command.getBitmapNew() : null);
+        answer.setIncrementalFallback(incrementalFallback);
+        return answer;
+    }
+
+    /**
+     * Run nasbackup.sh once with the given args. Returns the exit code + captured stdout.
+     */
+    private Pair<Integer, String> runBackupScript(LibvirtComputingResource libvirtComputingResource,
+            TakeBackupCommand command, String vmName, String backupRepoType, String backupRepoAddress,
+            String mountOptions, String backupPath, List<String> diskPaths, String mode,
+            String bitmapNew, String bitmapParent, List<String> parentPaths, int timeout) {
+        List<String> argv = new ArrayList<>(Arrays.asList(
+                libvirtComputingResource.getNasBackupPath(),
+                "-o", "backup",
+                "-v", vmName,
+                "-t", backupRepoType,
+                "-s", backupRepoAddress,
+                "-m", Objects.nonNull(mountOptions) ? mountOptions : "",
+                "-p", backupPath,
+                "-q", command.getQuiesce() != null && command.getQuiesce() ? "true" : "false",
+                "-d", diskPaths.isEmpty() ? "" : String.join(",", diskPaths)
+        ));
+        if (mode != null && !mode.isEmpty()) {
+            argv.add("-M");
+            argv.add(mode);
+        }
+        if (bitmapNew != null && !bitmapNew.isEmpty()) {
+            argv.add("--bitmap-new");
+            argv.add(bitmapNew);
+        }
+        if (bitmapParent != null && !bitmapParent.isEmpty()) {
+            argv.add("--bitmap-parent");
+            argv.add(bitmapParent);
+        }
+        if (parentPaths != null && !parentPaths.isEmpty()) {
+            argv.add("--parent-paths");
+            argv.add(String.join(",", parentPaths));
+        }
+
+        List<String[]> commands = new ArrayList<>();
+        commands.add(argv.toArray(new String[0]));
+        return Script.executePipedCommands(commands, timeout);
+    }
+
+    /**
+     * Return a human-readable validation error string, or {@code null} if the command's
+     * incremental-backup args are internally consistent.
+     */
+    private String validateBackupArgs(TakeBackupCommand command) {
+        String mode = command.getMode();
+        if (mode == null || mode.isEmpty()) {
+            return null; // legacy full-only — no extra args expected
+        }
+        if (MODE_INCREMENTAL.equals(mode)) {
+            if (command.getBitmapNew() == null || command.getBitmapNew().isEmpty()) {
+                return "incremental mode requires bitmapNew";
+            }
+            if (command.getBitmapParent() == null || command.getBitmapParent().isEmpty()) {
+                return "incremental mode requires bitmapParent";
+            }
+            if (command.getParentPaths() == null || command.getParentPaths().isEmpty()) {
+                return "incremental mode requires parentPaths";
+            }
+            return null;
+        }
+        if (MODE_FULL.equals(mode)) {
+            if (command.getBitmapNew() == null || command.getBitmapNew().isEmpty()) {
+                return "full mode requires bitmapNew (the bitmap to create for the next incremental)";
+            }
+            return null;
+        }
+        return "Unknown backup mode: " + mode;
+    }
+
+    /**
+     * Sum the per-disk size lines emitted by nasbackup.sh. Single-volume mode emits one
+     * line containing just the byte count; multi-volume mode emits one line per disk
+     * whose first whitespace-separated token is the byte count.
+     */
+    private long parseBackupSize(String stdout, List<String> diskPaths) {
         long backupSize = 0L;
         if (CollectionUtils.isNullOrEmpty(diskPaths)) {
-            List<String> outputLines = Arrays.asList(result.second().trim().split("\n"));
+            List<String> outputLines = Arrays.asList(stdout.split("\n"));
             if (!outputLines.isEmpty()) {
                 backupSize = Long.parseLong(outputLines.get(outputLines.size() - 1).trim());
             }
         } else {
-            String[] outputLines = result.second().trim().split("\n");
-            for(String line : outputLines) {
+            for (String line : stdout.split("\n")) {
                 backupSize = backupSize + Long.parseLong(line.split(" ")[0].trim());
             }
         }
-
-        BackupAnswer answer = new BackupAnswer(command, true, result.second().trim());
-        answer.setSize(backupSize);
-        return answer;
+        return backupSize;
     }
 }
