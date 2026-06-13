@@ -1464,7 +1464,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
      */
     private void migrateAwayVmWithVolumes(HostVO host, VMInstanceVO vm) {
         final DataCenterDeployment plan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), null, null, null);
-        ServiceOfferingVO offeringVO = serviceOfferingDao.findById(vm.getServiceOfferingId());
+        ServiceOfferingVO offeringVO = serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
         final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm, null, offeringVO, null, null);
         plan.setMigrationPlan(true);
         DeployDestination dest = getDeployDestination(vm, profile, plan, host);
