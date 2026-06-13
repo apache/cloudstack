@@ -1004,6 +1004,7 @@ class TestNetworkExtensionNamespace(cloudstackTestCase):
             # CloudStack requires shared guest offerings to explicitly allow
             # caller-specified IP ranges.
             offering_params["specifyIpRanges"] = True
+            offering_params["specifyVlan"] = True
         if guestiptype == "Isolated" and "SourceNat" in _svc:
             offering_params["serviceCapabilityList"] = {
                 "SourceNat": {"SupportedSourceNatTypes": "peraccount"},
@@ -1273,6 +1274,7 @@ class TestNetworkExtensionNamespace(cloudstackTestCase):
             "netmask": "255.255.255.0",
             "startip": "172.31.%d.10" % third_octet,
             "endip": "172.31.%d.200" % third_octet,
+            "vlan": "vlan://%d" % (3000 + third_octet),
         }
 
         account, network, vm = self._create_account_network_vm(
