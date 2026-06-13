@@ -62,7 +62,7 @@
           <div class="form__label">
             <tooltip-label :title="$t('label.templatename')" :tooltip="createAutoScaleVmProfileApiParams.templateid.description"/>
           </div>
-          {{ getTemplateName(templateid) }}
+          {{ templateName || templateid }}
         </div>
       </div>
       <div class="form">
@@ -338,6 +338,7 @@ export default {
       autoscaleuserid: null,
       expungevmgraceperiod: null,
       templateid: null,
+      templateName: null,
       serviceofferingid: null,
       userdata: null,
       userdataid: null,
@@ -422,6 +423,9 @@ export default {
         domainid: this.resource.domainid,
         account: this.resource.account
       }
+      if (this.resource.projectid) {
+        params.projectid = this.resource.projectid
+      }
       if (isAdmin()) {
         params.templatefilter = 'all'
       } else {
@@ -436,6 +440,9 @@ export default {
         listall: 'true',
         issystem: 'false'
       }
+      if (this.resource.projectid) {
+        params.projectid = this.resource.projectid
+      }
       if (isAdminOrDomainAdmin()) {
         params.isrecursive = 'true'
       }
@@ -446,15 +453,20 @@ export default {
     },
     fetchData () {
       this.loading = true
-      api('listAutoScaleVmProfiles', {
+      const params = {
         listAll: true,
         id: this.resource.vmprofileid
-      }).then(response => {
+      }
+      if (this.resource.projectid) {
+        params.projectid = this.resource.projectid
+      }
+      api('listAutoScaleVmProfiles', params).then(response => {
         this.profileid = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.id
         this.autoscaleuserid = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.autoscaleuserid
         this.expungevmgraceperiod = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.expungevmgraceperiod
         this.serviceofferingid = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.serviceofferingid
         this.templateid = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.templateid
+        this.fetchTemplate(this.templateid)
         this.userdata = this.decodeUserData(decodeURIComponent(response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.userdata || ''))
         this.userdataid = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.userdataid
         this.userdataname = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.userdataname
@@ -468,13 +480,22 @@ export default {
         this.loading = false
       })
     },
-    getTemplateName (templateid) {
-      for (const template of this.templatesList) {
-        if (template.id === templateid) {
-          return template.name
-        }
+    fetchTemplate (templateid) {
+      if (!templateid) return
+      const params = {
+        id: templateid,
+        templatefilter: 'executable'
       }
-      return ''
+      if (this.resource.projectid) {
+        params.projectid = this.resource.projectid
+      }
+      api('listTemplates', params).then(json => {
+        if (json.listtemplatesresponse?.template?.[0]) {
+          this.templateName = json.listtemplatesresponse.template[0].name
+        } else {
+          this.templateName = templateid
+        }
+      })
     },
     getServiceOfferingName (serviceofferingid) {
       for (const serviceoffering of this.serviceOfferingsList) {
@@ -576,9 +597,11 @@ export default {
         this.$pollJob({
           jobId: response.updateautoscalevmprofileresponse.jobid,
           successMethod: (result) => {
+            this.fetchData()
           },
           errorMessage: this.$t('message.update.autoscale.vm.profile.failed'),
           errorMethod: () => {
+            this.fetchData()
           }
         })
       }).finally(() => {
@@ -586,6 +609,8 @@ export default {
       })
     },
     updateAutoScaleVmProfile () {
+      if (this.loading) return
+      this.loading = true
       const params = {
         id: this.profileid,
         expungevmgraceperiod: this.expungevmgraceperiod,
@@ -604,6 +629,7 @@ export default {
         this.$pollJob({
           jobId: response.updateautoscalevmprofileresponse.jobid,
           successMethod: (result) => {
+            this.closeModal()
           },
           errorMessage: this.$t('message.update.autoscale.vm.profile.failed'),
           errorMethod: () => {
@@ -618,6 +644,7 @@ export default {
       return decodedData.toString('utf-8')
     },
     closeModal () {
+      this.fetchData()
       this.editProfileModalVisible = false
     }
   }

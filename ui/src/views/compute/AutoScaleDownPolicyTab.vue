@@ -425,10 +425,14 @@ export default {
   methods: {
     fetchInitData () {
       this.loading = true
-      api('listAutoScaleVmGroups', {
+      const params = {
         listAll: true,
         id: this.resource.id
-      }).then(response => {
+      }
+      if (this.resource.projectid) {
+        params.projectid = this.resource.projectid
+      }
+      api('listAutoScaleVmGroups', params).then(response => {
         const lbruleid = response.listautoscalevmgroupsresponse?.autoscalevmgroup?.[0]?.lbruleid
         this.policies = response.listautoscalevmgroupsresponse?.autoscalevmgroup?.[0]?.scaledownpolicies
         if (this.selectedPolicyId) {
@@ -437,10 +441,14 @@ export default {
           this.policy = this.policies?.[0]
           this.selectedPolicyId = this.policy.id
         }
-        api('listLoadBalancerRules', {
+        const lbParams = {
           listAll: true,
           id: lbruleid
-        }).then(response => {
+        }
+        if (this.resource.projectid) {
+          lbParams.projectid = this.resource.projectid
+        }
+        api('listLoadBalancerRules', lbParams).then(response => {
           const networkid = response.listloadbalancerrulesresponse?.loadbalancerrule?.[0]?.networkid
           api('listNetworks', {
             listAll: true,
@@ -464,10 +472,14 @@ export default {
     },
     fetchData () {
       this.loading = true
-      api('listAutoScalePolicies', {
+      const params = {
         listAll: true,
         id: this.selectedPolicyId
-      }).then(response => {
+      }
+      if (this.resource.projectid) {
+        params.projectid = this.resource.projectid
+      }
+      api('listAutoScalePolicies', params).then(response => {
         this.policy = response.listautoscalepoliciesresponse?.autoscalepolicy[0]
       }).finally(() => {
         this.loading = false
