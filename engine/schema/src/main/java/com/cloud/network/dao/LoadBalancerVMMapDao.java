@@ -42,5 +42,6 @@ public interface LoadBalancerVMMapDao extends GenericDao<LoadBalancerVMMapVO, Lo
     LoadBalancerVMMapVO findByLoadBalancerIdAndVmIdVmIp(long loadBalancerId, long instanceId, String instanceIp);
 
     void remove(long id, long instanceId, String instanceIp, Boolean revoke);
+
     int expungeByVmList(List<Long> vmIds, Long batchSize);
 }
