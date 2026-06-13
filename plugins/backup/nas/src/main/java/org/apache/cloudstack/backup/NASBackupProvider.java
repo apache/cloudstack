@@ -406,12 +406,12 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
      * other providers can implement their own chain semantics without schema changes.
      */
     private void persistChainMetadata(Backup backup, ChainDecision decision, String bitmapFromAgent) {
-        // Only persist nas.bitmap_name when the agent confirmed it via BITMAP_CREATED=. If we
-        // fall back to decision.bitmapNew when the agent didn't emit BITMAP_CREATED= (e.g.,
-        // stopped-VM path where the qemu-img pre-seed failed, or running-VM path where libvirt
-        // backup-begin succeeded but the bitmap line wasn't surfaced for any reason), we'd
-        // anchor the next incremental on a bitmap that doesn't exist on the host. Better to
-        // leave it empty so the next backup sees no checkpoint and starts a fresh full chain.
+        // Only persist nas.bitmap_name when the agent confirmed the bitmap exists on the host.
+        // The agent wrapper sets bitmapFromAgent=null when nasbackup.sh exits
+        // EXIT_BITMAP_NOT_SEEDED (=22) — currently only the stopped-VM path where qemu-img
+        // bitmap --add failed on every source disk. Anchoring the next incremental on a
+        // bitmap that doesn't exist would force a non-recoverable failure, so we leave the
+        // detail empty and let the next backup start a fresh full chain.
         if (bitmapFromAgent != null && !bitmapFromAgent.isEmpty()) {
             backupDetailsDao.persist(new BackupDetailVO(backup.getId(), NASBackupChainKeys.BITMAP_NAME, bitmapFromAgent, true));
         }
@@ -562,10 +562,11 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
                 persistChainMetadata(backupVO, effective, answer.getBitmapCreated());
                 // Pin the VM's active_checkpoint_id to whichever bitmap the agent actually
                 // created. This is the only valid parent for the next incremental (see
-                // decideChain). For the stopped-VM offline path BITMAP_CREATED is null —
-                // no bitmap exists on the host, so we also clear any stale detail from a
-                // prior online backup. Either way, after this step the detail accurately
-                // reflects what's on the running QEMU (or absence thereof).
+                // decideChain). When the agent wrapper sets bitmapCreated=null (script exited
+                // EXIT_BITMAP_NOT_SEEDED — stopped-VM path where qemu-img bitmap --add failed),
+                // no bitmap exists on the host, so we also clear any stale detail from a prior
+                // online backup. Either way, after this step the detail accurately reflects
+                // what's on the running QEMU (or absence thereof).
                 String confirmedBitmap = answer.getBitmapCreated();
                 if (confirmedBitmap != null) {
                     upsertVmActiveCheckpoint(vm.getId(), confirmedBitmap);
