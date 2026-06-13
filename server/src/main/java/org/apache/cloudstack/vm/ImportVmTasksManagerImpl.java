@@ -110,7 +110,7 @@ public class ImportVmTasksManagerImpl implements ImportVmTasksManager {
             String vcenter, String datacenterName, String sourceVMName, Host convertHost, Host importHost) {
         logger.debug("Creating import VM task entry for VM: {} for account {} on zone {} " +
                 "from the vCenter: {} / datacenter: {} / source VM: {}",
-                sourceVMName, owner.getAccountName(), zone.getName(), displayName, vcenter, datacenterName);
+                displayName, owner.getAccountName(), zone.getName(), vcenter, datacenterName, sourceVMName);
         ImportVMTaskVO importVMTaskVO = new ImportVMTaskVO(zone.getId(), owner.getAccountId(), userId, displayName,
                 vcenter, datacenterName, sourceVMName, convertHost.getId(), importHost.getId());
         importVMTaskVO.setState(ImportVmTask.TaskState.Running);
@@ -151,9 +151,9 @@ public class ImportVmTasksManagerImpl implements ImportVmTasksManager {
         ImportVMTaskVO importVMTaskVO = (ImportVMTaskVO) importVMTask;
         logger.debug("Updating import VM task entry for VM: {} for account {} on zone {} " +
                 "from the vCenter: {} / datacenter: {} / source VM: {} to step: {}",
-                importVMTaskVO.getSourceVMName(), owner.getAccountName(), zone.getName(),
-                importVMTaskVO.getDisplayName(),
-                importVMTaskVO.getVcenter(), importVMTaskVO.getDatacenter(), step);
+                importVMTaskVO.getDisplayName(), owner.getAccountName(), zone.getName(),
+                importVMTaskVO.getVcenter(), importVMTaskVO.getDatacenter(),
+                importVMTaskVO.getSourceVMName(), step);
         Date updatedDate = DateUtil.now();
         String description = getStepDescription(importVMTaskVO, convertHost, importHost, step, updatedDate);
         importVMTaskVO.setStep(step);
