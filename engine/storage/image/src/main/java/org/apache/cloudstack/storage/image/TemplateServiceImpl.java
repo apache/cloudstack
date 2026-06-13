@@ -64,6 +64,7 @@ import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.datastore.DataObjectManager;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
@@ -163,6 +164,8 @@ public class TemplateServiceImpl implements TemplateService {
     TemplateDataFactory imageFactory;
     @Inject
     StorageOrchestrationService storageOrchestrator;
+    @Inject
+    ImageStoreDao imageStoreDao;
 
     class TemplateOpContext<T> extends AsyncRpcContext<T> {
         final TemplateObject template;
@@ -295,10 +298,14 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
     protected boolean shouldDownloadTemplateToStore(VMTemplateVO template, DataStore store) {
+        if (_storeMgr.isRemovedOrReadonly(store)) {
+            return false;
+        }
+
         Long zoneId = store.getScope().getScopeId();
         DataStore directedStore = _tmpltMgr.verifyHeuristicRulesForZone(template, zoneId);
         if (directedStore != null && store.getId() != directedStore.getId()) {
-            logger.info("Template [{}] will not be download to image store [{}], as a heuristic rule is directing it to another store.",
+            logger.info("Template [{}] will not be downloaded to image store [{}], as a heuristic rule is directing it to another store.",
                     template.getUniqueName(), store.getName());
             return false;
         }
