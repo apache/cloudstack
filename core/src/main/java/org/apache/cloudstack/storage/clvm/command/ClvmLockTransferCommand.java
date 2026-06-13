@@ -77,7 +77,6 @@ public class ClvmLockTransferCommand extends Command {
         this.operation = operation;
         this.lvPath = lvPath;
         this.volumeUuid = volumeUuid;
-        // Execute in sequence to ensure lock safety
         setWait(30);
     }
 
@@ -95,6 +94,6 @@ public class ClvmLockTransferCommand extends Command {
 
     @Override
     public boolean executeInSequence() {
-        return true;
+        return false;
     }
 }
