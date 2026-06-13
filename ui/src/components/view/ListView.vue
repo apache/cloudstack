@@ -208,7 +208,8 @@
         <router-link :to="{ path: '/physicalnetwork/' + record.physicalnetworkid }">{{ text }}</router-link>
       </template>
       <template v-if="column.key === 'serviceofferingname'">
-        <router-link :to="{ path: '/computeoffering/' + record.serviceofferingid }">{{ text }}</router-link>
+        <router-link v-if="$route.path === '/networkoffering'" :to="{ path: '/systemoffering/' + record.serviceofferingid, query:{issystem:'true'} }">{{ text }}</router-link>
+        <router-link v-else :to="{ path: '/computeoffering/' + record.serviceofferingid }">{{ text }}</router-link>
       </template>
       <template v-if="column.key === 'hypervisor'">
         <span v-if="$route.name === 'hypervisorcapability'">
