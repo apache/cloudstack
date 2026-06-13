@@ -22,6 +22,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -72,6 +73,7 @@ public class S3ImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
     @Override
     public DataStore initialize(Map<String, Object> dsInfos) {
 
+        Long dcId = (Long)dsInfos.get("zoneId");
         String url = (String)dsInfos.get("url");
         String name = (String)dsInfos.get("name");
         String providerName = (String)dsInfos.get("providerName");
@@ -79,21 +81,26 @@ public class S3ImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
         DataStoreRole role = (DataStoreRole)dsInfos.get("role");
         Map<String, String> details = (Map<String, String>)dsInfos.get("details");
 
-        logger.info("Trying to add a S3 store with endpoint: " + details.get(ApiConstants.S3_END_POINT));
+        String endPoint = details.get(ApiConstants.S3_END_POINT);
+        String bucketName = details.get(ApiConstants.S3_BUCKET_NAME);
+        logger.info("Trying to add a S3 store with endpoint: " + endPoint);
+
+        if (StringUtils.isEmpty(url) && StringUtils.isNotEmpty(endPoint) && StringUtils.isNotEmpty(bucketName)) {
+            url = "s3://" + endPoint.replaceFirst("^https?://", "") + "/" + bucketName;
+        }
+        if (StringUtils.isEmpty(name) && StringUtils.isNotEmpty(url)) {
+            name = url;
+        }
 
         Map<String, Object> imageStoreParameters = new HashMap();
         imageStoreParameters.put("name", name);
+        imageStoreParameters.put("zoneId", dcId);
         imageStoreParameters.put("url", url);
-        String protocol = "http";
-        String useHttps = details.get(ApiConstants.S3_HTTPS_FLAG);
-        if (useHttps != null && Boolean.parseBoolean(useHttps)) {
-            protocol = "https";
-        }
-        imageStoreParameters.put("protocol", protocol);
+        imageStoreParameters.put("protocol", "s3");
         if (scope != null) {
             imageStoreParameters.put("scope", scope);
         } else {
-            imageStoreParameters.put("scope", ScopeType.REGION);
+            imageStoreParameters.put("scope", ScopeType.ZONE);
         }
         imageStoreParameters.put("providerName", providerName);
         imageStoreParameters.put("role", role);

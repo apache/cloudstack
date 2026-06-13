@@ -118,6 +118,45 @@ public class SecondaryStorageManagerImplTest {
     }
 
     @Test
+    public void testAddSecondaryStorageServerAddressToBufferWithNullEntries() {
+        String randomIp1 = InetAddresses.fromInteger(secureRandom.nextInt()).getHostAddress();
+        String randomIp2 = InetAddresses.fromInteger(secureRandom.nextInt()).getHostAddress();
+
+        List<DataStore> dataStores = new ArrayList<>();
+
+        DataStore validStore1 = Mockito.mock(DataStore.class);
+        DataStoreTO validStoreTO1 = Mockito.mock(DataStoreTO.class);
+        when(validStoreTO1.getUrl()).thenReturn(String.format("http://%s", randomIp1));
+        when(validStore1.getTO()).thenReturn(validStoreTO1);
+        dataStores.add(validStore1);
+
+        dataStores.add(null);
+
+        DataStore nullToStore = Mockito.mock(DataStore.class);
+        when(nullToStore.getTO()).thenReturn(null);
+        dataStores.add(nullToStore);
+
+        DataStore nullUrlStore = Mockito.mock(DataStore.class);
+        DataStoreTO nullUrlStoreTO = Mockito.mock(DataStoreTO.class);
+        when(nullUrlStoreTO.getUrl()).thenReturn(null);
+        when(nullUrlStore.getTO()).thenReturn(nullUrlStoreTO);
+        dataStores.add(nullUrlStore);
+
+        DataStore validStore2 = Mockito.mock(DataStore.class);
+        DataStoreTO validStoreTO2 = Mockito.mock(DataStoreTO.class);
+        when(validStoreTO2.getUrl()).thenReturn(String.format("http://%s", randomIp2));
+        when(validStore2.getTO()).thenReturn(validStoreTO2);
+        dataStores.add(validStore2);
+
+        StringBuilder builder = new StringBuilder();
+        secondaryStorageManager.addSecondaryStorageServerAddressToBuffer(builder, dataStores, "VM");
+        String result = builder.toString();
+        result = result.contains("=") ? result.split("=")[1] : null;
+
+        assertEquals(StringUtils.join(List.of(randomIp1, randomIp2), ","), result);
+    }
+
+    @Test
     public void testCreateSecondaryStorageVm_New() {
         long dataCenterId = 1L;
         long id = 100L;
