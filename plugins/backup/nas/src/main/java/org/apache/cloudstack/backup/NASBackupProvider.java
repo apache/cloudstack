@@ -935,6 +935,9 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     /**
      * Look up this backup's immediate parent in the chain (by {@code PARENT_BACKUP_ID}).
      * Returns {@code null} if this is the full (no parent) or the parent row is gone.
+     *
+     * <p>Prefer {@link #getChainOrderedLeafToRoot(Backup)} when walking the whole chain —
+     * this method hits the DB on each call and is O(N²) when used in a loop.
      */
     private Backup findChainParent(Backup backup) {
         String parentUuid = readDetail(backup, NASBackupChainKeys.PARENT_BACKUP_ID);
@@ -950,6 +953,33 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     }
 
     /**
+     * Return the chain containing {@code member}, ordered leaf-first
+     * (highest {@code CHAIN_POSITION} → root).
+     *
+     * <p>Materialises the chain via a single {@link BackupDao#listByVmId} call. Callers that
+     * previously walked the chain by repeatedly calling {@link #findChainParent} were doing
+     * O(N) {@code listByVmId} calls (one per ancestor); this collapses that to one.
+     *
+     * <p>If {@code member} has no {@code CHAIN_ID} metadata it is returned as a one-element
+     * list (it is its own degenerate chain).
+     */
+    private List<Backup> getChainOrderedLeafToRoot(Backup member) {
+        String chainId = readDetail(member, NASBackupChainKeys.CHAIN_ID);
+        if (chainId == null) {
+            return Collections.singletonList(member);
+        }
+        List<Backup> chain = new ArrayList<>();
+        for (Backup b : backupDao.listByVmId(null, member.getVmId())) {
+            if (chainId.equals(readDetail(b, NASBackupChainKeys.CHAIN_ID))) {
+                chain.add(b);
+            }
+        }
+        // Descending CHAIN_POSITION = leaf-first (highest position = furthest from root).
+        chain.sort((a, b) -> Integer.compare(chainPosition(b), chainPosition(a)));
+        return chain;
+    }
+
+    /**
      * Physically delete the leaf {@code backup}, then walk up the chain while each ancestor
      * is in delete-pending state. Mirrors the snapshot subsystem pattern: once a leaf is
      * gone, garbage-collect any tombstoned parents.
@@ -959,46 +989,54 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
      * live-children check is needed inside the loop.
      */
     private boolean deleteLeafBackupAndSweepPendingAncestors(Backup backup, BackupRepository repo, Host host) {
-        // Record the parent BEFORE the delete — deleteBackupFileAndRow removes the backup row,
-        // after which findChainParent can't resolve PARENT_BACKUP_ID.
-        Backup parent = findChainParent(backup);
+        // Snapshot the chain BEFORE the leaf delete — deleteBackupFileAndRow removes the row,
+        // after which the in-memory list still resolves but the DB no longer would.
+        List<Backup> chain = getChainOrderedLeafToRoot(backup);
         if (!deleteBackupFileAndRow(backup, repo, host)) {
             return false;
         }
-        while (parent != null && isDeletePending(parent)) {
-            Backup nextParent = findChainParent(parent);
-            if (!deleteBackupFileAndRow(parent, repo, host)) {
+        // Walk the snapshot from leaf+1 upward, deleting tombstoned ancestors until a live
+        // one is reached or the root is past.
+        int leafIdx = indexOfBackupById(chain, backup.getId());
+        if (leafIdx < 0) {
+            // Leaf wasn't in its own CHAIN_ID list — degenerate case, nothing more to sweep.
+            return true;
+        }
+        for (int i = leafIdx + 1; i < chain.size(); i++) {
+            Backup ancestor = chain.get(i);
+            if (!isDeletePending(ancestor)) {
+                break;
+            }
+            if (!deleteBackupFileAndRow(ancestor, repo, host)) {
                 // Stop the sweep; the rest of the tombstoned chain will be collected on a
                 // future delete that re-runs the sweep.
                 return true;
             }
-            parent = nextParent;
         }
         return true;
     }
 
     /**
      * Forced delete of {@code root}'s entire chain, leaf-first. NAS backups form a linear
-     * chain (full → inc → inc → …), not a tree, so we don't need BFS — find the tail
-     * (highest {@code CHAIN_POSITION} for {@code root}'s {@code CHAIN_ID}) and delete down.
-     * Each {@code rm} runs against a chain that still resolves.
+     * chain (full → inc → inc → …), not a tree, so we just walk the ordered chain and
+     * delete each member without re-querying parents.
      */
     private boolean cascadeDeleteSubtree(Backup root, BackupRepository repo, Host host) {
-        Backup tail = findChainTail(root);
-        if (tail == null) {
-            return false;
-        }
-        // Walk leaf → root via PARENT_BACKUP_ID, deleting unconditionally. We re-fetch parent
-        // before each delete because deleteBackupFileAndRow removes the backup row.
-        Backup current = tail;
-        while (current != null) {
-            Backup nextParent = findChainParent(current);
-            if (!deleteBackupFileAndRow(current, repo, host)) {
+        for (Backup b : getChainOrderedLeafToRoot(root)) {
+            if (!deleteBackupFileAndRow(b, repo, host)) {
                 return false;
             }
-            current = nextParent;
         }
         return true;
+    }
+
+    private static int indexOfBackupById(List<Backup> chain, long id) {
+        for (int i = 0; i < chain.size(); i++) {
+            if (chain.get(i).getId() == id) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     /**
