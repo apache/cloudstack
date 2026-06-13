@@ -592,22 +592,27 @@ public class NASBackupProviderTest {
         Mockito.when(backupRepositoryDao.findByBackupOfferingId(offeringId)).thenReturn(repo);
         Mockito.when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
 
-        // Leaf details.
+        // Leaf details. CHAIN_POSITION=1 puts the leaf after the full anchor in the
+        // ordered chain — getChainOrderedLeafToRoot sorts by CHAIN_POSITION descending.
         BackupDetailVO leafChainId = new BackupDetailVO(51L, NASBackupChainKeys.CHAIN_ID, "chain-1", true);
+        BackupDetailVO leafChainPos = new BackupDetailVO(51L, NASBackupChainKeys.CHAIN_POSITION, "1", true);
         BackupDetailVO leafParent = new BackupDetailVO(51L, NASBackupChainKeys.PARENT_BACKUP_ID, "parent-uuid", true);
         Mockito.when(backupDetailsDao.findDetail(51L, NASBackupChainKeys.CHAIN_ID)).thenReturn(leafChainId);
+        Mockito.when(backupDetailsDao.findDetail(51L, NASBackupChainKeys.CHAIN_POSITION)).thenReturn(leafChainPos);
         Mockito.when(backupDetailsDao.findDetail(51L, NASBackupChainKeys.PARENT_BACKUP_ID)).thenReturn(leafParent);
 
-        // Parent is tombstoned.
+        // Parent is the tombstoned full anchor (CHAIN_POSITION=0).
         BackupDetailVO parentChainId = new BackupDetailVO(50L, NASBackupChainKeys.CHAIN_ID, "chain-1", true);
+        BackupDetailVO parentChainPos = new BackupDetailVO(50L, NASBackupChainKeys.CHAIN_POSITION, "0", true);
         BackupDetailVO parentPending = new BackupDetailVO(50L, NASBackupChainKeys.DELETE_PENDING, "true", true);
         Mockito.when(backupDetailsDao.findDetail(50L, NASBackupChainKeys.CHAIN_ID)).thenReturn(parentChainId);
+        Mockito.when(backupDetailsDao.findDetail(50L, NASBackupChainKeys.CHAIN_POSITION)).thenReturn(parentChainPos);
         Mockito.when(backupDetailsDao.findDetail(50L, NASBackupChainKeys.DELETE_PENDING)).thenReturn(parentPending);
         // Parent has no parent of its own (it's the full anchor).
         Mockito.when(backupDetailsDao.findDetail(50L, NASBackupChainKeys.PARENT_BACKUP_ID)).thenReturn(null);
 
-        // listByVmId is called repeatedly. We use a mutable list so the sweep observes the
-        // leaf has been removed and treats the parent as childless.
+        // listByVmId is called once now (chain snapshot taken before the leaf delete).
+        // We still use a mutable list + remove() answer so the DAO contract is realistic.
         java.util.List<Backup> liveBackups = new java.util.ArrayList<>(List.of(parent, leaf));
         Mockito.when(backupDao.listByVmId(null, vmId)).thenAnswer(inv -> new java.util.ArrayList<>(liveBackups));
 
