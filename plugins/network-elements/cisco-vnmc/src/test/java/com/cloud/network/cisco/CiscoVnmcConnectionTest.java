@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.network.cisco;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Map;
@@ -136,7 +137,7 @@ public class CiscoVnmcConnectionTest {
     @Test
     public void testListUnassocAsa1000v() throws ExecutionException {
         Map<String, String> response = connection.listUnAssocAsa1000v();
-        assertTrue(response.size() >= 0);
+        assertFalse(response.isEmpty());
         fwDns = response;
     }
 

@@ -18,6 +18,7 @@ package org.apache.cloudstack.network.tungsten.api.command;
 
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -47,6 +48,7 @@ public class DeleteTungstenFabricTagCmdTest {
         ReflectionTestUtils.setField(deleteTungstenFabricTagCmd, "tagUuid", "test");
     }
 
+    @After
     public void tearDown() throws Exception {
         closeable.close();
     }
