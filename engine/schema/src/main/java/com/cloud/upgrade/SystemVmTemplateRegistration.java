@@ -108,9 +108,19 @@ public class SystemVmTemplateRegistration {
     private static Integer LINUX_12_ID = 363;
     private static final Integer SCRIPT_TIMEOUT = 1800000;
     private static final Integer LOCK_WAIT_TIMEOUT = 1200;
-    protected static final List<CPU.CPUArch> DOWNLOADABLE_TEMPLATE_ARCH_TYPES = Arrays.asList(
-            CPU.CPUArch.arm64
+    protected static final List<Pair<Hypervisor.HypervisorType, CPU.CPUArch>> AVAILABLE_SYSTEM_TEMPLATES_HYPERVISOR_ARCH_LIST = Arrays.asList(
+            new Pair<>(Hypervisor.HypervisorType.KVM, CPU.CPUArch.amd64),
+            new Pair<>(Hypervisor.HypervisorType.KVM, CPU.CPUArch.arm64),
+            new Pair<>(Hypervisor.HypervisorType.VMware, CPU.CPUArch.amd64),
+            new Pair<>(Hypervisor.HypervisorType.XenServer, CPU.CPUArch.amd64),
+            new Pair<>(Hypervisor.HypervisorType.Hyperv, CPU.CPUArch.amd64),
+            new Pair<>(Hypervisor.HypervisorType.LXC, CPU.CPUArch.amd64),
+            new Pair<>(Hypervisor.HypervisorType.Ovm3, CPU.CPUArch.amd64)
     );
+    protected static final List<Pair<Hypervisor.HypervisorType, CPU.CPUArch>> DOWNLOADABLE_TEMPLATE_HYPERVISOR_ARCH_TYPES =
+            Arrays.asList(
+                    new Pair<>(Hypervisor.HypervisorType.KVM, CPU.CPUArch.arm64)
+            );
 
     public static String CS_MAJOR_VERSION = null;
     public static String CS_TINY_VERSION = null;
@@ -148,9 +158,9 @@ public class SystemVmTemplateRegistration {
         vmInstanceDao = new VMInstanceDaoImpl();
         imageStoreDao = new ImageStoreDaoImpl();
         imageStoreDetailsDao = new ImageStoreDetailsDaoImpl();
-        clusterDao = new ClusterDaoImpl();
         configurationDao = new ConfigurationDaoImpl();
         guestOSDao = new GuestOSDaoImpl();
+        clusterDao = new ClusterDaoImpl();
         tempDownloadDir = new File(System.getProperty("java.io.tmpdir"));
     }
 
@@ -857,7 +867,9 @@ public class SystemVmTemplateRegistration {
             return templateFile;
         }
         LOGGER.debug("{} is not present", templateFile.getAbsolutePath());
-        if (DOWNLOADABLE_TEMPLATE_ARCH_TYPES.contains(templateDetails.getArch()) &&
+        Pair<Hypervisor.HypervisorType, CPU.CPUArch> templateHypervisorAndArch =
+                new Pair<>(templateDetails.getHypervisorType(), templateDetails.getArch());
+        if (DOWNLOADABLE_TEMPLATE_HYPERVISOR_ARCH_TYPES.contains(templateHypervisorAndArch) &&
                 StringUtils.isNotBlank(templateDetails.getUrl())) {
             LOGGER.debug("Downloading the template file {} for {}",
                     templateDetails.getUrl(), templateDetails.getHypervisorArchLog());
@@ -893,6 +905,11 @@ public class SystemVmTemplateRegistration {
             if (matchedTemplate == null) {
                 templatesFound = false;
                 break;
+            }
+            if (!AVAILABLE_SYSTEM_TEMPLATES_HYPERVISOR_ARCH_LIST.contains(hypervisorArch)) {
+                LOGGER.info("No system VM Template available for {}. Skipping validation.",
+                        getHypervisorArchLog(hypervisorArch.first(), hypervisorArch.second()));
+                continue;
             }
             File tempFile = getTemplateFile(matchedTemplate);
             if (tempFile == null) {
