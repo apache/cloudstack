@@ -27,6 +27,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
@@ -85,6 +87,10 @@ public class FlashArrayAdapter implements ProviderAdapter {
     private static final long POST_COPY_WAIT_MS_DEFAULT = 5000;
     private static final String API_LOGIN_VERSION_DEFAULT = "1.19";
     private static final String API_VERSION_DEFAULT = "2.23";
+
+    // URLs for which the legacy-auth deprecation WARN has already been emitted,
+    // so we don't spam the logs once per refresh per pool while it's still configured.
+    private static final Set<String> WARNED_LEGACY_URLS = ConcurrentHashMap.newKeySet();
 
     static final ObjectMapper mapper = new ObjectMapper();
     public String pod = null;
@@ -712,10 +718,12 @@ public class FlashArrayAdapter implements ProviderAdapter {
             }
 
             if (usingLegacyUserPass) {
-                logger.warn("FlashArray adapter at [" + url + "] is using deprecated username/password "
-                        + "login against Purity REST 1.x. Replace with a pre-minted "
-                        + ProviderAdapter.API_TOKEN_KEY + " detail; the username/password code path will be "
-                        + "removed in a future release.");
+                if (WARNED_LEGACY_URLS.add(url)) {
+                    logger.warn("FlashArray adapter at [" + url + "] is using deprecated username/password "
+                            + "login against Purity REST 1.x. Replace with a pre-minted "
+                            + ProviderAdapter.API_TOKEN_KEY + " detail; the username/password code path will be "
+                            + "removed in a future release.");
+                }
                 HttpPost request = new HttpPost(url + "/" + apiLoginVersion + "/auth/apitoken");
                 ArrayList<NameValuePair> postParms = new ArrayList<NameValuePair>();
                 postParms.add(new BasicNameValuePair("username", username));
