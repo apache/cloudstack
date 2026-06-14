@@ -147,10 +147,10 @@ public class MultipathNVMeOFPool implements KVMStoragePool {
     @Override public String getStorageNodeId() { return null; }
 
     @Override
-    public Boolean checkingHeartBeat(HAStoragePool pool, HostTO host) { return null; }
+    public Boolean hasHeartBeat(HAStoragePool pool, HostTO host) { return null; }
 
     @Override
-    public Boolean vmActivityCheck(HAStoragePool pool, HostTO host, Duration activityScriptTimeout,
+    public Boolean hasVmActivity(HAStoragePool pool, HostTO host, Duration activityScriptTimeout,
             String volumeUUIDListString, String vmActivityCheckPath, long duration) {
         return null;
     }
