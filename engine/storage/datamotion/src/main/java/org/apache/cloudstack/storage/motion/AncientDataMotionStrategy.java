@@ -27,6 +27,7 @@ import java.util.Objects;
 import javax.inject.Inject;
 
 import com.cloud.agent.api.to.DiskTO;
+import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.storage.Storage;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
@@ -75,6 +76,7 @@ import com.cloud.storage.ScopeType;
 import com.cloud.storage.Snapshot.Type;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.StorageManager;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VolumeVO;
@@ -108,6 +110,8 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     StorageCacheManager cacheMgr;
     @Inject
     VolumeDataStoreDao volumeDataStoreDao;
+    @Inject
+    ClvmPoolManager clvmPoolManager;
 
     @Inject
     StorageManager storageManager;
@@ -309,6 +313,8 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 ep = selector.select(srcData, volObj);
             }
 
+            updateLockHostForVolume(ep, volObj);
+
             CopyCommand cmd = new CopyCommand(srcData.getTO(), addFullCloneAndDiskprovisiongStrictnessFlagOnVMwareDest(volObj.getTO()), _createVolumeFromSnapshotWait, VirtualMachineManager.ExecuteInSequence.value());
 
             Answer answer = null;
@@ -328,6 +334,29 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 // still keep snapshot on cache which may be migrated from previous secondary storage
                 releaseSnapshotCacheChain((SnapshotInfo)srcData);
             }
+        }
+    }
+
+    private void updateLockHostForVolume(EndPoint ep, DataObject volObj) {
+        if (ep == null || !(volObj instanceof VolumeInfo)) {
+            return;
+        }
+        VolumeInfo volumeInfo = (VolumeInfo) volObj;
+        StoragePool destPool = (StoragePool) volObj.getDataStore();
+        if (destPool == null || !ClvmPoolManager.isClvmPoolType(destPool.getPoolType())) {
+            return;
+        }
+        Long hostId = ep.getId();
+        Long existingHostId = clvmPoolManager.getClvmLockHostId(
+                volumeInfo.getId(),
+                volumeInfo.getUuid(),
+                volumeInfo.getPath(),
+                destPool,
+                true
+        );
+        if (existingHostId == null) {
+            clvmPoolManager.setClvmLockHostId(volumeInfo.getId(), hostId);
+            logger.debug("Set lock host ID {} for CLVM volume {} being created from snapshot", hostId, volumeInfo.getId());
         }
     }
 
@@ -581,6 +610,9 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             volumeVo.setPoolId(destPool.getId());
             volumeVo.setPoolType(destPool.getPoolType());
             volumeVo.setLastPoolId(oldPoolId);
+            if (destPool.getPoolType() == StoragePoolType.CLVM) {
+                volumeVo.setFormat(ImageFormat.RAW);
+            }
             // For SMB, pool credentials are also stored in the uri query string.  We trim the query string
             // part  here to make sure the credentials do not get stored in the db unencrypted.
             String folder = destPool.getPath();
