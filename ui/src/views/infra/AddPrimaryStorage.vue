@@ -242,7 +242,7 @@
             </a-select>
           </a-form-item>
         </div>
-        <div v-if="form.provider !== 'DefaultPrimary' && form.provider !== 'PowerFlex' && form.provider !== 'Linstor' && form.protocol !== 'FiberChannel'">
+        <div v-if="form.provider !== 'DefaultPrimary' && form.provider !== 'PowerFlex' && form.provider !== 'Linstor' && form.protocol !== 'FiberChannel' && form.protocol !== 'NVMeTCP'">
           <a-form-item name="managed" ref="managed">
             <template #label>
               <tooltip-label :title="$t('label.ismanaged')" :tooltip="apiParams.managed.description"/>
@@ -765,7 +765,10 @@ export default {
       if (value === 'PowerFlex') {
         this.protocols = ['custom']
         this.form.protocol = 'custom'
-      } else if (value === 'Flash Array' || value === 'Primera') {
+      } else if (value === 'Flash Array') {
+        this.protocols = ['FiberChannel', 'NVMeTCP']
+        this.form.protocol = 'FiberChannel'
+      } else if (value === 'Primera') {
         this.protocols = ['FiberChannel']
         this.form.protocol = 'FiberChannel'
       } else {
@@ -890,6 +893,9 @@ export default {
           params['details[0].api_username'] = values.flashArrayUsername
           params['details[0].api_password'] = values.flashArrayPassword
           url = values.flashArrayURL
+          if (values.protocol === 'NVMeTCP') {
+            url = url + (url.indexOf('?') === -1 ? '?' : '&') + 'transport=nvme-tcp'
+          }
         }
 
         if (values.provider === 'Linstor' || values.protocol === 'Linstor') {
