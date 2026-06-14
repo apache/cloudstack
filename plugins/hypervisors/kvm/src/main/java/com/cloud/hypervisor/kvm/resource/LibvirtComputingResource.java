@@ -5760,7 +5760,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
         }
 
-        Script lvs = new Script("lvs", 10000, logger);
+        Script lvs = new Script("lvs", 30000, logger);
         lvs.add("--noheadings");
         lvs.add("--nosuffix");
         lvs.add("-o", "lv_name,lv_size");
@@ -7092,7 +7092,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         try {
             OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
-            Script vgsCmd = new Script("vgs", 10000, LOGGER);
+            Script vgsCmd = new Script("vgs", 30000, LOGGER);
             vgsCmd.add("--noheadings");
             vgsCmd.add("--unbuffered");
             vgsCmd.add("-o");

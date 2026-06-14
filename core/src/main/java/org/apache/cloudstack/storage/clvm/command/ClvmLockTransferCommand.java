@@ -77,7 +77,7 @@ public class ClvmLockTransferCommand extends Command {
         this.operation = operation;
         this.lvPath = lvPath;
         this.volumeUuid = volumeUuid;
-        setWait(30);
+        setWait(65);
     }
 
     public String getLvPath() {

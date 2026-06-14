@@ -172,7 +172,7 @@ public class ClvmStorageAdaptor extends LibvirtStorageAdaptor {
     public boolean connectPhysicalDisk(String name, KVMStoragePool pool, Map<String, String> details, boolean isVMMigrate) {
         if (isVMMigrate) {
             logger.info("Activating CLVM/CLVM_NG volume {} in shared mode for VM migration", name);
-            Script activateVol = new Script("lvchange", 10000, logger);
+            Script activateVol = new Script("lvchange", 30000, logger);
             activateVol.add("-asy");
             activateVol.add(pool.getLocalPath() + File.separator + name);
             String result = activateVol.execute();
@@ -266,7 +266,7 @@ public class ClvmStorageAdaptor extends LibvirtStorageAdaptor {
         String volgroupName = path;
         volgroupName = volgroupName.replaceFirst("^/", "");
 
-        Script checkVgExists = new Script("vgs", 10000, logger);
+        Script checkVgExists = new Script("vgs", 30000, logger);
         checkVgExists.add("--noheadings");
         checkVgExists.add("-o", "vg_name");
         checkVgExists.add(volgroupName);
@@ -312,7 +312,7 @@ public class ClvmStorageAdaptor extends LibvirtStorageAdaptor {
     }
 
     private long[] getVgStats(String vgName) {
-        Script getVgStats = new Script("vgs", 10000, logger);
+        Script getVgStats = new Script("vgs", 30000, logger);
         getVgStats.add("--noheadings");
         getVgStats.add("--units", "b");
         getVgStats.add("--nosuffix");
@@ -466,7 +466,7 @@ public class ClvmStorageAdaptor extends LibvirtStorageAdaptor {
 
     private void verifyLvExistsInVg(String volumeUuid, String vgName) {
         logger.debug("Checking if volume {} exists in VG {}", volumeUuid, vgName);
-        Script checkLvCmd = new Script("/usr/sbin/lvs", 10000, logger);
+        Script checkLvCmd = new Script("/usr/sbin/lvs", 30000, logger);
         checkLvCmd.add("--noheadings");
         checkLvCmd.add("--unbuffered");
         checkLvCmd.add(vgName + "/" + volumeUuid);
@@ -547,7 +547,7 @@ public class ClvmStorageAdaptor extends LibvirtStorageAdaptor {
 
     private long getClvmVolumeSize(String lvPath) {
         try {
-            Script lvsCmd = new Script("/usr/sbin/lvs", 10000, logger);
+            Script lvsCmd = new Script("/usr/sbin/lvs", 30000, logger);
             lvsCmd.add("--noheadings");
             lvsCmd.add("--units");
             lvsCmd.add("b");
@@ -666,7 +666,7 @@ public class ClvmStorageAdaptor extends LibvirtStorageAdaptor {
      */
     private void ensureTemplateLvInSharedMode(String templatePath, boolean throwOnFailure) {
         try {
-            Script checkLvs = new Script("lvs", Duration.millis(10000), logger);
+            Script checkLvs = new Script("lvs", Duration.millis(30000), logger);
             checkLvs.add("--noheadings");
             checkLvs.add("-o", "lv_attr");
             checkLvs.add(templatePath);
@@ -881,7 +881,7 @@ public class ClvmStorageAdaptor extends LibvirtStorageAdaptor {
     }
 
     private boolean lvExists(String lvPath) {
-        Script checkLv = new Script("lvs", Duration.millis(10000), logger);
+        Script checkLv = new Script("lvs", Duration.millis(30000), logger);
         checkLv.add("--noheadings");
         checkLv.add("--unbuffered");
         checkLv.add(lvPath);
@@ -953,7 +953,7 @@ public class ClvmStorageAdaptor extends LibvirtStorageAdaptor {
             String lvPath = "/dev/" + vgName + "/" + uuid;
             logger.debug("Volume path: {}", lvPath);
 
-            Script checkLvs = new Script("lvs", 10000, logger);
+            Script checkLvs = new Script("lvs", 30000, logger);
             checkLvs.add("--noheadings");
             checkLvs.add("--unbuffered");
             checkLvs.add(lvPath);

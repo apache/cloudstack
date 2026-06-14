@@ -64,7 +64,7 @@ public class LibvirtClvmLockTransferCommandWrapper
                     return new ClvmLockTransferAnswer(cmd, false, "Unknown operation: " + operation);
             }
 
-            Script script = new Script("/usr/sbin/lvchange", 30000, logger);
+            Script script = new Script("/usr/sbin/lvchange", 60000, logger);
             script.add(lvchangeOpt);
             script.add(lvPath);
 
@@ -103,7 +103,7 @@ public class LibvirtClvmLockTransferCommandWrapper
      */
     private Answer handleQueryLockState(ClvmLockTransferCommand cmd, String lvPath, String volumeUuid) {
         try {
-            Script script = new Script("/usr/sbin/lvs", 10000, logger);
+            Script script = new Script("/usr/sbin/lvs", 30000, logger);
             script.add("-o");
             script.add("lv_attr,lv_host");
             script.add("--noheadings");
