@@ -2481,7 +2481,7 @@
 "label.username": "Nome de usu\u00e1rio",
 "label.users": "Usu\u00e1rios",
 "label.usersource": "Tipo de usu\u00e1rio",
-"label.user.api.key.rules": "Regras",
+"label.user.api.key.rules": "Regras do par de chaves de API",
 "label.using.cli": "Usando CLI",
 "label.utilization": "Utiliza\u00e7\u00e3o",
 "label.uuid": "ID",
