@@ -262,7 +262,7 @@ public class LibvirtTakeKbossBackupCommandWrapper extends CommandWrapper<TakeKbo
         if (result) {
             temporaryDeltasToRemove.remove(0);
         }
-        logger.debug("Removing temporary deltas [{}].", temporaryDeltasToRemove);
+        logger.debug("Removing temporary deltas {}.", temporaryDeltasToRemove);
         for (String delta : temporaryDeltasToRemove) {
             try {
                 Files.deleteIfExists(Path.of(delta));

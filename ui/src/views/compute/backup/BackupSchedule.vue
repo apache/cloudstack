@@ -162,7 +162,7 @@ export default {
         },
         {
           key: 'isolated',
-          title: this.$t('label.isolated'),
+          title: this.$t('label.backup.isolated'),
           dataIndex: 'isolated'
         },
         {

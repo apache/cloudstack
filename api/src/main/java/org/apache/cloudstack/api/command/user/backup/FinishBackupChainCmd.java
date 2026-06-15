@@ -35,8 +35,8 @@ import org.apache.cloudstack.backup.InternalBackupService;
 
 import javax.inject.Inject;
 
-@APICommand(name = "finishBackupChain", description = "Finish backup chain of VM.",
-        responseObject = SuccessResponse.class, since = "4.23.0.0", requestHasSensitiveInfo = false,
+@APICommand(name = "finishBackupChain", description = "Finish the backup chain of VM. Currently only has effect on VMs with KBOSS backup offerings.",
+        responseObject = SuccessResponse.class, since = "4.23.0", requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false)
 public class FinishBackupChainCmd extends BaseCmd {
     @Inject
@@ -48,7 +48,7 @@ public class FinishBackupChainCmd extends BaseCmd {
 
     @ACL
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = VirtualMachineResponse.class, required = true,
-            description = "Id of the VM to finish the chain.")
+            description = "ID of the VM to finish the chain.")
     private Long vmId;
 
     /////////////////////////////////////////////////////

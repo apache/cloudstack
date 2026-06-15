@@ -590,6 +590,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
     public Boolean orchestrateRestoreVMFromBackup(Backup backup, VirtualMachine vm, boolean quickRestore, Long hostId, boolean sameVmAsBackup) {
         logger.info("Starting restore backup process for VM [{}] and backup [{}].", vm.getUuid(), backup);
         validateNoVmSnapshots(vm);
+        validateQuickRestore(backup, quickRestore);
         long backupId = backup.getId();
         Pair<Boolean, BackupVO> isValidStateAndBackupVo = validateCompressionStateForRestoreAndGetBackup(backupId);
 
@@ -2641,7 +2642,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
 
     protected void validateQuickRestore(Backup backup, boolean quickRestore) {
         BackupOfferingVO backupOfferingVO = backupOfferingDao.findByIdIncludingRemoved(backup.getBackupOfferingId());
-        BackupOfferingDetailsVO detail = backupOfferingDetailsDao.findDetail(backupOfferingVO.getId(), ApiConstants.QUICK_RESTORE);
+        BackupOfferingDetailsVO detail = backupOfferingDetailsDao.findDetail(backupOfferingVO.getId(), ApiConstants.ALLOW_QUICK_RESTORE);
         if (quickRestore && (detail == null || !Boolean.parseBoolean(detail.getValue()))) {
             throw new BackupProviderException(String.format("Unable to quick restore backup [%s] using offering [%s] as the offering does not support quick restoration.",
                     backup.getUuid(), backupOfferingVO.getUuid()));

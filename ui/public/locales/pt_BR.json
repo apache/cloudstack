@@ -427,6 +427,7 @@
 "label.back": "Voltar",
 "label.backup": "Backup",
 "label.backups": "Backups",
+"label.backup.isolated": "Isolado",
 "label.back.login": "Voltar à página de login",
 "label.backup": "Backups",
 "label.backup.attach.restore": "Restaurar e anexar volume de backup",

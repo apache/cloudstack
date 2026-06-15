@@ -66,7 +66,7 @@ public class LibvirtValidateKbossVmCommandWrapper extends CommandWrapper<Validat
             String scriptResult = runScript(command, vm);
             return new  ValidateKbossVmAnswer(command, bootValidated, screenshotPath, scriptResult);
         } catch (LibvirtException e) {
-            logger.error("Received libvirt exception while trying to validate VM [{}].", vmTo.getName(), e);
+            logger.error("Received Libvirt exception while trying to validate VM [{}].", vmTo.getName(), e);
             return new Answer(command, e);
         } finally {
             if (secondaryStorage != null) {

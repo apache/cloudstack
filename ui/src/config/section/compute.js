@@ -293,6 +293,22 @@ export default {
           }
         },
         {
+          api: 'finishBackupChain',
+          icon: 'vertical-align-middle-outlined',
+          label: 'label.backup.chain.finish',
+          dataView: true,
+          args: ['virtualmachineid'],
+          show: (record) => {
+            console.log(record)
+            return ['Running', 'Stopped'].includes(record.state) && record.backupofferingid
+          },
+          mapping: {
+            virtualmachineid: {
+              value: (record, params) => { return record.id }
+            }
+          }
+        },
+        {
           api: 'attachIso',
           icon: 'paper-clip-outlined',
           label: 'label.action.attach.iso',

@@ -30,20 +30,21 @@ public interface InternalBackupProvider extends BackupProvider {
     String VM_WORK_JOB_HANDLER = InternalBackupService.class.getSimpleName();
 
     ConfigKey<Integer> backupCompressionTimeout = new ConfigKey<>("Advanced", Integer.class, "backup.compression.timeout", "28800", "Backup compression timeout (in " +
-            "seconds). Will only start counting once the backup compression async job actually starts.", true, ConfigKey.Scope.Cluster);
+            "seconds). Will only start counting once the backup compression async job actually starts. This setting is currently only applicable to KBOSS.", true,
+            ConfigKey.Scope.Cluster);
 
     ConfigKey<Double> backupCompressionMinimumFreeStorage = new ConfigKey<>("Advanced", Double.class, "backup.compression.minimum.free.storage", "1", "The minimum " +
             "amount of free storage that should be available to start the compression. This configuration uses a multiplier on the backup size, by default, it needs the same " +
-            "amount of free storage as the backup uses while uncompressed.", true, ConfigKey.Scope.Zone);
+            "amount of free storage as the backup uses while uncompressed. This setting is currently only applicable to KBOSS.", true, ConfigKey.Scope.Zone);
 
     ConfigKey<Integer> backupCompressionCoroutines = new ConfigKey<>("Advanced", Integer.class, "backup.compression.coroutines", "1", "Number of parallel coroutines " +
-            "for the compression process. This is translated to qemu-img '-m' parameter.", true, ConfigKey.Scope.Cluster);
+            "for the compression process. This is translated to qemu-img '-m' parameter. This setting is currently only applicable to KBOSS.", true, ConfigKey.Scope.Cluster);
 
     ConfigKey<Integer> backupCompressionRateLimit = new ConfigKey<>("Advanced", Integer.class, "backup.compression.rate.limit", "0", "Limit the compression rate to " +
-            "this configuration's value (in MB/s). Values lower than 1 disable the limit.", true, ConfigKey.Scope.Cluster);
+            "this configuration's value (in MB/s). Values lower than 1 disable the limit. This setting is currently only applicable to KBOSS.", true, ConfigKey.Scope.Cluster);
 
     ConfigKey<Integer> backupValidationTimeout = new ConfigKey<>("Advanced", Integer.class, "backup.validation.timeout", "3600", "Backup validation job timeout (in " +
-            "seconds). Will only start counting once the backup validation async job actually starts.", true, ConfigKey.Scope.Cluster);
+            "seconds). Will only start counting once the backup validation async job actually starts. This setting is currently only applicable to KBOSS.", true, ConfigKey.Scope.Cluster);
 
     /**
      * Actually execute the backup after being queued.

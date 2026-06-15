@@ -462,6 +462,7 @@
 "label.back.login": "Back to login",
 "label.backup": "Backup",
 "label.backups": "Backups",
+"label.backup.isolated": "Isolated",
 "label.backup.attach.restore": "Restore and attach backup volume",
 "label.backup.configure.schedule": "Configure Backup Schedule",
 "label.backupchainsize": "Backup chain size",

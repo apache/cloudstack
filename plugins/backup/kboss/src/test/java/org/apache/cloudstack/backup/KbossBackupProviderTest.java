@@ -1043,6 +1043,7 @@ public class KbossBackupProviderTest {
     @Test
     public void orchestrateRestoreVMFromBackupTestInvalidState() {
         doNothing().when(kbossBackupProviderSpy).validateNoVmSnapshots(virtualMachineMock);
+        doNothing().when(kbossBackupProviderSpy).validateQuickRestore(backupVoMock, false);
         doReturn(new Pair<>(false, backupVoMock)).when(kbossBackupProviderSpy).validateCompressionStateForRestoreAndGetBackup(backupId);
 
         boolean result = kbossBackupProviderSpy.orchestrateRestoreVMFromBackup(backupVoMock, virtualMachineMock, false, null, false);
@@ -1051,8 +1052,9 @@ public class KbossBackupProviderTest {
     }
 
     @Test (expected = CloudRuntimeException.class)
-    public void orchestrateRestoreVMFromBackupTestCurrentBackupNoHostToRestore() throws AgentUnavailableException {
+    public void orchestrateRestoreVMFromBackupTestCurrentBackupNoHostToRestore() throws AgentUnavailableException { // fixxxxxxx
         doNothing().when(kbossBackupProviderSpy).validateNoVmSnapshots(virtualMachineMock);
+        doNothing().when(kbossBackupProviderSpy).validateQuickRestore(backupVoMock, false);
         doReturn(new Pair<>(true, backupVoMock)).when(kbossBackupProviderSpy).validateCompressionStateForRestoreAndGetBackup(backupId);
         long currentBackupId = 39;
         doThrow(AgentUnavailableException.class).when(kbossBackupProviderSpy).getHostToRestore(virtualMachineMock, false, null);
@@ -1065,6 +1067,7 @@ public class KbossBackupProviderTest {
     @Test (expected = CloudRuntimeException.class)
     public void orchestrateRestoreVMFromBackupTestSameVmCurrentBackupTimeOut() throws AgentUnavailableException, OperationTimedoutException {
         doNothing().when(kbossBackupProviderSpy).validateNoVmSnapshots(virtualMachineMock);
+        doNothing().when(kbossBackupProviderSpy).validateQuickRestore(backupVoMock, false);
         doReturn(new Pair<>(true, backupVoMock)).when(kbossBackupProviderSpy).validateCompressionStateForRestoreAndGetBackup(backupId);
         long currentBackupId = 39;
         InternalBackupJoinVO currentBackup = Mockito.mock(InternalBackupJoinVO.class);
@@ -1088,6 +1091,7 @@ public class KbossBackupProviderTest {
     @Test
     public void orchestrateRestoreVMFromBackupTestSameVmCurrentBackupNullAnswers() throws AgentUnavailableException, OperationTimedoutException {
         doNothing().when(kbossBackupProviderSpy).validateNoVmSnapshots(virtualMachineMock);
+        doNothing().when(kbossBackupProviderSpy).validateQuickRestore(backupVoMock, false);
         doReturn(new Pair<>(true, backupVoMock)).when(kbossBackupProviderSpy).validateCompressionStateForRestoreAndGetBackup(backupId);
         long currentBackupId = 39;
         InternalBackupJoinVO currentBackup = Mockito.mock(InternalBackupJoinVO.class);
@@ -1112,6 +1116,7 @@ public class KbossBackupProviderTest {
     @Test
     public void orchestrateRestoreVMFromBackupTestSameVmCurrentBackupAnswerFalse() throws AgentUnavailableException, OperationTimedoutException {
         doNothing().when(kbossBackupProviderSpy).validateNoVmSnapshots(virtualMachineMock);
+        doNothing().when(kbossBackupProviderSpy).validateQuickRestore(backupVoMock, false);
         doReturn(new Pair<>(true, backupVoMock)).when(kbossBackupProviderSpy).validateCompressionStateForRestoreAndGetBackup(backupId);
         long currentBackupId = 39;
         InternalBackupJoinVO currentBackup = Mockito.mock(InternalBackupJoinVO.class);
@@ -1137,6 +1142,7 @@ public class KbossBackupProviderTest {
     @Test
     public void orchestrateRestoreVMFromBackupTestSameVmQuickRestoreCurrentBackupAnswerTrue() throws AgentUnavailableException, OperationTimedoutException {
         doNothing().when(kbossBackupProviderSpy).validateNoVmSnapshots(virtualMachineMock);
+        doNothing().when(kbossBackupProviderSpy).validateQuickRestore(backupVoMock, true);
         doReturn(new Pair<>(true, backupVoMock)).when(kbossBackupProviderSpy).validateCompressionStateForRestoreAndGetBackup(backupId);
         long currentBackupId = 39;
         InternalBackupJoinVO currentBackup = Mockito.mock(InternalBackupJoinVO.class);
