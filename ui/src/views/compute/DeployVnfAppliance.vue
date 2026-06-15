@@ -362,6 +362,7 @@
                       :items="templateVnfNics"
                       :templateNics="templateNics"
                       :networks="networks"
+                      :deployasis="template && template.deployasis"
                       @update-vnf-nic-networks="($event) => updateVnfNicNetworks($event)" />
                   </div>
                   <div style="margin-top: 15px" v-if="showVnfConfigureManagement">
