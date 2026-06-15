@@ -196,7 +196,7 @@ backup_running_vm() {
 
   # Print statistics
   virsh -c qemu:///system domjobinfo $VM --completed
-  du -sb $dest | cut -f1
+  du -sb $dest 2>/dev/null | cut -f1 || true
 
   umount $mount_point
   rmdir $mount_point
