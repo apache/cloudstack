@@ -32,12 +32,17 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 /**
  * Data Access Object for server
  *
  */
 public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Status.Event, Host> {
+
+    ConfigKey<Long> guestOsRuleExecutionTimeout = new ConfigKey<>("Advanced", Long.class, "guest.os.rule.execution.timeout", "3000", "The maximum runtime, in milliseconds, " +
+            "to execute a guest OS rule; if it is reached, a timeout will happen.", true);
+
     long countBy(long clusterId, ResourceState... states);
 
     Integer countAllByType(final Host.Type type);
@@ -223,6 +228,8 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
     List<String> listOrderedHostsHypervisorVersionsInDatacenter(long datacenterId, HypervisorType hypervisorType);
 
     List<HostVO> findHostsWithTagRuleThatMatchComputeOfferingTags(String computeOfferingTags);
+
+    List<HostVO> findHostsWithGuestOsRulesThatDidNotMatchOsOfGuestVm(String templateGuestOSName);
 
     List<Long> findClustersThatMatchHostTagRule(String computeOfferingTags);
 

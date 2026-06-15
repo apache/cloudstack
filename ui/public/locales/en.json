@@ -1227,6 +1227,8 @@
 "label.guestnetwork": "Guest Network",
 "label.guestnetworkid": "Network ID",
 "label.guestnetworkname": "Network name",
+"label.guestosasrule": "Guest OS as rule",
+"label.guestosrule": "Guest OS rule",
 "label.gueststartip": "Guest start IP",
 "label.guest.vlan": "Guest VLAN",
 "label.guestvlanrange": "VLAN range(s)",

@@ -1095,6 +1095,8 @@
 "label.guestnetwork": "Rede guest",
 "label.guestnetworkid": "ID de rede",
 "label.guestnetworkname": "Nome da rede",
+"label.guestosasrule": "SO guest como regra JS",
+"label.guestosrule": "Regra SO guest",
 "label.gueststartip": "IP de in\u00edcio do guest",
 "label.guestvlanrange": "Intervalo(s) de VLAN",
 "label.guestvmcidr": "CIDR",
