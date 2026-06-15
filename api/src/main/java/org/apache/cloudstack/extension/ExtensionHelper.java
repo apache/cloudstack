@@ -26,6 +26,7 @@ import com.cloud.network.Network.Service;
 public interface ExtensionHelper {
     Long getExtensionIdForCluster(long clusterId);
     Extension getExtension(long id);
+    Extension getExtensionByNameAndType(String name, Extension.Type type);
     Extension getExtensionForCluster(long clusterId);
     List<String> getExtensionReservedResourceDetails(long extensionId);
 

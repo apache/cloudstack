@@ -188,11 +188,10 @@ registration as extension metadata. The `custom-action` path embeds them
 directly into the payload file under `physical-network-extension-details`.
 The schema is entirely yours — CloudStack treats it as opaque.
 
-> **`isolation_method=NetworkExtension`** tells CloudStack to select
-> `NetworkExtensionGuestNetworkGuru` when designing guest networks backed by
-> this extension.  This is required whenever your `implement-network` handler
-> outputs JSON that updates the network's broadcast domain type (e.g.
-> `"network.broadcast_domain_type": "Lswitch"` for OVN-backed extensions).
+> **`network.isolation.method=NetworkExtension`** must be set as an Extension
+> detail (via `createExtension` or `updateExtension`).
+> This is required whenever your `implement-network` handler outputs JSON that
+> updates the network's broadcast domain type.
 > Without it the script output is accepted but silently ignored — the network
 > record in the CloudStack database is not updated.
 
@@ -391,14 +390,14 @@ configure the gateway.
 > CloudStack now also includes `network_ip6_gateway` and `network_ip6_cidr`
 > when the guest network has IPv6 configured.
 
-**Stdout (required when `isolation_method=NetworkExtension`):**
+**Stdout (required when `network.isolation.method=NetworkExtension`):**
 
-When the physical-network registration detail `isolation_method=NetworkExtension`
-is set, CloudStack selects `NetworkExtensionGuestNetworkGuru` and applies the
-JSON object printed to stdout back to the network record.  The following two
-fields **must** be present in the output so that CloudStack stores the correct
-broadcast type and URI — without them the KVM agent (`OvsVifDriver`) will not
-set `external_ids:iface-id` on the OVS tap port and OVN port-binding will fail:
+When the Extension detail `network.isolation.method=NetworkExtension` is set,
+CloudStack selects `NetworkExtensionGuestNetworkGuru` and applies the JSON object
+printed to stdout back to the network record.  The following two fields **must**
+be present in the output so that CloudStack stores the correct broadcast type and
+URI — without them the KVM agent (`OvsVifDriver`) will not set
+`external_ids:iface-id` on the OVS tap port and OVN port-binding will fail:
 
 | Output key | Required value | Description |
 |---|---|---|
@@ -411,8 +410,8 @@ Example stdout:
 {"network.broadcast_domain_type": "Lswitch", "network.broadcast_uri": "ovn://cs-net-42"}
 ```
 
-> **Note:** These fields are only consumed when `isolation_method=NetworkExtension`
-> is set on the physical-network registration.  Without that detail, the script
+> **Note:** These fields are only consumed when the Extension detail
+> `network.isolation.method=NetworkExtension` is set.  Without it, the script
 > output is accepted but the network record is **not** updated (the update is
 > silently skipped).
 
@@ -1259,6 +1258,31 @@ To use this extension as a VPC provider:
   helper): CloudStack allocates a dedicated IP from the guest subnet and passes
   it.  The device must listen on this IP for DHCP, DNS, and metadata (port 80)
   requests.
+
+### Opting out of the placeholder IP
+
+Some extensions (e.g. OVN) manage their own data-plane addressing and do not
+need CloudStack to reserve a real IP for networks that provide DHCP/DNS/UserData
+without SourceNat or Gateway.  This covers **both** shared networks and isolated
+networks that omit SourceNat.  Set the Extension detail
+**`network.allocate.extension.ip=false`** when creating or updating the Extension
+to suppress the allocation:
+
+```bash
+cmk createExtension \
+    name=my-sdn \
+    ... \
+    "details[N].key=network.allocate.extension.ip" "details[N].value=false"
+```
+
+When this detail is `false`, `ensureExtensionIp` returns `null` for any network
+backed by this extension that reaches the placeholder-IP branch — i.e. networks
+with DHCP/DNS/UserData but without SourceNat/Gateway.  `extension_ip` will not
+be set in command payloads, and no IP is consumed from the subnet pool.
+
+Omitting the detail (or setting any value other than `false`) preserves the
+original behaviour — a placeholder NIC is allocated and `extension_ip` is
+included in every command payload.
 
 ---
 

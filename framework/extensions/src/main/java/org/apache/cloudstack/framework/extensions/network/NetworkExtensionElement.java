@@ -122,6 +122,7 @@ import org.apache.cloudstack.extension.Extension;
 import org.apache.cloudstack.extension.ExtensionHelper;
 import org.apache.cloudstack.extension.NetworkCustomActionProvider;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionDetailsDao;
+import org.apache.cloudstack.framework.extensions.vo.ExtensionDetailsVO;
 import org.apache.cloudstack.resourcedetail.dao.VpcDetailsDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -255,6 +256,21 @@ public class NetworkExtensionElement extends AdapterBase implements
      * namespace name, VRF ID, …).
      */
     public static final String NETWORK_DETAIL_EXTENSION_DETAILS = "extension.details";
+
+    /**
+     * Extension detail key that controls whether {@link #ensureExtensionIp} allocates
+     * a placeholder NIC/IP.
+     *
+     * <p>Applies to any network whose DHCP/DNS/UserData service is provided by this
+     * extension <em>without</em> SourceNat or Gateway — i.e. shared networks and
+     * isolated networks that omit SourceNat.  Set the value to {@code "false"} on the
+     * Extension object (via {@code createExtension} or {@code updateExtension}) when
+     * the extension handles its own data-plane addressing and does not need CloudStack
+     * to reserve a real IP from the subnet pool (e.g. OVN, which programs port
+     * bindings in-fabric).  Omitting the detail or setting any value other than
+     * {@code "false"} preserves the original behaviour (placeholder IP is allocated).</p>
+     */
+    public static final String NETWORK_ALLOCATE_EXTENSION_IP = "network.allocate.extension.ip";
 
     public String getProviderName() {
         return providerName;
@@ -677,6 +693,17 @@ public class NetworkExtensionElement extends AdapterBase implements
 
         if (networkModel.isAnyServiceSupportedInNetwork(network.getId(), this.getProvider(),
                 Service.Dhcp, Service.Dns, Service.UserData)) {
+                // Some extensions (e.g. OVN) handle shared-network addressing in the
+                // data plane and do not need a CloudStack-allocated placeholder IP.
+            Extension ext = extensionHelper.getExtensionByNameAndType(providerName, Extension.Type.NetworkOrchestrator);
+            if (ext != null) {
+                ExtensionDetailsVO allocateDetail =
+                        extensionDetailsDao.findDetail(ext.getId(), NETWORK_ALLOCATE_EXTENSION_IP);
+                if (allocateDetail != null && "false".equalsIgnoreCase(allocateDetail.getValue())) {
+                    logger.debug("Skipping placeholder IP for network {} — {} detail is false",
+                            network.getId(), NETWORK_ALLOCATE_EXTENSION_IP);
+                    return null;
+                }
                 try {
                     // An extra IP will be allocated and configured on the external network
                     Nic placeholderNic = networkModel.getPlaceholderNicForRouter(network, null);
@@ -685,7 +712,7 @@ public class NetworkExtensionElement extends AdapterBase implements
                         String routerIp = routerIpDetail != null ? routerIpDetail.getValue() : null;
                         Account account = accountService.getAccount(network.getAccountId());
                         String extensionIp = Network.GuestType.Shared.equals(network.getGuestType()) ?
-                                ipAddressManager.assignPublicIpAddress(network.getDataCenterId(), null, account, Vlan.VlanType.DirectAttached, network.getId(), routerIp, false, false).getAddress().toString():
+                                ipAddressManager.assignPublicIpAddress(network.getDataCenterId(), null, account, Vlan.VlanType.DirectAttached, network.getId(), routerIp, false, false).getAddress().toString() :
                                 ipAddressManager.acquireGuestIpAddress(network, routerIp);
                         logger.debug("Saving placeholder nic with ip4 address {} for the network", extensionIp, network);
                         networkManager.savePlaceholderNic(network, extensionIp, null, VirtualMachine.Type.DomainRouter);
@@ -695,6 +722,7 @@ public class NetworkExtensionElement extends AdapterBase implements
                 } catch (Exception e) {
                     logger.warn("Failed to acquire extension IP for network {}: {}", network, e.getMessage());
                 }
+            }
         }
         return null;
     }

@@ -2223,6 +2223,11 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     }
 
     @Override
+    public Extension getExtensionByNameAndType(String name, Extension.Type type) {
+        return extensionDao.findByNameAndType(name, type);
+    }
+
+    @Override
     public Extension getExtensionForCluster(long clusterId) {
         Long extensionId = getExtensionIdForCluster(clusterId);
         if (extensionId == null) {
