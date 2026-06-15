@@ -193,12 +193,31 @@ backup_running_vm() {
   rm -f $dest/backup.xml
   sync
 
-  # Print statistics
-  virsh -c qemu:///system domjobinfo $VM --completed
-  du -sb $dest | cut -f1
+  # Collect statistics now, print them after successful unmount/rmdir.
+  local job_info
+  local backup_size
+  if ! job_info=$(virsh -c qemu:///system domjobinfo "$VM" --completed 2>&1); then
+    echo "Failed to get backup job info for $VM: $job_info"
+    exit 1
+  elif ! backup_size=$(du -sb "$dest" 2>&1); then
+    echo "Failed to get backup size for $dest: $backup_size"
+    exit 1
+  fi
 
-  umount $mount_point
-  rmdir $mount_point
+  local unmount_err
+  if ! unmount_err=$(umount "$mount_point" 2>&1); then
+    echo "Failed to unmount $mount_point: $unmount_err"
+    exit 1
+  fi
+
+  local rmdir_err
+  if ! rmdir_err=$(rmdir "$mount_point" 2>&1); then
+    echo "Failed to remove mount point $mount_point: $rmdir_err"
+    exit 1
+  fi
+
+  echo "$job_info"
+  echo "$backup_size" | cut -f1
 }
 
 backup_stopped_vm() {
