@@ -124,6 +124,20 @@ public class AgentProperties{
     public static final Property<String> LOCAL_STORAGE_PATH = new Property<>("local.storage.path", "/var/lib/libvirt/images/");
 
     /**
+     * Enables TLS on the KVM image server transfer endpoint.<br>
+     * Data type: Boolean.<br>
+     * Default value: <code>true</code>
+     */
+    public static final Property<Boolean> IMAGE_SERVER_TLS_ENABLED = new Property<>("image.server.tls.enabled", true);
+
+    /**
+     * The IP address that the KVM image server listens on.<br>
+     * Data type: String.<br>
+     * Default value: <code>null</code>
+     */
+    public static final Property<String> IMAGE_SERVER_LISTEN_ADDRESS = new Property<>("image.server.listen.address", null, String.class);
+
+    /**
      * Directory where Qemu sockets are placed.<br>
      * These sockets are for the Qemu Guest Agent and SSVM provisioning.<br>
      * Make sure that AppArmor or SELinux allows Libvirt to write there.<br>
@@ -809,6 +823,30 @@ public class AgentProperties{
     public static final Property<String> CONVERT_ENV_VIRTV2V_TMPDIR = new Property<>("convert.instance.env.virtv2v.tmpdir", null, String.class);
 
     /**
+     * Path to the VDDK library directory on the KVM conversion host, used when converting VMs from VMware to KVM via VDDK.
+     * This directory is passed to virt-v2v as <code>-io vddk-libdir=&lt;path&gt;</code>.
+     * Data type: String.<br>
+     * Default value: <code>null</code>
+     */
+    public static final Property<String> VDDK_LIB_DIR = new Property<>("vddk.lib.dir", null, String.class);
+
+    /**
+     * Ordered list of VDDK transports for virt-v2v, passed as <code>-io vddk-transports=&lt;value&gt;</code>.
+     * Example: <code>nbd:nbdssl</code>.
+     * Data type: String.<br>
+     * Default value: <code>null</code>
+     */
+    public static final Property<String> VDDK_TRANSPORTS = new Property<>("vddk.transports", null, String.class);
+
+    /**
+     * vCenter TLS certificate thumbprint used by virt-v2v VDDK mode, passed as <code>-io vddk-thumbprint=&lt;value&gt;</code>.
+     * If unset, the KVM host computes it at runtime from the vCenter endpoint.
+     * Data type: String.<br>
+     * Default value: <code>null</code>
+     */
+    public static final Property<String> VDDK_THUMBPRINT = new Property<>("vddk.thumbprint", null, String.class);
+
+    /**
      * BGP controll CIDR
      * Data type: String.<br>
      * Default value: <code>169.254.0.0/16</code>
@@ -884,6 +922,11 @@ public class AgentProperties{
      * Default value: <code>false</code>
      */
     public static final Property<Boolean> CREATE_FULL_CLONE = new Property<>("create.full.clone", false);
+
+    /**
+     * Time, in seconds, to wait before retrying to rebase during the incremental snapshot process.
+     * */
+    public static final Property<Integer> INCREMENTAL_SNAPSHOT_RETRY_REBASE_WAIT = new Property<>("incremental.snapshot.retry.rebase.wait", 60);
 
 
     public static class Property <T>{

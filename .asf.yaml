@@ -50,10 +50,13 @@ github:
     rebase: false
 
   collaborators:
-    - gpordeus
+    - ingox
+    - gp-santos
     - erikbocks
     - Imvedansh
     - Damans227
+    - jmsperu
+    - GaOrtiga
 
   protected_branches: ~
 

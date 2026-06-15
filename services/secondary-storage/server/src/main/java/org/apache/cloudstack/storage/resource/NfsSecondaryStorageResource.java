@@ -49,12 +49,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.naming.ConfigurationException;
 
-import com.cloud.agent.api.ConvertSnapshotCommand;
 import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
 import org.apache.cloudstack.storage.NfsMountManagerImpl.PathParser;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
@@ -97,8 +97,8 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.joda.time.DateTime;
 import org.joda.time.format.ISODateTimeFormat;
 
@@ -108,6 +108,7 @@ import com.cloud.agent.api.CheckHealthAnswer;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ComputeChecksumCommand;
+import com.cloud.agent.api.ConvertSnapshotCommand;
 import com.cloud.agent.api.DeleteSnapshotsDirCommand;
 import com.cloud.agent.api.GetStorageStatsAnswer;
 import com.cloud.agent.api.GetStorageStatsCommand;
@@ -258,7 +259,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     protected String _parent = "/mnt/SecStorage";
     final private String _tmpltpp = "template.properties";
     protected String createTemplateFromSnapshotXenScript;
-    private HashMap<String, UploadEntity> uploadEntityStateMap = new HashMap<>();
+    private final Map<String, UploadEntity> uploadEntityStateMap = new ConcurrentHashMap<>();
+    private final Map<String, Channel> uploadChannelMap = new ConcurrentHashMap<>();
     private String _ssvmPSK = null;
     private long processTimeout;
 
@@ -2395,6 +2397,20 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         String entityUuid = cmd.getEntityUuid();
         if (uploadEntityStateMap.containsKey(entityUuid)) {
             UploadEntity uploadEntity = uploadEntityStateMap.get(entityUuid);
+            if (Boolean.TRUE.equals(cmd.getAbort())) {
+                updateStateMapWithError(entityUuid, "Upload Entity aborted");
+                String errorMsg = uploadEntity.getErrorMessage();
+                if (errorMsg == null) {
+                    errorMsg = "Upload aborted by management server";
+                }
+                Channel channel = uploadChannelMap.remove(entityUuid);
+                if (channel != null && channel.isActive()) {
+                    logger.info("Closing upload channel for entity {}", entityUuid);
+                    channel.close();
+                }
+                uploadEntityStateMap.remove(entityUuid);
+                return new UploadStatusAnswer(cmd, UploadStatus.ERROR, errorMsg);
+            }
             if (uploadEntity.getUploadState() == UploadEntity.Status.ERROR) {
                 uploadEntityStateMap.remove(entityUuid);
                 return new UploadStatusAnswer(cmd, UploadStatus.ERROR, uploadEntity.getErrorMessage());
@@ -2413,6 +2429,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 UploadStatusAnswer answer = new UploadStatusAnswer(cmd, UploadStatus.IN_PROGRESS);
                 long downloadedSize = FileUtils.sizeOfDirectory(new File(uploadEntity.getInstallPathPrefix()));
                 int downloadPercent = (int)(100 * downloadedSize / uploadEntity.getContentLength());
+                answer.setPhysicalSize(downloadedSize);
                 answer.setDownloadPercent(Math.min(downloadPercent, 100));
                 return answer;
             }
@@ -3442,6 +3459,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     public String postUpload(String uuid, String filename, long processTimeout) {
         UploadEntity uploadEntity = uploadEntityStateMap.get(uuid);
+        if (uploadEntity == null) {
+            logger.warn("Upload entity not found for uuid: {}. Upload may have been aborted.", uuid);
+            return "Upload entity not found. Upload may have been aborted.";
+        }
         int installTimeoutPerGig = 180 * 60 * 1000;
 
         String resourcePath = uploadEntity.getInstallPathPrefix();
@@ -3590,6 +3611,16 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             }
         }
         return _ssvmPSK;
+    }
+
+    public void registerUploadChannel(String uuid, Channel channel) {
+        uploadChannelMap.put(uuid, channel);
+    }
+
+    public void deregisterUploadChannel(String uuid) {
+        if (uuid != null) {
+            uploadChannelMap.remove(uuid);
+        }
     }
 
     public void updateStateMapWithError(String uuid, String errorMessage) {

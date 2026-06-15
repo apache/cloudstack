@@ -19,6 +19,7 @@
 package org.apache.cloudstack.engine.orchestration;
 
 import com.cloud.storage.Snapshot;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate;
 import java.net.URL;
@@ -292,9 +293,11 @@ public class CloudOrchestrator implements OrchestrationService {
 
         ServiceOfferingVO computeOffering = _serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
 
+        VMTemplateVO iso = _templateDao.findByIdIncludingRemoved(Long.valueOf(isoId));
+
         DiskOfferingInfo rootDiskOfferingInfo = new DiskOfferingInfo();
 
-        if (diskOfferingId == null) {
+        if (diskOfferingId == null && !_itMgr.isBlankInstance(iso)) {
             throw new InvalidParameterValueException("Installing from ISO requires a disk offering to be specified for the root disk.");
         }
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
@@ -345,7 +348,7 @@ public class CloudOrchestrator implements OrchestrationService {
 
         HypervisorType hypervisorType = HypervisorType.valueOf(hypervisor);
 
-        _itMgr.allocate(vm.getInstanceName(), _templateDao.findByIdIncludingRemoved(new Long(isoId)), computeOffering, rootDiskOfferingInfo, dataDiskOfferings, dataDiskDeviceIds,
+        _itMgr.allocate(vm.getInstanceName(), iso, computeOffering, rootDiskOfferingInfo, dataDiskOfferings, dataDiskDeviceIds,
                 networkIpMap, plan, hypervisorType, extraDhcpOptionMap, null, volume, snapshot);
 
         return vmEntity;

@@ -19,6 +19,7 @@ package com.cloud.api.query.dao;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
 
@@ -34,27 +35,29 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.utils.jsinterpreter.TagAsRuleHelper;
+import org.apache.cloudstack.utils.jsinterpreter.GenericRuleHelper;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.capacity.CapacityManager;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.server.ResourceTag;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.VolumeApiServiceImpl;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import org.apache.commons.collections.MapUtils;
-
-import java.util.Map;
 
 @Component
 public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Long> implements StoragePoolJoinDao {
@@ -398,7 +401,8 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         String injectableTag = injectableTagsBuilder.toString();
 
         for (StoragePoolJoinVO storagePoolJoinVO : storagePools) {
-            if (TagAsRuleHelper.interpretTagAsRule(storagePoolJoinVO.getTag(), injectableTag, VolumeApiServiceImpl.storageTagRuleExecutionTimeout.value())) {
+            if (GenericRuleHelper.interpretTagAsRule(storagePoolJoinVO.getTag(), injectableTag, VolumeApiServiceImpl.storageTagRuleExecutionTimeout.value(),
+                    VolumeApiServiceImpl.storageTagRuleExecutionTimeout.key())) {
                 StoragePoolVO storagePoolVO = storagePoolDao.findById(storagePoolJoinVO.getId());
                 if (storagePoolVO != null) {
                     filteredPools.add(storagePoolVO);
@@ -410,4 +414,26 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         return filteredPools;
     }
 
+    public List<StoragePoolJoinVO> listAvailableByZoneHypervisorAndType(long zoneId, Hypervisor.HypervisorType hypervisorType, List<Storage.StoragePoolType> types, Filter filter) {
+        List<StoragePoolStatus> availableStatus = Arrays.asList(
+                StoragePoolStatus.Up, StoragePoolStatus.Disabled
+        );
+        SearchBuilder<StoragePoolJoinVO> sb = createSearchBuilder();
+        sb.and("zoneId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
+        sb.and("hypervisors", sb.entity().getHypervisor(), SearchCriteria.Op.IN);
+        sb.and("types", sb.entity().getPoolType(), SearchCriteria.Op.IN);
+        sb.and("status", sb.entity().getStatus(), SearchCriteria.Op.IN);
+        sb.done();
+        SearchCriteria<StoragePoolJoinVO> sc = sb.create();
+        sc.setParameters("zoneId", zoneId);
+        List<Hypervisor.HypervisorType> hypervisors = new ArrayList<>();
+        hypervisors.add(Hypervisor.HypervisorType.Any);
+        hypervisors.add(hypervisorType);
+        sc.setParameters("hypervisors", hypervisors.toArray());
+        if (CollectionUtils.isNotEmpty(types)) {
+            sc.setParameters("types", types.toArray());
+        }
+        sc.setParameters("status", availableStatus.toArray());
+        return listBy(sc, filter);
+    }
 }

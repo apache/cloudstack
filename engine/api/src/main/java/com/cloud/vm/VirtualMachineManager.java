@@ -59,6 +59,8 @@ import com.cloud.utils.fsm.NoTransitionException;
  */
 public interface VirtualMachineManager extends Manager {
 
+    String KVM_BLANK_VM_TEMPLATE_NAME = "kvm-blank-vm-template";
+
     ConfigKey<Boolean> ExecuteInSequence = new ConfigKey<>("Advanced", Boolean.class, "execute.in.sequence.hypervisor.commands", "false",
             "If set to true, start, stop, reboot, copy and migrate commands will be serialized on the agent side. If set to false the commands are executed in parallel. Default value is false.", false);
 
@@ -180,15 +182,6 @@ public interface VirtualMachineManager extends Manager {
 
     void advanceReboot(String vmUuid, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException,
         ConcurrentOperationException, OperationTimedoutException;
-
-    /**
-     * Check to see if a virtual machine can be upgraded to the given service offering
-     *
-     * @param vm
-     * @param offering
-     * @return true if the host can handle the upgrade, false otherwise
-     */
-    boolean isVirtualMachineUpgradable(final VirtualMachine vm, final ServiceOffering offering);
 
     VirtualMachine findById(long vmId);
 
@@ -320,5 +313,9 @@ public interface VirtualMachineManager extends Manager {
     void checkDeploymentPlan(VirtualMachine virtualMachine, VirtualMachineTemplate template,
                 ServiceOffering serviceOffering, Account systemAccount, DeploymentPlan plan)
             throws InsufficientServerCapacityException;
+
+    boolean isBlankInstanceDefaultTemplate(VirtualMachineTemplate template);
+
+    boolean isBlankInstance(VirtualMachineTemplate template);
 
 }

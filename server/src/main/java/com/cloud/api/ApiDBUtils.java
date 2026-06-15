@@ -31,6 +31,7 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import com.cloud.cpu.CPU;
+import com.cloud.storage.GuestOSVO;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -45,7 +46,6 @@ import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.BackupOfferingResponse;
-import org.apache.cloudstack.api.response.BackupScheduleResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
@@ -76,7 +76,6 @@ import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.backup.BackupRepository;
-import org.apache.cloudstack.backup.BackupSchedule;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.backup.dao.BackupRepositoryDao;
@@ -2302,16 +2301,16 @@ public class ApiDBUtils {
         return s_accountService.isAdmin(account.getId());
     }
 
+    public static Account getSystemAccount() {
+        return s_accountService.getSystemAccount();
+    }
+
     public static List<ResourceTagJoinVO> listResourceTagViewByResourceUUID(String resourceUUID, ResourceObjectType resourceType) {
         return s_tagJoinDao.listBy(resourceUUID, resourceType);
     }
 
     public static ResourceIconVO getResourceIconByResourceUUID(String resourceUUID, ResourceObjectType resourceType) {
         return s_resourceIconDao.findByResourceUuid(resourceUUID, resourceType);
-    }
-
-    public static BackupScheduleResponse newBackupScheduleResponse(BackupSchedule schedule) {
-        return s_backupScheduleDao.newBackupScheduleResponse(schedule);
     }
 
     public static BackupOfferingResponse newBackupOfferingResponse(BackupOffering offering) {
@@ -2346,5 +2345,16 @@ public class ApiDBUtils {
 
     public static List<CPU.CPUArch> listZoneClustersArchs(long zoneId) {
         return s_clusterDao.getClustersArchsByZone(zoneId);
+    }
+
+    public static String getTemplateGuestOSName(VMTemplateVO template) {
+        long guestOSId = template.getGuestOSId();
+        GuestOSVO guestOS = s_guestOSDao.findById(guestOSId);
+
+        if (guestOS == null) {
+            return null;
+        }
+
+        return guestOS.getDisplayName();
     }
 }

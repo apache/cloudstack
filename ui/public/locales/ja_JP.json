@@ -2932,7 +2932,6 @@
   "message.error.domain": "ドメインを入力し、ROOTドメインは空のままにします",
   "message.error.enable.saml": "SAML SSOを有効にするユーザーIDが見つかりません。手動で有効にしてください。",
   "message.error.endip": "終了IPを入力してください",
-  "message.error.fixed.offering.kvm": "固定コンピューティングオファリングでKVMハイパーバイザーを利用するVMをスケールアップすることはできません。",
   "message.error.gateway": "ゲートウェイに入ってください",
   "message.error.host.name": "ホスト名を入力してください",
   "message.error.host.password": "ホストパスワードを入力してください",

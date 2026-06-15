@@ -16,13 +16,14 @@
 // under the License.
 package com.cloud.vm;
 
+import static com.cloud.user.ResourceLimitService.ResourceLimitHostTags;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
@@ -40,8 +41,7 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
-
-import static com.cloud.user.ResourceLimitService.ResourceLimitHostTags;
+import com.cloud.utils.StringUtils;
 
 /**
  *
@@ -107,6 +107,13 @@ public interface UserVmManager extends UserVmService {
             "vmware.allowed.additional.details.from.ova", "Advanced", "",
             "Comma separated list of allowed additional VM settings if VM instance settings are read from OVA.",
             true, ConfigKey.Scope.Zone, null, null, null, null, null, ConfigKey.Kind.CSV, null);
+
+    ConfigKey<Boolean> AllowDifferentHostTagsOfferingsForVmScale = new ConfigKey<>("Advanced", Boolean.class, "allow.different.host.tags.offerings.for.vm.scale", "false",
+            "Enables/Disable allowing to change a VM offering to offerings with different host tags", true);
+
+    ConfigKey<Boolean> AutoMigrateVmOnLiveScaleInsufficientCapacity = new ConfigKey<>("Advanced", Boolean.class, "auto.migrate.vm.on.live.scale.insufficient.capacity",
+            "true", "Defines whether a VM should be automatically migrated to a suitable host when the current host " +
+                    "lacks sufficient compute capacity to live scale the instance. Defaults to true.", true, ConfigKey.Scope.Cluster);
 
     static final int MAX_USER_DATA_LENGTH_BYTES = 2048;
 
@@ -203,5 +210,4 @@ public interface UserVmManager extends UserVmService {
      * @return true if the VM is part of a CKS cluster, false otherwise.
      */
     boolean isVMPartOfAnyCKSCluster(VMInstanceVO vm);
-
 }

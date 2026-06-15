@@ -40,7 +40,7 @@ public class CreateBgpPeerCmdTest {
     @Test
     public void testCreateBgpPeerCmd() {
         Long zoneId = 1L;
-        UUID zoneUuid = UUID.randomUUID();
+        String zoneUuid = UUID.randomUUID().toString();
         String accountName = "user";
         Long projectId = 10L;
         Long domainId = 11L;
