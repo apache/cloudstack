@@ -268,9 +268,9 @@ export default {
         title: this.$t('label.operation.status'),
         slots: { customRender: 'status' },
         filters: [
-          { text: 'In Progress', value: 'InProgress' },
-          { text: 'Success', value: 'success' },
-          { text: 'Failed', value: 'failed' }
+          { text: this.$t('state.inprogress'), value: 'InProgress' },
+          { text: this.$t('label.success'), value: 'success' },
+          { text: this.$t('label.failed'), value: 'failed' }
         ]
       })
       if (this.selectedRowKeys.length > 0) {

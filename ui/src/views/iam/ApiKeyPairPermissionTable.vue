@@ -229,7 +229,7 @@ export default {
         }
       ],
       pagination: {
-        pageSize: 20,
+        pageSize: this.$store.getters.defaultListViewPageSize,
         pageSizeOptions: ['10', '20', '40', '80', '100', '200'],
         showSizeChanger: true
       },

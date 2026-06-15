@@ -168,7 +168,7 @@ export default {
         postAPI('registerUserKeys', params).then(response => {
           this.$pollJob({
             jobId: response.registeruserkeysresponse.jobid,
-            successMessage: `${this.$t('message.success.register.user.keypair')} ${this.$t('label.for')} user ${this.resource.id}`,
+            successMessage: this.$t('message.success.register.user.keypair', { user: this.resource.username }),
             successMethod: () => {
               this.fetchData()
             },
@@ -176,7 +176,7 @@ export default {
             errorMethod: () => {
               this.fetchData()
             },
-            loadingMessage: `${this.$t('label.registering.keypair')} ${this.$t('label.for')} user ${this.resource.id} ${this.$t('label.is.in.progress')}`,
+            loadingMessage: this.$t('label.registering.keypair', { user: this.resource.username }),
             catchMessage: this.$t('error.fetching.async.job.result')
           })
         }).catch(error => {
