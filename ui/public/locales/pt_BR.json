@@ -385,7 +385,7 @@
 "label.apikeypairs": "Par de chaves de API",
 "label.apikeypair.description": "Descri\u00e7\u00e3o do par de chaves de API",
 "label.apikeypair.name": "Nome do par de chaves de API",
-"label.apikeypair.startdate": "Data de in\u00edcio de valida\u00e7\u00e3o par de chaves de API",
+"label.apikeypair.startdate": "Data de in\u00edcio da validade do par de chaves de API",
 "label.apikeypair.enddate": "Data de expira\u00e7\u00e3o do par de chaves de API",
 "label.app.cookie": "AppCookie",
 "label.app.name": "CloudStack",
