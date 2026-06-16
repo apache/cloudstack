@@ -551,7 +551,7 @@ public class CommandSetupHelper {
         cmds.addCommand(cmd);
     }
 
-    public void createFirewallRulesCommands(final List<? extends FirewallRule> rules, final VirtualRouter router, final Commands cmds, final long guestNetworkId) {
+    public void createFirewallRulesCommands(final List<? extends FirewallRule> rules, final VirtualRouter router, final Commands cmds, final Long guestNetworkId) {
         final List<FirewallRuleTO> rulesTO = new ArrayList<>();
         String systemRule = null;
         Boolean defaultEgressPolicy = false;
@@ -585,7 +585,9 @@ public class CommandSetupHelper {
 
         final SetFirewallRulesCommand cmd = new SetFirewallRulesCommand(rulesTO);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()));
+        if (guestNetworkId != null) {
+            cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()));
+        }
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
         final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
         cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
