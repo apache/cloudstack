@@ -117,7 +117,7 @@ public class LibvirtRevertSnapshotCommandWrapper extends CommandWrapper<RevertSn
                     secondaryStoragePool = storagePoolMgr.getStoragePoolByURI(snapshotImageStore.getUrl());
                 }
 
-                if (primaryPool.getType() == StoragePoolType.CLVM) {
+                if (primaryPool.getType() == StoragePoolType.CLVM || primaryPool.getType() == StoragePoolType.CLVM_NG) {
                     Script cmd = new Script(libvirtComputingResource.manageSnapshotPath(), libvirtComputingResource.getCmdsTimeout(), logger);
                     cmd.add("-v", getFullPathAccordingToStorage(secondaryStoragePool, snapshotRelPath));
                     cmd.add("-n", snapshotDisk.getName());

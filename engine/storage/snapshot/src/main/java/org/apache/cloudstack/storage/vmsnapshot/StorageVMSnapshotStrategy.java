@@ -345,6 +345,13 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
            }
        }
 
+       Long vmId = vmSnapshot.getVmId();
+       UserVmVO vm = userVmDao.findById(vmId);
+       String cantHandleLog = String.format("Storage VM snapshot strategy cannot handle VM snapshot for [%s]", vm);
+       if (vm != null && isRunningVMVolumeOnCLVMStorage(vm, cantHandleLog)) {
+           return StrategyPriority.CANT_HANDLE;
+       }
+
        if ( SnapshotManager.VmStorageSnapshotKvm.value() && userVm.getHypervisorType() == Hypervisor.HypervisorType.KVM
                     && vmSnapshot.getType() == VMSnapshot.Type.Disk) {
            return StrategyPriority.HYPERVISOR;

@@ -183,6 +183,8 @@
 
     <bean id="oCFS2ManagerImpl" class="com.cloud.storage.OCFS2ManagerImpl" />
 
+    <bean id="clvmPoolManager" class="com.cloud.storage.clvm.ClvmPoolManager" />
+
     <bean id="outOfBandManagementServiceImpl" class="org.apache.cloudstack.outofbandmanagement.OutOfBandManagementServiceImpl">
         <property name="outOfBandManagementDrivers" value="#{outOfBandManagementDriversRegistry.registered}" />
     </bean>

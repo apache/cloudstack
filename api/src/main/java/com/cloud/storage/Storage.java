@@ -170,6 +170,7 @@ public class Storage {
         ISO(false, false, EncryptionSupport.Unsupported), // for iso image
         LVM(false, false, EncryptionSupport.Unsupported), // XenServer local LVM SR
         CLVM(true, false, EncryptionSupport.Unsupported),
+        CLVM_NG(true, false, EncryptionSupport.Hypervisor),
         RBD(true, true, EncryptionSupport.Unsupported), // http://libvirt.org/storage.html#StorageBackendRBD
         SharedMountPoint(true, true, EncryptionSupport.Hypervisor),
         VMFS(true, true, EncryptionSupport.Unsupported), // VMware VMFS storage

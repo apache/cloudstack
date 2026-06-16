@@ -383,7 +383,7 @@
             <a-input v-model:value="form.radossecret" :placeholder="$t('label.rados.secret')" />
           </a-form-item>
         </div>
-        <div v-if="form.protocol === 'CLVM'">
+        <div v-if="form.protocol === 'CLVM' || form.protocol === 'CLVM_NG'">
           <a-form-item name="volumegroup" ref="volumegroup" :label="$t('label.volumegroup')">
             <a-input v-model:value="form.volumegroup" :placeholder="$t('label.volumegroup')" />
           </a-form-item>
@@ -607,7 +607,7 @@ export default {
       const cluster = this.clusters.find(cluster => cluster.id === this.form.cluster)
       this.hypervisorType = cluster.hypervisortype
       if (this.hypervisorType === 'KVM') {
-        this.protocols = ['nfs', 'SharedMountPoint', 'RBD', 'CLVM', 'Gluster', 'Linstor', 'custom', 'FiberChannel']
+        this.protocols = ['nfs', 'SharedMountPoint', 'RBD', 'CLVM', 'CLVM_NG', 'Gluster', 'Linstor', 'custom', 'FiberChannel']
         if (this.form.scope === 'host') {
           this.protocols.push('Filesystem')
         }
@@ -724,6 +724,15 @@ export default {
       var url
       if (vgname.indexOf('://') === -1) {
         url = 'clvm://localhost/' + vgname
+      } else {
+        url = vgname
+      }
+      return url
+    },
+    clvmNgURL (vgname) {
+      var url
+      if (vgname.indexOf('://') === -1) {
+        url = 'clvm_ng://localhost/' + vgname
       } else {
         url = vgname
       }
@@ -853,6 +862,9 @@ export default {
         } else if (values.protocol === 'CLVM') {
           var vg = (values.volumegroup.substring(0, 1) !== '/') ? ('/' + values.volumegroup) : values.volumegroup
           url = this.clvmURL(vg)
+        } else if (values.protocol === 'CLVM_NG') {
+          vg = (values.volumegroup.substring(0, 1) !== '/') ? ('/' + values.volumegroup) : values.volumegroup
+          url = this.clvmNgURL(vg)
         } else if (values.protocol === 'RBD') {
           url = this.rbdURL(values.radosmonitor, values.radospool, values.radosuser, values.radossecret)
           if (values.datapool) {

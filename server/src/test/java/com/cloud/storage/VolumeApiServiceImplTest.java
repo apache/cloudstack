@@ -40,6 +40,16 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
+import com.cloud.host.HostVO;
+import com.cloud.resourcelimit.CheckedReservation;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.clvm.ClvmPoolManager;
+import com.cloud.vm.snapshot.VMSnapshot;
+import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.user.volume.CheckAndRepairVolumeCmd;
@@ -99,24 +109,18 @@ import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
-import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
-import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.DiskOffering;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
-import com.cloud.resourcelimit.CheckedReservation;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementService;
 import com.cloud.server.TaggedResourceService;
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.dao.DiskOfferingDao;
@@ -144,11 +148,8 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.cloud.vm.snapshot.VMSnapshot;
-import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
 
 @RunWith(MockitoJUnitRunner.class)
 public class VolumeApiServiceImplTest {
@@ -228,6 +229,8 @@ public class VolumeApiServiceImplTest {
     ClusterDao clusterDao;
     @Mock
     VolumeOrchestrationService volumeOrchestrationService;
+    @Mock
+    ClvmPoolManager clvmPoolManager;
 
 
     private DetachVolumeCmd detachCmd = new DetachVolumeCmd();
@@ -2422,5 +2425,291 @@ public class VolumeApiServiceImplTest {
         Mockito.doReturn(t2).when(mock2).getType();
         Mockito.doReturn(1L).when(mock2).getId();
         return List.of(mock1, mock2);
+    }
+
+    @Test
+    public void testIsClvmLightweightMigrationNeeded_SameVG() {
+        VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+        VolumeVO vmExistingVolume = Mockito.mock(VolumeVO.class);
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        StoragePoolVO volumePool = Mockito.mock(StoragePoolVO.class);
+        StoragePoolVO vmPool = Mockito.mock(StoragePoolVO.class);
+
+        Long volumePoolId = 100L;
+        Long vmPoolId = 200L;
+
+        Mockito.when(volumeInfo.getPoolId()).thenReturn(volumePoolId);
+        Mockito.when(vmExistingVolume.getPoolId()).thenReturn(vmPoolId);
+        Mockito.when(primaryDataStoreDaoMock.findById(volumePoolId)).thenReturn(volumePool);
+        Mockito.when(primaryDataStoreDaoMock.findById(vmPoolId)).thenReturn(vmPool);
+
+        Mockito.when(volumePool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+        Mockito.when(vmPool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+        Mockito.when(volumePool.getPath()).thenReturn("/vg1");
+        Mockito.when(vmPool.getPath()).thenReturn("/vg1");
+
+        Mockito.when(volumeServiceMock.isLightweightMigrationNeeded(
+                Storage.StoragePoolType.CLVM, Storage.StoragePoolType.CLVM,
+                "/vg1", "/vg1")).thenReturn(true);
+
+        boolean result = invokePrivateMethod("isClvmLightweightMigrationNeeded",
+                new Class[]{VolumeInfo.class, VolumeVO.class},
+                volumeInfo, vmExistingVolume);
+
+        Assert.assertTrue(result);
+        Mockito.verify(volumeServiceMock).isLightweightMigrationNeeded(
+                Storage.StoragePoolType.CLVM, Storage.StoragePoolType.CLVM, "/vg1", "/vg1");
+    }
+
+    @Test
+    public void testIsClvmLightweightMigrationNeeded_DifferentVG() {
+        VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+        VolumeVO vmExistingVolume = Mockito.mock(VolumeVO.class);
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        StoragePoolVO volumePool = Mockito.mock(StoragePoolVO.class);
+        StoragePoolVO vmPool = Mockito.mock(StoragePoolVO.class);
+
+        Long volumePoolId = 100L;
+        Long vmPoolId = 200L;
+
+        Mockito.when(volumeInfo.getPoolId()).thenReturn(volumePoolId);
+        Mockito.when(vmExistingVolume.getPoolId()).thenReturn(vmPoolId);
+        Mockito.when(primaryDataStoreDaoMock.findById(volumePoolId)).thenReturn(volumePool);
+        Mockito.when(primaryDataStoreDaoMock.findById(vmPoolId)).thenReturn(vmPool);
+
+        Mockito.when(volumePool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+        Mockito.when(vmPool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+        Mockito.when(volumePool.getPath()).thenReturn("/vg1");
+        Mockito.when(vmPool.getPath()).thenReturn("/vg2");
+
+        Mockito.when(volumeServiceMock.isLightweightMigrationNeeded(
+                Storage.StoragePoolType.CLVM, Storage.StoragePoolType.CLVM,
+                "/vg1", "/vg2")).thenReturn(false);
+
+        boolean result = invokePrivateMethod("isClvmLightweightMigrationNeeded",
+                new Class[]{VolumeInfo.class, VolumeVO.class},
+                volumeInfo, vmExistingVolume);
+
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void testIsClvmLightweightMigrationNeeded_CLVM_NG_SameVG() {
+        VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+        VolumeVO vmExistingVolume = Mockito.mock(VolumeVO.class);
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        StoragePoolVO volumePool = Mockito.mock(StoragePoolVO.class);
+        StoragePoolVO vmPool = Mockito.mock(StoragePoolVO.class);
+
+        Long volumePoolId = 100L;
+        Long vmPoolId = 200L;
+
+        Mockito.when(volumeInfo.getPoolId()).thenReturn(volumePoolId);
+        Mockito.when(vmExistingVolume.getPoolId()).thenReturn(vmPoolId);
+        Mockito.when(primaryDataStoreDaoMock.findById(volumePoolId)).thenReturn(volumePool);
+        Mockito.when(primaryDataStoreDaoMock.findById(vmPoolId)).thenReturn(vmPool);
+
+        Mockito.when(volumePool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM_NG);
+        Mockito.when(vmPool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM_NG);
+        Mockito.when(volumePool.getPath()).thenReturn("/vg1");
+        Mockito.when(vmPool.getPath()).thenReturn("/vg1");
+
+        Mockito.when(volumeServiceMock.isLightweightMigrationNeeded(
+                Storage.StoragePoolType.CLVM_NG, Storage.StoragePoolType.CLVM_NG,
+                "/vg1", "/vg1")).thenReturn(true);
+
+        boolean result = invokePrivateMethod("isClvmLightweightMigrationNeeded",
+                new Class[]{VolumeInfo.class, VolumeVO.class},
+                volumeInfo, vmExistingVolume);
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void testIsClvmLockTransferRequired_DifferentHosts() {
+        VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+        VolumeVO vmExistingVolume = Mockito.mock(VolumeVO.class);
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        StoragePoolVO volumePool = Mockito.mock(StoragePoolVO.class);
+        StoragePoolVO vmPool = Mockito.mock(StoragePoolVO.class);
+
+        Long volumePoolId = 100L;
+        Long vmPoolId = 100L; // Same pool
+        Long vmHostId = 10L;
+
+        Mockito.when(volumeInfo.getPoolId()).thenReturn(volumePoolId);
+        Mockito.when(vmExistingVolume.getPoolId()).thenReturn(vmPoolId);
+        Mockito.when(vm.getHostId()).thenReturn(vmHostId);
+        Mockito.when(primaryDataStoreDaoMock.findById(volumePoolId)).thenReturn(volumePool);
+        Mockito.when(primaryDataStoreDaoMock.findById(vmPoolId)).thenReturn(vmPool);
+
+        Mockito.when(vmPool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+        Mockito.when(vmPool.getId()).thenReturn(vmPoolId);
+
+        Mockito.when(volumeServiceMock.isLockTransferRequired(
+                eq(volumeInfo), eq(Storage.StoragePoolType.CLVM), eq(Storage.StoragePoolType.CLVM),
+                eq(volumePoolId), eq(vmPoolId), eq(vmHostId))).thenReturn(true);
+
+        boolean result = invokePrivateMethod("isClvmLockTransferRequired",
+                new Class[]{VolumeInfo.class, VolumeVO.class, UserVmVO.class},
+                volumeInfo, vmExistingVolume, vm);
+
+        Assert.assertTrue(result);
+        Mockito.verify(volumeServiceMock).isLockTransferRequired(
+                eq(volumeInfo), eq(Storage.StoragePoolType.CLVM), eq(Storage.StoragePoolType.CLVM),
+                eq(volumePoolId), eq(vmPoolId), eq(vmHostId));
+    }
+
+    @Test
+    public void testIsClvmLockTransferRequired_SameHost() {
+        VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+        VolumeVO vmExistingVolume = Mockito.mock(VolumeVO.class);
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        StoragePoolVO volumePool = Mockito.mock(StoragePoolVO.class);
+        StoragePoolVO vmPool = Mockito.mock(StoragePoolVO.class);
+
+        Long volumePoolId = 100L;
+        Long vmPoolId = 100L;
+        Long vmHostId = 10L;
+
+        Mockito.when(volumeInfo.getPoolId()).thenReturn(volumePoolId);
+        Mockito.when(vmExistingVolume.getPoolId()).thenReturn(vmPoolId);
+        Mockito.when(vm.getHostId()).thenReturn(vmHostId);
+        Mockito.when(primaryDataStoreDaoMock.findById(volumePoolId)).thenReturn(volumePool);
+        Mockito.when(primaryDataStoreDaoMock.findById(vmPoolId)).thenReturn(vmPool);
+
+        Mockito.when(vmPool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+        Mockito.when(vmPool.getId()).thenReturn(vmPoolId);
+
+        Mockito.when(volumeServiceMock.isLockTransferRequired(
+                eq(volumeInfo), eq(Storage.StoragePoolType.CLVM), eq(Storage.StoragePoolType.CLVM),
+                eq(volumePoolId), eq(vmPoolId), eq(vmHostId))).thenReturn(false);
+
+        boolean result = invokePrivateMethod("isClvmLockTransferRequired",
+                new Class[]{VolumeInfo.class, VolumeVO.class, UserVmVO.class},
+                volumeInfo, vmExistingVolume, vm);
+
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void testIsClvmLockTransferRequired_DifferentPools() {
+        VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+        VolumeVO vmExistingVolume = Mockito.mock(VolumeVO.class);
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        StoragePoolVO volumePool = Mockito.mock(StoragePoolVO.class);
+        StoragePoolVO vmPool = Mockito.mock(StoragePoolVO.class);
+
+        Long volumePoolId = 100L;
+        Long vmPoolId = 200L; // Different pool
+        Long vmHostId = 10L;
+
+        Mockito.when(volumeInfo.getPoolId()).thenReturn(volumePoolId);
+        Mockito.when(vmExistingVolume.getPoolId()).thenReturn(vmPoolId);
+        Mockito.when(vm.getHostId()).thenReturn(vmHostId);
+        Mockito.when(primaryDataStoreDaoMock.findById(volumePoolId)).thenReturn(volumePool);
+        Mockito.when(primaryDataStoreDaoMock.findById(vmPoolId)).thenReturn(vmPool);
+
+        Mockito.when(volumePool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+        Mockito.when(vmPool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+        Mockito.when(volumePool.getId()).thenReturn(volumePoolId);
+        Mockito.when(vmPool.getId()).thenReturn(vmPoolId);
+
+        Mockito.when(volumeServiceMock.isLockTransferRequired(
+                eq(volumeInfo), eq(Storage.StoragePoolType.CLVM), eq(Storage.StoragePoolType.CLVM),
+                eq(volumePoolId), eq(vmPoolId), eq(vmHostId))).thenReturn(false);
+
+        boolean result = invokePrivateMethod("isClvmLockTransferRequired",
+                new Class[]{VolumeInfo.class, VolumeVO.class, UserVmVO.class},
+                volumeInfo, vmExistingVolume, vm);
+
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void testIsClvmLockTransferRequired_NonCLVMPool() {
+        VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+        VolumeVO vmExistingVolume = Mockito.mock(VolumeVO.class);
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        StoragePoolVO volumePool = Mockito.mock(StoragePoolVO.class);
+        StoragePoolVO vmPool = Mockito.mock(StoragePoolVO.class);
+
+        Long volumePoolId = 100L;
+        Long vmPoolId = 100L;
+        Long vmHostId = 10L;
+
+        Mockito.when(volumeInfo.getPoolId()).thenReturn(volumePoolId);
+        Mockito.when(vmExistingVolume.getPoolId()).thenReturn(vmPoolId);
+        Mockito.when(vm.getHostId()).thenReturn(vmHostId);
+        Mockito.when(primaryDataStoreDaoMock.findById(volumePoolId)).thenReturn(volumePool);
+        Mockito.when(primaryDataStoreDaoMock.findById(vmPoolId)).thenReturn(vmPool);
+
+        Mockito.when(vmPool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+        Mockito.when(vmPool.getId()).thenReturn(vmPoolId);
+
+        boolean result = invokePrivateMethod("isClvmLockTransferRequired",
+                new Class[]{VolumeInfo.class, VolumeVO.class, UserVmVO.class},
+                volumeInfo, vmExistingVolume, vm);
+
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void testIsClvmLockTransferRequired_NullVM() {
+        VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+        VolumeVO vmExistingVolume = Mockito.mock(VolumeVO.class);
+
+        boolean result = invokePrivateMethod("isClvmLockTransferRequired",
+                new Class[]{VolumeInfo.class, VolumeVO.class, UserVmVO.class},
+                volumeInfo, vmExistingVolume, null);
+
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void testIsClvmLockTransferRequired_VMStoppedUsesLastHostId() {
+        VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+        VolumeVO vmExistingVolume = Mockito.mock(VolumeVO.class);
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        StoragePoolVO volumePool = Mockito.mock(StoragePoolVO.class);
+        StoragePoolVO vmPool = Mockito.mock(StoragePoolVO.class);
+
+        Long volumePoolId = 100L;
+        Long vmPoolId = 100L;
+        Long lastHostId = 10L;
+
+        Mockito.when(volumeInfo.getPoolId()).thenReturn(volumePoolId);
+        Mockito.when(vmExistingVolume.getPoolId()).thenReturn(vmPoolId);
+        Mockito.when(vm.getHostId()).thenReturn(null); // VM is stopped
+        Mockito.when(vm.getLastHostId()).thenReturn(lastHostId);
+        Mockito.when(primaryDataStoreDaoMock.findById(volumePoolId)).thenReturn(volumePool);
+        Mockito.when(primaryDataStoreDaoMock.findById(vmPoolId)).thenReturn(vmPool);
+
+        Mockito.when(vmPool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+        Mockito.when(vmPool.getId()).thenReturn(vmPoolId);
+
+        Mockito.when(volumeServiceMock.isLockTransferRequired(
+                eq(volumeInfo), eq(Storage.StoragePoolType.CLVM), eq(Storage.StoragePoolType.CLVM),
+                eq(volumePoolId), eq(vmPoolId), eq(lastHostId))).thenReturn(true);
+
+        boolean result = invokePrivateMethod("isClvmLockTransferRequired",
+                new Class[]{VolumeInfo.class, VolumeVO.class, UserVmVO.class},
+                volumeInfo, vmExistingVolume, vm);
+
+        Assert.assertTrue(result);
+        Mockito.verify(volumeServiceMock).isLockTransferRequired(
+                eq(volumeInfo), eq(Storage.StoragePoolType.CLVM), eq(Storage.StoragePoolType.CLVM),
+                eq(volumePoolId), eq(vmPoolId), eq(lastHostId));
+    }
+
+
+    private <T> T invokePrivateMethod(String methodName, Class<?>[] paramTypes, Object... params) {
+        try {
+            java.lang.reflect.Method method = VolumeApiServiceImpl.class.getDeclaredMethod(methodName, paramTypes);
+            method.setAccessible(true);
+            return (T) method.invoke(volumeApiServiceImpl, params);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to invoke method: " + methodName, e);
+        }
     }
 }

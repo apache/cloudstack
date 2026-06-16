@@ -52,9 +52,19 @@ public final class LibvirtModifyStoragePoolCommandWrapper extends CommandWrapper
 
         final KVMStoragePool storagepool;
         try {
+            Map<String, String> poolDetails = command.getDetails();
+            if (poolDetails == null) {
+                poolDetails = new HashMap<>();
+            }
+
+            // Ensure CLVM secure zero-fill setting has a default value if not provided by MS
+            if (!poolDetails.containsKey(KVMStoragePool.CLVM_SECURE_ZERO_FILL)) {
+                poolDetails.put(KVMStoragePool.CLVM_SECURE_ZERO_FILL, "false");
+            }
+
             storagepool =
                     storagePoolMgr.createStoragePool(command.getPool().getUuid(), command.getPool().getHost(), command.getPool().getPort(), command.getPool().getPath(), command.getPool()
-                            .getUserInfo(), command.getPool().getType(), command.getDetails());
+                            .getUserInfo(), command.getPool().getType(), poolDetails);
             if (storagepool == null) {
                 return new Answer(command, false, " Failed to create storage pool");
             }

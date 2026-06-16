@@ -28,14 +28,18 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.any;
 
+import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -93,6 +97,14 @@ public class AncientDataMotionStrategyTest {
         final Field f = ConfigKey.class.getDeclaredField("_defaultValue");
         f.setAccessible(true);
         f.set(configKey, value);
+    }
+
+    private ClvmPoolManager injectMockedClvmPoolManager() throws Exception {
+        ClvmPoolManager clvmPoolManager = Mockito.mock(ClvmPoolManager.class);
+        Field clvmPoolManagerField = AncientDataMotionStrategy.class.getDeclaredField("clvmPoolManager");
+        clvmPoolManagerField.setAccessible(true);
+        clvmPoolManagerField.set(strategy, clvmPoolManager);
+        return clvmPoolManager;
     }
 
     @Test
@@ -287,5 +299,186 @@ public class AncientDataMotionStrategyTest {
 
         canBypassSecondaryStorage = (boolean) method.invoke(strategy, destVolumeInfo, srcVolumeInfo);
         Assert.assertTrue(canBypassSecondaryStorage);
+    }
+
+    @Test
+    public void testUpdateLockHostForVolume_CLVMPool_SetsLockHost() throws Exception {
+        Method method = AncientDataMotionStrategy.class.getDeclaredMethod(
+                "updateLockHostForVolume",
+                EndPoint.class,
+                DataObject.class);
+        method.setAccessible(true);
+
+        EndPoint endPoint = Mockito.mock(EndPoint.class);
+        VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+        DataStore dataStore = Mockito.mock(DataStore.class, Mockito.withSettings().extraInterfaces(StoragePool.class));
+        ClvmPoolManager clvmPoolManager = injectMockedClvmPoolManager();
+
+        Long hostId = 123L;
+        Long volumeId = 456L;
+        String volumeUuid = "test-volume-uuid";
+
+        Mockito.when(endPoint.getId()).thenReturn(hostId);
+        Mockito.when(volumeInfo.getDataStore()).thenReturn(dataStore);
+        Mockito.when(volumeInfo.getId()).thenReturn(volumeId);
+        Mockito.when(volumeInfo.getUuid()).thenReturn(volumeUuid);
+        Mockito.when(volumeInfo.getPath()).thenReturn("test-volume-path");
+        Mockito.when(((StoragePool) dataStore).getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+        Mockito.when(clvmPoolManager.getClvmLockHostId(Mockito.eq(volumeId), Mockito.eq(volumeUuid),
+                Mockito.anyString(), Mockito.any(StoragePool.class), Mockito.eq(true))).thenReturn(null);
+
+        method.invoke(strategy, endPoint, volumeInfo);
+
+        Mockito.verify(clvmPoolManager).setClvmLockHostId(volumeId, hostId);
+    }
+
+    @Test
+    public void testUpdateLockHostForVolume_CLVM_NG_Pool_SetsLockHost() throws Exception {
+        Method method = AncientDataMotionStrategy.class.getDeclaredMethod(
+                "updateLockHostForVolume",
+                EndPoint.class,
+                DataObject.class);
+        method.setAccessible(true);
+
+        EndPoint endPoint = Mockito.mock(EndPoint.class);
+        VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+        DataStore dataStore = Mockito.mock(DataStore.class, Mockito.withSettings().extraInterfaces(StoragePool.class));
+        ClvmPoolManager clvmPoolManager = injectMockedClvmPoolManager();
+
+        Long hostId = 789L;
+        Long volumeId = 101L;
+        String volumeUuid = "test-clvm-ng-volume-uuid";
+
+        Mockito.when(endPoint.getId()).thenReturn(hostId);
+        Mockito.when(volumeInfo.getDataStore()).thenReturn(dataStore);
+        Mockito.when(volumeInfo.getId()).thenReturn(volumeId);
+        Mockito.when(volumeInfo.getUuid()).thenReturn(volumeUuid);
+        Mockito.when(volumeInfo.getPath()).thenReturn("test-clvm-ng-volume-path");
+        Mockito.when(((StoragePool) dataStore).getPoolType()).thenReturn(Storage.StoragePoolType.CLVM_NG);
+        Mockito.when(clvmPoolManager.getClvmLockHostId(Mockito.eq(volumeId), Mockito.eq(volumeUuid),
+                Mockito.anyString(), Mockito.any(StoragePool.class), Mockito.eq(true))).thenReturn(null);
+
+        try {
+            method.invoke(strategy, endPoint, volumeInfo);
+        } catch (InvocationTargetException e) {
+            e.getCause().printStackTrace();
+            throw e;
+        }
+
+        Mockito.verify(clvmPoolManager).setClvmLockHostId(volumeId, hostId);
+    }
+
+    @Test
+    public void testUpdateLockHostForVolume_NonCLVMPool_DoesNotSetLockHost() throws Exception {
+        Method method = AncientDataMotionStrategy.class.getDeclaredMethod(
+                "updateLockHostForVolume",
+                EndPoint.class,
+                DataObject.class);
+        method.setAccessible(true);
+
+        EndPoint endPoint = Mockito.mock(EndPoint.class);
+        VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+        // Create mock that implements both DataStore and StoragePool interfaces
+        DataStore dataStore = Mockito.mock(DataStore.class, Mockito.withSettings().extraInterfaces(StoragePool.class));
+        ClvmPoolManager clvmPoolManager = injectMockedClvmPoolManager();
+
+        Mockito.when(volumeInfo.getDataStore()).thenReturn(dataStore);
+        Mockito.when(((StoragePool) dataStore).getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+
+        method.invoke(strategy, endPoint, volumeInfo);
+
+        Mockito.verify(clvmPoolManager, never()).setClvmLockHostId(any(Long.class), any(Long.class));
+        Mockito.verify(clvmPoolManager, never()).getClvmLockHostId(any(Long.class), any(String.class),
+                any(String.class), any(StoragePool.class), Mockito.anyBoolean());
+    }
+
+    @Test
+    public void testUpdateLockHostForVolume_ExistingLockHost_DoesNotOverwrite() throws Exception {
+        Method method = AncientDataMotionStrategy.class.getDeclaredMethod(
+                "updateLockHostForVolume",
+                EndPoint.class,
+                DataObject.class);
+        method.setAccessible(true);
+
+        EndPoint endPoint = Mockito.mock(EndPoint.class);
+        VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+        DataStore dataStore = Mockito.mock(DataStore.class, Mockito.withSettings().extraInterfaces(StoragePool.class));
+        ClvmPoolManager clvmPoolManager = injectMockedClvmPoolManager();
+
+        Long hostId = 555L;
+        Long existingHostId = 666L;
+        Long volumeId = 777L;
+        String volumeUuid = "existing-lock-volume-uuid";
+
+        Mockito.when(endPoint.getId()).thenReturn(hostId);
+        Mockito.when(volumeInfo.getDataStore()).thenReturn(dataStore);
+        Mockito.when(volumeInfo.getId()).thenReturn(volumeId);
+        Mockito.when(volumeInfo.getUuid()).thenReturn(volumeUuid);
+        Mockito.when(volumeInfo.getPath()).thenReturn("existing-lock-volume-path");
+        Mockito.when(((StoragePool) dataStore).getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+        Mockito.when(clvmPoolManager.getClvmLockHostId(Mockito.eq(volumeId), Mockito.eq(volumeUuid),
+                Mockito.anyString(), Mockito.any(StoragePool.class), Mockito.eq(true))).thenReturn(existingHostId);
+
+        method.invoke(strategy, endPoint, volumeInfo);
+
+        Mockito.verify(clvmPoolManager, never()).setClvmLockHostId(any(Long.class), any(Long.class));
+        Mockito.verify(clvmPoolManager).getClvmLockHostId(Mockito.eq(volumeId), Mockito.eq(volumeUuid),
+                Mockito.anyString(), Mockito.any(StoragePool.class), Mockito.eq(true));
+    }
+
+    @Test
+    public void testUpdateLockHostForVolume_NullEndPoint_DoesNotSetLockHost() throws Exception {
+        Method method = AncientDataMotionStrategy.class.getDeclaredMethod(
+                "updateLockHostForVolume",
+                EndPoint.class,
+                DataObject.class);
+        method.setAccessible(true);
+
+        VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+        ClvmPoolManager clvmPoolManager = injectMockedClvmPoolManager();
+
+        method.invoke(strategy, null, volumeInfo);
+
+        Mockito.verify(clvmPoolManager, never()).setClvmLockHostId(any(Long.class), any(Long.class));
+        Mockito.verify(clvmPoolManager, never()).getClvmLockHostId(any(Long.class), any(String.class),
+                any(String.class), any(StoragePool.class), Mockito.anyBoolean());
+    }
+
+    @Test
+    public void testUpdateLockHostForVolume_NonVolumeDataObject_DoesNotSetLockHost() throws Exception {
+        Method method = AncientDataMotionStrategy.class.getDeclaredMethod(
+                "updateLockHostForVolume",
+                EndPoint.class,
+                DataObject.class);
+        method.setAccessible(true);
+
+        EndPoint endPoint = Mockito.mock(EndPoint.class);
+        SnapshotInfo snapshotInfo = Mockito.mock(SnapshotInfo.class);
+        ClvmPoolManager clvmPoolManager = injectMockedClvmPoolManager();
+
+        method.invoke(strategy, endPoint, snapshotInfo);
+
+        Mockito.verify(clvmPoolManager, never()).setClvmLockHostId(any(Long.class), any(Long.class));
+        Mockito.verify(clvmPoolManager, never()).getClvmLockHostId(any(Long.class), any(String.class),
+                any(String.class), any(StoragePool.class), Mockito.anyBoolean());
+    }
+
+    @Test
+    public void testUpdateLockHostForVolume_NullPool_DoesNotSetLockHost() throws Exception {
+        Method method = AncientDataMotionStrategy.class.getDeclaredMethod(
+                "updateLockHostForVolume",
+                EndPoint.class,
+                DataObject.class);
+        method.setAccessible(true);
+
+        EndPoint endPoint = Mockito.mock(EndPoint.class);
+        VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+        ClvmPoolManager clvmPoolManager = injectMockedClvmPoolManager();
+
+        method.invoke(strategy, endPoint, volumeInfo);
+
+        Mockito.verify(clvmPoolManager, never()).setClvmLockHostId(any(Long.class), any(Long.class));
+        Mockito.verify(clvmPoolManager, never()).getClvmLockHostId(any(Long.class), any(String.class),
+                any(String.class), any(StoragePool.class), Mockito.anyBoolean());
     }
 }
