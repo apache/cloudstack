@@ -140,8 +140,16 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
 
     @Override
     public ListResponse<ResourceAlertResponse> listResourceAlerts(ListResourceAlertsCmd cmd) {
+        Long alertRuleInternalId = null;
+        if (cmd.getAlertRuleId() != null) {
+            ResourceAlertRuleVO rule = ruleDao.findByUuid(cmd.getAlertRuleId());
+            if (rule == null) {
+                throw new InvalidParameterValueException("Alert rule not found: " + cmd.getAlertRuleId());
+            }
+            alertRuleInternalId = rule.getId();
+        }
         List<ResourceAlertVO> alerts = alertDao.listByFilters(
-                cmd.getAlertRuleId(), cmd.getResourceId(),
+                alertRuleInternalId, cmd.getResourceId(),
                 cmd.getSeverity(), cmd.getStartDate(), cmd.getEndDate());
 
         List<ResourceAlertResponse> responses = alerts.stream()
@@ -190,7 +198,8 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
         ResourceAlertResponse r = new ResourceAlertResponse();
         r.setObjectName("resourcealert");
         r.setId(vo.getUuid());
-        r.setAlertRuleId(String.valueOf(vo.getAlertRuleId()));
+        ResourceAlertRuleVO rule = ruleDao.findById(vo.getAlertRuleId());
+        r.setAlertRuleId(rule != null ? rule.getUuid() : null);
         r.setResourceId(vo.getResourceId() != null ? String.valueOf(vo.getResourceId()) : null);
         r.setMetricType(vo.getMetricType());
         r.setMetricValue(vo.getMetricValue());

@@ -15,22 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.resourcealert.dao;
+package org.apache.cloudstack.resourcealert;
 
-import java.util.List;
-
-import org.apache.cloudstack.resourcealert.ResourceAlertRule;
-import org.apache.cloudstack.resourcealert.vo.ResourceAlertRuleVO;
-
-import com.cloud.utils.db.GenericDao;
-
-public interface ResourceAlertRuleDao extends GenericDao<ResourceAlertRuleVO, Long> {
-
-    ResourceAlertRuleVO findByUuid(String uuid);
-
-    List<ResourceAlertRuleVO> listActive();
-
-    List<ResourceAlertRuleVO> listByAccountId(long accountId);
-
-    List<ResourceAlertRuleVO> listByResourceTypeAndId(ResourceAlertRule.ResourceType resourceType, Long resourceId);
+public interface ResourceAlertManager {
+    void evaluateRules();
 }
