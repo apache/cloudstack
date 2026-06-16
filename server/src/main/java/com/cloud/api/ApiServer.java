@@ -100,7 +100,7 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.LoginCmdResponse;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.context.ErrorMessageResolver;
+import org.apache.cloudstack.context.ResponseMessageResolver;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.events.EventDistributor;
@@ -1671,7 +1671,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             apiResponse.setErrorCode(ex.getErrorCode().getHttpCode());
             apiResponse.setErrorText(ex.getDescription());
             apiResponse.setResponseName(responseName);
-            ErrorMessageResolver.updateExceptionResponse(apiResponse, ex);
+            ResponseMessageResolver.updateExceptionResponse(apiResponse, ex);
             final ArrayList<ExceptionProxyObject> idList = ex.getIdProxyList();
             if (idList != null) {
                 for (ExceptionProxyObject exceptionProxyObject : idList) {

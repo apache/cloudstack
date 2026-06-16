@@ -44,7 +44,7 @@ import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @RunWith(MockitoJUnitRunner.class)
-public class ErrorMessageResolverTest {
+public class ResponseMessageResolverTest {
 
     @Mock
     CallContext callContextMock;
@@ -66,6 +66,7 @@ public class ErrorMessageResolverTest {
     public void tearDown() throws Exception {
         callContextMocked.close();
         propertiesUtilMocked.close();
+        ResponseMessageResolver.clearCache();
         if (tmpFile != null) {
             try {
                 Files.deleteIfExists(tmpFile);
@@ -77,14 +78,14 @@ public class ErrorMessageResolverTest {
     @Test
     public void getVariableNamesInErrorKey_shouldReturnEmptyListForTemplateWithoutVariables() {
         String template = "This is a template without variables.";
-        List<String> result = ErrorMessageResolver.getVariableNamesInErrorKey(template);
+        List<String> result = ResponseMessageResolver.getVariableNamesInErrorKey(template);
         Assert.assertTrue("Result should be an empty list", result.isEmpty());
     }
 
     @Test
     public void getVariableNamesInErrorKey_shouldExtractSingleVariable() {
         String template = "This is a template with one variable: {{variable}}.";
-        List<String> result = ErrorMessageResolver.getVariableNamesInErrorKey(template);
+        List<String> result = ResponseMessageResolver.getVariableNamesInErrorKey(template);
         Assert.assertEquals("Result should contain one variable", 1, result.size());
         Assert.assertEquals("Variable name should be 'variable'", "variable", result.get(0));
     }
@@ -92,7 +93,7 @@ public class ErrorMessageResolverTest {
     @Test
     public void getVariableNamesInErrorKey_shouldExtractMultipleVariables() {
         String template = "This template has {{var1}} and {{var2}}.";
-        List<String> result = ErrorMessageResolver.getVariableNamesInErrorKey(template);
+        List<String> result = ResponseMessageResolver.getVariableNamesInErrorKey(template);
         Assert.assertEquals("Result should contain two variables", 2, result.size());
         Assert.assertEquals("First variable name should be 'var1'", "var1", result.get(0));
         Assert.assertEquals("Second variable name should be 'var2'", "var2", result.get(1));
@@ -101,7 +102,7 @@ public class ErrorMessageResolverTest {
     @Test
     public void getVariableNamesInErrorKey_shouldIgnoreMalformedVariables() {
         String template = "This template has {{var1} and {{var2}}.";
-        List<String> result = ErrorMessageResolver.getVariableNamesInErrorKey(template);
+        List<String> result = ResponseMessageResolver.getVariableNamesInErrorKey(template);
         Assert.assertEquals("Result should contain one valid variable", 1, result.size());
         Assert.assertEquals("Variable name should be 'var2'", "var2", result.get(0));
     }
@@ -109,14 +110,14 @@ public class ErrorMessageResolverTest {
     @Test
     public void getVariableNamesInErrorKey_shouldHandleEmptyTemplate() {
         String template = "";
-        List<String> result = ErrorMessageResolver.getVariableNamesInErrorKey(template);
+        List<String> result = ResponseMessageResolver.getVariableNamesInErrorKey(template);
         Assert.assertTrue("Result should be an empty list", result.isEmpty());
     }
 
     @Test
     public void getVariableNamesInErrorKey_shouldHandleTemplateWithOnlyVariables() {
         String template = "{{var1}}{{var2}}{{var3}}";
-        List<String> result = ErrorMessageResolver.getVariableNamesInErrorKey(template);
+        List<String> result = ResponseMessageResolver.getVariableNamesInErrorKey(template);
         Assert.assertEquals("Result should contain three variables", 3, result.size());
         Assert.assertEquals("First variable name should be 'var1'", "var1", result.get(0));
         Assert.assertEquals("Second variable name should be 'var2'", "var2", result.get(1));
@@ -127,7 +128,7 @@ public class ErrorMessageResolverTest {
     public void getCombinedMetadataFromErrorTemplate_shouldReturnMetadataWhenNoVariablesInTemplate() {
         String template = "This is a template without variables.";
         Map<String, Object> metadata = Map.of("key1", "value1");
-        Map<String, Object> result = ErrorMessageResolver.getCombinedMetadataFromErrorTemplate(template, metadata);
+        Map<String, Object> result = ResponseMessageResolver.getCombinedMetadataFromErrorTemplate(template, metadata);
         Assert.assertEquals("Result should match the input metadata", metadata, result);
     }
 
@@ -136,7 +137,7 @@ public class ErrorMessageResolverTest {
         String template = "This template has {{var1}}.";
         Map<String, Object> metadata = Map.of();
         when(callContextMock.getErrorContextParameters()).thenReturn(Map.of());
-        Map<String, Object> result = ErrorMessageResolver.getCombinedMetadataFromErrorTemplate(template, metadata);
+        Map<String, Object> result = ResponseMessageResolver.getCombinedMetadataFromErrorTemplate(template, metadata);
         Assert.assertTrue("Result should be an empty map", result.isEmpty());
     }
 
@@ -145,7 +146,7 @@ public class ErrorMessageResolverTest {
         String template = "This template has {{var1}} and {{var2}}.";
         Map<String, Object> metadata = Map.of("key1", "value1");
         when(callContextMock.getErrorContextParameters()).thenReturn(Map.of("var1", "valueVar1", "var2", "valueVar2"));
-        Map<String, Object> result = ErrorMessageResolver.getCombinedMetadataFromErrorTemplate(template, metadata);
+        Map<String, Object> result = ResponseMessageResolver.getCombinedMetadataFromErrorTemplate(template, metadata);
         Assert.assertEquals("Result should contain combined metadata", 3, result.size());
         Assert.assertEquals("Result should contain context metadata for var1", "valueVar1", result.get("var1"));
         Assert.assertEquals("Result should contain context metadata for var2", "valueVar2", result.get("var2"));
@@ -157,7 +158,7 @@ public class ErrorMessageResolverTest {
         String template = "This template has {{var1}} and {{var2}}.";
         Map<String, Object> metadata = Map.of("key1", "value1");
         when(callContextMock.getErrorContextParameters()).thenReturn(Map.of("var1", "valueVar1"));
-        Map<String, Object> result = ErrorMessageResolver.getCombinedMetadataFromErrorTemplate(template, metadata);
+        Map<String, Object> result = ResponseMessageResolver.getCombinedMetadataFromErrorTemplate(template, metadata);
         Assert.assertEquals("Result should contain combined metadata", 2, result.size());
         Assert.assertEquals("Result should contain context metadata for var1", "valueVar1", result.get("var1"));
         Assert.assertEquals("Result should contain provided metadata", "value1", result.get("key1"));
@@ -167,21 +168,21 @@ public class ErrorMessageResolverTest {
     public void getCombinedMetadataFromErrorTemplate_shouldReturnProvidedMetadataWhenTemplateIsEmpty() {
         String template = "";
         Map<String, Object> metadata = Map.of("key1", "value1");
-        Map<String, Object> result = ErrorMessageResolver.getCombinedMetadataFromErrorTemplate(template, metadata);
+        Map<String, Object> result = ResponseMessageResolver.getCombinedMetadataFromErrorTemplate(template, metadata);
         Assert.assertEquals("Result should match the input metadata", metadata, result);
     }
 
     @Test
     public void getStringMap_shouldReturnEmptyMapWhenMetadataIsEmpty() {
         Map<String, Object> metadata = Map.of();
-        Map<String, String> result = ErrorMessageResolver.getStringMap(metadata);
+        Map<String, String> result = ResponseMessageResolver.getStringMap(metadata);
         Assert.assertTrue("Result should be an empty map", result.isEmpty());
     }
 
     @Test
     public void getStringMap_shouldConvertAllMetadataValuesToStrings() {
         Map<String, Object> metadata = Map.of("key1", 123, "key2", true, "key3", "value");
-        Map<String, String> result = ErrorMessageResolver.getStringMap(metadata);
+        Map<String, String> result = ResponseMessageResolver.getStringMap(metadata);
         Assert.assertEquals("Result should contain all keys", 3, result.size());
         Assert.assertEquals("Value for key1 should be '123'", "123", result.get("key1"));
         Assert.assertEquals("Value for key2 should be 'true'", "true", result.get("key2"));
@@ -193,7 +194,7 @@ public class ErrorMessageResolverTest {
         Map<String, Object> metadata = new LinkedHashMap<>();
         metadata.put("key1", null);
         metadata.put("key2", "value");
-        Map<String, String> result = ErrorMessageResolver.getStringMap(metadata);
+        Map<String, String> result = ResponseMessageResolver.getStringMap(metadata);
         Assert.assertEquals("Result should contain all keys", 2, result.size());
         Assert.assertNull("Value for key1 should be null", result.get("key1"));
         Assert.assertEquals("Value for key2 should be 'value'", "value", result.get("key2"));
@@ -201,20 +202,20 @@ public class ErrorMessageResolverTest {
 
     @Test
     public void getStringMap_shouldReturnEmptyMapWhenMetadataIsNull() {
-        Map<String, String> result = ErrorMessageResolver.getStringMap(null);
+        Map<String, String> result = ResponseMessageResolver.getStringMap(null);
         Assert.assertTrue("Result should be an empty map", result.isEmpty());
     }
 
     @Test
     public void getMetadataObjectStringValue_shouldReturnNullWhenObjectIsNull() {
-        Assert.assertNull(ErrorMessageResolver.getMetadataObjectStringValue(null));
+        Assert.assertNull(ResponseMessageResolver.getMetadataObjectStringValue(null));
     }
 
     @Test
     public void getMetadataObjectStringValue_shouldReturnUuidWhenNameIsUnavailable() {
         Identity identityMock = Mockito.mock(Identity.class);
         when(identityMock.getUuid()).thenReturn("uuid-1234");
-        Assert.assertEquals("uuid-1234", ErrorMessageResolver.getMetadataObjectStringValue(identityMock));
+        Assert.assertEquals("uuid-1234", ResponseMessageResolver.getMetadataObjectStringValue(identityMock));
     }
 
     @Test
@@ -222,26 +223,26 @@ public class ErrorMessageResolverTest {
         DataCenter identityMock = Mockito.mock(DataCenter.class);
         when(identityMock.getUuid()).thenReturn("uuid-1234");
         when(identityMock.getName()).thenReturn("TestName");
-        Assert.assertEquals("'TestName'", ErrorMessageResolver.getMetadataObjectStringValue(identityMock));
+        Assert.assertEquals("'TestName'", ResponseMessageResolver.getMetadataObjectStringValue(identityMock));
     }
 
     @Test
     public void getMetadataObjectStringValue_shouldIncludeIdAndUuidForRootAdmin() {
         DataCenter internalIdentityMock = Mockito.mock(DataCenter.class);
         when(internalIdentityMock.getUuid()).thenReturn("uuid-5678");
-        if (ErrorMessageResolver.INCLUDE_METADATA_ID_IN_MESSAGE) {
+        if (ResponseMessageResolver.INCLUDE_METADATA_ID_IN_MESSAGE) {
             when(internalIdentityMock.getId()).thenReturn(42L);
         }
         when(internalIdentityMock.getName()).thenReturn("AdminName");
         when(CallContext.current().isCallingAccountRootAdmin()).thenReturn(true);
-        String expected = String.format("'AdminName' (%sUUID: uuid-5678)", ErrorMessageResolver.INCLUDE_METADATA_ID_IN_MESSAGE ? "ID: 42, " : "");
-        Assert.assertEquals(expected, ErrorMessageResolver.getMetadataObjectStringValue(internalIdentityMock));
+        String expected = String.format("'AdminName' (%sUUID: uuid-5678)", ResponseMessageResolver.INCLUDE_METADATA_ID_IN_MESSAGE ? "ID: 42, " : "");
+        Assert.assertEquals(expected, ResponseMessageResolver.getMetadataObjectStringValue(internalIdentityMock));
     }
 
     @Test
     public void getMetadataObjectStringValue_shouldFallbackToToStringWhenNameAndUuidAreUnavailable() {
         Object obj = new Object();
-        Assert.assertEquals(obj.toString(), ErrorMessageResolver.getMetadataObjectStringValue(obj));
+        Assert.assertEquals(obj.toString(), ResponseMessageResolver.getMetadataObjectStringValue(obj));
     }
 
     @Test
@@ -249,14 +250,14 @@ public class ErrorMessageResolverTest {
         DataCenter internalIdentityMock = Mockito.mock(DataCenter.class);
         when(internalIdentityMock.getName()).thenReturn("UserName");
         when(CallContext.current().isCallingAccountRootAdmin()).thenReturn(false);
-        Assert.assertEquals("'UserName'", ErrorMessageResolver.getMetadataObjectStringValue(internalIdentityMock));
+        Assert.assertEquals("'UserName'", ResponseMessageResolver.getMetadataObjectStringValue(internalIdentityMock));
     }
 
     @Test
     public void expand_shouldReturnTemplateWhenMetadataIsEmpty() {
         String template = "This is a template with no placeholders.";
         Map<String, String> metadata = Map.of();
-        String result = ErrorMessageResolver.expand(template, metadata);
+        String result = ResponseMessageResolver.expand(template, metadata);
         Assert.assertEquals("This is a template with no placeholders.", result);
     }
 
@@ -264,7 +265,7 @@ public class ErrorMessageResolverTest {
     public void expand_shouldReplaceSinglePlaceholderWithMetadataValue() {
         String template = "Hello, {{name}}!";
         Map<String, String> metadata = Map.of("name", "World");
-        String result = ErrorMessageResolver.expand(template, metadata);
+        String result = ResponseMessageResolver.expand(template, metadata);
         Assert.assertEquals("Hello, World!", result);
     }
 
@@ -272,7 +273,7 @@ public class ErrorMessageResolverTest {
     public void expand_shouldReplaceMultiplePlaceholdersWithMetadataValues() {
         String template = "Hello, {{name}}! Today is {{day}}.";
         Map<String, String> metadata = Map.of("name", "Alice", "day", "Monday");
-        String result = ErrorMessageResolver.expand(template, metadata);
+        String result = ResponseMessageResolver.expand(template, metadata);
         Assert.assertEquals("Hello, Alice! Today is Monday.", result);
     }
 
@@ -280,7 +281,7 @@ public class ErrorMessageResolverTest {
     public void expand_shouldIgnorePlaceholdersWithoutMatchingMetadata() {
         String template = "Hello, {{name}}! Your age is {{age}}.";
         Map<String, String> metadata = Map.of("name", "Bob");
-        String result = ErrorMessageResolver.expand(template, metadata);
+        String result = ResponseMessageResolver.expand(template, metadata);
         Assert.assertEquals("Hello, Bob! Your age is {{age}}.", result);
     }
 
@@ -289,14 +290,14 @@ public class ErrorMessageResolverTest {
         String template = "Hello, {{name}}!";
         Map<String, String> metadata = new LinkedHashMap<>();
         metadata.put("name", null);
-        String result = ErrorMessageResolver.expand(template, metadata);
+        String result = ResponseMessageResolver.expand(template, metadata);
         Assert.assertEquals("Hello, {{name}}!", result);
     }
 
     @Test
     public void expand_shouldReturnTemplateWhenMetadataIsNull() {
         String template = "This is a template with no placeholders.";
-        String result = ErrorMessageResolver.expand(template, null);
+        String result = ResponseMessageResolver.expand(template, null);
         Assert.assertEquals("This is a template with no placeholders.", result);
     }
 
@@ -304,14 +305,14 @@ public class ErrorMessageResolverTest {
     public void expand_shouldHandleTemplateWithNoPlaceholders() {
         String template = "This template has no placeholders.";
         Map<String, String> metadata = Map.of("key", "value");
-        String result = ErrorMessageResolver.expand(template, metadata);
+        String result = ResponseMessageResolver.expand(template, metadata);
         Assert.assertEquals("This template has no placeholders.", result);
     }
 
     @Test
     public void getMessage_shouldReturnErrorKeyWhenTemplateIsNull() {
         String errorKey = "error.key";
-        String result = ErrorMessageResolver.getMessage(errorKey, Map.of());
+        String result = ResponseMessageResolver.getMessage(errorKey, Map.of());
         Assert.assertEquals(errorKey, result);
     }
 
@@ -333,7 +334,7 @@ public class ErrorMessageResolverTest {
         Map<String, Object> metadata = Map.of("field", "value");
         createTempFileWithTemplate(errorKey, template);
         when(callContextMock.getErrorContextParameters()).thenReturn(Map.of());
-        String result = ErrorMessageResolver.getMessage(errorKey, metadata);
+        String result = ResponseMessageResolver.getMessage(errorKey, metadata);
         Assert.assertEquals("Error occurred: value", result);
     }
 
@@ -342,7 +343,7 @@ public class ErrorMessageResolverTest {
         String errorKey = "error.key";
         String template = "Error occurred.";
         createTempFileWithTemplate(errorKey, template);
-        String result = ErrorMessageResolver.getMessage(errorKey, Map.of());
+        String result = ResponseMessageResolver.getMessage(errorKey, Map.of());
         Assert.assertEquals("Error occurred.", result);
     }
 
@@ -351,7 +352,7 @@ public class ErrorMessageResolverTest {
         String errorKey = "error.key";
         String template = "Error occurred.";
         createTempFileWithTemplate(errorKey, template);
-        String result = ErrorMessageResolver.getMessage(errorKey, null);
+        String result = ResponseMessageResolver.getMessage(errorKey, null);
         Assert.assertEquals("Error occurred.", result);
     }
 
@@ -362,7 +363,7 @@ public class ErrorMessageResolverTest {
         Map<String, Object> metadata = Map.of("field1", "value1");
         createTempFileWithTemplate(errorKey, template);
         when(callContextMock.getErrorContextParameters()).thenReturn(Map.of("field2", "value2"));
-        String result = ErrorMessageResolver.getMessage(errorKey, metadata);
+        String result = ResponseMessageResolver.getMessage(errorKey, metadata);
         Assert.assertEquals("Error in value1 and value2.", result);
     }
 
@@ -378,7 +379,7 @@ public class ErrorMessageResolverTest {
         when(cre.getMetadata()).thenReturn(metadata);
         createTempFileWithTemplate(key, template);
 
-        ErrorMessageResolver.updateExceptionResponse(response, cre);
+        ResponseMessageResolver.updateExceptionResponse(response, cre);
 
         Assert.assertEquals(key, response.getErrorTextKey());
         Assert.assertEquals("Error occurred: value", response.getErrorText());
@@ -395,7 +396,7 @@ public class ErrorMessageResolverTest {
         when(cre.getMessageKey()).thenReturn(key);
         when(cre.getMetadata()).thenReturn(metadata);
 
-        ErrorMessageResolver.updateExceptionResponse(response, cre);
+        ResponseMessageResolver.updateExceptionResponse(response, cre);
 
         Assert.assertEquals(key, response.getErrorTextKey());
         Assert.assertEquals(key, response.getErrorText());
@@ -411,7 +412,7 @@ public class ErrorMessageResolverTest {
         when(cre.getMessageKey()).thenReturn(null);
         when(cre.getCause()).thenReturn(new RuntimeException());
 
-        ErrorMessageResolver.updateExceptionResponse(response, cre);
+        ResponseMessageResolver.updateExceptionResponse(response, cre);
 
         Assert.assertNull(response.getErrorTextKey());
         Assert.assertNull(response.getErrorMetadata());
@@ -433,7 +434,7 @@ public class ErrorMessageResolverTest {
         when(cause.getMetadata()).thenReturn(metadata);
         createTempFileWithTemplate(key, template);
 
-        ErrorMessageResolver.updateExceptionResponse(response, cre);
+        ResponseMessageResolver.updateExceptionResponse(response, cre);
 
         Assert.assertEquals(key, response.getErrorTextKey());
         Assert.assertEquals("Error occurred: value", response.getErrorText());
@@ -451,7 +452,7 @@ public class ErrorMessageResolverTest {
         when(cre.getMetadata()).thenReturn(null);
         createTempFileWithTemplate(key, template);
 
-        ErrorMessageResolver.updateExceptionResponse(response, cre);
+        ResponseMessageResolver.updateExceptionResponse(response, cre);
 
         Assert.assertEquals(key, response.getErrorTextKey());
         Assert.assertEquals("Error occurred.", response.getErrorText());

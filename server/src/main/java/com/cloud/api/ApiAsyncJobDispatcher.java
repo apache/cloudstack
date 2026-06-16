@@ -28,7 +28,7 @@ import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ExceptionResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.context.ErrorMessageResolver;
+import org.apache.cloudstack.context.ResponseMessageResolver;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
@@ -134,7 +134,7 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
             response.setErrorCode(errorCode);
             response.setErrorText(errorMsg);
             if (e instanceof CloudRuntimeException) {
-                ErrorMessageResolver.updateExceptionResponse(response, (CloudRuntimeException) e);
+                ResponseMessageResolver.updateExceptionResponse(response, (CloudRuntimeException) e);
             }
             response.setResponseName((cmdObj == null) ? "unknowncommandresponse" : cmdObj.getCommandName());
 

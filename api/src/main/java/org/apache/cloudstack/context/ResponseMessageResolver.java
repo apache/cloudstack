@@ -44,9 +44,9 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-public class ErrorMessageResolver {
+public class ResponseMessageResolver {
     private static final Logger LOG =
-            LogManager.getLogger(ErrorMessageResolver.class);
+            LogManager.getLogger(ResponseMessageResolver.class);
 
     protected static final String ERROR_MESSAGES_FILENAME = "error-messages.json";
     protected static final String ERROR_KEY_ADMIN_SUFFIX = ".admin";
@@ -62,7 +62,16 @@ public class ErrorMessageResolver {
 
     private static volatile long lastModified = -1;
 
-    private ErrorMessageResolver() {
+    private ResponseMessageResolver() {
+    }
+
+    /**
+     * Clears the cached templates and last modified timestamp.
+     * Useful for testing to ensure cache isolation between tests.
+     */
+    protected static synchronized void clearCache() {
+        templates = Collections.emptyMap();
+        lastModified = -1;
     }
 
     protected static List<String> getVariableNamesInErrorKey(String template) {
