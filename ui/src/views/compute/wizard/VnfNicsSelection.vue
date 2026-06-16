@@ -50,7 +50,7 @@
       <template #network="{ record }">
         <a-form-item style="display: block" :name="'nic-' + record.deviceid">
           <a-select
-            :disabled="deployasis && templateNics && templateNics.length > 0"
+            :disabled="templateNics && templateNics.length > 0"
             @change="updateNicNetworkValue($event, record.deviceid)"
             optionFilterProp="label"
             :filterOption="(input, option) => {
@@ -87,10 +87,6 @@ export default {
     preFillContent: {
       type: Object,
       default: () => {}
-    },
-    deployasis: {
-      type: Boolean,
-      default: false
     }
   },
   data () {
