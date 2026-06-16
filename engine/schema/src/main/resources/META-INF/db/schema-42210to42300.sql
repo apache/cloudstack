@@ -208,3 +208,12 @@ INSERT INTO cloud.role_permissions (uuid, role_id, rule, permission, sort_order)
 SELECT uuid(), role_id, 'quotaResourceStatement', permission, sort_order
 FROM cloud.role_permissions rp
 WHERE rule = 'quotaStatement' AND NOT EXISTS(SELECT 1 FROM cloud.role_permissions rp_ WHERE rp.role_id = rp_.role_id AND rp_.rule = 'quotaResourceStatement');
+
+--- Change nw_rate and mc_rate column types from smallint unsigned to int unsigned to support larger rate values
+ALTER TABLE `cloud`.`service_offering`
+    MODIFY COLUMN `nw_rate` int unsigned DEFAULT 200 COMMENT 'network rate throttle mbits/s',
+    MODIFY COLUMN `mc_rate` int unsigned DEFAULT 10 COMMENT 'mcast rate throttle mbits/s';
+
+ALTER TABLE `cloud`.`network_offerings`
+    MODIFY COLUMN `nw_rate` int unsigned COMMENT 'network rate throttle mbits/s',
+    MODIFY COLUMN `mc_rate` int unsigned COMMENT 'mcast rate throttle mbits/s';
