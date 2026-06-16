@@ -28,5 +28,6 @@
     <bean id="resourceAlertRuleJoinDao" class="org.apache.cloudstack.resourcealert.dao.ResourceAlertRuleJoinDaoImpl" />
     <bean id="resourceAlertDao" class="org.apache.cloudstack.resourcealert.dao.ResourceAlertDaoImpl" />
     <bean id="resourceAlertService" class="org.apache.cloudstack.resourcealert.ResourceAlertServiceImpl" />
+    <bean id="resourceAlertManager" class="org.apache.cloudstack.resourcealert.ResourceAlertManagerImpl" />
 
 </beans>

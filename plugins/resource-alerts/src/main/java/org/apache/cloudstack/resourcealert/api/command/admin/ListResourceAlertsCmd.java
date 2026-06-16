@@ -31,7 +31,6 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.resourcealert.ResourceAlert;
 import org.apache.cloudstack.resourcealert.ResourceAlertService;
 import org.apache.cloudstack.resourcealert.api.response.ResourceAlertResponse;
-import org.apache.cloudstack.resourcealert.api.response.ResourceAlertRuleResponse;
 
 @APICommand(name = "listResourceAlerts",
         description = "Lists fired resource alerts",
@@ -44,10 +43,9 @@ public class ListResourceAlertsCmd extends BaseListCmd {
     @Inject
     ResourceAlertService resourceAlertService;
 
-    @Parameter(name = "alertruleid", type = CommandType.UUID,
-            entityType = ResourceAlertRuleResponse.class,
-            description = "filter by the rule that fired the alert")
-    private Long alertRuleId;
+    @Parameter(name = "alertruleid", type = CommandType.STRING,
+            description = "UUID of the alert rule to filter by")
+    private String alertRuleId;
 
     @Parameter(name = "resourceid", type = CommandType.LONG,
             description = "filter by the resource that triggered the alert")
@@ -65,7 +63,7 @@ public class ListResourceAlertsCmd extends BaseListCmd {
             description = "filter alerts fired on or before this date")
     private Date endDate;
 
-    public Long getAlertRuleId() { return alertRuleId; }
+    public String getAlertRuleId() { return alertRuleId; }
     public Long getResourceId() { return resourceId; }
     public String getSeverity() { return severity; }
     public Date getStartDate() { return startDate; }

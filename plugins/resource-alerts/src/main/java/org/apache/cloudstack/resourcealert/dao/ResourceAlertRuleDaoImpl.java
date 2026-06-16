@@ -28,10 +28,15 @@ import com.cloud.utils.db.SearchCriteria;
 
 public class ResourceAlertRuleDaoImpl extends GenericDaoBase<ResourceAlertRuleVO, Long> implements ResourceAlertRuleDao {
 
+    private final SearchBuilder<ResourceAlertRuleVO> activeSearch;
     private final SearchBuilder<ResourceAlertRuleVO> accountIdSearch;
     private final SearchBuilder<ResourceAlertRuleVO> resourceTypeAndIdSearch;
 
     public ResourceAlertRuleDaoImpl() {
+        activeSearch = createSearchBuilder();
+        activeSearch.and("removed", activeSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
+        activeSearch.done();
+
         accountIdSearch = createSearchBuilder();
         accountIdSearch.and("accountId", accountIdSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         accountIdSearch.done();
@@ -40,6 +45,12 @@ public class ResourceAlertRuleDaoImpl extends GenericDaoBase<ResourceAlertRuleVO
         resourceTypeAndIdSearch.and("resourceType", resourceTypeAndIdSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
         resourceTypeAndIdSearch.and("resourceId", resourceTypeAndIdSearch.entity().getResourceId(), SearchCriteria.Op.EQ);
         resourceTypeAndIdSearch.done();
+    }
+
+    @Override
+    public List<ResourceAlertRuleVO> listActive() {
+        SearchCriteria<ResourceAlertRuleVO> sc = activeSearch.create();
+        return listBy(sc);
     }
 
     @Override
