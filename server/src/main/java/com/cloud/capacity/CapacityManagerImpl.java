@@ -172,9 +172,6 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
             return true;
         }
         HostVO host = _hostDao.findById(hostId);
-        if (HypervisorType.External.equals(host.getHypervisorType())) {
-            return true;
-        }
         return releaseVmCapacity(vm, moveFromReserved, moveToReserved, host);
     }
 
@@ -983,9 +980,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
       }
 
       if ((newState == State.Starting || newState == State.Migrating || event == Event.AgentReportMigrated) && vm.getHostId() != null) {
-        if (vm.getLastHostId() != null) {
-          releaseVmCapacity(vm, true, false, vm.getLastHostId());
-        }
+        releaseVmCapacity(vm, true, false, lastHost);
         allocateVmCapacity(vm);
       }
 

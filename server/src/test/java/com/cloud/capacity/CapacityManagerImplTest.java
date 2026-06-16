@@ -21,7 +21,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doNothing;
@@ -46,6 +45,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.host.Host;
+import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
@@ -174,6 +174,8 @@ public class CapacityManagerImplTest {
     public void testPostStateTransitionReleasesStaleReservationWhenStartingOnDifferentHost() {
         final Long oldHostId = 1L;
         final Long newHostId = 2L;
+        HostVO oldHost = mock(HostVO.class);
+        when(hostDao.findById(oldHostId)).thenReturn(oldHost);
 
         VirtualMachine vm = mock(VirtualMachine.class);
         when(vm.getHostId()).thenReturn(newHostId);
@@ -181,7 +183,7 @@ public class CapacityManagerImplTest {
 
         doNothing().when(capacityManager).allocateVmCapacity(any(VirtualMachine.class));
         doReturn(true).when(capacityManager).releaseVmCapacity(
-                any(VirtualMachine.class), anyBoolean(), anyBoolean(), anyLong());
+                any(VirtualMachine.class), anyBoolean(), anyBoolean(), any(Host.class));
 
         StateMachine2.Transition<State, Event> transition = new StateMachine2.Transition<>(
                 State.Stopped, Event.StartRequested, State.Starting, Collections.emptyList());
@@ -189,13 +191,15 @@ public class CapacityManagerImplTest {
 
         capacityManager.postStateTransitionEvent(transition, vm, true, opaque);
 
-        verify(capacityManager).releaseVmCapacity(vm, true, false, oldHostId);
+        verify(capacityManager).releaseVmCapacity(vm, true, false, oldHost);
         verify(capacityManager).allocateVmCapacity(vm);
     }
 
     @Test
     public void testPostStateTransitionReleasesReservationWhenStartingOnSameHost() {
         final Long hostId = 1L;
+        HostVO h = mock(HostVO.class);
+        when(hostDao.findById(hostId)).thenReturn(h);
 
         VirtualMachine vm = mock(VirtualMachine.class);
         when(vm.getHostId()).thenReturn(hostId);
@@ -203,7 +207,7 @@ public class CapacityManagerImplTest {
 
         doNothing().when(capacityManager).allocateVmCapacity(any(VirtualMachine.class));
         doReturn(true).when(capacityManager).releaseVmCapacity(
-                any(VirtualMachine.class), anyBoolean(), anyBoolean(), anyLong());
+                any(VirtualMachine.class), anyBoolean(), anyBoolean(), any(Host.class));
 
         StateMachine2.Transition<State, Event> transition = new StateMachine2.Transition<>(
                 State.Stopped, Event.StartRequested, State.Starting, Collections.emptyList());
@@ -211,7 +215,7 @@ public class CapacityManagerImplTest {
 
         capacityManager.postStateTransitionEvent(transition, vm, true, opaque);
 
-        verify(capacityManager).releaseVmCapacity(vm, true, false, hostId);
+        verify(capacityManager).releaseVmCapacity(vm, true, false, h);
         verify(capacityManager).allocateVmCapacity(vm);
     }
 
