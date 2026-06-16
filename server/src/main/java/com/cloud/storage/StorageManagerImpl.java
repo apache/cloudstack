@@ -1058,6 +1058,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         params.put("managed", cmd.isManaged());
         params.put("capacityBytes", cmd.getCapacityBytes());
         params.put("capacityIops", cmd.getCapacityIops());
+        params.put("scheme", uriParams.get("scheme"));
         if (MapUtils.isNotEmpty(uriParams)) {
             params.putAll(uriParams);
         }
@@ -1142,6 +1143,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         } else if (scheme.equalsIgnoreCase("gluster")) {
             if (isHostOrPathBlank) {
                 throw new InvalidParameterValueException("host or path is null, should be gluster://hostname/volume");
+            }
+        } else if (scheme.equalsIgnoreCase("clvm") || scheme.equalsIgnoreCase("clvm_ng")) {
+            if (storagePath == null) {
+                throw new InvalidParameterValueException("path is null, should be " + scheme.toLowerCase() + "://localhost/volume-group-name");
             }
         }
 
