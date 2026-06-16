@@ -73,7 +73,12 @@ public class UpdateStoragePoolCmd extends BaseCmd {
     @Parameter(name = ApiConstants.URL,
                             type = CommandType.STRING,
                             required = false,
-                            description = "the URL of the storage pool",
+                            description = "the URL of the storage pool. Supported only for NFS and Gluster pool type." +
+                                    "The pool must be in Maintenance mode before changing the URL. WARNING: use this parameter" +
+                                    "with caution. It is intended for failover scenarios where the storage content is already " +
+                                    "fully mirrored at the new location. Pointing to a new location without ensuring complete " +
+                                    "data parity will result in data loss or corruption. After the URL is updated, the new mount" +
+                                    "is applied to all connected hosts or restart the Management server",
                             since = "4.19.0")
     private String url;
 

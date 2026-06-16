@@ -1787,7 +1787,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                         && (_storageStats.get(storeId).getCapacityBytes() == 0l
                         || _storageStats.get(storeId).getCapacityBytes() != storageStats.get(storeId).getCapacityBytes())) {
                         // get add to DB rigorously
-                        _storageManager.updateImageStoreStatus(storeId, null, null, storageStats.get(storeId).getCapacityBytes());
+                        _storageManager.updateImageStoreStatus(storeId, null, null, storageStats.get(storeId).getCapacityBytes(), null);
                 }
             }
             // if in _storageStats and not in storageStats it gets discarded

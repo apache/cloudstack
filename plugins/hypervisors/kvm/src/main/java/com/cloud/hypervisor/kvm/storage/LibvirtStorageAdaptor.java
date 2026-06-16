@@ -766,6 +766,39 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             path = path.substring(0, path.length() - 1);
         }
 
+        // For NFS and Gluster pools, if the existing pool's source host or path has changed
+        // (e.g. after a storage URL update), destroy and undefine it so it gets recreated
+        // with the new source below. Restricted to NFS/Gluster only.
+        if (sp != null && (type == StoragePoolType.NetworkFilesystem || type == StoragePoolType.Gluster)) {
+            try {
+                LibvirtStoragePoolDef existingDef = getStoragePoolDef(conn, sp);
+                if (existingDef != null) {
+                    String existingSourceHost = existingDef.getSourceHost();
+                    String existingSourceDir = existingDef.getSourceDir();
+                    boolean hostChanged = host != null && existingSourceHost != null && !existingSourceHost.equals(host);
+                    boolean pathChanged = path != null && existingSourceDir != null && !existingSourceDir.equals(path);
+                    if (hostChanged || pathChanged) {
+                        logger.info("Storage pool {} source has changed (host: {} -> {}, path: {} -> {}); destroying and redefining.",
+                                name, existingSourceHost, host, existingSourceDir, path);
+                        try {
+                            if (sp.isPersistent() == 1) {
+                                sp.destroy();
+                                sp.undefine();
+                            } else {
+                                sp.destroy();
+                            }
+                            sp.free();
+                            sp = null;
+                        } catch (LibvirtException destroyEx) {
+                            logger.error("Failed to destroy storage pool {} with changed source; will attempt to reuse existing pool: {}", name, destroyEx.getMessage());
+                        }
+                    }
+                }
+            } catch (LibvirtException e) {
+                logger.warn("Failed to check existing storage pool {} source path, will attempt to reuse it: {}", name, e.getMessage());
+            }
+        }
+
         if (sp == null) {
             // see if any existing pool by another name is using our storage path.
             // if anyone is, undefine the pool so we can define it as requested.
