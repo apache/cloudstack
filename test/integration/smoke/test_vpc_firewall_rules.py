@@ -43,7 +43,10 @@ class TestVpcFirewallRules(cloudstackTestCase):
         )
         cls._cleanup.append(cls.account)
 
-        cls.services["vpc_offering"]["supportedservices"] = "Vpn,Dhcp,Dns,SourceNat,Lb,UserData,StaticNat,NetworkACL,PortForwarding,Firewall"
+        cls.services["vpc_offering"]["supportedservices"] = (
+            "Vpn,Dhcp,Dns,SourceNat,Lb,UserData,StaticNat,"
+            "NetworkACL,PortForwarding,Firewall"
+        )
         cls.services["vpc_offering"]["serviceProviderList"] = {
             "Vpn": "VpcVirtualRouter",
             "Dhcp": "VpcVirtualRouter",
@@ -68,10 +71,11 @@ class TestVpcFirewallRules(cloudstackTestCase):
             cls.apiclient,
             name="DefaultIsolatedNetworkOfferingForVpcNetworks"
         )
-        cls.assertTrue(network_offering is not None and len(network_offering) > 0,
-                       "No VPC tier network offering found")
+        cls.assertTrue(
+            network_offering is not None and len(network_offering) > 0,
+            "No VPC tier network offering found"
+        )
         cls.network_offering = network_offering[0]
-
         cls.services["vpc"]["cidr"] = "10.20.30.0/24"
         cls.vpc = VPC.create(
             cls.apiclient,
@@ -81,11 +85,13 @@ class TestVpcFirewallRules(cloudstackTestCase):
             account=cls.account.name,
             domainid=cls.account.domainid
         )
-        cls._cleanup.append(cls.vpc)
 
         cls.tier = Network.create(
             cls.apiclient,
-            services={"name": "vpc-fw-tier", "displaytext": "vpc-fw-tier"},
+            services={
+                "name": "vpc-fw-tier",
+                "displaytext": "vpc-fw-tier"
+            },
             accountid=cls.account.name,
             domainid=cls.account.domainid,
             networkofferingid=cls.network_offering.id,
@@ -94,7 +100,6 @@ class TestVpcFirewallRules(cloudstackTestCase):
             gateway="10.20.30.1",
             netmask="255.255.255.0"
         )
-        cls._cleanup.append(cls.tier)
 
     @classmethod
     def tearDownClass(cls):
