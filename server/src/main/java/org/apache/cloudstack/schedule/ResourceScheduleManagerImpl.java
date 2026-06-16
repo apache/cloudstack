@@ -347,10 +347,11 @@ public class ResourceScheduleManagerImpl extends MutualExclusiveIdsManagerBase i
             startDate = Date.from(DateUtil.getZoneDateTime(cmdStartDate, timeZone.toZoneId()).toInstant());
         }
 
-        if (ObjectUtils.anyNotNull(cmdStartDate, cmdEndDate, timeZoneStr) &&
+        boolean enabling = Boolean.TRUE.equals(enabled) && !scheduleVO.getEnabled();
+        if (enabling || (ObjectUtils.anyNotNull(cmdStartDate, cmdEndDate, timeZoneStr) &&
                 (!Objects.equals(originalTimeZone, timeZoneId) ||
                         !Objects.equals(originalStartDate, startDate) ||
-                        !Objects.equals(originalEndDate, endDate))) {
+                        !Objects.equals(originalEndDate, endDate)))) {
             validateStartDateEndDate(Objects.requireNonNullElse(startDate, DateUtils.addMinutes(new Date(), 1)),
                     endDate, timeZone);
         }

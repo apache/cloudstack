@@ -20,6 +20,7 @@ package org.apache.cloudstack.schedule;
 
 import com.cloud.api.ApiGsonHelper;
 import com.cloud.event.ActionEventUtils;
+import com.cloud.event.EventTypes;
 import com.cloud.user.User;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.component.ComponentContext;
@@ -213,8 +214,7 @@ public abstract class BaseScheduleWorker extends ManagerBase {
 
         if (!isResourceValid(schedule.getResourceId())) {
             logger.info("Resource id={} is no longer valid. Disabling schedule {}.", schedule.getResourceId(), schedule);
-            schedule.setEnabled(false);
-            resourceScheduleDao.persist(schedule);
+            disableSchedule(schedule, "owning resource is no longer valid");
             return null;
         }
 
@@ -228,16 +228,14 @@ public abstract class BaseScheduleWorker extends ManagerBase {
 
         if (zonedEnd != null && now.isAfter(zonedEnd)) {
             logger.info("End time has passed. Disabling schedule {}.", schedule);
-            schedule.setEnabled(false);
-            resourceScheduleDao.persist(schedule);
+            disableSchedule(schedule, String.format("end date %s has passed", zonedEnd));
             return null;
         }
 
         ZonedDateTime ts = zonedStart.isAfter(now) ? cron.next(zonedStart) : cron.next(now);
         if (ts == null) {
             logger.info("No next schedule time found. Disabling schedule {}.", schedule);
-            schedule.setEnabled(false);
-            resourceScheduleDao.persist(schedule);
+            disableSchedule(schedule, "schedule has no further occurrences");
             return null;
         }
 
@@ -352,6 +350,18 @@ public abstract class BaseScheduleWorker extends ManagerBase {
     // -------------------------------------------------------------------------
     // Subclass helpers
     // -------------------------------------------------------------------------
+
+    private void disableSchedule(ResourceScheduleVO schedule, String reason) {
+        schedule.setEnabled(false);
+        resourceScheduleDao.persist(schedule);
+        long accountId = getEntityOwnerId(schedule.getResourceId());
+        ActionEventUtils.onScheduledActionEvent(
+                User.UID_SYSTEM, accountId, EventTypes.EVENT_SCHEDULE_UPDATE,
+                String.format("Auto-disabled resource schedule (uuid=%s description='%s') for %s (id=%d): %s",
+                        schedule.getUuid(), schedule.getDescription(),
+                        getResourceTypeName(), schedule.getResourceId(), reason),
+                schedule.getResourceId(), getResourceTypeName(), true, 0);
+    }
 
     public abstract boolean isResourceValid(long resourceId);
 

@@ -19,17 +19,21 @@
 package org.apache.cloudstack.schedule.autoscale;
 
 import com.cloud.event.ActionEventUtils;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.as.AutoScaleManager;
 import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.network.as.AutoScaleVmGroupVO;
 import com.cloud.network.as.dao.AutoScaleVmGroupDao;
+import com.cloud.user.User;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmGroupCmd;
+import org.apache.cloudstack.schedule.ResourceScheduleVO;
 import org.apache.cloudstack.schedule.ResourceScheduledJobVO;
 import org.apache.cloudstack.schedule.dao.ResourceScheduleDao;
 import org.apache.cloudstack.schedule.dao.ResourceScheduleDetailsDao;
 import org.apache.cloudstack.schedule.dao.ResourceScheduledJobDao;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.commons.lang.time.DateUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -43,6 +47,8 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.time.ZoneId;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -125,5 +131,34 @@ public class AutoScaleScheduleWorkerTest {
         Map<String, String> details = new HashMap<>();
         details.put("minmembers", "1");
         worker.validateDetails(AutoScaleScheduleAction.UPDATE, details);
+    }
+
+    @Test
+    public void testScheduleNextJobDisablesWithEventWhenEndDatePassed() {
+        ResourceScheduleVO schedule = Mockito.mock(ResourceScheduleVO.class);
+        AutoScaleVmGroupVO group = Mockito.mock(AutoScaleVmGroupVO.class);
+        Date pastDate = DateUtils.addDays(new Date(), -1);
+
+        Mockito.when(schedule.getEnabled()).thenReturn(true);
+        Mockito.when(schedule.getResourceId()).thenReturn(1L);
+        Mockito.when(schedule.getSchedule()).thenReturn("0 0 * * *");
+        Mockito.when(schedule.getStartDate()).thenReturn(pastDate);
+        Mockito.when(schedule.getEndDate()).thenReturn(pastDate);
+        Mockito.when(schedule.getTimeZoneId()).thenReturn(ZoneId.of("UTC"));
+        Mockito.when(schedule.getUuid()).thenReturn("sched-uuid");
+        Mockito.when(schedule.getDescription()).thenReturn("test schedule");
+        Mockito.when(autoScaleVmGroupDao.findById(1L)).thenReturn(group);
+        Mockito.when(group.getState()).thenReturn(AutoScaleVmGroup.State.ENABLED);
+        Mockito.when(group.getAccountId()).thenReturn(2L);
+
+        worker.scheduleNextJob(schedule, new Date());
+
+        Mockito.verify(schedule).setEnabled(false);
+        Mockito.verify(resourceScheduleDao).persist(schedule);
+        actionEventUtilsMocked.verify(() -> ActionEventUtils.onScheduledActionEvent(
+                Mockito.eq(User.UID_SYSTEM), Mockito.eq(2L),
+                Mockito.eq(EventTypes.EVENT_SCHEDULE_UPDATE),
+                Mockito.contains("end date"),
+                Mockito.eq(1L), Mockito.anyString(), Mockito.eq(true), Mockito.eq(0L)));
     }
 }
