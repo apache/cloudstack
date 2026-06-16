@@ -557,15 +557,18 @@ For each property: condition, violation symptom, severity tier, provenance.
 
 - **Condition**: input matches the documented protocol on B1–B5; the JVM
   is conformant; native code is invoked only via documented hypervisor
-  SDKs (libvirt / vSphere / XenAPI) — CloudStack's own server-side code
-  is Java *(inferred — §14 Q27)*.
+  SDKs (libvirt / vSphere / XenAPI). CloudStack presumes **no limitation
+  on implementation language** — ocaml, python and bash run on hypervisors
+  and go is used on the management server (the set may grow); the
+  memory-safety claims here hold for the **JVM components**, to which the
+  JVM-conformance condition applies *(maintainer: DaanHoogland — §14 Q27)*.
 - **Violation symptom**: heap corruption, OOM-via-input-size attack on a
   surface where the input source is `:8080` / `:8443` / B5; JVM-side
   crashes from a request a normally-RBAC'd user could send.
 - **Severity**: **security-critical** when reachable from network input;
   **`VALID-HARDENING`** when reachable only by a writer who already
   controls the bytes (§3 item 5).
-- *(inferred — §14 Q27)*
+- *(maintainer: DaanHoogland — §14 Q27)*
 
 ### P10 — Bounded RBAC scope of cross-domain visibility (`SHOW`-equivalent listing)
 
@@ -860,6 +863,8 @@ Revise this document when any of the following lands:
 - A change in the signing algorithm or signature scheme on the JSON API
   (e.g. SHA1 → SHA256 by default).
 - A new hypervisor or system VM that adds a new trust boundary.
+- A change in the extension mechanisms implemented by CloudStack
+  *(maintainer: DaanHoogland — §14 Q36)*.
 - A new external-data surface (a new SDN controller integration, a new
   storage provider, a new backup provider).
 - A vulnerability report that cannot be cleanly routed to one of the §13
@@ -986,8 +991,7 @@ a CloudStack-side injection surface. *(maps to §3 item 6, §9)*
 **Q11.** Confirm the unsupported-component list: `tools/marvin/`,
 `test/`, `developer/`, `quickcloud/`, `cloud-cli/`,
 `tools/{devcloud4,devcloud-kvm,appliance,checkstyle,transifex,bugs-wiki,...}`,
-`simulator` hypervisor plugin. Anything to add or remove? *(maps to §3
-item 7)*
+`simulator` hypervisor plugin. Anything to add or remove? **RESOLVED** *(maintainer: DaanHoogland)* — exclude `simulator` and `tools/appliance` explicitly (out of scope for now; a future security-purpose tooling effort may revisit). *(maps to §3 item 7)*
 
 **Q17.** Forward-header gating — the **setting names are confirmed**
 *(maintainer: vishesh92)*: `proxy.header.verify` (the on/off gate),
@@ -1022,98 +1026,86 @@ the effective set, so the supported greenfield encoders are
 default in production packaging, open only when explicitly configured;
 when open, it is unauthenticated by design. A report of "integration
 port allows admin commands without auth" is `OUT-OF-MODEL:
-non-default-build` *if* the operator opened it, else `VALID`. Confirm
-the default. *(maps to §5a, §10, §11a)*
+non-default-build` *if* the operator opened it, else `VALID`. Confirm the default. **RESOLVED** *(maintainer: DaanHoogland)* — default is `0` (disabled); `8096` is set only in test configurations. *(maps to §5a, §10, §11a)*
 
 ### Wave 4 — environment, distributed model, false-friends
 
 **Q13.** Network-fabric assumptions — proposed: at least four logical
 networks (management, public, guest, storage), with the management
 network as the trusted control plane. Is that the canonical model, or
-do you support more compressed topologies (single-fabric) in production?
-*(maps to §5, §10)*
+do you support more compressed topologies (single-fabric) in production? **RESOLVED** *(maintainer: DaanHoogland)* — there are four logical networks (management, public, guest, storage); each may have multiple instances across topologies (e.g. multiple zones) and may be combined within physical networks, but all four logical types must be present for a functional system. *(maps to §5, §10)*
 
 **Q14.** Clock-skew assumption for signature v3 `expires` enforcement —
-proposed: operator's responsibility to keep client + management-server
-clocks roughly in sync. Confirm. *(maps to §5)*
+proposed: operator's responsibility to keep client + management-server clocks roughly in sync. Confirm. **RESOLVED** *(maintainer: DaanHoogland)* — confirmed; operator responsibility (PMC to add to the security model page). *(maps to §5)*
 
 **Q15.** Confirm the filesystem-permissions inventory for sensitive
 files: JCEKS keystore, Root CA private key, JaSypt key + IV,
-`db.properties`. Who owns them, what mode? *(maps to §5, §10)*
+`db.properties`. Who owns them, what mode? **CLARIFIED** *(producer)* — not a CSV inventory of every file in a running system; only the four sensitive artifacts named here (JCEKS keystore, Root CA private key, JaSypt key + IV, `db.properties`), each with its owning UID and file mode. *(awaiting the per-file owner/mode values from the PMC.)* *(maps to §5, §10)*
 
 **Q16.** Confirm the "what CloudStack does not do to its host" inventory
 in §5: no child processes besides agent `Script` invocations / system
 VM provisioning; signal-handlers via servlet container default;
-environment-variable consumption confined to documented set. Anything to
-add? *(maps to §5)*
+environment-variable consumption confined to documented set. Anything to add? **RESOLVED** *(maintainer: DaanHoogland)* — confirmed; nothing to add. *(maps to §5)*
 
 **Q21.** API request size cap and cluster/agent RPC payload size cap —
-are these explicitly bounded, or "whatever Jetty / NIO defaults give"?
-*(maps to §6, §9)*
+are these explicitly bounded, or "whatever Jetty / NIO defaults give"? **RESOLVED** *(maintainer: DaanHoogland)* — the UI server sets an explicit cap, `org.apache.cloudstack.ServerDaemon.DEFAULT_REQUEST_CONTENT_SIZE = 1048576` (1 MiB); for other components the sizes are capped by the upstream components used. *(maps to §6, §9)*
 
 **Q22.** `api.throttling.*` and per-account resource limits — proposed:
-these are the entire DoS-protection surface, with no engine-level
-guard. Confirm. *(maps to §6, §9, §10)*
+these are the entire DoS-protection surface, with no engine-level guard. Confirm. **RESOLVED** *(maintainer: DaanHoogland)* — confirmed; enforced at the API access check, and `api.throttling.enabled` is **`false` by default**. *(maps to §6, §9, §10)*
 
 **Q23.** Decompression behaviour on uploaded QCOW2 / RAW / OVA — proposed:
-no engine-side cap; per-account storage limits + hypervisor limits are
-the bound. Confirm. *(maps to §6, §9)*
+no engine-side cap; per-account storage limits + hypervisor limits are the bound. Confirm. **RESOLVED** *(maintainer: DaanHoogland)* — correct. *(maps to §6, §9)*
 
 **Q24.** Same-host non-`cloudstack` UID — proposed: game-over, no defence
-claimed. Confirm. *(maps to §7, §9)*
+claimed. Confirm. *(maintainer: DaanHoogland notes there is a refusal to add a host with the same IP; whether that also includes a UID check is open — @vishesh92 to confirm. Disposition unchanged pending that.)* *(maps to §7, §9)*
 
-**Q25.** Side-channel observers (cache, branch, hypervisor-shared) — out
-of scope (proposed). *(maps to §7, §9)*
+**Q25.** Side-channel observers (CPU cache timing, branch-predictor / speculative-execution channels e.g. Spectre-class, hypervisor-shared microarchitectural channels) — out of scope (proposed). **RESOLVED** *(maintainer: DaanHoogland)* — agreed, out of scope. *("branch" = branch-predictor / speculative-execution side channels — clarified by producer.)* *(maps to §7, §9)*
 
 **Q26.** Byzantine-internal-peer threshold — confirm CloudStack makes no
 BFT claim, so any compromised cluster peer or agent with a valid
-Root-CA-issued cert is unbounded (proposed). *(maps to §7, §9)*
+Root-CA-issued cert is unbounded (proposed). **RESOLVED** *(maintainer: DaanHoogland)* — agreed; no BFT claim. (A quorum-style mitigation would only be meaningful in larger clusters, not single/dual-node — possible future feature proposal.) *(maps to §7, §9)*
 
 **Q27.** §8 P9 memory-safety — JVM-bounded; is the reachability
 boundary correctly "in-model for the JSON API + B5 input; out-of-model
-for native hypervisor SDK bugs that surface as `Throwable`"? *(maps to
-§8 P9, §9)*
+for native hypervisor SDK bugs that surface as `Throwable`"? **RESOLVED** *(maintainer: DaanHoogland)* — the reachability boundary is right, but **§8 P9 must not imply CloudStack is Java-only** — no implementation-language limitation is presumed (ocaml, python, bash run on hypervisors; go is used on the management server; the set may grow). The memory-safety claims hold for the JVM components only. *(reflected in §8 P9.)* *(maps to §8 P9, §9)*
 
 **Q28.** §8 P10 listing-scope — confirm the §10 invariant "`list*`
 responses are scoped to the principal's domain/account/project". And:
-is information leak via error messages / async-job status / event log
-an in-model concern, or accepted? *(maps to §8 P10, §9, §11)*
+is information leak via error messages / async-job status / event log an in-model concern, or accepted? **RESOLVED** *(maintainer: DaanHoogland)* — in-model: regular system logs (e.g. log4j) are exempt, but other than those, information leaks (via error messages, async-job status, event log) are a concern. *(maps to §8 P10, §9, §11)*
 
 **Q29.** Data-at-rest encryption — confirm CloudStack delegates entirely
 to storage layer / hypervisor (LUKS, Ceph encryption, vSphere VM
-Encryption); no CloudStack-layer encryption of guest volumes. *(maps to
-§9)*
+Encryption); no CloudStack-layer encryption of guest volumes. **RESOLVED** *(maintainer: DaanHoogland)* — correct (delegated to storage layer / hypervisor); *(vishesh92 to confirm)*. *(maps to §9)*
 
 **Q30.** Constant-time comparison — confirm that *only* the API
 signature path uses `ConstantTimeComparator`. Login password compare,
 session cookie compare, console-token compare — none documented
-constant-time. Is that intentional? *(maps to §8, §9)*
+constant-time. Is that intentional? **RESOLVED** *(maintainer: DaanHoogland)* — not intentional — the absence of constant-time comparison on the login-password / session-cookie / console-token paths is a lack of feature (hardening opportunity), not a by-design decision. *(maps to §8, §9)*
 
 **Q31.** Time-of-check-to-time-of-use between RBAC check at API entry
 and orchestration on agent fleet — confirm mid-job RBAC revocation is
-**not** retroactively enforced (proposed). *(maps to §9)*
+**not** retroactively enforced (proposed). **RESOLVED** *(maintainer: DaanHoogland)* — agreed/confirmed. *(maps to §9)*
 
 **Q32.** TLS posture on `:8080` vs `:8443` — confirm production deploys
 behind TLS on `:8443` or behind a TLS-terminating reverse proxy; a bare
-`:8080` HTTP API is dev-only. *(maps to §5a, §10)*
+`:8080` HTTP API is dev-only. **RESOLVED** *(maintainer: DaanHoogland)* — confirmed. *(maps to §5a, §10)*
 
 **Q33.** `security.encryption.key` reuse across environments — confirm
 that reusing the JaSypt key + IV across staging and production is a
-documented misuse. *(maps to §11)*
+documented misuse. **RESOLVED** *(maintainer: DaanHoogland)* — indeed — confirmed misuse. *(maps to §11)*
 
 ### Wave 5 — meta
 
 **Q34.** Should this document live at `docs/threat-model.md` in
 `apache/cloudstack`, or as a page on `cloudstack.apache.org/security/`?
-Or both, with one canonical and the other linked? *(meta)*
+Or both, with one canonical and the other linked? **RESOLVED** *(maintainer: DaanHoogland, vishesh92)* — both: this document is the source of truth, and `cloudstack.apache.org/security` carries an excerpt plus a link to it. *(meta)*
 
 **Q35.** Is there an existing CloudStack threat-model document
 (Confluence, internal, or a `[SECURITY]`-tagged dev@ thread) that this
-should reconcile against rather than supersede? *(meta — §3.1a of the
-rubric)*
+should reconcile against rather than supersede? **RESOLVED** *(maintainer: DaanHoogland)* — `cloudstack.apache.org/security/` is the only existing security model today; this document becomes its source of truth, with the page linking to it. *(meta — §3.1a of the rubric)*
 
 **Q36.** What kind of change should trigger a revision (proposed list in
-§12 — confirm or correct)? *(meta, §12)*
+§12 — confirm or correct)? **RESOLVED** *(maintainer: DaanHoogland)* — confirmed, plus add: a change in the extension mechanisms implemented by CloudStack (now reflected in §12). *(meta, §12)*
 
 **Q37.** §11a is the highest-leverage section for the scan agent's
 suppression list. The current draft has 15 patterns; could the PMC
@@ -1130,7 +1122,7 @@ as separate delta models (`cloudstack-go-threat-model-draft.md`,
 `cloudstack-cloudmonkey-threat-model-draft.md`,
 `cloudstack-terraform-provider-threat-model-draft.md`,
 `cloudstack-kubernetes-provider-threat-model-draft.md`) inheriting §3
-/ §4 / §7 from this document. *(meta, §3 item 9)*
+/ §4 / §7 from this document. **RESOLVED** *(maintainer: DaanHoogland)* — confirmed; the satellites are not the system core (the core runs without them, they cannot run without the core), and there is an added hierarchy — `cloudstack-go` is a dependency of the other three. *(meta, §3 item 9)*
 
 ---
 
