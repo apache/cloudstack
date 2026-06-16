@@ -72,6 +72,7 @@ import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.MonitoringServiceVO;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.dao.RemoteAccessVpnVO;
 import com.cloud.network.dao.Site2SiteVpnConnectionVO;
 import com.cloud.network.lb.LoadBalancingRule;
@@ -567,6 +568,10 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 finalizeMonitorService(cmds, profile, domainRouterVO, provider, publicNics.get(0).second().getId(), true, routerHealthCheckConfig);
             }
 
+            if (reprogramGuestNtwks) {
+                reapplyVpcFirewallIngressRules(cmds, domainRouterVO, provider);
+            }
+
             for (final Pair<Nic, Network> nicNtwk : guestNics) {
                 final Nic guestNic = nicNtwk.first();
                 final long guestNetworkId = guestNic.getNetworkId();
@@ -636,6 +641,26 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 }
             }
         }
+    }
+
+    private void reapplyVpcFirewallIngressRules(final Commands cmds, final DomainRouterVO domainRouterVO, final Provider provider) {
+        final Long vpcId = domainRouterVO.getVpcId();
+        if (vpcId == null) {
+            return;
+        }
+
+        if (!_vpcMgr.isProviderSupportServiceInVpc(vpcId, Service.Firewall, provider)) {
+            return;
+        }
+
+        final List<FirewallRule> firewallRulesIngress = new ArrayList<>(
+                _rulesDao.listByVpcPurposeTrafficType(vpcId, FirewallRule.Purpose.Firewall, FirewallRule.TrafficType.Ingress));
+        if (firewallRulesIngress.isEmpty()) {
+            return;
+        }
+
+        logger.debug("Found {} VPC firewall ingress rule(s) to apply as a part of domR {} start for VPC {}", firewallRulesIngress.size(), domainRouterVO, vpcId);
+        _commandSetupHelper.createFirewallRulesCommands(firewallRulesIngress, domainRouterVO, cmds, null);
     }
 
     protected boolean sendNetworkRulesToRouter(final long routerId, final long networkId, final boolean reprogramNetwork) throws ResourceUnavailableException {

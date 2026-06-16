@@ -2018,6 +2018,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             } else {
                 buf.append(" has_public_network=false");
             }
+            boolean isVpcFirewallEnabled = vpcManager.isProviderSupportServiceInVpc(vpc.getId(), Service.Firewall, Provider.VPCVirtualRouter);
+            buf.append(" vpc_firewall_enabled=").append(isVpcFirewallEnabled);
         } else if (!publicNetwork) {
             type = "dhcpsrvr";
         } else {

@@ -139,7 +139,13 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
                 return false;
             }
         } else {
-            if (!_networkMdl.isProviderSupportServiceInNetwork(network.getId(), service, getProvider())) {
+            boolean supportsService;
+            if (service == Service.Firewall) {
+                supportsService = _vpcMgr.isProviderSupportServiceInVpc(network.getVpcId(), service, getProvider());
+            } else {
+                supportsService = _networkMdl.isProviderSupportServiceInNetwork(network.getId(), service, getProvider());
+            }
+            if (!supportsService) {
                 logger.trace("Element " + getProvider().getName() + " doesn't support service " + service.getName() + " in the network " + network);
                 return false;
             }
@@ -412,10 +418,6 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         vpnCapabilities.putAll(capabilities.get(Service.Vpn));
         vpnCapabilities.put(Capability.VpnTypes, "s2svpn");
         capabilities.put(Service.Vpn, vpnCapabilities);
-
-        // remove firewall capability
-        capabilities.remove(Service.Firewall);
-
         // add network ACL capability
         final Map<Capability, String> networkACLCapabilities = new HashMap<Capability, String>();
         networkACLCapabilities.put(Capability.SupportedProtocols, "tcp,udp,icmp");
