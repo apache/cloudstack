@@ -78,12 +78,12 @@ public class DisableUserCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "disabling user: " + this._uuidMgr.getUuid(User.class, getId());
+        return "Disabling User with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("User ID: " + this._uuidMgr.getUuid(User.class, getId()));
+        CallContext.current().setEventDetails("User ID: " + getResourceUuid(ApiConstants.ID));
         UserAccount user = _regionService.disableUser(this);
 
         if (user != null) {

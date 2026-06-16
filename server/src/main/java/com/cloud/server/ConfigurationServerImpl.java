@@ -222,9 +222,6 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             _configDao.update(Config.SecStorageEncryptCopy.key(), Config.SecStorageEncryptCopy.getCategory(), "false");
             logger.debug("ConfigurationServer made secondary storage copy encrypt set to false.");
 
-            _configDao.update("secstorage.secure.copy.cert", "realhostip");
-            logger.debug("ConfigurationServer made secondary storage copy use realhostip.");
-
             _configDao.update("user.password.encoders.exclude", "MD5,LDAP,PLAINTEXT");
             logger.debug("Configuration server excluded insecure encoders");
 
@@ -614,7 +611,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             }
             // FIXME: take a global database lock here for safety.
             boolean onWindows = isOnWindows();
-            if(!onWindows) {
+            if (!onWindows && !(privkeyfile.exists() && pubkeyfile.exists())) {
                 Script.runSimpleBashScript("if [ -f " + privkeyfile + " ]; then rm -f " + privkeyfile + "; fi; ssh-keygen -t ecdsa -m PEM -N '' -f " + privkeyfile + " -q 2>/dev/null || ssh-keygen -t ecdsa -N '' -f " + privkeyfile + " -q");
             }
 

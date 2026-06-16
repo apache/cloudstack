@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.user.backup;
 
 import javax.inject.Inject;
 
-import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -124,7 +123,12 @@ public class CreateBackupCmd extends BaseAsyncCreateCmd {
 
     @Override
     public ApiCommandResourceType getApiResourceType() {
-        return ApiCommandResourceType.Backup;
+        return ApiCommandResourceType.VirtualMachine;
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return vmId;
     }
 
     @Override
@@ -139,8 +143,7 @@ public class CreateBackupCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        String vmUuid = _uuidMgr.getUuid(VirtualMachine.class, getVmId());
-        return "Creating backup for Instance " + vmUuid;
+        return "Creating backup for Instance " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID);
     }
 
     @Override

@@ -425,6 +425,8 @@ export default {
         }
         if (values.extraconfig && values.extraconfig.length > 0) {
           params.extraconfig = encodeURIComponent(values.extraconfig)
+        } else if (this.combinedExtraConfig) {
+          params.cleanupextraconfig = true
         }
         this.loading = true
 

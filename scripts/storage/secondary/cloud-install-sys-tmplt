@@ -44,6 +44,7 @@ failed() {
 }
 
 #set -x
+umask 0022 # ensure we have the proper permissions even on hardened deployments
 mflag=
 fflag=
 ext="vhd"

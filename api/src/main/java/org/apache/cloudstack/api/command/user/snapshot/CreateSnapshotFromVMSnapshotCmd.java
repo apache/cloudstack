@@ -143,7 +143,7 @@ public class CreateSnapshotFromVMSnapshotCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return "Creating Snapshot from Instance Snapshot : " + this._uuidMgr.getUuid(VMSnapshot.class, getVMSnapshotId());
+        return "Creating Snapshot from Instance Snapshot : " + getResourceUuid(ApiConstants.VOLUME_ID);
     }
 
     @Override
@@ -166,7 +166,7 @@ public class CreateSnapshotFromVMSnapshotCmd extends BaseAsyncCreateCmd {
     public void execute() {
         VMSnapshot vmSnapshot = _vmSnapshotService.getVMSnapshotById(getVMSnapshotId());
         logger.info("CreateSnapshotFromVMSnapshotCmd with {} and Snapshot [ID: {}, UUID: {}]", vmSnapshot, getEntityId(), getEntityUuid());
-        CallContext.current().setEventDetails("Instance Snapshot Id: " + vmSnapshot.getUuid());
+        CallContext.current().setEventDetails("Instance Snapshot ID: " + vmSnapshot.getUuid());
         Snapshot snapshot = null;
         try {
             snapshot = _snapshotService.backupSnapshotFromVmSnapshot(getEntityId(), getVmId(), getVolumeId(), getVMSnapshotId());

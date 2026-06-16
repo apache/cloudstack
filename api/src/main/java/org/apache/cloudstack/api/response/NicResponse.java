@@ -146,6 +146,10 @@ public class NicResponse extends BaseResponse {
     @Param(description = "Public IP address associated with this NIC via Static NAT rule")
     private String publicIp;
 
+    @SerializedName(ApiConstants.ENABLED)
+    @Param(description = "whether the NIC is enabled or not")
+    private Boolean isEnabled;
+
     public void setVmId(String vmId) {
         this.vmId = vmId;
     }
@@ -415,5 +419,13 @@ public class NicResponse extends BaseResponse {
 
     public void setPublicIp(String publicIp) {
         this.publicIp = publicIp;
+    }
+
+    public Boolean getEnabled() {
+        return isEnabled;
+    }
+
+    public void setEnabled(Boolean enabled) {
+        isEnabled = enabled;
     }
 }

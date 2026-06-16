@@ -54,7 +54,7 @@ import java.util.Set;
 public class ImportBackupOfferingCmd extends BaseAsyncCmd {
 
     @Inject
-    private BackupManager backupManager;
+    protected BackupManager backupManager;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -86,7 +86,8 @@ public class ImportBackupOfferingCmd extends BaseAsyncCmd {
             type = CommandType.LIST,
             collectionType = CommandType.UUID,
             entityType = DomainResponse.class,
-            description = "the ID of the containing domain(s), null for public offerings")
+            description = "the ID of the containing domain(s), null for public offerings",
+            since = "4.23.0")
     private List<Long> domainIds;
 
     /////////////////////////////////////////////////////
@@ -156,6 +157,6 @@ public class ImportBackupOfferingCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Importing backup offering: " + name + " (external ID: " + externalId + ") on zone ID " + zoneId ;
+        return "Importing backup offering: " + name + " (external ID: " + externalId + ") on zone with ID: " + getResourceUuid(ApiConstants.ZONE_ID) ;
     }
 }

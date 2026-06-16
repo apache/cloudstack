@@ -37,9 +37,13 @@
                   value="#{pluggableAPIAuthenticatorsRegistry.registered}" />
     </bean>
 
-    <bean id="roleManagerImpl" class="org.apache.cloudstack.acl.RoleManagerImpl" />
+    <bean id="roleManagerImpl" class="org.apache.cloudstack.acl.RoleManagerImpl">
+        <property name="apiAccessCheckers" value="#{apiAclCheckersRegistry.registered}" />
+    </bean>
 
     <bean id="projRoleManagerImpl" class="org.apache.cloudstack.acl.ProjectRoleManagerImpl" />
+
+    <bean id="ApiKeyPairManagerImpl" class="org.apache.cloudstack.acl.ApiKeyPairManagerImpl" />
 
     <bean id="accountManagerImpl" class="com.cloud.user.AccountManagerImpl">
         <property name="userAuthenticators"
@@ -178,6 +182,8 @@
     <bean id="networkUsageManagerImpl" class="com.cloud.network.NetworkUsageManagerImpl" />
 
     <bean id="oCFS2ManagerImpl" class="com.cloud.storage.OCFS2ManagerImpl" />
+
+    <bean id="clvmPoolManager" class="com.cloud.storage.clvm.ClvmPoolManager" />
 
     <bean id="outOfBandManagementServiceImpl" class="org.apache.cloudstack.outofbandmanagement.OutOfBandManagementServiceImpl">
         <property name="outOfBandManagementDrivers" value="#{outOfBandManagementDriversRegistry.registered}" />
@@ -342,6 +348,8 @@
     </bean>
 
     <bean id="backupRepositoryService" class="org.apache.cloudstack.backup.BackupRepositoryServiceImpl" />
+
+    <bean id="kvmBackupExportService" class="org.apache.cloudstack.backup.KVMBackupExportServiceImpl" />
 
     <bean id="storageLayer" class="com.cloud.storage.JavaStorageLayer" />
 

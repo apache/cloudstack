@@ -69,9 +69,6 @@ public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
     ConfigKey<String> ConsoleProxyCapacityScanInterval = new ConfigKey<>(String.class, "consoleproxy.capacityscan.interval", "Console Proxy", "30000",
             "The time interval(in millisecond) to scan whether or not system needs more console proxy to ensure minimal standby capacity", false, null);
 
-    ConfigKey<Integer> ConsoleProxyCmdPort = new ConfigKey<>(Integer.class, "consoleproxy.cmd.port", "Console Proxy", String.valueOf(DEFAULT_PROXY_CMD_PORT),
-            "Console proxy command port that is used to communicate with management server", false, ConfigKey.Scope.Zone, null);
-
     ConfigKey<Boolean> ConsoleProxyRestart = new ConfigKey<>(Boolean.class, "consoleproxy.restart", "Console Proxy", "true",
             "Console proxy restart flag, defaults to true", true, ConfigKey.Scope.Zone, null);
 

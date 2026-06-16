@@ -20,6 +20,7 @@ import com.cloud.api.ApiServlet;
 import com.cloud.domain.Domain;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
+import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.api.ApiServerService;
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.exception.CloudAuthenticationException;
@@ -34,6 +35,8 @@ import org.apache.cloudstack.api.auth.APIAuthenticationType;
 import org.apache.cloudstack.api.auth.APIAuthenticator;
 import org.apache.cloudstack.api.auth.PluggableAPIAuthenticator;
 import org.apache.cloudstack.api.response.LoginCmdResponse;
+import org.apache.cloudstack.resourcedetail.UserDetailVO;
+import org.apache.cloudstack.resourcedetail.dao.UserDetailsDao;
 import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Inject;
@@ -46,7 +49,6 @@ import java.net.InetAddress;
 
 @APICommand(name = "login", description = "Logs a user into the CloudStack. A successful login attempt will generate a JSESSIONID cookie value that can be passed in subsequent Query command calls until the \"logout\" command has been issued or the session has expired.", requestHasSensitiveInfo = true, responseObject = LoginCmdResponse.class, entityType = {})
 public class DefaultLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthenticator {
-
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -65,6 +67,9 @@ public class DefaultLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthe
 
     @Inject
     ApiServerService _apiServer;
+
+    @Inject
+    UserDetailsDao userDetailsDao;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -107,22 +112,18 @@ public class DefaultLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthe
         if (HTTPMethod.valueOf(req.getMethod()) != HTTPMethod.POST) {
             throw new ServerApiException(ApiErrorCode.METHOD_NOT_ALLOWED, "Please use HTTP POST to authenticate using this API");
         }
+
         // FIXME: ported from ApiServlet, refactor and cleanup
         final String[] username = (String[])params.get(ApiConstants.USERNAME);
         final String[] password = (String[])params.get(ApiConstants.PASSWORD);
-        String[] domainIdArr = (String[])params.get(ApiConstants.DOMAIN_ID);
-
-        if (domainIdArr == null) {
-            domainIdArr = (String[])params.get(ApiConstants.DOMAIN__ID);
-        }
-        final String[] domainName = (String[])params.get(ApiConstants.DOMAIN);
+        String domainIdStr = _apiServer.getDomainId(params);
         Long domainId = null;
-        if ((domainIdArr != null) && (domainIdArr.length > 0)) {
+        if (StringUtils.isNotEmpty(domainIdStr)) {
             try {
                 //check if UUID is passed in for domain
-                domainId = _apiServer.fetchDomainId(domainIdArr[0]);
+                domainId = _apiServer.fetchDomainId(domainIdStr);
                 if (domainId == null) {
-                    domainId = Long.parseLong(domainIdArr[0]);
+                    domainId = Long.parseLong(domainIdStr);
                 }
                 auditTrailSb.append(" domainid=" + domainId);// building the params for POST call
             } catch (final NumberFormatException e) {
@@ -135,6 +136,7 @@ public class DefaultLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthe
         }
 
         String domain = null;
+        final String[] domainName = (String[])params.get(ApiConstants.DOMAIN);
         domain = getDomainName(auditTrailSb, domainName, domain);
 
         String serializedResponse = null;
@@ -151,8 +153,10 @@ public class DefaultLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthe
                 if (userAccount != null && User.Source.SAML2 == userAccount.getSource()) {
                     throw new CloudAuthenticationException("User is not allowed CloudStack login");
                 }
-                return ApiResponseSerializer.toSerializedString(_apiServer.loginUser(session, username[0], pwd, domainId, domain, remoteAddress, params),
+                serializedResponse = ApiResponseSerializer.toSerializedString(_apiServer.loginUser(session, username[0], pwd, domainId, domain, remoteAddress, params),
                         responseType);
+                userDetailsDao.removeDetail(userAccount.getId(), UserDetailVO.OauthLogin);
+                return serializedResponse;
             } catch (final CloudAuthenticationException ex) {
                 ApiServlet.invalidateHttpSession(session, "fall through to API key,");
                 // TODO: fall through to API key, or just fail here w/ auth error? (HTTP 401)

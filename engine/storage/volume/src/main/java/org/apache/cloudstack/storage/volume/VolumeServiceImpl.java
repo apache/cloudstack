@@ -32,6 +32,8 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.clvm.ClvmPoolManager;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -221,6 +223,8 @@ public class VolumeServiceImpl implements VolumeService {
     private PassphraseDao passphraseDao;
     @Inject
     protected DiskOfferingDao diskOfferingDao;
+    @Inject
+    ClvmPoolManager clvmPoolManager;
 
     public VolumeServiceImpl() {
     }
@@ -387,6 +391,7 @@ public class VolumeServiceImpl implements VolumeService {
             logger.info("Expunge volume with no data store specified");
             if (canVolumeBeRemoved(volume.getId())) {
                 logger.info("Volume {} is not referred anywhere, remove it from volumes table", volume);
+                snapshotMgr.deletePoliciesForVolume(volume.getId());
                 volDao.remove(volume.getId());
             }
             future.complete(result);
@@ -394,9 +399,9 @@ public class VolumeServiceImpl implements VolumeService {
         }
 
         // Find out if the volume is at state of download_in_progress on secondary storage
-        VolumeDataStoreVO volumeStore = _volumeStoreDao.findByVolume(volume.getId());
-        if (volumeStore != null) {
-            if (volumeStore.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOAD_IN_PROGRESS) {
+        VolumeDataStoreVO volumeOnImageStore = _volumeStoreDao.findByVolume(volume.getId());
+        if (volumeOnImageStore != null) {
+            if (volumeOnImageStore.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOAD_IN_PROGRESS) {
                 String msg = String.format("Volume: %s is currently being uploaded; can't delete it.", volume);
                 logger.debug(msg);
                 result.setSuccess(false);
@@ -415,13 +420,14 @@ public class VolumeServiceImpl implements VolumeService {
 
         if (!volumeExistsOnPrimary(vol)) {
             // not created on primary store
-            if (volumeStore == null) {
+            if (volumeOnImageStore == null) {
                 // also not created on secondary store
                 if (logger.isDebugEnabled()) {
-                    logger.debug("Marking volume that was never created as destroyed: " + vol);
+                    logger.debug("Marking volume that was never created as destroyed: {}", vol);
                 }
                 VMTemplateVO template = templateDao.findById(vol.getTemplateId());
                 if (template != null && !template.isDeployAsIs()) {
+                    snapshotMgr.deletePoliciesForVolume(vol.getId());
                     volDao.remove(vol.getId());
                     future.complete(result);
                     return future;
@@ -433,8 +439,21 @@ public class VolumeServiceImpl implements VolumeService {
         if (volume.getDataStore().getRole() == DataStoreRole.Image) {
             // no need to change state in volumes table
             volume.processEventOnly(Event.DestroyRequested);
+            if (volumeOnImageStore == null) {
+                logger.debug("Volume {} doesn't exist on image store, no need to delete", vol);
+                future.complete(result);
+                return future;
+            }
         } else if (volume.getDataStore().getRole() == DataStoreRole.Primary) {
+            if (vol.getState() == Volume.State.Expunging) {
+                logger.info("Volume {} is already in Expunging, retrying", volume);
+            }
             volume.processEvent(Event.ExpungeRequested);
+            if (!volumeExistsOnPrimary(vol)) {
+                logger.debug("Volume {} doesn't exist on primary storage, no need to delete", vol);
+                future.complete(result);
+                return future;
+            }
         }
 
         DeleteVolumeContext<VolumeApiResult> context = new DeleteVolumeContext<>(null, vo, future);
@@ -455,13 +474,11 @@ public class VolumeServiceImpl implements VolumeService {
 
     private boolean volumeExistsOnPrimary(VolumeVO vol) {
         Long poolId = vol.getPoolId();
-
         if (poolId == null) {
             return false;
         }
 
         PrimaryDataStore primaryStore = dataStoreMgr.getPrimaryDataStore(poolId);
-
         if (primaryStore == null) {
             return false;
         }
@@ -471,8 +488,7 @@ public class VolumeServiceImpl implements VolumeService {
         }
 
         String volumePath = vol.getPath();
-
-        if (volumePath == null || volumePath.trim().isEmpty()) {
+        if (StringUtils.isBlank(volumePath)) {
             return false;
         }
 
@@ -493,6 +509,7 @@ public class VolumeServiceImpl implements VolumeService {
 
                 if (canVolumeBeRemoved(vo.getId())) {
                     logger.info("Volume {} is not referred anywhere, remove it from volumes table", vo);
+                    snapshotMgr.deletePoliciesForVolume(vo.getId());
                     volDao.remove(vo.getId());
                 }
 
@@ -1656,7 +1673,6 @@ public class VolumeServiceImpl implements VolumeService {
         // mark volume entry in volumes table as destroy state
         VolumeInfo vol = volFactory.getVolume(volumeId);
         vol.stateTransit(Volume.Event.DestroyRequested);
-        snapshotMgr.deletePoliciesForVolume(volumeId);
         annotationDao.removeByEntityType(AnnotationService.EntityType.VOLUME.name(), vol.getUuid());
 
         vol.stateTransit(Volume.Event.OperationSucceeded);
@@ -2957,5 +2973,174 @@ public class VolumeServiceImpl implements VolumeService {
 
     protected String buildVolumePath(long accountId, long volumeId) {
         return String.format("%s/%s/%s", TemplateConstants.DEFAULT_VOLUME_ROOT_DIR, accountId, volumeId);
+    }
+
+    @Override
+    public boolean transferVolumeLock(VolumeInfo volume, Long sourceHostId, Long destHostId) {
+        StoragePoolVO pool = storagePoolDao.findById(volume.getPoolId());
+        if (pool == null) {
+            logger.error("Cannot transfer volume lock for volume {}: storage pool not found", volume.getUuid());
+            return false;
+        }
+
+        logger.info("Transferring CLVM lock for volume {} (pool: {}) from host {} to host {}",
+                volume.getUuid(), pool.getName(), sourceHostId, destHostId);
+
+        return clvmPoolManager.transferClvmVolumeLock(volume.getUuid(), volume.getId(), volume.getPath(),
+                pool, sourceHostId, destHostId);
+    }
+
+    @Override
+    public Long findVolumeLockHost(VolumeInfo volume) {
+        if (volume == null) {
+            logger.warn("Cannot find volume lock host: volume is null");
+            return null;
+        }
+
+        StoragePoolVO pool = storagePoolDao.findById(volume.getPoolId());
+
+        Long lockHostId = clvmPoolManager.getClvmLockHostId(
+                volume.getId(),
+                volume.getUuid(),
+                volume.getPath(),
+                pool,
+                true
+        );
+
+        if (lockHostId != null) {
+            logger.debug("Found actual lock host {} for volume {}", lockHostId, volume.getUuid());
+            return lockHostId;
+        }
+
+        Long instanceId = volume.getInstanceId();
+        if (instanceId != null) {
+            VMInstanceVO vmInstance = vmDao.findById(instanceId);
+            if (vmInstance != null && vmInstance.getHostId() != null) {
+                logger.debug("Volume {} is attached to VM {} on host {}",
+                        volume.getUuid(), vmInstance.getUuid(), vmInstance.getHostId());
+                return vmInstance.getHostId();
+            }
+        }
+
+        if (pool != null && pool.getClusterId() != null) {
+            List<HostVO> hosts = _hostDao.findByClusterId(pool.getClusterId());
+            if (hosts != null && !hosts.isEmpty()) {
+                for (HostVO host : hosts) {
+                    if (host.getStatus() == com.cloud.host.Status.Up) {
+                        logger.debug("Using fallback: first UP host {} in cluster {} for volume {}",
+                                host.getId(), pool.getClusterId(), volume.getUuid());
+                        return host.getId();
+                    }
+                }
+            }
+        }
+
+        logger.warn("Could not determine lock host for volume {}", volume.getUuid());
+        return null;
+    }
+
+    @Override
+    public VolumeInfo performLockMigration(VolumeInfo volume, Long destHostId) {
+        if (volume == null) {
+            throw new CloudRuntimeException("Cannot perform CLVM lock migration: volume is null");
+        }
+
+        String volumeUuid = volume.getUuid();
+        logger.info("Starting CLVM lock migration for volume {} (id: {}) to host {}",
+                volumeUuid, volume.getUuid(), destHostId);
+
+        Long sourceHostId = findVolumeLockHost(volume);
+        if (sourceHostId == null) {
+            logger.warn("Could not determine source host for CLVM volume {} lock, assuming volume is not exclusively locked",
+                    volumeUuid);
+            sourceHostId = destHostId;
+        }
+
+        if (sourceHostId.equals(destHostId)) {
+            logger.info("CLVM volume {} already has lock on destination host {}, no migration needed",
+                    volumeUuid, destHostId);
+            return volume;
+        }
+
+        logger.info("Migrating CLVM volume {} lock from host {} to host {}",
+                volumeUuid, sourceHostId, destHostId);
+
+        boolean success = transferVolumeLock(volume, sourceHostId, destHostId);
+        if (!success) {
+            throw new CloudRuntimeException(
+                    String.format("Failed to transfer CLVM lock for volume %s from host %s to host %s",
+                            volumeUuid, sourceHostId, destHostId));
+        }
+
+        logger.info("Successfully migrated CLVM volume {} lock from host {} to host {}",
+                volumeUuid, sourceHostId, destHostId);
+
+        return volFactory.getVolume(volume.getId());
+    }
+
+    @Override
+    public boolean areBothPoolsClvmType(StoragePoolType volumePoolType, StoragePoolType vmPoolType) {
+        if (volumePoolType == null || vmPoolType == null) {
+            logger.debug("Cannot check if both pools are CLVM type: one or both pool types are null");
+            return false;
+        }
+        return ClvmPoolManager.isClvmPoolType(volumePoolType) &&
+               ClvmPoolManager.isClvmPoolType(vmPoolType);
+    }
+
+    @Override
+    public boolean isLockTransferRequired(VolumeInfo volumeToAttach, StoragePoolType volumePoolType, StoragePoolType vmPoolType,
+                                          Long volumePoolId, Long vmPoolId, Long vmHostId) {
+        if (volumePoolType != null && !ClvmPoolManager.isClvmPoolType(volumePoolType)) {
+            return false;
+        }
+
+        if (volumePoolId == null || !volumePoolId.equals(vmPoolId)) {
+            return false;
+        }
+
+        Long volumeLockHostId = findVolumeLockHost(volumeToAttach);
+
+        if (volumeLockHostId == null) {
+            VolumeVO volumeVO = _volumeDao.findById(volumeToAttach.getId());
+            if (volumeVO != null && volumeVO.getState() == Volume.State.Ready && volumeVO.getInstanceId() == null) {
+                logger.debug("CLVM volume {} is detached on same pool, lock transfer may be needed",
+                        volumeToAttach.getUuid());
+                return true;
+            }
+        }
+
+        if (volumeLockHostId != null && vmHostId != null && !volumeLockHostId.equals(vmHostId)) {
+            logger.info("CLVM lock transfer required: Volume {} lock is on host {} but VM is on host {}",
+                    volumeToAttach.getUuid(), volumeLockHostId, vmHostId);
+            return true;
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean isLightweightMigrationNeeded(StoragePoolType volumePoolType, StoragePoolType vmPoolType,
+                                                String volumePoolPath, String vmPoolPath) {
+        if (!areBothPoolsClvmType(volumePoolType, vmPoolType)) {
+            return false;
+        }
+
+        String volumeVgName = extractVgNameFromPath(volumePoolPath);
+        String vmVgName = extractVgNameFromPath(vmPoolPath);
+
+        if (volumeVgName != null && volumeVgName.equals(vmVgName)) {
+            logger.info("CLVM lightweight migration detected: Volume is in same VG ({}), only lock transfer needed (no data copy)", volumeVgName);
+            return true;
+        }
+
+        return false;
+    }
+
+    private String extractVgNameFromPath(String poolPath) {
+        if (poolPath == null) {
+            return null;
+        }
+        return poolPath.startsWith("/") ? poolPath.substring(1) : poolPath;
     }
 }

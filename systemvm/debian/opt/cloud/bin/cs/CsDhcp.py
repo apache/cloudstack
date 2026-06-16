@@ -110,7 +110,7 @@ class CsDhcp(CsDataBag):
             if gn.get_dns() and device:
                 sline = "dhcp-option=tag:interface-%s-%s,6" % (device, idx)
                 dns_list = [x for x in gn.get_dns() if x]
-                if (self.config.is_vpc() or self.config.is_router()) and ('is_vr_guest_gateway' in gn.data and gn.data['is_vr_guest_gateway']):
+                if self.config.is_vpc() and not gn.is_vr_guest_gateway():
                   if gateway in dns_list:
                     dns_list.remove(gateway)
                   if gn.data['router_guest_ip'] != ip:

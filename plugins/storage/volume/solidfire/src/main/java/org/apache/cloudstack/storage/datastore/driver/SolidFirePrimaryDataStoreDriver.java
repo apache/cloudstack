@@ -433,7 +433,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     public long getUsedIops(StoragePool storagePool) {
         long usedIops = 0;
 
-        List<VolumeVO> volumes = volumeDao.findByPoolId(storagePool.getId(), null);
+        List<VolumeVO> volumes = volumeDao.findNonDestroyedVolumesByPoolId(storagePool.getId(), null);
 
         if (volumes != null) {
             for (VolumeVO volume : volumes) {

@@ -46,12 +46,24 @@
         <dependency>
             <groupId>io.minio</groupId>
             <artifactId>minio</artifactId>
-            <version>8.5.2</version>
+            <version>${cs.minio.version}</version>
         </dependency>
         <dependency>
             <groupId>io.minio</groupId>
             <artifactId>minio-admin</artifactId>
-            <version>8.5.2</version>
+            <version>${cs.minio.version}</version>
+        </dependency>
+        <!-- Pin okhttp3 to the version required by minio 8.6.0+, overriding the older
+             version transitively pulled by influxdb-java -->
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+            <version>5.1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>logging-interceptor</artifactId>
+            <version>5.1.0</version>
         </dependency>
     </dependencies>
 </project>

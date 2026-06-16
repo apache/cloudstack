@@ -67,39 +67,33 @@
               <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
           </template>
-          <a-select
+          <infinite-scroll-select
             id="domain-selection"
             v-model:value="form.domainid"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            :loading="domainLoading"
+            api="listDomains"
+            :apiParams="domainsApiParams"
+            resourceType="domain"
+            optionValueKey="id"
+            optionLabelKey="path"
+            defaultIcon="block-outlined"
+            :defaultOption="{ id: null, path: ''}"
+            allowClear="true"
             :placeholder="apiParams.domainid.description"
-            @change="val => { handleDomainChanged(val) }">
-            <a-select-option v-for="opt in domains" :key="opt.id" :label="opt.path || opt.name || opt.description || ''">
-              {{ opt.path || opt.name || opt.description }}
-            </a-select-option>
-          </a-select>
+            @change-option-value="handleDomainChanged" />
         </a-form-item>
         <a-form-item name="account" ref="account" v-if="isAdminOrDomainAdmin && ['Local'].includes(form.scope) && form.domainid">
           <template #label>
             <tooltip-label :title="$t('label.account')" :tooltip="apiParams.account.description"/>
           </template>
-          <a-select
+          <infinite-scroll-select
             v-model:value="form.account"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            :loading="accountLoading"
-            :placeholder="apiParams.account.description">
-            <a-select-option v-for="opt in accounts" :key="opt.id" :label="opt.name">
-              {{ opt.name }}
-            </a-select-option>
-          </a-select>
+            api="listAccounts"
+            :apiParams="accountsApiParams"
+            resourceType="account"
+            optionValueKey="name"
+            optionLabelKey="name"
+            defaultIcon="team-outlined"
+            :placeholder="apiParams.account.description" />
         </a-form-item>
         <a-form-item name="payloadurl" ref="payloadurl">
           <template #label>
@@ -155,26 +149,23 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { getAPI, postAPI } from '@/api'
-import _ from 'lodash'
+import { postAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import TestWebhookDeliveryView from '@/components/view/TestWebhookDeliveryView'
+import InfiniteScrollSelect from '@/components/widgets/InfiniteScrollSelect.vue'
 
 export default {
   name: 'CreateWebhook',
   mixins: [mixinForm],
   components: {
     TooltipLabel,
-    TestWebhookDeliveryView
+    TestWebhookDeliveryView,
+    InfiniteScrollSelect
   },
   props: {},
   data () {
     return {
-      domains: [],
-      domainLoading: false,
-      accounts: [],
-      accountLoading: false,
       loading: false,
       testDeliveryAllowed: false,
       testDeliveryLoading: false
@@ -185,9 +176,6 @@ export default {
   },
   created () {
     this.initForm()
-    if (['Domain', 'Local'].includes(this.form.scope)) {
-      this.fetchDomainData()
-    }
   },
   computed: {
     isAdminOrDomainAdmin () {
@@ -201,6 +189,21 @@ export default {
         return this.form.payloadurl.toLowerCase().startsWith('https://')
       }
       return false
+    },
+    domainsApiParams () {
+      return {
+        listAll: true,
+        showicon: true,
+        details: 'min'
+      }
+    },
+    accountsApiParams () {
+      if (!this.form.domainid) {
+        return null
+      }
+      return {
+        domainid: this.form.domainid
+      }
     }
   },
   methods: {
@@ -227,46 +230,6 @@ export default {
     },
     updateTestDeliveryLoading (value) {
       this.testDeliveryLoading = value
-    },
-    fetchDomainData () {
-      this.domainLoading = true
-      this.domains = [
-        {
-          id: null,
-          name: ''
-        }
-      ]
-      this.form.domainid = null
-      this.form.account = null
-      getAPI('listDomains', {}).then(json => {
-        const listdomains = json.listdomainsresponse.domain
-        this.domains = this.domains.concat(listdomains)
-      }).finally(() => {
-        this.domainLoading = false
-        if (this.arrayHasItems(this.domains)) {
-          this.form.domainid = null
-        }
-      })
-    },
-    fetchAccountData () {
-      this.accounts = []
-      this.form.account = null
-      if (!this.form.domainid) {
-        return
-      }
-      this.accountLoading = true
-      var params = {
-        domainid: this.form.domainid
-      }
-      getAPI('listAccounts', params).then(json => {
-        const listAccounts = json.listaccountsresponse.account || []
-        this.accounts = listAccounts
-      }).finally(() => {
-        this.accountLoading = false
-        if (this.arrayHasItems(this.accounts)) {
-          this.form.account = this.accounts[0].id
-        }
-      })
     },
     handleSubmit (e) {
       e.preventDefault()
@@ -300,10 +263,8 @@ export default {
           return
         }
         if (values.account) {
-          const accountItem = _.find(this.accounts, (option) => option.id === values.account)
-          if (accountItem) {
-            params.account = accountItem.name
-          }
+          // values.account is the account name (optionValueKey="name")
+          params.account = values.account
         }
         this.loading = true
         postAPI('createWebhook', params).then(json => {
@@ -331,14 +292,11 @@ export default {
       }, 1)
     },
     handleScopeChange (e) {
-      if (['Domain', 'Local'].includes(this.form.scope)) {
-        this.fetchDomainData()
-      }
+      this.form.domainid = null
+      this.form.account = null
     },
     handleDomainChanged (domainid) {
-      if (domainid) {
-        this.fetchAccountData()
-      }
+      this.form.account = null
     }
   }
 }

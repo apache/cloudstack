@@ -105,6 +105,11 @@ public class UpdateNetworkCmd extends BaseAsyncCustomIdCmd implements UserCmd {
     @Parameter(name = ApiConstants.SOURCE_NAT_IP, type = CommandType.STRING, description = "IPV4 address to be assigned to the public interface of the network router. This address must already be acquired for this network", since = "4.19")
     private String sourceNatIP;
 
+    @Parameter(name = ApiConstants.KEEP_MAC_ADDRESS_ON_PUBLIC_NIC,
+            description = ApiConstants.PARAMETER_DESCRIPTION_KEEP_MAC_ADDRESS_ON_PUBLIC_NIC,
+            type = CommandType.BOOLEAN, since = "4.23.0", authorized = {RoleType.Admin})
+    private Boolean keepMacAddressOnPublicNic;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -184,6 +189,10 @@ public class UpdateNetworkCmd extends BaseAsyncCustomIdCmd implements UserCmd {
 
     public String getSourceNatIP() {
         return sourceNatIP;
+    }
+
+    public Boolean getKeepMacAddressOnPublicNic() {
+        return keepMacAddressOnPublicNic;
     }
 
     /////////////////////////////////////////////////////

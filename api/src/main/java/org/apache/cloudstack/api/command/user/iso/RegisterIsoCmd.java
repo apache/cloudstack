@@ -70,7 +70,7 @@ public class RegisterIsoCmd extends BaseCmd implements UserCmd {
     @Parameter(name = ApiConstants.IS_EXTRACTABLE, type = CommandType.BOOLEAN, description = "True if the ISO or its derivatives are extractable; default is false")
     private Boolean extractable;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "The name of the ISO")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, length = 251, description = "The name of the ISO")
     private String isoName;
 
     @Parameter(name = ApiConstants.OS_TYPE_ID,
@@ -254,7 +254,7 @@ public class RegisterIsoCmd extends BaseCmd implements UserCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
+        Long accountId = _accountService.finalizeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }

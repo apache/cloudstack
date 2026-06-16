@@ -62,7 +62,7 @@ public interface UsageDao extends GenericDao<UsageVO, Long> {
 
     void saveUsageRecords(List<UsageVO> usageRecords);
 
-    void removeOldUsageRecords(int days);
+    void expungeAllOlderThan(int days, long limitPerQuery);
 
     UsageVO persistUsage(final UsageVO usage);
 

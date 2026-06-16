@@ -55,6 +55,10 @@ import javax.xml.xpath.XPathFactory;
 
 import com.cloud.agent.api.Command;
 import com.cloud.hypervisor.kvm.resource.LibvirtXMLParser;
+import com.cloud.storage.clvm.ClvmPoolManager;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadAnswer;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.cloudstack.direct.download.DirectDownloadHelper;
@@ -182,6 +186,8 @@ public class KVMStorageProcessor implements StorageProcessor {
 
     private int incrementalSnapshotTimeout;
 
+    private int incrementalSnapshotRetryRebaseWait;
+
     private static final String CHECKPOINT_XML_TEMP_DIR = "/tmp/cloudstack/checkpointXMLs";
 
     private static final String BACKUP_XML_TEMP_DIR = "/tmp/cloudstack/backupXMLs";
@@ -220,6 +226,26 @@ public class KVMStorageProcessor implements StorageProcessor {
             "  </devices>\n" +
             "</domain>";
 
+    private static final String DUMMY_VM_XML_BLOCK = "<domain type='qemu'>\n" +
+            "  <name>%s</name>\n" +
+            "  <memory unit='MiB'>256</memory>\n" +
+            "  <currentMemory unit='MiB'>256</currentMemory>\n" +
+            "  <vcpu>1</vcpu>\n" +
+            "  <os>\n" +
+            "    <type arch='%s' machine='%s'>hvm</type>\n" +
+            "    <boot dev='hd'/>\n" +
+            "  </os>\n" +
+            "  <devices>\n" +
+            "    <emulator>%s</emulator>\n" +
+            "    <disk type='block' device='disk'>\n" +
+            "      <driver name='qemu' type='qcow2' cache='none'/>\n"+
+            "      <source dev='%s'/>\n" +
+            "      <target dev='sda'/>\n" +
+            "    </disk>\n" +
+            "    <graphics type='vnc' port='-1'/>\n" +
+            "  </devices>\n" +
+            "</domain>";
+
 
     public KVMStorageProcessor(final KVMStoragePoolManager storagePoolMgr, final LibvirtComputingResource resource) {
         this.storagePoolMgr = storagePoolMgr;
@@ -249,6 +275,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         _cmdsTimeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.CMDS_TIMEOUT) * 1000;
 
         incrementalSnapshotTimeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.INCREMENTAL_SNAPSHOT_TIMEOUT) * 1000;
+        incrementalSnapshotRetryRebaseWait = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.INCREMENTAL_SNAPSHOT_RETRY_REBASE_WAIT) * 1000;
         return true;
     }
 
@@ -341,15 +368,28 @@ public class KVMStorageProcessor implements StorageProcessor {
                     path = destTempl.getUuid();
                 }
 
-                if (path != null && !storagePoolMgr.connectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path, details)) {
-                    logger.warn("Failed to connect physical disk at path: {}, in storage pool [id: {}, name: {}]", path, primaryStore.getUuid(), primaryStore.getName());
-                    return new PrimaryStorageDownloadAnswer("Failed to spool template disk at path: " + path + ", in storage pool id: " + primaryStore.getUuid());
-                }
+                if (primaryPool.getType() == StoragePoolType.CLVM_NG) {
+                    logger.info("Copying template {} to CLVM_NG pool {}",
+                                destTempl.getUuid(), primaryPool.getUuid());
 
-                primaryVol = storagePoolMgr.copyPhysicalDisk(tmplVol, path != null ? path : destTempl.getUuid(), primaryPool, cmd.getWaitInMillSeconds());
+                    try {
+                        storagePoolMgr.createTemplateOnClvmNg(tmplVol.getPath(), path, cmd.getWaitInMillSeconds(), primaryPool);
+                        primaryVol = primaryPool.getPhysicalDisk("template-" + path);
+                    } catch (Exception e) {
+                        logger.error("Failed to create CLVM_NG template: {}", e.getMessage(), e);
+                        return new PrimaryStorageDownloadAnswer("Failed to create CLVM_NG template: " + e.getMessage());
+                    }
+                } else {
+                    if (path != null && !storagePoolMgr.connectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path, details)) {
+                        logger.warn("Failed to connect physical disk at path: {}, in storage pool [id: {}, name: {}]", path, primaryStore.getUuid(), primaryStore.getName());
+                        return new PrimaryStorageDownloadAnswer("Failed to spool template disk at path: " + path + ", in storage pool id: " + primaryStore.getUuid());
+                    }
 
-                if (!storagePoolMgr.disconnectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path)) {
-                    logger.warn("Failed to disconnect physical disk at path: {}, in storage pool [id: {}, name: {}]", path, primaryStore.getUuid(), primaryStore.getName());
+                    primaryVol = storagePoolMgr.copyPhysicalDisk(tmplVol, path != null ? path : destTempl.getUuid(), primaryPool, cmd.getWaitInMillSeconds());
+
+                    if (!storagePoolMgr.disconnectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path)) {
+                        logger.warn("Failed to disconnect physical disk at path: {}, in storage pool [id: {}, name: {}]", path, primaryStore.getUuid(), primaryStore.getName());
+                    }
                 }
             } else {
                 primaryVol = storagePoolMgr.copyPhysicalDisk(tmplVol, UUID.randomUUID().toString(), primaryPool, cmd.getWaitInMillSeconds());
@@ -365,6 +405,17 @@ public class KVMStorageProcessor implements StorageProcessor {
                 newTemplate.setPath(primaryVol.getName());
                 newTemplate.setSize(primaryVol.getSize());
                 newTemplate.setFormat(getFormat(primaryPool.getType()));
+
+                if (List.of(
+                    StoragePoolType.RBD,
+                    StoragePoolType.PowerFlex,
+                    StoragePoolType.Linstor,
+                    StoragePoolType.FiberChannel,
+                    StoragePoolType.CLVM).contains(primaryPool.getType())) {
+                    newTemplate.setFormat(ImageFormat.RAW);
+                } else {
+                    newTemplate.setFormat(ImageFormat.QCOW2);
+                }
                 data = newTemplate;
             } else if (destData.getObjectType() == DataObjectType.VOLUME) {
                 final VolumeObjectTO volumeObjectTO = new VolumeObjectTO();
@@ -573,7 +624,9 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             String path = details != null ? details.get(DiskTO.IQN) : null;
 
-            storagePoolMgr.connectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path, details);
+            if (!ClvmPoolManager.isClvmPoolType(primaryStore.getPoolType())) {
+                storagePoolMgr.connectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path, details);
+            }
 
             final String volumeName = UUID.randomUUID().toString();
 
@@ -602,7 +655,9 @@ public class KVMStorageProcessor implements StorageProcessor {
             final KVMPhysicalDisk newDisk = storagePoolMgr.copyPhysicalDisk(volume, path != null ? path : volumeName, primaryPool, cmd.getWaitInMillSeconds());
             resource.createOrUpdateLogFileForCommand(cmd, Command.State.COMPLETED);
 
-            storagePoolMgr.disconnectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path);
+            if (!ClvmPoolManager.isClvmPoolType(primaryStore.getPoolType())) {
+                storagePoolMgr.disconnectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path);
+            }
 
             final VolumeObjectTO newVol = new VolumeObjectTO();
 
@@ -752,7 +807,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                 templateContent += "snapshot.name=" + dateFormat.format(date) + System.getProperty("line.separator");
 
 
-                try(FileOutputStream templFo = new FileOutputStream(templateProp);){
+                try (FileOutputStream templFo = new FileOutputStream(templateProp);) {
                     templFo.write(templateContent.getBytes());
                     templFo.flush();
                 } catch (final IOException e) {
@@ -817,11 +872,9 @@ public class KVMStorageProcessor implements StorageProcessor {
 
         if (srcData instanceof VolumeObjectTO) {
             isVolume = true;
-        }
-        else if (srcData instanceof SnapshotObjectTO) {
+        } else if (srcData instanceof SnapshotObjectTO) {
             isVolume = false;
-        }
-        else {
+        } else {
             return new CopyCmdAnswer("unsupported object type");
         }
 
@@ -887,8 +940,7 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             if (isVolume) {
                 templateContent += "volume.name=" + dateFormat.format(date) + System.getProperty("line.separator");
-            }
-            else {
+            } else {
                 templateContent += "snapshot.name=" + dateFormat.format(date) + System.getProperty("line.separator");
             }
 
@@ -926,8 +978,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         } catch (Exception ex) {
             if (isVolume) {
                 logger.debug("Failed to create template from volume: ", ex);
-            }
-            else {
+            } else {
                 logger.debug("Failed to create template from snapshot: ", ex);
             }
 
@@ -1088,7 +1139,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                     q.convert(srcFile, destFile);
 
                     final File snapFile = new File(snapshotFile);
-                    if(snapFile.exists()) {
+                    if (snapFile.exists()) {
                         size = snapFile.length();
                     }
 
@@ -1106,7 +1157,14 @@ public class KVMStorageProcessor implements StorageProcessor {
                 }
             } else {
                 final Script command = new Script(_manageSnapshotPath, cmd.getWaitInMillSeconds(), logger);
-                command.add("-b", isCreatedFromVmSnapshot ? snapshotDisk.getPath() : snapshot.getPath());
+                String backupPath;
+                if (primaryPool.getType() == StoragePoolType.CLVM || primaryPool.getType() == StoragePoolType.CLVM_NG) {
+                    backupPath = snapshotDisk.getPath();
+                    logger.debug("Using snapshotDisk path for CLVM/CLVM_NG backup: " + backupPath);
+                } else {
+                    backupPath = isCreatedFromVmSnapshot ? snapshotDisk.getPath() : snapshot.getPath();
+                }
+                command.add("-b", backupPath);
                 command.add(NAME_OPTION, snapshotName);
                 command.add("-p", snapshotDestPath);
 
@@ -1121,7 +1179,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                     return new CopyCmdAnswer(result);
                 }
                 final File snapFile = new File(snapshotDestPath + "/" + descName);
-                if(snapFile.exists()){
+                if (snapFile.exists()) {
                     size = snapFile.length();
                 }
             }
@@ -1151,6 +1209,90 @@ public class KVMStorageProcessor implements StorageProcessor {
         }
     }
 
+    /**
+     * Parse CLVM/CLVM_NG snapshot path and compute MD5 hash.
+     * Snapshot path format: /dev/vgname/volumeuuid/snapshotuuid
+     *
+     * @param snapshotPath The snapshot path from database
+     * @param poolType Storage pool type (for logging)
+     * @return Array of [vgName, volumeUuid, snapshotUuid, md5Hash] or null if invalid
+     */
+    private String[] parseClvmSnapshotPath(String snapshotPath, StoragePoolType poolType) {
+        String[] pathParts = snapshotPath.split("/");
+        if (pathParts.length < 5) {
+            logger.warn("Invalid {} snapshot path format: {}, expected format: /dev/vgname/volume-uuid/snapshot-uuid",
+                        poolType, snapshotPath);
+            return null;
+        }
+
+        String vgName = pathParts[2];
+        String volumeUuid = pathParts[3];
+        String snapshotUuid = pathParts[4];
+
+        logger.info("Parsed {} snapshot path - VG: {}, Volume: {}, Snapshot: {}",
+                    poolType, vgName, volumeUuid, snapshotUuid);
+
+        String md5Hash = computeMd5Hash(snapshotUuid);
+        logger.debug("Computed MD5 hash for snapshot UUID {}: {}", snapshotUuid, md5Hash);
+
+        return new String[]{vgName, volumeUuid, snapshotUuid, md5Hash};
+    }
+
+    /**
+     * Delete a CLVM or CLVM_NG snapshot using managesnapshot.sh script.
+     * For both CLVM and CLVM_NG, the snapshot path stored in DB is: /dev/vgname/volumeuuid/snapshotuuid
+     * The script handles MD5 transformation and pool-specific deletion commands internally:
+     * - CLVM: Uses lvremove to delete LVM snapshot
+     * - CLVM_NG: Uses qemu-img snapshot -d to delete QCOW2 internal snapshot
+     * This approach is consistent with snapshot creation and backup which also use the script.
+     *
+     * @param snapshotPath The snapshot path from database
+     * @param poolType Storage pool type (CLVM or CLVM_NG)
+     * @param checkExistence If true, checks if snapshot exists before cleanup (for explicit deletion)
+     *                       If false, always performs cleanup (for post-backup cleanup)
+     * @return true if cleanup was performed, false if snapshot didn't exist (when checkExistence=true)
+     */
+    private boolean deleteClvmSnapshot(String snapshotPath, StoragePoolType poolType, boolean checkExistence) {
+        logger.info("Starting {} snapshot deletion for path: {}, checkExistence: {}", poolType, snapshotPath, checkExistence);
+
+        try {
+            String[] parsed = parseClvmSnapshotPath(snapshotPath, poolType);
+            if (parsed == null) {
+                return false;
+            }
+
+            String vgName = parsed[0];
+            String volumeUuid = parsed[1];
+            String snapshotUuid = parsed[2];
+            String volumePath = "/dev/" + vgName + "/" + volumeUuid;
+
+            // Use managesnapshot.sh script for deletion (consistent with create/backup)
+            // Script handles MD5 transformation and pool-specific commands internally
+            Script deleteCommand = new Script(_manageSnapshotPath, 30000, logger);
+            deleteCommand.add("-d", volumePath);
+            deleteCommand.add("-n", snapshotUuid);
+
+            logger.info("Executing: managesnapshot.sh -d {} -n {}", volumePath, snapshotUuid);
+            String result = deleteCommand.execute();
+
+            if (result == null) {
+                logger.info("Successfully deleted {} snapshot: {}", poolType, snapshotPath);
+                return true;
+            } else {
+                if (checkExistence && result.contains("does not exist")) {
+                    logger.info("{} snapshot {} already deleted, no cleanup needed", poolType, snapshotPath);
+                    return true;
+                }
+                logger.warn("Failed to delete {} snapshot {}: {}", poolType, snapshotPath, result);
+                return false;
+            }
+
+        } catch (Exception ex) {
+            logger.error("Exception while deleting {} snapshot {}", poolType, snapshotPath, ex);
+            return false;
+        }
+    }
+
     private void deleteSnapshotOnPrimary(final CopyCommand cmd, final SnapshotObjectTO snapshot,
             KVMStoragePool primaryPool) {
         String snapshotPath = snapshot.getPath();
@@ -1163,12 +1305,44 @@ public class KVMStorageProcessor implements StorageProcessor {
 
         if ((backupSnapshotAfterTakingSnapshot == null || BooleanUtils.toBoolean(backupSnapshotAfterTakingSnapshot)) && deleteSnapshotOnPrimary) {
             try {
-                Files.deleteIfExists(Paths.get(snapshotPath));
+                if (primaryPool.getType() == StoragePoolType.CLVM || primaryPool.getType() == StoragePoolType.CLVM_NG) {
+                    // Both CLVM and CLVM_NG use the same deletion method via managesnapshot.sh script
+                    boolean cleanedUp = deleteClvmSnapshot(snapshotPath, primaryPool.getType(), false);
+                    if (!cleanedUp) {
+                        String[] parsedPath = parseClvmSnapshotPath(snapshotPath, primaryPool.getType());
+                        String snapMd5 = (parsedPath != null) ? computeMd5Hash(parsedPath[2]) : computeMd5Hash(snapshotPath);
+                        logger.warn("Deletion of Snapshot: {} on primary store may have failed as it doesn't exist: {} " +
+                                "(MD5 of snapshot UUID: {} - admins can use this to manually locate and delete the LV via managesnapshot.sh or lvremove)",
+                                primaryPool.getType(), snapshotPath, snapMd5);
+                    }
+                } else {
+                    Files.deleteIfExists(Paths.get(snapshotPath));
+                }
             } catch (IOException ex) {
                 logger.error("Failed to delete snapshot [{}] on primary storage [{}].", snapshot.getId(), snapshot.getName(), ex);
             }
         } else {
             logger.debug("This backup is temporary, not deleting snapshot [{}] on primary storage [{}]", snapshot.getId(), snapshot.getName());
+        }
+    }
+
+
+    /**
+     * Compute MD5 hash of a string, matching what managesnapshot.sh does:
+     * echo "${snapshot}" | md5sum -t | awk '{ print $1 }'
+     */
+    private String computeMd5Hash(String input) {
+        try {
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("MD5");
+            byte[] array = md.digest((input + "\n").getBytes("UTF-8"));
+            StringBuilder sb = new StringBuilder();
+            for (byte b : array) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            logger.error("Failed to compute MD5 hash for: {}", input, e);
+            return input;
         }
     }
 
@@ -1374,26 +1548,27 @@ public class KVMStorageProcessor implements StorageProcessor {
 
     /**
      * Attaches or detaches a disk to an instance.
-     * @param conn libvirt connection
-     * @param attach boolean that determines whether the device will be attached or detached
-     * @param vmName instance name
-     * @param attachingDisk kvm physical disk
-     * @param devId device id in instance
+     * @param conn                    libvirt connection
+     * @param attach                  boolean that determines whether the device will be attached or detached
+     * @param vmName                  instance name
+     * @param attachingDisk           kvm physical disk
+     * @param devId                   device id in instance
      * @param serial
-     * @param bytesReadRate bytes read rate
-     * @param bytesReadRateMax bytes read rate max
-     * @param bytesReadRateMaxLength bytes read rate max length
-     * @param bytesWriteRate bytes write rate
-     * @param bytesWriteRateMax bytes write rate amx
+     * @param bytesReadRate           bytes read rate
+     * @param bytesReadRateMax        bytes read rate max
+     * @param bytesReadRateMaxLength  bytes read rate max length
+     * @param bytesWriteRate          bytes write rate
+     * @param bytesWriteRateMax       bytes write rate amx
      * @param bytesWriteRateMaxLength bytes write rate max length
-     * @param iopsReadRate iops read rate
-     * @param iopsReadRateMax iops read rate max
-     * @param iopsReadRateMaxLength iops read rate max length
-     * @param iopsWriteRate iops write rate
-     * @param iopsWriteRateMax iops write rate max
-     * @param iopsWriteRateMaxLength iops write rate max length
-     * @param cacheMode cache mode
-     * @param encryptDetails encrypt details
+     * @param iopsReadRate            iops read rate
+     * @param iopsReadRateMax         iops read rate max
+     * @param iopsReadRateMaxLength   iops read rate max length
+     * @param iopsWriteRate           iops write rate
+     * @param iopsWriteRateMax        iops write rate max
+     * @param iopsWriteRateMaxLength  iops write rate max length
+     * @param cacheMode               cache mode
+     * @param encryptDetails          encrypt details
+     * @param controllerInfo
      * @throws LibvirtException
      * @throws InternalErrorException
      */
@@ -1401,37 +1576,38 @@ public class KVMStorageProcessor implements StorageProcessor {
                                                    final String serial, final Long bytesReadRate, final Long bytesReadRateMax, final Long bytesReadRateMaxLength,
                                                    final Long bytesWriteRate, final Long bytesWriteRateMax, final Long bytesWriteRateMaxLength, final Long iopsReadRate,
                                                    final Long iopsReadRateMax, final Long iopsReadRateMaxLength, final Long iopsWriteRate, final Long iopsWriteRateMax,
-                                                   final Long iopsWriteRateMaxLength, final String cacheMode, final DiskDef.LibvirtDiskEncryptDetails encryptDetails, Map<String, String> details)
+                                                   final Long iopsWriteRateMaxLength, final String cacheMode, final DiskDef.LibvirtDiskEncryptDetails encryptDetails, Map<String, String> details, Map<String, String> controllerInfo)
             throws LibvirtException, InternalErrorException {
         attachOrDetachDisk(conn, attach, vmName, attachingDisk, devId, serial, bytesReadRate, bytesReadRateMax, bytesReadRateMaxLength,
                 bytesWriteRate, bytesWriteRateMax, bytesWriteRateMaxLength, iopsReadRate, iopsReadRateMax, iopsReadRateMaxLength, iopsWriteRate,
-                iopsWriteRateMax, iopsWriteRateMaxLength, cacheMode, encryptDetails, 0l, details);
+                iopsWriteRateMax, iopsWriteRateMaxLength, cacheMode, encryptDetails, 0l, details, controllerInfo);
     }
 
     /**
      *
      * Attaches or detaches a disk to an instance.
-     * @param conn libvirt connection
-     * @param attach boolean that determines whether the device will be attached or detached
-     * @param vmName instance name
-     * @param attachingDisk kvm physical disk
-     * @param devId device id in instance
+     * @param conn                    libvirt connection
+     * @param attach                  boolean that determines whether the device will be attached or detached
+     * @param vmName                  instance name
+     * @param attachingDisk           kvm physical disk
+     * @param devId                   device id in instance
      * @param serial
-     * @param bytesReadRate bytes read rate
-     * @param bytesReadRateMax bytes read rate max
-     * @param bytesReadRateMaxLength bytes read rate max length
-     * @param bytesWriteRate bytes write rate
-     * @param bytesWriteRateMax bytes write rate amx
+     * @param bytesReadRate           bytes read rate
+     * @param bytesReadRateMax        bytes read rate max
+     * @param bytesReadRateMaxLength  bytes read rate max length
+     * @param bytesWriteRate          bytes write rate
+     * @param bytesWriteRateMax       bytes write rate amx
      * @param bytesWriteRateMaxLength bytes write rate max length
-     * @param iopsReadRate iops read rate
-     * @param iopsReadRateMax iops read rate max
-     * @param iopsReadRateMaxLength iops read rate max length
-     * @param iopsWriteRate iops write rate
-     * @param iopsWriteRateMax iops write rate max
-     * @param iopsWriteRateMaxLength iops write rate max length
-     * @param cacheMode cache mode
-     * @param encryptDetails encrypt details
-     * @param waitDetachDevice value set in milliseconds to wait before assuming device removal failed
+     * @param iopsReadRate            iops read rate
+     * @param iopsReadRateMax         iops read rate max
+     * @param iopsReadRateMaxLength   iops read rate max length
+     * @param iopsWriteRate           iops write rate
+     * @param iopsWriteRateMax        iops write rate max
+     * @param iopsWriteRateMaxLength  iops write rate max length
+     * @param cacheMode               cache mode
+     * @param encryptDetails          encrypt details
+     * @param waitDetachDevice        value set in milliseconds to wait before assuming device removal failed
+     * @param controllerInfo
      * @throws LibvirtException
      * @throws InternalErrorException
      */
@@ -1440,7 +1616,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                                                    final Long bytesWriteRate, final Long bytesWriteRateMax, final Long bytesWriteRateMaxLength, final Long iopsReadRate,
                                                    final Long iopsReadRateMax, final Long iopsReadRateMaxLength, final Long iopsWriteRate, final Long iopsWriteRateMax,
                                                    final Long iopsWriteRateMaxLength, final String cacheMode, final DiskDef.LibvirtDiskEncryptDetails encryptDetails,
-                                                   long waitDetachDevice, Map<String, String> details)
+                                                   long waitDetachDevice, Map<String, String> details, Map<String, String> controllerInfo)
             throws LibvirtException, InternalErrorException {
 
         List<DiskDef> disks = null;
@@ -1458,7 +1634,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                     if (resource.getHypervisorType() == Hypervisor.HypervisorType.LXC) {
                         final String device = resource.mapRbdDevice(attachingDisk);
                         if (device != null) {
-                            logger.debug("RBD device on host is: "+device);
+                            logger.debug("RBD device on host is: " + device);
                             attachingDisk.setPath(device);
                         }
                     }
@@ -1477,17 +1653,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                     return;
                 }
             } else {
-                DiskDef.DiskBus busT = DiskDef.DiskBus.VIRTIO;
-                for (final DiskDef disk : disks) {
-                    if (disk.getDeviceType() == DeviceType.DISK) {
-                        if (disk.getBusType() == DiskDef.DiskBus.SCSI) {
-                            busT = DiskDef.DiskBus.SCSI;
-                        } else if (disk.getBusType() == DiskDef.DiskBus.VIRTIOBLK) {
-                            busT = DiskDef.DiskBus.VIRTIOBLK;
-                        }
-                        break;
-                    }
-                }
+                DiskDef.DiskBus busT = getAttachDiskBusType(devId, disks, controllerInfo);
                 diskdef = new DiskDef();
                 if (busT == DiskDef.DiskBus.SCSI || busT == DiskDef.DiskBus.VIRTIOBLK) {
                     diskdef.setQemuDriver(true);
@@ -1495,11 +1661,11 @@ public class KVMStorageProcessor implements StorageProcessor {
                 }
                 diskdef.setSerial(serial);
                 if (attachingPool.getType() == StoragePoolType.RBD) {
-                    if(resource.getHypervisorType() == Hypervisor.HypervisorType.LXC){
+                    if (resource.getHypervisorType() == Hypervisor.HypervisorType.LXC) {
                         // For LXC, map image to host and then attach to Vm
                         final String device = resource.mapRbdDevice(attachingDisk);
                         if (device != null) {
-                            logger.debug("RBD device on host is: "+device);
+                            logger.debug("RBD device on host is: " + device);
                             diskdef.defBlockBasedDisk(device, devId, busT);
                         } else {
                             throw new InternalErrorException("Error while mapping disk "+attachingDisk.getPath()+" on host");
@@ -1519,6 +1685,10 @@ public class KVMStorageProcessor implements StorageProcessor {
                     if (attachingDisk.getFormat() == PhysicalDiskFormat.QCOW2) {
                         diskdef.setDiskFormatType(DiskDef.DiskFmtType.QCOW2);
                     }
+                } else if (attachingPool.getType() == StoragePoolType.CLVM_NG) {
+                    // CLVM_NG uses QCOW2 format on block devices
+                    diskdef.defBlockBasedDisk(attachingDisk.getPath(), devId, busT);
+                    diskdef.setDiskFormatType(DiskDef.DiskFmtType.QCOW2);
                 } else if (attachingDisk.getFormat() == PhysicalDiskFormat.QCOW2) {
                     diskdef.defFileBasedDisk(attachingDisk.getPath(), devId, busT, DiskDef.DiskFmtType.QCOW2);
                 } else if (attachingDisk.getFormat() == PhysicalDiskFormat.RAW) {
@@ -1569,7 +1739,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                 if ((iopsWriteRateMaxLength != null) && (iopsWriteRateMaxLength > 0)) {
                     diskdef.setIopsWriteRateMaxLength(iopsWriteRateMaxLength);
                 }
-                if(cacheMode != null) {
+                if (cacheMode != null) {
                     diskdef.setCacheMode(DiskDef.DiskCacheMode.valueOf(cacheMode.toUpperCase()));
                 }
 
@@ -1590,6 +1760,28 @@ public class KVMStorageProcessor implements StorageProcessor {
                 dm.free();
             }
         }
+    }
+
+    protected DiskDef.DiskBus getAttachDiskBusType(int deviceId, List<DiskDef> disks, Map<String, String> controllerInfo) {
+        String controllerKey = deviceId == 0 ? VmDetailConstants.ROOT_DISK_CONTROLLER : VmDetailConstants.DATA_DISK_CONTROLLER;
+        String diskController = MapUtils.getString(controllerInfo, controllerKey);
+        DiskDef.DiskBus busType = DiskDef.DiskBus.fromValue(diskController);
+        if (diskController != null) {
+            logger.debug("Using controller '{}' from command specified as {} while attaching disk (deviceId={})",
+                    diskController, controllerKey, deviceId);
+            return busType;
+        }
+        for (final DiskDef disk : disks) {
+            if (disk.getDeviceType() != DeviceType.DISK) {
+                continue;
+            }
+            if (disk.getBusType() == DiskDef.DiskBus.SCSI) {
+                return DiskDef.DiskBus.SCSI;
+            } else if (disk.getBusType() == DiskDef.DiskBus.VIRTIOBLK) {
+                return DiskDef.DiskBus.VIRTIOBLK;
+            }
+        }
+        return DiskDef.DiskBus.VIRTIO;
     }
 
     @Override
@@ -1619,7 +1811,8 @@ public class KVMStorageProcessor implements StorageProcessor {
                     vol.getBytesReadRate(), vol.getBytesReadRateMax(), vol.getBytesReadRateMaxLength(),
                     vol.getBytesWriteRate(), vol.getBytesWriteRateMax(), vol.getBytesWriteRateMaxLength(),
                     vol.getIopsReadRate(), vol.getIopsReadRateMax(), vol.getIopsReadRateMaxLength(),
-                    vol.getIopsWriteRate(), vol.getIopsWriteRateMax(), vol.getIopsWriteRateMaxLength(), volCacheMode, encryptDetails, disk.getDetails());
+                    vol.getIopsWriteRate(), vol.getIopsWriteRateMax(), vol.getIopsWriteRateMaxLength(), volCacheMode,
+                    encryptDetails, disk.getDetails(), cmd.getControllerInfo());
 
             resource.recreateCheckpointsOnVm(List.of((VolumeObjectTO) disk.getData()), vmName, conn);
 
@@ -1658,7 +1851,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                     vol.getBytesReadRate(), vol.getBytesReadRateMax(), vol.getBytesReadRateMaxLength(),
                     vol.getBytesWriteRate(), vol.getBytesWriteRateMax(), vol.getBytesWriteRateMaxLength(),
                     vol.getIopsReadRate(), vol.getIopsReadRateMax(), vol.getIopsReadRateMaxLength(),
-                    vol.getIopsWriteRate(), vol.getIopsWriteRateMax(), vol.getIopsWriteRateMaxLength(), volCacheMode, null, waitDetachDevice, null);
+                    vol.getIopsWriteRate(), vol.getIopsWriteRateMax(), vol.getIopsWriteRateMaxLength(), volCacheMode, null, waitDetachDevice, null, null);
 
             storagePoolMgr.disconnectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), vol.getPath());
 
@@ -1711,13 +1904,22 @@ public class KVMStorageProcessor implements StorageProcessor {
             primaryPool = storagePoolMgr.getStoragePool(primaryStore.getPoolType(), primaryStore.getUuid());
             disksize = volume.getSize();
             PhysicalDiskFormat format;
-            if (volume.getFormat() == null || StoragePoolType.RBD.equals(primaryStore.getPoolType())) {
+
+            MigrationOptions migrationOptions = volume.getMigrationOptions();
+            boolean useDstPoolFormat = useDestPoolFormat(migrationOptions, primaryStore);
+
+            if (volume.getFormat() == null || StoragePoolType.RBD.equals(primaryStore.getPoolType()) || useDstPoolFormat) {
                 format = primaryPool.getDefaultFormat();
+                if (useDstPoolFormat) {
+                    logger.debug("Using destination pool default format {} for volume {} due to CLVM migration (src: {}, dst: {})",
+                               format, volume.getUuid(),
+                               migrationOptions != null ? migrationOptions.getSrcPoolType() : "unknown",
+                               primaryStore.getPoolType());
+                }
             } else {
                 format = PhysicalDiskFormat.valueOf(volume.getFormat().toString().toUpperCase());
             }
 
-            MigrationOptions migrationOptions = volume.getMigrationOptions();
             if (migrationOptions != null) {
                 int timeout = migrationOptions.getTimeout();
 
@@ -1733,7 +1935,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             }
 
             final VolumeObjectTO newVol = new VolumeObjectTO();
-            if(vol != null) {
+            if (vol != null) {
                 newVol.setPath(vol.getName());
                 if (vol.getQemuEncryptFormat() != null) {
                     newVol.setEncryptFormat(vol.getQemuEncryptFormat().toString());
@@ -1742,7 +1944,11 @@ public class KVMStorageProcessor implements StorageProcessor {
                     format = vol.getFormat();
                 }
             }
-            newVol.setSize(volume.getSize());
+            if (StoragePoolType.CLVM_NG.equals(primaryStore.getPoolType()) && vol != null && vol.getVirtualSize() > 0) {
+                newVol.setSize(vol.getVirtualSize());
+            } else {
+                newVol.setSize(volume.getSize());
+            }
             newVol.setFormat(ImageFormat.valueOf(format.toString().toUpperCase()));
 
             return new CreateObjectAnswer(newVol);
@@ -1752,6 +1958,29 @@ public class KVMStorageProcessor implements StorageProcessor {
         } finally {
             volume.clearPassphrase();
         }
+    }
+
+    /**
+     * For migration involving CLVM (RAW format), use destination pool's default format
+     * CLVM uses RAW format which may not match destination pool's format (e.g., NFS uses QCOW2)
+     * This specifically handles:
+     *   - CLVM (RAW) -> NFS/Local/CLVM_NG (QCOW2)
+     *   - NFS/Local/CLVM_NG (QCOW2) -> CLVM (RAW)
+     * @param migrationOptions
+     * @param primaryStore
+     * @return
+     */
+    private boolean useDestPoolFormat(MigrationOptions migrationOptions, PrimaryDataStoreTO primaryStore) {
+        boolean useDstPoolFormat = false;
+        if (migrationOptions != null && migrationOptions.getSrcPoolType() != null) {
+            StoragePoolType srcPoolType = migrationOptions.getSrcPoolType();
+            StoragePoolType dstPoolType = primaryStore.getPoolType();
+
+            if (srcPoolType != dstPoolType) {
+                useDstPoolFormat = (srcPoolType == StoragePoolType.CLVM || dstPoolType == StoragePoolType.CLVM);
+            }
+        }
+        return useDstPoolFormat;
     }
 
     /**
@@ -1838,12 +2067,27 @@ public class KVMStorageProcessor implements StorageProcessor {
                 }
             } else {
                 if (primaryPool.getType() == StoragePoolType.RBD) {
-                    takeRbdVolumeSnapshotOfStoppedVm(primaryPool, disk, snapshotName);
+                    Long snapshotSize = takeRbdVolumeSnapshotOfStoppedVm(primaryPool, disk, snapshotName);
                     newSnapshot.setPath(snapshotPath);
-                } else if (primaryPool.getType() == StoragePoolType.CLVM) {
-                    CreateObjectAnswer result = takeClvmVolumeSnapshotOfStoppedVm(disk, snapshotName);
-                    if (result != null) return result;
-                    newSnapshot.setPath(snapshotPath);
+                    if (snapshotSize != null) {
+                        newSnapshot.setPhysicalSize(snapshotSize);
+                    }
+                } else if (primaryPool.getType() == StoragePoolType.CLVM || primaryPool.getType() == StoragePoolType.CLVM_NG) {
+                    if (primaryPool.getType() == StoragePoolType.CLVM_NG && snapshotTO.isKvmIncrementalSnapshot()) {
+                        if (secondaryPool == null) {
+                            String errorMsg = String.format("Incremental snapshots for CLVM_NG require secondary storage. " +
+                                    "Please configure secondary storage or disable incremental snapshots for volume [%s].", volume.getName());
+                            logger.error(errorMsg);
+                            return new CreateObjectAnswer(errorMsg);
+                        }
+                        logger.info("Taking incremental snapshot of CLVM_NG volume [{}] using QCOW2 backup to secondary storage.", volume.getName());
+                        newSnapshot = takeIncrementalVolumeSnapshotOfStoppedVm(snapshotTO, primaryPool, secondaryPool,
+                                imageStoreTo.getUrl(), snapshotName, volume, conn, cmd.getWait());
+                    } else {
+                        CreateObjectAnswer result = takeClvmVolumeSnapshotOfStoppedVm(disk, snapshotName);
+                        if (result != null) return result;
+                        newSnapshot.setPath(snapshotPath);
+                    }
                 } else {
                     if (snapshotTO.isKvmIncrementalSnapshot()) {
                         newSnapshot = takeIncrementalVolumeSnapshotOfStoppedVm(snapshotTO, primaryPool, secondaryPool, imageStoreTo != null ? imageStoreTo.getUrl() : null, snapshotName, volume, conn, cmd.getWait());
@@ -1916,7 +2160,11 @@ public class KVMStorageProcessor implements StorageProcessor {
         String machine = resource.isGuestAarch64() ? LibvirtComputingResource.VIRT : LibvirtComputingResource.PC;
         String cpuArch = resource.getGuestCpuArch() != null ? resource.getGuestCpuArch() : "x86_64";
 
-        return String.format(DUMMY_VM_XML, vmName, cpuArch, machine, resource.getHypervisorPath(), primaryPool.getLocalPathFor(volumeObjectTo.getPath()));
+        String volumePath = primaryPool.getLocalPathFor(volumeObjectTo.getPath());
+        boolean isClvmNg = StoragePoolType.CLVM_NG == primaryPool.getType();
+
+        String xmlTemplate = isClvmNg ? DUMMY_VM_XML_BLOCK : DUMMY_VM_XML;
+        return String.format(xmlTemplate, vmName, cpuArch, machine, resource.getHypervisorPath(), volumePath);
     }
 
     private SnapshotObjectTO takeIncrementalVolumeSnapshotOfRunningVm(SnapshotObjectTO snapshotObjectTO, KVMStoragePool primaryPool, KVMStoragePool secondaryPool,
@@ -2017,7 +2265,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             try {
                 Thread.sleep(10000);
             } catch (InterruptedException e) {
-                throw new CloudRuntimeException(e);
+                logger.trace("Thread that was tracking the progress for backup of VM [{}] was interrupted. Ignoring.", vmName);
             }
         }
 
@@ -2066,8 +2314,25 @@ public class KVMStorageProcessor implements StorageProcessor {
             QemuImg qemuImg = new QemuImg(wait);
             qemuImg.rebase(snapshotFile, parentSnapshotFile, PhysicalDiskFormat.QCOW2.toString(), false);
         } catch (LibvirtException | QemuImgException e) {
-            logger.error("Exception while rebasing incremental snapshot [{}] due to: [{}].", snapshotName, e.getMessage(), e);
-            throw new CloudRuntimeException(e);
+            if (!StringUtils.contains(e.getMessage(), "Is another process using the image")) {
+                logger.error("Exception while rebasing incremental snapshot [{}] due to: [{}].", snapshotName, e.getMessage(), e);
+                throw new CloudRuntimeException(e);
+            }
+            retryRebase(snapshotName, wait, e, snapshotFile, parentSnapshotFile);
+        }
+    }
+
+    private void retryRebase(String snapshotName, int wait, Exception e, QemuImgFile snapshotFile, QemuImgFile parentSnapshotFile) {
+        logger.warn("Libvirt still has not released the lock, will wait [{}] milliseconds and try again later.", incrementalSnapshotRetryRebaseWait);
+        try {
+            Thread.sleep(incrementalSnapshotRetryRebaseWait);
+            QemuImg qemuImg = new QemuImg(wait);
+            qemuImg.rebase(snapshotFile, parentSnapshotFile, PhysicalDiskFormat.QCOW2.toString(), false);
+        } catch (LibvirtException | QemuImgException | InterruptedException ex) {
+            logger.error("Unable to rebase snapshot [{}].", snapshotName, ex);
+            CloudRuntimeException cre = new CloudRuntimeException(ex);
+            cre.addSuppressed(e);
+            throw cre;
         }
     }
 
@@ -2291,7 +2556,8 @@ public class KVMStorageProcessor implements StorageProcessor {
      * barriers properly (>2.6.32) this won't be any different then pulling the power
      * cord out of a running machine.
      */
-    private void takeRbdVolumeSnapshotOfStoppedVm(KVMStoragePool primaryPool, KVMPhysicalDisk disk, String snapshotName) {
+    private Long takeRbdVolumeSnapshotOfStoppedVm(KVMStoragePool primaryPool, KVMPhysicalDisk disk, String snapshotName) {
+        Long snapshotSize = null;
         try {
             Rados r = radosConnect(primaryPool);
 
@@ -2302,11 +2568,43 @@ public class KVMStorageProcessor implements StorageProcessor {
             logger.debug("Attempting to create RBD snapshot {}@{}", disk.getName(), snapshotName);
             image.snapCreate(snapshotName);
 
+            image.snapCreate(snapshotName);
+            long rbdSnapshotSize = getRbdSnapshotSize(primaryPool.getSourceDir(), disk.getName(), snapshotName, primaryPool.getSourceHost(), primaryPool.getAuthUserName(), primaryPool.getAuthSecret());
+            if (rbdSnapshotSize > 0) {
+                snapshotSize = rbdSnapshotSize;
+            }
+
             rbd.close(image);
             r.ioCtxDestroy(io);
         } catch (final Exception e) {
             logger.error("A RBD snapshot operation on [{}] failed. The error was: {}", disk.getName(), e.getMessage(), e);
         }
+        return snapshotSize;
+    }
+
+    private long getRbdSnapshotSize(String poolPath, String diskName, String snapshotName, String rbdMonitor, String authUser, String authSecret) {
+        logger.debug("Get RBD snapshot size for {}/{}@{}", poolPath, diskName, snapshotName);
+        //cmd: rbd du <pool>/<disk-name>@<snapshot-name> --format json --mon-host <monitor-host> --id <user> --key <key> 2>/dev/null
+        String snapshotDetailsInJson = Script.runSimpleBashScript(String.format("rbd du %s/%s@%s --format json --mon-host %s --id %s --key %s 2>/dev/null", poolPath, diskName, snapshotName, rbdMonitor, authUser, authSecret));
+        if (StringUtils.isNotBlank(snapshotDetailsInJson)) {
+            ObjectMapper mapper = new ObjectMapper();
+            try {
+                JsonNode root = mapper.readTree(snapshotDetailsInJson);
+                for (JsonNode image : root.path("images")) {
+                    if (snapshotName.equals(image.path("snapshot").asText())) {
+                        long usedSizeInBytes = image.path("used_size").asLong();
+                        logger.debug("RBD snapshot {}/{}@{} used size in bytes: {}", poolPath, diskName, snapshotName, usedSizeInBytes);
+                        return usedSizeInBytes;
+                    }
+                }
+            } catch (JsonProcessingException e) {
+                logger.error("Unable to get the RBD snapshot size, RBD snapshot cmd output: {}", snapshotDetailsInJson, e);
+            }
+        } else {
+                logger.warn("Failed to get RBD snapshot size for {}/{}@{} - no output for RBD snapshot cmd", poolPath, diskName, snapshotName);
+        }
+
+        return 0;
     }
 
     /**
@@ -2587,11 +2885,13 @@ public class KVMStorageProcessor implements StorageProcessor {
         final PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)vol.getDataStore();
         try {
             final KVMStoragePool pool = storagePoolMgr.getStoragePool(primaryStore.getPoolType(), primaryStore.getUuid());
-            try {
-                pool.getPhysicalDisk(vol.getPath());
-            } catch (final Exception e) {
-                logger.debug(String.format("can't find volume: %s, return true", vol));
-                return new Answer(null);
+            if (pool.getType() != StoragePoolType.CLVM && pool.getType() != StoragePoolType.CLVM_NG) {
+                try {
+                    pool.getPhysicalDisk(vol.getPath());
+                } catch (final Exception e) {
+                    logger.debug(String.format("can't find volume: %s, return true", vol));
+                    return new Answer(null);
+                }
             }
             pool.deletePhysicalDisk(vol.getPath(), vol.getFormat());
             return new Answer(null);
@@ -2819,6 +3119,25 @@ public class KVMStorageProcessor implements StorageProcessor {
                 deleteSnapshotFile(snapshotTO);
                 if (snapshotTO.isKvmIncrementalSnapshot()) {
                     deleteCheckpoint(snapshotTO);
+                }
+            } else if (primaryPool.getType() == StoragePoolType.CLVM || primaryPool.getType() == StoragePoolType.CLVM_NG) {
+                // For CLVM/CLVM_NG, snapshots are typically already deleted from primary storage during backup
+                // via deleteSnapshotOnPrimary in the backupSnapshot finally block.
+                // This is called when the user explicitly deletes the snapshot via UI/API.
+                // We check if the snapshot still exists and clean it up if needed.
+                logger.info("Processing CLVM/CLVM_NG snapshot deletion (id={}, name={}, path={}) on primary storage",
+                        snapshotTO.getId(), snapshotTO.getName(), snapshotTO.getPath());
+
+                String snapshotPath = snapshotTO.getPath();
+                if (snapshotPath != null && !snapshotPath.isEmpty()) {
+                    boolean wasDeleted = deleteClvmSnapshot(snapshotPath, primaryPool.getType(), true);
+                    if (wasDeleted) {
+                        logger.info("Successfully cleaned up {} snapshot {} from primary storage", primaryPool.getType(), snapshotName);
+                    } else {
+                        logger.info("{} snapshot {} was already deleted from primary storage during backup, no cleanup needed", primaryPool.getType(), snapshotName);
+                    }
+                } else {
+                    logger.debug("{} snapshot path is null or empty, assuming already cleaned up", primaryPool.getType());
                 }
             } else {
                 logger.warn("Operation not implemented for storage pool type of " + primaryPool.getType().toString());
@@ -3095,7 +3414,8 @@ public class KVMStorageProcessor implements StorageProcessor {
                 StoragePoolType.RBD,
                 StoragePoolType.PowerFlex,
                 StoragePoolType.Linstor,
-                StoragePoolType.FiberChannel).contains(poolType)) {
+                StoragePoolType.FiberChannel,
+                StoragePoolType.CLVM).contains(poolType)) {
             return ImageFormat.RAW;
         } else {
             return ImageFormat.QCOW2;

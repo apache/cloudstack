@@ -153,6 +153,8 @@ public interface TemplateManager {
 
     TemplateType validateTemplateType(BaseCmd cmd, boolean isAdmin, boolean isCrossZones, Hypervisor.HypervisorType hypervisorType);
 
+    DataStore verifyHeuristicRulesForZone(VMTemplateVO template, Long zoneId);
+
     List<DatadiskTO> getTemplateDisksOnImageStore(VirtualMachineTemplate template, DataStoreRole role, String configurationId);
 
     static Boolean getValidateUrlIsResolvableBeforeRegisteringTemplateValue() {

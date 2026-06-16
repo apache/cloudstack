@@ -79,7 +79,7 @@ public class StopRouterCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Stopping router: " + this._uuidMgr.getUuid(VirtualMachine.class, getId());
+        return "Stopping virtual router with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
@@ -98,7 +98,7 @@ public class StopRouterCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException {
-        CallContext.current().setEventDetails("Router Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()));
+        CallContext.current().setEventDetails("Router ID: " + getResourceUuid(ApiConstants.ID));
         VirtualRouter result = null;
         VirtualRouter router = _routerService.findRouter(getId());
         if (router == null || router.getRole() != Role.VIRTUAL_ROUTER) {

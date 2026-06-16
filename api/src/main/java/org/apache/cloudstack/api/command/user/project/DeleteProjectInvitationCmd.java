@@ -59,7 +59,7 @@ public class DeleteProjectInvitationCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Project invitation id " + id);
+        CallContext.current().setEventDetails("Project invitation ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _projectService.deleteProjectInvitation(id);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
@@ -76,7 +76,7 @@ public class DeleteProjectInvitationCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Project invitatino id " + id + " is being removed";
+        return "Removing project invitation with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
 }

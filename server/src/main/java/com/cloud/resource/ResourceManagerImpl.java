@@ -78,13 +78,14 @@ import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 import org.apache.cloudstack.framework.extensions.vo.ExtensionResourceMapVO;
 import org.apache.cloudstack.framework.extensions.vo.ExtensionVO;
 import org.apache.cloudstack.gpu.GpuService;
+import org.apache.cloudstack.jsinterpreter.JsInterpreterHelper;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
-import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -310,6 +311,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     private GpuService gpuService;
     @Inject
     ManagementService managementService;
+    @Inject
+    JsInterpreterHelper jsInterpreterHelper;
 
     private List<? extends Discoverer> _discoverers;
 
@@ -352,7 +355,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     private final HashMap<String, ResourceStateAdapter> _resourceStateAdapters = new HashMap<>();
 
     private final HashMap<Integer, List<ResourceListener>> _lifeCycleListeners = new HashMap<>();
-    private HypervisorType _defaultSystemVMHypervisor;
 
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 30; // seconds
 
@@ -852,7 +854,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 _clusterDetailsDao.persist(cluster_cpu_detail);
                 _clusterDetailsDao.persist(cluster_memory_detail);
             }
-
         }
 
         uri = validatedHostUrl(url, hypervisorType);
@@ -946,7 +947,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                         hosts.add(host);
                     }
                     discoverer.postDiscovery(hosts, _nodeId);
-
                 }
                 logger.info("server resources successfully discovered by " + discoverer.getName());
                 return hosts;
@@ -1147,8 +1147,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     protected void destroyLocalStoragePoolVolumes(long poolId) {
-        List<VolumeVO> rootDisks = volumeDao.findByPoolId(poolId);
-        List<VolumeVO> dataVolumes = volumeDao.findByPoolId(poolId, Volume.Type.DATADISK);
+        List<VolumeVO> rootDisks = volumeDao.findNonDestroyedVolumesByPoolId(poolId);
+        List<VolumeVO> dataVolumes = volumeDao.findNonDestroyedVolumesByPoolId(poolId, Volume.Type.DATADISK);
 
         List<VolumeVO> volumes = new ArrayList<>();
         addVolumesToList(volumes, rootDisks);
@@ -1172,7 +1172,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Override
     public boolean deleteHost(final long hostId, final boolean isForced, final boolean isForceDeleteStorage) {
         try {
-            final Boolean result = propagateResourceEvent(hostId, ResourceState.Event.DeleteHost);
+            final Boolean result = propagateResourceEvent(hostId, ResourceState.Event.DeleteHost, isForced, isForceDeleteStorage);
             if (result != null) {
                 return result;
             }
@@ -1564,7 +1564,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                         throw new CloudRuntimeException("There are active VMs using the host's local storage pool. Please stop all VMs on this host that use local storage.");
                     }
                 } else {
-                    logger.info("Maintenance: scheduling migration of VM {} from host {}", vm, host);
+                    logger.info("Maintenance: scheduling migration of {} from {}", vm, host);
                     _haMgr.scheduleMigration(vm, HighAvailabilityManager.ReasonType.HostMaintenance);
                 }
             }
@@ -2046,31 +2046,74 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         _hostDao.update(host.getId(), host);
     }
 
-    private void updateHostGuestOSCategory(Long hostId, Long guestOSCategoryId) {
-        // Verify that the guest OS Category exists
-        if (!(guestOSCategoryId > 0) || _guestOSCategoryDao.findById(guestOSCategoryId) == null) {
+    /**
+     * Updates the guest OS details related to the host ({@code guest.os.rule} and {@code guest.os.category.id}); only one can be set at a time for a given host.
+     */
+    private void updateGuestOsRelatedFields(Long hostId, Long cmdOsCategoryId, String cmdGuestOsRule) {
+        if (ObjectUtils.allNotNull(cmdOsCategoryId, cmdGuestOsRule)) {
+            throw new InvalidParameterValueException("Informing both guest OS category and guest OS rule is invalid; please, inform only one of them.");
+        }
+
+        if (cmdOsCategoryId != null) {
+            updateHostCategoryOs(hostId, cmdOsCategoryId);
+        } else if (cmdGuestOsRule != null) {
+            updateHostGuestOsRule(hostId, cmdGuestOsRule);
+        }
+    }
+
+    /**
+     * Associates/removes a guest OS rule to a host and removes any guest OS category associated with it.
+     */
+    private void updateHostGuestOsRule(Long hostId, String cmdGuestOsRule) {
+        final DetailVO hostGuestOsRule = _hostDetailsDao.findDetail(hostId, Host.GUEST_OS_RULE);
+
+        if (StringUtils.isNotBlank(cmdGuestOsRule)) {
+            createOrUpdateHostDetails(hostGuestOsRule, cmdGuestOsRule, Host.GUEST_OS_RULE, hostId);
+        } else if (hostGuestOsRule != null) {
+            _hostDetailsDao.remove(hostGuestOsRule.getId());
+        }
+        removeHostDetails(hostId, Host.GUEST_OS_CATEGORY_ID);
+    }
+
+    /**
+     * Removes a host details if it exists.
+     */
+    private void removeHostDetails(Long hostId, String detailString) {
+        DetailVO detailVO = _hostDetailsDao.findDetail(hostId, detailString);
+
+        if (detailVO != null) {
+            _hostDetailsDao.remove(detailVO.getId());
+        }
+    }
+
+    private void createOrUpdateHostDetails(DetailVO hostDetail, String detailValue, String detailName, Long hostId) {
+        if (hostDetail != null) {
+            hostDetail.setValue(detailValue);
+            _hostDetailsDao.update(hostDetail.getId(), hostDetail);
+        } else {
+            Map<String, String> detail = new HashMap<>();
+            detail.put(detailName, detailValue);
+            _hostDetailsDao.persist(hostId, detail);
+        }
+    }
+
+    /**
+     * Associates/removes a valid guest OS category to a host and removes any guest OS rules associated with it.
+     */
+    private void updateHostCategoryOs(Long hostId, Long cmdOsCategoryId) {
+        if (cmdOsCategoryId <= 0 || _guestOSCategoryDao.findById(cmdOsCategoryId) == null) {
             throw new InvalidParameterValueException("Please specify a valid guest OS category.");
         }
 
-        final GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(guestOSCategoryId);
-        final DetailVO guestOSDetail = _hostDetailsDao.findDetail(hostId, "guest.os.category.id");
+        GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(cmdOsCategoryId);
+        DetailVO guestOSDetail = _hostDetailsDao.findDetail(hostId, Host.GUEST_OS_CATEGORY_ID);
 
         if (guestOSCategory != null && !GuestOSCategoryVO.CATEGORY_NONE.equalsIgnoreCase(guestOSCategory.getName())) {
-            // Create/Update an entry for guest.os.category.id
-            if (guestOSDetail != null) {
-                guestOSDetail.setValue(String.valueOf(guestOSCategory.getId()));
-                _hostDetailsDao.update(guestOSDetail.getId(), guestOSDetail);
-            } else {
-                final Map<String, String> detail = new HashMap<>();
-                detail.put("guest.os.category.id", String.valueOf(guestOSCategory.getId()));
-                _hostDetailsDao.persist(hostId, detail);
-            }
-        } else {
-            // Delete any existing entry for guest.os.category.id
-            if (guestOSDetail != null) {
-                _hostDetailsDao.remove(guestOSDetail.getId());
-            }
+            createOrUpdateHostDetails(guestOSDetail, String.valueOf(guestOSCategory.getId()), Host.GUEST_OS_CATEGORY_ID, hostId);
+        } else if (guestOSDetail != null) {
+            _hostDetailsDao.remove(guestOSDetail.getId());
         }
+        removeHostDetails(hostId, Host.GUEST_OS_RULE);
     }
 
     private void removeStorageAccessGroupsOnPodsInZone(long zoneId, List<String> newStoragePoolTags, List<String> tagsToDeleteOnZone) {
@@ -2366,7 +2409,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             List<Long> conflictingHostIds = new ArrayList<>(CollectionUtils.intersection(hostIdsToDisconnect, hostIdsUsingTheStoragePool));
             if (CollectionUtils.isNotEmpty(conflictingHostIds)) {
                 Map<HostVO, List<VolumeVO>> hostVolumeMap = new HashMap<>();
-                List<VolumeVO> volumesInPool = volumeDao.findByPoolId(poolId);
+                List<VolumeVO> volumesInPool = volumeDao.findNonDestroyedVolumesByPoolId(poolId);
                 Map<Long, VMInstanceVO> vmInstanceCache = new HashMap<>();
 
                 for (Long hostId : conflictingHostIds) {
@@ -2821,18 +2864,18 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public Host updateHost(final UpdateHostCmd cmd) throws NoTransitionException {
-        managementService.checkJsInterpretationAllowedIfNeededForParameterValue(ApiConstants.IS_TAG_A_RULE,
-                Boolean.TRUE.equals(cmd.getIsTagARule()));
-
-        return updateHost(cmd.getId(), cmd.getName(), cmd.getOsCategoryId(),
+        return updateHost(cmd.getId(), cmd.getName(), cmd.getOsCategoryId(), cmd.getGuestOsRule(),
                 cmd.getAllocationState(), cmd.getUrl(), cmd.getHostTags(), cmd.getIsTagARule(), cmd.getAnnotation(), false,
                 cmd.getExternalDetails(), cmd.isCleanupExternalDetails());
     }
 
-    private Host updateHost(Long hostId, String name, Long guestOSCategoryId, String allocationState,
+    private Host updateHost(Long hostId, String name, Long guestOSCategoryId, String guestOsRule, String allocationState,
             String url, List<String> hostTags, Boolean isTagARule, String annotation,
             boolean isUpdateFromHostHealthCheck, Map<String, String> externalDetails,
             boolean cleanupExternalDetails) throws NoTransitionException {
+        jsInterpreterHelper.ensureInterpreterEnabledIfParameterProvided(ApiConstants.IS_TAG_A_RULE, Boolean.TRUE.equals(isTagARule));
+        jsInterpreterHelper.ensureInterpreterEnabledIfParameterProvided(ApiConstants.GUEST_OS_RULE, guestOsRule != null);
+
         // Verify that the host exists
         final HostVO host = _hostDao.findById(hostId);
         if (host == null) {
@@ -2848,9 +2891,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             updateHostName(host, name);
         }
 
-        if (guestOSCategoryId != null) {
-            updateHostGuestOSCategory(hostId, guestOSCategoryId);
-        }
+        updateGuestOsRelatedFields(hostId, guestOSCategoryId, guestOsRule);
 
         if (hostTags != null) {
             updateHostTags(host, hostId, hostTags, isTagARule);
@@ -2920,7 +2961,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public Host autoUpdateHostAllocationState(Long hostId, ResourceState.Event resourceEvent) throws NoTransitionException {
-        return updateHost(hostId, null, null, resourceEvent.toString(), null, null, null, null, true, null, false);
+        return updateHost(hostId, null, null, null, resourceEvent.toString(), null, null, null, null, true, null, false);
     }
 
     @Override
@@ -2935,7 +2976,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
-        _defaultSystemVMHypervisor = HypervisorType.getType(_configDao.getValue(Config.SystemVMDefaultHypervisor.toString()));
         _gson = GsonHelper.getGson();
 
         _hypervisorsInDC = _hostDao.createSearchBuilder(String.class);
@@ -2981,10 +3021,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public HypervisorType getDefaultHypervisor(final long zoneId) {
-        HypervisorType defaultHyper = HypervisorType.None;
-        if (_defaultSystemVMHypervisor != HypervisorType.None) {
-            defaultHyper = _defaultSystemVMHypervisor;
-        }
+        HypervisorType systemVMDefaultHypervisor = HypervisorType.getType(ResourceManager.SystemVMDefaultHypervisor.value());
 
         final DataCenterVO dc = _dcDao.findById(zoneId);
         if (dc == null) {
@@ -2993,27 +3030,27 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         _dcDao.loadDetails(dc);
         final String defaultHypervisorInZone = dc.getDetail("defaultSystemVMHypervisorType");
         if (defaultHypervisorInZone != null) {
-            defaultHyper = HypervisorType.getType(defaultHypervisorInZone);
+            systemVMDefaultHypervisor = HypervisorType.getType(defaultHypervisorInZone);
         }
 
         final List<VMTemplateVO> systemTemplates = _templateDao.listAllSystemVMTemplates();
         boolean isValid = false;
         for (final VMTemplateVO template : systemTemplates) {
-            if (template.getHypervisorType() == defaultHyper) {
+            if (template.getHypervisorType() == systemVMDefaultHypervisor) {
                 isValid = true;
                 break;
             }
         }
 
         if (isValid) {
-            final List<ClusterVO> clusters = _clusterDao.listByDcHyType(zoneId, defaultHyper.toString());
+            final List<ClusterVO> clusters = _clusterDao.listByDcHyType(zoneId, systemVMDefaultHypervisor.toString());
             if (clusters.isEmpty()) {
                 isValid = false;
             }
         }
 
         if (isValid) {
-            return defaultHyper;
+            return systemVMDefaultHypervisor;
         } else {
             return HypervisorType.None;
         }
@@ -3154,15 +3191,26 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     private HostVO getNewHost(StartupCommand[] startupCommands) {
         StartupCommand startupCommand = startupCommands[0];
 
-        HostVO host = findHostByGuid(startupCommand.getGuid());
+        String fullGuid = startupCommand.getGuid();
+        logger.debug(String.format("Trying to find Host by guid %s", fullGuid));
+        HostVO host = findHostByGuid(fullGuid);
 
         if (host != null) {
+            logger.debug(String.format("Found Host by guid %s: %s", fullGuid, host));
             return host;
         }
 
-        host = findHostByGuid(startupCommand.getGuidWithoutResource());
+        String guidPrefix = startupCommand.getGuidWithoutResource();
+        logger.debug(String.format("Trying to find Host by guid prefix %s", guidPrefix));
+        host = findHostByGuidPrefix(guidPrefix);
 
-        return host; // even when host == null!
+        if (host != null) {
+            logger.debug(String.format("Found Host by guid prefix %s: %s", guidPrefix, host));
+            return host;
+        }
+
+        logger.debug(String.format("Could not find Host by guid %s", fullGuid));
+        return null;
     }
 
     protected HostVO createHostVO(final StartupCommand[] cmds, final ServerResource resource, final Map<String, String> details, List<String> hostTags,
@@ -3633,7 +3681,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         // If the server's private IP is the same as is public IP, this host has
         // a host-only private network. Don't check for conflicts with the
         // private IP address table.
-        if (!ObjectUtils.equals(serverPrivateIP, serverPublicIP)) {
+        if (!StringUtils.equals(serverPrivateIP, serverPublicIP)) {
             if (!_privateIPAddressDao.mark(dc.getId(), pod.getId(), serverPrivateIP)) {
                 // If the server's private IP address is already in the
                 // database, return false
@@ -3838,8 +3886,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         if (!isAgentOnHost || vmsMigrating || host.getStatus() == Status.Up) {
             return;
         }
-        final boolean sshToAgent = Boolean.parseBoolean(_configDao.getValue(KvmSshToAgentEnabled.key()));
-        if (sshToAgent) {
+        if (KvmSshToAgentEnabled.value()) {
             Ternary<String, String, String> credentials = getHostCredentials(host);
             connectAndRestartAgentOnHost(host, credentials.first(), credentials.second(), credentials.third());
         } else {
@@ -3868,7 +3915,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
      */
     protected void connectAndRestartAgentOnHost(HostVO host, String username, String password, String privateKey) {
         final com.trilead.ssh2.Connection connection = SSHCmdHelper.acquireAuthorizedConnection(
-                host.getPrivateIpAddress(), 22, username, password, privateKey);
+                host.getPrivateIpAddress(), _agentMgr.getHostSshPort(host), username, password, privateKey);
         if (connection == null) {
             throw new CloudRuntimeException(String.format("SSH to agent is enabled, but failed to connect to %s via IP address [%s].", host, host.getPrivateIpAddress()));
         }
@@ -3899,13 +3946,18 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
-    public boolean executeUserRequest(final long hostId, final ResourceState.Event event) {
+    public boolean executeUserRequest(final long hostId, final ResourceState.Event event) throws AgentUnavailableException {
+        return executeUserRequest(hostId, event, false, false);
+    }
+
+    @Override
+    public boolean executeUserRequest(final long hostId, final ResourceState.Event event, final boolean isForced, final boolean isForceDeleteStorage) throws AgentUnavailableException {
         if (event == ResourceState.Event.AdminAskMaintenance) {
             return doMaintain(hostId);
         } else if (event == ResourceState.Event.AdminCancelMaintenance) {
             return doCancelMaintenance(hostId);
         } else if (event == ResourceState.Event.DeleteHost) {
-            return doDeleteHost(hostId, false, false);
+            return doDeleteHost(hostId, isForced, isForceDeleteStorage);
         } else if (event == ResourceState.Event.Unmanaged) {
             return doUmanageHost(hostId);
         } else if (event == ResourceState.Event.UpdatePassword) {
@@ -4025,6 +4077,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     public Boolean propagateResourceEvent(final long agentId, final ResourceState.Event event) throws AgentUnavailableException {
+        return propagateResourceEvent(agentId, event, false, false);
+    }
+
+    public Boolean propagateResourceEvent(final long agentId, final ResourceState.Event event, final boolean isForced, final boolean isForceDeleteStorage) throws AgentUnavailableException {
         final String msPeer = getPeerName(agentId);
         if (msPeer == null) {
             return null;
@@ -4032,7 +4088,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         logger.debug("Propagating resource request event:" + event.toString() + " to agent:" + agentId);
         final Command[] cmds = new Command[1];
-        cmds[0] = new PropagateResourceEventCommand(agentId, event);
+        cmds[0] = new PropagateResourceEventCommand(agentId, event, isForced, isForceDeleteStorage);
 
         final String AnsStr = _clusterMgr.execute(msPeer, agentId, _gson.toJson(cmds), true);
         if (AnsStr == null) {
@@ -4043,6 +4099,13 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         if (logger.isDebugEnabled()) {
             logger.debug("Result for agent change is " + answers[0].getResult());
+        }
+
+        if (!answers[0].getResult()) {
+            final String details = answers[0].getDetails();
+            if (details != null && !details.isEmpty()) {
+                throw new CloudRuntimeException(String.format("Failed to propagate resource event %s for host %d on peer %s: %s", event, agentId, msPeer, details));
+            }
         }
 
         return answers[0].getResult();
@@ -4215,6 +4278,15 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     public HostVO findHostByGuid(final String guid) {
         final QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
         sc.and(sc.entity().getGuid(), Op.EQ, guid);
+        sc.and(sc.entity().getRemoved(), Op.NULL);
+        return sc.find();
+    }
+
+    @Override
+    public HostVO findHostByGuidPrefix(String guid) {
+        final QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getGuid(), Op.LIKE, guid + "%");
+        sc.and(sc.entity().getRemoved(), Op.NULL);
         return sc.find();
     }
 
@@ -4222,6 +4294,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     public HostVO findHostByName(final String name) {
         final QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
         sc.and(sc.entity().getName(), Op.EQ, name);
+        sc.and(sc.entity().getRemoved(), Op.NULL);
         return sc.find();
     }
 
@@ -4253,7 +4326,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             return null;
         } else {
             _hostDao.loadDetails(host);
-            final DetailVO detail = _hostDetailsDao.findDetail(hostId, "guest.os.category.id");
+            final DetailVO detail = _hostDetailsDao.findDetail(hostId, Host.GUEST_OS_CATEGORY_ID);
             if (detail == null) {
                 return null;
             } else {
@@ -4578,7 +4651,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         return new ConfigKey<?>[] {
                 KvmSshToAgentEnabled,
                 HOST_MAINTENANCE_LOCAL_STRATEGY,
-                SystemVmPreferredArchitecture
+                SystemVmPreferredArchitecture,
+                SystemVMDefaultHypervisor
         };
     }
 }

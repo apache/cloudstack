@@ -144,18 +144,22 @@ public class CopySnapshotCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        StringBuilder descBuilder = new StringBuilder();
+        StringBuilder descBuilder = new StringBuilder("Copying snapshot with ID: " + getResourceUuid(ApiConstants.ID));
+
         if (getDestinationZoneIds() != null) {
+            descBuilder.append(" to zones: [");
+
             for (Long destId : getDestinationZoneIds()) {
-                descBuilder.append(", ");
                 descBuilder.append(_uuidMgr.getUuid(DataCenter.class, destId));
+                descBuilder.append(", ");
             }
-            if (descBuilder.length() > 0) {
-                descBuilder.deleteCharAt(0);
-            }
+
+            descBuilder.deleteCharAt(descBuilder.length() - 1);
+
+            descBuilder.append("]");
         }
 
-        return  "copying snapshot: " + _uuidMgr.getUuid(Snapshot.class, getId()) + ((descBuilder.length() > 0) ? " to zones: " + descBuilder.toString() : "");
+        return descBuilder.toString();
     }
 
     @Override
