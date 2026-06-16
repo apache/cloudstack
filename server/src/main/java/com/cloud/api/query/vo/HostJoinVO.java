@@ -173,6 +173,9 @@ public class HostJoinVO extends BaseViewVO implements InternalIdentity, Identity
     @Column(name = "guest_os_category_name")
     private String osCategoryName;
 
+    @Column(name = "guest_os_rule")
+    private String guestOsRule;
+
     @Column(name = "tag")
     private String tag;
 
@@ -371,6 +374,10 @@ public class HostJoinVO extends BaseViewVO implements InternalIdentity, Identity
 
     public String getOsCategoryName() {
         return osCategoryName;
+    }
+
+    public String getGuestOsRule() {
+        return guestOsRule;
     }
 
     public Long getJobId() {
