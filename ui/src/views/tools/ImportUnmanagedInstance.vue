@@ -40,7 +40,7 @@
                 :showIcon="true"
                 :message="$t('message.import.running.instance.warning')"
               />
-              <div v-if="!isNormalUserOrProject">
+              <div v-if="!isProject">
                 <ownership-selection @fetch-owner="fetchOwnerOptions" />
               </div>
               <a-form-item name="displayname" ref="displayname">
@@ -550,8 +550,8 @@ export default {
         }
       }
     },
-    isNormalUserOrProject () {
-      return ['User'].includes(this.$store.getters.userInfo.roletype) || store.getters.project?.id
+    isProject () {
+      return store.getters.project?.id
     },
     isVmRunning () {
       if (this.resource && this.resource.powerstate === 'PowerOn') {
