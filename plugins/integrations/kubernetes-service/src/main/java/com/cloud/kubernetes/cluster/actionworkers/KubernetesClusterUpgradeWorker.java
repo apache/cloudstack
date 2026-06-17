@@ -63,6 +63,20 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
         upgradeScriptFile = retrieveScriptFile(upgradeScriptFilename);
     }
 
+    private Pair<Boolean, String> preseedImagesOnVM(final UserVm vm, final int index) throws Exception {
+        int nodeSshPort = sshPort == 22 ? sshPort : sshPort + index;
+        String nodeAddress = (index > 0 && sshPort == 22) ? vm.getPrivateIpAddress() : publicIpAddress;
+        SshHelper.scpTo(nodeAddress, nodeSshPort, getControlNodeLoginUser(), sshKeyFile, null,
+                "~/", upgradeScriptFile.getAbsolutePath(), "0755");
+        String cmdStr = String.format("sudo ./%s %s false false %s %s true",
+                upgradeScriptFile.getName(),
+                upgradeVersion.getSemanticVersion(),
+                Hypervisor.HypervisorType.VMware.equals(vm.getHypervisorType()),
+                Objects.isNull(kubernetesCluster.getCniConfigId()));
+        return SshHelper.sshExecute(nodeAddress, nodeSshPort, getControlNodeLoginUser(), sshKeyFile, null,
+                cmdStr, 10000, 10000, 5 * 60 * 1000);
+    }
+
     private Pair<Boolean, String> runInstallScriptOnVM(final UserVm vm, final int index) throws Exception {
         int nodeSshPort = sshPort == 22 ? sshPort : sshPort + index;
         String nodeAddress = (index > 0 && sshPort == 22) ? vm.getPrivateIpAddress() : publicIpAddress;
@@ -80,6 +94,37 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
     }
 
     private void upgradeKubernetesClusterNodes() {
+        // kubeadm upgrade apply schedules a post-upgrade health check pod on a non-cordoned node.
+        // In air-gapped clusters, workers lack the new pause image until their own upgrade runs,
+        // causing the pod pull to fail and the upgrade to stall. Pre-seed all workers first so
+        // the image is present before the control-plane upgrade starts.
+        if (clusterVMs.size() > 1) {
+            for (int i = 1; i < clusterVMs.size(); ++i) {
+                UserVm vm = clusterVMs.get(i);
+                String errorMessage = String.format("Failed to upgrade Kubernetes cluster : %s, unable to pre-seed images on VM : %s",
+                        kubernetesCluster.getName(), vm.getDisplayName());
+                for (int retry = KubernetesClusterService.KubernetesClusterUpgradeRetries.value(); retry >= 0; retry--) {
+                    try {
+                        Pair<Boolean, String> result = preseedImagesOnVM(vm, i);
+                        if (result.first()) {
+                            break;
+                        }
+                        if (retry > 0) {
+                            logger.warn("{}, retries left: {}", errorMessage, retry);
+                        } else {
+                            logTransitStateDetachIsoAndThrow(Level.ERROR, errorMessage, kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, null);
+                        }
+                    } catch (Exception e) {
+                        if (retry > 0) {
+                            logger.warn("{} due to {}, retries left: {}", errorMessage, e, retry);
+                        } else {
+                            logTransitStateDetachIsoAndThrow(Level.ERROR, errorMessage, kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, e);
+                        }
+                    }
+                }
+            }
+        }
+
         for (int i = 0; i < clusterVMs.size(); ++i) {
             UserVm vm = clusterVMs.get(i);
             String hostName = vm.getHostName();

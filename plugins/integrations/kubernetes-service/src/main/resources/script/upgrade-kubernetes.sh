@@ -39,6 +39,10 @@ EXTERNAL_CNI=false
 if [ $# -gt 4 ]; then
   EXTERNAL_CNI="${5}"
 fi
+PRESEED_ONLY=false
+if [ $# -gt 5 ]; then
+  PRESEED_ONLY="${6}"
+fi
 
 export PATH=$PATH:/opt/bin
 if [[ "$PATH" != *:/usr/sbin && "$PATH" != *:/usr/sbin:* ]]; then
@@ -118,6 +122,12 @@ if [ -d "$BINARIES_DIR" ]; then
   echo $PAUSE_IMAGE
   if [ -n "$PAUSE_IMAGE" ]; then
     sed -i "s|sandbox_image = .*|sandbox_image = \"$PAUSE_IMAGE\"|g" /etc/containerd/config.toml
+  fi
+
+  if [ "${PRESEED_ONLY}" == 'true' ]; then
+    systemctl restart containerd
+    umount "${ISO_MOUNT_DIR}" && rmdir "${ISO_MOUNT_DIR}"
+    exit 0
   fi
 
   tar -f "${BINARIES_DIR}/cni/cni-plugins-"*64.tgz -C /opt/cni/bin -xz
