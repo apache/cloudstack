@@ -1040,7 +1040,7 @@ proposed: operator's responsibility to keep client + management-server clocks ro
 
 **Q15.** Confirm the filesystem-permissions inventory for sensitive
 files: JCEKS keystore, Root CA private key, JaSypt key + IV,
-`db.properties`. Who owns them, what mode? **CLARIFIED** *(producer)* — not a CSV inventory of every file in a running system; only the four sensitive artifacts named here (JCEKS keystore, Root CA private key, JaSypt key + IV, `db.properties`), each with its owning UID and file mode. *(awaiting the per-file owner/mode values from the PMC.)* *(maps to §5, §10)*
+`db.properties`. Who owns them, what mode? **RESOLVED** *(maintainer: vishesh92)* — not a CSV inventory of every file in a running system; only the four sensitive artifacts named here (JCEKS keystore, Root CA private key, JaSypt key + IV, `db.properties`). Ownership is `root` (user) / `cloud` (group), mode read+write for the owner and read for the `cloud` group (i.e. `0640`, `root:cloud`). *(maps to §5, §10)*
 
 **Q16.** Confirm the "what CloudStack does not do to its host" inventory
 in §5: no child processes besides agent `Script` invocations / system
@@ -1057,7 +1057,7 @@ these are the entire DoS-protection surface, with no engine-level guard. Confirm
 no engine-side cap; per-account storage limits + hypervisor limits are the bound. Confirm. **RESOLVED** *(maintainer: DaanHoogland)* — correct. *(maps to §6, §9)*
 
 **Q24.** Same-host non-`cloudstack` UID — proposed: game-over, no defence
-claimed. Confirm. *(maintainer: DaanHoogland notes there is a refusal to add a host with the same IP; whether that also includes a UID check is open — @vishesh92 to confirm. Disposition unchanged pending that.)* *(maps to §7, §9)*
+claimed. Confirm. **RESOLVED** *(maintainer: DaanHoogland, vishesh92)* — same-host non-`cloudstack` UID is game-over (no defence claimed; an operator at that level already controls the host, §3). On the related host-registration question: re-adding a host with the same IP **updates the existing host record** rather than creating a spoofed peer, and is gated by root-admin/operator access plus the keys/certs required to connect to the management server — adding a host directly without those fails (refinement tracked in apache/cloudstack#13182). So this is not an unauthenticated identity-spoof path. *(maps to §7, §9)*
 
 **Q25.** Side-channel observers (CPU cache timing, branch-predictor / speculative-execution channels e.g. Spectre-class, hypervisor-shared microarchitectural channels) — out of scope (proposed). **RESOLVED** *(maintainer: DaanHoogland)* — agreed, out of scope. *("branch" = branch-predictor / speculative-execution side channels — clarified by producer.)* *(maps to §7, §9)*
 
@@ -1075,7 +1075,7 @@ is information leak via error messages / async-job status / event log an in-mode
 
 **Q29.** Data-at-rest encryption — confirm CloudStack delegates entirely
 to storage layer / hypervisor (LUKS, Ceph encryption, vSphere VM
-Encryption); no CloudStack-layer encryption of guest volumes. **RESOLVED** *(maintainer: DaanHoogland)* — correct (delegated to storage layer / hypervisor); *(vishesh92 to confirm)*. *(maps to §9)*
+Encryption); no CloudStack-layer encryption of guest volumes. **RESOLVED** *(maintainer: DaanHoogland, vishesh92)* — correct; delegated entirely to the storage layer / hypervisor. *(maps to §9)*
 
 **Q30.** Constant-time comparison — confirm that *only* the API
 signature path uses `ConstantTimeComparator`. Login password compare,
