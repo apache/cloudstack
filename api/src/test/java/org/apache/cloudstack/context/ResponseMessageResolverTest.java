@@ -442,6 +442,73 @@ public class ResponseMessageResolverTest {
     }
 
     @Test
+    public void getMetadataObjectStringValueAlt_shouldReturnNullWhenObjectIsNull() {
+        Assert.assertNull(ResponseMessageResolver.getMetadataObjectStringValueAlt(null));
+    }
+
+    @Test
+    public void getMetadataObjectStringValueAlt_shouldReturnToStringWhenNonEmptyForRootAdmin() {
+        when(callContextMock.isCallingAccountRootAdmin()).thenReturn(true);
+        Object obj = new Object() {
+            @Override public String toString() { return "SomeObject id: 42"; }
+        };
+        Assert.assertEquals("SomeObject id: 42", ResponseMessageResolver.getMetadataObjectStringValueAlt(obj));
+    }
+
+    @Test
+    public void getMetadataObjectStringValueAlt_shouldStripIdPatternForNonRootAdmin() {
+        when(callContextMock.isCallingAccountRootAdmin()).thenReturn(false);
+        Object obj = new Object() {
+            @Override public String toString() { return "SomeObject id: 42"; }
+        };
+        Assert.assertEquals("SomeObject", ResponseMessageResolver.getMetadataObjectStringValueAlt(obj));
+    }
+
+    @Test
+    public void getMetadataObjectStringValueAlt_shouldStripMultipleIdPatternsForNonRootAdmin() {
+        when(callContextMock.isCallingAccountRootAdmin()).thenReturn(false);
+        Object obj = new Object() {
+            @Override public String toString() { return "id: 1 SomeObject id: 42"; }
+        };
+        Assert.assertEquals("SomeObject", ResponseMessageResolver.getMetadataObjectStringValueAlt(obj));
+    }
+
+    @Test
+    public void getMetadataObjectStringValueAlt_shouldReturnToStringUnchangedWhenNoIdPatternForNonRootAdmin() {
+        when(callContextMock.isCallingAccountRootAdmin()).thenReturn(false);
+        Object obj = new Object() {
+            @Override public String toString() { return "SomeObjectWithoutId"; }
+        };
+        Assert.assertEquals("SomeObjectWithoutId", ResponseMessageResolver.getMetadataObjectStringValueAlt(obj));
+    }
+
+    @Test
+    public void getMetadataObjectStringValueAlt_shouldFallbackToGetMetadataObjectStringValueWhenToStringIsEmpty() {
+        Identity identityMock = Mockito.mock(Identity.class);
+        when(identityMock.toString()).thenReturn("");
+        when(identityMock.getUuid()).thenReturn("uuid-fallback");
+        Assert.assertEquals("uuid-fallback", ResponseMessageResolver.getMetadataObjectStringValueAlt(identityMock));
+    }
+
+    @Test
+    public void getMetadataObjectStringValueAlt_shouldFallbackWhenToStringBecomesBlankAfterStrippingIdForNonRootAdmin() {
+        when(callContextMock.isCallingAccountRootAdmin()).thenReturn(false);
+        DataCenter dataCenterMock = Mockito.mock(DataCenter.class);
+        when(dataCenterMock.toString()).thenReturn("id: 99");
+        when(dataCenterMock.getName()).thenReturn("FallbackName");
+        Assert.assertEquals("'FallbackName'", ResponseMessageResolver.getMetadataObjectStringValueAlt(dataCenterMock));
+    }
+
+    @Test
+    public void getMetadataObjectStringValueAlt_shouldPreserveIdInToStringForRootAdmin() {
+        when(callContextMock.isCallingAccountRootAdmin()).thenReturn(true);
+        Object obj = new Object() {
+            @Override public String toString() { return "Zone [id: 7, name: TestZone]"; }
+        };
+        Assert.assertEquals("Zone [id: 7, name: TestZone]", ResponseMessageResolver.getMetadataObjectStringValueAlt(obj));
+    }
+
+    @Test
     public void updateExceptionResponse_shouldHandleNullMetadata() {
         ExceptionResponse response = new ExceptionResponse();
         CloudRuntimeException cre = Mockito.mock(CloudRuntimeException.class);

@@ -129,11 +129,13 @@ public class ResponseMessageResolver {
         if (MapUtils.isNotEmpty(metadata)) {
             for (Map.Entry<String, Object> entry : metadata.entrySet()) {
                 Object value = entry.getValue();
-                stringMap.put(entry.getKey(), getMetadataObjectStringValue(value));
+                stringMap.put(entry.getKey(), getMetadataObjectStringValueAlt(value));
             }
         }
         return stringMap;
     }
+
+
 
     /**
      * Converts a metadata object to a human-readable string for error messages.
@@ -210,6 +212,39 @@ public class ResponseMessageResolver {
         sb.append(")");
 
         return sb.toString();
+    }
+
+    /**
+     * Converts a metadata object to a human-readable string, prioritizing toString().
+     *
+     * <p>Behavior:
+     * <ul>
+     *   <li>If {@code obj} is {@code null}, returns {@code null}.</li>
+     *   <li>First attempts to use {@code obj.toString()}. If the result is non-empty, returns it.</li>
+     *   <li>For non-root admins, removes any "id: DBID" patterns from the toString() result.</li>
+     *   <li>If {@code obj.toString()} is empty or null (after filtering), falls back to {@link #getMetadataObjectStringValue(Object)},
+     *       which uses reflection to find display names and format metadata with UUID/ID info.</li>
+     * </ul>
+     *
+     * @param obj metadata object
+     * @return formatted metadata string suitable for inclusion in error messages, or {@code null}
+     *         if {@code obj} is {@code null}
+     */
+    protected static String getMetadataObjectStringValueAlt(Object obj) {
+        if (obj == null) {
+            return null;
+        }
+        String result = obj.toString();
+        if (StringUtils.isNotEmpty(result)) {
+            // Remove id: DBID pattern for non-root admins
+            if (!CallContext.current().isCallingAccountRootAdmin()) {
+                result = result.replaceAll("\\bid:\\s*\\d+", "").trim();
+            }
+            if (StringUtils.isNotEmpty(result)) {
+                return result;
+            }
+        }
+        return getMetadataObjectStringValue(obj);
     }
 
     protected static String invokeStringGetter(Object obj, String methodName) {
