@@ -596,10 +596,8 @@ public class NASBackupProviderTest {
         // ordered chain — getChainOrderedLeafToRoot sorts by CHAIN_POSITION descending.
         BackupDetailVO leafChainId = new BackupDetailVO(51L, NASBackupChainKeys.CHAIN_ID, "chain-1", true);
         BackupDetailVO leafChainPos = new BackupDetailVO(51L, NASBackupChainKeys.CHAIN_POSITION, "1", true);
-        BackupDetailVO leafParent = new BackupDetailVO(51L, NASBackupChainKeys.PARENT_BACKUP_ID, "parent-uuid", true);
         Mockito.when(backupDetailsDao.findDetail(51L, NASBackupChainKeys.CHAIN_ID)).thenReturn(leafChainId);
         Mockito.when(backupDetailsDao.findDetail(51L, NASBackupChainKeys.CHAIN_POSITION)).thenReturn(leafChainPos);
-        Mockito.when(backupDetailsDao.findDetail(51L, NASBackupChainKeys.PARENT_BACKUP_ID)).thenReturn(leafParent);
 
         // Parent is the tombstoned full anchor (CHAIN_POSITION=0).
         BackupDetailVO parentChainId = new BackupDetailVO(50L, NASBackupChainKeys.CHAIN_ID, "chain-1", true);
