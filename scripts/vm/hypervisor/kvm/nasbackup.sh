@@ -196,10 +196,10 @@ backup_running_vm() {
 
   # Print statistics
   virsh -c qemu:///system domjobinfo $VM --completed
-  du -sb $dest 2>/dev/null | cut -f1 || true
-
-  umount $mount_point
-  rmdir $mount_point
+  backup_size=$(du -sb "$dest" 2>/dev/null | cut -f1) || true
+  timeout 60 umount "$mount_point" 2>/dev/null || true
+  rmdir "$mount_point" 2>/dev/null || true
+  echo "$backup_size"
 }
 
 backup_stopped_vm() {
