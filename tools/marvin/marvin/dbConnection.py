@@ -42,6 +42,7 @@ class DbConnection(object):
                                             port=int(self.port),
                                             user=str(self.user),
                                             password=str(self.passwd),
+                                            charset="utf8mb4",
                                             db=str(self.database) if not db else db)) as conn:
             conn.autocommit = True
             with contextlib.closing(conn.cursor(buffered=True)) as cursor:
