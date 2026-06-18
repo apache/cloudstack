@@ -1184,4 +1184,31 @@ public class ResourceManagerImplTest {
         Mockito.verify(host).setStorageAccessGroups("group1,group2");
         Mockito.verify(hostDao).update(hostId, host);
     }
+
+    @Test
+    public void executeUserRequestDeleteHostPassesForcedFlags() throws Exception {
+        Mockito.doReturn(true).when(resourceManager).doDeleteHost(anyLong(), anyBoolean(), anyBoolean());
+
+        resourceManager.executeUserRequest(hostId, ResourceState.Event.DeleteHost, true, true);
+
+        Mockito.verify(resourceManager).doDeleteHost(hostId, true, true);
+    }
+
+    @Test
+    public void executeUserRequestDeleteHostPassesNonForcedFlags() throws Exception {
+        Mockito.doReturn(true).when(resourceManager).doDeleteHost(anyLong(), anyBoolean(), anyBoolean());
+
+        resourceManager.executeUserRequest(hostId, ResourceState.Event.DeleteHost, false, false);
+
+        Mockito.verify(resourceManager).doDeleteHost(hostId, false, false);
+    }
+
+    @Test
+    public void executeUserRequestDefaultOverloadPassesFalseForDeleteHost() throws Exception {
+        Mockito.doReturn(true).when(resourceManager).doDeleteHost(anyLong(), anyBoolean(), anyBoolean());
+
+        resourceManager.executeUserRequest(hostId, ResourceState.Event.DeleteHost);
+
+        Mockito.verify(resourceManager).doDeleteHost(hostId, false, false);
+    }
 }

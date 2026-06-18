@@ -32,6 +32,7 @@ import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SnapshotResponse;
+import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
@@ -109,6 +110,14 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd implements UserC
                description = "The ID of the Instance; to be used with snapshot Id, Instance to which the volume gets attached after creation")
     private Long virtualMachineId;
 
+    @Parameter(name = ApiConstants.STORAGE_ID,
+            type = CommandType.UUID,
+            entityType = StoragePoolResponse.class,
+            description = "Storage pool ID to create the volume in. Cannot be used with the snapshotid parameter.",
+            authorized = {RoleType.Admin},
+            since = "4.22.1")
+    private Long storageId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -142,6 +151,10 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd implements UserC
     }
 
     public Long getSnapshotId() {
+        if (storageId != null && snapshotId != null) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+                    "Snapshot ID cannot be specified with the Storage ID.");
+        }
         return snapshotId;
     }
 
@@ -151,6 +164,14 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd implements UserC
 
     private Long getProjectId() {
         return projectId;
+    }
+
+    public Long getStorageId() {
+        if (snapshotId != null && storageId != null) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+                    "Storage ID cannot be specified with the Snapshot ID.");
+        }
+        return storageId;
     }
 
     public Boolean getDisplayVolume() {

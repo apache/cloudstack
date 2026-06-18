@@ -204,6 +204,22 @@ public class ListServiceOfferingsCmd extends BaseListProjectAndAccountResourcesC
     public Long getCategoryId() {
         return categoryId;
     }
+  
+    public void setZoneId(Long zoneId) {
+        this.zoneId = zoneId;
+    }
+
+    public void setCpuNumber(Integer cpuNumber) {
+        this.cpuNumber = cpuNumber;
+    }
+
+    public void setMemory(Integer memory) {
+        this.memory = memory;
+    }
+
+    public void setEncryptRoot(Boolean encryptRoot) {
+        this.encryptRoot = encryptRoot;
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

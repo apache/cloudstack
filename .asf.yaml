@@ -50,12 +50,21 @@ github:
     rebase: false
 
   collaborators:
-    - gpordeus
+    - ingox
+    - gp-santos
     - erikbocks
     - Imvedansh
     - Damans227
+    - jmsperu
+    - GaOrtiga
+    - bhouse-nexthop
 
   protected_branches: ~
+
+  copilot_code_review:
+    enabled: true
+    review_drafts: true
+    review_on_push: true
 
 notifications:
   commits: commits@cloudstack.apache.org

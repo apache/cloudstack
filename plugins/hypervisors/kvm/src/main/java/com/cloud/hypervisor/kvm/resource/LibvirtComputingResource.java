@@ -18,6 +18,9 @@ package com.cloud.hypervisor.kvm.resource;
 
 import static com.cloud.host.Host.HOST_INSTANCE_CONVERSION;
 import static com.cloud.host.Host.HOST_OVFTOOL_VERSION;
+import static com.cloud.host.Host.HOST_VDDK_LIB_DIR;
+import static com.cloud.host.Host.HOST_VDDK_SUPPORT;
+import static com.cloud.host.Host.HOST_VDDK_VERSION;
 import static com.cloud.host.Host.HOST_VIRTV2V_VERSION;
 import static com.cloud.host.Host.HOST_VOLUME_ENCRYPTION;
 import static org.apache.cloudstack.utils.linux.KVMHostInfo.isHostS390x;
@@ -76,6 +79,7 @@ import org.apache.cloudstack.command.ReconcileCommandService;
 import org.apache.cloudstack.command.ReconcileCommandUtils;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.gpu.GpuDevice;
+import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsAnswer;
 import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsCommand;
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
@@ -121,6 +125,7 @@ import org.libvirt.DomainSnapshot;
 import org.libvirt.LibvirtException;
 import org.libvirt.MemoryStatistic;
 import org.libvirt.Network;
+import org.libvirt.SchedLongParameter;
 import org.libvirt.SchedParameter;
 import org.libvirt.SchedUlongParameter;
 import org.libvirt.Secret;
@@ -224,6 +229,7 @@ import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
+import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.storage.Volume;
 import com.cloud.storage.resource.StorageSubsystemCommandHandler;
 import com.cloud.storage.resource.StorageSubsystemCommandHandlerBase;
@@ -365,6 +371,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public static final String WINDOWS_GUEST_CONVERSION_SUPPORTED_CHECK_CMD = "rpm -qa | grep -i virtio-win";
     public static final String UBUNTU_WINDOWS_GUEST_CONVERSION_SUPPORTED_CHECK_CMD = "dpkg -l virtio-win";
     public static final String UBUNTU_NBDKIT_PKG_CHECK_CMD = "dpkg -l nbdkit";
+    public static final String VDDK_AUTODETECT_PATH_CMD = "find / -type d -name 'vmware-vix-disklib-distrib' 2>/dev/null | head -n 1";
 
     public static final int LIBVIRT_CGROUP_CPU_SHARES_MIN = 2;
     public static final int LIBVIRT_CGROUP_CPU_SHARES_MAX = 262144;
@@ -382,6 +389,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public static final String CHECKPOINT_DELETE_COMMAND = "virsh checkpoint-delete --domain %s --checkpointname %s  --metadata";
 
+    public static final int IMAGE_SERVER_DEFAULT_PORT = 54322;
+    public static final String IMAGE_SERVER_SYSTEMD_UNIT_NAME = "cloudstack-image-server";
+
     protected int qcow2DeltaMergeTimeout;
 
     private String modifyVlanPath;
@@ -395,6 +405,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private String heartBeatPath;
     private String vmActivityCheckPath;
     private String nasBackupPath;
+    private String imageServerPath;
+    private boolean imageServerTlsEnabled = false;
+    private String imageServerListenAddress;
     private String securityGroupPath;
     private String ovsPvlanDhcpHostPath;
     private String ovsPvlanVmPath;
@@ -809,6 +822,18 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return nasBackupPath;
     }
 
+    public String getImageServerPath() {
+        return imageServerPath;
+    }
+
+    public boolean isImageServerTlsEnabled() {
+        return imageServerTlsEnabled;
+    }
+
+    public String getImageServerListenAddress() {
+        return imageServerListenAddress;
+    }
+
     public String getOvsPvlanDhcpHostPath() {
         return ovsPvlanDhcpHostPath;
     }
@@ -879,16 +904,41 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         SUCCESS, FAILURE, IGNORE
     }
 
+    public enum CpuSchedulerParameter {
+        CPU_SHARES("cpu_shares"), PERIOD("vcpu_period"), QUOTA("vcpu_quota");
+
+        private String name;
+
+        CpuSchedulerParameter(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        @Override
+        public String toString() {
+            return getName();
+        }
+    }
+
     protected BridgeType bridgeType;
 
     protected StorageSubsystemCommandHandler storageHandler;
 
     private boolean convertInstanceVerboseMode = false;
     private Map<String, String> convertInstanceEnv = null;
+    private String vddkLibDir = null;
+    private static final String libguestfsBackend = "direct";
     protected boolean dpdkSupport = false;
     protected String dpdkOvsPath;
     protected String directDownloadTemporaryDownloadPath;
     protected String cachePath;
+    private String vddkTransports = null;
+    private String vddkThumbprint = null;
+    private String vddkVersion = null;
+    private String detectedPasswordFileOption = null;
     protected String javaTempDir = System.getProperty("java.io.tmpdir");
 
     private String getEndIpFromStartIp(final String startIp, final int numIps) {
@@ -951,6 +1001,26 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public Map<String, String> getConvertInstanceEnv() {
         return convertInstanceEnv;
+    }
+
+    public String getVddkLibDir() {
+        return vddkLibDir;
+    }
+
+    public String getLibguestfsBackend() {
+        return libguestfsBackend;
+    }
+
+    public String getVddkTransports() {
+        return vddkTransports;
+    }
+
+    public String getVddkThumbprint() {
+        return vddkThumbprint;
+    }
+
+    public String getVddkVersion() {
+        return vddkVersion;
     }
 
     /**
@@ -1027,6 +1097,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         cachePath = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HOST_CACHE_LOCATION);
 
+        imageServerTlsEnabled = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.IMAGE_SERVER_TLS_ENABLED);
+        imageServerListenAddress = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.IMAGE_SERVER_LISTEN_ADDRESS);
+
         params.put("domr.scripts.dir", domrScriptsDir);
 
         virtRouterResource = new VirtualRoutingResource(this);
@@ -1065,11 +1138,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             throw new ConfigurationException("Unable to find patch.sh");
         }
 
-        heartBeatPath = Script.findScript(kvmScriptsDir, "kvmheartbeat.sh");
-        if (heartBeatPath == null) {
-            throw new ConfigurationException("Unable to find kvmheartbeat.sh");
-        }
-
         createVmPath = Script.findScript(storageScriptsDir, "createvm.sh");
         if (createVmPath == null) {
             throw new ConfigurationException("Unable to find the createvm.sh");
@@ -1094,6 +1162,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (nasBackupPath == null) {
             throw new ConfigurationException("Unable to find nasbackup.sh");
         }
+
+        String imageServerMain = Script.findScript(kvmScriptsDir, "imageserver/__main__.py");
+        if (imageServerMain == null) {
+            throw new ConfigurationException("Unable to find imageserver package");
+        }
+        imageServerPath = new File(imageServerMain).getParent();
 
         createTmplPath = Script.findScript(storageScriptsDir, "createtmplt.sh");
         if (createTmplPath == null) {
@@ -1157,6 +1231,37 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         String convertEnvVirtv2vTmpDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.CONVERT_ENV_VIRTV2V_TMPDIR);
 
         setConvertInstanceEnv(convertEnvTmpDir, convertEnvVirtv2vTmpDir);
+
+        vddkLibDir = StringUtils.trimToNull(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VDDK_LIB_DIR));
+        if (StringUtils.isNotBlank(vddkLibDir) && !isVddkLibDirValid(vddkLibDir)) {
+            LOGGER.warn("Configured VDDK library dir [{}] is invalid (missing lib64/libvixDiskLib.so), attempting auto-detection", vddkLibDir);
+            vddkLibDir = null;
+        }
+        if (StringUtils.isBlank(vddkLibDir)) {
+            vddkLibDir = detectVddkLibDir();
+        }
+        if (StringUtils.isNotBlank(vddkLibDir)) {
+            LOGGER.info("Detected VDDK library dir: {}", vddkLibDir);
+        } else {
+            LOGGER.warn("Could not detect a valid VDDK library dir; VDDK conversion will be unavailable");
+        }
+
+        vddkVersion = detectVddkVersion();
+        if (StringUtils.isNotBlank(vddkVersion)) {
+            LOGGER.info("Detected nbdkit VDDK plugin version: {}", vddkVersion);
+        }
+
+        vddkTransports = StringUtils.trimToNull(
+                AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VDDK_TRANSPORTS));
+        vddkThumbprint = StringUtils.trimToNull(
+                AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VDDK_THUMBPRINT));
+
+        detectedPasswordFileOption = detectPasswordFileOption();
+        if (StringUtils.isNotBlank(detectedPasswordFileOption)) {
+            LOGGER.info("Detected virt-v2v password option: {}", detectedPasswordFileOption);
+        } else {
+            LOGGER.warn("Could not detect virt-v2v password option, VDDK conversions may fail");
+        }
 
         pool = (String)params.get("pool");
         if (pool == null) {
@@ -1332,9 +1437,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         final String[] info = NetUtils.getNetworkParams(privateNic);
 
-        kvmhaMonitor = new KVMHAMonitor(null, info[0], heartBeatPath);
-        final Thread ha = new Thread(kvmhaMonitor);
-        ha.start();
+        kvmhaMonitor = new KVMHAMonitor(info[0]);
+        final Thread haMonitorThread = new Thread(kvmhaMonitor);
+        haMonitorThread.start();
 
         storagePoolManager = new KVMStoragePoolManager(storageLayer, kvmhaMonitor);
 
@@ -2481,6 +2586,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         if (pool.getType() == StoragePoolType.CLVM && volFormat == PhysicalDiskFormat.RAW) {
             return "CLVM";
+        } else if (poolType == StoragePoolType.CLVM_NG) {
+            return "CLVM_NG";
         } else if ((poolType == StoragePoolType.NetworkFilesystem
                 || poolType == StoragePoolType.SharedMountPoint
                 || poolType == StoragePoolType.Filesystem
@@ -2909,23 +3016,61 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected void setQuotaAndPeriod(VirtualMachineTO vmTO, CpuTuneDef ctd) {
         if (vmTO.isLimitCpuUse() && vmTO.getCpuQuotaPercentage() != null) {
             Double cpuQuotaPercentage = vmTO.getCpuQuotaPercentage();
-            int period = CpuTuneDef.DEFAULT_PERIOD;
-            int quota = (int) (period * cpuQuotaPercentage);
-            if (quota < CpuTuneDef.MIN_QUOTA) {
-                LOGGER.info("Calculated quota (" + quota + ") below the minimum (" + CpuTuneDef.MIN_QUOTA + ") for VM domain " + vmTO.getUuid() + ", setting it to minimum " +
-                        "and calculating period instead of using the default");
-                quota = CpuTuneDef.MIN_QUOTA;
-                period = (int) ((double) quota / cpuQuotaPercentage);
-                if (period > CpuTuneDef.MAX_PERIOD) {
-                    LOGGER.info("Calculated period (" + period + ") exceeds the maximum (" + CpuTuneDef.MAX_PERIOD +
-                            "), setting it to the maximum");
-                    period = CpuTuneDef.MAX_PERIOD;
-                }
-            }
-            ctd.setQuota(quota);
-            ctd.setPeriod(period);
-            LOGGER.info("Setting quota=" + quota + ", period=" + period + " to VM domain " + vmTO.getUuid());
+            Pair<Integer, Long> periodAndQuota = getPeriodAndQuota(cpuQuotaPercentage);
+            ctd.setPeriod(periodAndQuota.first());
+            ctd.setQuota(periodAndQuota.second());
+            LOGGER.info("Setting quota = [{}] and period = [{}] to VM domain [{}].", periodAndQuota.second(), periodAndQuota.first(), vmTO.getUuid());
         }
+    }
+
+    /**
+     * Calculates the CPU period and quota based on the quota percentage defined by the Management Server
+     * @param cpuQuotaPercentage CPU quota percentage defined by the Management Server
+     * @return The period and quota to be defined for the VM's domain
+     */
+    protected Pair<Integer, Long> getPeriodAndQuota(double cpuQuotaPercentage) {
+        int period = CpuTuneDef.DEFAULT_PERIOD;
+        long quota = (long) (period * cpuQuotaPercentage);
+        if (quota < CpuTuneDef.MIN_QUOTA) {
+            LOGGER.info("Calculated quota ({}) below the minimum ({}), setting it to minimum and calculating period instead of using the default", quota, CpuTuneDef.MIN_QUOTA);
+            quota = CpuTuneDef.MIN_QUOTA;
+            period = (int) ((double) quota / cpuQuotaPercentage);
+            if (period > CpuTuneDef.MAX_PERIOD) {
+                LOGGER.info("Calculated period ({}) exceeds the maximum ({}), setting it to the maximum", period, CpuTuneDef.MAX_PERIOD);
+                period = CpuTuneDef.MAX_PERIOD;
+            }
+        }
+
+        LOGGER.info("Calculated period = [{}] and quota = [{}] given the [{}] quota percentage.", period, quota, cpuQuotaPercentage);
+        return new Pair<>(period, quota);
+    }
+
+    /**
+     * Dynamically updates the domain's "vcpu_quota" and "period" fields of the CPU tune definition.
+     * This is required because the values of the fields must change according to the new CPU speed of the VM.
+     * When the CPU limitation is removed from the domain, the "vcpu_quota" field is set to 17,592,186,044,415.
+     * @param domain VM's domain.
+     * @param vmTO VM's transfer object, which contains the required fields to update the "vcpu_quota" and "period" fields.
+     * @param limitCpuUseChange Indicates whether the CPU limitation for the VM has changed.
+     * @throws org.libvirt.LibvirtException
+     **/
+    public void updateCpuQuotaAndPeriod(Domain domain, VirtualMachineTO vmTO, boolean limitCpuUseChange) throws LibvirtException {
+        if (hypervisorLibvirtVersion < MIN_LIBVIRT_VERSION_FOR_GUEST_CPU_TUNE || (!limitCpuUseChange && !vmTO.isLimitCpuUse())) {
+            logger.info("Not updating the [{}] and [{}] for the [{}] domain, because [{}].",
+                    CpuSchedulerParameter.QUOTA, CpuSchedulerParameter.PERIOD, domain.getName(), hypervisorLibvirtVersion < MIN_LIBVIRT_VERSION_FOR_GUEST_CPU_TUNE ?
+                            "the current Libvirt version does not support CPU tune" : "it was not requested to remove, change or apply CPU limitation for the instance.");
+            return;
+        }
+
+        if (limitCpuUseChange && !vmTO.isLimitCpuUse()) {
+            logger.info("Updating the [{}] of the [{}] domain to [{}], because CPU limitation has been removed.", CpuSchedulerParameter.QUOTA, domain.getName(), CpuTuneDef.MAX_CPU_QUOTA);
+            LibvirtComputingResource.setQuota(domain, CpuTuneDef.MAX_CPU_QUOTA);
+            return;
+        }
+
+        Pair<Integer, Long> periodAndQuota = getPeriodAndQuota(vmTO.getCpuQuotaPercentage());
+        LibvirtComputingResource.setPeriod(domain, periodAndQuota.first());
+        LibvirtComputingResource.setQuota(domain, periodAndQuota.second());
     }
 
     protected void enlightenWindowsVm(VirtualMachineTO vmTO, FeaturesDef features) {
@@ -3389,10 +3534,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         grd.setMemBalloning(!noMemBalloon);
 
-        Long maxRam = ByteScaleUtils.bytesToKibibytes(vmTO.getMaxRam());
-
-        grd.setMemorySize(maxRam);
-        grd.setCurrentMem(getCurrentMemAccordingToMemBallooning(vmTO, maxRam));
+        long requestedRam = ByteScaleUtils.bytesToKibibytes(vmTO.getRequestedRam());
+        long minRam = ByteScaleUtils.bytesToKibibytes(vmTO.getMinRam());
+        grd.setCurrentMem(getCurrentMemAccordingToMemBallooning(vmTO, requestedRam, minRam));
+        grd.setMaxMemory(ByteScaleUtils.bytesToKibibytes(vmTO.getMaxRam()));
 
         int vcpus = vmTO.getCpus();
         Integer maxVcpus = vmTO.getVcpuMaxLimit();
@@ -3403,18 +3548,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return grd;
     }
 
-    protected long getCurrentMemAccordingToMemBallooning(VirtualMachineTO vmTO, long maxRam) {
-        long retVal = maxRam;
+    protected long getCurrentMemAccordingToMemBallooning(VirtualMachineTO vmTO, long requestedRam, long minRam) {
         if (noMemBalloon) {
-            LOGGER.warn(String.format("Setting VM's [%s] current memory as max memory [%s] due to memory ballooning is disabled. If you are using a custom service offering, verify if memory ballooning really should be disabled.", vmTO.toString(), maxRam));
-        } else if (vmTO != null && vmTO.getType() != VirtualMachine.Type.User) {
-            LOGGER.warn(String.format("Setting System VM's [%s] current memory as max memory [%s].", vmTO.toString(), maxRam));
-        } else {
-            long minRam = ByteScaleUtils.bytesToKibibytes(vmTO.getMinRam());
-            LOGGER.debug(String.format("Setting VM's [%s] current memory as min memory [%s] due to memory ballooning is enabled.", vmTO.toString(), minRam));
-            retVal = minRam;
+            LOGGER.warn("Setting VM's [{}] current memory as requested memory [{}] due to memory ballooning is disabled.", vmTO.toString(), requestedRam);
+            return requestedRam;
         }
-        return retVal;
+
+        if (vmTO != null && vmTO.getType() != VirtualMachine.Type.User) {
+            LOGGER.warn("Setting System VM's [{}] current memory as requested memory [{}].", vmTO.toString(), requestedRam);
+            return requestedRam;
+        }
+
+        LOGGER.debug("Setting VM's [{}] current memory as min memory [{}] due to memory ballooning is enabled.", vmTO.toString(), minRam);
+        return minRam;
     }
 
     /**
@@ -3680,13 +3826,18 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     final String glusterVolume = pool.getSourceDir().replace("/", "");
                     disk.defNetworkBasedDisk(glusterVolume + path.replace(mountpoint, ""), pool.getSourceHost(), pool.getSourcePort(), null,
                             null, devId, diskBusType, DiskProtocol.GLUSTER, DiskDef.DiskFmtType.QCOW2);
-                } else if (pool.getType() == StoragePoolType.CLVM || physicalDisk.getFormat() == PhysicalDiskFormat.RAW) {
+                } else if (pool.getType() == StoragePoolType.CLVM || pool.getType() == StoragePoolType.CLVM_NG || physicalDisk.getFormat() == PhysicalDiskFormat.RAW) {
                     if (volume.getType() == Volume.Type.DATADISK && !(isWindowsTemplate && isUefiEnabled)) {
                         disk.defBlockBasedDisk(physicalDisk.getPath(), devId, diskBusTypeData);
-                    }
-                    else {
+                    } else {
                         disk.defBlockBasedDisk(physicalDisk.getPath(), devId, diskBusType);
                     }
+
+                    // CLVM_NG uses QCOW2 format on block devices, override the default RAW format
+                    if (pool.getType() == StoragePoolType.CLVM_NG) {
+                        disk.setDiskFormatType(DiskDef.DiskFmtType.QCOW2);
+                    }
+
                     if (pool.getType() == StoragePoolType.Linstor && isQemuDiscardBugFree(diskBusType)) {
                         disk.setDiscard(DiscardType.UNMAP);
                     }
@@ -4229,6 +4380,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         cmd.setHostTags(getHostTags());
         boolean instanceConversionSupported = hostSupportsInstanceConversion();
         cmd.getHostDetails().put(HOST_INSTANCE_CONVERSION, String.valueOf(instanceConversionSupported));
+        cmd.getHostDetails().put(HOST_VDDK_SUPPORT, String.valueOf(hostSupportsVddk()));
+        if (StringUtils.isNotBlank(vddkLibDir)) {
+            cmd.getHostDetails().put(HOST_VDDK_LIB_DIR, vddkLibDir);
+        }
+        if (StringUtils.isNotBlank(vddkVersion)) {
+            cmd.getHostDetails().put(HOST_VDDK_VERSION, vddkVersion);
+        }
         if (instanceConversionSupported) {
             cmd.getHostDetails().put(HOST_VIRTV2V_VERSION, getHostVirtV2vVersion());
         }
@@ -4851,6 +5009,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
+    public InterfaceDef getInterface(final Connect conn, final String vmName, final String macAddress) {
+        List<InterfaceDef> interfaces = getInterfaces(conn, vmName);
+        return interfaces.stream().filter(interfaceDef -> interfaceDef.getMacAddress().equals(macAddress))
+                .findFirst().orElseThrow(() -> new CloudRuntimeException(String.format("Unable to find NIC with MAC address %s.", macAddress)));
+    }
+
     public List<DiskDef> getDisks(final Connect conn, final String vmName) {
         final LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
         Domain dm = null;
@@ -5221,6 +5385,24 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         logger.debug("Removed all checkpoints of volume [{}] on VM [{}].", volumeUuid, vmName);
     }
 
+    public Map<String, String> getDiskPathLabelMap(String vmName) {
+        try {
+            Connect conn = LibvirtConnection.getConnectionByVmName(vmName);
+            List<DiskDef> disks = getDisks(conn, vmName);
+            Map<String, String> diskPathLabelMap = new HashMap<>();
+            for (DiskDef disk : disks) {
+                if (disk.getDeviceType() != DeviceType.DISK) {
+                    continue;
+                }
+                diskPathLabelMap.put(disk.getDiskPath(), disk.getDiskLabel());
+            }
+            return diskPathLabelMap;
+        } catch (LibvirtException e) {
+            logger.error("Failed to get disk path label map for VM [{}] due to: [{}].", vmName, e.getMessage(), e);
+            throw new CloudRuntimeException(e);
+        }
+    }
+
     public boolean recreateCheckpointsOnVm(List<VolumeObjectTO> volumes, String vmName, Connect conn) {
         logger.debug("Trying to recreate checkpoints on VM [{}] with volumes [{}].", vmName, volumes);
         try {
@@ -5555,8 +5737,71 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public Answer listFilesAtPath(ListDataStoreObjectsCommand command) {
         DataStoreTO store = command.getStore();
-        KVMStoragePool storagePool = storagePoolManager.getStoragePool(StoragePoolType.NetworkFilesystem, store.getUuid());
+        StoragePoolType poolType = StoragePoolType.NetworkFilesystem;
+        if (store instanceof PrimaryDataStoreTO) {
+            poolType = ((PrimaryDataStoreTO) store).getPoolType();
+        }
+        KVMStoragePool storagePool = storagePoolManager.getStoragePool(poolType, store.getUuid());
+        if (ClvmPoolManager.isClvmPoolType(poolType)) {
+            return listLvmVolumes(storagePool.getLocalPath(), command.getStartIndex(), command.getPageSize());
+        }
         return listFilesAtPath(storagePool.getLocalPath(), command.getPath(), command.getStartIndex(), command.getPageSize());
+    }
+
+    private Answer listLvmVolumes(String localPath, int startIndex, int pageSize) {
+        String vgName = localPath;
+        if (vgName.startsWith("/")) {
+            String[] parts = vgName.split("/");
+            for (int i = parts.length - 1; i >= 0; i--) {
+                if (!parts[i].isEmpty()) {
+                    vgName = parts[i];
+                    break;
+                }
+            }
+        }
+
+        Script lvs = new Script("lvs", 30000, logger);
+        lvs.add("--noheadings");
+        lvs.add("--nosuffix");
+        lvs.add("-o", "lv_name,lv_size");
+        lvs.add("--units", "b");
+        lvs.add(vgName);
+        AllLinesParser parser = new AllLinesParser();
+        String result = lvs.execute(parser);
+
+        List<String> names = new ArrayList<>();
+        List<String> paths = new ArrayList<>();
+        List<String> absPaths = new ArrayList<>();
+        List<Boolean> isDirs = new ArrayList<>();
+        List<Long> sizes = new ArrayList<>();
+        List<Long> lastModified = new ArrayList<>();
+
+        if (result != null) {
+            logger.warn("lvs listing failed for VG {}: {}", vgName, result);
+            return new ListDataStoreObjectsAnswer(false, 0, names, paths, absPaths, isDirs, sizes, lastModified);
+        }
+
+        List<String[]> entries = new ArrayList<>();
+        for (String line : parser.getLines().split("\n")) {
+            String trimmed = line.trim();
+            if (trimmed.isEmpty()) continue;
+            String[] cols = trimmed.split("\\s+");
+            if (cols.length >= 2) entries.add(cols);
+        }
+
+        int count = entries.size();
+        for (int i = startIndex; i < startIndex + pageSize && i < count; i++) {
+            String lvName = entries.get(i)[0];
+            long size = 0;
+            try { size = Long.parseLong(entries.get(i)[1]); } catch (NumberFormatException ignored) {}
+            names.add(lvName);
+            paths.add("/" + lvName);
+            absPaths.add("/dev/" + vgName + "/" + lvName);
+            isDirs.add(false);
+            sizes.add(size);
+            lastModified.add(0L);
+        }
+        return new ListDataStoreObjectsAnswer(true, count, names, paths, absPaths, isDirs, sizes, lastModified);
     }
 
     public boolean addNetworkRules(final String vmName, final String vmId, final String guestIP, final String guestIP6, final String sig, final String seq, final String mac, final String rules, final String vif, final String brname,
@@ -5944,6 +6189,66 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return exitValue == 0;
     }
 
+    public boolean hostSupportsVddk() {
+        return hostSupportsVddk(null);
+    }
+
+    public boolean hostSupportsVddk(String overriddenVddkLibDir) {
+        String effectiveVddkLibDir = StringUtils.trimToNull(overriddenVddkLibDir);
+        if (StringUtils.isBlank(effectiveVddkLibDir)) {
+            effectiveVddkLibDir = StringUtils.trimToNull(vddkLibDir);
+        }
+        if (StringUtils.isBlank(effectiveVddkLibDir) || !isVddkLibDirValid(effectiveVddkLibDir)) {
+            effectiveVddkLibDir = detectVddkLibDir();
+        }
+        return hostSupportsInstanceConversion() && isVddkLibDirValid(effectiveVddkLibDir) && StringUtils.isNotBlank(detectVddkVersion());
+    }
+
+    protected boolean isVddkLibDirValid(String path) {
+        if (StringUtils.isBlank(path)) {
+            return false;
+        }
+        File libDir = new File(path, "lib64");
+        if (!libDir.isDirectory()) {
+            return false;
+        }
+        File[] libs = libDir.listFiles((dir, name) -> name.startsWith("libvixDiskLib.so"));
+        return libs != null && libs.length > 0;
+    }
+
+    protected String detectVddkLibDir() {
+        String detectedPath = StringUtils.trimToNull(Script.runSimpleBashScript(VDDK_AUTODETECT_PATH_CMD));
+        if (StringUtils.isNotBlank(detectedPath) && isVddkLibDirValid(detectedPath)) {
+            return detectedPath;
+        }
+        return null;
+    }
+
+    protected String detectVddkVersion() {
+        try {
+            ProcessBuilder pb = new ProcessBuilder("nbdkit", "vddk", "--version");
+            Process process = pb.start();
+
+            String output = new String(process.getInputStream().readAllBytes());
+            process.waitFor();
+
+            if (StringUtils.isBlank(output)) {
+                return null;
+            }
+
+            for (String line : output.split("\\R")) {
+                String trimmed = StringUtils.trimToEmpty(line);
+                if (trimmed.startsWith("vddk ")) {
+                    return StringUtils.trimToNull(trimmed.substring("vddk ".length()));
+                }
+            }
+            return null;
+        } catch (Exception e) {
+            LOGGER.error("Failed to detect vddk version: {}", e.getMessage());
+            return null;
+        }
+    }
+
     public boolean hostSupportsWindowsGuestConversion() {
         if (isUbuntuOrDebianHost()) {
             int exitValue = Script.runSimpleBashScriptForExitValue(UBUNTU_WINDOWS_GUEST_CONVERSION_SUPPORTED_CHECK_CMD);
@@ -5956,6 +6261,40 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public boolean hostSupportsOvfExport() {
         int exitValue = Script.runSimpleBashScriptForExitValue(OVF_EXPORT_SUPPORTED_CHECK_CMD);
         return exitValue == 0;
+    }
+
+    /**
+     * Detect which password option virt-v2v supports by examining its --help output
+     * @return "-ip" if supported (virt-v2v >= 2.8.1), "--password-file" if older version, or null if detection fails
+     */
+    protected String detectPasswordFileOption() {
+        try {
+            ProcessBuilder pb = new ProcessBuilder("virt-v2v", "--help");
+            Process process = pb.start();
+
+            String output = new String(process.getInputStream().readAllBytes());
+            process.waitFor();
+
+            if (output.contains("-ip <filename>")) {
+                return "-ip";
+            } else if (output.contains("--password-file")) {
+                return "--password-file";
+            } else {
+                LOGGER.error("virt-v2v does not support -ip or --password-file");
+                return null;
+            }
+        } catch (Exception e) {
+            LOGGER.error("Failed to detect virt-v2v password option: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Get the detected password file option for virt-v2v
+     * @return the password option ("-ip" or "--password-file") or null if not detected
+     */
+    public String getDetectedPasswordFileOption() {
+        return detectedPasswordFileOption;
     }
 
     public String getHostVirtV2vVersion() {
@@ -6092,27 +6431,57 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      **/
     public static Integer getCpuShares(Domain dm) throws LibvirtException {
         for (SchedParameter c : dm.getSchedulerParameters()) {
-            if (c.field.equals("cpu_shares")) {
+            if (c.field.equals(CpuSchedulerParameter.CPU_SHARES.getName())) {
                 return Integer.parseInt(c.getValueAsString());
             }
         }
-        LOGGER.warn(String.format("Could not get cpu_shares of domain: [%s]. Returning default value of 0. ", dm.getName()));
+        LOGGER.warn("Could not get [{}] of domain: [{}]. Returning default value of 0. ", CpuSchedulerParameter.CPU_SHARES.getName(), dm.getName());
         return 0;
     }
 
     /**
-     * Sets the cpu_shares (priority) of the running VM <br/>
+     * Updates the cpu_shares (priority) of the running VM.
      * @param dm domain of the VM.
      * @param cpuShares new priority of the running VM.
-     * @throws org.libvirt.LibvirtException
      **/
     public static void setCpuShares(Domain dm, Integer cpuShares) throws LibvirtException {
+        LOGGER.info("Dynamically updating the [{}] of the [{}] VM to [{}].", CpuSchedulerParameter.CPU_SHARES.getName(), dm.getName(), cpuShares);
         SchedUlongParameter[] params = new SchedUlongParameter[1];
         params[0] = new SchedUlongParameter();
-        params[0].field = "cpu_shares";
+        params[0].field = CpuSchedulerParameter.CPU_SHARES.getName();
         params[0].value = cpuShares;
 
         dm.setSchedulerParameters(params);
+    }
+
+    /**
+     * Updates the period of the running VM.
+     * @param domain domain of the VM.
+     * @param period new period of the running VM.
+     **/
+    public static void setPeriod(Domain domain, int period) throws LibvirtException {
+        LOGGER.info("Dynamically updating the [{}] of the [{}] VM to [{}].", CpuSchedulerParameter.PERIOD.getName(), domain.getName(), period);
+        SchedUlongParameter[] params = new SchedUlongParameter[1];
+        params[0] = new SchedUlongParameter();
+        params[0].field = CpuSchedulerParameter.PERIOD.getName();
+        params[0].value = period;
+
+        domain.setSchedulerParameters(params);
+    }
+
+    /**
+     * Updates the quota of the running VM.
+     * @param domain domain of the VM.
+     * @param quota new quota of the running VM.
+     **/
+    public static void setQuota(Domain domain, long quota) throws LibvirtException {
+        LOGGER.info("Dynamically updating the [{}] of the [{}] VM to [{}].", CpuSchedulerParameter.QUOTA.getName(), domain.getName(), quota);
+        SchedLongParameter[] params = new SchedLongParameter[1];
+        params[0] = new SchedLongParameter();
+        params[0].field = CpuSchedulerParameter.QUOTA.getName();
+        params[0].value = quota;
+
+        domain.setSchedulerParameters(params);
     }
 
     /**
@@ -6522,5 +6891,238 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
     public String getGuestCpuArch() {
         return guestCpuArch;
+    }
+
+    /**
+     * CLVM volume state for migration operations on source host
+     */
+    public enum ClvmVolumeState {
+        /** Shared mode (-asy) - used before migration to allow both hosts to access volume */
+        SHARED("-asy", "shared", "Before migration: activating in shared mode"),
+
+        /** Deactivate (-an) - used after successful migration to release volume on source */
+        DEACTIVATE("-an", "deactivated", "After successful migration: deactivating volume"),
+
+        /** Exclusive mode (-aey) - used after failed migration to revert to original exclusive state */
+        EXCLUSIVE("-aey", "exclusive", "After failed migration: reverting to exclusive mode");
+
+        private final String lvchangeFlag;
+        private final String description;
+        private final String logMessage;
+
+        ClvmVolumeState(String lvchangeFlag, String description, String logMessage) {
+            this.lvchangeFlag = lvchangeFlag;
+            this.description = description;
+            this.logMessage = logMessage;
+        }
+
+        public String getLvchangeFlag() {
+            return lvchangeFlag;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public String getLogMessage() {
+            return logMessage;
+        }
+    }
+
+    public static void modifyClvmVolumesStateForMigration(List<DiskDef> disks, VirtualMachineTO vmSpec, ClvmVolumeState state) {
+        for (DiskDef disk : disks) {
+            if (isClvmVolume(disk, vmSpec)) {
+                String volumePath = disk.getDiskPath();
+                try {
+                    modifyClvmVolumeState(volumePath, state.getLvchangeFlag(), state.getDescription(), state.getLogMessage());
+                } catch (Exception e) {
+                    LOGGER.error("[CLVM Migration] Exception while setting volume [{}] to {} state: {}",
+                            volumePath, state.getDescription(), e.getMessage(), e);
+                }
+            }
+        }
+    }
+
+    private static void modifyClvmVolumeState(String volumePath, String lvchangeFlag,
+                                       String stateDescription, String logMessage) {
+        try {
+            LOGGER.info("{} for volume [{}]", logMessage, volumePath);
+
+            Script cmd = new Script("lvchange", Duration.standardSeconds(300), LOGGER);
+            cmd.add(lvchangeFlag);
+            cmd.add(volumePath);
+
+            String result = cmd.execute();
+            if (result != null) {
+                String errorMsg = String.format(
+                        "Failed to set volume [%s] to %s state. Command result: %s",
+                        volumePath, stateDescription, result);
+                LOGGER.error(errorMsg);
+                throw new CloudRuntimeException(errorMsg);
+            } else {
+                LOGGER.info("Successfully set volume [{}] to {} state.",
+                        volumePath, stateDescription);
+            }
+        } catch (CloudRuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            String errorMsg = String.format(
+                    "Exception while setting volume [%s] to %s state: %s",
+                    volumePath, stateDescription, e.getMessage());
+            LOGGER.error(errorMsg, e);
+            throw new CloudRuntimeException(errorMsg, e);
+        }
+    }
+
+    public static void activateClvmVolumeExclusive(String volumePath) {
+        modifyClvmVolumeState(volumePath, ClvmVolumeState.EXCLUSIVE.getLvchangeFlag(),
+                ClvmVolumeState.EXCLUSIVE.getDescription(),
+                "Activating CLVM volume in exclusive mode");
+    }
+
+    public static void deactivateClvmVolume(String volumePath) {
+        try {
+            modifyClvmVolumeState(volumePath, ClvmVolumeState.DEACTIVATE.getLvchangeFlag(),
+                    ClvmVolumeState.DEACTIVATE.getDescription(),
+                    "Deactivating CLVM volume");
+        } catch (Exception e) {
+            LOGGER.warn("Failed to deactivate CLVM volume {}: {}", volumePath, e.getMessage());
+        }
+    }
+
+    public static void setClvmVolumeToSharedMode(String volumePath) {
+        try {
+            modifyClvmVolumeState(volumePath, ClvmVolumeState.SHARED.getLvchangeFlag(),
+                    ClvmVolumeState.SHARED.getDescription(),
+                    "Setting CLVM volume to shared mode");
+        } catch (Exception e) {
+            LOGGER.warn("Failed to set CLVM volume {} to shared mode: {}", volumePath, e.getMessage());
+        }
+    }
+
+    /**
+     * Determines if a disk is on a CLVM storage pool by checking the actual pool type from VirtualMachineTO.
+     * This is the most reliable method as it uses CloudStack's own storage pool information.
+     *
+     * @param disk The disk definition to check
+     * @param resource The LibvirtComputingResource instance (unused but kept for compatibility)
+     * @param vmSpec The VirtualMachineTO specification containing disk and pool information
+     * @return true if the disk is on a CLVM storage pool, false otherwise
+     */
+    private static boolean isClvmVolume(DiskDef disk, VirtualMachineTO vmSpec) {
+        String diskPath = disk.getDiskPath();
+        if (diskPath == null || vmSpec == null) {
+            return false;
+        }
+
+        try {
+            if (vmSpec.getDisks() != null) {
+                for (DiskTO diskTO : vmSpec.getDisks()) {
+                    if (!(diskTO.getData() instanceof VolumeObjectTO)) {
+                        continue;
+                    }
+                    VolumeObjectTO volumeTO = (VolumeObjectTO) diskTO.getData();
+                    if (!diskPath.equals(volumeTO.getPath()) && !diskPath.equals(diskTO.getPath())) {
+                        continue;
+                    }
+                    DataStoreTO dataStore = volumeTO.getDataStore();
+                    if (!(dataStore instanceof PrimaryDataStoreTO)) {
+                        continue;
+                    }
+                    PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO) dataStore;
+                    boolean isClvm = StoragePoolType.CLVM == primaryStore.getPoolType() ||
+                                     StoragePoolType.CLVM_NG == primaryStore.getPoolType();
+                    LOGGER.debug("Disk {} identified as CLVM/CLVM_NG={} via VirtualMachineTO pool type: {}",
+                                diskPath, isClvm, primaryStore.getPoolType());
+                    return isClvm;
+                }
+            }
+
+            if (diskPath.startsWith("/dev/") && !diskPath.contains("/dev/mapper/")) {
+                String vgName = extractVolumeGroupFromPath(diskPath);
+                if (vgName != null) {
+                    boolean isClustered = checkIfVolumeGroupIsClustered(vgName);
+                    LOGGER.debug("Disk {} VG {} identified as clustered={} via vgs attribute check",
+                                diskPath, vgName, isClustered);
+                    return isClustered;
+                }
+            }
+
+        } catch (Exception e) {
+            LOGGER.error("Error determining if volume {} is CLVM: {}", diskPath, e.getMessage(), e);
+        }
+
+        return false;
+    }
+
+    /**
+     * Extracts the volume group name from a device path.
+     *
+     * @param devicePath The device path (e.g., /dev/vgname/lvname)
+     * @return The volume group name, or null if cannot be determined
+     */
+     static String extractVolumeGroupFromPath(String devicePath) {
+        if (devicePath == null || !devicePath.startsWith("/dev/")) {
+            return null;
+        }
+
+        // Format: /dev/<vgname>/<lvname>
+        String[] parts = devicePath.split("/");
+        if (parts.length >= 3) {
+            return parts[2]; // ["", "dev", "vgname", ...]
+        }
+
+        return null;
+    }
+
+    /**
+     * Checks if a volume group is clustered (CLVM) by examining its attributes.
+     * Uses 'vgs' command to check for the clustered/shared flag in VG attributes.
+     *
+     * VG Attr format (6 characters): wz--nc or wz--ns
+     *   Position 6: Clustered flag - 'c' = CLVM (clustered), 's' = shared (lvmlockd), '-' = not clustered
+     *
+     * @param vgName The volume group name
+     * @return true if the VG is clustered or shared, false otherwise
+     */
+     static boolean checkIfVolumeGroupIsClustered(String vgName) {
+        if (vgName == null) {
+            return false;
+        }
+
+        try {
+            OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+            Script vgsCmd = new Script("vgs", 30000, LOGGER);
+            vgsCmd.add("--noheadings");
+            vgsCmd.add("--unbuffered");
+            vgsCmd.add("-o");
+            vgsCmd.add("vg_attr");
+            vgsCmd.add(vgName);
+
+            String result = vgsCmd.execute(parser);
+
+            if (result == null && parser.getLines() != null) {
+                String output = parser.getLines();
+                if (output != null && !output.isEmpty()) {
+                    String vgAttr = output.trim();
+                    if (vgAttr.length() >= 6) {
+                        char clusterFlag = vgAttr.charAt(5);  // Position 6 (0-indexed 5)
+                        boolean isClustered = (clusterFlag == 'c' || clusterFlag == 's');
+                        LOGGER.debug("VG {} has attributes '{}', cluster/shared flag '{}' = {}",
+                                    vgName, vgAttr, clusterFlag, isClustered);
+                        return isClustered;
+                    } else {
+                        LOGGER.warn("VG {} attributes '{}' have unexpected format (expected 6+ chars)", vgName, vgAttr);
+                    }
+                }
+            } else {
+                LOGGER.warn("Failed to get VG attributes for {}: {}", vgName, result);
+            }
+
+        } catch (Exception e) {
+            LOGGER.debug("Error checking if VG {} is clustered: {}", vgName, e.getMessage());
+        }
+
+        return false;
     }
 }

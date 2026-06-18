@@ -44,6 +44,8 @@
             value="#{storagePoolAllocatorsRegistry.registered}" />
     </bean>
 
+    <bean id="clvmPoolManager" class="com.cloud.storage.clvm.ClvmPoolManager" />
+
     <bean id="storageOrchestrator"
           class="org.apache.cloudstack.engine.orchestration.StorageOrchestrator"/>
     <bean id="dataMigrationHelper"
@@ -88,6 +90,7 @@
                 <entry key="VirtualMachineManagerImpl" value-ref="clusteredVirtualMachineManagerImpl" />
                 <entry key="VolumeApiServiceImpl" value-ref="volumeApiServiceImpl" />
                 <entry key="VMSnapshotManagerImpl" value-ref="vMSnapshotManagerImpl" />
+                <entry key="KVMBackupExportServiceImpl" value-ref="kvmBackupExportService" />
             </map>
         </property>
     </bean>

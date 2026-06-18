@@ -93,6 +93,7 @@ router.beforeEach((to, from, next) => {
           return
         }
         store.commit('SET_LOGIN_FLAG', true)
+        store.commit('SET_MS_ID', Cookies.get('managementserverid'))
       }
       // store already loaded
       if (store.getters.passwordChangeRequired) {
