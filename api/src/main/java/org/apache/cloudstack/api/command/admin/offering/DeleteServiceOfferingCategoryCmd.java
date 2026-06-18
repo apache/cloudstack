@@ -71,6 +71,6 @@ public class DeleteServiceOfferingCategoryCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return Account.Type.ADMIN.ordinal();
+        return Account.ACCOUNT_ID_SYSTEM;
     }
 }

@@ -127,7 +127,7 @@ public class ListServiceOfferingsCmd extends BaseListProjectAndAccountResourcesC
 
     @Parameter(name = ApiConstants.SERVICE_OFFERING_CATEGORY_ID,
             type = CommandType.UUID,
-            entityType = ServiceOfferingCategoryResponse .class,
+            entityType = ServiceOfferingCategoryResponse.class,
             description = "the ID of the service offering category",
             since = "4.23.0")
     private Long categoryId;

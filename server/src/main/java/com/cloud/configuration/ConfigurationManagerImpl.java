@@ -9613,6 +9613,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Cannot delete the default service offering category");
         }
 
+        // Check if any service offering is using this category
+        List<ServiceOfferingVO> offeringsUsingCategory = _serviceOfferingDao.listByCategoryId(categoryId);
+        if (offeringsUsingCategory != null && !offeringsUsingCategory.isEmpty()) {
+            throw new InvalidParameterValueException("Cannot delete service offering category with id " + categoryId +
+                " because it is in use by one or more service offerings.");
+        }
         boolean result = _serviceOfferingCategoryDao.remove(categoryId);
         if (result) {
             CallContext.current().setEventDetails("Service offering category id=" + categoryId);

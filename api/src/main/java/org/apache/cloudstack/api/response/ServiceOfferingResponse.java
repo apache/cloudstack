@@ -287,11 +287,11 @@ public class ServiceOfferingResponse extends BaseResponseWithAnnotations {
     private String leaseExpiryAction;
 
     @SerializedName("categoryid")
-    @Param(description = "the ID of the service offering category", since = "4.23")
+    @Param(description = "the ID of the service offering category", since = "4.23.0")
     private String categoryId;
 
     @SerializedName("category")
-    @Param(description = "the name of the service offering category", since = "4.23")
+    @Param(description = "the name of the service offering category", since = "4.23.0")
     private String categoryName;
 
     public ServiceOfferingResponse() {

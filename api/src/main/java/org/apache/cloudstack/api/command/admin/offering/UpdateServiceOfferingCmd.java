@@ -114,7 +114,7 @@ public class UpdateServiceOfferingCmd extends BaseCmd implements DomainAndZoneId
             entityType = ServiceOfferingCategoryResponse.class,
             required = false,
             description = "the ID of the service offering category to associate",
-            since = "4.23")
+            since = "4.23.0")
     private Long categoryId;
 
     /////////////////////////////////////////////////////
