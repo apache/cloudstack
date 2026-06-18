@@ -108,7 +108,7 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
         boolean result = true;
         FirewallRule rule = null;
         try {
-            CallContext.current().setEventDetails("Rule ID: " + getEntityId());
+            CallContext.current().setEventDetails("Rule ID: " + getEntityUuid());
 
             if (getOpenFirewall()) {
                 result = result && _firewallService.applyIngressFirewallRules(ipAddressId, CallContext.current().getCallingAccount());
@@ -148,7 +148,7 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
             setEntityId(rule.getId());
             setEntityUuid(rule.getUuid());
         } catch (NetworkRuleConflictException e) {
-            logger.info("Unable to create static NAT rule due to ", e);
+            logger.error("Unable to create static NAT rule due to ", e);
             throw new ServerApiException(ApiErrorCode.NETWORK_RULE_CONFLICT_ERROR, e.getMessage());
         }
     }

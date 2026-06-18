@@ -116,7 +116,7 @@ public class MoveUserCmd extends BaseCmd {
         Preconditions.checkNotNull(getId(),"I have to have an user to move!");
         Preconditions.checkState(ObjectUtils.anyNotNull(getAccountId(),getAccountName()),"provide either an account name or an account id!");
 
-        CallContext.current().setEventDetails("UserId: " + getId());
+        CallContext.current().setEventDetails("User ID: " + getResourceUuid(ApiConstants.ID));
         boolean result =
                 _regionService.moveUser(this);
         if (result) {

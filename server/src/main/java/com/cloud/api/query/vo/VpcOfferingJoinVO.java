@@ -112,6 +112,9 @@ public class VpcOfferingJoinVO implements VpcOffering {
     @Column(name = "specify_as_number")
     private Boolean specifyAsNumber = false;
 
+    @Column(name = "conserve_mode")
+    private boolean conserveMode;
+
     public VpcOfferingJoinVO() {
     }
 
@@ -176,6 +179,11 @@ public class VpcOfferingJoinVO implements VpcOffering {
     @Override
     public Boolean isSpecifyAsNumber() {
         return specifyAsNumber;
+    }
+
+    @Override
+    public boolean isConserveMode() {
+        return conserveMode;
     }
 
     public void setSpecifyAsNumber(Boolean specifyAsNumber) {

@@ -41,9 +41,6 @@ public class TransactionContextBuilderTest {
 
     @Test
     public void test() {
-        // _derived.DbAnnotatedMethod();
-        // _base.MethodWithClassDbAnnotated();
-
         // test @DB injection on dynamically constructed objects
         DbAnnotatedBase base = ComponentContext.inject(new DbAnnotatedBase());
         base.MethodWithClassDbAnnotated();

@@ -270,7 +270,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             keypairs.add(kubernetesCluster.getKeyPair());
         }
 
-        Long affinityGroupId = getExplicitAffinityGroup(domainId, accountId);
+        List<Long> affinityGroupIds = getMergedAffinityGroupIds(CONTROL, domainId, accountId);
         String userDataDetails = kubernetesCluster.getCniConfigDetails();
         if (kubernetesCluster.getSecurityGroupId() != null &&
                 networkModel.checkSecurityGroupSupportForNetwork(owner, zone, networkIds,
@@ -279,15 +279,13 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             securityGroupIds.add(kubernetesCluster.getSecurityGroupId());
             controlVm = userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, controlNodeTemplate, networkIds, securityGroupIds, owner,
             hostName, hostName, null, null, null, null, Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST,base64UserData, userDataId, userDataDetails, keypairs,
-                    requestedIps, addrs, null, null, Objects.nonNull(affinityGroupId) ?
-                            Collections.singletonList(affinityGroupId) : null, customParameterMap, null, null, null,
+                    requestedIps, addrs, null, null, affinityGroupIds, customParameterMap, null, null, null,
                     null, true, null, UserVmManager.CKS_NODE, null, null);
         } else {
             controlVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, controlNodeTemplate, networkIds, owner,
                     hostName, hostName, null, null, null, null,
                     Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, userDataId, userDataDetails, keypairs,
-                    requestedIps, addrs, null, null, Objects.nonNull(affinityGroupId) ?
-                            Collections.singletonList(affinityGroupId) : null, customParameterMap, null, null, null, null, true, UserVmManager.CKS_NODE, null, null, null);
+                    requestedIps, addrs, null, null, affinityGroupIds, customParameterMap, null, null, null, null, true, UserVmManager.CKS_NODE, null, null, null);
         }
         if (logger.isInfoEnabled()) {
             logger.info("Created control VM: {}, {} in the Kubernetes cluster: {}", controlVm, hostName, kubernetesCluster);
@@ -439,7 +437,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             keypairs.add(kubernetesCluster.getKeyPair());
         }
 
-        Long affinityGroupId = getExplicitAffinityGroup(domainId, accountId);
+        List<Long> affinityGroupIds = getMergedAffinityGroupIds(CONTROL, domainId, accountId);
         if (kubernetesCluster.getSecurityGroupId() != null &&
                 networkModel.checkSecurityGroupSupportForNetwork(owner, zone, networkIds,
                         List.of(kubernetesCluster.getSecurityGroupId()))) {
@@ -447,15 +445,13 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             securityGroupIds.add(kubernetesCluster.getSecurityGroupId());
             additionalControlVm = userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, controlNodeTemplate, networkIds, securityGroupIds, owner,
                     hostName, hostName, null, null, null, null, Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST,base64UserData, null, null, keypairs,
-                    null, addrs, null, null, Objects.nonNull(affinityGroupId) ?
-                            Collections.singletonList(affinityGroupId) : null, customParameterMap, null, null, null,
+                    null, addrs, null, null, affinityGroupIds, customParameterMap, null, null, null,
                     null, true, null, UserVmManager.CKS_NODE, null, null);
         } else {
             additionalControlVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, controlNodeTemplate, networkIds, owner,
                     hostName, hostName, null, null, null, null,
                     Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, null, null, keypairs,
-                    null, addrs, null, null, Objects.nonNull(affinityGroupId) ?
-                            Collections.singletonList(affinityGroupId) : null, customParameterMap, null, null, null, null, true, UserVmManager.CKS_NODE, null, null, null);
+                    null, addrs, null, null, affinityGroupIds, customParameterMap, null, null, null, null, true, UserVmManager.CKS_NODE, null, null, null);
         }
 
         if (logger.isInfoEnabled()) {
@@ -483,7 +479,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         if (StringUtils.isNotBlank(kubernetesCluster.getKeyPair())) {
             keypairs.add(kubernetesCluster.getKeyPair());
         }
-        Long affinityGroupId = getExplicitAffinityGroup(domainId, accountId);
+        List<Long> affinityGroupIds = getMergedAffinityGroupIds(ETCD, domainId, accountId);
         String hostName = etcdNodeHostnames.get(etcdNodeIndex);
         Map<String, String> customParameterMap = new HashMap<String, String>();
         if (zone.isSecurityGroupEnabled()) {
@@ -491,15 +487,13 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             securityGroupIds.add(kubernetesCluster.getSecurityGroupId());
             etcdNode = userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, etcdTemplate, networkIds, securityGroupIds, owner,
                     hostName, hostName, null, null, null, null, Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST,base64UserData, null, null, keypairs,
-                    Map.of(kubernetesCluster.getNetworkId(), requestedIps.get(etcdNodeIndex)), addrs, null, null, Objects.nonNull(affinityGroupId) ?
-                            Collections.singletonList(affinityGroupId) : null, customParameterMap, null, null, null,
+                    Map.of(kubernetesCluster.getNetworkId(), requestedIps.get(etcdNodeIndex)), addrs, null, null, affinityGroupIds, customParameterMap, null, null, null,
                     null, true, null, null, null, null);
         } else {
             etcdNode = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, etcdTemplate, networkIds, owner,
                     hostName, hostName, null, null, null, null,
                     Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, null, null, keypairs,
-                    Map.of(kubernetesCluster.getNetworkId(), requestedIps.get(etcdNodeIndex)), addrs, null, null, Objects.nonNull(affinityGroupId) ?
-                            Collections.singletonList(affinityGroupId) : null, customParameterMap, null, null, null, null, true, UserVmManager.CKS_NODE, null, null, null);
+                    Map.of(kubernetesCluster.getNetworkId(), requestedIps.get(etcdNodeIndex)), addrs, null, null, affinityGroupIds, customParameterMap, null, null, null, null, true, UserVmManager.CKS_NODE, null, null, null);
         }
 
         if (logger.isInfoEnabled()) {

@@ -82,7 +82,7 @@ public class UpdateDomainCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Domain Id: " + getId());
+        CallContext.current().setEventDetails("Domain ID: " + getResourceUuid(ApiConstants.ID));
         Domain domain = _regionService.updateDomain(this);
 
         if (domain != null) {

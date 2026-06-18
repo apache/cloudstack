@@ -72,7 +72,7 @@ public class ReleaseDedicatedGuestVlanRangeCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Releasing a dedicated guest vlan range.";
+        return "Releasing dedicated guest VLAN range with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     // ///////////////////////////////////////////////////
@@ -81,7 +81,7 @@ public class ReleaseDedicatedGuestVlanRangeCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Dedicated guest vlan range Id: " + id);
+        CallContext.current().setEventDetails("Dedicated guest VLAN range ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _networkService.releaseDedicatedGuestVlanRange(getId());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

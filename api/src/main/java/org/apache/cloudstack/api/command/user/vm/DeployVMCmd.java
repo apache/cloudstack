@@ -92,7 +92,7 @@ public class DeployVMCmd extends BaseDeployVMCmd {
     public void execute() {
         UserVm result;
 
-        CallContext.current().setEventDetails("Instance Id: " + getEntityUuid());
+        CallContext.current().setEventDetails("Instance ID: " + getEntityUuid());
         if (getStartVm()) {
             try {
                 result = _userVmService.startVirtualMachine(this);
@@ -112,12 +112,12 @@ public class DeployVMCmd extends BaseDeployVMCmd {
                         message.append(", Please check the affinity groups provided, there may not be sufficient capacity to follow them");
                     }
                 }
-                logger.info(String.format("%s: %s", message, ex.getLocalizedMessage()));
+                logger.info("{}: {}", message.toString(), ex.getLocalizedMessage());
                 logger.debug(message.toString(), ex);
                 throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, message.toString());
             }
         } else {
-            logger.info("Instance " + getEntityUuid() + " already created, load UserVm from DB");
+            logger.info("Instance {} already created, load UserVm from DB", getEntityUuid());
             result = _userVmService.finalizeCreateVirtualMachine(getEntityId());
         }
 

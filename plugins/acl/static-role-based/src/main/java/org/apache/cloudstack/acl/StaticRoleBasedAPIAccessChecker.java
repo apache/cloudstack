@@ -21,11 +21,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.exception.UnavailableCommandException;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPairPermission;
 
 import org.apache.cloudstack.api.APICommand;
 
@@ -90,7 +92,7 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
     }
 
     @Override
-    public boolean checkAccess(User user, String commandName) throws PermissionDeniedException {
+    public boolean checkAccess(User user, String commandName, ApiKeyPairPermission... apiKeyPairPermissions) throws PermissionDeniedException {
         if (!isEnabled()) {
             return true;
         }
@@ -104,7 +106,7 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
     }
 
     @Override
-    public boolean checkAccess(Account account, String commandName) {
+    public boolean checkAccess(Account account, String commandName, ApiKeyPairPermission... apiKeyPairPermissions) {
         if (!isEnabled()) {
             return true;
         }
@@ -161,6 +163,14 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
             }
         }
         return super.start();
+    }
+
+    @Override
+    public List<RolePermissionEntity> getImplicitRolePermissions(RoleType roleType) {
+        return annotationRoleBasedApisMap.get(roleType)
+                .stream()
+                .map(implicitApi -> new RolePermissionBaseVO(implicitApi, RolePermissionEntity.Permission.ALLOW))
+                .collect(Collectors.toList());
     }
 
     private void processMapping(Map<String, String> configMap) {

@@ -1128,7 +1128,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 callContext.setEventResourceId(volumeIds.get(0));
             }
             String volumeUuids = volumeIds.stream().map(volumeId -> this._uuidMgr.getUuid(Volume.class, volumeId)).collect(Collectors.joining(", "));
-            callContext.setEventDetails("Volume Type: " + type + "Volume Id: " + volumeUuids + " Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, vm.getId()));
+            callContext.setEventDetails("Volume Type: " + type + "Volume ID: " + volumeUuids + " Instance ID: " + vm.getUuid());
         }
     }
 
@@ -1368,7 +1368,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         // Create new context and inject correct event resource type, id and details,
         // otherwise VOLUME.DESTROY event will be associated with VirtualMachine and contain VM id and other information.
         CallContext volumeContext = CallContext.register(CallContext.current(), ApiCommandResourceType.Volume);
-        volumeContext.setEventDetails("Volume Type: " + volume.getVolumeType() + " Volume Id: " +  volume.getUuid() + " Vm Id: " + _uuidMgr.getUuid(VirtualMachine.class, volume.getInstanceId()));
+        volumeContext.setEventDetails("Volume Type: " + volume.getVolumeType() + " Volume ID: " +  volume.getUuid() + " Instance ID: " + _uuidMgr.getUuid(VirtualMachine.class, volume.getInstanceId()));
         volumeContext.setEventResourceType(ApiCommandResourceType.Volume);
         volumeContext.setEventResourceId(volume.getId());
         try {
@@ -1585,12 +1585,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             vm.addDisk(disk);
         }
 
-        //if (vm.getType() == VirtualMachine.Type.User && vm.getTemplate().getFormat() == ImageFormat.ISO) {
         if (vm.getType() == VirtualMachine.Type.User) {
             _tmpltMgr.prepareIsoForVmProfile(vm, dest);
-            //DataTO dataTO = tmplFactory.getTemplate(vm.getTemplate().getId(), DataStoreRole.Image, vm.getVirtualMachine().getDataCenterId()).getTO();
-            //DiskTO iso = new DiskTO(dataTO, 3L, null, Volume.Type.ISO);
-            //vm.addDisk(iso);
         }
     }
 

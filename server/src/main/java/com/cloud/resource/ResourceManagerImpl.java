@@ -78,6 +78,7 @@ import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 import org.apache.cloudstack.framework.extensions.vo.ExtensionResourceMapVO;
 import org.apache.cloudstack.framework.extensions.vo.ExtensionVO;
 import org.apache.cloudstack.gpu.GpuService;
+import org.apache.cloudstack.jsinterpreter.JsInterpreterHelper;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
@@ -310,6 +311,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     private GpuService gpuService;
     @Inject
     ManagementService managementService;
+    @Inject
+    JsInterpreterHelper jsInterpreterHelper;
 
     private List<? extends Discoverer> _discoverers;
 
@@ -2818,9 +2821,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public Host updateHost(final UpdateHostCmd cmd) throws NoTransitionException {
-        managementService.checkJsInterpretationAllowedIfNeededForParameterValue(ApiConstants.IS_TAG_A_RULE,
-                Boolean.TRUE.equals(cmd.getIsTagARule()));
-
         return updateHost(cmd.getId(), cmd.getName(), cmd.getOsCategoryId(),
                 cmd.getAllocationState(), cmd.getUrl(), cmd.getHostTags(), cmd.getIsTagARule(), cmd.getAnnotation(), false,
                 cmd.getExternalDetails(), cmd.isCleanupExternalDetails());
@@ -2830,6 +2830,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             String url, List<String> hostTags, Boolean isTagARule, String annotation,
             boolean isUpdateFromHostHealthCheck, Map<String, String> externalDetails,
             boolean cleanupExternalDetails) throws NoTransitionException {
+        jsInterpreterHelper.ensureInterpreterEnabledIfParameterProvided(ApiConstants.IS_TAG_A_RULE, Boolean.TRUE.equals(isTagARule));
+
         // Verify that the host exists
         final HostVO host = _hostDao.findById(hostId);
         if (host == null) {

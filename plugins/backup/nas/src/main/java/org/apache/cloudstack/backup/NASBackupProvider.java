@@ -56,7 +56,7 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -195,6 +195,12 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             throw new CloudRuntimeException("No valid backup repository found for the VM, please check the attached backup offering");
         }
 
+        if (CollectionUtils.isNotEmpty(vmSnapshotDao.findByVmAndByType(vm.getId(), VMSnapshot.Type.DiskAndMemory))) {
+            logger.debug("NAS backup provider cannot take backups of a VM [{}] with disk-and-memory VM snapshots. Restoring the backup will corrupt any newer disk-and-memory " +
+                    "VM snapshots.", vm);
+            throw new CloudRuntimeException(String.format("Cannot take backup of VM [%s] as it has disk-and-memory VM snapshots.", vm.getUuid()));
+        }
+
         final Date creationDate = new Date();
         final String backupPath = String.format("%s/%s", vm.getInstanceName(),
                 new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(creationDate));
@@ -220,12 +226,12 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         } catch (AgentUnavailableException e) {
             logger.error("Unable to contact backend control plane to initiate backup for VM {}", vm.getInstanceName());
             backupVO.setStatus(Backup.Status.Failed);
-            backupDao.remove(backupVO.getId());
+            backupDao.update(backupVO.getId(), backupVO);
             throw new CloudRuntimeException("Unable to contact backend control plane to initiate backup");
         } catch (OperationTimedoutException e) {
             logger.error("Operation to initiate backup timed out for VM {}", vm.getInstanceName());
             backupVO.setStatus(Backup.Status.Failed);
-            backupDao.remove(backupVO.getId());
+            backupDao.update(backupVO.getId(), backupVO);
             throw new CloudRuntimeException("Operation to initiate backup timed out, please try again");
         }
 
@@ -243,12 +249,12 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         } else {
             logger.error("Failed to take backup for VM {}: {}", vm.getInstanceName(), answer != null ? answer.getDetails() : "No answer received");
             if (answer.getNeedsCleanup()) {
-                logger.error("Backup cleanup failed for VM {}. Leaving the backup in Error state.", vm.getInstanceName());
+                logger.error("Backup cleanup failed for VM {}. Leaving the backup in Error state. Backup should be manually deleted to free up the space", vm.getInstanceName());
                 backupVO.setStatus(Backup.Status.Error);
                 backupDao.update(backupVO.getId(), backupVO);
             } else {
                 backupVO.setStatus(Backup.Status.Failed);
-                backupDao.remove(backupVO.getId());
+                backupDao.update(backupVO.getId(), backupVO);
             }
             return new Pair<>(false, null);
         }
@@ -548,6 +554,11 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     @Override
     public boolean supportsInstanceFromBackup() {
         return true;
+    }
+
+    @Override
+    public boolean supportsMemoryVmSnapshot() {
+        return false;
     }
 
     @Override

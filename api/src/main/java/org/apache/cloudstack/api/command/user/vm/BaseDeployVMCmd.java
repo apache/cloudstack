@@ -416,9 +416,7 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
                     nic = null;
                 }
                 String networkUuid = entry.get(VmDetailConstants.NETWORK);
-                if (logger.isTraceEnabled()) {
-                    logger.trace(String.format("nic, '%s', goes on net, '%s'", nic, networkUuid));
-                }
+                logger.trace("Checking if NIC '{}' can be mapped on network '{}'", nic, networkUuid);
                 if (nic == null || StringUtils.isEmpty(networkUuid) || _entityMgr.findByUuid(Network.class, networkUuid) == null) {
                     throw new InvalidParameterValueException(String.format("Network ID: %s for NIC ID: %s is invalid", networkUuid, nic));
                 }
@@ -810,7 +808,7 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
+        Long accountId = _accountService.finalizeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }
@@ -830,15 +828,15 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
 
     @Override
     public String getCreateEventDescription() {
-        return "creating Vm";
+        return "Creating Instance";
     }
 
     @Override
     public String getEventDescription() {
         if(getStartVm()) {
-            return "starting Vm. Vm Id: " + getEntityUuid();
+            return "Starting Instance with ID: " + getEntityUuid();
         }
-        return "deploying Vm. Vm Id: " + getEntityUuid();
+        return "Deploying Instance with ID: " + getEntityUuid();
     }
 
     @Override

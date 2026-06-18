@@ -71,7 +71,7 @@ public class DeleteEgressFirewallRuleCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return ("Deleting egress firewall rule id=" + id);
+        return ("Deleting egress firewall rule with ID: " + getResourceUuid(ApiConstants.ID));
     }
 
     @Override
@@ -89,7 +89,7 @@ public class DeleteEgressFirewallRuleCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException {
-        CallContext.current().setEventDetails("Rule Id: " + id);
+        CallContext.current().setEventDetails("Rule ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _firewallService.revokeEgressFirewallRule(id, true);
 
         if (result) {

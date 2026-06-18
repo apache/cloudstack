@@ -149,6 +149,6 @@ public class IssueCertificateCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "issuing certificate for domain(s)=" + domains + ", ip(s)=" + addresses;
+        return "Issuing certificate for domain(s)=" + domains + ", ip(s)=" + addresses;
     }
 }

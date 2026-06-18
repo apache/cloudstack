@@ -348,6 +348,9 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "is_default_nic")
     private boolean isDefaultNic;
 
+    @Column(name = "is_nic_enabled")
+    private boolean isNicEnabled;
+
     @Column(name = "ip_address")
     private String ipAddress;
 
@@ -1095,5 +1098,9 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     public String getLeaseActionExecution() {
         return leaseActionExecution;
+    }
+
+    public boolean isNicEnabled() {
+        return isNicEnabled;
     }
 }

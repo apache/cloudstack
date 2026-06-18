@@ -96,7 +96,7 @@ public class EnableAutoScaleVmGroupCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Enabling AutoScale Instance Group. Instance Group Id: " + getId();
+        return "Enabling AutoScale Instance Group with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

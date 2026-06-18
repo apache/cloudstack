@@ -77,13 +77,11 @@ public class ApiXmlDocWriter {
         List<String> asyncResponses = new ArrayList<String>();
         asyncResponses.add(TemplateResponse.class.getName());
         asyncResponses.add(VolumeResponse.class.getName());
-        //asyncResponses.add(LoadBalancerResponse.class.getName());
         asyncResponses.add(HostResponse.class.getName());
         asyncResponses.add(IPAddressResponse.class.getName());
         asyncResponses.add(StoragePoolResponse.class.getName());
         asyncResponses.add(UserVmResponse.class.getName());
         asyncResponses.add(SecurityGroupResponse.class.getName());
-        //asyncResponses.add(ExternalLoadBalancerResponse.class.getName());
         asyncResponses.add(SnapshotResponse.class.getName());
 
         return asyncResponses;
