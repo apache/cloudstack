@@ -4755,7 +4755,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     /**
      * Validates that the network supports the necessary UserData-related features for the VM
      * <br/>
-     * Validation VMs are not validated, there VMs should be in a no-service network regardless of the original VM's settings.
+     * Validation VMs are not validated, these VMs should be in a no-service network regardless of the original VM's settings.
      * */
     private void validateUserdataSupport(String userData, String vmType, VMTemplateVO template, NetworkVO network, String sshPublicKeys) {
         if (VALIDATION_VM.equals(vmType)) {
@@ -10259,16 +10259,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         String serviceOfferingUuid = backup.getDetail(ApiConstants.SERVICE_OFFERING_ID);
         if (serviceOfferingUuid == null) {
-            throw new CloudRuntimeException(String.format("Backup [%s] doesn't contain service offering uuid. Unable to validate it.", backup.getUuid()));
+            throw new CloudRuntimeException(String.format("Backup [%s] doesn't contain service offering UUID. Unable to validate it.", backup.getUuid()));
         }
         ServiceOffering serviceOffering = serviceOfferingDao.findByUuid(serviceOfferingUuid);
         if (serviceOffering == null) {
-            throw new CloudRuntimeException(String.format("Unable to find service offering with the uuid stored in backup [%s]. Unable to validate the backup.", backup.getUuid()));
+            throw new CloudRuntimeException(String.format("Unable to find service offering with the UUID stored in backup [%s]. Unable to validate the backup.", backup.getUuid()));
         }
 
         String templateUuid = backup.getDetail(ApiConstants.TEMPLATE_ID);
         if (templateUuid == null) {
-            throw new CloudRuntimeException(String.format("Backup [%s] doesn't contain a template uuid. Unable to validate it.", backup.getUuid()));
+            throw new CloudRuntimeException(String.format("Backup [%s] doesn't contain a template UUID. Unable to validate it.", backup.getUuid()));
         }
         VirtualMachineTemplate template = _templateDao.findByUuidIncludingRemoved(templateUuid);
         if (template == null) {

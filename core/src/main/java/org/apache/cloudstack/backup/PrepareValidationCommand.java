@@ -30,7 +30,7 @@ public class PrepareValidationCommand extends Command {
 
     private List<Pair<BackupDeltaTO, VolumeObjectTO>> backupToVolumeList;
 
-    Set<String> imageStoreSet;
+    private Set<String> imageStoreSet;
 
     public PrepareValidationCommand(List<Pair<BackupDeltaTO, VolumeObjectTO>> backupToVolumeList, Set<String> imageStoreSet) {
         this.backupToVolumeList = backupToVolumeList;

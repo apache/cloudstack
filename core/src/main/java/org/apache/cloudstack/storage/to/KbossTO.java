@@ -32,7 +32,7 @@ public class KbossTO {
 
     private DeltaMergeTreeTO deltaMergeTreeTO;
 
-    List<String> vmSnapshotDeltaPaths;
+    private List<String> vmSnapshotDeltaPaths;
 
     public KbossTO(VolumeObjectTO volumeObjectTO, List<SnapshotDataStoreVO> snapshotDataStoreVOs) {
         this.volumeObjectTO = volumeObjectTO;

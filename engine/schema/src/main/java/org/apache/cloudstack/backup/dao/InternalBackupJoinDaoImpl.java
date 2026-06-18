@@ -62,6 +62,7 @@ public class InternalBackupJoinDaoImpl extends GenericDaoBase<InternalBackupJoin
         allBackupsSearch.and(IMAGE_STORE_ID, allBackupsSearch.entity().getImageStoreId(), SearchCriteria.Op.EQ);
         allBackupsSearch.done();
     }
+
     @Override
     public List<InternalBackupJoinVO> listByBackedUpAndVmIdAndDateBeforeOrAfterOrderBy(long vmId, Date date, boolean before, boolean ascending) {
         SearchCriteria<InternalBackupJoinVO> sc = backupSearch.create();

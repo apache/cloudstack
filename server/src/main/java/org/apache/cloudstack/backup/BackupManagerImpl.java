@@ -358,7 +358,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (CollectionUtils.isNotEmpty(cmd.getDomainIds())) {
             for (final Long domainId: cmd.getDomainIds()) {
                 if (domainDao.findById(domainId) == null) {
-                    throw new InvalidParameterValueException("Please specify a valid domain id");
+                    throw new InvalidParameterValueException("Please specify a valid domain ID");
                 }
             }
         }
@@ -1743,7 +1743,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         if ("nas".equals(offering.getProvider()) && backedUpVolume != null) {
             restoreInfo = getRestoreVolumeHostAndDatastoreForNas(vm, backedUpVolume);
-        } else if (KBOSS_BACKUP_PROVIDER.equals(offering.getProvider())){
+        } else if (KBOSS_BACKUP_PROVIDER.equals(offering.getProvider())) {
             restoreInfo = getRestoreVolumeHostAndDatastoreForKboss(vm, backedUpVolume, isQuickRestore, hostId);
         } else {
             restoreInfo = getRestoreVolumeHostAndDatastore(vm);

@@ -60,8 +60,8 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Partition, 
         Shutdown(false, "VM state is shutdown from inside"),
         Restoring(true, "VM is being restored from backup"),
         BackingUp(true, "VM is being backed up"),
-        BackupError(false, "VM backup is in a inconsistent state. Operator should analyse the logs and restore the VM"),
-        RestoreError(false, "VM restore left the VM in a inconsistent state. Operator should analyse the logs and restore the VM");
+        BackupError(false, "VM backup is in an inconsistent state. Operator should analyse the logs and restore the VM"),
+        RestoreError(false, "VM restore left the VM in an inconsistent state. Operator should analyse the logs and restore the VM");
 
         private final boolean _transitional;
         String _description;

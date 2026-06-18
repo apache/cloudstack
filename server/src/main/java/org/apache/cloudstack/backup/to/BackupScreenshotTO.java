@@ -22,9 +22,9 @@ import com.cloud.agent.api.to.DataTO;
 import com.cloud.hypervisor.Hypervisor;
 
 public class BackupScreenshotTO implements DataTO {
-    DataStoreTO dataStoreTO;
-    Hypervisor.HypervisorType hypervisor;
-    String path;
+    private DataStoreTO dataStoreTO;
+    private Hypervisor.HypervisorType hypervisor;
+    private String path;
 
     public BackupScreenshotTO(DataStoreTO dataStoreTO, Hypervisor.HypervisorType hypervisor, String path) {
         this.dataStoreTO = dataStoreTO;

@@ -72,7 +72,7 @@ public class BackupResponse extends BaseResponse {
     private Long protectedSize;
 
     @SerializedName(ApiConstants.UNCOMPRESSED_SIZE)
-    @Param(description = "backup uncompressed size in bytes. Only set if backup is compressed")
+    @Param(description = "Backup uncompressed size in bytes. Only defined if backup is compressed.")
     private Long uncompressedSize;
 
     @SerializedName(ApiConstants.STATUS)
@@ -80,11 +80,11 @@ public class BackupResponse extends BaseResponse {
     private Backup.Status status;
 
     @SerializedName(ApiConstants.COMPRESSION_STATUS)
-    @Param(description = "backup compression status")
+    @Param(description = "Backup compression status.")
     private Backup.CompressionStatus compressionStatus;
 
     @SerializedName(ApiConstants.VALIDATION_STATUS)
-    @Param(description = "backup validation status")
+    @Param(description = "Backup validation status.")
     private Backup.ValidationStatus validationStatus;
 
     @SerializedName(ApiConstants.VOLUMES)

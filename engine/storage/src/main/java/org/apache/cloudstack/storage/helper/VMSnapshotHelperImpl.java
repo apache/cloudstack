@@ -135,7 +135,7 @@ public class VMSnapshotHelperImpl implements VMSnapshotHelper {
                 volumeTOs.add((VolumeObjectTO)volumeInfo.getTO());
             }
         } catch (NullPointerException npe) {
-            throw new CloudRuntimeException(String.format("Unable to get list of volumeTOs for VM [%s]. Are the volumes created on storage already?", vmId), npe);
+            throw new CloudRuntimeException(String.format("Unable to get list of volumeTOs for VM [%s]. Have the volumes already been created on the storage?", vmId), npe);
         }
         return volumeTOs;
     }

@@ -26,8 +26,8 @@ import org.apache.commons.collections4.CollectionUtils;
 import java.util.List;
 
 public class CleanupKbossBackupErrorAnswer extends Answer {
-    List<VolumeObjectTO> volumeObjectTos;
-    boolean vmRunning;
+    private List<VolumeObjectTO> volumeObjectTos;
+    private boolean vmRunning;
 
     public CleanupKbossBackupErrorAnswer(Command cmd, List<VolumeObjectTO> volumeObjectTos, boolean vmRunning) {
         super(cmd, CollectionUtils.isNotEmpty(volumeObjectTos), null);

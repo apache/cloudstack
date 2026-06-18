@@ -356,7 +356,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         if (jobResult instanceof BackupProviderException) {
             throw (BackupProviderException) jobResult;
         } else if (jobResult instanceof Throwable) {
-            throw new CloudRuntimeException(String.format("Exception while taking KVM native incremental backup for VM [%s]. Check the logs for more information.", vm.getUuid()));
+            throw new CloudRuntimeException(String.format("Exception while taking KBOSS backup for VM [%s]. Check the logs for more information.", vm.getUuid()));
         }
 
         Pair<Boolean, Long> result = (Pair<Boolean, Long>)jobResult;
@@ -482,7 +482,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
             if (jobResult instanceof BackupProviderException) {
                 throw (BackupProviderException) jobResult;
             }
-            throw new CloudRuntimeException(String.format("Exception while deleting KVM native incremental backup [%s]. Check the logs for more information.", backup.getUuid()));
+            throw new CloudRuntimeException(String.format("Exception while deleting KBOSS backup [%s]. Check the logs for more information.", backup.getUuid()));
         }
 
         return BooleanUtils.isTrue((Boolean) jobResult);

@@ -7181,7 +7181,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 try {
                     dm.free();
                 } catch (LibvirtException l) {
-                    logger.trace("Ignoring libvirt error.", l);
+                    logger.trace("Ignoring Libvirt error.", l);
                 }
             }
         }
@@ -7288,7 +7288,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         logger.debug("Rebasing grand-children [{}] into parent at [{}].", mergeTreeTO.getGrandChildren(), parentSnapshotLocalPath);
         for (DataTO grandChildTo : mergeTreeTO.getGrandChildren()) {
             if (checkIfFileIsInActiveChainForVm(domain, grandChildTo)) {
-                logger.debug("Grand-child [{}] is on the active chain of VM [{}], thus libvirt has already rebased it, will ignore it.", grandChildTo, vmName);
+                logger.debug("Grand-child [{}] is on the active chain of VM [{}], thus Libvirt has already rebased it, will ignore it.", grandChildTo, vmName);
                 continue;
             }
             QemuImgFile grandChild = new QemuImgFile(storagePool.getLocalPathFor(grandChildTo.getPath()), QemuImg.PhysicalDiskFormat.QCOW2);

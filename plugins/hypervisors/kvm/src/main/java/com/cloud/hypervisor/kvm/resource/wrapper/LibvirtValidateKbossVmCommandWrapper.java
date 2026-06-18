@@ -121,7 +121,7 @@ public class LibvirtValidateKbossVmCommandWrapper extends CommandWrapper<Validat
         logger.info("Taking screenshot of VM [{}].", vmName);
         String ssPath = secondaryStorage.getLocalPathFor(command.getBackupDeltaTO().getPath()) + String.format("-screenshot-%s", DateUtil.getDateInSystemTimeZone());
         if (Script.runSimpleBashScript(String.format(SCREENSHOT_COMMAND, vmName, ssPath)) == null) {
-            throw new CloudRuntimeException(String.format("Got an unexpected error while trying to screenshot validation VM [%s].", vmName));
+            throw new CloudRuntimeException(String.format("Got an unexpected error while trying to execute the screenshot validation step for VM [%s].", vmName));
         }
         try {
             File inputFile = new File(ssPath);
@@ -129,7 +129,7 @@ public class LibvirtValidateKbossVmCommandWrapper extends CommandWrapper<Validat
             File outputFile = new File(pngPath);
             BufferedImage image = ImageIO.read(inputFile);
 
-            String warnMessage = String.format("Unable to convert screenshot at [%s] to png. Leaving it as is.", ssPath);
+            String warnMessage = String.format("Unable to convert screenshot at [%s] to PNG. Leaving it as is.", ssPath);
             if (image == null) {
                 logger.warn(warnMessage);
                 return ssPath.substring(ssPath.indexOf("backups"));

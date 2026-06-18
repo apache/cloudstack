@@ -32,7 +32,7 @@ import org.apache.cloudstack.backup.InternalBackupService;
 import javax.inject.Inject;
 
 @APICommand(name = "downloadValidationScreenshot", description = "Download validation screenshot of given backup.",
-        responseObject = ExtractResponse.class, since = "4.23.0.0", requestHasSensitiveInfo = false,
+        responseObject = ExtractResponse.class, since = "4.23.0", requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false)
 public class DownloadValidationScreenshotCmd extends BaseAsyncCmd {
 
@@ -45,7 +45,7 @@ public class DownloadValidationScreenshotCmd extends BaseAsyncCmd {
 
     @ACL
     @Parameter(name = ApiConstants.BACKUP_ID, type = CommandType.UUID, entityType = BackupResponse.class, required = true,
-            description = "Id of the backup.")
+            description = "ID of the backup.")
     private Long backupId;
 
     /////////////////////////////////////////////////////

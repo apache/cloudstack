@@ -360,7 +360,7 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
 
         BackupOfferingVO backupOffering = backupOfferingDao.findById(vm.getBackupOfferingId());
         if (backupOffering != null && !backupOffering.getProvider().equals(BackupManagerImpl.KBOSS_BACKUP_PROVIDER)) {
-            logger.debug("{} as the VM has a backup offering for a provider that is not supported. This strategy only supports the kboss backup provider.", cantHandleLog);
+            logger.debug("{} as the VM has a backup offering for a provider that is not supported. This strategy only supports the KBOSS backup provider.", cantHandleLog);
             return StrategyPriority.CANT_HANDLE;
         }
 
