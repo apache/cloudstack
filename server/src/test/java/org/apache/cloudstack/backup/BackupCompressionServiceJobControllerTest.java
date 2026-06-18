@@ -344,7 +344,7 @@ public class BackupCompressionServiceJobControllerTest {
 
     @Test
     public void filterHostsWithTooManyJobsTestUnlimitedCompressionPerHost() {
-        doReturn(0).when(backupCompressionServiceJobControllerSpy).getMaxConcurrentCompressionsPerHost(maxConcurrentJobsConfigKey, hostVO);
+        doReturn(0).when(backupCompressionServiceJobControllerSpy).getMaxConcurrentJobsPerHost(maxConcurrentJobsConfigKey, hostVO);
 
         HashMap<HostVO, Long> hostToNumberOfExecutingJobs = new HashMap<>();
         hostToNumberOfExecutingJobs.put(hostVO, 10L);
@@ -356,7 +356,7 @@ public class BackupCompressionServiceJobControllerTest {
 
     @Test
     public void filterHostsWithTooManyJobsTestLimitedCompressionPerHost() {
-        doReturn(4).when(backupCompressionServiceJobControllerSpy).getMaxConcurrentCompressionsPerHost(any(), any());
+        doReturn(4).when(backupCompressionServiceJobControllerSpy).getMaxConcurrentJobsPerHost(any(), any());
 
 
         HashMap<HostVO, Long> hostToNumberOfExecutingJobs = new HashMap<>();
@@ -403,7 +403,7 @@ public class BackupCompressionServiceJobControllerTest {
         doReturn(jobId).when(internalBackupServiceJobVoMock).getId();
         doReturn(backupId).when(internalBackupServiceJobVoMock).getBackupId();
         doReturn(hostId).when(hostVO).getId();
-        doReturn(5).when(backupCompressionServiceJobControllerSpy).getMaxConcurrentCompressionsPerHost(maxConcurrentJobsConfigKey, hostVO);
+        doReturn(5).when(backupCompressionServiceJobControllerSpy).getMaxConcurrentJobsPerHost(maxConcurrentJobsConfigKey, hostVO);
         doNothing().when(backupCompressionServiceJobControllerSpy).submitQueuedJob(any(), eq(datacenterId), any());
 
         List<Pair<HostVO, Long>> hostAndNumberOfJobsPairList = new java.util.ArrayList<>();
@@ -429,7 +429,7 @@ public class BackupCompressionServiceJobControllerTest {
         doReturn(jobId).when(internalBackupServiceJobVoMock).getId();
         doReturn(backupId).when(internalBackupServiceJobVoMock).getBackupId();
         doReturn(hostId).when(hostVO).getId();
-        doReturn(1).when(backupCompressionServiceJobControllerSpy).getMaxConcurrentCompressionsPerHost(maxConcurrentJobsConfigKey, hostVO);
+        doReturn(1).when(backupCompressionServiceJobControllerSpy).getMaxConcurrentJobsPerHost(maxConcurrentJobsConfigKey, hostVO);
         doNothing().when(backupCompressionServiceJobControllerSpy).submitQueuedJob(any(), eq(datacenterId), any());
 
         List<Pair<HostVO, Long>> hostAndNumberOfJobsPairList = new java.util.ArrayList<>();

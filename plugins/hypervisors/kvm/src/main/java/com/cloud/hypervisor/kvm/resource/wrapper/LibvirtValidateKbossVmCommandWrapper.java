@@ -62,7 +62,7 @@ public class LibvirtValidateKbossVmCommandWrapper extends CommandWrapper<Validat
             secondaryStorage = storagePoolMgr.getStoragePoolByURI(command.getBackupDeltaTO().getDataStore().getUrl());
             logger.info("Validating VM [{}].", vm.getName());
             boolean bootValidated = waitForBoot(command, vm);
-            String screenshotPath = takeScreenshot(command, vm, secondaryStorage, serverResource);
+            String screenshotPath = takeScreenshot(command, vm, secondaryStorage);
             String scriptResult = runScript(command, vm);
             return new  ValidateKbossVmAnswer(command, bootValidated, screenshotPath, scriptResult);
         } catch (LibvirtException e) {
@@ -107,7 +107,7 @@ public class LibvirtValidateKbossVmCommandWrapper extends CommandWrapper<Validat
         return false;
     }
 
-    private String takeScreenshot(ValidateKbossVmCommand command, Domain vm, KVMStoragePool secondaryStorage, LibvirtComputingResource resource) throws LibvirtException {
+    private String takeScreenshot(ValidateKbossVmCommand command, Domain vm, KVMStoragePool secondaryStorage) throws LibvirtException {
         if (!command.isTakeScreenshot()) {
             return null;
         }
@@ -124,28 +124,32 @@ public class LibvirtValidateKbossVmCommandWrapper extends CommandWrapper<Validat
             throw new CloudRuntimeException(String.format("Got an unexpected error while trying to execute the screenshot validation step for VM [%s].", vmName));
         }
         try {
-            File inputFile = new File(ssPath);
-            String pngPath = ssPath + ".png";
-            File outputFile = new File(pngPath);
-            BufferedImage image = ImageIO.read(inputFile);
-
-            String warnMessage = String.format("Unable to convert screenshot at [%s] to PNG. Leaving it as is.", ssPath);
-            if (image == null) {
-                logger.warn(warnMessage);
-                return ssPath.substring(ssPath.indexOf("backups"));
-            }
-            boolean result = ImageIO.write(image, "png", outputFile);
-
-            if (result) {
-                logger.debug("Successfully converted image at [{}] to PNG at [{}].", ssPath, pngPath);
-                Files.deleteIfExists(Path.of(ssPath));
-                return pngPath.substring(ssPath.indexOf("backups"));
-            } else {
-                logger.warn(warnMessage);
-                return ssPath.substring(ssPath.indexOf("backups"));
-            }
+            return tryToConvertFileToPng(ssPath);
         } catch (IOException ex) {
             throw new CloudRuntimeException(ex);
+        }
+    }
+
+    private String tryToConvertFileToPng(String ssPath) throws IOException {
+        File inputFile = new File(ssPath);
+        String pngPath = ssPath + ".png";
+        File outputFile = new File(pngPath);
+        BufferedImage image = ImageIO.read(inputFile);
+
+        String warnMessage = String.format("Unable to convert screenshot at [%s] to PNG. Leaving it as is.", ssPath);
+        if (image == null) {
+            logger.warn(warnMessage);
+            return ssPath.substring(ssPath.indexOf("backups"));
+        }
+        boolean result = ImageIO.write(image, "png", outputFile);
+
+        if (result) {
+            logger.debug("Successfully converted image at [{}] to PNG at [{}].", ssPath, pngPath);
+            Files.deleteIfExists(Path.of(ssPath));
+            return pngPath.substring(ssPath.indexOf("backups"));
+        } else {
+            logger.warn(warnMessage);
+            return ssPath.substring(ssPath.indexOf("backups"));
         }
     }
 
@@ -177,6 +181,12 @@ public class LibvirtValidateKbossVmCommandWrapper extends CommandWrapper<Validat
         JsonObject ret = root.getAsJsonObject("return");
         String pid = ret.get("pid").getAsString();
 
+        return waitForCommandResult(command, vm, pid, script, arguments);
+    }
+
+    private String waitForCommandResult(ValidateKbossVmCommand command, Domain vm, String pid, String script, String arguments) throws LibvirtException {
+        JsonObject root;
+        JsonObject ret;
         String expectedResult = command.getExpectedResult();
         Integer timeout = command.getScriptTimeout();
         while (timeout > 0) {

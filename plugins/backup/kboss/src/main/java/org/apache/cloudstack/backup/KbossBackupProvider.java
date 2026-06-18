@@ -284,7 +284,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
     private final List<VirtualMachine.State> allowedVmStates = Arrays.asList(VirtualMachine.State.Running, VirtualMachine.State.Stopped);
     @Override
     public String getDescription() {
-        return "Native Incremental KVM Backup Plugin";
+        return "KVM Backup on Secondary Storage";
     }
 
     @Override
@@ -301,7 +301,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
     public boolean assignVMToBackupOffering(VirtualMachine vm, BackupOffering backupOffering) {
         logger.debug("Assigning VM [{}] to KBOSS backup offering with name:[{}], uuid: [{}].", vm.getUuid(), backupOffering.getName(), backupOffering.getUuid());
         if (!Hypervisor.HypervisorType.KVM.equals(vm.getHypervisorType())) {
-            logger.error("KVM Native Incremental Backup provider is only supported for KVM.");
+            logger.error("KVM Backup on Secondary Storage provider is only supported for KVM.");
             return false;
         }
 
@@ -328,7 +328,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         }
         UserVmVO vmVO = userVmDao.findById(vm.getId());
         logger.error("Failed to merge deltas for VM [{}] during backup offering removal process. Changing its state to [{}].", vm, VirtualMachine.State.BackupError);
-        vmInstanceDetailsDao.addDetail(vm.getId(), ApiConstants.LAST_KNOWN_STATE, vmVO.getState().name(), false);
+        vmInstanceDetailsDao.addDetail(vm.getId(), VmDetailConstants.LAST_KNOWN_STATE, vmVO.getState().name(), false);
         vmVO.setState(VirtualMachine.State.BackupError);
         userVmDao.update(vmVO.getId(), vmVO);
 
@@ -1249,7 +1249,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
     }
 
     protected boolean normalizeBackupErrorAndFinishChain(UserVmVO userVmVO) {
-        VMInstanceDetailVO detail = vmInstanceDetailsDao.findDetail(userVmVO.getId(), ApiConstants.LAST_KNOWN_STATE);
+        VMInstanceDetailVO detail = vmInstanceDetailsDao.findDetail(userVmVO.getId(), VmDetailConstants.LAST_KNOWN_STATE);
         boolean runningVM = detail == null || VirtualMachine.State.valueOf(detail.getValue()) == VirtualMachine.State.Running;
 
         BackupVO backupVO = backupDao.findLatestByStatusAndVmId(Backup.Status.Error, userVmVO.getId());
@@ -1307,7 +1307,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         runningVM = cleanAnswer.isVmRunning();
         userVmVO.setState(runningVM ? VirtualMachine.State.Running : VirtualMachine.State.Stopped);
         userVmDao.update(userVmVO.getId(), userVmVO);
-        vmInstanceDetailsDao.removeDetail(userVmVO.getId(), ApiConstants.LAST_KNOWN_STATE);
+        vmInstanceDetailsDao.removeDetail(userVmVO.getId(), VmDetailConstants.LAST_KNOWN_STATE);
         return chainAlreadyEnded;
     }
 
@@ -2109,7 +2109,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         } else {
             logger.info("Backup [{}] of VM [{}] ended in error. We are not sure if the VM is consistent; thus, we will set it as BackupError.", backupVO.getUuid(), vm.getUuid());
             transitVmStateWithoutThrow(vm, VirtualMachine.Event.OperationFailedToError, hostId);
-            vmInstanceDetailsDao.addDetail(vm.getId(), ApiConstants.LAST_KNOWN_STATE, runningVm ? VirtualMachine.State.Running.name() : VirtualMachine.State.Stopped.name(), false);
+            vmInstanceDetailsDao.addDetail(vm.getId(), VmDetailConstants.LAST_KNOWN_STATE, runningVm ? VirtualMachine.State.Running.name() : VirtualMachine.State.Stopped.name(), false);
             backupVO.setStatus(Backup.Status.Error);
         }
 

@@ -219,10 +219,10 @@ public abstract class InternalBackupServiceJobController extends ManagerBase {
         for (HostVO host : hostToNumberOfExecutingJobs.keySet()) {
             Long numberOfJobs = hostToNumberOfExecutingJobs.get(host);
             hostDao.loadDetails(host);
-            Integer maxConcurrentCompressionsPerHost = getMaxConcurrentCompressionsPerHost(jobsPerHostConfiguration, host);
-            if (maxConcurrentCompressionsPerHost > 0 && numberOfJobs >= maxConcurrentCompressionsPerHost) {
-                logger.debug("Host [{}] is already executing the maximum number of concurrent compression jobs set in [{}]. Current number of jobs being executed is " +
-                        "[{}], the value for the configuration is [{}].", host, jobsPerHostConfiguration.toString(), numberOfJobs, maxConcurrentCompressionsPerHost);
+            Integer maxConcurrentJobsPerHost = getMaxConcurrentJobsPerHost(jobsPerHostConfiguration, host);
+            if (maxConcurrentJobsPerHost > 0 && numberOfJobs >= maxConcurrentJobsPerHost) {
+                logger.debug("Host [{}] is already executing the maximum number of concurrent {} jobs set in [{}]. Current number of jobs being executed is " +
+                        "[{}], the value for the configuration is [{}].", host, controllerType, jobsPerHostConfiguration.toString(), numberOfJobs, maxConcurrentJobsPerHost);
                 continue;
             }
             hostAndNumberOfJobsPairList.add(new Pair<>(host, numberOfJobs));
@@ -230,13 +230,11 @@ public abstract class InternalBackupServiceJobController extends ManagerBase {
         return hostAndNumberOfJobsPairList;
     }
 
-    protected Integer getMaxConcurrentCompressionsPerHost(ConfigKey<Integer> jobsPerHostConfiguration, HostVO host) {
+    protected Integer getMaxConcurrentJobsPerHost(ConfigKey<Integer> jobsPerHostConfiguration, HostVO host) {
         if (host.getDetail(jobsPerHostConfiguration.key()) != null) {
             return Integer.valueOf(host.getDetail(jobsPerHostConfiguration.key()));
-        } else {
-            return jobsPerHostConfiguration.valueIn(host.getClusterId());
         }
-
+        return jobsPerHostConfiguration.valueIn(host.getClusterId());
     }
 
     /**
@@ -268,7 +266,7 @@ public abstract class InternalBackupServiceJobController extends ManagerBase {
 
             submitQueuedJob(job, zoneId, logId);
 
-            Integer maxJobsPerHost = getMaxConcurrentCompressionsPerHost(maxJobPerHostConfig, hostAndNumberOfJobs.first());
+            Integer maxJobsPerHost = getMaxConcurrentJobsPerHost(maxJobPerHostConfig, hostAndNumberOfJobs.first());
             if (hostAndNumberOfJobs.second() < maxJobsPerHost || maxJobsPerHost < 0) {
                 hostAndNumberOfJobsPairList.add(hostAndNumberOfJobs);
                 hostAndNumberOfJobsPairList.sort(Comparator.comparing(Pair::second));
@@ -282,8 +280,7 @@ public abstract class InternalBackupServiceJobController extends ManagerBase {
         return BackupManager.BackupFrameworkEnabled.valueIn(zone.getId());
     }
 
-    protected void submitQueuedJob(InternalBackupServiceJobVO job, long zoneId, String logId) {
-    }
+    protected abstract void submitQueuedJob(InternalBackupServiceJobVO job, long zoneId, String logId);
 
     /**
      * Implementing classes should override this if they want jobs to be tried more than once.
@@ -306,6 +303,5 @@ public abstract class InternalBackupServiceJobController extends ManagerBase {
         return List.of();
     }
 
-    protected void searchAndDispatchJobs() {
-    }
+    protected abstract void searchAndDispatchJobs();
 }

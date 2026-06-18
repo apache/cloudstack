@@ -71,7 +71,7 @@ public class LibvirtCleanupKbossVmBackupCommandWrapper extends CommandWrapper<Cl
             dm = serverResource.getDomain(serverResource.getLibvirtUtilitiesHelper().getConnection(), command.getVmName());
             return new Pair<>(mergeDeltasForRunningVmIfNeeded(command, serverResource, dm), true);
         } catch (LibvirtException e) {
-            if (e.getError().getCode() == Error.ErrorNumber.VIR_ERR_NO_DOMAIN && IsVmReallyStopped(command, serverResource)) {
+            if (e.getError().getCode() == Error.ErrorNumber.VIR_ERR_NO_DOMAIN && isVmReallyStopped(command, serverResource)) {
                 return new Pair<>(mergeDeltasForStoppedVmIfNeeded(command, serverResource), false);
             }
             logger.error("Error while trying to get VM [{}]. Aborting the process.", command.getVmName(), e);
@@ -185,7 +185,7 @@ public class LibvirtCleanupKbossVmBackupCommandWrapper extends CommandWrapper<Cl
         }
     }
 
-    private boolean IsVmReallyStopped(CleanupKbossBackupErrorCommand command, LibvirtComputingResource serverResource) {
+    private boolean isVmReallyStopped(CleanupKbossBackupErrorCommand command, LibvirtComputingResource serverResource) {
         VolumeObjectTO volume = command.getKbossTOs().stream()
                 .filter(kbossTO -> kbossTO.getVolumeObjectTO().getDeviceId() == 0)
                 .map(KbossTO::getVolumeObjectTO).findFirst().orElseThrow();

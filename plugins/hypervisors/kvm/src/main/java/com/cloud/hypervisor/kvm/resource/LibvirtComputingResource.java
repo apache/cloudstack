@@ -7363,25 +7363,25 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException ex) {
-                logger.trace(String.format("Thread that was tracking the block pull progress %s was interrupted. Ignoring.", partialLog), ex);
+                logger.trace("Thread that was tracking the block pull progress {} was interrupted. Ignoring.", partialLog, ex);
                 continue;
             }
 
             try {
                 result = vm.getBlockJobInfo(diskLabel, 0);
             } catch (LibvirtException ex) {
-                logger.warn(String.format("Exception while getting block job info %s: [%s].", partialLog, ex.getMessage()), ex);
+                logger.warn("Exception while getting block job info {}: [{}].", partialLog, ex.getMessage(), ex);
                 return false;
             }
 
             if (result == null || result.type == 0 && result.end == 0 && result.cur == 0) {
-                logger.debug(String.format("Block pull job %s has finished.", partialLog));
+                logger.debug("Block pull job {} has finished.", partialLog);
                 return true;
             }
 
             long currentCommittedBytes = result.cur;
             if (currentCommittedBytes > lastCommittedBytes) {
-                logger.debug(String.format("The block pull %s is at [%s] of [%s].", partialLog, currentCommittedBytes, result.end));
+                logger.debug("The block pull {} is at [{}] of [{}].", partialLog, currentCommittedBytes, result.end);
             }
             lastCommittedBytes = currentCommittedBytes;
             endBytes = result.end;

@@ -145,4 +145,5 @@ public interface VmDetailConstants {
     String VALIDATION_COMMAND_TIMEOUT = "backupValidationCommandTimeout";
     String VALIDATION_SCREENSHOT_WAIT = "backupValidationScreenshotWait";
     String VALIDATION_BOOT_TIMEOUT = "backupValidationBootTimeout";
+    String LAST_KNOWN_STATE = "last_known_state";
 }
