@@ -63,3 +63,5 @@ jobs:
           verbose: true
           name: codecov
           token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Compute Coverage Grade
+        run: bash scripts/coverage-grade.sh client/target/site/jacoco-aggregate/jacoco.xml
