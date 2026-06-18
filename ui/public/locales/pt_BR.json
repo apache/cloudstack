@@ -435,6 +435,7 @@
 "label.backup.storage": "Armazenamento de backup",
 "label.backupstoragelimit": "Limite de armazenamento de backup (GiB)",
 "label.backup.configure.schedule": "Configurar Agendamento de Backup",
+"label.backup.chain.finish": "Finalizar cadeia de backup",
 "label.backupchainsize": "Tamanho da cadeia de backup",
 "label.backup.offering.assign": "Atribuir VM a oferta de backup",
 "label.backup.offering.remove": "Remover VM de oferta de backup",

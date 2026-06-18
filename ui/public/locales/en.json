@@ -465,6 +465,7 @@
 "label.backup.isolated": "Isolated",
 "label.backup.attach.restore": "Restore and attach backup volume",
 "label.backup.configure.schedule": "Configure Backup Schedule",
+"label.backup.chain.finish": "Finish backup chain",
 "label.backupchainsize": "Backup chain size",
 "label.backup.offering.assign": "Assign Instance to backup offering",
 "label.backup.offering.remove": "Remove Instance from backup offering",
