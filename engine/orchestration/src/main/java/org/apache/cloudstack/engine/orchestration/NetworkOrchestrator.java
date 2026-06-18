@@ -3173,9 +3173,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     /**
-     * Checks for L2 network offering services. Only 2 cases allowed:
+     * Checks for L2 network offering services. Only 3 cases allowed:
      * - No services
-     * - User Data service only, provided by ConfigDrive
+     * - UserData service only, provided by ConfigDrive
+     * - Connectivity service only, provided by Netris
      *
      * @param ntwkOff network offering
      */

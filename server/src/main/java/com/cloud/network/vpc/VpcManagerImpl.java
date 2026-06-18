@@ -714,10 +714,11 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         Service redundantRouterService = Service.SourceNat;
         if (CollectionUtils.isNotEmpty(sourceNatServiceProviders)) {
             svcProviderMap.put(Service.Gateway, sourceNatServiceProviders);
-        } else if (NetworkOffering.NetworkMode.ROUTED.equals(networkMode) && org.apache.commons.lang3.StringUtils.isBlank(externalProvider)) {
-            // For Routed mode, add the Gateway service except for external providers such as NSX, Netris to not override the svcProviderMap mapping
-            svcProviderMap.put(Service.Gateway, Sets.newHashSet(Provider.VPCVirtualRouter));
+        } else if (NetworkOffering.NetworkMode.ROUTED.equals(networkMode)) {
             redundantRouterService = Service.Gateway;
+            if (org.apache.commons.lang3.StringUtils.isBlank(externalProvider)) {
+                svcProviderMap.put(Service.Gateway, Sets.newHashSet(Provider.VPCVirtualRouter));
+            }
         }
 
         validateConnectivtyServiceCapabilities(svcProviderMap.get(Service.Connectivity), serviceCapabilityList);

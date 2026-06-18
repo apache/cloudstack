@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.resource;
 
+import com.cloud.offering.NetworkOffering;
 import org.apache.cloudstack.agent.api.NetrisCommand;
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -73,7 +74,7 @@ public class NetrisResourceObjectUtils {
                 break;
             case STATICNAT:
                 stringBuilder.append(String.format("%s%s-VM%s-%s", prefix, suffixes[0], suffixes[1], "STATICNAT"));
-                suffixes = new String[0];
+                suffixes = ArrayUtils.subarray(suffixes, 2, suffixes.length);
                 break;
             case DNAT:
                 stringBuilder.append(String.format("%s%s-%s", prefix, suffixes[0], "DNAT"));
@@ -99,5 +100,9 @@ public class NetrisResourceObjectUtils {
             }
         }
         return stringBuilder.toString();
+    }
+
+    public static NetworkOffering.NetworkMode getNetworkMode(NetworkOffering.NetworkMode mode) {
+        return Objects.isNull(mode) ? NetworkOffering.NetworkMode.NATTED : mode;
     }
 }
