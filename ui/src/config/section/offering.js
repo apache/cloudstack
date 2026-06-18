@@ -390,7 +390,7 @@ export default {
       permission: ['listNetworkOfferings'],
       searchFilters: ['name', 'zoneid', 'domainid', 'tags'],
       columns: () => {
-        const fields = ['name', 'state', 'guestiptype', 'traffictype', 'networkrate', 'domain', 'zone', 'order']
+        const fields = ['name', 'state', 'guestiptype', 'traffictype', 'networkrate', 'zone', 'egressdefaultpolicy', 'order']
         if (store.getters.userInfo.roletype === 'Admin') {
           fields.splice(fields.length - 1, 0, { field: 'serviceofferingname', customTitle: 'virtual.routers.system.offering' })
         }
