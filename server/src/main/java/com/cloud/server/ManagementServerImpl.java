@@ -1490,19 +1490,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
         }
-
-        String srcHostVersion = srcHost.getHypervisorVersion();
-        if (HypervisorType.KVM.equals(srcHost.getHypervisorType()) && srcHostVersion == null) {
-            srcHostVersion = "";
-        }
-
-        // Check if the vm can be migrated with storage.
-        boolean canMigrateWithStorage = false;
-
-        List<HypervisorType> hypervisorTypes = Arrays.asList(new HypervisorType[]{HypervisorType.VMware, HypervisorType.KVM});
-        if (VirtualMachine.Type.User.equals(vm.getType()) || hypervisorTypes.contains(vm.getHypervisorType())) {
-            canMigrateWithStorage = _hypervisorCapabilitiesDao.isStorageMotionSupported(srcHost.getHypervisorType(), srcHostVersion);
-        }
+        final String srcHostVersion = getHypervisorVersionOfHost(srcHost);
 
         // Check if the vm is using any disks on local storage.
         final VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(vm, null, _offeringDao.findById(vm.getId(), vm.getServiceOfferingId()), null, null);
@@ -1517,6 +1505,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             }
         }
 
+        boolean canMigrateWithStorage = isStorageMigrationSupported(vm);
         if (!canMigrateWithStorage && usesLocal) {
             throw new InvalidParameterValueException("Unsupported operation, instance uses Local storage, cannot migrate");
         }
@@ -1596,6 +1585,28 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return new Ternary<>(allHostsPairResult, filteredHosts, requiresStorageMotion);
     }
 
+    protected boolean isStorageMigrationSupported(final VirtualMachine vm) {
+        final Host srcHost = _hostDao.findById(vm.getHostId());
+        if (srcHost == null) {
+            throw new CloudRuntimeException(String.format("Unable to find the host where Instance [%s] is running.", vm.getInstanceName()));
+        }
+
+        final List<HypervisorType> hypervisorTypes = Arrays.asList(HypervisorType.VMware, HypervisorType.KVM);
+        if (VirtualMachine.Type.User.equals(vm.getType()) || hypervisorTypes.contains(vm.getHypervisorType())) {
+            final String srcHostVersion = getHypervisorVersionOfHost(srcHost);
+            return _hypervisorCapabilitiesDao.isStorageMotionSupported(srcHost.getHypervisorType(), srcHostVersion);
+        }
+        return false;
+    }
+
+    protected String getHypervisorVersionOfHost(final Host host) {
+        final String version = host.getHypervisorVersion();
+        if (version == null && HypervisorType.KVM.equals(host.getHypervisorType())) {
+            return "";
+        }
+        return version;
+    }
+
     /**
      * Apply affinity group constraints and other exclusion rules for VM migration.
      * This builds an ExcludeList based on affinity groups, DPDK requirements, and dedicated resources.
@@ -1642,7 +1653,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
      * @param plan The deployment plan
      * @param compatibleHosts List of technically compatible hosts
      * @param excludes ExcludeList with hosts to avoid
-     * @param srcHost Source host (for architecture filtering)
      * @return List of suitable hosts with capacity
      */
     protected List<Host> getCapableSuitableHosts(
@@ -1650,8 +1660,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             final VirtualMachineProfile vmProfile,
             final DataCenterDeployment plan,
             final List<? extends Host> compatibleHosts,
-            final ExcludeList excludes,
-            final Host srcHost) {
+            final ExcludeList excludes) {
 
         List<Host> suitableHosts = new ArrayList<>();
 
@@ -1677,6 +1686,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         // Only list hosts of the same architecture as the source Host in a multi-arch zone
         if (!suitableHosts.isEmpty()) {
+            Host srcHost = _hostDao.findById(vm.getHostId());
             List<CPU.CPUArch> clusterArchs = ApiDBUtils.listZoneClustersArchs(vm.getDataCenterId());
             if (CollectionUtils.isNotEmpty(clusterArchs) && clusterArchs.size() > 1) {
                 suitableHosts = suitableHosts.stream().filter(h -> h.getArch() == srcHost.getArch()).collect(Collectors.toList());
@@ -1707,9 +1717,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         // Create deployment plan and VM profile
-        final Host srcHost = _hostDao.findById(vm.getHostId());
-        final DataCenterDeployment plan = new DataCenterDeployment(
-            srcHost.getDataCenterId(), srcHost.getPodId(), srcHost.getClusterId(), null, null, null);
+        final DataCenterDeployment plan = createDeploymentPlanForMigrationListing(vm);
         final VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(
             vm, null, _offeringDao.findById(vm.getId(), vm.getServiceOfferingId()), null, null);
 
@@ -1717,10 +1725,21 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final ExcludeList excludes = applyAffinityConstraints(vm, vmProfile, plan, vmList);
 
         // Get hosts with capacity
-        List<Host> suitableHosts = getCapableSuitableHosts(vm, vmProfile, plan, filteredHosts, excludes, srcHost);
+        List<Host> suitableHosts = getCapableSuitableHosts(vm, vmProfile, plan, filteredHosts, excludes);
 
         final Pair<List<? extends Host>, Integer> otherHosts = new Pair<>(allHostsPair.first(), allHostsPair.second());
         return new Ternary<>(otherHosts, suitableHosts, requiresStorageMotion);
+    }
+
+    protected DataCenterDeployment createDeploymentPlanForMigrationListing(final VirtualMachine vm) {
+        final Host srcHost = _hostDao.findById(vm.getHostId());
+
+        final boolean canMigrateWithStorage = isStorageMigrationSupported(vm);
+        if (canMigrateWithStorage) {
+            return new DataCenterDeployment(srcHost.getDataCenterId(), srcHost.getPodId(), null, null, null, null);
+        }
+
+        return new DataCenterDeployment(srcHost.getDataCenterId(), srcHost.getPodId(), srcHost.getClusterId(), null, null, null);
     }
 
     /**
