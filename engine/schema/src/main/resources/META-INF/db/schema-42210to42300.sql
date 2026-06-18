@@ -215,3 +215,6 @@ CALL `cloud`.`IDEMPOTENT_CHANGE_COLUMN`('cloud.extension_resource_map_details', 
 
 -- Add CustomAction service support to physical_network_service_providers
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.physical_network_service_providers', 'custom_action_service_provided', 'tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT "Is Custom Action service provided" AFTER `networkacl_service_provided`');
+
+-- Add description for secondary IP addresses
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.nic_secondary_ips', 'description', 'VARCHAR(2048) DEFAULT NULL');
