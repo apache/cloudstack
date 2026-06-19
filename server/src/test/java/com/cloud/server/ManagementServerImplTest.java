@@ -827,9 +827,13 @@ public class ManagementServerImplTest {
     @Test
     public void testListHostsForMigrationOfVMGpuEnabled() {
         VMInstanceVO vm = mockRunningVM(1L, HypervisorType.KVM);
+        long hostId = vm.getHostId();
+        HostVO srcHost = mockHost(hostId, 4L, 5L, 6L, HypervisorType.KVM);
         Account caller = mockRootAdminAccount();
+
         Mockito.doReturn(caller).when(spy).getCaller();
         Mockito.when(vmInstanceDao.findById(1L)).thenReturn(vm);
+        Mockito.doReturn(srcHost).when(hostDao).findById(hostId);
 
         // Mock GPU detail
         Mockito.when(serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.pciDevice.toString()))
@@ -1509,8 +1513,6 @@ public class ManagementServerImplTest {
         Account caller = mockRootAdminAccount();
         Mockito.doReturn(caller).when(spy).getCaller();
         Mockito.when(vmInstanceDao.findById(1L)).thenReturn(vm);
-        Mockito.when(serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.pciDevice.toString()))
-            .thenReturn(null);
         Mockito.when(hostDao.findById(vm.getHostId())).thenReturn(null);
 
         spy.listHostsForMigrationOfVM(1L, 0L, 20L, null);
@@ -2079,12 +2081,11 @@ public class ManagementServerImplTest {
     @Test
     public void createDeploymentPlanForMigrationListingTestAllocatesInAnyClusterWhenStorageMigrationIsSupported() {
         VMInstanceVO vm = mockRunningVM(1L, HypervisorType.KVM);
-        Mockito.doReturn(true).when(spy).isStorageMigrationSupported(vm);
+        HostVO srcHost = mockHost(vm.getHostId(), 1L, 2L, 3L, HypervisorType.KVM);
 
-        HostVO srcHost = mockHost(100L, 1L, 2L, 3L, HypervisorType.KVM);
-        Mockito.doReturn(srcHost).when(hostDao).findById(Mockito.anyLong());
+        Mockito.doReturn(true).when(spy).isStorageMigrationSupported(vm, srcHost);
 
-        DataCenterDeployment deploymentPlan = spy.createDeploymentPlanForMigrationListing(vm);
+        DataCenterDeployment deploymentPlan = spy.createDeploymentPlanForMigrationListing(vm, srcHost);
 
         Assert.assertEquals(3L, deploymentPlan.getDataCenterId());
         Assert.assertEquals(2L, (long) deploymentPlan.getPodId());
@@ -2094,12 +2095,11 @@ public class ManagementServerImplTest {
     @Test
     public void createDeploymentPlanForMigrationListingTestAllocatesInSourceClusterWhenStorageMigrationIsNotSupported() {
         VMInstanceVO vm = mockRunningVM(1L, HypervisorType.XenServer);
-        Mockito.doReturn(false).when(spy).isStorageMigrationSupported(vm);
+        HostVO srcHost = mockHost(vm.getHostId(), 4L, 5L, 6L, HypervisorType.XenServer);
 
-        HostVO srcHost = mockHost(200L, 4L, 5L, 6L, HypervisorType.XenServer);
-        Mockito.doReturn(srcHost).when(hostDao).findById(Mockito.anyLong());
+        Mockito.doReturn(false).when(spy).isStorageMigrationSupported(vm, srcHost);
 
-        DataCenterDeployment deploymentPlan = spy.createDeploymentPlanForMigrationListing(vm);
+        DataCenterDeployment deploymentPlan = spy.createDeploymentPlanForMigrationListing(vm, srcHost);
 
         Assert.assertEquals(6L, deploymentPlan.getDataCenterId());
         Assert.assertEquals(5L, (long) deploymentPlan.getPodId());
