@@ -135,7 +135,7 @@ public class VmwareHelperTest {
         nvmeMapping.setBusName("nvme");
         nvmeMapping.setMaxDeviceCount(15);
         nvmeMapping.setMaxControllerCount(4);
-        VmwareHelper.setSupportedDiskControllers(List.of(osdefaultMapping, ideMapping, lsilogicMapping, pvscsiMapping, sataMapping, nvmeMapping));
+        VmwareHelper.setSupportedDiskControllers(new ArrayList<>(List.of(osdefaultMapping, ideMapping, lsilogicMapping, pvscsiMapping, sataMapping, nvmeMapping)));
 
         Mockito.when(virtualMachineConfigSpecMock.getDeviceChange()).thenReturn(new ArrayList<>());
     }

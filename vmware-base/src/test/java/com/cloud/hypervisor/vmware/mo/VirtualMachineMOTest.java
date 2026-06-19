@@ -130,7 +130,7 @@ public class VirtualMachineMOTest {
         nvmeMapping.setMaxControllerCount(4);
         nvmeMapping.setMinHardwareVersion("13");
 
-        VmwareHelper.setSupportedDiskControllers(List.of(osdefaultMapping, ideMapping, lsilogicMapping, nvmeMapping));
+        VmwareHelper.setSupportedDiskControllers(new ArrayList<>(List.of(osdefaultMapping, ideMapping, lsilogicMapping, nvmeMapping)));
     }
 
     @BeforeClass

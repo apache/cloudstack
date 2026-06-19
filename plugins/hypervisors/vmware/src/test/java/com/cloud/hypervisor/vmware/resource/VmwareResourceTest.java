@@ -904,7 +904,7 @@ public class VmwareResourceTest {
         nvmeMapping.setMaxControllerCount(4);
         nvmeMapping.setMinHardwareVersion("13");
 
-        VmwareHelper.setSupportedDiskControllers(List.of(osdefaultMapping, ideMapping, lsilogicMapping, pvscsiMapping, sataMapping, nvmeMapping));
+        VmwareHelper.setSupportedDiskControllers(new ArrayList<>(List.of(osdefaultMapping, ideMapping, lsilogicMapping, pvscsiMapping, sataMapping, nvmeMapping)));
     }
 
     private Set<DiskControllerMappingVO> getRequiredDiskControllersForValidateRequiredVirtualHardwareVersionForNewDiskControllersTests() {
