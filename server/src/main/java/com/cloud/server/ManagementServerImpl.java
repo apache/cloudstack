@@ -1637,6 +1637,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
      * @param plan The deployment plan
      * @param compatibleHosts List of technically compatible hosts
      * @param excludes ExcludeList with hosts to avoid
+     * @param srcHost Source host (for architecture filtering)
      * @return List of suitable hosts with capacity
      */
     protected List<Host> getCapableSuitableHosts(
@@ -1644,7 +1645,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             final VirtualMachineProfile vmProfile,
             final DataCenterDeployment plan,
             final List<? extends Host> compatibleHosts,
-            final ExcludeList excludes) {
+            final ExcludeList excludes,
+            final Host srcHost) {
 
         List<Host> suitableHosts = new ArrayList<>();
 
@@ -1670,7 +1672,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         // Only list hosts of the same architecture as the source Host in a multi-arch zone
         if (!suitableHosts.isEmpty()) {
-            Host srcHost = _hostDao.findById(vm.getHostId());
             List<CPU.CPUArch> clusterArchs = ApiDBUtils.listZoneClustersArchs(vm.getDataCenterId());
             if (CollectionUtils.isNotEmpty(clusterArchs) && clusterArchs.size() > 1) {
                 suitableHosts = suitableHosts.stream().filter(h -> h.getArch() == srcHost.getArch()).collect(Collectors.toList());
@@ -1719,7 +1720,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final ExcludeList excludes = applyAffinityConstraints(vm, vmProfile, plan, vmList);
 
         // Get hosts with capacity
-        List<Host> suitableHosts = getCapableSuitableHosts(vm, vmProfile, plan, filteredHosts, excludes);
+        List<Host> suitableHosts = getCapableSuitableHosts(vm, vmProfile, plan, filteredHosts, excludes, srcHost);
 
         final Pair<List<? extends Host>, Integer> otherHosts = new Pair<>(allHostsPair.first(), allHostsPair.second());
         return new Ternary<>(otherHosts, suitableHosts, requiresStorageMotion);
