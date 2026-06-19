@@ -71,6 +71,21 @@ public class AssignVolumeCmd extends BaseCmd implements UserCmd {
     }
 
     /////////////////////////////////////////////////////
+    /////////////////// Setter///////////////////////////
+    /////////////////////////////////////////////////////
+    public void setVolumeId(Long volumeId) {
+        this.volumeId = volumeId;
+    }
+
+    public void setAccountId(Long accountId) {
+        this.accountId = accountId;
+    }
+
+    public void setProjectId(Long projectid) {
+        this.projectid = projectid;
+    }
+
+    /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 

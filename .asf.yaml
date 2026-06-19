@@ -16,7 +16,6 @@
 # under the License.
 
 # https://cwiki.apache.org/confluence/display/INFRA/git+-+.asf.yaml+features
----
 github:
   description: "Apache CloudStack is an opensource Infrastructure as a Service (IaaS) cloud computing platform"
   homepage: https://cloudstack.apache.org/
@@ -55,8 +54,28 @@ github:
     - erikbocks
     - Imvedansh
     - Damans227
+    - jmsperu
+    - GaOrtiga
+    - bhouse-nexthop
 
-  protected_branches: ~
+  protected_branches:
+
+  rulesets:
+    - name: "Default Branch Protection"
+      type: branch
+      branches:
+        includes:
+          - "~DEFAULT_BRANCH"
+        excludes: []
+      bypass_teams:
+        - root
+      restrict_deletion: true
+      restrict_force_push: true
+
+  copilot_code_review:
+    enabled: true
+    review_drafts: true
+    review_on_push: true
 
 notifications:
   commits: commits@cloudstack.apache.org

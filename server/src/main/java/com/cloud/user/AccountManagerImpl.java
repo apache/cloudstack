@@ -1534,6 +1534,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         checkApiAccess(apiCheckers, caller, command, keyPairPermissions.toArray(new ApiKeyPairPermission[0]));
     }
 
+    @Override
+    public void checkApiAccess(Account caller, String command) {
+        List<APIChecker> apiCheckers = getEnabledApiCheckers();
+        checkApiAccess(apiCheckers, caller, command);
+    }
+
     @NotNull
     private List<APIChecker> getEnabledApiCheckers() {
         // we are really only interested in the dynamic access checker
@@ -2773,8 +2779,18 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
+    public Account getActiveAccountByUuid(String accountUuid) {
+        return _accountDao.findByUuid(accountUuid);
+    }
+
+    @Override
     public Account getAccount(long accountId) {
         return _accountDao.findByIdIncludingRemoved(accountId);
+    }
+
+    @Override
+    public Account getAccountByUuid(String accountUuid) {
+        return _accountDao.findByUuidIncludingRemoved(accountUuid);
     }
 
     @Override
@@ -2788,6 +2804,15 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     public User getActiveUser(long userId) {
         return _userDao.findById(userId);
+    }
+
+    @Override
+    public User getOneActiveUserForAccount(Account account) {
+        List<UserVO> users = _userDao.listByAccount(account.getId());
+        if (CollectionUtils.isEmpty(users)) {
+            return null;
+        }
+        return users.get(0);
     }
 
     @Override
@@ -3922,7 +3947,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             if (getActiveAccountById(accountId) != null) {
                 return accountId;
             }
-            throw new InvalidParameterValueException(String.format("Unable to find account with ID [%s].", accountId));
+            throw new InvalidParameterValueException(String.format("Unable to find account with the specified ID."));
         }
 
         if (accountName == null && domainId == null) {
@@ -3938,16 +3963,16 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Both %s and %s are needed if using either. Consider using %s instead.",
                     ApiConstants.ACCOUNT, ApiConstants.DOMAIN_ID, ApiConstants.ACCOUNT_ID));
         }
-        throw new InvalidParameterValueException(String.format("Unable to find account by name [%s] on domain [%s].", accountName, domainId));
+        throw new InvalidParameterValueException(String.format("Unable to find account with name [%s] on the specified domain.", accountName));
     }
 
     protected long getActiveProjectAccountByProjectId(long projectId) {
         Project project = _projectMgr.getProject(projectId);
         if (project == null) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Unable to find project with ID [%s].", projectId));
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to find project with the specified ID.");
         }
         if (project.getState() != Project.State.Active) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Project with ID [%s] is not active.", projectId));
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Project is not active.");
         }
         return project.getProjectAccountId();
     }

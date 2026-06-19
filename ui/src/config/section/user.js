@@ -179,7 +179,7 @@ export default {
       dataView: true,
       popup: true,
       show: (record, store) => {
-        return (record.is2faenabled === false && record.id === store.userInfo.id)
+        return (!record.is2faenabled && record.id === store.userInfo.id)
       },
       component: shallowRef(defineAsyncComponent(() => import('@/views/iam/SetupTwoFaAtUserProfile.vue')))
     },
