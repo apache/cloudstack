@@ -314,6 +314,58 @@ public class LinstorDataMotionStrategy implements DataMotionStrategy {
         return true;
     }
 
+    /**
+     * Verify that the destination KVM host is a registered LINSTOR satellite on the controller
+     * backing every destination pool involved in this migration. Throws CloudRuntimeException
+     * with a clear message when it isn't, instead of letting the resource creation later fail
+     * obscurely inside auto-placement.
+     *
+     * Best-effort: a transient controller error during this check does not block the migration
+     * — we log a warning and let the downstream resource-create surface the real issue. Only a
+     * confirmed "host not in node list" outcome aborts the migration up-front.
+     */
+    private void verifyDestinationIsLinstorSatellite(Map<VolumeInfo, DataStore> volumeDataStoreMap, Host destHost) {
+        if (destHost == null || destHost.getName() == null) {
+            // Without a destination host name to match, the only sensible thing is to let the
+            // existing flow run and report whatever it would have reported.
+            return;
+        }
+        for (Map.Entry<VolumeInfo, DataStore> entry : volumeDataStoreMap.entrySet()) {
+            DataStore destDataStore = entry.getValue();
+            StoragePoolVO destStoragePool = _storagePool.findById(destDataStore.getId());
+            if (destStoragePool == null
+                    || destStoragePool.getPoolType() != Storage.StoragePoolType.Linstor) {
+                continue;
+            }
+            DevelopersApi api = LinstorUtil.getLinstorAPI(destStoragePool.getHostAddress());
+            try {
+                List<String> nodes = LinstorUtil.getLinstorNodeNames(api);
+                if (nodes == null) {
+                    logger.warn("LINSTOR controller {} returned null node list; skipping pre-flight",
+                            destStoragePool.getHostAddress());
+                    return;
+                }
+                if (!nodes.contains(destHost.getName())) {
+                    throw new CloudRuntimeException(String.format(
+                            "Cannot migrate to host '%s': it is not a registered LINSTOR satellite on " +
+                                    "controller %s (pool '%s'). Known satellites: %s. Either register the " +
+                                    "host with `linstor node create` or pick a different destination.",
+                            destHost.getName(),
+                            destStoragePool.getHostAddress(),
+                            destStoragePool.getName(),
+                            nodes));
+                }
+            } catch (ApiException apiEx) {
+                // Don't block migration on a transient controller hiccup — log and let the
+                // downstream resource creation handle the real failure.
+                logger.warn("LINSTOR pre-flight check could not contact controller {}: {}; " +
+                                "letting downstream resource creation proceed",
+                        destStoragePool.getHostAddress(), apiEx.getBestMessage());
+                return;
+            }
+        }
+    }
+
     @Override
     public void copyAsync(Map<VolumeInfo, DataStore> volumeDataStoreMap, VirtualMachineTO vmTO, Host srcHost,
             Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {
@@ -322,6 +374,15 @@ public class LinstorDataMotionStrategy implements DataMotionStrategy {
             throw new CloudRuntimeException(
                     String.format("Invalid hypervisor type [%s]. Only KVM supported", srcHost.getHypervisorType()));
         }
+
+        // Pre-flight: verify the destination KVM host is registered as a satellite on the
+        // LINSTOR controller backing each destination pool. Without this check, resource
+        // creation falls through to the resource-group's auto-placement filters and may
+        // either silently place the resource on the wrong node or fail with an opaque
+        // auto-place error from the LINSTOR API. Failing fast here gives operators a clear
+        // actionable message instead of having to correlate the live-migration failure with
+        // an unrelated LINSTOR controller log entry.
+        verifyDestinationIsLinstorSatellite(volumeDataStoreMap, destHost);
 
         String errMsg = null;
         VMInstanceVO vmInstance = _vmDao.findById(vmTO.getId());

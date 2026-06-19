@@ -32,10 +32,13 @@ github:
 
   collaborators:
     - ingox
-    - gpordeus
+    - gp-santos
     - erikbocks
     - Imvedansh
     - Damans227
+    - jmsperu
+    - GaOrtiga
+    - bhouse-nexthop
 
   protected_branches:
 
@@ -45,13 +48,17 @@ github:
       branches:
         includes:
           - "~DEFAULT_BRANCH"
-          - "release/*"
-          - "rel/*"
         excludes: []
       bypass_teams:
         - root
       restrict_deletion: true
       restrict_force_push: true
+
+  copilot_code_review:
+    enabled: true
+    review_drafts: true
+    review_on_push: true
+
 notifications:
   commits: commits@cloudstack.apache.org
   issues: commits@cloudstack.apache.org

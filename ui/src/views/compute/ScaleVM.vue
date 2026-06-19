@@ -23,10 +23,6 @@
       <loading-outlined style="color: #1890ff;" />
     </div>
 
-    <a-alert v-if="fixedOfferingKvm" type="error" show-icon>
-      <template #message><span style="margin-bottom: 5px" v-html="$t('message.error.fixed.offering.kvm')" /></template>
-    </a-alert>
-
     <compute-offering-selection
       :compute-items="offerings"
       :loading="loading"
@@ -42,9 +38,11 @@
       :memory-input-decorator="memoryKey"
       :computeOfferingId="selectedOffering.id"
       :isConstrained="'serviceofferingdetails' in selectedOffering"
+      :initialCpuValue="getInitialCpuValue()"
       :minCpu="getMinCpu()"
       :maxCpu="'serviceofferingdetails' in selectedOffering ? selectedOffering.serviceofferingdetails.maxcpunumber*1 : Number.MAX_SAFE_INTEGER"
       :cpuSpeed="getCPUSpeed()"
+      :initialMemoryValue="getInitialMemoryValue()"
       :minMemory="getMinMemory()"
       :maxMemory="'serviceofferingdetails' in selectedOffering ? selectedOffering.serviceofferingdetails.maxmemory*1 : Number.MAX_SAFE_INTEGER"
       :isCustomized="selectedOffering.iscustomized"
@@ -151,31 +149,30 @@ export default {
           return
         }
         this.offerings = response.listserviceofferingsresponse.serviceoffering || []
-        if (this.resource.state === 'Running' && this.resource.hypervisor === 'KVM') {
-          this.offerings = this.offerings.filter(offering => offering.id === this.resource.serviceofferingid)
-          this.currentOffer = this.offerings[0]
-          if (this.currentOffer === undefined) {
-            this.fixedOfferingKvm = true
-          }
-        }
-        this.offerings.map(i => { this.offeringsMap[i.id] = i })
+        this.offerings.forEach(offering => { this.offeringsMap[offering.id] = offering })
       }).finally(() => {
         this.loading = false
       })
     },
     getMinCpu () {
-      // We can only scale up while a VM is running
-      if (this.resource.state === 'Running') {
-        return this.resource.cpunumber
-      }
       return this.selectedOffering?.serviceofferingdetails?.mincpunumber * 1 || 1
     },
-    getMinMemory () {
-      // We can only scale up while a VM is running
-      if (this.resource.state === 'Running') {
-        return this.resource.memory
+    getInitialCpuValue () {
+      const offeringMinCpu = this.getMinCpu()
+      if (this.resource.cpunumber < offeringMinCpu) {
+        return offeringMinCpu
       }
+      return this.resource.cpunumber
+    },
+    getMinMemory () {
       return this.selectedOffering?.serviceofferingdetails?.minmemory * 1 || 32
+    },
+    getInitialMemoryValue () {
+      const offeringMinMemory = this.getMinMemory()
+      if (this.resource.memory < offeringMinMemory) {
+        return offeringMinMemory
+      }
+      return this.resource.memory
     },
     getCPUSpeed () {
       // We can only scale up while a VM is running
