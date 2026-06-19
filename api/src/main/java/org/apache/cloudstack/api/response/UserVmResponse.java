@@ -226,6 +226,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "The name of the backup offering of the Instance", since = "4.14")
     private String backupOfferingName;
 
+    @SerializedName(ApiConstants.BACKUP_PROVIDER)
+    @Param(description = "The name of the backup provider of the offering attached to the Instance", since = "4.23.0")
+    private String backupProvider;
+
     @SerializedName("forvirtualnetwork")
     @Param(description = "The virtual Network for the service offering")
     private Boolean forVirtualNetwork;
@@ -1338,4 +1342,11 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         this.leaseExpiryDate = leaseExpiryDate;
     }
 
+    public String getBackupProvider() {
+        return backupProvider;
+    }
+
+    public void setBackupProvider(String backupProvider) {
+        this.backupProvider = backupProvider;
+    }
 }

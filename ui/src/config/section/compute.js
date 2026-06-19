@@ -299,8 +299,7 @@ export default {
           dataView: true,
           args: ['virtualmachineid'],
           show: (record) => {
-            console.log(record)
-            return ['Running', 'Stopped'].includes(record.state) && record.backupofferingid
+            return ['Running', 'Stopped'].includes(record.state) && record.backupofferingid && record.backupprovider === 'kboss'
           },
           mapping: {
             virtualmachineid: {

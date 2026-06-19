@@ -282,6 +282,12 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
     private final List<Backup.Status> allowedBackupStatesToValidate = List.of(Backup.Status.BackedUp, Backup.Status.Restoring);
 
     private final List<VirtualMachine.State> allowedVmStates = Arrays.asList(VirtualMachine.State.Running, VirtualMachine.State.Stopped);
+
+    @Override
+    public String getName() {
+        return "kboss";
+    }
+
     @Override
     public String getDescription() {
         return "KVM Backup on Secondary Storage";
