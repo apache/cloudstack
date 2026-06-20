@@ -19,7 +19,6 @@ package org.apache.cloudstack.backup;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Arrays;
 
 import com.cloud.capacity.Capacity;
 import com.cloud.exception.ResourceAllocationException;
@@ -55,18 +54,11 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
             "false",
             "Is backup and recovery framework enabled.", false, ConfigKey.Scope.Zone);
 
-    ConfigKey<String> BackupProviderPlugin = new ValidatedConfigKey<>("Advanced", String.class,
+    ConfigKey<String> BackupProviderPlugin = new ConfigKey<>("Advanced", String.class,
             "backup.framework.provider.plugin",
             "dummy",
-            "The backup and recovery provider plugin. Default built-in plugins: dummy, veeam, networker, nas. Additional plugins can be allowed via backup.framework.provider.plugin.allowed setting.",
-            true, ConfigKey.Scope.Zone, BackupFrameworkEnabled.key(), value -> validateBackupProviderConfig((String)value));
-
-    ConfigKey<String> AllowedBackupProviderPlugins = new ConfigKey<>(
-            "Advanced", String.class,
-            "backup.framework.provider.plugin.allowed",
-            "dummy,veeam,networker,nas",
-            "Comma-separated list of allowed backup provider plugins.",
-            true, ConfigKey.Scope.Zone);
+            "The backup and recovery provider plugin.",
+            true, ConfigKey.Scope.Zone, BackupFrameworkEnabled.key());
 
     ConfigKey<Long> BackupSyncPollingInterval = new ConfigKey<>("Advanced", Long.class,
             "backup.framework.sync.interval",
@@ -257,19 +249,4 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
     Capacity getBackupStorageUsedStats(Long zoneId);
 
     void checkAndRemoveBackupOfferingBeforeExpunge(VirtualMachine vm);
-
-    static void validateBackupProviderConfig(String value) {
-        if (value != null && (value.contains(",") || value.trim().contains(" "))) {
-            throw new IllegalArgumentException("Multiple backup provider plugins are not supported. Please provide a single plugin value.");
-        }
-        String allowed = AllowedBackupProviderPlugins.value();
-        if (allowed != null && value != null) {
-            List<String> validPlugins = Arrays.asList(allowed.split(","));
-            if (!validPlugins.contains(value.trim())) {
-                throw new IllegalArgumentException("Invalid backup provider plugin: " + value +
-                    ". Valid plugin values are: " + allowed +
-                    ". You can add more plugins via backup.framework.provider.plugin.allowed setting.");
-            }
-        }
-    }
 }
