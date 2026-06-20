@@ -247,25 +247,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         command.setQuiesce(quiesceVM);
 
         // Pass optional backup enhancement settings from zone-scoped configs
-        Long zoneId = vm.getDataCenterId();
-        if (Boolean.TRUE.equals(NASBackupCompressionEnabled.valueIn(zoneId))) {
-            command.addDetail(TakeBackupCommand.DETAIL_COMPRESSION, "true");
-        }
-        if (Boolean.TRUE.equals(NASBackupEncryptionEnabled.valueIn(zoneId))) {
-            String passphrase = NASBackupEncryptionPassphrase.valueIn(zoneId);
-            if (passphrase == null || passphrase.isEmpty()) {
-                throw new CloudRuntimeException("NAS backup encryption is enabled but no passphrase is configured (nas.backup.encryption.passphrase)");
-            }
-            command.addDetail(TakeBackupCommand.DETAIL_ENCRYPTION, "true");
-            command.addDetail(TakeBackupCommand.DETAIL_ENCRYPTION_PASSPHRASE, passphrase);
-        }
-        Integer bandwidthLimit = NASBackupBandwidthLimitMbps.valueIn(zoneId);
-        if (bandwidthLimit != null && bandwidthLimit > 0) {
-            command.addDetail(TakeBackupCommand.DETAIL_BANDWIDTH_LIMIT, String.valueOf(bandwidthLimit));
-        }
-        if (Boolean.TRUE.equals(NASBackupIntegrityCheckEnabled.valueIn(zoneId))) {
-            command.addDetail(TakeBackupCommand.DETAIL_INTEGRITY_CHECK, "true");
-        }
+        applyBackupEnhancementDetails(command, vm.getDataCenterId());
 
         if (VirtualMachine.State.Stopped.equals(vm.getState())) {
             List<VolumeVO> vmVolumes = volumeDao.findByInstance(vm.getId());
@@ -312,6 +294,32 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
                 backupDao.remove(backupVO.getId());
             }
             return new Pair<>(false, null);
+        }
+    }
+
+    /**
+     * Translates the zone-scoped backup-enhancement settings (compression, encryption,
+     * bandwidth limit, integrity check) into details on the {@link TakeBackupCommand}.
+     * Fails fast if encryption is enabled without a configured passphrase.
+     */
+    protected void applyBackupEnhancementDetails(TakeBackupCommand command, Long zoneId) {
+        if (Boolean.TRUE.equals(NASBackupCompressionEnabled.valueIn(zoneId))) {
+            command.addDetail(TakeBackupCommand.DETAIL_COMPRESSION, "true");
+        }
+        if (Boolean.TRUE.equals(NASBackupEncryptionEnabled.valueIn(zoneId))) {
+            String passphrase = NASBackupEncryptionPassphrase.valueIn(zoneId);
+            if (passphrase == null || passphrase.isEmpty()) {
+                throw new CloudRuntimeException("NAS backup encryption is enabled but no passphrase is configured (nas.backup.encryption.passphrase)");
+            }
+            command.addDetail(TakeBackupCommand.DETAIL_ENCRYPTION, "true");
+            command.addDetail(TakeBackupCommand.DETAIL_ENCRYPTION_PASSPHRASE, passphrase);
+        }
+        Integer bandwidthLimit = NASBackupBandwidthLimitMbps.valueIn(zoneId);
+        if (bandwidthLimit != null && bandwidthLimit > 0) {
+            command.addDetail(TakeBackupCommand.DETAIL_BANDWIDTH_LIMIT, String.valueOf(bandwidthLimit));
+        }
+        if (Boolean.TRUE.equals(NASBackupIntegrityCheckEnabled.valueIn(zoneId))) {
+            command.addDetail(TakeBackupCommand.DETAIL_INTEGRITY_CHECK, "true");
         }
     }
 

@@ -91,42 +91,12 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
         cmdArgs.add("-q"); cmdArgs.add(command.getQuiesce() != null && command.getQuiesce() ? "true" : "false");
         cmdArgs.add("-d"); cmdArgs.add(diskPaths.isEmpty() ? "" : String.join(",", diskPaths));
 
-        // Append optional enhancement flags from management server config
-        File passphraseFile = null;
-        Map<String, String> details = command.getDetails();
-        if (details != null) {
-            if ("true".equals(details.get(TakeBackupCommand.DETAIL_COMPRESSION))) {
-                cmdArgs.add("-c");
-            }
-            if ("true".equals(details.get(TakeBackupCommand.DETAIL_ENCRYPTION))) {
-                String passphrase = details.get(TakeBackupCommand.DETAIL_ENCRYPTION_PASSPHRASE);
-                if (passphrase == null || passphrase.isEmpty()) {
-                    return new BackupAnswer(command, false, "Encryption is enabled but no passphrase was provided");
-                }
-                try {
-                    passphraseFile = File.createTempFile("cs-backup-enc-", ".key");
-                    passphraseFile.deleteOnExit();
-                    Files.setPosixFilePermissions(passphraseFile.toPath(),
-                            EnumSet.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE));
-                    try (Writer fw = new OutputStreamWriter(new FileOutputStream(passphraseFile), StandardCharsets.UTF_8)) {
-                        fw.write(passphrase);
-                    }
-                    cmdArgs.add("-e"); cmdArgs.add(passphraseFile.getAbsolutePath());
-                } catch (IOException e) {
-                    logger.error("Failed to create encryption passphrase file", e);
-                    if (passphraseFile != null && passphraseFile.exists()) {
-                        passphraseFile.delete();
-                    }
-                    return new BackupAnswer(command, false, "Failed to create encryption passphrase file: " + e.getMessage());
-                }
-            }
-            String bwLimit = details.get(TakeBackupCommand.DETAIL_BANDWIDTH_LIMIT);
-            if (bwLimit != null && !"0".equals(bwLimit)) {
-                cmdArgs.add("-b"); cmdArgs.add(bwLimit);
-            }
-            if ("true".equals(details.get(TakeBackupCommand.DETAIL_INTEGRITY_CHECK))) {
-                cmdArgs.add("--verify");
-            }
+        // Append optional enhancement flags (compression / encryption / bandwidth / integrity)
+        File passphraseFile;
+        try {
+            passphraseFile = appendEnhancementFlags(cmdArgs, command.getDetails());
+        } catch (BackupConfigException e) {
+            return new BackupAnswer(command, false, e.getMessage());
         }
 
         List<String[]> commands = new ArrayList<>();
@@ -168,5 +138,68 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
         BackupAnswer answer = new BackupAnswer(command, true, result.second().trim());
         answer.setSize(backupSize);
         return answer;
+    }
+
+    /**
+     * Translates the optional backup-enhancement details (compression, encryption,
+     * bandwidth limit, integrity check) into nasbackup.sh CLI flags appended to
+     * {@code cmdArgs}. Returns the temporary passphrase file when encryption is
+     * enabled (the caller deletes it after the backup), or {@code null} otherwise.
+     */
+    File appendEnhancementFlags(List<String> cmdArgs, Map<String, String> details) throws BackupConfigException {
+        if (details == null) {
+            return null;
+        }
+        if ("true".equals(details.get(TakeBackupCommand.DETAIL_COMPRESSION))) {
+            cmdArgs.add("-c");
+        }
+        File passphraseFile = null;
+        if ("true".equals(details.get(TakeBackupCommand.DETAIL_ENCRYPTION))) {
+            String passphrase = details.get(TakeBackupCommand.DETAIL_ENCRYPTION_PASSPHRASE);
+            if (passphrase == null || passphrase.isEmpty()) {
+                throw new BackupConfigException("Encryption is enabled but no passphrase was provided");
+            }
+            passphraseFile = writePassphraseFile(passphrase);
+            cmdArgs.add("-e"); cmdArgs.add(passphraseFile.getAbsolutePath());
+        }
+        String bwLimit = details.get(TakeBackupCommand.DETAIL_BANDWIDTH_LIMIT);
+        if (bwLimit != null && !"0".equals(bwLimit)) {
+            cmdArgs.add("-b"); cmdArgs.add(bwLimit);
+        }
+        if ("true".equals(details.get(TakeBackupCommand.DETAIL_INTEGRITY_CHECK))) {
+            cmdArgs.add("--verify");
+        }
+        return passphraseFile;
+    }
+
+    /**
+     * Writes {@code passphrase} to a 0600 UTF-8 temp file for nasbackup.sh's {@code -e}
+     * flag. Scheduled for deletion on JVM exit; the caller removes it after the backup.
+     */
+    private File writePassphraseFile(String passphrase) throws BackupConfigException {
+        File passphraseFile = null;
+        try {
+            passphraseFile = File.createTempFile("cs-backup-enc-", ".key");
+            passphraseFile.deleteOnExit();
+            Files.setPosixFilePermissions(passphraseFile.toPath(),
+                    EnumSet.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE));
+            try (Writer fw = new OutputStreamWriter(new FileOutputStream(passphraseFile), StandardCharsets.UTF_8)) {
+                fw.write(passphrase);
+            }
+            return passphraseFile;
+        } catch (IOException e) {
+            logger.error("Failed to create encryption passphrase file", e);
+            if (passphraseFile != null && passphraseFile.exists()) {
+                passphraseFile.delete();
+            }
+            throw new BackupConfigException("Failed to create encryption passphrase file: " + e.getMessage());
+        }
+    }
+
+    /** Signals an invalid or unsatisfiable backup-enhancement configuration. */
+    static class BackupConfigException extends Exception {
+        BackupConfigException(String message) {
+            super(message);
+        }
     }
 }
