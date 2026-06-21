@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.backup;
 
+import com.cloud.utils.db.GlobalLock;
+
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.poll.BackgroundPollTask;
 import org.apache.logging.log4j.Logger;
@@ -23,14 +25,28 @@ import org.apache.logging.log4j.LogManager;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.PosixFilePermission;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * Scheduled task that backs up CloudStack infrastructure to NAS storage:
@@ -111,9 +127,18 @@ public class InfrastructureBackupTask extends ManagedContextRunnable implements 
 
         LOG.info("Starting infrastructure backup to {} (database included: {})", backupDir, includeDatabase);
 
+        // Cluster-wide lock: in multi-management-server deployments only one MS should run the
+        // infrastructure backup at a time, otherwise they would write/delete concurrently in the
+        // same NAS infra-backup path (duplicate backups, retention races, accidental deletes).
+        GlobalLock lock = acquireRunLock();
+        if (lock == null) {
+            LOG.info("Another management server is performing the infrastructure backup; skipping this run");
+            return;
+        }
+
         try {
             File dir = new File(backupDir);
-            if (!dir.mkdirs()) {
+            if (!dir.exists() && !dir.mkdirs()) {
                 LOG.error("Failed to create backup directory: {}", backupDir);
                 return;
             }
@@ -166,6 +191,24 @@ public class InfrastructureBackupTask extends ManagedContextRunnable implements 
 
         } catch (Exception e) {
             LOG.error("Infrastructure backup failed: {}", e.getMessage(), e);
+        } finally {
+            releaseRunLock(lock);
+        }
+    }
+
+    /**
+     * Acquire the cluster-wide run lock so only one management server performs the infrastructure
+     * backup at a time. Returns null if the lock can't be taken (another MS holds it). Overridable
+     * so unit tests can exercise runInContext without standing up the DB-backed lock manager.
+     */
+    protected GlobalLock acquireRunLock() {
+        GlobalLock lock = GlobalLock.getInternLock("infra-backup");
+        return (lock != null && lock.lock(5)) ? lock : null;
+    }
+
+    protected void releaseRunLock(GlobalLock lock) {
+        if (lock != null) {
+            lock.unlock();
         }
     }
 
@@ -190,15 +233,23 @@ public class InfrastructureBackupTask extends ManagedContextRunnable implements 
                                  String dbHost, String dbUser, String dbPassword) {
         String dumpFile = backupDir + "/" + dbName + "-" + timestamp + ".sql.gz";
 
-        // Use --single-transaction for InnoDB hot backup (no table locks, consistent snapshot)
-        String[] cmd = {"/bin/bash", "-c",
-            String.format("mysqldump --single-transaction --routines --triggers --events " +
-                "-h '%s' -u '%s' -p'%s' '%s' | gzip > '%s'",
-                dbHost, dbUser, dbPassword, dbName, dumpFile)};
-
+        File defaultsFile = null;
+        File rawDump = null;
         try {
-            ProcessBuilder pb = new ProcessBuilder(cmd);
-            pb.redirectErrorStream(true);
+            // Pass credentials via a 0600 --defaults-extra-file rather than the command line, so the
+            // password never appears in the process list, and invoke mysqldump WITHOUT a shell so that
+            // values read from db.properties cannot be interpreted as shell metacharacters (no injection).
+            defaultsFile = writeMysqlDefaultsFile(dbHost, dbUser, dbPassword);
+
+            rawDump = new File(backupDir, dbName + "-" + timestamp + ".sql");
+            // --single-transaction = InnoDB hot backup (no table locks, consistent snapshot)
+            ProcessBuilder pb = new ProcessBuilder(
+                    "mysqldump",
+                    "--defaults-extra-file=" + defaultsFile.getAbsolutePath(),
+                    "--single-transaction", "--routines", "--triggers", "--events",
+                    dbName);
+            pb.redirectOutput(ProcessBuilder.Redirect.to(rawDump));
+            pb.redirectError(ProcessBuilder.Redirect.INHERIT);
             Process process = pb.start();
             boolean completed = process.waitFor(300, TimeUnit.SECONDS);
 
@@ -213,6 +264,12 @@ public class InfrastructureBackupTask extends ManagedContextRunnable implements 
                 return;
             }
 
+            // Compress in-process (no shell pipeline) into the final .sql.gz.
+            try (InputStream in = new FileInputStream(rawDump);
+                 OutputStream out = new GZIPOutputStream(new FileOutputStream(dumpFile))) {
+                in.transferTo(out);
+            }
+
             File dump = new File(dumpFile);
             LOG.info("Database {} backed up: {} ({} bytes)", dbName, dumpFile, dump.length());
 
@@ -221,7 +278,37 @@ public class InfrastructureBackupTask extends ManagedContextRunnable implements 
             if (e instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
+        } finally {
+            if (rawDump != null && rawDump.exists() && !rawDump.delete()) {
+                LOG.warn("Failed to delete temporary dump file: {}", rawDump.getAbsolutePath());
+            }
+            if (defaultsFile != null && defaultsFile.exists() && !defaultsFile.delete()) {
+                LOG.warn("Failed to delete temporary mysql defaults file: {}", defaultsFile.getAbsolutePath());
+            }
         }
+    }
+
+    /**
+     * Writes a temporary MySQL option file (restricted to mode 0600 where supported) holding the
+     * connection credentials, so mysqldump can read them via {@code --defaults-extra-file}. Keeping
+     * the password out of the argument list prevents it leaking through the process list.
+     */
+    private File writeMysqlDefaultsFile(String host, String user, String password) throws IOException {
+        Path tmp = Files.createTempFile("cs-infra-mysqldump-", ".cnf");
+        try {
+            Files.setPosixFilePermissions(tmp,
+                    EnumSet.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE));
+        } catch (UnsupportedOperationException ignored) {
+            // Non-POSIX filesystem; createTempFile already restricts access to the owner.
+        }
+        String content = "[client]\n"
+                + "host=" + (host == null ? "" : host) + "\n"
+                + "user=" + (user == null ? "" : user) + "\n"
+                + "password=" + (password == null ? "" : password) + "\n";
+        try (Writer w = Files.newBufferedWriter(tmp, StandardCharsets.UTF_8)) {
+            w.write(content);
+        }
+        return tmp.toFile();
     }
 
     protected void backupDirectory(String sourcePath, String backupDir, String archiveName) {
@@ -259,6 +346,11 @@ public class InfrastructureBackupTask extends ManagedContextRunnable implements 
     }
 
     protected void cleanupOldBackups(String nasBackupPath, int retentionCount) {
+        // A negative retention (misconfiguration) would make toDelete exceed backups.length below and
+        // throw ArrayIndexOutOfBoundsException; clamp it so we never compute a delete count > available.
+        if (retentionCount < 0) {
+            retentionCount = 0;
+        }
         File infraDir = new File(nasBackupPath + "/infra-backup");
         if (!infraDir.exists()) {
             return;
@@ -280,20 +372,25 @@ public class InfrastructureBackupTask extends ManagedContextRunnable implements 
     }
 
     private void deleteDirectory(File dir) {
-        File[] files = dir.listFiles();
-        if (files != null) {
-            for (File file : files) {
-                if (file.isDirectory()) {
-                    deleteDirectory(file);
-                } else {
-                    if (!file.delete()) {
-                        LOG.warn("Failed to delete file: {}", file.getAbsolutePath());
-                    }
+        try {
+            // walkFileTree does NOT follow symbolic links by default: a symlink placed inside the
+            // backup tree (NAS shares are often writable by multiple systems) is removed as a link,
+            // its target is never descended into or deleted — so a delete can't escape the tree.
+            Files.walkFileTree(dir.toPath(), new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                    Files.deleteIfExists(file);
+                    return FileVisitResult.CONTINUE;
                 }
-            }
-        }
-        if (!dir.delete()) {
-            LOG.warn("Failed to delete directory: {}", dir.getAbsolutePath());
+
+                @Override
+                public FileVisitResult postVisitDirectory(Path visited, IOException exc) throws IOException {
+                    Files.deleteIfExists(visited);
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            LOG.warn("Failed to delete directory {}: {}", dir.getAbsolutePath(), e.getMessage());
         }
     }
 }
