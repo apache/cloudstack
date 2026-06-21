@@ -185,7 +185,8 @@ backup_running_vm() {
         break ;;
       Failed)
         echo "Virsh backup job failed"
-        cleanup ;;
+        cleanup
+        exit 1 ;;
     esac
     if [[ $elapsed -ge $BACKUP_TIMEOUT ]]; then
       echo "Backup timed out after ${BACKUP_TIMEOUT}s for VM $VM"
@@ -243,15 +244,21 @@ backup_stopped_vm() {
       volUuid="${disk##*/}"
     fi
     output="$dest/$name.$volUuid.qcow2"
-    if ! qemu-img convert -O qcow2 "$disk" "$output" > "$logFile" 2> >(cat >&2); then
+    if ! qemu-img convert -O qcow2 "$disk" "$output" >> "$logFile" 2> >(cat >&2); then
       echo "qemu-img convert failed for $disk $output"
       cleanup
+      exit 1
     fi
     name="datadisk"
   done
   sync
 
   ls -l --numeric-uid-gid $dest | awk '{print $5}'
+
+  # Unmount on success so the EXIT trap's cleanup (which removes an incomplete $dest)
+  # does not delete the just-completed backup. Mirrors backup_running_vm/delete_backup.
+  umount $mount_point
+  rmdir $mount_point
 }
 
 delete_backup() {
@@ -278,8 +285,10 @@ mount_operation() {
   if [ ${NAS_TYPE} == "cifs" ]; then
     MOUNT_OPTS="${MOUNT_OPTS},nobrl"
   fi
-  mount -t ${NAS_TYPE} ${NAS_ADDRESS} ${mount_point} $([[ ! -z "${MOUNT_OPTS}" ]] && echo -o ${MOUNT_OPTS}) 2>&1 | tee -a "$logFile"
-  if [ $? -eq 0 ]; then
+  # Test mount's own exit in an if-condition: under `set -eo pipefail` the previous
+  # `mount ... | tee` form aborted before the check on failure, and `$?` captured tee's
+  # status (always 0), masking mount failures. Output is appended to the agent log.
+  if mount -t "${NAS_TYPE}" "${NAS_ADDRESS}" "${mount_point}" $([[ -n "${MOUNT_OPTS}" ]] && echo -o "${MOUNT_OPTS}") >> "$logFile" 2>&1; then
       log -ne "Successfully mounted ${NAS_TYPE} store"
   else
       echo "Failed to mount ${NAS_TYPE} store"
@@ -328,7 +337,11 @@ cleanup() {
     rm -rf "$dest" || { echo "Failed to delete $dest"; status=1; }
   fi
   if [[ -n "$mount_point" && -d "$mount_point" ]]; then
-    umount "$mount_point" 2>/dev/null || { echo "Failed to unmount $mount_point"; status=1; }
+    # Only umount if it is actually a mount — otherwise (mount failed, or stats/delete
+    # already unmounted) a umount error would wrongly flag cleanup as failed via the EXIT trap.
+    if mountpoint -q "$mount_point"; then
+      umount "$mount_point" 2>/dev/null || { echo "Failed to unmount $mount_point"; status=1; }
+    fi
     rmdir "$mount_point" 2>/dev/null || true
   fi
 
