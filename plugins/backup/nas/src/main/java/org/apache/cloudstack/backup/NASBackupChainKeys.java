@@ -43,6 +43,10 @@ public final class NASBackupChainKeys {
      */
     public static final String TYPE_FULL = "full";
     public static final String TYPE_INCREMENTAL = "incremental";
+    // Feature disabled: behave exactly like the pre-incremental full-only backup — no QEMU
+    // bitmap/checkpoint is created and no chain metadata is persisted. Matches nasbackup.sh's
+    // "legacy-full" mode token (which sets make_checkpoint=0).
+    public static final String TYPE_LEGACY_FULL = "legacy-full";
 
     /**
      * Tombstone key stored in {@code backup_details} when a backup is requested for deletion

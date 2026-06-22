@@ -231,6 +231,15 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
                     UUID.randomUUID().toString(), 0);
         }
 
+        /**
+         * Decision used when the incremental feature is disabled: a plain full backup that
+         * creates no bitmap and carries no chain identity, so nothing chain/checkpoint-related
+         * is sent to the agent or persisted. Keeps the feature-off path byte-for-byte legacy.
+         */
+        static ChainDecision legacyFull() {
+            return new ChainDecision(NASBackupChainKeys.TYPE_LEGACY_FULL, null, null, null, null, 0);
+        }
+
         static ChainDecision incremental(String bitmapNew, String bitmapParent, List<String> parentPaths,
                                          String chainId, int chainPosition) {
             return new ChainDecision(NASBackupChainKeys.TYPE_INCREMENTAL, bitmapNew, bitmapParent,
@@ -239,6 +248,10 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
         boolean isIncremental() {
             return NASBackupChainKeys.TYPE_INCREMENTAL.equals(mode);
+        }
+
+        boolean isLegacyFull() {
+            return NASBackupChainKeys.TYPE_LEGACY_FULL.equals(mode);
         }
     }
 
@@ -255,17 +268,15 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
      * relying on "last backup taken", because that row is misleading after a restore.</p>
      */
     protected ChainDecision decideChain(VirtualMachine vm) {
-        final String newBitmap = "backup-" + System.currentTimeMillis() / 1000L;
-
-        // Master switch — when the operator disables incrementals at the zone level every
-        // backup is taken as a fresh full. Existing chains stay restorable because each
-        // backup's metadata is kept independently; restoring an incremental still walks its
-        // own chain (the per-backup chain_id / parent_backup_id details persist regardless
-        // of the live config). The next backup with this flag back on starts a new chain.
+        // Master switch — when the operator disables incrementals at the zone level the backup
+        // behaves exactly like the pre-incremental full-only path: no bitmap is generated and no
+        // chain/checkpoint metadata is created, sent to the agent, or persisted (legacy-full).
         Boolean incrementalEnabled = NASBackupIncrementalEnabled.valueIn(vm.getDataCenterId());
         if (incrementalEnabled == null || !incrementalEnabled) {
-            return ChainDecision.fullStart(newBitmap);
+            return ChainDecision.legacyFull();
         }
+
+        final String newBitmap = "backup-" + System.currentTimeMillis() / 1000L;
 
         // Stopped VMs cannot do incrementals — script will also fall back, but we make the
         // decision here so we register the right type up-front.
@@ -559,19 +570,20 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             List<Volume> volumes = new ArrayList<>(volumeDao.findByInstance(vm.getId()));
             backupVO.setBackedUpVolumes(backupManager.createVolumeInfoFromVolumes(volumes));
             if (backupDao.update(backupVO.getId(), backupVO)) {
-                persistChainMetadata(backupVO, effective, answer.getBitmapCreated());
-                // Pin the VM's active_checkpoint_id to whichever bitmap the agent actually
-                // created. This is the only valid parent for the next incremental (see
-                // decideChain). When the agent wrapper sets bitmapCreated=null (script exited
-                // EXIT_BITMAP_NOT_SEEDED — stopped-VM path where qemu-img bitmap --add failed),
-                // no bitmap exists on the host, so we also clear any stale detail from a prior
-                // online backup. Either way, after this step the detail accurately reflects
-                // what's on the running QEMU (or absence thereof).
-                String confirmedBitmap = answer.getBitmapCreated();
-                if (confirmedBitmap != null) {
-                    upsertVmActiveCheckpoint(vm.getId(), confirmedBitmap);
-                } else {
-                    clearVmActiveCheckpoint(vm.getId());
+                // Legacy-full (incremental feature disabled): persist no chain/checkpoint metadata
+                // and do not touch the VM's active_checkpoint_id — keep the feature-off path legacy.
+                if (!decision.isLegacyFull()) {
+                    persistChainMetadata(backupVO, effective, answer.getBitmapCreated());
+                    // Pin the VM's active_checkpoint_id to whichever bitmap the agent actually
+                    // created — the only valid parent for the next incremental (see decideChain).
+                    // If the agent reports no bitmap (bitmapCreated=null), clear any stale detail
+                    // so the next backup starts a fresh full.
+                    String confirmedBitmap = answer.getBitmapCreated();
+                    if (confirmedBitmap != null) {
+                        upsertVmActiveCheckpoint(vm.getId(), confirmedBitmap);
+                    } else {
+                        clearVmActiveCheckpoint(vm.getId());
+                    }
                 }
                 return new Pair<>(true, backupVO);
             } else {

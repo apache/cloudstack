@@ -386,7 +386,7 @@ public class NASBackupProviderTest {
      * operator can flip without having to count remaining backups in a chain.
      */
     @Test
-    public void decideChainReturnsFullWhenIncrementalDisabled() {
+    public void decideChainReturnsLegacyFullWhenIncrementalDisabled() {
         Long zoneId = 1L;
         VMInstanceVO vm = mock(VMInstanceVO.class);
         Mockito.lenient().when(vm.getDataCenterId()).thenReturn(zoneId);
@@ -402,8 +402,10 @@ public class NASBackupProviderTest {
 
         NASBackupProvider.ChainDecision decision = nasBackupProvider.decideChain(vm);
         Assert.assertNotNull(decision);
-        Assert.assertEquals(NASBackupChainKeys.TYPE_FULL, decision.mode);
+        Assert.assertEquals(NASBackupChainKeys.TYPE_LEGACY_FULL, decision.mode);
+        Assert.assertNull("legacy-full must not carry a bitmap", decision.bitmapNew);
         Assert.assertNull(decision.bitmapParent);
+        Assert.assertNull("legacy-full must not start a chain", decision.chainId);
         Assert.assertEquals(0, decision.chainPosition);
     }
 

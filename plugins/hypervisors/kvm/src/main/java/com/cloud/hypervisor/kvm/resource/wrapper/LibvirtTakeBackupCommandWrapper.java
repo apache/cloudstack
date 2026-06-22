@@ -49,6 +49,9 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
 
     private static final String MODE_FULL = "full";
     private static final String MODE_INCREMENTAL = "incremental";
+    // Incremental feature disabled: plain full backup with no QEMU bitmap/checkpoint and no
+    // chain metadata. Matches nasbackup.sh's "legacy-full" mode (make_checkpoint=0).
+    private static final String MODE_LEGACY_FULL = "legacy-full";
 
     @Override
     public Answer execute(TakeBackupCommand command, LibvirtComputingResource libvirtComputingResource) {
@@ -196,6 +199,9 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
                 return "full mode requires bitmapNew (the bitmap to create for the next incremental)";
             }
             return null;
+        }
+        if (MODE_LEGACY_FULL.equals(mode)) {
+            return null; // feature-off full backup — no bitmap or chain args expected
         }
         return "Unknown backup mode: " + mode;
     }
