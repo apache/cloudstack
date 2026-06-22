@@ -57,6 +57,8 @@ import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.UserVmVO;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+
 @RunWith(MockitoJUnitRunner.class)
 public class ResourceAlertManagerImplTest {
 
@@ -70,6 +72,7 @@ public class ResourceAlertManagerImplTest {
     @Mock PrimaryDataStoreDao storagePoolDao;
     @Mock VolumeDao volumeDao;
     @Mock StatsCollector statsCollector;
+    @Mock ConfigurationDao configDao;
 
     @Captor ArgumentCaptor<ResourceAlertVO> alertCaptor;
 
