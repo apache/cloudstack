@@ -437,16 +437,10 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
         try {
             EndPoint ep = null;
             VolumeInfo volumeInfo = volFactory.getVolume(snapshot.getVolumeId(), DataStoreRole.Primary);
-
-            StoragePoolVO storagePool = primaryStoreDao.findById(volumeInfo.getPoolId());
-            if (storagePool != null && storagePool.getPoolType() == StoragePoolType.CLVM) {
-                ep = epSelector.select(volumeInfo);
+            if (snapshotOnPrimaryStore != null) {
+                ep = epSelector.select(snapshotOnPrimaryStore);
             } else {
-                if (snapshotOnPrimaryStore != null) {
-                    ep = epSelector.select(snapshotOnPrimaryStore);
-                } else {
-                    ep = epSelector.select(volumeInfo);
-                }
+                ep = epSelector.select(volumeInfo);
             }
 
             if ( ep == null ){
