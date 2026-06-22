@@ -42,10 +42,9 @@ import java.util.Objects;
 @ResourceWrapper(handles = TakeBackupCommand.class)
 public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCommand, Answer, LibvirtComputingResource> {
     private static final Integer EXIT_CLEANUP_FAILED = 20;
-    private static final Integer EXIT_INCREMENTAL_UNSUPPORTED = 21;
-    // Backup file is valid, but the host has no bitmap to anchor the next incremental on.
-    // Used by the stopped-VM path when qemu-img bitmap --add failed for every source disk.
-    private static final Integer EXIT_BITMAP_NOT_SEEDED = 22;
+    // nasbackup.sh prints this on stdout when it could not proceed as an incremental and
+    // completed a full backup instead; the orchestrator then records the backup as a full.
+    private static final String INCREMENTAL_FALLBACK_MARKER = "INCREMENTAL_FALLBACK=true";
 
     private static final String MODE_FULL = "full";
     private static final String MODE_INCREMENTAL = "incremental";
@@ -87,50 +86,53 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
             }
         }
 
-        final String requestedMode = command.getMode();
         Pair<Integer, String> result = runBackupScript(libvirtComputingResource, command, vmName, backupRepoType, backupRepoAddress,
-                mountOptions, backupPath, diskPaths, requestedMode,
+                mountOptions, backupPath, diskPaths, command.getMode(),
                 command.getBitmapNew(), command.getBitmapParent(), command.getParentPaths(), timeout);
 
-        boolean incrementalFallback = false;
-        if (result.first() == EXIT_INCREMENTAL_UNSUPPORTED && MODE_INCREMENTAL.equals(requestedMode)) {
-            // Script told us the incremental can't proceed (parent checkpoint can't be
-            // re-registered, or VM is stopped). Re-invoke as full with the same --bitmap-new
-            // so the chain restarts cleanly. Drop --bitmap-parent + --parent-paths since
-            // they no longer apply.
-            logger.info("nasbackup.sh signalled incremental unsupported for VM " + vmName + " — retrying as full");
-            result = runBackupScript(libvirtComputingResource, command, vmName, backupRepoType, backupRepoAddress,
-                    mountOptions, backupPath, diskPaths, MODE_FULL,
-                    command.getBitmapNew(), null, null, timeout);
-            incrementalFallback = true;
-        }
-
-        boolean bitmapSeeded = true;
-        if (result.first() == EXIT_BITMAP_NOT_SEEDED) {
-            // Backup file is valid; the host just has no bitmap. Treat as success but
-            // mark bitmapCreated=null so the orchestrator clears active_checkpoint_id.
-            bitmapSeeded = false;
-        } else if (result.first() != 0) {
+        if (result.first() != 0) {
             logger.debug("Failed to take VM backup: " + result.second());
             BackupAnswer answer = new BackupAnswer(command, false, result.second().trim());
-            if (result.first() == EXIT_CLEANUP_FAILED) {
+            if (EXIT_CLEANUP_FAILED.equals(result.first())) {
                 logger.debug("Backup cleanup failed");
                 answer.setNeedsCleanup(true);
             }
             return answer;
         }
 
-        String stdout = result.second().trim();
+        // The script self-heals to a full backup when an incremental can't proceed (e.g. the
+        // parent checkpoint can't be re-registered) and signals it with INCREMENTAL_FALLBACK
+        // on stdout. Detect it, then strip the marker line before parsing the backup size.
+        String rawStdout = result.second();
+        boolean incrementalFallback = rawStdout.contains(INCREMENTAL_FALLBACK_MARKER);
+        String stdout = stripMarkerLines(rawStdout).trim();
         long backupSize = parseBackupSize(stdout, diskPaths);
 
         BackupAnswer answer = new BackupAnswer(command, true, stdout);
         answer.setSize(backupSize);
-        // bitmapCreated mirrors what we asked the script to create — except when the
-        // script exited EXIT_BITMAP_NOT_SEEDED, in which case the host has no bitmap
-        // and the orchestrator must clear active_checkpoint_id.
-        answer.setBitmapCreated(bitmapSeeded ? command.getBitmapNew() : null);
+        // A successful run always created command.getBitmapNew() (full and incremental both do;
+        // it is null for legacy-full, which the orchestrator treats as "no bitmap").
+        answer.setBitmapCreated(command.getBitmapNew());
         answer.setIncrementalFallback(incrementalFallback);
         return answer;
+    }
+
+    /** Remove nasbackup.sh's stdout signalling marker lines so they don't pollute size parsing. */
+    private String stripMarkerLines(String stdout) {
+        if (stdout == null || stdout.isEmpty()) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder();
+        for (String line : stdout.split("\n", -1)) {
+            if (line.contains(INCREMENTAL_FALLBACK_MARKER)) {
+                continue;
+            }
+            if (sb.length() > 0) {
+                sb.append('\n');
+            }
+            sb.append(line);
+        }
+        return sb.toString();
     }
 
     /**

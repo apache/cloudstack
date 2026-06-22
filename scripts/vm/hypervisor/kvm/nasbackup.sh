@@ -45,12 +45,6 @@ PARENT_PATHS=""       # For incremental: comma-separated list of parent backup f
 logFile="/var/log/cloudstack/agent/agent.log"
 
 EXIT_CLEANUP_FAILED=20
-EXIT_INCREMENTAL_UNSUPPORTED=21
-# Stopped-VM backup succeeded but the qemu-img bitmap pre-seed failed on every disk
-# (e.g. RBD/LINSTOR sources, or the bitmap --add operation errored). The backup file
-# is valid; the wrapper records bitmapCreated=null so the orchestrator clears the
-# VM's active_checkpoint_id and the next backup starts a fresh full chain.
-EXIT_BITMAP_NOT_SEEDED=22
 
 log() {
   [[ "$verb" -eq 1 ]] && builtin echo "$@"
@@ -164,12 +158,12 @@ backup_running_vm() {
         rm -f "$redefine_xml" # parent checkpoint re-registered; the incremental can proceed against it
       else
         rm -f "$redefine_xml"
-        # Parent checkpoint could not be re-registered. Signal the Java wrapper to retry as a
-        # full backup so the chain restarts cleanly instead of failing the backup. The wrapper
-        # records incrementalFallback=true on the resulting BackupAnswer.
-        log -e "incremental: parent checkpoint $BITMAP_PARENT could not be re-registered — exiting $EXIT_INCREMENTAL_UNSUPPORTED for caller-driven fallback"
-        cleanup
-        exit $EXIT_INCREMENTAL_UNSUPPORTED
+        # Parent checkpoint could not be re-registered — fall back to a full backup in place so
+        # the chain restarts cleanly instead of failing. Emit a stdout marker so the wrapper
+        # records this backup as a full (incrementalFallback=true).
+        log -e "incremental: parent checkpoint $BITMAP_PARENT could not be re-registered — falling back to full"
+        echo "INCREMENTAL_FALLBACK=true"
+        effective_mode="full"
       fi
     fi
   fi
@@ -334,21 +328,14 @@ backup_running_vm() {
 }
 
 backup_stopped_vm() {
-  # Stopped VMs cannot use libvirt's backup-begin (no QEMU process). Take a full
-  # backup via qemu-img convert. If the caller asked for incremental, signal the
-  # Java wrapper to retry as full and record the fallback on the BackupAnswer.
-  if [[ "$MODE" == "incremental" ]]; then
-    log -e "incremental: VM stopped — exiting $EXIT_INCREMENTAL_UNSUPPORTED for caller-driven fallback to full"
-    exit $EXIT_INCREMENTAL_UNSUPPORTED
-  fi
-
+  # Stopped VMs cannot use libvirt's backup-begin (no QEMU process); take a full backup via
+  # qemu-img convert. The orchestrator never sends incremental mode for a stopped VM.
   mount_operation
   mkdir -p "$dest" || { echo "Failed to create backup directory $dest"; exit 1; }
 
   IFS=","
 
   name="root"
-  bitmap_seeded=0
   for disk in $DISK_PATHS; do
     if [[ "$disk" == rbd:* ]]; then
       volUuid=$(get_ceph_uuid_from_path "$disk")
@@ -369,11 +356,13 @@ backup_stopped_vm() {
     # fall back to full because no parent bitmap exists on the host yet.
     # Only applies to file-backed qcow2 sources — RBD/LINSTOR have their own
     # snapshot mechanisms and qemu-img bitmap is not the right primitive there.
+    # bitmap --add should not fail on a file-backed qcow2; if it does, fail the backup so the
+    # underlying problem is surfaced rather than silently degrading future backups to full.
     if [[ -n "$BITMAP_NEW" && "$disk" != rbd:* && "$disk" != /dev/drbd/by-res/* ]]; then
-      if qemu-img bitmap --add "$disk" "$BITMAP_NEW" 2>>"$logFile"; then
-        bitmap_seeded=1
-      else
-        echo "WARN: failed to pre-seed bitmap $BITMAP_NEW on $disk — next backup will fall back to full" >&2
+      if ! qemu-img bitmap --add "$disk" "$BITMAP_NEW" 2>>"$logFile"; then
+        echo "Failed to pre-seed bitmap $BITMAP_NEW on $disk"
+        cleanup
+        exit 1
       fi
     fi
 
@@ -382,16 +371,6 @@ backup_stopped_vm() {
   sync
 
   ls -l --numeric-uid-gid $dest | awk '{print $5}'
-
-  # Signal to the Java wrapper whether a usable bitmap exists on the host. When the
-  # caller asked for BITMAP_NEW but we couldn't pre-seed it (RBD/LINSTOR sources, or
-  # qemu-img bitmap --add failed on every disk), exit $EXIT_BITMAP_NOT_SEEDED so the
-  # wrapper records bitmapCreated=null. The orchestrator (NASBackupProvider) then
-  # clears the VM's active_checkpoint_id and the next backup starts a fresh chain.
-  if [[ -n "$BITMAP_NEW" && "$bitmap_seeded" != "1" ]]; then
-    log -e "stopped-VM backup: bitmap pre-seed skipped or failed for all disks — exiting $EXIT_BITMAP_NOT_SEEDED so wrapper clears active_checkpoint_id"
-    exit $EXIT_BITMAP_NOT_SEEDED
-  fi
 }
 
 delete_backup() {
