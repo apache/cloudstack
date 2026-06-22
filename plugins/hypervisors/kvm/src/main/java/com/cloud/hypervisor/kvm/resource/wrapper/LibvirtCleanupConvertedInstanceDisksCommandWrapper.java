@@ -50,7 +50,7 @@ public class LibvirtCleanupConvertedInstanceDisksCommandWrapper extends LibvirtB
 
             LibvirtDomainXMLParser xmlParser = xmlExists ? parseMigratedVMXmlDomain(volumesBasePath) : null;
             List<KVMPhysicalDisk> temporaryDisks = xmlExists && xmlParser != null ?
-                    getTemporaryDisksFromParsedXml(conversionPool, xmlParser, volumesBasePath) :
+                    getTemporaryDisksFromParsedXml(conversionPool, xmlParser, volumesBasePath, conversionPoolPath, vmVolumesPrefix) :
                     getTemporaryDisksWithPrefixFromTemporaryPool(conversionPool, conversionPoolPath, vmVolumesPrefix);
 
             cleanupDisksAndDomainFromTemporaryLocation(temporaryDisks, conversionPool, vmVolumesPrefix, xmlExists);

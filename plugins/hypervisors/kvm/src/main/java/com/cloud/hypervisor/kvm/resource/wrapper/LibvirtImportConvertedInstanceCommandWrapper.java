@@ -59,7 +59,7 @@ public class LibvirtImportConvertedInstanceCommandWrapper extends LibvirtBaseCon
 
             List<KVMPhysicalDisk> temporaryDisks = xmlParser == null ?
                     getTemporaryDisksWithPrefixFromTemporaryPool(temporaryStoragePool, temporaryConvertPath, temporaryConvertUuid) :
-                    getTemporaryDisksFromParsedXml(temporaryStoragePool, xmlParser, convertedBasePath);
+                    getTemporaryDisksFromParsedXml(temporaryStoragePool, xmlParser, convertedBasePath, temporaryConvertPath, temporaryConvertUuid);
 
             List<KVMPhysicalDisk> disks;
             if (forceConvertToPool) {

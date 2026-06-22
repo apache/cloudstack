@@ -63,14 +63,17 @@ public abstract class LibvirtBaseConvertCommandWrapper <T extends Command, A ext
         }
     }
 
-    protected List<KVMPhysicalDisk> getTemporaryDisksFromParsedXml(KVMStoragePool pool, LibvirtDomainXMLParser xmlParser, String convertedBasePath) {
+    protected List<KVMPhysicalDisk> getTemporaryDisksFromParsedXml(KVMStoragePool pool, LibvirtDomainXMLParser xmlParser,
+                                                                   String convertedBasePath,
+                                                                   String conversionPoolPath, String vmVolumesPrefix) {
         List<LibvirtVMDef.DiskDef> disksDefs = xmlParser.getDisks();
         disksDefs = disksDefs.stream().filter(x -> x.getDiskType() == LibvirtVMDef.DiskDef.DiskType.FILE &&
                 x.getDeviceType() == LibvirtVMDef.DiskDef.DeviceType.DISK).collect(Collectors.toList());
         if (CollectionUtils.isEmpty(disksDefs)) {
-            String err = String.format("Cannot find any disk defined on the converted XML domain %s.xml", convertedBasePath);
-            logger.error(err);
-            throw new CloudRuntimeException(err);
+            String err = String.format("Cannot find any disk defined on the converted XML domain %s.xml, " +
+                    "checking disks at: %s with prefix: %s", convertedBasePath, conversionPoolPath, vmVolumesPrefix);
+            logger.warn(err);
+            return getTemporaryDisksWithPrefixFromTemporaryPool(pool, conversionPoolPath, vmVolumesPrefix);
         }
         sanitizeDisksPath(disksDefs);
         return getPhysicalDisksFromDefPaths(disksDefs, pool);
