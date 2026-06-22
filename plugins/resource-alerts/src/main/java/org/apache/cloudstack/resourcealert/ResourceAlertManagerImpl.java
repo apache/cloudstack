@@ -19,7 +19,11 @@ package org.apache.cloudstack.resourcealert;
 
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -27,23 +31,34 @@ import java.util.function.ToDoubleFunction;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
+import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.resourcealert.dao.ResourceAlertDao;
 import org.apache.cloudstack.resourcealert.dao.ResourceAlertRuleDao;
 import org.apache.cloudstack.resourcealert.vo.ResourceAlertRuleVO;
 import org.apache.cloudstack.resourcealert.vo.ResourceAlertVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.utils.mailing.MailAddress;
+import org.apache.cloudstack.utils.mailing.SMTPMailProperties;
+import org.apache.cloudstack.utils.mailing.SMTPMailSender;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 
+import com.cloud.event.AlertGenerator;
 import com.cloud.host.Host;
 import com.cloud.host.HostStats;
+import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.server.StatsCollector;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.UserVmDao;
@@ -61,8 +76,32 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
     @Inject PrimaryDataStoreDao storagePoolDao;
     @Inject VolumeDao volumeDao;
     @Inject StatsCollector statsCollector;
+    @Inject ConfigurationDao configDao;
 
     private ScheduledExecutorService executor;
+    private final ExecutorService emailExecutor = Executors.newCachedThreadPool(r -> {
+        Thread t = new Thread(r, "ResourceAlertEmailSender");
+        t.setDaemon(true);
+        return t;
+    });
+
+    private SMTPMailSender mailSender;
+    private String[] emailRecipients;
+    private String senderAddress;
+
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        Map<String, String> configs = configDao.getConfiguration("management-server", params);
+
+        String emailList = configs.get("alert.email.addresses");
+        if (StringUtils.isNotBlank(emailList)) {
+            emailRecipients = emailList.split(",");
+        }
+        senderAddress = configs.get("alert.email.sender");
+        mailSender = new SMTPMailSender(configs, "alert.smtp");
+
+        return super.configure(name, params);
+    }
 
     @Override
     public boolean start() {
@@ -81,6 +120,7 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
         if (executor != null) {
             executor.shutdown();
         }
+        emailExecutor.shutdown();
         return true;
     }
 
@@ -230,6 +270,93 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
         alertDao.persist(alert);
         logger.warn("Alert fired: rule={} metric={} resource={} value={} threshold={}",
                 rule.getUuid(), rule.getMetric(), resourceId, value, rule.getThreshold());
+
+        String subject = buildSubject(rule, resourceId, value);
+        String body = buildBody(rule, resourceId, value);
+        long dcId = getDataCenterId(rule.getResourceType(), resourceId);
+        try {
+            AlertGenerator.publishAlertOnEventBus("RESOURCE.ALERT", dcId, null, subject, body);
+        } catch (Exception e) {
+            logger.warn("Failed to publish resource alert event: {}", e.getMessage());
+        }
+
+        if (rule.isEmail()) {
+            sendEmail(subject, body);
+        }
+    }
+
+    private String buildSubject(ResourceAlertRuleVO rule, Long resourceId, double value) {
+        return String.format("[%s] Resource Alert: %s %s %.2f on %s %s",
+                rule.getSeverity().name(),
+                rule.getMetric(),
+                rule.getCondition().name(),
+                rule.getThreshold(),
+                rule.getResourceType().name(),
+                resourceId);
+    }
+
+    private String buildBody(ResourceAlertRuleVO rule, Long resourceId, double value) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Rule: ").append(rule.getName()).append('\n');
+        sb.append("Resource Type: ").append(rule.getResourceType().name()).append('\n');
+        sb.append("Resource ID: ").append(resourceId).append('\n');
+        sb.append("Metric: ").append(rule.getMetric()).append('\n');
+        sb.append(String.format("Condition: %s %.2f%n", rule.getCondition().name(), rule.getThreshold()));
+        sb.append(String.format("Current Value: %.2f%n", value));
+        sb.append("Severity: ").append(rule.getSeverity().name()).append('\n');
+        if (StringUtils.isNotBlank(rule.getMessage())) {
+            sb.append("Message: ").append(rule.getMessage()).append('\n');
+        }
+        return sb.toString();
+    }
+
+    private long getDataCenterId(ResourceAlertRule.ResourceType type, long resourceId) {
+        try {
+            switch (type) {
+                case VirtualMachine: {
+                    UserVmVO vm = userVmDao.findById(resourceId);
+                    return vm != null ? vm.getDataCenterId() : 0L;
+                }
+                case Volume: {
+                    VolumeVO vol = volumeDao.findById(resourceId);
+                    return vol != null ? vol.getDataCenterId() : 0L;
+                }
+                case Host: {
+                    HostVO host = hostDao.findById(resourceId);
+                    return host != null ? host.getDataCenterId() : 0L;
+                }
+                case StoragePool: {
+                    StoragePoolVO pool = storagePoolDao.findById(resourceId);
+                    return pool != null ? pool.getDataCenterId() : 0L;
+                }
+                default:
+                    return 0L;
+            }
+        } catch (Exception e) {
+            return 0L;
+        }
+    }
+
+    private void sendEmail(String subject, String body) {
+        if (mailSender == null || ArrayUtils.isEmpty(emailRecipients)) {
+            return;
+        }
+        SMTPMailProperties mailProps = new SMTPMailProperties();
+        if (StringUtils.isNotBlank(senderAddress)) {
+            mailProps.setSender(new MailAddress(senderAddress));
+        }
+        mailProps.setSubject(subject);
+        mailProps.setContent(body);
+        mailProps.setContentType("text/plain");
+
+        Set<MailAddress> addresses = new HashSet<>();
+        for (String recipient : emailRecipients) {
+            if (StringUtils.isNotBlank(recipient)) {
+                addresses.add(new MailAddress(recipient.trim()));
+            }
+        }
+        mailProps.setRecipients(addresses);
+        emailExecutor.execute(() -> mailSender.sendMail(mailProps));
     }
 
     @Override
