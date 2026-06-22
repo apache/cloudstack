@@ -151,23 +151,22 @@ backup_running_vm() {
   # When incremental, make sure the parent checkpoint is registered with libvirt. CloudStack
   # rebuilds the domain XML on every VM start, which wipes libvirt's in-memory checkpoint
   # registry, while the dirty bitmap persists on the qcow2 (QEMU re-loads it on start). A
-  # fresh checkpoint-create cannot be used then — QEMU reports "Bitmap already exists" — and
-  # qemu-img cannot drop the bitmap on a running disk (the image is write-locked). The parent
-  # must instead be re-registered with --redefine, using the FULL checkpoint XML this script
-  # saved alongside the parent backup when it was taken (a minimal/synthesized XML is rejected
-  # by libvirt's checkpoint schema on redefine, so the full dump is required).
+  # fresh checkpoint-create cannot be used then — QEMU reports "Bitmap already exists" — so the
+  # parent must be re-registered with --redefine. libvirt only needs the checkpoint name and a
+  # creationTime for a redefine (the value need not be accurate — checkpoints are ephemeral),
+  # so we synthesize a minimal XML on the fly instead of persisting the full checkpoint dump.
   if [[ "$effective_mode" == "incremental" ]]; then
     if ! virsh -c qemu:///system checkpoint-list "$VM" --name 2>/dev/null | grep -qx "$BITMAP_PARENT"; then
-      parent_first="${PARENT_PATHS%%,*}"
-      parent_cp_xml="$(dirname "$parent_first")/$BITMAP_PARENT.checkpoint.xml"
-      if [[ -f "$parent_cp_xml" ]] && \
-         virsh -c qemu:///system checkpoint-create "$VM" --xmlfile "$parent_cp_xml" --redefine > /dev/null 2>&1; then
-        : # parent checkpoint re-registered; the incremental can proceed against it
+      redefine_xml=$(mktemp)
+      printf '<domaincheckpoint><name>%s</name><creationTime>%s</creationTime></domaincheckpoint>' \
+        "$BITMAP_PARENT" "$(date +%s)" > "$redefine_xml"
+      if virsh -c qemu:///system checkpoint-create "$VM" --xmlfile "$redefine_xml" --redefine > /dev/null 2>&1; then
+        rm -f "$redefine_xml" # parent checkpoint re-registered; the incremental can proceed against it
       else
-        # No saved checkpoint XML (e.g. a backup taken before this fix) or redefine failed.
-        # Signal the Java wrapper to retry as a full backup so the chain restarts cleanly
-        # instead of failing the backup. The wrapper is responsible for the retry and for
-        # recording incrementalFallback=true on the resulting BackupAnswer.
+        rm -f "$redefine_xml"
+        # Parent checkpoint could not be re-registered. Signal the Java wrapper to retry as a
+        # full backup so the chain restarts cleanly instead of failing the backup. The wrapper
+        # records incrementalFallback=true on the resulting BackupAnswer.
         log -e "incremental: parent checkpoint $BITMAP_PARENT could not be re-registered — exiting $EXIT_INCREMENTAL_UNSUPPORTED for caller-driven fallback"
         cleanup
         exit $EXIT_INCREMENTAL_UNSUPPORTED
@@ -327,14 +326,8 @@ backup_running_vm() {
   # Print statistics
   virsh -c qemu:///system domjobinfo $VM --completed
   du -sb $dest | cut -f1
-  if [[ -n "$BITMAP_NEW" ]]; then
-    # Persist the FULL checkpoint XML next to this backup so a later incremental can
-    # re-register this checkpoint with --redefine after the VM restarts (which wipes
-    # libvirt's checkpoint registry but leaves the bitmap on the qcow2).
-    # The Java wrapper records bitmapCreated from its own --bitmap-new arg on success,
-    # so no stdout signal is needed here.
-    virsh -c qemu:///system checkpoint-dumpxml "$VM" "$BITMAP_NEW" > "$dest/$BITMAP_NEW.checkpoint.xml" 2>/dev/null || true
-  fi
+  # No need to persist the checkpoint XML: a later incremental re-registers the parent
+  # checkpoint with a synthesized minimal --redefine XML (see the redefine block above).
 
   umount $mount_point
   rmdir $mount_point
