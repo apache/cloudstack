@@ -45,19 +45,26 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.ResourceManager;
+import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.Storage;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.Pair;
 import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
+
+import com.google.gson.Gson;
 
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupDetailsDao;
 import org.apache.cloudstack.backup.dao.BackupRepositoryDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
@@ -105,6 +112,12 @@ public class NASBackupProviderTest {
 
     @Mock
     private VMInstanceDetailsDao vmInstanceDetailsDao;
+
+    @Mock
+    private DiskOfferingDao diskOfferingDao;
+
+    @Mock
+    private DataStoreManager dataStoreMgr;
 
     @Test
     public void testDeleteBackup() throws OperationTimedoutException, AgentUnavailableException {
@@ -477,6 +490,74 @@ public class NASBackupProviderTest {
         boolean ok = nasBackupProvider.restoreVMFromBackup(vm, backup);
         Assert.assertTrue(ok);
         Mockito.verify(vmInstanceDetailsDao).removeDetail(vmId, NASBackupChainKeys.VM_ACTIVE_CHECKPOINT_ID);
+    }
+
+    /**
+     * Single-volume restore (restoreBackedUpVolume) must also clear the target VM's
+     * active_checkpoint_id, so the next backup of that VM is a fresh full — the restored
+     * volume's image carries no QEMU bitmap.
+     */
+    @Test
+    public void restoreBackedUpVolumeClearsTargetVmActiveCheckpoint()
+            throws AgentUnavailableException, OperationTimedoutException {
+        Long targetVmId = 42L;
+        Long backupOfferingId = 9L;
+        String targetVmName = "i-2-42-VM";
+        String volUuid = "vol-uuid-1";
+        String hostIp = "10.0.0.5";
+        String dsUuid = "ds-uuid-1";
+
+        VolumeVO srcVolume = mock(VolumeVO.class);
+        Mockito.when(srcVolume.getUuid()).thenReturn(volUuid);
+        Mockito.when(srcVolume.getName()).thenReturn("data1");
+        Mockito.when(volumeDao.findByUuid(volUuid)).thenReturn(srcVolume);
+
+        DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
+        Mockito.when(diskOffering.getId()).thenReturn(5L);
+        Mockito.when(diskOffering.getProvisioningType()).thenReturn(Storage.ProvisioningType.THIN);
+        Mockito.when(diskOfferingDao.findByUuid(Mockito.anyString())).thenReturn(diskOffering);
+
+        StoragePoolVO pool = mock(StoragePoolVO.class);
+        Mockito.when(pool.getId()).thenReturn(11L);
+        Mockito.when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+        Mockito.when(storagePoolDao.findByUuid(dsUuid)).thenReturn(pool);
+
+        HostVO host = mock(HostVO.class);
+        Mockito.when(host.getId()).thenReturn(8L);
+        Mockito.when(hostDao.findByIp(hostIp)).thenReturn(host);
+
+        Backup.VolumeInfo backedUp = new Backup.VolumeInfo(volUuid, "i-2-99-VM/2026/data1.qcow2",
+                Volume.Type.DATADISK, 1024L, 1L, "disk-offering-uuid", null, null);
+
+        BackupVO backup = new BackupVO();
+        backup.setVmId(99L);
+        backup.setBackupOfferingId(backupOfferingId);
+        backup.setExternalId("i-2-99-VM/2026.06.22.10.00.00");
+        backup.setSize(1024L);
+        backup.setBackedUpVolumes(new Gson().toJson(Collections.singletonList(backedUp)));
+        ReflectionTestUtils.setField(backup, "id", 200L);
+
+        BackupRepositoryVO repo = new BackupRepositoryVO(1L, "nas", "test-repo",
+                "nfs", "address", "sync", 1024L, null);
+        Mockito.when(backupRepositoryDao.findByBackupOfferingId(backupOfferingId)).thenReturn(repo);
+
+        BackupAnswer answer = mock(BackupAnswer.class);
+        Mockito.when(answer.getResult()).thenReturn(true);
+        Mockito.when(agentManager.send(Mockito.anyLong(), Mockito.any(RestoreBackupCommand.class))).thenReturn(answer);
+
+        VMInstanceVO targetVm = mock(VMInstanceVO.class);
+        Mockito.when(targetVm.getId()).thenReturn(targetVmId);
+        Mockito.when(vmInstanceDao.findVMByInstanceName(targetVmName)).thenReturn(targetVm);
+
+        VMInstanceDetailVO existing = mock(VMInstanceDetailVO.class);
+        Mockito.when(existing.getValue()).thenReturn("backup-1718000000");
+        Mockito.when(vmInstanceDetailsDao.findDetail(targetVmId, NASBackupChainKeys.VM_ACTIVE_CHECKPOINT_ID)).thenReturn(existing);
+
+        Pair<Boolean, String> result = nasBackupProvider.restoreBackedUpVolume(
+                backup, backedUp, hostIp, dsUuid, new Pair<>(targetVmName, VirtualMachine.State.Stopped));
+
+        Assert.assertTrue(result.first());
+        Mockito.verify(vmInstanceDetailsDao).removeDetail(targetVmId, NASBackupChainKeys.VM_ACTIVE_CHECKPOINT_ID);
     }
 
     // -- delete-pending cascade ----------------------------------------------------------

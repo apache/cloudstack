@@ -793,6 +793,13 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             } catch (Exception e) {
                 throw new CloudRuntimeException("Unable to create restored volume due to: " + e);
             }
+            // The restored volume is attached to this VM with no QEMU bitmap on its image, so the
+            // VM's tracked checkpoint is now stale; clear it to force the next backup to be a full
+            // (mirrors the full restore paths restoreVMFromBackup/restoreBackupToVM).
+            VirtualMachine restoreTargetVm = vmInstanceDao.findVMByInstanceName(vmNameAndState.first());
+            if (restoreTargetVm != null) {
+                clearVmActiveCheckpoint(restoreTargetVm.getId());
+            }
         }
 
         return new Pair<>(answer.getResult(), answer.getDetails());
