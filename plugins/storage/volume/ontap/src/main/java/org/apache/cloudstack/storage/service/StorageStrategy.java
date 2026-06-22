@@ -49,6 +49,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -135,31 +136,42 @@ public abstract class StorageStrategy {
                 logger.error("No aggregates are assigned to SVM " + svmName);
                 throw new CloudRuntimeException("No aggregates are assigned to SVM " + svmName);
             }
+            // Collect all online aggregates assigned to the SVM. Capacity-based selection is
+            // intentionally deferred to createStorageVolume(name, size), which validates the
+            // available space against the actual requested volume size.
+            List<Aggregate> eligibleAggregates = new ArrayList<>();
             for (Aggregate aggr : aggrs) {
                 logger.debug("Found aggregate: " + aggr.getName() + " with UUID: " + aggr.getUuid());
                 Aggregate aggrResp = aggregateFeignClient.getAggregateByUUID(authHeader, aggr.getUuid());
                 if (aggrResp == null) {
                     logger.warn("Aggregate details response is null for aggregate " + aggr.getName() + ". Skipping.");
-                    break;
+                    continue;
                 }
                 if (!Objects.equals(aggrResp.getState(), Aggregate.StateEnum.ONLINE)) {
                     logger.warn("Aggregate " + aggr.getName() + " is not in online state. Skipping this aggregate.");
                     continue;
-                } else if (aggrResp.getSpace() == null || aggrResp.getAvailableBlockStorageSpace() == null ||
-                        aggrResp.getAvailableBlockStorageSpace() <= storage.getSize().doubleValue()) {
-                    logger.warn("Aggregate " + aggr.getName() + " does not have sufficient available space. Skipping this aggregate.");
-                    continue;
                 }
-                logger.info("Selected aggregate: " + aggr.getName() + " for volume operations.");
-                this.aggregates = List.of(aggr);
-                break;
+                logger.debug("Aggregate " + aggr.getName() + " is online and eligible for volume operations.");
+                eligibleAggregates.add(aggr);
             }
-            if (this.aggregates == null || this.aggregates.isEmpty()) {
-                logger.error("No suitable aggregates found on SVM " + svmName + " for volume creation.");
-                throw new CloudRuntimeException("No suitable aggregates found on SVM " + svmName + " for volume creation.");
+            if (eligibleAggregates.isEmpty()) {
+                logger.error("No suitable aggregates found on SVM " + svmName + " for volume operations.");
+                throw new CloudRuntimeException("No suitable aggregates found on SVM " + svmName + " for volume operations.");
             }
+            this.aggregates = eligibleAggregates;
+            logger.info("Found " + eligibleAggregates.size() + " online aggregate(s) on SVM " + svmName + " for volume operations.");
 
             logger.info("Successfully connected to ONTAP cluster and validated ONTAP details provided");
+        } catch (FeignException.Unauthorized e) {
+            logger.error("Authentication failed while connecting to ONTAP cluster at " + storage.getStorageIP() +
+                    ". Please verify the username and password.", e);
+            throw new CloudRuntimeException("Authentication failed: Invalid credentials for ONTAP cluster at " +
+                    storage.getStorageIP() + ". Please verify the username and password.");
+        } catch (FeignException.Forbidden e) {
+            logger.error("Authorization failed while connecting to ONTAP cluster at " + storage.getStorageIP() +
+                    ". The user does not have sufficient privileges.", e);
+            throw new CloudRuntimeException("Authorization failed: User does not have sufficient privileges on ONTAP cluster at " +
+                    storage.getStorageIP() + ". Please verify user permissions.");
         } catch (Exception e) {
             logger.error("Failed to connect to ONTAP cluster: " + e.getMessage(), e);
             throw new CloudRuntimeException("Failed to connect to ONTAP cluster: " + e.getMessage(), e);
@@ -211,7 +223,7 @@ public abstract class StorageStrategy {
 
             if (aggrResp == null) {
                 logger.warn("Aggregate details response is null for aggregate " + aggr.getName() + ". Skipping.");
-                break;
+                continue;
             }
 
             if (!Objects.equals(aggrResp.getState(), Aggregate.StateEnum.ONLINE)) {
@@ -251,6 +263,7 @@ public abstract class StorageStrategy {
         volumeRequest.setAggregates(List.of(aggr));
         volumeRequest.setSize(size);
         volumeRequest.setNas(nas);
+        volumeRequest.setGuarantee(new Volume.Guarantee(Volume.Guarantee.TypeEnum.NONE));
         try {
             JobResponse jobResponse = volumeFeignClient.createVolumeWithJob(authHeader, volumeRequest);
             if (jobResponse == null || jobResponse.getJob() == null) {
