@@ -81,7 +81,7 @@
 
 <script>
 
-import { dayjs, toLocaleDate } from '@/utils/date'
+import { dayjs, parseDayJsObject, toLocaleDate } from '@/utils/date'
 import { reactive, toRaw } from 'vue'
 
 export default {
@@ -137,8 +137,8 @@ export default {
     },
     getPeriodToString () {
       return this.$t('label.quota.filter.period', {
-        startDate: toLocaleDate({ date: this.startDate }),
-        endDate: toLocaleDate({ date: this.endDate })
+        startDate: toLocaleDate({ date: parseDayJsObject({ value: this.startDate, keepMoment: true, format: false }) }),
+        endDate: toLocaleDate({ date: parseDayJsObject({ value: this.endDate, keepMoment: true, format: false }) })
       })
     },
     handleSubmit () {

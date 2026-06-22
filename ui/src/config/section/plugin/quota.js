@@ -30,6 +30,7 @@ export default {
       title: 'label.quota.summary',
       icon: 'bars-outlined',
       permission: ['quotaSummary'],
+      customParamHandler: (params, query) => { return { ...params, ignoreproject: true } },
       tabs: [
         {
           name: 'consumption',
