@@ -149,6 +149,18 @@ backup_running_vm() {
   # parent must be re-registered with --redefine. libvirt only needs the checkpoint name and a
   # creationTime for a redefine (the value need not be accurate — checkpoints are ephemeral),
   # so we synthesize a minimal XML on the fly instead of persisting the full checkpoint dump.
+  #
+  # First verify the parent bitmap actually exists on the running qcow2 — it can be absent after
+  # a migration even though the orchestrator's active_checkpoint says it should be there. If it
+  # is gone, fall back to a full backup rather than letting backup-begin fail below.
+  if [[ "$effective_mode" == "incremental" ]]; then
+    if ! virsh -c qemu:///system qemu-monitor-command "$VM" '{"execute":"query-block"}' 2>/dev/null | grep -q "\"$BITMAP_PARENT\""; then
+      log -e "incremental: parent bitmap $BITMAP_PARENT not present on the qcow2 — falling back to full"
+      echo "INCREMENTAL_FALLBACK=true"
+      effective_mode="full"
+    fi
+  fi
+
   if [[ "$effective_mode" == "incremental" ]]; then
     if ! virsh -c qemu:///system checkpoint-list "$VM" --name 2>/dev/null | grep -qx "$BITMAP_PARENT"; then
       redefine_xml=$(mktemp)
