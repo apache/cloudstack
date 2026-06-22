@@ -39,6 +39,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import com.cloud.agent.AgentManager;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.configuration.Resource;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -51,6 +52,7 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.Pair;
 import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VMInstanceVO;
@@ -118,6 +120,9 @@ public class NASBackupProviderTest {
 
     @Mock
     private DataStoreManager dataStoreMgr;
+
+    @Mock
+    private ResourceLimitService resourceLimitMgr;
 
     @Test
     public void testDeleteBackup() throws OperationTimedoutException, AgentUnavailableException {
@@ -627,6 +632,8 @@ public class NASBackupProviderTest {
         Mockito.verify(agentManager, Mockito.never()).send(Mockito.anyLong(), Mockito.any(DeleteBackupCommand.class));
         // No DB row removal — the row is the tombstone marker.
         Mockito.verify(backupDao, Mockito.never()).remove(50L);
+        // A tombstoned backup is NOT decremented — its space is still occupied until swept.
+        Mockito.verify(resourceLimitMgr, Mockito.never()).decrementResourceCount(Mockito.anyLong(), Mockito.eq(Resource.ResourceType.backup));
         // A DELETE_PENDING detail was persisted.
         ArgumentCaptor<BackupDetailVO> captor = ArgumentCaptor.forClass(BackupDetailVO.class);
         Mockito.verify(backupDetailsDao).persist(captor.capture());
@@ -716,5 +723,11 @@ public class NASBackupProviderTest {
                 .send(Mockito.anyLong(), Mockito.any(DeleteBackupCommand.class));
         Mockito.verify(backupDao).remove(51L);
         Mockito.verify(backupDao).remove(50L);
+        // Exactly-once resource accounting: decremented for BOTH physically-removed backups
+        // (leaf + swept ancestor), not just one.
+        Mockito.verify(resourceLimitMgr, Mockito.times(2))
+                .decrementResourceCount(Mockito.anyLong(), Mockito.eq(Resource.ResourceType.backup));
+        Mockito.verify(resourceLimitMgr, Mockito.times(2))
+                .decrementResourceCount(Mockito.anyLong(), Mockito.eq(Resource.ResourceType.backup_storage), Mockito.any());
     }
 }

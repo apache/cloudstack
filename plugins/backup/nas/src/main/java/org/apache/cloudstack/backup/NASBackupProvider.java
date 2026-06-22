@@ -19,6 +19,7 @@ package org.apache.cloudstack.backup;
 import com.cloud.agent.AgentManager;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.configuration.Resource;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -38,6 +39,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.user.ResourceLimitService;
 import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -143,6 +145,9 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
     @Inject
     private AgentManager agentManager;
+
+    @Inject
+    private ResourceLimitService resourceLimitMgr;
 
     @Inject
     private VMSnapshotDao vmSnapshotDao;
@@ -833,6 +838,14 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     }
 
     @Override
+    public boolean handlesChainDeleteResourceAccounting() {
+        // This provider deletes whole incremental chains (leaf + swept delete-pending ancestors)
+        // and decrements resource count/usage once per physically-removed backup itself, so the
+        // manager must not also decrement or remove the DB row.
+        return true;
+    }
+
+    @Override
     public boolean deleteBackup(Backup backup, boolean forced) {
         final BackupRepository backupRepository = backupRepositoryDao.findByBackupOfferingId(backup.getBackupOfferingId());
         if (backupRepository == null) {
@@ -900,6 +913,13 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             return false;
         }
         backupDao.remove(backup.getId());
+        // Exactly-once resource accounting: decrement at the single point a backup row + file are
+        // physically removed. This runs for the leaf and for every swept delete-pending ancestor,
+        // so a chain delete decrements once per actually-removed backup. The manager skips its own
+        // accounting for this provider (see handlesChainDeleteResourceAccounting()).
+        long size = backup.getSize() != null ? backup.getSize() : 0L;
+        resourceLimitMgr.decrementResourceCount(backup.getAccountId(), Resource.ResourceType.backup);
+        resourceLimitMgr.decrementResourceCount(backup.getAccountId(), Resource.ResourceType.backup_storage, size);
         return true;
     }
 

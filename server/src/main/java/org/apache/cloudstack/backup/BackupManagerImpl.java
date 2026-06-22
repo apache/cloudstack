@@ -1706,6 +1706,14 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                      reservationDao, resourceLimitMgr)) {
             boolean result = backupProvider.deleteBackup(backup, forced);
             if (result) {
+                // Chain-aware providers (e.g. NAS) physically remove several backups per call
+                // (leaf + swept delete-pending ancestors) and decrement resource count/usage and
+                // remove each DB row themselves, exactly once per removed backup. Decrementing or
+                // removing again here would double-handle and destroy delete-pending tombstones,
+                // so defer entirely to the provider for those.
+                if (backupProvider.handlesChainDeleteResourceAccounting()) {
+                    return true;
+                }
                 resourceLimitMgr.decrementResourceCount(backup.getAccountId(), Resource.ResourceType.backup);
                 resourceLimitMgr.decrementResourceCount(backup.getAccountId(), Resource.ResourceType.backup_storage, backupSize);
                 if (backupDao.remove(backup.getId())) {
