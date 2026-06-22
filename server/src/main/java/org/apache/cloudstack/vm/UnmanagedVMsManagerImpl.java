@@ -2243,24 +2243,27 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             throw new CloudRuntimeException(err);
         } finally {
             if (cleanupConvertedDisks) {
-                logger.debug("Cleaning up the converted disks for the VM {} through " +
-                        "the conversion host {}", sourceVM, convertHost.getName());
-                CleanupConvertedInstanceDisksCommand cleanupCommand =
-                        new CleanupConvertedInstanceDisksCommand(temporaryConvertLocation, convertedDisksPrefix);
-                try {
-                    Answer cleanupAnswer = agentManager.send(convertHost.getId(), cleanupCommand);
-                    if (!cleanupAnswer.getResult()) {
-                        logger.warn("Failed to cleanup the converted disks for the VM {} through " +
-                                "the conversion host {}: {}", sourceVM, convertHost.getName(), cleanupAnswer.getDetails());
-                    }
-                } catch (AgentUnavailableException | OperationTimedoutException e) {
-                    logger.error("Error cleaning up converted disks for VM {} through the conversion host {}",
-                            sourceVM, convertHost.getName(), e);
-                }
+                cleanupConvertedDisks(sourceVM, convertHost, temporaryConvertLocation, convertedDisksPrefix);
             }
         }
 
         return ((ImportConvertedInstanceAnswer) importAnswer).getConvertedInstance();
+    }
+
+    private void cleanupConvertedDisks(String sourceVM, HostVO convertHost, DataStoreTO temporaryConvertLocation, String convertedDisksPrefix) {
+        logger.debug("Cleaning up the converted disks for the VM {} through the conversion host {}", sourceVM, convertHost.getName());
+        CleanupConvertedInstanceDisksCommand cleanupCommand =
+                new CleanupConvertedInstanceDisksCommand(temporaryConvertLocation, convertedDisksPrefix);
+        try {
+            Answer cleanupAnswer = agentManager.send(convertHost.getId(), cleanupCommand);
+            if (!cleanupAnswer.getResult()) {
+                logger.warn("Failed to cleanup the converted disks for the VM {} through " +
+                        "the conversion host {}: {}", sourceVM, convertHost.getName(), cleanupAnswer.getDetails());
+            }
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
+            logger.error("Error cleaning up converted disks for VM {} through the conversion host {}",
+                    sourceVM, convertHost.getName(), e);
+        }
     }
 
     private List<StoragePoolVO> findInstanceConversionDestinationStoragePoolsInCluster(

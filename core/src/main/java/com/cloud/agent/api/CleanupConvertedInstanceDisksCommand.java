@@ -21,6 +21,9 @@ package com.cloud.agent.api;
 
 import com.cloud.agent.api.to.DataStoreTO;
 
+/**
+ * This command is used to cleanup the converted instance disks from the storage pool: vmVolumesStore and the prefix: vmVolumesPrefix.
+ */
 public class CleanupConvertedInstanceDisksCommand extends Command {
 
     private DataStoreTO vmVolumesStore;
