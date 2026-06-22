@@ -42,9 +42,6 @@ PARENT_PATHS=""       # For incremental: comma-separated list of parent backup f
                       # is rebased onto its corresponding parent file. Required because
                       # data-disk backup files don't share the root volume's UUID, so
                       # each disk must be rebased onto its own parent.
-# Rebase operation parameters (used only with -o rebase, for chain repair on delete-middle)
-REBASE_TARGET=""      # The qcow2 file to repoint at a new backing (mount-relative path)
-REBASE_NEW_BACKING="" # The new backing parent file (mount-relative path)
 logFile="/var/log/cloudstack/agent/agent.log"
 
 EXIT_CLEANUP_FAILED=20
@@ -413,51 +410,6 @@ delete_backup() {
   rmdir $mount_point
 }
 
-# Rebase an existing backup qcow2 (e.g. a chain child) onto a new backing parent so the chain
-# stays valid after a middle backup is deleted. Both --target and --new-backing are passed as
-# paths relative to the NAS mount root; we resolve them under $mount_point and write the new
-# backing reference relative to the target file's directory (mount points are ephemeral).
-rebase_backup() {
-  mount_operation
-
-  if [[ -z "$REBASE_TARGET" || -z "$REBASE_NEW_BACKING" ]]; then
-    echo "rebase requires --rebase-target and --rebase-new-backing"
-    cleanup
-    exit 1
-  fi
-
-  local target_abs="$mount_point/$REBASE_TARGET"
-  local backing_abs="$mount_point/$REBASE_NEW_BACKING"
-  if [[ ! -f "$target_abs" ]]; then
-    echo "Rebase target file does not exist: $target_abs"
-    cleanup
-    exit 1
-  fi
-  if [[ ! -f "$backing_abs" ]]; then
-    echo "New backing file does not exist: $backing_abs"
-    cleanup
-    exit 1
-  fi
-  local target_dir
-  target_dir=$(dirname "$target_abs")
-  local backing_rel
-  backing_rel=$(realpath --relative-to="$target_dir" "$backing_abs")
-
-  # SAFE rebase (no -u): qemu-img reads blocks from the old chain and writes them into
-  # the target where the new chain doesn't cover them. This is the "merge into" semantic
-  # required when we're about to delete the old immediate parent — the target needs to
-  # absorb the to-be-deleted parent's blocks so the chain remains consistent against the
-  # new (further-back) backing.
-  if ! qemu-img rebase -b "$backing_rel" -F qcow2 "$target_abs" >> "$logFile" 2> >(cat >&2); then
-    echo "qemu-img rebase failed for $target_abs onto $backing_rel"
-    cleanup
-    exit 1
-  fi
-  sync
-  umount $mount_point
-  rmdir $mount_point
-}
-
 get_backup_stats() {
   mount_operation
 
@@ -573,16 +525,6 @@ while [[ $# -gt 0 ]]; do
       shift
       shift
       ;;
-    --rebase-target)
-      REBASE_TARGET="$2"
-      shift
-      shift
-      ;;
-    --rebase-new-backing)
-      REBASE_NEW_BACKING="$2"
-      shift
-      shift
-      ;;
     -h|--help)
       usage
       shift
@@ -594,13 +536,8 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# QEMU >= 4.2 and libvirt >= 7.2 are only required for backup-begin (incremental
-# checkpoints and per-bitmap exports). Legacy full-only backups, plus delete /
-# stats / rebase operations, run on older versions just fine. Gate the version
-# check to the paths that actually need it to preserve backward compatibility.
-if [ "$OP" = "backup" ] && [ -n "$MODE" ]; then
-  sanity_checks
-fi
+# Perform initial environment sanity checks (QEMU/libvirt version).
+sanity_checks
 
 if [ "$OP" = "backup" ]; then
   STATE=$(virsh -c qemu:///system list | awk -v vm="$VM" '$2 == vm {print $3}')
@@ -611,8 +548,6 @@ if [ "$OP" = "backup" ]; then
   fi
 elif [ "$OP" = "delete" ]; then
   delete_backup
-elif [ "$OP" = "rebase" ]; then
-  rebase_backup
 elif [ "$OP" = "stats" ]; then
   get_backup_stats
 fi
