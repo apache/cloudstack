@@ -139,10 +139,15 @@ public class OntapStorageUtils {
         }
     }
 
-    public static String getIgroupName(String svmName, String hostName) {
-        //Igroup name format: cs_svmName_hostName
-        String sanitizedHostName = hostName.split("\\.")[0].replaceAll("[^a-zA-Z0-9_-]", "_");
-        return OntapStorageConstants.CS + OntapStorageConstants.UNDERSCORE + svmName + OntapStorageConstants.UNDERSCORE + sanitizedHostName;
+    public static String getIgroupName(String svmName, String hostUuid) {
+        //Igroup name format: cs_svmName_hostUuid
+        String sanitizedHostUuid = hostUuid.replaceAll("[^a-zA-Z0-9_-]", "_");
+        String igroupName = OntapStorageConstants.CS + OntapStorageConstants.UNDERSCORE + svmName + OntapStorageConstants.UNDERSCORE + sanitizedHostUuid;
+        // ONTAP igroup names are limited to 96 characters; truncate if longer.
+        if (igroupName.length() > OntapStorageConstants.IGROUP_NAME_MAX_LENGTH) {
+            igroupName = igroupName.substring(0, OntapStorageConstants.IGROUP_NAME_MAX_LENGTH);
+        }
+        return igroupName;
     }
 
     public static String generateExportPolicyName(String svmName, String volumeName){
