@@ -363,7 +363,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         }
 
         if (resultObject != null) {
-            job.setResult(resultObject);
+            job.updateResultWithEncryptionIfNeeded(resultObject);
         }
 
         if (logger.isDebugEnabled()) {
@@ -384,9 +384,9 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                 job.setResultCode(resultCode);
 
                 if (resultObject != null) {
-                    job.setResult(resultObject);
+                    job.updateResultWithEncryptionIfNeeded(resultObject);
                 } else {
-                    job.setResult(null);
+                    job.updateResultWithEncryptionIfNeeded(null);
                 }
 
                 final Date currentGMTTime = DateUtil.currentGMTTime();
@@ -455,7 +455,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             public void doInTransactionWithoutResult(TransactionStatus status) {
                 job.setProcessStatus(processStatus);
                 if (resultObject != null) {
-                    job.setResult(resultObject);
+                    job.updateResultWithEncryptionIfNeeded(resultObject);
                 }
                 job.setLastUpdated(DateUtil.currentGMTTime());
                 _jobDao.update(jobId, job);
@@ -553,23 +553,11 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         return job;
     }
 
-    public String obfuscatePassword(String result, boolean hidePassword) {
-        if (hidePassword) {
-            String pattern = "\"password\":";
-            if (result != null) {
-                if (result.contains(pattern)) {
-                    String[] resp = result.split(pattern);
-                    String psswd = resp[1].toString().split(",")[0];
-                    if (psswd.endsWith("}")) {
-                        psswd = psswd.substring(0, psswd.length() - 1);
-                        result = resp[0] + pattern + psswd.replace(psswd.substring(2, psswd.length() - 1), "*****") + "}," + resp[1].split(",", 2)[1];
-                    } else {
-                        result = resp[0] + pattern + psswd.replace(psswd.substring(2, psswd.length() - 1), "*****") + "," + resp[1].split(",", 2)[1];
-                    }
-                }
-            }
+    public String  obfuscatePassword(String result, boolean hidePassword) {
+        if (!hidePassword) {
+            return result;
         }
-        return result;
+        return StringUtils.obfuscatePasswordInJsonLikeString(result);
     }
 
     private void scheduleExecution(final AsyncJobVO job) {
@@ -1158,7 +1146,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                         cleanupResources(job);
                         job.setStatus(JobInfo.Status.FAILED);
                         job.setResultCode(ApiErrorCode.INTERNAL_ERROR.getHttpCode());
-                        job.setResult("job cancelled because of management server restart or shutdown");
+                        job.updateResultWithEncryptionIfNeeded("job cancelled because of management server restart or shutdown");
                         job.setCompleteMsid(msid);
                         final Date currentGMTTime = DateUtil.currentGMTTime();
                         job.setLastUpdated(currentGMTTime);
