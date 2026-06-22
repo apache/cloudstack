@@ -79,7 +79,7 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
     @Inject ConfigurationDao configDao;
 
     private ScheduledExecutorService executor;
-    private final ExecutorService emailExecutor = Executors.newCachedThreadPool(r -> {
+    ExecutorService emailExecutor = Executors.newCachedThreadPool(r -> {
         Thread t = new Thread(r, "ResourceAlertEmailSender");
         t.setDaemon(true);
         return t;
@@ -274,11 +274,7 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
         String subject = buildSubject(rule, resourceId, value);
         String body = buildBody(rule, resourceId, value);
         long dcId = getDataCenterId(rule.getResourceType(), resourceId);
-        try {
-            AlertGenerator.publishAlertOnEventBus("RESOURCE.ALERT", dcId, null, subject, body);
-        } catch (Exception e) {
-            logger.warn("Failed to publish resource alert event: {}", e.getMessage());
-        }
+        publishAlertEvent(dcId, subject, body);
 
         if (rule.isEmail()) {
             sendEmail(subject, body);
@@ -357,6 +353,15 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
         }
         mailProps.setRecipients(addresses);
         emailExecutor.execute(() -> mailSender.sendMail(mailProps));
+    }
+
+    // package-private so tests can stub it without needing a Spring context
+    void publishAlertEvent(long dcId, String subject, String body) {
+        try {
+            AlertGenerator.publishAlertOnEventBus("RESOURCE.ALERT", dcId, null, subject, body);
+        } catch (Exception e) {
+            logger.warn("Failed to publish resource alert event: {}", e.getMessage());
+        }
     }
 
     @Override
