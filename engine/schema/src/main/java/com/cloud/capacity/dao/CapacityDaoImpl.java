@@ -993,7 +993,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     }
 
     @Override
-    public Pair<List<Long>, Map<Long, Double>> orderClustersByAggregateCapacity(long id, long vmId, Long ownerId, short capacityTypeForOrdering, boolean isVr, boolean allowRoutersOnDedicatedResources, boolean isZone) {
+    public Pair<List<Long>, Map<Long, Double>> orderClustersByAggregateCapacity(long id, long vmId, Long ownerId, short capacityTypeForOrdering, boolean isVr, boolean isZone) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         List<Long> result = new ArrayList<Long>();
@@ -1005,7 +1005,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
             sql.append(ORDER_CLUSTERS_BY_AGGREGATE_OVERCOMMIT_CAPACITY_PART1);
         }
 
-        if (isVr && allowRoutersOnDedicatedResources) {
+        if (isVr) {
             sql.append(ORDER_CLUSTERS_BY_AGGREGATE_CAPACITY_INCLUDE_DEDICATED_JOIN_CLAUSE.replace("ownerId", ownerId.toString()));
         } else {
             sql.append(ORDER_CLUSTERS_BY_AGGREGATE_CAPACITY_JOIN_1);
