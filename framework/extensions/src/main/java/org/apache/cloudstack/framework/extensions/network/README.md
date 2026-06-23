@@ -143,12 +143,9 @@ the extension is created.  CloudStack sets it to:
 cmk createExtension \
     name=my-sdn \
     type=NetworkOrchestrator \
-    "details[0].key=network.services" \
-    "details[0].value=SourceNat,StaticNat,PortForwarding,Firewall,Lb,Dhcp,Dns,UserData" \
-    "details[1].key=network.service.capabilities" \
-    "details[1].value=$(cat my-sdn-capabilities.json)" \
-    "details[2].key=network.isolation.method" \
-    "details[2].value=NetworkExtension"
+    "details[0].network.services=SourceNat,StaticNat,PortForwarding,Firewall,Lb,Dhcp,Dns,UserData,CustomAction" \
+    "details[1].network.service.capabilities=$(cat my-sdn-capabilities.json)" \
+    "details[2].network.isolation.method=NetworkExtension"
 ```
 
 `network.service.capabilities` is a JSON object — see
@@ -178,9 +175,9 @@ cmk registerExtension \
     id=${EXT_ID} \
     resourcetype=PhysicalNetwork \
     resourceid=${PHYS_ID} \
-    "details[0].key=hosts"             "details[0].value=192.168.1.10,192.168.1.11" \
-    "details[1].key=username"          "details[1].value=admin" \
-    "details[2].key=password"          "details[2].value=s3cr3t"
+    "details[0].hosts=192.168.1.10,192.168.1.11" \
+    "details[1].username=root" \
+    "details[2].password=s3cr3t"
 ```
 
 Any key/value pairs you pass here are stored with the physical-network
@@ -1272,7 +1269,7 @@ to suppress the allocation:
 cmk createExtension \
     name=my-sdn \
     ... \
-    "details[N].key=network.allocate.extension.ip" "details[N].value=false"
+    "details[N].network.allocate.extension.ip=false"
 ```
 
 When this detail is `false`, `ensureExtensionIp` returns `null` for any network
