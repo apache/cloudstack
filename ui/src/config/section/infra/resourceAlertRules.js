@@ -21,7 +21,7 @@ import store from '@/store'
 export default {
   name: 'resourcealertrule',
   title: 'label.resource.alert.rules',
-  icon: 'AlertOutlined',
+  icon: 'BellOutlined',
   permission: ['listResourceAlertRules'],
   columns: ['name', 'resourcetype', 'metric', 'condition', 'threshold', 'severity', 'email'],
   details: ['name', 'id', 'resourcetype', 'resourceid', 'metric', 'condition', 'threshold', 'severity', 'message', 'email', 'resetinterval', 'account', 'domain', 'created'],
