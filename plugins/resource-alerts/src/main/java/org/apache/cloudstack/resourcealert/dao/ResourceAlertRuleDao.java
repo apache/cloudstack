@@ -33,4 +33,8 @@ public interface ResourceAlertRuleDao extends GenericDao<ResourceAlertRuleVO, Lo
     List<ResourceAlertRuleVO> listByAccountId(long accountId);
 
     List<ResourceAlertRuleVO> listByResourceTypeAndId(ResourceAlertRule.ResourceType resourceType, Long resourceId);
+
+    int countActiveByAccountId(long accountId);
+
+    boolean existsSpecificRule(ResourceAlertRule.ResourceType resourceType, String metric, long resourceId);
 }

@@ -53,10 +53,12 @@ import com.cloud.host.Host;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.server.ResourceTag;
 import com.cloud.server.StatsCollector;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
@@ -69,6 +71,10 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
             "resource.alert.evaluation.interval", "60",
             "Interval in seconds between resource alert rule evaluations", true);
 
+    public static final ConfigKey<Integer> RULES_PER_ACCOUNT_LIMIT = new ConfigKey<>("Advanced", Integer.class,
+            "resource.alert.rules.per.account", "20",
+            "Maximum number of resource alert rules per account; 0 = unlimited", true);
+
     @Inject ResourceAlertRuleDao ruleDao;
     @Inject ResourceAlertDao alertDao;
     @Inject UserVmDao userVmDao;
@@ -77,6 +83,7 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
     @Inject VolumeDao volumeDao;
     @Inject StatsCollector statsCollector;
     @Inject ConfigurationDao configDao;
+    @Inject ResourceTagDao resourceTagDao;
 
     private ScheduledExecutorService executor;
     ExecutorService emailExecutor = Executors.newCachedThreadPool(r -> {
@@ -142,8 +149,13 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
 
     private void evaluateRule(ResourceAlertRuleVO rule) {
         ResourceAlertMetric metric = ResourceAlertMetric.valueOf(rule.getMetric());
+        boolean isGeneric = rule.getResourceId() == null;
         for (Long resourceId : getResourceIds(rule)) {
             try {
+                if (isGeneric) {
+                    if (isOptedOut(rule.getResourceType(), resourceId)) continue;
+                    if (ruleDao.existsSpecificRule(rule.getResourceType(), rule.getMetric(), resourceId)) continue;
+                }
                 Double value = getMetricValue(rule.getResourceType(), metric, resourceId);
                 if (value == null || value < 0) {
                     continue;
@@ -156,6 +168,18 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
                 logger.warn("Error evaluating rule {} for resource {}: {}", rule.getUuid(), resourceId, e.getMessage());
             }
         }
+    }
+
+    private boolean isOptedOut(ResourceAlertRule.ResourceType type, long resourceId) {
+        ResourceTag.ResourceObjectType objType = null;
+        if (type == ResourceAlertRule.ResourceType.VirtualMachine) {
+            objType = ResourceTag.ResourceObjectType.UserVm;
+        } else if (type == ResourceAlertRule.ResourceType.Volume) {
+            objType = ResourceTag.ResourceObjectType.Volume;
+        }
+        if (objType == null) return false;
+        ResourceTag tag = resourceTagDao.findByKey(resourceId, objType, "resource.alert.opt.out");
+        return tag != null && "true".equalsIgnoreCase(tag.getValue());
     }
 
     private List<Long> getResourceIds(ResourceAlertRuleVO rule) {
@@ -371,6 +395,6 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[]{EVAL_INTERVAL};
+        return new ConfigKey<?>[]{EVAL_INTERVAL, RULES_PER_ACCOUNT_LIMIT};
     }
 }
