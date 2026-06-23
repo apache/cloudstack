@@ -173,7 +173,7 @@
             </template>
           </a-input>
         </a-form-item>
-        <div class="center" v-if="oauthGithubProvider || oauthGoogleProvider">
+        <div class="center" v-if="oauthGithubProvider || oauthGoogleProvider || oauthKeycloakProvider">
           <div class="social-auth" v-if="oauthGithubProvider">
             <a-button
               @click="handleGithubProviderAndDomain"
@@ -193,9 +193,21 @@
               color="primary"
               :href="getGoogleUrl(from)"
               class="auth-btn google-auth"
-              style="height: 38px; width: 185px; padding: 0" >
+              style="height: 38px; width: 185px; padding: 0; margin-bottom: 5px;" >
               <img src="/assets/google.svg" alt="Google" style="width: 32px; padding: 5px" />
               <a-typography-text>Sign in with Google</a-typography-text>
+            </a-button>
+          </div>
+          <div class="social-auth" v-if="oauthKeycloakProvider">
+            <a-button
+              @click="handleKeycloakProviderAndDomain"
+              tag="a"
+              color="primary"
+              :href="getKeycloakUrl(from)"
+              class="auth-btn keycloak-auth"
+              style="height: 38px; width: 185px; padding: 0" >
+              <img src="/assets/keycloak.svg" alt="Keycloak" style="width: 32px; padding: 5px" />
+              <a-typography-text>Sign in with Keycloak</a-typography-text>
             </a-button>
           </div>
         </div>
@@ -259,16 +271,24 @@ export default {
       socialLogin: false,
       googleprovider: false,
       githubprovider: false,
+      keycloakprovider: false,
       googleredirecturi: '',
       githubredirecturi: '',
+      keycloakredirecturi: '',
       googleclientid: '',
       githubclientid: '',
+      keycloakclientid: '',
+      keycloakauthorizeurl: '',
       oauthGoogleProvider: false,
       oauthGithubProvider: false,
+      oauthKeycloakProvider: false,
       oauthGoogleClientId: '',
       oauthGithubClientId: '',
+      oauthKeycloakClientId: '',
       oauthGoogleRedirectUri: '',
       oauthGithubRedirectUri: '',
+      oauthKeycloakRedirectUri: '',
+      oauthKeycloakAuthorizeUrl: '',
       oauthLoading: false,
       loginType: 0,
       state: {
@@ -379,18 +399,29 @@ export default {
                 this.githubclientid = item.clientid
                 this.githubredirecturi = item.redirecturi
               }
+              if (item.provider === 'keycloak') {
+                this.keycloakprovider = item.enabled
+                this.keycloakclientid = item.clientid
+                this.keycloakredirecturi = item.redirecturi
+                this.keycloakauthorizeurl = item.authorizeurl
+              }
             })
             const totalCount = response.listoauthproviderresponse.count || 0
             this.socialLogin = totalCount > 0
             this.oauthGithubProvider = this.githubprovider
             this.oauthGoogleProvider = this.googleprovider
+            this.oauthKeycloakProvider = this.keycloakprovider
             this.oauthGithubClientId = this.githubclientid
             this.oauthGoogleClientId = this.googleclientid
+            this.oauthKeycloakClientId = this.keycloakclientid
             this.oauthGithubRedirectUri = this.githubredirecturi
             this.oauthGoogleRedirectUri = this.googleredirecturi
+            this.oauthKeycloakRedirectUri = this.keycloakredirecturi
+            this.oauthKeycloakAuthorizeUrl = this.keycloakauthorizeurl
           } else {
             this.oauthGithubProvider = false
             this.oauthGoogleProvider = false
+            this.oauthKeycloakProvider = false
             oauthproviders.forEach(item => {
               if (item.provider === 'google') {
                 this.oauthGoogleProvider = item.enabled
@@ -401,6 +432,12 @@ export default {
                 this.oauthGithubProvider = item.enabled
                 this.oauthGithubClientId = item.clientid
                 this.oauthGithubRedirectUri = item.redirecturi
+              }
+              if (item.provider === 'keycloak') {
+                this.oauthKeycloakProvider = item.enabled
+                this.oauthKeycloakClientId = item.clientid
+                this.oauthKeycloakRedirectUri = item.redirecturi
+                this.oauthKeycloakAuthorizeUrl = item.authorizeurl
               }
             })
           }
@@ -425,10 +462,14 @@ export default {
       if (key === 'oauth') {
         this.oauthGithubProvider = this.githubprovider
         this.oauthGoogleProvider = this.googleprovider
+        this.oauthKeycloakProvider = this.keycloakprovider
         this.oauthGithubClientId = this.githubclientid
         this.oauthGoogleClientId = this.googleclientid
+        this.oauthKeycloakClientId = this.keycloakclientid
         this.oauthGithubRedirectUri = this.githubredirecturi
         this.oauthGoogleRedirectUri = this.googleredirecturi
+        this.oauthKeycloakRedirectUri = this.keycloakredirecturi
+        this.oauthKeycloakAuthorizeUrl = this.keycloakauthorizeurl
       }
       this.setRules()
     },
@@ -439,10 +480,14 @@ export default {
       } else {
         this.oauthGithubProvider = this.githubprovider
         this.oauthGoogleProvider = this.googleprovider
+        this.oauthKeycloakProvider = this.keycloakprovider
         this.oauthGithubClientId = this.githubclientid
         this.oauthGoogleClientId = this.googleclientid
+        this.oauthKeycloakClientId = this.keycloakclientid
         this.oauthGithubRedirectUri = this.githubredirecturi
         this.oauthGoogleRedirectUri = this.googleredirecturi
+        this.oauthKeycloakRedirectUri = this.keycloakredirecturi
+        this.oauthKeycloakAuthorizeUrl = this.keycloakauthorizeurl
       }
     },
     handleGithubProviderAndDomain () {
@@ -452,6 +497,10 @@ export default {
     handleGoogleProviderAndDomain () {
       this.handleDomain()
       this.$store.commit('SET_OAUTH_PROVIDER_USED_TO_LOGIN', 'google')
+    },
+    handleKeycloakProviderAndDomain () {
+      this.handleDomain()
+      this.$store.commit('SET_OAUTH_PROVIDER_USED_TO_LOGIN', 'keycloak')
     },
     handleDomain () {
       const values = toRaw(this.form)
@@ -502,6 +551,22 @@ export default {
       const qs = new URLSearchParams(options)
 
       return `${rootUrl}?${qs.toString()}`
+    },
+    getKeycloakUrl (from) {
+      const rootURl = this.customActiveKey === 'oauth' ? this.oauthKeycloakAuthorizeUrl : this.keycloakauthorizeurl
+      const redirectUri = this.customActiveKey === 'oauth' ? this.oauthKeycloakRedirectUri : this.keycloakredirecturi
+      const clientId = this.customActiveKey === 'oauth' ? this.oauthKeycloakClientId : this.keycloakclientid
+      const options = {
+        redirect_uri: redirectUri,
+        client_id: clientId,
+        response_type: 'code',
+        scope: 'openid email',
+        state: 'cloudstack'
+      }
+
+      const qs = new URLSearchParams(options)
+
+      return `${rootURl}?${qs.toString()}`
     },
     handleSubmit (e) {
       e.preventDefault()

@@ -114,4 +114,14 @@ public class SharedFSDaoImpl extends GenericDaoBase<SharedFSVO, Long> implements
         sc.setParameters("domainId", domainId);
         return findOneBy(sc);
     }
+
+    @Override
+    public SharedFSVO findByVm(long vmId) {
+        SearchBuilder<SharedFSVO> sb = createSearchBuilder();
+        sb.and("vmId", sb.entity().getVmId(), SearchCriteria.Op.EQ);
+        sb.done();
+        SearchCriteria<SharedFSVO> sc = sb.create();
+        sc.setParameters("vmId", vmId);
+        return findOneBy(sc);
+    }
 }

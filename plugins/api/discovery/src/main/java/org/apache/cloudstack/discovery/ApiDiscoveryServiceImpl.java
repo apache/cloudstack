@@ -26,6 +26,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -33,6 +34,8 @@ import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.acl.RolePermissionEntity;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPairService;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
@@ -44,6 +47,7 @@ import org.apache.cloudstack.api.response.ApiDiscoveryResponse;
 import org.apache.cloudstack.api.response.ApiParameterResponse;
 import org.apache.cloudstack.api.response.ApiResponseResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.ratelimit.ApiRateLimitService;
 import org.apache.cloudstack.resourcedetail.UserDetailVO;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.CollectionUtils;
@@ -77,6 +81,9 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
 
     @Inject
     RoleService roleService;
+
+    @Inject
+    ApiKeyPairService apiKeyPairService;
 
     protected ApiDiscoveryServiceImpl() {
         super();
@@ -257,16 +264,24 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
     }
 
     @Override
-    public ListResponse<? extends BaseResponse> listApis(User user, String name) {
+    public ListResponse<? extends BaseResponse> listApis(User user, String name, ListApisCmd cmd) {
         ListResponse<ApiDiscoveryResponse> response = new ListResponse<>();
         List<ApiDiscoveryResponse> responseList = new ArrayList<>();
         List<String> apisAllowed = new ArrayList<>(s_apiNameDiscoveryResponseMap.keySet());
+        String apikey = accountService.getAccessingApiKey(cmd);
 
         if (user == null)
             return null;
-        Account account = accountService.getAccount(user.getAccountId());
 
-        if (name != null) {
+        Account account = accountService.getAccount(user.getAccountId());
+        if (account == null) {
+            throw new PermissionDeniedException(String.format("The account with id [%s] for user [%s] is null.", user.getAccountId(), user));
+        }
+
+        Role role = roleService.findRole(account.getRoleId());
+        if (apikey != null) {
+            responseList = listApisForKeyPair(apikey, name, user, role, apisAllowed);
+        } else if (name != null) {
             if (!s_apiNameDiscoveryResponseMap.containsKey(name))
                 return null;
 
@@ -281,11 +296,6 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
             responseList.add(getApiDiscoveryResponseWithAccessibleParams(name, account));
 
         } else {
-            if (account == null) {
-                throw new PermissionDeniedException(String.format("The account with id [%s] for user [%s] is null.", user.getAccountId(), user));
-            }
-
-            final Role role = roleService.findRole(account.getRoleId());
             if (role == null || role.getId() < 1L) {
                 throw new PermissionDeniedException(String.format("The account [%s] has role null or unknown.",
                         ReflectionToStringBuilderUtils.reflectOnlySelectedFields(account, "accountName", "uuid")));
@@ -341,6 +351,44 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
         List<Class<?>> cmdList = new ArrayList<Class<?>>();
         cmdList.add(ListApisCmd.class);
         return cmdList;
+    }
+
+    protected List<ApiDiscoveryResponse> listApisForKeyPair(String apiKey, String apiName, User user, Role role, List<String> apisAllowed) {
+        List<RolePermissionEntity> keyPairPermissions = accountService.getAllKeypairPermissions(apiKey);
+
+        List<String> filteredApis = new ArrayList<>();
+        if (apiName != null && isApiAllowedForKey(keyPairPermissions, apiName)) {
+            filteredApis = List.of(apiName);
+        } else {
+            for (String api : apisAllowed) {
+                if (isApiAllowedForKey(keyPairPermissions, api)) {
+                    filteredApis.add(api);
+                }
+            }
+        }
+
+        checkRateLimit(user, role, filteredApis);
+        return filteredApis.stream().map(api -> s_apiNameDiscoveryResponseMap.get(api)).collect(Collectors.toList());
+    }
+
+    protected boolean isApiAllowedForKey(List<RolePermissionEntity> rolePermissionEntities, String apiName) {
+        for (RolePermissionEntity rolePermissionEntity : rolePermissionEntities) {
+            if (!rolePermissionEntity.getRule().matches(apiName)) {
+                continue;
+            }
+            return rolePermissionEntity.getPermission().equals(RolePermissionEntity.Permission.ALLOW);
+        }
+        return false;
+    }
+
+    private void checkRateLimit(User user, Role role, List<String> apiNames) {
+        for (APIChecker apiChecker : _apiAccessCheckers) {
+            if (!(apiChecker instanceof ApiRateLimitService)) {
+                continue;
+            }
+            apiChecker.getApisAllowedToUser(role, user, apiNames);
+            return;
+        }
     }
 
     public List<APIChecker> getApiAccessCheckers() {

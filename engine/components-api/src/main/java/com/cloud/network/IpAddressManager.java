@@ -288,4 +288,6 @@ public interface IpAddressManager {
     PublicIpQuarantine updatePublicIpAddressInQuarantine(Long quarantineProcessId, Date endDate);
 
     void updateSourceNatIpAddress(IPAddressVO requestedIp, List<IPAddressVO> userIps) throws Exception;
+
+    Long getPreferredNetworkIdForPublicIpRuleAssignment(IpAddress ip, Long networkId);
 }

@@ -21,10 +21,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.api.response.ApiResponseSerializer;
-import com.cloud.api.ApiDBUtils;
-import com.cloud.domain.Domain;
-import com.cloud.user.Account;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -43,9 +43,10 @@ import org.apache.cloudstack.oauth2.api.response.OauthProviderResponse;
 import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
 import org.apache.commons.lang3.ArrayUtils;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import com.cloud.api.ApiDBUtils;
+import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.domain.Domain;
+import com.cloud.user.Account;
 
 @APICommand(name = "listOauthProvider", description = "List OAuth providers registered", responseObject = OauthProviderResponse.class, entityType = {},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
@@ -143,7 +144,7 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
         for (OauthProviderVO result : resultList) {
             Domain domain = result.getDomainId() != null ? ApiDBUtils.findDomainById(result.getDomainId()) : null;
             OauthProviderResponse r = new OauthProviderResponse(result.getUuid(), result.getProvider(),
-                    result.getDescription(), result.getClientId(), result.getSecretKey(), result.getRedirectUri(), domain);
+                    result.getDescription(), result.getClientId(), result.getSecretKey(), result.getRedirectUri(), result.getAuthorizeUrl(), result.getTokenUrl(), domain);
             boolean oauthEnabled = OAuth2AuthManager.isPluginEnabledForDomain(result.getDomainId());
             if (oauthEnabled && authenticatorPluginNames.contains(result.getProvider()) && result.isEnabled()) {
                 r.setEnabled(true);

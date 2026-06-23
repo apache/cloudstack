@@ -27,7 +27,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.regex.Pattern;
 
 import javax.inject.Inject;
@@ -36,6 +35,7 @@ import com.cloud.bgp.BGPService;
 import org.apache.cloudstack.acl.ProjectRoleService;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPairService;
 import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -220,6 +220,8 @@ public abstract class BaseCmd {
     public ResourceIconManager resourceIconManager;
     @Inject
     public Ipv6Service ipv6Service;
+    @Inject
+    public ApiKeyPairService apiKeyPairService;
     @Inject
     public VnfTemplateManager vnfTemplateManager;
     @Inject
@@ -501,12 +503,6 @@ public abstract class BaseCmd {
     }
 
     public String getResourceUuid(String parameterName) {
-        UUID resourceUuid = CallContext.current().getApiResourceUuid(parameterName);
-
-        if (resourceUuid != null) {
-            return resourceUuid.toString();
-        }
-
-        return null;
+        return CallContext.current().getApiResourceUuid(parameterName);
     }
 }

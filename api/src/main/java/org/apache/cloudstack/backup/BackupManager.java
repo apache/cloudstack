@@ -22,6 +22,7 @@ import java.util.Map;
 
 import com.cloud.capacity.Capacity;
 import com.cloud.exception.ResourceAllocationException;
+import org.apache.cloudstack.api.command.admin.backup.CloneBackupOfferingCmd;
 import org.apache.cloudstack.api.command.admin.backup.ImportBackupOfferingCmd;
 import org.apache.cloudstack.api.command.admin.backup.UpdateBackupOfferingCmd;
 import org.apache.cloudstack.api.command.user.backup.CreateBackupCmd;
@@ -141,6 +142,12 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
     List<Long> getBackupOfferingDomains(final Long offeringId);
 
     /**
+     * Clone an existing backup offering with updated values
+     * @param cmd clone backup offering cmd
+     */
+    BackupOffering cloneBackupOffering(final CloneBackupOfferingCmd cmd);
+
+    /**
      * List backup offerings
      * @param ListBackupOfferingsCmd API cmd
      */
@@ -228,7 +235,7 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
      * @param forced Indicates if backup will be force removed or not
      * @return returns operation success
      */
-    boolean deleteBackup(final Long backupId, final Boolean forced);
+    boolean deleteBackup(final Long backupId, final Boolean forced) throws ResourceAllocationException;
 
     void validateBackupForZone(Long zoneId);
 

@@ -27,15 +27,18 @@ import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.SslCertVO;
+import com.cloud.network.vpc.VpcManager;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.Nic;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ServerApiException;
@@ -54,7 +57,10 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -88,6 +94,9 @@ public class LoadBalancingRulesManagerImplTest{
 
     @Mock
     NetworkOfferingServiceMapDao _networkOfferingServiceDao;
+
+    @Mock
+    VpcManager vpcManager;
 
     @Spy
     @InjectMocks
@@ -307,5 +316,48 @@ public class LoadBalancingRulesManagerImplTest{
         Mockito.verify(lbr, times(1)).applyLoadBalancerConfig(lbRuleId);
         Mockito.verify(loadBalancerMock, times(1)).setLbProtocol(NetUtils.TCP_PROTO);
         Mockito.verify(loadBalancerMock, times(1)).setLbProtocol(NetUtils.SSL_PROTO);
+    }
+
+    @Test
+    public void testGetVmNicInLoadBalancerDefaultCase() {
+        UserVm userVm = Mockito.mock(UserVm.class);
+        LoadBalancerVO loadBalancer = Mockito.mock(LoadBalancerVO.class);
+        Network loadBalancerNetwork = Mockito.mock(Network.class);
+        Account owner = Mockito.mock(Account.class);
+
+        when(vpcManager.isNetworkOnVpcEnabledConserveMode(Mockito.eq(loadBalancerNetwork))).thenReturn(false);
+
+        when(loadBalancer.getNetworkId()).thenReturn(networkId);
+        Nic nic = Mockito.mock(Nic.class);
+        when(nic.getNetworkId()).thenReturn(networkId);
+        List<? extends Nic> nics = Collections.singletonList(nic);
+        Mockito.doReturn(nics).when(_networkModel).getNics(anyLong());
+        Nic nicInLb = lbr.getVmNicInLoadBalancer(userVm, loadBalancer, loadBalancerNetwork, null, owner);
+        Assert.assertEquals(nic, nicInLb);
+    }
+
+    @Test
+    public void testGetVmNicInLoadBalancerVPCConserveMode() {
+        long vmId = 30L;
+        UserVm userVm = Mockito.mock(UserVm.class);
+        when(userVm.getId()).thenReturn(vmId);
+        LoadBalancerVO loadBalancer = Mockito.mock(LoadBalancerVO.class);
+        Network loadBalancerNetwork = Mockito.mock(Network.class);
+        Account owner = Mockito.mock(Account.class);
+
+        long networkTier2Id = 20L;
+        NetworkVO networkTier2 = Mockito.mock(NetworkVO.class);
+        Map<Long, Long> vmIdNetworkIdMap = new HashMap<>();
+        vmIdNetworkIdMap.put(vmId, networkTier2Id);
+
+        when(vpcManager.isNetworkOnVpcEnabledConserveMode(Mockito.eq(loadBalancerNetwork))).thenReturn(true);
+        when(_networkDao.findById(networkTier2Id)).thenReturn(networkTier2);
+        when(networkTier2.getVpcId()).thenReturn(10L);
+        when(loadBalancerNetwork.getVpcId()).thenReturn(10L);
+        Nic nic = Mockito.mock(Nic.class);
+        when(_networkModel.getNicInNetwork(Mockito.eq(vmId), Mockito.eq(networkTier2Id))).thenReturn(nic);
+
+        Nic nicInLb = lbr.getVmNicInLoadBalancer(userVm, loadBalancer, loadBalancerNetwork, vmIdNetworkIdMap, owner);
+        Assert.assertEquals(nic, nicInLb);
     }
 }

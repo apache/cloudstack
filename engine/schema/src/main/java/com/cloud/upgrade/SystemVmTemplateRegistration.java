@@ -1073,7 +1073,7 @@ public class SystemVmTemplateRegistration {
         }
         Hypervisor.HypervisorType hypervisorType = templateDetails.getHypervisorType();
         updateSystemVMEntries(templateId, hypervisorType);
-        updateConfigurationParams(hypervisorType, templateDetails.getName(), zoneId);
+        updateConfigurationParams(hypervisorType, templateVO.getName(), zoneId);
     }
 
     protected void updateTemplateUrlChecksumAndGuestOsId(VMTemplateVO templateVO,

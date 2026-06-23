@@ -23,7 +23,8 @@ import java.net.URL;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.text.SimpleDateFormat;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -88,6 +89,9 @@ public class FlashArrayAdapter implements ProviderAdapter {
     static final ObjectMapper mapper = new ObjectMapper();
     public String pod = null;
     public String hostgroup = null;
+    private static final DateTimeFormatter DELETION_TIMESTAMP_FORMAT =
+            DateTimeFormatter.ofPattern("yyyyMMddHHmmss").withZone(ZoneOffset.UTC);
+
     private String username;
     private String password;
     private String accessToken;
@@ -200,28 +204,63 @@ public class FlashArrayAdapter implements ProviderAdapter {
 
     @Override
     public void delete(ProviderAdapterContext context, ProviderAdapterDataObject dataObject) {
-        // first make sure we are disconnected
-        removeVlunsAll(context, pod, dataObject.getExternalName());
         String fullName = normalizeName(pod, dataObject.getExternalName());
 
-        FlashArrayVolume volume = new FlashArrayVolume();
+        // Snapshots live under /volume-snapshots and already use the array's
+        // reserved form <volume>.<suffix>, which legitimately contains ".".
+        // The stricter [A-Za-z0-9_-] naming rule applies to regular volume
+        // names and free-form rename targets, not to these reserved snapshot
+        // names. Since FlashArray snapshot names are system-defined rather
+        // than arbitrary rename targets, we skip the usual timestamped rename
+        // and only mark snapshots destroyed; the array's own ".N" suffix
+        // already disambiguates them in the recycle bin.
+        if (dataObject.getType() == ProviderAdapterDataObject.Type.SNAPSHOT) {
+            try {
+                FlashArrayVolume destroy = new FlashArrayVolume();
+                destroy.setDestroyed(true);
+                PATCH("/volume-snapshots?names=" + fullName, destroy, new TypeReference<FlashArrayList<FlashArrayVolume>>() {
+                });
+            } catch (CloudRuntimeException e) {
+                String msg = e.getMessage();
+                if (msg != null && (msg.contains("No such volume or snapshot")
+                        || msg.contains("Volume does not exist"))) {
+                    return;
+                }
+                throw e;
+            }
+            return;
+        }
 
-        // rename as we delete so it doesn't conflict if the template or volume is ever recreated
-        // pure keeps the volume(s) around in a Destroyed bucket for a period of time post delete
-        String timestamp = new SimpleDateFormat("yyyyMMddHHmmss").format(new java.util.Date());
-        volume.setExternalName(fullName + "-" + timestamp);
+        // first make sure we are disconnected
+        removeVlunsAll(context, pod, dataObject.getExternalName());
+
+        // Rename then destroy: FlashArray keeps destroyed volumes in a recycle
+        // bin (default 24h) from which they can be recovered. Renaming with a
+        // deletion timestamp gives operators a forensic trail when browsing the
+        // array - they can see when each destroyed copy was deleted on the
+        // CloudStack side. FlashArray rejects a single PATCH that combines
+        // {name, destroyed}, so the rename and the destroy must be issued as
+        // two separate requests each carrying only its own field.
+        // Use UTC so the rename suffix is stable regardless of the management
+        // server's local timezone or DST changes - operators correlating the
+        // CloudStack delete event with the array's audit log get a consistent
+        // wall-clock value.
+        String timestamp = DELETION_TIMESTAMP_FORMAT.format(java.time.Instant.now());
+        String renamedName = fullName + "-" + timestamp;
 
         try {
-            PATCH("/volumes?names=" + fullName, volume, new TypeReference<FlashArrayList<FlashArrayVolume>>() {
+            FlashArrayVolume rename = new FlashArrayVolume();
+            rename.setExternalName(renamedName);
+            PATCH("/volumes?names=" + fullName, rename, new TypeReference<FlashArrayList<FlashArrayVolume>>() {
             });
 
-            // now delete it with new name
-            volume.setDestroyed(true);
-
-            PATCH("/volumes?names=" + fullName + "-" + timestamp, volume, new TypeReference<FlashArrayList<FlashArrayVolume>>() {
+            FlashArrayVolume destroy = new FlashArrayVolume();
+            destroy.setDestroyed(true);
+            PATCH("/volumes?names=" + renamedName, destroy, new TypeReference<FlashArrayList<FlashArrayVolume>>() {
             });
         } catch (CloudRuntimeException e) {
-            if (e.toString().contains("Volume does not exist")) {
+            String msg = e.getMessage();
+            if (msg != null && msg.contains("Volume does not exist")) {
                 return;
             } else {
                 throw e;

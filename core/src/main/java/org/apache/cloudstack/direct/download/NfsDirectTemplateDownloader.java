@@ -69,7 +69,7 @@ public class NfsDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
         String mount = String.format(mountCommand, srcHost + ":" + srcPath, "/mnt/" + mountSrcUuid);
         Script.runSimpleBashScript(mount);
         String downloadDir = getDestPoolPath() + File.separator + getDirectDownloadTempPath(getTemplateId());
-        setDownloadedFilePath(downloadDir + File.separator + getFileNameFromUrl());
+        setDownloadedFilePath(downloadDir + File.separator + getTemporaryFileName());
         Script.runSimpleBashScript("cp /mnt/" + mountSrcUuid + srcPath + " " + getDownloadedFilePath());
         Script.runSimpleBashScript("umount /mnt/" + mountSrcUuid);
         return new Pair<>(true, getDownloadedFilePath());

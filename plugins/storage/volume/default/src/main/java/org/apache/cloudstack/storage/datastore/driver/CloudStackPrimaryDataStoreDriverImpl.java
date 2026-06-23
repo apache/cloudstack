@@ -27,6 +27,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 
 import com.cloud.agent.api.to.DiskTO;
+import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.storage.VolumeVO;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
@@ -89,6 +90,13 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
 
+import com.cloud.agent.AgentManager;
+import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.OperationTimedoutException;
+import com.cloud.storage.clvm.ClvmPoolManager;
+import com.cloud.host.HostVO;
+import com.cloud.host.Status;
+
 public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver {
     @Override
     public Map<String, String> getCapabilities() {
@@ -131,6 +139,12 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 
     @Inject
     private VolumeOrchestrationService volumeOrchestrationService;
+
+    @Inject
+    private ClvmPoolManager clvmPoolManager;
+
+    @Inject
+    private AgentManager agentMgr;
 
     @Override
     public DataTO getTO(DataObject data) {
@@ -422,12 +436,19 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
         CommandResult result = new CommandResult();
         try {
             EndPoint ep = null;
-            if (snapshotOnPrimaryStore != null) {
-                ep = epSelector.select(snapshotOnPrimaryStore);
-            } else {
-                VolumeInfo volumeInfo = volFactory.getVolume(snapshot.getVolumeId(), DataStoreRole.Primary);
+            VolumeInfo volumeInfo = volFactory.getVolume(snapshot.getVolumeId(), DataStoreRole.Primary);
+
+            StoragePoolVO storagePool = primaryStoreDao.findById(volumeInfo.getPoolId());
+            if (storagePool != null && storagePool.getPoolType() == StoragePoolType.CLVM) {
                 ep = epSelector.select(volumeInfo);
+            } else {
+                if (snapshotOnPrimaryStore != null) {
+                    ep = epSelector.select(snapshotOnPrimaryStore);
+                } else {
+                    ep = epSelector.select(volumeInfo);
+                }
             }
+
             if ( ep == null ){
                 String errMsg = "No remote endpoint to send RevertSnapshotCommand, check if host or ssvm is down?";
                 logger.error(errMsg);
@@ -455,6 +476,29 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 
         CreateCmdResult result = new CreateCmdResult(null, null);
 
+        if (ClvmPoolManager.isClvmPoolType(pool.getPoolType())) {
+            VirtualMachine attachedVm = vol.getAttachedVM();
+            boolean vmIsRunning = attachedVm != null && attachedVm.getHostId() != null;
+            if (!vmIsRunning) {
+                Long lockHostId = clvmPoolManager.getClvmLockHostId(vol.getId(), vol.getUuid(),
+                        vol.getPath(), pool, true);
+                if (lockHostId != null) {
+                    HostVO lockHost = hostDao.findById(lockHostId);
+                    if (lockHost != null && lockHost.getStatus() == Status.Up) {
+                        logger.debug("CLVM resize: routing to lock-holding host {} for volume {}",
+                                lockHostId, vol.getUuid());
+                        endpointsToRunResize = new long[]{lockHostId};
+                    } else {
+                        logger.warn("CLVM resize: lock host {} for volume {} is down or missing, " +
+                                "keeping caller-provided hosts", lockHostId, vol.getUuid());
+                    }
+                } else {
+                    logger.warn("CLVM resize: no lock holder found for volume {}, " +
+                            "keeping caller-provided hosts or epSelector", vol.getUuid());
+                }
+            }
+        }
+
         // if hosts are provided, they are where the VM last ran. We can use that.
         if (endpointsToRunResize == null || endpointsToRunResize.length == 0) {
             EndPoint ep = epSelector.select(data, encryptionRequired);
@@ -473,7 +517,21 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
             resizeCmd.setContextParam(DiskTO.PROTOCOL_TYPE, Storage.StoragePoolType.DatastoreCluster.toString());
         }
         try {
-            ResizeVolumeAnswer answer = (ResizeVolumeAnswer) storageMgr.sendToPool(pool, endpointsToRunResize, resizeCmd);
+            ResizeVolumeAnswer answer;
+            if (ClvmPoolManager.isClvmPoolType(pool.getPoolType())) {
+                // For CLVM, send only to the determined host, without falling through to other hosts
+                try {
+                    answer = (ResizeVolumeAnswer) agentMgr.send(endpointsToRunResize[0], resizeCmd);
+                } catch (AgentUnavailableException | OperationTimedoutException e) {
+                    logger.error("CLVM resize failed to reach host {} for volume {}: {}",
+                            endpointsToRunResize[0], vol.getUuid(), e.getMessage());
+                    result.setResult(e.getMessage());
+                    callback.complete(result);
+                    return;
+                }
+            } else {
+                answer = (ResizeVolumeAnswer) storageMgr.sendToPool(pool, endpointsToRunResize, resizeCmd);
+            }
             if (answer != null && answer.getResult()) {
                 long finalSize = answer.getNewSize();
                 logger.debug("Resize: volume started at size: " + toHumanReadableSize(vol.getSize()) + " and ended at size: " + toHumanReadableSize(finalSize));
@@ -587,7 +645,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 
     @Override
     public boolean isStorageSupportHA(StoragePoolType type) {
-        return StoragePoolType.NetworkFilesystem == type;
+        return type != null && HighAvailabilityManager.LIBVIRT_STORAGE_POOL_TYPES_WITH_HA_SUPPORT.contains(type);
     }
 
     @Override

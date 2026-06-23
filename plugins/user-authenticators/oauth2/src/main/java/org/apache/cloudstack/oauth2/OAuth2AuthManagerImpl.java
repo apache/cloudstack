@@ -18,15 +18,15 @@
 //
 package org.apache.cloudstack.oauth2;
 
-import com.cloud.domain.Domain;
-import com.cloud.domain.DomainVO;
-import com.cloud.user.DomainManager;
-import com.cloud.user.DomainService;
-import com.cloud.user.dao.UserDao;
-import com.cloud.utils.component.Manager;
-import com.cloud.utils.component.ManagerBase;
-import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.cloudstack.framework.messagebus.MessageBus;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.auth.UserOAuth2Authenticator;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -43,17 +43,16 @@ import org.apache.commons.lang3.StringUtils;
 
 import org.apache.commons.lang3.ArrayUtils;
 
-import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import com.cloud.domain.Domain;
+import com.cloud.domain.DomainVO;
+import com.cloud.user.DomainManager;
+import com.cloud.user.DomainService;
+import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
 
 public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthManager, Manager, Configurable {
-    @Inject
-    private UserDao _userDao;
 
     @Inject
     protected OauthProviderDao _oauthProviderDao;
@@ -70,7 +69,7 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
 
     @Override
     public List<Class<?>> getAuthCommands() {
-        List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        List<Class<?>> cmdList = new ArrayList<>();
         cmdList.add(OauthLoginAPIAuthenticatorCmd.class);
         cmdList.add(ListOAuthProvidersCmd.class);
         cmdList.add(VerifyOAuthCodeAndGetUserCmd.class);
@@ -111,7 +110,7 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
 
     @Override
     public List<Class<?>> getCommands() {
-        List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        List<Class<?>> cmdList = new ArrayList<>();
         cmdList.add(RegisterOAuthProviderCmd.class);
         cmdList.add(DeleteOAuthProviderCmd.class);
         cmdList.add(UpdateOAuthProviderCmd.class);
@@ -167,6 +166,8 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
         String redirectUri = StringUtils.trim(cmd.getRedirectUri());
         String secretKey = StringUtils.trim(cmd.getSecretKey());
         Long domainId = normalizeGlobalScope(resolveDomainIdFromIdOrPath(cmd.getDomainId(), cmd.getDomainPath()));
+        String authorizeUrl = StringUtils.trim(cmd.getAuthorizeUrl());
+        String tokenUrl = StringUtils.trim(cmd.getTokenUrl());
 
         if (!isOAuthPluginEnabled(domainId)) {
             throw new CloudRuntimeException("OAuth is not enabled, please enable to register");
@@ -182,7 +183,7 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
             }
         }
 
-        return saveOauthProvider(provider, description, clientId, secretKey, redirectUri, domainId);
+        return saveOauthProvider(provider, description, clientId, secretKey, redirectUri, authorizeUrl, tokenUrl, domainId);
     }
 
     @Override
@@ -209,6 +210,8 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
         String clientId = StringUtils.trim(cmd.getClientId());
         String redirectUri = StringUtils.trim(cmd.getRedirectUri());
         String secretKey = StringUtils.trim(cmd.getSecretKey());
+        String authorizeUrl = StringUtils.trim(cmd.getAuthorizeUrl());
+        String tokenUrl = StringUtils.trim(cmd.getTokenUrl());
         Boolean enabled = cmd.getEnabled();
 
         OauthProviderVO providerVO = _oauthProviderDao.findById(id);
@@ -252,6 +255,12 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
         if (StringUtils.isNotEmpty(secretKey)) {
             providerVO.setSecretKey(secretKey);
         }
+        if (StringUtils.isNotEmpty(authorizeUrl)) {
+            providerVO.setAuthorizeUrl(authorizeUrl);
+        }
+        if (StringUtils.isNotEmpty(tokenUrl)) {
+            providerVO.setTokenUrl(tokenUrl);
+        }
         if (enabled != null) {
             providerVO.setEnabled(enabled);
         }
@@ -262,7 +271,7 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
         return _oauthProviderDao.findById(id);
     }
 
-    private OauthProviderVO saveOauthProvider(String provider, String description, String clientId, String secretKey, String redirectUri, Long domainId) {
+    private OauthProviderVO saveOauthProvider(String provider, String description, String clientId, String secretKey, String redirectUri, String authorizeUrl, String tokenUrl, Long domainId) {
         final OauthProviderVO oauthProviderVO = new OauthProviderVO();
 
         oauthProviderVO.setProvider(provider);
@@ -271,6 +280,8 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
         oauthProviderVO.setSecretKey(secretKey);
         oauthProviderVO.setRedirectUri(redirectUri);
         oauthProviderVO.setDomainId(domainId);
+        oauthProviderVO.setAuthorizeUrl(authorizeUrl);
+        oauthProviderVO.setTokenUrl(tokenUrl);
         oauthProviderVO.setEnabled(true);
 
         _oauthProviderDao.persist(oauthProviderVO);
