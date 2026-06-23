@@ -143,9 +143,9 @@ the extension is created.  CloudStack sets it to:
 cmk createExtension \
     name=my-sdn \
     type=NetworkOrchestrator \
-    "details[0].network.services=SourceNat,StaticNat,PortForwarding,Firewall,Lb,Dhcp,Dns,UserData,CustomAction" \
-    "details[1].network.service.capabilities=$(cat my-sdn-capabilities.json)" \
-    "details[2].network.isolation.method=NetworkExtension"
+    details[0].network.services="SourceNat,StaticNat,PortForwarding,Firewall,Lb,Dhcp,Dns,UserData,CustomAction" \
+    details[1].network.service.capabilities="$(cat my-sdn-capabilities.json)" \
+    details[2].network.isolation.method="NetworkExtension"
 ```
 
 `network.service.capabilities` is a JSON object — see
@@ -175,9 +175,21 @@ cmk registerExtension \
     id=${EXT_ID} \
     resourcetype=PhysicalNetwork \
     resourceid=${PHYS_ID} \
-    "details[0].hosts=192.168.1.10,192.168.1.11" \
-    "details[1].username=root" \
-    "details[2].password=s3cr3t"
+    details[0].hosts="192.168.1.10,192.168.1.11" \
+    details[1].username="root" \
+    details[2].password="s3cr3t"
+```
+
+To update the registration details later, use `updateRegisteredExtension`:
+
+```bash
+cmk updateRegisteredExtension \
+    extensionid=${EXT_ID} \
+    resourcetype=PhysicalNetwork \
+    resourceid=${PHYS_ID} \
+    details[0].hosts="192.168.1.10,192.168.1.11" \
+    details[1].username="root" \
+    details[2].password="s3cr3t"
 ```
 
 Any key/value pairs you pass here are stored with the physical-network
@@ -208,16 +220,18 @@ cmk createNetworkOffering \
     displaytext="My SDN network offering" \
     guestiptype=Isolated \
     traffictype=GUEST \
-    supportedservices=Dhcp,Dns,UserData,SourceNat,StaticNat,PortForwarding,Firewall,Lb \
-    "serviceProviderList[Dhcp]=my-sdn" \
-    "serviceProviderList[Dns]=my-sdn" \
-    "serviceProviderList[UserData]=my-sdn" \
-    "serviceProviderList[SourceNat]=my-sdn" \
-    "serviceProviderList[StaticNat]=my-sdn" \
-    "serviceProviderList[PortForwarding]=my-sdn" \
-    "serviceProviderList[Firewall]=my-sdn" \
-    "serviceProviderList[Lb]=my-sdn" \
-    "serviceCapabilityList[SourceNat][SupportedSourceNatTypes]=peraccount"
+    supportedservices="Dhcp,Dns,UserData,SourceNat,StaticNat,PortForwarding,Firewall,Lb" \
+    serviceProviderList[0].service=Dhcp           serviceProviderList[0].provider=my-sdn \
+    serviceProviderList[1].service=Dns            serviceProviderList[1].provider=my-sdn \
+    serviceProviderList[2].service=UserData       serviceProviderList[2].provider=my-sdn \
+    serviceProviderList[3].service=SourceNat      serviceProviderList[3].provider=my-sdn \
+    serviceProviderList[4].service=StaticNat      serviceProviderList[4].provider=my-sdn \
+    serviceProviderList[5].service=PortForwarding serviceProviderList[5].provider=my-sdn \
+    serviceProviderList[6].service=Firewall       serviceProviderList[6].provider=my-sdn \
+    serviceProviderList[7].service=Lb             serviceProviderList[7].provider=my-sdn \
+    serviceCapabilityList[0].service=SourceNat \
+    serviceCapabilityList[0].capabilitytype=SupportedSourceNatTypes \
+    serviceCapabilityList[0].capabilityvalue=peraccount
 cmk updateNetworkOffering id=<offering-id> state=Enabled
 ```
 
