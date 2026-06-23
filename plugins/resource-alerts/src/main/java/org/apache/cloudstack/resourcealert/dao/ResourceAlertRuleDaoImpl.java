@@ -31,6 +31,8 @@ public class ResourceAlertRuleDaoImpl extends GenericDaoBase<ResourceAlertRuleVO
     private final SearchBuilder<ResourceAlertRuleVO> activeSearch;
     private final SearchBuilder<ResourceAlertRuleVO> accountIdSearch;
     private final SearchBuilder<ResourceAlertRuleVO> resourceTypeAndIdSearch;
+    private final SearchBuilder<ResourceAlertRuleVO> activeByAccountSearch;
+    private final SearchBuilder<ResourceAlertRuleVO> specificRuleSearch;
 
     public ResourceAlertRuleDaoImpl() {
         activeSearch = createSearchBuilder();
@@ -45,6 +47,18 @@ public class ResourceAlertRuleDaoImpl extends GenericDaoBase<ResourceAlertRuleVO
         resourceTypeAndIdSearch.and("resourceType", resourceTypeAndIdSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
         resourceTypeAndIdSearch.and("resourceId", resourceTypeAndIdSearch.entity().getResourceId(), SearchCriteria.Op.EQ);
         resourceTypeAndIdSearch.done();
+
+        activeByAccountSearch = createSearchBuilder();
+        activeByAccountSearch.and("accountId", activeByAccountSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        activeByAccountSearch.and("removed", activeByAccountSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
+        activeByAccountSearch.done();
+
+        specificRuleSearch = createSearchBuilder();
+        specificRuleSearch.and("resourceType", specificRuleSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
+        specificRuleSearch.and("metric", specificRuleSearch.entity().getMetric(), SearchCriteria.Op.EQ);
+        specificRuleSearch.and("resourceId", specificRuleSearch.entity().getResourceId(), SearchCriteria.Op.EQ);
+        specificRuleSearch.and("removed", specificRuleSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
+        specificRuleSearch.done();
     }
 
     @Override
@@ -79,5 +93,21 @@ public class ResourceAlertRuleDaoImpl extends GenericDaoBase<ResourceAlertRuleVO
             sc.setParameters("resourceId", (Object) null);
         }
         return listBy(sc);
+    }
+
+    @Override
+    public int countActiveByAccountId(long accountId) {
+        SearchCriteria<ResourceAlertRuleVO> sc = activeByAccountSearch.create();
+        sc.setParameters("accountId", accountId);
+        return getCount(sc);
+    }
+
+    @Override
+    public boolean existsSpecificRule(ResourceAlertRule.ResourceType resourceType, String metric, long resourceId) {
+        SearchCriteria<ResourceAlertRuleVO> sc = specificRuleSearch.create();
+        sc.setParameters("resourceType", resourceType);
+        sc.setParameters("metric", metric);
+        sc.setParameters("resourceId", resourceId);
+        return getCount(sc) > 0;
     }
 }
