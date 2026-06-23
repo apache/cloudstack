@@ -63,7 +63,9 @@ export default {
       icon: 'delete-outlined',
       label: 'label.delete',
       message: 'message.confirm.delete.resource.alert.rule',
-      dataView: true
+      dataView: true,
+      groupAction: true,
+      groupMap: (selection) => { return selection.map(x => { return { id: x.id } }) }
     }
   ]
 }

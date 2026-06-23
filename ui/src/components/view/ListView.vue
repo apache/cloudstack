@@ -1227,7 +1227,8 @@ export default {
         'vmsnapshot', 'backup', 'guestnetwork', 'vpc', 'publicip', 'vpnuser', 'vpncustomergateway', 'vnfapp',
         'project', 'account', 'systemvm', 'router', 'computeoffering', 'systemoffering',
         'diskoffering', 'backupoffering', 'networkoffering', 'vpcoffering', 'ilbvm', 'kubernetes', 'comment', 'buckets',
-        'webhook', 'webhookdeliveries', 'sharedfs', 'ipv4subnets', 'asnumbers', 'guestos', 'gpucard', 'gpudevices', 'vgpuprofile'
+        'webhook', 'webhookdeliveries', 'sharedfs', 'ipv4subnets', 'asnumbers', 'guestos', 'gpucard', 'gpudevices', 'vgpuprofile',
+        'resourcealertrule'
       ].includes(this.$route.name)
     },
     getDateAtTimeZone (date, timezone) {
