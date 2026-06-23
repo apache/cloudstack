@@ -22,6 +22,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.clvm.ClvmPoolManager;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
@@ -134,7 +135,11 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
         }
 
         if (volume.getProvisioningType() != null) {
-            volResponse.setProvisioningType(volume.getProvisioningType().toString());
+            Long poolId = volume.getPoolId();
+            StoragePoolVO poolVO = primaryDataStoreDao.findById(poolId);
+            if (poolVO == null || !ClvmPoolManager.isClvmPoolType(poolVO.getPoolType())) {
+                volResponse.setProvisioningType(volume.getProvisioningType().toString());
+            }
         }
 
         // Show the virtual size of the volume
