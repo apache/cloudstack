@@ -163,6 +163,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
             length = 1048576)
     private String userData;
 
+    @ACL
     @Parameter(name = ApiConstants.USER_DATA_ID, type = CommandType.UUID, entityType = UserDataResponse.class, description = "The ID of the Userdata", since = "4.18")
     private Long userdataId;
 
