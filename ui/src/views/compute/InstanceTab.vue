@@ -95,6 +95,9 @@
       <a-tab-pane :tab="$t('label.settings')" key="settings">
         <DetailSettings :resource="dataResource" :loading="loading" />
       </a-tab-pane>
+      <a-tab-pane :tab="$t('label.resource.alerts')" key="resourcealerts" v-if="'listResourceAlerts' in $store.getters.apis">
+        <ResourceAlertsTab :resource="dataResource" :loading="loading" />
+      </a-tab-pane>
       <a-tab-pane :tab="$t('label.events')" key="events" v-if="'listEvents' in $store.getters.apis">
         <events-tab :resource="dataResource" resourceType="VirtualMachine" :loading="loading" />
       </a-tab-pane>
@@ -151,6 +154,7 @@ import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import AnnotationsTab from '@/components/view/AnnotationsTab'
 import VolumesTab from '@/components/view/VolumesTab.vue'
+import ResourceAlertsTab from '@/components/view/ResourceAlertsTab.vue'
 import SecurityGroupSelection from '@views/compute/wizard/SecurityGroupSelection'
 import GPUTab from '@/components/view/GPUTab.vue'
 
@@ -168,6 +172,7 @@ export default {
     InstanceSchedules,
     ListResourceTable,
     SecurityGroupSelection,
+    ResourceAlertsTab,
     TooltipButton,
     ResourceIcon,
     AnnotationsTab,
