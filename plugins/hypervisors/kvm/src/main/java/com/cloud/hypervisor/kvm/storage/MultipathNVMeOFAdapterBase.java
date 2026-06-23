@@ -86,6 +86,9 @@ public abstract class MultipathNVMeOFAdapterBase implements StorageAdaptor {
      * path set to {@code /dev/disk/by-id/nvme-eui.<eui>}.
      */
     public AddressInfo parseAndValidatePath(String inPath) {
+        if (inPath == null) {
+            throw new CloudRuntimeException("Cannot parse null volume path");
+        }
         String type = null;
         String address = null;
         String connectionId = null;
