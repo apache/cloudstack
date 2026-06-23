@@ -162,3 +162,9 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.form {
+  min-width: 450px;
+}
+</style>
