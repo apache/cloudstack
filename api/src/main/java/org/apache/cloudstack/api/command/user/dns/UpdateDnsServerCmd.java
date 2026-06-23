@@ -132,7 +132,7 @@ public class UpdateDnsServerCmd extends BaseCmd {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update DNS server");
             }
         } catch (Exception ex) {
-            logger.error("Failed to add update server", ex);
+            logger.error("Failed to update DNS server", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
     }
