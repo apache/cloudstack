@@ -1283,7 +1283,7 @@ to suppress the allocation:
 cmk createExtension \
     name=my-sdn \
     ... \
-    "details[N].network.allocate.extension.ip=false"
+    details[N].network.allocate.extension.ip=false
 ```
 
 When this detail is `false`, `ensureExtensionIp` returns `null` for any network
