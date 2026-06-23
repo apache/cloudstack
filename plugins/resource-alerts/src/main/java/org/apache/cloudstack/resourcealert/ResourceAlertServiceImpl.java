@@ -74,6 +74,12 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
         boolean email = cmd.getEmail() != null && cmd.getEmail();
 
         Account owner = resolveOwner(cmd.getAccountName(), cmd.getDomainId());
+
+        int limit = ResourceAlertManagerImpl.RULES_PER_ACCOUNT_LIMIT.value();
+        if (limit > 0 && ruleDao.countActiveByAccountId(owner.getId()) >= limit) {
+            throw new InvalidParameterValueException(
+                    "Account has reached the maximum of " + limit + " resource alert rules");
+        }
         long domainId = owner.getDomainId();
 
         ResourceAlertRuleVO rule = new ResourceAlertRuleVO(

@@ -44,7 +44,6 @@ import org.apache.cloudstack.resourcealert.dao.ResourceAlertRuleDao;
 import org.apache.cloudstack.resourcealert.vo.ResourceAlertRuleVO;
 import org.apache.cloudstack.resourcealert.vo.ResourceAlertVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.mailing.SMTPMailProperties;
 import org.apache.cloudstack.utils.mailing.SMTPMailSender;
 import org.junit.Before;
@@ -57,14 +56,13 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import com.cloud.host.Host;
 import com.cloud.host.HostStats;
-import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.server.ResourceTag;
 import com.cloud.server.StatsCollector;
 import com.cloud.storage.StorageStats;
-import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VmStats;
@@ -84,6 +82,7 @@ public class ResourceAlertManagerImplTest {
     @Mock VolumeDao volumeDao;
     @Mock StatsCollector statsCollector;
     @Mock ConfigurationDao configDao;
+    @Mock ResourceTagDao resourceTagDao;
     @Mock SMTPMailSender mailSender;
 
     @Captor ArgumentCaptor<ResourceAlertVO> alertCaptor;
@@ -132,8 +131,6 @@ public class ResourceAlertManagerImplTest {
             @Override public boolean awaitTermination(long t, TimeUnit u) { return true; }
         };
     }
-
-    // ── Phase 1/2: evaluation engine ──────────────────────────────────────────
 
     @Test
     public void testVmCpuRuleFiresWhenThresholdBreached() {
@@ -349,8 +346,6 @@ public class ResourceAlertManagerImplTest {
         assertEquals(90.0, alertCaptor.getValue().getMetricValue(), 0.01);
     }
 
-    // ── Phase 3: event bus + email ─────────────────────────────────────────────
-
     @Test
     public void testEventBusPublishedOnFiring() {
         ResourceAlertRuleVO rule = vmCpuRule(VM_ID);
@@ -479,6 +474,91 @@ public class ResourceAlertManagerImplTest {
         manager.evaluateRules();
 
         verify(manager).publishAlertEvent(eq(42L), anyString(), anyString());
+    }
+
+    @Test
+    public void testGenericRuleSkipsOptedOutVm() {
+        ResourceAlertRuleVO rule = vmCpuRule(null);
+        when(ruleDao.listActive()).thenReturn(Collections.singletonList(rule));
+
+        UserVmVO vm = mock(UserVmVO.class);
+        when(vm.getId()).thenReturn(VM_ID);
+        when(vm.getState()).thenReturn(VirtualMachine.State.Running);
+        when(userVmDao.listByAccountId(1L)).thenReturn(Collections.singletonList(vm));
+
+        ResourceTag optOutTag = mock(ResourceTag.class);
+        when(optOutTag.getValue()).thenReturn("true");
+        when(resourceTagDao.findByKey(VM_ID, ResourceTag.ResourceObjectType.UserVm, "resource.alert.opt.out"))
+                .thenReturn(optOutTag);
+
+        manager.evaluateRules();
+
+        verify(alertDao, never()).persist(any());
+    }
+
+    @Test
+    public void testGenericRuleDoesNotSkipVmWithOptOutTagValueFalse() {
+        ResourceAlertRuleVO rule = vmCpuRule(null);
+        when(ruleDao.listActive()).thenReturn(Collections.singletonList(rule));
+
+        UserVmVO vm = mock(UserVmVO.class);
+        when(vm.getId()).thenReturn(VM_ID);
+        when(vm.getState()).thenReturn(VirtualMachine.State.Running);
+        when(userVmDao.listByAccountId(1L)).thenReturn(Collections.singletonList(vm));
+
+        ResourceTag tag = mock(ResourceTag.class);
+        when(tag.getValue()).thenReturn("false");
+        when(resourceTagDao.findByKey(VM_ID, ResourceTag.ResourceObjectType.UserVm, "resource.alert.opt.out"))
+                .thenReturn(tag);
+        when(ruleDao.existsSpecificRule(ResourceAlertRule.ResourceType.VirtualMachine, "CPU_UTILIZATION", VM_ID))
+                .thenReturn(false);
+
+        VmStats stats = mock(VmStats.class);
+        when(stats.getCPUUtilization()).thenReturn(85.0);
+        when(statsCollector.getVmStats(VM_ID, false)).thenReturn(stats);
+        when(alertDao.findLastFiredForRule(anyLong(), eq(VM_ID))).thenReturn(null);
+
+        manager.evaluateRules();
+
+        verify(alertDao).persist(any());
+    }
+
+    @Test
+    public void testGenericRuleSkipsVmWithSpecificRuleForSameMetric() {
+        ResourceAlertRuleVO rule = vmCpuRule(null);
+        when(ruleDao.listActive()).thenReturn(Collections.singletonList(rule));
+
+        UserVmVO vm = mock(UserVmVO.class);
+        when(vm.getId()).thenReturn(VM_ID);
+        when(vm.getState()).thenReturn(VirtualMachine.State.Running);
+        when(userVmDao.listByAccountId(1L)).thenReturn(Collections.singletonList(vm));
+
+        when(resourceTagDao.findByKey(VM_ID, ResourceTag.ResourceObjectType.UserVm, "resource.alert.opt.out"))
+                .thenReturn(null);
+        when(ruleDao.existsSpecificRule(ResourceAlertRule.ResourceType.VirtualMachine, "CPU_UTILIZATION", VM_ID))
+                .thenReturn(true);
+
+        manager.evaluateRules();
+
+        verify(alertDao, never()).persist(any());
+    }
+
+    @Test
+    public void testSpecificRuleIgnoresOptOutAndPrecedenceChecks() {
+        // specific rule (non-null resourceId) must not check opt-out or precedence
+        ResourceAlertRuleVO rule = vmCpuRule(VM_ID);
+        when(ruleDao.listActive()).thenReturn(Collections.singletonList(rule));
+
+        VmStats stats = mock(VmStats.class);
+        when(stats.getCPUUtilization()).thenReturn(85.0);
+        when(statsCollector.getVmStats(VM_ID, false)).thenReturn(stats);
+        when(alertDao.findLastFiredForRule(anyLong(), eq(VM_ID))).thenReturn(null);
+
+        manager.evaluateRules();
+
+        verify(alertDao).persist(any());
+        verify(resourceTagDao, never()).findByKey(anyLong(), any(), anyString());
+        verify(ruleDao, never()).existsSpecificRule(any(), anyString(), anyLong());
     }
 
     @Test

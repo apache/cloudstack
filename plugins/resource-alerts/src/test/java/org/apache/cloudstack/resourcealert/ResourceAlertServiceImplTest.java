@@ -20,6 +20,9 @@ package org.apache.cloudstack.resourcealert;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.cloud.domain.DomainVO;
+import com.cloud.user.Account;
+
 import org.apache.cloudstack.resourcealert.api.command.admin.CreateResourceAlertRuleCmd;
 import org.apache.cloudstack.resourcealert.api.command.admin.DeleteResourceAlertRuleCmd;
 import org.apache.cloudstack.resourcealert.api.command.admin.ListResourceAlertsCmd;
@@ -116,6 +119,28 @@ public class ResourceAlertServiceImplTest {
         when(ruleDao.findById(999L)).thenReturn(null);
 
         service.deleteResourceAlertRule(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCreateFailsWhenAccountAtRuleLimit() {
+        CreateResourceAlertRuleCmd cmd = mock(CreateResourceAlertRuleCmd.class);
+        when(cmd.getResourceType()).thenReturn("VirtualMachine");
+        when(cmd.getCondition()).thenReturn("GT");
+        when(cmd.getSeverity()).thenReturn("HIGH");
+        when(cmd.getMetric()).thenReturn("CPU_UTILIZATION");
+        when(cmd.getAccountName()).thenReturn("testuser");
+        when(cmd.getDomainId()).thenReturn(1L);
+
+        when(domainDao.findById(1L)).thenReturn(mock(DomainVO.class));
+
+        Account account = mock(Account.class);
+        when(account.getId()).thenReturn(42L);
+        when(accountManager.getActiveAccountByName("testuser", 1L)).thenReturn(account);
+
+        // default limit is 20; returning 20 means account is at the limit
+        when(ruleDao.countActiveByAccountId(42L)).thenReturn(20);
+
+        service.createResourceAlertRule(cmd);
     }
 
     @Test(expected = InvalidParameterValueException.class)
