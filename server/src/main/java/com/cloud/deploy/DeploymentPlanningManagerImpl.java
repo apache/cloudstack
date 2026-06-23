@@ -20,7 +20,6 @@ import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -36,6 +35,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.gpu.dao.VgpuProfileDao;
 import com.cloud.resource.ResourceState;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
@@ -806,18 +806,49 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                 return false;
             }
         }
+
+        DetailVO guestOsRule = _hostDetailsDao.findDetail(host.getId(), HostVO.GUEST_OS_RULE);
+        if (guestOsRule != null) {
+            return isHostGuestOsCompatible(vmProfile, host, guestOsRule);
+        }
+
+        DetailVO guestOsCategoryId = _hostDetailsDao.findDetail(host.getId(), HostVO.GUEST_OS_CATEGORY_ID);
+        if (guestOsCategoryId != null) {
+            return isHostGuestOsCategoryCompatible(vmProfile, host, guestOsCategoryId);
+        }
+
+        return true;
+    }
+
+    private boolean isHostGuestOsCategoryCompatible(VirtualMachineProfile vmProfile, HostVO host, DetailVO guestOsCategoryId) {
         long guestOSId = vmProfile.getTemplate().getGuestOSId();
         GuestOSVO guestOS = _guestOSDao.findById(guestOSId);
-        if (guestOS != null) {
-            long guestOSCategoryId = guestOS.getCategoryId();
-            DetailVO hostDetail = _hostDetailsDao.findDetail(host.getId(), "guest.os.category.id");
-            if (hostDetail != null) {
-                String guestOSCategoryIdString = hostDetail.getValue();
-                if (String.valueOf(guestOSCategoryId) != guestOSCategoryIdString) {
-                    logger.debug("The last host has different guest.os.category.id than guest os category of VM, skipping");
-                    return false;
-                }
-            }
+
+        if (guestOS == null) {
+            return true;
+        }
+
+        long guestOSCategoryId = guestOS.getCategoryId();
+        String guestOSCategoryIdString = guestOsCategoryId.getValue();
+        if (!String.valueOf(guestOSCategoryId).equals(guestOSCategoryIdString)) {
+            logger.debug("The last host has different `{}` than guest os category of VM, skipping", Host.GUEST_OS_CATEGORY_ID);
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean isHostGuestOsCompatible(VirtualMachineProfile vmProfile, HostVO host, DetailVO guestOsRule) {
+        VMTemplateVO template = (VMTemplateVO) vmProfile.getTemplate();
+        String templateGuestOSName = ApiDBUtils.getTemplateGuestOSName(template);
+
+        List<HostVO> incompatibleHosts = _hostDao.findHostsWithGuestOsRulesThatDidNotMatchOsOfGuestVm(templateGuestOSName);
+
+        boolean isHostCompatible = incompatibleHosts.stream().noneMatch(incompatibleHost -> incompatibleHost.getId() == host.getId());
+
+        if (!isHostCompatible) {
+            logger.debug("The template [{}] is incompatible with the host [{}] due to the guest OS rule [{}].", template, host, guestOsRule);
+            return false;
         }
         return true;
     }
@@ -1714,20 +1745,19 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
     @Override
     public void reorderHostsByPriority(Map<Long, Integer> priorities, List<Host> hosts) {
-        logger.debug("Re-ordering hosts {} by priorities {}", hosts, priorities);
+        if (CollectionUtils.isEmpty(hosts)){
+            logger.debug("Hosts list is empty; therefore, there is nothing to reorder.");
+            return;
+        }
 
+        logger.info("Re-ordering hosts [{}] by priorities [{}].", hosts, priorities);
         hosts.removeIf(host -> DataCenterDeployment.PROHIBITED_HOST_PRIORITY.equals(getHostPriority(priorities, host.getId())));
+        hosts.sort((host1, host2) -> {
+            int res = getHostPriority(priorities, host1.getId()).compareTo(getHostPriority(priorities, host2.getId()));
+            return -res;
+        });
 
-        Collections.sort(hosts, new Comparator<>() {
-                    @Override
-                    public int compare(Host host1, Host host2) {
-                        int res = getHostPriority(priorities, host1.getId()).compareTo(getHostPriority(priorities, host2.getId()));
-                        return -res;
-                    }
-                }
-        );
-
-        logger.debug("Hosts after re-ordering are: {}", hosts);
+        logger.info("Hosts after re-ordering are: [{}].", hosts);
     }
 
     private Integer getHostPriority(Map<Long, Integer> priorities, Long hostId) {

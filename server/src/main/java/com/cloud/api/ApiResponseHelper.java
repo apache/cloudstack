@@ -2890,6 +2890,11 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
             }
         }
 
+        if (CallContext.current().getCallingAccount().getType() == Account.Type.ADMIN &&
+                network.getVpcId() == null && network.getGuestType() == Network.GuestType.Isolated) {
+            response.setKeepMacAddressOnPublicNic(network.getKeepMacAddressOnPublicNic());
+        }
+
         response.setObjectName("network");
         return response;
     }
@@ -3653,6 +3658,9 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
             }
         }
 
+        if (CallContext.current().getCallingAccount().getType() == Account.Type.ADMIN) {
+            response.setKeepMacAddressOnPublicNic(vpc.getKeepMacAddressOnPublicNic());
+        }
         response.setObjectName("vpc");
         return response;
     }
@@ -4751,6 +4759,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         setResponseIpAddress(result, response);
         response.setNicId(nic.getUuid());
         response.setNwId(network.getUuid());
+        response.setDescription(result.getDescription());
         response.setObjectName("nicsecondaryip");
         return response;
     }
@@ -4837,6 +4846,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
                 for (NicSecondaryIpVO ip : secondaryIps) {
                     NicSecondaryIpResponse ipRes = new NicSecondaryIpResponse();
                     ipRes.setId(ip.getUuid());
+                    ipRes.setDescription(ip.getDescription());
                     setResponseIpAddress(ip, ipRes);
                     ipList.add(ipRes);
                 }

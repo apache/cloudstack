@@ -23,6 +23,10 @@ import org.apache.cloudstack.api.command.user.storage.sharedfs.ChangeSharedFSDis
 import org.apache.cloudstack.api.command.user.storage.sharedfs.ChangeSharedFSServiceOfferingCmd;
 import org.apache.cloudstack.api.command.user.storage.sharedfs.CreateSharedFSCmd;
 import org.apache.cloudstack.api.command.user.storage.sharedfs.DestroySharedFSCmd;
+import org.apache.cloudstack.api.command.user.storage.sharedfs.ListSharedFSCmd;
+import org.apache.cloudstack.api.command.user.storage.sharedfs.UpdateSharedFSCmd;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.SharedFSResponse;
 
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ManagementServerException;
@@ -30,11 +34,6 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.VirtualMachineMigrationException;
-
-import org.apache.cloudstack.api.command.user.storage.sharedfs.ListSharedFSCmd;
-import org.apache.cloudstack.api.command.user.storage.sharedfs.UpdateSharedFSCmd;
-import org.apache.cloudstack.api.response.SharedFSResponse;
-import org.apache.cloudstack.api.response.ListResponse;
 
 public interface SharedFSService {
 
@@ -69,4 +68,10 @@ public interface SharedFSService {
     SharedFS recoverSharedFS(Long sharedFSId);
 
     void deleteSharedFS(Long sharedFSId);
+
+    SharedFS getSharedFSByUuid(String uuid);
+
+    SharedFS getSharedFSForVmId(long vmId);
+
+    SharedFS updateSharedFSPostRestore(long sharedFsId, long volumeId);
 }

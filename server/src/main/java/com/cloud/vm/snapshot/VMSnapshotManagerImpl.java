@@ -436,6 +436,12 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             vmSnapshotType = VMSnapshot.Type.Disk;
         }
 
+        // CLVM_NG: Block VM snapshots until Phase 2 implementation is complete
+        if (rootVolumePool.getPoolType() == Storage.StoragePoolType.CLVM_NG) {
+            throw new InvalidParameterValueException("VM snapshots are not yet supported on CLVM_NG storage pools. " +
+                    "This feature will be available in a future release.");
+        }
+
         try {
             return createAndPersistVMSnapshot(userVmVo, vsDescription, vmSnapshotName, vsDisplayName, vmSnapshotType);
         } catch (Exception e) {
@@ -756,6 +762,13 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
                 && userVm.getState() != VirtualMachine.State.Stopped) {
             throw new InvalidParameterValueException(
                     "Instance Snapshot reverting failed because the Instance is not in Running or Stopped state.");
+        }
+
+        if (userVm.getState() == VirtualMachine.State.Running && vmSnapshotVo.getType() == VMSnapshot.Type.Disk) {
+            throw new InvalidParameterValueException(
+                    "Reverting to the Instance Snapshot is not allowed for running Instances as this would result in an Instance state change. " +
+                            "For running Instances only Snapshots with memory can be reverted. " +
+                            "In order to revert to a Snapshot without memory you need to first stop the Instance.");
         }
 
         if (userVm.getState() == VirtualMachine.State.Running && vmSnapshotVo.getType() == VMSnapshot.Type.Disk) {

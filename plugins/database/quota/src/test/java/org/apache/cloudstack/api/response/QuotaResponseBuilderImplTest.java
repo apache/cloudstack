@@ -17,6 +17,8 @@
 package org.apache.cloudstack.api.response;
 
 import java.math.BigDecimal;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -36,8 +38,11 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.AccountManager;
 import com.cloud.user.UserVO;
 import com.cloud.utils.Pair;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.QuotaBalanceCmd;
 import org.apache.cloudstack.api.command.QuotaConfigureEmailCmd;
 import org.apache.cloudstack.api.command.QuotaCreditsListCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateListCmd;
@@ -67,6 +72,7 @@ import org.apache.cloudstack.quota.vo.QuotaCreditsVO;
 import org.apache.cloudstack.quota.vo.QuotaEmailConfigurationVO;
 import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
+import org.apache.cloudstack.quota.vo.QuotaUsageJoinVO;
 import org.apache.cloudstack.utils.jsinterpreter.JsInterpreter;
 
 import org.apache.commons.lang3.time.DateUtils;
@@ -151,7 +157,7 @@ public class QuotaResponseBuilderImplTest extends TestCase {
     Date date = new Date();
 
     @Mock
-    Account accountMock;
+    AccountVO accountMock;
 
     @Mock
     DomainVO domainVoMock;
@@ -182,6 +188,9 @@ public class QuotaResponseBuilderImplTest extends TestCase {
 
     @Mock
     User callerUserMock;
+
+    @Mock
+    EntityManager entityManagerMock;
 
     @Before
     public void setup() {
@@ -245,7 +254,7 @@ public class QuotaResponseBuilderImplTest extends TestCase {
         credit.setCredit(new BigDecimal(amount));
 
         Mockito.when(quotaCreditsDaoMock.saveCredits(Mockito.any(QuotaCreditsVO.class))).thenReturn(credit);
-        Mockito.when(quotaBalanceDaoMock.lastQuotaBalance(Mockito.anyLong(), Mockito.anyLong(), Mockito.any(Date.class))).thenReturn(new BigDecimal(111));
+        Mockito.when(quotaBalanceDaoMock.getLastQuotaBalance(Mockito.anyLong(), Mockito.anyLong())).thenReturn(new BigDecimal(111));
         Mockito.doReturn(userVoMock).when(quotaResponseBuilderSpy).getCreditorForQuotaCredits(credit);
 
         AccountVO account = new AccountVO();
@@ -289,33 +298,6 @@ public class QuotaResponseBuilderImplTest extends TestCase {
         template.setTemplateName("template");
         templates.add(template);
         assertTrue(quotaResponseBuilderSpy.updateQuotaEmailTemplate(cmd));
-    }
-
-    @Test
-    public void testCreateQuotaLastBalanceResponse() {
-        List<QuotaBalanceVO> quotaBalance = new ArrayList<>();
-        // null balance test
-        try {
-            quotaResponseBuilderSpy.createQuotaLastBalanceResponse(null, new Date());
-        } catch (InvalidParameterValueException e) {
-            assertTrue(e.getMessage().equals("There are no balance entries on or before the requested date."));
-        }
-
-        // empty balance test
-        try {
-            quotaResponseBuilderSpy.createQuotaLastBalanceResponse(quotaBalance, new Date());
-        } catch (InvalidParameterValueException e) {
-            assertTrue(e.getMessage().equals("There are no balance entries on or before the requested date."));
-        }
-
-        // valid balance test
-        QuotaBalanceVO entry = new QuotaBalanceVO();
-        entry.setAccountId(2L);
-        entry.setCreditBalance(new BigDecimal(100));
-        quotaBalance.add(entry);
-        quotaBalance.add(entry);
-        QuotaBalanceResponse resp = quotaResponseBuilderSpy.createQuotaLastBalanceResponse(quotaBalance, null);
-        assertTrue(resp.getStartQuota().compareTo(new BigDecimal(200)) == 0);
     }
 
     @Test
@@ -913,5 +895,294 @@ public class QuotaResponseBuilderImplTest extends TestCase {
 
         Assert.assertTrue(formattedVariables.containsValue("accountname"));
         Assert.assertTrue(formattedVariables.containsValue("zonename"));
+    }
+
+    private List<QuotaBalanceVO> getQuotaBalancesForTest() {
+        List<QuotaBalanceVO> balances = new ArrayList<>();
+
+        QuotaBalanceVO balance = new QuotaBalanceVO();
+        balance.setUpdatedOn(new Date());
+        balance.setCreditBalance(BigDecimal.valueOf(-10.42));
+        balances.add(balance);
+
+        balance = new QuotaBalanceVO();
+        balance.setUpdatedOn(new Date());
+        balance.setCreditBalance(BigDecimal.valueOf(-18.94));
+        balances.add(balance);
+
+        balance = new QuotaBalanceVO();
+        balance.setUpdatedOn(new Date());
+        balance.setCreditBalance(BigDecimal.valueOf(-29.37));
+        balances.add(balance);
+
+        return balances;
+    }
+
+    @Test
+    public void createQuotaBalancesResponseTestCreateResponse() {
+        List<QuotaBalanceVO> balances = getQuotaBalancesForTest();
+
+        QuotaBalanceResponse expected = new QuotaBalanceResponse();
+        expected.setObjectName("balance");
+        expected.setCurrency("$");
+
+        Mockito.doReturn(balances).when(quotaServiceMock).listQuotaBalancesForAccount(Mockito.any(), Mockito.any(), Mockito.any());
+        QuotaBalanceResponse result = quotaResponseBuilderSpy.createQuotaBalanceResponse(new QuotaBalanceCmd());
+
+        Assert.assertEquals(expected.getCurrency(), result.getCurrency());
+
+        for (int i = 0; i < balances.size(); i++) {
+            Assert.assertEquals(balances.get(i).getUpdatedOn(), result.getBalances().get(i).getDate());
+            Assert.assertEquals(balances.get(i).getCreditBalance(), result.getBalances().get(i).getBalance());
+        }
+    }
+
+    @Test
+    public void createDummyRecordForEachQuotaTypeIfUsageTypeIsNotInformedTestUsageTypeDifferentFromNullDoNothing() {
+        List<QuotaUsageJoinVO> listUsage = new ArrayList<>();
+
+        quotaResponseBuilderSpy.createDummyRecordForEachQuotaTypeIfUsageTypeIsNotInformed(listUsage, 1);
+
+        Assert.assertTrue(listUsage.isEmpty());
+    }
+
+    @Test
+    public void createDummyRecordForEachQuotaTypeIfUsageTypeIsNotInformedTestUsageTypeIsNullAddDummyForAllQuotaTypes() {
+        List<QuotaUsageJoinVO> listUsage = new ArrayList<>();
+        listUsage.add(new QuotaUsageJoinVO());
+
+        quotaResponseBuilderSpy.createDummyRecordForEachQuotaTypeIfUsageTypeIsNotInformed(listUsage, null);
+
+        Assert.assertEquals(QuotaTypes.listQuotaTypes().size() + 1, listUsage.size());
+
+        QuotaTypes.listQuotaTypes().entrySet().forEach(entry -> {
+            Assert.assertTrue(listUsage.stream().anyMatch(usage -> usage.getUsageType() == entry.getKey() && usage.getQuotaUsed().equals(BigDecimal.ZERO)));
+        });
+    }
+
+    private List<QuotaUsageJoinVO> getQuotaUsagesForTest() {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+
+        List<QuotaUsageJoinVO> quotaUsages = new ArrayList<>();
+
+        QuotaUsageJoinVO quotaUsage = new QuotaUsageJoinVO();
+        quotaUsage.setAccountId(1l);
+        quotaUsage.setDomainId(2l);
+        quotaUsage.setUsageType(3);
+        quotaUsage.setQuotaUsed(BigDecimal.valueOf(10));
+        try {
+            quotaUsage.setStartDate(sdf.parse("2022-01-01"));
+            quotaUsage.setEndDate(sdf.parse("2022-01-02"));
+        } catch (ParseException ignored) {
+        }
+        quotaUsages.add(quotaUsage);
+
+        quotaUsage = new QuotaUsageJoinVO();
+        quotaUsage.setAccountId(4l);
+        quotaUsage.setDomainId(5l);
+        quotaUsage.setUsageType(3);
+        quotaUsage.setQuotaUsed(null);
+        try {
+            quotaUsage.setStartDate(sdf.parse("2022-01-03"));
+            quotaUsage.setEndDate(sdf.parse("2022-01-04"));
+        } catch (ParseException ignored) {
+        }
+        quotaUsages.add(quotaUsage);
+
+        quotaUsage = new QuotaUsageJoinVO();
+        quotaUsage.setAccountId(6l);
+        quotaUsage.setDomainId(7l);
+        quotaUsage.setUsageType(3);
+        quotaUsage.setQuotaUsed(BigDecimal.valueOf(5));
+        try {
+            quotaUsage.setStartDate(sdf.parse("2022-01-05"));
+            quotaUsage.setEndDate(sdf.parse("2022-01-06"));
+        } catch (ParseException ignored) {
+        }
+        quotaUsages.add(quotaUsage);
+
+        return quotaUsages;
+    }
+
+    @Test
+    public void createStatementItemTestReturnItem() {
+        List<QuotaUsageJoinVO> quotaUsages = getQuotaUsagesForTest();
+        Mockito.doNothing().when(quotaResponseBuilderSpy).setStatementItemResources(Mockito.any(), Mockito.anyInt(), Mockito.any(), Mockito.anyBoolean());
+
+        QuotaStatementItemResponse result = quotaResponseBuilderSpy.createStatementItem(0, quotaUsages, false);
+
+        QuotaUsageJoinVO expected = quotaUsages.get(0);
+        QuotaTypes quotaTypeExpected = QuotaTypes.listQuotaTypes().get(expected.getUsageType());
+        Assert.assertEquals(BigDecimal.valueOf(15), result.getQuotaUsed());
+        Assert.assertEquals(quotaTypeExpected.getQuotaUnit(), result.getUsageUnit());
+        Assert.assertEquals(quotaTypeExpected.getQuotaName(), result.getUsageName());
+    }
+
+    @Test
+    public void setStatementItemResourcesTestDoNotShowResourcesDoNothing() {
+        QuotaStatementItemResponse item = new QuotaStatementItemResponse(1);
+
+        quotaResponseBuilderSpy.setStatementItemResources(item, 0, getQuotaUsagesForTest(), false);
+
+        Assert.assertNull(item.getResources());
+    }
+
+    @Test
+    public void getAccountIdForQuotaStatementTestReturnsProvidedAccount() {
+        long providedAccountId = 200L;
+
+        Mockito.when(accountDaoMock.findByIdIncludingRemoved(providedAccountId)).thenReturn(accountMock);
+        Mockito.doNothing().when(accountManagerMock).checkAccess(callerAccountMock, null, false, accountMock);
+
+        long result = quotaResponseBuilderSpy.getAccountIdForQuotaStatement(providedAccountId, null);
+
+        Assert.assertEquals(200L, result);
+        Mockito.verify(accountManagerMock).checkAccess(callerAccountMock, null, false, accountMock);
+    }
+
+    @Test
+    public void getAccountIdForQuotaStatementTestReturnsNullWhenCallerIsAdminWithoutProvidedAccount() {
+        Mockito.when(callerAccountMock.getType()).thenReturn(Account.Type.ADMIN);
+
+        Long result = quotaResponseBuilderSpy.getAccountIdForQuotaStatement(-1L, null);
+
+        assertNull(result);
+        Mockito.verify(accountManagerMock, Mockito.never()).getAccount(Mockito.anyLong());
+    }
+
+    @Test
+    public void getAccountIdForQuotaStatementTestReturnsNullWhenCallerIsDomainAdminWithoutProvidedAccount() {
+        Mockito.when(callerAccountMock.getType()).thenReturn(Account.Type.DOMAIN_ADMIN);
+
+        Long result = quotaResponseBuilderSpy.getAccountIdForQuotaStatement(-1L, null);
+
+        assertNull(result);
+        Mockito.verify(accountManagerMock, Mockito.never()).getAccount(Mockito.anyLong());
+    }
+
+    @Test
+    public void getAccountIdForQuotaStatementTestReturnsFallbackAccountWhenNoAccountProvidedAndCallerIsNotAdmin() {
+        Mockito.when(callerAccountMock.getType()).thenReturn(Account.Type.NORMAL);
+
+        Mockito.when(accountDaoMock.findByIdIncludingRemoved(300L)).thenReturn(accountMock);
+        Mockito.doNothing().when(accountManagerMock).checkAccess(callerAccountMock, null, false, accountMock);
+
+        long result = quotaResponseBuilderSpy.getAccountIdForQuotaStatement(-1L, 300L);
+
+        assertEquals(300L, result);
+        Mockito.verify(accountManagerMock).checkAccess(callerAccountMock, null, false, accountMock);
+    }
+
+    @Test
+    public void getAccountIdForQuotaStatementTestAccessDeniedForProvidedAccount() {
+        Mockito.when(accountDaoMock.findByIdIncludingRemoved(200L)).thenReturn(accountMock);
+        Mockito.doThrow(new PermissionDeniedException("Access denied"))
+                .when(accountManagerMock).checkAccess(callerAccountMock, null, false, accountMock);
+
+        Assert.assertThrows(PermissionDeniedException.class,
+                () -> quotaResponseBuilderSpy.getAccountIdForQuotaStatement(200L, null));
+        Mockito.verify(accountManagerMock).checkAccess(callerAccountMock, null, false, accountMock);
+    }
+
+    @Test
+    public void getDomainIdsForQuotaStatementTestReturnsNullPairWhenAccountIsProvided() {
+        Pair<Long, List<Long>> result = quotaResponseBuilderSpy.getDomainIdsForQuotaStatement(100L, null, false);
+
+        assertNull(result.first());
+        assertNull(result.second());
+        Mockito.verify(domainDaoMock, Mockito.never()).findByIdIncludingRemoved(Mockito.anyLong());
+    }
+
+    @Test
+    public void getDomainIdsForQuotaStatementTestReturnsProvidedDomainIdNonRecursively() {
+        Mockito.when(domainDaoMock.findByIdIncludingRemoved(5L)).thenReturn(domainVoMock);
+        Mockito.doNothing().when(accountManagerMock).checkAccess(callerAccountMock, domainVoMock);
+
+        Pair<Long, List<Long>> result = quotaResponseBuilderSpy.getDomainIdsForQuotaStatement(null, 5L, false);
+
+        assertEquals(5L, (long) result.first());
+        assertEquals(List.of(5L), result.second());
+        Mockito.verify(accountManagerMock).checkAccess(callerAccountMock, domainVoMock);
+    }
+
+    @Test
+    public void getDomainIdsForQuotaStatementTestReturnsCallerDomainNonRecursively() {
+        Mockito.when(callerAccountMock.getDomainId()).thenReturn(7L);
+
+        Pair<Long, List<Long>> result = quotaResponseBuilderSpy.getDomainIdsForQuotaStatement(null, null, false);
+
+        assertEquals(7L, (long) result.first());
+        assertEquals(List.of(7L), result.second());
+        Mockito.verify(domainDaoMock, Mockito.never()).findByIdIncludingRemoved(Mockito.anyLong());
+    }
+
+    @Test
+    public void getDomainIdsForQuotaStatementTestReturnsProvidedDomainRecursively() {
+        List<Long> domainAndChildren = List.of(5L, 10L, 15L);
+        Mockito.when(domainDaoMock.findByIdIncludingRemoved(5L)).thenReturn(domainVoMock);
+        Mockito.when(domainDaoMock.getDomainAndChildrenIds(5L)).thenReturn(domainAndChildren);
+        Mockito.doNothing().when(accountManagerMock).checkAccess(callerAccountMock, domainVoMock);
+
+        Pair<Long, List<Long>> result = quotaResponseBuilderSpy.getDomainIdsForQuotaStatement(null, 5L, true);
+
+        assertEquals(5L, (long) result.first());
+        assertEquals(domainAndChildren, result.second());
+        Mockito.verify(domainDaoMock).getDomainAndChildrenIds(5L);
+    }
+
+    @Test
+    public void getDomainIdsForQuotaStatementReturnsCallerDomainRecursively() {
+        List<Long> domainAndChildren = List.of(1L, 2L, 3L);
+        Mockito.when(callerAccountMock.getDomainId()).thenReturn(1L);
+
+        Mockito.when(domainDaoMock.getDomainAndChildrenIds(1L)).thenReturn(domainAndChildren);
+
+        Pair<Long, List<Long>> result = quotaResponseBuilderSpy.getDomainIdsForQuotaStatement(null, null, true);
+
+        assertEquals(1L, (long) result.first());
+        assertEquals(domainAndChildren, result.second());
+        Mockito.verify(domainDaoMock).getDomainAndChildrenIds(1L);
+    }
+
+    @Test
+    public void getDomainIdsForQuotaStatementTestThrowsAccessDeniedForProvidedDomain() {
+        Mockito.when(domainDaoMock.findByIdIncludingRemoved(5L)).thenReturn(domainVoMock);
+        Mockito.doThrow(new PermissionDeniedException("Access denied"))
+                .when(accountManagerMock).checkAccess(callerAccountMock, domainVoMock);
+
+        Assert.assertThrows(PermissionDeniedException.class,
+                () -> quotaResponseBuilderSpy.getDomainIdsForQuotaStatement(null, 5L, false));
+        Mockito.verify(accountManagerMock).checkAccess(callerAccountMock, domainVoMock);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void retrieveResourceTestThrowsExceptionForInvalidUsageType() {
+        Integer invalidUsageType = 999;
+        quotaResponseBuilderSpy.retrieveResource("validUuid", invalidUsageType);
+    }
+
+    @Test
+    public void retrieveResourceTestReturnsNullForNonexistentResource() {
+        String invalidUuid = "nonexistentUuid";
+        Integer validUsageType = QuotaTypes.ALLOCATED_VM;
+
+        Mockito.doReturn(null).when(entityManagerMock).findByUuidIncludingRemoved(Mockito.any(), Mockito.eq(invalidUuid));
+        InternalIdentity result = quotaResponseBuilderSpy.retrieveResource(invalidUuid, validUsageType);
+
+        Assert.assertNull(result);
+    }
+
+    @Test
+    public void retrieveResourceTestReturnsCorrectResource() {
+        String validUuid = "validUuid";
+        Integer validUsageType = QuotaTypes.ALLOCATED_VM;
+        InternalIdentity mockResource = Mockito.mock(InternalIdentity.class);
+
+        Mockito.doReturn(mockResource).when(entityManagerMock).findByUuidIncludingRemoved(Mockito.any(), Mockito.eq(validUuid));
+
+        InternalIdentity result = quotaResponseBuilderSpy.retrieveResource(validUuid, validUsageType);
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(mockResource, result);
     }
 }

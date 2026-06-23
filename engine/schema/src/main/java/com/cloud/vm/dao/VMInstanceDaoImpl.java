@@ -358,7 +358,8 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
                 IdsPowerStateSelectSearch.entity().getPowerHostId(),
                 IdsPowerStateSelectSearch.entity().getPowerState(),
                 IdsPowerStateSelectSearch.entity().getPowerStateUpdateCount(),
-                IdsPowerStateSelectSearch.entity().getPowerStateUpdateTime());
+                IdsPowerStateSelectSearch.entity().getPowerStateUpdateTime(),
+                IdsPowerStateSelectSearch.entity().getState());
         IdsPowerStateSelectSearch.done();
 
         CountByOfferingId = createSearchBuilder(Integer.class);
@@ -1105,10 +1106,14 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
 
     private boolean isPowerStateInSyncWithInstanceState(final VirtualMachine.PowerState powerState, final long powerHostId, final VMInstanceVO instance) {
         State instanceState = instance.getState();
+        if (instanceState == null) {
+            logger.warn("VM {} has null instance state during power state sync check, treating as out of sync", instance);
+            return false;
+        }
         if ((powerState == VirtualMachine.PowerState.PowerOff && instanceState == State.Running)
                 || (powerState == VirtualMachine.PowerState.PowerOn && instanceState == State.Stopped)) {
             HostVO instanceHost = hostDao.findById(instance.getHostId());
-            HostVO powerHost = powerHostId == instance.getHostId() ? instanceHost : hostDao.findById(powerHostId);
+            HostVO powerHost = instance.getHostId() != null && powerHostId == instance.getHostId() ? instanceHost : hostDao.findById(powerHostId);
             logger.debug("VM: {} on host: {} and power host : {} is in {} state, but power state is {}",
                     instance, instanceHost, powerHost, instanceState, powerState);
             return false;
@@ -1330,5 +1335,21 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         sc.setParameters(ApiConstants.DELETE_PROTECTION, true);
         Filter filter = new Filter(VMInstanceVO.class, null, false, 0L, 10L);
         return listBy(sc, filter);
+    }
+
+    @Override
+    public List<Long> listIdsByHostIdForVolumeStats(long hostId) {
+        GenericSearchBuilder<VMInstanceVO, Long> sb = createSearchBuilder(Long.class);
+        sb.selectFields(sb.entity().getId());
+        sb.and().op("host", sb.entity().getHostId(), SearchCriteria.Op.EQ);
+        sb.or().op("hostNull", sb.entity().getHostId(), Op.NULL);
+        sb.and("lastHost", sb.entity().getLastHostId(), SearchCriteria.Op.EQ);
+        sb.cp();
+        sb.cp();
+        sb.done();
+        SearchCriteria<Long> sc = sb.create();
+        sc.setParameters("host", hostId);
+        sc.setParameters("lastHost", hostId);
+        return customSearch(sc, null);
     }
 }

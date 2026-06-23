@@ -117,7 +117,7 @@ Requires: ipset
 Requires: perl
 Requires: rsync
 Requires: cifs-utils
-Requires: edk2-ovmf
+Requires: (edk2-ovmf or qemu-ovmf-x86_64)
 Requires: swtpm
 Requires: (python3-libvirt or python3-libvirt-python)
 Requires: (qemu-img or qemu-tools)
@@ -127,6 +127,8 @@ Requires: rng-tools
 Requires: (libgcrypt > 1.8.3 or libgcrypt20)
 Requires: (selinux-tools if selinux-tools)
 Requires: sysstat
+Requires: python3-libnbd
+Requires: socat
 Provides: cloud-agent
 Group: System Environment/Libraries
 %description agent

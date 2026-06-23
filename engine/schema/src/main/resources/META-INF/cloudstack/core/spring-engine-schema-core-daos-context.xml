@@ -116,6 +116,7 @@
   <bean id="loadBalancerVMMapDaoImpl" class="com.cloud.network.dao.LoadBalancerVMMapDaoImpl" />
   <bean id="loadBalancerCertMapDaoImpl" class="com.cloud.network.dao.LoadBalancerCertMapDaoImpl" />
   <bean id="managementServerHostDaoImpl" class="com.cloud.cluster.dao.ManagementServerHostDaoImpl" />
+  <bean id="managementServerHostDetailsDaoImpl" class="com.cloud.cluster.dao.ManagementServerHostDetailsDaoImpl" />
   <bean id="managementServerHostPeerDaoImpl" class="com.cloud.cluster.dao.ManagementServerHostPeerDaoImpl" />
   <bean id="managementServerHostPeerJoinDaoImpl" class="com.cloud.cluster.dao.ManagementServerHostPeerJoinDaoImpl" />
   <bean id="managementServerStatusDaoImpl" class="com.cloud.cluster.dao.ManagementServerStatusDaoImpl" />
@@ -271,6 +272,7 @@
   <bean id="backupDaoImpl" class="org.apache.cloudstack.backup.dao.BackupDaoImpl" />
   <bean id="backupDetailsDaoImpl" class="org.apache.cloudstack.backup.dao.BackupDetailsDaoImpl" />
   <bean id="backupRepositoryDaoImpl" class="org.apache.cloudstack.backup.dao.BackupRepositoryDaoImpl" />
+  <bean id="imageTransferDaoImpl" class="org.apache.cloudstack.backup.dao.ImageTransferDaoImpl" />
   <bean id="directDownloadCertificateDaoImpl" class="org.apache.cloudstack.direct.download.DirectDownloadCertificateDaoImpl" />
   <bean id="directDownloadCertificateHostMapDaoImpl" class="org.apache.cloudstack.direct.download.DirectDownloadCertificateHostMapDaoImpl" />
   <bean id="routerHealthCheckResultsDaoImpl" class="com.cloud.network.dao.RouterHealthCheckResultDaoImpl" />
