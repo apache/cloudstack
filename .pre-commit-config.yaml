@@ -151,7 +151,7 @@ repos:
           ^server/src/test/resources/certs/rsa_self_signed\.key$|
           ^services/console-proxy/rdpconsole/src/test/doc/rdp-key\.pem$|
           ^systemvm/agent/certs/localhost\.key$|
-          ^systemvm/agent/certs/realhostip\.key$|
+          ^systemvm/agent/certs/systemvm\.key$|
           ^test/integration/smoke/test_ssl_offloading\.py$
       - id: end-of-file-fixer
         exclude: \.vhd$|\.svg$

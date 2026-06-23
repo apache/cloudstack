@@ -33,6 +33,7 @@ import com.cloud.storage.Storage.StoragePoolType;
 
 public interface KVMStoragePool {
 
+    public static final String CLVM_SECURE_ZERO_FILL = "clvmsecurezerofill";
     long HeartBeatUpdateTimeoutInMs = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HEARTBEAT_UPDATE_TIMEOUT);
     long HeartBeatUpdateFreqInMs = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_HEARTBEAT_UPDATE_FREQUENCY);
     long HeartBeatCheckerTimeoutInMs = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_HEARTBEAT_CHECKER_TIMEOUT);

@@ -73,7 +73,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`api_keypair` (
     `user_id` bigint(20) unsigned NOT NULL,
     `start_date` datetime,
     `end_date` datetime,
-    `description` varchar(100),
+    `description` varchar(1024),
     `api_key` varchar(255) NOT NULL,
     `secret_key` varchar(255) NOT NULL,
     `created` datetime NOT NULL,
@@ -107,16 +107,24 @@ WHERE user.api_key IS NOT NULL AND user.secret_key IS NOT NULL;
 -- Drop API keys from user table
 ALTER TABLE `cloud`.`user` DROP COLUMN api_key, DROP COLUMN secret_key;
 
--- Grant access to the "deleteUserKeys" API to the "User", "Domain Admin" and "Resource Admin" roles, similarly to the "registerUserKeys" API
+-- Grant access to the "deleteUserKeys" and "listUserKeyRules" APIs to the "User", "Domain Admin" and "Resource Admin" roles, similarly to the "registerUserKeys" API
 CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('User', 'deleteUserKeys', 'ALLOW');
 CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('Domain Admin', 'deleteUserKeys', 'ALLOW');
 CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('Resource Admin', 'deleteUserKeys', 'ALLOW');
+
+CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('User', 'listUserKeyRules', 'ALLOW');
+CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('Domain Admin', 'listUserKeyRules', 'ALLOW');
+CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('Resource Admin', 'listUserKeyRules', 'ALLOW');
 
 -- Add conserve mode for VPC offerings
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vpc_offerings','conserve_mode', 'tinyint(1) unsigned NULL DEFAULT 0 COMMENT ''True if the VPC offering is IP conserve mode enabled, allowing public IP services to be used across multiple VPC tiers'' ');
 
 --- Disable/enable NICs
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.nics','enabled', 'TINYINT(1) NOT NULL DEFAULT 1 COMMENT ''Indicates whether the NIC is enabled or not'' ');
+
+--- Add URLs for OAuth provider
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.oauth_provider','authorize_url', 'VARCHAR(255) DEFAULT NULL COMMENT ''Authorize URL for OAuth initialization'' ');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.oauth_provider','token_url', 'VARCHAR(255) DEFAULT NULL COMMENT ''Token URL for OAuth finalization'' ');
 
 --- Quota tariff/usage mapping
 CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_tariff_usage` (
@@ -164,6 +172,12 @@ FROM `cloud`.`configuration` `cfg`
 WHERE NOT EXISTS (SELECT 1 FROM `cloud`.`configuration` WHERE `name` = 'kvm.cpu.dynamic.scaling.capacity')
   AND `cfg`.`name` = 'vm.serviceoffering.cpu.cores.max';
 
+-- Remove stale realhostip.com default values; domain has been dead since ~2015.
+UPDATE `cloud`.`configuration`
+    SET value = NULL
+    WHERE name IN ('consoleproxy.url.domain', 'secstorage.ssl.cert.domain')
+      AND value IN ('realhostip.com', '*.realhostip.com');
+
 -- Add management_server_details table to allow ManagementServer scope configs
 CREATE TABLE IF NOT EXISTS `management_server_details` (
                                                            `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
@@ -210,3 +224,12 @@ CREATE TABLE IF NOT EXISTS `cloud`.`image_transfer`(
     CONSTRAINT `fk_image_transfer__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
     INDEX `i_image_transfer__backup_id`(`backup_id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--- Quota resource statement
+INSERT INTO cloud.role_permissions (uuid, role_id, rule, permission, sort_order)
+SELECT uuid(), role_id, 'quotaResourceStatement', permission, sort_order
+FROM cloud.role_permissions rp
+WHERE rule = 'quotaStatement' AND NOT EXISTS(SELECT 1 FROM cloud.role_permissions rp_ WHERE rp.role_id = rp_.role_id AND rp_.rule = 'quotaResourceStatement');
+
+-- Add description for secondary IP addresses
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.nic_secondary_ips', 'description', 'VARCHAR(2048) DEFAULT NULL');

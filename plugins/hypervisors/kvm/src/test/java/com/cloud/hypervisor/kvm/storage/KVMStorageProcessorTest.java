@@ -22,6 +22,7 @@ import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtDomainXMLParser;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
+import com.cloud.storage.Storage;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -53,6 +54,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import javax.naming.ConfigurationException;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -498,5 +500,170 @@ public class KVMStorageProcessorTest {
         String result = storageProcessorSpy.getDiskLabelToSnapshot(List.of(diskDefMock1), "Path", Mockito.mock(Domain.class));
 
         Assert.assertEquals("vda", result);
+    }
+
+    @Test
+    public void testParseClvmSnapshotPath_ValidPath() {
+        String snapshotPath = "/dev/vg-storage/volume-uuid-123/snapshot-uuid-456";
+        Storage.StoragePoolType poolType = Storage.StoragePoolType.CLVM_NG;
+
+        try {
+            java.lang.reflect.Method method = KVMStorageProcessor.class.getDeclaredMethod(
+                    "parseClvmSnapshotPath", String.class, Storage.StoragePoolType.class);
+            method.setAccessible(true);
+            String[] result = (String[]) method.invoke(storageProcessorSpy, snapshotPath, poolType);
+
+            Assert.assertNotNull("Should return parsed array for valid path", result);
+            Assert.assertEquals("Should return 4 elements", 4, result.length);
+            Assert.assertEquals("VG name should be vg-storage", "vg-storage", result[0]);
+            Assert.assertEquals("Volume UUID should be volume-uuid-123", "volume-uuid-123", result[1]);
+            Assert.assertEquals("Snapshot UUID should be snapshot-uuid-456", "snapshot-uuid-456", result[2]);
+            Assert.assertNotNull("MD5 hash should be computed", result[3]);
+        } catch (Exception e) {
+            Assert.fail("Failed to test parseClvmSnapshotPath: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testParseClvmSnapshotPath_InvalidPathFormat() {
+        String snapshotPath = "/dev/vg-storage/invalid";
+        Storage.StoragePoolType poolType = Storage.StoragePoolType.CLVM;
+
+        try {
+            java.lang.reflect.Method method = KVMStorageProcessor.class.getDeclaredMethod(
+                    "parseClvmSnapshotPath", String.class, Storage.StoragePoolType.class);
+            method.setAccessible(true);
+            String[] result = (String[]) method.invoke(storageProcessorSpy, snapshotPath, poolType);
+
+            Assert.assertNull("Should return null for invalid path format", result);
+        } catch (Exception e) {
+            Assert.fail("Failed to test parseClvmSnapshotPath: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testDeleteClvmSnapshot_SuccessfulDeletion() {
+        String snapshotPath = "/dev/vg-storage/volume-uuid/snapshot-uuid";
+        Storage.StoragePoolType poolType = Storage.StoragePoolType.CLVM_NG;
+
+        try (MockedConstruction<Script> scriptConstruction = Mockito.mockConstruction(Script.class, (mock, context) -> {
+            Mockito.when(mock.execute()).thenReturn(null);
+        })) {
+            java.lang.reflect.Method method = KVMStorageProcessor.class.getDeclaredMethod(
+                    "deleteClvmSnapshot", String.class, Storage.StoragePoolType.class, boolean.class);
+            method.setAccessible(true);
+            boolean result = (boolean) method.invoke(storageProcessorSpy, snapshotPath, poolType, true);
+
+            Assert.assertTrue("Should return true for successful deletion", result);
+        } catch (Exception e) {
+            Assert.fail("Failed to test deleteClvmSnapshot: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testDeleteClvmSnapshot_SnapshotAlreadyDeleted() {
+        String snapshotPath = "/dev/vg-storage/volume-uuid/snapshot-uuid";
+        Storage.StoragePoolType poolType = Storage.StoragePoolType.CLVM;
+
+        try (MockedConstruction<Script> scriptConstruction = Mockito.mockConstruction(Script.class, (mock, context) -> {
+            Mockito.when(mock.execute()).thenReturn("Error: snapshot does not exist");
+        })) {
+            java.lang.reflect.Method method = KVMStorageProcessor.class.getDeclaredMethod(
+                    "deleteClvmSnapshot", String.class, Storage.StoragePoolType.class, boolean.class);
+            method.setAccessible(true);
+            boolean result = (boolean) method.invoke(storageProcessorSpy, snapshotPath, poolType, true);
+
+            Assert.assertTrue("Should return true when snapshot already deleted", result);
+        } catch (Exception e) {
+            Assert.fail("Failed to test deleteClvmSnapshot: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testDeleteClvmSnapshot_DeletionFailedWithoutCheck() {
+        String snapshotPath = "/dev/vg-storage/volume-uuid/snapshot-uuid";
+        Storage.StoragePoolType poolType = Storage.StoragePoolType.CLVM_NG;
+
+        try (MockedConstruction<Script> scriptConstruction = Mockito.mockConstruction(Script.class, (mock, context) -> {
+            Mockito.when(mock.execute()).thenReturn("Error: some other error");
+        })) {
+            java.lang.reflect.Method method = KVMStorageProcessor.class.getDeclaredMethod(
+                    "deleteClvmSnapshot", String.class, Storage.StoragePoolType.class, boolean.class);
+            method.setAccessible(true);
+            boolean result = (boolean) method.invoke(storageProcessorSpy, snapshotPath, poolType, false);
+
+            Assert.assertFalse("Should return false when deletion fails", result);
+        } catch (Exception e) {
+            Assert.fail("Failed to test deleteClvmSnapshot: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testDeleteClvmSnapshot_InvalidPath() {
+        String snapshotPath = "/invalid/path";
+        Storage.StoragePoolType poolType = Storage.StoragePoolType.CLVM;
+
+        try {
+            java.lang.reflect.Method method = KVMStorageProcessor.class.getDeclaredMethod(
+                    "deleteClvmSnapshot", String.class, Storage.StoragePoolType.class, boolean.class);
+            method.setAccessible(true);
+            boolean result = (boolean) method.invoke(storageProcessorSpy, snapshotPath, poolType, true);
+
+            Assert.assertFalse("Should return false for invalid path", result);
+        } catch (Exception e) {
+            Assert.fail("Failed to test deleteClvmSnapshot: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testComputeMd5Hash_ValidInput() {
+        String input = "snapshot-uuid-123";
+
+        try {
+            Method method = KVMStorageProcessor.class.getDeclaredMethod(
+                    "computeMd5Hash", String.class);
+            method.setAccessible(true);
+            String result = (String) method.invoke(storageProcessorSpy, input);
+
+            Assert.assertNotNull("Should return non-null hash", result);
+            Assert.assertEquals("Hash should be 32 characters long (MD5)", 32, result.length());
+            Assert.assertTrue("Hash should contain only hex characters", result.matches("[0-9a-f]+"));
+        } catch (Exception e) {
+            Assert.fail("Failed to test computeMd5Hash: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testComputeMd5Hash_EmptyInput() {
+        String input = "";
+
+        try {
+            java.lang.reflect.Method method = KVMStorageProcessor.class.getDeclaredMethod(
+                    "computeMd5Hash", String.class);
+            method.setAccessible(true);
+            String result = (String) method.invoke(storageProcessorSpy, input);
+
+            Assert.assertNotNull("Should return non-null hash even for empty input", result);
+            Assert.assertEquals("Hash should be 32 characters long (MD5)", 32, result.length());
+        } catch (Exception e) {
+            Assert.fail("Failed to test computeMd5Hash: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testComputeMd5Hash_ConsistentResults() {
+        String input = "snapshot-uuid-456";
+
+        try {
+            java.lang.reflect.Method method = KVMStorageProcessor.class.getDeclaredMethod(
+                    "computeMd5Hash", String.class);
+            method.setAccessible(true);
+            String result1 = (String) method.invoke(storageProcessorSpy, input);
+            String result2 = (String) method.invoke(storageProcessorSpy, input);
+
+            Assert.assertEquals("Same input should produce same hash", result1, result2);
+        } catch (Exception e) {
+            Assert.fail("Failed to test computeMd5Hash: " + e.getMessage());
+        }
     }
 }
