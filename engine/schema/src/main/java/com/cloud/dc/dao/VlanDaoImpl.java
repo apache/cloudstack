@@ -20,6 +20,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -27,6 +28,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.dc.VlanDetailsVO;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
@@ -134,7 +136,7 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
         ZoneTypeSearch.done();
 
         NetworkVlanSearch = createSearchBuilder();
-        NetworkVlanSearch.and("networkId", NetworkVlanSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
+        NetworkVlanSearch.and("networkId", NetworkVlanSearch.entity().getNetworkId(), SearchCriteria.Op.IN);
         NetworkVlanSearch.done();
 
         PhysicalNetworkVlanSearch = createSearchBuilder();
@@ -394,10 +396,10 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
 
     @Override
     public List<VlanVO> listVlansByNetworkIds(List<Long> networkIds) {
-        SearchBuilder<VlanVO> sb = createSearchBuilder();
-        sb.and("networkId", sb.entity().getNetworkId(), SearchCriteria.Op.IN);
-        sb.done();
-        SearchCriteria<VlanVO> sc = sb.create();
+        if (CollectionUtils.isEmpty(networkIds)) {
+            return Collections.emptyList();
+        }
+        SearchCriteria<VlanVO> sc = NetworkVlanSearch.create();
         sc.setParameters("networkId", networkIds.toArray());
         return listBy(sc);
     }

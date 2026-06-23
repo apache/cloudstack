@@ -5200,10 +5200,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                             macAddresses.add(entry.getMacAddress());
                         }
                         Map<String, NicVO> nicsByMac = new HashMap<>();
-                        if (!macAddresses.isEmpty()) {
-                            for (NicVO nic : _nicDao.listByMacAddresses(macAddresses)) {
-                                nicsByMac.put(nic.getMacAddress(), nic);
-                            }
+                        for (NicVO nic : _nicDao.listByMacAddresses(macAddresses)) {
+                            nicsByMac.put(nic.getMacAddress(), nic);
                         }
 
                         Set<Long> networkIds = new HashSet<>();
@@ -5211,10 +5209,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                             networkIds.add(nic.getNetworkId());
                         }
                         Map<Long, List<VlanVO>> vlansByNetwork = new HashMap<>();
-                        if (!networkIds.isEmpty()) {
-                            for (VlanVO vlan : _vlanDao.listVlansByNetworkIds(new ArrayList<>(networkIds))) {
-                                vlansByNetwork.computeIfAbsent(vlan.getNetworkId(), k -> new ArrayList<>()).add(vlan);
-                            }
+                        for (VlanVO vlan : _vlanDao.listVlansByNetworkIds(new ArrayList<>(networkIds))) {
+                            vlansByNetwork.computeIfAbsent(vlan.getNetworkId(), k -> new ArrayList<>()).add(vlan);
                         }
 
                         for (VmNetworkStatsEntry vmNetworkStat:vmNetworkStats) {
