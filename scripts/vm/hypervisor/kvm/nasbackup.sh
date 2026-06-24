@@ -201,7 +201,7 @@ backup_running_vm() {
   timeout $TIMEOUT umount "$mount_point" 2>$logFile || true
   rmdir "$mount_point" 2>$logFile || true
   
-  echo -n "$backup_size"
+  echo "$backup_size"
 }
 
 backup_stopped_vm() {
