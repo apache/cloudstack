@@ -156,10 +156,28 @@ public abstract class LibvirtBaseConvertCommandWrapper <T extends Command, A ext
 
             String destinationName = UUID.randomUUID().toString();
 
-            KVMPhysicalDisk destinationDisk = storagePoolMgr.copyPhysicalDisk(sourceDisk, destinationName, destinationPool, 7200 * 1000);
-            targetDisks.add(destinationDisk);
+            try {
+                KVMPhysicalDisk destinationDisk = storagePoolMgr.copyPhysicalDisk(sourceDisk, destinationName, destinationPool, 7200 * 1000);
+                targetDisks.add(destinationDisk);
+            } catch (Exception e) {
+                String err = String.format("Error copying converted instance disk number %s from the temporary location %s" +
+                        " to destination storage pool %s: %s", i, sourceDisk.getPool().getLocalPath(), destinationPool.getUuid(), e.getMessage());
+                logger.error(err, e);
+                cleanupMovedDisksOnDestinationPool(targetDisks);
+                return null;
+            }
         }
         return targetDisks;
+    }
+
+    private void cleanupMovedDisksOnDestinationPool(List<KVMPhysicalDisk> targetDisks) {
+        if (CollectionUtils.isEmpty(targetDisks)) {
+            return;
+        }
+        for (KVMPhysicalDisk disk : targetDisks) {
+            logger.info(String.format("Cleaning up disk %s from pool %s after conversion", disk.getName(), disk.getPool().getUuid()));
+            disk.getPool().deletePhysicalDisk(disk.getName(), Storage.ImageFormat.QCOW2);
+        }
     }
 
     protected UnmanagedInstanceTO getConvertedUnmanagedInstance(String baseName,

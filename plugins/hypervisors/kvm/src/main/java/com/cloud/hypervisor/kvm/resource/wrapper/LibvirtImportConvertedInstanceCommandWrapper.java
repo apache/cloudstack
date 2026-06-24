@@ -35,6 +35,7 @@ import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.resource.ResourceWrapper;
+import org.apache.commons.collections4.CollectionUtils;
 
 @ResourceWrapper(handles =  ImportConvertedInstanceCommand.class)
 public class LibvirtImportConvertedInstanceCommandWrapper extends LibvirtBaseConvertCommandWrapper<ImportConvertedInstanceCommand, Answer, LibvirtComputingResource> {
@@ -69,6 +70,12 @@ public class LibvirtImportConvertedInstanceCommandWrapper extends LibvirtBaseCon
                 disks = moveTemporaryDisksToDestination(temporaryDisks,
                         destinationStoragePools, storagePoolMgr);
                 cleanupDisksAndDomainFromTemporaryLocation(temporaryDisks, temporaryStoragePool, temporaryConvertUuid, true);
+            }
+
+            if (CollectionUtils.isEmpty(disks)) {
+                String msg = String.format("Unable to import the converted disks for VM %s from destination pools", sourceInstanceName);
+                logger.error(msg);
+                return new ImportConvertedInstanceAnswer(cmd, false, msg);
             }
 
             UnmanagedInstanceTO convertedInstanceTO = getConvertedUnmanagedInstance(temporaryConvertUuid,
