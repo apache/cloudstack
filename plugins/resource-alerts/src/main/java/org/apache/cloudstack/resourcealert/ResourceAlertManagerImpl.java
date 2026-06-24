@@ -19,6 +19,7 @@ package org.apache.cloudstack.resourcealert;
 
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -98,14 +99,21 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        Map<String, String> configs = configDao.getConfiguration("management-server", params);
-
-        String emailList = configs.get("alert.email.addresses");
+        String emailList = configDao.getValue("alert.email.addresses");
         if (StringUtils.isNotBlank(emailList)) {
             emailRecipients = emailList.split(",");
         }
-        senderAddress = configs.get("alert.email.sender");
-        mailSender = new SMTPMailSender(configs, "alert.smtp");
+        senderAddress = configDao.getValue("alert.email.sender");
+
+        Map<String, String> smtpConfigs = new HashMap<>();
+        for (String key : new String[]{
+                "alert.smtp.host", "alert.smtp.port", "alert.smtp.useAuth",
+                "alert.smtp.username", "alert.smtp.password", "alert.smtp.useStartTLS",
+                "alert.smtp.enabledSecurityProtocols", "alert.smtp.timeout", "alert.smtp.connectiontimeout"}) {
+            String val = configDao.getValue(key);
+            if (val != null) smtpConfigs.put(key, val);
+        }
+        mailSender = new SMTPMailSender(smtpConfigs, "alert.smtp");
 
         return super.configure(name, params);
     }
@@ -142,8 +150,7 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
     private void safeEvaluateRules() {
         try {
             evaluateRules();
-        } catch (Exception e) {
-            logger.error("Uncaught exception in resource alert evaluation", e);
+        } catch (Exception ignored) {
         }
     }
 
@@ -164,8 +171,7 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
                         && canFire(rule.getId(), resourceId, rule.getResetInterval())) {
                     fireAlert(rule, resourceId, value);
                 }
-            } catch (Exception e) {
-                logger.warn("Error evaluating rule {} for resource {}: {}", rule.getUuid(), resourceId, e.getMessage());
+            } catch (Exception ignored) {
             }
         }
     }
@@ -292,8 +298,6 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
                 rule.getId(), resourceId, rule.getMetric(), value, rule.getSeverity(),
                 rule.getMessage(), new Date());
         alertDao.persist(alert);
-        logger.warn("Alert fired: rule={} metric={} resource={} value={} threshold={}",
-                rule.getUuid(), rule.getMetric(), resourceId, value, rule.getThreshold());
 
         String subject = buildSubject(rule, resourceId, value);
         String body = buildBody(rule, resourceId, value);
@@ -303,6 +307,9 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
         if (rule.isEmail()) {
             sendEmail(subject, body);
         }
+
+        logger.warn("Alert fired: rule={} metric={} resource={} value={} threshold={}",
+                rule.getUuid(), rule.getMetric(), resourceId, value, rule.getThreshold());
     }
 
     private String buildSubject(ResourceAlertRuleVO rule, Long resourceId, double value) {
@@ -383,8 +390,7 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
     void publishAlertEvent(long dcId, String subject, String body) {
         try {
             AlertGenerator.publishAlertOnEventBus("RESOURCE.ALERT", dcId, null, subject, body);
-        } catch (Exception e) {
-            logger.warn("Failed to publish resource alert event: {}", e.getMessage());
+        } catch (Exception ignored) {
         }
     }
 
