@@ -92,9 +92,14 @@
           :routerlinks="(record) => { return { name: '/securitygroups/' + record.id } }"
           :showSearch="false"/>
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.schedules')" key="schedules" v-if="'listVMSchedule' in $store.getters.apis">
-        <InstanceSchedules
-          :virtualmachine="vm"
+      <a-tab-pane
+        :tab="$t('label.schedules')"
+        key="schedules"
+        v-if="'listResourceSchedule' in $store.getters.apis && !dataResource.autoscalevmgroupid"
+      >
+        <ResourceSchedules
+          :resource="vm"
+          resourceType="VirtualMachine"
           :loading="loading"/>
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.settings')" key="settings">
@@ -150,7 +155,7 @@ import EventsTab from '@/components/view/EventsTab'
 import DetailSettings from '@/components/view/DetailSettings'
 import CreateVolume from '@/views/storage/CreateVolume'
 import NicsTab from '@/views/network/NicsTab'
-import InstanceSchedules from '@/views/compute/InstanceSchedules.vue'
+import ResourceSchedules from '@/views/compute/ResourceSchedules.vue'
 import ListResourceTable from '@/components/view/ListResourceTable'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
@@ -170,7 +175,7 @@ export default {
     CreateVolume,
     NicsTab,
     GPUTab,
-    InstanceSchedules,
+    ResourceSchedules,
     ListResourceTable,
     SecurityGroupSelection,
     TooltipButton,

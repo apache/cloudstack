@@ -16,21 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.vm.schedule.dao;
+package org.apache.cloudstack.schedule.dao;
 
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.vm.schedule.VMScheduledJobVO;
+import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.schedule.ResourceScheduledJobVO;
 
 import java.util.Date;
 import java.util.List;
 
-public interface VMScheduledJobDao extends GenericDao<VMScheduledJobVO, Long> {
+public interface ResourceScheduledJobDao extends GenericDao<ResourceScheduledJobVO, Long> {
+    List<ResourceScheduledJobVO> listJobsToStart(ApiCommandResourceType resourceType, Date currentTimestamp);
 
-    List<VMScheduledJobVO> listJobsToStart(Date currentTimestamp);
+    int expungeJobsForSchedules(List<Long> scheduleIds, Date dateAfter);
 
-    int expungeJobsForSchedules(List<Long> scheduleId, Date dateAfter);
+    int expungeJobsBefore(ApiCommandResourceType resourceType, Date currentTimestamp);
 
-    int expungeJobsBefore(Date currentTimestamp);
-
-    VMScheduledJobVO findByScheduleAndTimestamp(long scheduleId, Date scheduledTimestamp);
+    ResourceScheduledJobVO findByScheduleAndTimestamp(long scheduleId, Date scheduledTimestamp);
 }

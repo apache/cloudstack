@@ -16,23 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.vm.schedule;
+package org.apache.cloudstack.schedule.autoscale;
 
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+import com.cloud.event.EventTypes;
+import org.apache.cloudstack.schedule.ResourceSchedule;
 
-import java.util.Date;
-
-public interface VMScheduledJob extends Identity, InternalIdentity {
-    long getVmId();
-
-    long getVmScheduleId();
-
-    Long getAsyncJobId();
-
-    void setAsyncJobId(long asyncJobId);
-
-    VMSchedule.Action getAction();
-
-    Date getScheduledTime();
+public enum AutoScaleScheduleAction implements ResourceSchedule.Action {
+    UPDATE {
+        @Override
+        public String getEventType() {
+            return EventTypes.EVENT_AUTOSCALEVMGROUP_SCHEDULE_UPDATE;
+        }
+    }
 }
