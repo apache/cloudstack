@@ -16,22 +16,26 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.vm.schedule.dao;
+package org.apache.cloudstack.schedule;
 
-import com.cloud.utils.Pair;
-import com.cloud.utils.db.GenericDao;
-import com.cloud.utils.db.SearchCriteria;
-import org.apache.cloudstack.vm.schedule.VMSchedule;
-import org.apache.cloudstack.vm.schedule.VMScheduleVO;
+import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-import java.util.List;
+import java.util.Date;
 
-public interface VMScheduleDao extends GenericDao<VMScheduleVO, Long> {
-    List<VMScheduleVO> listAllActiveSchedules();
+public interface ResourceScheduledJob extends Identity, InternalIdentity {
+    ApiCommandResourceType getResourceType();
 
-    long removeSchedulesForVmIdAndIds(Long vmId, List<Long> ids);
+    long getResourceId();
 
-    Pair<List<VMScheduleVO>, Integer> searchAndCount(Long id, Long vmId, VMSchedule.Action action, Boolean enabled, Long offset, Long limit);
+    long getScheduleId();
 
-    SearchCriteria<VMScheduleVO> getSearchCriteriaForVMId(Long vmId);
+    Long getAsyncJobId();
+
+    void setAsyncJobId(long asyncJobId);
+
+    String getActionName();
+
+    Date getScheduledTime();
 }

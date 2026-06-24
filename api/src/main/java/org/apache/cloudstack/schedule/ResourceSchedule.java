@@ -16,20 +16,31 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.vm.schedule;
+package org.apache.cloudstack.schedule;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 import java.time.ZoneId;
 import java.util.Date;
 
-public interface VMSchedule extends Identity, InternalIdentity {
-    enum Action {
-        START, STOP, REBOOT, FORCE_STOP, FORCE_REBOOT
+public interface ResourceSchedule extends Identity, InternalIdentity {
+
+    /**
+     * Common contract for scheduler actions.  Each provider defines its own enum
+     * implementing this interface so the generic machinery can call {@link #name()}
+     * and {@link #getEventType()} without knowing the concrete type.
+     */
+    interface Action {
+        String name();
+
+        String getEventType();
     }
 
-    long getVmId();
+    ApiCommandResourceType getResourceType();
+
+    long getResourceId();
 
     String getDescription();
 
@@ -37,7 +48,7 @@ public interface VMSchedule extends Identity, InternalIdentity {
 
     String getTimeZone();
 
-    Action getAction();
+    String getActionName();
 
     boolean getEnabled();
 

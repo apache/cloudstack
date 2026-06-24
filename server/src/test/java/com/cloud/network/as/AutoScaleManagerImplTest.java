@@ -47,6 +47,7 @@ import org.apache.cloudstack.affinity.AffinityGroupVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.admin.autoscale.CreateCounterCmd;
@@ -62,6 +63,7 @@ import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.schedule.ResourceScheduleManager;
 import org.apache.cloudstack.userdata.UserDataManager;
 import org.junit.After;
 import org.junit.Assert;
@@ -268,6 +270,8 @@ public class AutoScaleManagerImplTest {
     VirtualMachineManager virtualMachineManager;
     @Mock
     GuestOSDao guestOSDao;
+    @Mock
+    ResourceScheduleManager resourceScheduleManager;
 
     @Mock
     NetworkOrchestrationService networkOrchestrationService;
@@ -1036,7 +1040,6 @@ public class AutoScaleManagerImplTest {
         when(asVmGroupMock.getInterval()).thenReturn(interval);
         when(asVmGroupMock.getMaxMembers()).thenReturn(maxMembers);
         when(asVmGroupMock.getMinMembers()).thenReturn(minMembers);
-        when(asVmGroupMock.getState()).thenReturn(AutoScaleVmGroup.State.DISABLED);
         when(asVmGroupMock.getProfileId()).thenReturn(vmProfileId);
         when(asVmGroupMock.getLoadBalancerId()).thenReturn(loadBalancerId);
 
@@ -1086,7 +1089,6 @@ public class AutoScaleManagerImplTest {
 
         when(autoScaleVmGroupDao.findById(vmGroupId)).thenReturn(asVmGroupMock);
         when(asVmGroupMock.getInterval()).thenReturn(interval);
-        when(asVmGroupMock.getState()).thenReturn(AutoScaleVmGroup.State.ENABLED);
 
         AutoScaleVmGroup vmGroup = autoScaleManagerImplSpy.updateAutoScaleVmGroup(cmd);
     }
@@ -1213,6 +1215,7 @@ public class AutoScaleManagerImplTest {
         Mockito.verify(autoScaleManagerImplSpy).configureAutoScaleVmGroup(vmGroupId, AutoScaleVmGroup.State.ENABLED);
         Mockito.verify(annotationDao).removeByEntityType(AnnotationService.EntityType.AUTOSCALE_VM_GROUP.name(), vmGroupUuid);
         Mockito.verify(autoScaleManagerImplSpy).cancelMonitorTask(vmGroupId);
+        Mockito.verify(resourceScheduleManager).removeSchedulesForResource(ApiCommandResourceType.AutoScaleVmGroup, vmGroupId);
     }
 
     @Test
@@ -2556,5 +2559,20 @@ public class AutoScaleManagerImplTest {
                 "-" + asVmGroupMock.getNextVmSeq() + "-[a-z]{6}";
         Assert.assertTrue(result.first().matches(vmHostNamePattern));
         Assert.assertEquals(result.first(), result.second());
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateMinMaxMembersInvalidMin() {
+        autoScaleManagerImplSpy.validateMinMaxMembers(-1, 5);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateMinMaxMembersInvalidMax() {
+        autoScaleManagerImplSpy.validateMinMaxMembers(1, -1);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateMinMaxMembersInvalidRange() {
+        autoScaleManagerImplSpy.validateMinMaxMembers(5, 1);
     }
 }
