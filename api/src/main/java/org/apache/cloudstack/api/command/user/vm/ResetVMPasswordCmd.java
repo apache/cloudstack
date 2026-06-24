@@ -16,8 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
-import org.apache.commons.lang3.StringUtils;
-
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
@@ -116,16 +114,8 @@ public class ResetVMPasswordCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException {
-        password = getPassword();
-        UserVm vm = _responseGenerator.findUserVmById(getId());
-        if (StringUtils.isBlank(password)) {
-            password = _mgr.generateRandomPassword();
-            logger.debug(String.format("Resetting VM [%s] password to a randomly generated password.", vm.getUuid()));
-        } else {
-            logger.debug(String.format("Resetting VM [%s] password to password defined by user.", vm.getUuid()));
-        }
         CallContext.current().setEventDetails("Vm Id: " + getId());
-        UserVm result = _userVmService.resetVMPassword(this, password);
+        UserVm result = _userVmService.resetVMPassword(this);
         if (result != null){
             UserVmResponse response = _responseGenerator.createUserVmResponse(getResponseView(), "virtualmachine", result).get(0);
             response.setResponseName(getCommandName());

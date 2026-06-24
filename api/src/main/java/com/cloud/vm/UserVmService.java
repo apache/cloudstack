@@ -93,7 +93,7 @@ public interface UserVmService {
      *            - the command specifying vmId, password
      * @return the VM if reset worked successfully, null otherwise
      */
-    UserVm resetVMPassword(ResetVMPasswordCmd cmd, String password) throws ResourceUnavailableException, InsufficientCapacityException;
+    UserVm resetVMPassword(ResetVMPasswordCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException;
 
     /**
      * Resets the SSH Key of a virtual machine.
