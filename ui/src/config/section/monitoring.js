@@ -20,7 +20,7 @@ import resourceAlerts from '@/config/section/infra/resourceAlertRules'
 export default {
   name: 'monitoring',
   title: 'label.monitoring',
-  icon: 'MonitorOutlined',
+  icon: 'BarChartOutlined',
   permission: ['listResourceAlertRules'],
   children: [
     resourceAlerts
