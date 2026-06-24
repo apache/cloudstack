@@ -34,21 +34,21 @@
       <a-form-item name="resourcetype" ref="resourcetype">
         <template #label>{{ $t('label.resourcetype') }}</template>
         <a-select v-model:value="form.resourcetype" @change="onResourceTypeChange">
-          <a-select-option v-for="rt in resourceTypes" :key="rt" :value="rt">{{ rt }}</a-select-option>
+          <a-select-option v-for="rt in resourceTypes" :key="rt" :value="rt">{{ resourceTypeLabels[rt] || rt }}</a-select-option>
         </a-select>
       </a-form-item>
 
       <a-form-item name="metric" ref="metric">
         <template #label>{{ $t('label.metric') }}</template>
         <a-select v-model:value="form.metric" :disabled="!form.resourcetype">
-          <a-select-option v-for="m in availableMetrics" :key="m" :value="m">{{ m }}</a-select-option>
+          <a-select-option v-for="m in availableMetrics" :key="m" :value="m">{{ metricLabels[m] || m }}</a-select-option>
         </a-select>
       </a-form-item>
 
       <a-form-item name="condition" ref="condition">
         <template #label>{{ $t('label.condition') }}</template>
         <a-select v-model:value="form.condition">
-          <a-select-option v-for="c in conditions" :key="c" :value="c">{{ c }}</a-select-option>
+          <a-select-option v-for="c in conditions" :key="c" :value="c">{{ conditionLabels[c] || c }}</a-select-option>
         </a-select>
       </a-form-item>
 
@@ -60,7 +60,7 @@
       <a-form-item name="severity" ref="severity">
         <template #label>{{ $t('label.severity') }}</template>
         <a-select v-model:value="form.severity">
-          <a-select-option v-for="s in severities" :key="s" :value="s">{{ s }}</a-select-option>
+          <a-select-option v-for="s in severities" :key="s" :value="s">{{ severityLabels[s] || s }}</a-select-option>
         </a-select>
       </a-form-item>
 
@@ -123,7 +123,37 @@ export default {
       },
       resourceTypes: ['VirtualMachine', 'Host', 'Volume', 'StoragePool'],
       conditions: ['GT', 'GTE', 'LT', 'LTE', 'EQ'],
-      severities: ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']
+      severities: ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'],
+      resourceTypeLabels: {
+        VirtualMachine: 'Virtual Machine',
+        Host: 'Host',
+        Volume: 'Volume',
+        StoragePool: 'Storage Pool'
+      },
+      metricLabels: {
+        CPU_UTILIZATION: 'CPU Utilization %',
+        MEMORY_UTILIZATION: 'Memory Utilization %',
+        DISK_READ_IOPS: 'Disk Read IOPS',
+        DISK_WRITE_IOPS: 'Disk Write IOPS',
+        DISK_READ_KBPS: 'Disk Read KB/s',
+        DISK_WRITE_KBPS: 'Disk Write KB/s',
+        NETWORK_READ_KBPS: 'Network In KB/s',
+        NETWORK_WRITE_KBPS: 'Network Out KB/s',
+        STORAGE_UTILIZATION: 'Storage Utilization %'
+      },
+      conditionLabels: {
+        GT: 'Is above',
+        GTE: 'Is above or equal to',
+        LT: 'Is below',
+        LTE: 'Is below or equal to',
+        EQ: 'Equals'
+      },
+      severityLabels: {
+        CRITICAL: 'Critical',
+        HIGH: 'High',
+        MEDIUM: 'Medium',
+        LOW: 'Low'
+      }
     }
   },
   computed: {
