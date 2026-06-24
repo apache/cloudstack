@@ -120,10 +120,16 @@
 
             <a-divider/>
 
-            <div class="resource-detail-item" v-if="(resource.state || resource.status) && $route.meta.name !== 'zone'">
+            <div class="resource-detail-item" v-if="(resource.state || resource.status) && !['zone', 'keypair'].includes($route.meta.name)">
               <div class="resource-detail-item__label">{{ $t('label.status') }}</div>
               <div class="resource-detail-item__details">
                 <status class="status" :text="resource.state || resource.status" displayText/>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.apikeyaccess && $route.meta.name === 'accountuser'">
+              <div class="resource-detail-item__label">{{ $t('label.apikeyaccess') }}</div>
+              <div class="resource-detail-item__details">
+                <status class="status" :text="resource.apikeyaccess" displayText/>
               </div>
             </div>
             <div class="resource-detail-item" v-if="resource.allocationstate">
@@ -157,6 +163,42 @@
                   :copyResource="String(resource.id)"
                   @onClick="$message.success($t('label.copied.clipboard'))" />
                 <span style="margin-left: 10px;"><copy-label :label="resource.id" /></span>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.apikey && resource.secretkey">
+              <div class="user-keys">
+                <key-outlined />
+                <strong>
+                  {{ $t('label.apikey') }}
+                  <tooltip-button
+                    tooltipPlacement="right"
+                    :tooltip="$t('label.copy') + ' ' + $t('label.apikey')"
+                    icon="CopyOutlined"
+                    type="dashed"
+                    size="small"
+                    @onClick="$message.success($t('label.copied.clipboard'))"
+                    :copyResource="resource.apikey" />
+                </strong>
+                <div>
+                  {{ resource.apikey.substring(0, 20) }}...
+                </div>
+              </div> <br/>
+              <div class="user-keys">
+                <lock-outlined />
+                <strong>
+                  {{ $t('label.secretkey') }}
+                  <tooltip-button
+                    tooltipPlacement="right"
+                    :tooltip="$t('label.copy') + ' ' + $t('label.secretkey')"
+                    icon="CopyOutlined"
+                    type="dashed"
+                    size="small"
+                    @onClick="$message.success($t('label.copied.clipboard'))"
+                    :copyResource="resource.secretkey" />
+                </strong>
+                <div>
+                  {{ resource.secretkey.substring(0, 20) }}...
+                </div>
               </div>
             </div>
             <div class="resource-detail-item" v-if="(resource.ostypename || resource.osdisplayname) && resource.ostypeid">
@@ -609,7 +651,8 @@
               <div class="resource-detail-item__details">
                 <resource-icon v-if="images.template || images.guestoscategory" :image="images.template || images.guestoscategory" size="1x" style="margin-right: 5px"/>
                 <SaveOutlined v-else />
-                <router-link :to="{ path: (resource.templateformat === 'ISO' ? '/iso/' : '/template/') + resource.templateid }">{{ resource.templatedisplaytext || resource.templatename || resource.templateid }} </router-link>
+                <router-link v-if="validLinks.template" :to="{ path: (resource.templateformat === 'ISO' ? '/iso/' : '/template/') + resource.templateid }">{{ resource.templatedisplaytext || resource.templatename || resource.templateid }} </router-link>
+                <span v-else>{{ resource.templatedisplaytext || resource.templatename || resource.templateid }}</span>
               </div>
             </div>
             <div class="resource-detail-item" v-if="resource.isoid">
@@ -617,7 +660,8 @@
               <div class="resource-detail-item__details">
                 <resource-icon v-if="images.iso || (resource.isoid === resource.templateid && images.guestoscategory)" :image="images.iso || images.guestoscategory" size="1x" style="margin-right: 5px"/>
                 <UsbOutlined v-else />
-                  <router-link :to="{ path: '/iso/' + resource.isoid }">{{ resource.isodisplaytext || resource.isoname || resource.isoid }} </router-link>
+                <router-link v-if="validLinks.iso" :to="{ path: '/iso/' + resource.isoid }">{{ resource.isodisplaytext || resource.isoname || resource.isoid }} </router-link>
+                <span v-else>{{ resource.isodisplaytext || resource.isoname || resource.isoid }}</span>
               </div>
             </div>
             <div class="resource-detail-item" v-if="resource.serviceofferingname && resource.serviceofferingid">
@@ -794,6 +838,14 @@
                 <span v-else>{{ resource.account }}</span>
               </div>
             </div>
+            <div class="resource-detail-item" v-if="resource.userid && $route.meta.name === 'keypair'">
+              <div class="resource-detail-item__label">{{ $t('label.user') }}</div>
+              <div class="resource-detail-item__details">
+                <user-outlined />
+                <router-link v-if="!isStatic && $router.resolve('/accountuser/' + resource.userid).matched[0].redirect !== '/exception/404'" :to="{ path: '/accountuser/' + resource.userid }">{{ resource.username }}</router-link>
+                <span v-else>{{ resource.username }}</span>
+              </div>
+            </div>
             <div class="resource-detail-item" v-if="resource.roleid">
               <div class="resource-detail-item__label">{{ $t('label.role') }}</div>
               <div class="resource-detail-item__details">
@@ -881,54 +933,6 @@
               :osCategoryId="osCategoryId" />
           </div>
 
-          <div class="account-center-tags" v-if="showKeys || resource.apikeyaccess">
-            <a-divider/>
-          </div>
-          <div class="account-center-tags" v-if="resource.apikeyaccess && resource.account">
-            <div class="resource-detail-item">
-              <div class="resource-detail-item__label">{{ $t('label.apikeyaccess') }}</div>
-              <div class="resource-detail-item__details">
-                <status class="status" :text="resource.apikeyaccess" displayText/>
-              </div>
-            </div>
-          </div>
-          <div class="account-center-tags" v-if="showKeys">
-            <div class="user-keys">
-              <key-outlined />
-              <strong>
-                {{ $t('label.apikey') }}
-                <tooltip-button
-                  tooltipPlacement="right"
-                  :tooltip="$t('label.copy') + ' ' + $t('label.apikey')"
-                  icon="CopyOutlined"
-                  type="dashed"
-                  size="small"
-                  @onClick="$message.success($t('label.copied.clipboard'))"
-                  :copyResource="resource.apikey" />
-              </strong>
-              <div>
-                {{ resource.apikey.substring(0, 20) }}...
-              </div>
-            </div> <br/>
-            <div class="user-keys">
-              <lock-outlined />
-              <strong>
-                {{ $t('label.secretkey') }}
-                <tooltip-button
-                  tooltipPlacement="right"
-                  :tooltip="$t('label.copy') + ' ' + $t('label.secretkey')"
-                  icon="CopyOutlined"
-                  type="dashed"
-                  size="small"
-                  @onClick="$message.success($t('label.copied.clipboard'))"
-                  :copyResource="resource.secretkey" />
-              </strong>
-              <div>
-                {{ resource.secretkey.substring(0, 20) }}...
-              </div>
-            </div>
-          </div>
-
           <div class="account-center-tags" v-if="!isStatic && resourceType && tagsSupportingResourceTypes.includes(this.resourceType) && 'listTags' in $store.getters.apis">
             <a-divider/>
             <a-spin :spinning="loadingTags">
@@ -980,7 +984,7 @@
 <script>
 import { getAPI, postAPI } from '@/api'
 import { createPathBasedOnVmType } from '@/utils/plugins'
-import { validateLinks } from '@/utils/links'
+import { validateLinksAsync } from '@/utils/links'
 import Console from '@/components/widgets/Console'
 import OsLogo from '@/components/widgets/OsLogo'
 import Status from '@/components/widgets/Status'
@@ -1068,14 +1072,14 @@ export default {
     },
     resource: {
       deep: true,
-      handler (newData, oldData) {
+      async handler (newData, oldData) {
         if (newData === oldData) return
         this.newResource = newData
         this.showKeys = false
         this.setData()
-        this.validLinks = validateLinks(this.$router, this.isStatic, this.resource)
+        this.validLinks = await validateLinksAsync(this.$router, this.isStatic, this.resource)
 
-        if ('apikey' in this.resource) {
+        if (this.$route.meta.name === 'accountuser' && 'apikey' in this.resource) {
           this.getUserKeys()
         }
         this.updateResourceAdditionalData()
@@ -1254,8 +1258,6 @@ export default {
         return
       }
       getAPI('getUserKeys', { id: this.resource.id }).then(json => {
-        this.showKeys = true
-        this.newResource.secretkey = json.getuserkeysresponse.userkeys.secretkey
         if (!this.isAdmin()) {
           this.newResource.apikeyaccess = json.getuserkeysresponse.userkeys.apikeyaccess ? 'Enabled' : 'Disabled'
         }

@@ -1336,4 +1336,20 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         Filter filter = new Filter(VMInstanceVO.class, null, false, 0L, 10L);
         return listBy(sc, filter);
     }
+
+    @Override
+    public List<Long> listIdsByHostIdForVolumeStats(long hostId) {
+        GenericSearchBuilder<VMInstanceVO, Long> sb = createSearchBuilder(Long.class);
+        sb.selectFields(sb.entity().getId());
+        sb.and().op("host", sb.entity().getHostId(), SearchCriteria.Op.EQ);
+        sb.or().op("hostNull", sb.entity().getHostId(), Op.NULL);
+        sb.and("lastHost", sb.entity().getLastHostId(), SearchCriteria.Op.EQ);
+        sb.cp();
+        sb.cp();
+        sb.done();
+        SearchCriteria<Long> sc = sb.create();
+        sc.setParameters("host", hostId);
+        sc.setParameters("lastHost", hostId);
+        return customSearch(sc, null);
+    }
 }

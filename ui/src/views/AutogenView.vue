@@ -214,7 +214,7 @@
           :spinning="actionLoading"
           v-ctrl-enter="handleSubmit"
         >
-          <span v-if="currentAction.message">
+          <span v-if="currentAction.messageString">
             <div v-if="selectedRowKeys.length > 0">
               <a-alert
                 v-if="['delete-outlined', 'DeleteOutlined', 'poweroff-outlined', 'PoweroffOutlined'].includes(currentAction.icon)"
@@ -226,7 +226,7 @@
                     style="padding-left: 5px"
                     v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`"
                   />
-                  <span v-html="currentAction.message" />
+                  <span v-html="currentAction.messageString" />
                 </template>
               </a-alert>
               <a-alert
@@ -238,14 +238,14 @@
                     v-if="selectedRowKeys.length > 0"
                     v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`"
                   />
-                  <span v-html="currentAction.message" />
+                  <span v-html="currentAction.messageString" />
                 </template>
               </a-alert>
             </div>
             <div v-else>
               <a-alert type="warning">
                 <template #message>
-                  <span v-html="currentAction.message" />
+                  <span v-html="currentAction.messageString" />
                 </template>
               </a-alert>
             </div>
@@ -1119,7 +1119,6 @@ export default {
       this.loading = true
       if (this.$route.path.startsWith('/cniconfiguration')) {
         params.forcks = true
-        console.log('here')
       }
       if (this.$route.params && this.$route.params.id) {
         params.id = this.$route.params.id
@@ -1131,6 +1130,10 @@ export default {
             delete params.id
             params.name = this.$route.params.id
           }
+        }
+        if (['listUserKeys'].includes(this.apiName)) {
+          delete params.listall
+          params.keypairid = this.$route.params.id
         }
         if (['listPublicIpAddresses'].includes(this.apiName)) {
           params.allocatedonly = false
@@ -1253,7 +1256,7 @@ export default {
         if (this.items.length <= 0 && this.dataView) {
           this.$router.push({ path: '/exception/404' })
         }
-        if (!this.showAction || this.dataView) {
+        if (!this.showAction || this.dataView || (this.items.length === 1 && this.apiName === 'getUserKeys')) {
           this.resource = this.items?.[0] || {}
           this.$emit('change-resource', this.resource)
         }
@@ -1384,9 +1387,11 @@ export default {
       this.currentAction.paramFilters = []
       if ('message' in action) {
         if (typeof action.message === 'function') {
-          action.message = action.message(action.resource)
+          action.messageString = action.message(action.resource)
+        } else {
+          action.messageString = action.message
         }
-        action.message = Array.isArray(action.message) ? this.$t(...action.message) : this.$t(action.message)
+        action.messageString = Array.isArray(action.messageString) ? this.$t(...action.messageString) : this.$t(action.messageString)
       }
       this.getArgs(action, isGroupAction, paramFields)
       this.getFilters(action, isGroupAction, paramFields)

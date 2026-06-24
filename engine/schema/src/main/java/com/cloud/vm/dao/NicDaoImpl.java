@@ -127,6 +127,13 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
     }
 
     @Override
+    public int countByVmId(long instanceId) {
+        SearchCriteria<NicVO> sc = AllFieldsSearch.create();
+        sc.setParameters("instance", instanceId);
+        return getCount(sc);
+    }
+
+    @Override
     public List<NicVO> listByVmIdOrderByDeviceId(long instanceId) {
         SearchCriteria<NicVO> sc = AllFieldsSearch.create();
         sc.setParameters("instance", instanceId);

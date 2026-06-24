@@ -108,6 +108,7 @@
   <bean id="instanceGroupJoinDaoImpl" class="com.cloud.api.query.dao.InstanceGroupJoinDaoImpl" />
   <bean id="managementServerJoinDaoImpl" class="com.cloud.api.query.dao.ManagementServerJoinDaoImpl" />
   <bean id="instanceGroupVMMapDaoImpl" class="com.cloud.vm.dao.InstanceGroupVMMapDaoImpl" />
+  <bean id="vmIsoMapDaoImpl" class="com.cloud.vm.dao.VmIsoMapDaoImpl" />
   <bean id="itWorkDaoImpl" class="com.cloud.vm.ItWorkDaoImpl" />
   <bean id="lBHealthCheckPolicyDaoImpl" class="com.cloud.network.dao.LBHealthCheckPolicyDaoImpl" />
   <bean id="lBStickinessPolicyDaoImpl" class="com.cloud.network.dao.LBStickinessPolicyDaoImpl" />
@@ -116,6 +117,7 @@
   <bean id="loadBalancerVMMapDaoImpl" class="com.cloud.network.dao.LoadBalancerVMMapDaoImpl" />
   <bean id="loadBalancerCertMapDaoImpl" class="com.cloud.network.dao.LoadBalancerCertMapDaoImpl" />
   <bean id="managementServerHostDaoImpl" class="com.cloud.cluster.dao.ManagementServerHostDaoImpl" />
+  <bean id="managementServerHostDetailsDaoImpl" class="com.cloud.cluster.dao.ManagementServerHostDetailsDaoImpl" />
   <bean id="managementServerHostPeerDaoImpl" class="com.cloud.cluster.dao.ManagementServerHostPeerDaoImpl" />
   <bean id="managementServerHostPeerJoinDaoImpl" class="com.cloud.cluster.dao.ManagementServerHostPeerJoinDaoImpl" />
   <bean id="managementServerStatusDaoImpl" class="com.cloud.cluster.dao.ManagementServerStatusDaoImpl" />
@@ -271,6 +273,7 @@
   <bean id="backupDaoImpl" class="org.apache.cloudstack.backup.dao.BackupDaoImpl" />
   <bean id="backupDetailsDaoImpl" class="org.apache.cloudstack.backup.dao.BackupDetailsDaoImpl" />
   <bean id="backupRepositoryDaoImpl" class="org.apache.cloudstack.backup.dao.BackupRepositoryDaoImpl" />
+  <bean id="imageTransferDaoImpl" class="org.apache.cloudstack.backup.dao.ImageTransferDaoImpl" />
   <bean id="directDownloadCertificateDaoImpl" class="org.apache.cloudstack.direct.download.DirectDownloadCertificateDaoImpl" />
   <bean id="directDownloadCertificateHostMapDaoImpl" class="org.apache.cloudstack.direct.download.DirectDownloadCertificateHostMapDaoImpl" />
   <bean id="routerHealthCheckResultsDaoImpl" class="com.cloud.network.dao.RouterHealthCheckResultDaoImpl" />
@@ -282,8 +285,9 @@
   <bean id="secondaryStorageHeuristicDaoImpl" class="org.apache.cloudstack.secstorage.dao.SecondaryStorageHeuristicDaoImpl" />
   <bean id="heuristicRuleHelper" class="org.apache.cloudstack.storage.heuristics.HeuristicRuleHelper" />
   <bean id="publicIpQuarantineDaoImpl" class="com.cloud.network.dao.PublicIpQuarantineDaoImpl" />
-  <bean id="VMScheduleDaoImpl" class="org.apache.cloudstack.vm.schedule.dao.VMScheduleDaoImpl" />
-  <bean id="VMScheduledJobDaoImpl" class="org.apache.cloudstack.vm.schedule.dao.VMScheduledJobDaoImpl" />
+  <bean id="ResourceScheduleDaoImpl" class="org.apache.cloudstack.schedule.dao.ResourceScheduleDaoImpl" />
+  <bean id="ResourceScheduleDetailsDaoImpl" class="org.apache.cloudstack.schedule.dao.ResourceScheduleDetailsDaoImpl" />
+  <bean id="ResourceScheduledJobDaoImpl" class="org.apache.cloudstack.schedule.dao.ResourceScheduledJobDaoImpl" />
   <bean id="VmwareDatacenterDaoImpl" class="com.cloud.hypervisor.vmware.dao.VmwareDatacenterDaoImpl" />
   <bean id="vnfTemplateDetailsDaoImpl" class="com.cloud.storage.dao.VnfTemplateDetailsDaoImpl" />
   <bean id="vnfTemplateNicDaoImpl" class="com.cloud.storage.dao.VnfTemplateNicDaoImpl" />

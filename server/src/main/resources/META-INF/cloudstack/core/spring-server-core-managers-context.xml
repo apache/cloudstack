@@ -183,6 +183,8 @@
 
     <bean id="oCFS2ManagerImpl" class="com.cloud.storage.OCFS2ManagerImpl" />
 
+    <bean id="clvmPoolManager" class="com.cloud.storage.clvm.ClvmPoolManager" />
+
     <bean id="outOfBandManagementServiceImpl" class="org.apache.cloudstack.outofbandmanagement.OutOfBandManagementServiceImpl">
         <property name="outOfBandManagementDrivers" value="#{outOfBandManagementDriversRegistry.registered}" />
     </bean>
@@ -347,6 +349,8 @@
 
     <bean id="backupRepositoryService" class="org.apache.cloudstack.backup.BackupRepositoryServiceImpl" />
 
+    <bean id="kvmBackupExportService" class="org.apache.cloudstack.backup.KVMBackupExportServiceImpl" />
+
     <bean id="storageLayer" class="com.cloud.storage.JavaStorageLayer" />
 
     <bean id="nfsMountManager" class="org.apache.cloudstack.storage.NfsMountManagerImpl" >
@@ -372,8 +376,11 @@
     <bean id="bucketApiServiceImpl" class="org.apache.cloudstack.storage.object.BucketApiServiceImpl" />
     <bean id="routedIpv4ManagerImpl" class="org.apache.cloudstack.network.RoutedIpv4ManagerImpl" />
 
-    <bean id="VMScheduleManagerImpl" class="org.apache.cloudstack.vm.schedule.VMScheduleManagerImpl" />
-    <bean id="VMSchedulerImpl" class="org.apache.cloudstack.vm.schedule.VMSchedulerImpl">
+    <bean id="ResourceScheduleManagerImpl" class="org.apache.cloudstack.schedule.ResourceScheduleManagerImpl" />
+    <bean id="VMScheduleWorker" class="org.apache.cloudstack.schedule.vm.VMScheduleWorker">
+        <property name="asyncJobDispatcher" ref="ApiAsyncJobDispatcher" />
+    </bean>
+    <bean id="AutoScaleScheduleWorker" class="org.apache.cloudstack.schedule.autoscale.AutoScaleScheduleWorker">
         <property name="asyncJobDispatcher" ref="ApiAsyncJobDispatcher" />
     </bean>
 

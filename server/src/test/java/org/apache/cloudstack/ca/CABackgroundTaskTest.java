@@ -115,19 +115,19 @@ public class CABackgroundTaskTest {
         certMap.put(hostIp, expiredCertificate);
         Assume.assumeThat(certMap.size() == 1, is(true));
         task.runInContext();
-        Mockito.verify(caManager, Mockito.times(1)).provisionCertificate(host, false, null);
+        Mockito.verify(caManager, Mockito.times(1)).provisionCertificate(host, false, null, false);
         Mockito.verify(caManager, Mockito.times(0)).sendAlert(Mockito.any(Host.class), Mockito.anyString(), Mockito.anyString());
     }
 
     @Test
     public void testAutoRenewalEnabledWithExceptionsOnProvisioning() throws Exception {
         overrideDefaultConfigValue(AutomaticCertRenewal, "_defaultValue", "true");
-        Mockito.when(caManager.provisionCertificate(any(Host.class), anyBoolean(), nullable(String.class))).thenThrow(new CloudRuntimeException("some error"));
+        Mockito.when(caManager.provisionCertificate(any(Host.class), anyBoolean(), nullable(String.class), anyBoolean())).thenThrow(new CloudRuntimeException("some error"));
         host.setManagementServerId(ManagementServerNode.getManagementServerId());
         certMap.put(hostIp, expiredCertificate);
         Assume.assumeThat(certMap.size() == 1, is(true));
         task.runInContext();
-        Mockito.verify(caManager, Mockito.times(1)).provisionCertificate(host, false, null);
+        Mockito.verify(caManager, Mockito.times(1)).provisionCertificate(host, false, null, false);
         Mockito.verify(caManager, Mockito.times(1)).sendAlert(Mockito.any(Host.class), Mockito.anyString(), Mockito.anyString());
     }
 
@@ -138,12 +138,12 @@ public class CABackgroundTaskTest {
         Assume.assumeThat(certMap.size() == 1, is(true));
         // First round
         task.runInContext();
-        Mockito.verify(caManager, Mockito.times(0)).provisionCertificate(Mockito.any(Host.class), anyBoolean(), Mockito.anyString());
+        Mockito.verify(caManager, Mockito.times(0)).provisionCertificate(Mockito.any(Host.class), anyBoolean(), Mockito.anyString(), Mockito.anyBoolean());
         Mockito.verify(caManager, Mockito.times(1)).sendAlert(Mockito.any(Host.class), Mockito.anyString(), Mockito.anyString());
         Mockito.reset(caManager);
         // Second round
         task.runInContext();
-        Mockito.verify(caManager, Mockito.times(0)).provisionCertificate(Mockito.any(Host.class), anyBoolean(), Mockito.anyString());
+        Mockito.verify(caManager, Mockito.times(0)).provisionCertificate(Mockito.any(Host.class), anyBoolean(), Mockito.anyString(), Mockito.anyBoolean());
         Mockito.verify(caManager, Mockito.times(0)).sendAlert(Mockito.any(Host.class), Mockito.anyString(), Mockito.anyString());
     }
 
