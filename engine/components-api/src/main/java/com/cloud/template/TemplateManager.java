@@ -64,6 +64,21 @@ public interface TemplateManager {
             true,
             ConfigKey.Scope.Global);
 
+    ConfigKey<Integer> VmIsoMaxCount = new ConfigKey<Integer>("Advanced",
+            Integer.class,
+            "vm.iso.max.count", "1",
+            "Maximum number of ISOs that may be attached to a VM.",
+            true,
+            ConfigKey.Scope.Cluster);
+
+    // KVM/libvirt maps deviceSeq=3 to hdc (hda/hdb are taken by the root volume on i440fx/IDE).
+    // user_vm.iso_id has always pointed at this slot; additional cdroms live in vm_iso_map.
+    int CDROM_PRIMARY_DEVICE_SEQ = 3;
+
+    // Fallback per-VM cdrom cap when the placement host hasn't advertised host.cdrom.max.count
+    // (older agent, never-deployed VM, etc.).
+    int DEFAULT_CDROM_MAX_PER_VM = 1;
+
     static final String VMWARE_TOOLS_ISO = "vmware-tools.iso";
     static final String XS_TOOLS_ISO = "xs-tools.iso";
 

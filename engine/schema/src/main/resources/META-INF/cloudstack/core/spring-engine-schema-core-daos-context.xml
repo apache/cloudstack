@@ -108,6 +108,7 @@
   <bean id="instanceGroupJoinDaoImpl" class="com.cloud.api.query.dao.InstanceGroupJoinDaoImpl" />
   <bean id="managementServerJoinDaoImpl" class="com.cloud.api.query.dao.ManagementServerJoinDaoImpl" />
   <bean id="instanceGroupVMMapDaoImpl" class="com.cloud.vm.dao.InstanceGroupVMMapDaoImpl" />
+  <bean id="vmIsoMapDaoImpl" class="com.cloud.vm.dao.VmIsoMapDaoImpl" />
   <bean id="itWorkDaoImpl" class="com.cloud.vm.ItWorkDaoImpl" />
   <bean id="lBHealthCheckPolicyDaoImpl" class="com.cloud.network.dao.LBHealthCheckPolicyDaoImpl" />
   <bean id="lBStickinessPolicyDaoImpl" class="com.cloud.network.dao.LBStickinessPolicyDaoImpl" />
