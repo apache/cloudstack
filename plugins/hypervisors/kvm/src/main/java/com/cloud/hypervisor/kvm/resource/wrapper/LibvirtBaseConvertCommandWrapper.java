@@ -157,6 +157,13 @@ public abstract class LibvirtBaseConvertCommandWrapper <T extends Command, A ext
             String destinationName = UUID.randomUUID().toString();
 
             try {
+                if (destinationPool.getAvailable() < sourceDisk.getSize()) {
+                    String msg = String.format("Not enough space on destination pool %s (%s bytes) to copy disk %s (size %s)",
+                            destinationPool.getUuid(), destinationPool.getAvailable(), sourceDisk.getName(), sourceDisk.getSize());
+                    logger.error(msg);
+                    throw new CloudRuntimeException(msg);
+                }
+
                 KVMPhysicalDisk destinationDisk = storagePoolMgr.copyPhysicalDisk(sourceDisk, destinationName, destinationPool, 7200 * 1000);
                 targetDisks.add(destinationDisk);
             } catch (Exception e) {
