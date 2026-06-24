@@ -154,8 +154,8 @@
       <a-tab-pane key="oauth" :disabled="!socialLogin">
         <template #tab>
           <span style="display: inline-flex; align-items: center; gap: 4px; color: inherit;">
-            <img src="/assets/github.svg" alt="GitHub" style="width: 16px; height: 16px; display: block;" />
-            <img src="/assets/google.svg" alt="Google" style="width: 16px; height: 16px; display: block;" />
+            <img src="/assets/github.svg" alt="GitHub" class="oauth-tab-icon" :class="{ 'oauth-tab-icon--disabled': !socialLogin }" style="width: 16px; height: 16px; display: block;" />
+            <img src="/assets/google.svg" alt="Google" class="oauth-tab-icon" :class="{ 'oauth-tab-icon--disabled': !socialLogin }" style="width: 16px; height: 16px; display: block;" />
             <span>{{ $t('label.login.external') }}</span>
           </span>
         </template>
@@ -692,6 +692,11 @@ export default {
 
   :deep(.tab-center .ant-tabs-tab) {
     margin: 0 16px 0 0;
+  }
+
+  .oauth-tab-icon--disabled {
+    filter: grayscale(100%);
+    opacity: 0.45;
   }
 
   .mobile & {
