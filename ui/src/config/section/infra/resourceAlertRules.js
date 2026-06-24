@@ -19,7 +19,7 @@ import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
 
 export default {
-  name: 'resourcealertrule',
+  name: 'resourcealerts',
   title: 'label.resource.alert.rules',
   icon: 'BellOutlined',
   permission: ['listResourceAlertRules'],

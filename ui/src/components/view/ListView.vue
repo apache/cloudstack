@@ -1222,7 +1222,7 @@ export default {
           '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering',
           '/tungstenfabric', '/oauthsetting', '/guestos', '/guestoshypervisormapping', '/webhook', 'webhookdeliveries', 'webhookfilters', '/quotatariff', '/sharedfs',
           '/ipv4subnets', '/managementserver', '/gpucard', '/gpudevices', '/vgpuprofile', '/extension', '/snapshotpolicy', '/backupschedule',
-          '/kmskey', '/hsmprofile', '/dnsserver', '/dnszone', '/resourcealertrule'].join('|'))
+          '/kmskey', '/hsmprofile', '/dnsserver', '/dnszone', '/resourcealerts'].join('|'))
           .test(this.$route.path)
     },
     enableGroupAction () {
@@ -1231,7 +1231,7 @@ export default {
         'project', 'account', 'systemvm', 'router', 'computeoffering', 'systemoffering',
         'diskoffering', 'backupoffering', 'networkoffering', 'vpcoffering', 'ilbvm', 'kubernetes', 'comment', 'buckets',
         'webhook', 'webhookdeliveries', 'sharedfs', 'ipv4subnets', 'asnumbers', 'guestos', 'gpucard', 'gpudevices', 'vgpuprofile',
-        'quotatariff', 'resourcealertrule'
+        'quotatariff', 'resourcealerts'
       ].includes(this.$route.name)
     },
     getDateAtTimeZone (date, timezone) {
