@@ -438,7 +438,7 @@ public class NetrisApiClientImpl implements NetrisApiClient {
                 try {
                     aclApi.apiAclPut(aclEditItem);
                 } catch (ApiException e) {
-                    if (e.getResponseBody().contains("This kind of acl already exists")) {
+                    if (e.getResponseBody().contains("already exists")) {
                         logger.info("Netris ACL rule: {} already exists and doesn't need to be updated", aclName);
                         return true;
                     }
@@ -448,7 +448,15 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             }
             AclAddItem aclAddItem = getAclAddItem(cmd, aclName);
             aclAddItem.setVpc(vpc);
-            aclApi.apiAclPost(aclAddItem);
+            try {
+                aclApi.apiAclPost(aclAddItem);
+            } catch (ApiException e) {
+                if (e.getResponseBody() != null && e.getResponseBody().contains("already exists")) {
+                    logger.info("Netris ACL rule: {} already exists, skipping creation", aclName);
+                    return true;
+                }
+                throw e;
+            }
         } catch (ApiException e) {
             logAndThrowException(String.format("Failed to create Netris ACL: %s", cmd.getNetrisAclName()), e);
         }
@@ -971,13 +979,12 @@ public class NetrisApiClientImpl implements NetrisApiClient {
                 logger.error("Could not find the Netris LB rule with name {}", lbName);
                 return false;
             }
-            if (matchingLbId.isEmpty()) {
+            if (!matchingLbId.isEmpty()) {
+                L4LoadBalancerApi lbApi = apiClient.getApiStubForMethod(L4LoadBalancerApi.class);
+                lbApi.apiV2L4lbIdDelete(matchingLbId.get(0).intValue());
+            } else {
                 logger.warn("There doesn't seem to be any LB rule on Netris matching {}", lbName);
-                return true;
             }
-
-            L4LoadBalancerApi lbApi = apiClient.getApiStubForMethod(L4LoadBalancerApi.class);
-            lbApi.apiV2L4lbIdDelete(matchingLbId.get(0).intValue());
             if (Objects.nonNull(cidrList)) {
                 deleteAclRulesForLb(cmd);
             }
