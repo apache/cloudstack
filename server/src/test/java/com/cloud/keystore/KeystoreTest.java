@@ -75,20 +75,20 @@ public class KeystoreTest extends TestCase {
             ComponentLocator locator = ComponentLocator.getCurrentLocator();
 
             KeystoreDao ksDao = locator.getDao(KeystoreDao.class);
-            ksDao.save("CPVMCertificate", "CPVMCertificate", "KeyForCertificate", "realhostip.com");
+            ksDao.save("CPVMCertificate", "CPVMCertificate", "KeyForCertificate", "example.com");
             ksVo = ksDao.findByName("CPVMCertificate");
             assertTrue(ksVo != null);
             assertTrue(ksVo.getCertificate().equals("CPVMCertificate"));
             assertTrue(ksVo.getKey().equals("KeyForCertificate"));
-            assertTrue(ksVo.getDomainSuffix().equals("realhostip.com"));
+            assertTrue(ksVo.getDomainSuffix().equals("example.com"));
 
-            ksDao.save("CPVMCertificate", "CPVMCertificate Again", "KeyForCertificate Again", "again.realhostip.com");
+            ksDao.save("CPVMCertificate", "CPVMCertificate Again", "KeyForCertificate Again", "again.example.com");
 
             ksVo = ksDao.findByName("CPVMCertificate");
             assertTrue(ksVo != null);
             assertTrue(ksVo.getCertificate().equals("CPVMCertificate Again"));
             assertTrue(ksVo.getKey().equals("KeyForCertificate Again"));
-            assertTrue(ksVo.getDomainSuffix().equals("again.realhostip.com"));
+            assertTrue(ksVo.getDomainSuffix().equals("again.example.com"));
 
             ksDao.expunge(ksVo.getId());
         }
@@ -112,9 +112,9 @@ public class KeystoreTest extends TestCase {
             assertTrue(ksMgr.configure("TaskManager", new HashMap<String, Object>()));
             assertTrue(ksMgr.start());
 
-            ksMgr.saveCertificate("CPVMCertificate", certContent, keyContent, "realhostip.com");
+            ksMgr.saveCertificate("CPVMCertificate", certContent, keyContent, "example.com");
 
-            byte[] ksBits = ksMgr.getKeystoreBits("CPVMCertificate", "realhostip", "vmops.com");
+            byte[] ksBits = ksMgr.getKeystoreBits("CPVMCertificate", "example", "vmops.com");
             assertTrue(ksBits != null);
 
             try {

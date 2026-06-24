@@ -46,6 +46,8 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
 
     List<VolumeVO> findByInstanceAndType(long id, Volume.Type vType);
 
+    List<VolumeVO> findByInstanceAndNotStates(long id, Volume.State...states);
+
     List<VolumeVO> findIncludingRemovedByInstanceAndType(long id, Volume.Type vType);
 
     List<VolumeVO> findNonDestroyedVolumesByInstanceIdAndPoolId(long instanceId, long poolId);
@@ -166,4 +168,12 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
     int getVolumeCountByOfferingId(long diskOfferingId);
 
     VolumeVO findByLastIdAndState(long lastVolumeId, Volume.State...states);
+
+    /**
+     *  Retrieves volume by its externalId
+     *
+     * @param externalUuid
+     * @return Volume Object of matching search criteria
+     */
+    VolumeVO findByExternalUuid(String externalUuid);
 }

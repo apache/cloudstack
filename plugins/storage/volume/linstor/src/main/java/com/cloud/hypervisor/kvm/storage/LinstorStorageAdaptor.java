@@ -508,12 +508,33 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
             // if there is only one template-for property left for templates, the template isn't needed anymore
             // or if it isn't a template anyway, it will not have this Aux property
             // _cs-template-for- properties work like a ref-count.
-            if (rd.getProps().keySet().stream()
+            long remainingTemplateRefs = rd.getProps().keySet().stream()
                     .filter(key -> key.startsWith("Aux/" + LinstorUtil.CS_TEMPLATE_FOR_PREFIX))
-                    .count() == expectedProps) {
+                    .count();
+            if (remainingTemplateRefs == expectedProps) {
+                // Surface the legacy case where a resource has zero `_cs-template-for-` aux
+                // properties even though we never decremented one — that's a template predating
+                // the ref-count convention, or a stale orphan. Logging before deletion lets
+                // operators audit how many such orphans existed at upgrade time.
+                if (expectedProps == 0) {
+                    logger.info("Linstor: deleting resource {} which has no _cs-template-for- aux properties " +
+                                    "(legacy template predating the ref-count convention, or a stale orphan). " +
+                                    "Resource group context: {}", rd.getName(), rscGrpName);
+                }
                 ApiCallRcList answers = api.resourceDefinitionDelete(rd.getName());
                 checkLinstorAnswersThrow(answers);
                 deleted = true;
+
+                // LINSTOR can return success here while the resource lingers in DELETING state
+                // on the controller (down peer, lost quorum, etc.). Confirm it's actually gone
+                // — if not, log a WARN so operators can clear it manually. Don't throw: the
+                // CloudStack-side accounting has already moved on.
+                if (!LinstorUtil.waitForResourceDefinitionDeleted(api, rd.getName(),
+                        LinstorUtil.DEFAULT_RD_DELETE_VERIFY_TIMEOUT_MILLIS)) {
+                    logger.warn("Linstor: resource {} still present {}ms after delete returned success — " +
+                            "may be stuck in DELETING. Check the LINSTOR controller (linstor resource list).",
+                            rd.getName(), LinstorUtil.DEFAULT_RD_DELETE_VERIFY_TIMEOUT_MILLIS);
+                }
             }
         }
         return deleted;
@@ -585,8 +606,8 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         Path propFile = diskPath.getParent().resolve("template.properties");
         if (Files.exists(propFile)) {
             java.util.Properties templateProps = new java.util.Properties();
-            try {
-                templateProps.load(new FileInputStream(propFile.toFile()));
+            try (FileInputStream in = new FileInputStream(propFile.toFile())) {
+                templateProps.load(in);
                 String desc = templateProps.getProperty("description");
                 if (desc != null && desc.startsWith("SystemVM Template")) {
                     return true;

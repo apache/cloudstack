@@ -88,9 +88,15 @@ public interface AccountService {
 
     Account getActiveAccountById(long accountId);
 
+    Account getActiveAccountByUuid(String accountUuid);
+
     Account getAccount(long accountId);
 
+    Account getAccountByUuid(String accountUuid);
+
     User getActiveUser(long userId);
+
+    User getOneActiveUserForAccount(Account account);
 
     User getUserIncludingRemoved(long userId);
 
@@ -137,6 +143,8 @@ public interface AccountService {
     void validateCallingUserHasAccessToDesiredUser(Long userId);
 
     Long finalizeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly);
+
+    Long finalizeAccountId(Long accountId, String accountName, Long domainId, Long projectId);
 
     /**
      * returns the user account object for a given user id

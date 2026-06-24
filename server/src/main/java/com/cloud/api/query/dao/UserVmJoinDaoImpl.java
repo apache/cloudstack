@@ -17,14 +17,13 @@
 package com.cloud.api.query.dao;
 
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
-
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
@@ -34,14 +33,13 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.cloud.gpu.dao.VgpuProfileDao;
-import com.cloud.service.dao.ServiceOfferingDao;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.response.AttachedIsoResponse;
 import org.apache.cloudstack.api.response.NicExtraDhcpOptionResponse;
 import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
@@ -49,6 +47,7 @@ import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VnfNicResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.extension.ExtensionHelper;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.vm.lease.VMLeaseManager;
@@ -61,16 +60,25 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.gpu.GPU;
+import com.cloud.gpu.dao.VgpuProfileDao;
 import com.cloud.host.ControlState;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.host.DetailVO;
+import com.cloud.host.Host;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.IpAddress;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.service.ServiceOfferingDetailsVO;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VnfTemplateDetailVO;
+import com.cloud.template.TemplateManager;
 import com.cloud.storage.VnfTemplateNicVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -83,6 +91,7 @@ import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
@@ -91,11 +100,12 @@ import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VmIsoMapVO;
 import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.NicExtraDhcpOptionDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
-
 import com.cloud.vm.dao.VMInstanceDetailsDao;
+import com.cloud.vm.dao.VmIsoMapDao;
 
 @Component
 public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJoinVO, UserVmResponse> implements UserVmJoinDao {
@@ -128,6 +138,14 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
     private VgpuProfileDao vgpuProfileDao;
     @Inject
     VMTemplateDao vmTemplateDao;
+    @Inject
+    VmIsoMapDao vmIsoMapDao;
+    @Inject
+    HostDetailsDao hostDetailsDao;
+    @Inject
+    HostDao hostDao;
+    @Inject
+    ExtensionHelper extensionHelper;
 
     private final SearchBuilder<UserVmJoinVO> VmDetailSearch;
     private final SearchBuilder<UserVmJoinVO> activeVmByIsoSearch;
@@ -243,6 +261,23 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             userVmResponse.setIsoId(userVm.getIsoUuid());
             userVmResponse.setIsoName(userVm.getIsoName());
             userVmResponse.setIsoDisplayText(userVm.getIsoDisplayText());
+
+            List<AttachedIsoResponse> attachedIsos = new ArrayList<>();
+            if (userVm.getIsoUuid() != null) {
+                VMTemplateVO bootIso = vmTemplateDao.findById(userVm.getIsoId());
+                boolean bootIsoBootable = bootIso != null && bootIso.isBootable();
+                attachedIsos.add(new AttachedIsoResponse(userVm.getIsoUuid(), userVm.getIsoName(),
+                        userVm.getIsoDisplayText(), TemplateManager.CDROM_PRIMARY_DEVICE_SEQ, bootIsoBootable));
+            }
+            for (VmIsoMapVO row : vmIsoMapDao.listByVmId(userVm.getId())) {
+                VMTemplateVO tmpl = vmTemplateDao.findById(row.getIsoId());
+                if (tmpl != null) {
+                    attachedIsos.add(new AttachedIsoResponse(tmpl.getUuid(), tmpl.getName(),
+                            tmpl.getDisplayText(), row.getDeviceSeq(), false));
+                }
+            }
+            userVmResponse.setIsos(attachedIsos);
+            userVmResponse.setIsoMaxCount(effectiveCdromMaxCount(userVm));
         }
         if (details.contains(VMDetails.all) || details.contains(VMDetails.servoff)) {
             userVmResponse.setServiceOfferingId(userVm.getServiceOfferingUuid());
@@ -358,6 +393,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
                 nicResponse.setIp6Address(userVm.getIp6Address());
                 nicResponse.setIp6Gateway(userVm.getIp6Gateway());
                 nicResponse.setIp6Cidr(userVm.getIp6Cidr());
+                nicResponse.setEnabled(userVm.isNicEnabled());
                 if (userVm.getBroadcastUri() != null) {
                     nicResponse.setBroadcastUri(userVm.getBroadcastUri().toString());
                 }
@@ -384,6 +420,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
                     for (NicSecondaryIpVO ip : secondaryIps) {
                         NicSecondaryIpResponse ipRes = new NicSecondaryIpResponse();
                         ipRes.setId(ip.getUuid());
+                        ipRes.setDescription(ip.getDescription());
                         ApiResponseHelper.setResponseIpAddress(ip, ipRes);
                         ipList.add(ipRes);
                     }
@@ -460,7 +497,16 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
 
             // Remove deny listed settings if user is not admin
             if (caller.getType() != Account.Type.ADMIN) {
-                String[] userVmSettingsToHide = QueryService.UserVMDeniedDetails.value().split(",");
+                List<String> userVmSettingsToHide = new ArrayList<>();
+                String[] parts = QueryService.UserVMDeniedDetails.value().split(",");
+                if (parts.length > 0) {
+                    Collections.addAll(userVmSettingsToHide, parts);
+                }
+                if (userVm.getTemplateExtensionId() != null) {
+                    userVmSettingsToHide.addAll(extensionHelper.getExtensionReservedResourceDetails(
+                            userVm.getTemplateExtensionId()));
+                }
+
                 for (String key : userVmSettingsToHide) {
                     resourceDetails.remove(key.trim());
                 }
@@ -496,7 +542,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         }
 
         if (userVm.getUserDataId() != null) {
-            userVmResponse.setUserDataId(userVm.getUserDataUUid());
+            userVmResponse.setUserDataId(userVm.getUserDataUuid());
             userVmResponse.setUserDataName(userVm.getUserDataName());
             userVmResponse.setUserDataDetails(userVm.getUserDataDetails());
             userVmResponse.setUserDataPolicy(userVm.getUserDataPolicy());
@@ -520,11 +566,48 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         return userVmResponse;
     }
 
-
     private long computeLeaseDurationFromExpiryDate(Date created, Date leaseExpiryDate) {
         LocalDate createdDate = created.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
         LocalDate expiryDate = leaseExpiryDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
         return ChronoUnit.DAYS.between(createdDate, expiryDate);
+    }
+
+    int effectiveCdromMaxCount(UserVmJoinVO userVm) {
+        Long hostId = userVm.getHostId() != null && userVm.getHostId() > 0
+                ? userVm.getHostId() : userVm.getLastHostId();
+        if (hostId == null && userVm.getHypervisorType() != null) {
+            List<HostVO> candidates = hostDao.listByDataCenterIdAndHypervisorType(userVm.getDataCenterId(), userVm.getHypervisorType());
+            if (!candidates.isEmpty()) {
+                hostId = candidates.get(0).getId();
+            }
+        }
+        Long clusterId = userVm.getClusterId();
+        if (clusterId == null && hostId != null) {
+            HostVO host = hostDao.findById(hostId);
+            if (host != null) {
+                clusterId = host.getClusterId();
+            }
+        }
+        int configuredCap = TemplateManager.VmIsoMaxCount.valueIn(clusterId);
+        int hypervisorCap = advertisedCdromCap(hostId);
+        // List endpoint clamps for display robustness; the action paths in TemplateManagerImpl
+        // throw on misconfiguration so operators still see the loud error when they try to attach.
+        return Math.min(configuredCap, hypervisorCap);
+    }
+
+    int advertisedCdromCap(Long hostId) {
+        if (hostId == null) {
+            return TemplateManager.DEFAULT_CDROM_MAX_PER_VM;
+        }
+        DetailVO detail = hostDetailsDao.findDetail(hostId, Host.HOST_CDROM_MAX_COUNT);
+        if (detail == null || detail.getValue() == null) {
+            return TemplateManager.DEFAULT_CDROM_MAX_PER_VM;
+        }
+        try {
+            return Integer.parseInt(detail.getValue());
+        } catch (NumberFormatException e) {
+            return TemplateManager.DEFAULT_CDROM_MAX_PER_VM;
+        }
     }
 
     private void addVnfInfoToserVmResponse(UserVmJoinVO userVm, UserVmResponse userVmResponse) {
@@ -556,7 +639,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
 
     /**
      * The resulting Response attempts to be in line with what is returned from
-     * @see com.cloud.api.ApiResponseHelper#createNicResponse(Nic)
+     * @see com.cloud.api.ApiResponseHelper#{code}createNicResponse(Nic){code}
      */
     @Override
     public UserVmResponse setUserVmResponse(ResponseView view, UserVmResponse userVmData, UserVmJoinVO uvo) {
@@ -625,6 +708,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             /*17: default*/
             nicResponse.setIsDefault(uvo.isDefaultNic());
             nicResponse.setDeviceId(String.valueOf(uvo.getNicDeviceId()));
+            nicResponse.setEnabled(uvo.isNicEnabled());
             List<NicSecondaryIpVO> secondaryIps = ApiDBUtils.findNicSecondaryIps(uvo.getNicId());
             if (secondaryIps != null) {
                 List<NicSecondaryIpResponse> ipList = new ArrayList<NicSecondaryIpResponse>();
@@ -829,5 +913,44 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             sc.setParameters("leaseExpiryEndDate", nextDate);
         }
         return listBy(sc);
+    }
+
+    @Override
+    public List<UserVmJoinVO> listByZonesHypervisorNotTypesAndOwners(List<Long> zoneIds,
+                                                                     Hypervisor.HypervisorType hypervisorType,
+                                                                     List<String> excludeTypes, List<Long> accountIds,
+                                                                     String domainPath, Filter filter) {
+        if (CollectionUtils.isEmpty(zoneIds)) {
+            return Collections.emptyList();
+        }
+        SearchBuilder<UserVmJoinVO> sb = createSearchBuilder();
+        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.IN);
+        sb.and("hypervisorType", sb.entity().getHypervisorType(), Op.EQ);
+        if (CollectionUtils.isNotEmpty(excludeTypes)) {
+            sb.and().op("typeNull", sb.entity().getUserVmType(), Op.NULL);
+            sb.or("type", sb.entity().getUserVmType(), Op.NOTIN);
+            sb.cp();
+        }
+        boolean accountIdsNotEmpty = CollectionUtils.isNotEmpty(accountIds);
+        boolean domainPathNotBlank = StringUtils.isNotBlank(domainPath);
+        if (accountIdsNotEmpty || domainPathNotBlank) {
+            sb.and().op("account", sb.entity().getAccountId(), Op.IN);
+            sb.or("domainPath", sb.entity().getDomainPath(), Op.LIKE);
+            sb.cp();
+        }
+        sb.done();
+        SearchCriteria<UserVmJoinVO> sc = sb.create();
+        sc.setParameters("dataCenterId", zoneIds.toArray());
+        sc.setParameters("hypervisorType", hypervisorType);
+        if (CollectionUtils.isNotEmpty(excludeTypes)) {
+            sc.setParameters("type", excludeTypes.toArray());
+        }
+        if (accountIdsNotEmpty) {
+            sc.setParameters("account", accountIds.toArray());
+        }
+        if (domainPathNotBlank) {
+            sc.setParameters("domainPath", domainPath + "%");
+        }
+        return listBy(sc, filter);
     }
 }

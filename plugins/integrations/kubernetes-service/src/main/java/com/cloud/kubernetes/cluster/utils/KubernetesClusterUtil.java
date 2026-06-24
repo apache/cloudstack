@@ -171,11 +171,20 @@ public class KubernetesClusterUtil {
         // Check if dashboard service is up running.
         while (System.currentTimeMillis() < timeoutTime) {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(String.format("Checking dashboard service for the Kubernetes cluster: %s to come up", kubernetesCluster));
+                LOGGER.debug(String.format("Checking dashboard service (Kubernetes Dashboard or Headlamp) for the Kubernetes cluster: %s to come up", kubernetesCluster));
             }
+            // Check for Headlamp (new dashboard) in kube-system namespace
+            if (isKubernetesClusterAddOnServiceRunning(kubernetesCluster, ipAddress, port, user, sshKeyFile, "kube-system", "headlamp")) {
+                if (LOGGER.isInfoEnabled()) {
+                    LOGGER.info(String.format("Headlamp dashboard service for the Kubernetes cluster %s is in running state", kubernetesCluster));
+                }
+                running = true;
+                break;
+            }
+            // For backward compatibility, check for Kubernetes Dashboard in kubernetes-dashboard namespace
             if (isKubernetesClusterAddOnServiceRunning(kubernetesCluster, ipAddress, port, user, sshKeyFile, "kubernetes-dashboard", "kubernetes-dashboard")) {
                 if (LOGGER.isInfoEnabled()) {
-                    LOGGER.info(String.format("Dashboard service for the Kubernetes cluster %s is in running state", kubernetesCluster));
+                    LOGGER.info(String.format("Kubernetes Dashboard service for the Kubernetes cluster %s is in running state", kubernetesCluster));
                 }
                 running = true;
                 break;

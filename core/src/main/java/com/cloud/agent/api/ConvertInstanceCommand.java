@@ -31,6 +31,10 @@ public class ConvertInstanceCommand extends Command {
     private boolean exportOvfToConversionLocation;
     private int threadsCountToExportOvf = 0;
     private String extraParams;
+    private boolean useVddk;
+    private String vddkLibDir;
+    private String vddkTransports;
+    private String vddkThumbprint;
 
     public ConvertInstanceCommand() {
     }
@@ -88,6 +92,38 @@ public class ConvertInstanceCommand extends Command {
 
     public void setExtraParams(String extraParams) {
         this.extraParams = extraParams;
+    }
+
+    public boolean isUseVddk() {
+        return useVddk;
+    }
+
+    public void setUseVddk(boolean useVddk) {
+        this.useVddk = useVddk;
+    }
+
+    public String getVddkLibDir() {
+        return vddkLibDir;
+    }
+
+    public void setVddkLibDir(String vddkLibDir) {
+        this.vddkLibDir = vddkLibDir;
+    }
+
+    public String getVddkTransports() {
+        return vddkTransports;
+    }
+
+    public void setVddkTransports(String vddkTransports) {
+        this.vddkTransports = vddkTransports;
+    }
+
+    public String getVddkThumbprint() {
+        return vddkThumbprint;
+    }
+
+    public void setVddkThumbprint(String vddkThumbprint) {
+        this.vddkThumbprint = vddkThumbprint;
     }
 
     @Override

@@ -56,7 +56,7 @@ public class UpdateConditionCmdTest {
     private static final Long threshold = 100L;
 
     private static final long accountId = 5L;
-    private static final UUID conditionUuid = UUID.randomUUID();
+    private static final String conditionUuid = UUID.randomUUID().toString();
 
     @Before
     public void setUp() {
