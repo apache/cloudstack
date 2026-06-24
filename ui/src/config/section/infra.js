@@ -29,7 +29,6 @@ import systemVms from '@/config/section/infra/systemVms'
 import routers from '@/config/section/infra/routers'
 import ilbvms from '@/config/section/infra/ilbvms'
 import managementServers from '@/config/section/infra/managementServers'
-import resourceAlertRules from '@/config/section/infra/resourceAlertRules'
 
 export default {
   name: 'infra',
@@ -95,7 +94,6 @@ export default {
       permission: ['listDbMetrics', 'listUsageServerMetrics'],
       component: () => import('@/views/infra/Metrics.vue')
     },
-    resourceAlertRules,
     {
       name: 'alert',
       title: 'label.alerts',
