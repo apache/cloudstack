@@ -1713,7 +1713,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
             }
         } finally {
-            long hostId = vm.getHostId();
             if (startedVm == null) {
                 if (VirtualMachine.Type.User.equals(vm.type) && ResourceCountRunningVMsonly.value()) {
                     _resourceLimitMgr.decrementVmResourceCount(owner.getAccountId(), vm.isDisplay(), offering, template, null);
@@ -1734,7 +1733,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             if (params != null && Boolean.TRUE.equals(params.get(VirtualMachineProfile.Param.ReturnAfterVolumePrepare))) {
                 vm.setHostId(null);
-                vm.setLastHostId(hostId);
+                vm.setLastHostId(vm.getHostId());
                 _vmDao.update(vm.getId(), vm);
             }
         }
