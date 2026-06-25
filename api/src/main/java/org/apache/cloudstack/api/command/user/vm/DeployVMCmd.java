@@ -32,7 +32,7 @@ import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.context.ResponseMessageResolver;
+import org.apache.cloudstack.error.Exceptions;
 
 import com.cloud.configuration.Resource;
 import com.cloud.exception.ConcurrentOperationException;
@@ -166,10 +166,10 @@ public class DeployVMCmd extends BaseDeployVMCmd {
     protected void handleCreateResourceAllocationException(ResourceAllocationException ex) {
         Object cause = CallContext.current().getErrorContextParameters().get("resourceLimitCause");
         if (Resource.ResourceOwnerType.Account.equals(cause)) {
-            throw ResponseMessageResolver.serverApiException(ApiErrorCode.RESOURCE_ALLOCATION_ERROR,
+            throw Exceptions.serverApiException(ApiErrorCode.RESOURCE_ALLOCATION_ERROR,
                     "vm.deploy.resourcelimit.exceeded.account");
         } else if (Resource.ResourceOwnerType.Domain.equals(cause)) {
-            throw ResponseMessageResolver.serverApiException(ApiErrorCode.RESOURCE_ALLOCATION_ERROR,
+            throw Exceptions.serverApiException(ApiErrorCode.RESOURCE_ALLOCATION_ERROR,
                     "vm.deploy.resourcelimit.exceeded.domain");
         }
         throw new ServerApiException(ApiErrorCode.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
