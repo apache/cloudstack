@@ -230,12 +230,12 @@ public class ResponseMessageResolverTest {
     public void getMetadataObjectStringValue_shouldIncludeIdAndUuidForRootAdmin() {
         DataCenter internalIdentityMock = Mockito.mock(DataCenter.class);
         when(internalIdentityMock.getUuid()).thenReturn("uuid-5678");
-        if (ResponseMessageResolver.INCLUDE_METADATA_ID_FOR_ADMINS_IN_MESSAGE) {
+        if (ResponseMessageResolver.INCLUDE_RESOURCE_ID_FOR_ADMINS_IN_METADATA) {
             when(internalIdentityMock.getId()).thenReturn(42L);
         }
         when(internalIdentityMock.getName()).thenReturn("AdminName");
         when(CallContext.current().isCallingAccountRootAdmin()).thenReturn(true);
-        String expected = String.format("'AdminName' (%sUUID: uuid-5678)", ResponseMessageResolver.INCLUDE_METADATA_ID_FOR_ADMINS_IN_MESSAGE ? "ID: 42, " : "");
+        String expected = String.format("'AdminName' (%sUUID: uuid-5678)", ResponseMessageResolver.INCLUDE_RESOURCE_ID_FOR_ADMINS_IN_METADATA ? "ID: 42, " : "");
         Assert.assertEquals(expected, ResponseMessageResolver.getMetadataObjectStringValue(internalIdentityMock));
     }
 
