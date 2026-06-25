@@ -33,6 +33,7 @@ import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuObject;
+import org.apache.cloudstack.utils.rbd.RbdEncryption;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainInfo;
@@ -93,6 +94,13 @@ public final class LibvirtResizeVolumeCommandWrapper extends CommandWrapper<Resi
             final String path = vol.getPath();
             String type = notifyOnlyType;
 
+            // Encrypted RBD volumes are encrypted natively by librbd; they must be resized via
+            // `rbd resize --encryption-passphrase-file` so librbd grows the encrypted payload and keeps
+            // the LUKS header consistent. The libvirt/qemu-img resize paths below are for qemu-native
+            // encryption and would not handle the librbd LUKS2 layout.
+            final boolean rbdEncrypted = pool.getType() == StoragePoolType.RBD
+                    && command.getPassphrase() != null && command.getPassphrase().length > 0;
+
             if (spool.getType().equals(StoragePoolType.PowerFlex) && vol.getFormat().equals(PhysicalDiskFormat.QCOW2)) {
                 // PowerFlex QCOW2 sizing needs to consider overhead.
                 newSize = ScaleIOStorageAdaptor.getUsableBytesFromRawBytes(newSize);
@@ -115,7 +123,7 @@ public final class LibvirtResizeVolumeCommandWrapper extends CommandWrapper<Resi
             /* libvirt doesn't support resizing (C)LVM devices, and corrupts QCOW2 in some scenarios, so we have to do these via qemu-img */
             if (pool.getType() != StoragePoolType.CLVM && pool.getType() != StoragePoolType.CLVM_NG
                     && pool.getType() != StoragePoolType.Linstor && pool.getType() != StoragePoolType.PowerFlex
-                    && vol.getFormat() != PhysicalDiskFormat.QCOW2) {
+                    && vol.getFormat() != PhysicalDiskFormat.QCOW2 && !rbdEncrypted) {
                 logger.debug("Volume " + path +  " can be resized by libvirt. Asking libvirt to resize the volume.");
                 try {
                     final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
@@ -143,7 +151,12 @@ public final class LibvirtResizeVolumeCommandWrapper extends CommandWrapper<Resi
                If VM is online, the existing resize script will call virsh blockresize which works
                with both encrypted and non-encrypted volumes.
              */
-            if (!vmIsRunning && command.getPassphrase() != null && command.getPassphrase().length > 0 ) {
+            if (rbdEncrypted) {
+                logger.debug("Invoking rbd to resize an encrypted (librbd) RBD volume");
+                // NOTE: for a running VM this grows the rbd image, but the guest may not see the new size
+                // until the domain is notified/restarted. Online notification needs live validation.
+                resizeRbdEncryptedVolume(pool, vol, newSize, shrinkOk, command.getPassphrase());
+            } else if (!vmIsRunning && command.getPassphrase() != null && command.getPassphrase().length > 0 ) {
                 logger.debug("Invoking qemu-img to resize an offline, encrypted volume");
                 QemuObject.EncryptFormat encryptFormat = QemuObject.EncryptFormat.enumValue(command.getEncryptFormat());
                 resizeEncryptedQcowFile(vol, encryptFormat,newSize, command.getPassphrase(), libvirtComputingResource);
@@ -208,6 +221,16 @@ public final class LibvirtResizeVolumeCommandWrapper extends CommandWrapper<Resi
             throw new CloudRuntimeException("Failed to run qemu-img for resize", ex);
         } catch (IOException ex) {
             throw new CloudRuntimeException("Failed to create keyfile for encrypted resize", ex);
+        } finally {
+            Arrays.fill(passphrase, (byte) 0);
+        }
+    }
+
+    private void resizeRbdEncryptedVolume(final KVMStoragePool pool, final KVMPhysicalDisk vol, long newSize,
+                                          boolean shrinkOk, byte[] passphrase) throws CloudRuntimeException {
+        try {
+            new RbdEncryption().resize(pool.getSourceHost(), pool.getSourcePort(), pool.getAuthUserName(),
+                    pool.getAuthSecret(), pool.getSourceDir(), vol.getName(), newSize, shrinkOk, passphrase);
         } finally {
             Arrays.fill(passphrase, (byte) 0);
         }

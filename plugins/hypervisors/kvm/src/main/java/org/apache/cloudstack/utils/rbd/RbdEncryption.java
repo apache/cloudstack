@@ -95,6 +95,50 @@ public class RbdEncryption {
     }
 
     /**
+     * Resize an encrypted RBD image. librbd needs the passphrase so it can resize the encrypted
+     * payload (not just the raw image) and keep the LUKS header consistent. {@code newSizeBytes} is
+     * the usable (decrypted) size requested; rbd {@code --size} is expressed in MiB.
+     *
+     * @param allowShrink pass --allow-shrink when shrinking is permitted
+     */
+    public void resize(String monHost, int monPort, String authUser, String authSecret,
+                       String cephPool, String image, long newSizeBytes, boolean allowShrink, byte[] passphrase) {
+        final String imageSpec = cephPool + "/" + image;
+        final long sizeMiB = newSizeBytes / (1024L * 1024L);
+        try (KeyFile passFile = new KeyFile(passphrase);
+             KeyFile cephKeyFile = new KeyFile(authSecret == null ? null : authSecret.getBytes(StandardCharsets.UTF_8))) {
+            final Script script = new Script(commandPath);
+            script.add("resize");
+            script.add("--size");
+            script.add(String.valueOf(sizeMiB));
+            script.add(imageSpec);
+            script.add("--encryption-passphrase-file");
+            script.add(passFile.toString());
+            if (allowShrink) {
+                script.add("--allow-shrink");
+            }
+            script.add("--mon-host");
+            script.add(monPort > 0 ? monHost + ":" + monPort : monHost);
+            if (authUser != null) {
+                script.add("--id");
+                script.add(authUser);
+            }
+            if (cephKeyFile.isSet()) {
+                script.add("--keyfile");
+                script.add(cephKeyFile.toString());
+            }
+
+            final String result = script.execute();
+            if (result != null) {
+                throw new CloudRuntimeException(String.format("Failed to resize encrypted RBD image %s to %d MiB: %s", imageSpec, sizeMiB, result));
+            }
+            LOGGER.debug("Resized encrypted RBD image {} to {} MiB", imageSpec, sizeMiB);
+        } catch (IOException ex) {
+            throw new CloudRuntimeException(String.format("Failed to resize encrypted RBD image %s", imageSpec), ex);
+        }
+    }
+
+    /**
      * Best-effort probe that the local rbd CLI supports the encryption subcommand.
      */
     public boolean isSupported() {
