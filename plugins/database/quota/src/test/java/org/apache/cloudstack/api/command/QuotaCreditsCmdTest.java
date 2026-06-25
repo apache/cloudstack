@@ -16,11 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command;
 
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyDouble;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.nullable;
-
 import java.lang.reflect.Field;
 
 import org.apache.cloudstack.api.BaseCmd;
