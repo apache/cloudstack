@@ -1303,11 +1303,13 @@ public class QuotaResponseBuilderImplTest extends TestCase {
         record1.setStartDate(now);
         record1.setEndDate(now);
         record1.setQuotaUsed(null);
+        record1.setUsageItemId(10L);
 
         QuotaUsageJoinVO record2 = new QuotaUsageJoinVO();
         record2.setStartDate(new Date(now.getTime() + 1000));
         record2.setEndDate(new Date(now.getTime() + 1000));
         record2.setQuotaUsed(BigDecimal.valueOf(10));
+        record2.setUsageItemId(11L);
 
         usageRecords.add(record1);
         usageRecords.add(record2);
@@ -1330,22 +1332,25 @@ public class QuotaResponseBuilderImplTest extends TestCase {
         record1.setStartDate(now);
         record1.setEndDate(new Date(now.getTime() + 1000));
         record1.setQuotaUsed(BigDecimal.valueOf(5));
+        record1.setUsageItemId(10L);
 
         QuotaUsageJoinVO record2 = new QuotaUsageJoinVO();
         record2.setStartDate(new Date(now.getTime() + 2000));
         record2.setEndDate(new Date(now.getTime() + 3000));
         record2.setQuotaUsed(BigDecimal.valueOf(15));
+        record2.setUsageItemId(11L);
 
         QuotaUsageJoinVO record3 = new QuotaUsageJoinVO();
         record3.setStartDate(new Date(now.getTime() + 2000));
         record3.setEndDate(new Date(now.getTime() + 3000));
         record3.setQuotaUsed(BigDecimal.valueOf(5));
+        record3.setUsageItemId(11L);
 
         usageRecords.add(record1);
         usageRecords.add(record2);
         usageRecords.add(record3);
 
-        BigDecimal totalQuotaUsed = BigDecimal.valueOf(20);
+        BigDecimal totalQuotaUsed = BigDecimal.valueOf(25);
 
         List<QuotaStatementItemHistoryResponse> result = quotaResponseBuilderSpy.createQuotaConsumptionHistory(usageRecords, totalQuotaUsed);
 
