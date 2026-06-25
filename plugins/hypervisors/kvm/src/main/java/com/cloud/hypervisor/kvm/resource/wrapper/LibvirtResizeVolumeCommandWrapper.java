@@ -147,14 +147,13 @@ public final class LibvirtResizeVolumeCommandWrapper extends CommandWrapper<Resi
 
             boolean vmIsRunning = isVmRunning(vmInstanceName, libvirtComputingResource);
 
-            /* when VM is offline, we use qemu-img directly to resize encrypted volumes.
-               If VM is online, the existing resize script will call virsh blockresize which works
-               with both encrypted and non-encrypted volumes.
+            /* when VM is offline, we use qemu-img (or rbd, for librbd-encrypted RBD) directly to resize
+               encrypted volumes. If VM is online, the existing resize script calls virsh blockresize,
+               which for an librbd-encrypted RBD disk lets qemu/librbd grow the encrypted payload and
+               notify the guest in one step (no passphrase needed, qemu already has the secret loaded).
              */
-            if (rbdEncrypted) {
-                logger.debug("Invoking rbd to resize an encrypted (librbd) RBD volume");
-                // NOTE: for a running VM this grows the rbd image, but the guest may not see the new size
-                // until the domain is notified/restarted. Online notification needs live validation.
+            if (rbdEncrypted && !vmIsRunning) {
+                logger.debug("Invoking rbd to resize an offline, encrypted (librbd) RBD volume");
                 resizeRbdEncryptedVolume(pool, vol, newSize, shrinkOk, command.getPassphrase());
             } else if (!vmIsRunning && command.getPassphrase() != null && command.getPassphrase().length > 0 ) {
                 logger.debug("Invoking qemu-img to resize an offline, encrypted volume");
