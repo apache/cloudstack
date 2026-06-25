@@ -558,14 +558,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
                 if (domainResourceLimit != Resource.RESOURCE_UNLIMITED && requestedDomainResourceCount > domainResourceLimit) {
                     String message = "Maximum" + messageSuffix;
-                    Map<String, Object> details = new HashMap<>();
-                    details.put("resourceTypeDisplay", StringUtils.isBlank(tag) ? type.getDisplayName() : type.getDisplayName() + " (tag: " + tag + ")");
-                    details.put("resourceOwnerDomain", domain);
-                    details.put("resourceLimit", convDomainResourceLimit);
-                    details.put("resourceAmount", convCurrentDomainResourceCount);
-                    details.put("resourceReserved", convCurrentResourceReservation);
-                    details.put("resourceRequested", convNumResources);
-                    CallContext.current().putErrorContextParameters(details);
+                    addResourceLimitErrorContext(domain, null, null, type, tag, convDomainResourceLimit,
+                            convCurrentDomainResourceCount, convCurrentResourceReservation, convNumResources);
                     ResourceAllocationException e = new ResourceAllocationException(message, type);
                     logger.error(message, e);
                     throw e;
@@ -605,19 +599,37 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
         if (accountResourceLimit != Resource.RESOURCE_UNLIMITED && requestedResourceCount > accountResourceLimit) {
             String message = "Maximum" + messageSuffix;
-            Map<String, Object> details = new HashMap<>();
-            details.put("resourceTypeDisplay", StringUtils.isBlank(tag) ? type.getDisplayName() : type.getDisplayName() + " (tag: " + tag + ")");
-            details.put("resourceOwner", ObjectUtils.firstNonNull(project, account));
-            details.put("resourceOwnerType", project == null ? "Account" : "Project");
-            details.put("resourceLimit", convertedAccountResourceLimit);
-            details.put("resourceAmount", convertedCurrentResourceCount);
-            details.put("resourceReserved", convertedCurrentResourceReservation);
-            details.put("resourceRequested", convertedNumResources);
-            CallContext.current().putErrorContextParameters(details);
+            addResourceLimitErrorContext(null, account, project, type, tag, convertedAccountResourceLimit,
+                    convertedCurrentResourceCount, convertedCurrentResourceReservation, convertedNumResources);
             ResourceAllocationException e = new ResourceAllocationException(message, type);
             logger.error(message, e);
             throw e;
         }
+    }
+
+    private void addResourceLimitErrorContext(Domain domain, Account account, Project project, ResourceType type,
+                                              String tag, String convertedResourceLimit,
+                                              String convertedCurrentResourceCount,
+                                              String convertedCurrentResourceReservation,
+                                              String convertedNumResources) {
+        Map<String, Object> details = new HashMap<>();
+        details.put("resourceTypeDisplay", StringUtils.isBlank(tag) ?
+                type.getDisplayName() :
+                type.getDisplayName() + " (tag: " + tag + ")");
+        if (domain != null) {
+            details.put("resourceLimitCause", ResourceOwnerType.Domain);
+            details.put("resourceOwnerDomain", domain);
+        }
+        if (account != null) {
+            details.put("resourceLimitCause", ResourceOwnerType.Account);
+            details.put("resourceOwner", ObjectUtils.firstNonNull(project, account));
+            details.put("resourceOwnerType", project == null ? "Account" : "Project");
+        }
+        details.put("resourceLimit", convertedResourceLimit);
+        details.put("resourceAmount", convertedCurrentResourceCount);
+        details.put("resourceReserved", convertedCurrentResourceReservation);
+        details.put("resourceRequested", convertedNumResources);
+        CallContext.current().putErrorContextParameters(details);
     }
 
     protected List<ResourceCountVO> lockAccountAndOwnerDomainRows(long accountId, final ResourceType type, String tag) {

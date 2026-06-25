@@ -17,9 +17,11 @@
 package org.apache.cloudstack.api.command.user.vm;
 
 import java.util.Collections;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 
+import com.cloud.configuration.Resource;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
@@ -163,10 +165,11 @@ public class DeployVMCmd extends BaseDeployVMCmd {
     }
 
     protected void handleCreateResourceAllocationException(ResourceAllocationException ex) {
-        if (ex.getMessage() != null && ex.getMessage().startsWith("Maximum amount")) {
+        Map<String, Object> errorContext = CallContext.current().getErrorContextParameters();
+        if (Resource.ResourceOwnerType.Account.equals(errorContext.get("resourceLimitCause"))) {
             throw new ServerApiException(ApiErrorCode.RESOURCE_ALLOCATION_ERROR,
                     "vm.deploy.resourcelimit.exceeded.account", Collections.emptyMap());
-        } else if (ex.getMessage() != null && ex.getMessage().startsWith("Maximum domain resource limits")) {
+        } else if (Resource.ResourceOwnerType.Domain.equals(errorContext.get("resourceLimitCause"))) {
             throw new ServerApiException(ApiErrorCode.RESOURCE_ALLOCATION_ERROR,
                     "vm.deploy.resourcelimit.exceeded.domain", Collections.emptyMap());
         }
