@@ -198,6 +198,9 @@ import com.cloud.utils.exception.ExceptionProxyObject;
 import com.cloud.utils.net.NetUtils;
 import com.google.gson.reflect.TypeToken;
 
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
+
 @Component
 public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiServerService, Configurable {
     private static final Logger ACCESSLOGGER = LogManager.getLogger("apiserver." + ApiServer.class.getName());
@@ -620,6 +623,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     }
 
     @Override
+    @WithSpan("ApiServer.handleRequest")
     @SuppressWarnings("rawtypes")
     public String handleRequest(final Map params, final String responseType, final StringBuilder auditTrailSb) throws ServerApiException {
         checkCharacterInkParams(params);
@@ -629,6 +633,10 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
         try {
             command = (String[])params.get("command");
+            if (command != null && command.length > 0) {
+                Span.current().updateName("ApiServer.handleRequest " + command[0]);
+                Span.current().setAttribute("api.command", command[0]);
+            }
             if (command == null) {
                 logger.error("invalid request, no command sent");
                 if (logger.isTraceEnabled()) {
