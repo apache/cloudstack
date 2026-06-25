@@ -17,8 +17,10 @@
 package com.cloud.exception;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.context.ResponseMessageResolver;
 
 import com.cloud.user.Account;
 import com.cloud.utils.SerialVersionUID;
@@ -30,6 +32,10 @@ public class PermissionDeniedException extends CloudRuntimeException {
 
     public PermissionDeniedException(String message) {
         super(message);
+    }
+
+    public PermissionDeniedException(String key, Map<String, Object> metadata) {
+        super(ResponseMessageResolver.resolve(key, metadata));
     }
 
     public PermissionDeniedException(String message, Throwable cause) {

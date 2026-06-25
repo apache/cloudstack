@@ -39,7 +39,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -50,7 +53,8 @@ public class ResponseMessageResolver {
 
     protected static final String ERROR_MESSAGES_FILENAME = "error-messages.json";
     protected static final String ERROR_KEY_ADMIN_SUFFIX = ".admin";
-    protected static final boolean INCLUDE_METADATA_ID_IN_MESSAGE = false;
+    protected static final boolean USE_RESOURCE_TO_STRING_IN_METADATA = false;
+    protected static final boolean INCLUDE_RESOURCE_ID_FOR_ADMINS_IN_METADATA = true;
 
     private static final Pattern VARIABLE_PATTERN = Pattern.compile("\\{\\{\\s*([A-Za-z0-9_]+)\\s*\\}\\}");
 
@@ -129,7 +133,10 @@ public class ResponseMessageResolver {
         if (MapUtils.isNotEmpty(metadata)) {
             for (Map.Entry<String, Object> entry : metadata.entrySet()) {
                 Object value = entry.getValue();
-                stringMap.put(entry.getKey(), getMetadataObjectStringValueAlt(value));
+                stringMap.put(entry.getKey(),
+                        USE_RESOURCE_TO_STRING_IN_METADATA ?
+                                getMetadataObjectStringValueAlt(value) :
+                                getMetadataObjectStringValue(value));
             }
         }
         return stringMap;
@@ -192,7 +199,7 @@ public class ResponseMessageResolver {
         }
 
         Long id = null;
-        if (INCLUDE_METADATA_ID_IN_MESSAGE && obj instanceof InternalIdentity) {
+        if (INCLUDE_RESOURCE_ID_FOR_ADMINS_IN_METADATA && obj instanceof InternalIdentity) {
             id = ((InternalIdentity) obj).getId();
         }
 
@@ -324,6 +331,15 @@ public class ResponseMessageResolver {
         return expand(template, getStringMap(combinedMetadata));
     }
 
+    public static Ternary<String, String, Map<String, Object>> resolve(String errorKey, Map<String, Object> metadata) {
+        String template = getTemplateForKey(errorKey);
+        if (template == null) {
+            return new Ternary<>(errorKey, errorKey, metadata);
+        }
+        Map<String, Object> combinedMetadata = getCombinedMetadataFromErrorTemplate(template, metadata);
+        return new Ternary<>(expand(template, getStringMap(combinedMetadata)), errorKey, combinedMetadata);
+    }
+
     public static void updateExceptionResponse(ExceptionResponse response, CloudRuntimeException cre) {
         String key = cre.getMessageKey();
         Map<String, Object> map = cre.getMetadata();
@@ -351,5 +367,33 @@ public class ResponseMessageResolver {
         Map<String, String> stringMap = getStringMap(combinedMetadata);
         response.setErrorText(expand(template,  stringMap));
         response.setErrorMetadata(stringMap);
+    }
+
+    public static InvalidParameterValueException invalidParameterValueException(String errorKey, Map<String, Object> metadata) {
+        return new InvalidParameterValueException(errorKey, metadata);
+    }
+
+    public static InvalidParameterValueException invalidParameterValueException(String errorKey) {
+        return invalidParameterValueException(errorKey, Collections.emptyMap());
+    }
+
+    public static PermissionDeniedException permissionDeniedException(String errorKey, Map<String, Object> metadata) {
+        return new PermissionDeniedException(errorKey, metadata);
+    }
+
+    public static PermissionDeniedException permissionDeniedException(String errorKey) {
+        return permissionDeniedException(errorKey, Collections.emptyMap());
+    }
+
+    public static CloudRuntimeException cloudRuntimeException(String errorKey, Map<String, Object> metadata) {
+        return new CloudRuntimeException(resolve(errorKey, metadata));
+    }
+
+    public static CloudRuntimeException cloudRuntimeException(String errorKey) {
+        return new CloudRuntimeException(resolve(errorKey, Collections.emptyMap()));
+    }
+
+    public static CloudRuntimeException cloudRuntimeException(String errorKey, Map<String, Object> metadata, Throwable th) {
+        return new CloudRuntimeException(resolve(errorKey, metadata), th);
     }
 }

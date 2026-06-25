@@ -31,7 +31,7 @@ public class InvalidParameterValueException extends CloudRuntimeException {
     }
 
     public InvalidParameterValueException(String key, Map<String, Object> metadata) {
-        super(ResponseMessageResolver.getMessage(key, metadata), key, metadata);
+        super(ResponseMessageResolver.resolve(key, metadata));
     }
 
 }
