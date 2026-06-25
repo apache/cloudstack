@@ -794,12 +794,12 @@
         {{ record.enabled ? 'Enabled' : 'Disabled' }}
       </template>
       <template
-        v-if="['created', 'sent', 'removed', 'effectiveDate', 'endDate', 'allocated'].includes(column.key) || (['startdate'].includes(column.key) && ['webhook'].includes($route.path.split('/')[1])) || (column.key === 'allocated' && ['asnumbers', 'publicip', 'ipv4subnets'].includes($route.meta.name) && text)"
+        v-if="['created', 'sent', 'removed', 'effectiveDate', 'endDate', 'allocated', 'startdate', 'enddate'].includes(column.key) || (['startdate'].includes(column.key) && ['webhook'].includes($route.path.split('/')[1])) || (column.key === 'allocated' && ['asnumbers', 'publicip', 'ipv4subnets'].includes($route.meta.name) && text)"
       >
         {{ text && $toLocaleDate(text) }}
       </template>
       <template
-        v-if="['startdate', 'enddate'].includes(column.key) && ['vm', 'vnfapp'].includes($route.path.split('/')[1])"
+        v-if="['startdate', 'enddate'].includes(column.key) && ['vm', 'vnfapp', 'autoscalevmgroup'].includes($route.path.split('/')[1])"
       >
         {{ getDateAtTimeZone(text, record.timezone) }}
       </template>
@@ -1026,21 +1026,11 @@
         />
         <slot></slot>
       </template>
-      <template v-if="column.key === 'vmScheduleActions'">
-        <tooltip-button
-          :tooltip="$t('label.edit')"
-          :disabled="!('updateVMSchedule' in $store.getters.apis)"
-          icon="edit-outlined"
-          @onClick="updateVMSchedule(record)"
-        />
-        <tooltip-button
-          :tooltip="$t('label.remove')"
-          :disabled="!('deleteVMSchedule' in $store.getters.apis)"
-          icon="delete-outlined"
-          :danger="true"
-          type="primary"
-          @onClick="removeVMSchedule(record)"
-        />
+      <template v-if="column.key === 'scheduleActions'">
+        <slot
+          name="scheduleActions"
+          :record="record"
+        ></slot>
       </template>
       <template v-if="column.key === 'vgpuActions'">
         <slot name="actionButtons" :record="record" :actions="actions"></slot>
@@ -1382,12 +1372,6 @@ export default {
       if (index === data.length - 1) return
       data.push(data.splice(index, 1)[0])
       this.updateOrder(data)
-    },
-    updateVMSchedule (record) {
-      this.$emit('update-vm-schedule', record)
-    },
-    removeVMSchedule (record) {
-      this.$emit('remove-vm-schedule', record)
     },
     ipV6Address (text, record) {
       if (!record || !record.nic || record.nic.length === 0) {
