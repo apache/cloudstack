@@ -16,13 +16,9 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
-import java.util.Collections;
-import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-import com.cloud.configuration.Resource;
-import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -36,13 +32,16 @@ import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.context.ResponseMessageResolver;
 
+import com.cloud.configuration.Resource;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "deployVirtualMachine", description = "Creates and automatically starts an Instance based on a service offering, disk offering, and Template.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
@@ -165,13 +164,13 @@ public class DeployVMCmd extends BaseDeployVMCmd {
     }
 
     protected void handleCreateResourceAllocationException(ResourceAllocationException ex) {
-        Map<String, Object> errorContext = CallContext.current().getErrorContextParameters();
-        if (Resource.ResourceOwnerType.Account.equals(errorContext.get("resourceLimitCause"))) {
-            throw new ServerApiException(ApiErrorCode.RESOURCE_ALLOCATION_ERROR,
-                    "vm.deploy.resourcelimit.exceeded.account", Collections.emptyMap());
-        } else if (Resource.ResourceOwnerType.Domain.equals(errorContext.get("resourceLimitCause"))) {
-            throw new ServerApiException(ApiErrorCode.RESOURCE_ALLOCATION_ERROR,
-                    "vm.deploy.resourcelimit.exceeded.domain", Collections.emptyMap());
+        Object cause = CallContext.current().getErrorContextParameters().get("resourceLimitCause");
+        if (Resource.ResourceOwnerType.Account.equals(cause)) {
+            throw ResponseMessageResolver.serverApiException(ApiErrorCode.RESOURCE_ALLOCATION_ERROR,
+                    "vm.deploy.resourcelimit.exceeded.account");
+        } else if (Resource.ResourceOwnerType.Domain.equals(cause)) {
+            throw ResponseMessageResolver.serverApiException(ApiErrorCode.RESOURCE_ALLOCATION_ERROR,
+                    "vm.deploy.resourcelimit.exceeded.domain");
         }
         throw new ServerApiException(ApiErrorCode.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
     }

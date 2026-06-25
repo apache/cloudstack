@@ -30,8 +30,10 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ExceptionResponse;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -383,6 +385,10 @@ public class ResponseMessageResolver {
 
     public static PermissionDeniedException permissionDeniedException(String errorKey) {
         return permissionDeniedException(errorKey, Collections.emptyMap());
+    }
+
+    public static ServerApiException serverApiException(ApiErrorCode errorCode, String errorKey) {
+        return new ServerApiException(errorCode, errorKey, Collections.emptyMap());
     }
 
     public static CloudRuntimeException cloudRuntimeException(String errorKey, Map<String, Object> metadata) {
