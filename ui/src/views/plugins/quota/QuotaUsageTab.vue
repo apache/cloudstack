@@ -649,7 +649,7 @@ export default {
     },
     getColor (row) {
       const quotaType = getQuotaTypeByName(row.name)
-      if (quotaType) {
+      if (quotaType?.chartColor) {
         return getChartColorObject(quotaType.chartColor)
       }
       return getChartColorObject(this.textToDeterministicColor(this.getName(row)))
