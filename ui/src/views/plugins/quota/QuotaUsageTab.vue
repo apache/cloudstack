@@ -60,19 +60,21 @@
         :rowKey="record => record.name"
         :pagination="false"
         :scroll="{ y: '55vh' }">
-        <template #nameRedirect="props">
-          <a @click="handleSelectedTypeChange(`${props.record.type}-${props.record.name}`)">{{ $t(props.text) }}</a>
-        </template>
-        <template #unit="{ text }">
-          {{ $t(text) }}
-        </template>
-        <template #quota="{ text }">
-          <a-tooltip placement="right">
+        <template #bodyCell="{ column, text, record }">
+          <template v-if="column.dataIndex === 'name'">
+            <a @click="handleSelectedTypeChange(`${record.type}-${record.name}`)">{{ $t(text) }}</a>
+          </template>
+          <template v-if="column.dataIndex === 'unit'">
+            {{ $t(text) }}
+          </template>
+          <template v-if="column.dataIndex === 'quota'">
+            <a-tooltip placement="right">
             <template #title>
               {{ text }}
             </template>
             <span class="dotted-underline">{{ parseFloat(text).toFixed(2) }}</span>
           </a-tooltip>
+          </template>
         </template>
         <template #footer >
           <div style="text-align: right;">
@@ -126,24 +128,26 @@
         <template #title v-if="dataSourceResource.length > 0">
           <div>{{ $t('label.currency') }}: <b>{{ currency }}</b></div>
         </template>
-        <template #displayName="props">
-          <span v-if="!props.text">
-            -
-          </span>
-          <span v-if="!props.text === '<untraceable>' || !props.record.resourceid">
-            {{ props.text }}
-          </span>
-          <a v-else @click="handleSelectedResourceChange(props.record.resourceid)">
-            {{ props.text }}
-          </a>
-        </template>
-        <template #quota="{ text }">
-          <a-tooltip placement="right">
+        <template #bodyCell="{ column, text, record }">
+          <template v-if="column.dataIndex === 'displayname'">
+            <span v-if="!text">
+              -
+            </span>
+            <span v-if="!text === '<untraceable>' || !record.resourceid">
+              {{ text }}
+            </span>
+            <a v-else @click="handleSelectedResourceChange(record.resourceid)">
+              {{ text }}
+            </a>
+          </template>
+          <template v-if="column.dataIndex === 'quotaconsumed'">
+            <a-tooltip placement="right">
             <template #title>
               {{ text }}
             </template>
             <span class="dotted-underline">{{ parseFloat(text).toFixed(2) }}</span>
           </a-tooltip>
+          </template>
         </template>
       </a-table>
 
@@ -183,31 +187,33 @@
         :rowKey="record => record.tariffname + '-' + record.startdate"
         :pagination="false"
         :scroll="{ y: '55vh' }">
-        <template #title v-if="dataSourceTariffs.length > 0">
-          <div>{{ $t('label.currency') }}: <b>{{ currency }}</b></div>
-        </template>
-        <template #tariffName="props">
-          <a v-if="'quotaTariffList' in $store.getters.apis" :href="`#/quotatariff/${props.record.tariffid}`" target="_blank">
-            {{ props.text }}
-          </a>
-          <span v-else>
-            {{ props.text }}
-          </span>
-        </template>
-        <template #enddate="{ text }">
-          {{ text }}
-        </template>
-        <template #startdate="{ text }">
-          {{ $toLocaleDate(text) }}
-        </template>
-        <template #quota="{ text }">
-          <a-tooltip placement="right">
-            <template #title>
-              {{ text }}
+          <template #title v-if="dataSourceTariffs.length > 0">
+            <div>{{ $t('label.currency') }}: <b>{{ currency }}</b></div>
+          </template>
+          <template #bodyCell="{ column, text, record }">
+            <template v-if="column.dataIndex === 'tariffname'">
+              <a v-if="'quotaTariffList' in $store.getters.apis" :href="`#/quotatariff/${record.tariffid}`" target="_blank">
+                {{ text }}
+              </a>
+              <span v-else>
+                {{ text }}
+              </span>
             </template>
-            <span class="dotted-underline">{{ parseFloat(text).toFixed(2) }}</span>
-          </a-tooltip>
-        </template>
+            <template v-if="column.dataIndex === 'enddate'">
+              {{ $toLocaleDate(text) }}
+            </template>
+            <template v-if="column.dataIndex === 'startdate'">
+              {{ $toLocaleDate(text) }}
+            </template>
+            <template v-if="column.dataIndex === 'quotaconsumed'">
+              <a-tooltip placement="right">
+              <template #title>
+                {{ text }}
+              </template>
+              <span class="dotted-underline">{{ parseFloat(text).toFixed(2) }}</span>
+            </a-tooltip>
+            </template>
+          </template>
       </a-table>
     </div>
   </div>
@@ -278,21 +284,18 @@ export default {
           title: this.$t('label.quota.type.name'),
           dataIndex: 'name',
           width: 'calc(100% / 3)',
-          slots: { customRender: 'nameRedirect' },
           sorter: (a, b) => a.name.localeCompare(b.name)
         },
         {
           title: this.$t('label.quota.type.unit'),
           dataIndex: 'unit',
           width: 'calc(100% / 3)',
-          slots: { customRender: 'unit' },
           sorter: (a, b) => a.unit.localeCompare(b.unit)
         },
         {
           title: this.$t('label.quota.consumed'),
           dataIndex: 'quota',
           width: 'calc(100% / 3)',
-          slots: { customRender: 'quota' },
           sorter: (a, b) => a.quota - b.quota,
           defaultSortOrder: 'descend'
         }
@@ -304,7 +307,6 @@ export default {
           title: this.$t('label.resource'),
           dataIndex: 'displayname',
           width: '50%',
-          slots: { customRender: 'displayName' },
           sorter: (a, b) => a.displayname.localeCompare(b.displayname),
           defaultSortOrder: 'ascend'
         },
@@ -312,7 +314,6 @@ export default {
           title: this.$t('label.quota.consumed'),
           dataIndex: 'quotaconsumed',
           width: '50%',
-          slots: { customRender: 'quota' },
           sorter: (a, b) => a.quotaconsumed - b.quotaconsumed
         }
       ]
@@ -322,26 +323,22 @@ export default {
         {
           title: this.$t('label.quota.tariff'),
           dataIndex: 'tariffname',
-          slots: { customRender: 'tariffName' },
           sorter: (a, b) => a.tariffname.localeCompare(b.tariffname)
         },
         {
           title: this.$t('label.start.date'),
           dataIndex: 'startdate',
-          slots: { customRender: 'startDate' },
           sorter: (a, b) => a.startdate.localeCompare(b.startdate),
           defaultSortOrder: 'descend'
         },
         {
           title: this.$t('label.end.date'),
           dataIndex: 'enddate',
-          slots: { customRender: 'endDate' },
           sorter: (a, b) => a.enddate.localeCompare(b.enddate)
         },
         {
           title: this.$t('label.quota.consumed'),
           dataIndex: 'quotaconsumed',
-          slots: { customRender: 'quota' },
           sorter: (a, b) => a.quotaused - b.quotaused
         }
       ]
