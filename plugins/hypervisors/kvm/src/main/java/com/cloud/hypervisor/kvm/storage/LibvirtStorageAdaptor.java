@@ -985,6 +985,13 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
         StoragePoolType poolType = pool.getType();
         if (StoragePoolType.RBD.equals(poolType)) {
+            // RBD is advertised as encryption-capable (StoragePoolType.RBD -> EncryptionSupport.Hypervisor),
+            // but the encrypted RBD create path is not implemented on this branch yet. Fail closed so we never
+            // silently create a plaintext volume that the control plane believes is encrypted.
+            // The qemu-native (engine='qemu') and ceph-native (engine='librbd') tracks each replace this guard.
+            if (passphrase != null && passphrase.length > 0) {
+                throw new CloudRuntimeException("Encrypted volume creation on RBD is not yet implemented (volume " + name + ")");
+            }
             Map<String, String> details = pool.getDetails();
             String dataPool = (details == null) ? null : details.get(KVMPhysicalDisk.RBD_DEFAULT_DATA_POOL);
 
@@ -1244,6 +1251,12 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         KVMPhysicalDisk disk = null;
 
         if (destPool.getType() == StoragePoolType.RBD) {
+            // See createPhysicalDisk(): encrypted root-disk-from-template on RBD is not implemented yet.
+            // createDiskFromTemplateOnRBD() does not consume the passphrase, so fail closed rather than
+            // silently producing a plaintext root volume. Tracks A/B replace this with real create logic.
+            if (passphrase != null && passphrase.length > 0) {
+                throw new CloudRuntimeException("Encrypted root volume creation from template on RBD is not yet implemented (volume " + name + ")");
+            }
             disk = createDiskFromTemplateOnRBD(template, name, format, provisioningType, size, destPool, timeout);
         } else {
             try (KeyFile keyFile = new KeyFile(passphrase)){

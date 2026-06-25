@@ -171,7 +171,7 @@ public class Storage {
         LVM(false, false, EncryptionSupport.Unsupported), // XenServer local LVM SR
         CLVM(true, false, EncryptionSupport.Unsupported),
         CLVM_NG(true, false, EncryptionSupport.Hypervisor),
-        RBD(true, true, EncryptionSupport.Unsupported), // http://libvirt.org/storage.html#StorageBackendRBD
+        RBD(true, true, EncryptionSupport.Hypervisor), // http://libvirt.org/storage.html#StorageBackendRBD ; encrypted natively by librbd (LUKS2, engine='librbd')
         SharedMountPoint(true, true, EncryptionSupport.Hypervisor),
         VMFS(true, true, EncryptionSupport.Unsupported), // VMware VMFS storage
         PreSetup(true, true, EncryptionSupport.Unsupported), // for XenServer, Storage Pool is set up by customers.
