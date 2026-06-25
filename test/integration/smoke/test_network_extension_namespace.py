@@ -1305,8 +1305,11 @@ class TestNetworkExtensionNamespace(cloudstackTestCase):
         Sub-tests in order
         ------------------
         A. Static NAT
-             allocate IP → enable static NAT → create FW rule (TCP/22)
-             → assert SSH works → disable static NAT → assert SSH fails
+             allocate IP → enable static NAT → assert SSH blocked (no FW rule)
+             → create FW rule (TCP/22) → assert SSH works
+             → remove FW rule → assert SSH blocked (static NAT still active)
+             → re-add FW rule → assert SSH works
+             → disable static NAT → assert SSH fails
         B. Port forwarding (22→22)
              allocate IP → create PF rule → create FW rule (TCP/22)
              → assert SSH works → delete PF rule → assert SSH fails
@@ -1351,13 +1354,31 @@ class TestNetworkExtensionNamespace(cloudstackTestCase):
                              virtualmachineid=vm.id,
                              networkid=network.id)
         self.logger.info("Static NAT enabled on %s", snat_ip)
-        # Explicit FW rule required — static NAT does not auto-create one
-        self._create_firewall_rule_for_ssh(snat_ip_id)
+        self._assert_vm_ssh_not_accessible(
+            snat_ip, 22,
+            "SSH via %s:22 should fail before firewall rule is created" % snat_ip)
 
+        # Explicit FW rule required — static NAT does not auto-create one
+        snat_fw_rule_id = self._create_firewall_rule_for_ssh(snat_ip_id)
         self._assert_vm_ssh_accessible(
             snat_ip, 22,
             "SSH via static NAT %s:22 should succeed" % snat_ip)
         self.logger.info("Verified: SSH works via static NAT %s", snat_ip)
+
+        # Remove the FW rule while static NAT is still active — VM must be blocked
+        self._delete_firewall_rule(snat_fw_rule_id)
+        self._assert_vm_ssh_not_accessible(
+            snat_ip, 22,
+            "SSH via %s:22 should fail after firewall rule removed (static NAT still active)"
+            % snat_ip)
+        self.logger.info("Verified: SSH blocked after FW rule removed (static NAT active)")
+
+        # Re-add the FW rule — VM must be reachable again
+        self._create_firewall_rule_for_ssh(snat_ip_id)
+        self._assert_vm_ssh_accessible(
+            snat_ip, 22,
+            "SSH via %s:22 should succeed after firewall rule re-added" % snat_ip)
+        self.logger.info("Verified: SSH restored after FW rule re-added")
 
         # disable() cascades revokeFirewallRulesForIp() — deletes the FW rule
         StaticNATRule.disable(self.apiclient, ipaddressid=snat_ip_id)
