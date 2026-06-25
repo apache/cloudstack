@@ -3864,7 +3864,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 if (volumeObjectTO.requiresEncryption() &&
                         pool.getType().encryptionSupportMode() == Storage.EncryptionSupport.Hypervisor ) {
                     String secretUuid = createLibvirtVolumeSecret(conn, volumeObjectTO.getPath(), volumeObjectTO.getPassphrase());
-                    DiskDef.LibvirtDiskEncryptDetails encryptDetails = new DiskDef.LibvirtDiskEncryptDetails(secretUuid, QemuObject.EncryptFormat.enumValue(volumeObjectTO.getEncryptFormat()));
+                    // RBD volumes are encrypted natively by librbd, so request the librbd encryption engine.
+                    String encryptEngine = (pool.getType() == StoragePoolType.RBD) ? "librbd" : null;
+                    DiskDef.LibvirtDiskEncryptDetails encryptDetails = new DiskDef.LibvirtDiskEncryptDetails(secretUuid, QemuObject.EncryptFormat.enumValue(volumeObjectTO.getEncryptFormat()), encryptEngine);
                     disk.setLibvirtDiskEncryptDetails(encryptDetails);
                 }
             }

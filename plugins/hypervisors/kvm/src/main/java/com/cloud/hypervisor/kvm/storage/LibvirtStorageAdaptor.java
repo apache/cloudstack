@@ -34,7 +34,9 @@ import java.util.stream.Collectors;
 import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.utils.cryptsetup.CryptSetup;
 import org.apache.cloudstack.utils.cryptsetup.KeyFile;
+import org.apache.cloudstack.utils.rbd.RbdEncryption;
 import org.apache.cloudstack.utils.qemu.QemuImageOptions;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
@@ -985,18 +987,21 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
         StoragePoolType poolType = pool.getType();
         if (StoragePoolType.RBD.equals(poolType)) {
-            // RBD is advertised as encryption-capable (StoragePoolType.RBD -> EncryptionSupport.Hypervisor),
-            // but the encrypted RBD create path is not implemented on this branch yet. Fail closed so we never
-            // silently create a plaintext volume that the control plane believes is encrypted.
-            // The qemu-native (engine='qemu') and ceph-native (engine='librbd') tracks each replace this guard.
-            if (passphrase != null && passphrase.length > 0) {
-                throw new CloudRuntimeException("Encrypted volume creation on RBD is not yet implemented (volume " + name + ")");
-            }
             Map<String, String> details = pool.getDetails();
             String dataPool = (details == null) ? null : details.get(KVMPhysicalDisk.RBD_DEFAULT_DATA_POOL);
 
-            return (dataPool == null) ?  createPhysicalDiskByLibVirt(name, pool, PhysicalDiskFormat.RAW, provisioningType, size) :
-                    createPhysicalDiskByQemuImg(name, pool, PhysicalDiskFormat.RAW, provisioningType, size, passphrase);
+            // Create the raw RBD image first. For encrypted volumes we apply a native librbd LUKS header
+            // afterwards via `rbd encryption format` (engine='librbd'). We deliberately do NOT hand the
+            // passphrase to qemu-img, which would instead produce a qemu-native LUKS container.
+            KVMPhysicalDisk disk = (dataPool == null) ?
+                    createPhysicalDiskByLibVirt(name, pool, PhysicalDiskFormat.RAW, provisioningType, size) :
+                    createPhysicalDiskByQemuImg(name, pool, PhysicalDiskFormat.RAW, provisioningType, size, null);
+
+            if (passphrase != null && passphrase.length > 0) {
+                formatRbdImageEncryption(pool, name, passphrase);
+                disk.setQemuEncryptFormat(QemuObject.EncryptFormat.LUKS2);
+            }
+            return disk;
         } else if (QEMU_IMG_MANAGED_POOL_TYPES.contains(poolType)) {
             switch (format) {
                 case QCOW2:
@@ -1251,13 +1256,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         KVMPhysicalDisk disk = null;
 
         if (destPool.getType() == StoragePoolType.RBD) {
-            // See createPhysicalDisk(): encrypted root-disk-from-template on RBD is not implemented yet.
-            // createDiskFromTemplateOnRBD() does not consume the passphrase, so fail closed rather than
-            // silently producing a plaintext root volume. Tracks A/B replace this with real create logic.
-            if (passphrase != null && passphrase.length > 0) {
-                throw new CloudRuntimeException("Encrypted root volume creation from template on RBD is not yet implemented (volume " + name + ")");
-            }
-            disk = createDiskFromTemplateOnRBD(template, name, format, provisioningType, size, destPool, timeout);
+            disk = createDiskFromTemplateOnRBD(template, name, format, provisioningType, size, destPool, timeout, passphrase);
         } else {
             try (KeyFile keyFile = new KeyFile(passphrase)){
                 String newUuid = name;
@@ -1337,7 +1336,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     }
 
     private KVMPhysicalDisk createDiskFromTemplateOnRBD(KVMPhysicalDisk template,
-            String name, PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, KVMStoragePool destPool, int timeout){
+            String name, PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, KVMStoragePool destPool, int timeout, byte[] passphrase){
 
         /*
             With RBD you can't run qemu-img convert with an existing RBD image as destination
@@ -1506,7 +1505,25 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 disk = null;
             }
         }
+
+        if (disk != null && passphrase != null && passphrase.length > 0) {
+            // Apply native librbd LUKS to the freshly created/cloned root image (engine='librbd').
+            // NOTE: when the destination is a CoW clone of an (unencrypted) template, `rbd encryption
+            // format` reserves LUKS-header space; the parent-grow / usable-size behaviour described in the
+            // Ceph "Image Encryption" docs must be validated against a live cluster (see spec B gotchas).
+            formatRbdImageEncryption(destPool, newUuid, passphrase);
+            disk.setQemuEncryptFormat(QemuObject.EncryptFormat.LUKS2);
+        }
         return disk;
+    }
+
+    /**
+     * Apply native librbd LUKS encryption to an existing RBD image via the rbd CLI.
+     * Isolated here so the CLI dependency can later be swapped for a native (JNA) librbd binding.
+     */
+    private void formatRbdImageEncryption(KVMStoragePool pool, String image, byte[] passphrase) {
+        new RbdEncryption().format(pool.getSourceHost(), pool.getSourcePort(), pool.getAuthUserName(),
+                pool.getAuthSecret(), pool.getSourceDir(), image, passphrase, CryptSetup.LuksType.LUKS2);
     }
 
     @Override

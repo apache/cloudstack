@@ -1802,7 +1802,9 @@ public class KVMStorageProcessor implements StorageProcessor {
             DiskDef.LibvirtDiskEncryptDetails encryptDetails = null;
             if (vol.requiresEncryption()) {
                 String secretUuid = resource.createLibvirtVolumeSecret(conn, vol.getPath(), vol.getPassphrase());
-                encryptDetails = new DiskDef.LibvirtDiskEncryptDetails(secretUuid, QemuObject.EncryptFormat.enumValue(vol.getEncryptFormat()));
+                // RBD volumes are encrypted natively by librbd, so request the librbd encryption engine.
+                String encryptEngine = (primaryStore.getPoolType() == StoragePoolType.RBD) ? "librbd" : null;
+                encryptDetails = new DiskDef.LibvirtDiskEncryptDetails(secretUuid, QemuObject.EncryptFormat.enumValue(vol.getEncryptFormat()), encryptEngine);
                 vol.clearPassphrase();
             }
 
