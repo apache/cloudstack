@@ -16,6 +16,10 @@ permissions:
 
 network: defaults
 
+engine:
+  id: copilot
+  model: claude-haiku-4.5
+
 tools:
   github:
     # If in a public repo, setting `lockdown: false` allows

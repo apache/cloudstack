@@ -108,6 +108,7 @@ import org.apache.cloudstack.backup.BackupScheduleVO;
 import org.apache.cloudstack.backup.BackupVO;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupScheduleDao;
+import org.apache.cloudstack.schedule.ResourceScheduleManager;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntity;
 import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMNetworkMapDao;
@@ -343,6 +344,7 @@ import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
@@ -430,6 +432,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Inject
     private EntityManager _entityMgr;
+    @Inject
+    private ResourceScheduleManager resourceScheduleManager;
     @Inject
     private HostDao _hostDao;
     @Inject
@@ -650,6 +654,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Inject
     ExtensionHelper extensionHelper;
+
+    @Inject
+    ClvmPoolManager clvmPoolManager;
 
     private ScheduledExecutorService _executor = null;
     private ScheduledExecutorService _vmIpFetchExecutor = null;
@@ -2612,11 +2619,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             autoScaleManager.removeVmFromVmGroup(vm.getId());
 
+            resourceScheduleManager.removeSchedulesForResource(ApiCommandResourceType.VirtualMachine, vm.getId());
+
             releaseNetworkResourcesOnExpunge(vm.getId());
 
             List<VolumeVO> rootVol = _volsDao.findByInstanceAndType(vm.getId(), Volume.Type.ROOT);
             // expunge the vm
             _itMgr.advanceExpunge(vm.getUuid());
+            for (VolumeVO volume : rootVol) {
+                clvmPoolManager.clearClvmLockHostDetail(volume);
+            }
 
             // Only if vm is not expunged already, cleanup it's resources
             if (vm.getRemoved() == null) {
