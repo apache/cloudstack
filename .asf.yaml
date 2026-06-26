@@ -58,8 +58,6 @@ github:
     - GaOrtiga
     - bhouse-nexthop
 
-  protected_branches:
-
   rulesets:
     - name: "Default Branch Protection"
       type: branch
