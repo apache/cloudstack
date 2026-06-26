@@ -222,6 +222,7 @@ public class RandomAllocatorTest {
         Mockito.doReturn(upAndEnabledHosts).when(resourceManagerMock).listAllUpAndEnabledHosts(Mockito.any(Host.Type.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong());
         Mockito.doReturn(hostsWithNoRuleTagsAndHostTags).when(hostDao).listAllHostsThatHaveNoRuleTag(Mockito.any(Host.Type.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong());
         Mockito.doReturn(emptyList).when(hostDao).findHostsWithTagRuleThatMatchComputeOfferingTags(Mockito.nullable(String.class));
+        Mockito.doNothing().when(randomAllocator).filterHostsBasedOnGuestOsRules(Mockito.any(VMTemplateVO.class), Mockito.anyList());
         List<HostVO> availableHosts = randomAllocator.retrieveHosts(type, null, vmTemplateVO, null, clusterId, podId, zoneId);
 
         Assert.assertEquals(1, availableHosts.size());
@@ -237,6 +238,7 @@ public class RandomAllocatorTest {
         Mockito.doReturn(upAndEnabledHosts).when(resourceManagerMock).listAllUpAndEnabledHosts(Mockito.any(Host.Type.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong());
         Mockito.doReturn(hostsWithNoRuleTagsAndHostTags).when(hostDao).listAllHostsThatHaveNoRuleTag(Mockito.any(Host.Type.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong());
         Mockito.doReturn(hostsMatchingRuleTags).when(hostDao).findHostsWithTagRuleThatMatchComputeOfferingTags(Mockito.nullable(String.class));
+        Mockito.doNothing().when(randomAllocator).filterHostsBasedOnGuestOsRules(Mockito.any(VMTemplateVO.class), Mockito.anyList());
         List<HostVO> availableHosts = randomAllocator.retrieveHosts(type, null, vmTemplateVO, null, clusterId, podId, zoneId);
 
         Assert.assertEquals(2, availableHosts.size());
@@ -252,6 +254,7 @@ public class RandomAllocatorTest {
         Mockito.doReturn(upAndEnabledHosts).when(resourceManagerMock).listAllUpAndEnabledHosts(Mockito.any(Host.Type.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong());
         Mockito.doReturn(hostsWithMatchingTags).when(hostDao).listByHostTag(Mockito.any(Host.Type.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString());
         Mockito.doReturn(emptyList).when(hostDao).findHostsWithTagRuleThatMatchComputeOfferingTags(Mockito.nullable(String.class));
+        Mockito.doNothing().when(randomAllocator).filterHostsBasedOnGuestOsRules(Mockito.any(VMTemplateVO.class), Mockito.anyList());
         List<HostVO> availableHosts = randomAllocator.retrieveHosts(type, null, vmTemplateVO, hostTag, clusterId, podId, zoneId);
 
         Assert.assertEquals(1, availableHosts.size());
@@ -267,6 +270,7 @@ public class RandomAllocatorTest {
         Mockito.doReturn(upAndEnabledHosts).when(resourceManagerMock).listAllUpAndEnabledHosts(Mockito.any(Host.Type.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong());
         Mockito.doReturn(hostsWithMatchingTags).when(hostDao).listByHostTag(Mockito.any(Host.Type.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString());
         Mockito.doReturn(hostsMatchingRuleTags).when(hostDao).findHostsWithTagRuleThatMatchComputeOfferingTags(Mockito.nullable(String.class));
+        Mockito.doNothing().when(randomAllocator).filterHostsBasedOnGuestOsRules(Mockito.any(VMTemplateVO.class), Mockito.anyList());
         List<HostVO> availableHosts = randomAllocator.retrieveHosts(type, null, vmTemplateVO, hostTag, clusterId, podId, zoneId);
 
         Assert.assertEquals(2, availableHosts.size());
@@ -281,6 +285,7 @@ public class RandomAllocatorTest {
 
         Mockito.doReturn(hostsWithNoRuleTagsAndHostTags).when(hostDao).listAllHostsThatHaveNoRuleTag(Mockito.any(Host.Type.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong());
         Mockito.doReturn(emptyList).when(hostDao).findHostsWithTagRuleThatMatchComputeOfferingTags(Mockito.nullable(String.class));
+        Mockito.doNothing().when(randomAllocator).filterHostsBasedOnGuestOsRules(Mockito.any(VMTemplateVO.class), Mockito.anyList());
         List<HostVO> availableHosts = randomAllocator.retrieveHosts(type, providedHosts, vmTemplateVO, null, clusterId, podId, zoneId);
 
         Assert.assertEquals(1, availableHosts.size());
@@ -295,6 +300,7 @@ public class RandomAllocatorTest {
 
         Mockito.doReturn(hostsWithNoRuleTagsAndHostTags).when(hostDao).listAllHostsThatHaveNoRuleTag(Mockito.any(Host.Type.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong());
         Mockito.doReturn(hostsMatchingRuleTags).when(hostDao).findHostsWithTagRuleThatMatchComputeOfferingTags(Mockito.nullable(String.class));
+        Mockito.doNothing().when(randomAllocator).filterHostsBasedOnGuestOsRules(Mockito.any(VMTemplateVO.class), Mockito.anyList());
         List<HostVO> availableHosts = randomAllocator.retrieveHosts(type, providedHosts, vmTemplateVO, null, clusterId, podId, zoneId);
 
         Assert.assertEquals(2, availableHosts.size());
@@ -309,6 +315,7 @@ public class RandomAllocatorTest {
 
         Mockito.doReturn(hostsWithMatchingTags).when(hostDao).listByHostTag(Mockito.any(Host.Type.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString());
         Mockito.doReturn(emptyList).when(hostDao).findHostsWithTagRuleThatMatchComputeOfferingTags(Mockito.nullable(String.class));
+        Mockito.doNothing().when(randomAllocator).filterHostsBasedOnGuestOsRules(Mockito.any(VMTemplateVO.class), Mockito.anyList());
         List<HostVO> availableHosts = randomAllocator.retrieveHosts(type, providedHosts, vmTemplateVO, hostTag, clusterId, podId, zoneId);
 
         Assert.assertEquals(1, availableHosts.size());
@@ -323,6 +330,7 @@ public class RandomAllocatorTest {
 
         Mockito.doReturn(hostsWithMatchingTags).when(hostDao).listByHostTag(Mockito.any(Host.Type.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString());
         Mockito.doReturn(hostsMatchingRuleTags).when(hostDao).findHostsWithTagRuleThatMatchComputeOfferingTags(Mockito.nullable(String.class));
+        Mockito.doNothing().when(randomAllocator).filterHostsBasedOnGuestOsRules(Mockito.any(VMTemplateVO.class), Mockito.anyList());
         List<HostVO> availableHosts = randomAllocator.retrieveHosts(type, providedHosts, vmTemplateVO, hostTag, clusterId, podId, zoneId);
 
         Assert.assertEquals(2, availableHosts.size());

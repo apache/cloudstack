@@ -73,7 +73,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`api_keypair` (
     `user_id` bigint(20) unsigned NOT NULL,
     `start_date` datetime,
     `end_date` datetime,
-    `description` varchar(100),
+    `description` varchar(1024),
     `api_key` varchar(255) NOT NULL,
     `secret_key` varchar(255) NOT NULL,
     `created` datetime NOT NULL,
@@ -107,16 +107,24 @@ WHERE user.api_key IS NOT NULL AND user.secret_key IS NOT NULL;
 -- Drop API keys from user table
 ALTER TABLE `cloud`.`user` DROP COLUMN api_key, DROP COLUMN secret_key;
 
--- Grant access to the "deleteUserKeys" API to the "User", "Domain Admin" and "Resource Admin" roles, similarly to the "registerUserKeys" API
+-- Grant access to the "deleteUserKeys" and "listUserKeyRules" APIs to the "User", "Domain Admin" and "Resource Admin" roles, similarly to the "registerUserKeys" API
 CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('User', 'deleteUserKeys', 'ALLOW');
 CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('Domain Admin', 'deleteUserKeys', 'ALLOW');
 CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('Resource Admin', 'deleteUserKeys', 'ALLOW');
+
+CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('User', 'listUserKeyRules', 'ALLOW');
+CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('Domain Admin', 'listUserKeyRules', 'ALLOW');
+CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('Resource Admin', 'listUserKeyRules', 'ALLOW');
 
 -- Add conserve mode for VPC offerings
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vpc_offerings','conserve_mode', 'tinyint(1) unsigned NULL DEFAULT 0 COMMENT ''True if the VPC offering is IP conserve mode enabled, allowing public IP services to be used across multiple VPC tiers'' ');
 
 --- Disable/enable NICs
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.nics','enabled', 'TINYINT(1) NOT NULL DEFAULT 1 COMMENT ''Indicates whether the NIC is enabled or not'' ');
+
+--- Add URLs for OAuth provider
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.oauth_provider','authorize_url', 'VARCHAR(255) DEFAULT NULL COMMENT ''Authorize URL for OAuth initialization'' ');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.oauth_provider','token_url', 'VARCHAR(255) DEFAULT NULL COMMENT ''Token URL for OAuth finalization'' ');
 
 --- Quota tariff/usage mapping
 CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_tariff_usage` (
@@ -127,6 +135,20 @@ CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_tariff_usage` (
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_quota_tariff_usage__tariff_id` FOREIGN KEY (`tariff_id`) REFERENCES `cloud_usage`.`quota_tariff` (`id`),
     CONSTRAINT `fk_quota_tariff_usage__quota_usage_id` FOREIGN KEY (`quota_usage_id`) REFERENCES `cloud_usage`.`quota_usage` (`id`));
+
+--- Per-VM ISO attachments. user_vm.iso_id remains as the primary/bootable ISO pointer.
+CREATE TABLE IF NOT EXISTS `cloud`.`vm_iso_map` (
+    `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+    `vm_id` bigint(20) unsigned NOT NULL COMMENT 'foreign key to user_vm',
+    `iso_id` bigint(20) unsigned NOT NULL COMMENT 'foreign key to vm_template (ISOs are templates of format ISO)',
+    `device_seq` int(10) unsigned NOT NULL COMMENT 'cdrom slot index used to derive the libvirt device label (3=hdc, 4=hdd)',
+    `created` datetime NOT NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uc_vm_iso_map__vm_iso` (`vm_id`, `iso_id`),
+    UNIQUE KEY `uc_vm_iso_map__vm_seq` (`vm_id`, `device_seq`),
+    CONSTRAINT `fk_vm_iso_map__vm_id` FOREIGN KEY (`vm_id`) REFERENCES `cloud`.`user_vm` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_vm_iso_map__iso_id` FOREIGN KEY (`iso_id`) REFERENCES `cloud`.`vm_template` (`id`)
+);
 
 -- Add the 'keep_mac_address_on_public_nic' column to the 'cloud.networks' and 'cloud.vpc' tables
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.networks', 'keep_mac_address_on_public_nic', 'TINYINT(1) NOT NULL DEFAULT 1');
@@ -149,6 +171,61 @@ SELECT 'Advanced', 'DEFAULT', 'CapacityManager', 'kvm.cpu.dynamic.scaling.capaci
 FROM `cloud`.`configuration` `cfg`
 WHERE NOT EXISTS (SELECT 1 FROM `cloud`.`configuration` WHERE `name` = 'kvm.cpu.dynamic.scaling.capacity')
   AND `cfg`.`name` = 'vm.serviceoffering.cpu.cores.max';
+
+-- Generalise VM schedule tables into resource-agnostic resource_schedule / resource_scheduled_job.
+-- Step 1: rename vm_schedule → resource_schedule, rename vm_id → resource_id, add resource_type column.
+ALTER TABLE `cloud`.`vm_schedule`
+    DROP FOREIGN KEY `fk_vm_schedule__vm_id`,
+    DROP INDEX `i_vm_schedule__vm_id`,
+    DROP INDEX `i_vm_schedule__enabled_end_date`,
+    CHANGE COLUMN `vm_id` `resource_id` bigint unsigned NOT NULL COMMENT 'id of the scheduled resource',
+    ADD COLUMN `resource_type` varchar(64) NOT NULL DEFAULT 'VirtualMachine' COMMENT 'type of the scheduled resource' AFTER `uuid`;
+
+RENAME TABLE `cloud`.`vm_schedule` TO `cloud`.`resource_schedule`;
+
+ALTER TABLE `cloud`.`resource_schedule`
+    ADD INDEX `i_resource_schedule__resource` (`resource_type`, `resource_id`),
+    ADD INDEX `i_resource_schedule__enabled_end_date` (`enabled`, `end_date`);
+
+-- Step 2: rename vm_scheduled_job → resource_scheduled_job, rename columns.
+ALTER TABLE `cloud`.`vm_scheduled_job`
+    DROP FOREIGN KEY `fk_vm_scheduled_job__vm_id`,
+    DROP FOREIGN KEY `fk_vm_scheduled_job__vm_schedule_id`,
+    DROP INDEX `i_vm_scheduled_job__vm_id`,
+    DROP INDEX `i_vm_scheduled_job__scheduled_timestamp`,
+    DROP INDEX `vm_schedule_id`,
+    CHANGE COLUMN `vm_id` `resource_id` bigint unsigned NOT NULL COMMENT 'id of the scheduled resource',
+    CHANGE COLUMN `vm_schedule_id` `schedule_id` bigint unsigned NOT NULL COMMENT 'id of the resource_schedule row',
+    ADD COLUMN `resource_type` varchar(64) NOT NULL DEFAULT 'VirtualMachine' COMMENT 'type of the scheduled resource' AFTER `uuid`;
+
+RENAME TABLE `cloud`.`vm_scheduled_job` TO `cloud`.`resource_scheduled_job`;
+
+ALTER TABLE `cloud`.`resource_scheduled_job`
+    ADD UNIQUE KEY `uc_resource_scheduled_job__schedule_timestamp` (`schedule_id`, `scheduled_timestamp`),
+    ADD INDEX `i_resource_scheduled_job__resource` (`resource_type`, `resource_id`),
+    ADD INDEX `i_resource_scheduled_job__scheduled_timestamp` (`scheduled_timestamp`),
+    ADD CONSTRAINT `fk_resource_scheduled_job__schedule_id` FOREIGN KEY (`schedule_id`) REFERENCES `resource_schedule`(`id`) ON DELETE CASCADE;
+
+-- Step 3: details table for action-specific parameters (used by the generic resource schedule API in Commit 2).
+CREATE TABLE IF NOT EXISTS `cloud`.`resource_schedule_details` (
+    `id` bigint unsigned NOT NULL auto_increment,
+    `schedule_id` bigint unsigned NOT NULL COMMENT 'id of the resource_schedule row',
+    `name` varchar(255) NOT NULL,
+    `value` varchar(1024) NOT NULL,
+    `display` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'should this detail be visible to the end user',
+    PRIMARY KEY (`id`),
+    INDEX `i_resource_schedule_details__schedule_id` (`schedule_id`),
+    CONSTRAINT `fk_resource_schedule_details__schedule_id` FOREIGN KEY (`schedule_id`) REFERENCES `resource_schedule`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Step 4: rename CRUD event types from VM.SCHEDULE.{CREATE,UPDATE,DELETE} to the new generic SCHEDULE.{CREATE,UPDATE,DELETE}.
+-- Action-execution events (VM.SCHEDULE.START, .STOP, .REBOOT, .FORCE_STOP, .FORCE_REBOOT) keep their existing names.
+UPDATE `cloud`.`event` SET `type` = 'SCHEDULE.CREATE' WHERE `type` = 'VM.SCHEDULE.CREATE';
+UPDATE `cloud`.`event` SET `type` = 'SCHEDULE.UPDATE' WHERE `type` = 'VM.SCHEDULE.UPDATE';
+UPDATE `cloud`.`event` SET `type` = 'SCHEDULE.DELETE' WHERE `type` = 'VM.SCHEDULE.DELETE';
+
+-- Step 5: Rename the global configuration key for the scheduler
+UPDATE `cloud`.`configuration` SET name='scheduler.jobs.expire.interval' WHERE name='vmscheduler.jobs.expire.interval';
 
 -- Remove stale realhostip.com default values; domain has been dead since ~2015.
 UPDATE `cloud`.`configuration`
@@ -211,3 +288,6 @@ WHERE rule = 'quotaStatement' AND NOT EXISTS(SELECT 1 FROM cloud.role_permission
 
 -- Add custom labels to GUI themes
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.gui_themes', 'custom_labels_path', 'TEXT DEFAULT NULL');
+
+-- Add description for secondary IP addresses
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.nic_secondary_ips', 'description', 'VARCHAR(2048) DEFAULT NULL');
