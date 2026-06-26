@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.api;
 
-import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -29,17 +29,20 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -57,7 +60,9 @@ import org.apache.cloudstack.api.response.UnmanagedInstanceResponse;
 import org.apache.cloudstack.api.response.UsageRecordResponse;
 import org.apache.cloudstack.api.response.TrafficTypeResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.usage.UsageService;
+import org.apache.cloudstack.usage.UsageTypes;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 
 import com.cloud.capacity.Capacity;
@@ -67,6 +72,7 @@ import com.cloud.host.HostVO;
 import com.cloud.network.Networks;
 import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.network.PublicIpQuarantine;
+import com.cloud.network.VpnUserVO;
 import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.network.as.AutoScaleVmGroupVO;
 import com.cloud.network.as.AutoScaleVmProfileVO;
@@ -78,12 +84,23 @@ import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
+import com.cloud.network.rules.PortForwardingRuleVO;
+import com.cloud.network.security.SecurityGroupVO;
+import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.resource.icon.ResourceIconVO;
+import com.cloud.service.ServiceOfferingVO;
 import com.cloud.server.ResourceIcon;
 import com.cloud.server.ResourceIconManager;
 import com.cloud.server.ResourceTag;
+import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOsCategory;
+import com.cloud.storage.GuestOSCategoryVO;
+import com.cloud.storage.GuestOSVO;
+import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.GuestOSCategoryDao;
+import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.usage.UsageVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -93,22 +110,25 @@ import com.cloud.user.UserData;
 import com.cloud.user.UserDataVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.UserDataDao;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.net.Ip;
 import com.cloud.vm.ConsoleSessionVO;
 import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.VMInstanceVO;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class ApiResponseHelperTest {
 
     @Mock
@@ -136,6 +156,15 @@ public class ApiResponseHelperTest {
 
     @Mock
     ResourceIconManager resourceIconManager;
+
+    @Mock
+    EntityManager entityManagerMock;
+
+    @Mock
+    GuestOSDao guestOSDaoMock;
+
+    @Mock
+    GuestOSCategoryDao guestOSCategoryDaoMock;
 
     @Mock
     private ConsoleSessionVO consoleSessionMock;
@@ -168,17 +197,16 @@ public class ApiResponseHelperTest {
 
     static long autoScaleUserId = 7L;
 
-    @Before
-    public void injectMocks() throws SecurityException, NoSuchFieldException,
-            IllegalArgumentException, IllegalAccessException {
-        Field usageSvcField = ApiResponseHelper.class
-                .getDeclaredField("_usageSvc");
-        usageSvcField.setAccessible(true);
+    @BeforeEach
+    public void injectMocks() {
         helper = new ApiResponseHelper();
-        usageSvcField.set(helper, usageService);
+        ReflectionTestUtils.setField(helper, "_usageSvc", usageService);
+        ReflectionTestUtils.setField(helper, "_entityMgr", entityManagerMock);
+        ReflectionTestUtils.setField(helper, "_guestOsDao", guestOSDaoMock);
+        ReflectionTestUtils.setField(helper, "_guestOsCategoryDao", guestOSCategoryDaoMock);
     }
 
-    @Before
+    @BeforeEach
     public void setup() {
         AccountVO account = new AccountVO("testaccount", 1L, "networkdomain", Account.Type.NORMAL, "uuid");
         account.setId(1);
@@ -188,7 +216,7 @@ public class ApiResponseHelperTest {
         CallContext.register(user, account);
     }
 
-    @After
+    @AfterEach
     public void cleanup() {
         CallContext.unregister();
     }
@@ -479,8 +507,8 @@ public class ApiResponseHelperTest {
     public void testCreateUnmanagedInstanceResponseVmwareDcVms() {
         UnmanagedInstanceTO instance = getUnmanagedInstanceForTests();
         UnmanagedInstanceResponse response = apiResponseHelper.createUnmanagedInstanceResponse(instance, null, null);
-        Assert.assertEquals(1, response.getDisks().size());
-        Assert.assertEquals(1, response.getNics().size());
+        Assertions.assertEquals(1, response.getDisks().size());
+        Assertions.assertEquals(1, response.getNics().size());
     }
 
     @Test
@@ -521,16 +549,16 @@ public class ApiResponseHelperTest {
 
         IpQuarantineResponse result = apiResponseHelper.createQuarantinedIpsResponse(quarantinedIpMock);
 
-        Assert.assertEquals(quarantinedIpUuid, result.getId());
-        Assert.assertEquals(publicIpAddress, result.getPublicIpAddress());
-        Assert.assertEquals(previousOwnerUuid, result.getPreviousOwnerId());
-        Assert.assertEquals(previousOwnerName, result.getPreviousOwnerName());
-        Assert.assertEquals(created, result.getCreated());
-        Assert.assertEquals(removed, result.getRemoved());
-        Assert.assertEquals(endDate, result.getEndDate());
-        Assert.assertEquals(removalReason, result.getRemovalReason());
-        Assert.assertEquals(removerAccountUuid, result.getRemoverAccountId());
-        Assert.assertEquals("quarantinedip", result.getResponseName());
+        Assertions.assertEquals(quarantinedIpUuid, result.getId());
+        Assertions.assertEquals(publicIpAddress, result.getPublicIpAddress());
+        Assertions.assertEquals(previousOwnerUuid, result.getPreviousOwnerId());
+        Assertions.assertEquals(previousOwnerName, result.getPreviousOwnerName());
+        Assertions.assertEquals(created, result.getCreated());
+        Assertions.assertEquals(removed, result.getRemoved());
+        Assertions.assertEquals(endDate, result.getEndDate());
+        Assertions.assertEquals(removalReason, result.getRemovalReason());
+        Assertions.assertEquals(removerAccountUuid, result.getRemoverAccountId());
+        Assertions.assertEquals("quarantinedip", result.getResponseName());
     }
 
     @Test
@@ -542,9 +570,9 @@ public class ApiResponseHelperTest {
         Capacity c3 = Mockito.mock(Capacity.class);
         Mockito.when(c3.getTag()).thenReturn("tag2");
         Capacity c4 = Mockito.mock(Capacity.class);
-        Assert.assertTrue(apiResponseHelper.capacityListingForSingleTag(List.of(c1, c2)));
-        Assert.assertFalse(apiResponseHelper.capacityListingForSingleTag(List.of(c1, c2, c3)));
-        Assert.assertFalse(apiResponseHelper.capacityListingForSingleTag(List.of(c4, c2, c3)));
+        Assertions.assertTrue(apiResponseHelper.capacityListingForSingleTag(List.of(c1, c2)));
+        Assertions.assertFalse(apiResponseHelper.capacityListingForSingleTag(List.of(c1, c2, c3)));
+        Assertions.assertFalse(apiResponseHelper.capacityListingForSingleTag(List.of(c4, c2, c3)));
     }
 
     @Test
@@ -556,8 +584,8 @@ public class ApiResponseHelperTest {
         Capacity c3 = Mockito.mock(Capacity.class);
         Mockito.when(c3.getCapacityType()).thenReturn((short)Resource.ResourceType.volume.getOrdinal());
         Capacity c4 = Mockito.mock(Capacity.class);
-        Assert.assertTrue(apiResponseHelper.capacityListingForSingleNonGpuType(List.of(c1, c2)));
-        Assert.assertFalse(apiResponseHelper.capacityListingForSingleNonGpuType(List.of(c1, c2, c3)));
+        Assertions.assertTrue(apiResponseHelper.capacityListingForSingleNonGpuType(List.of(c1, c2)));
+        Assertions.assertFalse(apiResponseHelper.capacityListingForSingleNonGpuType(List.of(c1, c2, c3)));
     }
 
     @Test
@@ -575,17 +603,17 @@ public class ApiResponseHelperTest {
             Mockito.when(ApiDBUtils.getResourceIconByResourceUUID(uuid, ResourceTag.ResourceObjectType.GuestOsCategory)).thenReturn(resourceIconVO);
             Mockito.when(ApiDBUtils.newResourceIconResponse(resourceIconVO)).thenReturn(mockIconResponse);
             GuestOSCategoryResponse response = apiResponseHelper.createGuestOSCategoryResponse(guestOsCategory);
-            Assert.assertNotNull(response);
-            Assert.assertEquals(uuid, response.getId());
-            Assert.assertEquals(name, response.getName());
+            Assertions.assertNotNull(response);
+            Assertions.assertEquals(uuid, response.getId());
+            Assertions.assertEquals(name, response.getName());
             Object obj = ReflectionTestUtils.getField(response, "featured");
             if (obj == null) {
-                Assert.fail("Invalid featured value");
+                Assertions.fail("Invalid featured value");
             }
-            Assert.assertTrue((Boolean)obj);
+            Assertions.assertTrue((Boolean)obj);
             obj = ReflectionTestUtils.getField(response, "resourceIconResponse");
-            Assert.assertNotNull(obj);
-            Assert.assertEquals("oscategory", response.getObjectName());
+            Assertions.assertNotNull(obj);
+            Assertions.assertEquals("oscategory", response.getObjectName());
         }
     }
 
@@ -601,17 +629,17 @@ public class ApiResponseHelperTest {
         try (MockedStatic<ApiDBUtils> ignored = Mockito.mockStatic(ApiDBUtils.class)) {
             when(ApiDBUtils.getResourceIconByResourceUUID(uuid, ResourceTag.ResourceObjectType.GuestOsCategory)).thenReturn(null);
             GuestOSCategoryResponse response = apiResponseHelper.createGuestOSCategoryResponse(guestOsCategory);
-            Assert.assertNotNull(response);
-            Assert.assertEquals(uuid, response.getId());
-            Assert.assertEquals(name, response.getName());
+            Assertions.assertNotNull(response);
+            Assertions.assertEquals(uuid, response.getId());
+            Assertions.assertEquals(name, response.getName());
             Object obj = ReflectionTestUtils.getField(response, "featured");
             if (obj == null) {
-                Assert.fail("Invalid featured value");
+                Assertions.fail("Invalid featured value");
             }
-            Assert.assertFalse((Boolean)obj);
+            Assertions.assertFalse((Boolean)obj);
             obj = ReflectionTestUtils.getField(response, "resourceIconResponse");
-            Assert.assertNull(obj);
-            Assert.assertEquals("oscategory", response.getObjectName());
+            Assertions.assertNull(obj);
+            Assertions.assertEquals("oscategory", response.getObjectName());
         }
     }
 
@@ -621,7 +649,7 @@ public class ApiResponseHelperTest {
         Mockito.when(guestOsCategory.getUuid()).thenReturn(UUID.randomUUID().toString());
         try (MockedStatic<ApiDBUtils> mockedStatic = Mockito.mockStatic(ApiDBUtils.class)) {
             GuestOSCategoryResponse response = apiResponseHelper.createGuestOSCategoryResponse(guestOsCategory, false);
-            Assert.assertNotNull(response);
+            Assertions.assertNotNull(response);
             mockedStatic.verify(() -> ApiDBUtils.getResourceIconByResourceUUID(Mockito.any(), Mockito.any()),
                     Mockito.never());
         }
@@ -732,12 +760,12 @@ public class ApiResponseHelperTest {
 
             ConsoleSessionResponse response = apiResponseHelper.createConsoleSessionResponse(consoleSessionMock, ResponseObject.ResponseView.Restricted);
 
-            Assert.assertEquals(expected.getId(), response.getId());
-            Assert.assertEquals(expected.getCreated(), response.getCreated());
-            Assert.assertEquals(expected.getAcquired(), response.getAcquired());
-            Assert.assertEquals(expected.getRemoved(), response.getRemoved());
-            Assert.assertEquals(expected.getConsoleEndpointCreatorAddress(), response.getConsoleEndpointCreatorAddress());
-            Assert.assertEquals(expected.getClientAddress(), response.getClientAddress());
+            Assertions.assertEquals(expected.getId(), response.getId());
+            Assertions.assertEquals(expected.getCreated(), response.getCreated());
+            Assertions.assertEquals(expected.getAcquired(), response.getAcquired());
+            Assertions.assertEquals(expected.getRemoved(), response.getRemoved());
+            Assertions.assertEquals(expected.getConsoleEndpointCreatorAddress(), response.getConsoleEndpointCreatorAddress());
+            Assertions.assertEquals(expected.getClientAddress(), response.getClientAddress());
         }
     }
 
@@ -781,23 +809,664 @@ public class ApiResponseHelperTest {
 
             ConsoleSessionResponse response = apiResponseHelper.createConsoleSessionResponse(consoleSessionMock, ResponseObject.ResponseView.Full);
 
-            Assert.assertEquals(expected.getId(), response.getId());
-            Assert.assertEquals(expected.getCreated(), response.getCreated());
-            Assert.assertEquals(expected.getAcquired(), response.getAcquired());
-            Assert.assertEquals(expected.getRemoved(), response.getRemoved());
-            Assert.assertEquals(expected.getConsoleEndpointCreatorAddress(), response.getConsoleEndpointCreatorAddress());
-            Assert.assertEquals(expected.getClientAddress(), response.getClientAddress());
-            Assert.assertEquals(expected.getDomain(), response.getDomain());
-            Assert.assertEquals(expected.getDomainPath(), response.getDomainPath());
-            Assert.assertEquals(expected.getDomainId(), response.getDomainId());
-            Assert.assertEquals(expected.getUser(), response.getUser());
-            Assert.assertEquals(expected.getUserId(), response.getUserId());
-            Assert.assertEquals(expected.getAccount(), response.getAccount());
-            Assert.assertEquals(expected.getAccountId(), response.getAccountId());
-            Assert.assertEquals(expected.getHostId(), response.getHostId());
-            Assert.assertEquals(expected.getHostName(), response.getHostName());
-            Assert.assertEquals(expected.getVmId(), response.getVmId());
-            Assert.assertEquals(expected.getVmName(), response.getVmName());
+            Assertions.assertEquals(expected.getId(), response.getId());
+            Assertions.assertEquals(expected.getCreated(), response.getCreated());
+            Assertions.assertEquals(expected.getAcquired(), response.getAcquired());
+            Assertions.assertEquals(expected.getRemoved(), response.getRemoved());
+            Assertions.assertEquals(expected.getConsoleEndpointCreatorAddress(), response.getConsoleEndpointCreatorAddress());
+            Assertions.assertEquals(expected.getClientAddress(), response.getClientAddress());
+            Assertions.assertEquals(expected.getDomain(), response.getDomain());
+            Assertions.assertEquals(expected.getDomainPath(), response.getDomainPath());
+            Assertions.assertEquals(expected.getDomainId(), response.getDomainId());
+            Assertions.assertEquals(expected.getUser(), response.getUser());
+            Assertions.assertEquals(expected.getUserId(), response.getUserId());
+            Assertions.assertEquals(expected.getAccount(), response.getAccount());
+            Assertions.assertEquals(expected.getAccountId(), response.getAccountId());
+            Assertions.assertEquals(expected.getHostId(), response.getHostId());
+            Assertions.assertEquals(expected.getHostName(), response.getHostName());
+            Assertions.assertEquals(expected.getVmId(), response.getVmId());
+            Assertions.assertEquals(expected.getVmName(), response.getVmName());
         }
+    }
+
+    @Test
+    @DisplayName("RUNNING_VM usage populates service offering, VM and OS details")
+    public void populateRunningVmUsageResponseTest() throws Exception {
+        // Arrange
+        UsageVO usageRecord = mock(UsageVO.class);
+        UsageRecordResponse response = new UsageRecordResponse();
+        ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
+        VMInstanceVO vmInstance = mock(VMInstanceVO.class);
+        VMTemplateVO template = mock(VMTemplateVO.class);
+        GuestOSVO guestOS = mock(GuestOSVO.class);
+        GuestOSCategoryVO guestOSCategory = mock(GuestOSCategoryVO.class);
+        Long usageId = 11L;
+        Long offeringId = 21L;
+        Long guestOSId = 31L;
+        Long guestOSCategoryId = 41L;
+
+        when(usageRecord.getUsageType()).thenReturn(UsageTypes.RUNNING_VM);
+        when(usageRecord.getOfferingId()).thenReturn(offeringId);
+        when(usageRecord.getUsageId()).thenReturn(usageId);
+        when(usageRecord.getVmInstanceId()).thenReturn(usageId);
+        when(usageRecord.getType()).thenReturn("KVM");
+        when(usageRecord.getCpuCores()).thenReturn(null);
+        when(usageRecord.getCpuSpeed()).thenReturn(2400L);
+        when(usageRecord.getMemory()).thenReturn(8192L);
+        when(entityManagerMock.findByIdIncludingRemoved(ServiceOfferingVO.class, offeringId.toString())).thenReturn(serviceOffering);
+        when(serviceOffering.getUuid()).thenReturn("service-offering-uuid");
+        when(serviceOffering.getName()).thenReturn("Small Instance");
+        when(serviceOffering.getCpu()).thenReturn(4);
+        when(vmInstance.getUuid()).thenReturn("vm-uuid");
+        when(vmInstance.getId()).thenReturn(usageId);
+        when(vmInstance.getHostName()).thenReturn("vm-host");
+        when(vmInstance.getInstanceName()).thenReturn("i-2-11-VM");
+        when(vmInstance.getGuestOSId()).thenReturn(guestOSId);
+        when(guestOSDaoMock.findById(guestOSId)).thenReturn(guestOS);
+        when(guestOS.getUuid()).thenReturn("guest-os-uuid");
+        when(guestOS.getDisplayName()).thenReturn("Ubuntu 22.04");
+        when(guestOS.getCategoryId()).thenReturn(guestOSCategoryId);
+        when(guestOSCategoryDaoMock.findById(guestOSCategoryId)).thenReturn(guestOSCategory);
+        when(guestOSCategory.getUuid()).thenReturn("guest-os-category-uuid");
+        when(guestOSCategory.getName()).thenReturn("Linux");
+        when(template.getUuid()).thenReturn("template-uuid");
+        when(template.getName()).thenReturn("Ubuntu Template");
+
+        // Act
+        Object resourceDetails = invokeUsageDetailsHelper("populateRunningOrAllocatedVmUsageResponse",
+                new Class<?>[] {Usage.class, UsageRecordResponse.class, boolean.class, VMInstanceVO.class, VMTemplateVO.class},
+                usageRecord, response, false, vmInstance, template);
+
+        // Assert
+        assertResponseField(response, "offeringId", "service-offering-uuid");
+        assertResponseField(response, "usageId", "vm-uuid");
+        assertResponseField(response, "type", "KVM");
+        assertResponseField(response, "cpuNumber", 4L);
+        assertResponseField(response, "cpuSpeed", 2400L);
+        assertResponseField(response, "memory", 8192L);
+        assertResponseField(response, "osTypeId", "guest-os-uuid");
+        assertResponseField(response, "osDisplayName", "Ubuntu 22.04");
+        assertResponseField(response, "osCategoryId", "guest-os-category-uuid");
+        assertResponseField(response, "osCategoryName", "Linux");
+        assertDescriptionContains(response, "Running VM usage for vm-host (i-2-11-VM) (vm-uuid)");
+        assertDescriptionContains(response, "using service offering Small Instance (service-offering-uuid)");
+        assertDescriptionContains(response, "and template Ubuntu Template (template-uuid)");
+        assertUsageResourceDetails(resourceDetails, ResourceTag.ResourceObjectType.UserVm, usageId);
+        verify(entityManagerMock).findByIdIncludingRemoved(ServiceOfferingVO.class, offeringId.toString());
+        verify(guestOSDaoMock).findById(guestOSId);
+    }
+
+    @Test
+    @DisplayName("ALLOCATED_VM usage falls back to service offering compute details")
+    public void populateAllocatedVmUsageResponseTest() throws Exception {
+        // Arrange
+        UsageVO usageRecord = mock(UsageVO.class);
+        UsageRecordResponse response = new UsageRecordResponse();
+        ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
+        VMInstanceVO vmInstance = mock(VMInstanceVO.class);
+        Long usageId = 12L;
+        Long vmInstanceId = 22L;
+        Long offeringId = 32L;
+
+        when(usageRecord.getUsageType()).thenReturn(UsageTypes.ALLOCATED_VM);
+        when(usageRecord.getOfferingId()).thenReturn(offeringId);
+        when(usageRecord.getUsageId()).thenReturn(usageId);
+        when(usageRecord.getVmInstanceId()).thenReturn(vmInstanceId);
+        when(usageRecord.getType()).thenReturn("KVM");
+        when(usageRecord.getCpuCores()).thenReturn(null);
+        when(usageRecord.getCpuSpeed()).thenReturn(null);
+        when(usageRecord.getMemory()).thenReturn(null);
+        when(entityManagerMock.findByIdIncludingRemoved(ServiceOfferingVO.class, offeringId.toString())).thenReturn(serviceOffering);
+        when(entityManagerMock.findByIdIncludingRemoved(VMInstanceVO.class, usageId.toString())).thenReturn(vmInstance);
+        when(serviceOffering.getUuid()).thenReturn("allocated-service-offering-uuid");
+        when(serviceOffering.getName()).thenReturn("Medium Instance");
+        when(serviceOffering.getCpu()).thenReturn(2);
+        when(serviceOffering.getSpeed()).thenReturn(1800);
+        when(serviceOffering.getRamSize()).thenReturn(4096);
+        when(vmInstance.getUuid()).thenReturn("allocated-vm-uuid");
+        when(vmInstance.getId()).thenReturn(usageId);
+        when(vmInstance.getHostName()).thenReturn("allocated-vm-host");
+        when(vmInstance.getInstanceName()).thenReturn("i-2-12-VM");
+
+        // Act
+        Object resourceDetails = invokeUsageDetailsHelper("populateRunningOrAllocatedVmUsageResponse",
+                new Class<?>[] {Usage.class, UsageRecordResponse.class, boolean.class, VMInstanceVO.class, VMTemplateVO.class},
+                usageRecord, response, false, null, null);
+
+        // Assert
+        assertResponseField(response, "offeringId", "allocated-service-offering-uuid");
+        assertResponseField(response, "usageId", "allocated-vm-uuid");
+        assertResponseField(response, "type", "KVM");
+        assertResponseField(response, "cpuNumber", 2L);
+        assertResponseField(response, "cpuSpeed", 1800L);
+        assertResponseField(response, "memory", 4096L);
+        assertDescriptionContains(response, "Allocated VM usage for allocated-vm-host (i-2-12-VM) (allocated-vm-uuid)");
+        assertDescriptionContains(response, "using service offering Medium Instance (allocated-service-offering-uuid)");
+        assertUsageResourceDetails(resourceDetails, ResourceTag.ResourceObjectType.UserVm, usageId);
+        verify(entityManagerMock).findByIdIncludingRemoved(ServiceOfferingVO.class, offeringId.toString());
+        verify(entityManagerMock).findByIdIncludingRemoved(VMInstanceVO.class, usageId.toString());
+    }
+
+    @Test
+    @DisplayName("IP_ADDRESS usage populates public IP flags")
+    public void populateIpAddressUsageResponseTest() throws Exception {
+        // Arrange
+        UsageVO usageRecord = mock(UsageVO.class);
+        UsageRecordResponse response = new UsageRecordResponse();
+        IPAddressVO ipAddress = mock(IPAddressVO.class);
+        Long usageId = 13L;
+
+        when(usageRecord.getUsageId()).thenReturn(usageId);
+        when(usageRecord.getType()).thenReturn("SourceNat");
+        when(usageRecord.getSize()).thenReturn(1L);
+        when(entityManagerMock.findByIdIncludingRemoved(IPAddressVO.class, usageId.toString())).thenReturn(ipAddress);
+        when(ipAddress.getUuid()).thenReturn("ip-address-uuid");
+        when(ipAddress.getId()).thenReturn(usageId);
+        when(ipAddress.getAssociatedWithNetworkId()).thenReturn(null);
+        when(ipAddress.getSourceNetworkId()).thenReturn(23L);
+
+        // Act
+        Object resourceDetails = invokeUsageDetailsHelper("populateIpAddressUsageResponse",
+                new Class<?>[] {Usage.class, UsageRecordResponse.class}, usageRecord, response);
+
+        // Assert
+        assertResponseField(response, "usageId", "ip-address-uuid");
+        assertResponseField(response, "isSourceNat", Boolean.TRUE);
+        assertResponseField(response, "isSystem", Boolean.TRUE);
+        assertUsageResourceDetails(resourceDetails, ResourceTag.ResourceObjectType.PublicIpAddress, usageId);
+        verify(entityManagerMock).findByIdIncludingRemoved(IPAddressVO.class, usageId.toString());
+        verify(ipAddress).getSourceNetworkId();
+    }
+
+    @Test
+    @DisplayName("NETWORK_BYTES_SENT usage populates VM and network details")
+    public void populateNetworkBytesSentUsageResponseTest() throws Exception {
+        // Arrange
+        UsageVO usageRecord = mock(UsageVO.class);
+        UsageRecordResponse response = new UsageRecordResponse();
+        VMInstanceVO vmInstance = mock(VMInstanceVO.class);
+        NetworkVO network = mock(NetworkVO.class);
+        Long usageId = 14L;
+        Long networkId = 24L;
+
+        when(usageRecord.getUsageType()).thenReturn(UsageTypes.NETWORK_BYTES_SENT);
+        when(usageRecord.getType()).thenReturn("UserVm");
+        when(usageRecord.getUsageId()).thenReturn(usageId);
+        when(usageRecord.getNetworkId()).thenReturn(networkId);
+        when(usageRecord.getRawUsage()).thenReturn(1024D);
+        when(entityManagerMock.findByIdIncludingRemoved(VMInstanceVO.class, usageId.toString())).thenReturn(vmInstance);
+        when(entityManagerMock.findByIdIncludingRemoved(NetworkVO.class, networkId.toString())).thenReturn(network);
+        when(vmInstance.getUuid()).thenReturn("network-vm-uuid");
+        when(vmInstance.getId()).thenReturn(usageId);
+        when(vmInstance.getInstanceName()).thenReturn("r-14-VM");
+        when(network.getUuid()).thenReturn("network-uuid");
+        when(network.getId()).thenReturn(networkId);
+        when(network.getName()).thenReturn("guest-network");
+        when(network.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+
+        // Act
+        Object resourceDetails = invokeUsageDetailsHelper("populateNetworkBytesUsageResponse",
+                new Class<?>[] {Usage.class, UsageRecordResponse.class, boolean.class}, usageRecord, response, false);
+
+        // Assert
+        assertResponseField(response, "type", "UserVm");
+        assertResponseField(response, "usageId", "network-vm-uuid");
+        assertResponseField(response, "networkId", "network-uuid");
+        assertResponseField(response, "resourceName", "guest-network");
+        assertDescriptionContains(response, "Bytes sent by network guest-network (network-uuid)");
+        assertDescriptionContains(response, "using router r-14-VM (network-vm-uuid)");
+        assertUsageResourceDetails(resourceDetails, ResourceTag.ResourceObjectType.Network, networkId);
+        verify(entityManagerMock).findByIdIncludingRemoved(VMInstanceVO.class, usageId.toString());
+        verify(entityManagerMock).findByIdIncludingRemoved(NetworkVO.class, networkId.toString());
+    }
+
+    @Test
+    @DisplayName("NETWORK_BYTES_RECEIVED usage populates VM and network details")
+    public void populateNetworkBytesReceivedUsageResponseTest() throws Exception {
+        // Arrange
+        UsageVO usageRecord = mock(UsageVO.class);
+        UsageRecordResponse response = new UsageRecordResponse();
+        VMInstanceVO vmInstance = mock(VMInstanceVO.class);
+        NetworkVO network = mock(NetworkVO.class);
+        Long usageId = 15L;
+        Long networkId = 25L;
+
+        when(usageRecord.getUsageType()).thenReturn(UsageTypes.NETWORK_BYTES_RECEIVED);
+        when(usageRecord.getType()).thenReturn("DomainRouter");
+        when(usageRecord.getUsageId()).thenReturn(usageId);
+        when(usageRecord.getNetworkId()).thenReturn(networkId);
+        when(usageRecord.getRawUsage()).thenReturn(2048D);
+        when(entityManagerMock.findByIdIncludingRemoved(VMInstanceVO.class, usageId.toString())).thenReturn(vmInstance);
+        when(entityManagerMock.findByIdIncludingRemoved(NetworkVO.class, networkId.toString())).thenReturn(network);
+        when(vmInstance.getUuid()).thenReturn("network-router-uuid");
+        when(vmInstance.getId()).thenReturn(usageId);
+        when(vmInstance.getInstanceName()).thenReturn("r-15-VM");
+        when(network.getUuid()).thenReturn("received-network-uuid");
+        when(network.getId()).thenReturn(networkId);
+        when(network.getName()).thenReturn("received-network");
+        when(network.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+
+        // Act
+        Object resourceDetails = invokeUsageDetailsHelper("populateNetworkBytesUsageResponse",
+                new Class<?>[] {Usage.class, UsageRecordResponse.class, boolean.class}, usageRecord, response, false);
+
+        // Assert
+        assertResponseField(response, "type", "DomainRouter");
+        assertResponseField(response, "usageId", "network-router-uuid");
+        assertResponseField(response, "networkId", "received-network-uuid");
+        assertResponseField(response, "resourceName", "received-network");
+        assertDescriptionContains(response, "Bytes received by network received-network (received-network-uuid)");
+        assertDescriptionContains(response, "using router r-15-VM (network-router-uuid)");
+        assertUsageResourceDetails(resourceDetails, ResourceTag.ResourceObjectType.Network, networkId);
+        verify(entityManagerMock).findByIdIncludingRemoved(VMInstanceVO.class, usageId.toString());
+        verify(entityManagerMock).findByIdIncludingRemoved(NetworkVO.class, networkId.toString());
+    }
+
+    @Test
+    @DisplayName("VOLUME usage populates volume size and offering details")
+    public void populateVolumeUsageResponseTest() throws Exception {
+        // Arrange
+        UsageVO usageRecord = mock(UsageVO.class);
+        UsageRecordResponse response = new UsageRecordResponse();
+        VMInstanceVO vmInstance = mock(VMInstanceVO.class);
+        VMTemplateVO template = mock(VMTemplateVO.class);
+        VolumeVO volume = mock(VolumeVO.class);
+        DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
+        Long usageId = 16L;
+        Long offeringId = 26L;
+
+        when(usageRecord.getUsageId()).thenReturn(usageId);
+        when(usageRecord.getOfferingId()).thenReturn(offeringId);
+        when(usageRecord.getSize()).thenReturn(4096L);
+        when(entityManagerMock.findByIdIncludingRemoved(VolumeVO.class, usageId.toString())).thenReturn(volume);
+        when(entityManagerMock.findByIdIncludingRemoved(DiskOfferingVO.class, offeringId.toString())).thenReturn(diskOffering);
+        when(volume.getUuid()).thenReturn("volume-uuid");
+        when(volume.getId()).thenReturn(usageId);
+        when(volume.getName()).thenReturn("data-volume");
+        when(diskOffering.getUuid()).thenReturn("disk-offering-uuid");
+        when(diskOffering.getName()).thenReturn("Small Disk");
+        when(vmInstance.getUuid()).thenReturn("volume-vm-uuid");
+        when(vmInstance.getHostName()).thenReturn("volume-vm");
+        when(template.getUuid()).thenReturn("volume-template-uuid");
+        when(template.getName()).thenReturn("Volume Template");
+
+        // Act
+        Object resourceDetails = invokeUsageDetailsHelper("populateVolumeUsageResponse",
+                new Class<?>[] {Usage.class, UsageRecordResponse.class, boolean.class, VMInstanceVO.class, VMTemplateVO.class},
+                usageRecord, response, false, vmInstance, template);
+
+        // Assert
+        assertResponseField(response, "usageId", "volume-uuid");
+        assertResponseField(response, "size", 4096L);
+        assertResponseField(response, "offeringId", "disk-offering-uuid");
+        assertDescriptionContains(response, "Volume usage for data-volume (volume-uuid)");
+        assertDescriptionContains(response, "attached to VM volume-vm (volume-vm-uuid)");
+        assertDescriptionContains(response, "with disk offering Small Disk (disk-offering-uuid)");
+        assertUsageResourceDetails(resourceDetails, ResourceTag.ResourceObjectType.Volume, usageId);
+        verify(entityManagerMock).findByIdIncludingRemoved(VolumeVO.class, usageId.toString());
+        verify(entityManagerMock).findByIdIncludingRemoved(DiskOfferingVO.class, offeringId.toString());
+    }
+
+    @Test
+    @DisplayName("TEMPLATE usage populates template size details")
+    public void populateTemplateUsageResponseTest() throws Exception {
+        // Arrange
+        UsageVO usageRecord = mock(UsageVO.class);
+        UsageRecordResponse response = new UsageRecordResponse();
+        VMTemplateVO template = mock(VMTemplateVO.class);
+        Long usageId = 17L;
+
+        when(usageRecord.getUsageType()).thenReturn(UsageTypes.TEMPLATE);
+        when(usageRecord.getUsageId()).thenReturn(usageId);
+        when(usageRecord.getSize()).thenReturn(8192L);
+        when(usageRecord.getVirtualSize()).thenReturn(16384L);
+        when(entityManagerMock.findByIdIncludingRemoved(VMTemplateVO.class, usageId.toString())).thenReturn(template);
+        when(template.getUuid()).thenReturn("template-usage-uuid");
+        when(template.getId()).thenReturn(usageId);
+        when(template.getName()).thenReturn("CentOS Template");
+
+        // Act
+        Object resourceDetails = invokeUsageDetailsHelper("populateTemplateOrIsoUsageResponse",
+                new Class<?>[] {Usage.class, UsageRecordResponse.class, boolean.class}, usageRecord, response, false);
+
+        // Assert
+        assertResponseField(response, "usageId", "template-usage-uuid");
+        assertResponseField(response, "size", 8192L);
+        assertResponseField(response, "virtualSize", 16384L);
+        assertDescriptionContains(response, "Template usage for CentOS Template (template-usage-uuid)");
+        assertUsageResourceDetails(resourceDetails, ResourceTag.ResourceObjectType.Template, usageId);
+        verify(entityManagerMock).findByIdIncludingRemoved(VMTemplateVO.class, usageId.toString());
+    }
+
+    @Test
+    @DisplayName("ISO usage populates ISO size details")
+    public void populateIsoUsageResponseTest() throws Exception {
+        // Arrange
+        UsageVO usageRecord = mock(UsageVO.class);
+        UsageRecordResponse response = new UsageRecordResponse();
+        VMTemplateVO iso = mock(VMTemplateVO.class);
+        Long usageId = 18L;
+
+        when(usageRecord.getUsageType()).thenReturn(UsageTypes.ISO);
+        when(usageRecord.getUsageId()).thenReturn(usageId);
+        when(usageRecord.getSize()).thenReturn(2048L);
+        when(usageRecord.getVirtualSize()).thenReturn(4096L);
+        when(entityManagerMock.findByIdIncludingRemoved(VMTemplateVO.class, usageId.toString())).thenReturn(iso);
+        when(iso.getUuid()).thenReturn("iso-usage-uuid");
+        when(iso.getId()).thenReturn(usageId);
+        when(iso.getName()).thenReturn("Installer ISO");
+
+        // Act
+        Object resourceDetails = invokeUsageDetailsHelper("populateTemplateOrIsoUsageResponse",
+                new Class<?>[] {Usage.class, UsageRecordResponse.class, boolean.class}, usageRecord, response, false);
+
+        // Assert
+        assertResponseField(response, "usageId", "iso-usage-uuid");
+        assertResponseField(response, "size", 2048L);
+        assertResponseField(response, "virtualSize", 2048L);
+        assertDescriptionContains(response, "ISO usage for Installer ISO (iso-usage-uuid)");
+        assertUsageResourceDetails(resourceDetails, ResourceTag.ResourceObjectType.ISO, usageId);
+        verify(entityManagerMock).findByIdIncludingRemoved(VMTemplateVO.class, usageId.toString());
+    }
+
+    @Test
+    @DisplayName("SNAPSHOT usage populates snapshot size details")
+    public void populateSnapshotUsageResponseTest() throws Exception {
+        // Arrange
+        UsageVO usageRecord = mock(UsageVO.class);
+        UsageRecordResponse response = new UsageRecordResponse();
+        SnapshotVO snapshot = mock(SnapshotVO.class);
+        Long usageId = 19L;
+
+        when(usageRecord.getUsageId()).thenReturn(usageId);
+        when(usageRecord.getSize()).thenReturn(1024L);
+        when(entityManagerMock.findByIdIncludingRemoved(SnapshotVO.class, usageId.toString())).thenReturn(snapshot);
+        when(snapshot.getUuid()).thenReturn("snapshot-uuid");
+        when(snapshot.getId()).thenReturn(usageId);
+        when(snapshot.getName()).thenReturn("daily-snapshot");
+
+        // Act
+        Object resourceDetails = invokeUsageDetailsHelper("populateSnapshotUsageResponse",
+                new Class<?>[] {Usage.class, UsageRecordResponse.class, boolean.class}, usageRecord, response, false);
+
+        // Assert
+        assertResponseField(response, "usageId", "snapshot-uuid");
+        assertResponseField(response, "size", 1024L);
+        assertDescriptionContains(response, "Snapshot usage for daily-snapshot (snapshot-uuid)");
+        assertUsageResourceDetails(resourceDetails, ResourceTag.ResourceObjectType.Snapshot, usageId);
+        verify(entityManagerMock).findByIdIncludingRemoved(SnapshotVO.class, usageId.toString());
+    }
+
+    @Test
+    @DisplayName("SECURITY_GROUP usage populates security group details")
+    public void populateSecurityGroupUsageResponseTest() throws Exception {
+        // Arrange
+        UsageVO usageRecord = mock(UsageVO.class);
+        UsageRecordResponse response = new UsageRecordResponse();
+        SecurityGroupVO securityGroup = mock(SecurityGroupVO.class);
+        VMInstanceVO vmInstance = mock(VMInstanceVO.class);
+        Long usageId = 20L;
+
+        when(usageRecord.getUsageId()).thenReturn(usageId);
+        when(entityManagerMock.findByIdIncludingRemoved(SecurityGroupVO.class, usageId.toString())).thenReturn(securityGroup);
+        when(securityGroup.getUuid()).thenReturn("security-group-uuid");
+        when(securityGroup.getId()).thenReturn(usageId);
+        when(securityGroup.getName()).thenReturn("web-tier");
+        when(vmInstance.getUuid()).thenReturn("security-group-vm-uuid");
+        when(vmInstance.getHostName()).thenReturn("security-group-vm");
+
+        // Act
+        Object resourceDetails = invokeUsageDetailsHelper("populateSecurityGroupUsageResponse",
+                new Class<?>[] {Usage.class, UsageRecordResponse.class, boolean.class, VMInstanceVO.class},
+                usageRecord, response, false, vmInstance);
+
+        // Assert
+        assertResponseField(response, "usageId", "security-group-uuid");
+        assertDescriptionContains(response, "Security group web-tier (security-group-uuid) usage");
+        assertDescriptionContains(response, "for VM security-group-vm (security-group-vm-uuid)");
+        assertUsageResourceDetails(resourceDetails, ResourceTag.ResourceObjectType.SecurityGroup, usageId);
+        verify(entityManagerMock).findByIdIncludingRemoved(SecurityGroupVO.class, usageId.toString());
+    }
+
+    @Test
+    @DisplayName("LOAD_BALANCER_POLICY usage populates load balancer details")
+    public void populateLoadBalancerPolicyUsageResponseTest() throws Exception {
+        // Arrange
+        UsageVO usageRecord = mock(UsageVO.class);
+        UsageRecordResponse response = new UsageRecordResponse();
+        LoadBalancerVO loadBalancer = mock(LoadBalancerVO.class);
+        Long usageId = 21L;
+
+        when(usageRecord.getUsageId()).thenReturn(usageId);
+        when(entityManagerMock.findByIdIncludingRemoved(LoadBalancerVO.class, usageId.toString())).thenReturn(loadBalancer);
+        when(loadBalancer.getUuid()).thenReturn("load-balancer-uuid");
+        when(loadBalancer.getId()).thenReturn(usageId);
+        when(loadBalancer.getName()).thenReturn("public-lb");
+
+        // Act
+        Object resourceDetails = invokeUsageDetailsHelper("populateLoadBalancerPolicyUsageResponse",
+                new Class<?>[] {Usage.class, UsageRecordResponse.class, boolean.class}, usageRecord, response, false);
+
+        // Assert
+        assertResponseField(response, "usageId", "load-balancer-uuid");
+        assertDescriptionContains(response, "Loadbalancer policy usage public-lb (load-balancer-uuid)");
+        assertUsageResourceDetails(resourceDetails, ResourceTag.ResourceObjectType.LoadBalancer, usageId);
+        verify(entityManagerMock).findByIdIncludingRemoved(LoadBalancerVO.class, usageId.toString());
+    }
+
+    @Test
+    @DisplayName("PORT_FORWARDING_RULE usage populates port forwarding rule details")
+    public void populatePortForwardingRuleUsageResponseTest() throws Exception {
+        // Arrange
+        UsageVO usageRecord = mock(UsageVO.class);
+        UsageRecordResponse response = new UsageRecordResponse();
+        PortForwardingRuleVO portForwardingRule = mock(PortForwardingRuleVO.class);
+        Long usageId = 22L;
+
+        when(usageRecord.getUsageId()).thenReturn(usageId);
+        when(entityManagerMock.findByIdIncludingRemoved(PortForwardingRuleVO.class, usageId.toString())).thenReturn(portForwardingRule);
+        when(portForwardingRule.getUuid()).thenReturn("port-forwarding-rule-uuid");
+        when(portForwardingRule.getId()).thenReturn(usageId);
+
+        // Act
+        Object resourceDetails = invokeUsageDetailsHelper("populatePortForwardingRuleUsageResponse",
+                new Class<?>[] {Usage.class, UsageRecordResponse.class, boolean.class}, usageRecord, response, false);
+
+        // Assert
+        assertResponseField(response, "usageId", "port-forwarding-rule-uuid");
+        assertDescriptionContains(response, "Port forwarding rule usage (port-forwarding-rule-uuid)");
+        assertUsageResourceDetails(resourceDetails, ResourceTag.ResourceObjectType.PortForwardingRule, usageId);
+        verify(entityManagerMock).findByIdIncludingRemoved(PortForwardingRuleVO.class, usageId.toString());
+    }
+
+    @Test
+    @DisplayName("NETWORK_OFFERING usage populates offering and default flag")
+    public void populateNetworkOfferingUsageResponseTest() throws Exception {
+        // Arrange
+        UsageVO usageRecord = mock(UsageVO.class);
+        UsageRecordResponse response = new UsageRecordResponse();
+        NetworkOfferingVO networkOffering = mock(NetworkOfferingVO.class);
+        VMInstanceVO vmInstance = mock(VMInstanceVO.class);
+        Long offeringId = 23L;
+
+        when(usageRecord.getOfferingId()).thenReturn(offeringId);
+        when(usageRecord.getUsageId()).thenReturn(1L);
+        when(entityManagerMock.findByIdIncludingRemoved(NetworkOfferingVO.class, offeringId.toString())).thenReturn(networkOffering);
+        when(networkOffering.getUuid()).thenReturn("network-offering-uuid");
+        when(networkOffering.getName()).thenReturn("Default Isolated Network");
+        when(vmInstance.getUuid()).thenReturn("network-offering-vm-uuid");
+        when(vmInstance.getHostName()).thenReturn("network-offering-vm");
+
+        // Act
+        Object resourceDetails = invokeUsageDetailsHelper("populateNetworkOfferingUsageResponse",
+                new Class<?>[] {Usage.class, UsageRecordResponse.class, boolean.class, VMInstanceVO.class},
+                usageRecord, response, false, vmInstance);
+
+        // Assert
+        assertResponseField(response, "offeringId", "network-offering-uuid");
+        assertResponseField(response, "isDefault", Boolean.TRUE);
+        assertDescriptionContains(response, "Network offering Default Isolated Network (network-offering-uuid) usage");
+        assertDescriptionContains(response, "for VM network-offering-vm (network-offering-vm-uuid)");
+        assertUsageResourceDetails(resourceDetails, null, null);
+        verify(entityManagerMock).findByIdIncludingRemoved(NetworkOfferingVO.class, offeringId.toString());
+    }
+
+    @Test
+    @DisplayName("VPN_USERS usage populates VPN user details")
+    public void populateVpnUsersUsageResponseTest() throws Exception {
+        // Arrange
+        UsageVO usageRecord = mock(UsageVO.class);
+        UsageRecordResponse response = new UsageRecordResponse();
+        VpnUserVO vpnUser = mock(VpnUserVO.class);
+        Long usageId = 24L;
+
+        when(usageRecord.getUsageId()).thenReturn(usageId);
+        when(entityManagerMock.findByIdIncludingRemoved(VpnUserVO.class, usageId.toString())).thenReturn(vpnUser);
+        when(vpnUser.getUuid()).thenReturn("vpn-user-uuid");
+        when(vpnUser.getUsername()).thenReturn("vpn-user");
+
+        // Act
+        Object resourceDetails = invokeUsageDetailsHelper("populateVpnUsersUsageResponse",
+                new Class<?>[] {Usage.class, UsageRecordResponse.class, boolean.class}, usageRecord, response, false);
+
+        // Assert
+        assertResponseField(response, "usageId", "vpn-user-uuid");
+        assertDescriptionContains(response, "VPN usage for user vpn-user (vpn-user-uuid)");
+        assertUsageResourceDetails(resourceDetails, null, null);
+        verify(entityManagerMock).findByIdIncludingRemoved(VpnUserVO.class, usageId.toString());
+    }
+
+    @Test
+    @DisplayName("VM_DISK_IO_READ usage populates disk read request details")
+    public void populateVmDiskIoReadUsageResponseTest() throws Exception {
+        // Arrange
+        UsageVO usageRecord = mockVmDiskUsageRecord(UsageTypes.VM_DISK_IO_READ, 25L, 512D);
+        UsageRecordResponse response = new UsageRecordResponse();
+        VMInstanceVO vmInstance = mockVmInstance("vm-disk-read-vm", "vm-disk-read-vm-uuid");
+        VolumeVO volume = mockVolume(25L, "vm-disk-read-volume-uuid", "vm-disk-read-volume");
+        when(entityManagerMock.findByIdIncludingRemoved(VolumeVO.class, "25")).thenReturn(volume);
+
+        // Act
+        Object resourceDetails = invokeUsageDetailsHelper("populateVmDiskUsageResponse",
+                new Class<?>[] {Usage.class, UsageRecordResponse.class, boolean.class, VMInstanceVO.class},
+                usageRecord, response, false, vmInstance);
+
+        // Assert
+        assertVmDiskUsageResponse(response, resourceDetails, "Disk I/O read requests", "vm-disk-read-volume-uuid", "vm-disk-read-volume", 25L);
+        verify(entityManagerMock).findByIdIncludingRemoved(VolumeVO.class, "25");
+    }
+
+    @Test
+    @DisplayName("VM_DISK_IO_WRITE usage populates disk write request details")
+    public void populateVmDiskIoWriteUsageResponseTest() throws Exception {
+        // Arrange
+        UsageVO usageRecord = mockVmDiskUsageRecord(UsageTypes.VM_DISK_IO_WRITE, 26L, 1024D);
+        UsageRecordResponse response = new UsageRecordResponse();
+        VMInstanceVO vmInstance = mockVmInstance("vm-disk-write-vm", "vm-disk-write-vm-uuid");
+        VolumeVO volume = mockVolume(26L, "vm-disk-write-volume-uuid", "vm-disk-write-volume");
+        when(entityManagerMock.findByIdIncludingRemoved(VolumeVO.class, "26")).thenReturn(volume);
+
+        // Act
+        Object resourceDetails = invokeUsageDetailsHelper("populateVmDiskUsageResponse",
+                new Class<?>[] {Usage.class, UsageRecordResponse.class, boolean.class, VMInstanceVO.class},
+                usageRecord, response, false, vmInstance);
+
+        // Assert
+        assertVmDiskUsageResponse(response, resourceDetails, "Disk I/O write requests", "vm-disk-write-volume-uuid", "vm-disk-write-volume", 26L);
+        verify(entityManagerMock).findByIdIncludingRemoved(VolumeVO.class, "26");
+    }
+
+    @Test
+    @DisplayName("VM_DISK_BYTES_READ usage populates disk read byte details")
+    public void populateVmDiskBytesReadUsageResponseTest() throws Exception {
+        // Arrange
+        UsageVO usageRecord = mockVmDiskUsageRecord(UsageTypes.VM_DISK_BYTES_READ, 27L, 2048D);
+        UsageRecordResponse response = new UsageRecordResponse();
+        VMInstanceVO vmInstance = mockVmInstance("vm-disk-bytes-read-vm", "vm-disk-bytes-read-vm-uuid");
+        VolumeVO volume = mockVolume(27L, "vm-disk-bytes-read-volume-uuid", "vm-disk-bytes-read-volume");
+        when(entityManagerMock.findByIdIncludingRemoved(VolumeVO.class, "27")).thenReturn(volume);
+
+        // Act
+        Object resourceDetails = invokeUsageDetailsHelper("populateVmDiskUsageResponse",
+                new Class<?>[] {Usage.class, UsageRecordResponse.class, boolean.class, VMInstanceVO.class},
+                usageRecord, response, false, vmInstance);
+
+        // Assert
+        assertVmDiskUsageResponse(response, resourceDetails, "Disk I/O read bytes", "vm-disk-bytes-read-volume-uuid", "vm-disk-bytes-read-volume", 27L);
+        verify(entityManagerMock).findByIdIncludingRemoved(VolumeVO.class, "27");
+    }
+
+    @Test
+    @DisplayName("VM_DISK_BYTES_WRITE usage populates disk write byte details")
+    public void populateVmDiskBytesWriteUsageResponseTest() throws Exception {
+        // Arrange
+        UsageVO usageRecord = mockVmDiskUsageRecord(UsageTypes.VM_DISK_BYTES_WRITE, 28L, 4096D);
+        UsageRecordResponse response = new UsageRecordResponse();
+        VMInstanceVO vmInstance = mockVmInstance("vm-disk-bytes-write-vm", "vm-disk-bytes-write-vm-uuid");
+        VolumeVO volume = mockVolume(28L, "vm-disk-bytes-write-volume-uuid", "vm-disk-bytes-write-volume");
+        when(entityManagerMock.findByIdIncludingRemoved(VolumeVO.class, "28")).thenReturn(volume);
+
+        // Act
+        Object resourceDetails = invokeUsageDetailsHelper("populateVmDiskUsageResponse",
+                new Class<?>[] {Usage.class, UsageRecordResponse.class, boolean.class, VMInstanceVO.class},
+                usageRecord, response, false, vmInstance);
+
+        // Assert
+        assertVmDiskUsageResponse(response, resourceDetails, "Disk I/O write bytes", "vm-disk-bytes-write-volume-uuid", "vm-disk-bytes-write-volume", 28L);
+        verify(entityManagerMock).findByIdIncludingRemoved(VolumeVO.class, "28");
+    }
+
+    private Object invokeUsageDetailsHelper(String methodName, Class<?>[] parameterTypes, Object... args) throws Exception {
+        Method method = ApiResponseHelper.class.getDeclaredMethod(methodName, parameterTypes);
+        method.setAccessible(true);
+        return method.invoke(helper, args);
+    }
+
+    private void assertResponseField(UsageRecordResponse response, String fieldName, Object expectedValue) {
+        assertEquals(expectedValue, ReflectionTestUtils.getField(response, fieldName));
+    }
+
+    private void assertDescriptionContains(UsageRecordResponse response, String expectedText) {
+        Object description = ReflectionTestUtils.getField(response, "description");
+        Assertions.assertNotNull(description);
+        assertTrue(description.toString().contains(expectedText),
+                String.format("Expected description [%s] to contain [%s]", description, expectedText));
+    }
+
+    private void assertUsageResourceDetails(Object resourceDetails, ResourceTag.ResourceObjectType expectedResourceType, Long expectedResourceId) {
+        assertEquals(expectedResourceType, ReflectionTestUtils.getField(resourceDetails, "resourceType"));
+        assertEquals(expectedResourceId, ReflectionTestUtils.getField(resourceDetails, "resourceId"));
+    }
+
+    private UsageVO mockVmDiskUsageRecord(int usageType, Long usageId, Double rawUsage) {
+        UsageVO usageRecord = mock(UsageVO.class);
+        when(usageRecord.getUsageType()).thenReturn(usageType);
+        when(usageRecord.getUsageId()).thenReturn(usageId);
+        when(usageRecord.getType()).thenReturn("UserVm");
+        when(usageRecord.getRawUsage()).thenReturn(rawUsage);
+        return usageRecord;
+    }
+
+    private VMInstanceVO mockVmInstance(String hostName, String uuid) {
+        VMInstanceVO vmInstance = mock(VMInstanceVO.class);
+        when(vmInstance.getHostName()).thenReturn(hostName);
+        when(vmInstance.getUuid()).thenReturn(uuid);
+        return vmInstance;
+    }
+
+    private VolumeVO mockVolume(Long id, String uuid, String name) {
+        VolumeVO volume = mock(VolumeVO.class);
+        when(volume.getId()).thenReturn(id);
+        when(volume.getUuid()).thenReturn(uuid);
+        when(volume.getName()).thenReturn(name);
+        return volume;
+    }
+
+    private void assertVmDiskUsageResponse(UsageRecordResponse response, Object resourceDetails, String descriptionPrefix, String volumeUuid, String volumeName, Long volumeId) {
+        assertResponseField(response, "type", "UserVm");
+        assertResponseField(response, "usageId", volumeUuid);
+        assertDescriptionContains(response, descriptionPrefix);
+        assertDescriptionContains(response, "volume " + volumeName + " (" + volumeUuid + ")");
+        assertUsageResourceDetails(resourceDetails, ResourceTag.ResourceObjectType.Volume, volumeId);
     }
 }
