@@ -85,7 +85,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RunWith(MockitoJUnitRunner.class)
-public class AccountManagetImplTestBase {
+public class AccountManagentImplTestBase {
 
     @Mock
     AccountDao _accountDao;
@@ -100,7 +100,7 @@ public class AccountManagetImplTestBase {
     @Mock
     InstanceGroupDao _vmGroupDao;
     @Mock
-    UserAccountDao userAccountDaoMock;
+    UserAccountDao userAccountDao;
     @Mock
     VolumeDao _volumeDao;
     @Mock
@@ -213,9 +213,6 @@ public class AccountManagetImplTestBase {
     @Mock
     RoutedIpv4Manager routedIpv4Manager;
 
-    @Mock
-    Account accountMock;
-
     @Before
     public void setup() {
         accountManagerImpl.setUserAuthenticators(Arrays.asList(userAuthenticator));
@@ -231,7 +228,6 @@ public class AccountManagetImplTestBase {
     @Test
     public void test()
     {
-        return;
     }
 
     public static Map<String, Field> getInheritedFields(Class<?> type) {

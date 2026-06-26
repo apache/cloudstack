@@ -97,7 +97,7 @@ public class MetalinkDirectTemplateDownloader extends DirectTemplateDownloaderIm
             DirectTemplateDownloader urlDownloader = createDownloaderForMetalinks(getUrl(), getTemplateId(), getDestPoolPath(),
                     getChecksum(), headers, connectTimeout, soTimeout, null, temporaryDownloadPath);
             try {
-                setDownloadedFilePath(downloadDir + File.separator + getFileNameFromUrl());
+                setDownloadedFilePath(downloadDir + File.separator + getTemporaryFileName());
                 File f = new File(getDownloadedFilePath());
                 if (f.exists()) {
                     f.delete();

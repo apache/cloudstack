@@ -14,21 +14,25 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+package org.apache.cloudstack.framework.config;
 
-package org.apache.cloudstack.quota.activationrule.presetvariables;
+import java.util.function.Consumer;
 
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
+public class ValidatedConfigKey<T> extends ConfigKey<T> {
+    private final Consumer<T> validator;
 
-@RunWith(MockitoJUnitRunner.class)
-public class AccountTest {
+    public ValidatedConfigKey(String category, Class<T> type, String name, String defaultValue, String description, boolean dynamic, Scope scope, String parent, Consumer<T> validator) {
+        super(category, type, name, defaultValue, description, dynamic, scope, parent);
+        this.validator = validator;
+    }
 
-    @Test
-    public void setRoleTestAddFieldRoleToCollection() {
-        Account variable = new Account();
-        variable.setRole(null);
-        Assert.assertTrue(variable.fieldNamesToIncludeInToString.contains("role"));
+    public Consumer<T> getValidator() {
+        return validator;
+    }
+
+    public void validateValue(String value) {
+        if (validator != null) {
+            validator.accept((T) value);
+        }
     }
 }

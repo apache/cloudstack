@@ -1714,7 +1714,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
     @Override
     public void reorderHostsByPriority(Map<Long, Integer> priorities, List<Host> hosts) {
-        logger.info("Re-ordering hosts {} by priorities {}", hosts, priorities);
+        logger.debug("Re-ordering hosts {} by priorities {}", hosts, priorities);
 
         hosts.removeIf(host -> DataCenterDeployment.PROHIBITED_HOST_PRIORITY.equals(getHostPriority(priorities, host.getId())));
 
@@ -1727,7 +1727,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                 }
         );
 
-        logger.info("Hosts after re-ordering are: {}", hosts);
+        logger.debug("Hosts after re-ordering are: {}", hosts);
     }
 
     private Integer getHostPriority(Map<Long, Integer> priorities, Long hostId) {

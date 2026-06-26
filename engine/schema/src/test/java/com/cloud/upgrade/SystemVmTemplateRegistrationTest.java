@@ -155,7 +155,7 @@ public class SystemVmTemplateRegistrationTest {
         templateDetails =
                 SystemVmTemplateRegistration.NewTemplateMap.get("vmware");
         assertNotNull(templateDetails);
-        assertNull(templateDetails.getArch());
+        assertEquals(CPU.CPUArch.amd64, templateDetails.getArch());
         assertEquals(Hypervisor.HypervisorType.VMware, templateDetails.getHypervisorType());
     }
 

@@ -58,6 +58,9 @@ import javax.naming.ConfigurationException;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
+
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.user.Account;
@@ -119,6 +122,7 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.user.UserPasswordResetManager;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpException;
@@ -618,6 +622,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     }
 
     @Override
+    @WithSpan("ApiServer.handleRequest")
     @SuppressWarnings("rawtypes")
     public String handleRequest(final Map params, final String responseType, final StringBuilder auditTrailSb) throws ServerApiException {
         checkCharacterInkParams(params);
@@ -627,6 +632,10 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
         try {
             command = (String[])params.get("command");
+            if (command != null && command.length > 0) {
+                Span.current().updateName("ApiServer.handleRequest " + command[0]);
+                Span.current().setAttribute("api.command", command[0]);
+            }
             if (command == null) {
                 logger.error("invalid request, no command sent");
                 if (logger.isTraceEnabled()) {
@@ -1398,6 +1407,25 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             throw new CloudRuntimeException(errorMessage);
         }
         return userPasswordResetManager.validateAndResetPassword(userAccount, token, password);
+    }
+
+    @Override
+    public String getDomainId(Map<String, Object[]> params) {
+        if (MapUtils.isEmpty(params)) {
+            return null;
+        }
+
+        String[] domainIdArr = (String[])params.get(ApiConstants.DOMAIN_ID);
+        if (domainIdArr == null) {
+            // Fallback to support clients using the camelCase parameter name "domainId"
+            domainIdArr = (String[])params.get(ApiConstants.DOMAIN__ID);
+        }
+
+        if (domainIdArr == null || domainIdArr.length == 0) {
+            return null;
+        }
+
+        return domainIdArr[0];
     }
 
     private void checkCommandAvailable(final User user, final String commandName, final InetAddress remoteAddress) throws PermissionDeniedException {

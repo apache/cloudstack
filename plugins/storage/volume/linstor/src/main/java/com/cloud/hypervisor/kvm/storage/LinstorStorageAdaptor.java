@@ -585,8 +585,8 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         Path propFile = diskPath.getParent().resolve("template.properties");
         if (Files.exists(propFile)) {
             java.util.Properties templateProps = new java.util.Properties();
-            try {
-                templateProps.load(new FileInputStream(propFile.toFile()));
+            try (FileInputStream in = new FileInputStream(propFile.toFile())) {
+                templateProps.load(in);
                 String desc = templateProps.getProperty("description");
                 if (desc != null && desc.startsWith("SystemVM Template")) {
                     return true;

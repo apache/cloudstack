@@ -75,6 +75,18 @@ export default {
     preFillContent: {
       type: Object,
       default: () => {}
+    },
+    domainId: {
+      type: String,
+      default: () => ''
+    },
+    account: {
+      type: String,
+      default: () => ''
+    },
+    projectId: {
+      type: String,
+      default: () => ''
     }
   },
   data () {
@@ -102,6 +114,9 @@ export default {
     }
   },
   computed: {
+    ownerParams () {
+      return `${this.domainId}-${this.account}-${this.projectId}`
+    },
     rowSelection () {
       return {
         type: 'checkbox',
@@ -120,6 +135,11 @@ export default {
       if (newValue && !_.isEqual(newValue, oldValue)) {
         this.selectedRowKeys = newValue
       }
+    },
+    ownerParams () {
+      this.selectedRowKeys = []
+      this.$emit('select-security-group-item', null)
+      this.fetchData()
     },
     loading () {
       if (!this.loading) {
@@ -140,9 +160,9 @@ export default {
   methods: {
     fetchData () {
       const params = {
-        projectid: this.$store.getters.project ? this.$store.getters.project.id : null,
-        domainid: this.$store.getters.project && this.$store.getters.project.id ? null : this.$store.getters.userInfo.domainid,
-        account: this.$store.getters.project && this.$store.getters.project.id ? null : this.$store.getters.userInfo.account,
+        projectid: this.projectId || (this.$store.getters.project ? this.$store.getters.project.id : null),
+        domainid: this.projectId || (this.$store.getters.project && this.$store.getters.project.id) ? null : (this.domainId || this.$store.getters.userInfo.domainid),
+        account: this.projectId || (this.$store.getters.project && this.$store.getters.project.id) ? null : (this.account || this.$store.getters.userInfo.account),
         page: this.page,
         pageSize: this.pageSize
       }

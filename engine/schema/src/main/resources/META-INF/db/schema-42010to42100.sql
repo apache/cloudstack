@@ -687,22 +687,23 @@ CREATE TABLE IF NOT EXISTS `cloud`.`backup_details` (
 UPDATE `cloud`.`backups` b
 INNER JOIN `cloud`.`vm_instance` vm ON b.vm_id = vm.id
 SET b.backed_volumes = (
-    SELECT CONCAT("[",
-        GROUP_CONCAT(
-            CONCAT(
-                "{\"uuid\":\"", v.uuid, "\",",
-                "\"type\":\"", v.volume_type, "\",",
-                "\"size\":", v.`size`, ",",
-                "\"path\":\"", IFNULL(v.path, 'null'), "\",",
-                "\"deviceId\":", IFNULL(v.device_id, 'null'), ",",
-                "\"diskOfferingId\":\"", doff.uuid, "\",",
-                "\"minIops\":", IFNULL(v.min_iops, 'null'), ",",
-                "\"maxIops\":", IFNULL(v.max_iops, 'null'),
-                "}"
-            )
-            SEPARATOR ","
+    SELECT COALESCE(
+        CAST(
+            JSON_ARRAYAGG(
+                JSON_OBJECT(
+                     'uuid', v.uuid,
+                     'type', v.volume_type,
+                     'size', v.size,
+                     'path', v.path,
+                     'deviceId', v.device_id,
+                     'diskOfferingId', doff.uuid,
+                     'minIops', v.min_iops,
+                     'maxIops', v.max_iops
+                )
+            ) AS CHAR
         ),
-    "]")
+        '[]'
+    )
     FROM `cloud`.`volumes` v
     LEFT JOIN `cloud`.`disk_offering` doff ON v.disk_offering_id = doff.id
     WHERE v.instance_id = vm.id
@@ -711,22 +712,23 @@ SET b.backed_volumes = (
 -- Add diskOfferingId, deviceId, minIops and maxIops to backup_volumes in vm_instance table
 UPDATE `cloud`.`vm_instance` vm
 SET vm.backup_volumes = (
-    SELECT CONCAT("[",
-        GROUP_CONCAT(
-            CONCAT(
-                "{\"uuid\":\"", v.uuid, "\",",
-                "\"type\":\"", v.volume_type, "\",",
-                "\"size\":", v.`size`, ",",
-                "\"path\":\"", IFNULL(v.path, 'null'), "\",",
-                "\"deviceId\":", IFNULL(v.device_id, 'null'), ",",
-                "\"diskOfferingId\":\"", doff.uuid, "\",",
-                "\"minIops\":", IFNULL(v.min_iops, 'null'), ",",
-                "\"maxIops\":", IFNULL(v.max_iops, 'null'),
-                "}"
-            )
-            SEPARATOR ","
+    SELECT COALESCE(
+        CAST(
+            JSON_ARRAYAGG(
+                JSON_OBJECT(
+                     'uuid', v.uuid,
+                     'type', v.volume_type,
+                     'size', v.size,
+                     'path', v.path,
+                     'deviceId', v.device_id,
+                     'diskOfferingId', doff.uuid,
+                     'minIops', v.min_iops,
+                     'maxIops', v.max_iops
+                )
+            ) AS CHAR
         ),
-    "]")
+        '[]'
+    )
     FROM `cloud`.`volumes` v
     LEFT JOIN `cloud`.`disk_offering` doff ON v.disk_offering_id = doff.id
     WHERE v.instance_id = vm.id

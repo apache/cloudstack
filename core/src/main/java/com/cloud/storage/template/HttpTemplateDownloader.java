@@ -52,6 +52,7 @@ import com.cloud.storage.StorageLayer;
 import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.HttpClientCloudStackUserAgent;
 import com.cloud.utils.net.Proxy;
 
 /**
@@ -125,6 +126,7 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
         GetMethod request = new GetMethod(downloadUrl);
         request.getParams().setParameter(HttpMethodParams.RETRY_HANDLER, myretryhandler);
         request.setFollowRedirects(followRedirects);
+        request.getParams().setParameter(HttpMethodParams.USER_AGENT, HttpClientCloudStackUserAgent.CLOUDSTACK_USER_AGENT);
         return request;
     }
 

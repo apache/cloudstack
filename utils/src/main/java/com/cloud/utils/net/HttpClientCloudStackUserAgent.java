@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,21 +15,25 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
 
-package org.apache.cloudstack.quota.activationrule.presetvariables;
+package com.cloud.utils.net;
 
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.apache.logging.log4j.util.Strings;
 
-@RunWith(MockitoJUnitRunner.class)
-public class HostTest {
+public class HttpClientCloudStackUserAgent {
+    public static final String CLOUDSTACK_USER_AGENT = buildUserAgent();
 
-    @Test
-    public void setTagsTestAddFieldTagsToCollection() {
-        Host variable = new Host();
-        variable.setTags(null);
-        Assert.assertTrue(variable.fieldNamesToIncludeInToString.contains("tags"));
+    private static String buildUserAgent() {
+        String version = HttpClientCloudStackUserAgent.class
+                .getPackage()
+                .getImplementationVersion();
+
+        if (Strings.isBlank(version)) {
+            version = "unknown";
+        }
+        return "CloudStack-Agent/" + version + " (Apache CloudStack)";
     }
+
+    private HttpClientCloudStackUserAgent() {}
 }

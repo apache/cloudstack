@@ -85,10 +85,29 @@ public class OauthLoginAPIAuthenticatorCmdTest {
         ApiServer apiServer = mock(ApiServer.class);
         cmd._apiServer = apiServer;
         when(apiServer.fetchDomainId("1234")).thenReturn(5678L);
+        when(apiServer.getDomainId(params)).thenCallRealMethod();
 
         Long domainId = cmd.getDomainIdFromParams(params, auditTrailSb, responseType);
 
         assertEquals(Long.valueOf(5678), domainId);
         assertEquals(" domainid=5678", auditTrailSb.toString());
+    }
+
+    @Test
+    public void testGetDomainIdFromCamelCaseParam() {
+        StringBuilder auditTrailSb = new StringBuilder();
+        String responseType = "json";
+        Map<String, Object[]> params = new HashMap<>();
+        params.put(ApiConstants.DOMAIN_ID, null);
+        params.put(ApiConstants.DOMAIN__ID, new String[]{"5678"});
+        ApiServer apiServer = mock(ApiServer.class);
+        cmd._apiServer = apiServer;
+        when(apiServer.fetchDomainId("5678")).thenReturn(1234L);
+        when(apiServer.getDomainId(params)).thenCallRealMethod();
+
+        Long domainId = cmd.getDomainIdFromParams(params, auditTrailSb, responseType);
+
+        assertEquals(Long.valueOf(1234), domainId);
+        assertEquals(" domainid=1234", auditTrailSb.toString());
     }
 }
