@@ -621,9 +621,10 @@ public class NASBackupProviderTest {
         BackupDetailVO childParent = new BackupDetailVO(51L, NASBackupChainKeys.PARENT_BACKUP_ID, "parent-uuid", true);
         Mockito.when(backupDetailsDao.findDetail(51L, NASBackupChainKeys.CHAIN_ID)).thenReturn(childChainId);
         Mockito.when(backupDetailsDao.findDetail(51L, NASBackupChainKeys.PARENT_BACKUP_ID)).thenReturn(childParent);
-        Mockito.when(backupDetailsDao.findDetail(51L, NASBackupChainKeys.DELETE_PENDING)).thenReturn(null);
 
         Mockito.when(backupDao.listByVmId(null, vmId)).thenReturn(List.of(parent, child));
+        // markDeletePending loads the row to flip its status to Hidden.
+        Mockito.when(backupDao.findById(50L)).thenReturn(parent);
 
         boolean result = nasBackupProvider.deleteBackup(parent, false);
         Assert.assertTrue(result);
@@ -634,11 +635,11 @@ public class NASBackupProviderTest {
         Mockito.verify(backupDao, Mockito.never()).remove(50L);
         // A tombstoned backup is NOT decremented — its space is still occupied until swept.
         Mockito.verify(resourceLimitMgr, Mockito.never()).decrementResourceCount(Mockito.anyLong(), Mockito.eq(Resource.ResourceType.backup));
-        // A DELETE_PENDING detail was persisted.
-        ArgumentCaptor<BackupDetailVO> captor = ArgumentCaptor.forClass(BackupDetailVO.class);
-        Mockito.verify(backupDetailsDao).persist(captor.capture());
-        Assert.assertEquals(NASBackupChainKeys.DELETE_PENDING, captor.getValue().getName());
-        Assert.assertEquals("true", captor.getValue().getValue());
+        // The tombstoned backup is moved to Status.Hidden (replaces the old DELETE_PENDING detail).
+        ArgumentCaptor<BackupVO> captor = ArgumentCaptor.forClass(BackupVO.class);
+        Mockito.verify(backupDao).update(Mockito.eq(50L), captor.capture());
+        Assert.assertEquals(Backup.Status.Hidden, captor.getValue().getStatus());
+        Mockito.verify(backupDetailsDao, Mockito.never()).persist(Mockito.any(BackupDetailVO.class));
     }
 
     /**
@@ -692,10 +693,10 @@ public class NASBackupProviderTest {
         // Parent is the tombstoned full anchor (CHAIN_POSITION=0).
         BackupDetailVO parentChainId = new BackupDetailVO(50L, NASBackupChainKeys.CHAIN_ID, "chain-1", true);
         BackupDetailVO parentChainPos = new BackupDetailVO(50L, NASBackupChainKeys.CHAIN_POSITION, "0", true);
-        BackupDetailVO parentPending = new BackupDetailVO(50L, NASBackupChainKeys.DELETE_PENDING, "true", true);
+        // The parent is the tombstone — now represented by Status.Hidden (was the DELETE_PENDING detail).
+        parent.setStatus(Backup.Status.Hidden);
         Mockito.when(backupDetailsDao.findDetail(50L, NASBackupChainKeys.CHAIN_ID)).thenReturn(parentChainId);
         Mockito.when(backupDetailsDao.findDetail(50L, NASBackupChainKeys.CHAIN_POSITION)).thenReturn(parentChainPos);
-        Mockito.when(backupDetailsDao.findDetail(50L, NASBackupChainKeys.DELETE_PENDING)).thenReturn(parentPending);
         // Parent has no parent of its own (it's the full anchor).
         Mockito.when(backupDetailsDao.findDetail(50L, NASBackupChainKeys.PARENT_BACKUP_ID)).thenReturn(null);
 

@@ -154,8 +154,15 @@ backup_running_vm() {
   # a migration even though the orchestrator's active_checkpoint says it should be there. If it
   # is gone, fall back to a full backup rather than letting backup-begin fail below.
   if [[ "$effective_mode" == "incremental" ]]; then
-    if ! virsh -c qemu:///system qemu-monitor-command "$VM" '{"execute":"query-block"}' 2>/dev/null | grep -q "\"$BITMAP_PARENT\""; then
-      log -e "incremental: parent bitmap $BITMAP_PARENT not present on the qcow2 — falling back to full"
+    # The parent bitmap must be present on EVERY disk's qcow2, not just one of them. A volume
+    # snapshot restore (or a partial migration) can wipe the bitmap on some disks while leaving
+    # it on others; a plain "is the name anywhere in query-block" check passes in that case and
+    # backup-begin then fails on the disk that is missing the bitmap. Require the bitmap on all
+    # disks: compare the disk count to the number of disks reporting the bitmap (tests 17/19).
+    disk_count=$(virsh -c qemu:///system domblklist "$VM" --details 2>/dev/null | awk '$2=="disk"{c++} END{print c+0}')
+    bitmap_count=$(virsh -c qemu:///system qemu-monitor-command "$VM" '{"execute":"query-block"}' 2>/dev/null | grep -o "\"$BITMAP_PARENT\"" | wc -l | tr -d ' ')
+    if [[ "$disk_count" -eq 0 || "$bitmap_count" -lt "$disk_count" ]]; then
+      log -e "incremental: parent bitmap $BITMAP_PARENT present on $bitmap_count/$disk_count disk(s) — falling back to full"
       echo "INCREMENTAL_FALLBACK=true"
       effective_mode="full"
     fi

@@ -1119,6 +1119,9 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("zoneId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
         sb.and("backupOfferingId", sb.entity().getBackupOfferingId(), SearchCriteria.Op.EQ);
+        // Tombstoned chain backups (Status.Hidden) are never shown to users — they exist only so the
+        // incremental chain GC can sweep them once their last descendant is deleted (test 37).
+        sb.and("statusNeq", sb.entity().getStatus(), SearchCriteria.Op.NEQ);
 
         if (keyword != null) {
             sb.and().op("keywordName", sb.entity().getName(), SearchCriteria.Op.LIKE);
@@ -1130,6 +1133,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         SearchCriteria<BackupVO> sc = sb.create();
         accountManager.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        sc.setParameters("statusNeq", Backup.Status.Hidden);
 
         if (id != null) {
             sc.setParameters("id", id);

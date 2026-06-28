@@ -406,13 +406,16 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             return null;
         }
 
-        // parentVols is in deviceId order at the time the parent was taken. The script names
-        // files as root.<uuid>.qcow2 for the first volume and datadisk.<uuid>.qcow2 for the rest.
+        // parentVols is in deviceId order at the time the parent was taken. The script names the
+        // per-disk files from the volume PATH basename (root.<path>.qcow2 / datadisk.<path>.qcow2,
+        // see nasbackup.sh: volUuid="${fullpath##*/}"). Use getPath(), NOT getUuid(): after a
+        // volume migration the uuid and the on-disk path diverge, and the backup file is named by
+        // path — a uuid-based parent path then fails to resolve for the incremental (test 13).
         List<String> paths = new ArrayList<>(parentVols.size());
         for (int i = 0; i < parentVols.size(); i++) {
-            String volUuid = parentVols.get(i).getUuid();
+            String volPath = parentVols.get(i).getPath();
             String prefix = (i == 0) ? "root" : "datadisk";
-            paths.add(dir + "/" + prefix + "." + volUuid + ".qcow2");
+            paths.add(dir + "/" + prefix + "." + volPath + ".qcow2");
         }
         return paths;
     }
@@ -912,7 +915,15 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
                     backup.getUuid(), backup.getExternalId());
             return false;
         }
+        // Capture the deleted backup's bitmap before the row (and its backup_details) are removed.
+        String deletedBitmap = readDetail(backup, NASBackupChainKeys.BITMAP_NAME);
         backupDao.remove(backup.getId());
+        // If this backup owned the bitmap the VM's active_checkpoint_id points to, that on-host QEMU
+        // dirty-bitmap is gone with it — clear active_checkpoint_id so the next backup starts a fresh
+        // full chain instead of anchoring an incremental on a deleted checkpoint (test: delete last backup).
+        if (deletedBitmap != null && deletedBitmap.equals(readVmActiveCheckpoint(backup.getVmId()))) {
+            clearVmActiveCheckpoint(backup.getVmId());
+        }
         // Exactly-once resource accounting: decrement at the single point a backup row + file are
         // physically removed. This runs for the leaf and for every swept delete-pending ancestor,
         // so a chain delete decrements once per actually-removed backup. The manager skips its own
@@ -924,22 +935,28 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     }
 
     /**
-     * Mark {@code backup} as delete-pending in {@code backup_details}. Idempotent.
+     * Tombstone {@code backup} by moving it to {@link Backup.Status#Hidden}. Idempotent.
+     * The row stays in the DB so the chain GC can sweep it once its last descendant is deleted
+     * ({@code listByVmId} is status-agnostic), but it disappears from the user-facing list
+     * ({@link BackupManagerImpl#listBackups} filters Hidden) and all backup operations refuse it
+     * (they require {@code BackedUp}). Replaces the previous {@code nas.delete_pending} detail.
      */
     private void markDeletePending(Backup backup) {
-        BackupDetailVO existing = backupDetailsDao.findDetail(backup.getId(), NASBackupChainKeys.DELETE_PENDING);
-        if (existing == null) {
-            backupDetailsDao.persist(new BackupDetailVO(backup.getId(),
-                    NASBackupChainKeys.DELETE_PENDING, "true", true));
+        if (Backup.Status.Hidden.equals(backup.getStatus())) {
+            return;
+        }
+        BackupVO vo = backupDao.findById(backup.getId());
+        if (vo != null) {
+            vo.setStatus(Backup.Status.Hidden);
+            backupDao.update(vo.getId(), vo);
         }
     }
 
     /**
-     * @return true if this backup carries the delete-pending tombstone.
+     * @return true if this backup is a tombstone (Hidden) awaiting chain sweep.
      */
     private boolean isDeletePending(Backup backup) {
-        BackupDetailVO d = backupDetailsDao.findDetail(backup.getId(), NASBackupChainKeys.DELETE_PENDING);
-        return d != null && "true".equalsIgnoreCase(d.getValue());
+        return Backup.Status.Hidden.equals(backup.getStatus());
     }
 
     /**
