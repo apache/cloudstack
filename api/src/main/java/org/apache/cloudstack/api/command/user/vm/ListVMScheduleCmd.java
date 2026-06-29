@@ -20,23 +20,27 @@ package org.apache.cloudstack.api.command.user.vm;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ResourceScheduleResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VMScheduleResponse;
-import org.apache.cloudstack.vm.schedule.VMSchedule;
-import org.apache.cloudstack.vm.schedule.VMScheduleManager;
+import org.apache.cloudstack.schedule.ResourceScheduleManager;
 
 import javax.inject.Inject;
+import java.util.ArrayList;
+import java.util.List;
 
+@Deprecated
 @APICommand(name = "listVMSchedule", description = "List Instance Schedules.", responseObject = VMScheduleResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListVMScheduleCmd extends BaseListCmd {
     @Inject
-    VMScheduleManager vmScheduleManager;
+    ResourceScheduleManager resourceScheduleManager;
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
             type = CommandType.UUID,
@@ -61,12 +65,12 @@ public class ListVMScheduleCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.ENABLED,
             type = CommandType.BOOLEAN,
             required = false,
-            description = "ID of Instance schedule")
+            description = "Filter by enabled status")
     private Boolean enabled;
 
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
+    /// //////////////////////////////////////////////////
+    /// //////////////// Accessors ///////////////////////
+    /// //////////////////////////////////////////////////
 
     public Long getVmId() {
         return vmId;
@@ -84,14 +88,26 @@ public class ListVMScheduleCmd extends BaseListCmd {
         return enabled;
     }
 
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
+    /// //////////////////////////////////////////////////
+    /// //////////// API Implementation///////////////////
+    /// //////////////////////////////////////////////////
     @Override
     public void execute() {
-        ListResponse<VMScheduleResponse> response = vmScheduleManager.listSchedule(this);
+        String resourceIdStr = getVmId() != null ? String.valueOf(getVmId()) : null;
+
+        ListResponse<ResourceScheduleResponse> scheduleResponse = resourceScheduleManager.listSchedule(
+                getId(), null, ApiCommandResourceType.VirtualMachine, resourceIdStr, getAction(), getEnabled(),
+                getStartIndex(), getPageSizeVal()
+        );
+
+        List<VMScheduleResponse> vmScheduleResponses = new ArrayList<>();
+        for (ResourceScheduleResponse resourceScheduleResponse : scheduleResponse.getResponses()) {
+            vmScheduleResponses.add(new VMScheduleResponse(resourceScheduleResponse));
+        }
+        ListResponse<VMScheduleResponse> response = new ListResponse<>();
+        response.setResponses(vmScheduleResponses, scheduleResponse.getCount());
         response.setResponseName(getCommandName());
-        response.setObjectName(VMSchedule.class.getSimpleName().toLowerCase());
+        response.setObjectName("vmschedule");
         setResponseObject(response);
     }
 }
