@@ -891,7 +891,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
      */
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NIC_SECONDARY_IP_ASSIGN, eventDescription = "Assigning secondary IP to NIC", create = true)
-    public NicSecondaryIp allocateSecondaryGuestIP(final long nicId, IpAddresses requestedIpPair) throws InsufficientAddressCapacityException {
+    public NicSecondaryIp allocateSecondaryGuestIP(final long nicId, IpAddresses requestedIpPair, String description) throws InsufficientAddressCapacityException {
 
         Account caller = CallContext.current().getCallingAccount();
         String ipv4Address = requestedIpPair.getIp4Address();
@@ -989,7 +989,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
                     logger.debug("Setting nic_secondary_ip table ...");
                     Long vmId = nicVO.getInstanceId();
-                    NicSecondaryIpVO secondaryIpVO = new NicSecondaryIpVO(nicId, ip4AddrFinal, ip6AddrFinal, vmId, ipOwner.getId(), ipOwner.getDomainId(), networkId);
+                    NicSecondaryIpVO secondaryIpVO = new NicSecondaryIpVO(nicId, ip4AddrFinal, ip6AddrFinal, vmId, ipOwner.getId(), ipOwner.getDomainId(), networkId, description);
                     _nicSecondaryIpDao.persist(secondaryIpVO);
                     return secondaryIpVO.getId();
                 }
@@ -1162,21 +1162,19 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         long reservedIpAddressesAmount = ipDedicatedAccountId == null ? 1L : 0L;
         try (CheckedReservation publicIpAddressReservation = new CheckedReservation(account, Resource.ResourceType.public_ip, reservedIpAddressesAmount, reservationDao, _resourceLimitMgr)) {
-
-        List<AccountVlanMapVO> maps = _accountVlanMapDao.listAccountVlanMapsByVlan(ipVO.getVlanId());
-        ipVO.setAllocatedTime(new Date());
-        ipVO.setAllocatedToAccountId(account.getAccountId());
-        ipVO.setAllocatedInDomainId(account.getDomainId());
-        ipVO.setState(State.Reserved);
-        if (displayIp != null) {
-            ipVO.setDisplay(displayIp);
-        }
-        ipVO = _ipAddressDao.persist(ipVO);
-        if (reservedIpAddressesAmount > 0) {
-            _resourceLimitMgr.incrementResourceCount(account.getId(), Resource.ResourceType.public_ip);
-        }
-        return ipVO;
-
+            List<AccountVlanMapVO> maps = _accountVlanMapDao.listAccountVlanMapsByVlan(ipVO.getVlanId());
+            ipVO.setAllocatedTime(new Date());
+            ipVO.setAllocatedToAccountId(account.getAccountId());
+            ipVO.setAllocatedInDomainId(account.getDomainId());
+            ipVO.setState(State.Reserved);
+            if (displayIp != null) {
+                ipVO.setDisplay(displayIp);
+            }
+            ipVO = _ipAddressDao.persist(ipVO);
+            if (reservedIpAddressesAmount > 0) {
+                _resourceLimitMgr.incrementResourceCount(account.getId(), Resource.ResourceType.public_ip);
+            }
+            return ipVO;
         } catch (ResourceAllocationException ex) {
             logger.warn("Failed to allocate resource of type " + ex.getResourceType() + " for account " + account);
             throw new AccountLimitException("Maximum number of public IP addresses for account: " + account.getAccountName() + " has been exceeded.");
@@ -1551,6 +1549,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         DataCenter zone = getAndValidateZone(cmd, pNtwk);
 
+        boolean keepMacAddressOnPublicNic = getAndValidateSupportForKeepMacAddressOnPublicNicParameter(cmd.getKeepMacAddressOnPublicNic(), ntwkOff);
+
         _accountMgr.checkAccess(owner, ntwkOff, zone);
 
         validateZoneAvailability(caller, zone);
@@ -1836,7 +1836,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         Network network = commitNetwork(networkOfferingId, gateway, startIP, endIP, netmask, networkDomain, vlanId, bypassVlanOverlapCheck, name, displayText, caller, physicalNetworkId, zone.getId(),
                 domainId, isDomainSpecific, subdomainAccess, vpcId, startIPv6, endIPv6, ip6Gateway, ip6Cidr, displayNetwork, aclId, secondaryVlanId, privateVlanType, ntwkOff, pNtwk, aclType, owner, cidr, createVlan,
-                externalId, routerIPv4, routerIPv6, associatedNetwork, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2, interfaceMTUs, networkCidrSize);
+                externalId, routerIPv4, routerIPv6, associatedNetwork, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2, interfaceMTUs, networkCidrSize, keepMacAddressOnPublicNic);
 
         // retrieve, acquire and associate the correct IP addresses
         checkAndSetRouterSourceNatIp(owner, cmd, network);
@@ -1879,6 +1879,24 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                     String.format("Creation of %s networks is not supported in NSX enabled zone %s", guestType.name(), zoneName)
             );
         }
+    }
+
+    protected boolean getAndValidateSupportForKeepMacAddressOnPublicNicParameter(Boolean keepMacAddressOnPublicNic, NetworkOffering networkOffering) {
+        if (networkOffering.isForVpc() && keepMacAddressOnPublicNic != null) {
+            throw new InvalidParameterValueException(
+                    String.format("The [%s] parameter cannot be specified on the creation of VPC tiers.", ApiConstants.KEEP_MAC_ADDRESS_ON_PUBLIC_NIC)
+            );
+        }
+
+        GuestType guestType = networkOffering.getGuestType();
+        if (guestType != GuestType.Isolated && keepMacAddressOnPublicNic != null) {
+            throw new InvalidParameterValueException(String.format(
+                    "The [%s] parameter can only be specified on the creation of [%s] networks.",
+                    ApiConstants.KEEP_MAC_ADDRESS_ON_PUBLIC_NIC, GuestType.Isolated
+            ));
+        }
+
+        return keepMacAddressOnPublicNic == null || keepMacAddressOnPublicNic;
     }
 
     @Override
@@ -2284,7 +2302,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                                   final Boolean displayNetwork, final Long aclId, final String isolatedPvlan, final PVlanType isolatedPvlanType, final NetworkOffering ntwkOff, final PhysicalNetwork pNtwk, final ACLType aclType, final Account ownerFinal,
                                   final String cidr, final boolean createVlan, final String externalId, String routerIp, String routerIpv6,
                                   final Network associatedNetwork, final String ip4Dns1, final String ip4Dns2, final String ip6Dns1, final String ip6Dns2, Pair<Integer, Integer> vrIfaceMTUs,
-                                  final Integer networkCidrSize) throws InsufficientCapacityException, ResourceAllocationException {
+                                  final Integer networkCidrSize, final boolean keepMacAddressOnPublicNic) throws InsufficientCapacityException, ResourceAllocationException {
         try {
             Network network = Transaction.execute(new TransactionCallbackWithException<Network, Exception>() {
                 @Override
@@ -2350,7 +2368,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                         }
                         network = _networkMgr.createGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId, bypassVlanOverlapCheck, networkDomain, owner, sharedDomainId, pNtwk,
                                 zoneId, aclType, subdomainAccess, vpcId, ip6Gateway, ip6Cidr, displayNetwork, isolatedPvlan, isolatedPvlanType, externalId, routerIp, routerIpv6, ip4Dns1, ip4Dns2,
-                                ip6Dns1, ip6Dns2, vrIfaceMTUs, networkCidrSize);
+                                ip6Dns1, ip6Dns2, vrIfaceMTUs, networkCidrSize, keepMacAddressOnPublicNic);
                     }
 
                     if (createVlan && network != null) {
@@ -3158,6 +3176,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         String ip4Dns2 = cmd.getIp4Dns2();
         String ip6Dns1 = cmd.getIp6Dns1();
         String ip6Dns2 = cmd.getIp6Dns2();
+        Boolean keepMacAddressOnPublicNic = cmd.getKeepMacAddressOnPublicNic();
 
         boolean restartNetwork = false;
 
@@ -3214,6 +3233,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         if (customId != null) {
             network.setUuid(customId);
+        }
+
+        if (keepMacAddressOnPublicNic != null) {
+            network.setKeepMacAddressOnPublicNic(getAndValidateSupportForKeepMacAddressOnPublicNicParameter(keepMacAddressOnPublicNic, offering));
         }
 
         // display flag is not null and has changed

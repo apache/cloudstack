@@ -570,18 +570,19 @@ public class SystemVmTemplateRegistrationTest {
         SystemVmTemplateRegistration.MetadataTemplateDetails templateDetails =
                 Mockito.mock(SystemVmTemplateRegistration.MetadataTemplateDetails.class);
         VMTemplateVO templateVO = Mockito.mock(VMTemplateVO.class);
+        String templateName = "templateName";
+        when(templateVO.getName()).thenReturn(templateName);
         GuestOSVO guestOS = Mockito.mock(GuestOSVO.class);
 
         when(templateDetails.getGuestOs()).thenReturn("Debian");
         when(templateDetails.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
-        when(templateDetails.getName()).thenReturn("templateName");
         when(vmTemplateDao.findById(templateId)).thenReturn(templateVO);
         when(guestOSDao.findOneByDisplayName("Debian")).thenReturn(guestOS);
         when(guestOS.getId()).thenReturn(10L);
         when(vmTemplateDao.update(templateVO.getId(), templateVO)).thenReturn(true);
         doNothing().when(systemVmTemplateRegistration).updateSystemVMEntries(templateId, Hypervisor.HypervisorType.KVM);
         doNothing().when(systemVmTemplateRegistration).updateConfigurationParams(Hypervisor.HypervisorType.KVM,
-                "templateName", zoneId);
+                templateName, zoneId);
 
         systemVmTemplateRegistration.updateRegisteredTemplateDetails(templateId, templateDetails, zoneId);
 
@@ -590,7 +591,7 @@ public class SystemVmTemplateRegistrationTest {
         verify(vmTemplateDao).update(templateVO.getId(), templateVO);
         verify(systemVmTemplateRegistration).updateSystemVMEntries(templateId, Hypervisor.HypervisorType.KVM);
         verify(systemVmTemplateRegistration).updateConfigurationParams(Hypervisor.HypervisorType.KVM,
-                "templateName", zoneId);
+                templateName, zoneId);
     }
 
     @Test
@@ -620,16 +621,17 @@ public class SystemVmTemplateRegistrationTest {
         SystemVmTemplateRegistration.MetadataTemplateDetails templateDetails =
                 Mockito.mock(SystemVmTemplateRegistration.MetadataTemplateDetails.class);
         VMTemplateVO templateVO = Mockito.mock(VMTemplateVO.class);
+        String templateName = "templateName";
+        when(templateVO.getName()).thenReturn(templateName);
 
         when(templateDetails.getGuestOs()).thenReturn("NonExistentOS");
         when(templateDetails.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
-        when(templateDetails.getName()).thenReturn("templateName");
         when(vmTemplateDao.findById(templateId)).thenReturn(templateVO);
         when(guestOSDao.findOneByDisplayName("NonExistentOS")).thenReturn(null);
         when(vmTemplateDao.update(templateVO.getId(), templateVO)).thenReturn(true);
         doNothing().when(systemVmTemplateRegistration).updateSystemVMEntries(templateId, Hypervisor.HypervisorType.KVM);
         doNothing().when(systemVmTemplateRegistration).updateConfigurationParams(Hypervisor.HypervisorType.KVM,
-                "templateName", zoneId);
+                templateName, zoneId);
 
         systemVmTemplateRegistration.updateRegisteredTemplateDetails(templateId, templateDetails, zoneId);
 
@@ -637,7 +639,7 @@ public class SystemVmTemplateRegistrationTest {
         verify(vmTemplateDao).update(templateVO.getId(), templateVO);
         verify(systemVmTemplateRegistration).updateSystemVMEntries(templateId, Hypervisor.HypervisorType.KVM);
         verify(systemVmTemplateRegistration).updateConfigurationParams(Hypervisor.HypervisorType.KVM,
-                "templateName", zoneId);
+                templateName, zoneId);
     }
 
     @Test

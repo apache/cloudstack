@@ -361,7 +361,7 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
             boolean success = true;
             Long currentSize = answer.getVirtualSize() != 0 ? answer.getVirtualSize() : answer.getPhysicalSize();
             Long lastSize = volume.getSize() != null ? volume.getSize() : 0L;
-            if (!checkAndUpdateSecondaryStorageResourceLimit(volume.getAccountId(), volume.getSize(), currentSize)) {
+            if (!checkAndUpdateSecondaryStorageResourceLimit(volume.getAccountId(), lastSize, currentSize)) {
                 volumeDataStore.setDownloadState(VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR);
                 volumeDataStore.setState(State.Failed);
                 volumeDataStore.setErrorString("Storage Limit Reached");
@@ -573,6 +573,12 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
 
                             if (logger.isDebugEnabled()) {
                                 logger.debug("Template {} uploaded successfully", tmpTemplate);
+                            }
+                            try {
+                                templateService.replicateTemplateUpToCap(tmpTemplate.getId(), vo.getDataCenterId());
+                            } catch (Exception e) {
+                                logger.warn("Failed to schedule additional copies for uploaded template [{}] in zone [{}]: {}",
+                                        tmpTemplate.getUuid(), vo.getDataCenterId(), e.getMessage());
                             }
                             break;
                         case IN_PROGRESS:

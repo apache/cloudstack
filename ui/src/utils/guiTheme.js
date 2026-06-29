@@ -70,19 +70,26 @@ async function applyDynamicCustomization (response) {
   vueProps.$config.logo = jsonConfig?.logo ?? vueProps.$config.logo
   vueProps.$config.minilogo = jsonConfig?.minilogo ?? vueProps.$config.minilogo
   vueProps.$config.banner = jsonConfig?.banner ?? vueProps.$config.banner
+  vueProps.$config.docBase = jsonConfig?.docBase ?? vueProps.$config.docBase
+  vueProps.$config.apidocs = jsonConfig?.apidocs ?? vueProps.$config.apidocs
+  vueProps.$config.docHelpMappings = jsonConfig?.docHelpMappings ?? vueProps.$config.docHelpMappings
+  vueProps.$config.keyboardOptions = jsonConfig?.keyboardOptions ?? vueProps.$config.keyboardOptions
   vueProps.$config.defaultLanguage = vueProps.$localStorage.get('LOCALE') ?? jsonConfig?.defaultLanguage ?? vueProps.$config.defaultLanguage
 
-  if (jsonConfig?.error) {
-    vueProps.$config.error[403] = jsonConfig?.error[403] ?? vueProps.$config.error[403]
-    vueProps.$config.error[404] = jsonConfig?.error[404] ?? vueProps.$config.error[404]
-    vueProps.$config.error[500] = jsonConfig?.error[500] ?? vueProps.$config.error[500]
-  }
+  applyJsonConfigToObject(jsonConfig?.error, vueProps.$config.error)
+  applyJsonConfigToObject(jsonConfig?.userCard, vueProps.$config.userCard)
+  applyJsonConfigToObject(jsonConfig?.theme, vueProps.$config.theme)
 
   if (jsonConfig?.plugins) {
     jsonConfig.plugins.forEach(plugin => {
       vueProps.$config.plugins.push(plugin)
     })
   }
+
+  if (vueProps.$store) {
+    vueProps.$store.dispatch('SetDarkMode', (vueProps.$config.theme['@layout-mode'] === 'dark'))
+  }
+  window.less.modifyVars(vueProps.$config.theme)
 
   vueProps.$config.favicon = jsonConfig?.favicon ?? vueProps.$config.favicon
   vueProps.$config.css = response?.css ?? null
@@ -93,6 +100,16 @@ async function applyDynamicCustomization (response) {
   }
 
   await applyStaticCustomization(vueProps.$config.favicon, vueProps.$config.css)
+}
+
+function applyJsonConfigToObject (sourceConfig, targetObject) {
+  if (!sourceConfig) {
+    return
+  }
+
+  for (const [variableName, value] of Object.entries(targetObject)) {
+    targetObject[variableName] = sourceConfig?.[variableName] ?? value
+  }
 }
 
 async function applyStaticCustomization (favicon, css) {

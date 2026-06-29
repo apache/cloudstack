@@ -214,7 +214,8 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
             maxconn = offering.getConcurrentConnections().toString();
         }
         LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lbs, elbVm.getPublicIpAddress(), _nicDao.getIpAddress(guestNetworkId, elbVm.getId()),
-                elbVm.getPrivateIpAddress(), null, null, maxconn, offering.isKeepAliveEnabled());
+                elbVm.getPrivateIpAddress(), null, null, maxconn, offering.isKeepAliveEnabled(),
+                NetworkOrchestrationService.NETWORK_LB_HAPROXY_IDLE_TIMEOUT.value());
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, elbVm.getPrivateIpAddress());
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, elbVm.getInstanceName());
         //FIXME: why are we setting attributes directly? Ick!! There should be accessors and

@@ -19,6 +19,7 @@ package com.cloud.api.query.dao;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.Iterator;
@@ -40,6 +41,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.ha.HAResource;
 import org.apache.cloudstack.ha.dao.HAConfigDao;
 import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -53,8 +55,10 @@ import com.cloud.host.Host;
 import com.cloud.host.HostStats;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.resource.ResourceState;
 import com.cloud.storage.StorageStats;
 import com.cloud.user.AccountManager;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -221,6 +225,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
                 hostResponse.setHaHost(containsHostHATag(hostTags));
                 hostResponse.setExplicitHostTags(host.getExplicitTag());
                 hostResponse.setImplicitHostTags(host.getImplicitTag());
+                hostResponse.setGuestOsRule(host.getGuestOsRule());
 
                 hostResponse.setHypervisorVersion(host.getHypervisorVersion());
                 if (host.getArch() != null) {
@@ -413,4 +418,26 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
         return decimalFormat.format(((float)resource / resourceWithOverProvision * 100.0f)) + "%";
     }
 
+    @Override
+    public List<HostJoinVO> listAvailableRoutingByZonesAndHypervisor(List<Long> zoneIds, Hypervisor.HypervisorType hypervisorType, Filter filter) {
+        if (CollectionUtils.isEmpty(zoneIds)) {
+            return Collections.emptyList();
+        }
+        List<ResourceState> availableStates = Arrays.asList(
+                ResourceState.Enabled, ResourceState.Disabled, ResourceState.Degraded
+        );
+        SearchBuilder<HostJoinVO> sb = createSearchBuilder();
+        sb.and("dataCenterId", sb.entity().getZoneId(), SearchCriteria.Op.IN);
+        sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
+        sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
+        sb.and("resourceStates", sb.entity().getResourceState(), SearchCriteria.Op.IN);
+        sb.done();
+
+        SearchCriteria<HostJoinVO> sc = sb.create();
+        sc.setParameters("dataCenterId", zoneIds.toArray());
+        sc.setParameters("type", Host.Type.Routing);
+        sc.setParameters("hypervisorType", hypervisorType);
+        sc.setParameters("resourceStates", availableStates.toArray());
+        return listBy(sc, filter);
+    }
 }

@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.storage;
 
+import static com.cloud.configuration.ConfigurationManagerImpl.SystemVMUseLocalStorage;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 import java.io.UnsupportedEncodingException;
@@ -149,6 +150,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.springframework.stereotype.Component;
 
@@ -181,7 +183,6 @@ import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
-import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.cpu.CPU;
 import com.cloud.dc.ClusterVO;
@@ -822,6 +823,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return createLocalStorage(host, pInfo);
     }
 
+    private boolean isLocalStorageEnabledForZone(DataCenterVO zone) {
+        return zone.isLocalStorageEnabled() || BooleanUtils.toBoolean(SystemVMUseLocalStorage.valueIn(zone.getId()));
+    }
+
     @DB
     @Override
     public DataStore createLocalStorage(Host host, StoragePoolInfo pInfo) throws ConnectionException {
@@ -829,12 +834,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if (dc == null) {
             return null;
         }
-        boolean useLocalStorageForSystemVM = false;
-        Boolean isLocal = ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dc.getId());
-        if (isLocal != null) {
-            useLocalStorageForSystemVM = isLocal.booleanValue();
-        }
-        if (!(dc.isLocalStorageEnabled() || useLocalStorageForSystemVM)) {
+        if (!isLocalStorageEnabledForZone(dc)) {
             return null;
         }
         DataStore store = null;
@@ -1038,6 +1038,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getId())) {
             throw new PermissionDeniedException(String.format("Cannot perform this operation, Zone is currently disabled: %s", zone));
         }
+        // Check if it's local storage and if it's enabled on the zone
+        if (isFileScheme && !isLocalStorageEnabledForZone(zone)) {
+            throw new InvalidParameterValueException("Local storage is not enabled for zone: " + zone);
+        }
 
         Map<String, Object> params = new HashMap<>();
         params.put("zoneId", zone.getId());
@@ -1054,6 +1058,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         params.put("managed", cmd.isManaged());
         params.put("capacityBytes", cmd.getCapacityBytes());
         params.put("capacityIops", cmd.getCapacityIops());
+        params.put("scheme", uriParams.get("scheme"));
         if (MapUtils.isNotEmpty(uriParams)) {
             params.putAll(uriParams);
         }
@@ -1138,6 +1143,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         } else if (scheme.equalsIgnoreCase("gluster")) {
             if (isHostOrPathBlank) {
                 throw new InvalidParameterValueException("host or path is null, should be gluster://hostname/volume");
+            }
+        } else if (scheme.equalsIgnoreCase("clvm") || scheme.equalsIgnoreCase("clvm_ng")) {
+            if (storagePath == null) {
+                throw new InvalidParameterValueException("path is null, should be " + scheme.toLowerCase() + "://localhost/volume-group-name");
             }
         }
 

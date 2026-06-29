@@ -179,6 +179,14 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
             description = "(only for importing VMs from VMware to KVM) optional - the ID of the guest OS for the imported VM.")
     private Long guestOsId;
 
+    @Parameter(name = ApiConstants.USE_VDDK,
+            type = CommandType.BOOLEAN,
+            since = "4.22.1",
+            description = "(only for importing VMs from VMware to KVM) optional - if true, uses VDDK on the KVM conversion host for converting the VM. " +
+                    "This parameter is mutually exclusive with " + ApiConstants.FORCE_MS_TO_IMPORT_VM_FILES + ".")
+    private Boolean useVddk;
+
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -253,6 +261,10 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
 
     public Long getStoragePoolId() {
         return storagePoolId;
+    }
+
+    public boolean getUseVddk() {
+        return BooleanUtils.toBooleanDefaultIfNull(useVddk, true);
     }
 
     public String getTmpPath() {

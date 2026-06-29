@@ -143,7 +143,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.userdata.UserDataManager;
-import org.apache.cloudstack.utils.jsinterpreter.TagAsRuleHelper;
+import org.apache.cloudstack.utils.jsinterpreter.GenericRuleHelper;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.cloudstack.vm.UnmanagedVMsManager;
 import org.apache.cloudstack.vm.lease.VMLeaseManager;
@@ -160,6 +160,9 @@ import com.cloud.api.query.dao.NetworkOfferingJoinDao;
 import com.cloud.api.query.vo.NetworkOfferingJoinVO;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.cluster.ManagementServerHostVO;
+import com.cloud.cluster.dao.ManagementServerHostDao;
+import com.cloud.cluster.dao.ManagementServerHostDetailsDao;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.ClusterDetailsDao;
@@ -468,6 +471,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     ImageStoreDao _imageStoreDao;
     @Inject
     ImageStoreDetailsDao _imageStoreDetailsDao;
+    @Inject
+    ManagementServerHostDao managementServerHostDao;
+    @Inject
+    ManagementServerHostDetailsDao managementServerHostDetailsDao;
     @Inject
     MessageBus messageBus;
     @Inject
@@ -885,6 +892,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 }
                 break;
 
+                case ManagementServer:
+                    final ManagementServerHostVO managementServer = managementServerHostDao.findById(resourceId);
+                    Preconditions.checkState(managementServer != null);
+                    resourceType = ApiCommandResourceType.ManagementServer;
+                    managementServerHostDetailsDao.addDetail(resourceId, name, value, true);
+                    break;
+
             default:
                 throw new InvalidParameterValueException("Scope provided is invalid");
             }
@@ -1032,8 +1046,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         String value = cmd.getValue();
         final Long zoneId = cmd.getZoneId();
         final Long clusterId = cmd.getClusterId();
-        final Long storagepoolId = cmd.getStoragepoolId();
+        final Long storagepoolId = cmd.getStoragePoolId();
         final Long imageStoreId = cmd.getImageStoreId();
+        final Long managementServerId = cmd.getManagementServerId();
         Long accountId = cmd.getAccountId();
         Long domainId = cmd.getDomainId();
         // check if config value exists
@@ -1113,6 +1128,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             id = imageStoreId;
             paramCountCheck++;
         }
+        if (managementServerId != null) {
+            scope = ConfigKey.Scope.ManagementServer;
+            id = managementServerId;
+            paramCountCheck++;
+        }
 
         if (paramCountCheck > 1) {
             throw new InvalidParameterValueException("cannot handle multiple IDs, provide only one ID corresponding to the scope");
@@ -1168,6 +1188,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Long accountId = cmd.getAccountId();
         final Long domainId = cmd.getDomainId();
         final Long imageStoreId = cmd.getImageStoreId();
+        final Long managementServerId = cmd.getManagementServerId();
         ConfigKey<?> configKey = null;
         Optional optionalValue;
         String defaultValue;
@@ -1201,6 +1222,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         scopeMap.put(ConfigKey.Scope.Account.toString(), accountId);
         scopeMap.put(ConfigKey.Scope.StoragePool.toString(), storagepoolId);
         scopeMap.put(ConfigKey.Scope.ImageStore.toString(), imageStoreId);
+        scopeMap.put(ConfigKey.Scope.ManagementServer.toString(), managementServerId);
 
         ParamCountPair paramCountPair = getParamCount(scopeMap);
         id = paramCountPair.getId();
@@ -1293,6 +1315,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (imageStoreDetailVO != null) {
                     _imageStoreDetailsDao.remove(imageStoreDetailVO.getId());
                 }
+                optionalValue = Optional.ofNullable(configKey != null ? configKey.valueIn(id) : config.getValue());
+                newValue = optionalValue.isPresent() ? optionalValue.get().toString() : defaultValue;
+                break;
+
+            case ManagementServer:
+                final ManagementServerHostVO managementServer = managementServerHostDao.findById(id);
+                if (managementServer == null) {
+                    throw new InvalidParameterValueException("unable to find management server by id " + id);
+                }
+                managementServerHostDetailsDao.removeDetail(id, name);
                 optionalValue = Optional.ofNullable(configKey != null ? configKey.valueIn(id) : config.getValue());
                 newValue = optionalValue.isPresent() ? optionalValue.get().toString() : defaultValue;
                 break;
@@ -5083,7 +5115,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
                     if ((CollectionUtils.isNotEmpty(tagsAsString) && tagsAsString.containsAll(listOfTags)) ||
                         (tagsOnPool.size() == 1 && tagsOnPool.get(0).isTagARule() &&
-                        TagAsRuleHelper.interpretTagAsRule(tagsOnPool.get(0).getTag(), tags, VolumeApiServiceImpl.storageTagRuleExecutionTimeout.value()))) {
+                        GenericRuleHelper.interpretTagAsRule(tagsOnPool.get(0).getTag(), tags, VolumeApiServiceImpl.storageTagRuleExecutionTimeout.value(),
+                                VolumeApiServiceImpl.storageTagRuleExecutionTimeout.key()))) {
                         continue;
                     }
 
@@ -5126,7 +5159,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
                     if ((CollectionUtils.isNotEmpty(tagsAsString) && tagsAsString.containsAll(listOfHostTags)) ||
                         (tagsOnHost.size() == 1 && tagsOnHost.get(0).getIsTagARule() &&
-                        TagAsRuleHelper.interpretTagAsRule(tagsOnHost.get(0).getTag(), hostTags, HostTagsDao.hostTagRuleExecutionTimeout.value()))) {
+                        GenericRuleHelper.interpretTagAsRule(tagsOnHost.get(0).getTag(), hostTags, HostTagsDao.hostTagRuleExecutionTimeout.value(),
+                                HostTagsDao.hostTagRuleExecutionTimeout.key()))) {
                         continue;
                     }
 

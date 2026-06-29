@@ -27,11 +27,6 @@ import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.google.gson.JsonSyntaxException;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.command.user.gui.theme.CreateGuiThemeCmd;
 import org.apache.cloudstack.api.command.user.gui.theme.ListGuiThemesCmd;
@@ -43,6 +38,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.gui.theme.dao.GuiThemeDao;
 import org.apache.cloudstack.gui.theme.dao.GuiThemeDetailsDao;
 import org.apache.cloudstack.gui.theme.dao.GuiThemeJoinDao;
+import org.apache.cloudstack.gui.theme.json.config.validator.JsonConfigValidator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -52,23 +48,11 @@ import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 @Component
 public class GuiThemeServiceImpl implements GuiThemeService {
 
     protected Logger logger = LogManager.getLogger(getClass());
-
-    private static final List<String> ALLOWED_PRIMITIVE_PROPERTIES = List.of("appTitle", "footer", "loginFooter", "logo", "minilogo", "banner", "defaultLanguage");
-
-    private static final List<String> ALLOWED_ERROR_PROPERTIES = List.of("403", "404", "500");
-
-    private static final List<String> ALLOWED_PLUGIN_PROPERTIES = List.of("name", "path", "icon", "isExternalLink");
-
-    private static final String ERROR = "error";
-
-    private static final String PLUGINS = "plugins";
 
     @Inject
     GuiThemeDao guiThemeDao;
@@ -90,6 +74,9 @@ public class GuiThemeServiceImpl implements GuiThemeService {
 
     @Inject
     DomainDao domainDao;
+
+    @Inject
+    JsonConfigValidator jsonConfigValidator;
 
     @Override
     public ListResponse<GuiThemeResponse> listGuiThemes(ListGuiThemesCmd cmd) {
@@ -244,94 +231,7 @@ public class GuiThemeServiceImpl implements GuiThemeService {
 
         validateObjectUuids(accountIds, Account.class);
         validateObjectUuids(domainIds, Domain.class);
-        validateJsonConfiguration(jsonConfig);
-    }
-
-    protected void validateJsonConfiguration(String jsonConfig) {
-        if (jsonConfig == null) {
-            return;
-        }
-
-        JsonObject jsonObject = new JsonObject();
-
-        try {
-            JsonElement jsonElement = new JsonParser().parse(jsonConfig);
-            Set<Map.Entry<String, JsonElement>> entries = jsonElement.getAsJsonObject().entrySet();
-            entries.stream().forEach(entry -> validateJsonAttributes(entry, jsonObject));
-        } catch (JsonSyntaxException exception) {
-            logger.error("The following exception was thrown while parsing the JSON object: [{}].", exception.getMessage());
-            throw new CloudRuntimeException("Specified JSON configuration is not a valid JSON object.");
-        }
-    }
-
-    /**
-     * Validates the informed JSON attributes considering the allowed properties by the API, any invalid option is ignored.
-     * All valid options are added to a {@link JsonObject} that will be considered as the final JSON configuration used by the GUI theme.
-     */
-    private void validateJsonAttributes(Map.Entry<String, JsonElement> entry, JsonObject jsonObject) {
-        JsonElement entryValue = entry.getValue();
-        String entryKey = entry.getKey();
-
-        if (entryValue.isJsonPrimitive() && ALLOWED_PRIMITIVE_PROPERTIES.contains(entryKey)) {
-            logger.trace("The JSON attribute [{}] is a valid option.", entryKey);
-            jsonObject.add(entryKey, entryValue);
-        } else if (entryValue.isJsonObject() && ERROR.equals(entryKey)) {
-            validateErrorAttribute(entry, jsonObject);
-        } else if (entryValue.isJsonArray() && PLUGINS.equals(entryKey)) {
-            validatePluginsAttribute(entry, jsonObject);
-        } else {
-            warnOfInvalidJsonAttribute(entryKey);
-        }
-    }
-
-    /**
-     * Creates a {@link JsonObject} with only the valid options for the Plugins' properties specified in the {@link #ALLOWED_PLUGIN_PROPERTIES}.
-     */
-    protected void validatePluginsAttribute(Map.Entry<String, JsonElement> entry, JsonObject jsonObject) {
-        Set<Map.Entry<String, JsonElement>> entries = entry.getValue().getAsJsonArray().get(0).getAsJsonObject().entrySet();
-        JsonObject objectToBeAdded = createJsonObject(entries, ALLOWED_PLUGIN_PROPERTIES);
-        JsonArray jsonArray = new JsonArray();
-
-        if (objectToBeAdded.entrySet().isEmpty()) {
-            return;
-        }
-
-        jsonArray.add(objectToBeAdded);
-        jsonObject.add(entry.getKey(), jsonArray);
-    }
-
-    /**
-     * Creates a {@link JsonObject} with only the valid options for the Error's properties specified in the {@link #ALLOWED_ERROR_PROPERTIES}.
-     */
-    protected void validateErrorAttribute(Map.Entry<String, JsonElement> entry, JsonObject jsonObject) {
-        Set<Map.Entry<String, JsonElement>> entries = entry.getValue().getAsJsonObject().entrySet();
-        JsonObject objectToBeAdded = createJsonObject(entries, ALLOWED_ERROR_PROPERTIES);
-
-        if (objectToBeAdded.entrySet().isEmpty()) {
-            return;
-        }
-
-        jsonObject.add(entry.getKey(), objectToBeAdded);
-    }
-
-    protected JsonObject createJsonObject(Set<Map.Entry<String, JsonElement>> entries, List<String> allowedProperties) {
-        JsonObject objectToBeAdded = new JsonObject();
-
-        for (Map.Entry<String, JsonElement> recursiveEntry : entries) {
-            String entryKey = recursiveEntry.getKey();
-
-            if (!allowedProperties.contains(entryKey)) {
-                warnOfInvalidJsonAttribute(entryKey);
-                continue;
-            }
-            objectToBeAdded.add(entryKey, recursiveEntry.getValue());
-        }
-
-        return objectToBeAdded;
-    }
-
-    protected void warnOfInvalidJsonAttribute(String entryKey) {
-        logger.warn("The JSON attribute [{}] is not a valid option, therefore, it will be ignored.", entryKey);
+        jsonConfigValidator.validateJsonConfiguration(jsonConfig);
     }
 
     /**

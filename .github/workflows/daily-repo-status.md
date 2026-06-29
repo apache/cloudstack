@@ -16,21 +16,29 @@ permissions:
 
 network: defaults
 
+engine:
+  id: copilot
+  model: claude-haiku-4.5
+
 tools:
   github:
     # If in a public repo, setting `lockdown: false` allows
     # reading issues, pull requests and comments from 3rd-parties
     # If in a private repo this has no particular effect.
     lockdown: false
+    min-integrity: none # This workflow is allowed to examine and comment on any issues
 
 safe-outputs:
+  mentions: false
+  allowed-github-references: []
   create-issue:
     title-prefix: "[repo-status] "
     labels: [report, daily-status]
-source: githubnext/agentics/workflows/daily-repo-status.md@d19056381ba48cb1f7c78510c23069701fa7ae87
+    close-older-issues: true
+source: githubnext/agentics/workflows/repo-status.md@main
 ---
 
-# Daily Repo Status
+# Repo Status
 
 Create an upbeat daily status report for the repo as a GitHub issue.
 
