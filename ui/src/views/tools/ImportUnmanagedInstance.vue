@@ -352,15 +352,25 @@
                   </template>
                   <span>{{ $t('message.ip.address.changes.effect.after.vm.restart') }}</span>
                 </a-form-item>
-                <a-row v-if="selectedVmwareVcenter" :gutter="12" justify="end">
+                <a-row v-if="selectedVmwareVcenter && showMacConflictOptions" :gutter="12" justify="end">
                   <a-col style="text-align: right">
                     <a-form-item name="forced" ref="forced">
                       <template #label>
                         <tooltip-label
-                          :title="$t('label.allow.duplicate.macaddresses')"
+                          :title="$t('label.generate.new.mac.if.required')"
                           :tooltip="apiParams.forced.description"/>
                       </template>
-                      <a-switch v-model:checked="form.forced" @change="val => { switches.forced = val }" />
+                      <a-switch v-model:checked="form.forced" @change="onForcedMacConflictChange" />
+                    </a-form-item>
+                  </a-col>
+                  <a-col style="text-align: right" v-if="showAllowDuplicateMacAddresses">
+                    <a-form-item name="allowduplicatemacaddresses" ref="allowduplicatemacaddresses">
+                      <template #label>
+                        <tooltip-label
+                          :title="$t('label.allow.duplicate.macaddresses')"
+                          :tooltip="apiParams.allowduplicatemacaddresses.description"/>
+                      </template>
+                      <a-switch v-model:checked="form.allowduplicatemacaddresses" @change="onAllowDuplicateMacAddressesChange" />
                     </a-form-item>
                   </a-col>
                 </a-row>
@@ -414,14 +424,24 @@
                     <a-switch v-model:checked="form.migrateallowed" @change="val => { switches.migrateAllowed = val }" />
                   </a-form-item>
                 </a-col>
-                <a-col>
+                <a-col v-if="showMacConflictOptions">
                   <a-form-item name="forced" ref="forced">
                     <template #label>
                       <tooltip-label
-                        :title="$t('label.forced')"
+                        :title="$t('label.generate.new.mac.if.required')"
                         :tooltip="apiParams.forced.description"/>
                     </template>
-                    <a-switch v-model:checked="form.forced" @change="val => { switches.forced = val }" />
+                    <a-switch v-model:checked="form.forced" @change="onForcedMacConflictChange" />
+                  </a-form-item>
+                </a-col>
+                <a-col v-if="showAllowDuplicateMacAddresses">
+                  <a-form-item name="allowduplicatemacaddresses" ref="allowduplicatemacaddresses">
+                    <template #label>
+                      <tooltip-label
+                        :title="$t('label.allow.duplicate.macaddresses')"
+                        :tooltip="apiParams.allowduplicatemacaddresses.description"/>
+                    </template>
+                    <a-switch v-model:checked="form.allowduplicatemacaddresses" @change="onAllowDuplicateMacAddressesChange" />
                   </a-form-item>
                 </a-col>
               </a-row>
@@ -673,6 +693,15 @@ export default {
     isKVMUnmanage () {
       return this.hypervisor && this.hypervisor === 'kvm' && (this.importsource === 'unmanaged' || this.importsource === 'external')
     },
+    hasSourceNicMacAddresses () {
+      return !this.isDiskImport && this.resource?.nic?.some(nic => nic.macaddress || nic.mac)
+    },
+    showMacConflictOptions () {
+      return this.hasSourceNicMacAddresses
+    },
+    showAllowDuplicateMacAddresses () {
+      return this.showMacConflictOptions && this.apiParams.allowduplicatemacaddresses
+    },
     domainSelectOptions () {
       var domains = this.options.domains.map((domain) => {
         return {
@@ -789,6 +818,7 @@ export default {
         usevddk: false,
         migrateallowed: this.switches.migrateAllowed,
         forced: this.switches.forced,
+        allowduplicatemacaddresses: this.switches.allowDuplicateMacAddresses,
         forcemstoimportvmfiles: this.switches.forceMsToImportVmFiles,
         forceconverttopool: this.switches.forceConvertToPool,
         domainid: null,
@@ -1163,6 +1193,22 @@ export default {
       this.showStoragePoolsForConversion = false
       this.resetStorageOptionsForConversion()
     },
+    onForcedMacConflictChange (val) {
+      this.switches.forced = val
+      this.form.forced = val
+      if (val) {
+        this.switches.allowDuplicateMacAddresses = false
+        this.form.allowduplicatemacaddresses = false
+      }
+    },
+    onAllowDuplicateMacAddressesChange (val) {
+      this.switches.allowDuplicateMacAddresses = val
+      this.form.allowduplicatemacaddresses = val
+      if (val) {
+        this.switches.forced = false
+        this.form.forced = false
+      }
+    },
     onUseVddkChange (val, isUserChange = true) {
       if (isUserChange) {
         this.userModifiedVddkSetting = true
@@ -1317,7 +1363,13 @@ export default {
             params.forceconverttopool = values.forceconverttopool
           }
         }
-        var keys = ['hostname', 'domainid', 'projectid', 'account', 'migrateallowed', 'forced', 'osid']
+        var keys = ['hostname', 'domainid', 'projectid', 'account', 'migrateallowed', 'osid']
+        if (this.showMacConflictOptions) {
+          keys.push('forced')
+        }
+        if (this.showAllowDuplicateMacAddresses) {
+          keys.push('allowduplicatemacaddresses')
+        }
         if (this.templateType !== 'auto') {
           keys.push('templateid')
         }
@@ -1434,6 +1486,8 @@ export default {
       this.form.usevddk = false
       this.form.forceconverttopool = false
       this.form.forcemstoimportvmfiles = false
+      this.form.forced = false
+      this.form.allowduplicatemacaddresses = false
       this.userModifiedVddkSetting = false
       this.resetStorageOptionsForConversion()
     },

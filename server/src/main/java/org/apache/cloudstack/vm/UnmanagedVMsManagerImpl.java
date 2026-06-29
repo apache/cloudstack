@@ -847,9 +847,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return new Pair<DiskProfile, StoragePool>(profile, storagePool);
     }
 
-    private NicProfile importNic(UnmanagedInstanceTO.Nic nic, VirtualMachine vm, Network network, Network.IpAddresses ipAddresses, int deviceId, boolean isDefaultNic, boolean forced) throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
+    private NicProfile importNic(UnmanagedInstanceTO.Nic nic, VirtualMachine vm, Network network, Network.IpAddresses ipAddresses, int deviceId, boolean isDefaultNic,
+                                 boolean forced, boolean allowDuplicateMacAddress) throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
         DataCenterVO dataCenterVO = dataCenterDao.findById(network.getDataCenterId());
-        Pair<NicProfile, Integer> result = networkOrchestrationService.importNic(nic.getMacAddress(), deviceId, network, isDefaultNic, vm, ipAddresses, dataCenterVO, forced);
+        Pair<NicProfile, Integer> result = networkOrchestrationService.importNic(nic.getMacAddress(), deviceId, network, isDefaultNic, vm, ipAddresses, dataCenterVO, forced, allowDuplicateMacAddress);
         if (result == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("NIC ID: %s import failed", nic.getNicId()));
         }
@@ -1056,7 +1057,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                                                 final VirtualMachineTemplate template, final String displayName, final String hostName, final Account caller, final Account owner, final Long userId,
                                                 final ServiceOfferingVO serviceOffering, final Map<String, Long> dataDiskOfferingMap,
                                                 final Map<String, Long> nicNetworkMap, final Map<String, Network.IpAddresses> callerNicIpAddressMap, final Long guestOsId,
-                                                final Map<String, String> details, final boolean migrateAllowed, final boolean forced, final boolean isImportUnmanagedFromSameHypervisor) {
+                                                final Map<String, String> details, final boolean migrateAllowed, final boolean forced, final boolean allowDuplicateMacAddress,
+                                                final boolean isImportUnmanagedFromSameHypervisor) {
         logger.debug(LogUtils.logGsonWithoutException("Trying to import VM [%s] with name [%s], in zone [%s], cluster [%s], and host [%s], using template [%s], service offering [%s], disks map [%s], NICs map [%s] and details [%s].",
                 unmanagedInstance, displayName, zone, cluster, host, template, serviceOffering, dataDiskOfferingMap, nicNetworkMap, details));
         UserVm userVm = null;
@@ -1186,7 +1188,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 for (UnmanagedInstanceTO.Nic nic : unmanagedInstance.getNics()) {
                     Network network = networkDao.findById(allNicNetworkMap.get(nic.getNicId()));
                     Network.IpAddresses ipAddresses = nicIpAddressMap.get(nic.getNicId());
-                    importNic(nic, userVm, network, ipAddresses, nicIndex, nicIndex == 0, forced);
+                    importNic(nic, userVm, network, ipAddresses, nicIndex, nicIndex == 0, forced, allowDuplicateMacAddress);
                     nicIndex++;
                 }
             } catch (Exception e) {
@@ -1319,6 +1321,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         final Map<String, Long> dataDiskOfferingMap = cmd.getDataDiskToDiskOfferingList();
         final Map<String, String> details = cmd.getDetails();
         final boolean forced = cmd.isForced();
+        final boolean allowDuplicateMacAddress = cmd.isAllowDuplicateMacAddresses();
+        if (forced && allowDuplicateMacAddress) {
+            throw new InvalidParameterValueException(String.format("%s and %s are mutually exclusive", ApiConstants.FORCED, ApiConstants.ALLOW_DUPLICATE_MAC_ADDRESSES));
+        }
         List<HostVO> hosts = resourceManager.listHostsInClusterByStatus(clusterId, Status.Up);
         UserVm userVm = null;
         List<String> additionalNameFilters = getAdditionalNameFilters(cluster);
@@ -1342,7 +1348,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                             template, instanceName, displayName, hostName, caller, owner, userId,
                             serviceOffering, dataDiskOfferingMap,
                             nicNetworkMap, nicIpAddressMap,
-                            details, importVmCmd, forced);
+                            details, importVmCmd, forced, allowDuplicateMacAddress);
                 }
             } else {
                 if (List.of(Hypervisor.HypervisorType.VMware, Hypervisor.HypervisorType.KVM).contains(cluster.getHypervisorType())) {
@@ -1350,7 +1356,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                             template, instanceName, displayName, hostName, caller, owner, userId,
                             serviceOffering, dataDiskOfferingMap,
                             nicNetworkMap, nicIpAddressMap,
-                            details, cmd.getMigrateAllowed(), managedVms, forced);
+                            details, cmd.getMigrateAllowed(), managedVms, forced, allowDuplicateMacAddress);
                 }
             }
 
@@ -1497,7 +1503,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                                                          String hostName, Account caller, Account owner, long userId,
                                                          ServiceOfferingVO serviceOffering, Map<String, Long> dataDiskOfferingMap,
                                                          Map<String, Long> nicNetworkMap, Map<String, Network.IpAddresses> nicIpAddressMap,
-                                                         Map<String, String> details, Boolean migrateAllowed, List<String> managedVms, boolean forced) throws ResourceAllocationException {
+                                                         Map<String, String> details, Boolean migrateAllowed, List<String> managedVms, boolean forced,
+                                                         boolean allowDuplicateMacAddress) throws ResourceAllocationException {
         UserVm userVm = null;
         for (HostVO host : hosts) {
             HashMap<String, UnmanagedInstanceTO> unmanagedInstances = getUnmanagedInstancesForHost(host, instanceName, managedVms);
@@ -1549,7 +1556,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                             template, displayName, hostName, CallContext.current().getCallingAccount(), owner, userId,
                             serviceOffering, dataDiskOfferingMap,
                             nicNetworkMap, nicIpAddressMap, null,
-                            details, migrateAllowed, forced, true);
+                            details, migrateAllowed, forced, allowDuplicateMacAddress, true);
                 } finally {
                     ReservationHelper.closeAll(reservations);
                 }
@@ -1648,7 +1655,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                                                           Account caller, Account owner, long userId,
                                                           ServiceOfferingVO serviceOffering, Map<String, Long> dataDiskOfferingMap,
                                                           Map<String, Long> nicNetworkMap, Map<String, Network.IpAddresses> nicIpAddressMap,
-                                                          Map<String, String> details, ImportVmCmd cmd, boolean forced) throws ResourceAllocationException {
+                                                          Map<String, String> details, ImportVmCmd cmd, boolean forced, boolean allowDuplicateMacAddress) throws ResourceAllocationException {
         Long existingVcenterId = cmd.getExistingVcenterId();
         String vcenter = cmd.getVcenter();
         String datacenterName = cmd.getDatacenterName();
@@ -1741,7 +1748,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 checkConversionSupportOnHost(convertHost, sourceVMName, true, useVddk, details);
             }
 
-            checkNetworkingBeforeConvertingVmwareInstance(zone, owner, displayName, hostName, sourceVMwareInstance, nicNetworkMap, nicIpAddressMap, forced);
+            checkNetworkingBeforeConvertingVmwareInstance(zone, owner, displayName, hostName, sourceVMwareInstance, nicNetworkMap, nicIpAddressMap, forced, allowDuplicateMacAddress);
             UnmanagedInstanceTO convertedInstance;
             if (!useVddk && (forceMsToImportVmFiles || !isOvfExportSupported)) {
                 // Uses MS for OVF export to temporary conversion location
@@ -1769,7 +1776,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                     template, displayName, hostName, caller, owner, userId,
                     serviceOffering, dataDiskOfferingMap,
                     nicNetworkMap, nicIpAddressMap, guestOsId,
-                    details, false, forced, false);
+                    details, false, forced, allowDuplicateMacAddress, false);
             long timeElapsedInSecs = (System.currentTimeMillis() - importStartTime) / 1000;
             logger.debug(String.format("VMware VM %s imported successfully to CloudStack instance %s (%s), Time taken: %d secs, OVF files imported from %s, Source VMware VM details - OS: %s, PowerState: %s, Disks: %s, NICs: %s",
                     sourceVMName, displayName, displayName, timeElapsedInSecs, (ovfTemplateOnConvertLocation != null)? "MS" : "KVM Host", sourceVMwareInstance.getOperatingSystem(), sourceVMwareInstance.getPowerState(), sourceVMwareInstance.getDisks(), sourceVMwareInstance.getNics()));
@@ -1859,7 +1866,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                                                                String hostName, UnmanagedInstanceTO sourceVMwareInstance,
                                                                Map<String, Long> nicNetworkMap,
                                                                Map<String, Network.IpAddresses> nicIpAddressMap,
-                                                               boolean forced) {
+                                                               boolean forced, boolean allowDuplicateMacAddress) {
         List<UnmanagedInstanceTO.Nic> nics = sourceVMwareInstance.getNics();
         List<Long> networkIds = new ArrayList<>(nicNetworkMap.values());
         if (nics.size() != networkIds.size()) {
@@ -1882,18 +1889,19 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 ipAddresses = nicIpAddressMap.get(nic.getNicId());
             }
             boolean autoImport = ipAddresses != null && ipAddresses.getIp4Address() != null && ipAddresses.getIp4Address().equalsIgnoreCase("auto");
-            checkUnmanagedNicAndNetworkMacAddressForImport(network, nic, forced);
+            checkUnmanagedNicAndNetworkMacAddressForImport(network, nic, forced, allowDuplicateMacAddress);
             checkUnmanagedNicAndNetworkForImport(displayName, nic, network, zone, owner, autoImport, Hypervisor.HypervisorType.KVM);
             checkUnmanagedNicAndNetworkHostnameForImport(displayName, nic, network, hostName);
             checkUnmanagedNicIpAndNetworkForImport(displayName, nic, network, ipAddresses);
         }
     }
 
-    private void checkUnmanagedNicAndNetworkMacAddressForImport(NetworkVO network, UnmanagedInstanceTO.Nic nic, boolean forced) {
+    private void checkUnmanagedNicAndNetworkMacAddressForImport(NetworkVO network, UnmanagedInstanceTO.Nic nic, boolean forced, boolean allowDuplicateMacAddress) {
         NicVO existingNic = nicDao.findByNetworkIdAndMacAddress(network.getId(), nic.getMacAddress());
-        if (existingNic != null && !forced) {
-            String err = String.format("NIC %s with MAC address %s already exists on network %s and forced flag is disabled. " +
-                    "Retry with forced flag enabled if a new MAC address to be generated.", nic, nic.getMacAddress(), network);
+        if (existingNic != null && !forced && !allowDuplicateMacAddress) {
+            String err = String.format("NIC %s with MAC address %s already exists on network %s. " +
+                    "Retry with %s=true to generate a new MAC address or %s=true to preserve the duplicate MAC address.",
+                    nic, nic.getMacAddress(), network, ApiConstants.FORCED, ApiConstants.ALLOW_DUPLICATE_MAC_ADDRESSES);
             logger.error(err);
             throw new CloudRuntimeException(err);
         }
@@ -2809,7 +2817,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 for (UnmanagedInstanceTO.Nic nic : unmanagedInstance.getNics()) {
                     Network network = networkDao.findById(allNicNetworkMap.get(nic.getNicId()));
                     Network.IpAddresses ipAddresses = nicIpAddressMap.get(nic.getNicId());
-                    importNic(nic, userVm, network, ipAddresses, nicIndex, nicIndex==0, true);
+                    importNic(nic, userVm, network, ipAddresses, nicIndex, nicIndex==0, true, false);
                     nicIndex++;
                 }
             } catch (Exception e) {
@@ -2980,7 +2988,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 cleanupFailedImportVM(userVm);
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import volumes while importing vm: %s. %s", instanceName, StringUtils.defaultString(e.getMessage())));
             }
-            networkOrchestrationService.importNic(macAddress, 0, network, true, userVm, requestedIpPair, zone, true);
+            networkOrchestrationService.importNic(macAddress, 0, network, true, userVm, requestedIpPair, zone, true, false);
             publishVMUsageUpdateResourceCount(userVm, dummyOffering, template);
             return userVm;
 
