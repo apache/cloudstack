@@ -98,6 +98,8 @@ public final class LibvirtGetRemoteVmsCommandWrapper extends CommandWrapper<GetR
             if (parser.getCpuTuneDef() !=null) {
                 instance.setCpuSpeed(parser.getCpuTuneDef().getShares());
             }
+            instance.setOperatingSystemId(parser.getOsInfoId());
+            instance.setOperatingSystem(parser.getDescription());
             instance.setHypervisorType(Hypervisor.HypervisorType.KVM.name());
             instance.setPowerState(getPowerState(libvirtComputingResource.getVmState(conn,domain.getName())));
             instance.setNics(getUnmanagedInstanceNics(parser.getInterfaces()));
