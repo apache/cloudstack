@@ -228,7 +228,7 @@ cleanup() {
   # remaining indefinitely paused when the backup job fails (e.g. due
   # to storage full or I/O errors on the backup target)
   local vm_state
-  vm_state=$(virsh -c qemu:///system domstate "$VM" 2>/dev/null)
+  vm_state=$(virsh -c qemu:///system domstate "$VM" 2>/dev/null || true)
   if [[ "$vm_state" == "paused" ]]; then
     log -ne "Resuming paused VM $VM during backup cleanup"
     if ! virsh -c qemu:///system resume "$VM" > /dev/null 2>&1; then
