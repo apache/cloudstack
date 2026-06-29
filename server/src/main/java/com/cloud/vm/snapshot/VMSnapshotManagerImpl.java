@@ -406,10 +406,11 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         _accountMgr.checkAccess(caller, null, true, userVmVo);
 
         // check max snapshot limit for per VM
-        int vmSnapshotMax = VMSnapshotManager.VMSnapshotMax.value();
-
+        boolean vmBelongsToProject = _accountMgr.getAccount(userVmVo.getAccountId()).getType() == Account.Type.PROJECT;
+        long accountIdToRetrieveConfigurationValueFrom = vmBelongsToProject ? caller.getId() : userVmVo.getAccountId();
+        int vmSnapshotMax = VMSnapshotManager.VMSnapshotMax.valueIn(accountIdToRetrieveConfigurationValueFrom);
         if (_vmSnapshotDao.findByVm(vmId).size() >= vmSnapshotMax) {
-            throw new CloudRuntimeException("Creating Instance Snapshot failed due to a Instance can just have : " + vmSnapshotMax + " Instance Snapshots. Please delete old ones");
+            throw new CloudRuntimeException(String.format("Each VM can have at most [%s] VM snapshots.", vmSnapshotMax));
         }
 
         // check if there are active volume snapshots tasks
@@ -433,6 +434,12 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
 
         if (rootVolumePool.getPoolType() == Storage.StoragePoolType.PowerFlex) {
             vmSnapshotType = VMSnapshot.Type.Disk;
+        }
+
+        // CLVM_NG: Block VM snapshots until Phase 2 implementation is complete
+        if (rootVolumePool.getPoolType() == Storage.StoragePoolType.CLVM_NG) {
+            throw new InvalidParameterValueException("VM snapshots are not yet supported on CLVM_NG storage pools. " +
+                    "This feature will be available in a future release.");
         }
 
         try {

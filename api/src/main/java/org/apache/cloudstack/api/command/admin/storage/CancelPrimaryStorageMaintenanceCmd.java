@@ -93,7 +93,7 @@ public class CancelPrimaryStorageMaintenanceCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "canceling maintenance for primary storage pool: " + getId();
+        return "Canceling maintenance mode for primary storage pool with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

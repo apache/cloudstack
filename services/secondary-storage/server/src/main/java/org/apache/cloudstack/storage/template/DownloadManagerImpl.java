@@ -1058,7 +1058,6 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             try {
                 if (!loc.load()) {
                     logger.warn("Post download installation was not completed for " + path);
-                    // loc.purge();
                     _storage.cleanup(path, templateDir);
                     continue;
                 }
@@ -1104,7 +1103,6 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             try {
                 if (!loc.load()) {
                     logger.warn("Post download installation was not completed for " + path);
-                    // loc.purge();
                     _storage.cleanup(path, volumeDir);
                     continue;
                 }

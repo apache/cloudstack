@@ -141,7 +141,7 @@ public class UpdateVMAffinityGroupCmd extends BaseAsyncCmd implements UserCmd {
             throw new InvalidParameterValueException("affinitygroupids parameter or affinitygroupnames parameter must be given");
         }
 
-        CallContext.current().setEventDetails("VM ID: " + getId());
+        CallContext.current().setEventDetails("Instance ID: " + getResourceUuid(ApiConstants.ID));
         UserVm result = _affinityGroupService.updateVMAffinityGroups(getId(), getAffinityGroupIdList());
         ArrayList<VMDetails> dc = new ArrayList<VMDetails>();
         dc.add(VMDetails.valueOf("affgrp"));

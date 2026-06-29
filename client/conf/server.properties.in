@@ -62,3 +62,8 @@ extensions.deployment.mode=@EXTENSIONSDEPLOYMENTMODE@
 # Thread pool configuration
 #threads.min=10
 #threads.max=500
+
+# The URL prefix for the system VM templates repository. When downloading system VM templates, the server replaces the
+# `downloadrepository` key value from the metadata file in template URLs. If not specified, the original template URL
+# will be used for download.
+# system.vm.templates.download.repository=http://download.cloudstack.org/systemvm/

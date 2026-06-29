@@ -3341,9 +3341,6 @@ class TestInstances(cloudstackTestCase):
                deployed in step1
         Step6: Verifying that VM's service offerings is changed
         """
-        if self.hypervisor.lower() == 'kvm':
-            self.skipTest(
-                "ScaleVM is not supported on KVM. Hence, skipping the test")
         # Checking if Dynamic scaling of VM is supported or not
         list_config = Configurations.list(
             self.apiClient,

@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 
@@ -90,11 +92,116 @@ public class DeployVMCmd extends BaseDeployVMCmd {
         return volumeId != null || snapshotId != null;
     }
 
+    public boolean isBlankInstance() {
+        return false;
+    }
+
+
+
+    /////////////////////////////////////////////////////
+    ////////////////// Setters //////////////////////////
+    /////////////////////////////////////////////////////
+    public void setZoneId(Long zoneId) {
+        this.zoneId = zoneId;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public void setAccountName(String accountName) {
+        this.accountName = accountName;
+    }
+
+    public void setDomainId(Long domainId) {
+        this.domainId = domainId;
+    }
+
+    public void setNetworkIds(List<Long> networkIds) {
+        this.networkIds = networkIds;
+    }
+
+    public void setBootType(String bootType) {
+        this.bootType = bootType;
+    }
+
+    public void setBootMode(String bootMode) {
+        this.bootMode = bootMode;
+    }
+
+    public void setHypervisor(String hypervisor) {
+        this.hypervisor = hypervisor;
+    }
+
+    public void setUserData(String userData) {
+        this.userData = userData;
+    }
+
+    public void setKeyboard(String keyboard) {
+        this.keyboard = keyboard;
+    }
+
+    public void setProjectId(Long projectId) {
+        this.projectId = projectId;
+    }
+
+    public void setDisplayVm(Boolean displayVm) {
+        this.displayVm = displayVm;
+    }
+
+    public void setUserDataId(Long userDataId) {
+        this.userdataId = userDataId;
+    }
+
+    public void setAffinityGroupIds(List<Long> ids) {
+        this.affinityGroupIdList = ids;
+    }
+
+    public void setDetails(Map details) {
+        this.details = details;
+    }
+
+    public void setExtraConfig(String extraConfig) {
+        this.extraConfig = extraConfig;
+    }
+
+    public void setDynamicScalingEnabled(Boolean dynamicScalingEnabled) {
+        this.dynamicScalingEnabled = dynamicScalingEnabled;
+    }
+
+    public void setServiceOfferingId(Long serviceOfferingId) {
+        this.serviceOfferingId = serviceOfferingId;
+    }
+
+    public void setTemplateId(Long templateId) {
+        this.templateId = templateId;
+    }
+
+    public void setVolumeId(Long volumeId) {
+        this.volumeId = volumeId;
+    }
+
+    public void setSnapshotId(Long snapshotId) {
+        this.snapshotId = snapshotId;
+    }
+
+    public void setSshKeyPairNames(List<String> sshKeyPairNames) {
+        this.sshKeyPairNames = sshKeyPairNames;
+    }
+
+    public void setSecurityGroupList(List<Long> securityGroupIdList) {
+        this.securityGroupIdList = securityGroupIdList;
+    }
+
     @Override
     public void execute() {
         UserVm result;
 
-        CallContext.current().setEventDetails("Instance Id: " + getEntityUuid());
+        CallContext.current().setEventDetails("Instance ID: " + getEntityUuid());
         if (getStartVm()) {
             try {
                 result = _userVmService.startVirtualMachine(this);
@@ -114,12 +221,12 @@ public class DeployVMCmd extends BaseDeployVMCmd {
                         message.append(", Please check the affinity groups provided, there may not be sufficient capacity to follow them");
                     }
                 }
-                logger.info(String.format("%s: %s", message, ex.getLocalizedMessage()));
+                logger.info("{}: {}", message.toString(), ex.getLocalizedMessage());
                 logger.debug(message.toString(), ex);
                 throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, message.toString());
             }
         } else {
-            logger.info("Instance " + getEntityUuid() + " already created, load UserVm from DB");
+            logger.info("Instance {} already created, load UserVm from DB", getEntityUuid());
             result = _userVmService.finalizeCreateVirtualMachine(getEntityId());
         }
 
@@ -134,7 +241,7 @@ public class DeployVMCmd extends BaseDeployVMCmd {
 
     @Override
     public void create() throws ResourceAllocationException {
-        if (Stream.of(templateId, snapshotId, volumeId).filter(Objects::nonNull).count() != 1) {
+        if (!isBlankInstance() && Stream.of(templateId, snapshotId, volumeId).filter(Objects::nonNull).count() != 1) {
             throw new CloudRuntimeException("Please provide only one of the following parameters - template ID, volume ID or snapshot ID");
         }
 

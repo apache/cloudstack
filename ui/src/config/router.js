@@ -31,6 +31,7 @@ import image from '@/config/section/image'
 import project from '@/config/section/project'
 import event from '@/config/section/event'
 import user from '@/config/section/user'
+import keyPair from '@/config/section/keypair'
 import account from '@/config/section/account'
 import domain from '@/config/section/domain'
 import role from '@/config/section/role'
@@ -81,6 +82,7 @@ function generateRouterMap (section) {
           filters: child.filters,
           params: child.params ? child.params : {},
           columns: child.columns,
+          advisories: !vueProps.$config.advisoriesDisabled ? child.advisories : undefined,
           details: child.details,
           searchFilters: child.searchFilters,
           related: child.related,
@@ -180,6 +182,10 @@ function generateRouterMap (section) {
     map.meta.columns = section.columns
   }
 
+  if (!vueProps.$config.advisoriesDisabled && section.advisories) {
+    map.meta.advisories = section.advisories
+  }
+
   if (section.actions) {
     map.meta.actions = section.actions
   }
@@ -216,6 +222,7 @@ export function asyncRouterMap () {
       generateRouterMap(event),
       generateRouterMap(project),
       generateRouterMap(user),
+      generateRouterMap(keyPair),
       generateRouterMap(role),
       generateRouterMap(account),
       generateRouterMap(domain),
@@ -313,6 +320,11 @@ export const constantRouterMap = [
         path: 'resetPassword',
         name: 'resetPassword',
         component: () => import(/* webpackChunkName: "auth" */ '@/views/auth/ResetPassword')
+      },
+      {
+        path: 'forceChangePassword',
+        name: 'forceChangePassword',
+        component: () => import(/* webpackChunkName: "auth" */ '@/views/iam/ForceChangePassword')
       }
     ]
   },

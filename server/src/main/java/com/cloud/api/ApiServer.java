@@ -17,6 +17,7 @@
 package com.cloud.api;
 
 import static com.cloud.user.AccountManagerImpl.apiKeyAccess;
+import static org.apache.cloudstack.api.ApiConstants.PASSWORD_CHANGE_REQUIRED;
 import static org.apache.cloudstack.user.UserPasswordResetManager.UserPasswordResetEnabled;
 
 import java.io.ByteArrayInputStream;
@@ -62,6 +63,9 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.apache.cloudstack.acl.APIChecker;
+import org.apache.cloudstack.acl.ApiKeyPairManagerImpl;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPair;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPairPermission;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -111,6 +115,7 @@ import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageDispatcher;
 import org.apache.cloudstack.framework.messagebus.MessageHandler;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.resourcedetail.UserDetailVO;
 import org.apache.cloudstack.user.UserPasswordResetManager;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.codec.binary.Base64;
@@ -186,6 +191,7 @@ import com.cloud.utils.HttpUtils.ApiSessionKeySameSite;
 import com.cloud.utils.Pair;
 import com.cloud.utils.ReflectUtil;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
@@ -239,6 +245,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     private UUIDManager uuidMgr;
     @Inject
     private UserPasswordResetManager userPasswordResetManager;
+    @Inject
+    private ApiKeyPairManagerImpl keyPairManager;
 
     private List<PluggableService> pluggableServices;
 
@@ -466,14 +474,14 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
         final Long snapshotLimit = ConcurrentSnapshotsThresholdPerHost.value();
         if (snapshotLimit == null || snapshotLimit <= 0) {
-            logger.debug("Global concurrent snapshot config parameter " + ConcurrentSnapshotsThresholdPerHost.value() + " is less or equal 0; defaulting to unlimited");
+            logger.debug("Global concurrent snapshot config parameter {} is less or equal 0; defaulting to unlimited", ConcurrentSnapshotsThresholdPerHost.value());
         } else {
             dispatcher.setCreateSnapshotQueueSizeLimit(snapshotLimit);
         }
 
         final Long migrationLimit = VolumeApiService.ConcurrentMigrationsThresholdPerDatastore.value();
         if (migrationLimit == null || migrationLimit <= 0) {
-            logger.debug("Global concurrent migration config parameter " + VolumeApiService.ConcurrentMigrationsThresholdPerDatastore.value() + " is less or equal 0; defaulting to unlimited");
+            logger.debug("Global concurrent migration config parameter {} is less or equal 0; defaulting to unlimited", VolumeApiService.ConcurrentMigrationsThresholdPerDatastore.value());
         } else {
             dispatcher.setMigrateQueueSizeLimit(migrationLimit);
         }
@@ -657,7 +665,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                             logValue = (value == null) ? "'null'" : value[0];
                         }
 
-                        logger.trace("   key: " + keyStr + ", value: " + logValue);
+                        logger.trace("   key: {}, value: {}", keyStr, logValue);
                     }
                 }
                 throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "Invalid request, no command sent");
@@ -717,7 +725,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                     buf.append(obj.getUuid());
                     buf.append(" ");
                 }
-                logger.info("PermissionDenied: " + ex.getMessage() + " on objs: [" + buf + "]");
+                logger.info("PermissionDenied: {} on objs: [{}]", ex.getMessage(), buf);
             } else {
                 logger.info("PermissionDenied: {}", ex.getMessage());
             }
@@ -793,85 +801,14 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         // BaseAsyncCreateCmd: cmd params are processed and create() is called, then same workflow as BaseAsyncCmd.
         // BaseAsyncCmd: cmd is processed and submitted as an AsyncJob, job related info is serialized and returned.
         if (cmdObj instanceof BaseAsyncCmd) {
-            if (!asyncMgr.isAsyncJobsEnabled()) {
-                String msg = "Maintenance or Shutdown has been initiated on this management server. Can not accept new jobs";
-                logger.warn(msg);
-                throw new ServerApiException(ApiErrorCode.SERVICE_UNAVAILABLE, msg);
-            }
-            Long objectId = null;
-            String objectUuid;
-            if (cmdObj instanceof BaseAsyncCreateCmd) {
-                final BaseAsyncCreateCmd createCmd = (BaseAsyncCreateCmd)cmdObj;
-                dispatcher.dispatchCreateCmd(createCmd, params);
-                objectId = createCmd.getEntityId();
-                objectUuid = createCmd.getEntityUuid();
-                params.put("id", objectId.toString());
-                Class entityClass = EventTypes.getEntityClassForEvent(createCmd.getEventType());
-                if (entityClass != null)
-                    ctx.putContextParameter(entityClass, objectUuid);
-            } else {
-                // Extract the uuid before params are processed and id reflects internal db id
-                objectUuid = params.get(ApiConstants.ID);
-                dispatchChainFactory.getStandardDispatchChain().dispatch(new DispatchTask(cmdObj, params));
-            }
-
-            final BaseAsyncCmd asyncCmd = (BaseAsyncCmd)cmdObj;
-
-            if (callerUserId != null) {
-                params.put("ctxUserId", callerUserId.toString());
-            }
-            if (caller != null) {
-                params.put("ctxAccountId", String.valueOf(caller.getId()));
-            }
-            if (objectUuid != null) {
-                params.put("uuid", objectUuid);
-            }
-
-            long startEventId = ctx.getStartEventId();
-            asyncCmd.setStartEventId(startEventId);
-
-            // save the scheduled event
-            final Long eventId =
-                    ActionEventUtils.onScheduledActionEvent((callerUserId == null) ? (Long)User.UID_SYSTEM : callerUserId, asyncCmd.getEntityOwnerId(), asyncCmd.getEventType(),
-                            asyncCmd.getEventDescription(), asyncCmd.getApiResourceId(), asyncCmd.getApiResourceType().toString(), asyncCmd.isDisplay(), startEventId);
-            if (startEventId == 0) {
-                // There was no create event before, set current event id as start eventId
-                startEventId = eventId;
-            }
-
-            params.put("ctxStartEventId", String.valueOf(startEventId));
-            params.put("cmdEventType", asyncCmd.getEventType());
-            params.put("ctxDetails", ApiGsonHelper.getBuilder().create().toJson(ctx.getContextParameters()));
-            if (asyncCmd.getHttpMethod() != null) {
-                params.put(ApiConstants.HTTPMETHOD, asyncCmd.getHttpMethod().toString());
-            }
-
-            Long instanceId = (objectId == null) ? asyncCmd.getApiResourceId() : objectId;
-
-            // users can provide the job id they want to use, so log as it is a uuid and is unique
-            String injectedJobId = asyncCmd.getInjectedJobId();
-            uuidMgr.checkUuidSimple(injectedJobId, AsyncJob.class);
-
-            AsyncJobVO job = new AsyncJobVO("", callerUserId, caller.getId(), cmdObj.getClass().getName(),
-                    ApiGsonHelper.getBuilder().create().toJson(params), instanceId,
-                    asyncCmd.getApiResourceType() != null ? asyncCmd.getApiResourceType().toString() : null,
-                            injectedJobId);
-            job.setDispatcher(asyncDispatcher.getName());
-
-            final long jobId = asyncMgr.submitAsyncJob(job);
-
-            if (jobId == 0L) {
-                final String errorMsg = "Unable to schedule async job for command " + job.getCmd();
-                logger.warn(errorMsg);
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, errorMsg);
-            }
+            AsyncCmdResult result = processAsyncCmd((BaseAsyncCmd)cmdObj, params, ctx, callerUserId, caller);
             final String response;
-            if (objectId != null) {
-                final String objUuid = (objectUuid == null) ? objectId.toString() : objectUuid;
-                response = getBaseAsyncCreateResponse(jobId, (BaseAsyncCreateCmd)asyncCmd, objUuid);
+            if (result.objectId != null) {
+                final String objUuid = (result.objectUuid == null) ? result.objectId.toString() : result.objectUuid;
+                response = getBaseAsyncCreateResponse(result.jobId, (BaseAsyncCreateCmd) result.asyncCmd, objUuid);
             } else {
                 SerializationContext.current().setUuidTranslation(true);
-                response = getBaseAsyncResponse(jobId, asyncCmd);
+                response = getBaseAsyncResponse(result.jobId, result.asyncCmd);
             }
             // Always log response for async for now, I don't think any sensitive data will be in here.
             // It might be nice to send this through scrubbing similar to how
@@ -899,6 +836,81 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             SerializationContext.current().setUuidTranslation(true);
             return ApiResponseSerializer.toSerializedStringWithSecureLogs((ResponseObject)cmdObj.getResponseObject(), cmdObj.getResponseType(), log);
         }
+    }
+
+    @Override
+    public AsyncCmdResult processAsyncCmd(BaseAsyncCmd asyncCmd, Map<String, String> params, CallContext ctx, Long callerUserId, Account caller) throws Exception {
+        if (!asyncMgr.isAsyncJobsEnabled()) {
+            String msg = "Maintenance or Shutdown has been initiated on this management server. Can not accept new jobs";
+            logger.warn(msg);
+            throw new ServerApiException(ApiErrorCode.SERVICE_UNAVAILABLE, msg);
+        }
+        Long objectId = null;
+        String objectUuid;
+        if (asyncCmd instanceof BaseAsyncCreateCmd) {
+            final BaseAsyncCreateCmd createCmd = (BaseAsyncCreateCmd) asyncCmd;
+            dispatcher.dispatchCreateCmd(createCmd, params);
+            objectId = createCmd.getEntityId();
+            objectUuid = createCmd.getEntityUuid();
+            params.put("id", objectId.toString());
+            Class entityClass = EventTypes.getEntityClassForEvent(createCmd.getEventType());
+            if (entityClass != null)
+                ctx.putContextParameter(entityClass, objectUuid);
+        } else {
+            // Extract the uuid before params are processed and id reflects internal db id
+            objectUuid = params.get(ApiConstants.ID);
+            dispatchChainFactory.getStandardDispatchChain().dispatch(new DispatchTask(asyncCmd, params));
+        }
+
+        if (callerUserId != null) {
+            params.put("ctxUserId", callerUserId.toString());
+        }
+        if (caller != null) {
+            params.put("ctxAccountId", String.valueOf(caller.getId()));
+        }
+        if (objectUuid != null) {
+            params.put("uuid", objectUuid);
+        }
+
+        long startEventId = ctx.getStartEventId();
+        asyncCmd.setStartEventId(startEventId);
+
+        // save the scheduled event
+        final Long eventId =
+                ActionEventUtils.onScheduledActionEvent((callerUserId == null) ? (Long)User.UID_SYSTEM : callerUserId, asyncCmd.getEntityOwnerId(), asyncCmd.getEventType(),
+                        asyncCmd.getEventDescription(), asyncCmd.getApiResourceId(), asyncCmd.getApiResourceType().toString(), asyncCmd.isDisplay(), startEventId);
+        if (startEventId == 0) {
+            // There was no create event before, set current event id as start eventId
+            startEventId = eventId;
+        }
+
+        params.put("ctxStartEventId", String.valueOf(startEventId));
+        params.put("cmdEventType", asyncCmd.getEventType());
+        params.put("ctxDetails", ApiGsonHelper.getBuilder().create().toJson(ctx.getContextParameters()));
+        if (asyncCmd.getHttpMethod() != null) {
+            params.put(ApiConstants.HTTPMETHOD, asyncCmd.getHttpMethod().toString());
+        }
+
+        Long instanceId = (objectId == null) ? asyncCmd.getApiResourceId() : objectId;
+
+        // users can provide the job id they want to use, so log as it is a uuid and is unique
+        String injectedJobId = asyncCmd.getInjectedJobId();
+        uuidMgr.checkUuidSimple(injectedJobId, AsyncJob.class);
+
+        AsyncJobVO job = new AsyncJobVO("", callerUserId, caller.getId(), asyncCmd.getClass().getName(),
+                ApiGsonHelper.getBuilder().create().toJson(params), instanceId,
+                asyncCmd.getApiResourceType() != null ? asyncCmd.getApiResourceType().toString() : null,
+                        injectedJobId);
+        job.setDispatcher(asyncDispatcher.getName());
+
+        final long jobId = asyncMgr.submitAsyncJob(job);
+
+        if (jobId == 0L) {
+            final String errorMsg = "Unable to schedule async job for command " + job.getCmd();
+            logger.warn(errorMsg);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, errorMsg);
+        }
+        return new AsyncCmdResult(objectId, objectUuid, asyncCmd, jobId);
     }
 
     @SuppressWarnings("unchecked")
@@ -1045,7 +1057,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
             // if api/secret key are passed to the parameters
             if ((signature == null) || (apiKey == null)) {
-                logger.debug("Expired session, missing signature, or missing apiKey -- ignoring request. Signature: " + signature + ", apiKey: " + apiKey);
+                logger.warn("Expired session, missing signature, or missing apiKey -- ignoring request. Signature: {}, apiKey: {}", signature, apiKey);
                 return false; // no signature, bad request
             }
 
@@ -1088,14 +1100,16 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             txn.close();
             User user;
             // verify there is a user with this api key
-            final Pair<User, Account> userAcctPair = accountMgr.findUserByApiKey(apiKey);
-            if (userAcctPair == null) {
+            final Ternary<User, Account, ApiKeyPair> keyPairTernary = accountMgr.findUserByApiKey(apiKey);
+
+            if (keyPairTernary == null) {
                 logger.debug("apiKey does not map to a valid user -- ignoring request, apiKey: {}", apiKey);
                 return false;
             }
 
-            user = userAcctPair.first();
-            final Account account = userAcctPair.second();
+            user = keyPairTernary.first();
+            Account account = keyPairTernary.second();
+            ApiKeyPair keyPair = keyPairTernary.third();
 
             if (user.getState() != Account.State.ENABLED || !account.getState().equals(Account.State.ENABLED)) {
                 logger.info("disabled or locked user accessing the api, user = {} (state: {}); " +
@@ -1111,10 +1125,16 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 return false;
             }
 
-            // verify secret key exists
-            secretKey = user.getSecretKey();
+            if (keyPair.getRemoved() != null) {
+                logger.info(String.format("Invalid request, as used API keypair [%s] has been removed.", keyPair.getUuid()));
+                return false;
+            }
+
+            keyPair.validateDate();
+
+            secretKey = keyPair.getSecretKey();
             if (secretKey == null) {
-                logger.info("User does not have a secret key associated with the account -- ignoring request, username: {}", user);
+                logger.info(String.format("User does not have a secret key associated with the API key -- ignoring request, username: [%s].", user.getUsername()));
                 return false;
             }
 
@@ -1132,21 +1152,28 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             if (!equalSig) {
                 signature = signature.replaceAll(SANITIZATION_REGEX, "_");
                 logger.info("User signature [{}] is not equaled to computed signature [{}].", signature, computedSignature);
-            } else {
-                CallContext.register(user, account);
+                return false;
             }
-            return equalSig;
+            CallContext.register(user, account);
+
+            List<ApiKeyPairPermission> keyPairPermissions = keyPairManager.findAllPermissionsByKeyPairId(keyPair.getId(), account.getRoleId());
+            if (commandAvailable(remoteAddress, commandName, user, keyPairPermissions.toArray(new ApiKeyPairPermission[0]))) {
+                logger.info("API accessed through API Key Pair. API Key: [{}].", keyPair.getApiKey());
+                return true;
+            }
         } catch (final ServerApiException ex) {
             throw ex;
+        } catch (PermissionDeniedException ex) {
+            logger.error("Permission denied for keypair, reason: {}.", ex.getMessage());
         } catch (final Exception ex) {
-            logger.error("unable to verify request signature");
+            logger.error("Unable to verify request signature.", ex);
         }
         return false;
     }
 
-    private boolean commandAvailable(final InetAddress remoteAddress, final String commandName, final User user) {
+    private boolean commandAvailable(final InetAddress remoteAddress, final String commandName, final User user, ApiKeyPairPermission... rolePermissions) {
         try {
-            checkCommandAvailable(user, commandName, remoteAddress);
+            checkCommandAvailable(user, commandName, remoteAddress, rolePermissions);
         } catch (final RequestLimitException ex) {
             logger.debug(ex.getMessage());
             throw new ServerApiException(ApiErrorCode.API_LIMIT_EXCEED, ex.getMessage());
@@ -1237,6 +1264,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 if (ApiConstants.MANAGEMENT_SERVER_ID.equalsIgnoreCase(attrName)) {
                     response.setManagementServerId(attrObj.toString());
                 }
+                if (PASSWORD_CHANGE_REQUIRED.equalsIgnoreCase(attrName) && attrObj instanceof Boolean) {
+                    response.setPasswordChangeRequired((Boolean) attrObj);
+                }
             }
         }
         response.setResponseName("loginresponse");
@@ -1268,7 +1298,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             float offsetInHrs = 0f;
             if (timezone != null) {
                 final TimeZone t = TimeZone.getTimeZone(timezone);
-                logger.info("Current user logged in under " + timezone + " timezone");
+                logger.info("Current user logged in under {} timezone", timezone);
 
                 final java.util.Date date = new java.util.Date();
                 final long longDate = date.getTime();
@@ -1337,6 +1367,13 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             final String sessionKey = Base64.encodeBase64URLSafeString(sessionKeyBytes);
             session.setAttribute(ApiConstants.SESSIONKEY, sessionKey);
 
+            Map<String, String> userAccDetails = userAcct.getDetails();
+            if (MapUtils.isNotEmpty(userAccDetails)) {
+                String needPwdChangeStr = userAccDetails.get(UserDetailVO.PasswordChangeRequired);
+                if ("true".equalsIgnoreCase(needPwdChangeStr)) {
+                    session.setAttribute(PASSWORD_CHANGE_REQUIRED, true);
+                }
+            }
             return createLoginResponse(session);
         }
         throw new CloudAuthenticationException("Failed to authenticate user " + username + " in domain " + domainId + "; please provide valid credentials");
@@ -1429,7 +1466,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         return domainIdArr[0];
     }
 
-    private void checkCommandAvailable(final User user, final String commandName, final InetAddress remoteAddress) throws PermissionDeniedException {
+    private void checkCommandAvailable(final User user, final String commandName, final InetAddress remoteAddress, ApiKeyPairPermission ... apiKeyPairPermissions) throws PermissionDeniedException {
         if (user == null) {
             throw new PermissionDeniedException("User is null for role based API access check for command" + commandName);
         }
@@ -1439,16 +1476,15 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         final Boolean apiSourceCidrChecksEnabled = ApiServiceConfiguration.ApiSourceCidrChecksEnabled.value();
 
         if (apiSourceCidrChecksEnabled) {
-            logger.debug("CIDRs from which account '" + account.toString() + "' is allowed to perform API calls: " + accessAllowedCidrs);
+            logger.debug("CIDRs from which account '{}' is allowed to perform API calls: {}", account.toString(), accessAllowedCidrs);
             if (!NetUtils.isIpInCidrList(remoteAddress, accessAllowedCidrs.split(","))) {
-                logger.warn("Request by account '" + account.toString() + "' was denied since " + remoteAddress + " does not match " + accessAllowedCidrs);
+                logger.warn("Request by account '{}' was denied since {} does not match {}", account.toString(), remoteAddress, accessAllowedCidrs);
                 throw new OriginDeniedException("Calls from disallowed origin", account, remoteAddress);
-                }
+            }
         }
 
-
         for (final APIChecker apiChecker : apiAccessCheckers) {
-            apiChecker.checkAccess(user, commandName);
+            apiChecker.checkAccess(user, commandName, apiKeyPairPermissions);
         }
     }
 

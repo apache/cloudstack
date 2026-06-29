@@ -114,7 +114,8 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd implements UserC
             type = CommandType.UUID,
             entityType = StoragePoolResponse.class,
             description = "Storage pool ID to create the volume in. Cannot be used with the snapshotid parameter.",
-            authorized = {RoleType.Admin})
+            authorized = {RoleType.Admin},
+            since = "4.22.1")
     private Long storageId;
 
     /////////////////////////////////////////////////////
@@ -150,6 +151,10 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd implements UserC
     }
 
     public Long getSnapshotId() {
+        if (storageId != null && snapshotId != null) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+                    "Snapshot ID cannot be specified with the Storage ID.");
+        }
         return snapshotId;
     }
 
@@ -163,7 +168,8 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd implements UserC
 
     public Long getStorageId() {
         if (snapshotId != null && storageId != null) {
-            throw new IllegalArgumentException("StorageId parameter cannot be specified with the SnapshotId parameter.");
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+                    "Storage ID cannot be specified with the Snapshot ID.");
         }
         return storageId;
     }
@@ -203,7 +209,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd implements UserC
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
+        Long accountId = _accountService.finalizeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }
@@ -218,7 +224,17 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd implements UserC
 
     @Override
     public String getEventDescription() {
-        return  "Creating volume: " + getVolumeName() + ((getSnapshotId() == null) ? "" : " from Snapshot: " + this._uuidMgr.getUuid(Snapshot.class, getSnapshotId()));
+        String description = "Creating volume ";
+
+        if (getVolumeName() != null) {
+            description += getVolumeName();
+        }
+
+        if (getSnapshotId() != null) {
+            description += " from Snapshot: " + getResourceUuid(ApiConstants.SNAPSHOT_ID);
+        }
+
+        return description;
     }
 
     @Override
@@ -235,7 +251,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd implements UserC
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Volume Id: " + getEntityUuid() + ((getSnapshotId() == null) ? "" : " from Snapshot: " + this._uuidMgr.getUuid(Snapshot.class, getSnapshotId())));
+        CallContext.current().setEventDetails("Volume ID: " + getEntityUuid() + ((getSnapshotId() == null) ? "" : " from Snapshot with ID: " + getResourceUuid(ApiConstants.SNAPSHOT_ID)));
         Volume volume = _volumeService.createVolume(this);
         if (volume != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(getResponseView(), volume);

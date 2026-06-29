@@ -16,9 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.config;
 
-import com.cloud.utils.crypt.DBEncryptionUtil;
 import org.apache.cloudstack.acl.RoleService;
-import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiConstants;
@@ -29,13 +27,17 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.ConfigurationResponse;
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
+import org.apache.cloudstack.api.response.ManagementServerResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.config.Configuration;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.user.Account;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 
 @APICommand(name = "updateConfiguration", description = "Updates a configuration.", responseObject = ConfigurationResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -88,6 +90,13 @@ public class UpdateCfgCmd extends BaseCmd {
             validations = ApiArgValidator.PositiveNumber)
     private Long imageStoreId;
 
+    @Parameter(name = ApiConstants.MANAGEMENT_SERVER_ID,
+            type = CommandType.UUID,
+            entityType = ManagementServerResponse.class,
+            description = "the ID of the Management Server to update the parameter value for corresponding management server",
+            since = "4.23.0")
+    private Long managementServerId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -112,7 +121,7 @@ public class UpdateCfgCmd extends BaseCmd {
         return clusterId;
     }
 
-    public Long getStoragepoolId() {
+    public Long getStoragePoolId() {
         return storagePoolId;
     }
 
@@ -126,6 +135,10 @@ public class UpdateCfgCmd extends BaseCmd {
 
     public Long getImageStoreId() {
         return imageStoreId;
+    }
+
+    public Long getManagementServerId() {
+        return managementServerId;
     }
 
     /////////////////////////////////////////////////////
@@ -150,7 +163,7 @@ public class UpdateCfgCmd extends BaseCmd {
             ConfigurationResponse response = _responseGenerator.createConfigurationResponse(cfg);
             response.setResponseName(getCommandName());
             response = setResponseScopes(response);
-            response = setResponseValue(response, cfg);
+            setResponseValue(response, cfg);
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update config");
@@ -161,15 +174,13 @@ public class UpdateCfgCmd extends BaseCmd {
      * Sets the configuration value in the response. If the configuration is in the `Hidden` or `Secure` categories, the value is encrypted before being set in the response.
      * @param response to be set with the configuration `cfg` value
      * @param cfg to be used in setting the response value
-     * @return the response with the configuration's value
      */
-    public ConfigurationResponse setResponseValue(ConfigurationResponse response, Configuration cfg) {
+    public void setResponseValue(ConfigurationResponse response, Configuration cfg) {
+        String value = cfg.getValue();
         if (cfg.isEncrypted()) {
-            response.setValue(DBEncryptionUtil.encrypt(getValue()));
-        } else {
-            response.setValue(getValue());
+            value = DBEncryptionUtil.encrypt(value);
         }
-        return response;
+        response.setValue(value);
     }
 
     /**
@@ -184,7 +195,7 @@ public class UpdateCfgCmd extends BaseCmd {
         if (getClusterId() != null) {
             response.setScope("cluster");
         }
-        if (getStoragepoolId() != null) {
+        if (getStoragePoolId() != null) {
             response.setScope("storagepool");
         }
         if (getAccountId() != null) {
@@ -192,6 +203,9 @@ public class UpdateCfgCmd extends BaseCmd {
         }
         if (getDomainId() != null) {
             response.setScope("domain");
+        }
+        if (getManagementServerId() != null) {
+            response.setScope(ConfigKey.Scope.ManagementServer.name().toLowerCase());
         }
         return response;
     }

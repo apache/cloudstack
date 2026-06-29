@@ -68,7 +68,8 @@ public class CallContext {
     private User user;
     private long userId;
     private final Map<Object, Object> context = new HashMap<Object, Object>();
-    private final Map<String, Object> errorContext = new HashMap<String, Object>();
+    private final Map<String, String> apiResourcesUuids = new HashMap<>();
+    private final Map<String, Object> errorContext = new HashMap<>();
     private Project project;
     private String apiName;
 
@@ -201,9 +202,7 @@ public class CallContext {
         }
         s_currentContext.set(callingContext);
         ThreadContext.push("ctx-" + UuidUtils.first(contextId));
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("Registered: " + callingContext);
-        }
+        LOGGER.trace("Registered: {}", callingContext);
 
         s_currentContextStack.get().push(callingContext);
 
@@ -300,9 +299,7 @@ public class CallContext {
             return null;
         }
         s_currentContext.remove();
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("Unregistered: " + context);
-        }
+        LOGGER.trace("Unregistered: {}", context);
         String contextId = context.getContextId();
         String sessionIdOnStack = null;
         String sessionIdPushedToNDC = "ctx-" + UuidUtils.first(contextId);
@@ -310,9 +307,7 @@ public class CallContext {
             if (sessionIdOnStack.isEmpty() || sessionIdPushedToNDC.equals(sessionIdOnStack)) {
                 break;
             }
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace("Popping from NDC: " + contextId);
-            }
+            LOGGER.trace("Popping from NDC: {}", contextId);
         }
 
         Stack<CallContext> stack = s_currentContextStack.get();
@@ -413,6 +408,14 @@ public class CallContext {
 
     public void setEventDisplayEnabled(boolean eventDisplayEnabled) {
         isEventDisplayEnabled = eventDisplayEnabled;
+    }
+
+    public String getApiResourceUuid(String paramName) {
+        return apiResourcesUuids.get(paramName);
+    }
+
+    public void putApiResourceUuid(String paramName, String uuid) {
+        apiResourcesUuids.put(paramName, uuid);
     }
 
     public Map<Object, Object> getContextParameters() {

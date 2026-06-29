@@ -94,7 +94,7 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd {
             setEntityId(result.getId());
             setEntityUuid(result.getUuid());
         } catch (NetworkRuleConflictException ex) {
-            logger.info("Network rule conflict: " + ex.getMessage());
+            logger.info("Network rule conflict: {}", ex.getMessage());
             logger.trace("Network rule conflict: ", ex);
             throw new ServerApiException(ApiErrorCode.NETWORK_RULE_CONFLICT_ERROR, ex.getMessage());
         }
@@ -115,7 +115,7 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd {
         boolean success = false;
         StaticRoute route = null;
         try {
-            CallContext.current().setEventDetails("Static route Id: " + getEntityId());
+            CallContext.current().setEventDetails("Static route ID: " + getEntityUuid());
             success = _vpcService.applyStaticRoute(getEntityId());
             // State is different after the route is applied, so retrieve the object only here
             route = _entityMgr.findById(StaticRoute.class, getEntityId());
