@@ -446,6 +446,7 @@
     "vm.start.insufficient.capacity.exposed": "Unable to start Instance {{instance}}: {{error}}.",
     "vm.start.insufficient.capacity": "Unable to start Instance {{instance}} due to insufficient capacity.",
     "vm.start.network.unavailable": "Network is unavailable. Please contact your administrator.",
+    "vm.start.network.unavailable.admin": "Network is unavailable. Failure: {{error}}.",
     "vm.start.resource.unavailable": "Unable to start Instance {{instance}}: {{error}}.",
     "vm.start.wrong.state": "Cannot start Instance {{instance}} in state {{state}}.",
     "vm.start.template.not.found": "Template for the Instance cannot be found. Instance configuration needs to be updated.",
