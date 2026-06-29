@@ -1173,7 +1173,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             vm = guru.importVirtualMachineFromBackup(zoneId, domainId, accountId, userId, vmInternalName, backup);
         } catch (final Exception e) {
             logger.error(String.format("Failed to import VM [vmInternalName: %s] from backup restoration [%s] with hypervisor [type: %s] due to: [%s].", vmInternalName,
-                    ReflectionToStringBuilderUtils.reflectOnlySelectedFields(backup, "id", "uuid", "vmId", "externalId", "backupType"), hypervisorType, e.getMessage()), e);
+                    ReflectionToStringBuilderUtils.reflectOnlySelectedFields(backup, "id", "uuid", "vmId", "externalId", "type"), hypervisorType, e.getMessage()), e);
             ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_BACKUP_RESTORE,
                     String.format("Failed to import Instance %s from Backup %s with hypervisor [type: %s]", vmInternalName, backup.getUuid(), hypervisorType),
                     vm.getId(), ApiCommandResourceType.VirtualMachine.toString(),0);
