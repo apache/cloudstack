@@ -288,3 +288,6 @@ WHERE rule = 'quotaStatement' AND NOT EXISTS(SELECT 1 FROM cloud.role_permission
 
 -- Add description for secondary IP addresses
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.nic_secondary_ips', 'description', 'VARCHAR(2048) DEFAULT NULL');
+
+-- Add guest os and mappings for Ubuntu 26.04
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (10, 'Ubuntu 26.04 LTS', 'KVM', 'default', 'Ubuntu 26.04 LTS');
