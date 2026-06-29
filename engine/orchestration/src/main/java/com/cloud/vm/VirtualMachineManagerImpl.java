@@ -6362,9 +6362,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 return BooleanUtils.isTrue((Boolean) jobResult);
             }
         } catch (ResourceUnavailableException | InsufficientCapacityException ex) {
-            throw new CloudRuntimeException(String.format("Exception while updating VM [%s] NIC. Check the logs for more information.", vm.getUuid()));
+            throw Exceptions.cloudRuntimeException("vm.updatenic.job.exception", Map.of("instance", vm));
         }
-        throw new CloudRuntimeException("Unexpected job execution result.");
+        throw Exceptions.cloudRuntimeException("vm.updatenic.job.execution.failed");
     }
 
     private boolean orchestrateUpdateVmNic(final VirtualMachine vm, final Nic nic, final Boolean enabled) throws ResourceUnavailableException {
@@ -6418,7 +6418,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         VMInstanceVO vm = findVmById(work.getVmId());
         final NicVO nic = _entityMgr.findById(NicVO.class, work.getNicId());
         if (nic == null) {
-            throw new CloudRuntimeException(String.format("Unable to find NIC with ID %s.", work.getNicId()));
+            throw Exceptions.cloudRuntimeException("vm.updatenic.nic.not.found", Map.of("nicId", work.getNicId()));
         }
         final boolean result = orchestrateUpdateVmNic(vm, nic, work.isEnabled());
         return new Pair<>(JobInfo.Status.SUCCEEDED, _jobMgr.marshallResultObject(result));
@@ -6486,7 +6486,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             return;
         }
         final String vmInstanceName = vm.getInstanceName();
-        final String srcHostUuid = _hostDao.findById(srcHostId).getUuid();
+        final HostVO srcHost = _hostDao.findById(srcHostId);
+        final String srcHostUuid = srcHost.getUuid();
         logger.info("Sending PreMigrationCommand to source host {} for VM {} with CLVM volumes", srcHostUuid, vmInstanceName);
         final PreMigrationCommand preMigCmd = new PreMigrationCommand(to, vmInstanceName);
         Answer preMigAnswer = null;
@@ -6494,14 +6495,15 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             preMigAnswer = _agentMgr.send(srcHostId, preMigCmd);
             if (preMigAnswer == null || !preMigAnswer.getResult()) {
                 final String details = preMigAnswer != null ? preMigAnswer.getDetails() : "null answer returned";
-                final String msg = "Failed to prepare source host for migration: " + details;
                 logger.error("Failed to prepare source host {} for migration of VM {}: {}", srcHostUuid, vmInstanceName, details);
-                throw new CloudRuntimeException(msg);
+                throw Exceptions.cloudRuntimeException("vm.migrate.host.source.prepare.failed",
+                        Map.of("instance", vm, "host", srcHost, "error", details));
             }
             logger.info("Successfully prepared source host {} for migration of VM {}", srcHostUuid, vmInstanceName);
         } catch (final AgentUnavailableException | OperationTimedoutException e) {
             logger.error("Failed to send PreMigrationCommand to source host {}: {}", srcHostUuid, e.getMessage(), e);
-            throw new CloudRuntimeException("Failed to prepare source host for migration: " + e.getMessage(), e);
+            throw Exceptions.cloudRuntimeException("vm.migrate.host.source.prepare.failed",
+                    Map.of("instance", vm, "host", srcHost, "error", e.getMessage()), e);
         }
     }
 

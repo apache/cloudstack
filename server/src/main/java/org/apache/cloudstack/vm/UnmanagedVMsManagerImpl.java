@@ -1375,12 +1375,12 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             return;
         }
         if (BooleanUtils.isFalse(ConvertVmwareInstanceToKvmExtraParamsAllowed.value())) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+            throw Exceptions.serverApiException(ApiErrorCode.PARAM_ERROR,
                     "vm.import.extra.params.disabled", Collections.emptyMap());
         }
         String allowedParamsStr = ConvertVmwareInstanceToKvmExtraParamsAllowedList.value();
         if (StringUtils.isBlank(allowedParamsStr)) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+            throw Exceptions.serverApiException(ApiErrorCode.PARAM_ERROR,
                     "vm.import.extra.params.list.empty", Collections.emptyMap());
         }
         List<String> allowedParams = Arrays.asList(allowedParamsStr.split(","));
@@ -1391,7 +1391,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 .collect(Collectors.toList());
         for (String param : sanitizedParams) {
             if (!allowedParams.contains(param)) {
-                throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+                throw Exceptions.serverApiException(ApiErrorCode.PARAM_ERROR,
                         "vm.import.extra.param.not.allowed", Map.of("param", param));
             }
         }
@@ -1666,15 +1666,15 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         boolean useVddk = cmd.getUseVddk();
 
         if ((existingVcenterId == null && vcenter == null) || (existingVcenterId != null && vcenter != null)) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+            throw Exceptions.serverApiException(ApiErrorCode.PARAM_ERROR,
                     "vm.import.vcenter.param.exclusive", Collections.emptyMap());
         }
         if (existingVcenterId == null && StringUtils.isAnyBlank(vcenter, datacenterName, username, password)) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+            throw Exceptions.serverApiException(ApiErrorCode.PARAM_ERROR,
                     "vm.import.vcenter.params.incomplete", Collections.emptyMap());
         }
         if (forceMsToImportVmFiles && useVddk) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+            throw Exceptions.serverApiException(ApiErrorCode.PARAM_ERROR,
                     "vm.import.force.ms.vddk.exclusive", Map.of("param1", ApiConstants.FORCE_MS_TO_IMPORT_VM_FILES, "param2", ApiConstants.USE_VDDK));
         }
 

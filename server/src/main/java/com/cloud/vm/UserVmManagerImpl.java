@@ -2246,9 +2246,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         boolean scalingDown = newSpeed < currentSpeed || newMemory < currentMemory || newCpu < currentCpu;
         if (scalingDown) {
-            throw new InvalidParameterValueException(String.format("Scaling down is not supported while the VM is running. The new service offering attributes " +
-                    "{\"memory\": %s, \"CPU speed\": %s, \"vCPUs\": %s} must not be lower than the current values {\"memory\": %s, \"CPU speed\": %s, \"vCPUs\": %s}.",
-                    newMemory, newSpeed, newCpu, currentMemory, currentSpeed, currentCpu));
+            throw Exceptions.invalidParameterValueException("vm.upgrade.vm.sunning.scale.down.unsupported", Map.of(
+                    "newMemory", newMemory, "newSpeed", newSpeed, "newCpu", newCpu,
+                    "currentMemory", currentMemory, "currentSpeed", currentSpeed, "currentCpu", currentCpu));
         }
 
         boolean sameAmountOfResourcesAsThePreviousOffering = newSpeed == currentSpeed && newMemory == currentMemory && newCpu == currentCpu;
@@ -3041,7 +3041,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         } catch (ResourceAllocationException e) {
             logger.error(String.format("Failed to updated VM due to: %s", e.getLocalizedMessage()));
-            throw new InvalidParameterValueException(e.getLocalizedMessage());
+            throw Exceptions.invalidParameterValueException(e.getLocalizedMessage());
         } finally {
             ReservationHelper.closeAll(reservations);
         }
