@@ -105,7 +105,7 @@ public class OntapStorageConstants {
     public static final String PRIMARY_POOL_ID = "primary_pool_id";
     public static final String ONTAP_SNAP_SIZE = "ontap_snap_size";
     public static final String FILE_PATH = "file_path";
-    public static final int MAX_SNAPSHOT_NAME_LENGTH = 64;
+    public static final int MAX_SNAPSHOT_NAME_LENGTH = 255;
 
     /** vm_snapshot_details key for ONTAP FlexVolume-level VM snapshots. */
     public static final String ONTAP_FLEXVOL_SNAPSHOT = "ontapFlexVolSnapshot";
