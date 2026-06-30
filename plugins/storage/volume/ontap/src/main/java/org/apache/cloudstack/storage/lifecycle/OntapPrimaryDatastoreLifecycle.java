@@ -235,16 +235,6 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
             throw new CloudRuntimeException("Provider name is null or empty, cannot create primary storage");
         }
 
-        PrimaryDataStoreParameters parameters = new PrimaryDataStoreParameters();
-        if (clusterId != null) {
-            ClusterVO clusterVO = _clusterDao.findById(clusterId);
-            Preconditions.checkNotNull(clusterVO, "Unable to locate the specified cluster");
-            if (clusterVO.getHypervisorType() != Hypervisor.HypervisorType.KVM) {
-                throw new CloudRuntimeException("ONTAP primary storage is supported only for KVM hypervisor");
-            }
-            parameters.setHypervisorType(clusterVO.getHypervisorType());
-        }
-
         logger.debug("ONTAP primary storage will be created as " + (managed ? "managed" : "unmanaged"));
         if (!managed) {
             throw new CloudRuntimeException("ONTAP primary storage must be managed");
@@ -402,8 +392,8 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
                         } else {
                             ip = ip.isEmpty() ? host.getPrivateIpAddress().trim() : ip;
                         }
+                        hostIdentifiers.add(ip);
                     }
-                    hostIdentifiers.add(ip);
                 }
                 break;
             default:
