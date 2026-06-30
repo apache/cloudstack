@@ -127,8 +127,6 @@ public class UnifiedNASStrategy extends NASStrategy {
             cloudStackVolume = new CloudStackVolume();
             cloudStackVolume.setFlexVolumeUuid(cloudStackVolumeMap.get(OntapStorageConstants.VOLUME_UUID));
             cloudStackVolume.setFile(fileInfo);
-        } else {
-            logger.warn("getCloudStackVolume: File not found for volume UUID: {} and file path: {}", cloudStackVolumeMap.get(OntapStorageConstants.VOLUME_UUID), cloudStackVolumeMap.get(OntapStorageConstants.FILE_PATH));
         }
 
         return cloudStackVolume;
