@@ -16,23 +16,23 @@
 // under the License.
 package org.apache.cloudstack.oauth2.api.command;
 
-import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.cloudstack.auth.UserOAuth2Authenticator;
-import org.apache.cloudstack.oauth2.OAuth2AuthManager;
-import org.apache.cloudstack.oauth2.api.response.OauthProviderResponse;
-import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.inject.Inject;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.auth.UserOAuth2Authenticator;
 import org.apache.cloudstack.context.CallContext;
-
-import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.List;
+import org.apache.cloudstack.oauth2.OAuth2AuthManager;
+import org.apache.cloudstack.oauth2.api.response.OauthProviderResponse;
+import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
 
 @APICommand(name = "updateOauthProvider", description = "Updates the registered OAuth provider details", responseObject = OauthProviderResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0")
@@ -56,6 +56,12 @@ public final class UpdateOAuthProviderCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.REDIRECT_URI, type = CommandType.STRING, description = "Redirect URI pre-registered in the specific OAuth provider")
     private String redirectUri;
+
+    @Parameter(name = ApiConstants.AUTHORIZE_URL, type = CommandType.STRING, description = "Authorize URL pre-registered in the specific OAuth provider")
+    private String authorizeUrl;
+
+    @Parameter(name = ApiConstants.TOKEN_URL, type = CommandType.STRING, description = "Token URL pre-registered in the specific OAuth provider")
+    private String tokenUrl;
 
     @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, description = "OAuth provider will be enabled or disabled based on this value")
     private Boolean enabled;
@@ -87,6 +93,14 @@ public final class UpdateOAuthProviderCmd extends BaseCmd {
         return redirectUri;
     }
 
+    public String getAuthorizeUrl() {
+        return authorizeUrl;
+    }
+
+    public String getTokenUrl() {
+        return tokenUrl;
+    }
+
     public Boolean getEnabled() {
         return enabled;
     }
@@ -115,7 +129,8 @@ public final class UpdateOAuthProviderCmd extends BaseCmd {
         OauthProviderVO result = _oauthMgr.updateOauthProvider(this);
         if (result != null) {
             OauthProviderResponse r = new OauthProviderResponse(result.getUuid(), result.getProvider(),
-                    result.getDescription(), result.getClientId(), result.getSecretKey(), result.getRedirectUri());
+                    result.getDescription(), result.getClientId(), result.getSecretKey(), result.getRedirectUri(),
+                    result.getAuthorizeUrl(), result.getTokenUrl());
 
             List<UserOAuth2Authenticator> userOAuth2AuthenticatorPlugins = _oauthMgr.listUserOAuth2AuthenticationProviders();
             List<String> authenticatorPluginNames = new ArrayList<>();

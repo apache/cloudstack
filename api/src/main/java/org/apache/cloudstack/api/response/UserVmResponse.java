@@ -166,6 +166,14 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "An alternate display text of the ISO attached to the Instance")
     private String isoDisplayText;
 
+    @SerializedName("isos")
+    @Param(description = "All ISOs attached to the Instance, keyed by cdrom slot. The first entry mirrors isoid/isoname for back-compat.", responseObject = AttachedIsoResponse.class, since = "4.23.0")
+    private List<AttachedIsoResponse> isos;
+
+    @SerializedName("isomaxcount")
+    @Param(description = "Maximum number of ISOs that may be attached to this Instance, after applying the cluster-scoped vm.iso.max.count and the hypervisor's own cap.", since = "4.23.0")
+    private Integer isoMaxCount;
+
     @SerializedName(ApiConstants.SERVICE_OFFERING_ID)
     @Param(description = "The ID of the service offering of the Instance")
     private String serviceOfferingId;
@@ -869,6 +877,22 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public void setIsoId(String isoId) {
         this.isoId = isoId;
+    }
+
+    public void setIsos(List<AttachedIsoResponse> isos) {
+        this.isos = isos;
+    }
+
+    public List<AttachedIsoResponse> getIsos() {
+        return isos;
+    }
+
+    public void setIsoMaxCount(Integer isoMaxCount) {
+        this.isoMaxCount = isoMaxCount;
+    }
+
+    public Integer getIsoMaxCount() {
+        return isoMaxCount;
     }
 
     public void setIsoName(String isoName) {

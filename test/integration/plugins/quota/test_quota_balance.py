@@ -117,8 +117,27 @@ class TestQuotaBalance(cloudstackTestCase):
     def delete_tariffs(self):
         for tariff in self.tariffs:
             cmd = quotaTariffDelete.quotaTariffDeleteCmd()
-            cmd.id = tariff.uuid
+            cmd.id = tariff.id
             self.apiclient.quotaTariffDelete(cmd)
+
+    def insert_usage_and_update_quota(self, zone_id, account_id, domain_id, relative_start_date, relative_end_date):
+        start_date = f"DATE_ADD(UTC_TIMESTAMP(), INTERVAL {relative_start_date} HOUR)"
+        end_date = f"DATE_ADD(UTC_TIMESTAMP(), INTERVAL {relative_end_date} HOUR)"
+
+        # Manually insert a usage regarding the usage type 21 (VM_DISK_IO_READ)
+        sql_query = (f"INSERT INTO cloud_usage.cloud_usage (zone_id,account_id,domain_id,description,usage_display,usage_type,raw_usage,vm_instance_id,vm_name,offering_id,template_id,"
+                        f"usage_id,`type`,`size`,network_id,start_date,end_date,virtual_size,cpu_speed,cpu_cores,memory,quota_calculated,is_hidden,state)"
+                        f" VALUES ('{zone_id}','{account_id}','{domain_id}','Test','1 Hrs',21,1,NULL,NULL,NULL,NULL,NULL,'VirtualMachine',NULL,NULL,{start_date},{end_date},NULL,NULL,NULL,NULL,0,0,NULL);")
+        self.debug(sql_query)
+        self.dbclient.execute(sql_query)
+
+        # Update quota to calculate the balance of the account
+        cmd = quotaUpdate.quotaUpdateCmd()
+        self.apiclient.quotaUpdate(cmd)
+        time.sleep(1)
+
+    def format_date(self, date):
+        return date.strftime("%Y-%m-%d %H:%M:%S")
 
     @attr(tags=["advanced", "smoke", "quota"], required_hardware="false")
     def test_quota_balance(self):
@@ -146,6 +165,7 @@ class TestQuotaBalance(cloudstackTestCase):
         cmd.domainid = self.domain.id
         cmd.value = 100
         self.apiclient.quotaCredits(cmd)
+        time.sleep(1)
 
         # Fetch account ID from account_uuid
         account_id_select = f"SELECT id FROM account WHERE uuid = '{self.account.id}';"
@@ -165,27 +185,24 @@ class TestQuotaBalance(cloudstackTestCase):
         qresultset = self.dbclient.execute(zone_id_select)
         zone_id = qresultset[0][0]
 
-        start_date = datetime.datetime.now() + datetime.timedelta(seconds=1)
-        end_date = datetime.datetime.now() + datetime.timedelta(hours=1)
-
-        # Manually insert a usage regarding the usage type 21 (VM_DISK_IO_READ)
-        sql_query = (f"INSERT INTO cloud_usage.cloud_usage (zone_id,account_id,domain_id,description,usage_display,usage_type,raw_usage,vm_instance_id,vm_name,offering_id,template_id,"
-                     f"usage_id,`type`,`size`,network_id,start_date,end_date,virtual_size,cpu_speed,cpu_cores,memory,quota_calculated,is_hidden,state)"
-                     f" VALUES ('{zone_id}','{account_id}','{domain_id}','Test','1 Hrs',21,1,NULL,NULL,NULL,NULL,NULL,'VirtualMachine',NULL,NULL,'{start_date}','{end_date}',NULL,NULL,NULL,NULL,0,0,NULL);")
-        self.debug(sql_query)
-        self.dbclient.execute(sql_query)
-
-        # Update quota to calculate the balance of the account
-        cmd = quotaUpdate.quotaUpdateCmd()
-        self.apiclient.quotaUpdate(cmd)
+        # Generate three quota_balance entries
+        self.insert_usage_and_update_quota(zone_id, account_id, domain_id, 0, 1)
+        self.insert_usage_and_update_quota(zone_id, account_id, domain_id, 1, 2)
+        self.insert_usage_and_update_quota(zone_id, account_id, domain_id, 2, 3)
 
         # Retrieve the quota balance of the account
         cmd = quotaBalance.quotaBalanceCmd()
         cmd.domainid = self.account.domainid
         cmd.account = self.account.name
+        cmd.startdate = datetime.datetime.now() + datetime.timedelta(hours=-1)
+        cmd.enddate = datetime.datetime.now() + datetime.timedelta(hours=3)
         response = self.apiclient.quotaBalance(cmd)
 
-        self.debug(f"The quota balance for the account {self.account.name} is {response.balance}.")
-        self.assertEqual(response.balance.startquota, 90, f"The `startQuota` response field is supposed to be 90 but was {response.balance.startquota}.")
+        self.assertTrue(len(response.balance.balances) == 4, f"Expected 4 balance entries for between {self.format_date(cmd.startdate)} " +
+            f"and {self.format_date(cmd.enddate)} but got {len(response.balance.balances)}.")
+        for i, balance in enumerate(response.balance.balances):
+            expected_balance = 100 - 10 * i
+            self.debug(f"The quota balance for the account {self.account.name} at {balance.date} was {balance.balance}.")
+            self.assertEqual(balance.balance, expected_balance, f"The `balance` field at {balance.date} is supposed to be {expected_balance} but was {balance.balance}.")
 
         return

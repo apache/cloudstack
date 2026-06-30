@@ -508,9 +508,19 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
             // if there is only one template-for property left for templates, the template isn't needed anymore
             // or if it isn't a template anyway, it will not have this Aux property
             // _cs-template-for- properties work like a ref-count.
-            if (rd.getProps().keySet().stream()
+            long remainingTemplateRefs = rd.getProps().keySet().stream()
                     .filter(key -> key.startsWith("Aux/" + LinstorUtil.CS_TEMPLATE_FOR_PREFIX))
-                    .count() == expectedProps) {
+                    .count();
+            if (remainingTemplateRefs == expectedProps) {
+                // Surface the legacy case where a resource has zero `_cs-template-for-` aux
+                // properties even though we never decremented one — that's a template predating
+                // the ref-count convention, or a stale orphan. Logging before deletion lets
+                // operators audit how many such orphans existed at upgrade time.
+                if (expectedProps == 0) {
+                    logger.info("Linstor: deleting resource {} which has no _cs-template-for- aux properties " +
+                                    "(legacy template predating the ref-count convention, or a stale orphan). " +
+                                    "Resource group context: {}", rd.getName(), rscGrpName);
+                }
                 ApiCallRcList answers = api.resourceDefinitionDelete(rd.getName());
                 checkLinstorAnswersThrow(answers);
                 deleted = true;

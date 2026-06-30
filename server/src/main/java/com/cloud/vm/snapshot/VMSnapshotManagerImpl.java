@@ -396,7 +396,9 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             }
 
             // disallow KVM snapshots for VMs if root volume is encrypted (Qemu crash)
-            if (rootVolume.getPassphraseId() != null && userVmVo.getState() == VirtualMachine.State.Running && Boolean.TRUE.equals(snapshotMemory)) {
+            if ((rootVolume.getPassphraseId() != null || rootVolume.getKmsKeyId() != null) &&
+                    userVmVo.getState() == VirtualMachine.State.Running && Boolean.TRUE.equals(snapshotMemory)
+            ) {
                 throw new UnsupportedOperationException("Cannot create Instance memory Snapshots on KVM from encrypted root volumes");
             }
 
@@ -434,6 +436,12 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
 
         if (rootVolumePool.getPoolType() == Storage.StoragePoolType.PowerFlex) {
             vmSnapshotType = VMSnapshot.Type.Disk;
+        }
+
+        // CLVM_NG: Block VM snapshots until Phase 2 implementation is complete
+        if (rootVolumePool.getPoolType() == Storage.StoragePoolType.CLVM_NG) {
+            throw new InvalidParameterValueException("VM snapshots are not yet supported on CLVM_NG storage pools. " +
+                    "This feature will be available in a future release.");
         }
 
         try {
