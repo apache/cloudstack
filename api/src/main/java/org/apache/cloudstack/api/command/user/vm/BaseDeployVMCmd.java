@@ -46,6 +46,7 @@ import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserDataResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.error.Exceptions;
 import org.apache.cloudstack.vm.lease.VMLeaseManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -646,7 +647,7 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
             try {
                 networkId = Long.parseLong(networkid);
             } catch (NumberFormatException e) {
-                throw new InvalidParameterValueException("vm.deploy.network.not.found.ip.map",
+                throw Exceptions.invalidParameterValueException("vm.deploy.network.not.found.ip.map",
                         Map.of("networkId", networkid));
             }
         }

@@ -8906,7 +8906,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         PhysicalNetwork physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
         if (physicalNetwork == null) {
-            throw Exceptions.invalidParameterValueException("vm.assign.physical.network.not.found", Map.of("physicalNetworkId", physicalNetworkId, "tag", requiredOfferingTags));
+            throw Exceptions.invalidParameterValueException("vm.assign.physical.network.not.found",
+                    Map.of("physicalNetworkId", physicalNetworkId, "tag", StringUtils.toNullSafeString(requiredOfferingTags)));
         }
 
         long requiredOfferingId = requiredOffering.getId();

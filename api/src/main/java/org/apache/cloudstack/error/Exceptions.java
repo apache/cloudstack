@@ -19,6 +19,7 @@ package org.apache.cloudstack.error;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.function.Function;
 
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
@@ -26,43 +27,84 @@ import org.apache.cloudstack.context.ResponseMessageResolver;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class Exceptions {
+public final class Exceptions {
 
-    public static InvalidParameterValueException invalidParameterValueException(String errorKey, Map<String, Object> metadata) {
-        return new InvalidParameterValueException(errorKey, metadata);
+    private Exceptions() {
     }
 
-    public static InvalidParameterValueException invalidParameterValueException(String errorKey) {
+    public static InvalidParameterValueException invalidParameterValueException(final String errorKey) {
         return invalidParameterValueException(errorKey, Collections.emptyMap());
     }
 
-    public static PermissionDeniedException permissionDeniedException(String errorKey, Map<String, Object> metadata) {
-        return new PermissionDeniedException(errorKey, metadata);
+    public static InvalidParameterValueException invalidParameterValueException(final String errorKey,
+                                                                                final Map<String, Object> metadata) {
+        return build(errorKey, metadata, InvalidParameterValueException::new);
     }
 
-    public static PermissionDeniedException permissionDeniedException(String errorKey) {
+    public static PermissionDeniedException permissionDeniedException(final String errorKey) {
         return permissionDeniedException(errorKey, Collections.emptyMap());
     }
 
-    public static ServerApiException serverApiException(ApiErrorCode errorCode, String errorKey, Map<String, Object> metadata) {
-        return new ServerApiException(errorCode, errorKey, metadata);
+    public static PermissionDeniedException permissionDeniedException(final String errorKey,
+                                                                      final Map<String, Object> metadata) {
+        return build(errorKey, metadata, PermissionDeniedException::new);
     }
 
-    public static ServerApiException serverApiException(ApiErrorCode errorCode, String errorKey) {
+    public static ServerApiException serverApiException(final ApiErrorCode errorCode,
+                                                        final String errorKey) {
         return serverApiException(errorCode, errorKey, Collections.emptyMap());
     }
 
-    public static CloudRuntimeException cloudRuntimeException(String errorKey, Map<String, Object> metadata) {
-        return new CloudRuntimeException(ResponseMessageResolver.resolve(errorKey, metadata));
+    public static ServerApiException serverApiException(final ApiErrorCode errorCode,
+                                                        final String errorKey,
+                                                        final Map<String, Object> metadata) {
+        Ternary<String, String, Map<String, Object>> data =
+                ResponseMessageResolver.resolve(errorKey, metadata);
+
+        ServerApiException ex = new ServerApiException(errorCode, data.first());
+        enrich(ex, data);
+        throw ex;
     }
 
-    public static CloudRuntimeException cloudRuntimeException(String errorKey) {
-        return new CloudRuntimeException(ResponseMessageResolver.resolve(errorKey, Collections.emptyMap()));
+    public static CloudRuntimeException cloudRuntimeException(final String errorKey) {
+        return cloudRuntimeException(errorKey, Collections.emptyMap());
     }
 
-    public static CloudRuntimeException cloudRuntimeException(String errorKey, Map<String, Object> metadata, Throwable th) {
-        return new CloudRuntimeException(ResponseMessageResolver.resolve(errorKey, metadata), th);
+    public static CloudRuntimeException cloudRuntimeException(final String errorKey,
+                                                              final Map<String, Object> metadata) {
+        return build(errorKey, metadata, CloudRuntimeException::new);
+    }
+
+    public static CloudRuntimeException cloudRuntimeException(final String errorKey,
+                                                              final Map<String, Object> metadata,
+                                                              final Throwable cause) {
+        Ternary<String, String, Map<String, Object>> data =
+                ResponseMessageResolver.resolve(errorKey, metadata);
+
+        CloudRuntimeException ex = new CloudRuntimeException(data.first(), cause);
+        enrich(ex, data);
+        return ex;
+    }
+
+    private static <T extends CloudRuntimeException> T build(
+            final String errorKey,
+            final Map<String, Object> metadata,
+            final Function<String, T> exceptionSupplier) {
+
+        Ternary<String, String, Map<String, Object>> data =
+                ResponseMessageResolver.resolve(errorKey, metadata);
+
+        T ex = exceptionSupplier.apply(data.first());
+        enrich(ex, data);
+        return ex;
+    }
+
+    private static void enrich(final CloudRuntimeException ex,
+                               final Ternary<String, String, Map<String, Object>> data) {
+        ex.setMessageKey(data.second());
+        ex.setMetadata(data.third());
     }
 }

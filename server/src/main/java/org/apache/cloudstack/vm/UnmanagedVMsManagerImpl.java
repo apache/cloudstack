@@ -17,6 +17,68 @@
 
 package org.apache.cloudstack.vm;
 
+import static org.apache.cloudstack.api.ApiConstants.MAX_IOPS;
+import static org.apache.cloudstack.api.ApiConstants.MIN_IOPS;
+import static org.apache.cloudstack.storage.volume.VolumeImportUnmanageService.AllowImportVolumeWithBackingFile;
+import static org.apache.cloudstack.vm.ImportVmTask.Step.CloningInstance;
+import static org.apache.cloudstack.vm.ImportVmTask.Step.Completed;
+import static org.apache.cloudstack.vm.ImportVmTask.Step.ConvertingInstance;
+import static org.apache.cloudstack.vm.ImportVmTask.Step.Importing;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import javax.inject.Inject;
+
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.ResponseGenerator;
+import org.apache.cloudstack.api.ResponseObject;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.admin.vm.ImportUnmanagedInstanceCmd;
+import org.apache.cloudstack.api.command.admin.vm.ImportVmCmd;
+import org.apache.cloudstack.api.command.admin.vm.ListImportVMTasksCmd;
+import org.apache.cloudstack.api.command.admin.vm.ListUnmanagedInstancesCmd;
+import org.apache.cloudstack.api.command.admin.vm.ListVmsForImportCmd;
+import org.apache.cloudstack.api.command.admin.vm.UnmanageVMInstanceCmd;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.UnmanagedInstanceResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.error.Exceptions;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.reservation.dao.ReservationDao;
+import org.apache.cloudstack.resourcelimit.Reserver;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.volume.VolumeOnStorageTO;
+import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckConvertInstanceAnswer;
@@ -59,8 +121,6 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import org.apache.cloudstack.error.Exceptions;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
@@ -141,68 +201,9 @@ import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.google.gson.Gson;
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.ResponseGenerator;
-import org.apache.cloudstack.api.ResponseObject;
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.admin.vm.ImportUnmanagedInstanceCmd;
-import org.apache.cloudstack.api.command.admin.vm.ImportVmCmd;
-import org.apache.cloudstack.api.command.admin.vm.ListImportVMTasksCmd;
-import org.apache.cloudstack.api.command.admin.vm.ListUnmanagedInstancesCmd;
-import org.apache.cloudstack.api.command.admin.vm.ListVmsForImportCmd;
-import org.apache.cloudstack.api.command.admin.vm.UnmanageVMInstanceCmd;
-import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.UnmanagedInstanceResponse;
-import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.reservation.dao.ReservationDao;
-import org.apache.cloudstack.resourcelimit.Reserver;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.storage.volume.VolumeOnStorageTO;
-import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.MapUtils;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static org.apache.cloudstack.api.ApiConstants.MAX_IOPS;
-import static org.apache.cloudstack.api.ApiConstants.MIN_IOPS;
-import static org.apache.cloudstack.storage.volume.VolumeImportUnmanageService.AllowImportVolumeWithBackingFile;
-import static org.apache.cloudstack.vm.ImportVmTask.Step.CloningInstance;
-import static org.apache.cloudstack.vm.ImportVmTask.Step.Completed;
-import static org.apache.cloudstack.vm.ImportVmTask.Step.ConvertingInstance;
-import static org.apache.cloudstack.vm.ImportVmTask.Step.Importing;
 
 public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     protected Logger logger = LogManager.getLogger(UnmanagedVMsManagerImpl.class);
@@ -3114,7 +3115,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
         final String hypervisorType = cmd.getHypervisor();
         if (!Hypervisor.HypervisorType.KVM.toString().equalsIgnoreCase(hypervisorType)) {
-            throw Exceptions.invalidParameterValueException("vm.import.kvm.list.hypervisor.not.supported", Map.of("hypervisor", hypervisorType));
+            throw Exceptions.invalidParameterValueException("vm.import.kvm.list.hypervisor.not.supported",
+                    Map.of("hypervisor", StringUtils.defaultIfEmpty(hypervisorType, "null")));
         }
 
         String keyword = cmd.getKeyword();

@@ -17,9 +17,6 @@
 package org.apache.cloudstack.api;
 
 import java.util.ArrayList;
-import java.util.Map;
-
-import org.apache.cloudstack.context.ResponseMessageResolver;
 
 import com.cloud.exception.CloudException;
 import com.cloud.utils.exception.CSExceptionErrorCode;
@@ -34,14 +31,6 @@ public class ServerApiException extends CloudRuntimeException {
     public ServerApiException() {
         _errorCode = ApiErrorCode.INTERNAL_ERROR;
         _description = null;
-        setCSErrorCode(CSExceptionErrorCode.getCSErrCode(ServerApiException.class.getName()));
-    }
-
-    public ServerApiException(ApiErrorCode errorCode, String messageKey, Map<String, Object> errorMetadata) {
-        _errorCode = errorCode;
-        this.messageKey = messageKey;
-        this.metadata = errorMetadata;
-        _description = ResponseMessageResolver.getMessage(messageKey, errorMetadata);
         setCSErrorCode(CSExceptionErrorCode.getCSErrCode(ServerApiException.class.getName()));
     }
 

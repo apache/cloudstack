@@ -142,6 +142,9 @@ public class CallContext {
     }
 
     public boolean isCallingAccountRootAdmin() {
+        if (getCallingUserId() == User.UID_SYSTEM) {
+            return false;
+        }
         if (isAccountRootAdmin == null) {
             AccountService accountService;
             try {

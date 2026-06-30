@@ -28,7 +28,6 @@ import java.util.Map;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.SerialVersionUID;
-import com.cloud.utils.Ternary;
 
 /**
  * wrap exceptions that you know there's no point in dealing with.
@@ -54,27 +53,6 @@ public class CloudRuntimeException extends RuntimeException implements ErrorCont
 
     public CloudRuntimeException(String message, Throwable th) {
         super(message, th);
-        setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
-    }
-
-    public CloudRuntimeException(String message, String messageKey, Map<String, Object> metadata) {
-        super(message);
-        this.messageKey = messageKey;
-        this.metadata = metadata;
-        setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
-    }
-
-    public CloudRuntimeException(Ternary<String, String, Map<String, Object>> messageKeyAndMetadata) {
-        super(messageKeyAndMetadata.first());
-        this.messageKey = messageKeyAndMetadata.second();
-        this.metadata = messageKeyAndMetadata.third();
-        setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
-    }
-
-    public CloudRuntimeException(Ternary<String, String, Map<String, Object>> messageKeyAndMetadata, Throwable th) {
-        super(messageKeyAndMetadata.first(), th);
-        this.messageKey = messageKeyAndMetadata.second();
-        this.metadata = messageKeyAndMetadata.third();
         setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
     }
 
@@ -117,6 +95,11 @@ public class CloudRuntimeException extends RuntimeException implements ErrorCont
 
     public CloudRuntimeException(Throwable t) {
         super(t.getMessage(), t);
+        if (t instanceof CloudRuntimeException) {
+            CloudRuntimeException cre = (CloudRuntimeException)t;
+            setMessageKey(cre.getMessageKey());
+            setMetadata(cre.getMetadata());
+        }
     }
 
     @Override
@@ -169,7 +152,15 @@ public class CloudRuntimeException extends RuntimeException implements ErrorCont
         return messageKey;
     }
 
+    public void setMessageKey(String messageKey) {
+        this.messageKey = messageKey;
+    }
+
     public Map<String, Object> getMetadata() {
         return metadata;
+    }
+
+    public void setMetadata(Map<String, Object> metadata) {
+        this.metadata = metadata;
     }
 }

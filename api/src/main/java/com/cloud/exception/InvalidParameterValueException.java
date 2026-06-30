@@ -16,10 +16,6 @@
 // under the License.
 package com.cloud.exception;
 
-import java.util.Map;
-
-import org.apache.cloudstack.context.ResponseMessageResolver;
-
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class InvalidParameterValueException extends CloudRuntimeException {
@@ -28,10 +24,6 @@ public class InvalidParameterValueException extends CloudRuntimeException {
 
     public InvalidParameterValueException(String message) {
         super(message);
-    }
-
-    public InvalidParameterValueException(String key, Map<String, Object> metadata) {
-        super(ResponseMessageResolver.resolve(key, metadata));
     }
 
 }

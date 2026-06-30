@@ -397,6 +397,7 @@ public class UnmanagedVMsManagerImplTest {
         when(responseGenerator.createUserVmResponse(any(ResponseObject.ResponseView.class), Mockito.anyString(), any(UserVm.class))).thenReturn(userVmResponses);
 
         when(vmDao.findById(virtualMachineId)).thenReturn(virtualMachine);
+        when(virtualMachine.getUuid()).thenReturn(UUID.randomUUID().toString());
         when(virtualMachine.getState()).thenReturn(VirtualMachine.State.Running);
 
         when(unmanagedInstanceMock.getCpuCores()).thenReturn(8);
@@ -1041,9 +1042,11 @@ public class UnmanagedVMsManagerImplTest {
     public void testValidateSelectedConversionStoragePoolForVddkFailsWhenPoolDoesNotSupportDiskOfferings() {
         long poolId = 11L;
         StoragePoolVO selectedPool = mock(StoragePoolVO.class);
+        when(selectedPool.getName()).thenReturn("Pool");
         ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
         DiskOfferingVO rootDiskOffering = mock(DiskOfferingVO.class);
         DiskOfferingVO dataDiskOffering = mock(DiskOfferingVO.class);
+        when(dataDiskOffering.getName()).thenReturn("DataOffering");
 
         when(serviceOffering.getDiskOfferingId()).thenReturn(21L);
         when(primaryDataStoreDao.findById(poolId)).thenReturn(selectedPool);
