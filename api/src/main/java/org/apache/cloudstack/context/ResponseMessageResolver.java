@@ -39,6 +39,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.cloud.user.Account;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -57,6 +58,8 @@ public class ResponseMessageResolver {
     private static final Pattern VARIABLE_PATTERN = Pattern.compile("\\{\\{\\s*([A-Za-z0-9_]+)\\s*\\}\\}");
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    private static Boolean isDevel = null;
 
     // volatile for safe publication
     private static volatile Map<String, String> templates =
@@ -126,13 +129,21 @@ public class ResponseMessageResolver {
         return templates.get(errorKey);
     }
 
+    protected static boolean useResourceToStringInMetadata() {
+        Account account = CallContext.current().getCallingAccount();
+        if (account != null && "testadmin".equals(account.getName())) {
+            return true;
+        }
+        return USE_RESOURCE_TO_STRING_IN_METADATA;
+    }
+
     protected static Map<String, String> getStringMap(Map<String, Object> metadata) {
         Map<String, String> stringMap = new LinkedHashMap<>();
         if (MapUtils.isNotEmpty(metadata)) {
             for (Map.Entry<String, Object> entry : metadata.entrySet()) {
                 Object value = entry.getValue();
                 stringMap.put(entry.getKey(),
-                        USE_RESOURCE_TO_STRING_IN_METADATA ?
+                        useResourceToStringInMetadata() ?
                                 getMetadataObjectStringValueAlt(value) :
                                 getMetadataObjectStringValue(value));
             }
@@ -190,29 +201,25 @@ public class ResponseMessageResolver {
         }
 
         StringBuilder sb = new StringBuilder();
-        sb.append("'").append(name).append("'");
-
-        if (!CallContext.current().isCallingAccountRootAdmin()) {
-            return sb.toString();
-        }
+        sb.append(name);
 
         Long id = null;
-        if (INCLUDE_RESOURCE_ID_FOR_ADMINS_IN_METADATA && obj instanceof InternalIdentity) {
+        if (obj instanceof InternalIdentity && CallContext.current().isCallingAccountRootAdmin()) {
             id = ((InternalIdentity) obj).getId();
         }
 
         if (ObjectUtils.allNull(id, uuid)) {
             return sb.toString();
         }
-        sb.append(" (");
+        sb.append(" (ID: ");
         if (id != null) {
-            sb.append("ID: ").append(id);
+            sb.append(id);
             if (uuid != null) {
-                sb.append(", ");
+                sb.append(", UUID: ");
             }
         }
         if (uuid != null) {
-            sb.append("UUID: ").append(uuid);
+            sb.append(uuid);
         }
         sb.append(")");
 

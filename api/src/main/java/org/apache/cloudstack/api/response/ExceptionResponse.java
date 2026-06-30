@@ -45,11 +45,11 @@ public class ExceptionResponse extends BaseResponse {
     private String errorText = "Command failed due to Internal Server Error";
 
     @SerializedName("errortextkey")
-    @Param(description = "the key for the text associated with this error")
+    @Param(description = "the key for the text associated with this error", since = "4.24.0")
     private String errorTextKey;
 
     @SerializedName("errormetadata")
-    @Param(description = "the metadata associated with this error")
+    @Param(description = "the metadata associated with this error", since = "4.24.0")
     private Map<String, String> errorMetadata;
 
     public ExceptionResponse() {

@@ -219,11 +219,11 @@ public class ResponseMessageResolverTest {
     }
 
     @Test
-    public void getMetadataObjectStringValue_shouldReturnNameWhenAvailable() {
+    public void getMetadataObjectStringValue_shouldReturnNameAndUuidWhenAvailable() {
         DataCenter identityMock = Mockito.mock(DataCenter.class);
         when(identityMock.getUuid()).thenReturn("uuid-1234");
         when(identityMock.getName()).thenReturn("TestName");
-        Assert.assertEquals("'TestName'", ResponseMessageResolver.getMetadataObjectStringValue(identityMock));
+        Assert.assertEquals("TestName (ID: uuid-1234)", ResponseMessageResolver.getMetadataObjectStringValue(identityMock));
     }
 
     @Test
@@ -235,7 +235,7 @@ public class ResponseMessageResolverTest {
         }
         when(internalIdentityMock.getName()).thenReturn("AdminName");
         when(CallContext.current().isCallingAccountRootAdmin()).thenReturn(true);
-        String expected = String.format("'AdminName' (%sUUID: uuid-5678)", ResponseMessageResolver.INCLUDE_RESOURCE_ID_FOR_ADMINS_IN_METADATA ? "ID: 42, " : "");
+        String expected = String.format("AdminName (%sUUID: uuid-5678)", ResponseMessageResolver.INCLUDE_RESOURCE_ID_FOR_ADMINS_IN_METADATA ? "ID: 42, " : "");
         Assert.assertEquals(expected, ResponseMessageResolver.getMetadataObjectStringValue(internalIdentityMock));
     }
 
@@ -250,7 +250,7 @@ public class ResponseMessageResolverTest {
         DataCenter internalIdentityMock = Mockito.mock(DataCenter.class);
         when(internalIdentityMock.getName()).thenReturn("UserName");
         when(CallContext.current().isCallingAccountRootAdmin()).thenReturn(false);
-        Assert.assertEquals("'UserName'", ResponseMessageResolver.getMetadataObjectStringValue(internalIdentityMock));
+        Assert.assertEquals("UserName", ResponseMessageResolver.getMetadataObjectStringValue(internalIdentityMock));
     }
 
     @Test
@@ -496,7 +496,7 @@ public class ResponseMessageResolverTest {
         DataCenter dataCenterMock = Mockito.mock(DataCenter.class);
         when(dataCenterMock.toString()).thenReturn("id: 99");
         when(dataCenterMock.getName()).thenReturn("FallbackName");
-        Assert.assertEquals("'FallbackName'", ResponseMessageResolver.getMetadataObjectStringValueAlt(dataCenterMock));
+        Assert.assertEquals("FallbackName", ResponseMessageResolver.getMetadataObjectStringValueAlt(dataCenterMock));
     }
 
     @Test

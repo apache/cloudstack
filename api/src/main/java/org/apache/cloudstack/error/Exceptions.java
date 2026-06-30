@@ -27,6 +27,7 @@ import org.apache.cloudstack.context.ResponseMessageResolver;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -66,7 +67,18 @@ public final class Exceptions {
 
         ServerApiException ex = new ServerApiException(errorCode, data.first());
         enrich(ex, data);
-        throw ex;
+        return ex;
+    }
+
+    public static ServerApiException serverApiException(final ApiErrorCode errorCode,
+                                                        final String message,
+                                                        final String errorKey,
+                                                        final Map<String, Object> metadata) {
+        if (StringUtils.isBlank(errorKey)) {
+            return serverApiException(errorCode, errorKey, metadata);
+        }
+
+        return new ServerApiException(errorCode, message);
     }
 
     public static CloudRuntimeException cloudRuntimeException(final String errorKey) {
@@ -104,6 +116,9 @@ public final class Exceptions {
 
     private static void enrich(final CloudRuntimeException ex,
                                final Ternary<String, String, Map<String, Object>> data) {
+        if (data == null) {
+            return;
+        }
         ex.setMessageKey(data.second());
         ex.setMetadata(data.third());
     }

@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ExceptionResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.context.ResponseMessageResolver;
+import org.apache.cloudstack.error.Exceptions;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
@@ -114,7 +115,8 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
                 // serialize this to the async job table
                 _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.SUCCEEDED, 0, ApiSerializerHelper.toSerializedString(cmdObj.getResponseObject()));
             } catch (InvalidParameterValueException ipve) {
-                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, ipve.getMessage());
+                throw Exceptions.serverApiException(ApiErrorCode.PARAM_ERROR, ipve.getMessage(), ipve.getMessageKey(),
+                        ipve.getMetadata());
             } finally {
                 CallContext.unregister();
             }
