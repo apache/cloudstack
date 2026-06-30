@@ -1042,11 +1042,9 @@ public class UnmanagedVMsManagerImplTest {
     public void testValidateSelectedConversionStoragePoolForVddkFailsWhenPoolDoesNotSupportDiskOfferings() {
         long poolId = 11L;
         StoragePoolVO selectedPool = mock(StoragePoolVO.class);
-        when(selectedPool.getName()).thenReturn("Pool");
         ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
         DiskOfferingVO rootDiskOffering = mock(DiskOfferingVO.class);
         DiskOfferingVO dataDiskOffering = mock(DiskOfferingVO.class);
-        when(dataDiskOffering.getName()).thenReturn("DataOffering");
 
         when(serviceOffering.getDiskOfferingId()).thenReturn(21L);
         when(primaryDataStoreDao.findById(poolId)).thenReturn(selectedPool);
