@@ -17,8 +17,11 @@
 
 package org.apache.cloudstack.extension;
 
+import java.util.List;
+
 public interface ExtensionHelper {
     Long getExtensionIdForCluster(long clusterId);
     Extension getExtension(long id);
     Extension getExtensionForCluster(long clusterId);
+    List<String> getExtensionReservedResourceDetails(long extensionId);
 }

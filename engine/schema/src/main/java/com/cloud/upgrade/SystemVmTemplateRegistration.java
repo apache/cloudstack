@@ -315,11 +315,11 @@ public class SystemVmTemplateRegistration {
     public static final List<Pair<Hypervisor.HypervisorType, CPU.CPUArch>> hypervisorList = Arrays.asList(
             new Pair<>(Hypervisor.HypervisorType.KVM, CPU.CPUArch.amd64),
             new Pair<>(Hypervisor.HypervisorType.KVM, CPU.CPUArch.arm64),
-            new Pair<>(Hypervisor.HypervisorType.VMware, null),
-            new Pair<>(Hypervisor.HypervisorType.XenServer, null),
-            new Pair<>(Hypervisor.HypervisorType.Hyperv, null),
-            new Pair<>(Hypervisor.HypervisorType.LXC, null),
-            new Pair<>(Hypervisor.HypervisorType.Ovm3, null)
+            new Pair<>(Hypervisor.HypervisorType.VMware, CPU.CPUArch.amd64),
+            new Pair<>(Hypervisor.HypervisorType.XenServer, CPU.CPUArch.amd64),
+            new Pair<>(Hypervisor.HypervisorType.Hyperv, CPU.CPUArch.amd64),
+            new Pair<>(Hypervisor.HypervisorType.LXC, CPU.CPUArch.amd64),
+            new Pair<>(Hypervisor.HypervisorType.Ovm3, CPU.CPUArch.amd64)
     );
 
     public static final Map<String, MetadataTemplateDetails> NewTemplateMap = new HashMap<>();

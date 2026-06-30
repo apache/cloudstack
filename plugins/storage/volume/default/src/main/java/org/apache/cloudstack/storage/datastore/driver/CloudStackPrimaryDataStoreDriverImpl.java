@@ -27,6 +27,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 
 import com.cloud.agent.api.to.DiskTO;
+import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.storage.VolumeVO;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
@@ -587,7 +588,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 
     @Override
     public boolean isStorageSupportHA(StoragePoolType type) {
-        return StoragePoolType.NetworkFilesystem == type;
+        return type != null && HighAvailabilityManager.LIBVIRT_STORAGE_POOL_TYPES_WITH_HA_SUPPORT.contains(type);
     }
 
     @Override

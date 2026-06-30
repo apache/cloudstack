@@ -24,7 +24,6 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -44,6 +43,7 @@ import javax.script.SimpleBindings;
 import javax.script.SimpleScriptContext;
 
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.openjdk.nashorn.api.scripting.ClassFilter;
@@ -67,7 +67,7 @@ public class JsInterpreter implements Closeable {
 
     protected ScriptEngine interpreter;
     protected String interpreterName;
-    private final String injectingLogMessage = "Injecting variable [%s] with value [%s] into the JS interpreter.";
+    private final String injectingLogMessage = "Injecting variable [{}] with value [{}] into the JS interpreter.";
     protected ExecutorService executor;
     private TimeUnit defaultTimeUnit = TimeUnit.MILLISECONDS;
     private long timeout;
@@ -107,7 +107,7 @@ public class JsInterpreter implements Closeable {
 
         NashornScriptEngineFactory factory = new NashornScriptEngineFactory();
         this.interpreterName = factory.getEngineName();
-        logger.trace(String.format("Initiating JS interpreter: %s.", interpreterName));
+        logger.trace("Initiating JS interpreter: {}.", interpreterName);
 
         setScriptEngineDisablingJavaLanguage(factory);
     }
@@ -136,21 +136,8 @@ public class JsInterpreter implements Closeable {
      */
     public void injectVariable(String key, Object value) {
         if (key == null) return;
-        logger.trace(String.format(injectingLogMessage, key, String.valueOf(value)));
+        logger.trace(injectingLogMessage, key, value);
         variables.put(key, value);
-    }
-
-    /**
-     * @deprecated Not needed when using Bindings; kept for source compatibility.
-     *             Prefer {@link #injectVariable(String, Object)}.
-     */
-    @Deprecated
-    public void injectStringVariable(String key, String value) {
-        if (value == null) {
-            logger.trace(String.format("Not injecting [%s] because its value is null.", key));
-            return;
-        }
-        injectVariable(key, value);
     }
 
     /**
@@ -159,13 +146,15 @@ public class JsInterpreter implements Closeable {
      * @return The result of the executed script.
      */
     public Object executeScript(String script) {
-        Objects.requireNonNull(script, "script");
+        if (script == null) {
+            throw new CloudRuntimeException("Script injected into the JavaScript interpreter must not be null.");
+        }
 
-        logger.debug(String.format("Executing script [%s].", script));
+        logger.debug("Executing script [{}].", script);
 
         Object result = executeScriptInThread(script);
 
-        logger.debug(String.format("The script [%s] had the following result: [%s].", script, result));
+        logger.debug("The script [{}] had the following result: [{}].", script, result);
         return result;
     }
 
@@ -193,7 +182,7 @@ public class JsInterpreter implements Closeable {
                 }
                 return result;
             } catch (ScriptException se) {
-                String msg = se.getMessage() == null ? "Script error" : se.getMessage();
+                String msg = ObjectUtils.defaultIfNull(se.getMessage(), "Script error");
                 throw new ScriptException("Script error: " + msg, se.getFileName(), se.getLineNumber(), se.getColumnNumber());
             }
         };
@@ -213,7 +202,7 @@ public class JsInterpreter implements Closeable {
             logger.error(message, e);
             throw new CloudRuntimeException(message, e);
         } catch (ExecutionException e) {
-            Throwable cause = e.getCause() == null ? e : e.getCause();
+            Throwable cause = ObjectUtils.defaultIfNull(e.getCause(), e);
             String message = String.format("Unable to execute script [%s] due to [%s]", script, cause.getMessage());
             logger.error(message, cause);
             throw new CloudRuntimeException(message, cause);
