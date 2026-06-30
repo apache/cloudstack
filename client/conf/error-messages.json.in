@@ -310,6 +310,10 @@
     "vm.import.usage.publish.failed.vm": "Unable to publish usage for imported Instance {{instance}}: {{error}}.",
     "vm.import.vcenter.param.exclusive": "Unable to import Instance as 'vcenter' and 'existingvcenterid' parameters are mutually exclusive.",
     "vm.import.vcenter.params.incomplete": "Unable to import Instance as vcenter, datacenter, username, and password are all required when specifying a new vCenter.",
+    "vm.import.vddk.data.disk.offering.incompatible": "The data disk offering {{diskOffering}} is not supported by the selected conversion storage pool {{storagePool}}. When using VDDK, all selected disk offerings must be compatible with the conversion storage pool, as it will become the primary storage for the imported volumes.",
+    "vm.import.vddk.data.disk.offering.not.found": "Disk offering specified for disk {{disk}} is not found.",
+    "vm.import.vddk.root.disk.offering.incompatible": "The root disk offering {{diskOffering}} is not supported by the selected conversion storage pool {{storagePool}}. When using VDDK, all selected disk offerings must be compatible with the conversion storage pool, as it will become the primary storage for the imported volumes.",
+    "vm.import.vddk.root.disk.offering.not.found": "Disk offering linked to service offering {{serviceOffering}} is not found.",
     "vm.import.vm.allocation.error": "Unable to import Instance as resource allocation failed for account {{owner}}: {{error}}.",
     "vm.import.vm.create.failed": "Unable to import Instance {{name}} as VM creation failed.",
     "vm.import.vm.failed": "Unable to import Instance {{name}}.",
@@ -647,9 +651,5 @@
     "vm.validate.serviceoffering.invalid.params.cpu.cores": "Invalid CPU cores value for service offering {{serviceOffering}}, specify a value between {{minCPUCores}} and {{maxCPUCores}}.",
     "vm.validate.serviceoffering.invalid.params.cpu.speed": "Invalid CPU speed value for service offering {{serviceOffering}}, specify a value between 1 and {{maxCPUSpeed}}.",
     "vm.validate.serviceoffering.invalid.params.memory": "Invalid memory value for service offering {{serviceOffering}}, specify a value between {{minMemory}} and {{maxMemory}} MB.",
-    "vm.validate.serviceoffering.memory.not.dynamic": "Memory cannot be customized for service offering {{serviceOffering}} as it has been already predefined to {{memory}} MB.",
-    "vm.import.vddk.root.disk.offering.not.found": "Disk offering linked to service offering {{serviceOffering}} is not found.",
-    "vm.import.vddk.data.disk.offering.not.found": "Disk offering specified for disk {{disk}} is not found.",
-    "vm.import.vddk.root.disk.offering.incompatible": "The root disk offering {{diskOffering}} is not supported by the selected conversion storage pool {{storagePool}}. When using VDDK, all selected disk offerings must be compatible with the conversion storage pool, as it will become the primary storage for the imported volumes."
-    "vm.import.vddk.data.disk.offering.incompatible": "The data disk offering {{diskOffering}} is not supported by the selected conversion storage pool {{storagePool}}. When using VDDK, all selected disk offerings must be compatible with the conversion storage pool, as it will become the primary storage for the imported volumes."
+    "vm.validate.serviceoffering.memory.not.dynamic": "Memory cannot be customized for service offering {{serviceOffering}} as it has been already predefined to {{memory}} MB."
 }
