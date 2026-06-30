@@ -647,5 +647,9 @@
     "vm.validate.serviceoffering.invalid.params.cpu.cores": "Invalid CPU cores value for service offering {{serviceOffering}}, specify a value between {{minCPUCores}} and {{maxCPUCores}}.",
     "vm.validate.serviceoffering.invalid.params.cpu.speed": "Invalid CPU speed value for service offering {{serviceOffering}}, specify a value between 1 and {{maxCPUSpeed}}.",
     "vm.validate.serviceoffering.invalid.params.memory": "Invalid memory value for service offering {{serviceOffering}}, specify a value between {{minMemory}} and {{maxMemory}} MB.",
-    "vm.validate.serviceoffering.memory.not.dynamic": "Memory cannot be customized for service offering {{serviceOffering}} as it has been already predefined to {{memory}} MB."
+    "vm.validate.serviceoffering.memory.not.dynamic": "Memory cannot be customized for service offering {{serviceOffering}} as it has been already predefined to {{memory}} MB.",
+    "vm.import.vddk.root.disk.offering.not.found": "Disk offering linked to service offering {{serviceOffering}} is not found.",
+    "vm.import.vddk.data.disk.offering.not.found": "Disk offering specified for disk {{disk}} is not found.",
+    "vm.import.vddk.root.disk.offering.incompatible": "The root disk offering {{diskOffering}} is not supported by the selected conversion storage pool {{storagePool}}. When using VDDK, all selected disk offerings must be compatible with the conversion storage pool, as it will become the primary storage for the imported volumes."
+    "vm.import.vddk.data.disk.offering.incompatible": "The data disk offering {{diskOffering}} is not supported by the selected conversion storage pool {{storagePool}}. When using VDDK, all selected disk offerings must be compatible with the conversion storage pool, as it will become the primary storage for the imported volumes."
 }
