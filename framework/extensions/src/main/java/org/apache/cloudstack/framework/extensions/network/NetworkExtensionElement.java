@@ -1024,6 +1024,25 @@ public class NetworkExtensionElement extends AdapterBase implements
     }
 
     /**
+     * Adds all standard VPC-level fields to the payload.
+     * Always-present: vpc_id, zone_id.
+     * Conditional (only when non-null / non-blank): vpc_state, vpc_cidr.
+     */
+    private void addVpcToPayload(JsonObject payload, Vpc vpc) {
+        if (payload == null || vpc == null) {
+            return;
+        }
+        payload.addProperty("vpc_id", String.valueOf(vpc.getId()));
+        payload.addProperty("zone_id", String.valueOf(vpc.getZoneId()));
+        if (vpc.getState() != null) {
+            payload.addProperty("vpc_state", vpc.getState().toString().toLowerCase());
+        }
+        if (StringUtils.isNotBlank(vpc.getCidr())) {
+            payload.addProperty("vpc_cidr", safeStr(vpc.getCidr()));
+        }
+    }
+
+    /**
      * Adds all available NIC fields to the payload.
      * Fields are added only when non-blank / non-null so the JSON stays clean.
      * Covers: nic_id, nic_uuid, mac, ip, gateway (IPv4), netmask, default_nic,
@@ -1293,7 +1312,7 @@ public class NetworkExtensionElement extends AdapterBase implements
     private JsonObject buildCustomActionPayload(Vpc vpc, Long physicalNetworkId, Extension extension,
             String actionName, Map<String, Object> parameters) {
         JsonObject payload = new JsonObject();
-        payload.addProperty("vpc_id", String.valueOf(vpc.getId()));
+        addVpcToPayload(payload, vpc);
         payload.addProperty("action", actionName);
         payload.add(ARG_ACTION_PARAMS, buildActionParamsPayload(parameters));
         payload.add(ARG_PHYSICAL_NETWORK_EXTENSION_DETAILS,
@@ -2272,8 +2291,7 @@ public class NetworkExtensionElement extends AdapterBase implements
             return;
         }
         JsonObject argsPayload = new JsonObject();
-        argsPayload.addProperty("vpc_id", String.valueOf(vpc.getId()));
-        argsPayload.addProperty("zone_id", String.valueOf(vpc.getZoneId()));
+        addVpcToPayload(argsPayload, vpc);
         argsPayload.addProperty("current_details", currentDetails);
 
         try {
@@ -2384,8 +2402,7 @@ public class NetworkExtensionElement extends AdapterBase implements
 
         // Step 2: Create the VPC namespace (no anchor tier network needed).
         JsonObject implPayload = new JsonObject();
-        implPayload.addProperty("vpc_id", String.valueOf(vpc.getId()));
-        implPayload.addProperty("vpc_cidr", safeStr(vpc.getCidr()));
+        addVpcToPayload(implPayload, vpc);
 
         // Include source NAT IP if already allocated, so the script can set up the
         // VPC-level SNAT rule for the entire VPC CIDR.
@@ -2428,7 +2445,7 @@ public class NetworkExtensionElement extends AdapterBase implements
 
         // Remove the VPC namespace and VPC-level details regardless of tier result.
         JsonObject vpcPayload = new JsonObject();
-        vpcPayload.addProperty("vpc_id", String.valueOf(vpc.getId()));
+        addVpcToPayload(vpcPayload, vpc);
         boolean vpcResult = executeVpcScript(vpc, CMD_SHUTDOWN_VPC, vpcPayload);
         if (vpcResult) {
             try {
@@ -2477,8 +2494,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         }
 
         final JsonObject payload = new JsonObject();
-        payload.addProperty("vpc_id", String.valueOf(vpc.getId()));
-        payload.addProperty("vpc_cidr", safeStr(vpc.getCidr()));
+        addVpcToPayload(payload, vpc);
         addPublicIpToPayload(payload, address.getId(), true);
 
         final boolean result = executeVpcScript(vpc, CMD_UPDATE_VPC_SOURCE_NAT_IP, payload);
