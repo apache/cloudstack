@@ -34,14 +34,25 @@ import org.apache.cloudstack.backup.BackupAnswer;
 import org.apache.cloudstack.backup.TakeBackupCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.FileOutputStream;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.attribute.PosixFilePermission;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 @ResourceWrapper(handles = TakeBackupCommand.class)
 public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCommand, Answer, LibvirtComputingResource> {
     private static final Integer EXIT_CLEANUP_FAILED = 20;
+
     @Override
     public Answer execute(TakeBackupCommand command, LibvirtComputingResource libvirtComputingResource) {
         final String vmName = command.getVmName();
@@ -69,20 +80,37 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
             }
         }
 
-        List<String[]> commands = new ArrayList<>();
-        commands.add(new String[]{
-                libvirtComputingResource.getNasBackupPath(),
-                "-o", "backup",
-                "-v", vmName,
-                "-t", backupRepoType,
-                "-s", backupRepoAddress,
-                "-m", Objects.nonNull(mountOptions) ? mountOptions : "",
-                "-p", backupPath,
-                "-q", command.getQuiesce() != null && command.getQuiesce() ? "true" : "false",
-                "-d", diskPaths.isEmpty() ? "" : String.join(",", diskPaths)
-        });
+        List<String> cmdArgs = new ArrayList<>();
+        cmdArgs.add(libvirtComputingResource.getNasBackupPath());
+        cmdArgs.add("-o"); cmdArgs.add("backup");
+        cmdArgs.add("-v"); cmdArgs.add(vmName);
+        cmdArgs.add("-t"); cmdArgs.add(backupRepoType);
+        cmdArgs.add("-s"); cmdArgs.add(backupRepoAddress);
+        cmdArgs.add("-m"); cmdArgs.add(Objects.nonNull(mountOptions) ? mountOptions : "");
+        cmdArgs.add("-p"); cmdArgs.add(backupPath);
+        cmdArgs.add("-q"); cmdArgs.add(command.getQuiesce() != null && command.getQuiesce() ? "true" : "false");
+        cmdArgs.add("-d"); cmdArgs.add(diskPaths.isEmpty() ? "" : String.join(",", diskPaths));
 
-        Pair<Integer, String> result = Script.executePipedCommands(commands, timeout);
+        // Append optional enhancement flags (compression / encryption / bandwidth / integrity)
+        File passphraseFile;
+        try {
+            passphraseFile = appendEnhancementFlags(cmdArgs, command.getDetails());
+        } catch (BackupConfigException e) {
+            return new BackupAnswer(command, false, e.getMessage());
+        }
+
+        List<String[]> commands = new ArrayList<>();
+        commands.add(cmdArgs.toArray(new String[0]));
+
+        Pair<Integer, String> result;
+        try {
+            result = Script.executePipedCommands(commands, timeout);
+        } finally {
+            // Clean up passphrase file after backup completes (best-effort).
+            if (passphraseFile != null && passphraseFile.exists()) {
+                passphraseFile.delete();
+            }
+        }
 
         if (result.first() != 0) {
             logger.debug("Failed to take VM backup: " + result.second());
@@ -110,5 +138,68 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
         BackupAnswer answer = new BackupAnswer(command, true, result.second().trim());
         answer.setSize(backupSize);
         return answer;
+    }
+
+    /**
+     * Translates the optional backup-enhancement details (compression, encryption,
+     * bandwidth limit, integrity check) into nasbackup.sh CLI flags appended to
+     * {@code cmdArgs}. Returns the temporary passphrase file when encryption is
+     * enabled (the caller deletes it after the backup), or {@code null} otherwise.
+     */
+    File appendEnhancementFlags(List<String> cmdArgs, Map<String, String> details) throws BackupConfigException {
+        if (details == null) {
+            return null;
+        }
+        if ("true".equals(details.get(TakeBackupCommand.DETAIL_COMPRESSION))) {
+            cmdArgs.add("-c");
+        }
+        File passphraseFile = null;
+        if ("true".equals(details.get(TakeBackupCommand.DETAIL_ENCRYPTION))) {
+            String passphrase = details.get(TakeBackupCommand.DETAIL_ENCRYPTION_PASSPHRASE);
+            if (passphrase == null || passphrase.isEmpty()) {
+                throw new BackupConfigException("Encryption is enabled but no passphrase was provided");
+            }
+            passphraseFile = writePassphraseFile(passphrase);
+            cmdArgs.add("-e"); cmdArgs.add(passphraseFile.getAbsolutePath());
+        }
+        String bwLimit = details.get(TakeBackupCommand.DETAIL_BANDWIDTH_LIMIT);
+        if (bwLimit != null && !"0".equals(bwLimit)) {
+            cmdArgs.add("-b"); cmdArgs.add(bwLimit);
+        }
+        if ("true".equals(details.get(TakeBackupCommand.DETAIL_INTEGRITY_CHECK))) {
+            cmdArgs.add("--verify");
+        }
+        return passphraseFile;
+    }
+
+    /**
+     * Writes {@code passphrase} to a 0600 UTF-8 temp file for nasbackup.sh's {@code -e}
+     * flag. Scheduled for deletion on JVM exit; the caller removes it after the backup.
+     */
+    private File writePassphraseFile(String passphrase) throws BackupConfigException {
+        File passphraseFile = null;
+        try {
+            passphraseFile = File.createTempFile("cs-backup-enc-", ".key");
+            passphraseFile.deleteOnExit();
+            Files.setPosixFilePermissions(passphraseFile.toPath(),
+                    EnumSet.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE));
+            try (Writer fw = new OutputStreamWriter(new FileOutputStream(passphraseFile), StandardCharsets.UTF_8)) {
+                fw.write(passphrase);
+            }
+            return passphraseFile;
+        } catch (IOException e) {
+            logger.error("Failed to create encryption passphrase file", e);
+            if (passphraseFile != null && passphraseFile.exists()) {
+                passphraseFile.delete();
+            }
+            throw new BackupConfigException("Failed to create encryption passphrase file: " + e.getMessage());
+        }
+    }
+
+    /** Signals an invalid or unsatisfiable backup-enhancement configuration. */
+    static class BackupConfigException extends Exception {
+        BackupConfigException(String message) {
+            super(message);
+        }
     }
 }
