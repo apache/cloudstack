@@ -9576,7 +9576,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_SERVICE_OFFERING_CREATE, eventDescription = "creating service offering category")
+    @ActionEvent(eventType = EventTypes.EVENT_SERVICE_OFFERING_CATEGORY_CREATE, eventDescription = "creating service offering category")
     public ServiceOfferingCategory createServiceOfferingCategory(CreateServiceOfferingCategoryCmd cmd) {
         String name = cmd.getName();
         Integer sortKey = cmd.getSortKey();
@@ -9598,7 +9598,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_SERVICE_OFFERING_DELETE, eventDescription = "deleting service offering category")
+    @ActionEvent(eventType = EventTypes.EVENT_SERVICE_OFFERING_CATEGORY_DELETE, eventDescription = "deleting service offering category")
     public boolean deleteServiceOfferingCategory(DeleteServiceOfferingCategoryCmd cmd) {
         Long categoryId = cmd.getId();
 
@@ -9627,7 +9627,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_SERVICE_OFFERING_EDIT, eventDescription = "updating service offering category")
+    @ActionEvent(eventType = EventTypes.EVENT_SERVICE_OFFERING_CATEGORY_EDIT, eventDescription = "updating service offering category")
     public ServiceOfferingCategory updateServiceOfferingCategory(UpdateServiceOfferingCategoryCmd cmd) {
         Long categoryId = cmd.getId();
         String name = cmd.getName();

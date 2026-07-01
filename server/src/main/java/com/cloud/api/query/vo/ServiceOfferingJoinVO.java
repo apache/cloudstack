@@ -266,6 +266,12 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
     @Column(name = "category_id")
     private Long categoryId;
 
+    @Column(name = "category_uuid")
+    private String categoryUuid;
+
+    @Column(name = "category_name")
+    private String categoryName;
+
     public ServiceOfferingJoinVO() {
     }
 
@@ -562,4 +568,8 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
     }
 
     public Long getCategoryId() { return categoryId; }
+
+    public String getCategoryUuid() { return categoryUuid; }
+
+    public String getCategoryName() { return categoryName; }
 }

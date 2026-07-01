@@ -44,8 +44,6 @@ import com.cloud.dc.dao.VsphereStoragePolicyDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.storage.DiskOfferingVO;
-import com.cloud.service.dao.ServiceOfferingCategoryDao;
-import com.cloud.service.ServiceOfferingCategoryVO;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.Filter;
@@ -66,8 +64,6 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
     private ConfigurationDao configDao;
     @Inject
     private AccountManager accountManager;
-    @Inject
-    private ServiceOfferingCategoryDao _serviceOfferingCategoryDao;
 
     private SearchBuilder<ServiceOfferingJoinVO> sofIdSearch;
 
@@ -152,13 +148,10 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
         offeringResponse.setGpuCount(offering.getGpuCount());
         offeringResponse.setGpuDisplay(offering.getGpuDisplay());
 
-        // Set category information if available
-        if (offering.getCategoryId() != null) {
-            ServiceOfferingCategoryVO category = _serviceOfferingCategoryDao.findById(offering.getCategoryId());
-            if (category != null) {
-                offeringResponse.setCategoryId(category.getUuid());
-                offeringResponse.setCategoryName(category.getName());
-            }
+        // Set category information if available (joined via service_offering_view)
+        if (offering.getCategoryUuid() != null) {
+            offeringResponse.setCategoryId(offering.getCategoryUuid());
+            offeringResponse.setCategoryName(offering.getCategoryName());
         }
 
         offeringResponse.setNetworkRate(offering.getRateMbps());

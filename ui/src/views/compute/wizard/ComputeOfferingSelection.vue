@@ -446,7 +446,7 @@ export default {
     width: 100%;
     height: 100%;
 
-    .radio-opion__icon {
+    .radio-option__icon {
       font-size: 2rem;
       margin-bottom: 0.5rem;
     }

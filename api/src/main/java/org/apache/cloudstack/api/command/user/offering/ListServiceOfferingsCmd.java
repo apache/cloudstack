@@ -204,7 +204,7 @@ public class ListServiceOfferingsCmd extends BaseListProjectAndAccountResourcesC
     public Long getCategoryId() {
         return categoryId;
     }
-  
+
     public void setZoneId(Long zoneId) {
         this.zoneId = zoneId;
     }

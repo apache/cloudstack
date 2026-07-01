@@ -2315,8 +2315,6 @@ export default {
       }
       if (categoryId && categoryId !== '-1') {
         params.categoryid = categoryId
-      } else {
-        params.categoryid = null
       }
       this.handleSearchFilter('serviceOfferings', params)
     },

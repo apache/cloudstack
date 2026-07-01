@@ -83,6 +83,7 @@ import com.cloud.network.vpc.VpcOffering;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.offering.ServiceOfferingCategory;
 import com.cloud.projects.Project;
 import com.cloud.server.ResourceTag;
 import com.cloud.storage.GuestOS;
@@ -378,6 +379,11 @@ public class EventTypes {
     public static final String EVENT_SERVICE_OFFERING_CLONE = "SERVICE.OFFERING.CLONE";
     public static final String EVENT_SERVICE_OFFERING_EDIT = "SERVICE.OFFERING.EDIT";
     public static final String EVENT_SERVICE_OFFERING_DELETE = "SERVICE.OFFERING.DELETE";
+
+    // Service Offering Categories
+    public static final String EVENT_SERVICE_OFFERING_CATEGORY_CREATE = "SERVICE.OFFERING.CATEGORY.CREATE";
+    public static final String EVENT_SERVICE_OFFERING_CATEGORY_EDIT = "SERVICE.OFFERING.CATEGORY.EDIT";
+    public static final String EVENT_SERVICE_OFFERING_CATEGORY_DELETE = "SERVICE.OFFERING.CATEGORY.DELETE";
 
     // Disk Offerings
     public static final String EVENT_DISK_OFFERING_CREATE = "DISK.OFFERING.CREATE";
@@ -1054,6 +1060,9 @@ public class EventTypes {
         entityEventDetails.put(EVENT_SERVICE_OFFERING_CLONE, ServiceOffering.class);
         entityEventDetails.put(EVENT_SERVICE_OFFERING_EDIT, ServiceOffering.class);
         entityEventDetails.put(EVENT_SERVICE_OFFERING_DELETE, ServiceOffering.class);
+        entityEventDetails.put(EVENT_SERVICE_OFFERING_CATEGORY_CREATE, ServiceOfferingCategory.class);
+        entityEventDetails.put(EVENT_SERVICE_OFFERING_CATEGORY_EDIT, ServiceOfferingCategory.class);
+        entityEventDetails.put(EVENT_SERVICE_OFFERING_CATEGORY_DELETE, ServiceOfferingCategory.class);
 
         // Disk Offerings
         entityEventDetails.put(EVENT_DISK_OFFERING_CREATE, DiskOffering.class);

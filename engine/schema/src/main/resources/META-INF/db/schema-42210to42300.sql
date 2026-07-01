@@ -25,7 +25,8 @@ CREATE TABLE IF NOT EXISTS `cloud`.`service_offering_category` (
  `uuid` varchar(40),
  `sort_key` int NOT NULL DEFAULT 0,
  PRIMARY KEY  (`id`),
- CONSTRAINT `uc_service_offering_category__uuid` UNIQUE (`uuid`)
+ CONSTRAINT `uc_service_offering_category__uuid` UNIQUE (`uuid`),
+ CONSTRAINT `uc_service_offering_category__name` UNIQUE (`name`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
 INSERT INTO `cloud`.`service_offering_category` (id, name, uuid) VALUES (1, 'Default', UUID());
