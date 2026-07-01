@@ -62,7 +62,7 @@
           <div class="form__label">
             <tooltip-label :title="$t('label.templatename')" :tooltip="createAutoScaleVmProfileApiParams.templateid.description"/>
           </div>
-          {{ getTemplateName(templateid) }}
+          {{ templateName || templateid }}
         </div>
       </div>
       <div class="form">
@@ -199,7 +199,7 @@
     <a-modal
       :title="$t('label.edit.autoscale.vmprofile')"
       :visible="editProfileModalVisible"
-      :afterClose="closeModal"
+      :afterClose="onModalClosed"
       :maskClosable="false"
       :closable="true"
       :footer="null"
@@ -284,7 +284,7 @@
         </div>
       </div>
       <div :span="24" class="action-button">
-        <a-button :loading="loading" @click="closeModal">{{ $t('label.cancel') }}</a-button>
+        <a-button :loading="loading" @click="editProfileModalVisible = false">{{ $t('label.cancel') }}</a-button>
         <a-button :loading="loading" ref="submit" type="primary" @click="updateAutoScaleVmProfile">{{ $t('label.ok') }}</a-button>
       </div>
     </a-modal>
@@ -308,6 +308,7 @@
 
 <script>
 import { api } from '@/api'
+import { addProjectFilter } from '@/utils/util'
 import { isAdmin, isAdminOrDomainAdmin } from '@/role'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
@@ -338,6 +339,7 @@ export default {
       autoscaleuserid: null,
       expungevmgraceperiod: null,
       templateid: null,
+      templateName: null,
       serviceofferingid: null,
       userdata: null,
       userdataid: null,
@@ -422,6 +424,7 @@ export default {
         domainid: this.resource.domainid,
         account: this.resource.account
       }
+      addProjectFilter(params, this.resource)
       if (isAdmin()) {
         params.templatefilter = 'all'
       } else {
@@ -436,6 +439,7 @@ export default {
         listall: 'true',
         issystem: 'false'
       }
+      addProjectFilter(params, this.resource)
       if (isAdminOrDomainAdmin()) {
         params.isrecursive = 'true'
       }
@@ -446,15 +450,18 @@ export default {
     },
     fetchData () {
       this.loading = true
-      api('listAutoScaleVmProfiles', {
+      const params = {
         listAll: true,
         id: this.resource.vmprofileid
-      }).then(response => {
+      }
+      addProjectFilter(params, this.resource)
+      api('listAutoScaleVmProfiles', params).then(response => {
         this.profileid = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.id
         this.autoscaleuserid = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.autoscaleuserid
         this.expungevmgraceperiod = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.expungevmgraceperiod
         this.serviceofferingid = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.serviceofferingid
         this.templateid = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.templateid
+        this.fetchTemplate(this.templateid)
         this.userdata = this.decodeUserData(decodeURIComponent(response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.userdata || ''))
         this.userdataid = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.userdataid
         this.userdataname = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.userdataname
@@ -468,13 +475,24 @@ export default {
         this.loading = false
       })
     },
-    getTemplateName (templateid) {
-      for (const template of this.templatesList) {
-        if (template.id === templateid) {
-          return template.name
-        }
+    fetchTemplate (templateid) {
+      if (!templateid) {
+        this.templateName = null
+        return
       }
-      return ''
+      const params = {
+        id: templateid,
+        templatefilter: isAdmin() ? 'all' : 'executable'
+      }
+      addProjectFilter(params, this.resource)
+      api('listTemplates', params).then(json => {
+        // Ignore stale responses if templateid changed while this request was in flight.
+        if (templateid !== this.templateid) return
+        this.templateName = json.listtemplatesresponse?.template?.[0]?.name || templateid
+      }).catch(() => {
+        if (templateid !== this.templateid) return
+        this.templateName = templateid
+      })
     },
     getServiceOfferingName (serviceofferingid) {
       for (const serviceoffering of this.serviceOfferingsList) {
@@ -576,16 +594,21 @@ export default {
         this.$pollJob({
           jobId: response.updateautoscalevmprofileresponse.jobid,
           successMethod: (result) => {
+            this.fetchData()
           },
           errorMessage: this.$t('message.update.autoscale.vm.profile.failed'),
           errorMethod: () => {
+            this.fetchData()
           }
         })
-      }).finally(() => {
+      }).catch(() => {
+        // fetchData() resets loading once the job completes; reset here only on submit failure.
         this.loading = false
       })
     },
     updateAutoScaleVmProfile () {
+      if (this.loading) return
+      this.loading = true
       const params = {
         id: this.profileid,
         expungevmgraceperiod: this.expungevmgraceperiod,
@@ -604,12 +627,16 @@ export default {
         this.$pollJob({
           jobId: response.updateautoscalevmprofileresponse.jobid,
           successMethod: (result) => {
+            this.loading = false
+            // Closing the modal triggers afterClose -> onModalClosed, which refreshes the data.
+            this.editProfileModalVisible = false
           },
           errorMessage: this.$t('message.update.autoscale.vm.profile.failed'),
           errorMethod: () => {
+            this.loading = false
           }
         })
-      }).finally(() => {
+      }).catch(() => {
         this.loading = false
       })
     },
@@ -617,8 +644,8 @@ export default {
       const decodedData = Buffer.from(userdata, 'base64')
       return decodedData.toString('utf-8')
     },
-    closeModal () {
-      this.editProfileModalVisible = false
+    onModalClosed () {
+      this.fetchData()
     }
   }
 }
