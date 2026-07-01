@@ -18,6 +18,7 @@ package com.cloud.api.query.dao;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
 
@@ -26,7 +27,10 @@ import com.cloud.storage.StorageStats;
 import com.cloud.user.AccountManager;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.response.ImageStoreResponse;
@@ -48,6 +52,8 @@ public class ImageStoreJoinDaoImpl extends GenericDaoBase<ImageStoreJoinVO, Long
     private AnnotationDao annotationDao;
     @Inject
     private AccountManager accountManager;
+    @Inject
+    private ImageStoreDetailsDao imageStoreDetailsDao;
 
     private final SearchBuilder<ImageStoreJoinVO> dsSearch;
 
@@ -91,6 +97,14 @@ public class ImageStoreJoinDaoImpl extends GenericDaoBase<ImageStoreJoinVO, Long
         }
         osResponse.setHasAnnotation(annotationDao.hasAnnotations(ids.getUuid(), AnnotationService.EntityType.SECONDARY_STORAGE.name(),
                 accountManager.isRootAdmin(CallContext.current().getCallingAccount().getId())));
+
+        if (DataStoreProvider.S3_IMAGE.equalsIgnoreCase(ids.getProviderName())) {
+            Map<String, String> s3Details = imageStoreDetailsDao.getDetails(ids.getId());
+            if (s3Details != null) {
+                osResponse.setS3Endpoint(s3Details.get(ApiConstants.S3_END_POINT));
+                osResponse.setS3BucketName(s3Details.get(ApiConstants.S3_BUCKET_NAME));
+            }
+        }
 
         osResponse.setObjectName("imagestore");
         return osResponse;
