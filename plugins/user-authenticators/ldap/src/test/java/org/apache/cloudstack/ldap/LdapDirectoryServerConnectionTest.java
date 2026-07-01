@@ -90,7 +90,7 @@ public class LdapDirectoryServerConnectionTest {
         lenient().when(userManagerFactory.getInstance(LdapUserManager.Provider.OPENLDAP)).thenReturn(new OpenLdapUserManagerImpl(configuration));
         // construct an elaborate structure around a single object
         Pair<List<LdapConfigurationVO>, Integer> vos = new Pair<List<LdapConfigurationVO>, Integer>( Collections.singletonList(configurationVO),1);
-        lenient().when(configurationDao.searchConfigurations(null, 0, 1L)).thenReturn(vos);
+        lenient().when(configurationDao.searchConfigurations(null, 0, 1L, 1L, 20L)).thenReturn(vos);
 
         contextFactory = new LdapContextFactory(configuration);
         ldapManager = new LdapManagerImpl(configurationDao, contextFactory, userManagerFactory, configuration);
