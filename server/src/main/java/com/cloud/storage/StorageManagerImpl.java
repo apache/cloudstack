@@ -27,6 +27,7 @@ import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
@@ -4062,7 +4063,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                         SystemVmTemplateRegistration systemVmTemplateRegistration = new SystemVmTemplateRegistration();
                         String filePath = null;
                         try {
-                            filePath = Files.createTempDirectory(SystemVmTemplateRegistration.TEMPORARY_SECONDARY_STORE).toString();
+                            filePath = Files.createTempDirectory(Paths.get(SystemVmTemplateRegistration.TEMP_DIRECTORY), SystemVmTemplateRegistration.TEMPORARY_SECONDARY_STORE).toString();
                             if (filePath == null) {
                                 throw new CloudRuntimeException("Failed to create temporary file path to mount the store");
                             }

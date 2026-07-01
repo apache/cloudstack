@@ -101,6 +101,7 @@ public class SystemVmTemplateRegistration {
     private static final String TEMPLATES_PATH = fetchTemplatesPath();
     private static final String METADATA_FILE_NAME = "metadata.ini";
     private static final String METADATA_FILE = TEMPLATES_PATH + METADATA_FILE_NAME;
+    public static final String TEMP_DIRECTORY = "/var/tmp";
     public static final String TEMPORARY_SECONDARY_STORE = "tmp";
     private static final String PARTIAL_TEMPLATE_FOLDER = String.format("/template/tmpl/%d/", Account.ACCOUNT_ID_SYSTEM);
     private static final String storageScriptsDir = "scripts/storage/secondary";
@@ -360,7 +361,7 @@ public class SystemVmTemplateRegistration {
     public boolean validateIfSeeded(TemplateDataStoreVO templDataStoreVO, String url, String path, String nfsVersion) {
         String filePath = null;
         try {
-            filePath = Files.createTempDirectory(TEMPORARY_SECONDARY_STORE).toString();
+            filePath = Files.createTempDirectory(Paths.get(TEMP_DIRECTORY), TEMPORARY_SECONDARY_STORE).toString();
             if (filePath == null) {
                 throw new CloudRuntimeException("Failed to create temporary directory to mount secondary store");
             }
@@ -962,7 +963,7 @@ public class SystemVmTemplateRegistration {
                         for (Long zoneId : zoneIds) {
                             String filePath = null;
                             try {
-                                filePath = Files.createTempDirectory(TEMPORARY_SECONDARY_STORE).toString();
+                                filePath = Files.createTempDirectory(Paths.get(TEMP_DIRECTORY), TEMPORARY_SECONDARY_STORE).toString();
                                 if (filePath == null) {
                                     throw new CloudRuntimeException("Failed to create temporary file path to mount the store");
                                 }
