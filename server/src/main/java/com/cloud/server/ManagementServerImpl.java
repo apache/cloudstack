@@ -4975,8 +4975,8 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         if (cmd.getPrivateKey() != null) {
             _ksMgr.saveCertificate(ConsoleProxyManager.CERTIFICATE_NAME, certificate, key, domainSuffix);
 
-            // Reboot ssvm here since private key is present - meaning server cert being passed
             final List<SecondaryStorageVmVO> alreadyRunning = _secStorageVmDao.getSecStorageVmListInStates(null, State.Running, State.Migrating, State.Starting);
+            logger.debug("Reboot SSVMs in Running, Migrating, Starting states since private key is present - meaning server cert being passed");
             for (final SecondaryStorageVmVO ssVmVm : alreadyRunning) {
                 _secStorageVmMgr.rebootSecStorageVm(ssVmVm.getId());
             }
