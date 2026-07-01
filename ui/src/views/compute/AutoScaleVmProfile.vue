@@ -199,7 +199,7 @@
     <a-modal
       :title="$t('label.edit.autoscale.vmprofile')"
       :visible="editProfileModalVisible"
-      :afterClose="closeModal"
+      :afterClose="onModalClosed"
       :maskClosable="false"
       :closable="true"
       :footer="null"
@@ -284,7 +284,7 @@
         </div>
       </div>
       <div :span="24" class="action-button">
-        <a-button :loading="loading" @click="closeModal">{{ $t('label.cancel') }}</a-button>
+        <a-button :loading="loading" @click="editProfileModalVisible = false">{{ $t('label.cancel') }}</a-button>
         <a-button :loading="loading" ref="submit" type="primary" @click="updateAutoScaleVmProfile">{{ $t('label.ok') }}</a-button>
       </div>
     </a-modal>
@@ -308,6 +308,7 @@
 
 <script>
 import { api } from '@/api'
+import { addProjectFilter } from '@/utils/util'
 import { isAdmin, isAdminOrDomainAdmin } from '@/role'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
@@ -423,9 +424,7 @@ export default {
         domainid: this.resource.domainid,
         account: this.resource.account
       }
-      if (this.resource.projectid) {
-        params.projectid = this.resource.projectid
-      }
+      addProjectFilter(params, this.resource)
       if (isAdmin()) {
         params.templatefilter = 'all'
       } else {
@@ -440,9 +439,7 @@ export default {
         listall: 'true',
         issystem: 'false'
       }
-      if (this.resource.projectid) {
-        params.projectid = this.resource.projectid
-      }
+      addProjectFilter(params, this.resource)
       if (isAdminOrDomainAdmin()) {
         params.isrecursive = 'true'
       }
@@ -457,9 +454,7 @@ export default {
         listAll: true,
         id: this.resource.vmprofileid
       }
-      if (this.resource.projectid) {
-        params.projectid = this.resource.projectid
-      }
+      addProjectFilter(params, this.resource)
       api('listAutoScaleVmProfiles', params).then(response => {
         this.profileid = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.id
         this.autoscaleuserid = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.autoscaleuserid
@@ -481,20 +476,22 @@ export default {
       })
     },
     fetchTemplate (templateid) {
-      if (!templateid) return
+      if (!templateid) {
+        this.templateName = null
+        return
+      }
       const params = {
         id: templateid,
-        templatefilter: 'executable'
+        templatefilter: isAdmin() ? 'all' : 'executable'
       }
-      if (this.resource.projectid) {
-        params.projectid = this.resource.projectid
-      }
+      addProjectFilter(params, this.resource)
       api('listTemplates', params).then(json => {
-        if (json.listtemplatesresponse?.template?.[0]) {
-          this.templateName = json.listtemplatesresponse.template[0].name
-        } else {
-          this.templateName = templateid
-        }
+        // Ignore stale responses if templateid changed while this request was in flight.
+        if (templateid !== this.templateid) return
+        this.templateName = json.listtemplatesresponse?.template?.[0]?.name || templateid
+      }).catch(() => {
+        if (templateid !== this.templateid) return
+        this.templateName = templateid
       })
     },
     getServiceOfferingName (serviceofferingid) {
@@ -604,7 +601,8 @@ export default {
             this.fetchData()
           }
         })
-      }).finally(() => {
+      }).catch(() => {
+        // fetchData() resets loading once the job completes; reset here only on submit failure.
         this.loading = false
       })
     },
@@ -629,13 +627,16 @@ export default {
         this.$pollJob({
           jobId: response.updateautoscalevmprofileresponse.jobid,
           successMethod: (result) => {
-            this.closeModal()
+            this.loading = false
+            // Closing the modal triggers afterClose -> onModalClosed, which refreshes the data.
+            this.editProfileModalVisible = false
           },
           errorMessage: this.$t('message.update.autoscale.vm.profile.failed'),
           errorMethod: () => {
+            this.loading = false
           }
         })
-      }).finally(() => {
+      }).catch(() => {
         this.loading = false
       })
     },
@@ -643,9 +644,8 @@ export default {
       const decodedData = Buffer.from(userdata, 'base64')
       return decodedData.toString('utf-8')
     },
-    closeModal () {
+    onModalClosed () {
       this.fetchData()
-      this.editProfileModalVisible = false
     }
   }
 }

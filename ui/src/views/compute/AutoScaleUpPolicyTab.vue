@@ -324,6 +324,7 @@
 
 <script>
 import { api } from '@/api'
+import { addProjectFilter } from '@/utils/util'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
@@ -429,9 +430,7 @@ export default {
         listAll: true,
         id: this.resource.id
       }
-      if (this.resource.projectid) {
-        params.projectid = this.resource.projectid
-      }
+      addProjectFilter(params, this.resource)
       api('listAutoScaleVmGroups', params).then(response => {
         const lbruleid = response.listautoscalevmgroupsresponse?.autoscalevmgroup?.[0]?.lbruleid
         this.policies = response.listautoscalevmgroupsresponse?.autoscalevmgroup?.[0]?.scaleuppolicies
@@ -445,9 +444,7 @@ export default {
           listAll: true,
           id: lbruleid
         }
-        if (this.resource.projectid) {
-          lbParams.projectid = this.resource.projectid
-        }
+        addProjectFilter(lbParams, this.resource)
         api('listLoadBalancerRules', lbParams).then(response => {
           const networkid = response.listloadbalancerrulesresponse?.loadbalancerrule?.[0]?.networkid
           api('listNetworks', {
@@ -476,9 +473,7 @@ export default {
         listAll: true,
         id: this.selectedPolicyId
       }
-      if (this.resource.projectid) {
-        params.projectid = this.resource.projectid
-      }
+      addProjectFilter(params, this.resource)
       api('listAutoScalePolicies', params).then(response => {
         this.policy = response.listautoscalepoliciesresponse?.autoscalepolicy[0]
       }).finally(() => {
