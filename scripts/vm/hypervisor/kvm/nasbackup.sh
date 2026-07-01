@@ -160,7 +160,31 @@ backup_running_vm() {
     # backup-begin then fails on the disk that is missing the bitmap. Require the bitmap on all
     # disks: compare the disk count to the number of disks reporting the bitmap (tests 17/19).
     disk_count=$(virsh -c qemu:///system domblklist "$VM" --details 2>/dev/null | awk '$2=="disk"{c++} END{print c+0}')
-    bitmap_count=$(virsh -c qemu:///system qemu-monitor-command "$VM" '{"execute":"query-block"}' 2>/dev/null | grep -o "\"$BITMAP_PARENT\"" | wc -l | tr -d ' ')
+    # Count DISKS that actually carry the parent bitmap, not raw name occurrences. query-block
+    # lists each disk's bitmap under more than one node, so "grep -o name | wc -l" double-counts:
+    # with two disks where only one has the bitmap it returns 2, is misread as present-on-all, and
+    # the incremental then fails on the disk missing it (test 19). Parse per-device exactly as
+    # LibvirtStartBackupCommandWrapper.getVmDiskPathHasFromCheckpointMap() does (one count per
+    # inserted.file whose dirty-bitmaps contains the parent). The trailing "|| echo 0" also keeps a
+    # no-match from aborting the script under "set -eo pipefail" before the fallback below runs
+    # (a snapshot restore wipes the bitmap on all disks, so nothing matches — tests 17/18).
+    bitmap_count=$(virsh -c qemu:///system qemu-monitor-command "$VM" '{"execute":"query-block"}' 2>/dev/null | python3 -c '
+import sys, json
+target = sys.argv[1]
+try:
+    data = json.load(sys.stdin)
+except Exception:
+    print(0); sys.exit(0)
+files = set()
+for dev in data.get("return", []) or []:
+    inserted = dev.get("inserted") or {}
+    f = inserted.get("file")
+    if not f:
+        continue
+    if any((b or {}).get("name") == target for b in (inserted.get("dirty-bitmaps") or [])):
+        files.add(f)
+print(len(files))
+' "$BITMAP_PARENT" 2>/dev/null || echo 0)
     if [[ "$disk_count" -eq 0 || "$bitmap_count" -lt "$disk_count" ]]; then
       log -e "incremental: parent bitmap $BITMAP_PARENT present on $bitmap_count/$disk_count disk(s) — falling back to full"
       echo "INCREMENTAL_FALLBACK=true"
