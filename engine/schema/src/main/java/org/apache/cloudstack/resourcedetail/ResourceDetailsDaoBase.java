@@ -39,6 +39,7 @@ import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import javax.inject.Inject;
 
 public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends GenericDaoBase<R, Long> implements ResourceDetailsDao<R> {
+    private static final int IN_CLAUSE_BATCH_SIZE = 1000;
 
     @Inject
     private ConfigurationDao configDao;
@@ -120,6 +121,31 @@ public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends G
 
         List<R> results = search(sc, null);
         return results.stream().collect(Collectors.toMap(R::getName, R::getValue));
+    }
+
+    @Override
+    public Map<Long, Map<String, String>> listDetailsKeyPairs(List<Long> resourceIds, List<String> keys) {
+        if (CollectionUtils.isEmpty(resourceIds)) {
+            return new HashMap<>();
+        }
+        SearchBuilder<R> sb = createSearchBuilder();
+        sb.and("resourceId", sb.entity().getResourceId(), SearchCriteria.Op.IN);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.IN);
+        sb.done();
+
+        Map<Long, Map<String, String>> result = new HashMap<>(resourceIds.size());
+        for (int i = 0; i < resourceIds.size(); i += IN_CLAUSE_BATCH_SIZE) {
+            List<Long> batch = resourceIds.subList(i, Math.min(i + IN_CLAUSE_BATCH_SIZE, resourceIds.size()));
+            SearchCriteria<R> sc = sb.create();
+            sc.setParameters("resourceId", batch.toArray());
+            sc.setParameters("name", keys.toArray());
+            List<R> results = search(sc, null);
+            for (R r : results) {
+                result.computeIfAbsent(r.getResourceId(), k -> new HashMap<>())
+                        .put(r.getName(), r.getValue());
+            }
+        }
+        return result;
     }
 
     public Map<String, Boolean> listDetailsVisibility(long resourceId) {
