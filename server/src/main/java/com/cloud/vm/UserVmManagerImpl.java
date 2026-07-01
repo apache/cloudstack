@@ -249,12 +249,12 @@ import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import com.cloud.kubernetes.cluster.KubernetesServiceHelper;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
-import com.cloud.network.NetworkService;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.IpAddresses;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.NetworkService;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.as.AutoScaleManager;
@@ -837,7 +837,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_RESETPASSWORD, eventDescription = "resetting Vm password", async = true)
-    public UserVm resetVMPassword(ResetVMPasswordCmd cmd, String password) throws ResourceUnavailableException, InsufficientCapacityException {
+    public UserVm resetVMPassword(ResetVMPasswordCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException {
         Account caller = CallContext.current().getCallingAccount();
         Long vmId = cmd.getId();
         UserVmVO userVm = _vmDao.findById(cmd.getId());
@@ -846,6 +846,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (userVm == null) {
             throw new InvalidParameterValueException("unable to find an Instance with id " + cmd.getId());
         }
+
+        String logSuffix = "password defined by user";
+        String password = cmd.getPassword();
+        if (StringUtils.isBlank(password)) {
+            password = _mgr.generateRandomPassword();
+            logSuffix = "a randomly generated password";
+        }
+        logger.debug("Resetting {} password to {}.", userVm, logSuffix);
 
         _vmDao.loadDetails(userVm);
 
