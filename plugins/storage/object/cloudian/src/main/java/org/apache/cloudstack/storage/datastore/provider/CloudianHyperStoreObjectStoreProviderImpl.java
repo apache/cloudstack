@@ -28,7 +28,6 @@ import org.apache.cloudstack.storage.datastore.driver.CloudianHyperStoreObjectSt
 import org.apache.cloudstack.storage.datastore.lifecycle.CloudianHyperStoreObjectStoreLifeCycleImpl;
 import org.apache.cloudstack.storage.datastore.util.CloudianHyperStoreUtil;
 import org.apache.cloudstack.storage.object.ObjectStoreDriver;
-import org.apache.cloudstack.storage.object.datastore.ObjectStoreHelper;
 import org.apache.cloudstack.storage.object.datastore.ObjectStoreProviderManager;
 import org.apache.cloudstack.storage.object.store.lifecycle.ObjectStoreLifeCycle;
 import org.springframework.stereotype.Component;
@@ -43,10 +42,7 @@ public class CloudianHyperStoreObjectStoreProviderImpl implements ObjectStorePro
 
     @Inject
     ObjectStoreProviderManager storeMgr;
-    @Inject
-    ObjectStoreHelper helper;
 
-    private final String providerName = CloudianHyperStoreUtil.OBJECT_STORE_PROVIDER_NAME;
     protected ObjectStoreLifeCycle lifeCycle;
     protected ObjectStoreDriver driver;
 
@@ -57,7 +53,7 @@ public class CloudianHyperStoreObjectStoreProviderImpl implements ObjectStorePro
 
     @Override
     public String getName() {
-        return this.providerName;
+        return CloudianHyperStoreUtil.OBJECT_STORE_PROVIDER_NAME;
     }
 
     @Override
@@ -80,7 +76,7 @@ public class CloudianHyperStoreObjectStoreProviderImpl implements ObjectStorePro
 
     @Override
     public Set<DataStoreProviderType> getTypes() {
-        Set<DataStoreProviderType> types = new HashSet<DataStoreProviderType>();
+        Set<DataStoreProviderType> types = new HashSet<>();
         types.add(DataStoreProviderType.OBJECT);
         return types;
     }
