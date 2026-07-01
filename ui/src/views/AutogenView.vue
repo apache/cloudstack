@@ -1118,7 +1118,9 @@ export default {
 
       if (this.apiName === 'quotaTariffList' && !('quotaTariffCreate' in store.getters.apis || 'quotaTariffUpdate' in store.getters.apis)) {
         const index = this.columns.findIndex(col => col.dataIndex === 'hasActivationRule')
-        this.columns.splice(index, 1)
+        if (index >= 0) {
+          this.columns.splice(index, 1)
+        }
       }
 
       this.loading = true

@@ -677,13 +677,13 @@
         <template v-if="text">
           <template v-if="!text.startsWith('PrjAcct-')">
             <router-link
-              v-if="$route.path.startsWith('/quotasummary') && $router.resolve(`${$route.path}/${record.accountid}`) !== '404'"
+              v-if="$route.path.startsWith('/quotasummary') && $router.resolve(`${$route.path}/${record.accountid}`).matched[0].redirect !== '/exception/404'"
               :to="{ path: `${$route.path}/${record.accountid}` }">{{ text }}</router-link>
             <span v-else>{{ text }}</span>
           </template>
           <template v-else>
             <router-link
-              v-if="$route.path.startsWith('/quotasummary') && $router.resolve(`${$route.path}/${record.accountid}`) !== '404'"
+              v-if="$route.path.startsWith('/quotasummary') && $router.resolve(`${$route.path}/${record.accountid}`).matched[0].redirect !== '/exception/404'"
               :to="{ path: `${$route.path}/${record.accountid}` }">{{ (record.projectname || record.account).concat(' (').concat($t('label.project')).concat(')') }}</router-link>
             <span v-else>{{ text }}</span>
           </template>

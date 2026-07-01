@@ -121,8 +121,8 @@ export default {
     async getQuotaBalance () {
       const params = {
         accountid: this.$route.params?.id,
-        startDate: this.startDate,
-        endDate: this.endDate
+        startdate: this.startDate,
+        enddate: this.endDate
       }
 
       return await getAPI('quotaBalance', params)

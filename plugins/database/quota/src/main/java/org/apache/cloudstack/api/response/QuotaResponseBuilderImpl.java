@@ -766,7 +766,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             return;
         }
 
-        if (enforceQuota && account.getState() == Account.State.ENABLED && _quotaManager.isLockable(account)) {
+        if (Boolean.TRUE.equals(enforceQuota) && account.getState() == Account.State.ENABLED && _quotaManager.isLockable(account)) {
             logger.info("Locking Account [{}] due to negative balance.", accountName);
             _accountMgr.lockAccount(accountName, domainId, accountId);
         }

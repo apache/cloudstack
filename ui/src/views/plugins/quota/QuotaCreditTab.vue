@@ -132,7 +132,7 @@ export default {
       }
 
       return await getAPI('quotaCreditsList', params)
-        .then(json => json.quotacreditslistresponse.credit || {})
+        .then(json => json.quotacreditslistresponse.credit || [])
         .catch(error => { error && this.$notification.info({ message: this.$t('message.request.no.data') }) })
     },
     exportDataToCsv () {

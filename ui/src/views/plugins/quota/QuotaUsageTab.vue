@@ -99,7 +99,6 @@
         class="w-100"
         style="margin: 5px 0 10px 0px"
         show-search
-        v-model="selectedType"
         @change="handleSelectedTypeChange">
         <a-select-option
           v-for="quotaType of getQuotaTypesFiltered()"
@@ -133,7 +132,7 @@
             <span v-if="!text">
               -
             </span>
-            <span v-if="!text === '<untraceable>' || !record.resourceid">
+            <span v-if="text === '<untraceable>' || !record.resourceid">
               {{ text }}
             </span>
             <a v-else @click="handleSelectedResourceChange(record.resourceid)">
@@ -160,7 +159,6 @@
         class="w-100"
         style="margin: 5px 0 10px 0px"
         show-search
-        v-model="selectedResource"
         @change="handleSelectedResourceChange"
         :disabled="getResources().length == 0">
         <a-select-option
@@ -339,7 +337,7 @@ export default {
         {
           title: this.$t('label.quota.consumed'),
           dataIndex: 'quotaconsumed',
-          sorter: (a, b) => a.quotaused - b.quotaused
+          sorter: (a, b) => a.quotaconsumed - b.quotaconsumed
         }
       ]
     }
@@ -554,7 +552,7 @@ export default {
     pushDateToLabelsIfNotPresent (lineChartLabels, date) {
       const hasDate = lineChartLabels.some(d => {
         const diff = Math.abs(new Date(date) - new Date(d).getTime())
-        return diff < 5 * 1000 // Do not push the label if there is already one within 5 minutes
+        return diff < 5 * 1000 * 60 // Do not push the label if there is already one within 5 minutes
       })
       if (!hasDate) {
         lineChartLabels.push(date)

@@ -94,16 +94,12 @@ export default {
   },
   created () {
     this.initForm()
-    console.log(store.getters.project)
-    console.log(store.getters.userInfo)
   },
   methods: {
     initForm () {
       this.formRef = ref()
       this.form = reactive({})
       this.rules = reactive({
-        domainid: [{ required: true, message: this.$t('message.action.quota.credit.add.error.domainidrequired') }],
-        accountid: [{ required: true, message: this.$t('message.action.quota.credit.add.error.accountrequired') }],
         value: [{ required: true, message: this.$t('message.action.quota.credit.add.error.valuerequired') }]
       })
     },
@@ -142,7 +138,6 @@ export default {
       this.$emit('close-action')
     },
     fetchOwnerOptions (OwnerOptions) {
-      console.log(OwnerOptions)
       this.owner = {}
       if (OwnerOptions.selectedAccountType === 'Account') {
         if (!OwnerOptions.selectedAccount) {

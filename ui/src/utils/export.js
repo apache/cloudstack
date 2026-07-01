@@ -34,7 +34,7 @@ export function exportDataToCsv ({ data = null, keys = null, headers = null, col
 
       if (typeof item[key] === 'string' && item[key].includes(columnDelimiter)) {
         dataParsed += `"${item[key]}"`
-      } else if (dateFormat && item[key] instanceof dayjs) {
+      } else if (dateFormat && dayjs.isDayjs(item[key])) {
         dataParsed += `"${item[key].format(dateFormat)}"`
       } else {
         dataParsed += item[key]
