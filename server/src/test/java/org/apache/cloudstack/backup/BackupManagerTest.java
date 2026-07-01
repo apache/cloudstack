@@ -2242,4 +2242,33 @@ public class BackupManagerTest {
         verify(vmInstanceDao, times(1)).findByIdIncludingRemoved(vmId);
         verify(volumeDao, times(1)).findByInstance(vmId);
     }
+
+    @Test
+    public void testGetDatastorePossibleValuesNFS() {
+        String poolName = "NFS-Pool-Name";
+        String poolUuid = UUID.randomUUID().toString();
+
+        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+        when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+        when(pool.getName()).thenReturn(poolName);
+        when(pool.getUuid()).thenReturn(poolUuid);
+
+        String[] datastorePossibleValues = backupManager.getDatastorePossibleValues(pool);
+        Assert.assertEquals(2, datastorePossibleValues.length);
+        Assert.assertEquals(poolUuid, datastorePossibleValues[0]);
+        Assert.assertEquals(poolName, datastorePossibleValues[1]);
+    }
+
+    @Test
+    public void testGetDatastorePossibleValuesVSAN() {
+        String poolName = "VSAN-Pool-Name";
+
+        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+        when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.VMFS);
+        when(pool.getName()).thenReturn(poolName);
+
+        String[] datastorePossibleValues = backupManager.getDatastorePossibleValues(pool);
+        Assert.assertEquals(1, datastorePossibleValues.length);
+        Assert.assertEquals(poolName, datastorePossibleValues[0]);
+    }
 }
