@@ -2149,6 +2149,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                         }
 
                         try {
+                            cleanupSnapshotRecordsInPrimaryStorageOnly(vol);
                             VolumeInfo volumeInfo = volFactory.getVolume(vol.getId());
                             if (volumeInfo != null) {
                                 volService.ensureVolumeIsExpungeReady(vol.getId());
@@ -2293,6 +2294,47 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             }
         } catch (Exception e) {
             logger.error("Failed to delete snapshot [{}] from storage due to: [{}].", snapshot, e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Cleans up snapshot DB records for snapshots that exist only on primary storage (no secondary copy).
+     * This handles the case where snapshot.backup.to.secondary=false and the volume is being deleted
+     * during VM expunge. Each primary-only snapshot is routed through the storage driver via
+     * {@link #deleteSnapshot(SnapshotVO, SnapshotDataStoreVO)} so the underlying snapshot data is
+     * actually removed before any DB state is advanced. The parent snapshot row is only marked
+     * Destroyed once no live store refs remain.
+     */
+    protected void cleanupSnapshotRecordsInPrimaryStorageOnly(VolumeVO volume) {
+        List<SnapshotVO> snapshots = _snapshotDao.listByVolumeId(volume.getId());
+        if (CollectionUtils.isEmpty(snapshots)) {
+            return;
+        }
+        for (SnapshotVO snapshot : snapshots) {
+            if (Snapshot.State.Destroyed.equals(snapshot.getState())) {
+                continue;
+            }
+            List<SnapshotDataStoreVO> snapshotsOnPrimaryStorage = _snapshotStoreDao.listBySnapshotAndDataStoreRole(snapshot.getId(), DataStoreRole.Primary);
+            List<SnapshotDataStoreVO> snapshotsOnSecondaryStorage = _snapshotStoreDao.listBySnapshotAndDataStoreRole(snapshot.getId(), DataStoreRole.Image);
+            if (CollectionUtils.isEmpty(snapshotsOnPrimaryStorage) || CollectionUtils.isNotEmpty(snapshotsOnSecondaryStorage)) {
+                continue;
+            }
+            logger.info("Cleaning up snapshot {} (primary-only, no secondary copy) as volume {} is being deleted", snapshot, volume);
+            for (SnapshotDataStoreVO snapshotOnPrimaryStorage : snapshotsOnPrimaryStorage) {
+                deleteSnapshot(snapshot, snapshotOnPrimaryStorage);
+            }
+            List<SnapshotDataStoreVO> remaining = _snapshotStoreDao.findBySnapshotIdAndNotInDestroyedHiddenState(snapshot.getId());
+            if (CollectionUtils.isEmpty(remaining)) {
+                Snapshot.State previousState = snapshot.getState();
+                snapshot.setState(Snapshot.State.Destroyed);
+                _snapshotDao.update(snapshot.getId(), snapshot);
+                annotationDao.removeByEntityType(AnnotationService.EntityType.SNAPSHOT.name(), snapshot.getUuid());
+                if (previousState != Snapshot.State.Error && previousState != Snapshot.State.Destroyed) {
+                    _resourceLimitMgr.decrementResourceCount(snapshot.getAccountId(), ResourceType.snapshot);
+                }
+            } else {
+                logger.warn("Storage driver did not remove all primary store refs for snapshot {}; leaving parent record for the next scavenger pass to retry", snapshot);
+            }
         }
     }
 
