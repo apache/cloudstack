@@ -61,6 +61,7 @@ import org.apache.cloudstack.extension.CustomActionResultResponse;
 import org.apache.cloudstack.extension.Extension;
 import org.apache.cloudstack.extension.ExtensionCustomAction;
 import org.apache.cloudstack.extension.ExtensionHelper;
+import org.apache.cloudstack.extension.NetworkCustomActionProvider;
 import org.apache.cloudstack.extension.ExtensionResourceMap;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -75,6 +76,7 @@ import org.apache.cloudstack.framework.extensions.api.RunCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.UnregisterExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.UpdateCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.UpdateExtensionCmd;
+import org.apache.cloudstack.framework.extensions.api.UpdateRegisteredExtensionCmd;
 import org.apache.cloudstack.framework.extensions.command.CleanupExtensionFilesCommand;
 import org.apache.cloudstack.framework.extensions.command.ExtensionRoutingUpdateCommand;
 import org.apache.cloudstack.framework.extensions.command.ExtensionServerActionBaseCommand;
@@ -120,11 +122,25 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
-import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.ExternalProvisioner;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.network.Network;
+import com.cloud.network.Network.Capability;
+import com.cloud.network.Network.Service;
+import com.cloud.network.NetworkModel;
+import com.cloud.network.PhysicalNetworkServiceProvider;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkServiceMapDao;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
+import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
+import com.cloud.network.element.NetworkElement;
+import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.dao.VpcServiceMapDao;
 import com.cloud.org.Cluster;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -141,13 +157,15 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackWithException;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.VmDetailConstants;
-import com.cloud.vm.dao.VMInstanceDao;
 
 public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsManager, ExtensionHelper, PluggableService, Configurable {
 
@@ -172,6 +190,12 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     ClusterDao clusterDao;
 
     @Inject
+    PhysicalNetworkDao physicalNetworkDao;
+
+    @Inject
+    PhysicalNetworkServiceProviderDao physicalNetworkServiceProviderDao;
+
+    @Inject
     AgentManager agentMgr;
 
     @Inject
@@ -190,9 +214,6 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     ExtensionCustomActionDetailsDao extensionCustomActionDetailsDao;
 
     @Inject
-    VMInstanceDao vmInstanceDao;
-
-    @Inject
     VirtualMachineManager virtualMachineManager;
 
     @Inject
@@ -209,6 +230,18 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
 
     @Inject
     VMTemplateDao templateDao;
+
+    @Inject
+    NetworkDao networkDao;
+
+    @Inject
+    NetworkServiceMapDao networkServiceMapDao;
+
+    @Inject
+    VpcServiceMapDao vpcServiceMapDao;
+
+    @Inject
+    NetworkModel networkModel;
 
     @Inject
     RoleService roleService;
@@ -249,7 +282,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
 
     protected Pair<Boolean, String> getResultFromAnswersString(String answersStr, Extension extension,
                    ManagementServerHostVO msHost, String op) {
-        Answer[] answers = null;
+        Answer[] answers;
         try {
             answers = GsonHelper.getGson().fromJson(answersStr, Answer[].class);
         } catch (Exception e) {
@@ -339,6 +372,39 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         return getResultFromAnswersString(answersStr, extension, msHost, "get path checksum");
     }
 
+    protected List<ExtensionResourceMapDetailsVO> buildExtensionResourceDetailsArray(long extensionResourceMapId,
+            Map<String, String> details) {
+        List<ExtensionResourceMapDetailsVO> detailsList = new ArrayList<>();
+        if (MapUtils.isEmpty(details)) {
+            return detailsList;
+        }
+        for (Map.Entry<String, String> entry : details.entrySet()) {
+            boolean display = !SENSITIVE_DETAIL_KEYS.contains(entry.getKey().toLowerCase());
+            detailsList.add(new ExtensionResourceMapDetailsVO(extensionResourceMapId, entry.getKey(),
+                    entry.getValue(), display));
+        }
+        return detailsList;
+    }
+
+    protected void appendHiddenExtensionResourceDetails(long extensionResourceMapId,
+            List<ExtensionResourceMapDetailsVO> detailsList) {
+        if (CollectionUtils.isEmpty(detailsList)) {
+            return;
+        }
+        Map<String, String> hiddenDetails = extensionResourceMapDetailsDao.listDetailsKeyPairs(extensionResourceMapId, false);
+        if (MapUtils.isEmpty(hiddenDetails)) {
+            return;
+        }
+        Set<String> requestedKeys = detailsList.stream()
+                .map(ExtensionResourceMapDetailsVO::getName)
+                .collect(Collectors.toSet());
+        hiddenDetails.forEach((key, value) -> {
+            if (!requestedKeys.contains(key)) {
+                detailsList.add(new ExtensionResourceMapDetailsVO(extensionResourceMapId, key, value, false));
+            }
+        });
+    }
+
     protected List<ExtensionCustomAction.Parameter> getParametersListFromMap(String actionName, Map parametersMap) {
         if (MapUtils.isEmpty(parametersMap)) {
             return Collections.emptyList();
@@ -360,26 +426,48 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         unregisterExtensionWithCluster(cluster, extensionId);
     }
 
-    protected Extension getExtensionFromResource(ExtensionCustomAction.ResourceType resourceType, String resourceUuid) {
+    protected Extension getExtensionWithCustomActionFromResource(ExtensionCustomAction.ResourceType resourceType, String resourceUuid) {
         Object object = entityManager.findByUuid(resourceType.getAssociatedClass(), resourceUuid);
         if (object == null) {
             return null;
         }
-        Long clusterId = null;
-        if (resourceType == ExtensionCustomAction.ResourceType.VirtualMachine) {
+        if (ExtensionCustomAction.ResourceType.VirtualMachine.equals(resourceType)) {
             VirtualMachine vm = (VirtualMachine) object;
             Pair<Long, Long> clusterHostId = virtualMachineManager.findClusterAndHostIdForVm(vm, false);
-            clusterId = clusterHostId.first();
-        }
-        if (clusterId == null) {
+            Long clusterId = clusterHostId.first();
+            if (clusterId == null) {
+                return null;
+            }
+            ExtensionResourceMapVO mapVO =
+                    extensionResourceMapDao.findByResourceIdAndType(clusterId, ExtensionResourceMap.ResourceType.Cluster);
+            if (mapVO == null) {
+                return null;
+            }
+            return extensionDao.findById(mapVO.getExtensionId());
+        } else if (ExtensionCustomAction.ResourceType.Network.equals(resourceType)) {
+            Network network = (Network) object;
+            Long physicalNetworkId = network.getPhysicalNetworkId();
+            if (physicalNetworkId == null) {
+                return null;
+            }
+            // Use provider-based lookup: match the network's service-map providers
+            // against extension names registered on the physical network.
+            // This correctly handles multiple different extensions on the same physical network.
+            String providerName = networkServiceMapDao.getProviderForServiceInNetwork(network.getId(), Service.CustomAction);
+            if (providerName != null) {
+                return getExtensionForPhysicalNetworkAndProvider(physicalNetworkId, providerName);
+            }
+            return null;
+        } else if (ExtensionCustomAction.ResourceType.Vpc.equals(resourceType)) {
+            Vpc vpc = (Vpc) object;
+            // Find extension via the VPC's CustomAction service provider
+            String providerName = vpcServiceMapDao.getProviderForServiceInVpc(vpc.getId(), Service.CustomAction);
+            if (providerName != null) {
+                return extensionDao.findByNameAndType(providerName, Extension.Type.NetworkOrchestrator);
+            }
             return null;
         }
-        ExtensionResourceMapVO mapVO =
-                extensionResourceMapDao.findByResourceIdAndType(clusterId, ExtensionResourceMap.ResourceType.Cluster);
-        if (mapVO == null) {
-            return null;
-        }
-        return extensionDao.findById(mapVO.getExtensionId());
+        return null;
     }
 
     protected String getActionMessage(boolean success, ExtensionCustomAction action, Extension extension,
@@ -694,12 +782,16 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         Long id = cmd.getExtensionId();
         String name = cmd.getName();
         String keyword = cmd.getKeyword();
+        String typeStr = cmd.getType();
+
         final SearchBuilder<ExtensionVO> sb = extensionDao.createSearchBuilder();
         final Filter searchFilter = new Filter(ExtensionVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
 
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("keyword", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
+        sb.done();
         final SearchCriteria<ExtensionVO> sc = sb.create();
 
         if (id != null) {
@@ -712,6 +804,14 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
 
         if (keyword != null) {
             sc.setParameters("keyword",  "%" + keyword + "%");
+        }
+
+        if (typeStr != null) {
+            Extension.Type type = EnumUtils.getEnum(Extension.Type.class, typeStr);
+            if (type == null) {
+                throw new InvalidParameterValueException("Invalid type: " + typeStr);
+            }
+            sc.setParameters("type", type);
         }
 
         final Pair<List<ExtensionVO>, Integer> result = extensionDao.searchAndCount(sc, searchFilter);
@@ -880,19 +980,88 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         String resourceType = cmd.getResourceType();
         if (!EnumUtils.isValidEnum(ExtensionResourceMap.ResourceType.class, resourceType)) {
             throw new InvalidParameterValueException(
-                    String.format("Currently only [%s] can be used to register an extension of type Orchestrator",
+                    String.format("Currently only [%s] can be used to register an extension",
                             EnumSet.allOf(ExtensionResourceMap.ResourceType.class)));
-        }
-        ClusterVO clusterVO = clusterDao.findByUuid(resourceId);
-        if (clusterVO == null) {
-            throw new InvalidParameterValueException("Invalid cluster ID specified");
         }
         ExtensionVO extension = extensionDao.findById(extensionId);
         if (extension == null) {
             throw new InvalidParameterValueException("Invalid extension specified");
         }
-        ExtensionResourceMap extensionResourceMap = registerExtensionWithCluster(clusterVO, extension, cmd.getDetails());
-        return extensionDao.findById(extensionResourceMap.getExtensionId());
+        ExtensionResourceMap.ResourceType resType = EnumUtils.getEnum(ExtensionResourceMap.ResourceType.class, resourceType);
+        if (ExtensionResourceMap.ResourceType.PhysicalNetwork.equals(resType)) {
+            PhysicalNetworkVO physicalNetwork = physicalNetworkDao.findByUuid(resourceId);
+            if (physicalNetwork == null) {
+                throw new InvalidParameterValueException("Invalid physical network ID specified");
+            }
+            ExtensionResourceMap extensionResourceMap = registerExtensionWithPhysicalNetwork(physicalNetwork, extension, cmd.getDetails());
+            return extensionDao.findById(extensionResourceMap.getExtensionId());
+        } else if (ExtensionResourceMap.ResourceType.Cluster.equals(resType)) {
+            ClusterVO clusterVO = clusterDao.findByUuid(resourceId);
+            if (clusterVO == null) {
+                throw new InvalidParameterValueException("Invalid cluster ID specified");
+            }
+            ExtensionResourceMap extensionResourceMap = registerExtensionWithCluster(clusterVO, extension, cmd.getDetails());
+            return extensionDao.findById(extensionResourceMap.getExtensionId());
+        } else {
+            throw new InvalidParameterValueException("Unsupported resource type specified");
+        }
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_EXTENSION_RESOURCE_UPDATE, eventDescription = "updating extension resource")
+    public Extension updateRegisteredExtensionWithResource(UpdateRegisteredExtensionCmd cmd) {
+        final String resourceId = cmd.getResourceId();
+        final Long extensionId = cmd.getExtensionId();
+        final String resourceType = cmd.getResourceType();
+        final Map<String, String> details = cmd.getDetails();
+        final Boolean cleanupDetails = cmd.isCleanupDetails();
+
+        if (!EnumUtils.isValidEnum(ExtensionResourceMap.ResourceType.class, resourceType)) {
+            throw new InvalidParameterValueException(
+                    String.format("Currently only [%s] can be used to update an extension registration",
+                            EnumSet.allOf(ExtensionResourceMap.ResourceType.class)));
+        }
+        ExtensionVO extension = extensionDao.findById(extensionId);
+        if (extension == null) {
+            throw new InvalidParameterValueException("Invalid extension specified");
+        }
+
+        ExtensionResourceMap.ResourceType resType = EnumUtils.getEnum(ExtensionResourceMap.ResourceType.class, resourceType);
+        long resolvedResourceId;
+        if (ExtensionResourceMap.ResourceType.PhysicalNetwork.equals(resType)) {
+            PhysicalNetworkVO physicalNetwork = physicalNetworkDao.findByUuid(resourceId);
+            if (physicalNetwork == null) {
+                throw new InvalidParameterValueException("Invalid physical network ID specified");
+            }
+            resolvedResourceId = physicalNetwork.getId();
+        } else {
+            ClusterVO clusterVO = clusterDao.findByUuid(resourceId);
+            if (clusterVO == null) {
+                throw new InvalidParameterValueException("Invalid cluster ID specified");
+            }
+            resolvedResourceId = clusterVO.getId();
+        }
+
+        ExtensionResourceMapVO targetMapping = extensionResourceMapDao.findResourceByExtensionIdAndResourceIdAndType(
+                extensionId, resolvedResourceId, resType);
+        if (targetMapping == null) {
+            throw new InvalidParameterValueException(String.format(
+                    "Extension '%s' is not registered with resource %s (%s)",
+                    extension.getName(), resourceId, resourceType));
+        }
+
+        if (Boolean.TRUE.equals(cleanupDetails)) {
+            extensionResourceMapDetailsDao.removeDetails(targetMapping.getId());
+        } else if (MapUtils.isNotEmpty(details)) {
+            List<ExtensionResourceMapDetailsVO> detailsList = buildExtensionResourceDetailsArray(targetMapping.getId(), details);
+            appendHiddenExtensionResourceDetails(targetMapping.getId(), detailsList);
+            detailsList = detailsList.stream()
+                    .filter(detail -> detail.getValue() != null)
+                    .collect(Collectors.toList());
+            extensionResourceMapDetailsDao.saveDetails(detailsList);
+        }
+
+        return extensionDao.findById(extensionId);
     }
 
     @Override
@@ -923,8 +1092,9 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             List<ExtensionResourceMapDetailsVO> detailsVOList = new ArrayList<>();
             if (MapUtils.isNotEmpty(details)) {
                 for (Map.Entry<String, String> entry : details.entrySet()) {
+                    boolean display = !SENSITIVE_DETAIL_KEYS.contains(entry.getKey().toLowerCase());
                     detailsVOList.add(new ExtensionResourceMapDetailsVO(savedExtensionMap.getId(),
-                            entry.getKey(), entry.getValue()));
+                            entry.getKey(), entry.getValue(), display));
                 }
                 extensionResourceMapDetailsDao.saveDetails(detailsVOList);
             }
@@ -934,6 +1104,178 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         return result;
     }
 
+    protected ExtensionResourceMap registerExtensionWithPhysicalNetwork(PhysicalNetworkVO physicalNetwork,
+                  Extension extension, Map<String, String> details) {
+        // Only NetworkOrchestrator extensions can be registered with physical networks
+        if (!Extension.Type.NetworkOrchestrator.equals(extension.getType())) {
+            throw new InvalidParameterValueException(String.format(
+                    "Only extensions of type %s can be registered with a physical network. "
+                    + "Extension '%s' is of type %s.",
+                    Extension.Type.NetworkOrchestrator.name(),
+                    extension.getName(), extension.getType().name()));
+        }
+
+        // Block registering the exact same extension twice on the same physical network
+        final ExtensionResourceMap.ResourceType resourceType = ExtensionResourceMap.ResourceType.PhysicalNetwork;
+        ExtensionResourceMapVO existing = extensionResourceMapDao.findResourceByExtensionIdAndResourceIdAndType(
+                extension.getId(), physicalNetwork.getId(), resourceType);
+        if (existing != null) {
+            throw new CloudRuntimeException(String.format(
+                    "Extension '%s' is already registered with physical network %s",
+                    extension.getName(), physicalNetwork));
+        }
+
+        // Resolve which services this extension provides from its network.services detail
+        Set<Service> services = resolveExtensionServices(extension);
+
+        return Transaction.execute((TransactionCallbackWithException<ExtensionResourceMap, CloudRuntimeException>) status -> {
+            // 1. Persist the extension<->physical-network mapping
+            ExtensionResourceMapVO extensionMap = new ExtensionResourceMapVO(extension.getId(),
+                    physicalNetwork.getId(), resourceType);
+            ExtensionResourceMapVO savedExtensionMap = extensionResourceMapDao.persist(extensionMap);
+
+            // 2. Persist device credentials / details
+            List<ExtensionResourceMapDetailsVO> detailsVOList = new ArrayList<>();
+            if (MapUtils.isNotEmpty(details)) {
+                for (Map.Entry<String, String> entry : details.entrySet()) {
+                    boolean display = !SENSITIVE_DETAIL_KEYS.contains(entry.getKey().toLowerCase());
+                    detailsVOList.add(new ExtensionResourceMapDetailsVO(savedExtensionMap.getId(),
+                            entry.getKey(), entry.getValue(), display));
+                }
+                extensionResourceMapDetailsDao.saveDetails(detailsVOList);
+            }
+
+            // 3. Auto-create the NetworkServiceProvider entry for this extension so that
+            //    the services are visible in the UI and in listSupportedNetworkServices.
+            //    The NSP name equals the extension name; state is Enabled by default.
+            PhysicalNetworkServiceProviderVO existingNsp =
+                    physicalNetworkServiceProviderDao.findByServiceProvider(
+                            physicalNetwork.getId(), extension.getName());
+            if (existingNsp == null) {
+                PhysicalNetworkServiceProviderVO nsp =
+                        new PhysicalNetworkServiceProviderVO(physicalNetwork.getId(), extension.getName());
+                applyServicesToNsp(nsp, services);
+                nsp.setState(PhysicalNetworkServiceProvider.State.Enabled);
+                physicalNetworkServiceProviderDao.persist(nsp);
+                logger.info("Auto-created NetworkServiceProvider '{}' (Enabled) for physical network {} "
+                        + "with services {}", extension, physicalNetwork, services);
+            }
+
+            return savedExtensionMap;
+        });
+    }
+
+    /**
+     * Resolves the set of network service names declared in the extension's
+     * {@code network.services} detail. Falls back to an empty set if not present
+     */
+    private Set<Service> resolveExtensionServices(Extension extension) {
+        Map<String, String> extDetails = extensionDetailsDao.listDetailsKeyPairs(extension.getId());
+        Set<Service> parsed = parseNetworkServicesFromDetailKeys(extDetails);
+        if (!parsed.isEmpty()) {
+            return parsed;
+        }
+        // Falls back to an empty set if not present
+        return new HashSet<>();
+    }
+
+    /**
+     * Resolves the set of service names from the extension detail map.
+     * From {@code network.services} comma-separated key.
+     */
+    private Set<Service> parseNetworkServicesFromDetailKeys(Map<String, String> extDetails) {
+        if (extDetails == null) {
+            return Collections.emptySet();
+        }
+        // New format: "network.services" = "SourceNat,StaticNat,..."
+        if (extDetails.containsKey(ExtensionHelper.NETWORK_SERVICES_DETAIL_KEY)) {
+            String value = extDetails.get(ExtensionHelper.NETWORK_SERVICES_DETAIL_KEY);
+            if (StringUtils.isNotBlank(value)) {
+                Set<Service> services = new HashSet<>();
+                for (String s : value.split(",")) {
+                    Service service = Network.Service.getService(s.trim());
+                    if (service != null) {
+                        services.add(service);
+                    }
+                }
+                if (!services.isEmpty()) {
+                    return services;
+                }
+            }
+        }
+
+        return Collections.emptySet();
+    }
+
+    /**
+     * Builds a full {@code Map<Service, Map<Capability, String>>} from the
+     * extension detail map.  From the split keys
+     * {@code network.services} + {@code network.service.capabilities}.
+     */
+    private Map<Service, Map<Capability, String>> buildCapabilitiesFromDetailKeys(
+            Map<String, String> extDetails) {
+        if (extDetails == null) {
+            return new HashMap<>();
+        }
+        // New split format
+        if (extDetails.containsKey(ExtensionHelper.NETWORK_SERVICES_DETAIL_KEY)) {
+            Set<Service> serviceNames = parseNetworkServicesFromDetailKeys(extDetails);
+            if (!serviceNames.isEmpty()) {
+                JsonObject capsObj = null;
+                if (extDetails.containsKey(ExtensionHelper.NETWORK_SERVICE_CAPABILITIES_DETAIL_KEY)) {
+                    try {
+                        capsObj = JsonParser.parseString(
+                                extDetails.get(ExtensionHelper.NETWORK_SERVICE_CAPABILITIES_DETAIL_KEY))
+                                .getAsJsonObject();
+                    } catch (Exception e) {
+                        logger.warn("Failed to parse network.service.capabilities JSON: {}", e.getMessage());
+                    }
+                }
+                Map<Service, Map<Capability, String>> result = new HashMap<>();
+                for (Service service : serviceNames) {
+                    Map<Capability, String> capMap = new HashMap<>();
+                    if (capsObj != null && capsObj.has(service.getName())) {
+                        JsonObject svcCaps = capsObj.getAsJsonObject(service.getName());
+                        for (Map.Entry<String, JsonElement> entry : svcCaps.entrySet()) {
+                            Capability cap = Capability.getCapability(entry.getKey());
+                            if (cap != null) {
+                                capMap.put(cap, entry.getValue().getAsString());
+                            }
+                        }
+                    }
+                    result.put(service, capMap);
+                }
+                return result;
+            }
+        }
+
+        return new HashMap<>();
+    }
+
+    /**
+     * Sets the boolean service-provided flags on a {@link PhysicalNetworkServiceProviderVO}
+     * based on a set of service names.
+     */
+    private void applyServicesToNsp(PhysicalNetworkServiceProviderVO nsp, Set<Service> services) {
+        nsp.setSourcenatServiceProvided(services.contains(Service.SourceNat));
+        nsp.setStaticnatServiceProvided(services.contains(Service.StaticNat));
+        nsp.setPortForwardingServiceProvided(services.contains(Service.PortForwarding));
+        nsp.setFirewallServiceProvided(services.contains(Service.Firewall));
+        nsp.setGatewayServiceProvided(services.contains(Service.Gateway));
+        nsp.setDnsServiceProvided(services.contains(Service.Dns));
+        nsp.setDhcpServiceProvided(services.contains(Service.Dhcp));
+        nsp.setUserdataServiceProvided(services.contains(Service.UserData));
+        nsp.setLbServiceProvided(services.contains(Service.Lb));
+        nsp.setVpnServiceProvided(services.contains(Service.Vpn));
+        nsp.setSecuritygroupServiceProvided(services.contains(Service.SecurityGroup));
+        nsp.setNetworkAclServiceProvided(services.contains(Service.NetworkACL));
+        nsp.setCustomActionServiceProvided(services.contains(Service.CustomAction));
+    }
+
+    /** Keys that are always stored with display=false (sensitive). */
+    private static final Set<String> SENSITIVE_DETAIL_KEYS =
+            Set.of("password", "sshkey");
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_EXTENSION_RESOURCE_UNREGISTER, eventDescription = "unregistering extension resource")
     public Extension unregisterExtensionWithResource(UnregisterExtensionCmd cmd) {
@@ -942,10 +1284,15 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         final String resourceType = cmd.getResourceType();
         if (!EnumUtils.isValidEnum(ExtensionResourceMap.ResourceType.class, resourceType)) {
             throw new InvalidParameterValueException(
-                    String.format("Currently only [%s] can be used to unregister an extension of type Orchestrator",
+                    String.format("Currently only [%s] can be used to unregister an extension",
                             EnumSet.allOf(ExtensionResourceMap.ResourceType.class)));
         }
-        unregisterExtensionWithCluster(resourceId, extensionId);
+        ExtensionResourceMap.ResourceType resType = EnumUtils.getEnum(ExtensionResourceMap.ResourceType.class, resourceType);
+        if (ExtensionResourceMap.ResourceType.PhysicalNetwork.equals(resType)) {
+            unregisterExtensionWithPhysicalNetwork(resourceId, extensionId);
+        } else {
+            unregisterExtensionWithCluster(resourceId, extensionId);
+        }
         return extensionDao.findById(extensionId);
     }
 
@@ -962,6 +1309,45 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         ExtensionVO extensionVO = extensionDao.findById(extensionId);
         if (extensionVO != null) {
             updateAllExtensionHosts(extensionVO, cluster.getId(), true);
+        }
+    }
+
+    protected void unregisterExtensionWithPhysicalNetwork(String resourceId, Long extensionId) {
+        PhysicalNetworkVO physicalNetwork = physicalNetworkDao.findByUuid(resourceId);
+        if (physicalNetwork == null) {
+            throw new InvalidParameterValueException("Invalid physical network ID specified");
+        }
+        // Find the specific map entry for this extension+physical-network combination
+        ExtensionResourceMapVO existing = extensionResourceMapDao.findResourceByExtensionIdAndResourceIdAndType(
+                extensionId, physicalNetwork.getId(), ExtensionResourceMap.ResourceType.PhysicalNetwork);
+        if (existing == null) {
+            return;
+        }
+
+        ExtensionVO ext = extensionDao.findById(existing.getExtensionId());
+        if (ext != null) {
+            List<NetworkVO> networksUsingProvider = networkDao.listByPhysicalNetworkAndProvider(
+                    physicalNetwork.getId(), ext.getName());
+            if (CollectionUtils.isNotEmpty(networksUsingProvider)) {
+                throw new CloudRuntimeException(String.format(
+                        "Cannot unregister extension '%s' from physical network %s. "
+                                + "Provider is used by %d existing network service(s)",
+                        ext.getName(), physicalNetwork, networksUsingProvider.size()));
+            }
+        }
+
+        extensionResourceMapDao.remove(existing.getId());
+        extensionResourceMapDetailsDao.removeDetails(existing.getId());
+
+        // Also remove the auto-created NSP for this extension
+        if (ext != null) {
+            PhysicalNetworkServiceProviderVO nsp =
+                    physicalNetworkServiceProviderDao.findByServiceProvider(physicalNetwork.getId(), ext.getName());
+            if (nsp != null) {
+                physicalNetworkServiceProviderDao.remove(nsp.getId());
+                logger.info("Removed NetworkServiceProvider '{}' from physical network {} "
+                        + "on extension unregister", ext, physicalNetwork);
+            }
         }
     }
 
@@ -988,6 +1374,12 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                     Cluster cluster = clusterDao.findById(extensionResourceMapVO.getResourceId());
                     extensionResourceResponse.setId(cluster.getUuid());
                     extensionResourceResponse.setName(cluster.getName());
+                } else if (ExtensionResourceMap.ResourceType.PhysicalNetwork.equals(extensionResourceMapVO.getResourceType())) {
+                    PhysicalNetworkVO pn = physicalNetworkDao.findById(extensionResourceMapVO.getResourceId());
+                    if (pn != null) {
+                        extensionResourceResponse.setId(pn.getUuid());
+                        extensionResourceResponse.setName(pn.getName());
+                    }
                 }
                 Map<String, String> details = extensionResourceMapDetailsDao.listDetailsKeyPairs(
                         extensionResourceMapVO.getId(), true);
@@ -1143,7 +1535,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         }
 
         if (extensionId == null && resourceType != null && StringUtils.isNotBlank(resourceId)) {
-            Extension extension = getExtensionFromResource(resourceType, resourceId);
+            Extension extension = getExtensionWithCustomActionFromResource(resourceType, resourceId);
             if (extension == null) {
                 logger.error("No extension found for the specified resource [type: {}, id: {}]", resourceTypeStr, resourceId);
                 throw new InvalidParameterValueException("Internal error listing custom actions with specified resource");
@@ -1335,7 +1727,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
 
     @Override
     public CustomActionResultResponse runCustomAction(RunCustomActionCmd cmd) {
-        final Long id =  cmd.getCustomActionId();
+        final Long id = cmd.getCustomActionId();
         final String resourceTypeStr = cmd.getResourceType();
         final String resourceUuid = cmd.getResourceId();
         Map<String, String> cmdParameters = cmd.getParameters();
@@ -1360,8 +1752,6 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             logger.error("Failed to run {} as it is not enabled", customActionVO);
             throw new InvalidParameterValueException(error);
         }
-        final String actionName = customActionVO.getName();
-        RunCustomActionCommand runCustomActionCommand = new RunCustomActionCommand(actionName);
         final long extensionId = customActionVO.getExtensionId();
         final ExtensionVO extensionVO = extensionDao.findById(extensionId);
         if (extensionVO == null) {
@@ -1392,39 +1782,47 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             logger.error("Specified resource does not exist for running {}", customActionVO);
             throw new CloudRuntimeException(error);
         }
-        Long clusterId = null;
-        Long hostId = null;
-        if (entity instanceof Cluster) {
-            clusterId = ((Cluster)entity).getId();
-            List<HostVO> hosts = hostDao.listByClusterAndHypervisorType(clusterId, Hypervisor.HypervisorType.External);
-            if (CollectionUtils.isEmpty(hosts)) {
-                logger.error("No hosts found for {} for running {}", entity, customActionVO);
-                throw new CloudRuntimeException(error);
-            }
-            hostId = hosts.get(0).getId();
-        } else if (entity instanceof Host) {
-            Host host = (Host)entity;
-            if (!Hypervisor.HypervisorType.External.equals(host.getHypervisorType())) {
-                logger.error("Invalid {} specified as host resource for running {}", entity, customActionVO);
-                throw new InvalidParameterValueException(error);
-            }
-            hostId = host.getId();
-            clusterId = host.getClusterId();
-        } else if (entity instanceof VirtualMachine) {
-            VirtualMachine virtualMachine = (VirtualMachine)entity;
+        if (entity instanceof VirtualMachine) {
+            VirtualMachine virtualMachine = (VirtualMachine) entity;
             accountService.checkAccess(caller, null, true, virtualMachine);
-            if (!Hypervisor.HypervisorType.External.equals(virtualMachine.getHypervisorType())) {
-                logger.error("Invalid {} specified as VM resource for running {}", entity, customActionVO);
-                throw new InvalidParameterValueException(error);
-            }
-            VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(virtualMachine);
-            VirtualMachineTO virtualMachineTO = virtualMachineManager.toVmTO(vmProfile);
-            runCustomActionCommand.setVmTO(virtualMachineTO);
-            Pair<Long, Long> clusterAndHostId = virtualMachineManager.findClusterAndHostIdForVm(virtualMachine, false);
-            clusterId = clusterAndHostId.first();
-            hostId = clusterAndHostId.second();
+            return runVirtualMachineCustomAction(virtualMachine, customActionVO, extensionVO,
+                    actionResourceType, cmdParameters);
+        } else if (entity instanceof Network) {
+            // Network custom action: dispatched directly to NetworkCustomActionProvider (no agent)
+            Network network = (Network) entity;
+            accountService.checkAccess(caller, null, true, network);
+            return runNetworkCustomAction(network, customActionVO, extensionVO, actionResourceType, cmdParameters);
+        } else if (entity instanceof Vpc) {
+            // VPC custom action: dispatched directly to NetworkCustomActionProvider (no agent)
+            Vpc vpc = (Vpc) entity;
+            accountService.checkAccess(caller, null, true, vpc);
+            return runVpcCustomAction(vpc, customActionVO, extensionVO, actionResourceType, cmdParameters);
+        }
+        throw new CloudRuntimeException(String.format("Custom action for resource type %s is not supported",
+                actionResourceType.name()));
+    }
+
+    private CustomActionResultResponse runVirtualMachineCustomAction(VirtualMachine virtualMachine,
+            ExtensionCustomActionVO customActionVO, ExtensionVO extensionVO,
+            ExtensionCustomAction.ResourceType actionResourceType,
+            Map<String, String> cmdParameters) {
+
+        String error = "Internal error running action on virtual machine";
+
+        if (!Hypervisor.HypervisorType.External.equals(virtualMachine.getHypervisorType())) {
+            logger.error("Invalid {} specified as VM resource for running {}", virtualMachine, customActionVO);
+            throw new InvalidParameterValueException(error);
         }
 
+        final String actionName = customActionVO.getName();
+        RunCustomActionCommand runCustomActionCommand = new RunCustomActionCommand(actionName);
+        VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(virtualMachine);
+        VirtualMachineTO virtualMachineTO = virtualMachineManager.toVmTO(vmProfile);
+        runCustomActionCommand.setVmTO(virtualMachineTO);
+        Pair<Long, Long> clusterAndHostId = virtualMachineManager.findClusterAndHostIdForVm(virtualMachine, false);
+
+        Long clusterId = clusterAndHostId.first();
+        Long hostId = clusterAndHostId.second();
         if (clusterId == null || hostId == null) {
             logger.error(
                     "Unable to find cluster or host with the specified resource - cluster ID: {}, host ID: {}",
@@ -1458,7 +1856,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         Map<String, String> result = new HashMap<>();
         response.setSuccess(false);
         result.put(ApiConstants.MESSAGE, getActionMessage(false, customActionVO, extensionVO,
-                actionResourceType, entity));
+                actionResourceType, virtualMachine));
         Map<String, Map<String, String>> externalDetails =
                 getExternalAccessDetails(allDetails.first(), hostId, extensionResource);
         Map<String, String> vmExternalDetails = null;
@@ -1473,7 +1871,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         runCustomActionCommand.setWait(customActionVO.getTimeout());
         try {
             logger.info("Running custom action: {} with {} parameters", actionName,
-                    (parameters != null ? parameters.keySet().size() : 0));
+                    (parameters != null ? parameters.size() : 0));
             Answer answer = agentMgr.send(hostId, runCustomActionCommand);
             if (!(answer instanceof RunCustomActionAnswer)) {
                 logger.error("Unexpected answer [{}] received for {}", answer.getClass().getSimpleName(),
@@ -1483,7 +1881,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                 RunCustomActionAnswer customActionAnswer = (RunCustomActionAnswer) answer;
                 response.setSuccess(answer.getResult());
                 result.put(ApiConstants.MESSAGE, getActionMessage(answer.getResult(), customActionVO, extensionVO,
-                        actionResourceType, entity));
+                        actionResourceType, virtualMachine));
                 result.put(ApiConstants.DETAILS, customActionAnswer.getDetails());
             }
         } catch (AgentUnavailableException e) {
@@ -1494,6 +1892,183 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             String msg = "Running custom action timed out, please try again";
             logger.error(msg, e);
             result.put(ApiConstants.DETAILS, msg);
+        }
+        response.setResult(result);
+        return response;
+    }
+
+    /**
+     * Executes a custom action for a Network resource by delegating to an
+     * available {@link NetworkCustomActionProvider} (e.g. NetworkExtensionElement).
+     * This path does NOT go through the agent framework.
+     */
+    protected CustomActionResultResponse runNetworkCustomAction(Network network,
+            ExtensionCustomActionVO customActionVO, ExtensionVO extensionVO,
+            ExtensionCustomAction.ResourceType actionResourceType,
+            Map<String, String> cmdParameters) {
+
+        final String actionName = customActionVO.getName();
+        CustomActionResultResponse response = new CustomActionResultResponse();
+        response.setId(customActionVO.getUuid());
+        response.setName(actionName);
+        response.setObjectName("customactionresult");
+        Map<String, String> result = new HashMap<>();
+        response.setSuccess(false);
+        result.put(ApiConstants.MESSAGE, getActionMessage(false, customActionVO, extensionVO, actionResourceType, network));
+
+        // Resolve action parameters
+        List<ExtensionCustomAction.Parameter> actionParameters = null;
+        Pair<Map<String, String>, Map<String, String>> allDetails =
+                extensionCustomActionDetailsDao.listDetailsKeyPairsWithVisibility(customActionVO.getId());
+        if (allDetails.second().containsKey(ApiConstants.PARAMETERS)) {
+            actionParameters = ExtensionCustomAction.Parameter.toListFromJson(
+                    allDetails.second().get(ApiConstants.PARAMETERS));
+        }
+        Map<String, Object> parameters = null;
+        if (CollectionUtils.isNotEmpty(actionParameters)) {
+            parameters = ExtensionCustomAction.Parameter.validateParameterValues(actionParameters, cmdParameters);
+        }
+
+        // Find the provider name for this network
+        String providerName = networkServiceMapDao.getProviderForServiceInNetwork(network.getId(), Service.CustomAction);
+        if (StringUtils.isBlank(providerName)) {
+            logger.error("No network service provider found for network {}", network);
+            result.put(ApiConstants.DETAILS, "No network service provider found for this network");
+            response.setResult(result);
+            return response;
+        }
+
+        // Check if provider name matches the extension name
+        if (!providerName.equals(extensionVO.getName())) {
+            logger.error("Provider name '{}' for network {} does not match extension name '{}'",
+                    providerName, network, extensionVO);
+            result.put(ApiConstants.DETAILS, "Network service provider '" + providerName +
+                    "' does not match extension '" + extensionVO.getName() + "'");
+            response.setResult(result);
+            return response;
+        }
+
+        // Get the network element implementing that provider
+        NetworkElement element = networkModel.getElementImplementingProvider(providerName);
+        if (element == null) {
+            logger.error("No NetworkElement found implementing provider '{}' for network {}", providerName, network);
+            result.put(ApiConstants.DETAILS, "No network element found for provider: " + providerName);
+            response.setResult(result);
+            return response;
+        }
+
+        // The element must implement NetworkCustomActionProvider
+        if (!(element instanceof NetworkCustomActionProvider)) {
+            logger.error("Network element '{}' for provider '{}' does not support custom actions",
+                    element.getClass().getSimpleName(), providerName);
+            result.put(ApiConstants.DETAILS, "Provider '" + providerName + "' does not support custom actions");
+            response.setResult(result);
+            return response;
+        }
+
+        NetworkCustomActionProvider provider = (NetworkCustomActionProvider) element;
+        try {
+            if (!provider.canHandleCustomAction(network)) {
+                throw new CloudRuntimeException("Provider '" + providerName + "' cannot handle custom action for this network");
+            }
+            logger.info("Running network custom action '{}' on network {} via {} (provider: {})",
+                    actionName, network, element.getClass().getSimpleName(), providerName);
+            String output = provider.runCustomAction(network, actionName, parameters);
+            boolean success = output != null;
+            response.setSuccess(success);
+            result.put(ApiConstants.MESSAGE, getActionMessage(success, customActionVO, extensionVO, actionResourceType, network));
+            result.put(ApiConstants.DETAILS, success ? output : "Action failed — check management server logs for details");
+        } catch (Exception e) {
+            logger.error("Network custom action '{}' threw exception: {}", actionName, e.getMessage(), e);
+            result.put(ApiConstants.DETAILS, "Action failed: " + e.getMessage());
+        }
+        response.setResult(result);
+        return response;
+    }
+
+    /**
+     * Executes a custom action for a VPC resource by finding the VPC's
+     * extension provider and dispatching directly to it (no tier network lookup).
+     */
+    protected CustomActionResultResponse runVpcCustomAction(Vpc vpc,
+            ExtensionCustomActionVO customActionVO, ExtensionVO extensionVO,
+            ExtensionCustomAction.ResourceType actionResourceType,
+            Map<String, String> cmdParameters) {
+
+        final String actionName = customActionVO.getName();
+        CustomActionResultResponse response = new CustomActionResultResponse();
+        response.setId(customActionVO.getUuid());
+        response.setName(actionName);
+        response.setObjectName("customactionresult");
+        Map<String, String> result = new HashMap<>();
+        response.setSuccess(false);
+        result.put(ApiConstants.MESSAGE, getActionMessage(false, customActionVO, extensionVO, actionResourceType, vpc));
+
+        // Resolve action parameters
+        List<ExtensionCustomAction.Parameter> actionParameters = null;
+        Pair<Map<String, String>, Map<String, String>> allDetails =
+                extensionCustomActionDetailsDao.listDetailsKeyPairsWithVisibility(customActionVO.getId());
+        if (allDetails.second().containsKey(ApiConstants.PARAMETERS)) {
+            actionParameters = ExtensionCustomAction.Parameter.toListFromJson(
+                    allDetails.second().get(ApiConstants.PARAMETERS));
+        }
+        Map<String, Object> parameters = null;
+        if (CollectionUtils.isNotEmpty(actionParameters)) {
+            parameters = ExtensionCustomAction.Parameter.validateParameterValues(actionParameters, cmdParameters);
+        }
+
+        // Find the provider name for this VPC
+        String providerName = vpcServiceMapDao.getProviderForServiceInVpc(vpc.getId(), Service.CustomAction);
+        if (StringUtils.isBlank(providerName)) {
+            logger.error("No VPC service provider found for VPC {}", vpc.getId());
+            result.put(ApiConstants.DETAILS, "No VPC service provider found for this VPC");
+            response.setResult(result);
+            return response;
+        }
+
+        // Check if provider name matches the extension name
+        if (!providerName.equals(extensionVO.getName())) {
+            logger.error("Provider name '{}' for vpc {} does not match extension name '{}'",
+                    providerName, vpc.getId(), extensionVO.getName());
+            result.put(ApiConstants.DETAILS, "Network service provider '" + providerName +
+                    "' does not match extension '" + extensionVO.getName() + "'");
+            response.setResult(result);
+            return response;
+        }
+
+        // Get the network element implementing that provider
+        NetworkElement element = networkModel.getElementImplementingProvider(providerName);
+        if (element == null) {
+            logger.error("No NetworkElement found implementing provider '{}' for VPC {}", providerName, vpc);
+            result.put(ApiConstants.DETAILS, "No network element found for provider: " + providerName);
+            response.setResult(result);
+            return response;
+        }
+
+        // The element must implement NetworkCustomActionProvider
+        if (!(element instanceof NetworkCustomActionProvider)) {
+            logger.error("Network element '{}' for provider '{}' does not support VPC custom actions",
+                    element.getClass().getSimpleName(), providerName);
+            result.put(ApiConstants.DETAILS, "Provider '" + providerName + "' does not support custom actions");
+            response.setResult(result);
+            return response;
+        }
+
+        NetworkCustomActionProvider provider = (NetworkCustomActionProvider) element;
+        try {
+            if (!provider.canHandleVpcCustomAction(vpc)) {
+                throw new CloudRuntimeException("Provider '" + providerName + "' cannot handle custom action for this VPC");
+            }
+            logger.info("Running VPC custom action '{}' on VPC {} via {} (provider: {})",
+                    actionName, vpc.getId(), element.getClass().getSimpleName(), providerName);
+            String output = provider.runCustomAction(vpc, actionName, parameters);
+            boolean success = output != null;
+            response.setSuccess(success);
+            result.put(ApiConstants.MESSAGE, getActionMessage(success, customActionVO, extensionVO, actionResourceType, vpc));
+            result.put(ApiConstants.DETAILS, success ? output : "Action failed — check management server logs for details");
+        } catch (Exception e) {
+            logger.error("VPC custom action '{}' threw exception: {}", actionName, e.getMessage(), e);
+            result.put(ApiConstants.DETAILS, "Action failed: " + e.getMessage());
         }
         response.setResult(result);
         return response;
@@ -1608,11 +2183,8 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         if (MapUtils.isEmpty(details)) {
             return;
         }
-        List<ExtensionResourceMapDetailsVO> detailsList = new ArrayList<>();
-        for (Map.Entry<String, String> entry : details.entrySet()) {
-            detailsList.add(new ExtensionResourceMapDetailsVO(extensionResourceMapId, entry.getKey(),
-                    entry.getValue()));
-        }
+        List<ExtensionResourceMapDetailsVO> detailsList =
+                buildExtensionResourceDetailsArray(extensionResourceMapId, details);
         extensionResourceMapDetailsDao.saveDetails(detailsList);
     }
 
@@ -1648,6 +2220,11 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     @Override
     public Extension getExtension(long id) {
         return extensionDao.findById(id);
+    }
+
+    @Override
+    public Extension getExtensionByNameAndType(String name, Extension.Type type) {
+        return extensionDao.findByNameAndType(name, type);
     }
 
     @Override
@@ -1714,6 +2291,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         cmds.add(UpdateExtensionCmd.class);
         cmds.add(RegisterExtensionCmd.class);
         cmds.add(UnregisterExtensionCmd.class);
+        cmds.add(UpdateRegisteredExtensionCmd.class);
         return cmds;
     }
 
@@ -1764,5 +2342,96 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                 gcLock.releaseRef();
             }
         }
+    }
+
+    @Override
+    public String getExtensionScriptPath(Extension extension) {
+        if (extension == null) {
+            return null;
+        }
+        return externalProvisioner.getExtensionPath(extension.getRelativePath());
+    }
+
+    @Override
+    public Extension getExtensionForPhysicalNetworkAndProvider(long physicalNetworkId, String providerName) {
+        if (StringUtils.isBlank(providerName)) {
+            return null;
+        }
+        ExtensionVO ext = extensionDao.findByName(providerName);
+        if (ext == null) {
+            return null;
+        }
+
+        ExtensionResourceMapVO map = extensionResourceMapDao.findResourceByExtensionIdAndResourceIdAndType(
+                ext.getId(), physicalNetworkId, ExtensionResourceMap.ResourceType.PhysicalNetwork);
+        if (map != null) {
+            return ext;
+        }
+        return null;
+    }
+
+    @Override
+    public Map<String, String> getAllResourceMapDetailsForExtensionOnPhysicalNetwork(long physicalNetworkId, long extensionId) {
+        ExtensionResourceMapVO map = extensionResourceMapDao.findResourceByExtensionIdAndResourceIdAndType(
+                extensionId, physicalNetworkId, ExtensionResourceMap.ResourceType.PhysicalNetwork);
+        if (map == null) {
+            return new HashMap<>();
+        }
+
+        Map<String, String> details = extensionResourceMapDetailsDao.listDetailsKeyPairs(map.getId());
+        return details != null ? details : new HashMap<>();
+    }
+
+    @Override
+    public boolean isNetworkExtensionProvider(String providerName) {
+        if (StringUtils.isBlank(providerName)) {
+            return false;
+        }
+        return extensionDao.findByNameAndType(providerName, Extension.Type.NetworkOrchestrator) != null;
+    }
+
+    @Override
+    public boolean usesNetworkExtensionIsolation(String providerName) {
+        Extension extension = extensionDao.findByName(providerName);
+        if (extension == null) {
+            return false;
+        }
+        Map<String, String> extDetails = extensionDetailsDao.listDetailsKeyPairs(extension.getId());
+        if (MapUtils.isEmpty(extDetails)) {
+            return false;
+        }
+        return NETWORK_EXTENSION_ISOLATION_METHOD.equalsIgnoreCase(extDetails.get(NETWORK_ISOLATION_METHOD_DETAIL_KEY));
+    }
+
+    @Override
+    public List<Extension> listExtensionsByType(Extension.Type type) {
+        if (type == null) {
+            return new ArrayList<>();
+        }
+        List<ExtensionVO> extensions = extensionDao.listByType(type);
+        if (CollectionUtils.isEmpty(extensions)) {
+            return new ArrayList<>();
+        }
+        return new ArrayList<>(extensions);
+    }
+
+    @Override
+    public Map<Service, Map<Capability, String>> getNetworkCapabilitiesForProvider(Long physicalNetworkId,
+            String providerName) {
+        if (StringUtils.isBlank(providerName)) {
+            return new HashMap<>();
+        }
+        Extension extension = null;
+        if (physicalNetworkId != null) {
+            extension = getExtensionForPhysicalNetworkAndProvider(physicalNetworkId, providerName);
+        } else {
+            // Search across all physical networks
+            extension = extensionDao.findByNameAndType(providerName, Extension.Type.NetworkOrchestrator);
+        }
+        if (extension == null) {
+            return new HashMap<>();
+        }
+        Map<String, String> extDetails = extensionDetailsDao.listDetailsKeyPairs(extension.getId());
+        return buildCapabilitiesFromDetailKeys(extDetails);
     }
 }

@@ -138,6 +138,8 @@ public interface NetworkOrchestrationService {
         boolean errorIfAlreadySetup, Long domainId, ACLType aclType, Boolean subdomainAccess, Long vpcId, Boolean isDisplayNetworkEnabled)
         throws ConcurrentOperationException;
 
+    boolean isIsolationMethodNetworkExtension(Long networkOfferingId);
+
     void allocate(VirtualMachineProfile vm, LinkedHashMap<? extends Network, List<? extends NicProfile>> networks, Map<String, Map<Integer, String>> extraDhcpOptions) throws InsufficientCapacityException,
         ConcurrentOperationException;
 

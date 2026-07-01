@@ -739,6 +739,13 @@ export default {
     isSupportedServiceObject (obj) {
       return (obj !== null && obj !== undefined && Object.keys(obj).length > 0 && obj.constructor === Object && 'provider' in obj)
     },
+    isVpcCoreProvider (providerName) {
+      return ['VpcVirtualRouter', 'Netscaler', 'BigSwitchBcf', 'ConfigDrive'].includes(providerName)
+    },
+    isDynamicExtensionProvider (providerName) {
+      const knownProviders = ['VirtualRouter', 'VpcVirtualRouter', 'InternalLbVm', 'Netscaler', 'BigSwitchBcf', 'ConfigDrive', 'Nsx', 'Netris']
+      return !knownProviders.includes(providerName)
+    },
     fetchDomainData () {
       const params = {}
       params.listAll = true
@@ -917,11 +924,13 @@ export default {
             var providers = svc.provider
             providers.forEach(function (provider, providerIndex) {
               if (self.forVpc) { // *** vpc ***
-                var enabledProviders = ['VpcVirtualRouter', 'Netscaler', 'BigSwitchBcf', 'ConfigDrive']
-                if (self.lbType === 'internalLb') {
-                  enabledProviders.push('InternalLbVm')
+                // Keep the known VPC-safe providers allowlisted and only additionally
+                // enable dynamically discovered extension providers.
+                if (provider.name === 'InternalLbVm') {
+                  provider.enabled = self.lbType === 'internalLb' && svc.name === 'Lb'
+                } else {
+                  provider.enabled = self.isVpcCoreProvider(provider.name) || self.isDynamicExtensionProvider(provider.name)
                 }
-                provider.enabled = enabledProviders.includes(provider.name)
               } else { // *** non-vpc ***
                 provider.enabled = !['InternalLbVm', 'VpcVirtualRouter', 'Nsx', 'Netris'].includes(provider.name)
               }
