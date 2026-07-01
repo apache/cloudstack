@@ -56,6 +56,10 @@ public class UpdateGuiThemeCmd extends BaseCmd {
             "retrieved and imported into the GUI when matching the theme access configurations.")
     private String jsonConfiguration;
 
+    @Parameter(name = ApiConstants.CUSTOM_LABELS_PATH, type = CommandType.STRING, length = 65535, description = "The JSON with the custom labels to be " +
+            "retrieved and imported into the GUI when matching the theme access configurations.")
+    private String customLabelsPath;
+
     @Parameter(name = ApiConstants.COMMON_NAMES, type = CommandType.STRING, length = 65535, description = "A set of Common Names (CN) (fixed or " +
             "wildcard) separated by comma that can retrieve the theme; e.g.: *acme.com,acme2.com")
     private String commonNames;
@@ -94,6 +98,10 @@ public class UpdateGuiThemeCmd extends BaseCmd {
 
     public String getJsonConfiguration() {
         return jsonConfiguration;
+    }
+
+    public String getCustomLabelsPath() {
+        return customLabelsPath;
     }
 
     public String getCommonNames() {

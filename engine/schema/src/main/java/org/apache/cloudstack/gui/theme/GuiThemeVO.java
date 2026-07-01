@@ -53,6 +53,9 @@ public class GuiThemeVO implements GuiTheme {
     @Column(name = "json_configuration", length = 65535)
     private String jsonConfiguration;
 
+    @Column(name = "custom_labels_path", nullable = false, length = 65535)
+    private String customLabelsPath;
+
     @Column(name = "is_public")
     private boolean isPublic;
 
@@ -71,11 +74,12 @@ public class GuiThemeVO implements GuiTheme {
 
     }
 
-    public GuiThemeVO(String name, String description, String css, String jsonConfiguration, boolean recursiveDomains, boolean isPublic, Date created, Date removed) {
+    public GuiThemeVO(String name, String description, String css, String jsonConfiguration, String customLabelsPath, boolean recursiveDomains, boolean isPublic, Date created, Date removed) {
         this.name = name;
         this.description = description;
         this.css = css;
         this.jsonConfiguration = jsonConfiguration;
+        this.customLabelsPath = customLabelsPath;
         this.recursiveDomains = recursiveDomains;
         this.isPublic = isPublic;
         this.created = created;
@@ -113,6 +117,10 @@ public class GuiThemeVO implements GuiTheme {
     }
 
     @Override
+    public String getCustomLabelsPath() {
+        return customLabelsPath;
+    }
+
     public Date getCreated() {
         return created;
     }
@@ -158,6 +166,10 @@ public class GuiThemeVO implements GuiTheme {
     }
 
     @Override
+    public void setCustomLabelsPath(String customLabelsPath) {
+        this.customLabelsPath = customLabelsPath;
+    }
+
     public void setCreated(Date created) {
         this.created = created;
     }
