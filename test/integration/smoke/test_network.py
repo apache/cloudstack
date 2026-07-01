@@ -2349,7 +2349,7 @@ class TestSharedNetworkWithConfigDrive(cloudstackTestCase):
         return '\n'.join(res)
 
     @attr(tags=["advanced", "shared"], required_hardware="true")
-    def test_01_deployVMInSharedNetwork(self):
+    def test_01_deployVMInSharedNetworkWithConfigDrive(self):
         try:
             self.virtual_machine = VirtualMachine.create(self.apiclient, self.services["virtual_machine"],
                                                          networkids=[self.shared_network.id, self.isolated_network.id],
