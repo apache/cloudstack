@@ -86,7 +86,7 @@ public class UpdateGuestOsMappingCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Updating Guest OS Mapping: " + getId();
+        return "Updating Guest OS with ID: " + getResourceUuid(ApiConstants.ID) + " mapping.";
     }
 
     @Override

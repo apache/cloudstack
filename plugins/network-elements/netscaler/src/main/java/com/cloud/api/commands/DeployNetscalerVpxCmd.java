@@ -117,7 +117,7 @@ public class DeployNetscalerVpxCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Adding a netscaler load balancer device";
+        return "Adding a NetScaler load balancer device in zone: " + getResourceUuid(ApiConstants.ZONE_ID) ;
     }
 
     @Override

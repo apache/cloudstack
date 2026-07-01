@@ -1252,7 +1252,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             logger.debug(String.format("Boot args for machine profile [%s]: [%s].", profile.toString(), bootArgs));
         }
 
-        boolean useHttpsToUpload = BooleanUtils.toBooleanDefaultIfNull(VolumeApiService.UseHttpsToUpload.value(), true);
+        boolean useHttpsToUpload = VolumeApiService.UseHttpsToUpload.valueIn(dc.getId());
         logger.debug(String.format("Setting UseHttpsToUpload config on cmdline with [%s] value.", useHttpsToUpload));
         buf.append(" useHttpsToUpload=").append(useHttpsToUpload);
 

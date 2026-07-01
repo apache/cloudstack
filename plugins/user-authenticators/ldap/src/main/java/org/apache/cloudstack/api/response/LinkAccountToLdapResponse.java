@@ -82,4 +82,8 @@ public class LinkAccountToLdapResponse extends BaseResponse {
     public void setAdminId(String adminId) {
         this.adminId = adminId;
     }
+
+    public String getAccountName() {
+        return accountName;
+    }
 }

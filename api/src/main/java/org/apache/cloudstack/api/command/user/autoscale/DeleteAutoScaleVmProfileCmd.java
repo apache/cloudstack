@@ -79,18 +79,18 @@ public class DeleteAutoScaleVmProfileCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Deleting autoscale Instance profile: " + getId();
+        return "Deleting AutoScale Instance profile with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("AutoScale Instance Profile Id: " + getId());
+        CallContext.current().setEventDetails("AutoScale Instance Profile ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _autoScaleService.deleteAutoScaleVmProfile(id);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);
         } else {
-            logger.warn("Failed to delete autoscale Instance profile " + getId());
+            logger.warn("Failed to delete autoscale Instance profile {}", getId());
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete autoscale Instance profile");
         }
     }

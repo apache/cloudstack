@@ -77,6 +77,7 @@ public class VpcOfferingJoinDaoImpl extends GenericDaoBase<VpcOfferingJoinVO, Lo
         if (offering.isSpecifyAsNumber() != null) {
             offeringResponse.setSpecifyAsNumber(offering.isSpecifyAsNumber());
         }
+        offeringResponse.setConserveMode(offering.isConserveMode());
         if (offering instanceof VpcOfferingJoinVO) {
             VpcOfferingJoinVO offeringJoinVO = (VpcOfferingJoinVO) offering;
             offeringResponse.setDomainId(offeringJoinVO.getDomainUuid());

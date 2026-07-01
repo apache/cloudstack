@@ -542,7 +542,7 @@ public class LibvirtDomainXMLParser {
 
             final String quota = getTagValue("quota", cpuTuneDefElement);
             if (StringUtils.isNotBlank(quota)) {
-                cpuTuneDef.setQuota((Integer.parseInt(quota)));
+                cpuTuneDef.setQuota((Long.parseLong(quota)));
             }
 
             final String period = getTagValue("period", cpuTuneDefElement);

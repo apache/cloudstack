@@ -51,6 +51,7 @@ public class VirtualMachineTO {
 
     private long minRam;
     private long maxRam;
+    private long requestedRam;
     private String hostName;
     private String arch;
     private String os;
@@ -89,6 +90,7 @@ public class VirtualMachineTO {
     private DeployAsIsInfoTO deployAsIsInfo;
     private String metadataManufacturer;
     private String metadataProductName;
+    private VirtualMachineMetadataTO metadata;
 
     public VirtualMachineTO(long id, String instanceName, VirtualMachine.Type type, int cpus, Integer speed, long minRam, long maxRam, BootloaderType bootloader,
             String os, boolean enableHA, boolean limitCpuUse, String vncPassword) {
@@ -206,13 +208,18 @@ public class VirtualMachineTO {
         return minRam;
     }
 
-    public void setRam(long minRam, long maxRam) {
+    public void setRam(long minRam, long maxRam, long requestedRam) {
         this.minRam = minRam;
         this.maxRam = maxRam;
+        this.requestedRam = requestedRam;
     }
 
     public long getMaxRam() {
         return maxRam;
+    }
+
+    public long getRequestedRam() {
+        return requestedRam;
     }
 
     public String getHostName() {
@@ -492,6 +499,14 @@ public class VirtualMachineTO {
 
     public void setMetadataProductName(String metadataProductName) {
         this.metadataProductName = metadataProductName;
+    }
+
+    public VirtualMachineMetadataTO getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(VirtualMachineMetadataTO metadata) {
+        this.metadata = metadata;
     }
 
     @Override

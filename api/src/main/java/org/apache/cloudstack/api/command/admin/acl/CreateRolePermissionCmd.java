@@ -81,7 +81,7 @@ public class CreateRolePermissionCmd extends BaseRolePermissionCmd {
         if (role == null) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid role id provided");
         }
-        CallContext.current().setEventDetails("Role id: " + role.getId() + ", rule:" + getRule() + ", permission: " + getPermission() + ", description: " + getDescription());
+        CallContext.current().setEventDetails("Role ID: " + role.getUuid() + ", rule:" + getRule() + ", permission: " + getPermission() + ", description: " + getDescription());
         final RolePermission rolePermission = roleService.createRolePermission(role, getRule(), getPermission(), getDescription());
         if (rolePermission == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create role permission");

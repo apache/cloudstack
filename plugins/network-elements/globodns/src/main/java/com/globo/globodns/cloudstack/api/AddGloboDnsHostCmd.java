@@ -112,7 +112,7 @@ public class AddGloboDnsHostCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Add GloboDNS provider";
+        return "Add GloboDNS provider to physical network with ID: " + getResourceUuid(ApiConstants.PHYSICAL_NETWORK_ID);
     }
 
 }

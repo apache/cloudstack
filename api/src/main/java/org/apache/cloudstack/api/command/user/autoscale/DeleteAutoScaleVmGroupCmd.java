@@ -89,19 +89,19 @@ public class DeleteAutoScaleVmGroupCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Deleting autoscale Instance group: " + getId();
+        return "Deleting AutoScale Instance group with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("AutoScale Instance Group Id: " + getId());
+        CallContext.current().setEventDetails("AutoScale Instance Group ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _autoScaleService.deleteAutoScaleVmGroup(id, getCleanup());
 
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);
         } else {
-            logger.warn("Failed to delete autoscale Instance group " + getId());
+            logger.warn("Failed to delete autoscale Instance group {}", getId());
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete autoscale vm group");
         }
     }

@@ -77,7 +77,6 @@ public class IPRangeConfig {
             }
             String pod = args[2];
             String zone = args[3];
-            ;
             String startIP = args[4];
             String endIP = null;
             if (args.length == 6) {
@@ -97,31 +96,6 @@ public class IPRangeConfig {
         } else {
             printError(usage());
         }
-    }
-
-    public List<String> changePublicIPRangeGUI(String op, String zone, String startIP, String endIP, long physicalNetworkId) {
-        String result = checkErrors("public", op, null, zone, startIP, endIP);
-        if (!result.equals("success")) {
-            return DatabaseConfig.genReturnList("false", result);
-        }
-
-        long zoneId = PodZoneConfig.getZoneId(zone);
-        result = changeRange(op, "public", -1, zoneId, startIP, endIP, null, physicalNetworkId);
-
-        return DatabaseConfig.genReturnList("true", result);
-    }
-
-    public List<String> changePrivateIPRangeGUI(String op, String pod, String zone, String startIP, String endIP) {
-        String result = checkErrors("private", op, pod, zone, startIP, endIP);
-        if (!result.equals("success")) {
-            return DatabaseConfig.genReturnList("false", result);
-        }
-
-        long podId = PodZoneConfig.getPodId(pod, zone);
-        long zoneId = PodZoneConfig.getZoneId(zone);
-        result = changeRange(op, "private", podId, zoneId, startIP, endIP, null, -1);
-
-        return DatabaseConfig.genReturnList("true", result);
     }
 
     private String checkErrors(String type, String op, String pod, String zone, String startIP, String endIP) {
@@ -153,15 +127,7 @@ public class IPRangeConfig {
         }
 
         // Check that the IPs that are being added are compatible with either the zone's public netmask, or the pod's CIDR
-        if (type.equals("public")) {
-            // String publicNetmask = getPublicNetmask(zone);
-            // String publicGateway = getPublicGateway(zone);
-
-            // if (publicNetmask == null) return "Please ensure that your zone's public net mask is specified";
-            // if (!sameSubnet(startIP, endIP, publicNetmask)) return "Please ensure that your start IP and end IP are in the same subnet, as per the zone's netmask.";
-            // if (!sameSubnet(startIP, publicGateway, publicNetmask)) return "Please ensure that your start IP is in the same subnet as your zone's gateway, as per the zone's netmask.";
-            // if (!sameSubnet(endIP, publicGateway, publicNetmask)) return "Please ensure that your end IP is in the same subnet as your zone's gateway, as per the zone's netmask.";
-        } else if (type.equals("private")) {
+        if (type.equals("private")) {
             String cidrAddress = getCidrAddress(pod, zone);
             long cidrSize = getCidrSize(pod, zone);
 

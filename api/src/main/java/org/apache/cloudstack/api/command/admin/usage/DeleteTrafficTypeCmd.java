@@ -71,7 +71,7 @@ public class DeleteTrafficTypeCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Deleting Traffic Type: " + getId();
+        return "Deleting Traffic Type with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

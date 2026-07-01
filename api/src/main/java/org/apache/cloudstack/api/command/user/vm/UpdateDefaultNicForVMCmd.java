@@ -19,8 +19,6 @@ package org.apache.cloudstack.api.command.user.vm;
 import java.util.ArrayList;
 import java.util.EnumSet;
 
-import com.cloud.vm.Nic;
-
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
@@ -90,7 +88,7 @@ public class UpdateDefaultNicForVMCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return  "Updating NIC " + this._uuidMgr.getUuid(Nic.class, getNicId()) + " on User Instance: " + this._uuidMgr.getUuid(VirtualMachine.class, getVmId());
+        return "Setting NIC " + getResourceUuid(ApiConstants.NIC_ID) + " as default to User Instance: " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID);
     }
 
     @Override
@@ -104,7 +102,7 @@ public class UpdateDefaultNicForVMCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getVmId()) + " Nic Id: " + this._uuidMgr.getUuid(Nic.class, getNicId()));
+        CallContext.current().setEventDetails("Instance ID: " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID) + " NIC ID: " + getResourceUuid(ApiConstants.NIC_ID));
         UserVm result = _userVmService.updateDefaultNicForVirtualMachine(this);
         ArrayList<VMDetails> dc = new ArrayList<VMDetails>();
         dc.add(VMDetails.valueOf("nics"));

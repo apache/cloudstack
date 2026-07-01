@@ -180,7 +180,7 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
     private String templateType;
 
     @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
-            description = "the CPU arch of the template. Valid options are: x86_64, aarch64",
+            description = "the CPU arch of the template. Valid options are: x86_64, aarch64, s390x",
             since = "4.20")
     private String arch;
 
@@ -344,7 +344,7 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
+        Long accountId = _accountService.finalizeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }
