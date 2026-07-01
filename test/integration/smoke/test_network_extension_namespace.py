@@ -50,17 +50,24 @@ from marvin.cloudstackAPI import (listPhysicalNetworks,
                                   deleteNetworkServiceProvider,
                                   createFirewallRule,
                                   deleteFirewallRule,
-                                  listPublicIpAddresses)
+                                  listPublicIpAddresses,
+                                  createGuestNetworkIpv6Prefix,
+                                  listGuestNetworkIpv6Prefixes,
+                                  deleteGuestNetworkIpv6Prefix)
 from marvin.lib.base import (Account,
+                             Configurations,
                              Extension,
                              ExtensionCustomAction,
+                             Host,
                              LoadBalancerRule,
                              Network,
                              NetworkACL,
                              NetworkACLList,
                              NetworkOffering,
                              NATRule,
+                             NIC,
                              PublicIPAddress,
+                             PublicIpRange,
                              ServiceOffering,
                              SSHKeyPair,
                              StaticNATRule,
@@ -400,6 +407,7 @@ class TestNetworkExtensionNamespace(cloudstackTestCase):
       test_08 — custom-action smoke for Policy-Based Routing (PBR) actions on isolated network
       test_09 — VPC source NAT IP update without VPC restart
       test_10 — custom-action smoke for Policy-Based Routing (PBR) actions on VPC tier network
+      test_11 — IPv6 dualstack isolated network: namespace IPv6 address + radvd
     """
 
     @staticmethod
@@ -2900,3 +2908,401 @@ class TestNetworkExtensionNamespace(cloudstackTestCase):
                 self._teardown_extension()
             except Exception:
                 pass
+
+    # ------------------------------------------------------------------
+    # IPv6 helper: ensure a guest IPv6 prefix exists for the zone
+    # ------------------------------------------------------------------
+
+    def _ensure_guest_ipv6_prefix(self):
+        """Return an existing or newly created guest IPv6 prefix for the zone.
+
+        Uses ``services["guestip6prefix"]["prefix"]`` when available; falls
+        back to ``fd17:ac56:1234:1000::/52``.  Returns ``(prefix_obj, created)``
+        where *created* is True when this call created the prefix (the caller
+        is responsible for deleting it on teardown).
+        """
+        cmd = listGuestNetworkIpv6Prefixes.listGuestNetworkIpv6PrefixesCmd()
+        cmd.zoneid = self.zone.id
+        existing = self.apiclient.listGuestNetworkIpv6Prefixes(cmd)
+        if isinstance(existing, list) and existing:
+            self.logger.info("Found existing guest IPv6 prefix: %s",
+                             existing[0].prefix)
+            return existing[0], False
+
+        prefix_str = (self.services
+                      .get("guestip6prefix", {})
+                      .get("prefix", "fd17:ac56:1234:1000::/52"))
+        cmd = createGuestNetworkIpv6Prefix.createGuestNetworkIpv6PrefixCmd()
+        cmd.zoneid = self.zone.id
+        cmd.prefix = prefix_str
+        prefix_obj = self.apiclient.createGuestNetworkIpv6Prefix(cmd)
+        self.logger.info("Created guest IPv6 prefix: %s", prefix_str)
+        return prefix_obj, True
+
+    # ------------------------------------------------------------------
+    # IPv6 helper: ensure a public IPv6 IP range exists with a VLAN
+    # ------------------------------------------------------------------
+
+    def _ensure_public_ipv6_range(self):
+        """Return an existing or newly created public IPv6 IP range for the zone.
+
+        CloudStack requires a public IP range that has both IPv4 and IPv6
+        entries sharing the same VLAN for dualstack isolated networks to work.
+        This helper:
+          1. Returns immediately if an existing range already has ``ip6cidr``
+             and ``ip6gateway`` set.
+          2. Otherwise extracts the VLAN from the first IPv4 public range and
+             creates a new IPv6 range using ``services["publicip6range"]``.
+
+        Returns ``(range_obj, created)`` where *created* is True when this call
+        created the range (the caller is responsible for deleting it on
+        teardown).
+        """
+        ip_ranges = PublicIpRange.list(self.apiclient, zoneid=self.zone.id)
+        ipv4_range_vlan = None
+        if isinstance(ip_ranges, list):
+            for ip_range in ip_ranges:
+                if getattr(ip_range, 'ip6cidr', None) and \
+                        getattr(ip_range, 'ip6gateway', None):
+                    self.logger.info(
+                        "Found existing public IPv6 range: cidr=%s",
+                        ip_range.ip6cidr)
+                    return ip_range, False
+                if getattr(ip_range, 'netmask', None) and \
+                        getattr(ip_range, 'gateway', None):
+                    vlan = getattr(ip_range, 'vlan', None) or ''
+                    if ipv4_range_vlan is None and vlan.startswith("vlan://"):
+                        vlan_id = vlan.replace("vlan://", "")
+                        if vlan_id == "untagged":
+                            ipv4_range_vlan = None
+                        else:
+                            try:
+                                ipv4_range_vlan = int(vlan_id)
+                            except ValueError:
+                                ipv4_range_vlan = None
+
+        ip6range_services = dict(self.services.get("publicip6range", {}))
+        ip6range_services["zoneid"] = self.zone.id
+        ip6range_services["vlan"]   = ipv4_range_vlan
+        ip6range_obj = PublicIpRange.create(self.apiclient, ip6range_services)
+        self.logger.info(
+            "Created public IPv6 range: cidr=%s vlan=%s",
+            ip6range_services.get("ip6cidr"), ipv4_range_vlan)
+        return ip6range_obj, True
+
+    # ------------------------------------------------------------------
+    # Test 11: IPv6 dualstack isolated network
+    # ------------------------------------------------------------------
+
+    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    def test_11_ipv6_dualstack_isolated_network(self):
+        """IPv6 dualstack isolated network: namespace address and radvd.
+
+        Creates an isolated network with ``internetprotocol=dualstack`` backed
+        by the network-namespace extension and verifies end-to-end IPv6
+        provisioning:
+
+        A. API attribute verification
+             network receives ``ip6cidr`` and ``ip6gateway``
+             VM NIC receives ``ip6address`` (EUI-64 via SLAAC)
+        B. KVM namespace verification
+             IPv6 gateway address is present on the guest veth inside the
+             namespace
+             radvd is running inside the namespace with a valid config
+             (``AdvSendAdvert on``, ``AdvAutonomous on``, correct prefix)
+
+        Prerequisites
+        -------------
+        * KVM hosts reachable and have ``dnsmasq``, ``arping``, ``radvd``
+          installed.
+        * Zone has (or can have) a guest IPv6 prefix configured.
+        * Global setting ``ipv6.offering.enabled`` can be set to ``true``.
+        """
+        self._check_kvm_host_prerequisites(['arping', 'dnsmasq', 'radvd'])
+
+        # ---- Preserve and enable ipv6.offering.enabled ----
+        initial_ipv6_cfg = None
+        try:
+            cfg_list = Configurations.list(self.apiclient,
+                                           name="ipv6.offering.enabled")
+            if cfg_list:
+                initial_ipv6_cfg = cfg_list[0].value
+            Configurations.update(self.apiclient, "ipv6.offering.enabled",
+                                  "true")
+            self.logger.info("ipv6.offering.enabled set to true "
+                             "(was: %s)", initial_ipv6_cfg)
+        except Exception as e:
+            self.skipTest("Cannot enable ipv6.offering.enabled: %s" % e)
+
+        # ---- Ensure a guest IPv6 prefix exists ----
+        ip6prefix_obj     = None
+        ip6prefix_created = False
+        try:
+            ip6prefix_obj, ip6prefix_created = self._ensure_guest_ipv6_prefix()
+        except Exception as e:
+            if initial_ipv6_cfg is not None:
+                try:
+                    Configurations.update(self.apiclient,
+                                          "ipv6.offering.enabled",
+                                          initial_ipv6_cfg)
+                except Exception:
+                    pass
+            self.skipTest("Cannot set up guest IPv6 prefix: %s" % e)
+
+        # ---- Ensure a public IPv6 range exists (same VLAN as IPv4) ----
+        ip6pubrange_obj     = None
+        ip6pubrange_created = False
+        try:
+            ip6pubrange_obj, ip6pubrange_created = \
+                self._ensure_public_ipv6_range()
+        except Exception as e:
+            if initial_ipv6_cfg is not None:
+                try:
+                    Configurations.update(self.apiclient,
+                                          "ipv6.offering.enabled",
+                                          initial_ipv6_cfg)
+                except Exception:
+                    pass
+            if ip6prefix_created and ip6prefix_obj:
+                try:
+                    del_cmd = (deleteGuestNetworkIpv6Prefix
+                               .deleteGuestNetworkIpv6PrefixCmd())
+                    del_cmd.id = ip6prefix_obj.id
+                    self.apiclient.deleteGuestNetworkIpv6Prefix(del_cmd)
+                except Exception:
+                    pass
+            self.skipTest("Cannot set up public IPv6 range: %s" % e)
+
+        svc = ISOLATED_NETWORK_SERVICES
+
+        try:
+            # ---- Extension + NSP (no offering here; we create a dualstack one) ----
+            _, ext_name = self._setup_extension_nsp_offering(
+                "extnet-ip6iso", supported_services=svc, for_vpc=True)
+
+            # ---- Dualstack network offering ----
+            _provider_map = {s.strip(): ext_name for s in svc.split(',')}
+            ds_offering_params = {
+                "name":              "ExtNet-IP6-Offering-%s" % random_gen(),
+                "displaytext":       "ExtNet IPv6 dualstack offering",
+                "guestiptype":       "Isolated",
+                "traffictype":       "GUEST",
+                "internetprotocol":  "dualstack",
+                "supportedservices": svc,
+                "serviceProviderList": _provider_map,
+                "serviceCapabilityList": {
+                    "SourceNat": {"SupportedSourceNatTypes": "peraccount"},
+                },
+            }
+            nw_offering = NetworkOffering.create(self.apiclient, ds_offering_params)
+            self.cleanup.append(nw_offering)
+            nw_offering.update(self.apiclient, state='Enabled')
+            self.logger.info("Dualstack offering '%s' enabled", nw_offering.name)
+
+            # ---- Account + network + VM ----
+            account, network, vm = self._create_account_network_vm(
+                nw_offering, name_suffix="ip6iso")
+
+            # ==========================================================
+            # A. API: verify network and VM NIC get IPv6 attributes
+            # ==========================================================
+            self.logger.info("--- Sub-test A: API IPv6 attribute verification ---")
+
+            nw_list = Network.list(self.apiclient, id=network.id, listall=True)
+            self.assertIsInstance(nw_list, list,
+                "Network.list returned no list")
+            self.assertGreater(len(nw_list), 0, "Network not found after creation")
+            nw = nw_list[0]
+
+            self.assertIsNotNone(nw.ip6cidr,
+                "Network %s should have ip6cidr (dualstack offering)" % network.id)
+            self.assertIsNotNone(nw.ip6gateway,
+                "Network %s should have ip6gateway (dualstack offering)" % network.id)
+            ip6cidr    = nw.ip6cidr
+            ip6gateway = nw.ip6gateway
+            self.logger.info("Network IPv6: gateway=%s cidr=%s",
+                             ip6gateway, ip6cidr)
+
+            nics = NIC.list(self.apiclient,
+                            virtualmachineid=vm.id,
+                            networkid=network.id)
+            self.assertIsInstance(nics, list, "NIC.list returned no list")
+            self.assertGreater(len(nics), 0, "VM NIC not found")
+            vm_ip6 = getattr(nics[0], 'ip6address', None)
+            self.assertIsNotNone(vm_ip6,
+                "VM NIC should have ip6address (SLAAC) after deploy")
+            self.logger.info("VM NIC IPv6: %s", vm_ip6)
+            self.logger.info("Sub-test A PASSED")
+
+            # ==========================================================
+            # B. KVM namespace: IPv6 address on veth + radvd running
+            # ==========================================================
+            self.logger.info("--- Sub-test B: KVM namespace IPv6 verification ---")
+
+            # The network namespace lives on the KVM host chosen by
+            # ensure-network-device, which is NOT necessarily the same host that
+            # runs the VM.  Search every configured KVM host for the ip6-gateway
+            # state file written by config-dhcp-subnet.
+            self.assertTrue(self.kvm_host_configs,
+                "No KVM hosts configured — cannot verify namespace state")
+
+            prefix_size = ip6cidr.split('/')[-1]
+
+            kvm_ssh      = None
+            kvm_host_ip  = None
+            found_path   = None
+            discover_cmd = (
+                "for f in /var/lib/cloudstack/*/network-*/ip6-gateway; do "
+                "[ -f \"$f\" ] && grep -qF '%(gw)s' \"$f\" "
+                "&& echo \"$f\" && break; done" % {"gw": ip6gateway}
+            )
+            for h in self.kvm_host_configs:
+                h_ip  = h.get('ip', '')
+                h_user = h.get('username', 'root')
+                h_pass = h.get('password', '')
+                if not h_ip:
+                    continue
+                try:
+                    ssh = SshClient(h_ip, 22, h_user, h_pass)
+                    out = ssh.execute(discover_cmd)
+                    fp  = next((l.strip() for l in out if l.strip()), None)
+                    if fp:
+                        kvm_ssh     = ssh
+                        kvm_host_ip = h_ip
+                        found_path  = fp
+                        self.logger.info(
+                            "Found ip6-gateway state on KVM host %s: %s",
+                            h_ip, fp)
+                        break
+                except Exception as e:
+                    self.logger.warning(
+                        "Could not search KVM host %s: %s", h_ip, e)
+
+            self.assertIsNotNone(
+                found_path,
+                "No ip6-gateway state file containing %s found on any "
+                "configured KVM host (searched: %s)"
+                % (ip6gateway,
+                   ", ".join(h.get('ip', '?')
+                             for h in self.kvm_host_configs)))
+
+            state_dir      = found_path.rsplit('/ip6-gateway', 1)[0]
+            ns_id          = state_dir.split('/')[-1].replace('network-', '')
+            ns_name        = "cs-net-" + ns_id
+            radvd_conf_path = "%s/radvd/radvd.conf" % state_dir
+            radvd_pid_path  = "%s/radvd/radvd.pid"  % state_dir
+            self.logger.info("Discovered state_dir=%s  namespace=%s",
+                             state_dir, ns_name)
+
+            # B1. Namespace exists
+            ns_out  = kvm_ssh.execute(
+                "ip netns list 2>/dev/null | grep -c '^%s' || echo 0" % ns_name)
+            self.assertTrue(
+                any(line.strip() not in ('', '0') for line in ns_out),
+                "Namespace '%s' not found on KVM host %s" % (ns_name, kvm_host_ip))
+            self.logger.info("B1 PASSED: namespace '%s' exists", ns_name)
+
+            # B2. IPv6 gateway address is present on the guest veth
+            ip6_out = kvm_ssh.execute(
+                "ip netns exec '%s' ip -6 addr show 2>/dev/null"
+                " | grep '%s' || true" % (ns_name, ip6gateway))
+            self.assertTrue(
+                any(ip6gateway in line for line in ip6_out),
+                "IPv6 gateway %s not found on any interface in namespace '%s'"
+                % (ip6gateway, ns_name))
+            self.logger.info("B2 PASSED: IPv6 gateway %s present in namespace",
+                             ip6gateway)
+
+            # B3. radvd.conf exists and is non-empty
+            conf_check = kvm_ssh.execute(
+                "test -s '%s' && echo RADVD_CONF_OK"
+                " || echo RADVD_CONF_MISSING" % radvd_conf_path)
+            self.assertTrue(
+                any("RADVD_CONF_OK" in line for line in conf_check),
+                "radvd.conf not found or empty at %s" % radvd_conf_path)
+            self.logger.info("B3 PASSED: radvd.conf present at %s",
+                             radvd_conf_path)
+
+            # B4. radvd.conf has correct directives and prefix size
+            conf_lines = kvm_ssh.execute("cat '%s' 2>/dev/null" % radvd_conf_path)
+            conf_text  = "\n".join(conf_lines)
+            self.assertIn("AdvSendAdvert on", conf_text,
+                "radvd.conf missing 'AdvSendAdvert on'")
+            self.assertIn("AdvAutonomous on", conf_text,
+                "radvd.conf missing 'AdvAutonomous on'")
+            self.assertIn("/" + prefix_size, conf_text,
+                "radvd.conf missing prefix size '/%s'" % prefix_size)
+            self.logger.info(
+                "B4 PASSED: radvd.conf directives correct "
+                "(AdvSendAdvert on, AdvAutonomous on, /%s)", prefix_size)
+
+            # B5. radvd process is running inside the namespace
+            radvd_run = kvm_ssh.execute(
+                "pid=$(cat '%(pid)s' 2>/dev/null) && [ -n \"$pid\" ] && "
+                "ip netns exec '%(ns)s' ls /proc/$pid/status >/dev/null 2>&1 && "
+                "echo RADVD_RUNNING || echo RADVD_STOPPED"
+                % {"pid": radvd_pid_path, "ns": ns_name})
+            self.assertTrue(
+                any("RADVD_RUNNING" in line for line in radvd_run),
+                "radvd not running inside namespace '%s' (pid file: %s)"
+                % (ns_name, radvd_pid_path))
+            self.logger.info("B5 PASSED: radvd is running inside namespace '%s'",
+                             ns_name)
+
+            self.logger.info(
+                "Sub-test B PASSED: ns=%s gw=%s radvd=running",
+                ns_name, ip6gateway)
+
+        finally:
+            # Restore ipv6.offering.enabled
+            if initial_ipv6_cfg is not None:
+                try:
+                    Configurations.update(self.apiclient,
+                                          "ipv6.offering.enabled",
+                                          initial_ipv6_cfg)
+                    self.logger.info("Restored ipv6.offering.enabled to %s",
+                                     initial_ipv6_cfg)
+                except Exception as e:
+                    self.logger.warning(
+                        "Could not restore ipv6.offering.enabled: %s", e)
+
+            # Remove public IPv6 range if this test created it
+            if ip6pubrange_created and ip6pubrange_obj:
+                try:
+                    ip6pubrange_obj.delete(self.apiclient)
+                    self.logger.info("Deleted public IPv6 range %s",
+                                     getattr(ip6pubrange_obj, 'ip6cidr', ''))
+                except Exception as e:
+                    self.logger.warning(
+                        "Could not delete public IPv6 range: %s", e)
+
+            # Remove IPv6 prefix if this test created it
+            if ip6prefix_created and ip6prefix_obj:
+                try:
+                    del_cmd = (deleteGuestNetworkIpv6Prefix
+                               .deleteGuestNetworkIpv6PrefixCmd())
+                    del_cmd.id = ip6prefix_obj.id
+                    self.apiclient.deleteGuestNetworkIpv6Prefix(del_cmd)
+                    self.logger.info("Deleted guest IPv6 prefix %s",
+                                     ip6prefix_obj.prefix)
+                except Exception as e:
+                    self.logger.warning(
+                        "Could not delete guest IPv6 prefix: %s", e)
+
+        # ---- Explicit ordered cleanup ----
+        try:
+            vm.delete(self.apiclient, expunge=True)
+            self.cleanup = [o for o in self.cleanup if o != vm]
+        except Exception:
+            pass
+        try:
+            network.delete(self.apiclient)
+            self.cleanup = [o for o in self.cleanup if o != network]
+        except Exception:
+            pass
+        try:
+            self._teardown_extension()
+        except Exception:
+            pass
+
+        self.logger.info("test_11 PASSED")
