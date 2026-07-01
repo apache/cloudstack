@@ -31,8 +31,9 @@ public class LBStickinessPolicyDaoImpl extends GenericDaoBase<LBStickinessPolicy
     public void remove(long loadBalancerId) {
         SearchCriteria<LBStickinessPolicyVO> sc = createSearchCriteria();
         sc.addAnd("loadBalancerId", SearchCriteria.Op.EQ, loadBalancerId);
+        sc.addAnd("removed", SearchCriteria.Op.NULL);
 
-        expunge(sc);
+        remove(sc);
     }
 
     @Override
@@ -40,8 +41,9 @@ public class LBStickinessPolicyDaoImpl extends GenericDaoBase<LBStickinessPolicy
         SearchCriteria<LBStickinessPolicyVO> sc = createSearchCriteria();
         sc.addAnd("loadBalancerId", SearchCriteria.Op.EQ, loadBalancerId);
         sc.addAnd("revoke", SearchCriteria.Op.EQ, revoke);
+        sc.addAnd("removed", SearchCriteria.Op.NULL);
 
-        expunge(sc);
+        remove(sc);
     }
 
     @Override
@@ -62,4 +64,10 @@ public class LBStickinessPolicyDaoImpl extends GenericDaoBase<LBStickinessPolicy
         return listBy(sc);
     }
 
+    @Override
+    public List<LBStickinessPolicyVO> listByLoadBalancerId(long loadBalancerId) {
+        SearchCriteria<LBStickinessPolicyVO> sc = createSearchCriteria();
+        sc.addAnd("loadBalancerId", SearchCriteria.Op.EQ, loadBalancerId);
+        return listBy(sc);
+    }
 }
