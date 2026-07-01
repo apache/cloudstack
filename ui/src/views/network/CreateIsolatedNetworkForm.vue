@@ -561,7 +561,7 @@ export default {
       this.networkOfferings = []
       this.selectedNetworkOffering = {}
       getAPI('listNetworkOfferings', params).then(json => {
-        this.networkOfferings = json.listnetworkofferingsresponse.networkoffering
+        this.networkOfferings = json.listnetworkofferingsresponse.networkoffering || []
         this.networkOfferings = this.networkOfferings.filter(offering => offering.fornsx === this.selectedZone.isnsxenabled)
         if (!this.selectedZone.routedmodeenabled) {
           this.networkOfferings = this.networkOfferings.filter(offering => offering.networkmode !== 'ROUTED')
