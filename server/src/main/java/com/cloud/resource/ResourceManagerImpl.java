@@ -19,9 +19,11 @@ package com.cloud.resource;
 import static com.cloud.configuration.ConfigurationManagerImpl.MIGRATE_VM_ACROSS_CLUSTERS;
 import static com.cloud.configuration.ConfigurationManagerImpl.SET_HOST_DOWN_TO_MAINTENANCE;
 
+import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -31,6 +33,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 import java.util.stream.Collectors;
 
@@ -797,6 +800,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         } catch (final URISyntaxException e) {
             throw new InvalidParameterValueException(url + " is not a valid uri");
         }
+
+        checkForDuplicateHost(url);
 
         final List<HostVO> hosts = new ArrayList<>();
         logger.info("Trying to add a new host at {} in data center {}", url, zone);
@@ -2281,6 +2286,29 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         return null;
     }
 
+    protected void validateExistingHostLocationImmutable(final HostVO host, final boolean newHost,
+            final long dcId, final Long podId, final Long clusterId, final StartupCommand startup) {
+        if (newHost || host == null || host.getType() != Host.Type.Routing) {
+            return;
+        }
+        final long existingDcId = host.getDataCenterId();
+        final Long existingPodId = host.getPodId();
+        final Long existingClusterId = host.getClusterId();
+        if (existingPodId == null || existingClusterId == null) {
+            return;
+        }
+        if (existingDcId == dcId && Objects.equals(existingPodId, podId) && Objects.equals(existingClusterId, clusterId)) {
+            return;
+        }
+        final String identity = host.getUuid() != null ? host.getUuid() : host.getGuid();
+        final String ip = startup != null ? startup.getPrivateIpAddress() : "unknown";
+        throw new InvalidParameterValueException(
+                String.format("Host %s (ip: %s) is already registered in [zone: %s, pod: %s, cluster: %s] and cannot " +
+                                "be re-added or reconnected with [zone: %s, pod: %s, cluster: %s]. Zone, pod and " +
+                                "cluster of an existing host are immutable.",
+                        identity, ip, existingDcId, existingPodId, existingClusterId, dcId, podId, clusterId));
+    }
+
     protected HostVO createHostVO(final StartupCommand[] cmds, final ServerResource resource, final Map<String, String> details, List<String> hostTags,
             final ResourceStateAdapter.Event stateEvent) {
         boolean newHost = false;
@@ -2355,6 +2383,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 }
             }
         }
+
+        validateExistingHostLocationImmutable(host, newHost, dcId, podId, clusterId, startup);
 
         host.setDataCenterId(dc.getId());
         host.setPodId(podId);
@@ -2583,6 +2613,31 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
         return host;
+    }
+
+    void checkForDuplicateHost(final String url) {
+        String hostIpOrName = null;
+        String ipAddress = null;
+        try {
+            hostIpOrName = new URI(UriUtils.encodeURIComponent(url)).getHost();
+            if (StringUtils.isBlank(hostIpOrName)) {
+                return;
+            }
+            InetAddress ip = InetAddress.getByName(hostIpOrName);
+            ipAddress = ip.getHostAddress();
+        } catch (final URISyntaxException | UnknownHostException ignore) {
+            // unparseable URL or unknown host - discoverer will reject it shortly anyway
+            return;
+        }
+
+        if (StringUtils.isNotBlank(ipAddress)) {
+            final HostVO existingByIp = _hostDao.findByIp(ipAddress);
+            if (existingByIp != null) {
+                throw new InvalidParameterValueException(String.format(
+                        "A host with IP address '%s' (%s) already exists (id: %s). Remove it before adding again.",
+                        ipAddress, hostIpOrName, existingByIp));
+            }
+        }
     }
 
     private Host createHostAndAgentDeferred(final ServerResource resource, final Map<String, String> details, final boolean old, final List<String> hostTags, final boolean forRebalance) {
