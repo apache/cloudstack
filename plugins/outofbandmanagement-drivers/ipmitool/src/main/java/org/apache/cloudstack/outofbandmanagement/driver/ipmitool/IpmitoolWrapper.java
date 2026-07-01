@@ -158,7 +158,7 @@ public final class IpmitoolWrapper {
     public OutOfBandManagementDriverResponse executeCommands(final List<String> commands, final Duration timeOut) {
         final ProcessResult result = RUNNER.executeCommands(commands, timeOut);
         if (logger.isTraceEnabled()) {
-            List<String> cleanedCommands = getSanatisedCommandStrings(commands);
+            List<String> cleanedCommands = getSanitisedCommandStrings(commands);
             logger.trace("Executed ipmitool process with commands: {}\nIpmitool execution standard output: {}\nIpmitool execution error output: {}",
                     StringUtils.join(cleanedCommands, ", "),
                     result.getStdOutput(),
@@ -167,7 +167,7 @@ public final class IpmitoolWrapper {
         return new OutOfBandManagementDriverResponse(result.getStdOutput(), result.getStdError(), result.isSuccess());
     }
 
-    List<String> getSanatisedCommandStrings(List<String> commands) {
+    List<String> getSanitisedCommandStrings(List<String> commands) {
         List<String> cleanedCommands = new ArrayList<>();
         int maskNextCommand = 0;
         for (String command : commands) {
@@ -176,7 +176,7 @@ public final class IpmitoolWrapper {
                 maskNextCommand--;
                 continue;
             }
-            if (command.equalsIgnoreCase("-P")) {
+            if (command.equals("-P")) {
                 maskNextCommand = 1;
             } else if (command.toLowerCase().endsWith("password")) {
                 maskNextCommand = 2;
