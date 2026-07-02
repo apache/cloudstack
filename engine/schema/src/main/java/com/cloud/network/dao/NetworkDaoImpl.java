@@ -566,6 +566,19 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
     }
 
     @Override
+    public List<NetworkVO> listByIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return new ArrayList<>();
+        }
+        SearchBuilder<NetworkVO> sb = createSearchBuilder();
+        sb.and("id", sb.entity().getId(), Op.IN);
+        sb.done();
+        SearchCriteria<NetworkVO> sc = sb.create();
+        sc.setParameters("id", ids.toArray());
+        return listBy(sc);
+    }
+
+    @Override
     public void addDomainToNetwork(final long networkId, final long domainId, final Boolean subdomainAccess) {
         addDomainToNetworknetwork(networkId, domainId, subdomainAccess);
     }
