@@ -14,6 +14,77 @@ permissions: read-all
 
 network: defaults
 
+# Rotates the Copilot token across volunteer PATs, see .github/COPILOT_TOKENS.md.
+# Strict mode forbids reading secrets in the agent job, so this job picks today's
+# token and outputs its alias only; the agent job resolves the secret itself.
+# ROTATION_SLOT 1 staggers this workflow half the pool away from
+# daily-repo-status so the two pick different tokens (pool of 2 or more).
+# After `gh aw compile`, run `bash .github/scripts/post-compile.sh` to re-wire the
+# agent job to this output.
+jobs:
+  pick_copilot_token:
+    runs-on: ubuntu-latest
+    outputs:
+      name: ${{ steps.pick.outputs.name }}
+    steps:
+      - name: Compute candidate names by date
+        id: names
+        env:
+          NAMES_JSON: "${{ vars.GH_AW_COPILOT_TOKEN_NAMES }}"
+          ROTATION_SLOT: "1"
+        run: |
+          set -euo pipefail
+          NAMES=()
+          if [ -n "${NAMES_JSON:-}" ]; then
+            mapfile -t NAMES < <(printf '%s' "$NAMES_JSON" | jq -r '.[]')
+          fi
+          N=${#NAMES[@]}
+          K=3   # today's pick plus 2 fallbacks in case it's dead
+          if [ "$N" -eq 0 ]; then
+            for o in $(seq 0 $((K-1))); do echo "name_$o=" >> "$GITHUB_OUTPUT"; done
+            echo "GH_AW_COPILOT_TOKEN_NAMES is empty -> agent will use base COPILOT_GITHUB_TOKEN"
+            exit 0
+          fi
+          DOY=$(date -u +%-j)
+          # slot 1 starts half the pool away from slot 0 so the two workflows
+          # pick different tokens whenever the pool has at least 2
+          START=$(( (DOY - 1 + ROTATION_SLOT * ((N + 1) / 2)) % N ))
+          for o in $(seq 0 $((K-1))); do
+            i=$(( (START + o) % N ))
+            echo "name_$o=${NAMES[$i]}" >> "$GITHUB_OUTPUT"
+          done
+      - name: Pick first live token name
+        id: pick
+        env:
+          NAME_0: "${{ steps.names.outputs.name_0 }}"
+          NAME_1: "${{ steps.names.outputs.name_1 }}"
+          NAME_2: "${{ steps.names.outputs.name_2 }}"
+          CAND_0: "${{ secrets[format('COPILOT_GITHUB_TOKEN_{0}', steps.names.outputs.name_0)] }}"
+          CAND_1: "${{ secrets[format('COPILOT_GITHUB_TOKEN_{0}', steps.names.outputs.name_1)] }}"
+          CAND_2: "${{ secrets[format('COPILOT_GITHUB_TOKEN_{0}', steps.names.outputs.name_2)] }}"
+          BASE: "${{ secrets.COPILOT_GITHUB_TOKEN }}"
+        run: |
+          set -euo pipefail
+          live() {
+            [ -n "$1" ] && [ "$(curl -s -o /dev/null -w '%{http_code}' \
+              -H "Authorization: Bearer $1" https://api.github.com/user || echo 000)" = "200" ]
+          }
+          for pair in "$NAME_0|$CAND_0" "$NAME_1|$CAND_1" "$NAME_2|$CAND_2"; do
+            nm="${pair%%|*}"; tok="${pair#*|}"
+            if [ -z "$tok" ]; then continue; fi
+            echo "::add-mask::$tok"
+            if live "$tok"; then
+              echo "name=$nm" >> "$GITHUB_OUTPUT"
+              echo "Selected rotated token '$nm'"
+              exit 0
+            fi
+          done
+          # empty name makes the agent job fall back to the base COPILOT_GITHUB_TOKEN secret
+          [ -n "$BASE" ] && echo "::add-mask::$BASE"
+          echo "name=" >> "$GITHUB_OUTPUT"
+          if live "$BASE"; then echo "Falling back to base COPILOT_GITHUB_TOKEN"; else
+            echo "WARNING: no live Copilot token (rotated or base)" >&2; fi
+
 safe-outputs:
   add-labels:
     target: "*"

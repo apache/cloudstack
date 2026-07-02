@@ -1,5 +1,5 @@
-# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"919fb17c7928e5e96d9c0a2854670a42f9c5f6cfc2059b46009bb3c23640d0ca","compiler_version":"v0.76.1","strict":true,"agent_id":"copilot"}
-# gh-aw-manifest: {"version":1,"secrets":["COPILOT_GITHUB_TOKEN","GH_AW_GITHUB_MCP_SERVER_TOKEN","GH_AW_GITHUB_TOKEN","GITHUB_TOKEN"],"actions":[{"repo":"actions/checkout","sha":"de0fac2e4500dabe0009e67214ff5f5447ce83dd","version":"v6.0.2"},{"repo":"actions/download-artifact","sha":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c","version":"v8.0.1"},{"repo":"actions/github-script","sha":"3a2844b7e9c422d3c10d287c895573f7108da1b3","version":"v9.0.0"},{"repo":"actions/setup-node","sha":"48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e","version":"v6.4.0"},{"repo":"actions/upload-artifact","sha":"043fb46d1a93c77aae656e7c1c64a875d1fc6a0a","version":"v7.0.1"},{"repo":"github/gh-aw-actions/setup","sha":"46d564922b082d0db93244972e8005ea6904ee5f","version":"v0.76.1"}],"containers":[{"image":"ghcr.io/github/gh-aw-firewall/agent:0.25.55","digest":"sha256:138c363411decc9a61a5af9b95e8d64c76648b00add0ba06fc7ba786f0e72731","pinned_image":"ghcr.io/github/gh-aw-firewall/agent:0.25.55@sha256:138c363411decc9a61a5af9b95e8d64c76648b00add0ba06fc7ba786f0e72731"},{"image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.25.55","digest":"sha256:4142b873b678cd3279b98dcbe464857d56ea2f2348719b00379cdf35dd843ff3","pinned_image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.25.55@sha256:4142b873b678cd3279b98dcbe464857d56ea2f2348719b00379cdf35dd843ff3"},{"image":"ghcr.io/github/gh-aw-firewall/squid:0.25.55","digest":"sha256:74084b704d8d3664a363655986664d70bd9cdb4830532d0b35cd784d867aabca","pinned_image":"ghcr.io/github/gh-aw-firewall/squid:0.25.55@sha256:74084b704d8d3664a363655986664d70bd9cdb4830532d0b35cd784d867aabca"},{"image":"ghcr.io/github/gh-aw-mcpg:v0.3.19","digest":"sha256:a6c890d7c24d7190c9ef97b9c954cc4cffaae6b01c371ced1f959f1370b1f68f","pinned_image":"ghcr.io/github/gh-aw-mcpg:v0.3.19@sha256:a6c890d7c24d7190c9ef97b9c954cc4cffaae6b01c371ced1f959f1370b1f68f"},{"image":"ghcr.io/github/github-mcp-server:v1.0.4","digest":"sha256:e3816a476a977cfb836e7d221510011436c654d11861db66ecfd826601aba6a4","pinned_image":"ghcr.io/github/github-mcp-server:v1.0.4@sha256:e3816a476a977cfb836e7d221510011436c654d11861db66ecfd826601aba6a4"},{"image":"node:lts-alpine","digest":"sha256:2bdb65ed1dab192432bc31c95f94155ca5ad7fc1392fb7eb7526ab682fa5bf14","pinned_image":"node:lts-alpine@sha256:2bdb65ed1dab192432bc31c95f94155ca5ad7fc1392fb7eb7526ab682fa5bf14"}]}
+# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"3279ff2265cdf1decf770324c8ee3356f28df82b375a8f5024aa38e7c2e78f1a","compiler_version":"v0.76.1","strict":true,"agent_id":"copilot"}
+# gh-aw-manifest: {"version":1,"secrets":["COPILOT_GITHUB_TOKEN","GH_AW_GITHUB_MCP_SERVER_TOKEN","GH_AW_GITHUB_TOKEN","GITHUB_TOKEN"],"actions":[{"repo":"actions/checkout","sha":"df4cb1c069e1874edd31b4311f1884172cec0e10","version":"v6.0.3"},{"repo":"actions/download-artifact","sha":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c","version":"v8.0.1"},{"repo":"actions/github-script","sha":"3a2844b7e9c422d3c10d287c895573f7108da1b3","version":"v9.0.0"},{"repo":"actions/setup-node","sha":"48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e","version":"v6.4.0"},{"repo":"actions/upload-artifact","sha":"043fb46d1a93c77aae656e7c1c64a875d1fc6a0a","version":"v7.0.1"},{"repo":"github/gh-aw-actions/setup","sha":"46d564922b082d0db93244972e8005ea6904ee5f","version":"v0.76.1"}],"containers":[{"image":"ghcr.io/github/gh-aw-firewall/agent:0.25.55","digest":"sha256:138c363411decc9a61a5af9b95e8d64c76648b00add0ba06fc7ba786f0e72731","pinned_image":"ghcr.io/github/gh-aw-firewall/agent:0.25.55@sha256:138c363411decc9a61a5af9b95e8d64c76648b00add0ba06fc7ba786f0e72731"},{"image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.25.55","digest":"sha256:4142b873b678cd3279b98dcbe464857d56ea2f2348719b00379cdf35dd843ff3","pinned_image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.25.55@sha256:4142b873b678cd3279b98dcbe464857d56ea2f2348719b00379cdf35dd843ff3"},{"image":"ghcr.io/github/gh-aw-firewall/squid:0.25.55","digest":"sha256:74084b704d8d3664a363655986664d70bd9cdb4830532d0b35cd784d867aabca","pinned_image":"ghcr.io/github/gh-aw-firewall/squid:0.25.55@sha256:74084b704d8d3664a363655986664d70bd9cdb4830532d0b35cd784d867aabca"},{"image":"ghcr.io/github/gh-aw-mcpg:v0.3.19","digest":"sha256:a6c890d7c24d7190c9ef97b9c954cc4cffaae6b01c371ced1f959f1370b1f68f","pinned_image":"ghcr.io/github/gh-aw-mcpg:v0.3.19@sha256:a6c890d7c24d7190c9ef97b9c954cc4cffaae6b01c371ced1f959f1370b1f68f"},{"image":"ghcr.io/github/github-mcp-server:v1.0.4","digest":"sha256:e3816a476a977cfb836e7d221510011436c654d11861db66ecfd826601aba6a4","pinned_image":"ghcr.io/github/github-mcp-server:v1.0.4@sha256:e3816a476a977cfb836e7d221510011436c654d11861db66ecfd826601aba6a4"},{"image":"node:lts-alpine","digest":"sha256:2bdb65ed1dab192432bc31c95f94155ca5ad7fc1392fb7eb7526ab682fa5bf14","pinned_image":"node:lts-alpine@sha256:2bdb65ed1dab192432bc31c95f94155ca5ad7fc1392fb7eb7526ab682fa5bf14"}]}
 #    ___                   _   _
 #   / _ \                 | | (_)
 #  | |_| | __ _  ___ _ __ | |_ _  ___
@@ -40,7 +40,7 @@
 #   - actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
 #   - actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
 #   - actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-#   - github/gh-aw-actions/setup@c0338fef4749d08c21f8f975fb0e37efa17dda47 # v0.79.8
+#   - github/gh-aw-actions/setup@46d564922b082d0db93244972e8005ea6904ee5f # v0.76.1
 #
 # Container images used:
 #   - ghcr.io/github/gh-aw-firewall/agent:0.25.55@sha256:138c363411decc9a61a5af9b95e8d64c76648b00add0ba06fc7ba786f0e72731
@@ -90,7 +90,7 @@ jobs:
     steps:
       - name: Setup Scripts
         id: setup
-        uses: github/gh-aw-actions/setup@c0338fef4749d08c21f8f975fb0e37efa17dda47 # v0.79.8
+        uses: github/gh-aw-actions/setup@46d564922b082d0db93244972e8005ea6904ee5f # v0.76.1
         with:
           destination: ${{ runner.temp }}/gh-aw/actions
           job-name: ${{ github.job }}
@@ -194,20 +194,20 @@ jobs:
         run: |
           bash "${RUNNER_TEMP}/gh-aw/actions/create_prompt_first.sh"
           {
-          cat << 'GH_AW_PROMPT_7c51e8f15cc7af75_EOF'
+          cat << 'GH_AW_PROMPT_8c7eff11a2d4518b_EOF'
           <system>
-          GH_AW_PROMPT_7c51e8f15cc7af75_EOF
+          GH_AW_PROMPT_8c7eff11a2d4518b_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/xpia.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/temp_folder_prompt.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/markdown.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/safe_outputs_prompt.md"
-          cat << 'GH_AW_PROMPT_7c51e8f15cc7af75_EOF'
+          cat << 'GH_AW_PROMPT_8c7eff11a2d4518b_EOF'
           <safe-output-tools>
           Tools: add_comment(max:10), add_labels(max:10), missing_tool, missing_data, noop
           </safe-output-tools>
-          GH_AW_PROMPT_7c51e8f15cc7af75_EOF
+          GH_AW_PROMPT_8c7eff11a2d4518b_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/mcp_cli_tools_prompt.md"
-          cat << 'GH_AW_PROMPT_7c51e8f15cc7af75_EOF'
+          cat << 'GH_AW_PROMPT_8c7eff11a2d4518b_EOF'
           <github-context>
           The following GitHub context information is available for this workflow:
           {{#if github.actor}}
@@ -236,12 +236,12 @@ jobs:
           {{/if}}
           </github-context>
 
-          GH_AW_PROMPT_7c51e8f15cc7af75_EOF
+          GH_AW_PROMPT_8c7eff11a2d4518b_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/github_mcp_tools_with_safeoutputs_prompt.md"
-          cat << 'GH_AW_PROMPT_7c51e8f15cc7af75_EOF'
+          cat << 'GH_AW_PROMPT_8c7eff11a2d4518b_EOF'
           </system>
           {{#runtime-import .github/workflows/daily-issue-triage.md}}
-          GH_AW_PROMPT_7c51e8f15cc7af75_EOF
+          GH_AW_PROMPT_8c7eff11a2d4518b_EOF
           } > "$GH_AW_PROMPT"
       - name: Interpolate variables and render templates
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
@@ -319,7 +319,9 @@ jobs:
           retention-days: 1
 
   agent:
-    needs: activation
+    needs:
+      - activation
+      - pick_copilot_token
     runs-on: ubuntu-latest
     permissions: read-all
     concurrency:
@@ -349,7 +351,7 @@ jobs:
     steps:
       - name: Setup Scripts
         id: setup
-        uses: github/gh-aw-actions/setup@c0338fef4749d08c21f8f975fb0e37efa17dda47 # v0.79.8
+        uses: github/gh-aw-actions/setup@46d564922b082d0db93244972e8005ea6904ee5f # v0.76.1
         with:
           destination: ${{ runner.temp }}/gh-aw/actions
           job-name: ${{ github.job }}
@@ -447,9 +449,9 @@ jobs:
           mkdir -p "${RUNNER_TEMP}/gh-aw/safeoutputs"
           mkdir -p /tmp/gh-aw/safeoutputs
           mkdir -p /tmp/gh-aw/mcp-logs/safeoutputs
-          cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_09fd9551c3cd7278_EOF'
+          cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_16e3e1f2af7adbd5_EOF'
           {"add_comment":{"max":10,"target":"*"},"add_labels":{"max":10,"target":"*"},"create_report_incomplete_issue":{},"missing_data":{},"missing_tool":{},"noop":{"max":1,"report-as-issue":"true"},"report_incomplete":{}}
-          GH_AW_SAFE_OUTPUTS_CONFIG_09fd9551c3cd7278_EOF
+          GH_AW_SAFE_OUTPUTS_CONFIG_16e3e1f2af7adbd5_EOF
       - name: Generate Safe Outputs Tools
         env:
           GH_AW_TOOLS_META_JSON: |
@@ -661,7 +663,7 @@ jobs:
 
           mkdir -p /home/runner/.copilot
           GH_AW_NODE=$(which node 2>/dev/null || command -v node 2>/dev/null || echo node)
-          cat << GH_AW_MCP_CONFIG_37cac1d5ee0c175c_EOF | "$GH_AW_NODE" "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.cjs"
+          cat << GH_AW_MCP_CONFIG_dc96bebe6d2732bf_EOF | "$GH_AW_NODE" "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.cjs"
           {
             "mcpServers": {
               "github": {
@@ -705,7 +707,7 @@ jobs:
               "payloadDir": "${MCP_GATEWAY_PAYLOAD_DIR}"
             }
           }
-          GH_AW_MCP_CONFIG_37cac1d5ee0c175c_EOF
+          GH_AW_MCP_CONFIG_dc96bebe6d2732bf_EOF
       - name: Mount MCP servers as CLIs
         id: mount-mcp-clis
         continue-on-error: true
@@ -752,7 +754,7 @@ jobs:
           AWF_REFLECT_ENABLED: 1
           COPILOT_AGENT_RUNNER_TYPE: STANDALONE
           COPILOT_DUMMY_BYOK: dummy-byok-key-for-offline-mode
-          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+          COPILOT_GITHUB_TOKEN: ${{ needs.pick_copilot_token.outputs.name != '' && secrets[format('COPILOT_GITHUB_TOKEN_{0}', needs.pick_copilot_token.outputs.name)] || secrets.COPILOT_GITHUB_TOKEN }}
           COPILOT_MODEL: ${{ vars.GH_AW_MODEL_AGENT_COPILOT || 'claude-sonnet-4.6' }}
           GH_AW_MCP_CONFIG: /home/runner/.copilot/mcp-config.json
           GH_AW_PHASE: agent
@@ -815,7 +817,7 @@ jobs:
             await main();
         env:
           GH_AW_SECRET_NAMES: 'COPILOT_GITHUB_TOKEN,GH_AW_GITHUB_MCP_SERVER_TOKEN,GH_AW_GITHUB_TOKEN,GITHUB_TOKEN'
-          SECRET_COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+          SECRET_COPILOT_GITHUB_TOKEN: ${{ needs.pick_copilot_token.outputs.name != '' && secrets[format('COPILOT_GITHUB_TOKEN_{0}', needs.pick_copilot_token.outputs.name)] || secrets.COPILOT_GITHUB_TOKEN }}
           SECRET_GH_AW_GITHUB_MCP_SERVER_TOKEN: ${{ secrets.GH_AW_GITHUB_MCP_SERVER_TOKEN }}
           SECRET_GH_AW_GITHUB_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN }}
           SECRET_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -939,6 +941,7 @@ jobs:
       - activation
       - agent
       - detection
+      - pick_copilot_token
       - safe_outputs
     if: >
       always() && (needs.agent.result != 'skipped' || needs.activation.outputs.lockdown_check_failed == 'true' ||
@@ -961,7 +964,7 @@ jobs:
     steps:
       - name: Setup Scripts
         id: setup
-        uses: github/gh-aw-actions/setup@c0338fef4749d08c21f8f975fb0e37efa17dda47 # v0.79.8
+        uses: github/gh-aw-actions/setup@46d564922b082d0db93244972e8005ea6904ee5f # v0.76.1
         with:
           destination: ${{ runner.temp }}/gh-aw/actions
           job-name: ${{ github.job }}
@@ -1112,7 +1115,7 @@ jobs:
     steps:
       - name: Setup Scripts
         id: setup
-        uses: github/gh-aw-actions/setup@c0338fef4749d08c21f8f975fb0e37efa17dda47 # v0.79.8
+        uses: github/gh-aw-actions/setup@46d564922b082d0db93244972e8005ea6904ee5f # v0.76.1
         with:
           destination: ${{ runner.temp }}/gh-aw/actions
           job-name: ${{ github.job }}
@@ -1299,6 +1302,79 @@ jobs:
               }
             }
 
+  pick_copilot_token:
+    needs: activation
+    runs-on: ubuntu-latest
+    outputs:
+      name: ${{ steps.pick.outputs.name }}
+    steps:
+      - name: Configure GH_HOST for enterprise compatibility
+        id: ghes-host-config
+        shell: bash
+        run: |
+          # Derive GH_HOST from GITHUB_SERVER_URL so the gh CLI targets the correct
+          # GitHub instance (GHES/GHEC). On github.com this is a harmless no-op.
+          GH_HOST="${GITHUB_SERVER_URL#https://}"
+          GH_HOST="${GH_HOST#http://}"
+          echo "GH_HOST=${GH_HOST}" >> "$GITHUB_ENV"
+      - name: Compute candidate names by date
+        id: names
+        run: |
+          set -euo pipefail
+          NAMES=()
+          if [ -n "${NAMES_JSON:-}" ]; then
+            mapfile -t NAMES < <(printf '%s' "$NAMES_JSON" | jq -r '.[]')
+          fi
+          N=${#NAMES[@]}
+          K=3   # today's pick plus 2 fallbacks in case it's dead
+          if [ "$N" -eq 0 ]; then
+            for o in $(seq 0 $((K-1))); do echo "name_$o=" >> "$GITHUB_OUTPUT"; done
+            echo "GH_AW_COPILOT_TOKEN_NAMES is empty -> agent will use base COPILOT_GITHUB_TOKEN"
+            exit 0
+          fi
+          DOY=$(date -u +%-j)
+          # slot 1 starts half the pool away from slot 0 so the two workflows
+          # pick different tokens whenever the pool has at least 2
+          START=$(( (DOY - 1 + ROTATION_SLOT * ((N + 1) / 2)) % N ))
+          for o in $(seq 0 $((K-1))); do
+            i=$(( (START + o) % N ))
+            echo "name_$o=${NAMES[$i]}" >> "$GITHUB_OUTPUT"
+          done
+        env:
+          NAMES_JSON: ${{ vars.GH_AW_COPILOT_TOKEN_NAMES }}
+          ROTATION_SLOT: "1"
+      - name: Pick first live token name
+        id: pick
+        run: |
+          set -euo pipefail
+          live() {
+            [ -n "$1" ] && [ "$(curl -s -o /dev/null -w '%{http_code}' \
+              -H "Authorization: Bearer $1" https://api.github.com/user || echo 000)" = "200" ]
+          }
+          for pair in "$NAME_0|$CAND_0" "$NAME_1|$CAND_1" "$NAME_2|$CAND_2"; do
+            nm="${pair%%|*}"; tok="${pair#*|}"
+            if [ -z "$tok" ]; then continue; fi
+            echo "::add-mask::$tok"
+            if live "$tok"; then
+              echo "name=$nm" >> "$GITHUB_OUTPUT"
+              echo "Selected rotated token '$nm'"
+              exit 0
+            fi
+          done
+          # empty name makes the agent job fall back to the base COPILOT_GITHUB_TOKEN secret
+          [ -n "$BASE" ] && echo "::add-mask::$BASE"
+          echo "name=" >> "$GITHUB_OUTPUT"
+          if live "$BASE"; then echo "Falling back to base COPILOT_GITHUB_TOKEN"; else
+            echo "WARNING: no live Copilot token (rotated or base)" >&2; fi
+        env:
+          BASE: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+          CAND_0: ${{ secrets[format('COPILOT_GITHUB_TOKEN_{0}', steps.names.outputs.name_0)] }}
+          CAND_1: ${{ secrets[format('COPILOT_GITHUB_TOKEN_{0}', steps.names.outputs.name_1)] }}
+          CAND_2: ${{ secrets[format('COPILOT_GITHUB_TOKEN_{0}', steps.names.outputs.name_2)] }}
+          NAME_0: ${{ steps.names.outputs.name_0 }}
+          NAME_1: ${{ steps.names.outputs.name_1 }}
+          NAME_2: ${{ steps.names.outputs.name_2 }}
+
   safe_outputs:
     needs:
       - activation
@@ -1336,7 +1412,7 @@ jobs:
     steps:
       - name: Setup Scripts
         id: setup
-        uses: github/gh-aw-actions/setup@c0338fef4749d08c21f8f975fb0e37efa17dda47 # v0.79.8
+        uses: github/gh-aw-actions/setup@46d564922b082d0db93244972e8005ea6904ee5f # v0.76.1
         with:
           destination: ${{ runner.temp }}/gh-aw/actions
           job-name: ${{ github.job }}
