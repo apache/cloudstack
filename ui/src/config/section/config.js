@@ -93,7 +93,7 @@ export default {
           ],
           mapping: {
             provider: {
-              options: ['google', 'github', 'keycloak']
+              options: ['google', 'github', 'keycloak', 'forgerock']
             }
           }
         },

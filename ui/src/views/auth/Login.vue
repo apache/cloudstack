@@ -214,6 +214,18 @@
           <a-typography-text>Sign in with Keycloak</a-typography-text>
         </a-button>
       </div>
+      <div class="social-auth" v-if="forgerockprovider">
+        <a-button
+          @click="handleForgerockProviderAndDomain"
+          tag="a"
+          color="primary"
+          :href="getForgerockUrl(from)"
+          class="auth-btn forgerock-auth"
+          style="height: 38px; width: 185px; padding: 0" >
+          <img src="/assets/forgerock.svg" alt="ForgeRock" style="width: 32px; padding: 5px" />
+          <a-typography-text>Sign in with ForgeRock</a-typography-text>
+        </a-button>
+      </div>
     </div>
   </a-form>
 </template>
@@ -244,13 +256,17 @@ export default {
       googleprovider: false,
       githubprovider: false,
       keycloakprovider: false,
+      forgerockprovider: false,
       googleredirecturi: '',
       githubredirecturi: '',
       keycloakredirecturi: '',
+      forgerockredirecturi: '',
       googleclientid: '',
       githubclientid: '',
       keycloakclientid: '',
       keycloakauthorizeurl: '',
+      forgerockclientid: '',
+      forgerockauthorizeurl: '',
       loginType: 0,
       state: {
         time: 60,
@@ -347,8 +363,14 @@ export default {
               this.keycloakredirecturi = item.redirecturi
               this.keycloakauthorizeurl = item.authorizeurl
             }
+            if (item.provider === 'forgerock') {
+              this.forgerockprovider = item.enabled
+              this.forgerockclientid = item.clientid
+              this.forgerockredirecturi = item.redirecturi
+              this.forgerockauthorizeurl = item.authorizeurl
+            }
           })
-          this.socialLogin = this.googleprovider || this.githubprovider || this.keycloakprovider
+          this.socialLogin = this.googleprovider || this.githubprovider || this.keycloakprovider || this.forgerockprovider
         }
       })
       postAPI('forgotPassword', {}).then(response => {
@@ -387,6 +409,10 @@ export default {
     handleKeycloakProviderAndDomain () {
       this.handleDomain()
       this.$store.commit('SET_OAUTH_PROVIDER_USED_TO_LOGIN', 'keycloak')
+    },
+    handleForgerockProviderAndDomain () {
+      this.handleDomain()
+      this.$store.commit('SET_OAUTH_PROVIDER_USED_TO_LOGIN', 'forgerock')
     },
     handleDomain () {
       const values = toRaw(this.form)
@@ -441,6 +467,20 @@ export default {
       const options = {
         redirect_uri: this.keycloakredirecturi,
         client_id: this.keycloakclientid,
+        response_type: 'code',
+        scope: 'openid email',
+        state: 'cloudstack'
+      }
+
+      const qs = new URLSearchParams(options)
+
+      return `${rootURl}?${qs.toString()}`
+    },
+    getForgerockUrl (from) {
+      const rootURl = this.forgerockauthorizeurl
+      const options = {
+        redirect_uri: this.forgerockredirecturi,
+        client_id: this.forgerockclientid,
         response_type: 'code',
         scope: 'openid email',
         state: 'cloudstack'
