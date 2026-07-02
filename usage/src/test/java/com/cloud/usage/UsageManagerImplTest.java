@@ -36,6 +36,15 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import org.mockito.junit.MockitoJUnitRunner;
 
+
+import java.util.Date;
+
+import com.cloud.usage.dao.UsageVMInstanceDao;
+import com.cloud.utils.db.SearchCriteria;
+
+import org.springframework.test.util.ReflectionTestUtils;
+
+
 @RunWith(MockitoJUnitRunner.class)
 public class UsageManagerImplTest {
 
@@ -243,4 +252,41 @@ public class UsageManagerImplTest {
         Mockito.verify(usageManagerImpl, Mockito.never()).createUsageVpnUser(usageEventVOMock,accountMock);
         Mockito.verify(usageManagerImpl, Mockito.never()).deleteUsageVpnUser(usageEventVOMock, accountMock);
     }
+
+
+    @Test
+    public void testDuplicateVmStartDoesNotCreateNewRunningUsage() {
+
+        UsageVMInstanceDao usageInstanceDao = Mockito.mock(UsageVMInstanceDao.class);
+        ReflectionTestUtils.setField(usageManagerImpl, "_usageInstanceDao", usageInstanceDao);
+
+        Mockito.doNothing()
+            .when(usageEventDetailsDao)
+            .persist(Mockito.any());
+
+        long vmId = 100L;
+
+        UsageEventVO event = Mockito.mock(UsageEventVO.class);
+        Mockito.when(event.getType()).thenReturn(EventTypes.EVENT_VM_START);
+        Mockito.when(event.getResourceId()).thenReturn(vmId);
+        Mockito.when(event.getZoneId()).thenReturn(1L);
+        Mockito.when(event.getAccountId()).thenReturn(1L);
+        Mockito.when(event.getCreateDate()).thenReturn(new Date());
+
+        UsageVMInstanceVO existing = Mockito.mock(UsageVMInstanceVO.class);
+        List<UsageVMInstanceVO> existingList = List.of(existing);
+
+        SearchCriteria<UsageVMInstanceVO> sc = Mockito.mock(SearchCriteria.class);
+        Mockito.when(usageInstanceDao.createSearchCriteria()).thenReturn(sc);
+        Mockito.when(usageInstanceDao.search(Mockito.any(), Mockito.isNull()))
+            .thenReturn(existingList);
+
+        usageManagerImpl.handleEvent(event);
+
+        Mockito.verify(usageInstanceDao, Mockito.never())
+            .persist(Mockito.any(UsageVMInstanceVO.class));
+    }
+
+
+
 }
