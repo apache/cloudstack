@@ -50,6 +50,7 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
     String RouterHealthChecksResultFetchIntervalCK = "router.health.checks.results.fetch.interval";
     String RouterHealthChecksFailuresToRecreateVrCK = "router.health.checks.failures.to.recreate.vr";
     String RemoveControlIpOnStopCK = "systemvm.release.control.ip.on.stop";
+    String UseNicAwareSnat = "network.nic.snat.enabled";
 
     ConfigKey<String> RouterTemplateXen = new ConfigKey<>(String.class, RouterTemplateXenCK, "Advanced", "SystemVM Template (XenServer)",
             "Name of the default router template on Xenserver.", true, ConfigKey.Scope.Zone, null);
@@ -130,6 +131,17 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
 
     ConfigKey<Boolean> RemoveControlIpOnStop = new ConfigKey<>(Boolean.class, RemoveControlIpOnStopCK, "Advanced", "true",
             "on stopping routers and system VMs the IP will be released to preserve IPv4 space.", true, ConfigKey.Scope.Zone, null);
+
+    ConfigKey<Boolean> NicSnatEnabled = new ConfigKey<>(Boolean.class,
+            UseNicAwareSnat,
+            "Advanced",
+            "false",
+            "When enabled, Virtual Router overwrites the SNAT source IP in POSTROUTING for traffic exiting " +
+                    "non-default NICs. The SNAT source is selected based on the egress interface to preserve return path " +
+                    "consistency in multi-NIC configurations.",
+            true,
+            ConfigKey.Scope.Global,
+            null);
 
     int DEFAULT_ROUTER_VM_RAMSIZE = 256;            // 256M
     int DEFAULT_ROUTER_CPU_MHZ = 500;                // 500 MHz
