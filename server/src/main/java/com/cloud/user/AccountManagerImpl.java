@@ -3961,7 +3961,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             if (getActiveAccountById(accountId) != null) {
                 return accountId;
             }
-            throw new InvalidParameterValueException(String.format("Unable to find account with the specified ID."));
+            throw new InvalidParameterValueException("Unable to find account with the specified ID.");
         }
 
         if (accountName == null && domainId == null) {
