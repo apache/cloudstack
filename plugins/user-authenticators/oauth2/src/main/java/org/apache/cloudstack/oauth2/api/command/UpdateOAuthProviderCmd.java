@@ -28,11 +28,15 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.auth.UserOAuth2Authenticator;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.oauth2.OAuth2AuthManager;
 import org.apache.cloudstack.oauth2.api.response.OauthProviderResponse;
 import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
+
+import com.cloud.api.ApiDBUtils;
+import com.cloud.domain.Domain;
 
 @APICommand(name = "updateOauthProvider", description = "Updates the registered OAuth provider details", responseObject = OauthProviderResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0")
@@ -65,6 +69,14 @@ public final class UpdateOAuthProviderCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, description = "OAuth provider will be enabled or disabled based on this value")
     private Boolean enabled;
+
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class,
+            description = "Domain ID to reassign this OAuth provider to. If not provided, the current domain assignment is kept.", since = "4.23.0")
+    private Long domainId;
+
+    @Parameter(name = ApiConstants.DOMAIN, type = CommandType.STRING,
+            description = "Domain path to reassign this OAuth provider to. Ignored when Domain ID is passed. If neither is provided, the current domain assignment is kept.", since = "4.23.0")
+    private String domainPath;
 
     @Inject
     OAuth2AuthManager _oauthMgr;
@@ -105,6 +117,14 @@ public final class UpdateOAuthProviderCmd extends BaseCmd {
         return enabled;
     }
 
+    public Long getDomainId() {
+        return domainId;
+    }
+
+    public String getDomainPath() {
+        return domainPath;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -128,9 +148,10 @@ public final class UpdateOAuthProviderCmd extends BaseCmd {
     public void execute() {
         OauthProviderVO result = _oauthMgr.updateOauthProvider(this);
         if (result != null) {
+            Domain domain = result.getDomainId() != null ? ApiDBUtils.findDomainById(result.getDomainId()) : null;
             OauthProviderResponse r = new OauthProviderResponse(result.getUuid(), result.getProvider(),
                     result.getDescription(), result.getClientId(), result.getSecretKey(), result.getRedirectUri(),
-                    result.getAuthorizeUrl(), result.getTokenUrl());
+                    result.getAuthorizeUrl(), result.getTokenUrl(), domain);
 
             List<UserOAuth2Authenticator> userOAuth2AuthenticatorPlugins = _oauthMgr.listUserOAuth2AuthenticationProviders();
             List<String> authenticatorPluginNames = new ArrayList<>();
@@ -138,7 +159,8 @@ public final class UpdateOAuthProviderCmd extends BaseCmd {
                 String name = authenticator.getName();
                 authenticatorPluginNames.add(name);
             }
-            if (OAuth2AuthManager.OAuth2IsPluginEnabled.value() && authenticatorPluginNames.contains(result.getProvider()) && result.isEnabled()) {
+            boolean oauthEnabled = OAuth2AuthManager.isPluginEnabledForDomain(result.getDomainId());
+            if (oauthEnabled && authenticatorPluginNames.contains(result.getProvider()) && result.isEnabled()) {
                 r.setEnabled(true);
             } else {
                 r.setEnabled(false);
