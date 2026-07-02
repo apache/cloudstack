@@ -489,7 +489,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
 
     }
 
-    protected <T> Future<T> submitKvmIncrementalMigration(Long zoneId, Callable<T> task) {
+    protected synchronized <T> Future<T> submitKvmIncrementalMigration(Long zoneId, Callable<T> task) {
         if (!zoneKvmIncrementalExecutorMap.containsKey(zoneId)) {
             zoneKvmIncrementalExecutorMap.put(zoneId, Executors.newSingleThreadExecutor());
         }

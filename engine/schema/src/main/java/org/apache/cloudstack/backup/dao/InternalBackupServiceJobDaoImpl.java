@@ -17,6 +17,7 @@
 package org.apache.cloudstack.backup.dao;
 
 import com.cloud.utils.DateUtil;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
@@ -30,6 +31,8 @@ import java.util.Date;
 import java.util.List;
 
 public class InternalBackupServiceJobDaoImpl extends GenericDaoBase<InternalBackupServiceJobVO, Long> implements InternalBackupServiceJobDao {
+    private static final String ID = "id";
+    private static final String BACKUP_ID = "backup_id";
     private SearchBuilder<InternalBackupServiceJobVO> executingBeforeAndHostInAndTypeInSearch;
     private SearchBuilder<InternalBackupServiceJobVO> scheduledAndNotStartedSearch;
 
@@ -92,6 +95,39 @@ public class InternalBackupServiceJobDaoImpl extends GenericDaoBase<InternalBack
         sc.setParameters(TYPE, (Object[]) jobTypes);
 
         return listBy(sc);
+    }
+
+    @Override
+    public Pair<List<InternalBackupServiceJobVO>, Integer> searchAndCountForListApi(Long id, Long backupId, Long hostId, Long zoneId, InternalBackupServiceJobType type, boolean executing,
+            boolean scheduled, Long startIndex, Long pageSize) {
+        SearchBuilder<InternalBackupServiceJobVO> sb = createSearchBuilder();
+
+        sb.and(ID, sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and(BACKUP_ID, sb.entity().getBackupId(), SearchCriteria.Op.EQ);
+        sb.and(HOST_ID, sb.entity().getHostId(), SearchCriteria.Op.EQ);
+        sb.and(ZONE_ID, sb.entity().getZoneId(), SearchCriteria.Op.EQ);
+        sb.and(TYPE, sb.entity().getType(), SearchCriteria.Op.EQ);
+
+        boolean removed = !executing && !scheduled;
+        if (executing && !scheduled) {
+            sb.and("executing", sb.entity().getStartTime(), SearchCriteria.Op.NNULL);
+        } else if (scheduled && !executing) {
+            sb.and("scheduled", sb.entity().getStartTime(), SearchCriteria.Op.NULL);
+        }
+
+        SearchCriteria<InternalBackupServiceJobVO> sc = sb.create();
+
+        sc.setParametersIfNotNull(ID, id);
+        sc.setParametersIfNotNull(BACKUP_ID, backupId);
+        sc.setParametersIfNotNull(HOST_ID, hostId);
+        sc.setParametersIfNotNull(ZONE_ID, zoneId);
+        if (type != null) {
+            sc.setParameters(TYPE, type);
+        }
+
+        Filter filter = new Filter(InternalBackupServiceJobVO.class, "created", false, startIndex, pageSize);
+
+        return searchAndCount(sc, filter, removed);
     }
 
     @Override

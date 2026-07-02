@@ -667,7 +667,7 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
     }
 
     /**
-     * Gets the correct children and grandchildren, taking Native backups into account.
+     * Gets the correct children and grandchildren, taking KBOSS backups into account.
      * */
     private DataTO getChildAndGrandChildren(VMSnapshotVO child, boolean stoppedVm, SnapshotDataStoreVO parentSnapshotDataStoreVO, InternalBackupStoragePoolVO backupDelta,
             SnapshotDataStoreVO childVO, VolumeObjectTO volumeObjectTO, List<DataTO> grandChildrenTOList, List<SnapshotDataStoreVO> grandChildrenVolumeSnapshots) {

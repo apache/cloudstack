@@ -6399,34 +6399,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     }
 
     private Pair<List<InternalBackupServiceJobVO>, Integer> listBackupServiceJobsInternal(ListBackupServiceJobsCmd cmd) {
-        SearchBuilder<InternalBackupServiceJobVO> sb = internalBackupServiceJobDao.createSearchBuilder();
-
-        sb.and("id", sb.entity().getId(), Op.EQ);
-        sb.and("backup_id", sb.entity().getBackupId(), Op.EQ);
-        sb.and("host_id", sb.entity().getHostId(), Op.EQ);
-        sb.and("zone_id", sb.entity().getZoneId(), Op.EQ);
-        sb.and("type", sb.entity().getType(), Op.EQ);
-
-        boolean removed = !cmd.getExecuting() && !cmd.getScheduled();
-        if (cmd.getExecuting() && !cmd.getScheduled()) {
-            sb.and("executing", sb.entity().getStartTime(), Op.NNULL);
-        } else if (cmd.getScheduled() && !cmd.getExecuting()) {
-            sb.and("scheduled", sb.entity().getStartTime(), Op.NULL);
-        }
-
-        SearchCriteria<InternalBackupServiceJobVO> sc = sb.create();
-
-        sc.setParametersIfNotNull("id", cmd.getId());
-        sc.setParametersIfNotNull("backup_id", cmd.getBackupId());
-        sc.setParametersIfNotNull("host_id", cmd.getHostId());
-        sc.setParametersIfNotNull("zone_id", cmd.getZoneId());
-        if (cmd.getType() != null) {
-            sc.setParameters("type", InternalBackupServiceJobType.valueOf(cmd.getType()));
-        }
-
-        Filter filter = new Filter(InternalBackupServiceJobVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
-
-        return internalBackupServiceJobDao.searchAndCount(sc, filter, removed);
+        return internalBackupServiceJobDao.searchAndCountForListApi(cmd.getId(), cmd.getBackupId(), cmd.getHostId(), cmd.getZoneId(),
+                InternalBackupServiceJobType.valueOf(cmd.getType()), cmd.getExecuting(), cmd.getScheduled(), cmd.getStartIndex(), cmd.getPageSizeVal());
     }
 
     @Override

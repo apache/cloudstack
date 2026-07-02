@@ -1915,16 +1915,16 @@ public class KbossBackupProviderTest {
         doReturn(Mockito.mock(VolumeVO.class)).when(volumeInfo2).getVolume();
         doReturn(volumeInfo2).when(volumeDataFactoryMock).getVolume(22L);
 
-        doNothing().when(kbossBackupProviderSpy).transitVmStateWithoutThrow(any(), any(), anyLong());
-        doNothing().when(kbossBackupProviderSpy).transitVolumeStateWithoutThrow(any(), any());
+        doNothing().when(kbossBackupProviderSpy).transitVmState(any(), any(), anyLong());
+        doNothing().when(kbossBackupProviderSpy).transitVolumeState(any(), any());
 
         List<VolumeInfo> result = kbossBackupProviderSpy.getVolumesToConsolidate(virtualMachineMock, List.of(), List.of(volumeObjectTO1, volumeObjectTO2), 99L, false);
 
         assertEquals(List.of(volumeInfo1, volumeInfo2), result);
-        verify(kbossBackupProviderSpy, times(1)).transitVmStateWithoutThrow(virtualMachineMock, VirtualMachine.Event.RestoringSuccess, 99L);
+        verify(kbossBackupProviderSpy, times(1)).transitVmState(virtualMachineMock, VirtualMachine.Event.RestoringSuccess, 99L);
         verify(volumeDataFactoryMock, times(1)).getVolume(11L);
         verify(volumeDataFactoryMock, times(1)).getVolume(22L);
-        verify(kbossBackupProviderSpy, times(2)).transitVolumeStateWithoutThrow(any(), eq(Volume.Event.RestoreSucceeded));
+        verify(kbossBackupProviderSpy, times(2)).transitVolumeState(any(), eq(Volume.Event.RestoreSucceeded));
     }
 
     @Test
@@ -1944,16 +1944,16 @@ public class KbossBackupProviderTest {
         InternalBackupDataStoreVO delta = Mockito.mock(InternalBackupDataStoreVO.class);
         doReturn(33L).when(delta).getVolumeId();
 
-        doNothing().when(kbossBackupProviderSpy).transitVmStateWithoutThrow(any(), any(), anyLong());
-        doNothing().when(kbossBackupProviderSpy).transitVolumeStateWithoutThrow(any(), any());
+        doNothing().when(kbossBackupProviderSpy).transitVmState(any(), any(), anyLong());
+        doNothing().when(kbossBackupProviderSpy).transitVolumeState(any(), any());
 
         List<VolumeInfo> result = kbossBackupProviderSpy.getVolumesToConsolidate(virtualMachineMock, List.of(delta), List.of(volumeObjectTO1, volumeObjectTO2), 99L, true);
 
         assertEquals(List.of(), result);
-        verify(kbossBackupProviderSpy, times(1)).transitVmStateWithoutThrow(virtualMachineMock, VirtualMachine.Event.RestoringSuccess, 99L);
+        verify(kbossBackupProviderSpy, times(1)).transitVmState(virtualMachineMock, VirtualMachine.Event.RestoringSuccess, 99L);
         verify(volumeDataFactoryMock, times(1)).getVolume(11L);
         verify(volumeDataFactoryMock, times(1)).getVolume(22L);
-        verify(kbossBackupProviderSpy, times(2)).transitVolumeStateWithoutThrow(any(), eq(Volume.Event.RestoreSucceeded));
+        verify(kbossBackupProviderSpy, times(2)).transitVolumeState(any(), eq(Volume.Event.RestoreSucceeded));
     }
 
     @Test

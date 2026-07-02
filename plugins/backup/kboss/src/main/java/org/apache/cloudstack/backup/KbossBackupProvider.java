@@ -417,7 +417,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         List<InternalBackupStoragePoolVO> parentBackupDeltasOnPrimary = new ArrayList<>();
         List<InternalBackupDataStoreVO> parentBackupDeltasOnSecondary = new ArrayList<>();
         List<String> chainImageStoreUrls = null;
-        List<KbossTO> kbossTOS = new ArrayList<>();
+        List<KbossTO> kbossTOs = new ArrayList<>();
         HashMap<String, InternalBackupStoragePoolVO> volumeUuidToDeltaPrimaryRef = new HashMap<>();
         HashMap<String, InternalBackupDataStoreVO> volumeUuidToDeltaSecondaryRef = new HashMap<>();
 
@@ -429,7 +429,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         }
 
         boolean runningVm = userVm.getState() == VirtualMachine.State.Running;
-        transitVmStateWithoutThrow(userVm, VirtualMachine.Event.BackupRequested, hostId);
+        transitVmState(userVm, VirtualMachine.Event.BackupRequested, hostId);
         updateBackupStatusToBackingUp(volumeTOs, backupVO);
 
         DataStore imageStore = getImageStoreForBackup(userVm.getDataCenterId(), backupVO);
@@ -441,13 +441,13 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         Map<Long, List<SnapshotDataStoreVO>> volumeIdToSnapshotDataStoreList = mapVolumesToVmSnapshotReferences(volumeTOs, succeedingVmSnapshotList);
         for (VolumeObjectTO volumeObjectTO : volumeTOs) {
             KbossTO kbossTO = new KbossTO(volumeObjectTO, volumeIdToSnapshotDataStoreList.getOrDefault(volumeObjectTO.getId(), new ArrayList<>()));
-            kbossTOS.add(kbossTO);
+            kbossTOs.add(kbossTO);
             createDeltaReferences(fullBackup, !succeedingVmSnapshotList.isEmpty(), runningVm, backup, parentBackupDeltasOnSecondary,
                     parentBackupDeltasOnPrimary, volumeUuidToDeltaPrimaryRef, volumeUuidToDeltaSecondaryRef, succeedingVmSnapshot, kbossTO);
         }
 
         TakeKbossBackupCommand command = new TakeKbossBackupCommand(quiesceVm, runningVm, newBackupJoin.getEndOfChain(), userVm.getInstanceName(), imageStore.getUri(),
-                chainImageStoreUrls, kbossTOS, isolated);
+                chainImageStoreUrls, kbossTOs, isolated);
 
         Answer answer = sendBackupCommand(hostId, command);
 
@@ -1448,10 +1448,10 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
             boolean sameVmAsBackup) {
         List<VolumeInfo> volumesToConsolidate = new ArrayList<>();
 
-        transitVmStateWithoutThrow(vm, VirtualMachine.Event.RestoringSuccess, hostId);
+        transitVmState(vm, VirtualMachine.Event.RestoringSuccess, hostId);
         for (VolumeObjectTO volume : volumeObjectTOS) {
             VolumeInfo volumeInfo = volumeDataFactory.getVolume(volume.getVolumeId());
-            transitVolumeStateWithoutThrow(volumeInfo.getVolume(), Volume.Event.RestoreSucceeded);
+            transitVolumeState(volumeInfo.getVolume(), Volume.Event.RestoreSucceeded);
 
             if (!sameVmAsBackup || deltasOnSecondary.stream().anyMatch(delta -> delta.getVolumeId() == volume.getVolumeId())) {
                 volumesToConsolidate.add(volumeInfo);
@@ -1462,7 +1462,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
 
     protected boolean consolidateVolumes(VirtualMachine vm, long hostId, List<VolumeInfo> volumesToConsolidate) {
         for (VolumeInfo volumeInfo : volumesToConsolidate) {
-            transitVolumeStateWithoutThrow(volumeInfo.getVolume(), Volume.Event.ConsolidationRequested);
+            transitVolumeState(volumeInfo.getVolume(), Volume.Event.ConsolidationRequested);
         }
 
         VMInstanceDetailVO uuids = vmInstanceDetailsDao.findDetail(vm.getId(), VmDetailConstants.LINKED_VOLUMES_SECONDARY_STORAGE_UUIDS);
@@ -1507,17 +1507,17 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
      * Deletes a Failed backup metadata and sets the backup as Expunged.
      * */
     protected boolean deleteFailedBackup(BackupVO backupVO) {
-        if (backupVO.getStatus() == Backup.Status.Failed) {
-            long backupId = backupVO.getId();
-
-            backupVO.setStatus(Backup.Status.Expunged);
-            backupDao.update(backupId, backupVO);
-            internalBackupStoragePoolDao.expungeByBackupId(backupId);
-            internalBackupDataStoreDao.expungeByBackupId(backupId);
-            backupDetailDao.removeDetails(backupId);
-            return true;
+        if (backupVO.getStatus() != Backup.Status.Failed) {
+            return false;
         }
-        return false;
+        long backupId = backupVO.getId();
+
+        backupVO.setStatus(Backup.Status.Expunged);
+        backupDao.update(backupId, backupVO);
+        internalBackupStoragePoolDao.expungeByBackupId(backupId);
+        internalBackupDataStoreDao.expungeByBackupId(backupId);
+        backupDetailDao.removeDetails(backupId);
+        return true;
     }
 
     /**
@@ -2021,7 +2021,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
             Backup.VolumeInfo backupVolumeInfo = volumeInfos.stream().filter(info -> volumeVO.getUuid().equals(info.getUuid())).findFirst().orElseThrow();
             VolumeInfo volumeInfo = duplicateAndCreateVolume(vm, host, backupVolumeInfo);
             Volume volume = volumeApiService.attachVolumeToVM(vm.getId(), volumeInfo.getId(), null, false, true);
-            transitVolumeStateWithoutThrow(volume, Volume.Event.RestoreRequested);
+            transitVolumeState(volume, Volume.Event.RestoreRequested);
             delta.setVolumeId(volume.getId());
         }
     }
@@ -2102,7 +2102,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         backupVO.setType(fullBackup ? "FULL" : "INCREMENTAL");
         backupDao.update(backupVO.getId(), backupVO);
 
-        transitVmStateWithoutThrow(userVm, runningVm ? VirtualMachine.Event.BackupSucceededRunning : VirtualMachine.Event.BackupSucceededStopped, hostId);
+        transitVmState(userVm, runningVm ? VirtualMachine.Event.BackupSucceededRunning : VirtualMachine.Event.BackupSucceededStopped, hostId);
     }
 
     protected void processBackupFailure(Answer answer, VirtualMachine vm, long hostId, boolean runningVm, BackupVO backupVO) {
@@ -2110,10 +2110,10 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
             logger.info("Backup [{}] of VM [{}] failed. However, the VM is still consistent, so we will roll back its state.", backupVO.getUuid(), vm.getUuid());
             backupVO.setStatus(Backup.Status.Failed);
 
-            transitVmStateWithoutThrow(vm, runningVm ? VirtualMachine.Event.OperationFailedToRunning : VirtualMachine.Event.OperationFailedToStopped, hostId);
+            transitVmState(vm, runningVm ? VirtualMachine.Event.OperationFailedToRunning : VirtualMachine.Event.OperationFailedToStopped, hostId);
         } else {
             logger.info("Backup [{}] of VM [{}] ended in error. We are not sure if the VM is consistent; thus, we will set it as BackupError.", backupVO.getUuid(), vm.getUuid());
-            transitVmStateWithoutThrow(vm, VirtualMachine.Event.OperationFailedToError, hostId);
+            transitVmState(vm, VirtualMachine.Event.OperationFailedToError, hostId);
             vmInstanceDetailsDao.addDetail(vm.getId(), VmDetailConstants.LAST_KNOWN_STATE, runningVm ? VirtualMachine.State.Running.name() : VirtualMachine.State.Stopped.name(), false);
             backupVO.setStatus(Backup.Status.Error);
         }
@@ -2172,10 +2172,10 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
     protected void processConsolidateAnswer(ConsolidateVolumesAnswer cAnswer, List<VolumeInfo> volumesToConsolidate, VirtualMachine vm) {
         for (VolumeObjectTO volumeObjectTO : cAnswer.getSuccessfullyConsolidatedVolumes()) {
             VolumeInfo volumeInfo = volumesToConsolidate.stream().filter(vol -> vol.getId() == volumeObjectTO.getVolumeId()).findFirst().orElseThrow();
-            transitVolumeStateWithoutThrow(volumeInfo.getVolume(), Volume.Event.OperationSucceeded);
+            transitVolumeState(volumeInfo.getVolume(), Volume.Event.OperationSucceeded);
             volumesToConsolidate.remove(volumeInfo);
         }
-        volumesToConsolidate.forEach(volumeInfo -> transitVolumeStateWithoutThrow(volumeInfo, Volume.Event.OperationFailed));
+        volumesToConsolidate.forEach(volumeInfo -> transitVolumeState(volumeInfo, Volume.Event.OperationFailed));
         if (cAnswer.getResult()) {
             vmInstanceDetailsDao.removeDetail(vm.getId(), VmDetailConstants.LINKED_VOLUMES_SECONDARY_STORAGE_UUIDS);
         } else {
@@ -2902,7 +2902,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         backupDao.releaseFromLockTable(backupId);
     }
 
-    protected void transitVmStateWithoutThrow(VirtualMachine vm, VirtualMachine.Event event, long hostId) {
+    protected void transitVmState(VirtualMachine vm, VirtualMachine.Event event, long hostId) {
         try {
             virtualMachineManager.stateTransitTo(vm, event, hostId);
         } catch (NoTransitionException e) {
@@ -2912,7 +2912,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         }
     }
 
-    protected void transitVolumeStateWithoutThrow(Volume volume, Volume.Event event) {
+    protected void transitVolumeState(Volume volume, Volume.Event event) {
         try {
             volumeApiService.stateTransitTo(volume, event);
         } catch (NoTransitionException e) {
