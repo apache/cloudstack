@@ -118,5 +118,6 @@
     "startDate": "2025-06-01T00:00:00Z",
     "endDate": "2025-07-16T00:00:00Z"
   },
-  "defaultLanguage": "en"
+  "defaultLanguage": "en",
+  "advisoriesDisabled": false
 }
