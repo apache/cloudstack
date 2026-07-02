@@ -963,8 +963,74 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
     }
 
     private void findAvoidSetForNonExplicitUserVM(ExcludeList avoids, VirtualMachine vm, List<Long> allPodsInDc, List<Long> allClustersInDc, List<Long> allHostsInDc) {
+        long vmAccountId = vm.getAccountId();
+        long vmDomainId = vm.getDomainId();
+
+        List<Long> allPodsFromDedicatedID = new ArrayList<>();
+        List<Long> allClustersFromDedicatedID = new ArrayList<>();
+        List<Long> allHostsFromDedicatedID = new ArrayList<>();
+
+        // Check if the VM owner's domain has explicit dedication affinity group mappings.
+        // If so, resources dedicated to that domain are accessible to the VM owner (fixes
+        // issue where users in a domain-dedicated pod could not deploy with ImplicitDedicationPlanner).
+        List<AffinityGroupDomainMapVO> domainGroupMappings = _affinityGroupDomainMapDao.listByDomain(vmDomainId);
+
+        List<DedicatedResourceVO> tempStorage;
+
+        if (domainGroupMappings == null || domainGroupMappings.isEmpty()) {
+            // No domain-level affinity groups: search for resources dedicated to this specific account
+            tempStorage = _dedicatedDao.searchDedicatedPods(null, vmDomainId, vmAccountId, null,
+                    new Filter(DedicatedResourceVO.class, "id", true, 0L, 1L)).first();
+            for (DedicatedResourceVO vo : tempStorage) {
+                allPodsFromDedicatedID.add(vo.getPodId());
+            }
+
+            tempStorage.clear();
+            tempStorage = _dedicatedDao.searchDedicatedClusters(null, vmDomainId, vmAccountId, null,
+                    new Filter(DedicatedResourceVO.class, "id", true, 0L, 1L)).first();
+            for (DedicatedResourceVO vo : tempStorage) {
+                allClustersFromDedicatedID.add(vo.getClusterId());
+            }
+
+            tempStorage.clear();
+            tempStorage = _dedicatedDao.searchDedicatedHosts(null, vmDomainId, vmAccountId, null,
+                    new Filter(DedicatedResourceVO.class, "id", true, 0L, 1L)).first();
+            for (DedicatedResourceVO vo : tempStorage) {
+                allHostsFromDedicatedID.add(vo.getHostId());
+            }
+
+            allPodsInDc.removeAll(allPodsFromDedicatedID);
+            allClustersInDc.removeAll(allClustersFromDedicatedID);
+            allHostsInDc.removeAll(allHostsFromDedicatedID);
+        } else {
+            // Domain has explicit dedication affinity groups: search for resources dedicated to this domain
+            tempStorage = _dedicatedDao.searchDedicatedPods(null, vmDomainId, null, null,
+                    new Filter(DedicatedResourceVO.class, "id", true, 0L, 1L)).first();
+            for (DedicatedResourceVO vo : tempStorage) {
+                allPodsFromDedicatedID.add(vo.getPodId());
+            }
+
+            tempStorage.clear();
+            tempStorage = _dedicatedDao.searchDedicatedClusters(null, vmDomainId, null, null,
+                    new Filter(DedicatedResourceVO.class, "id", true, 0L, 1L)).first();
+            for (DedicatedResourceVO vo : tempStorage) {
+                allClustersFromDedicatedID.add(vo.getClusterId());
+            }
+
+            tempStorage.clear();
+            tempStorage = _dedicatedDao.searchDedicatedHosts(null, vmDomainId, null, null,
+                    new Filter(DedicatedResourceVO.class, "id", true, 0L, 1L)).first();
+            for (DedicatedResourceVO vo : tempStorage) {
+                allHostsFromDedicatedID.add(vo.getHostId());
+            }
+
+            allPodsInDc.removeAll(allPodsFromDedicatedID);
+            allClustersInDc.removeAll(allClustersFromDedicatedID);
+            allHostsInDc.removeAll(allHostsFromDedicatedID);
+        }
+
         logger.debug(() -> LogUtils.logGsonWithoutException("Adding pods [%s], clusters [%s] and hosts [%s] to the avoid list in the deploy process of user VM [%s], "
-                        + "because this VM is not explicitly dedicated to these components.", allPodsInDc, allClustersInDc, allHostsInDc, vm));
+                        + "because this VM is not dedicated to these components.", allPodsInDc, allClustersInDc, allHostsInDc, vm));
         avoids.addPodList(allPodsInDc);
         avoids.addClusterList(allClustersInDc);
         avoids.addHostList(allHostsInDc);

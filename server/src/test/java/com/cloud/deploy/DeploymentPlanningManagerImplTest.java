@@ -27,6 +27,7 @@ import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -73,6 +74,7 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.db.Filter;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -82,6 +84,7 @@ import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
@@ -226,6 +229,9 @@ public class DeploymentPlanningManagerImplTest {
 
     @Inject
     HostPodDao _podDao;
+
+    @Inject
+    AffinityGroupDomainMapDao _affinityGroupDomainMapDao;
 
     private static final long dataCenterId = 1L;
     private static final long instanceId = 123L;
@@ -935,6 +941,207 @@ public class DeploymentPlanningManagerImplTest {
         Assert.assertEquals(isPodsEmpty, CollectionUtils.isEmpty(avoids.getPodsToAvoid()));
         Assert.assertEquals(isClustersEmpty, CollectionUtils.isEmpty(avoids.getClustersToAvoid()));
         Assert.assertEquals(isHostsEmpty, CollectionUtils.isEmpty(avoids.getHostsToAvoid()));
+    }
+
+    /**
+     * Helper: set up mocks for checkForNonDedicatedResources tests.
+     * Sets up a non-root, non-explicit user VM with the given domain and account.
+     */
+    private VMInstanceVO setupNonExplicitUserVmMocks(long vmDomainId, long vmAccountId, DataCenter mockDc) {
+        // Zone is not dedicated
+        Mockito.when(_dedicatedDao.findByZoneId(Mockito.anyLong())).thenReturn(null);
+        // Not root admin
+        Mockito.when(_accountMgr.isRootAdmin(Mockito.anyLong())).thenReturn(false);
+        // No explicit dedication affinity group for the VM
+        Mockito.when(_affinityGroupVMMapDao.findByVmIdType(Mockito.anyLong(), Mockito.eq("ExplicitDedication")))
+                .thenReturn(new ArrayList<>());
+
+        VMInstanceVO mockVm = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(mockVm.getType()).thenReturn(VirtualMachine.Type.User);
+        Mockito.when(mockVm.getDomainId()).thenReturn(vmDomainId);
+        Mockito.when(mockVm.getAccountId()).thenReturn(vmAccountId);
+        Mockito.when(mockVm.getId()).thenReturn(instanceId);
+
+        // No dedicated clusters or hosts in DC
+        Mockito.when(_clusterDao.listAllClusterIds(Mockito.anyLong())).thenReturn(new ArrayList<>());
+        Mockito.when(_dedicatedDao.listAllClusters()).thenReturn(new ArrayList<>());
+        Mockito.when(_hostDao.listAllHosts(Mockito.anyLong())).thenReturn(new ArrayList<>());
+        Mockito.when(_dedicatedDao.listAllHosts()).thenReturn(new ArrayList<>());
+        Mockito.when(_dedicatedDao.searchDedicatedClusters(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
+                .thenReturn(new Pair<>(new ArrayList<>(), 0));
+        Mockito.when(_dedicatedDao.searchDedicatedHosts(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
+                .thenReturn(new Pair<>(new ArrayList<>(), 0));
+
+        return mockVm;
+    }
+
+    /**
+     * Issue #5803: A regular user in the same domain as a domain-dedicated pod
+     * must be allowed to deploy on that pod (i.e., the pod must NOT appear in the avoid list).
+     */
+    @Test
+    public void checkForNonDedicatedResources_domainDedicatedPod_sameDomainUser_podNotInAvoidList() {
+        long vmDomainId = 10L;
+        long vmAccountId = 200L;
+        long dedicatedPodId = 42L;
+
+        DataCenter mockDc = Mockito.mock(DataCenter.class);
+        Mockito.when(mockDc.getId()).thenReturn(dataCenterId);
+
+        VMInstanceVO mockVm = setupNonExplicitUserVmMocks(vmDomainId, vmAccountId, mockDc);
+
+        // Pod in DC and it is dedicated
+        List<Long> podsInDc = new ArrayList<>(Arrays.asList(dedicatedPodId));
+        Mockito.when(_podDao.listAllPods(dataCenterId)).thenReturn(podsInDc);
+        Mockito.when(_dedicatedDao.listAllPods()).thenReturn(new ArrayList<>(Arrays.asList(dedicatedPodId)));
+
+        // Domain has affinity group mappings (pod dedicated to this domain)
+        AffinityGroupDomainMapVO domainMap = Mockito.mock(AffinityGroupDomainMapVO.class);
+        Mockito.when(_affinityGroupDomainMapDao.listByDomain(vmDomainId))
+                .thenReturn(Arrays.asList(domainMap));
+
+        // The pod is found when searching by domain (accountId = null)
+        DedicatedResourceVO dedicatedPod = Mockito.mock(DedicatedResourceVO.class);
+        Mockito.when(dedicatedPod.getPodId()).thenReturn(dedicatedPodId);
+        Mockito.when(_dedicatedDao.searchDedicatedPods(Mockito.isNull(), Mockito.eq(vmDomainId),
+                Mockito.isNull(), Mockito.isNull(), Mockito.any(Filter.class)))
+                .thenReturn(new Pair<>(new ArrayList<>(Arrays.asList(dedicatedPod)), 1));
+
+        VirtualMachineProfileImpl mockProfile = Mockito.mock(VirtualMachineProfileImpl.class);
+        Mockito.when(mockProfile.getVirtualMachine()).thenReturn(mockVm);
+        Mockito.when(mockProfile.getOwner()).thenReturn(Mockito.mock(com.cloud.user.Account.class));
+
+        ExcludeList avoids = new ExcludeList();
+        _dpm.checkForNonDedicatedResources(mockProfile, mockDc, avoids);
+
+        // The dedicated pod belongs to the same domain as the VM owner: must NOT be in avoid list
+        assertTrue("Domain-dedicated pod should not be in avoid list for same-domain user",
+                CollectionUtils.isEmpty(avoids.getPodsToAvoid()) || !avoids.getPodsToAvoid().contains(dedicatedPodId));
+    }
+
+    /**
+     * A user from a different domain must NOT be allowed to deploy on a pod dedicated to another domain.
+     */
+    @Test
+    public void checkForNonDedicatedResources_domainDedicatedPod_differentDomainUser_podInAvoidList() {
+        long podDomainId = 10L;   // domain the pod is dedicated to
+        long vmDomainId = 20L;    // VM owner belongs to a DIFFERENT domain
+        long vmAccountId = 300L;
+        long dedicatedPodId = 43L;
+
+        DataCenter mockDc = Mockito.mock(DataCenter.class);
+        Mockito.when(mockDc.getId()).thenReturn(dataCenterId);
+
+        VMInstanceVO mockVm = setupNonExplicitUserVmMocks(vmDomainId, vmAccountId, mockDc);
+
+        // Pod in DC and it is dedicated (to podDomainId, NOT to vmDomainId)
+        List<Long> podsInDc = new ArrayList<>(Arrays.asList(dedicatedPodId));
+        Mockito.when(_podDao.listAllPods(dataCenterId)).thenReturn(podsInDc);
+        Mockito.when(_dedicatedDao.listAllPods()).thenReturn(new ArrayList<>(Arrays.asList(dedicatedPodId)));
+
+        // VM owner's domain has NO affinity group mappings (no dedicated resources for vmDomainId)
+        Mockito.when(_affinityGroupDomainMapDao.listByDomain(vmDomainId))
+                .thenReturn(new ArrayList<>());
+
+        // No pods dedicated to the VM owner's account
+        Mockito.when(_dedicatedDao.searchDedicatedPods(Mockito.isNull(), Mockito.eq(vmDomainId),
+                Mockito.eq(vmAccountId), Mockito.isNull(), Mockito.any(Filter.class)))
+                .thenReturn(new Pair<>(new ArrayList<>(), 0));
+
+        VirtualMachineProfileImpl mockProfile = Mockito.mock(VirtualMachineProfileImpl.class);
+        Mockito.when(mockProfile.getVirtualMachine()).thenReturn(mockVm);
+        Mockito.when(mockProfile.getOwner()).thenReturn(Mockito.mock(com.cloud.user.Account.class));
+
+        ExcludeList avoids = new ExcludeList();
+        _dpm.checkForNonDedicatedResources(mockProfile, mockDc, avoids);
+
+        // The pod is dedicated to a different domain: must be in avoid list
+        assertTrue("Domain-dedicated pod should be in avoid list for different-domain user",
+                avoids.getPodsToAvoid() != null && avoids.getPodsToAvoid().contains(dedicatedPodId));
+    }
+
+    /**
+     * An account-dedicated pod should be accessible to the owning account
+     * (no domain-level affinity groups, but account-level dedicated resource exists).
+     */
+    @Test
+    public void checkForNonDedicatedResources_accountDedicatedPod_sameAccount_podNotInAvoidList() {
+        long vmDomainId = 10L;
+        long vmAccountId = 200L;
+        long dedicatedPodId = 44L;
+
+        DataCenter mockDc = Mockito.mock(DataCenter.class);
+        Mockito.when(mockDc.getId()).thenReturn(dataCenterId);
+
+        VMInstanceVO mockVm = setupNonExplicitUserVmMocks(vmDomainId, vmAccountId, mockDc);
+
+        // Pod in DC and it is dedicated
+        List<Long> podsInDc = new ArrayList<>(Arrays.asList(dedicatedPodId));
+        Mockito.when(_podDao.listAllPods(dataCenterId)).thenReturn(podsInDc);
+        Mockito.when(_dedicatedDao.listAllPods()).thenReturn(new ArrayList<>(Arrays.asList(dedicatedPodId)));
+
+        // Domain has NO affinity group mappings (account-level dedication, not domain-level)
+        Mockito.when(_affinityGroupDomainMapDao.listByDomain(vmDomainId))
+                .thenReturn(new ArrayList<>());
+
+        // The pod IS found when searching by account
+        DedicatedResourceVO dedicatedPod = Mockito.mock(DedicatedResourceVO.class);
+        Mockito.when(dedicatedPod.getPodId()).thenReturn(dedicatedPodId);
+        Mockito.when(_dedicatedDao.searchDedicatedPods(Mockito.isNull(), Mockito.eq(vmDomainId),
+                Mockito.eq(vmAccountId), Mockito.isNull(), Mockito.any(Filter.class)))
+                .thenReturn(new Pair<>(new ArrayList<>(Arrays.asList(dedicatedPod)), 1));
+
+        VirtualMachineProfileImpl mockProfile = Mockito.mock(VirtualMachineProfileImpl.class);
+        Mockito.when(mockProfile.getVirtualMachine()).thenReturn(mockVm);
+        Mockito.when(mockProfile.getOwner()).thenReturn(Mockito.mock(com.cloud.user.Account.class));
+
+        ExcludeList avoids = new ExcludeList();
+        _dpm.checkForNonDedicatedResources(mockProfile, mockDc, avoids);
+
+        // The pod is dedicated to this account: must NOT be in avoid list
+        assertTrue("Account-dedicated pod should not be in avoid list for same-account user",
+                CollectionUtils.isEmpty(avoids.getPodsToAvoid()) || !avoids.getPodsToAvoid().contains(dedicatedPodId));
+    }
+
+    /**
+     * A user whose account is different from the account a pod is dedicated to
+     * must NOT be able to deploy on that pod.
+     */
+    @Test
+    public void checkForNonDedicatedResources_accountDedicatedPod_differentAccount_podInAvoidList() {
+        long vmDomainId = 10L;
+        long vmAccountId = 300L;  // different account
+        long dedicatedPodId = 45L;
+
+        DataCenter mockDc = Mockito.mock(DataCenter.class);
+        Mockito.when(mockDc.getId()).thenReturn(dataCenterId);
+
+        VMInstanceVO mockVm = setupNonExplicitUserVmMocks(vmDomainId, vmAccountId, mockDc);
+
+        // Pod in DC and it is dedicated (to a different account)
+        List<Long> podsInDc = new ArrayList<>(Arrays.asList(dedicatedPodId));
+        Mockito.when(_podDao.listAllPods(dataCenterId)).thenReturn(podsInDc);
+        Mockito.when(_dedicatedDao.listAllPods()).thenReturn(new ArrayList<>(Arrays.asList(dedicatedPodId)));
+
+        // Domain has NO affinity group mappings
+        Mockito.when(_affinityGroupDomainMapDao.listByDomain(vmDomainId))
+                .thenReturn(new ArrayList<>());
+
+        // No pods dedicated to this account
+        Mockito.when(_dedicatedDao.searchDedicatedPods(Mockito.isNull(), Mockito.eq(vmDomainId),
+                Mockito.eq(vmAccountId), Mockito.isNull(), Mockito.any(Filter.class)))
+                .thenReturn(new Pair<>(new ArrayList<>(), 0));
+
+        VirtualMachineProfileImpl mockProfile = Mockito.mock(VirtualMachineProfileImpl.class);
+        Mockito.when(mockProfile.getVirtualMachine()).thenReturn(mockVm);
+        Mockito.when(mockProfile.getOwner()).thenReturn(Mockito.mock(com.cloud.user.Account.class));
+
+        ExcludeList avoids = new ExcludeList();
+        _dpm.checkForNonDedicatedResources(mockProfile, mockDc, avoids);
+
+        // The pod is dedicated to a different account: must be in avoid list
+        assertTrue("Account-dedicated pod should be in avoid list for different-account user",
+                avoids.getPodsToAvoid() != null && avoids.getPodsToAvoid().contains(dedicatedPodId));
     }
 
     @Configuration
