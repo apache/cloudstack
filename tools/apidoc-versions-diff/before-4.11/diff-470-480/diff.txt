@@ -1,0 +1,86 @@
+Added commands:
+
+Removed commands:
+
+Changes in command type (sync versus async)
+
+
+Changes in commands arguments:
+
+	createVpnConnection
+
+		Response:
+
+			New parameters: forceencap 
+
+	listNiciraNvpDevices
+
+		Response:
+
+			New parameters: l2gatewayserviceuuid 
+
+	addNiciraNvpDevice
+
+		Request:
+
+			New parameters: l2gatewayserviceuuid (optional) 
+
+		Response:
+
+			New parameters: l2gatewayserviceuuid 
+
+	createVpnCustomerGateway
+
+		Request:
+
+			New parameters: forceencap (optional) 
+
+		Response:
+
+			New parameters: forceencap 
+
+	listVpnCustomerGateways
+
+		Response:
+
+			New parameters: forceencap 
+
+	updateVpnCustomerGateway
+
+		Request:
+
+			New parameters: forceencap (optional) 
+
+		Response:
+
+			New parameters: forceencap 
+
+	updateVpnConnection
+
+		Response:
+
+			New parameters: forceencap 
+
+	listNics
+
+		Response:
+
+			New parameters: nsxlogicalswitch, nsxlogicalswitchport 
+
+	createVolume
+
+		Request:
+
+			Changed parameters: name (old version - required, new version - optional) 
+
+	resetVpnConnection
+
+		Response:
+
+			New parameters: forceencap 
+
+	listVpnConnections
+
+		Response:
+
+			New parameters: forceencap 

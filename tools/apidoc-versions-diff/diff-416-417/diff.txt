@@ -1,0 +1,756 @@
+Added commands:
+
+    deleteGuestNetworkIpv6Prefix (Deletes an existing guest network IPv6 prefix.)
+
+    releaseIpAddress (Releases an IP address from the account.)
+
+    listGuestVlans (Lists all guest vlans)
+
+    reserveIpAddress (Reserve a public IP to an account.)
+
+    resetConfiguration (Resets a configuration. The configuration will be set to default value for global setting, and removed from account_details or domain_details for Account/Domain settings)
+
+    listUsageServerMetrics (Lists Usage Server metrics)
+
+    listIpv6FirewallRules (Lists all IPv6 firewall rules)
+
+    patchSystemVm (Attempts to live patch systemVMs - CPVM, SSVM )
+
+    createNetworkPermissions (Updates network permissions.)
+
+    listManagementServersMetrics (Lists Management Server metrics)
+
+    changeOfferingForVolume (Change disk offering of the volume and also an option to auto migrate if required to apply the new disk offering)
+
+    listTemplateDirectDownloadCertificates (List the uploaded certificates for direct download templates)
+
+    createIpv6FirewallRule (Creates an Ipv6 firewall rule in the given network (the network has to belong to VPC))
+
+    createGuestNetworkIpv6Prefix (Creates a guest network IPv6 prefix.)
+
+    listGuestNetworkIpv6Prefixes (Lists guest network IPv6 prefixes)
+
+    listVirtualMachinesUsageHistory (Lists VM stats)
+
+    provisionTemplateDirectDownloadCertificate (Provisions a host with a direct download certificate)
+
+    resetNetworkPermissions (Resets network permissions.)
+
+    listDbMetrics (list the db hosts and statistics)
+
+    listNetworkPermissions (List network visibility and all accounts that have permissions to view this network.)
+
+    updateIpv6FirewallRule (Updates Ipv6 firewall rule with specified ID)
+
+    deleteIpv6FirewallRule (Deletes a IPv6 firewall rule)
+
+    removeNetworkPermissions (Removes network permissions.)
+
+Removed commands:
+
+	deleteExternalLoadBalancer (Deletes a F5 external load balancer appliance added in a zone.)
+
+	configureF5LoadBalancer (configures a F5 load balancer device)
+
+	listF5LoadBalancers (lists F5 load balancer devices)
+
+	listExternalLoadBalancers (Lists F5 external load balancer appliances added in a zone.)
+
+	deleteF5LoadBalancer ( delete a F5 load balancer device)
+
+	addExternalLoadBalancer (Adds F5 external load balancer appliance.)
+
+	addF5LoadBalancer (Adds a F5 BigIP load balancer device)
+
+	listF5LoadBalancerNetworks (lists network that are using a F5 load balancer device)
+
+Changes in command type (sync versus async)
+
+
+Changes in commands arguments:
+
+	createVPCOffering
+
+		Request:
+
+			New parameters: internetprotocol (optional) 
+
+		Response:
+
+			New parameters: internetprotocol 
+
+	listVirtualMachinesMetrics
+
+		Request:
+
+			New parameters: accumulate (optional), backupofferingid (optional) 
+
+			Removed parameters: hostid, podid, storageid 
+
+	listNetworks
+
+		Request:
+
+			New parameters: associatednetworkid (optional), networkfilter (optional), vlan (optional) 
+
+		Response:
+
+			New parameters: associatednetwork, associatednetworkid, egressdefaultpolicy, internetprotocol, ip6routes, ip6routing 
+
+	updateFirewallRule
+
+		Response:
+
+			New parameters: traffictype 
+
+	restoreVirtualMachine
+
+		Response:
+
+			New parameters: keypairs 
+
+			Removed parameters: keypair 
+
+	createEgressFirewallRule
+
+		Response:
+
+			New parameters: traffictype 
+
+	listVPCOfferings
+
+		Response:
+
+			New parameters: internetprotocol 
+
+	uploadVolume
+
+		Response:
+
+			New parameters: externaluuid 
+
+	stopRouter
+
+		Response:
+
+			New parameters: softwareversion 
+
+	listEgressFirewallRules
+
+		Response:
+
+			New parameters: traffictype 
+
+	startRouter
+
+		Response:
+
+			New parameters: softwareversion 
+
+	changeServiceForVirtualMachine
+
+		Request:
+
+			New parameters: automigrate (optional), maxiops (optional), miniops (optional), shrinkok (optional) 
+
+		Response:
+
+			New parameters: keypairs 
+
+			Removed parameters: keypair 
+
+	listFirewallRules
+
+		Response:
+
+			New parameters: traffictype 
+
+	rebootVirtualMachine
+
+		Response:
+
+			New parameters: keypairs 
+
+			Removed parameters: keypair 
+
+	updateNetworkOffering
+
+		Response:
+
+			New parameters: internetprotocol 
+
+	updateVPC
+
+		Response:
+
+			New parameters: ip6routes 
+
+	createNetworkOffering
+
+		Request:
+
+			New parameters: internetprotocol (optional) 
+
+		Response:
+
+			New parameters: internetprotocol 
+
+	updateVmNicIp
+
+		Response:
+
+			New parameters: keypairs 
+
+			Removed parameters: keypair 
+
+	startInternalLoadBalancerVM
+
+		Response:
+
+			New parameters: softwareversion 
+
+	updateDiskOffering
+
+		Response:
+
+			New parameters: disksizestrictness 
+
+	stopNetScalerVpx
+
+		Response:
+
+			New parameters: softwareversion 
+
+	destroyVolume
+
+		Response:
+
+			New parameters: externaluuid 
+
+	detachVolume
+
+		Response:
+
+			New parameters: externaluuid 
+
+	rebootRouter
+
+		Response:
+
+			New parameters: softwareversion 
+
+	updateHypervisorCapabilities
+
+		Request:
+
+			New parameters: maxdatavolumeslimit (optional), maxhostspercluster (optional), storagemotionenabled (optional), vmsnapshotenabled (optional) 
+
+		Response:
+
+			New parameters: vmsnapshotenabled 
+
+	addNicToVirtualMachine
+
+		Response:
+
+			New parameters: keypairs 
+
+			Removed parameters: keypair 
+
+	updateDefaultNicForVirtualMachine
+
+		Response:
+
+			New parameters: keypairs 
+
+			Removed parameters: keypair 
+
+	updateBackupOffering
+
+		Request:
+
+			New parameters: allowuserdrivenbackups (optional) 
+
+	stopInternalLoadBalancerVM
+
+		Response:
+
+			New parameters: softwareversion 
+
+	restartNetwork
+
+		Request:
+
+			New parameters: livepatch (optional) 
+
+	listHypervisorCapabilities
+
+		Response:
+
+			New parameters: vmsnapshotenabled 
+
+	revokeTemplateDirectDownloadCertificate
+
+		Request:
+
+			New parameters: id (optional) 
+
+			Changed parameters: hypervisor (old version - required, new version - optional), name (old version - required, new version - optional) 
+
+		Response:
+
+			New parameters: details, hostid, hostname, status 
+
+			Removed parameters: displaytext, success 
+
+	createServiceOffering
+
+		Request:
+
+			New parameters: diskofferingid (optional), diskofferingstrictness (optional) 
+
+		Response:
+
+			New parameters: diskofferingdisplaytext, diskofferingid, diskofferingname, diskofferingstrictness 
+
+	listNiciraNvpDeviceNetworks
+
+		Response:
+
+			New parameters: associatednetwork, associatednetworkid, egressdefaultpolicy, internetprotocol, ip6routes, ip6routing 
+
+	assignVirtualMachine
+
+		Response:
+
+			New parameters: keypairs 
+
+			Removed parameters: keypair 
+
+	resizeVolume
+
+		Response:
+
+			New parameters: externaluuid 
+
+	createVlanIpRange
+
+		Response:
+
+			New parameters: cidr 
+
+	listPaloAltoFirewallNetworks
+
+		Response:
+
+			New parameters: associatednetwork, associatednetworkid, egressdefaultpolicy, internetprotocol, ip6routes, ip6routing 
+
+	listManagementServers
+
+		Response:
+
+			New parameters: javadistribution, javaversion, kernelversion, lastboottime, lastserverstart, lastserverstop, osdistribution 
+
+	changeServiceForRouter
+
+		Response:
+
+			New parameters: softwareversion 
+
+	updateVolume
+
+		Response:
+
+			New parameters: externaluuid 
+
+	updateVirtualMachine
+
+		Response:
+
+			New parameters: keypairs 
+
+			Removed parameters: keypair 
+
+	updateNetwork
+
+		Response:
+
+			New parameters: associatednetwork, associatednetworkid, egressdefaultpolicy, internetprotocol, ip6routes, ip6routing 
+
+	listNetworkACLLists
+
+		Response:
+
+			New parameters: vpcname 
+
+	migrateVirtualMachine
+
+		Response:
+
+			New parameters: keypairs 
+
+			Removed parameters: keypair 
+
+	resetPasswordForVirtualMachine
+
+		Response:
+
+			New parameters: keypairs 
+
+			Removed parameters: keypair 
+
+	resetSSHKeyForVirtualMachine
+
+		Request:
+
+			New parameters: keypairs (optional) 
+
+			Changed parameters: keypair (old version - required, new version - optional) 
+
+		Response:
+
+			New parameters: keypairs 
+
+			Removed parameters: keypair 
+
+	createVPC
+
+		Response:
+
+			New parameters: ip6routes 
+
+	listInternalLoadBalancerVMs
+
+		Response:
+
+			New parameters: softwareversion 
+
+	listSrxFirewallNetworks
+
+		Response:
+
+			New parameters: associatednetwork, associatednetworkid, egressdefaultpolicy, internetprotocol, ip6routes, ip6routing 
+
+	detachIso
+
+		Response:
+
+			New parameters: keypairs 
+
+			Removed parameters: keypair 
+
+	listVirtualMachines
+
+		Request:
+
+			New parameters: accumulate (optional), backupofferingid (optional) 
+
+		Response:
+
+			New parameters: keypairs 
+
+			Removed parameters: keypair 
+
+	listDiskOfferings
+
+		Request:
+
+			New parameters: storageid (optional), volumeid (optional) 
+
+		Response:
+
+			New parameters: disksizestrictness 
+
+	revertToVMSnapshot
+
+		Response:
+
+			New parameters: keypairs 
+
+			Removed parameters: keypair 
+
+	deployVirtualMachine
+
+		Request:
+
+			New parameters: keypairs (optional), overridediskofferingid (optional) 
+
+		Response:
+
+			New parameters: keypairs 
+
+			Removed parameters: keypair 
+
+	listVlanIpRanges
+
+		Response:
+
+			New parameters: cidr 
+
+	createDiskOffering
+
+		Request:
+
+			New parameters: disksizestrictness (optional) 
+
+		Response:
+
+			New parameters: disksizestrictness 
+
+	listVolumes
+
+		Response:
+
+			New parameters: externaluuid 
+
+	listNetworkOfferings
+
+		Response:
+
+			New parameters: internetprotocol 
+
+	createNetwork
+
+		Request:
+
+			New parameters: associatednetworkid (optional) 
+
+		Response:
+
+			New parameters: associatednetwork, associatednetworkid, egressdefaultpolicy, internetprotocol, ip6routes, ip6routing 
+
+	listVPCs
+
+		Response:
+
+			New parameters: ip6routes 
+
+	migrateVirtualMachineWithVolume
+
+		Response:
+
+			New parameters: keypairs 
+
+			Removed parameters: keypair 
+
+	restartVPC
+
+		Request:
+
+			New parameters: livepatch (optional) 
+
+	attachVolume
+
+		Response:
+
+			New parameters: externaluuid 
+
+	updateVlanIpRange
+
+		Response:
+
+			New parameters: cidr 
+
+	listNetscalerLoadBalancerNetworks
+
+		Response:
+
+			New parameters: associatednetwork, associatednetworkid, egressdefaultpolicy, internetprotocol, ip6routes, ip6routing 
+
+	createKubernetesCluster
+
+		Request:
+
+			Removed parameters: dockerregistryemail 
+
+	migrateVolume
+
+		Response:
+
+			New parameters: externaluuid 
+
+	listEvents
+
+		Request:
+
+			New parameters: resourceid (optional), resourcetype (optional) 
+
+		Response:
+
+			New parameters: resourceid, resourcename, resourcetype 
+
+	updateVMAffinityGroup
+
+		Response:
+
+			New parameters: keypairs 
+
+			Removed parameters: keypair 
+
+	migrateVPC
+
+		Response:
+
+			New parameters: ip6routes 
+
+	dedicatePublicIpRange
+
+		Response:
+
+			New parameters: cidr 
+
+	recoverVirtualMachine
+
+		Response:
+
+			New parameters: keypairs 
+
+			Removed parameters: keypair 
+
+	listRouters
+
+		Response:
+
+			New parameters: softwareversion 
+
+	listBrocadeVcsDeviceNetworks
+
+		Response:
+
+			New parameters: associatednetwork, associatednetworkid, egressdefaultpolicy, internetprotocol, ip6routes, ip6routing 
+
+	recoverVolume
+
+		Response:
+
+			New parameters: externaluuid 
+
+	migrateNetwork
+
+		Response:
+
+			New parameters: associatednetwork, associatednetworkid, egressdefaultpolicy, internetprotocol, ip6routes, ip6routing 
+
+	uploadTemplateDirectDownloadCertificate
+
+		Response:
+
+			New parameters: id, alias, hostsmap, hypervisor, issuer, serialnum, subject, validity, version, zoneid, zonename 
+
+			Removed parameters: displaytext, success 
+
+	importUnmanagedInstance
+
+		Response:
+
+			New parameters: keypairs 
+
+			Removed parameters: keypair 
+
+	createVolume
+
+		Response:
+
+			New parameters: externaluuid 
+
+	createFirewallRule
+
+		Response:
+
+			New parameters: traffictype 
+
+	attachIso
+
+		Response:
+
+			New parameters: keypairs 
+
+			Removed parameters: keypair 
+
+	listSSHKeyPairs
+
+		Request:
+
+			New parameters: id (optional) 
+
+	destroyRouter
+
+		Response:
+
+			New parameters: softwareversion 
+
+	removeNicFromVirtualMachine
+
+		Response:
+
+			New parameters: keypairs 
+
+			Removed parameters: keypair 
+
+	createPrivateGateway
+
+		Request:
+
+			New parameters: associatednetworkid (optional) 
+
+			Changed parameters: vlan (old version - required, new version - optional) 
+
+	updateVPCOffering
+
+		Response:
+
+			New parameters: internetprotocol 
+
+	scaleVirtualMachine
+
+		Request:
+
+			New parameters: automigrate (optional), maxiops (optional), miniops (optional), shrinkok (optional) 
+
+	destroyVirtualMachine
+
+		Response:
+
+			New parameters: keypairs 
+
+			Removed parameters: keypair 
+
+	updateEgressFirewallRule
+
+		Response:
+
+			New parameters: traffictype 
+
+	listServiceOfferings
+
+		Response:
+
+			New parameters: diskofferingdisplaytext, diskofferingid, diskofferingname, diskofferingstrictness 
+
+	startVirtualMachine
+
+		Response:
+
+			New parameters: keypairs 
+
+			Removed parameters: keypair 
+
+	updateServiceOffering
+
+		Response:
+
+			New parameters: diskofferingdisplaytext, diskofferingid, diskofferingname, diskofferingstrictness 
+
+	stopVirtualMachine
+
+		Response:
+
+			New parameters: keypairs 
+
+			Removed parameters: keypair 
+
+	createNetworkACLList
+
+		Response:
+
+			New parameters: vpcname 
