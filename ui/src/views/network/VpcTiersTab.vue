@@ -262,14 +262,6 @@
               :placeholder="netmaskPlaceholder"
               v-model:value="form.netmask"></a-input>
           </a-form-item>
-          <a-form-item ref="externalId" name="externalId" :colon="false">
-            <template #label>
-              <tooltip-label :title="$t('label.externalid')" :tooltip="$t('label.create.tier.externalid.description')"/>
-            </template>
-            <a-input
-              :placeholder=" $t('label.create.tier.externalid.description')"
-              v-model:value="form.externalId"/>
-          </a-form-item>
           <a-form-item ref="acl" name="acl" :colon="false">
             <template #label>
               <tooltip-label :title="$t('label.aclid')" :tooltip="$t('label.create.tier.aclid.description')"/>
@@ -756,7 +748,6 @@ export default {
           gateway: values.gateway,
           netmask: values.netmask,
           zoneId: this.resource.zoneid,
-          externalid: values.externalId,
           aclid: values.acl
         }
 
