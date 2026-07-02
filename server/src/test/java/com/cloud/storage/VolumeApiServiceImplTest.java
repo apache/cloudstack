@@ -2372,13 +2372,8 @@ public class VolumeApiServiceImplTest {
         long currentSizeBytes = 10L << 30; // 10 GiB
         Long newSizeBytes     = 20L << 30; // 20 GiB (grow; VMware prohibits shrink)
 
-        Method method = VolumeApiServiceImpl.class.getDeclaredMethod(
-                "validateVolumeReadyStateAndHypervisorChecks",
-                VolumeVO.class, long.class, Long.class);
-        method.setAccessible(true);
-
         // Must complete without throwing any exception
-        method.invoke(volumeApiServiceImpl, volume, currentSizeBytes, newSizeBytes);
+        volumeApiServiceImpl.validateVolumeReadyStateAndHypervisorChecks(volume, currentSizeBytes, newSizeBytes);
     }
 
     /**
@@ -2408,13 +2403,8 @@ public class VolumeApiServiceImplTest {
         long currentSizeBytes = 10L << 30;
         Long newSizeBytes     = 20L << 30;
 
-        Method method = VolumeApiServiceImpl.class.getDeclaredMethod(
-                "validateVolumeReadyStateAndHypervisorChecks",
-                VolumeVO.class, long.class, Long.class);
-        method.setAccessible(true);
-
         try {
-            method.invoke(volumeApiServiceImpl, volume, currentSizeBytes, newSizeBytes);
+            volumeApiServiceImpl.validateVolumeReadyStateAndHypervisorChecks(volume, currentSizeBytes, newSizeBytes);
             Assert.fail("Expected InvalidParameterValueException for VMware ROOT-volume resize "
                     + "when VM state is Running");
         } catch (InvocationTargetException e) {
@@ -2510,14 +2500,8 @@ public class VolumeApiServiceImplTest {
 
         when(volumeDaoMock.getHypervisorType(volumeId)).thenReturn(HypervisorType.VMware);
 
-        Method method = VolumeApiServiceImpl.class.getDeclaredMethod(
-                "resizeVolumeInternal",
-                VolumeVO.class, DiskOfferingVO.class,
-                Long.class, Long.class, Long.class, Long.class, Integer.class, boolean.class);
-        method.setAccessible(true);
-
         try {
-            method.invoke(volumeApiServiceImpl,
+            volumeApiServiceImpl.(
                     volume,
                     (DiskOfferingVO) null,
                     0L, 1L, (Long) null, (Long) null, (Integer) null, false);
