@@ -108,8 +108,6 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
         @SuppressWarnings("unchecked")
         Map<String, String> details = (Map<String, String>) dsInfos.get("details");
 
-        capacityBytes = validateInitializeInputs(capacityBytes, podId, clusterId, zoneId, storagePoolName, providerName, managed, details);
-
         PrimaryDataStoreParameters parameters = new PrimaryDataStoreParameters();
         if (clusterId != null) {
             ClusterVO clusterVO = _clusterDao.findById(clusterId);
@@ -119,6 +117,8 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
             }
             parameters.setHypervisorType(clusterVO.getHypervisorType());
         }
+
+        capacityBytes = validateInitializeInputs(capacityBytes, podId, clusterId, zoneId, storagePoolName, providerName, managed, details);
 
         details.put(OntapStorageConstants.SIZE, capacityBytes.toString());
 
