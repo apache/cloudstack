@@ -975,6 +975,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         // issue where users in a domain-dedicated pod could not deploy with ImplicitDedicationPlanner).
         List<AffinityGroupDomainMapVO> domainGroupMappings = _affinityGroupDomainMapDao.listByDomain(vmDomainId);
 
+        // Sort by id ascending, no pagination — retrieve all dedicated resources for this domain/account
         Filter filter = new Filter(DedicatedResourceVO.class, "id", true);
 
         if (domainGroupMappings == null || domainGroupMappings.isEmpty()) {

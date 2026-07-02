@@ -995,7 +995,8 @@ public class DeploymentPlanningManagerImplTest {
         Mockito.when(_podDao.listAllPods(dataCenterId)).thenReturn(podsInDc);
         Mockito.when(_dedicatedDao.listAllPods()).thenReturn(new ArrayList<>(Arrays.asList(dedicatedPodId)));
 
-        // Domain has affinity group mappings (pod dedicated to this domain)
+        // Domain has affinity group mappings (pod dedicated to this domain).
+        // The content of the list entries does not matter; only emptiness is checked.
         AffinityGroupDomainMapVO domainMap = Mockito.mock(AffinityGroupDomainMapVO.class);
         Mockito.when(_affinityGroupDomainMapDao.listByDomain(vmDomainId))
                 .thenReturn(Arrays.asList(domainMap));
