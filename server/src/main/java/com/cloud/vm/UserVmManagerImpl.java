@@ -2730,7 +2730,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         volumeMgr.destroyVolume(volume);
                     }
                 }
-                String subject = String.format("Failed to deploy Instance [ID: %s]", vm.getId());
+                String subject = String.format("Failed to deploy Instance [ID: %s]", vm.getUuid());
                 String body = String.format("Failed to deploy [%s]%s. To troubleshoot, please check the logs with [logid:%s].",
                         vm,
                         hostId != null ? String.format(" on host [%s]", hostId) : "",
