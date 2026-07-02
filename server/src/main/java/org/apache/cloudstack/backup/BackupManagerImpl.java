@@ -1822,12 +1822,9 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     public BackupProvider getBackupProvider(final String name) {
-       if (StringUtils.isEmpty(name)) {
-           throw new CloudRuntimeException("Invalid backup provider name provided");
-       }
-       if (!backupProvidersMap.containsKey(name)) {
-           throw new CloudRuntimeException("Failed to find backup provider by the name: " + name);
-       }
+        if (StringUtils.isEmpty(name)) {
+            return null;
+        }
        return backupProvidersMap.get(name);
     }
 
@@ -2474,6 +2471,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             return new CapacityVO(null, zoneId, null, null, 0L, 0L, Capacity.CAPACITY_TYPE_BACKUP_STORAGE);
         }
         final BackupProvider backupProvider = getBackupProvider(zoneId);
+        if (backupProvider == null) {
+            logger.warn("Backup provider not configured or not found for zone {}", zoneId);
+            return new CapacityVO(null, zoneId, null, null, 0L, 0L, Capacity.CAPACITY_TYPE_BACKUP_STORAGE);
+        }
         Pair<Long, Long> backupUsage = backupProvider.getBackupStorageStats(zoneId);
         return new CapacityVO(null, zoneId, null, null, backupUsage.first(), backupUsage.second(), Capacity.CAPACITY_TYPE_BACKUP_STORAGE);
     }
