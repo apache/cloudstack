@@ -2447,14 +2447,8 @@ public class VolumeApiServiceImplTest {
         when(volumeDaoMock.getHypervisorType(volumeId)).thenReturn(HypervisorType.VMware);
 
         // resizeVolumeInternal(VolumeVO, DiskOfferingVO, Long, Long, Long, Long, Integer, boolean)
-        Method method = VolumeApiServiceImpl.class.getDeclaredMethod(
-                "resizeVolumeInternal",
-                VolumeVO.class, DiskOfferingVO.class,
-                Long.class, Long.class, Long.class, Long.class, Integer.class, boolean.class);
-        method.setAccessible(true);
-
         try {
-            method.invoke(volumeApiServiceImpl,
+            volumeApiServiceImpl.resizeVolumeInternal(
                     volume,
                     /* newDiskOffering */          (DiskOfferingVO) null,
                     /* currentSize     */          0L,
