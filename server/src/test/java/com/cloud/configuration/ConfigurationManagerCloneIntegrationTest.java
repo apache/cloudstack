@@ -251,7 +251,7 @@ public class ConfigurationManagerCloneIntegrationTest {
             anyString(), anyMap(), anyLong(), any(Boolean.class),
             anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(),
             any(Integer.class), anyString(), anyLong(), anyBoolean(), anyLong(), anyBoolean(), anyBoolean(), anyBoolean(),
-            anyLong(), any(Integer.class), any(Boolean.class), anyBoolean(), any(Integer.class), any(VMLeaseManager.ExpiryAction.class)
+            anyLong(), any(Integer.class), any(Boolean.class), anyBoolean(), any(Integer.class), any(VMLeaseManager.ExpiryAction.class), anyLong()
         );
 
         ServiceOffering result = configurationManager.cloneServiceOffering(cmd);
@@ -328,7 +328,7 @@ public class ConfigurationManagerCloneIntegrationTest {
             anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(),
             anyLong(), anyLong(), anyInt(), anyString(), anyLong(), anyBoolean(), anyLong(),
             anyBoolean(), anyBoolean(), anyBoolean(), anyLong(), anyInt(), anyBoolean(),
-            anyBoolean(), anyInt(), any());
+            anyBoolean(), anyInt(), any(), anyLong());
 
         ServiceOffering result = configurationManager.cloneServiceOffering(cmd);
 
@@ -553,7 +553,7 @@ public class ConfigurationManagerCloneIntegrationTest {
             anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(),
             anyLong(), anyLong(), anyInt(), anyString(), anyLong(), anyBoolean(), anyLong(),
             anyBoolean(), anyBoolean(), anyBoolean(), anyLong(), anyInt(), anyBoolean(),
-            anyBoolean(), anyInt(), any());
+            anyBoolean(), anyInt(), any(), anyLong());
 
         ServiceOffering result = configurationManager.cloneServiceOffering(cmd);
 
