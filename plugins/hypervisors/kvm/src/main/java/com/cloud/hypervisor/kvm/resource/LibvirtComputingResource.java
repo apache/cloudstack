@@ -7038,7 +7038,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                         continue;
                     }
                     VolumeObjectTO volumeTO = (VolumeObjectTO) diskTO.getData();
-                    if (!diskPath.equals(volumeTO.getPath()) && !diskPath.equals(diskTO.getPath())) {
+                    if (!diskPath.substring(diskPath.lastIndexOf(File.separator) + 1).equals(volumeTO.getPath())) {
                         continue;
                     }
                     DataStoreTO dataStore = volumeTO.getDataStore();

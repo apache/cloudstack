@@ -408,6 +408,9 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                     answer = new Answer(cmd, false, errMsg);
                 } else {
                     answer = ep.sendMessage(cmd);
+                    if (answer != null && answer.getResult()) {
+                        setClvmLockHostIdIfApplicable(destData, ep);
+                    }
                 }
                 return answer;
             }
@@ -463,6 +466,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                     imageStore.delete(objOnImageStore);
                     return answer;
                 }
+                setClvmLockHostIdIfApplicable(destData, ep);
             } catch (Exception e) {
                 if (imageStore.exists(objOnImageStore)) {
                     objOnImageStore.processEvent(Event.OperationFailed);
@@ -486,12 +490,26 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 answer = new Answer(cmd, false, errMsg);
             } else {
                 answer = ep.sendMessage(cmd);
+                if (answer != null && answer.getResult()) {
+                    setClvmLockHostIdIfApplicable(destData, ep);
+                }
             }
             // delete volume on cache store
             if (cacheData != null) {
                 cacheMgr.deleteCacheObject(cacheData);
             }
             return answer;
+        }
+    }
+
+    private void setClvmLockHostIdIfApplicable(DataObject destData, EndPoint ep) {
+        if (ep == null || !(destData instanceof VolumeInfo)) {
+            return;
+        }
+        VolumeInfo destVolume = (VolumeInfo) destData;
+        if (ClvmPoolManager.isClvmPoolType(destVolume.getStoragePoolType())) {
+            clvmPoolManager.setClvmLockHostId(destVolume.getId(), ep.getId());
+            logger.debug("Set CLVM lock host {} for migrated volume {}", ep.getId(), destVolume.getUuid());
         }
     }
 
@@ -612,6 +630,9 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             volumeVo.setLastPoolId(oldPoolId);
             if (destPool.getPoolType() == StoragePoolType.CLVM) {
                 volumeVo.setFormat(ImageFormat.RAW);
+            }
+            if (ClvmPoolManager.isClvmPoolType(destPool.getPoolType())) {
+                clvmPoolManager.setClvmLockHostId(volume.getId(), ep.getId());
             }
             // For SMB, pool credentials are also stored in the uri query string.  We trim the query string
             // part  here to make sure the credentials do not get stored in the db unencrypted.
