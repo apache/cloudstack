@@ -826,8 +826,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new InvalidParameterValueException("Isolated backups are only supported by KBOSS backup provider.");
         }
 
-        if (!"nas".equals(offering.getProvider()) && !KBOSS_BACKUP_PROVIDER.equals(offering.getProvider()) && cmd.getQuiesceVM() != null) {
-            throw new InvalidParameterValueException("Quiesce VM option is supported only for NAS and KBOSS backup providers.");
+        if (!quiesceSupported.contains(offering.getProvider()) && cmd.getQuiesceVM() != null) {
+            throw new InvalidParameterValueException("Quiesce VM option is supported only by NAS and KBOSS backup providers.");
         }
 
         final String timezoneId = timeZone.getID();
@@ -1030,7 +1030,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
 
         if (!quiesceSupported.contains(offering.getProvider()) && cmd.getQuiesceVM() != null) {
-            throw new InvalidParameterValueException("Quiesce VM option is supported only for NAS or KBOSS backup providers");
+            throw new InvalidParameterValueException("Quiesce VM option is supported only by NAS and KBOSS backup providers");
         }
 
         Long backupScheduleId = getBackupScheduleId(job);
@@ -1323,7 +1323,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     private void validateHostIdParameter(Long hostId, Account callerAccount) {
-        if (!accountService.isRootAdmin(callerAccount.getId()) && hostId != null) {
+        if (hostId != null && !accountService.isRootAdmin(callerAccount.getId())) {
             throw new PermissionDeniedException(String.format("Parameter %s can only be specified by a Root Admin", ApiConstants.HOST_ID));
         }
     }

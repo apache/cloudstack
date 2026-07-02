@@ -94,7 +94,6 @@ public class InternalBackupServiceJobDaoImpl extends GenericDaoBase<InternalBack
         return listBy(sc);
     }
 
-
     @Override
     @DB
     public void update(InternalBackupServiceJobVO job) {

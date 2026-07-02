@@ -61,7 +61,6 @@ public class LibvirtStorageVolumeXMLParser {
         return null;
     }
 
-
     public String getBackingFileNameIfExists(String volXML) {
         try {
             DocumentBuilder builder = ParserUtils.getSaferDocumentBuilderFactory().newDocumentBuilder();
@@ -81,7 +80,6 @@ public class LibvirtStorageVolumeXMLParser {
         }
         return null;
     }
-
 
     private static String getTagValue(String tag, Element eElement) {
         NodeList nlList = eElement.getElementsByTagName(tag).item(0).getChildNodes();

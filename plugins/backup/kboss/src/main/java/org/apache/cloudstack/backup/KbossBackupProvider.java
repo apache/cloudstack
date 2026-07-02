@@ -1826,7 +1826,6 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         }
 
 
-
         List<DataTO> deltaGrandchildren = succeedingDeltaPaths.stream()
                 .map(deltaPath -> new BackupDeltaTO(store.getTO(), Hypervisor.HypervisorType.KVM, deltaPath))
                 .collect(Collectors.toList());
@@ -2491,7 +2490,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
     }
 
     /**
-     * Retrieves the current backup and removes the CURRENT detail. If the informed backup is not the end of chain, sets is as the new CURRENT
+     * Retrieves the current backup and removes the CURRENT detail. If the informed backup is not the end of chain, sets it as the new CURRENT
      * */
     protected void updateCurrentBackup(InternalBackupJoinVO backup) {
         InternalBackupJoinVO current = internalBackupJoinDao.findCurrent(backup.getVmId());
@@ -2640,7 +2639,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
     protected void validateCorrectStorageType(BackupVO backupVO, VolumeVO volume, VolumeInfo volumeInfo) {
         StoragePoolVO storagePoolVO = storagePoolDao.findById(volumeInfo.getDataStore().getId());
         if (!supportedStoragePoolTypes.contains(storagePoolVO.getPoolType())) {
-            logger.error("Error while trying create volume [{}]. It was created in a storage that is not supported. Make sure that the disk offerings of VMs with backup " +
+            logger.error("Error while trying to create volume [{}]. It was created in a storage that is not supported. Make sure that the disk offerings of VMs with backup " +
                     "offerings can only be allocated to file-based storages ({}).", backupVO, volume, supportedStoragePoolTypes);
             throw new CloudRuntimeException(String.format("Unable to create volume [%s] due to a failure to allocate the volume. Please check the logs.", backupVO.getUuid()));
         }

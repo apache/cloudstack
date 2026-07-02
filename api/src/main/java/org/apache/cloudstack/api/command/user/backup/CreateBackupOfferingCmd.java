@@ -67,7 +67,7 @@ public class CreateBackupOfferingCmd extends BaseCmd {
             "steps. Accepted values are: wait_for_boot, screenshot and execute_command.")
     private String validationSteps;
 
-    @Parameter(name = ApiConstants.ALLOW_QUICK_RESTORE, type = CommandType.BOOLEAN, description = "Whether the backups are allowed to be restored or not.")
+    @Parameter(name = ApiConstants.ALLOW_QUICK_RESTORE, type = CommandType.BOOLEAN, description = "Whether quick restore is enabled for the backups or not.")
     private Boolean allowQuickRestore;
 
     @Parameter(name = ApiConstants.ALLOW_EXTRACT_FILE, type = CommandType.BOOLEAN, description = "Whether files may be extracted from backups or not.")
@@ -81,15 +81,15 @@ public class CreateBackupOfferingCmd extends BaseCmd {
     private String compressionLibrary;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = BaseCmd.CommandType.UUID, entityType = ZoneResponse.class,
-            description = "The zone ID", required = true)
+            description = "Restrict the backup offering to the Zone identified by this ID.", required = true)
     private Long zoneId;
 
     @Parameter(name = ApiConstants.ALLOW_USER_DRIVEN_BACKUPS, type = CommandType.BOOLEAN,
-            description = "Whether users are allowed to create adhoc backups and backup schedules", required = true)
+            description = "Whether users are allowed to create ad-hoc backups and backup schedules when using this offering.", required = true)
     private Boolean userDrivenBackups;
 
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = DomainResponse.class,
-            description = "the ID of the containing domain(s), null for public offerings")
+            description = "Restrict the backup offering to the Domains identified by these IDs.")
     private List<Long> domainIds;
 
     /////////////////////////////////////////////////////

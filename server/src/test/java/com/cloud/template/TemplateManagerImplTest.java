@@ -1234,7 +1234,6 @@ public class TemplateManagerImplTest extends TestCase {
             return Mockito.mock(SnapshotJoinDao.class);
         }
 
-
         @Bean
         public BackupOfferingDao backupOfferingDao() {
             return Mockito.mock(BackupOfferingDao.class);

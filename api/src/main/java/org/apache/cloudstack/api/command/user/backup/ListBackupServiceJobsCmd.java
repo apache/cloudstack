@@ -43,7 +43,7 @@ public class ListBackupServiceJobsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.BACKUP_ID, type = CommandType.UUID, entityType = BackupResponse.class, description = "List jobs for the given backup.")
     private Long backupId;
 
-    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, description = "List jobs in the given host, implies executing.")
+    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, description = "List jobs in the given host. When passing this parameter, only jobs that are currently executing will be returned.")
     private Long hostId;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "List jobs in the given zone.")

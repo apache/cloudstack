@@ -74,8 +74,7 @@ public interface UserVmService {
     /**
      * Destroys one virtual machine
      *
-     * @param cmd
-     *         the API Command Object containg the parameters to use for this service action
+     * @param cmd the API Command Object containg the parameters to use for this service action
      * @param checkExpunge
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException
