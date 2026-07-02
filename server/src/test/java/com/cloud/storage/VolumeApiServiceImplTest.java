@@ -34,7 +34,6 @@ import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -63,6 +62,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeAp
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.framework.jobs.Outcome;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDao;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.resourcedetail.dao.SnapshotPolicyDetailsDao;
@@ -2381,7 +2381,7 @@ public class VolumeApiServiceImplTest {
      * The guard must reject a VMware ROOT-volume resize when the CloudStack VM
      * state is {@code Running}.
      */
-    @Test
+    @Test(expected = InvalidParameterValueException.class)
     public void testValidateVolumeReadyStateVMware_VMRunning_ShouldThrowInvalidParameterValueException()
             throws NoSuchMethodException, IllegalAccessException {
 
@@ -2403,20 +2403,9 @@ public class VolumeApiServiceImplTest {
         long currentSizeBytes = 10L << 30;
         Long newSizeBytes     = 20L << 30;
 
-        try {
-            volumeApiServiceImpl.validateVolumeReadyStateAndHypervisorChecks(volume, currentSizeBytes, newSizeBytes);
-            Assert.fail("Expected InvalidParameterValueException for VMware ROOT-volume resize "
-                    + "when VM state is Running");
-        } catch (InvocationTargetException e) {
-            Assert.assertNotNull("InvocationTargetException must carry a cause", e.getCause());
-            Assert.assertTrue(
-                    "Cause must be InvalidParameterValueException, was: " + e.getCause().getClass(),
-                    e.getCause() instanceof InvalidParameterValueException);
-            Assert.assertTrue(
-                    "Exception message must reference Stopped-state requirement, was: " + e.getCause().getMessage(),
-                    e.getCause().getMessage() != null
-                            && e.getCause().getMessage().contains("VM should be in"));
-        }
+        volumeApiServiceImpl.validateVolumeReadyStateAndHypervisorChecks(volume, currentSizeBytes, newSizeBytes);
+        Assert.fail("Expected InvalidParameterValueException for VMware ROOT-volume resize "
+                + "when VM state is Running");
     }
 
     /**
@@ -2446,6 +2435,18 @@ public class VolumeApiServiceImplTest {
 
         when(volumeDaoMock.getHypervisorType(volumeId)).thenReturn(HypervisorType.VMware);
 
+        // Stub the job-queue call so OutcomeImpl.s_jobMgr (static, uninitialized in tests)
+        // is never reached.  The Outcome mock returns null from get() and a bare AsyncJobVO
+        // from getJob(), which is enough for the unmarshallResultObject path to return null.
+        @SuppressWarnings("unchecked")
+        Outcome<Volume> outcomemock = Mockito.mock(Outcome.class);
+        AsyncJobVO stubJob = new AsyncJobVO();
+        when(outcomemock.getJob()).thenReturn(stubJob);
+        doReturn(outcomemock).when(volumeApiServiceImpl).resizeVolumeThroughJobQueue(
+                anyLong(), anyLong(), anyLong(), anyLong(),
+                nullable(Long.class), nullable(Long.class),
+                nullable(Integer.class), nullable(Long.class), anyBoolean());
+
         // resizeVolumeInternal(VolumeVO, DiskOfferingVO, Long, Long, Long, Long, Integer, boolean)
         try {
             volumeApiServiceImpl.resizeVolumeInternal(
@@ -2457,17 +2458,12 @@ public class VolumeApiServiceImplTest {
                     /* newMaxIops      */          (Long) null,
                     /* snapshotReserve */          (Integer) null,
                     /* shrinkOk        */          false);
-        } catch (InvocationTargetException e) {
-            // If the state guard triggered it is a test failure; all other deeper
-            // exceptions (NullPointerException from job-queue plumbing, etc.) are
-            // acceptable because they are outside the scope of this test.
-            if (e.getCause() instanceof InvalidParameterValueException
-                    && e.getCause().getMessage() != null
-                    && e.getCause().getMessage().contains("VM should be in")) {
-                Assert.fail("VMware ROOT-volume resize must be allowed when CloudStack VM state is "
-                        + "Stopped, even under a power_state lag. Unexpected exception: "
-                        + e.getCause().getMessage());
-            }
+        } catch (ResourceAllocationException e) {
+            Assert.fail("Unexpected ResourceAllocationException");
+        } catch (InvalidParameterValueException e) {
+            Assert.fail("VMware ROOT-volume resize must be allowed when CloudStack VM state is "
+                    + "Stopped, even under a power_state lag. Unexpected exception: "
+                    + e.getMessage());
         }
     }
 
@@ -2481,7 +2477,7 @@ public class VolumeApiServiceImplTest {
             throws NoSuchMethodException, IllegalAccessException {
 
         long volumeId = 300L;
-        long vmId     = 301L;
+        long vmId = 301L;
 
         VolumeVO volume = Mockito.mock(VolumeVO.class);
         when(volume.getId()).thenReturn(volumeId);
@@ -2495,21 +2491,17 @@ public class VolumeApiServiceImplTest {
         when(volumeDaoMock.getHypervisorType(volumeId)).thenReturn(HypervisorType.VMware);
 
         try {
-            volumeApiServiceImpl.(
+            volumeApiServiceImpl.resizeVolumeInternal(
                     volume,
                     (DiskOfferingVO) null,
                     0L, 1L, (Long) null, (Long) null, (Integer) null, false);
-            Assert.fail("Expected InvalidParameterValueException for VMware ROOT-volume resize "
-                    + "when VM state is Running");
-        } catch (InvocationTargetException e) {
-            Assert.assertNotNull("InvocationTargetException must carry a cause", e.getCause());
+            Assert.fail("Expected an InvalidParameterValueException for VMware ROOT-volume resize when VM state is Running");
+        } catch (ResourceAllocationException e) {
+            Assert.fail("Cause must be InvalidParameterValueException, was: " + e.getClass());
+        } catch (InvalidParameterValueException e) {
             Assert.assertTrue(
-                    "Cause must be InvalidParameterValueException, was: " + e.getCause().getClass(),
-                    e.getCause() instanceof InvalidParameterValueException);
-            Assert.assertTrue(
-                    "Exception message must reference Stopped-state requirement, was: " + e.getCause().getMessage(),
-                    e.getCause().getMessage() != null
-                            && e.getCause().getMessage().contains("VM should be in"));
+                    "Exception message must reference Stopped-state requirement, was: " + e.getMessage(),
+                    e.getMessage() != null && e.getMessage().contains("VM should be in"));
         }
     }
 }
