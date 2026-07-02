@@ -173,6 +173,11 @@
             </template>
           </a-input>
         </a-form-item>
+        <div
+          v-if="(oauthGithubProvider || oauthGoogleProvider || oauthKeycloakProvider) && !form.oauthDomain"
+          style="text-align: center; color: #999; font-size: 12px; margin-bottom: 8px;">
+          Enter your domain to see domain-specific providers
+        </div>
         <div class="center" v-if="oauthGithubProvider || oauthGoogleProvider || oauthKeycloakProvider">
           <div class="social-auth" v-if="oauthGithubProvider">
             <a-button
@@ -215,7 +220,7 @@
           <a-spin />
         </div>
         <div v-else style="text-align: center; color: #999; padding: 20px 0;">
-          <span v-if="form.oauthDomain">No OAuth providers configured for this domain</span>
+          <span v-if="oauthDomainQueried && form.oauthDomain">No OAuth providers configured for this domain</span>
           <span v-else>Enter your domain to see available providers</span>
         </div>
       </a-tab-pane>
@@ -290,6 +295,7 @@ export default {
       oauthKeycloakRedirectUri: '',
       oauthKeycloakAuthorizeUrl: '',
       oauthLoading: false,
+      oauthDomainQueried: false,
       loginType: 0,
       state: {
         time: 60,
@@ -476,8 +482,10 @@ export default {
     handleOauthDomainSubmit () {
       const domain = this.form.oauthDomain
       if (domain) {
+        this.oauthDomainQueried = true
         this.fetchOauthProviders(domain)
       } else {
+        this.oauthDomainQueried = false
         this.oauthGithubProvider = this.githubprovider
         this.oauthGoogleProvider = this.googleprovider
         this.oauthKeycloakProvider = this.keycloakprovider
