@@ -46,6 +46,7 @@ import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VnfNicResponse;
+import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.extension.ExtensionHelper;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -146,11 +147,14 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
     HostDao hostDao;
     @Inject
     ExtensionHelper extensionHelper;
+    @Inject
+    private BackupOfferingDao backupOfferingDao;
 
     private final SearchBuilder<UserVmJoinVO> VmDetailSearch;
     private final SearchBuilder<UserVmJoinVO> activeVmByIsoSearch;
     private final SearchBuilder<UserVmJoinVO> leaseExpiredInstanceSearch;
     private final SearchBuilder<UserVmJoinVO> remainingLeaseInDaysSearch;
+
 
     protected UserVmJoinDaoImpl() {
 
@@ -294,6 +298,9 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         if (details.contains(VMDetails.all) || details.contains(VMDetails.backoff)) {
             userVmResponse.setBackupOfferingId(userVm.getBackupOfferingUuid());
             userVmResponse.setBackupOfferingName(userVm.getBackupOfferingName());
+            if (userVm.getBackupOfferingUuid() != null) {
+                userVmResponse.setBackupProvider(backupOfferingDao.findByUuidIncludingRemoved(userVm.getBackupOfferingUuid()).getProvider());
+            }
         }
         if (details.contains(VMDetails.all) || details.contains(VMDetails.servoff) || details.contains(VMDetails.stats)) {
             userVmResponse.setCpuNumber(userVm.getCpu());

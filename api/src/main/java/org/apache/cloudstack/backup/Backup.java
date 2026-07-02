@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.backup;
 
+import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +41,22 @@ public interface Backup extends ControlledEntity, InternalIdentity, Identity {
 
     enum Status {
         Allocated, Queued, BackingUp, ReadyForImageTransfer, FinalizingImageTransfer, BackedUp, Error, Failed, Restoring, Removed, Expunged
+    }
+
+    enum CompressionStatus {
+        Uncompressed, Compressing, FinalizingCompression, Compressed, CompressionError
+    }
+
+    enum ValidationStatus {
+        NotValidated, Validating, Valid, UnableToValidate, NotValid
+    }
+
+    enum ValidationSteps {
+        wait_for_boot, screenshot, execute_command
+    }
+
+    enum CompressionLibrary {
+        zstd, zlib
     }
 
     class Metric {
@@ -128,7 +145,7 @@ public interface Backup extends ControlledEntity, InternalIdentity, Identity {
         }
     }
 
-    class VolumeInfo {
+    class VolumeInfo implements Serializable {
         private String uuid;
         private Volume.Type type;
         private Long size;
@@ -197,11 +214,14 @@ public interface Backup extends ControlledEntity, InternalIdentity, Identity {
     String getType();
     Date getDate();
     Backup.Status getStatus();
+    Backup.CompressionStatus getCompressionStatus();
+    Backup.ValidationStatus getValidationStatus();
     Long getSize();
     Long getProtectedSize();
     void setName(String name);
     String getDescription();
     void setDescription(String description);
+    Long getUncompressedSize();
     List<VolumeInfo> getBackedUpVolumes();
     long getZoneId();
     Map<String, String> getDetails();

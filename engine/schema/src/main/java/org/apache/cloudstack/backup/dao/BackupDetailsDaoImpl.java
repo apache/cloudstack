@@ -17,12 +17,38 @@
 package org.apache.cloudstack.backup.dao;
 
 
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import org.apache.cloudstack.backup.BackupDetailVO;
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
+
 @Component
 public class BackupDetailsDaoImpl extends ResourceDetailsDaoBase<BackupDetailVO> implements BackupDetailsDao {
+
+    private SearchBuilder<BackupDetailVO> backupDetailSearch;
+
+    private static final String BACKUP_ID = "backup_id";
+
+    private static final String KEY = "key";
+
+    @PostConstruct
+    protected void init() {
+        backupDetailSearch = createSearchBuilder();
+        backupDetailSearch.and(BACKUP_ID, backupDetailSearch.entity().getResourceId(), SearchCriteria.Op.EQ);
+        backupDetailSearch.and(KEY, backupDetailSearch.entity().getName(), SearchCriteria.Op.NEQ);
+        backupDetailSearch.done();
+    }
+
+    @Override
+    public void removeDetailsExcept(long backupId, String exception) {
+        SearchCriteria<BackupDetailVO> sc = backupDetailSearch.create();
+        sc.setParameters(BACKUP_ID, backupId);
+        sc.setParameters(KEY, exception);
+        super.expunge(sc);
+    }
 
     @Override
     public void addDetail(long resourceId, String key, String value, boolean display) {

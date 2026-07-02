@@ -73,11 +73,14 @@ public interface BackupProvider {
      * Starts and creates an adhoc backup process
      * for a previously registered VM backup
      *
-     * @param vm        the machine to make a backup of
-     * @param quiesceVM instance will be quiesced for checkpointing for backup. Applicable only to NAS plugin.
+     * @param vm
+     *         the machine to make a backup of
+     * @param quiesceVM
+     *         instance will be quiesced for checkpointing for backup. Applicable only to NAS plugin.
+     * @param isolated
      * @return the result and {code}Backup{code} {code}Object{code}
      */
-    Pair<Boolean, Backup> takeBackup(VirtualMachine vm, Boolean quiesceVM);
+    Pair<Boolean, Backup> takeBackup(VirtualMachine vm, Boolean quiesceVM, boolean isolated);
 
     /**
      * Delete an existing backup
@@ -87,17 +90,18 @@ public interface BackupProvider {
      */
     boolean deleteBackup(Backup backup, boolean forced);
 
-    Pair<Boolean, String> restoreBackupToVM(VirtualMachine vm, Backup backup, String hostIp, String dataStoreUuid);
+    Pair<Boolean, String> restoreBackupToVM(VirtualMachine vm, Backup backup, String hostIp, String dataStoreUuid, boolean quickrestore);
 
     /**
      * Restore VM from backup
      */
-    boolean restoreVMFromBackup(VirtualMachine vm, Backup backup);
+    boolean restoreVMFromBackup(VirtualMachine vm, Backup backup, boolean quickRestore, Long hostId);
 
     /**
      * Restore a volume from a backup
      */
-    Pair<Boolean, String> restoreBackedUpVolume(Backup backup, Backup.VolumeInfo backupVolumeInfo, String hostIp, String dataStoreUuid, Pair<String, VirtualMachine.State> vmNameAndState);
+    Pair<Boolean, String> restoreBackedUpVolume(Backup backup, Backup.VolumeInfo backupVolumeInfo, String hostIp, String dataStoreUuid,
+            Pair<String, VirtualMachine.State> vmNameAndState, VirtualMachine vm, boolean quickRestore);
 
     /**
      * Syncs backup metrics (backup size, protected size) from the plugin and stores it within the provider
@@ -140,5 +144,4 @@ public interface BackupProvider {
      * @param zoneId the zone for which to return metrics
      */
     void syncBackupStorageStats(Long zoneId);
-
 }

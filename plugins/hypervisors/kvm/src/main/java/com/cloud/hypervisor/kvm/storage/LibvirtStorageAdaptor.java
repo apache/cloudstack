@@ -1607,8 +1607,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                             if (destPool.getType() == StoragePoolType.CLVM) {
                                 keepBitmaps = false;
                             }
-                            qemu.convert(srcFile, destFile, null, null, new QemuImageOptions(srcFile.getFormat(), srcFile.getFileName(), null),
-                                    null, false, keepBitmaps);
+                            qemu.convert(srcFile, destFile, null, null, null, new QemuImageOptions(srcFile.getFormat(), srcFile.getFileName(), null),
+                                    null, false, keepBitmaps, false,
+                                    false, null, null);
                             Map<String, String> destInfo = qemu.info(destFile);
                             Long virtualSize = Long.parseLong(destInfo.get(QemuImg.VIRTUAL_SIZE));
                             newDisk.setVirtualSize(virtualSize);

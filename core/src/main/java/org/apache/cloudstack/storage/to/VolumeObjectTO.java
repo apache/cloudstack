@@ -32,11 +32,12 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.Volume;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
-public class VolumeObjectTO extends DownloadableObjectTO implements DataTO {
+public class VolumeObjectTO extends DownloadableObjectTO implements DataTO, Serializable {
     private String uuid;
     private Volume.Type volumeType;
     private DataStoreTO dataStore;

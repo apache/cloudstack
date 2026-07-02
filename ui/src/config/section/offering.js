@@ -367,7 +367,7 @@ export default {
       permission: ['listBackupOfferings'],
       searchFilters: ['zoneid', 'domainid'],
       columns: ['name', 'description', 'domain', 'zonename'],
-      details: ['name', 'id', 'description', 'externalid', 'domain', 'zone', 'allowuserdrivenbackups', 'created'],
+      details: ['name', 'id', 'description', 'externalid', 'domain', 'zone', 'allowuserdrivenbackups', 'created', 'backupofferingdetails'],
       related: [{
         name: 'vm',
         title: 'label.instances',
@@ -393,6 +393,13 @@ export default {
         listView: true,
         popup: true,
         component: shallowRef(defineAsyncComponent(() => import('@/views/offering/ImportBackupOffering.vue')))
+      }, {
+        api: 'createBackupOffering',
+        icon: 'plus-outlined',
+        label: 'label.create.backup.offering',
+        listView: true,
+        popup: true,
+        component: shallowRef(defineAsyncComponent(() => import('@/views/offering/CreateBackupOffering.vue')))
       }, {
         api: 'updateBackupOffering',
         icon: 'edit-outlined',
