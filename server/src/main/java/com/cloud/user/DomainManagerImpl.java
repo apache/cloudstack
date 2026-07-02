@@ -91,6 +91,7 @@ import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
@@ -107,8 +108,6 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
-
-import org.apache.commons.lang3.StringUtils;
 
 @Component
 public class DomainManagerImpl extends ManagerBase implements DomainManager, DomainService {
@@ -958,7 +957,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         List<DomainVO> domainChildren = _domainDao.findAllChildren(domain.getPath(), domain.getId());
         // for each child, update the path
         for (DomainVO dom : domainChildren) {
-            dom.setPath(dom.getPath().replaceFirst(domain.getPath(), updatedDomainPrefix));
+            dom.setPath(StringUtils.replaceOnce(dom.getPath(), domain.getPath(), updatedDomainPrefix));
             _domainDao.update(dom.getId(), dom);
         }
     }
@@ -1094,7 +1093,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         for (Map.Entry<Long, List<String>> entry : idsOfDomainsWithResourcesUsedByDomainToBeMoved.entrySet()) {
             DomainVO domainWithResourceUsedByDomainToBeMoved = _domainDao.findById(entry.getKey());
 
-            Pattern pattern = Pattern.compile(domainWithResourceUsedByDomainToBeMoved.getPath().replace("/", "\\/").concat(".*"));
+            Pattern pattern = Pattern.compile(domainWithResourceUsedByDomainToBeMoved.getPath().replace("/", "\\/").concat(".*")); // This only scaped one Regex metacharacter (/). The wildcard `.` is more common and dangerous in my opinion. 
             Matcher matcher = pattern.matcher(newPathOfDomainToBeMoved);
             if (!matcher.matches()) {
                 domainsOfResourcesInaccessibleToNewParentDomain.put(domainWithResourceUsedByDomainToBeMoved, entry.getValue());
