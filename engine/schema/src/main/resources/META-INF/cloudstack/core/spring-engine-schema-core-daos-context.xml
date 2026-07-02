@@ -319,4 +319,12 @@
   <bean id="kmsWrappedKeyDaoImpl" class="org.apache.cloudstack.kms.dao.KMSWrappedKeyDaoImpl" />
   <bean id="hsmProfileDaoImpl" class="org.apache.cloudstack.kms.dao.HSMProfileDaoImpl" />
   <bean id="hsmProfileDetailsDaoImpl" class="org.apache.cloudstack.kms.dao.HSMProfileDetailsDaoImpl" />
+  <bean id="dnsServerDao" class="org.apache.cloudstack.dns.dao.DnsServerDaoImpl" />
+  <bean id="dnsZoneDao" class="org.apache.cloudstack.dns.dao.DnsZoneDaoImpl" />
+  <bean id="dnsZoneNetworkMapDao" class="org.apache.cloudstack.dns.dao.DnsZoneNetworkMapDaoImpl" />
+  <bean id="dnsServerJoinDao" class="org.apache.cloudstack.dns.dao.DnsServerJoinDaoImpl" />
+  <bean id="dnsZoneJoinDao" class="org.apache.cloudstack.dns.dao.DnsZoneJoinDaoImpl" />
+  <bean id="dnsNicJoinDao" class="org.apache.cloudstack.dns.dao.NicDnsJoinDaoImpl" />
+  <bean id="dnsServerDetailsDao" class="org.apache.cloudstack.dns.dao.DnsServerDetailsDaoImpl" />
+
 </beans>
