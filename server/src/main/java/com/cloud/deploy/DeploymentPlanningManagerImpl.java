@@ -481,9 +481,9 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
         logger.debug("This VM has last host_id: {}", vm.getLastHostId());
         HostVO lastHost = _hostDao.findById(vm.getLastHostId());
+        _hostDao.loadDetails(lastHost);
         if (canUseLastHost(lastHost, avoids, plan, vm, offering, volumesRequireEncryption)) {
             _hostDao.loadHostTags(lastHost);
-            _hostDao.loadDetails(lastHost);
             if (lastHost.getStatus() != Status.Up) {
                 logger.debug("Cannot deploy VM [{}] to the last host [{}] because this host is not in UP state or is not enabled. Host current status [{}] and resource status [{}].",
                         vm, lastHost, lastHost.getState().name(), lastHost.getResourceState());
@@ -682,7 +682,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
     protected boolean anyVolumeRequiresEncryption(List<? extends Volume> volumes) {
         for (Volume volume : volumes) {
-            if (volume.getPassphraseId() != null) {
+            if (volume.getPassphraseId() != null || volume.getKmsKeyId() != null) {
                 return true;
             }
         }

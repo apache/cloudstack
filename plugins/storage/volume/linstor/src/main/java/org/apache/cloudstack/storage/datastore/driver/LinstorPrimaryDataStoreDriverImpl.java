@@ -436,7 +436,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                 logger.info("Clone resource definition {} to {}", cloneRes, rscName);
                 ResourceDefinitionCloneRequest cloneRequest = new ResourceDefinitionCloneRequest();
                 cloneRequest.setName(rscName);
-                if (volumeInfo.getPassphraseId() != null) {
+                if (volumeInfo.getPassphraseId() != null || volumeInfo.getKmsKeyId() != null) {
                     List<LayerType> encryptionLayer = LinstorUtil.getEncryptedLayerList(
                             linstorApi, LinstorUtil.getRscGrp(storagePoolVO));
                     cloneRequest.setLayerList(encryptionLayer);
