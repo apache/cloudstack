@@ -7341,7 +7341,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     public boolean isVMUsingLocalStorage(VMInstanceVO vm) {
-        List<VolumeVO> volumes = _volsDao.findByInstance(vm.getId());
+        List<VolumeVO> volumes = _volsDao.findByInstanceAndNotDestroyed(vm.getId());
         return isAnyVmVolumeUsingLocalStorage(volumes);
     }
 
@@ -7777,10 +7777,20 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     protected boolean isAnyVmVolumeUsingLocalStorage(final List<VolumeVO> volumes) {
         for (VolumeVO vol : volumes) {
             DiskOfferingVO diskOffering = _diskOfferingDao.findById(vol.getDiskOfferingId());
-            if (diskOffering.isUseLocalStorage()) {
+            if (diskOffering != null && diskOffering.isUseLocalStorage()) {
                 return true;
             }
-            StoragePoolVO storagePool = _storagePoolDao.findById(vol.getPoolId());
+            Long poolId = vol.getPoolId();
+            if (poolId == null) {
+                logger.debug("Skipping volume without storage pool while checking local storage usage: {}", vol);
+                continue;
+            }
+            StoragePoolVO storagePool = _storagePoolDao.findById(poolId);
+            if (storagePool == null || storagePool.getRemoved() != null) {
+                throw new CloudRuntimeException(String.format(
+                        "Cannot determine local storage usage for active volume %s because storage pool ID %s is missing or removed",
+                        vol, poolId));
+            }
             if (storagePool.isLocal()) {
                 return true;
             }
