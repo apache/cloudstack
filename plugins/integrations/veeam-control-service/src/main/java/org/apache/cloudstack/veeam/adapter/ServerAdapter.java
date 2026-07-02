@@ -1016,7 +1016,7 @@ public class ServerAdapter extends ManagerBase {
         Volume volume;
         try {
             volume = volumeApiService.allocVolume(serviceAccount.getId(), pool.getDataCenterId(), diskOfferingId, null,
-                    null, name, sizeInGb, null, null, null, null);
+                    null, name, sizeInGb, null, null, null, null, null);
         } catch (ResourceAllocationException e) {
             throw new CloudRuntimeException(e.getMessage(), e);
         }

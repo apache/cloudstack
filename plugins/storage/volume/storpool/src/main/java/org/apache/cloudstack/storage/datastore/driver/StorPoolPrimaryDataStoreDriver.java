@@ -290,7 +290,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             try {
                 VolumeInfo vinfo = (VolumeInfo)data;
                 String name = vinfo.getUuid();
-                Long size = vinfo.getPassphraseId() == null ? vinfo.getSize() : vinfo.getSize() + 2097152;
+                Long size = (vinfo.getPassphraseId() == null && vinfo.getKmsKeyId() == null) ? vinfo.getSize() : vinfo.getSize() + 2097152;
                 Long vmId = vinfo.getInstanceId();
 
                 SpConnectionDesc conn = StorPoolUtil.getSpConnection(dataStore.getUuid(), dataStore.getId(), storagePoolDetailsDao, primaryStoreDao);
@@ -309,7 +309,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
                     updateVolume(dataStore, path, vinfo);
 
-                    if (vinfo.getPassphraseId() != null) {
+                    if (vinfo.getPassphraseId() != null || vinfo.getKmsKeyId() != null) {
                         VolumeObjectTO volume = updateVolumeObjectTO(vinfo, resp);
                         answer = createEncryptedVolume(dataStore, data, vinfo, size, volume, null, true);
                     } else {
@@ -360,11 +360,11 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         StorPoolSetVolumeEncryptionAnswer ans;
         EndPoint ep = null;
         if (parentName == null) {
-            ep = selector.select(data, vinfo.getPassphraseId() != null);
+            ep = selector.select(data, vinfo.getPassphraseId() != null || vinfo.getKmsKeyId() != null);
         } else {
             Long clusterId = StorPoolHelper.findClusterIdByGlobalId(parentName, clusterDao);
             if (clusterId == null) {
-                ep = selector.select(data, vinfo.getPassphraseId() != null);
+                ep = selector.select(data, vinfo.getPassphraseId() != null || vinfo.getKmsKeyId() != null);
             } else {
                 List<HostVO> hosts = hostDao.findByClusterIdAndEncryptionSupport(clusterId);
                 ep = CollectionUtils.isNotEmpty(hosts) ? RemoteHostEndPoint.getHypervisorHostEndPoint(hosts.get(0)) : ep;
@@ -558,10 +558,10 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     private void tryToSnapshotVolumeBeforeDelete(VolumeInfo vinfo, DataStore dataStore, String name, SpConnectionDesc conn) {
         Integer deleteAfter = StorPoolConfigurationManager.DeleteAfterInterval.valueIn(dataStore.getId());
-        if (deleteAfter != null && deleteAfter > 0 && vinfo.getPassphraseId() == null) {
+        if (deleteAfter != null && deleteAfter > 0 && vinfo.getPassphraseId() == null && vinfo.getKmsKeyId() == null) {
             createTemporarySnapshot(vinfo, name, deleteAfter, conn);
         } else {
-            StorPoolUtil.spLog("The volume [%s] is not marked to be snapshot. Check the global setting `storpool.delete.after.interval` or the volume is encrypted [%s]", name, deleteAfter, vinfo.getPassphraseId() != null);
+            StorPoolUtil.spLog("The volume [%s] is not marked to be snapshot. Check the global setting `storpool.delete.after.interval` or the volume is encrypted [%s]", name, deleteAfter, vinfo.getPassphraseId() != null || vinfo.getKmsKeyId() != null);
         }
     }
 
@@ -862,7 +862,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                         vinfo.getDataStore().getId(), storagePoolDetailsDao, primaryStoreDao);
 
                 Long snapshotSize = templStoragePoolVO.getTemplateSize();
-                boolean withoutEncryption = vinfo.getPassphraseId() == null;
+                boolean withoutEncryption = vinfo.getPassphraseId() == null && vinfo.getKmsKeyId() == null;
                 long size = withoutEncryption ? vinfo.getSize() : vinfo.getSize() + 2097152;
                 if (snapshotSize != null && size < snapshotSize) {
                     StorPoolUtil.spLog(String.format("provided size is too small for snapshot. Provided %d, snapshot %d. Using snapshot size", size, snapshotSize));

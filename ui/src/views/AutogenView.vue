@@ -350,6 +350,7 @@
                   showSearch
                   optionFilterProp="label"
                   v-model:value="form[field.name]"
+                  @change="val => handleSelectChange(field.name, val)"
                   :loading="field.loading"
                   :placeholder="field.description"
                   :filterOption="(input, option) => {
@@ -374,6 +375,7 @@
                   showSearch
                   optionFilterProp="label"
                   v-model:value="form[field.name]"
+                  @change="val => handleSelectChange(field.name, val)"
                   :loading="field.loading"
                   :placeholder="field.description"
                   :filterOption="(input, option) => {
@@ -481,6 +483,7 @@
                   :loading="field.loading"
                   mode="multiple"
                   v-model:value="form[field.name]"
+                  @change="val => handleSelectChange(field.name, val)"
                   :placeholder="field.description"
                   v-focus="fieldIndex === firstIndex"
                   showSearch
@@ -499,7 +502,8 @@
                 </a-select>
                 <details-input
                   v-else-if="field.type==='map'"
-                  v-model:value="form[field.name]" />
+                  v-model:value="form[field.name]"
+                  :optionalKeys="currentAction.mapping?.[field.name]?.optionalKeys || []" />
                 <a-input-number
                   v-else-if="field.type==='long'"
                   v-focus="fieldIndex === firstIndex"
@@ -1007,7 +1011,7 @@ export default {
       this.projectView = Boolean(store.getters.project && store.getters.project.id)
       this.hasProjectId = ['vm', 'vmgroup', 'ssh', 'affinitygroup', 'userdata', 'volume', 'snapshot', 'buckets', 'vmsnapshot', 'guestnetwork',
         'vpc', 'securitygroups', 'publicip', 'vpncustomergateway', 'template', 'iso', 'event', 'kubernetes', 'sharedfs',
-        'autoscalevmgroup', 'vnfapp', 'webhook'].includes(this.$route.name)
+        'autoscalevmgroup', 'vnfapp', 'webhook', 'kmskey', 'hsmprofile'].includes(this.$route.name)
 
       if (this.dataView && !refreshed) {
         this.resource = {}
@@ -1119,7 +1123,6 @@ export default {
       this.loading = true
       if (this.$route.path.startsWith('/cniconfiguration')) {
         params.forcks = true
-        console.log('here')
       }
       if (this.$route.params && this.$route.params.id) {
         params.id = this.$route.params.id
@@ -1131,6 +1134,10 @@ export default {
             delete params.id
             params.name = this.$route.params.id
           }
+        }
+        if (['listUserKeys'].includes(this.apiName)) {
+          delete params.listall
+          params.keypairid = this.$route.params.id
         }
         if (['listPublicIpAddresses'].includes(this.apiName)) {
           params.allocatedonly = false
@@ -1253,7 +1260,7 @@ export default {
         if (this.items.length <= 0 && this.dataView) {
           this.$router.push({ path: '/exception/404' })
         }
-        if (!this.showAction || this.dataView) {
+        if (!this.showAction || this.dataView || (this.items.length === 1 && this.apiName === 'getUserKeys')) {
           this.resource = this.items?.[0] || {}
           this.$emit('change-resource', this.resource)
         }
@@ -1458,6 +1465,21 @@ export default {
         if (!(this.currentAction.mapping && field.name in this.currentAction.mapping && this.currentAction.mapping[field.name].value)) {
           this.firstIndex = fieldIndex
           break
+        }
+      }
+    },
+    handleSelectChange (name, val) {
+      if (name === 'domainid') {
+        const accountField = this.currentAction.paramFields.find(f => f.name === 'account')
+        if (accountField) {
+          this.form.account = null
+          this.listUuidOpts(accountField, { domainid: val })
+        }
+      } else if (name === 'account') {
+        const volumeField = this.currentAction.paramFields.find(f => f.name === 'volumeids')
+        if (volumeField) {
+          this.form.volumeids = null
+          this.listUuidOpts(volumeField, { domainid: this.form.domainid, account: val })
         }
       }
     },
