@@ -108,6 +108,7 @@
   <bean id="instanceGroupJoinDaoImpl" class="com.cloud.api.query.dao.InstanceGroupJoinDaoImpl" />
   <bean id="managementServerJoinDaoImpl" class="com.cloud.api.query.dao.ManagementServerJoinDaoImpl" />
   <bean id="instanceGroupVMMapDaoImpl" class="com.cloud.vm.dao.InstanceGroupVMMapDaoImpl" />
+  <bean id="vmIsoMapDaoImpl" class="com.cloud.vm.dao.VmIsoMapDaoImpl" />
   <bean id="itWorkDaoImpl" class="com.cloud.vm.ItWorkDaoImpl" />
   <bean id="lBHealthCheckPolicyDaoImpl" class="com.cloud.network.dao.LBHealthCheckPolicyDaoImpl" />
   <bean id="lBStickinessPolicyDaoImpl" class="com.cloud.network.dao.LBStickinessPolicyDaoImpl" />
@@ -284,8 +285,9 @@
   <bean id="secondaryStorageHeuristicDaoImpl" class="org.apache.cloudstack.secstorage.dao.SecondaryStorageHeuristicDaoImpl" />
   <bean id="heuristicRuleHelper" class="org.apache.cloudstack.storage.heuristics.HeuristicRuleHelper" />
   <bean id="publicIpQuarantineDaoImpl" class="com.cloud.network.dao.PublicIpQuarantineDaoImpl" />
-  <bean id="VMScheduleDaoImpl" class="org.apache.cloudstack.vm.schedule.dao.VMScheduleDaoImpl" />
-  <bean id="VMScheduledJobDaoImpl" class="org.apache.cloudstack.vm.schedule.dao.VMScheduledJobDaoImpl" />
+  <bean id="ResourceScheduleDaoImpl" class="org.apache.cloudstack.schedule.dao.ResourceScheduleDaoImpl" />
+  <bean id="ResourceScheduleDetailsDaoImpl" class="org.apache.cloudstack.schedule.dao.ResourceScheduleDetailsDaoImpl" />
+  <bean id="ResourceScheduledJobDaoImpl" class="org.apache.cloudstack.schedule.dao.ResourceScheduledJobDaoImpl" />
   <bean id="VmwareDatacenterDaoImpl" class="com.cloud.hypervisor.vmware.dao.VmwareDatacenterDaoImpl" />
   <bean id="vnfTemplateDetailsDaoImpl" class="com.cloud.storage.dao.VnfTemplateDetailsDaoImpl" />
   <bean id="vnfTemplateNicDaoImpl" class="com.cloud.storage.dao.VnfTemplateNicDaoImpl" />
@@ -312,4 +314,9 @@
   <bean id="importVMTaskDaoImpl" class="com.cloud.vm.dao.ImportVMTaskDaoImpl" />
   <bean id="apiKeyPairDaoImpl" class="org.apache.cloudstack.acl.dao.ApiKeyPairDaoImpl" />
   <bean id="apiKeyPairPermissionsDaoImpl" class="org.apache.cloudstack.acl.dao.ApiKeyPairPermissionsDaoImpl" />
+  <bean id="kmsKeyDaoImpl" class="org.apache.cloudstack.kms.dao.KMSKeyDaoImpl" />
+  <bean id="kmsKekVersionDaoImpl" class="org.apache.cloudstack.kms.dao.KMSKekVersionDaoImpl" />
+  <bean id="kmsWrappedKeyDaoImpl" class="org.apache.cloudstack.kms.dao.KMSWrappedKeyDaoImpl" />
+  <bean id="hsmProfileDaoImpl" class="org.apache.cloudstack.kms.dao.HSMProfileDaoImpl" />
+  <bean id="hsmProfileDetailsDaoImpl" class="org.apache.cloudstack.kms.dao.HSMProfileDetailsDaoImpl" />
 </beans>
