@@ -31,6 +31,17 @@ repos:
       - id: doctoc
         name: Add TOC for Markdown files
         files: ^CONTRIBUTING\.md$|^INSTALL\.md$|^README\.md$
+  - repo: local
+    hooks:
+      - id: check-zip-file-is-not-committed
+        name: check no zip files are committed
+        description: Zip files are not allowed in the repository
+        language: fail
+        entry: |
+          Zip files are not allowed in the repository as they are hard to
+          track and have security implications. Please remove the zip file from the repository.
+        files: (?i)\.zip$
+        exclude: ^core/src/test/resources/vhds/test\.vhd\.zip$
   - repo: https://github.com/oxipng/oxipng
     rev: v9.1.5
     hooks:
