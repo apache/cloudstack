@@ -994,8 +994,51 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
     }
 
     private void findAvoidSetForNonExplicitUserVM(ExcludeList avoids, VirtualMachine vm, List<Long> allPodsInDc, List<Long> allClustersInDc, List<Long> allHostsInDc) {
+        long vmAccountId = vm.getAccountId();
+        long vmDomainId = vm.getDomainId();
+
+        List<Long> allPodsFromDedicatedID = new ArrayList<>();
+        List<Long> allClustersFromDedicatedID = new ArrayList<>();
+        List<Long> allHostsFromDedicatedID = new ArrayList<>();
+
+        // Check if the VM owner's domain has explicit dedication affinity group mappings.
+        // If so, resources dedicated to that domain are accessible to the VM owner (fixes
+        // issue where users in a domain-dedicated pod could not deploy with ImplicitDedicationPlanner).
+        List<AffinityGroupDomainMapVO> domainGroupMappings = _affinityGroupDomainMapDao.listByDomain(vmDomainId);
+
+        // Sort by id ascending, no pagination — retrieve all dedicated resources for this domain/account
+        Filter filter = new Filter(DedicatedResourceVO.class, "id", true);
+
+        if (domainGroupMappings == null || domainGroupMappings.isEmpty()) {
+            // No domain-level affinity groups: search for resources dedicated to this specific account
+            for (DedicatedResourceVO vo : _dedicatedDao.searchDedicatedPods(null, vmDomainId, vmAccountId, null, filter).first()) {
+                allPodsFromDedicatedID.add(vo.getPodId());
+            }
+            for (DedicatedResourceVO vo : _dedicatedDao.searchDedicatedClusters(null, vmDomainId, vmAccountId, null, filter).first()) {
+                allClustersFromDedicatedID.add(vo.getClusterId());
+            }
+            for (DedicatedResourceVO vo : _dedicatedDao.searchDedicatedHosts(null, vmDomainId, vmAccountId, null, filter).first()) {
+                allHostsFromDedicatedID.add(vo.getHostId());
+            }
+        } else {
+            // Domain has explicit dedication affinity groups: search for resources dedicated to this domain
+            for (DedicatedResourceVO vo : _dedicatedDao.searchDedicatedPods(null, vmDomainId, null, null, filter).first()) {
+                allPodsFromDedicatedID.add(vo.getPodId());
+            }
+            for (DedicatedResourceVO vo : _dedicatedDao.searchDedicatedClusters(null, vmDomainId, null, null, filter).first()) {
+                allClustersFromDedicatedID.add(vo.getClusterId());
+            }
+            for (DedicatedResourceVO vo : _dedicatedDao.searchDedicatedHosts(null, vmDomainId, null, null, filter).first()) {
+                allHostsFromDedicatedID.add(vo.getHostId());
+            }
+        }
+
+        allPodsInDc.removeAll(allPodsFromDedicatedID);
+        allClustersInDc.removeAll(allClustersFromDedicatedID);
+        allHostsInDc.removeAll(allHostsFromDedicatedID);
+
         logger.debug(() -> LogUtils.logGsonWithoutException("Adding pods [%s], clusters [%s] and hosts [%s] to the avoid list in the deploy process of user VM [%s], "
-                        + "because this VM is not explicitly dedicated to these components.", allPodsInDc, allClustersInDc, allHostsInDc, vm));
+                        + "because this VM is not dedicated to these components.", allPodsInDc, allClustersInDc, allHostsInDc, vm));
         avoids.addPodList(allPodsInDc);
         avoids.addClusterList(allClustersInDc);
         avoids.addHostList(allHostsInDc);
