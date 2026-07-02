@@ -80,7 +80,7 @@ ipmitool = Command("ipmitool")
 
 def check_tool():
     if exists(TOOl_PATH) == False:
-        print "Can not find ipmitool"
+        print("Can not find ipmitool")
         return False
 
 def ping(args):
@@ -89,15 +89,15 @@ def ping(args):
     password = args.get("password")
 
     if hostname == None:
-        print "No hostname"
+        print("No hostname")
         return 1
 
     o = ipmitool("-H", hostname, "-U", usrname, "-P", password, "chassis", "power", "status")
     if o.ret:
-        print o.stderr
+        print(o.stderr)
         return 1
     else:
-        print o.stdout
+        print(o.stdout)
         return 0
 
 def boot_dev(args):
@@ -107,16 +107,16 @@ def boot_dev(args):
     dev = args.get("dev")
 
     if hostname == None:
-        print "No hostname"
+        print("No hostname")
         return 1
 
     if dev == None:
-        print "No boot device specified"
+        print("No boot device specified")
         return 1
 
     o = ipmitool("-H", hostname, "-U", usrname, "-P", password, "chassis", "bootdev", dev)
     if o.ret:
-        print o.stderr
+        print(o.stderr)
         return 1
     else:
         return 0
@@ -127,12 +127,12 @@ def reboot(args):
     password = args.get("password")
 
     if hostname == None:
-        print "No hostname"
+        print("No hostname")
         return 1
 
     o = ipmitool("-H", hostname, "-U", usrname, "-P", password, "chassis", "power", "status")
     if o.ret:
-        print o.stderr
+        print(o.stderr)
         return 1
 
 
@@ -142,7 +142,7 @@ def reboot(args):
         o = ipmitool("-H", hostname, "-U", usrname, "-P", password, "chassis", "power", "reset")
 
     if o.ret:
-        print o.stderr
+        print(o.stderr)
         return 1
     else:
         return 0
@@ -154,12 +154,12 @@ def power(args):
     action = args.get("action")
 
     if hostname == None:
-        print "No hostname"
+        print("No hostname")
         return 1
 
     o = ipmitool("-H", hostname, "-U", usrname, "-P", password, "chassis", "power", action)
     if o.ret:
-        print o.stderr
+        print(o.stderr)
         return 1
     else:
         return 0
@@ -170,7 +170,7 @@ def boot_or_reboot(args):
     password = args.get("password")
     o = ipmitool("-H", hostname, "-U", usrname, "-P", password, "chassis", "power", "status")
     if o.ret:
-        print o.stderr
+        print(o.stderr)
         return 1
 
     if "is on" in o.stdout:
@@ -179,7 +179,7 @@ def boot_or_reboot(args):
         args["action"] = "on"
         return power(args)
     else:
-        print "unknown power status:" + o.stdout
+        print("unknown power status:" + o.stdout)
         return 1
 
 
@@ -189,14 +189,14 @@ def dispatch(args):
     params = args[2:]
     func_params = {}
 
-    if call_table.has_key(cmd) == False:
-        print "No function %s" % cmd
+    if (cmd in call_table) == False:
+        print("No function %s" % cmd)
         return 1
 
     for p in params:
         pairs = p.split("=")
         if len(pairs) != 2:
-            print "Invalid parameter %s" % p
+            print("Invalid parameter %s" % p)
             return 1
         func_params[pairs[0]] = pairs[1]
 
@@ -207,6 +207,6 @@ if __name__ == "__main__":
     if check_tool() == False:
         sys.exit(1)
     if len(sys.argv) < 2:
-        print "Not enough arguments, at least one"
+        print("Not enough arguments, at least one")
         sys.exit(1)
     sys.exit(dispatch(sys.argv))

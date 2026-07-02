@@ -31,7 +31,7 @@ def getHost():
     host = session.xenapi.host
     hosts = session.xenapi.host.get_by_name_label(hostname)
     if len(hosts) != 1:
-        print "can't find host:" + hostname
+        print("can't find host:" + hostname)
         sys.exit(1)
     localhost = hosts[0]
     return [host, localhost]
@@ -44,7 +44,7 @@ def callPlugin(pluginName, func, params):
 
 def main():
     if len(sys.argv) < 3:
-        print "args: pluginName funcName params"
+        print("args: pluginName funcName params")
         sys.exit(1)
 
     pluginName = sys.argv[1]
@@ -52,15 +52,15 @@ def main():
 
     paramList = sys.argv[3:]
     if (len(paramList) % 2) != 0:
-        print "params must be name/value pair"
+        print("params must be name/value pair")
         sys.exit(2)
     params = {}
     pos = 0;
     for i in range(len(paramList) / 2):
         params[str(paramList[pos])] = str(paramList[pos+1])
         pos = pos + 2
-    print "call: " + pluginName + " " + funcName + ", with params: " + str(params)
-    print "return: " +  callPlugin(pluginName, funcName, params)
+    print("call: " + pluginName + " " + funcName + ", with params: " + str(params))
+    print("return: " +  callPlugin(pluginName, funcName, params))
 
 if __name__ == "__main__":
     main()

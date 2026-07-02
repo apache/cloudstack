@@ -116,7 +116,7 @@ def copy_priv_key(newKey):
 		return 0
 	print ("Copying new private key file as it is not matching with old file")
 	shutil.copyfile(newKey, currDir + pathSep + "id_rsa.cloud")
-	os.chmod(currDir + pathSep + "id_rsa.cloud", 0644)
+	os.chmod(currDir + pathSep + "id_rsa.cloud", 0o644)
 	return 0
 
 if len(sys.argv) != 4:
