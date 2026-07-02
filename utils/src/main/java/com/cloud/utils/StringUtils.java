@@ -438,4 +438,11 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
 
         return null;
     }
+
+    public static String toNullSafeString(String str) {
+        if (str == null) {
+            return "null";
+        }
+        return str;
+    }
 }

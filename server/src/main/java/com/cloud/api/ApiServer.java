@@ -62,9 +62,6 @@ import javax.naming.ConfigurationException;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.instrumentation.annotations.WithSpan;
-
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.acl.ApiKeyPairManagerImpl;
 import org.apache.cloudstack.acl.apikeypair.ApiKeyPair;
@@ -107,6 +104,7 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.LoginCmdResponse;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.context.ResponseMessageResolver;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.events.EventDistributor;
@@ -205,6 +203,9 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionProxyObject;
 import com.cloud.utils.net.NetUtils;
 import com.google.gson.reflect.TypeToken;
+
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 
 @Component
 public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiServerService, Configurable {
@@ -1714,6 +1715,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             apiResponse.setErrorCode(ex.getErrorCode().getHttpCode());
             apiResponse.setErrorText(ex.getDescription());
             apiResponse.setResponseName(responseName);
+            ResponseMessageResolver.updateExceptionResponse(apiResponse, ex);
             final ArrayList<ExceptionProxyObject> idList = ex.getIdProxyList();
             if (idList != null) {
                 for (ExceptionProxyObject exceptionProxyObject : idList) {
