@@ -344,17 +344,24 @@ public class OntapPrimaryDatastoreLifecycleTest {
         clusterVO.setHypervisorType("XenServer");
         when(_clusterDao.findById(2L)).thenReturn(clusterVO);
 
+        HashMap<String, String> detailsMap = new HashMap<>();
+        detailsMap.put(OntapStorageConstants.USERNAME, "testUser");
+        detailsMap.put(OntapStorageConstants.PASSWORD, "testPassword");
+        detailsMap.put(OntapStorageConstants.STORAGE_IP, "10.10.10.10");
+        detailsMap.put(OntapStorageConstants.SVM_NAME, "vs0");
+        detailsMap.put(OntapStorageConstants.PROTOCOL, "NFS3");
+
         Map<String, Object> dsInfos = new HashMap<>();
-        dsInfos.put("zoneId",1L);
-        dsInfos.put("podId",1L);
+        dsInfos.put("zoneId", 1L);
+        dsInfos.put("podId", 1L);
         dsInfos.put("clusterId", 2L);
         dsInfos.put("name", "testStoragePool");
         dsInfos.put("providerName", "testProvider");
-        dsInfos.put("capacityBytes",200000L);
-        dsInfos.put("managed",true);
+        dsInfos.put("capacityBytes", 200000L);
+        dsInfos.put("managed", true);
         dsInfos.put("tags", "testTag");
         dsInfos.put("isTagARule", false);
-        dsInfos.put("details", new HashMap<String, String>());
+        dsInfos.put("details", detailsMap);
 
         Exception ex = assertThrows(CloudRuntimeException.class, () -> {
             try (MockedStatic<StorageProviderFactory> storageProviderFactory = Mockito.mockStatic(StorageProviderFactory.class)) {
@@ -799,6 +806,51 @@ public class OntapPrimaryDatastoreLifecycleTest {
             // Verify - createAccessGroup is called with correct AccessGroup structure
             assertTrue(result);
             verify(storageStrategy, times(1)).createAccessGroup(any(AccessGroup.class));
+        }
+    }
+
+    @Test
+    public void testAttachZone_nonKvmHypervisorThrowsException() {
+        // Non-KVM hypervisor type must be rejected before any further processing
+        Exception ex = assertThrows(CloudRuntimeException.class, () ->
+                ontapPrimaryDatastoreLifecycle.attachZone(
+                        dataStore, zoneScope, Hypervisor.HypervisorType.VMware));
+
+        assertTrue(ex.getMessage().contains("ONTAP primary storage is supported only for KVM hypervisor"));
+        // update should never be reached
+        verify(storagePoolDao, times(0)).update(anyLong(), any(StoragePoolVO.class));
+    }
+
+    @Test
+    public void testAttachZone_nullHypervisorThrowsException() {
+        // null hypervisorType is not a valid case — only KVM is accepted
+        Exception ex = assertThrows(CloudRuntimeException.class, () ->
+                ontapPrimaryDatastoreLifecycle.attachZone(dataStore, zoneScope, null));
+
+        assertTrue(ex.getMessage().contains("ONTAP primary storage is supported only for KVM hypervisor"));
+        verify(storagePoolDao, times(0)).update(anyLong(), any(StoragePoolVO.class));
+    }
+
+    @Test
+    public void testAttachZone_kvmHypervisorSetsAndUpdatesPool() throws Exception {
+        // KVM hypervisorType should be set on the pool and persisted via storagePoolDao.update
+        when(zoneScope.getScopeId()).thenReturn(1L);
+        when(_resourceMgr.getEligibleUpAndEnabledHostsInZoneForStorageConnection(any(), eq(1L), eq(Hypervisor.HypervisorType.KVM)))
+                .thenReturn(mockHosts);
+        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(poolDetails);
+        when(_dataStoreHelper.attachZone(any(DataStore.class))).thenReturn(dataStore);
+
+        try (MockedStatic<OntapStorageUtils> utilityMock = Mockito.mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(any()))
+                    .thenReturn(storageStrategy);
+            when(storageStrategy.createAccessGroup(any(AccessGroup.class))).thenReturn(null);
+            when(_storageMgr.connectHostToSharedPool(any(HostVO.class), anyLong())).thenReturn(true);
+
+            boolean result = ontapPrimaryDatastoreLifecycle.attachZone(
+                    dataStore, zoneScope, Hypervisor.HypervisorType.KVM);
+
+            assertTrue(result, "attachZone should succeed for KVM hypervisor");
+            verify(storagePoolDao, times(1)).update(eq(1L), any(StoragePoolVO.class));
         }
     }
 
