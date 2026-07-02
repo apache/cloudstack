@@ -253,7 +253,7 @@
                     :filterOption="(input, option) => {
                       return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                     }">
-                    <a-select-option v-for="mapping in resource.guestOsMappings" :key="mapping.ostypeid" :label="mapping.osdisplayname">
+                    <a-select-option v-for="mapping in resource.guestOsMappings" :key="mapping.ostypeid" :value="mapping.ostypeid" :label="mapping.osdisplayname">
                       <span>
                         {{ mapping.osdisplayname }}
                       </span>

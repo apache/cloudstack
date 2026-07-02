@@ -1732,11 +1732,12 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             Pair<UnmanagedInstanceTO, Boolean> sourceInstanceDetails = getSourceVmwareUnmanagedInstance(vcenter, datacenterName, username, password, clusterName, sourceHostName, sourceVMName, serviceOffering);
             sourceVMwareInstance = sourceInstanceDetails.first();
             isClonedInstance = sourceInstanceDetails.second();
+            guestOsId = resolveVmwareToKvmImportGuestOsId(guestOsId, sourceVMwareInstance);
 
             // Ensure that the configured resource limits will not be exceeded before beginning the conversion process
             checkVmResourceLimitsForUnmanagedInstanceImport(owner, sourceVMwareInstance, serviceOffering, template, reservations);
 
-            boolean isWindowsVm = sourceVMwareInstance.getOperatingSystem().toLowerCase().contains("windows");
+            boolean isWindowsVm = StringUtils.containsIgnoreCase(sourceVMwareInstance.getOperatingSystem(), "windows");
             if (isWindowsVm) {
                 checkConversionSupportOnHost(convertHost, sourceVMName, true, useVddk, details);
             }
@@ -1790,6 +1791,104 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             }
             ReservationHelper.closeAll(reservations);
         }
+    }
+
+    protected Long resolveVmwareToKvmImportGuestOsId(Long requestedGuestOsId, UnmanagedInstanceTO sourceVMwareInstance) {
+        if (requestedGuestOsId != null || sourceVMwareInstance == null) {
+            return requestedGuestOsId;
+        }
+
+        String osDisplayName = sourceVMwareInstance.getOperatingSystem();
+        String osNameForHypervisor = sourceVMwareInstance.getOperatingSystemId();
+        String sourceHypervisorVersion = sourceVMwareInstance.getHostHypervisorVersion();
+
+        GuestOSHypervisor guestOSHypervisor = findVmwareGuestOsMappingByDisplayName(osDisplayName, sourceHypervisorVersion);
+        if (guestOSHypervisor == null) {
+            guestOSHypervisor = findVmwareGuestOsMappingByOsName(osNameForHypervisor, sourceHypervisorVersion);
+        }
+        if (guestOSHypervisor == null) {
+            guestOSHypervisor = findVmwareGuestOsMappingByDisplayName(osDisplayName, null);
+        }
+        if (guestOSHypervisor == null) {
+            guestOSHypervisor = findVmwareGuestOsMappingByOsName(osNameForHypervisor, null);
+        }
+        if (guestOSHypervisor != null) {
+            return guestOSHypervisor.getGuestOsId();
+        }
+
+        GuestOS guestOS = findVmwareGuestOsByDisplayName(osDisplayName);
+        return guestOS != null ? guestOS.getId() : null;
+    }
+
+    private GuestOSHypervisor findVmwareGuestOsMappingByDisplayName(String osDisplayName, String hypervisorVersion) {
+        List<GuestOS> guestOSes = listStrongMatchingGuestOses(osDisplayName);
+        for (GuestOS guestOS : guestOSes) {
+            GuestOSHypervisor guestOSHypervisor = guestOSHypervisorDao.findByOsIdAndHypervisor(
+                    guestOS.getId(), Hypervisor.HypervisorType.VMware.toString(), hypervisorVersion);
+            if (guestOSHypervisor != null) {
+                return guestOSHypervisor;
+            }
+        }
+        return null;
+    }
+
+    private GuestOSHypervisor findVmwareGuestOsMappingByOsName(String osNameForHypervisor, String hypervisorVersion) {
+        if (StringUtils.isBlank(osNameForHypervisor)) {
+            return null;
+        }
+        return guestOSHypervisorDao.findByOsNameAndHypervisor(
+                osNameForHypervisor, Hypervisor.HypervisorType.VMware.toString(), hypervisorVersion);
+    }
+
+    private GuestOS findVmwareGuestOsByDisplayName(String osDisplayName) {
+        List<GuestOS> guestOSes = listStrongMatchingGuestOses(osDisplayName);
+        return CollectionUtils.isNotEmpty(guestOSes) ? guestOSes.get(0) : null;
+    }
+
+    private List<GuestOS> listStrongMatchingGuestOses(String osDisplayName) {
+        List<GuestOS> guestOSes = new ArrayList<>();
+        if (StringUtils.isBlank(osDisplayName)) {
+            return guestOSes;
+        }
+
+        GuestOS exactMatch = guestOSDao.findOneByDisplayName(osDisplayName);
+        if (exactMatch != null) {
+            guestOSes.add(exactMatch);
+        }
+
+        List<? extends GuestOS> candidates = guestOSDao.listLikeDisplayName(osDisplayName);
+        if (CollectionUtils.isEmpty(candidates)) {
+            return guestOSes;
+        }
+
+        for (GuestOS candidate : candidates) {
+            if (candidate == null || exactMatch != null && candidate.getId() == exactMatch.getId()) {
+                continue;
+            }
+            if (isStrongGuestOsNameMatch(candidate.getDisplayName(), osDisplayName)) {
+                guestOSes.add(candidate);
+            }
+        }
+        return guestOSes;
+    }
+
+    private boolean isStrongGuestOsNameMatch(String candidateName, String sourceName) {
+        String candidate = normalizeGuestOsName(candidateName);
+        String source = normalizeGuestOsName(sourceName);
+        if (StringUtils.isAnyBlank(candidate, source)) {
+            return false;
+        }
+        if (candidate.equals(source)) {
+            return true;
+        }
+        if (Math.min(candidate.length(), source.length()) < 8) {
+            return false;
+        }
+        return candidate.contains(source) || source.contains(candidate);
+    }
+
+    private String normalizeGuestOsName(String name) {
+        return StringUtils.defaultString(name).toLowerCase().replaceAll("[^a-z0-9]+", " ").trim();
     }
 
     /**
