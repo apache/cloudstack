@@ -201,7 +201,7 @@ backup_running_vm() {
   timeout "$UNMOUNT_TIMEOUT" umount "$mount_point" 2>>"$logFile" || { log "WARNING: umount of $mount_point failed or timed out"; true; }
   rmdir "$mount_point" 2>>"$logFile" || { log "WARNING: rmdir of $mount_point failed"; true; }
  
-  echo -n "$backup_size"
+  echo "$backup_size"
 }
 
 backup_stopped_vm() {
