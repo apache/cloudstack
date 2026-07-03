@@ -360,6 +360,53 @@ print(len(files))
   rm -f $dest/backup.xml $dest/checkpoint.xml
   sync
 
+  # Free the parent bitmap now that the incremental has been written and rebased. The parent's
+  # delta is fully captured in this backup and BITMAP_NEW already tracks changes going forward, so
+  # the parent bitmap is dead weight — left in place it accumulates metadata and IO cost over a
+  # long chain. Remove it directly per-disk with block-dirty-bitmap-remove (a clean free) rather
+  # than checkpoint-delete, which would MERGE the parent's dirty bits into BITMAP_NEW and make the
+  # next incremental needlessly re-copy already-backed-up regions. Best-effort: a failure here does
+  # not fail the backup (the data is already safe) — the bitmap is simply reclaimed on a later run.
+  if [[ "$effective_mode" == "incremental" && -n "$BITMAP_PARENT" ]]; then
+    removed_from=0
+    parent_disk_count=0
+    while read -r node; do
+      [[ -z "$node" ]] && continue
+      parent_disk_count=$((parent_disk_count + 1))
+      if virsh -c qemu:///system qemu-monitor-command "$VM" \
+           "{\"execute\":\"block-dirty-bitmap-remove\",\"arguments\":{\"node\":\"$node\",\"name\":\"$BITMAP_PARENT\"}}" \
+           > /dev/null 2>>"$logFile"; then
+        removed_from=$((removed_from + 1))
+      else
+        log -e "cleanup: failed to remove parent bitmap $BITMAP_PARENT on node $node (non-fatal)"
+      fi
+    done < <(
+      virsh -c qemu:///system qemu-monitor-command "$VM" '{"execute":"query-block"}' 2>/dev/null | python3 -c '
+import sys, json
+target = sys.argv[1]
+try:
+    data = json.load(sys.stdin)
+except Exception:
+    sys.exit(0)
+seen = set()
+for dev in data.get("return", []) or []:
+    inserted = dev.get("inserted") or {}
+    node = inserted.get("node-name")
+    if not node or node in seen:
+        continue
+    if any((b or {}).get("name") == target for b in (inserted.get("dirty-bitmaps") or [])):
+        seen.add(node)
+        print(node)
+' "$BITMAP_PARENT" 2>/dev/null || true
+    )
+    if [[ "$parent_disk_count" -gt 0 && "$removed_from" -eq "$parent_disk_count" ]]; then
+      # Signal the wrapper (mirrors the INCREMENTAL_FALLBACK marker convention) so the management
+      # server can record that the parent bitmap was reclaimed. Printed before the size line below.
+      echo "PARENT_BITMAP_DELETED=true"
+      log "cleanup: removed parent bitmap $BITMAP_PARENT from $removed_from disk(s)"
+    fi
+  fi
+
   # Print statistics
   virsh -c qemu:///system domjobinfo $VM --completed
   du -sb $dest | cut -f1

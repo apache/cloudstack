@@ -281,6 +281,14 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             return ChainDecision.legacyFull();
         }
 
+        // Incremental backups rely on QEMU dirty bitmaps / libvirt checkpoints, which only exist
+        // on file-based qcow2 storage. Storage such as Ceph-RBD and Linstor cannot carry per-disk
+        // checkpoints, so a VM with any volume on such a pool must stay on the full-only (legacy)
+        // path — otherwise an incremental attempt would fail or regress those storages.
+        if (!allVolumesOnCheckpointCapableStorage(vm)) {
+            return ChainDecision.legacyFull();
+        }
+
         final String newBitmap = "backup-" + System.currentTimeMillis() / 1000L;
 
         // Stopped VMs cannot do incrementals — script will also fall back, but we make the
@@ -338,6 +346,38 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         }
         return ChainDecision.incremental(newBitmap, activeCheckpoint, parentPaths,
                 parentChainId, parentChainPosition + 1);
+    }
+
+    /**
+     * Incremental backups require QEMU dirty bitmaps / libvirt checkpoints, which are only
+     * possible on file-based qcow2 storage. Returns {@code true} only when EVERY volume of the
+     * VM sits on HOST-scope local, {@code SharedMountPoint}, or {@code NetworkFilesystem} (NFS)
+     * storage. Ceph-RBD, Linstor, and any other pool that cannot carry a per-disk checkpoint
+     * make this return {@code false} so the caller falls back to the legacy full-only path. A
+     * volume whose pool can no longer be resolved is treated as incapable (safe default).
+     */
+    protected boolean allVolumesOnCheckpointCapableStorage(VirtualMachine vm) {
+        List<VolumeVO> volumes = volumeDao.findByInstance(vm.getId());
+        if (volumes == null) {
+            return true;
+        }
+        for (VolumeVO volume : volumes) {
+            StoragePoolVO pool = primaryDataStoreDao.findById(volume.getPoolId());
+            if (pool == null) {
+                LOG.debug("VM {} volume {} has no resolvable storage pool — forcing legacy full",
+                        vm.getInstanceName(), volume.getUuid());
+                return false;
+            }
+            boolean checkpointCapable = ScopeType.HOST.equals(pool.getScope())
+                    || Storage.StoragePoolType.SharedMountPoint.equals(pool.getPoolType())
+                    || Storage.StoragePoolType.NetworkFilesystem.equals(pool.getPoolType());
+            if (!checkpointCapable) {
+                LOG.debug("VM {} volume {} is on {} (scope {}) which cannot carry checkpoints — forcing legacy full",
+                        vm.getInstanceName(), volume.getUuid(), pool.getPoolType(), pool.getScope());
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -574,6 +614,10 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             if (answer.getIncrementalFallback()) {
                 effective = ChainDecision.fullStart(decision.bitmapNew);
                 backupVO.setType("FULL");
+            }
+            if (answer.getParentBitmapDeleted()) {
+                logger.debug("VM {} incremental backup reclaimed its now-redundant parent bitmap on the host",
+                        vm.getInstanceName());
             }
             List<Volume> volumes = new ArrayList<>(volumeDao.findByInstance(vm.getId()));
             backupVO.setBackedUpVolumes(backupManager.createVolumeInfoFromVolumes(volumes));

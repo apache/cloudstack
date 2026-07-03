@@ -47,6 +47,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
@@ -446,6 +447,79 @@ public class NASBackupProviderTest {
         Assert.assertEquals(NASBackupChainKeys.TYPE_FULL, decision.mode);
         Assert.assertNull(decision.bitmapParent);
         Assert.assertEquals(0, decision.chainPosition);
+    }
+
+    // -- incremental storage-capability guard (Ceph-RBD / Linstor stay on legacy full) ----
+
+    /**
+     * Incremental checkpoints are only possible on file-based qcow2 storage. A VM whose every
+     * volume sits on NFS / HOST-scope local / SharedMountPoint is checkpoint-capable.
+     */
+    @Test
+    public void allVolumesOnCheckpointCapableStorageTrueForNfsHostAndSharedMount() {
+        Long vmId = 55L;
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        Mockito.when(vm.getId()).thenReturn(vmId);
+
+        VolumeVO nfsVol = mock(VolumeVO.class);
+        Mockito.when(nfsVol.getPoolId()).thenReturn(1L);
+        VolumeVO hostVol = mock(VolumeVO.class);
+        Mockito.when(hostVol.getPoolId()).thenReturn(2L);
+        VolumeVO smpVol = mock(VolumeVO.class);
+        Mockito.when(smpVol.getPoolId()).thenReturn(3L);
+        Mockito.when(volumeDao.findByInstance(vmId)).thenReturn(List.of(nfsVol, hostVol, smpVol));
+
+        StoragePoolVO nfs = mock(StoragePoolVO.class);
+        Mockito.when(nfs.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+        StoragePoolVO host = mock(StoragePoolVO.class);
+        Mockito.when(host.getScope()).thenReturn(ScopeType.HOST);
+        StoragePoolVO smp = mock(StoragePoolVO.class);
+        Mockito.when(smp.getPoolType()).thenReturn(Storage.StoragePoolType.SharedMountPoint);
+        Mockito.when(storagePoolDao.findById(1L)).thenReturn(nfs);
+        Mockito.when(storagePoolDao.findById(2L)).thenReturn(host);
+        Mockito.when(storagePoolDao.findById(3L)).thenReturn(smp);
+
+        Assert.assertTrue(nasBackupProvider.allVolumesOnCheckpointCapableStorage(vm));
+    }
+
+    /**
+     * A single volume on Ceph-RBD (or any pool that cannot carry a per-disk checkpoint) forces
+     * the whole VM onto the legacy full-only path — avoids regressing RBD/Linstor storages.
+     */
+    @Test
+    public void allVolumesOnCheckpointCapableStorageFalseWhenAnyVolumeOnRbd() {
+        Long vmId = 56L;
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        Mockito.when(vm.getId()).thenReturn(vmId);
+
+        VolumeVO nfsVol = mock(VolumeVO.class);
+        Mockito.when(nfsVol.getPoolId()).thenReturn(1L);
+        VolumeVO rbdVol = mock(VolumeVO.class);
+        Mockito.when(rbdVol.getPoolId()).thenReturn(9L);
+        Mockito.when(volumeDao.findByInstance(vmId)).thenReturn(List.of(nfsVol, rbdVol));
+
+        StoragePoolVO nfs = mock(StoragePoolVO.class);
+        Mockito.when(nfs.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+        StoragePoolVO rbd = mock(StoragePoolVO.class);
+        Mockito.when(rbd.getPoolType()).thenReturn(Storage.StoragePoolType.RBD);
+        Mockito.when(storagePoolDao.findById(1L)).thenReturn(nfs);
+        Mockito.when(storagePoolDao.findById(9L)).thenReturn(rbd);
+
+        Assert.assertFalse(nasBackupProvider.allVolumesOnCheckpointCapableStorage(vm));
+    }
+
+    /** A volume whose storage pool can no longer be resolved is treated as incapable (safe). */
+    @Test
+    public void allVolumesOnCheckpointCapableStorageFalseWhenPoolUnresolvable() {
+        Long vmId = 57L;
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        Mockito.when(vm.getId()).thenReturn(vmId);
+        VolumeVO vol = mock(VolumeVO.class);
+        Mockito.when(vol.getPoolId()).thenReturn(1L);
+        Mockito.when(volumeDao.findByInstance(vmId)).thenReturn(List.of(vol));
+        Mockito.when(storagePoolDao.findById(1L)).thenReturn(null);
+
+        Assert.assertFalse(nasBackupProvider.allVolumesOnCheckpointCapableStorage(vm));
     }
 
     // -- restore clears active_checkpoint_id ---------------------------------------------
