@@ -52,7 +52,6 @@ public class ProjectAccountDaoImpl extends GenericDaoBase<ProjectAccountVO, Long
         ProjectAccountSearch = createSearchBuilder();
         ProjectAccountSearch.and("projectId", ProjectAccountSearch.entity().getProjectId(), SearchCriteria.Op.EQ);
         ProjectAccountSearch.and("accountId", ProjectAccountSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-        ProjectAccountSearch.and("userId", ProjectAccountSearch.entity().getUserId(), Op.NULL);
         ProjectAccountSearch.done();
 
 
