@@ -142,20 +142,21 @@ public class CallContext {
     }
 
     public boolean isCallingAccountRootAdmin() {
-        if (isAccountRootAdmin == null) {
-            if (account == null && s_entityMgr == null) {
-                return false;
-            }
-            Account caller = getCallingAccount();
-            AccountService accountService;
-            try {
-                accountService = ComponentContext.getDelegateComponentOfType(AccountService.class);
-            } catch (NoSuchBeanDefinitionException e) {
-                LOGGER.warn("Falling back to account type check for isRootAdmin for account ID: {} as no AccountService bean found: {}", accountId, e.getMessage());
-                return caller != null && caller.getType() == Account.Type.ADMIN;
-            }
-            isAccountRootAdmin = accountService.isRootAdmin(caller);
+        if (isAccountRootAdmin != null) {
+            return isAccountRootAdmin;
         }
+        if (account == null && s_entityMgr == null) {
+            return false;
+        }
+        Account caller = getCallingAccount();
+        AccountService accountService;
+        try {
+            accountService = ComponentContext.getDelegateComponentOfType(AccountService.class);
+        } catch (NoSuchBeanDefinitionException e) {
+            LOGGER.warn("Falling back to account type check for isRootAdmin for account ID: {} as no AccountService bean found: {}", accountId, e.getMessage());
+            return caller != null && caller.getType() == Account.Type.ADMIN;
+        }
+        isAccountRootAdmin = accountService.isRootAdmin(caller);
         return isAccountRootAdmin;
     }
 

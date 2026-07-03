@@ -7546,7 +7546,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             logger.error("Cannot deploy VM: {} to host : {} due to tag mismatch. host tags: {}, " +
                             "strict host tags: {} serviceOffering tags: {}, template tags: {}, missing tags: {}",
                     vm, host, host.getHostTags(), UserVmManager.getStrictHostTags(), serviceOffering.getHostTag(), template.getTemplateTag(), missingTags);
-            throw Exceptions.invalidParameterValueException("vm.migrate.host.tags.mismatch", Map.of("host", host));
+            throw Exceptions.invalidParameterValueException("vm.deploy.host.tags.mismatch", Map.of("host", host));
         }
     }
 
@@ -9161,7 +9161,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 _itMgr.stop(vm.getUuid());
             } catch (ResourceUnavailableException e) {
                 logger.debug("Stop vm {} failed", vm, e);
-                throw Exceptions.cloudRuntimeException("vm.restore.stop.failed");
+                throw Exceptions.cloudRuntimeException("vm.restore.stop.failed", Map.of("instance", vm));
             }
         }
 
@@ -9290,7 +9290,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
             } catch (Exception e) {
                 logger.debug("Unable to start VM " + vm.getUuid(), e);
-                throw Exceptions.cloudRuntimeException("vm.restore.start.failed");
+                throw Exceptions.cloudRuntimeException("vm.restore.start.failed", Map.of("instance", vm));
             }
         }
 

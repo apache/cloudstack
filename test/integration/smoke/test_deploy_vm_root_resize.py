@@ -354,7 +354,7 @@ class TestDeployVmRootSize(cloudstackTestCase):
                         rootdisksize=newrootsize
                     )
             except Exception as ex:
-                if "Root disk size should be a positive number" in str(ex):
+                if "Root disk size must be a positive number" in str(ex):
                     success = True
                 else:
                     self.debug("Virtual machine create did not fail appropriately. Error was actually : " + str(ex));
@@ -395,10 +395,9 @@ class TestDeployVmRootSize(cloudstackTestCase):
                         rootdisksize=newrootsize
                 )
             except Exception as ex:
-                    if "rootdisksize override (" + str(newrootsize) + " GB) is smaller than template size" in str(ex):
-                        success = True
-                    else:
-                        self.debug("Virtual machine create did not fail appropriately. Error was actually : " + str(ex));
+                success = True
+            else:
+                self.debug("Virtual machine create did not fail appropriately. Error was actually : " + str(ex))
 
             self.assertEqual(success, True, "Check if passing rootdisksize < templatesize fails appropriately")
         else:

@@ -24,6 +24,7 @@ import java.util.function.Function;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.context.ResponseMessageResolver;
+import org.apache.commons.collections.MapUtils;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
@@ -74,7 +75,7 @@ public final class Exceptions {
                                                         final String message,
                                                         final String errorKey,
                                                         final Map<String, Object> metadata) {
-        if (StringUtils.isBlank(errorKey)) {
+        if (StringUtils.isNotBlank(errorKey)) {
             return serverApiException(errorCode, errorKey, metadata);
         }
 
@@ -121,5 +122,12 @@ public final class Exceptions {
         }
         ex.setMessageKey(data.second());
         ex.setMetadata(data.third());
+    }
+
+    public static void normalizeMetadata(CloudRuntimeException cre) {
+        if (MapUtils.isEmpty(cre.getMetadata())) {
+            return;
+        }
+        cre.setMetadata(ResponseMessageResolver.convertToStringMap(cre.getMetadata()));
     }
 }

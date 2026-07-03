@@ -136,7 +136,8 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
             response.setErrorCode(errorCode);
             response.setErrorText(errorMsg);
             if (e instanceof CloudRuntimeException) {
-                ResponseMessageResolver.updateExceptionResponse(response, (CloudRuntimeException) e);
+                ResponseMessageResolver.updateExceptionResponse(response, (CloudRuntimeException)e,
+                        job.getAccountId(), job.getUserId());
             }
             response.setResponseName((cmdObj == null) ? "unknowncommandresponse" : cmdObj.getCommandName());
 

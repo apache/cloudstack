@@ -23,6 +23,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -39,7 +40,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.cloud.user.Account;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -55,11 +55,11 @@ public class ResponseMessageResolver {
     protected static final boolean USE_RESOURCE_TO_STRING_IN_METADATA = false;
     protected static final boolean INCLUDE_RESOURCE_ID_FOR_ADMINS_IN_METADATA = true;
 
-    private static final Pattern VARIABLE_PATTERN = Pattern.compile("\\{\\{\\s*([A-Za-z0-9_]+)\\s*\\}\\}");
+    private static final Pattern VARIABLE_PATTERN = Pattern.compile("\\{\\{\\s*([A-Za-z0-9_]+)\\s*}}");
+    private static final List<String> RESOURCE_NAME_GETTERS =
+            Arrays.asList("getDisplayText", "getDisplayName", "getName");
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
-
-    private static Boolean isDevel = null;
 
     // volatile for safe publication
     private static volatile Map<String, String> templates =
@@ -94,23 +94,32 @@ public class ResponseMessageResolver {
         return variables;
     }
 
-    protected static Map<String, Object> getCombinedMetadataFromErrorTemplate(String template, Map<String, Object> metadata) {
+    protected static Map<String, Object> getCombinedMetadataFromErrorTemplate(String template,
+                                                                              Map<String, Object> metadata) {
+        return getCombinedMetadataFromErrorTemplate(template, metadata, false);
+    }
+
+    protected static Map<String, Object> getCombinedMetadataFromErrorTemplate(String template,
+                                                                              Map<String, Object> metadata,
+                                                                              boolean onlyForTemplateVariables) {
         List<String> variableNames = getVariableNamesInErrorKey(template);
         if (variableNames.isEmpty()) {
-            return metadata;
+            return onlyForTemplateVariables ? Collections.emptyMap() : metadata;
         }
         Map<String, Object> contextMetadata = CallContext.current().getErrorContextParameters();
-        if (MapUtils.isEmpty(contextMetadata)) {
-            return metadata;
-        }
         Map<String, Object> combinedMetadata = new LinkedHashMap<>();
-        for (String varName : variableNames) {
-            if (contextMetadata.containsKey(varName)) {
-                combinedMetadata.put(varName, contextMetadata.get(varName));
+        if (MapUtils.isNotEmpty(contextMetadata)) {
+            for (String varName : variableNames) {
+                if (contextMetadata.containsKey(varName)) {
+                    combinedMetadata.put(varName, contextMetadata.get(varName));
+                }
             }
         }
         if (MapUtils.isNotEmpty(metadata)) {
             combinedMetadata.putAll(metadata);
+        }
+        if (onlyForTemplateVariables) {
+            combinedMetadata.entrySet().removeIf(x -> !variableNames.contains(x.getKey()));
         }
         return combinedMetadata;
     }
@@ -130,25 +139,33 @@ public class ResponseMessageResolver {
     }
 
     protected static boolean useResourceToStringInMetadata() {
-        Account account = CallContext.current().getCallingAccount();
-        if (account != null && "testadmin".equals(account.getName())) {
-            return true;
-        }
+        // ToDo: Add a global config
         return USE_RESOURCE_TO_STRING_IN_METADATA;
     }
 
     protected static Map<String, String> getStringMap(Map<String, Object> metadata) {
+        boolean isAdmin = CallContext.current().isCallingAccountRootAdmin();
+        return getStringMap(metadata, isAdmin);
+    }
+
+    protected static Map<String, String> getStringMap(Map<String, Object> metadata, boolean isAdmin) {
         Map<String, String> stringMap = new LinkedHashMap<>();
-        if (MapUtils.isNotEmpty(metadata)) {
-            for (Map.Entry<String, Object> entry : metadata.entrySet()) {
-                Object value = entry.getValue();
-                stringMap.put(entry.getKey(),
-                        useResourceToStringInMetadata() ?
-                                getMetadataObjectStringValueAlt(value) :
-                                getMetadataObjectStringValue(value));
-            }
+        if (MapUtils.isEmpty(metadata)) {
+            return stringMap;
+        }
+        for (Map.Entry<String, Object> entry : metadata.entrySet()) {
+            Object value = entry.getValue();
+            stringMap.put(entry.getKey(),
+                    useResourceToStringInMetadata() ?
+                            getMetadataObjectStringValueAlt(value, isAdmin) :
+                            getMetadataObjectStringValue(value, isAdmin));
         }
         return stringMap;
+    }
+
+    public static Map<String, Object> convertToStringMap(Map<String, Object> metadata) {
+        Map<String, String> stringMap = getStringMap(metadata, false);
+        return new LinkedHashMap<>(stringMap);
     }
 
 
@@ -175,10 +192,11 @@ public class ResponseMessageResolver {
      * absence of the corresponding value.
      *
      * @param obj metadata object
+     * @param isAdmin true when the caller is a root admin and admin-only details may be included
      * @return formatted metadata string suitable for inclusion in error messages, or {@code null}
      *         if {@code obj} is {@code null}
      */
-    protected static String getMetadataObjectStringValue(Object obj) {
+    protected static String getMetadataObjectStringValue(Object obj, boolean isAdmin) {
         if (obj == null) {
             return null;
         }
@@ -187,7 +205,7 @@ public class ResponseMessageResolver {
             uuid = ((Identity) obj).getUuid();
         }
         String name = null;
-        for (String getter : new String[]{"getDisplayText", "getDisplayName", "getName"}) {
+        for (String getter : RESOURCE_NAME_GETTERS) {
             name = invokeStringGetter(obj, getter);
             if (name != null) {
                 break;
@@ -204,7 +222,7 @@ public class ResponseMessageResolver {
         sb.append(name);
 
         Long id = null;
-        if (obj instanceof InternalIdentity && CallContext.current().isCallingAccountRootAdmin()) {
+        if (obj instanceof InternalIdentity && isAdmin) {
             id = ((InternalIdentity) obj).getId();
         }
 
@@ -234,29 +252,30 @@ public class ResponseMessageResolver {
      *   <li>If {@code obj} is {@code null}, returns {@code null}.</li>
      *   <li>First attempts to use {@code obj.toString()}. If the result is non-empty, returns it.</li>
      *   <li>For non-root admins, removes any "id: DBID" patterns from the toString() result.</li>
-     *   <li>If {@code obj.toString()} is empty or null (after filtering), falls back to {@link #getMetadataObjectStringValue(Object)},
+     *   <li>If {@code obj.toString()} is empty or null (after filtering), falls back to {@link #getMetadataObjectStringValue(Object, boolean)},
      *       which uses reflection to find display names and format metadata with UUID/ID info.</li>
      * </ul>
      *
      * @param obj metadata object
+     * @param isAdmin true when the caller is a root admin and admin-only details may be included
      * @return formatted metadata string suitable for inclusion in error messages, or {@code null}
      *         if {@code obj} is {@code null}
      */
-    protected static String getMetadataObjectStringValueAlt(Object obj) {
+    protected static String getMetadataObjectStringValueAlt(Object obj, boolean isAdmin) {
         if (obj == null) {
             return null;
         }
         String result = obj.toString();
         if (StringUtils.isNotEmpty(result)) {
             // Remove id: DBID pattern for non-root admins
-            if (!CallContext.current().isCallingAccountRootAdmin()) {
+            if (!isAdmin) {
                 result = result.replaceAll("\\bid:\\s*\\d+", "").trim();
             }
             if (StringUtils.isNotEmpty(result)) {
                 return result;
             }
         }
-        return getMetadataObjectStringValue(obj);
+        return getMetadataObjectStringValue(obj, isAdmin);
     }
 
     protected static String invokeStringGetter(Object obj, String methodName) {
@@ -345,6 +364,16 @@ public class ResponseMessageResolver {
         return new Ternary<>(expand(template, getStringMap(combinedMetadata)), errorKey, combinedMetadata);
     }
 
+    public static void updateExceptionResponse(ExceptionResponse response, CloudRuntimeException cre,
+                                               long accountId, long userId) {
+        CallContext.register(userId, accountId);
+        try {
+            updateExceptionResponse(response, cre);
+        } finally {
+            CallContext.unregister();
+        }
+    }
+
     public static void updateExceptionResponse(ExceptionResponse response, CloudRuntimeException cre) {
         String key = cre.getMessageKey();
         Map<String, Object> map = cre.getMetadata();
@@ -368,7 +397,8 @@ public class ResponseMessageResolver {
             response.setErrorMetadata(getStringMap(map));
             return;
         }
-        Map<String, Object> combinedMetadata = getCombinedMetadataFromErrorTemplate(template, map);
+        Map<String, Object> combinedMetadata = getCombinedMetadataFromErrorTemplate(template, map,
+                true);
         Map<String, String> stringMap = getStringMap(combinedMetadata);
         response.setErrorText(expand(template,  stringMap));
         response.setErrorMetadata(stringMap);

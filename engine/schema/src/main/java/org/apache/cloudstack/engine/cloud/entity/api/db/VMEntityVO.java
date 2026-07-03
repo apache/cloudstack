@@ -172,7 +172,7 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
     private String hostname = null;
 
     @Column(name = "display_name")
-    private String displayname = null;
+    private String displayName = null;
 
     @Transient
     List<String> networkIds;
@@ -524,12 +524,12 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
         this.hostname = hostname;
     }
 
-    public String getDisplayname() {
-        return displayname;
+    public String getDisplayName() {
+        return displayName;
     }
 
-    public void setDisplayname(String displayname) {
-        this.displayname = displayname;
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
 
     public List<String> getNetworkIds() {

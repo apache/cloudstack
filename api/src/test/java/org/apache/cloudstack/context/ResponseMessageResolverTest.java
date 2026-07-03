@@ -208,14 +208,14 @@ public class ResponseMessageResolverTest {
 
     @Test
     public void getMetadataObjectStringValue_shouldReturnNullWhenObjectIsNull() {
-        Assert.assertNull(ResponseMessageResolver.getMetadataObjectStringValue(null));
+        Assert.assertNull(ResponseMessageResolver.getMetadataObjectStringValue(null, false));
     }
 
     @Test
     public void getMetadataObjectStringValue_shouldReturnUuidWhenNameIsUnavailable() {
         Identity identityMock = Mockito.mock(Identity.class);
         when(identityMock.getUuid()).thenReturn("uuid-1234");
-        Assert.assertEquals("uuid-1234", ResponseMessageResolver.getMetadataObjectStringValue(identityMock));
+        Assert.assertEquals("uuid-1234", ResponseMessageResolver.getMetadataObjectStringValue(identityMock, false));
     }
 
     @Test
@@ -223,34 +223,35 @@ public class ResponseMessageResolverTest {
         DataCenter identityMock = Mockito.mock(DataCenter.class);
         when(identityMock.getUuid()).thenReturn("uuid-1234");
         when(identityMock.getName()).thenReturn("TestName");
-        Assert.assertEquals("TestName (ID: uuid-1234)", ResponseMessageResolver.getMetadataObjectStringValue(identityMock));
+        Assert.assertEquals("TestName (ID: uuid-1234)", ResponseMessageResolver.getMetadataObjectStringValue(identityMock, false));
     }
 
     @Test
     public void getMetadataObjectStringValue_shouldIncludeIdAndUuidForRootAdmin() {
-        DataCenter internalIdentityMock = Mockito.mock(DataCenter.class);
-        when(internalIdentityMock.getUuid()).thenReturn("uuid-5678");
+        DataCenter dc = Mockito.mock(DataCenter.class);
+        when(dc.getUuid()).thenReturn("uuid-5678");
         if (ResponseMessageResolver.INCLUDE_RESOURCE_ID_FOR_ADMINS_IN_METADATA) {
-            when(internalIdentityMock.getId()).thenReturn(42L);
+            when(dc.getId()).thenReturn(42L);
         }
-        when(internalIdentityMock.getName()).thenReturn("AdminName");
-        when(CallContext.current().isCallingAccountRootAdmin()).thenReturn(true);
-        String expected = String.format("AdminName (%sUUID: uuid-5678)", ResponseMessageResolver.INCLUDE_RESOURCE_ID_FOR_ADMINS_IN_METADATA ? "ID: 42, " : "");
-        Assert.assertEquals(expected, ResponseMessageResolver.getMetadataObjectStringValue(internalIdentityMock));
+        when(dc.getName()).thenReturn("Zone");
+        String expected = ResponseMessageResolver.INCLUDE_RESOURCE_ID_FOR_ADMINS_IN_METADATA ?
+                "Zone (ID: 42, UUID: uuid-5678)" :
+                "Zone (ID: uuid-5678)";
+        Assert.assertEquals(expected, ResponseMessageResolver.getMetadataObjectStringValue(dc, true));
     }
 
     @Test
     public void getMetadataObjectStringValue_shouldFallbackToToStringWhenNameAndUuidAreUnavailable() {
         Object obj = new Object();
-        Assert.assertEquals(obj.toString(), ResponseMessageResolver.getMetadataObjectStringValue(obj));
+        Assert.assertEquals(obj.toString(), ResponseMessageResolver.getMetadataObjectStringValue(obj, false));
     }
 
     @Test
     public void getMetadataObjectStringValue_shouldReturnNameOnlyForNonRootAdmin() {
-        DataCenter internalIdentityMock = Mockito.mock(DataCenter.class);
-        when(internalIdentityMock.getName()).thenReturn("UserName");
-        when(CallContext.current().isCallingAccountRootAdmin()).thenReturn(false);
-        Assert.assertEquals("UserName", ResponseMessageResolver.getMetadataObjectStringValue(internalIdentityMock));
+        DataCenter dc = Mockito.mock(DataCenter.class);
+        when(dc.getUuid()).thenReturn("uuid-5678");
+        when(dc.getName()).thenReturn("DC");
+        Assert.assertEquals("DC (ID: uuid-5678)", ResponseMessageResolver.getMetadataObjectStringValue(dc, false));
     }
 
     @Test
@@ -443,43 +444,39 @@ public class ResponseMessageResolverTest {
 
     @Test
     public void getMetadataObjectStringValueAlt_shouldReturnNullWhenObjectIsNull() {
-        Assert.assertNull(ResponseMessageResolver.getMetadataObjectStringValueAlt(null));
+        Assert.assertNull(ResponseMessageResolver.getMetadataObjectStringValueAlt(null, false));
     }
 
     @Test
     public void getMetadataObjectStringValueAlt_shouldReturnToStringWhenNonEmptyForRootAdmin() {
-        when(callContextMock.isCallingAccountRootAdmin()).thenReturn(true);
         Object obj = new Object() {
             @Override public String toString() { return "SomeObject id: 42"; }
         };
-        Assert.assertEquals("SomeObject id: 42", ResponseMessageResolver.getMetadataObjectStringValueAlt(obj));
+        Assert.assertEquals("SomeObject id: 42", ResponseMessageResolver.getMetadataObjectStringValueAlt(obj, true));
     }
 
     @Test
     public void getMetadataObjectStringValueAlt_shouldStripIdPatternForNonRootAdmin() {
-        when(callContextMock.isCallingAccountRootAdmin()).thenReturn(false);
         Object obj = new Object() {
             @Override public String toString() { return "SomeObject id: 42"; }
         };
-        Assert.assertEquals("SomeObject", ResponseMessageResolver.getMetadataObjectStringValueAlt(obj));
+        Assert.assertEquals("SomeObject", ResponseMessageResolver.getMetadataObjectStringValueAlt(obj, false));
     }
 
     @Test
     public void getMetadataObjectStringValueAlt_shouldStripMultipleIdPatternsForNonRootAdmin() {
-        when(callContextMock.isCallingAccountRootAdmin()).thenReturn(false);
         Object obj = new Object() {
             @Override public String toString() { return "id: 1 SomeObject id: 42"; }
         };
-        Assert.assertEquals("SomeObject", ResponseMessageResolver.getMetadataObjectStringValueAlt(obj));
+        Assert.assertEquals("SomeObject", ResponseMessageResolver.getMetadataObjectStringValueAlt(obj, false));
     }
 
     @Test
     public void getMetadataObjectStringValueAlt_shouldReturnToStringUnchangedWhenNoIdPatternForNonRootAdmin() {
-        when(callContextMock.isCallingAccountRootAdmin()).thenReturn(false);
         Object obj = new Object() {
             @Override public String toString() { return "SomeObjectWithoutId"; }
         };
-        Assert.assertEquals("SomeObjectWithoutId", ResponseMessageResolver.getMetadataObjectStringValueAlt(obj));
+        Assert.assertEquals("SomeObjectWithoutId", ResponseMessageResolver.getMetadataObjectStringValueAlt(obj, false));
     }
 
     @Test
@@ -487,25 +484,23 @@ public class ResponseMessageResolverTest {
         Identity identityMock = Mockito.mock(Identity.class);
         when(identityMock.toString()).thenReturn("");
         when(identityMock.getUuid()).thenReturn("uuid-fallback");
-        Assert.assertEquals("uuid-fallback", ResponseMessageResolver.getMetadataObjectStringValueAlt(identityMock));
+        Assert.assertEquals("uuid-fallback", ResponseMessageResolver.getMetadataObjectStringValueAlt(identityMock, false));
     }
 
     @Test
     public void getMetadataObjectStringValueAlt_shouldFallbackWhenToStringBecomesBlankAfterStrippingIdForNonRootAdmin() {
-        when(callContextMock.isCallingAccountRootAdmin()).thenReturn(false);
         DataCenter dataCenterMock = Mockito.mock(DataCenter.class);
         when(dataCenterMock.toString()).thenReturn("id: 99");
         when(dataCenterMock.getName()).thenReturn("FallbackName");
-        Assert.assertEquals("FallbackName", ResponseMessageResolver.getMetadataObjectStringValueAlt(dataCenterMock));
+        Assert.assertEquals("FallbackName", ResponseMessageResolver.getMetadataObjectStringValueAlt(dataCenterMock, false));
     }
 
     @Test
     public void getMetadataObjectStringValueAlt_shouldPreserveIdInToStringForRootAdmin() {
-        when(callContextMock.isCallingAccountRootAdmin()).thenReturn(true);
         Object obj = new Object() {
             @Override public String toString() { return "Zone [id: 7, name: TestZone]"; }
         };
-        Assert.assertEquals("Zone [id: 7, name: TestZone]", ResponseMessageResolver.getMetadataObjectStringValueAlt(obj));
+        Assert.assertEquals("Zone [id: 7, name: TestZone]", ResponseMessageResolver.getMetadataObjectStringValueAlt(obj, true));
     }
 
     @Test
