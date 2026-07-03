@@ -524,6 +524,7 @@
 "label.capacitybytes": "Capacity bytes",
 "label.capacityiops": "IOPS total",
 "label.category": "Category",
+"label.categoryid": "Category",
 "label.categoryname": "Category name",
 "label.certchain": "Chain",
 "label.certificate": "Certificate",

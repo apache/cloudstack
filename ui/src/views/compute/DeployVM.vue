@@ -2315,6 +2315,8 @@ export default {
       }
       if (categoryId && categoryId !== '-1') {
         params.categoryid = categoryId
+      } else {
+        this.deleteFrom(this.params.serviceOfferings.options, ['categoryid'])
       }
       this.handleSearchFilter('serviceOfferings', params)
     },
