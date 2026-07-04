@@ -18,8 +18,7 @@ package com.cloud.api;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
-import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
+
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -460,7 +459,7 @@ import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
-import sun.security.x509.X509CertImpl;
+
 
 public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
 
@@ -5440,18 +5439,18 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         return response;
     }
 
-    protected void handleCertificateResponse(String certStr, DirectDownloadCertificateResponse response) {
+protected void handleCertificateResponse(String certStr, DirectDownloadCertificateResponse response) {
         try {
-            Certificate cert = CertificateHelper.buildCertificate(certStr);
-            if (cert instanceof X509CertImpl) {
-                X509CertImpl certificate = (X509CertImpl) cert;
+            java.security.cert.Certificate cert = CertificateHelper.buildCertificate(certStr);
+            if (cert instanceof java.security.cert.X509Certificate) {
+                java.security.cert.X509Certificate certificate = (java.security.cert.X509Certificate) cert;
                 response.setVersion(String.valueOf(certificate.getVersion()));
                 response.setSubject(certificate.getSubjectDN().toString());
                 response.setIssuer(certificate.getIssuerDN().toString());
-                response.setSerialNum(certificate.getSerialNumberObject().toString());
+                response.setSerialNum(certificate.getSerialNumber().toString());
                 response.setValidity(String.format("From: [%s] - To: [%s]", certificate.getNotBefore(), certificate.getNotAfter()));
             }
-        } catch (CertificateException e) {
+        } catch (java.security.cert.CertificateException e) {
             logger.error("Error parsing direct download certificate: " + certStr, e);
         }
     }
