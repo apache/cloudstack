@@ -25,6 +25,8 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 /**
  * Thin wrapper around the {@code rbd} CLI to apply native librbd LUKS encryption to an
@@ -39,6 +41,7 @@ public class RbdEncryption {
     protected static Logger LOGGER = LogManager.getLogger(RbdEncryption.class);
 
     protected String commandPath = "rbd";
+    protected String qemuImgPath = "qemu-img";
 
     public RbdEncryption() {}
 
@@ -135,6 +138,74 @@ public class RbdEncryption {
             LOGGER.debug("Resized encrypted RBD image {} to {} MiB", imageSpec, sizeMiB);
         } catch (IOException ex) {
             throw new CloudRuntimeException(String.format("Failed to resize encrypted RBD image %s", imageSpec), ex);
+        }
+    }
+
+    /**
+     * Import a template into an already-created, already-LUKS-formatted RBD image by writing it
+     * THROUGH the librbd encryption layer with {@code qemu-img convert -n} (so the data lands
+     * encrypted). This is how encrypted root disks are populated: we never clone-then-format a
+     * plaintext template (that leaves the inherited OS data unreadable) — instead we format an
+     * empty image and convert the template into it.
+     *
+     * Exactly one source must be given: an RBD image ({@code srcRbdPool}+{@code srcRbdImage}) or a
+     * local file ({@code srcFilePath}[+{@code srcFileFormat}]). cephx auth is provided to qemu-img
+     * via a temporary ceph.conf + keyring (deleted on return).
+     */
+    public void importTemplate(String srcRbdPool, String srcRbdImage,
+                               String srcFilePath, String srcFileFormat,
+                               String monHost, int monPort, String authUser, String authSecret,
+                               String cephPool, String destImage, byte[] passphrase, CryptSetup.LuksType luksType) {
+        final String imageSpec = cephPool + "/" + destImage;
+        final String monSpec = monPort > 0 ? monHost + ":" + monPort : monHost;
+        Path conf = null;
+        Path keyring = null;
+        try (KeyFile passFile = new KeyFile(passphrase)) {
+            keyring = Files.createTempFile("cs-ceph-", ".keyring"); // 0600 by default on POSIX
+            Files.writeString(keyring, "[client." + authUser + "]\n\tkey = " + authSecret + "\n");
+            conf = Files.createTempFile("cs-ceph-", ".conf");
+            Files.writeString(conf, "[global]\nmon_host = " + monSpec + "\nkeyring = " + keyring + "\n");
+
+            final Script q = new Script(qemuImgPath);
+            q.add("convert");
+            q.add("-n"); // target already exists (pre-created + luks-formatted)
+            if (srcRbdImage != null) {
+                q.add("--image-opts");
+                q.add("driver=rbd,pool=" + srcRbdPool + ",image=" + srcRbdImage + ",conf=" + conf + ",user=" + authUser);
+            } else {
+                if (srcFileFormat != null) {
+                    q.add("-f");
+                    q.add(srcFileFormat.toLowerCase());
+                }
+                q.add(srcFilePath);
+            }
+            q.add("--object");
+            q.add("secret,id=luks0,file=" + passFile.toString());
+            q.add("--target-image-opts");
+            q.add("driver=rbd,pool=" + cephPool + ",image=" + destImage + ",conf=" + conf + ",user=" + authUser
+                    + ",encrypt.format=" + luksType + ",encrypt.key-secret=luks0");
+
+            final String result = q.execute();
+            if (result != null) {
+                throw new CloudRuntimeException(String.format("Failed to import template into encrypted RBD image %s: %s", imageSpec, result));
+            }
+            LOGGER.debug("Imported template into encrypted RBD image {}", imageSpec);
+        } catch (IOException ex) {
+            throw new CloudRuntimeException(String.format("Failed to import template into encrypted RBD image %s", imageSpec), ex);
+        } finally {
+            deleteQuietly(conf);
+            deleteQuietly(keyring);
+        }
+    }
+
+    private static void deleteQuietly(Path p) {
+        if (p == null) {
+            return;
+        }
+        try {
+            Files.deleteIfExists(p);
+        } catch (IOException ignored) {
+            // best-effort cleanup of the temporary ceph auth files
         }
     }
 
