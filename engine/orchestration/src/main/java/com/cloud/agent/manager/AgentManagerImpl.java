@@ -808,8 +808,16 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 String vddkSupport = detailsMap.get(Host.HOST_VDDK_SUPPORT);
                 String vddkLibDir = detailsMap.get(Host.HOST_VDDK_LIB_DIR);
                 String vddkVersion = detailsMap.get(Host.HOST_VDDK_VERSION);
+                String vmwareCbtSupport = detailsMap.get(Host.HOST_VMWARE_CBT_SUPPORT);
+                String vmwareCbtInPlaceFinalizationSupport = detailsMap.get(Host.HOST_VMWARE_CBT_IN_PLACE_FINALIZATION_SUPPORT);
+                String vmwareCbtRbdSupport = detailsMap.get(Host.HOST_VMWARE_CBT_RBD_SUPPORT);
+                String qemuImgVersion = detailsMap.get(Host.HOST_QEMU_IMG_VERSION);
+                String qemuNbdVersion = detailsMap.get(Host.HOST_QEMU_NBD_VERSION);
+                String qemuIoVersion = detailsMap.get(Host.HOST_QEMU_IO_VERSION);
+                String virtV2vInPlaceVersion = detailsMap.get(Host.HOST_VIRTV2V_IN_PLACE_VERSION);
                 logger.debug("Got HOST_UEFI_ENABLE [{}] for host [{}]:", uefiEnabled, host);
-                if (ObjectUtils.anyNotNull(uefiEnabled, virtv2vVersion, ovftoolVersion, vddkSupport, vddkLibDir, vddkVersion)) {
+                if (ObjectUtils.anyNotNull(uefiEnabled, virtv2vVersion, ovftoolVersion, vddkSupport, vddkLibDir, vddkVersion,
+                        vmwareCbtSupport, vmwareCbtInPlaceFinalizationSupport, vmwareCbtRbdSupport, qemuImgVersion, qemuNbdVersion, qemuIoVersion, virtV2vInPlaceVersion)) {
                     _hostDao.loadDetails(host);
                     boolean updateNeeded = false;
                     if (StringUtils.isNotBlank(uefiEnabled) && !uefiEnabled.equals(host.getDetails().get(Host.HOST_UEFI_ENABLE))) {
@@ -841,6 +849,52 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                             host.getDetails().remove(Host.HOST_VDDK_VERSION);
                         } else {
                             host.getDetails().put(Host.HOST_VDDK_VERSION, vddkVersion);
+                        }
+                        updateNeeded = true;
+                    }
+                    if (StringUtils.isNotBlank(vmwareCbtSupport) && !vmwareCbtSupport.equals(host.getDetails().get(Host.HOST_VMWARE_CBT_SUPPORT))) {
+                        host.getDetails().put(Host.HOST_VMWARE_CBT_SUPPORT, vmwareCbtSupport);
+                        updateNeeded = true;
+                    }
+                    if (StringUtils.isNotBlank(vmwareCbtInPlaceFinalizationSupport) &&
+                            !vmwareCbtInPlaceFinalizationSupport.equals(host.getDetails().get(Host.HOST_VMWARE_CBT_IN_PLACE_FINALIZATION_SUPPORT))) {
+                        host.getDetails().put(Host.HOST_VMWARE_CBT_IN_PLACE_FINALIZATION_SUPPORT, vmwareCbtInPlaceFinalizationSupport);
+                        updateNeeded = true;
+                    }
+                    if (StringUtils.isNotBlank(vmwareCbtRbdSupport) &&
+                            !vmwareCbtRbdSupport.equals(host.getDetails().get(Host.HOST_VMWARE_CBT_RBD_SUPPORT))) {
+                        host.getDetails().put(Host.HOST_VMWARE_CBT_RBD_SUPPORT, vmwareCbtRbdSupport);
+                        updateNeeded = true;
+                    }
+                    if (!StringUtils.defaultString(qemuImgVersion).equals(StringUtils.defaultString(host.getDetails().get(Host.HOST_QEMU_IMG_VERSION)))) {
+                        if (StringUtils.isBlank(qemuImgVersion)) {
+                            host.getDetails().remove(Host.HOST_QEMU_IMG_VERSION);
+                        } else {
+                            host.getDetails().put(Host.HOST_QEMU_IMG_VERSION, qemuImgVersion);
+                        }
+                        updateNeeded = true;
+                    }
+                    if (!StringUtils.defaultString(qemuNbdVersion).equals(StringUtils.defaultString(host.getDetails().get(Host.HOST_QEMU_NBD_VERSION)))) {
+                        if (StringUtils.isBlank(qemuNbdVersion)) {
+                            host.getDetails().remove(Host.HOST_QEMU_NBD_VERSION);
+                        } else {
+                            host.getDetails().put(Host.HOST_QEMU_NBD_VERSION, qemuNbdVersion);
+                        }
+                        updateNeeded = true;
+                    }
+                    if (!StringUtils.defaultString(qemuIoVersion).equals(StringUtils.defaultString(host.getDetails().get(Host.HOST_QEMU_IO_VERSION)))) {
+                        if (StringUtils.isBlank(qemuIoVersion)) {
+                            host.getDetails().remove(Host.HOST_QEMU_IO_VERSION);
+                        } else {
+                            host.getDetails().put(Host.HOST_QEMU_IO_VERSION, qemuIoVersion);
+                        }
+                        updateNeeded = true;
+                    }
+                    if (!StringUtils.defaultString(virtV2vInPlaceVersion).equals(StringUtils.defaultString(host.getDetails().get(Host.HOST_VIRTV2V_IN_PLACE_VERSION)))) {
+                        if (StringUtils.isBlank(virtV2vInPlaceVersion)) {
+                            host.getDetails().remove(Host.HOST_VIRTV2V_IN_PLACE_VERSION);
+                        } else {
+                            host.getDetails().put(Host.HOST_VIRTV2V_IN_PLACE_VERSION, virtV2vInPlaceVersion);
                         }
                         updateNeeded = true;
                     }

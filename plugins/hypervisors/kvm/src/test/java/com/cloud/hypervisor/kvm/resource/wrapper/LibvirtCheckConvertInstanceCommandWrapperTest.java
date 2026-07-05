@@ -89,4 +89,18 @@ public class LibvirtCheckConvertInstanceCommandWrapperTest {
         assertFalse(answer.getResult());
         assertTrue(StringUtils.isNotBlank(answer.getDetails()));
     }
+
+    @Test
+    public void testCheckInstanceCommand_windowsGuestConversionFailure() {
+        Mockito.when(checkConvertInstanceCommandMock.isUseVddk()).thenReturn(true);
+        Mockito.when(checkConvertInstanceCommandMock.getVddkLibDir()).thenReturn("/opt/vmware-vddk/vmware-vix-disklib-distrib");
+        Mockito.when(checkConvertInstanceCommandMock.getCheckWindowsGuestConversionSupport()).thenReturn(true);
+        Mockito.when(libvirtComputingResourceMock.hostSupportsVddk("/opt/vmware-vddk/vmware-vix-disklib-distrib")).thenReturn(true);
+        Mockito.when(libvirtComputingResourceMock.hostSupportsWindowsGuestConversion()).thenReturn(false);
+
+        Answer answer = checkConvertInstanceCommandWrapper.execute(checkConvertInstanceCommandMock, libvirtComputingResourceMock);
+
+        assertFalse(answer.getResult());
+        assertTrue(answer.getDetails().contains("virtio-win"));
+    }
 }

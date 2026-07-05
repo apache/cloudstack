@@ -51,9 +51,16 @@ public final class LibvirtReadyCommandWrapper extends CommandWrapper<ReadyComman
         if (libvirtComputingResource.hostSupportsInstanceConversion()) {
             hostDetails.put(Host.HOST_VIRTV2V_VERSION, libvirtComputingResource.getHostVirtV2vVersion());
         }
+        hostDetails.put(Host.HOST_VIRTV2V_IN_PLACE_VERSION, libvirtComputingResource.getHostVirtV2vInPlaceVersion());
         hostDetails.put(Host.HOST_VDDK_SUPPORT, Boolean.toString(libvirtComputingResource.hostSupportsVddk()));
         hostDetails.put(Host.HOST_VDDK_LIB_DIR, StringUtils.defaultString(libvirtComputingResource.getVddkLibDir()));
         hostDetails.put(Host.HOST_VDDK_VERSION, StringUtils.defaultString(libvirtComputingResource.getVddkVersion()));
+        hostDetails.put(Host.HOST_VMWARE_CBT_SUPPORT, Boolean.toString(libvirtComputingResource.hostSupportsVmwareCbtMigration()));
+        hostDetails.put(Host.HOST_VMWARE_CBT_IN_PLACE_FINALIZATION_SUPPORT, Boolean.toString(libvirtComputingResource.hostSupportsVmwareCbtInPlaceFinalization()));
+        hostDetails.put(Host.HOST_VMWARE_CBT_RBD_SUPPORT, Boolean.toString(libvirtComputingResource.hostSupportsVmwareCbtRbd()));
+        hostDetails.put(Host.HOST_QEMU_IMG_VERSION, StringUtils.defaultString(libvirtComputingResource.getQemuImgVersion()));
+        hostDetails.put(Host.HOST_QEMU_NBD_VERSION, StringUtils.defaultString(libvirtComputingResource.getQemuNbdVersion()));
+        hostDetails.put(Host.HOST_QEMU_IO_VERSION, StringUtils.defaultString(libvirtComputingResource.getQemuIoVersion()));
 
         if (libvirtComputingResource.hostSupportsOvfExport()) {
             hostDetails.put(Host.HOST_OVFTOOL_VERSION, libvirtComputingResource.getHostOvfToolVersion());

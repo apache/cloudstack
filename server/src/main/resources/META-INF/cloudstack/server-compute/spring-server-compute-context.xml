@@ -39,4 +39,6 @@
 
     <bean id="importVmTasksManager" class="org.apache.cloudstack.vm.ImportVmTasksManagerImpl" />
 
+    <bean id="vmwareCbtMigrationManager" class="org.apache.cloudstack.vm.VmwareCbtMigrationManagerImpl" />
+
 </beans>

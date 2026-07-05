@@ -127,6 +127,9 @@ public class EventTypes {
     public static final String EVENT_VM_RESTORE = "VM.RESTORE";
     public static final String EVENT_VM_EXPUNGE = "VM.EXPUNGE";
     public static final String EVENT_VM_IMPORT = "VM.IMPORT";
+    public static final String EVENT_VMWARE_CBT_MIGRATION_START = "VMWARE.CBT.MIGRATION.START";
+    public static final String EVENT_VMWARE_CBT_MIGRATION_SYNC = "VMWARE.CBT.MIGRATION.SYNC";
+    public static final String EVENT_VMWARE_CBT_MIGRATION_CUTOVER = "VMWARE.CBT.MIGRATION.CUTOVER";
     public static final String EVENT_VM_UNMANAGE = "VM.UNMANAGE";
     public static final String EVENT_VM_RECOVER = "VM.RECOVER";
 

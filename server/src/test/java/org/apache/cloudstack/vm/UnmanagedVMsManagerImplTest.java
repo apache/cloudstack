@@ -730,6 +730,27 @@ public class UnmanagedVMsManagerImplTest {
         Assert.assertEquals(defaultTemplateName, templateForImportInstance.getName());
     }
 
+    @Test
+    public void testGetVmwareMigrationModeFallsBackToUseVddk() {
+        ImportVmCmd cmd = Mockito.mock(ImportVmCmd.class);
+        Assert.assertEquals(ImportVmCmd.VmwareMigrationMode.OVF, unmanagedVMsManager.getVmwareMigrationMode(cmd, false));
+        Assert.assertEquals(ImportVmCmd.VmwareMigrationMode.VDDK, unmanagedVMsManager.getVmwareMigrationMode(cmd, true));
+    }
+
+    @Test
+    public void testGetVmwareMigrationModeParsesCbt() {
+        ImportVmCmd cmd = Mockito.mock(ImportVmCmd.class);
+        when(cmd.getVmwareMigrationMode()).thenReturn("cbt");
+        Assert.assertEquals(ImportVmCmd.VmwareMigrationMode.CBT, unmanagedVMsManager.getVmwareMigrationMode(cmd, false));
+    }
+
+    @Test(expected = ServerApiException.class)
+    public void testGetVmwareMigrationModeRejectsUnknownMode() {
+        ImportVmCmd cmd = Mockito.mock(ImportVmCmd.class);
+        when(cmd.getVmwareMigrationMode()).thenReturn("not-a-mode");
+        unmanagedVMsManager.getVmwareMigrationMode(cmd, false);
+    }
+
     private enum VcenterParameter {
         EXISTING,
         EXTERNAL,
@@ -1497,6 +1518,29 @@ public class UnmanagedVMsManagerImplTest {
         Assert.assertEquals("1", params.get(VmDetailConstants.CPU_NUMBER));
         Assert.assertEquals("1500", params.get(VmDetailConstants.CPU_SPEED));
         Assert.assertEquals("1024", params.get(VmDetailConstants.MEMORY));
+    }
+
+    @Test
+    public void testAddServiceOfferingDetailsToParamsUsesCallerDetailsForCustomOffering() {
+        Map<String, String> params = new HashMap<>();
+        ServiceOfferingVO serviceOfferingVO = mock(ServiceOfferingVO.class);
+        Map<String, String> offeringDetails = new HashMap<>();
+        offeringDetails.put(ApiConstants.MIN_CPU_NUMBER, "1");
+        offeringDetails.put(ApiConstants.MIN_MEMORY, "1024");
+        Map<String, String> callerDetails = new HashMap<>();
+        callerDetails.put(VmDetailConstants.CPU_NUMBER, "4");
+        callerDetails.put(VmDetailConstants.CPU_SPEED, "2200");
+        callerDetails.put(VmDetailConstants.MEMORY, "8192");
+        Mockito.when(serviceOfferingVO.getDetails()).thenReturn(offeringDetails);
+        Mockito.when(serviceOfferingVO.getCpu()).thenReturn(null);
+        Mockito.when(serviceOfferingVO.getSpeed()).thenReturn(null);
+        Mockito.when(serviceOfferingVO.getRamSize()).thenReturn(null);
+
+        unmanagedVMsManager.addServiceOfferingDetailsToParams(params, serviceOfferingVO, callerDetails);
+
+        Assert.assertEquals("4", params.get(VmDetailConstants.CPU_NUMBER));
+        Assert.assertEquals("2200", params.get(VmDetailConstants.CPU_SPEED));
+        Assert.assertEquals("8192", params.get(VmDetailConstants.MEMORY));
     }
 
     @Test

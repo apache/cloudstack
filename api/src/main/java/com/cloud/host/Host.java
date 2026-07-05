@@ -60,8 +60,15 @@ public interface Host extends StateObject<Status>, Identity, Partition, HAResour
     String HOST_VDDK_SUPPORT = "host.vddk.support";
     String HOST_VDDK_LIB_DIR = "vddk.lib.dir";
     String HOST_VDDK_VERSION = "host.vddk.version";
+    String HOST_VMWARE_CBT_SUPPORT = "host.vmware.cbt.support";
+    String HOST_VMWARE_CBT_IN_PLACE_FINALIZATION_SUPPORT = "host.vmware.cbt.in.place.finalization.support";
+    String HOST_VMWARE_CBT_RBD_SUPPORT = "host.vmware.cbt.rbd.support";
+    String HOST_QEMU_IMG_VERSION = "host.qemu.img.version";
+    String HOST_QEMU_NBD_VERSION = "host.qemu.nbd.version";
+    String HOST_QEMU_IO_VERSION = "host.qemu.io.version";
     String HOST_OVFTOOL_VERSION = "host.ovftool.version";
     String HOST_VIRTV2V_VERSION = "host.virtv2v.version";
+    String HOST_VIRTV2V_IN_PLACE_VERSION = "host.virtv2v.in.place.version";
     String HOST_SSH_PORT = "host.ssh.port";
     String HOST_CDROM_MAX_COUNT = "host.cdrom.max.count";
     String GUEST_OS_CATEGORY_ID = "guest.os.category.id";
