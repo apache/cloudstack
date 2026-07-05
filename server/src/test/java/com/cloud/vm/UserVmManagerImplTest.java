@@ -4211,7 +4211,7 @@ public class UserVmManagerImplTest {
         CloudRuntimeException exception = assertThrows(CloudRuntimeException.class, () -> {
             userVmManagerImpl.unmanageUserVM(vmId, null);
         });
-        assertEquals("vm.unmanage.vm.not.right.state", exception.getMessage());
+        assertEquals("vm.unmanage.vm.not.right.state", exception.getMessageKey());
         verify(userVmDao, times(1)).releaseFromLockTable(vmId);
     }
 

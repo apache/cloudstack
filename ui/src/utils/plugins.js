@@ -635,7 +635,7 @@ export const localeErrorUtilPlugin = {
       }
       if (params && params.constructor === Object) {
         for (const paramKey in params) {
-          localeMsg = localeMsg.replace(`{{${paramKey}}}`, params[paramKey])
+          localeMsg = localeMsg.replaceAll(`{{${paramKey}}}`, params[paramKey])
         }
       }
       return localeMsg

@@ -309,7 +309,7 @@ class TestScaleVMStrictTags(cloudstackTestCase):
             vm.scale(self.apiclient, serviceOfferingId=self.service_offering_h2.id)
             vm.start(self.apiclient)
             self.fail("VM should not be be able scale and start")
-        except Exception as e
+        except Exception as e:
             self.assertTrue("Unable to orchestrate the start of Instance" in str(e))
 
 

@@ -2249,7 +2249,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         boolean scalingDown = newSpeed < currentSpeed || newMemory < currentMemory || newCpu < currentCpu;
         if (scalingDown) {
-            throw Exceptions.invalidParameterValueException("vm.upgrade.vm.sunning.scale.down.unsupported", Map.of(
+            throw Exceptions.invalidParameterValueException("vm.upgrade.vm.running.scale.down.unsupported", Map.of(
                     "newMemory", newMemory, "newSpeed", newSpeed, "newCpu", newCpu,
                     "currentMemory", currentMemory, "currentSpeed", currentSpeed, "currentCpu", currentCpu));
         }
