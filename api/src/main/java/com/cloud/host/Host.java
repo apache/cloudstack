@@ -69,6 +69,10 @@ public interface Host extends StateObject<Status>, Identity, Partition, HAResour
     String HOST_OVFTOOL_VERSION = "host.ovftool.version";
     String HOST_VIRTV2V_VERSION = "host.virtv2v.version";
     String HOST_VIRTV2V_IN_PLACE_VERSION = "host.virtv2v.in.place.version";
+    String HOST_VDDK_RBD_DIRECT_IMPORT_SUPPORT = "host.vddk.rbd.direct.import.support";
+    String HOST_VIRTV2V_INPLACE_SUPPORT = "host.virt.v2v.inplace.support";
+    String HOST_QEMU_IMG_RBD_SUPPORT = "host.qemu.img.rbd.support";
+    String HOST_RBD_QEMU_COPY_SUPPORT = "host.rbd.qemu.copy.support";
     String HOST_SSH_PORT = "host.ssh.port";
     String HOST_CDROM_MAX_COUNT = "host.cdrom.max.count";
     String GUEST_OS_CATEGORY_ID = "guest.os.category.id";

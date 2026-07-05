@@ -18,7 +18,10 @@ package com.cloud.agent.api;
 
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.RemoteInstanceTO;
+import com.cloud.agent.api.to.VmwareVddkSourceDiskTO;
 import com.cloud.hypervisor.Hypervisor;
+
+import java.util.List;
 
 public class ConvertInstanceCommand extends Command {
 
@@ -35,6 +38,7 @@ public class ConvertInstanceCommand extends Command {
     private String vddkLibDir;
     private String vddkTransports;
     private String vddkThumbprint;
+    private List<VmwareVddkSourceDiskTO> vmwareVddkSourceDisks;
 
     public ConvertInstanceCommand() {
     }
@@ -124,6 +128,14 @@ public class ConvertInstanceCommand extends Command {
 
     public void setVddkThumbprint(String vddkThumbprint) {
         this.vddkThumbprint = vddkThumbprint;
+    }
+
+    public List<VmwareVddkSourceDiskTO> getVmwareVddkSourceDisks() {
+        return vmwareVddkSourceDisks;
+    }
+
+    public void setVmwareVddkSourceDisks(List<VmwareVddkSourceDiskTO> vmwareVddkSourceDisks) {
+        this.vmwareVddkSourceDisks = vmwareVddkSourceDisks;
     }
 
     @Override

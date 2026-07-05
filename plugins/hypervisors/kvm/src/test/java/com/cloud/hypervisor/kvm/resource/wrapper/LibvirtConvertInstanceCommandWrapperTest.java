@@ -44,6 +44,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
+import com.cloud.storage.Storage;
 import com.cloud.utils.script.Script;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -149,6 +150,26 @@ public class LibvirtConvertInstanceCommandWrapperTest {
         ConvertInstanceCommand cmd = getConvertInstanceCommand(remoteInstanceTO, Hypervisor.HypervisorType.KVM, true);
         Answer answer = convertInstanceCommandWrapper.execute(cmd, libvirtComputingResourceMock);
         Assert.assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testExecuteDirectRbdVddkFailsWhenHostLacksDirectRbdSupport() {
+        RemoteInstanceTO remoteInstanceTO = getRemoteInstanceTO(Hypervisor.HypervisorType.VMware);
+        ConvertInstanceCommand cmd = getConvertInstanceCommand(remoteInstanceTO, Hypervisor.HypervisorType.KVM, false);
+        Mockito.when(cmd.isUseVddk()).thenReturn(true);
+        Mockito.when(cmd.getVddkLibDir()).thenReturn("/opt/vddk");
+        Mockito.when(cmd.getConversionTemporaryLocation()).thenReturn(primaryDataStore);
+        Mockito.when(primaryDataStore.getPoolType()).thenReturn(Storage.StoragePoolType.RBD);
+        Mockito.when(primaryDataStore.getUuid()).thenReturn("rbd-pool-uuid");
+        Mockito.when(storagePoolManager.getStoragePool(Storage.StoragePoolType.RBD, "rbd-pool-uuid")).thenReturn(destinationPool);
+        Mockito.when(destinationPool.getLocalPath()).thenReturn("/rbd");
+        Mockito.when(libvirtComputingResourceMock.getVddkLibDir()).thenReturn("/opt/vddk");
+        Mockito.when(libvirtComputingResourceMock.hostSupportsVddkRbdDirectImport("/opt/vddk")).thenReturn(false);
+
+        Answer answer = convertInstanceCommandWrapper.execute(cmd, libvirtComputingResourceMock);
+
+        Assert.assertFalse(answer.getResult());
+        Assert.assertTrue(answer.getDetails().contains("Direct RBD VDDK import requires"));
     }
 
     @Test

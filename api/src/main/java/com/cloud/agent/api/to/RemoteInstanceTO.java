@@ -110,4 +110,8 @@ public class RemoteInstanceTO implements Serializable {
     public String getVmwareMoref() {
         return vmwareMoref;
     }
+
+    public void setVmwareMoref(String vmwareMoref) {
+        this.vmwareMoref = vmwareMoref;
+    }
 }

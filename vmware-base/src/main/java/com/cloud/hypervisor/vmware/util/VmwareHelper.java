@@ -806,6 +806,7 @@ public class VmwareHelper {
             instance.setName(vmMo.getVmName());
             instance.setInternalCSName(vmMo.getInternalCSName());
             instance.setPath((vmMo.getPath()));
+            instance.setVmwareMoref(vmMo.getMor().getValue());
             instance.setCpuCoresPerSocket(vmMo.getCoresPerSocket());
             instance.setOperatingSystemId(vmMo.getVmGuestInfo().getGuestId());
             VirtualMachineConfigSummary configSummary = vmMo.getConfigSummary();
