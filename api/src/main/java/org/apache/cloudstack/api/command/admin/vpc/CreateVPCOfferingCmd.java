@@ -92,10 +92,15 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.SERVICE_CAPABILITY_LIST, type = CommandType.MAP, description = "Desired service capabilities as part of VPC offering", since = "4.4")
     private Map<String, List<String>> serviceCapabilityList;
 
-    @Parameter(name = ApiConstants.INTERNET_PROTOCOL,
-            type = CommandType.STRING,
-            description = "The internet protocol of the offering. Options are IPv4 and dualstack. Default is IPv4. dualstack will create an offering that supports both IPv4 and IPv6",
-            since = "4.17.0")
+    @Parameter(
+        name = ApiConstants.INTERNET_PROTOCOL,
+        type = CommandType.STRING,
+        description = "The internet protocol of the offering. Options are IPv4 and dualstack. Default is IPv4. dualstack will create an offering that supports both IPv4 and IPv6",
+        since = "4.17.0",
+        allowedValues = {
+                "IPv4",
+                "dualstack"
+        })
     private String internetProtocol;
 
     @Parameter(name = ApiConstants.SERVICE_OFFERING_ID,
@@ -144,10 +149,15 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
             since = "4.16")
     private Boolean enable;
 
-    @Parameter(name = ApiConstants.NETWORK_MODE,
-            type = CommandType.STRING,
-            description = "Indicates the mode with which the network will operate. Valid option: NATTED or ROUTED",
-            since = "4.20.0")
+    @Parameter(
+        name = ApiConstants.NETWORK_MODE,
+        type = CommandType.STRING,
+        description = "Indicates the mode with which the network will operate. Valid option: NATTED or ROUTED",
+        since = "4.20.0",
+        allowedValues = {
+                "NATTED",
+                "ROUTED"
+        })
     private String networkMode;
 
     @Parameter(name = ApiConstants.SPECIFY_AS_NUMBER, type = CommandType.BOOLEAN, since = "4.20.0",
