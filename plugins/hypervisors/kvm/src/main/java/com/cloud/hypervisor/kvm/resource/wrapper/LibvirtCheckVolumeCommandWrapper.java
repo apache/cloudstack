@@ -50,7 +50,8 @@ public final class LibvirtCheckVolumeCommandWrapper extends CommandWrapper<Check
     private static final List<Storage.StoragePoolType> STORAGE_POOL_TYPES_SUPPORTED = Arrays.asList(
             Storage.StoragePoolType.Filesystem,
             Storage.StoragePoolType.NetworkFilesystem,
-            Storage.StoragePoolType.SharedMountPoint);
+            Storage.StoragePoolType.SharedMountPoint,
+            Storage.StoragePoolType.RBD);
 
     @Override
     public Answer execute(final CheckVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {
@@ -63,6 +64,9 @@ public final class LibvirtCheckVolumeCommandWrapper extends CommandWrapper<Check
         try {
             if (STORAGE_POOL_TYPES_SUPPORTED.contains(storageFilerTO.getType())) {
                 final KVMPhysicalDisk vol = pool.getPhysicalDisk(srcFile);
+                if (Storage.StoragePoolType.RBD.equals(storageFilerTO.getType())) {
+                    return checkRbdVolume(command, pool, vol);
+                }
                 final String path = vol.getPath();
                 try {
                     KVMPhysicalDisk.checkQcow2File(path);
@@ -79,6 +83,21 @@ public final class LibvirtCheckVolumeCommandWrapper extends CommandWrapper<Check
             logger.error("Error while checking the disk: {}", e.getMessage());
             return new Answer(command, false, result);
         }
+    }
+
+    /**
+     * RBD (Ceph) volumes are raw images that cannot be inspected through direct file reads
+     * (checkQcow2File / getVirtualSizeFromFile operate on a local path). Instead the volume is
+     * inspected through the RBD URI via qemu-img (see {@link #getDiskFileInfo}). The virtual size
+     * is taken from the disk reported by the storage pool, and the encrypted/backing-file/locked
+     * details are still collected so the management server can apply its import validations.
+     */
+    private Answer checkRbdVolume(final CheckVolumeCommand command, final KVMStoragePool pool, final KVMPhysicalDisk disk) {
+        Map<VolumeOnStorageTO.Detail, String> volumeDetails = getVolumeDetails(pool, disk);
+        if (volumeDetails == null) {
+            return new CheckVolumeAnswer(command, false, "", 0, null);
+        }
+        return new CheckVolumeAnswer(command, true, "", disk.getVirtualSize(), volumeDetails);
     }
 
     private Map<VolumeOnStorageTO.Detail, String> getVolumeDetails(KVMStoragePool pool, KVMPhysicalDisk disk) {
@@ -122,6 +141,10 @@ public final class LibvirtCheckVolumeCommandWrapper extends CommandWrapper<Check
         try {
             QemuImg qemu = new QemuImg(0);
             QemuImgFile qemuFile = new QemuImgFile(disk.getPath(), disk.getFormat());
+            if (Storage.StoragePoolType.RBD.equals(pool.getType())) {
+                String rbdDestFile = KVMPhysicalDisk.RBDStringBuilder(pool, disk.getPath());
+                qemuFile = new QemuImgFile(rbdDestFile, disk.getFormat());
+            }
             return qemu.info(qemuFile, secure);
         } catch (QemuImgException | LibvirtException ex) {
             logger.error("Failed to get info of disk file: " + ex.getMessage());
