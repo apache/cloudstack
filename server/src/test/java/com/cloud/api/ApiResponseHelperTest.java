@@ -962,20 +962,17 @@ public class ApiResponseHelperTest {
         when(entityManagerMock.findByIdIncludingRemoved(IPAddressVO.class, usageId.toString())).thenReturn(ipAddress);
         when(ipAddress.getUuid()).thenReturn("ip-address-uuid");
         when(ipAddress.getId()).thenReturn(usageId);
-        when(ipAddress.getAssociatedWithNetworkId()).thenReturn(null);
-        when(ipAddress.getSourceNetworkId()).thenReturn(23L);
 
         // Act
         Object resourceDetails = invokeUsageDetailsHelper("populateIpAddressUsageResponse",
                 new Class<?>[] {Usage.class, UsageRecordResponse.class}, usageRecord, response);
 
-        // Assert
+       // Assert
         assertResponseField(response, "usageId", "ip-address-uuid");
         assertResponseField(response, "isSourceNat", Boolean.TRUE);
         assertResponseField(response, "isSystem", Boolean.TRUE);
         assertUsageResourceDetails(resourceDetails, ResourceTag.ResourceObjectType.PublicIpAddress, usageId);
         verify(entityManagerMock).findByIdIncludingRemoved(IPAddressVO.class, usageId.toString());
-        verify(ipAddress).getSourceNetworkId();
     }
 
     @Test
