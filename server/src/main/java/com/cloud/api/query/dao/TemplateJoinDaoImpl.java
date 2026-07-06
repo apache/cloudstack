@@ -646,7 +646,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         }
 
         for (String idPair : idPairs) {
-            SearchCriteria<TemplateJoinVO> sc = applyPairWhereClauseHackyWorkaround(idPair);
+            SearchCriteria<TemplateJoinVO> sc = buildTemplateZonePairSearchCriteria(idPair);
             List<TemplateJoinVO> rows = searchIncludingRemoved(sc, searchFilter, null, false);
             if (rows != null) {
                 uvList.addAll(rows);
@@ -655,7 +655,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         return uvList;
     }
 
-    private SearchCriteria<TemplateJoinVO> applyPairWhereClauseHackyWorkaround(String idPair) {
+    private SearchCriteria<TemplateJoinVO> buildTemplateZonePairSearchCriteria(String idPair) {
         if (idPair == null || idPair.isEmpty()) {
             throw new IllegalArgumentException("template zone pair id is null or empty");
         }
@@ -821,8 +821,8 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
 
         if (filter.format != null) {
             // searchForTemplatesInternal: format = 'ISO' for isos, format != 'ISO' otherwise.
-            where.append(filter.isIso ? " AND vt.format = ?" : " AND vt.format != ?");
-            params.add(filter.format.toString());
+            String condition = filter.isIso ? "=" : "!=";
+            where.append(" AND vt.format " + condition + " 'ISO'");
         }
 
         if (filter.hypervisorType != null) {
