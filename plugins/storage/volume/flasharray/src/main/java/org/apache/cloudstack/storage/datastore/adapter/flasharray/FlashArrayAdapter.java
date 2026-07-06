@@ -524,6 +524,91 @@ public class FlashArrayAdapter implements ProviderAdapter {
         return accessToken;
     }
 
+    /**
+     * Discover the latest supported Purity REST API version by hitting the unauthenticated
+     * {@code /api/api_version} endpoint (returns {@code {"version":["1.0",...,"2.36"]}}).
+     * The discovered version is stored on {@link #apiVersion}; on failure the caller-configured
+     * default remains in place.
+     */
+    private void fetchApiVersionFromPurity(CloseableHttpClient client) {
+        HttpGet vReq = new HttpGet(url + "/api_version");
+        CloseableHttpResponse vResp = null;
+        try {
+            vResp = client.execute(vReq);
+            if (vResp.getStatusLine().getStatusCode() == 200) {
+                JsonNode root = mapper.readTree(vResp.getEntity().getContent());
+                JsonNode versions = root.get("version");
+                if (versions != null && versions.isArray() && versions.size() > 0) {
+                    apiVersion = versions.get(versions.size() - 1).asText();
+                }
+            } else {
+                logger.warn("Unexpected HTTP " + vResp.getStatusLine().getStatusCode()
+                        + " from FlashArray [" + url + "] /api_version, falling back to default "
+                        + API_VERSION_DEFAULT);
+            }
+        } catch (Exception e) {
+            logger.warn("Failed to discover Purity REST API version from " + url
+                    + "/api_version, falling back to default " + API_VERSION_DEFAULT, e);
+        } finally {
+            if (vResp != null) {
+                try {
+                    vResp.close();
+                } catch (IOException e) {
+                    logger.debug("Error closing /api_version response from FlashArray [" + url + "]", e);
+                }
+            }
+        }
+    }
+
+    /**
+     * Exchange the operator-configured username/password for a long-lived Purity api-token
+     * via REST 1.x {@code /auth/apitoken}. Emits the once-per-URL deprecation WARN.
+     * @return the api-token to feed into the REST 2.x /login exchange.
+     */
+    private String getApiTokenUsingUserPass(CloseableHttpClient client) throws IOException {
+        if (WARNED_LEGACY_URLS.add(url)) {
+            logger.warn("FlashArray adapter at [" + url + "] is using deprecated username/password "
+                    + "login against Purity REST 1.x. Replace with a pre-minted "
+                    + ProviderAdapter.API_TOKEN_KEY + " detail; the username/password code path will be "
+                    + "removed in a future release.");
+        }
+        HttpPost request = new HttpPost(url + "/" + apiLoginVersion + "/auth/apitoken");
+        ArrayList<NameValuePair> postParms = new ArrayList<NameValuePair>();
+        postParms.add(new BasicNameValuePair("username", username));
+        postParms.add(new BasicNameValuePair("password", password));
+        request.setEntity(new UrlEncodedFormEntity(postParms, "UTF-8"));
+        CloseableHttpResponse response = null;
+        try {
+            response = client.execute(request);
+            int statusCode = response.getStatusLine().getStatusCode();
+            if (statusCode == 200 || statusCode == 201) {
+                FlashArrayApiToken legacyToken = mapper.readValue(response.getEntity().getContent(),
+                        FlashArrayApiToken.class);
+                if (legacyToken == null || legacyToken.getApiToken() == null) {
+                    throw new CloudRuntimeException(
+                            "Authentication responded successfully but no api token was returned");
+                }
+                return legacyToken.getApiToken();
+            } else if (statusCode == 401 || statusCode == 403) {
+                throw new CloudRuntimeException(
+                        "Authentication or Authorization to FlashArray [" + url + "] with user [" + username
+                                + "] failed, unable to retrieve session token");
+            } else {
+                throw new CloudRuntimeException(
+                        "Unexpected HTTP response code from FlashArray [" + url + "] - [" + statusCode
+                                + "] - " + response.getStatusLine().getReasonPhrase());
+            }
+        } finally {
+            if (response != null) {
+                try {
+                    response.close();
+                } catch (IOException e) {
+                    logger.debug("Error closing legacy auth/apitoken response from FlashArray [" + url + "]", e);
+                }
+            }
+        }
+    }
+
     private synchronized void refreshSession(boolean force) {
         try {
             if (force || keyExpiration < System.currentTimeMillis()) {
@@ -688,78 +773,17 @@ public class FlashArrayAdapter implements ProviderAdapter {
             // Discover the latest supported API version from the array unless one was explicitly configured.
             // GET /api/api_version is unauthenticated and returns {"version":["1.0",...,"2.36"]}.
             if (!apiVersionExplicit) {
-                HttpGet vReq = new HttpGet(url + "/api_version");
-                CloseableHttpResponse vResp = null;
-                try {
-                    vResp = (CloseableHttpResponse) client.execute(vReq);
-                    if (vResp.getStatusLine().getStatusCode() == 200) {
-                        JsonNode root = mapper.readTree(vResp.getEntity().getContent());
-                        JsonNode versions = root.get("version");
-                        if (versions != null && versions.isArray() && versions.size() > 0) {
-                            apiVersion = versions.get(versions.size() - 1).asText();
-                        }
-                    } else {
-                        logger.warn("Unexpected HTTP " + vResp.getStatusLine().getStatusCode()
-                                + " from FlashArray [" + url + "] /api_version, falling back to default "
-                                + API_VERSION_DEFAULT);
-                    }
-                } catch (Exception e) {
-                    logger.warn("Failed to discover Purity REST API version from " + url
-                            + "/api_version, falling back to default " + API_VERSION_DEFAULT, e);
-                } finally {
-                    if (vResp != null) {
-                        try {
-                            vResp.close();
-                        } catch (IOException e) {
-                            logger.debug("Error closing /api_version response from FlashArray [" + url + "]", e);
-                        }
-                    }
-                }
+                fetchApiVersionFromPurity(client);
             }
 
             if (usingLegacyUserPass) {
-                if (WARNED_LEGACY_URLS.add(url)) {
-                    logger.warn("FlashArray adapter at [" + url + "] is using deprecated username/password "
-                            + "login against Purity REST 1.x. Replace with a pre-minted "
-                            + ProviderAdapter.API_TOKEN_KEY + " detail; the username/password code path will be "
-                            + "removed in a future release.");
-                }
-                HttpPost request = new HttpPost(url + "/" + apiLoginVersion + "/auth/apitoken");
-                ArrayList<NameValuePair> postParms = new ArrayList<NameValuePair>();
-                postParms.add(new BasicNameValuePair("username", username));
-                postParms.add(new BasicNameValuePair("password", password));
-                request.setEntity(new UrlEncodedFormEntity(postParms, "UTF-8"));
-                response = (CloseableHttpResponse) client.execute(request);
-                int statusCode = response.getStatusLine().getStatusCode();
-                if (statusCode == 200 || statusCode == 201) {
-                    FlashArrayApiToken legacyToken = mapper.readValue(response.getEntity().getContent(),
-                            FlashArrayApiToken.class);
-                    if (legacyToken == null || legacyToken.getApiToken() == null) {
-                        throw new CloudRuntimeException(
-                                "Authentication responded successfully but no api token was returned");
-                    }
-                    apiToken = legacyToken.getApiToken();
-                } else if (statusCode == 401 || statusCode == 403) {
-                    throw new CloudRuntimeException(
-                            "Authentication or Authorization to FlashArray [" + url + "] with user [" + username
-                                    + "] failed, unable to retrieve session token");
-                } else {
-                    throw new CloudRuntimeException(
-                            "Unexpected HTTP response code from FlashArray [" + url + "] - [" + statusCode
-                                    + "] - " + response.getStatusLine().getReasonPhrase());
-                }
-                try {
-                    response.close();
-                } catch (IOException e) {
-                    logger.debug("Error closing legacy auth/apitoken response from FlashArray [" + url + "]", e);
-                }
-                response = null;
+                apiToken = getApiTokenUsingUserPass(client);
             }
 
             // Exchange the long-lived api-token for a short-lived x-auth-token (REST 2.x).
             HttpPost request = new HttpPost(url + "/" + apiVersion + "/login");
             request.addHeader("api-token", apiToken);
-            response = (CloseableHttpResponse) client.execute(request);
+            response = client.execute(request);
             int statusCode = response.getStatusLine().getStatusCode();
             if (statusCode == 200 || statusCode == 201) {
                 Header[] headers = response.getHeaders("x-auth-token");
@@ -957,7 +981,7 @@ public class FlashArrayAdapter implements ProviderAdapter {
             request.setEntity(new StringEntity(data));
 
             CloseableHttpClient client = getClient();
-            response = (CloseableHttpResponse) client.execute(request);
+            response = client.execute(request);
 
             final int statusCode = response.getStatusLine().getStatusCode();
             if (statusCode == 200 || statusCode == 201) {
@@ -1012,7 +1036,7 @@ public class FlashArrayAdapter implements ProviderAdapter {
             request.addHeader("X-auth-token", getAccessToken());
 
             CloseableHttpClient client = getClient();
-            response = (CloseableHttpResponse) client.execute(request);
+            response = client.execute(request);
             final int statusCode = response.getStatusLine().getStatusCode();
             if (statusCode == 200) {
                 try {
@@ -1054,7 +1078,7 @@ public class FlashArrayAdapter implements ProviderAdapter {
             request.addHeader("X-auth-token", getAccessToken());
 
             CloseableHttpClient client = getClient();
-            response = (CloseableHttpResponse) client.execute(request);
+            response = client.execute(request);
             final int statusCode = response.getStatusLine().getStatusCode();
             if (statusCode == 200 || statusCode == 404 || statusCode == 400) {
                 // this means the volume was deleted successfully, or doesn't exist (effective
