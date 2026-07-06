@@ -305,14 +305,17 @@ public class PhysicalNetworkServiceProviderVO implements PhysicalNetworkServiceP
         if (this.isLbServiceProvided()) {
             services.add(Service.Lb);
         }
-        if (this.sourcenatServiceProvided) {
+        if (this.isSourcenatServiceProvided()) {
             services.add(Service.SourceNat);
         }
-        if (this.staticnatServiceProvided) {
+        if (this.isStaticnatServiceProvided()) {
             services.add(Service.StaticNat);
         }
-        if (this.portForwardingServiceProvided) {
+        if (this.isPortForwardingServiceProvided()) {
             services.add(Service.PortForwarding);
+        }
+        if (this.isNetworkAclServiceProvided()) {
+            services.add(Service.NetworkACL);
         }
         if (this.isUserdataServiceProvided()) {
             services.add(Service.UserData);
