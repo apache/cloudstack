@@ -9267,9 +9267,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
 
             if (hostId != null) {
-                VolumeInfo volumeInfo = volFactory.getVolume(root.getId());
                 Host host = _hostDao.findByIdIncludingRemoved(hostId);
 
+                // host row may have been hard-deleted from DB, treat like removed
+                if (host == null) {
+                    s_logger.warn(String.format("Host with id %s not found in DB for VM %s (%s)",
+                            hostId, vm.getUuid(), vm.getName()));
+                    return;
+                }
                 // host could be in removed state, in which case no operation is performed.
                 if (host.getStatus() == Status.Removed) {
                     logger.warn("Host {} ({}) for VM {} ({}) removed on {}",
@@ -9279,6 +9284,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                 final Command cmd;
 
+                VolumeInfo volumeInfo = volFactory.getVolume(root.getId());
                 if (host.getHypervisorType() == HypervisorType.XenServer) {
                     DiskTO disk = new DiskTO(volumeInfo.getTO(), root.getDeviceId(), root.getPath(), root.getVolumeType());
 

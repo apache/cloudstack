@@ -1720,6 +1720,7 @@ public class UserVmManagerImplTest {
         when(templateDataStoreDao.findByTemplateZoneReady(1L, 1L)).thenReturn(templateStore);
 
         ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
+        when(vm.getServiceOfferingId()).thenReturn(serviceOfferingId);
         when(_serviceOfferingDao.findById(vmId, vm.getServiceOfferingId())).thenReturn(serviceOffering);
 
         List<VolumeVO> rootVols = new ArrayList<>();
@@ -1758,7 +1759,6 @@ public class UserVmManagerImplTest {
         when(volumeMgr.allocateDuplicateVolume(any(VolumeVO.class), any(), anyLong()))
                 .thenReturn(newVolume);
         when(newVolume.getId()).thenReturn(11L);
-        when(newVolume.getState()).thenReturn(Volume.State.Ready);
         when(newVolume.getState()).thenReturn(Volume.State.Ready);
         doReturn(20L * 1024 * 1024 * 1024L).when(userVmManagerImpl).getRootVolumeSizeForVmRestore(
                 any(Volume.class), any(VMTemplateVO.class), any(UserVmVO.class),
