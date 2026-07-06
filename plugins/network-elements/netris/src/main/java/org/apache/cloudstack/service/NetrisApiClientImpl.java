@@ -345,8 +345,19 @@ public class NetrisApiClientImpl implements NetrisApiClient {
 
         String netrisIpamAllocationName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_ALLOCATION, cmd.getCidr());
         String vpcCidr = cmd.getCidr();
-        InlineResponse2004Data createdIpamAllocation = createIpamAllocationInternal(netrisIpamAllocationName, vpcCidr, createdVpc.getData());
-        return createdIpamAllocation != null;
+        VPCListing vpcListing = createdVpc.getData();
+        InlineResponse2004Data createdIpamAllocation = createIpamAllocationInternal(netrisIpamAllocationName, vpcCidr, vpcListing);
+        if (createdIpamAllocation == null) {
+            logger.warn("IPAM Allocation creation failed for VPC {}, rolling back VPC", netrisVpcName);
+            try {
+                deleteVpcInternal(vpcListing);
+            } catch (Exception e) {
+                logger.error("Failed to rollback VPC {} after IPAM Allocation failure - manual cleanup may be required: {}",
+                        netrisVpcName, e.getMessage());
+            }
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -1240,8 +1251,13 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         }
         String netrisV6Cidr = cmd.getIpv6Cidr();
 
+        VPCListing associatedVpc = null;
+        String netrisSubnetName = null;
+        String netrisV6IpamAllocationName = null;
+        String netrisV6SubnetName = null;
+        boolean createdIpv6Allocation = false;
+
         try {
-            VPCListing associatedVpc;
             if (isL2) {
                 associatedVpc = getOrCreateL2Vpc(cmd);
                 if (associatedVpc == null) {
@@ -1264,19 +1280,22 @@ public class NetrisApiClientImpl implements NetrisApiClient {
                 vNetName = String.format("N%s-%s", networkId, networkName);
             }
             String netrisVnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VNET, vNetName);
+            NetrisResourceObjectUtils.validateNetrisVnetNameLength(netrisVnetName, networkName);
 
             if (!isL2) {
-                String netrisSubnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_SUBNET, String.valueOf(cmd.getVpcId()), vnetCidr);
+                netrisSubnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_SUBNET, String.valueOf(cmd.getVpcId()), vnetCidr);
                 createIpamSubnetInternal(netrisSubnetName, vnetCidr, SubnetBody.PurposeEnum.COMMON, associatedVpc, ipv4GlobalRouting);
                 if (Objects.nonNull(netrisV6Cidr)) {
-                    String netrisV6IpamAllocationName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_ALLOCATION, netrisV6Cidr);
-                    String netrisV6SubnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_SUBNET, String.valueOf(cmd.getVpcId()), netrisV6Cidr);
+                    netrisV6IpamAllocationName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_ALLOCATION, netrisV6Cidr);
+                    netrisV6SubnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_SUBNET, String.valueOf(cmd.getVpcId()), netrisV6Cidr);
                     BigDecimal ipamAllocationId = getIpamAllocationIdByPrefixAndVpc(netrisV6Cidr, associatedVpc);
                     if (ipamAllocationId == null) {
-                        InlineResponse2004Data createdIpamAllocation = createIpamAllocationInternal(netrisV6IpamAllocationName, netrisV6Cidr, associatedVpc);
-                        if (Objects.isNull(createdIpamAllocation)) {
+                        InlineResponse2004Data createdIpamAllocationData = createIpamAllocationInternal(netrisV6IpamAllocationName, netrisV6Cidr, associatedVpc);
+                        if (Objects.isNull(createdIpamAllocationData)) {
+                            rollbackVnetResources(associatedVpc, netrisSubnetName, null, null, networkName);
                             throw new CloudRuntimeException(String.format("Failed to create Netris IPAM Allocation %s for VPC %s", netrisV6IpamAllocationName, associatedVpc.getName()));
                         }
+                        createdIpv6Allocation = true;
                     }
                     createIpamSubnetInternal(netrisV6SubnetName, netrisV6Cidr, SubnetBody.PurposeEnum.COMMON, associatedVpc, ipv6GlobalRouting);
                 }
@@ -1287,9 +1306,17 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             if (vnetResponse == null || !vnetResponse.isIsSuccess()) {
                 String reason = vnetResponse == null ? "Empty response" : "Operation failed on Netris";
                 logger.debug("The Netris vNet creation {} failed: {}", vNetName, reason);
+                if (!isL2) {
+                    rollbackVnetResources(associatedVpc, netrisSubnetName, netrisV6SubnetName,
+                            createdIpv6Allocation ? netrisV6IpamAllocationName : null, networkName);
+                }
                 return false;
             }
-        } catch (ApiException e) {
+        } catch (Exception e) {
+            if (!isL2 && associatedVpc != null) {
+                rollbackVnetResources(associatedVpc, netrisSubnetName, netrisV6SubnetName,
+                        createdIpv6Allocation ? netrisV6IpamAllocationName : null, networkName);
+            }
             throw new CloudRuntimeException(String.format("Failed to create Netris vNet %s", networkName), e);
         }
         return true;
@@ -1324,6 +1351,7 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         String netrisVnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VNET, vNetName) ;
         String prevNetrisVnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VNET, prevVnetName) ;
 
+        NetrisResourceObjectUtils.validateNetrisVnetNameLength(netrisVnetName, networkName);
         VnetResAddBody response = updateVnetInternal(associatedVpc, netrisVnetName, prevNetrisVnetName);
         if (response == null || !response.isIsSuccess()) {
             String reason = response == null ? "Empty response" : "Operation failed on Netris";
@@ -1955,6 +1983,26 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             ipamApi.apiV2IpamTypeIdDelete("subnet", matchedSubnets.get(0).getId().intValue());
         } catch (ApiException e) {
             logAndThrowException(String.format("Failed to delete subnet: %s", netrisSubnetName), e);
+        }
+    }
+
+    private void rollbackVnetResources(VPCListing associatedVpc, String ipv4SubnetName, String ipv6SubnetName,
+                                       String ipv6AllocationName, String networkName) {
+        logger.warn("Rolling back Netris resources created for network {}", networkName);
+        FilterByVpc vpcFilter = new FilterByVpc();
+        vpcFilter.add(associatedVpc.getId());
+        try {
+            if (ipv6SubnetName != null) {
+                deleteSubnetInternal(vpcFilter, null, ipv6SubnetName);
+            }
+            if (ipv6AllocationName != null) {
+                deleteVpcIpamAllocationInternal(associatedVpc, ipv6AllocationName);
+            }
+            if (ipv4SubnetName != null) {
+                deleteSubnetInternal(vpcFilter, null, ipv4SubnetName);
+            }
+        } catch (Exception e) {
+            logger.error("Failed to rollback Netris resources for network {} - manual cleanup may be required: {}", networkName, e.getMessage());
         }
     }
 
