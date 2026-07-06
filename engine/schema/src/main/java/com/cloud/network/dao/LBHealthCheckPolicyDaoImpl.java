@@ -32,8 +32,9 @@ public class LBHealthCheckPolicyDaoImpl extends GenericDaoBase<LBHealthCheckPoli
     public void remove(long loadBalancerId) {
         SearchCriteria<LBHealthCheckPolicyVO> sc = createSearchCriteria();
         sc.addAnd("loadBalancerId", SearchCriteria.Op.EQ, loadBalancerId);
+        sc.addAnd("removed", SearchCriteria.Op.NULL);
 
-        expunge(sc);
+        remove(sc);
     }
 
     @Override
@@ -41,8 +42,9 @@ public class LBHealthCheckPolicyDaoImpl extends GenericDaoBase<LBHealthCheckPoli
         SearchCriteria<LBHealthCheckPolicyVO> sc = createSearchCriteria();
         sc.addAnd("loadBalancerId", SearchCriteria.Op.EQ, loadBalancerId);
         sc.addAnd("revoke", SearchCriteria.Op.EQ, revoke);
+        sc.addAnd("removed", SearchCriteria.Op.NULL);
 
-        expunge(sc);
+        remove(sc);
     }
 
     @Override
