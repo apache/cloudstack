@@ -61,6 +61,7 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
+import com.cloud.agent.api.CheckOnHostAnswer;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
@@ -3130,7 +3131,9 @@ public class LibvirtComputingResourceTest {
         assertNotNull(wrapper);
 
         final Answer answer = wrapper.execute(command, libvirtComputingResourceMock);
-        assertFalse(answer.getResult());
+        assertTrue(answer.getResult());
+        assertTrue(answer instanceof CheckOnHostAnswer);
+        assertFalse(((CheckOnHostAnswer)answer).isAlive());
 
         verify(libvirtComputingResourceMock, times(1)).getMonitor();
     }
