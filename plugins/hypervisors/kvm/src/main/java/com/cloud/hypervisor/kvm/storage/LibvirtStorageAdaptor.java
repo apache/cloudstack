@@ -664,13 +664,25 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     }
 
     private Long getBackingFileSizes(StoragePool pool, StorageVol vol) throws LibvirtException {
-        long size = vol.getInfo().allocation;
-        String backingFileOfVolumeIfExists = getBackingFileOfVolumeIfExists(vol);
-        if (backingFileOfVolumeIfExists != null) {
-            StorageVol backingFile = getVolume(pool, backingFileOfVolumeIfExists);
-            size += getBackingFileSizes(pool, backingFile);
+        long total = 0L;
+        Set<String> visited = new HashSet<>();
+        StorageVol current = vol;
+
+        while (current != null) {
+            total += current.getInfo().allocation;
+            String backingName = getBackingFileOfVolumeIfExists(current);
+            if (StringUtils.isBlank(backingName) || !visited.add(backingName)) {
+                break;
+            }
+            try {
+                current = getVolume(pool, backingName);
+            } catch (CloudRuntimeException e) {
+                logger.debug("Unable to resolve backing volume {} in pool {}: {}", backingName, pool.getName(), e.getMessage());
+                break;
+            }
         }
-        return size;
+
+        return total;
     }
 
     @Override

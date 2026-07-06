@@ -51,7 +51,7 @@ public class LibvirtStorageVolumeXMLParser {
                 NodeList pathNodes = backingStore.getElementsByTagName("path");
                 if (pathNodes.getLength() > 0) {
                     String path = pathNodes.item(0).getTextContent();
-                    if (StringUtils.isEmpty(path)) {
+                    if (StringUtils.isBlank(path)) {
                         return null;
                     }
                     path = path.trim();
