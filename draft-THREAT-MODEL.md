@@ -90,7 +90,7 @@ private/public cloud control plane", not a hosted-as-a-service appliance.
 
 - A multi-tenant IaaS control plane deployed by an operator inside a
   controlled datacenter or cloud, exposing compute / storage / network
-  orchestration to authenticated end users via a JSON API and a Vue.js Web
+  orchestration to authenticated end users via APIs which return responses in JSON or XML and a Vue.js Web
   UI, with separately authenticated administrators *(documented: `README.md`,
   `INSTALL.md`)*.
 - Used both for service-provider public clouds and for on-premises private
@@ -134,7 +134,7 @@ single-instance is also a supported topology)*.
 
 | Family | Representative entry point | Touches outside the process? | In-model? |
 | --- | --- | --- | --- |
-| Management server JSON API | `client/.../ApiServlet`, HTTPS on `:8080` (admin), `:8080/client/api` (user), HTTPS on `:8443` integration port *(documented: `server/src/main/java/com/cloud/api/ApiServlet.java`, `client/`)* | network (TCP, optionally TLS) | **yes** |
+| Management server JSON and XML APIs | `client/.../ApiServlet`, HTTPS on `:8080` (admin), `:8080/client/api` (user), HTTPS on `:8443` integration port *(documented: `server/src/main/java/com/cloud/api/ApiServlet.java`, `client/`)* | network (TCP, optionally TLS) | **yes** |
 | Management server Web UI | Vue.js SPA under `ui/`, served by the same servlet container *(documented: `ui/`)* | network | **yes** (auth is the API auth) |
 | Management server cluster RPC (peer-to-peer) | NIO + TLS between management-server replicas, `:9090` *(documented: `framework/cluster/`, `utils/.../nio/`)* | network | **yes** (peer auth via Root CA) |
 | Management server → agent RPC | NIO + TLS on `:8250` (default `agent.properties`) *(documented: `agent/conf/agent.properties` line 47, `utils/.../nio/NioServer.java`)* | network | **yes** (mutually authenticated via Root CA) |
@@ -199,7 +199,7 @@ requiring any of these will be closed with the cited disposition:
    resource-limit case.
 6. **A sandbox for templates, ISO images, or user-data scripts.** A
    user-uploaded template (via `registerTemplate`) is run by the
-   hypervisor with the privileges the offering grants. cloud-init /
+   hypervisor with the privileges the system grants. cloud-init /
    user-data / metadata is passed through to the guest; CloudStack does
    not parse or sanitize its semantics *(documented: kubernetes-service
    plugin `userdata` references; maintainer: vishesh92 — §14 Q10, end-user guest customization)*. →
@@ -337,8 +337,7 @@ follows:
 
 ## §5a Build-time and configuration variants
 
-CloudStack ships as a family of `cloudstack-management`, `cloudstack-agent`,
-`cloudstack-usage`, `cloudstack-cli`, `cloudstack-ui` packages
+CloudStack ships as a family of  packages: 'cloudstack-agent', 'cloudstack-baremetal-agent', 'cloudstack-common', 'cloudstack-integration-tests', 'cloudstack-management', 'cloudstack-marvin', 'cloudstack-mysql-ha', 'cloudstack-ui', 'cloudstack-usage'
 *(documented: `debian/`, `packaging/`)*. A sizable number of runtime
 configuration knobs materially change the security envelope. The
 security-relevant subset:
