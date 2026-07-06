@@ -970,10 +970,10 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         List<Long> allClustersFromDedicatedID = new ArrayList<>();
         List<Long> allHostsFromDedicatedID = new ArrayList<>();
 
-        // Check if the VM owner's domain has explicit dedication affinity group mappings.
-        // If so, resources dedicated to that domain are accessible to the VM owner (fixes
-        // issue where users in a domain-dedicated pod could not deploy with ImplicitDedicationPlanner).
-        List<AffinityGroupDomainMapVO> domainGroupMappings = _affinityGroupDomainMapDao.listByDomain(vmDomainId);
+        // If the VM owner's domain has an ExplicitDedication domain-level affinity group,
+        // resources dedicated to that domain are accessible to the VM owner (fixes issue #5803).
+        boolean hasDomainExplicitDedicationGroup =
+                _affinityGroupDao.findDomainLevelGroupByType(vmDomainId, "ExplicitDedication") != null;
 
         // Sort by id ascending, no pagination — retrieve all dedicated resources for this domain/account
         Filter filter = new Filter(DedicatedResourceVO.class, "id", true);
@@ -989,7 +989,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             allHostsFromDedicatedID.add(vo.getHostId());
         }
 
-        if (domainGroupMappings != null && !domainGroupMappings.isEmpty()) {
+        if (hasDomainExplicitDedicationGroup) {
             // Domain has explicit dedication affinity groups: also allow resources dedicated to this domain
             for (DedicatedResourceVO vo : _dedicatedDao.searchDedicatedPods(null, vmDomainId, null, null, filter).first()) {
                 allPodsFromDedicatedID.add(vo.getPodId());

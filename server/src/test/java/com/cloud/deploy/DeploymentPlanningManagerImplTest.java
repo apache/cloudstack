@@ -230,6 +230,9 @@ public class DeploymentPlanningManagerImplTest {
     HostPodDao _podDao;
 
     @Inject
+    HostDao _hostDao;
+
+    @Inject
     AffinityGroupDomainMapDao _affinityGroupDomainMapDao;
 
     private static final long dataCenterId = 1L;
