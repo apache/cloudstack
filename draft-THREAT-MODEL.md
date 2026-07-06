@@ -75,7 +75,7 @@ Service (IaaS) orchestration platform *(documented: `README.md`,
 `https://cloudstack.apache.org/`)*. It deploys and manages large fleets of
 virtual machines across multiple hypervisors (KVM, VMware, XenServer/XCP-ng,
 Hyper-V, baremetal-bridge, OVM) and over object/block/file storage
-(NFS, Ceph/RBD, iSCSI, SMP, primary-storage plugins, S3-compatible secondary
+(NFS, Ceph/RBD, iSCSI, SMB, primary-storage plugins, S3-compatible secondary
 storage). A central **management server** (Java/Tomcat-style servlets,
 backed by MariaDB/MySQL) exposes a signed REST/JSON API to admins, end
 users, and integrations; runs system VMs (Secondary Storage VM, Console
@@ -132,10 +132,7 @@ single-instance is also a supported topology)*.
 
 ### Component-family table
 
-| Family | Representative entry point | Touches outside the process? | In-model? |
-| --- | --- | --- | --- |
-| Management server JSON and XML APIs | `client/.../ApiServlet`, HTTP on `:8080` (API + UI), optional HTTPS on `:8443` when `https.enable=true`; user API path `:8080/client/api` *(documented: `server/src/main/java/com/cloud/api/ApiServlet.java`, `client/conf/server.properties.in`)* | network (TCP, optionally TLS) | **yes** |
-| Management server Web UI | Vue.js SPA under `ui/`, served by the same servlet container *(documented: `ui/`)* | network | **yes** (auth is the API auth) |
+| Management server JSON and XML APIs | `server/src/main/java/com/cloud/api/ApiServlet.java`, HTTP on `:8080` (API + UI), optional HTTPS on `:8443` when `https.enable=true`; user API path `:8080/client/api` *(documented: `server/src/main/java/com/cloud/api/ApiServlet.java`, `client/conf/server.properties.in`)* | network (TCP, optionally TLS) | **yes** |
 | Management server cluster RPC (peer-to-peer) | NIO + TLS between management-server replicas, `:9090` *(documented: `framework/cluster/`, `utils/.../nio/`)* | network | **yes** (peer auth via Root CA) |
 | Management server → agent RPC | NIO + TLS on `:8250` (default `agent.properties`) *(documented: `agent/conf/agent.properties` line 47, `utils/.../nio/NioServer.java`)* | network | **yes** (mutually authenticated via Root CA) |
 | `cloudstack-agent` (KVM/baremetal) | reverse-connects to management server, runs commands via libvirt / hypervisor SDK *(documented: `agent/`, `plugins/hypervisors/kvm/`)* | network + hypervisor + OS | **yes** |
