@@ -19,21 +19,20 @@ package com.cloud.hypervisor.kvm.resource;
 import static com.cloud.host.Host.HOST_CDROM_MAX_COUNT;
 import static com.cloud.host.Host.HOST_INSTANCE_CONVERSION;
 import static com.cloud.host.Host.HOST_OVFTOOL_VERSION;
-import static com.cloud.host.Host.HOST_QEMU_IMG_RBD_SUPPORT;
+import static com.cloud.host.Host.HOST_QEMU_RBD_SUPPORT;
 import static com.cloud.host.Host.HOST_QEMU_IMG_VERSION;
 import static com.cloud.host.Host.HOST_QEMU_IO_VERSION;
 import static com.cloud.host.Host.HOST_QEMU_NBD_VERSION;
-import static com.cloud.host.Host.HOST_RBD_QEMU_COPY_SUPPORT;
 import static com.cloud.host.Host.HOST_VDDK_LIB_DIR;
 import static com.cloud.host.Host.HOST_VDDK_RBD_DIRECT_IMPORT_SUPPORT;
 import static com.cloud.host.Host.HOST_VDDK_SUPPORT;
 import static com.cloud.host.Host.HOST_VDDK_VERSION;
 import static com.cloud.host.Host.HOST_VIRTV2V_INPLACE_SUPPORT;
-import static com.cloud.host.Host.HOST_VIRTV2V_IN_PLACE_VERSION;
+import static com.cloud.host.Host.HOST_VIRTV2V_INPLACE_VERSION;
 import static com.cloud.host.Host.HOST_VIRTV2V_VERSION;
-import static com.cloud.host.Host.HOST_VMWARE_CBT_IN_PLACE_FINALIZATION_SUPPORT;
-import static com.cloud.host.Host.HOST_VMWARE_CBT_RBD_SUPPORT;
-import static com.cloud.host.Host.HOST_VMWARE_CBT_SUPPORT;
+import static com.cloud.host.Host.HOST_VDDK_BLOCKCOPY_INPLACE_FINALIZATION_SUPPORT;
+import static com.cloud.host.Host.HOST_VDDK_BLOCKCOPY_RBD_SUPPORT;
+import static com.cloud.host.Host.HOST_VDDK_BLOCKCOPY_SUPPORT;
 import static com.cloud.host.Host.HOST_VOLUME_ENCRYPTION;
 import static org.apache.cloudstack.utils.linux.KVMHostInfo.isHostS390x;
 
@@ -4434,12 +4433,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         cmd.getHostDetails().put(HOST_INSTANCE_CONVERSION, String.valueOf(instanceConversionSupported));
         cmd.getHostDetails().put(HOST_VDDK_SUPPORT, String.valueOf(hostSupportsVddk()));
         cmd.getHostDetails().put(HOST_CDROM_MAX_COUNT, String.valueOf(LibvirtVMDef.MAX_CDROMS_PER_VM));
-        cmd.getHostDetails().put(HOST_VMWARE_CBT_SUPPORT, String.valueOf(hostSupportsVmwareCbtMigration()));
-        cmd.getHostDetails().put(HOST_VMWARE_CBT_IN_PLACE_FINALIZATION_SUPPORT, String.valueOf(hostSupportsVmwareCbtInPlaceFinalization()));
-        cmd.getHostDetails().put(HOST_VMWARE_CBT_RBD_SUPPORT, String.valueOf(hostSupportsVmwareCbtRbd()));
+        cmd.getHostDetails().put(HOST_VDDK_BLOCKCOPY_SUPPORT, String.valueOf(hostSupportsVddkBlockCopy()));
+        cmd.getHostDetails().put(HOST_VDDK_BLOCKCOPY_INPLACE_FINALIZATION_SUPPORT, String.valueOf(hostSupportsVddkBlockCopyInPlaceFinalization()));
+        cmd.getHostDetails().put(HOST_VDDK_BLOCKCOPY_RBD_SUPPORT, String.valueOf(hostSupportsVddkBlockCopyRbd()));
         cmd.getHostDetails().put(HOST_VIRTV2V_INPLACE_SUPPORT, String.valueOf(hostSupportsVirtV2vInPlace()));
-        cmd.getHostDetails().put(HOST_QEMU_IMG_RBD_SUPPORT, String.valueOf(hostSupportsQemuImgRbd()));
-        cmd.getHostDetails().put(HOST_RBD_QEMU_COPY_SUPPORT, String.valueOf(hostSupportsRbdQemuCopy()));
+        cmd.getHostDetails().put(HOST_QEMU_RBD_SUPPORT, String.valueOf(hostSupportsQemuRbd()));
         cmd.getHostDetails().put(HOST_VDDK_RBD_DIRECT_IMPORT_SUPPORT, String.valueOf(hostSupportsVddkRbdDirectImport()));
         if (StringUtils.isNotBlank(vddkLibDir)) {
             cmd.getHostDetails().put(HOST_VDDK_LIB_DIR, vddkLibDir);
@@ -4464,7 +4462,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
         String virtV2vInPlaceVersion = getHostVirtV2vInPlaceVersion();
         if (StringUtils.isNotBlank(virtV2vInPlaceVersion)) {
-            cmd.getHostDetails().put(HOST_VIRTV2V_IN_PLACE_VERSION, virtV2vInPlaceVersion);
+            cmd.getHostDetails().put(HOST_VIRTV2V_INPLACE_VERSION, virtV2vInPlaceVersion);
         }
         if (hostSupportsOvfExport()) {
             cmd.getHostDetails().put(HOST_OVFTOOL_VERSION, getHostOvfToolVersion());
@@ -6287,23 +6285,23 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return hostSupportsInstanceConversion() && isVddkLibDirValid(effectiveVddkLibDir) && isNbdkitVddkPluginUsable(effectiveVddkLibDir);
     }
 
-    public boolean hostSupportsVmwareCbtMigration() {
-        return hostSupportsVmwareCbtMigration(null);
+    public boolean hostSupportsVddkBlockCopy() {
+        return hostSupportsVddkBlockCopy(null);
     }
 
-    public boolean hostSupportsVmwareCbtMigration(String overriddenVddkLibDir) {
+    public boolean hostSupportsVddkBlockCopy(String overriddenVddkLibDir) {
         return hostSupportsVddk(overriddenVddkLibDir)
                 && Script.runSimpleBashScriptForExitValue(QEMU_IMG_SUPPORTED_CHECK_CMD) == 0
                 && Script.runSimpleBashScriptForExitValue(QEMU_NBD_SUPPORTED_CHECK_CMD) == 0
                 && Script.runSimpleBashScriptForExitValue(QEMU_IO_SUPPORTED_CHECK_CMD) == 0;
     }
 
-    public boolean hostSupportsVmwareCbtInPlaceFinalization() {
-        return hostSupportsVmwareCbtMigration() && hostSupportsVirtV2vInPlace();
+    public boolean hostSupportsVddkBlockCopyInPlaceFinalization() {
+        return hostSupportsVddkBlockCopy() && hostSupportsVirtV2vInPlace();
     }
 
-    public boolean hostSupportsVmwareCbtRbd() {
-        return hostSupportsVmwareCbtInPlaceFinalization()
+    public boolean hostSupportsVddkBlockCopyRbd() {
+        return hostSupportsVddkBlockCopyInPlaceFinalization()
                 && Script.runSimpleBashScriptForExitValue(QEMU_IMG_RBD_SUPPORTED_CHECK_CMD) == 0;
     }
 
@@ -6374,12 +6372,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return parts.length > 0 ? parts[0] : versionLine;
     }
 
-    public boolean hostSupportsQemuImgRbd() {
+    public boolean hostSupportsQemuRbd() {
         return Script.runSimpleBashScriptForExitValue(QEMU_IMG_RBD_SUPPORTED_CHECK_CMD) == 0;
-    }
-
-    public boolean hostSupportsRbdQemuCopy() {
-        return hostSupportsQemuImgRbd();
     }
 
     public boolean hostSupportsVddkRbdDirectImport() {
@@ -6387,7 +6381,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public boolean hostSupportsVddkRbdDirectImport(String overriddenVddkLibDir) {
-        return hostSupportsVddk(overriddenVddkLibDir) && hostSupportsQemuImgRbd() && hostSupportsVirtV2vInPlace();
+        return hostSupportsVddk(overriddenVddkLibDir) && hostSupportsQemuRbd() && hostSupportsVirtV2vInPlace();
     }
 
     protected boolean isVddkLibDirValid(String path) {

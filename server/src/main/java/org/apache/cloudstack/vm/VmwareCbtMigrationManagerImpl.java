@@ -1013,7 +1013,7 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "CBT migration host must be an enabled, running routing host");
         }
         hostDao.loadDetails(host);
-        if (!Boolean.parseBoolean(host.getDetail(Host.HOST_VMWARE_CBT_SUPPORT))) {
+        if (!Boolean.parseBoolean(host.getDetail(Host.HOST_VDDK_BLOCKCOPY_SUPPORT))) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
                     String.format("CBT migration host %s does not report VMware CBT migration support", host.getName()));
         }
@@ -1024,12 +1024,12 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
 
     private String getRequiredHostCapability(boolean requireInPlaceFinalization, boolean requireRbdSupport) {
         if (requireRbdSupport) {
-            return Host.HOST_VMWARE_CBT_RBD_SUPPORT;
+            return Host.HOST_VDDK_BLOCKCOPY_RBD_SUPPORT;
         }
         if (requireInPlaceFinalization) {
-            return Host.HOST_VMWARE_CBT_IN_PLACE_FINALIZATION_SUPPORT;
+            return Host.HOST_VDDK_BLOCKCOPY_INPLACE_FINALIZATION_SUPPORT;
         }
-        return Host.HOST_VMWARE_CBT_SUPPORT;
+        return Host.HOST_VDDK_BLOCKCOPY_SUPPORT;
     }
 
     private String getRequiredHostCapabilityDescription(boolean requireInPlaceFinalization, boolean requireRbdSupport) {
@@ -1047,12 +1047,12 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
         if (requireRbdSupport) {
             return String.format("Could not find an enabled KVM host in cluster %s with '%s' enabled, which is required to perform VMware CBT migration to RBD storage. " +
                             "This usually means the host is missing VMware CBT migration support, qemu-img RBD support, or in-place virt-v2v support through the virt-v2v-in-place binary or virt-v2v --in-place option.",
-                    destinationCluster.getName(), Host.HOST_VMWARE_CBT_RBD_SUPPORT);
+                    destinationCluster.getName(), Host.HOST_VDDK_BLOCKCOPY_RBD_SUPPORT);
         }
         if (requireInPlaceFinalization) {
             return String.format("Could not find an enabled KVM host in cluster %s with '%s' enabled, which is required to perform VMware CBT in-place finalization. " +
                             "This usually means the host is missing virt-v2v-in-place or virt-v2v --in-place support.",
-                    destinationCluster.getName(), Host.HOST_VMWARE_CBT_IN_PLACE_FINALIZATION_SUPPORT);
+                    destinationCluster.getName(), Host.HOST_VDDK_BLOCKCOPY_INPLACE_FINALIZATION_SUPPORT);
         }
         return String.format("Could not find an enabled KVM host in cluster %s that reports %s",
                 destinationCluster.getName(), getRequiredHostCapabilityDescription(requireInPlaceFinalization, false));
@@ -1074,11 +1074,11 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
         throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
                 String.format("Destination storage requires virt-v2v in-place finalization, but %s does not report '%s=true'. " +
                                 "Ensure virt-v2v-in-place or virt-v2v --in-place is available on the conversion host.",
-                        hostName, Host.HOST_VMWARE_CBT_IN_PLACE_FINALIZATION_SUPPORT));
+                        hostName, Host.HOST_VDDK_BLOCKCOPY_INPLACE_FINALIZATION_SUPPORT));
     }
 
     private boolean hostSupportsInPlaceFinalization(HostVO host) {
-        return host != null && Boolean.parseBoolean(host.getDetail(Host.HOST_VMWARE_CBT_IN_PLACE_FINALIZATION_SUPPORT));
+        return host != null && Boolean.parseBoolean(host.getDetail(Host.HOST_VDDK_BLOCKCOPY_INPLACE_FINALIZATION_SUPPORT));
     }
 
     private boolean requiresInPlaceFinalizationSupport(VmwareCbtStorageTarget storageTarget) {
@@ -1096,12 +1096,12 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
         if (!requiresRbdStorageSupport(storageTarget)) {
             return;
         }
-        if (host == null || !Boolean.parseBoolean(host.getDetail(Host.HOST_VMWARE_CBT_RBD_SUPPORT))) {
+        if (host == null || !Boolean.parseBoolean(host.getDetail(Host.HOST_VDDK_BLOCKCOPY_RBD_SUPPORT))) {
             String hostName = host == null ? "selected KVM host" : host.getName();
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
                     String.format("Destination RBD storage requires qemu RBD support on the conversion host, but %s does not report '%s=true'. " +
                                     "This usually means the host is missing VMware CBT migration support, qemu-img RBD support, or in-place virt-v2v support through the virt-v2v-in-place binary or virt-v2v --in-place option.",
-                            hostName, Host.HOST_VMWARE_CBT_RBD_SUPPORT));
+                            hostName, Host.HOST_VDDK_BLOCKCOPY_RBD_SUPPORT));
         }
     }
 
@@ -1292,12 +1292,12 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
         if (storageTarget.supportsNonInPlaceFinalizationFallback()) {
             findings.fail("destinationStorage.finalizationSupported", "storage", resource,
                     String.format("KVM host %s does not report '%s=true'. Ensure virt-v2v-in-place or virt-v2v --in-place is available, or explicitly allow non-in-place fallback finalization with %s.",
-                            cbtHost.getName(), Host.HOST_VMWARE_CBT_IN_PLACE_FINALIZATION_SUPPORT,
+                            cbtHost.getName(), Host.HOST_VDDK_BLOCKCOPY_INPLACE_FINALIZATION_SUPPORT,
                             VmwareCbtAllowNonInPlaceFinalization.key()));
         } else {
             findings.fail("destinationStorage.finalizationSupported", "storage", resource,
                     String.format("Destination storage requires virt-v2v in-place finalization, but KVM host %s does not report '%s=true'. Ensure virt-v2v-in-place or virt-v2v --in-place is available on the conversion host.",
-                            cbtHost.getName(), Host.HOST_VMWARE_CBT_IN_PLACE_FINALIZATION_SUPPORT));
+                            cbtHost.getName(), Host.HOST_VDDK_BLOCKCOPY_INPLACE_FINALIZATION_SUPPORT));
         }
     }
 

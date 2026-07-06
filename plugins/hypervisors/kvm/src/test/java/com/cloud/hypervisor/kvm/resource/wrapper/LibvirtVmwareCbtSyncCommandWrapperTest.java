@@ -61,7 +61,7 @@ public class LibvirtVmwareCbtSyncCommandWrapperTest {
 
     @Before
     public void setUp() {
-        Mockito.when(libvirtComputingResource.hostSupportsVmwareCbtMigration(Mockito.nullable(String.class))).thenReturn(true);
+        Mockito.when(libvirtComputingResource.hostSupportsVddkBlockCopy(Mockito.nullable(String.class))).thenReturn(true);
         Mockito.when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolManager);
         Mockito.when(storagePoolManager.getStoragePool(Storage.StoragePoolType.RBD, "rbd-pool-uuid")).thenReturn(rbdStoragePool);
         Mockito.when(rbdStoragePool.getType()).thenReturn(Storage.StoragePoolType.RBD);
@@ -140,14 +140,14 @@ public class LibvirtVmwareCbtSyncCommandWrapperTest {
                 List.of(new VmwareCbtChangedBlockRangeTO("disk-1", 0, 1024)));
         command.setVddkLibDir("/opt/vmware-vddk/override");
         command.setVddkThumbprint("AA:BB:CC");
-        Mockito.when(libvirtComputingResource.hostSupportsVmwareCbtMigration("/opt/vmware-vddk/override"))
+        Mockito.when(libvirtComputingResource.hostSupportsVddkBlockCopy("/opt/vmware-vddk/override"))
                 .thenReturn(true);
 
         Answer answer = wrapper.execute(command, libvirtComputingResource);
 
         Assert.assertTrue(answer.getResult());
         Assert.assertTrue(answer.getDetails().contains("copied 1 changed block range"));
-        Mockito.verify(libvirtComputingResource).hostSupportsVmwareCbtMigration("/opt/vmware-vddk/override");
+        Mockito.verify(libvirtComputingResource).hostSupportsVddkBlockCopy("/opt/vmware-vddk/override");
     }
 
     @Test

@@ -153,7 +153,7 @@ public class VmwareCbtStorageTargetTest {
     private HostVO createHost(String name, String inPlaceSupported) {
         HostVO host = Mockito.mock(HostVO.class);
         Mockito.when(host.getName()).thenReturn(name);
-        Mockito.when(host.getDetail(Host.HOST_VMWARE_CBT_IN_PLACE_FINALIZATION_SUPPORT)).thenReturn(inPlaceSupported);
+        Mockito.when(host.getDetail(Host.HOST_VDDK_BLOCKCOPY_INPLACE_FINALIZATION_SUPPORT)).thenReturn(inPlaceSupported);
         return host;
     }
 

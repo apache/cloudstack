@@ -2410,10 +2410,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             return;
         }
         hostDao.loadDetails(importHost);
-        if (!Boolean.parseBoolean(importHost.getDetail(Host.HOST_RBD_QEMU_COPY_SUPPORT))) {
+        if (!Boolean.parseBoolean(importHost.getDetail(Host.HOST_QEMU_RBD_SUPPORT))) {
             throw new CloudRuntimeException(String.format("Import host %s cannot copy converted qcow2 disks to RBD. " +
                     "Please select an import host with %s=true, or use a non-RBD destination pool.",
-                    importHost.getName(), Host.HOST_RBD_QEMU_COPY_SUPPORT));
+                    importHost.getName(), Host.HOST_QEMU_RBD_SUPPORT));
         }
     }
 

@@ -53,7 +53,7 @@ public class LibvirtVmwareCbtCutoverCommandWrapper extends CommandWrapper<Vmware
 
     @Override
     public Answer execute(VmwareCbtCutoverCommand cmd, LibvirtComputingResource serverResource) {
-        if (!serverResource.hostSupportsVmwareCbtMigration(cmd.getVddkLibDir())) {
+        if (!serverResource.hostSupportsVddkBlockCopy(cmd.getVddkLibDir())) {
             String msg = String.format("Cannot cut over VMware CBT migration %s on host %s. VDDK, qemu-img, qemu-nbd and qemu-io are required.",
                     cmd.getMigrationUuid(), serverResource.getPrivateIp());
             logger.info(msg);

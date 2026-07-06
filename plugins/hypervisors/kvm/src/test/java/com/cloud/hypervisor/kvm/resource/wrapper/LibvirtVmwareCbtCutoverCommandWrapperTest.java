@@ -59,7 +59,7 @@ public class LibvirtVmwareCbtCutoverCommandWrapperTest {
 
     @Before
     public void setUp() {
-        Mockito.when(libvirtComputingResource.hostSupportsVmwareCbtMigration(Mockito.nullable(String.class))).thenReturn(true);
+        Mockito.when(libvirtComputingResource.hostSupportsVddkBlockCopy(Mockito.nullable(String.class))).thenReturn(true);
         Mockito.when(libvirtComputingResource.getLibguestfsBackend()).thenReturn("direct");
         Mockito.when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolManager);
         Mockito.when(storagePoolManager.getStoragePool(Storage.StoragePoolType.RBD, "rbd-pool-uuid")).thenReturn(rbdStoragePool);

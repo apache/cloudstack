@@ -808,21 +808,20 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 String vddkSupport = detailsMap.get(Host.HOST_VDDK_SUPPORT);
                 String vddkLibDir = detailsMap.get(Host.HOST_VDDK_LIB_DIR);
                 String vddkVersion = detailsMap.get(Host.HOST_VDDK_VERSION);
-                String vmwareCbtSupport = detailsMap.get(Host.HOST_VMWARE_CBT_SUPPORT);
-                String vmwareCbtInPlaceFinalizationSupport = detailsMap.get(Host.HOST_VMWARE_CBT_IN_PLACE_FINALIZATION_SUPPORT);
-                String vmwareCbtRbdSupport = detailsMap.get(Host.HOST_VMWARE_CBT_RBD_SUPPORT);
+                String vmwareCbtSupport = detailsMap.get(Host.HOST_VDDK_BLOCKCOPY_SUPPORT);
+                String vmwareCbtInPlaceFinalizationSupport = detailsMap.get(Host.HOST_VDDK_BLOCKCOPY_INPLACE_FINALIZATION_SUPPORT);
+                String vmwareCbtRbdSupport = detailsMap.get(Host.HOST_VDDK_BLOCKCOPY_RBD_SUPPORT);
                 String qemuImgVersion = detailsMap.get(Host.HOST_QEMU_IMG_VERSION);
                 String qemuNbdVersion = detailsMap.get(Host.HOST_QEMU_NBD_VERSION);
                 String qemuIoVersion = detailsMap.get(Host.HOST_QEMU_IO_VERSION);
-                String virtV2vInPlaceVersion = detailsMap.get(Host.HOST_VIRTV2V_IN_PLACE_VERSION);
+                String virtV2vInPlaceVersion = detailsMap.get(Host.HOST_VIRTV2V_INPLACE_VERSION);
                 String virtv2vInPlaceSupport = detailsMap.get(Host.HOST_VIRTV2V_INPLACE_SUPPORT);
-                String qemuImgRbdSupport = detailsMap.get(Host.HOST_QEMU_IMG_RBD_SUPPORT);
-                String rbdQemuCopySupport = detailsMap.get(Host.HOST_RBD_QEMU_COPY_SUPPORT);
+                String qemuImgRbdSupport = detailsMap.get(Host.HOST_QEMU_RBD_SUPPORT);
                 String vddkRbdDirectImportSupport = detailsMap.get(Host.HOST_VDDK_RBD_DIRECT_IMPORT_SUPPORT);
                 logger.debug("Got HOST_UEFI_ENABLE [{}] for host [{}]:", uefiEnabled, host);
                 if (ObjectUtils.anyNotNull(uefiEnabled, virtv2vVersion, ovftoolVersion, vddkSupport, vddkLibDir, vddkVersion,
                         vmwareCbtSupport, vmwareCbtInPlaceFinalizationSupport, vmwareCbtRbdSupport, qemuImgVersion, qemuNbdVersion, qemuIoVersion, virtV2vInPlaceVersion,
-                        virtv2vInPlaceSupport, qemuImgRbdSupport, rbdQemuCopySupport, vddkRbdDirectImportSupport)) {
+                        virtv2vInPlaceSupport, qemuImgRbdSupport, vddkRbdDirectImportSupport)) {
                     _hostDao.loadDetails(host);
                     boolean updateNeeded = false;
                     if (StringUtils.isNotBlank(uefiEnabled) && !uefiEnabled.equals(host.getDetails().get(Host.HOST_UEFI_ENABLE))) {
@@ -857,18 +856,18 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                         }
                         updateNeeded = true;
                     }
-                    if (StringUtils.isNotBlank(vmwareCbtSupport) && !vmwareCbtSupport.equals(host.getDetails().get(Host.HOST_VMWARE_CBT_SUPPORT))) {
-                        host.getDetails().put(Host.HOST_VMWARE_CBT_SUPPORT, vmwareCbtSupport);
+                    if (StringUtils.isNotBlank(vmwareCbtSupport) && !vmwareCbtSupport.equals(host.getDetails().get(Host.HOST_VDDK_BLOCKCOPY_SUPPORT))) {
+                        host.getDetails().put(Host.HOST_VDDK_BLOCKCOPY_SUPPORT, vmwareCbtSupport);
                         updateNeeded = true;
                     }
                     if (StringUtils.isNotBlank(vmwareCbtInPlaceFinalizationSupport) &&
-                            !vmwareCbtInPlaceFinalizationSupport.equals(host.getDetails().get(Host.HOST_VMWARE_CBT_IN_PLACE_FINALIZATION_SUPPORT))) {
-                        host.getDetails().put(Host.HOST_VMWARE_CBT_IN_PLACE_FINALIZATION_SUPPORT, vmwareCbtInPlaceFinalizationSupport);
+                            !vmwareCbtInPlaceFinalizationSupport.equals(host.getDetails().get(Host.HOST_VDDK_BLOCKCOPY_INPLACE_FINALIZATION_SUPPORT))) {
+                        host.getDetails().put(Host.HOST_VDDK_BLOCKCOPY_INPLACE_FINALIZATION_SUPPORT, vmwareCbtInPlaceFinalizationSupport);
                         updateNeeded = true;
                     }
                     if (StringUtils.isNotBlank(vmwareCbtRbdSupport) &&
-                            !vmwareCbtRbdSupport.equals(host.getDetails().get(Host.HOST_VMWARE_CBT_RBD_SUPPORT))) {
-                        host.getDetails().put(Host.HOST_VMWARE_CBT_RBD_SUPPORT, vmwareCbtRbdSupport);
+                            !vmwareCbtRbdSupport.equals(host.getDetails().get(Host.HOST_VDDK_BLOCKCOPY_RBD_SUPPORT))) {
+                        host.getDetails().put(Host.HOST_VDDK_BLOCKCOPY_RBD_SUPPORT, vmwareCbtRbdSupport);
                         updateNeeded = true;
                     }
                     if (!StringUtils.defaultString(qemuImgVersion).equals(StringUtils.defaultString(host.getDetails().get(Host.HOST_QEMU_IMG_VERSION)))) {
@@ -895,11 +894,11 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                         }
                         updateNeeded = true;
                     }
-                    if (!StringUtils.defaultString(virtV2vInPlaceVersion).equals(StringUtils.defaultString(host.getDetails().get(Host.HOST_VIRTV2V_IN_PLACE_VERSION)))) {
+                    if (!StringUtils.defaultString(virtV2vInPlaceVersion).equals(StringUtils.defaultString(host.getDetails().get(Host.HOST_VIRTV2V_INPLACE_VERSION)))) {
                         if (StringUtils.isBlank(virtV2vInPlaceVersion)) {
-                            host.getDetails().remove(Host.HOST_VIRTV2V_IN_PLACE_VERSION);
+                            host.getDetails().remove(Host.HOST_VIRTV2V_INPLACE_VERSION);
                         } else {
-                            host.getDetails().put(Host.HOST_VIRTV2V_IN_PLACE_VERSION, virtV2vInPlaceVersion);
+                            host.getDetails().put(Host.HOST_VIRTV2V_INPLACE_VERSION, virtV2vInPlaceVersion);
                         }
                         updateNeeded = true;
                     }
@@ -907,12 +906,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                         host.getDetails().put(Host.HOST_VIRTV2V_INPLACE_SUPPORT, virtv2vInPlaceSupport);
                         updateNeeded = true;
                     }
-                    if (StringUtils.isNotBlank(qemuImgRbdSupport) && !qemuImgRbdSupport.equals(host.getDetails().get(Host.HOST_QEMU_IMG_RBD_SUPPORT))) {
-                        host.getDetails().put(Host.HOST_QEMU_IMG_RBD_SUPPORT, qemuImgRbdSupport);
-                        updateNeeded = true;
-                    }
-                    if (StringUtils.isNotBlank(rbdQemuCopySupport) && !rbdQemuCopySupport.equals(host.getDetails().get(Host.HOST_RBD_QEMU_COPY_SUPPORT))) {
-                        host.getDetails().put(Host.HOST_RBD_QEMU_COPY_SUPPORT, rbdQemuCopySupport);
+                    if (StringUtils.isNotBlank(qemuImgRbdSupport) && !qemuImgRbdSupport.equals(host.getDetails().get(Host.HOST_QEMU_RBD_SUPPORT))) {
+                        host.getDetails().put(Host.HOST_QEMU_RBD_SUPPORT, qemuImgRbdSupport);
                         updateNeeded = true;
                     }
                     if (StringUtils.isNotBlank(vddkRbdDirectImportSupport) && !vddkRbdDirectImportSupport.equals(host.getDetails().get(Host.HOST_VDDK_RBD_DIRECT_IMPORT_SUPPORT))) {
