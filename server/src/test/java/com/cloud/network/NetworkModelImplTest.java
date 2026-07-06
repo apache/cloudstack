@@ -391,9 +391,10 @@ public class NetworkModelImplTest {
     // -----------------------------------------------------------------------
 
     @Test
-    public void listSupportedNetworkServiceProvidersIncludesExtensionBackedProviders() {
+    public void listSupportedNetworkServiceProvidersIncludesExtensionBackedProvidersWhenServiceIsSupported() {
         PhysicalNetworkServiceProviderVO nsp = mock(PhysicalNetworkServiceProviderVO.class);
         when(nsp.getProviderName()).thenReturn("my-ext");
+        when(nsp.isFirewallServiceProvided()).thenReturn(true);
         when(physicalNetworkServiceProviderDao.listAll()).thenReturn(List.of(nsp));
 
         Extension extension = mock(Extension.class);
@@ -405,11 +406,48 @@ public class NetworkModelImplTest {
         // networkElements is empty so no standard providers found
         ReflectionTestUtils.setField(networkModel, "networkElements", new ArrayList<>());
 
-        // We call with null service to test the inclusion path (parameter is service name String)
-        List<? extends Network.Provider> result = networkModel.listSupportedNetworkServiceProviders(null);
+        NetworkExtensionElement mockElement = mock(NetworkExtensionElement.class);
+        Map<Network.Service, Map<Network.Capability, String>> capabilities = new HashMap<>();
+        capabilities.put(Network.Service.Firewall, new HashMap<>());
+        when(networkExtensionElement.withProviderName("my-ext")).thenReturn(mockElement);
+        when(mockElement.getCapabilities()).thenReturn(capabilities);
+
+        List<? extends Network.Provider> result =
+                networkModel.listSupportedNetworkServiceProviders(Network.Service.Firewall.getName());
 
         boolean found = result.stream().anyMatch(p -> "my-ext".equalsIgnoreCase(p.getName()));
         assertTrue("Extension-backed provider should be included", found);
+
+        Mockito.verify(physicalNetworkServiceProviderDao, Mockito.times(1)).listAll();
+        Mockito.verify(physicalNetworkServiceProviderDao, Mockito.never()).listBy(Mockito.anyLong());
+    }
+
+    @Test
+    public void listSupportedNetworkServiceProvidersExcludesExtensionBackedProvidersWhenServiceIsNotSupported() {
+        PhysicalNetworkServiceProviderVO nsp = mock(PhysicalNetworkServiceProviderVO.class);
+        when(nsp.getProviderName()).thenReturn("my-ext");
+        when(nsp.isFirewallServiceProvided()).thenReturn(true);
+        when(physicalNetworkServiceProviderDao.listAll()).thenReturn(List.of(nsp));
+
+        Extension extension = mock(Extension.class);
+        when(extension.getName()).thenReturn("my-ext");
+        when(extensionHelper.listExtensionsByType(Extension.Type.NetworkOrchestrator)).thenReturn(List.of(extension));
+
+        when(extensionHelper.isNetworkExtensionProvider("my-ext")).thenReturn(true);
+
+        // networkElements is empty so no standard providers found
+        ReflectionTestUtils.setField(networkModel, "networkElements", new ArrayList<>());
+
+        NetworkExtensionElement mockElement = mock(NetworkExtensionElement.class);
+        Map<Network.Service, Map<Network.Capability, String>> capabilities = new HashMap<>();
+        when(networkExtensionElement.withProviderName("my-ext")).thenReturn(mockElement);
+        when(mockElement.getCapabilities()).thenReturn(capabilities);
+
+        List<? extends Network.Provider> result =
+                networkModel.listSupportedNetworkServiceProviders(Network.Service.Firewall.getName());
+
+        boolean found = result.stream().anyMatch(p -> "my-ext".equalsIgnoreCase(p.getName()));
+        assertFalse("Extension-backed provider should NOT be included", found);
 
         Mockito.verify(physicalNetworkServiceProviderDao, Mockito.times(1)).listAll();
         Mockito.verify(physicalNetworkServiceProviderDao, Mockito.never()).listBy(Mockito.anyLong());

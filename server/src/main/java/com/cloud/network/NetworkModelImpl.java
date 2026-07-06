@@ -1351,6 +1351,17 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
                         if (extProvider == null) {
                             continue;
                         }
+
+                        // Check if the network extension provider supports the service
+                        NetworkElement element = getElementImplementingProvider(provName);
+                        if (element == null) {
+                            continue;
+                        }
+                        Map<Service, Map<Capability, String>> elementCapabilities = element.getCapabilities();
+                        if (elementCapabilities == null || !elementCapabilities.containsKey(service)) {
+                            continue;
+                        }
+
                         supportedProviders.add(extProvider);
                         addedExtProviders.add(provName);
                     }
