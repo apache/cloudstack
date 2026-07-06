@@ -72,7 +72,7 @@ public interface VolumeApiService {
     Volume allocVolume(CreateVolumeCmd cmd) throws ResourceAllocationException;
 
     Volume allocVolume(long ownerId, Long zoneId, Long diskOfferingId, Long vmId, Long snapshotId, String name,
-           Long cmdSize, Boolean displayVolume, Long cmdMinIops, Long cmdMaxIops, String customId)
+           Long cmdSize, Boolean displayVolume, Long cmdMinIops, Long cmdMaxIops, String customId, Long kmsKeyId)
             throws ResourceAllocationException;
 
     /**

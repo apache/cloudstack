@@ -186,8 +186,8 @@
           :href="getGitHubUrl(from)"
           class="auth-btn github-auth"
           style="height: 38px; width: 185px; padding: 0; margin-bottom: 5px;" >
-          <img src="/assets/github.svg" style="width: 32px; padding: 5px" />
-          <a-typography-text>Sign in with Github</a-typography-text>
+          <img src="/assets/github.svg" alt="GitHub" style="width: 32px; padding: 5px" />
+          <a-typography-text>Sign in with GitHub</a-typography-text>
         </a-button>
       </div>
       <div class="social-auth" v-if="googleprovider">
@@ -198,8 +198,20 @@
           :href="getGoogleUrl(from)"
           class="auth-btn google-auth"
           style="height: 38px; width: 185px; padding: 0" >
-          <img src="/assets/google.svg" style="width: 32px; padding: 5px" />
+          <img src="/assets/google.svg" alt="Google" style="width: 32px; padding: 5px" />
           <a-typography-text>Sign in with Google</a-typography-text>
+        </a-button>
+      </div>
+      <div class="social-auth" v-if="keycloakprovider">
+        <a-button
+          @click="handleKeycloakProviderAndDomain"
+          tag="a"
+          color="primary"
+          :href="getKeycloakUrl(from)"
+          class="auth-btn keycloak-auth"
+          style="height: 38px; width: 185px; padding: 0" >
+          <img src="/assets/keycloak.svg" alt="Keycloak" style="width: 32px; padding: 5px" />
+          <a-typography-text>Sign in with Keycloak</a-typography-text>
         </a-button>
       </div>
     </div>
@@ -231,10 +243,14 @@ export default {
       socialLogin: false,
       googleprovider: false,
       githubprovider: false,
+      keycloakprovider: false,
       googleredirecturi: '',
       githubredirecturi: '',
+      keycloakredirecturi: '',
       googleclientid: '',
       githubclientid: '',
+      keycloakclientid: '',
+      keycloakauthorizeurl: '',
       loginType: 0,
       state: {
         time: 60,
@@ -325,8 +341,14 @@ export default {
               this.githubclientid = item.clientid
               this.githubredirecturi = item.redirecturi
             }
+            if (item.provider === 'keycloak') {
+              this.keycloakprovider = item.enabled
+              this.keycloakclientid = item.clientid
+              this.keycloakredirecturi = item.redirecturi
+              this.keycloakauthorizeurl = item.authorizeurl
+            }
           })
-          this.socialLogin = this.googleprovider || this.githubprovider
+          this.socialLogin = this.googleprovider || this.githubprovider || this.keycloakprovider
         }
       })
       postAPI('forgotPassword', {}).then(response => {
@@ -362,13 +384,26 @@ export default {
       this.handleDomain()
       this.$store.commit('SET_OAUTH_PROVIDER_USED_TO_LOGIN', 'google')
     },
+    handleKeycloakProviderAndDomain () {
+      this.handleDomain()
+      this.$store.commit('SET_OAUTH_PROVIDER_USED_TO_LOGIN', 'keycloak')
+    },
     handleDomain () {
       const values = toRaw(this.form)
-      if (!values.domain) {
-        this.$store.commit('SET_DOMAIN_USED_TO_LOGIN', '/')
-      } else {
-        this.$store.commit('SET_DOMAIN_USED_TO_LOGIN', values.domain)
+      const domain = this.getLoginDomain(values.domain)
+      this.$store.commit('SET_DOMAIN_USED_TO_LOGIN', domain)
+    },
+    getLoginDomain (domain) {
+      if (this.$config.loginBaseDomain) {
+        if (domain) {
+          return this.$config.loginBaseDomain + '/' + domain
+        }
+        return this.$config.loginBaseDomain
       }
+      if (domain) {
+        return domain
+      }
+      return '/'
     },
     getGitHubUrl (from) {
       const rootURl = 'https://github.com/login/oauth/authorize'
@@ -401,6 +436,20 @@ export default {
 
       return `${rootUrl}?${qs.toString()}`
     },
+    getKeycloakUrl (from) {
+      const rootURl = this.keycloakauthorizeurl
+      const options = {
+        redirect_uri: this.keycloakredirecturi,
+        client_id: this.keycloakclientid,
+        response_type: 'code',
+        scope: 'openid email',
+        state: 'cloudstack'
+      }
+
+      const qs = new URLSearchParams(options)
+
+      return `${rootURl}?${qs.toString()}`
+    },
     handleSubmit (e) {
       e.preventDefault()
       if (this.state.loginBtn) return
@@ -417,10 +466,7 @@ export default {
           delete loginParams.username
           loginParams[!this.state.loginType ? 'email' : 'username'] = values.username
           loginParams.password = values.password
-          loginParams.domain = values.domain
-          if (!loginParams.domain) {
-            loginParams.domain = '/'
-          }
+          loginParams.domain = this.getLoginDomain(values.domain)
           this.Login(loginParams)
             .then((res) => this.loginSuccess(res))
             .catch(err => {
@@ -449,10 +495,7 @@ export default {
         loginParams.email = this.email
         loginParams.provider = provider
         loginParams.secretcode = this.secretcode
-        loginParams.domain = values.domain
-        if (!loginParams.domain) {
-          loginParams.domain = '/'
-        }
+        loginParams.domain = this.getLoginDomain(values.domain)
         this.OauthLogin(loginParams)
           .then((res) => this.loginSuccess(res))
           .catch(err => {

@@ -38,6 +38,7 @@ from marvin.lib.base import (Account,
                              DiskOffering,
                              Domain,
                              Project,
+                             ResourceSchedule,
                              ServiceOffering,
                              Template,
                              VirtualMachine,
@@ -65,6 +66,7 @@ DEFAULT_DURATION = 120
 DEFAULT_INTERVAL = 30
 DEFAULT_QUIETTIME = 60
 NAME_PREFIX = "AS-VmGroup-"
+SCHEDULED_RESOURCE_TYPE_ASG = "AutoScaleVmGroup"
 
 CONFIG_NAME_DISK_CONTROLLER = "vmware.root.disk.controller"
 OS_DEFAULT = "osdefault"
@@ -860,13 +862,81 @@ class TestVmAutoScaling(cloudstackTestCase):
 
         VirtualMachine.delete(vm, self.apiclient, expunge=True)
 
-    @attr(tags=["advanced"], required_hardware="false")
-    def test_05_remove_vmgroup(self):
-        """ Verify removal of AutoScaling VM Group"""
-        self.message("Running test_05_remove_vmgroup")
+    @attr(tags=["advanced", "vj", "smoke"], required_hardware="false")
+    def test_05_autoscaling_vmgroup_schedule_update(self):
+        """Verify resource scheduling updates AutoScale VM Group min/max members"""
+        self.message("Running test_05_autoscaling_vmgroup_schedule_update")
 
-        self.delete_vmgroup(self.autoscaling_vmgroup, self.regular_user_apiclient, cleanup=False, expected=False)
-        self.delete_vmgroup(self.autoscaling_vmgroup, self.regular_user_apiclient, cleanup=True, expected=True)
+        vmgroups = AutoScaleVmGroup.list(
+            self.regular_user_apiclient,
+            id=self.autoscaling_vmgroup.id
+        )
+        self.assertEqual(
+            isinstance(vmgroups, list),
+            True,
+            "List autoscale vm groups should return a valid list"
+        )
+        self.assertEqual(
+            len(vmgroups) > 0,
+            True,
+            "Expected autoscale vm group to exist"
+        )
+        vmgroup = vmgroups[0]
+
+        current_min_members = int(vmgroup.minmembers)
+        current_max_members = int(vmgroup.maxmembers)
+        new_min_members = current_min_members + 1
+        new_max_members = current_max_members + 1
+
+        schedule = ResourceSchedule.create(
+            self.regular_user_apiclient,
+            SCHEDULED_RESOURCE_TYPE_ASG,
+            self.autoscaling_vmgroup.id,
+            "update",
+            "* * * * *",
+            datetime.datetime.now().astimezone().tzinfo,
+            (datetime.datetime.now() + datetime.timedelta(seconds=5)).strftime(
+                "%Y-%m-%d %H:%M:%S"
+            ),
+            enabled=True,
+            details=[{
+                "minmembers": str(new_min_members)},
+                {
+                "maxmembers": str(new_max_members)
+            }]
+        )
+        self.cleanup.append(schedule)
+        self.message("Created AutoScale VM Group schedule with ID: %s" % schedule.id)
+
+        schedules = ResourceSchedule.list(
+            self.regular_user_apiclient,
+            SCHEDULED_RESOURCE_TYPE_ASG,
+            self.autoscaling_vmgroup.id,
+            id=schedule.id
+        )
+        self.assertEqual(
+            isinstance(schedules, list),
+            True,
+            "Check list response returns a valid list for ASG schedules",
+        )
+        self.assertNotEqual(len(schedules), 0, "Check ASG schedule list")
+
+        # Poll for up to 4 minutes to allow the scheduler worker to run and apply update
+        schedule_worked = False
+        for _ in range(0, 24):
+            time.sleep(10)
+            updated_group = AutoScaleVmGroup.list(
+                self.regular_user_apiclient,
+                id=self.autoscaling_vmgroup.id
+            )[0]
+            if int(updated_group.minmembers) == new_min_members and int(updated_group.maxmembers) == new_max_members:
+                schedule_worked = True
+                break
+
+        self.assertTrue(
+            schedule_worked,
+            "Expected scheduled action to update AutoScale VM Group min/max members"
+        )
 
     @attr(tags=["advanced"], required_hardware="false")
     def test_06_autoscaling_vmgroup_on_project_network(self):
@@ -1211,3 +1281,11 @@ class TestVmAutoScaling(cloudstackTestCase):
 
         self.delete_vmgroup(autoscaling_vmgroup_vpc, self.regular_user_apiclient, cleanup=False, expected=False)
         self.delete_vmgroup(autoscaling_vmgroup_vpc, self.regular_user_apiclient, cleanup=True, expected=True)
+
+    @attr(tags=["advanced", "vj"], required_hardware="false")
+    def test_05_remove_vmgroup(self):
+        """ Verify removal of AutoScaling VM Group"""
+        self.message("Running test_05_remove_vmgroup")
+
+        self.delete_vmgroup(self.autoscaling_vmgroup, self.regular_user_apiclient, cleanup=False, expected=False)
+        self.delete_vmgroup(self.autoscaling_vmgroup, self.regular_user_apiclient, cleanup=True, expected=True)
