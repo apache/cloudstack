@@ -128,15 +128,15 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
     private String snapshotAvailable;
 
     @SerializedName(ApiConstants.VM_SNAPSHOT_LIMIT)
-    @Param(description = "the number of Instance Snapshots that can be stored by this Account")
+    @Param(description = "The total number of Instance Snapshots that this Account can own")
     private String vmSnapshotLimit;
 
     @SerializedName(ApiConstants.VM_SNAPSHOT_TOTAL)
-    @Param(description = "the number of Instance Snapshots stored by this Account")
+    @Param(description = "The number of Instance Snapshots owned by this Account")
     private Long vmSnapshotTotal;
 
     @SerializedName(ApiConstants.VM_SNAPSHOT_AVAILABLE)
-    @Param(description = "the number of Instance Snapshots available for this Account")
+    @Param(description = "The number of Instance Snapshots available for this Account")
     private String vmSnapshotAvailable;
 
     @SerializedName("templatelimit")

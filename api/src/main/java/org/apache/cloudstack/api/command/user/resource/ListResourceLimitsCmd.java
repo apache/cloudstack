@@ -42,7 +42,7 @@ public class ListResourceLimitsCmd extends BaseListProjectAndAccountResourcesCmd
     @Parameter(name = ApiConstants.ID, type = CommandType.LONG, description = "Lists resource limits by ID.")
     private Long id;
 
-    @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.INTEGER, description = "Type of resource. Values are 0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11 and 12. "
+    @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.INTEGER, description = "Type of resource. Accepted values are 0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11 and 12. "
         + "0 - Instance. Number of Instances a user can create. "
         + "1 - IP. Number of public IP addresses an account can own. "
         + "2 - Volume. Number of disk volumes an account can own. "
