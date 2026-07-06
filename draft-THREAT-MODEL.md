@@ -134,7 +134,7 @@ single-instance is also a supported topology)*.
 
 | Family | Representative entry point | Touches outside the process? | In-model? |
 | --- | --- | --- | --- |
-| Management server JSON and XML APIs | `client/.../ApiServlet`, HTTPS on `:8080` (admin), `:8080/client/api` (user), HTTPS on `:8443` integration port *(documented: `server/src/main/java/com/cloud/api/ApiServlet.java`, `client/`)* | network (TCP, optionally TLS) | **yes** |
+| Management server JSON and XML APIs | `client/.../ApiServlet`, HTTP on `:8080` (API + UI), optional HTTPS on `:8443` when `https.enable=true`; user API path `:8080/client/api` *(documented: `server/src/main/java/com/cloud/api/ApiServlet.java`, `client/conf/server.properties.in`)* | network (TCP, optionally TLS) | **yes** |
 | Management server Web UI | Vue.js SPA under `ui/`, served by the same servlet container *(documented: `ui/`)* | network | **yes** (auth is the API auth) |
 | Management server cluster RPC (peer-to-peer) | NIO + TLS between management-server replicas, `:9090` *(documented: `framework/cluster/`, `utils/.../nio/`)* | network | **yes** (peer auth via Root CA) |
 | Management server → agent RPC | NIO + TLS on `:8250` (default `agent.properties`) *(documented: `agent/conf/agent.properties` line 47, `utils/.../nio/NioServer.java`)* | network | **yes** (mutually authenticated via Root CA) |
