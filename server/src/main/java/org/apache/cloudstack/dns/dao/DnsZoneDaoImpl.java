@@ -17,7 +17,9 @@
 
 package org.apache.cloudstack.dns.dao;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.dns.DnsZone;
@@ -114,9 +116,13 @@ public class DnsZoneDaoImpl extends GenericDaoBase<DnsZoneVO, Long> implements D
         return searchAndCount(sc, filter);
     }
 
-    public List<DnsZoneVO> findDnsZonesByServerId(long dnsServerId) {
+    public List<Long> findDnsZoneIdsByServerId(long dnsServerId) {
         SearchCriteria<DnsZoneVO> sc = DnsServerSearch.create();
         sc.setParameters(ApiConstants.DNS_SERVER_ID, dnsServerId);
-        return listBy(sc);
+        List<DnsZoneVO> dnsZones = listBy(sc);
+        if (CollectionUtils.isEmpty(dnsZones)) {
+            return new ArrayList<>();
+        }
+        return dnsZones.stream().map(DnsZoneVO::getId).collect(Collectors.toList());
     }
 }

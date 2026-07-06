@@ -207,7 +207,7 @@
       <template v-if="column.key === 'templatetype'">
         <span>{{ text }}</span>
       </template>
-      <template v-if="$route.path.startsWith('/dnsserver') && !['name', 'provider'].includes(column.key)">
+      <template v-if="$route.path.startsWith('/dnsserver') && !['name', 'provider', 'state', 'ispublic'].includes(column.key)">
         <span>{{ text }}</span>
       </template>
       <template v-if="column.key === 'gpu'">

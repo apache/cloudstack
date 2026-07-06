@@ -547,7 +547,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`dns_zone_network_map` (
   `created` datetime NOT NULL COMMENT 'date created',
   `removed` datetime DEFAULT NULL COMMENT 'Date removed (soft delete)',
   PRIMARY KEY (`id`),
-  CONSTRAINT `uc_dns_zone__uuid` UNIQUE (`uuid`),
+  CONSTRAINT `uc_dns_zone_network_map__uuid` UNIQUE (`uuid`),
   KEY `fk_dns_map__zone_id` (`dns_zone_id`),
   KEY `fk_dns_map__network_id` (`network_id`),
   CONSTRAINT `fk_dns_map__zone_id` FOREIGN KEY (`dns_zone_id`) REFERENCES `dns_zone` (`id`) ON DELETE CASCADE,

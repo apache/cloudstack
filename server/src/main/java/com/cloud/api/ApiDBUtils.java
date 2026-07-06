@@ -2314,7 +2314,7 @@ public class ApiDBUtils {
         DnsZoneNetworkMapVO dnsNetworkMapVO = s_dnsZoneNetworkMapDao.findByNetworkId(networkId);
         if (dnsNetworkMapVO != null) {
             DnsZoneVO dnsZoneVO = s_dnsZoneDao.findById(dnsNetworkMapVO.getDnsZoneId());
-            if (Strings.isNotBlank(dnsZoneVO.getName())) {
+            if (dnsZoneVO != null && Strings.isNotBlank(dnsZoneVO.getName())) {
                 return new Pair<> (dnsZoneVO.getName(), dnsNetworkMapVO.getSubDomain());
             }
         }

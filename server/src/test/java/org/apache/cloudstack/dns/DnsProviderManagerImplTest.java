@@ -372,8 +372,8 @@ public class DnsProviderManagerImplTest {
         doNothing().when(accountMgr).checkAccess(any(Account.class),
                 nullable(org.apache.cloudstack.acl.SecurityChecker.AccessType.class), eq(true), any());
 
-        List<DnsZoneVO> zones = Collections.singletonList(zoneVO);
-        when(dnsZoneDao.findDnsZonesByServerId(SERVER_ID)).thenReturn(zones);
+        List<Long> zones = Collections.singletonList(ZONE_ID);
+        when(dnsZoneDao.findDnsZoneIdsByServerId(SERVER_ID)).thenReturn(zones);
         when(dnsZoneDao.findById(ZONE_ID)).thenReturn(zoneVO);
         when(dnsZoneNetworkMapDao.findByZoneId(ZONE_ID)).thenReturn(null);
         when(dnsServerDao.remove(SERVER_ID)).thenReturn(true);

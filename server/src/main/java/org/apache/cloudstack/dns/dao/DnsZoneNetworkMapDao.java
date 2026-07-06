@@ -25,5 +25,5 @@ public interface DnsZoneNetworkMapDao extends GenericDao<DnsZoneNetworkMapVO, Lo
     void removeNetworkMappingByZoneId(long dnsZoneId);
     DnsZoneNetworkMapVO findByNetworkId(long networkId);
 
-    DnsZoneNetworkMapVO findByZoneId(long networkId);
+    DnsZoneNetworkMapVO findByZoneId(long dnsZoneId);
 }

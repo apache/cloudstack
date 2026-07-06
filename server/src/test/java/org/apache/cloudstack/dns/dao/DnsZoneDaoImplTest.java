@@ -71,11 +71,11 @@ public class DnsZoneDaoImplTest {
     }
 
     @Test
-    public void testFindDnsZonesByServerId() {
+    public void testFindDnsZoneIdsByServerId() {
         List<DnsZoneVO> expected = Collections.singletonList(mockZone);
         doReturn(expected).when(dao).listBy(any(SearchCriteria.class));
 
-        List<DnsZoneVO> result = dao.findDnsZonesByServerId(1L);
+        List<Long> result = dao.findDnsZoneIdsByServerId(1L);
         assertEquals(1, result.size());
     }
 

@@ -320,12 +320,12 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         accountMgr.checkAccess(caller, null, true, dnsServer);
         return Transaction.execute((TransactionCallback<Boolean>) status -> {
             if (cmd.getCleanup()) {
-                List<DnsZoneVO> dnsZones = dnsZoneDao.findDnsZonesByServerId(dnsServerId);
-                for (DnsZoneVO dnsZone : dnsZones) {
+                List<Long> dnsZoneIds = dnsZoneDao.findDnsZoneIdsByServerId(dnsServerId);
+                for (Long dnsZoneId : dnsZoneIds) {
                     try {
-                        deleteDnsZone(dnsZone.getId(), cmd.isUnmanage());
+                        deleteDnsZone(dnsZoneId, cmd.isUnmanage());
                     } catch (Exception ex) {
-                        logger.error("Error cleaning up DNS zone: {} during DNS server: {} deletion", dnsZone.getName(), dnsServer.getName());
+                        logger.error("Error cleaning up DNS zone: {} during DNS server: {} deletion", dnsZoneId, dnsServer.getName());
                     }
                 }
             }
