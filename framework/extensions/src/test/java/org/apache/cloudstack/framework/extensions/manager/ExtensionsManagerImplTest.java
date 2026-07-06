@@ -135,10 +135,13 @@ import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
+import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import com.cloud.network.vpc.dao.VpcServiceMapDao;
+import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import org.apache.cloudstack.extension.NetworkCustomActionProvider;
 import com.cloud.org.Cluster;
 import com.cloud.serializer.GsonHelper;
@@ -213,6 +216,12 @@ public class ExtensionsManagerImplTest {
 
     @Mock
     private PhysicalNetworkServiceProviderDao physicalNetworkServiceProviderDao;
+
+    @Mock
+    private NetworkOfferingServiceMapDao networkOfferingServiceMapDao;
+
+    @Mock
+    private VpcOfferingServiceMapDao vpcOfferingServiceMapDao;
 
     @Before
     public void setUp() {
@@ -925,6 +934,105 @@ public class ExtensionsManagerImplTest {
         when(extensionDao.findById(5L)).thenReturn(ext);
 
         extensionsManager.updateExtension(cmd);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testUpdateExtension_RemovingUsedNetworkServiceThrows() {
+        UpdateExtensionCmd cmd = mock(UpdateExtensionCmd.class);
+        when(cmd.getId()).thenReturn(6L);
+        when(cmd.isOrchestratorRequiresPrepareVm()).thenReturn(null);
+        when(cmd.getState()).thenReturn(null);
+        Map<String, String> newDetails = new HashMap<>();
+        newDetails.put(ExtensionHelper.NETWORK_SERVICES_DETAIL_KEY, "SourceNat");
+        when(cmd.getDetails()).thenReturn(newDetails);
+        when(cmd.isCleanupDetails()).thenReturn(false);
+
+        ExtensionVO ext = mock(ExtensionVO.class);
+        when(ext.getId()).thenReturn(6L);
+        when(ext.getName()).thenReturn("MyExt");
+        when(ext.getType()).thenReturn(Extension.Type.NetworkOrchestrator);
+        when(extensionDao.findById(6L)).thenReturn(ext);
+
+        Map<String, String> oldDetailsMap = new HashMap<>();
+        oldDetailsMap.put(ExtensionHelper.NETWORK_SERVICES_DETAIL_KEY, "SourceNat,StaticNat");
+        Map<String, String> updatedDetailsMap = new HashMap<>();
+        updatedDetailsMap.put(ExtensionHelper.NETWORK_SERVICES_DETAIL_KEY, "SourceNat");
+        when(extensionDetailsDao.listDetailsKeyPairs(6L)).thenReturn(oldDetailsMap).thenReturn(updatedDetailsMap);
+
+        when(networkOfferingServiceMapDao.listOfferingIdsByServiceAndProvider(Network.Service.StaticNat, "MyExt"))
+                .thenReturn(Collections.singletonList(1L));
+
+        extensionsManager.updateExtension(cmd);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testUpdateExtension_RemovingServiceUsedByVpcOfferingThrows() {
+        UpdateExtensionCmd cmd = mock(UpdateExtensionCmd.class);
+        when(cmd.getId()).thenReturn(8L);
+        when(cmd.isOrchestratorRequiresPrepareVm()).thenReturn(null);
+        when(cmd.getState()).thenReturn(null);
+        Map<String, String> newDetails = new HashMap<>();
+        newDetails.put(ExtensionHelper.NETWORK_SERVICES_DETAIL_KEY, "SourceNat");
+        when(cmd.getDetails()).thenReturn(newDetails);
+        when(cmd.isCleanupDetails()).thenReturn(false);
+
+        ExtensionVO ext = mock(ExtensionVO.class);
+        when(ext.getId()).thenReturn(8L);
+        when(ext.getName()).thenReturn("MyExt");
+        when(ext.getType()).thenReturn(Extension.Type.NetworkOrchestrator);
+        when(extensionDao.findById(8L)).thenReturn(ext);
+
+        Map<String, String> oldDetailsMap = new HashMap<>();
+        oldDetailsMap.put(ExtensionHelper.NETWORK_SERVICES_DETAIL_KEY, "SourceNat,StaticNat");
+        Map<String, String> updatedDetailsMap = new HashMap<>();
+        updatedDetailsMap.put(ExtensionHelper.NETWORK_SERVICES_DETAIL_KEY, "SourceNat");
+        when(extensionDetailsDao.listDetailsKeyPairs(8L)).thenReturn(oldDetailsMap).thenReturn(updatedDetailsMap);
+
+        when(networkOfferingServiceMapDao.listOfferingIdsByServiceAndProvider(Network.Service.StaticNat, "MyExt"))
+                .thenReturn(Collections.emptyList());
+        when(vpcOfferingServiceMapDao.listOfferingIdsByServiceAndProvider(Network.Service.StaticNat, "MyExt"))
+                .thenReturn(Collections.singletonList(1L));
+
+        extensionsManager.updateExtension(cmd);
+    }
+
+    @Test
+    public void testUpdateExtension_UpdatesPhysicalNetworkServicesWhenNotInUse() {
+        UpdateExtensionCmd cmd = mock(UpdateExtensionCmd.class);
+        when(cmd.getId()).thenReturn(7L);
+        when(cmd.isOrchestratorRequiresPrepareVm()).thenReturn(null);
+        when(cmd.getState()).thenReturn(null);
+        Map<String, String> newDetails = new HashMap<>();
+        newDetails.put(ExtensionHelper.NETWORK_SERVICES_DETAIL_KEY, "SourceNat,StaticNat");
+        when(cmd.getDetails()).thenReturn(newDetails);
+        when(cmd.isCleanupDetails()).thenReturn(false);
+
+        ExtensionVO ext = mock(ExtensionVO.class);
+        when(ext.getId()).thenReturn(7L);
+        when(ext.getName()).thenReturn("MyExt");
+        when(ext.getType()).thenReturn(Extension.Type.NetworkOrchestrator);
+        when(extensionDao.findById(7L)).thenReturn(ext);
+
+        Map<String, String> oldDetailsMap = new HashMap<>();
+        oldDetailsMap.put(ExtensionHelper.NETWORK_SERVICES_DETAIL_KEY, "SourceNat");
+        Map<String, String> updatedDetailsMap = new HashMap<>();
+        updatedDetailsMap.put(ExtensionHelper.NETWORK_SERVICES_DETAIL_KEY, "SourceNat,StaticNat");
+        when(extensionDetailsDao.listDetailsKeyPairs(7L)).thenReturn(oldDetailsMap).thenReturn(updatedDetailsMap);
+
+        when(extensionResourceMapDao.listResourceIdsByExtensionIdAndType(7L, ExtensionResourceMap.ResourceType.PhysicalNetwork))
+                .thenReturn(Collections.singletonList(100L));
+        PhysicalNetworkServiceProviderVO nsp = mock(PhysicalNetworkServiceProviderVO.class);
+        when(nsp.getId()).thenReturn(500L);
+        when(nsp.getEnabledServices()).thenReturn(new ArrayList<>(Collections.singletonList(Network.Service.SourceNat)));
+        when(physicalNetworkServiceProviderDao.findByServiceProvider(100L, "MyExt")).thenReturn(nsp);
+
+        extensionsManager.updateExtension(cmd);
+
+        ArgumentCaptor<List<Network.Service>> captor = ArgumentCaptor.forClass(List.class);
+        verify(nsp).setEnabledServices(captor.capture());
+        assertTrue(captor.getValue().contains(Network.Service.SourceNat));
+        assertTrue(captor.getValue().contains(Network.Service.StaticNat));
+        verify(physicalNetworkServiceProviderDao).update(500L, nsp);
     }
 
     @Test

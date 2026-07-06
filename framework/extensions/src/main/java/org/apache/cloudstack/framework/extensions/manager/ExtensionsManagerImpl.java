@@ -140,7 +140,9 @@ import com.cloud.network.element.NetworkElement;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import com.cloud.network.vpc.dao.VpcServiceMapDao;
+import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.org.Cluster;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -239,6 +241,12 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
 
     @Inject
     VpcServiceMapDao vpcServiceMapDao;
+
+    @Inject
+    NetworkOfferingServiceMapDao networkOfferingServiceMapDao;
+
+    @Inject
+    VpcOfferingServiceMapDao vpcOfferingServiceMapDao;
 
     @Inject
     NetworkModel networkModel;
@@ -857,6 +865,8 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             }
         }
         final boolean updateNeededFinal = updateNeeded;
+        final Set<Service> oldNetworkServices = Extension.Type.NetworkOrchestrator.equals(extensionVO.getType()) ?
+                resolveExtensionServices(extensionVO) : Collections.emptySet();
         ExtensionVO result = Transaction.execute((TransactionCallbackWithException<ExtensionVO, CloudRuntimeException>) status -> {
             if (updateNeededFinal && !extensionDao.update(id, extensionVO)) {
                 throw new CloudRuntimeException(String.format("Failed to updated the extension: %s",
@@ -864,6 +874,13 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             }
             updateExtensionsDetails(cleanupDetails, details, orchestratorRequiresPrepareVm, reservedResourceDetails,
                     id);
+            if (Extension.Type.NetworkOrchestrator.equals(extensionVO.getType())) {
+                Set<Service> newNetworkServices = resolveExtensionServices(extensionVO);
+                if (!newNetworkServices.equals(oldNetworkServices)) {
+                    updateNetworkExtensionServicesOnPhysicalNetworks(extensionVO, oldNetworkServices,
+                            newNetworkServices);
+                }
+            }
             return extensionVO;
         });
         if (StringUtils.isNotBlank(stateStr)) {
@@ -1270,6 +1287,55 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         nsp.setSecuritygroupServiceProvided(services.contains(Service.SecurityGroup));
         nsp.setNetworkAclServiceProvided(services.contains(Service.NetworkACL));
         nsp.setCustomActionServiceProvided(services.contains(Service.CustomAction));
+    }
+
+    /**
+     * Propagates a change in the set of network services declared by a NetworkOrchestrator
+     * extension to every physical network the extension is registered with. A service that is
+     * still referenced by a network or VPC offering (i.e. the extension is configured as the
+     * provider for that service) cannot be removed. Otherwise, every physical network's provider
+     * is updated to add newly declared services and drop services that are no longer declared.
+     */
+    protected void updateNetworkExtensionServicesOnPhysicalNetworks(ExtensionVO extension,
+              Set<Service> oldServices, Set<Service> newServices) {
+        Set<Service> removedServices = new HashSet<>(oldServices);
+        removedServices.removeAll(newServices);
+        Set<Service> addedServices = new HashSet<>(newServices);
+        addedServices.removeAll(oldServices);
+        if (removedServices.isEmpty() && addedServices.isEmpty()) {
+            return;
+        }
+        for (Service removedService : removedServices) {
+            boolean usedByNetworkOffering = CollectionUtils.isNotEmpty(
+                    networkOfferingServiceMapDao.listOfferingIdsByServiceAndProvider(removedService, extension.getName()));
+            boolean usedByVpcOffering = CollectionUtils.isNotEmpty(
+                    vpcOfferingServiceMapDao.listOfferingIdsByServiceAndProvider(removedService, extension.getName()));
+            if (usedByNetworkOffering || usedByVpcOffering) {
+                throw new CloudRuntimeException(String.format(
+                        "Cannot remove service %s from extension '%s' as it is used by a network/VPC offering",
+                        removedService.getName(), extension.getName()));
+            }
+        }
+        List<Long> physicalNetworkIds = extensionResourceMapDao.listResourceIdsByExtensionIdAndType(
+                extension.getId(), ExtensionResourceMap.ResourceType.PhysicalNetwork);
+        for (Long physicalNetworkId : physicalNetworkIds) {
+            PhysicalNetworkServiceProviderVO nsp = physicalNetworkServiceProviderDao.findByServiceProvider(
+                    physicalNetworkId, extension.getName());
+            if (nsp == null) {
+                continue;
+            }
+            List<Service> enabledServices = new ArrayList<>(nsp.getEnabledServices());
+            enabledServices.removeAll(removedServices);
+            for (Service addedService : addedServices) {
+                if (!enabledServices.contains(addedService)) {
+                    enabledServices.add(addedService);
+                }
+            }
+            nsp.setEnabledServices(enabledServices);
+            physicalNetworkServiceProviderDao.update(nsp.getId(), nsp);
+            logger.info("Updated NetworkServiceProvider '{}' on physical network {} with services {}",
+                    extension, physicalNetworkId, enabledServices);
+        }
     }
 
     /** Keys that are always stored with display=false (sensitive). */
