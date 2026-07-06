@@ -106,6 +106,10 @@ public class LibvirtCreateDiskOnlyVMSnapshotCommandWrapper extends CommandWrappe
                 return new CreateDiskOnlyVmSnapshotAnswer(cmd, false, errorMsg, null);
             }
             return new CreateDiskOnlyVmSnapshotAnswer(cmd, false, e.getMessage(), null);
+        } catch (Exception e) {
+            String errorMsg = String.format("Creation of disk-only VM snapshot for VM [%s] failed due to %s.", vmName, e.getMessage());
+            logger.error(errorMsg, e);
+            return new CreateDiskOnlyVmSnapshotAnswer(cmd, false, errorMsg, null);
         } finally {
             if (dm != null) {
                 try {
@@ -146,21 +150,13 @@ public class LibvirtCreateDiskOnlyVMSnapshotCommandWrapper extends CommandWrappe
             }
         } catch (LibvirtException | QemuImgException e) {
             logger.error("Exception while creating disk-only VM snapshot for VM [{}]. Deleting leftover deltas.", vmName, e);
-            for (VolumeObjectTO volumeObjectTO : volumeObjectTos) {
-                Pair<Long, String> volSizeAndNewPath = mapVolumeToSnapshotSizeAndNewVolumePath.get(volumeObjectTO.getUuid());
-                PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO) volumeObjectTO.getDataStore();
-                KVMStoragePool kvmStoragePool = storagePoolMgr.getStoragePool(primaryDataStoreTO.getPoolType(), primaryDataStoreTO.getUuid());
-
-                if (volSizeAndNewPath == null) {
-                    continue;
-                }
-                try {
-                    Files.deleteIfExists(Path.of(kvmStoragePool.getLocalPathFor(volSizeAndNewPath.second())));
-                } catch (IOException ex) {
-                    logger.warn("Tried to delete leftover snapshot at [{}] failed.", volSizeAndNewPath.second(), ex);
-                }
-            }
+            cleanupLeftoverDeltas(volumeObjectTos, mapVolumeToSnapshotSizeAndNewVolumePath, storagePoolMgr);
             return new Answer(cmd, e);
+        } catch (Exception e) {
+            logger.error("Unexpected exception while creating disk-only VM snapshot for VM [{}]. Deleting leftover deltas.", vmName, e);
+            cleanupLeftoverDeltas(volumeObjectTos, mapVolumeToSnapshotSizeAndNewVolumePath, storagePoolMgr);
+            return new CreateDiskOnlyVmSnapshotAnswer(cmd, false,
+                    String.format("Creation of disk-only VM snapshot for VM [%s] failed due to %s.", vmName, e.getMessage()), null);
         }
 
         return new CreateDiskOnlyVmSnapshotAnswer(cmd, true, null, mapVolumeToSnapshotSizeAndNewVolumePath);
@@ -190,6 +186,23 @@ public class LibvirtCreateDiskOnlyVMSnapshotCommandWrapper extends CommandWrappe
 
         String snapshotXml = String.format(SNAPSHOT_XML, target.getSnapshotName(), stringBuilder);
         return new Pair<>(snapshotXml, volumeObjectToNewPathMap);
+    }
+
+    protected void cleanupLeftoverDeltas(List<VolumeObjectTO> volumeObjectTos, Map<String, Pair<Long, String>> mapVolumeToSnapshotSizeAndNewVolumePath, KVMStoragePoolManager storagePoolMgr) {
+        for (VolumeObjectTO volumeObjectTO : volumeObjectTos) {
+            Pair<Long, String> volSizeAndNewPath = mapVolumeToSnapshotSizeAndNewVolumePath.get(volumeObjectTO.getUuid());
+            PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO) volumeObjectTO.getDataStore();
+            KVMStoragePool kvmStoragePool = storagePoolMgr.getStoragePool(primaryDataStoreTO.getPoolType(), primaryDataStoreTO.getUuid());
+
+            if (volSizeAndNewPath == null) {
+                continue;
+            }
+            try {
+                Files.deleteIfExists(Path.of(kvmStoragePool.getLocalPathFor(volSizeAndNewPath.second())));
+            } catch (IOException ex) {
+                logger.warn("Tried to delete leftover snapshot at [{}] failed.", volSizeAndNewPath.second(), ex);
+            }
+        }
     }
 
     protected long getFileSize(String path) {

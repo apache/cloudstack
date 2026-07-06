@@ -451,8 +451,20 @@ SELECT uuid(), role_id, 'quotaResourceStatement', permission, sort_order
 FROM cloud.role_permissions rp
 WHERE rule = 'quotaStatement' AND NOT EXISTS(SELECT 1 FROM cloud.role_permissions rp_ WHERE rp.role_id = rp_.role_id AND rp_.rule = 'quotaResourceStatement');
 
+--- Gui theme login base domain
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.gui_themes', 'login_base_domain', 'TEXT DEFAULT NULL');
+
 -- Add description for secondary IP addresses
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.nic_secondary_ips', 'description', 'VARCHAR(2048) DEFAULT NULL');
+
+--- Change nw_rate and mc_rate column types from smallint unsigned to int unsigned to support larger rate values
+ALTER TABLE `cloud`.`service_offering`
+    MODIFY COLUMN `nw_rate` int unsigned DEFAULT 200 COMMENT 'network rate throttle mbits/s',
+    MODIFY COLUMN `mc_rate` int unsigned DEFAULT 10 COMMENT 'mcast rate throttle mbits/s';
+
+ALTER TABLE `cloud`.`network_offerings`
+    MODIFY COLUMN `nw_rate` int unsigned COMMENT 'network rate throttle mbits/s',
+    MODIFY COLUMN `mc_rate` int unsigned COMMENT 'mcast rate throttle mbits/s';
 
 -- Soft delete port forwarding, load balancing and firewall rules
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.firewall_rules', 'removed', 'datetime DEFAULT NULL');

@@ -17,7 +17,13 @@
 
 name: UI Build
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - main
+      - 4.22
+      - 4.20
+  pull_request:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}

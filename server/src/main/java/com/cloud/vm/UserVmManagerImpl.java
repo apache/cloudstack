@@ -109,7 +109,6 @@ import org.apache.cloudstack.backup.BackupVO;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupScheduleDao;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.kms.KMSManager;
 import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntity;
 import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMNetworkMapDao;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -137,6 +136,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
+import org.apache.cloudstack.kms.KMSManager;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.reservation.dao.ReservationDao;
@@ -159,6 +159,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.logging.log4j.ThreadContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -2875,22 +2876,29 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (vm != null) {
             if (vm.getState().equals(State.Stopped)) {
                 HostVO host = _hostDao.findById(hostId);
-                logger.debug("Destroying vm {} as it failed to create on Host: {} with id {}", vm, host, hostId);
+                logger.debug("Destroying VM [{}] as it was unable to be deployed on Host: {}.", vm, host);
                 try {
                     _itMgr.stateTransitTo(vm, VirtualMachine.Event.OperationFailedToError, null);
                 } catch (NoTransitionException e1) {
-                    logger.warn(e1.getMessage());
+                    logger.error("Error when transitioning state of [{}].", vm, e1);
                 }
                 // destroy associated volumes for vm in error state
                 // get all volumes in non destroyed state
+                logger.debug("Destroying associated volumes of [{}] as it was unable to be deployed.", vm);
                 List<VolumeVO> volumesForThisVm = _volsDao.findUsableVolumesForInstance(vm.getId());
                 for (VolumeVO volume : volumesForThisVm) {
                     if (volume.getState() != Volume.State.Destroy) {
+                        logger.trace("Destroying volume [{}] as its VM was unable to be deployed.", volume);
                         volumeMgr.destroyVolume(volume);
                     }
                 }
-                String msg = String.format("Failed to deploy Vm %s, on Host %s with Id: %d", vm, host, hostId);
-                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_USERVM, vm.getDataCenterId(), vm.getPodIdToDeployIn(), msg, msg);
+                String subject = String.format("Failed to deploy Instance [ID: %s]", vm.getUuid());
+                String body = String.format("Failed to deploy [%s]%s. To troubleshoot, please check the logs with [logid:%s].",
+                        vm,
+                        hostId != null ? String.format(" on host [%s]", hostId) : "",
+                        ThreadContext.get("logcontextid"));
+
+                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_USERVM, vm.getDataCenterId(), vm.getPodIdToDeployIn(), subject, body);
 
                 // Get serviceOffering and template for Virtual Machine
                 ServiceOfferingVO offering = serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
@@ -2901,8 +2909,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
     }
-
-
 
     private class VmIpFetchTask extends ManagedContextRunnable {
 
