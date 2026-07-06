@@ -1048,8 +1048,9 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
 
                 ManagementServerHostVO mshost = _mshostDao.findByMsid(_msId);
 
-                // Look for duplicate hostname in the case of kubernetes setup where ip/mac changes but hostname is constant.
-                if (mshost == null && StringUtils.isNotBlank(currentHostname)) {
+                // Look for duplicate hostname in Kubernetes setups where IP/MAC changes but hostname is constant.
+                // Skip the default "localhost" hostname fallback to avoid removing other active nodes when hostname resolution fails.
+                if (mshost == null && StringUtils.isNotBlank(currentHostname) && !StringUtils.equalsIgnoreCase(currentHostname, "localhost")) {
                     List<ManagementServerHostVO> activeEntries = _mshostDao.findAllByName(currentHostname);
                     for (ManagementServerHostVO activeEntry : activeEntries) {
                         // Found an active entry with this hostname but different MSID
