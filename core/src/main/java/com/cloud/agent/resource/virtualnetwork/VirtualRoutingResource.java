@@ -50,6 +50,8 @@ import org.apache.cloudstack.diagnostics.DiagnosticsAnswer;
 import org.apache.cloudstack.diagnostics.DiagnosticsCommand;
 import org.apache.cloudstack.diagnostics.PrepareFilesAnswer;
 import org.apache.cloudstack.diagnostics.PrepareFilesCommand;
+import org.apache.cloudstack.vm.bootgroup.readiness.InstanceReadinessCheckAnswer;
+import org.apache.cloudstack.vm.bootgroup.readiness.InstanceReadinessCheckCommand;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.net.util.SubnetUtils;
@@ -231,6 +233,8 @@ public class VirtualRoutingResource {
             return execute((GetRouterAlertsCommand)cmd);
         } else if (cmd instanceof DiagnosticsCommand) {
             return execute((DiagnosticsCommand) cmd);
+        } else if (cmd instanceof InstanceReadinessCheckCommand) {
+            return execute((InstanceReadinessCheckCommand) cmd);
         } else if (cmd instanceof PrepareFilesCommand) {
             return execute((PrepareFilesCommand) cmd);
         } else if (cmd instanceof DeleteFileInVrCommand) {
@@ -484,6 +488,15 @@ public class VirtualRoutingResource {
             return new DiagnosticsAnswer(cmd, false, result.getDetails());
         }
         return new DiagnosticsAnswer(cmd, result.isSuccess(), result.getDetails());
+    }
+
+    private Answer execute(InstanceReadinessCheckCommand cmd) {
+        _eachTimeout = Duration.standardSeconds(NumbersUtil.parseInt("60", 60));
+        String args = cmd.getPort() == null ?
+                String.format("%s %s", cmd.getCheckType(), cmd.getIpAddress()) :
+                String.format("%s %s %s", cmd.getCheckType(), cmd.getIpAddress(), cmd.getPort());
+        final ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.INSTANCE_READINESS_CHECK, args, _eachTimeout);
+        return new InstanceReadinessCheckAnswer(cmd, result.isSuccess(), result.getDetails());
     }
 
     private Answer execute(PrepareFilesCommand cmd) {

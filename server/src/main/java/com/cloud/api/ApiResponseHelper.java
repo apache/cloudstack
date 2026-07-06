@@ -62,6 +62,7 @@ import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.cloudstack.api.response.ASNRangeResponse;
 import org.apache.cloudstack.api.response.ASNumberResponse;
 import org.apache.cloudstack.api.response.AccountResponse;
+import org.apache.cloudstack.api.response.ApiKeyPairResponse;
 import org.apache.cloudstack.api.response.ApplicationLoadBalancerInstanceResponse;
 import org.apache.cloudstack.api.response.ApplicationLoadBalancerResponse;
 import org.apache.cloudstack.api.response.ApplicationLoadBalancerRuleResponse;
@@ -120,7 +121,6 @@ import org.apache.cloudstack.api.response.IpRangeResponse;
 import org.apache.cloudstack.api.response.Ipv4RouteResponse;
 import org.apache.cloudstack.api.response.Ipv6RouteResponse;
 import org.apache.cloudstack.api.response.IsolationMethodResponse;
-import org.apache.cloudstack.api.response.ApiKeyPairResponse;
 import org.apache.cloudstack.api.response.LBHealthCheckPolicyResponse;
 import org.apache.cloudstack.api.response.LBHealthCheckResponse;
 import org.apache.cloudstack.api.response.LBStickinessPolicyResponse;
@@ -247,6 +247,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.VgpuTypesInfo;
+import com.cloud.api.query.ResourceIdSupport;
 import com.cloud.api.query.ViewResponseHelper;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.vo.AccountJoinVO;
@@ -263,7 +264,6 @@ import com.cloud.api.query.vo.NetworkOfferingJoinVO;
 import com.cloud.api.query.vo.ProjectAccountJoinVO;
 import com.cloud.api.query.vo.ProjectInvitationJoinVO;
 import com.cloud.api.query.vo.ProjectJoinVO;
-import com.cloud.api.query.ResourceIdSupport;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.SecurityGroupJoinVO;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
@@ -567,6 +567,18 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
 
     @Inject
     private DomainDao domainDao;
+
+    @Inject
+    private com.cloud.vm.dao.InstanceBootGroupDao instanceBootGroupDao;
+
+    @Inject
+    private com.cloud.vm.dao.InstanceBootGroupMemberDao instanceBootGroupMemberDao;
+
+    @Inject
+    private com.cloud.vm.dao.UserVmDao userVmDao;
+
+    @Inject
+    private com.cloud.vm.dao.InstanceGroupDao instanceGroupDao;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -1565,7 +1577,6 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
     public InstanceGroupResponse createInstanceGroupResponse(InstanceGroup group) {
         InstanceGroupJoinVO vgroup = ApiDBUtils.newInstanceGroupView(group);
         return ApiDBUtils.newInstanceGroupResponse(vgroup);
-
     }
 
     @Override

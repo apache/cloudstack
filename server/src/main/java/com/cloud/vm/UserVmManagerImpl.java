@@ -159,6 +159,7 @@ import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.cloudstack.vm.UnmanagedVMsManager;
+import org.apache.cloudstack.vm.bootgroup.InstanceBootGroupMembershipGuard;
 import org.apache.cloudstack.vm.lease.VMLeaseManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -646,6 +647,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     protected SnapshotHelper snapshotHelper;
     @Inject
     private AutoScaleManager autoScaleManager;
+    @Inject
+    private InstanceBootGroupMembershipGuard instanceBootGroupMembershipGuard;
     @Inject
     NsxProviderDao nsxProviderDao;
     @Inject
@@ -3869,6 +3872,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @DB
     public boolean addInstanceToGroup(final long userVmId, String groupName) {
         UserVmVO vm = _vmDao.findById(userVmId);
+
+        instanceBootGroupMembershipGuard.validateVmEligibleForGroupMembership(userVmId);
 
         InstanceGroupVO group = _vmGroupDao.findByAccountAndName(vm.getAccountId(), groupName);
         // Create vm group if the group doesn't exist for this account

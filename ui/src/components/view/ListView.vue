@@ -1211,7 +1211,7 @@ export default {
     quickViewEnabled (actions, columns, key) {
       return actions.length > 0 &&
         (columns && key === columns[0].dataIndex) &&
-        new RegExp(['/vm', '/kubernetes', '/ssh', '/userdata', '/vmgroup', '/affinitygroup', '/autoscalevmgroup',
+        new RegExp(['/vm', '/kubernetes', '/ssh', '/userdata', '/vmgroup', '/instancebootgroup', '/affinitygroup', '/autoscalevmgroup',
           '/volume', '/snapshot', '/vmsnapshot', '/backup',
           '/guestnetwork', '/vpc', '/vpncustomergateway', '/vnfapp',
           '/template', '/iso',
