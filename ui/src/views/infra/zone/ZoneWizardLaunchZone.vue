@@ -1584,7 +1584,7 @@ export default {
       }
 
       params.url = url
-      if (this.prefillContent.provider !== 'DefaultPrimary' && this.prefillContent.provider !== 'PowerFlex') {
+      if (this.prefillContent.provider !== 'DefaultPrimary' && this.prefillContent.provider !== 'PowerFlex' && this.prefillContent.provider !== 'NetApp ONTAP') {
         if (this.prefillContent.managed) {
           params.managed = true
         } else {
@@ -1603,6 +1603,18 @@ export default {
       if (this.prefillContent.provider === 'PowerFlex') {
         params.url = this.powerflexURL(this.prefillContent.powerflexGateway, this.prefillContent.powerflexGatewayUsername,
           this.prefillContent.powerflexGatewayPassword, this.prefillContent.powerflexStoragePool)
+      }
+      if (this.prefillContent.provider === 'NetApp ONTAP') {
+        params['details[0].storageIP'] = this.prefillContent.ontapIP
+        params['details[0].username'] = this.prefillContent.ontapUsername
+        params['details[0].password'] = btoa(this.prefillContent.ontapPassword)
+        params['details[0].svmName'] = this.prefillContent.ontapSvmName
+        params['details[0].protocol'] = this.prefillContent.primaryStorageProtocol
+        params.managed = true
+        params.url = this.ontapURL(this.prefillContent.ontapIP)
+        if (this.prefillContent.capacityBytes && this.prefillContent.capacityBytes.length > 0) {
+          params.capacityBytes = this.prefillContent.capacityBytes.split(',').join('')
+        }
       }
 
       params.tags = this.prefillContent?.primaryStorageTags || ''
@@ -2485,6 +2497,10 @@ export default {
     powerflexURL (gateway, username, password, pool) {
       var url = 'powerflex://' + encodeURIComponent(username) + ':' + encodeURIComponent(password) + '@' +
        gateway + '/' + encodeURIComponent(pool)
+      return url
+    },
+    ontapURL (ontapIp) {
+      var url = 'https://' + ontapIp
       return url
     }
   }
