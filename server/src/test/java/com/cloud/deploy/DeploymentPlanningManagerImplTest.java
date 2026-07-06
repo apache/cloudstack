@@ -74,7 +74,6 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentContext;
-import com.cloud.utils.db.Filter;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -1005,7 +1004,7 @@ public class DeploymentPlanningManagerImplTest {
         DedicatedResourceVO dedicatedPod = Mockito.mock(DedicatedResourceVO.class);
         Mockito.when(dedicatedPod.getPodId()).thenReturn(dedicatedPodId);
         Mockito.when(_dedicatedDao.searchDedicatedPods(Mockito.isNull(), Mockito.eq(vmDomainId),
-                Mockito.isNull(), Mockito.isNull(), Mockito.any(Filter.class)))
+                Mockito.isNull(), Mockito.isNull(), Mockito.any(com.cloud.utils.db.Filter.class)))
                 .thenReturn(new Pair<>(new ArrayList<>(Arrays.asList(dedicatedPod)), 1));
 
         VirtualMachineProfileImpl mockProfile = Mockito.mock(VirtualMachineProfileImpl.class);
@@ -1046,7 +1045,7 @@ public class DeploymentPlanningManagerImplTest {
 
         // No pods dedicated to the VM owner's account
         Mockito.when(_dedicatedDao.searchDedicatedPods(Mockito.isNull(), Mockito.eq(vmDomainId),
-                Mockito.eq(vmAccountId), Mockito.isNull(), Mockito.any(Filter.class)))
+                Mockito.eq(vmAccountId), Mockito.isNull(), Mockito.any(com.cloud.utils.db.Filter.class)))
                 .thenReturn(new Pair<>(new ArrayList<>(), 0));
 
         VirtualMachineProfileImpl mockProfile = Mockito.mock(VirtualMachineProfileImpl.class);
@@ -1089,7 +1088,7 @@ public class DeploymentPlanningManagerImplTest {
         DedicatedResourceVO dedicatedPod = Mockito.mock(DedicatedResourceVO.class);
         Mockito.when(dedicatedPod.getPodId()).thenReturn(dedicatedPodId);
         Mockito.when(_dedicatedDao.searchDedicatedPods(Mockito.isNull(), Mockito.eq(vmDomainId),
-                Mockito.eq(vmAccountId), Mockito.isNull(), Mockito.any(Filter.class)))
+                Mockito.eq(vmAccountId), Mockito.isNull(), Mockito.any(com.cloud.utils.db.Filter.class)))
                 .thenReturn(new Pair<>(new ArrayList<>(Arrays.asList(dedicatedPod)), 1));
 
         VirtualMachineProfileImpl mockProfile = Mockito.mock(VirtualMachineProfileImpl.class);
@@ -1130,7 +1129,7 @@ public class DeploymentPlanningManagerImplTest {
 
         // No pods dedicated to this account
         Mockito.when(_dedicatedDao.searchDedicatedPods(Mockito.isNull(), Mockito.eq(vmDomainId),
-                Mockito.eq(vmAccountId), Mockito.isNull(), Mockito.any(Filter.class)))
+                Mockito.eq(vmAccountId), Mockito.isNull(), Mockito.any(com.cloud.utils.db.Filter.class)))
                 .thenReturn(new Pair<>(new ArrayList<>(), 0));
 
         VirtualMachineProfileImpl mockProfile = Mockito.mock(VirtualMachineProfileImpl.class);

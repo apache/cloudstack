@@ -978,19 +978,19 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         // Sort by id ascending, no pagination — retrieve all dedicated resources for this domain/account
         Filter filter = new Filter(DedicatedResourceVO.class, "id", true);
 
-        if (domainGroupMappings == null || domainGroupMappings.isEmpty()) {
-            // No domain-level affinity groups: search for resources dedicated to this specific account
-            for (DedicatedResourceVO vo : _dedicatedDao.searchDedicatedPods(null, vmDomainId, vmAccountId, null, filter).first()) {
-                allPodsFromDedicatedID.add(vo.getPodId());
-            }
-            for (DedicatedResourceVO vo : _dedicatedDao.searchDedicatedClusters(null, vmDomainId, vmAccountId, null, filter).first()) {
-                allClustersFromDedicatedID.add(vo.getClusterId());
-            }
-            for (DedicatedResourceVO vo : _dedicatedDao.searchDedicatedHosts(null, vmDomainId, vmAccountId, null, filter).first()) {
-                allHostsFromDedicatedID.add(vo.getHostId());
-            }
-        } else {
-            // Domain has explicit dedication affinity groups: search for resources dedicated to this domain
+        // Always allow resources dedicated to the VM owner's account.
+        for (DedicatedResourceVO vo : _dedicatedDao.searchDedicatedPods(null, vmDomainId, vmAccountId, null, filter).first()) {
+            allPodsFromDedicatedID.add(vo.getPodId());
+        }
+        for (DedicatedResourceVO vo : _dedicatedDao.searchDedicatedClusters(null, vmDomainId, vmAccountId, null, filter).first()) {
+            allClustersFromDedicatedID.add(vo.getClusterId());
+        }
+        for (DedicatedResourceVO vo : _dedicatedDao.searchDedicatedHosts(null, vmDomainId, vmAccountId, null, filter).first()) {
+            allHostsFromDedicatedID.add(vo.getHostId());
+        }
+
+        if (domainGroupMappings != null && !domainGroupMappings.isEmpty()) {
+            // Domain has explicit dedication affinity groups: also allow resources dedicated to this domain
             for (DedicatedResourceVO vo : _dedicatedDao.searchDedicatedPods(null, vmDomainId, null, null, filter).first()) {
                 allPodsFromDedicatedID.add(vo.getPodId());
             }
