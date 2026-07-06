@@ -451,6 +451,9 @@ SELECT uuid(), role_id, 'quotaResourceStatement', permission, sort_order
 FROM cloud.role_permissions rp
 WHERE rule = 'quotaStatement' AND NOT EXISTS(SELECT 1 FROM cloud.role_permissions rp_ WHERE rp.role_id = rp_.role_id AND rp_.rule = 'quotaResourceStatement');
 
+--- Gui theme login base domain
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.gui_themes', 'login_base_domain', 'TEXT DEFAULT NULL');
+
 -- Add description for secondary IP addresses
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.nic_secondary_ips', 'description', 'VARCHAR(2048) DEFAULT NULL');
 

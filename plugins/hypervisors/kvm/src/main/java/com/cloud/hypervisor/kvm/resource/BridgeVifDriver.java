@@ -76,9 +76,11 @@ public class BridgeVifDriver extends VifDriverBase {
         if (_modifyVlanPath == null) {
             throw new ConfigurationException("Unable to find modifyvlan.sh");
         }
-        _modifyVxlanPath = Script.findScript(networkScriptsDir, "modifyvxlan.sh");
+        String vxlanMode = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.NETWORK_VXLAN_MODE);
+        String vxlanScript = "evpn".equalsIgnoreCase(vxlanMode) ? "modifyvxlan-evpn.sh" : "modifyvxlan.sh";
+        _modifyVxlanPath = Script.findScript(networkScriptsDir, vxlanScript);
         if (_modifyVxlanPath == null) {
-            throw new ConfigurationException("Unable to find modifyvxlan.sh");
+            throw new ConfigurationException("Unable to find " + vxlanScript);
         }
 
         libvirtVersion = (Long) params.get("libvirtVersion");
