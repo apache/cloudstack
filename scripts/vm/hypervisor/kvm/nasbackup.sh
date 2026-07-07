@@ -142,32 +142,21 @@ backup_running_vm() {
       ;;
   esac
 
-  # When incremental, make sure the parent checkpoint is registered with libvirt. CloudStack
-  # rebuilds the domain XML on every VM start, which wipes libvirt's in-memory checkpoint
-  # registry, while the dirty bitmap persists on the qcow2 (QEMU re-loads it on start). A
-  # fresh checkpoint-create cannot be used then — QEMU reports "Bitmap already exists" — so the
-  # parent must be re-registered with --redefine. libvirt only needs the checkpoint name and a
-  # creationTime for a redefine (the value need not be accurate — checkpoints are ephemeral),
-  # so we synthesize a minimal XML on the fly instead of persisting the full checkpoint dump.
-  #
-  # First verify the parent bitmap actually exists on the running qcow2 — it can be absent after
-  # a migration even though the orchestrator's active_checkpoint says it should be there. If it
-  # is gone, fall back to a full backup rather than letting backup-begin fail below.
+  # Incremental needs the parent checkpoint registered with libvirt. CloudStack rebuilds the
+  # domain XML on every VM start, wiping libvirt's checkpoint registry while the dirty bitmap
+  # persists on the qcow2, so a fresh checkpoint-create fails with "Bitmap already exists".
+  # Re-register the parent with --redefine (needs only a name + creationTime) via a minimal
+  # synthesized XML. If the parent bitmap is missing from the qcow2 (e.g. after a migration),
+  # fall back to a full backup instead of letting backup-begin fail below.
   if [[ "$effective_mode" == "incremental" ]]; then
-    # The parent bitmap must be present on EVERY disk's qcow2, not just one of them. A volume
-    # snapshot restore (or a partial migration) can wipe the bitmap on some disks while leaving
-    # it on others; a plain "is the name anywhere in query-block" check passes in that case and
-    # backup-begin then fails on the disk that is missing the bitmap. Require the bitmap on all
-    # disks: compare the disk count to the number of disks reporting the bitmap (tests 17/19).
+    # The parent bitmap must be present on EVERY disk, not just one. A snapshot restore or partial
+    # migration can wipe it on some disks; require it on all by comparing the disk count to the
+    # number of disks that carry it.
     disk_count=$(virsh -c qemu:///system domblklist "$VM" --details 2>/dev/null | awk '$2=="disk"{c++} END{print c+0}')
-    # Count DISKS that actually carry the parent bitmap, not raw name occurrences. query-block
-    # lists each disk's bitmap under more than one node, so "grep -o name | wc -l" double-counts:
-    # with two disks where only one has the bitmap it returns 2, is misread as present-on-all, and
-    # the incremental then fails on the disk missing it (test 19). Parse per-device exactly as
-    # LibvirtStartBackupCommandWrapper.getVmDiskPathHasFromCheckpointMap() does (one count per
-    # inserted.file whose dirty-bitmaps contains the parent). The trailing "|| echo 0" also keeps a
-    # no-match from aborting the script under "set -eo pipefail" before the fallback below runs
-    # (a snapshot restore wipes the bitmap on all disks, so nothing matches — tests 17/18).
+    # Count per-device (one per inserted.file whose dirty-bitmaps holds the parent), mirroring
+    # getVmDiskPathHasFromCheckpointMap(): query-block lists a bitmap under multiple nodes, so raw
+    # name matches double-count. "|| echo 0" keeps a no-match from aborting under "set -eo pipefail"
+    # before the fallback runs.
     bitmap_count=$(virsh -c qemu:///system qemu-monitor-command "$VM" '{"execute":"query-block"}' 2>/dev/null | python3 -c '
 import sys, json
 target = sys.argv[1]
@@ -312,9 +301,6 @@ print(len(files))
   while read -r disk fullpath; do
     if [[ "$effective_mode" == "incremental" ]]; then
       volUuid="${fullpath##*/}"
-      if [[ "$fullpath" == /dev/drbd/by-res/* ]]; then
-        volUuid=$(get_linstor_uuid_from_path "$fullpath")
-      fi
       # Pick this disk's specific parent file. Each volume's backup is named after its
       # own UUID, so a single PARENT_PATH would wrongly rebase data disks onto the root
       # parent.
@@ -360,24 +346,17 @@ print(len(files))
   rm -f $dest/backup.xml $dest/checkpoint.xml
   sync
 
-  # Free the parent bitmap now that the incremental has been written and rebased. The parent's
-  # delta is fully captured in this backup and BITMAP_NEW already tracks changes going forward, so
-  # the parent bitmap is dead weight — left in place it accumulates metadata and IO cost over a
-  # long chain. Remove it directly per-disk with block-dirty-bitmap-remove (a clean free) rather
-  # than checkpoint-delete, which would MERGE the parent's dirty bits into BITMAP_NEW and make the
-  # next incremental needlessly re-copy already-backed-up regions. Best-effort: a failure here does
-  # not fail the backup (the data is already safe) — the bitmap is simply reclaimed on a later run.
+  # Free the parent bitmap now that the incremental is written and rebased: its delta is captured
+  # here and BITMAP_NEW tracks changes going forward, so it only accrues metadata/IO cost over a
+  # long chain. Remove it per-disk with block-dirty-bitmap-remove (a clean free) rather than
+  # checkpoint-delete, which would merge its bits into BITMAP_NEW and re-copy backed-up regions.
+  # Best-effort: a failure here does not fail the backup, the bitmap is reclaimed on a later run.
   if [[ "$effective_mode" == "incremental" && -n "$BITMAP_PARENT" ]]; then
-    removed_from=0
-    parent_disk_count=0
     while read -r node; do
       [[ -z "$node" ]] && continue
-      parent_disk_count=$((parent_disk_count + 1))
-      if virsh -c qemu:///system qemu-monitor-command "$VM" \
+      if ! virsh -c qemu:///system qemu-monitor-command "$VM" \
            "{\"execute\":\"block-dirty-bitmap-remove\",\"arguments\":{\"node\":\"$node\",\"name\":\"$BITMAP_PARENT\"}}" \
            > /dev/null 2>>"$logFile"; then
-        removed_from=$((removed_from + 1))
-      else
         log -e "cleanup: failed to remove parent bitmap $BITMAP_PARENT on node $node (non-fatal)"
       fi
     done < <(
@@ -399,12 +378,6 @@ for dev in data.get("return", []) or []:
         print(node)
 ' "$BITMAP_PARENT" 2>/dev/null || true
     )
-    if [[ "$parent_disk_count" -gt 0 && "$removed_from" -eq "$parent_disk_count" ]]; then
-      # Signal the wrapper (mirrors the INCREMENTAL_FALLBACK marker convention) so the management
-      # server can record that the parent bitmap was reclaimed. Printed before the size line below.
-      echo "PARENT_BITMAP_DELETED=true"
-      log "cleanup: removed parent bitmap $BITMAP_PARENT from $removed_from disk(s)"
-    fi
   fi
 
   # Print statistics

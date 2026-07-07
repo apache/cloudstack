@@ -35,9 +35,6 @@ public class BackupAnswer extends Answer {
     // Set when an incremental was requested but the agent had to fall back to a full
     // (e.g. VM was stopped). Provider should record this backup as type=full.
     private Boolean incrementalFallback;
-    // Set when a successful incremental reclaimed its now-redundant parent bitmap on the host.
-    // Informational only — lets the management server log/audit bitmap-chain cleanup.
-    private Boolean parentBitmapDeleted;
 
     public BackupAnswer(final Command command, final boolean success, final String details) {
         super(command, success, details);
@@ -92,14 +89,6 @@ public class BackupAnswer extends Answer {
 
     public void setIncrementalFallback(Boolean incrementalFallback) {
         this.incrementalFallback = incrementalFallback;
-    }
-
-    public Boolean getParentBitmapDeleted() {
-        return parentBitmapDeleted != null && parentBitmapDeleted;
-    }
-
-    public void setParentBitmapDeleted(Boolean parentBitmapDeleted) {
-        this.parentBitmapDeleted = parentBitmapDeleted;
     }
 
 }

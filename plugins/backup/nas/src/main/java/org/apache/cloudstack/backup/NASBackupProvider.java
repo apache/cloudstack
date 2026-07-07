@@ -615,10 +615,6 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
                 effective = ChainDecision.fullStart(decision.bitmapNew);
                 backupVO.setType("FULL");
             }
-            if (answer.getParentBitmapDeleted()) {
-                logger.debug("VM {} incremental backup reclaimed its now-redundant parent bitmap on the host",
-                        vm.getInstanceName());
-            }
             List<Volume> volumes = new ArrayList<>(volumeDao.findByInstance(vm.getId()));
             backupVO.setBackedUpVolumes(backupManager.createVolumeInfoFromVolumes(volumes));
             if (backupDao.update(backupVO.getId(), backupVO)) {

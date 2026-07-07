@@ -1711,6 +1711,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 // removing again here would double-handle and destroy delete-pending tombstones,
                 // so defer entirely to the provider for those.
                 if (backupProvider.handlesChainDeleteResourceAccounting()) {
+                    checkAndGenerateUsageForLastBackupDeletedAfterOfferingRemove(vm, backup);
                     return true;
                 }
                 resourceLimitMgr.decrementResourceCount(backup.getAccountId(), Resource.ResourceType.backup);

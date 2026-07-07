@@ -45,9 +45,6 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
     // nasbackup.sh prints this on stdout when it could not proceed as an incremental and
     // completed a full backup instead; the orchestrator then records the backup as a full.
     private static final String INCREMENTAL_FALLBACK_MARKER = "INCREMENTAL_FALLBACK=true";
-    // nasbackup.sh prints this on stdout after a successful incremental once it has reclaimed the
-    // now-redundant parent bitmap on the host; surfaced to the orchestrator for audit/logging.
-    private static final String PARENT_BITMAP_DELETED_MARKER = "PARENT_BITMAP_DELETED=true";
 
     private static final String MODE_FULL = "full";
     private static final String MODE_INCREMENTAL = "incremental";
@@ -108,7 +105,6 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
         // on stdout. Detect it, then strip the marker line before parsing the backup size.
         String rawStdout = result.second();
         boolean incrementalFallback = rawStdout.contains(INCREMENTAL_FALLBACK_MARKER);
-        boolean parentBitmapDeleted = rawStdout.contains(PARENT_BITMAP_DELETED_MARKER);
         String stdout = stripMarkerLines(rawStdout).trim();
         long backupSize = parseBackupSize(stdout, diskPaths);
 
@@ -118,7 +114,6 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
         // it is null for legacy-full, which the orchestrator treats as "no bitmap").
         answer.setBitmapCreated(command.getBitmapNew());
         answer.setIncrementalFallback(incrementalFallback);
-        answer.setParentBitmapDeleted(parentBitmapDeleted);
         return answer;
     }
 
@@ -129,7 +124,7 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
         }
         StringBuilder sb = new StringBuilder();
         for (String line : stdout.split("\n", -1)) {
-            if (line.contains(INCREMENTAL_FALLBACK_MARKER) || line.contains(PARENT_BITMAP_DELETED_MARKER)) {
+            if (line.contains(INCREMENTAL_FALLBACK_MARKER)) {
                 continue;
             }
             if (sb.length() > 0) {
