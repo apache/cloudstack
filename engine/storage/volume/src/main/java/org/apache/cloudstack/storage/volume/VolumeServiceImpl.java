@@ -43,7 +43,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
@@ -1342,13 +1341,11 @@ public class VolumeServiceImpl implements VolumeService {
             primaryDataStore.setDetails(details);
 
             grantAccess(volumeInfo, destHost, primaryDataStore);
-            if (DataStoreProvider.ONTAP_PLUGIN_NAME.equals(primaryDataStore.getStorageProviderName())) {
-                volumeInfo = volFactory.getVolume(volumeInfo.getId(), primaryDataStore);
-                // For Netapp ONTAP iscsiName or Lun path  is available only after grantAccess
-                String managedStoreTarget = ObjectUtils.defaultIfNull(volumeInfo.get_iScsiName(), volumeInfo.getUuid());
-                details.put(PrimaryDataStore.MANAGED_STORE_TARGET, managedStoreTarget);
-                primaryDataStore.setDetails(details);
-            }
+            volumeInfo = volFactory.getVolume(volumeInfo.getId(), primaryDataStore);
+            // For Netapp ONTAP iscsiName or Lun path  is available only after grantAccess
+            String managedStoreTarget = ObjectUtils.defaultIfNull(volumeInfo.get_iScsiName(), volumeInfo.getUuid());
+            details.put(PrimaryDataStore.MANAGED_STORE_TARGET, managedStoreTarget);
+            primaryDataStore.setDetails(details);
 
             try {
                 motionSrv.copyAsync(srcTemplateInfo, destTemplateInfo, destHost, caller);
