@@ -7230,25 +7230,25 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     protected void validateStorageAccessGroupsOnHosts(VMInstanceVO vm, Host destinationHost) {
         List<VolumeVO> vmVolumes = _volsDao.findByInstance(vm.getId());
         if (CollectionUtils.isEmpty(vmVolumes)) {
-            s_logger.debug(String.format("No volumes found for VM %s, skipping storage access group validation", vm));
+            logger.debug("No volumes found for VM {}, skipping storage access group validation", vm);
             return;
         }
 
         String[] storageAccessGroupsOnDestHost = storageManager.getStorageAccessGroups(null, null, null, destinationHost.getId());
         List<String> destHostStorageAccessGroupsList = Arrays.asList(storageAccessGroupsOnDestHost);
         if (CollectionUtils.isEmpty(destHostStorageAccessGroupsList)) {
-            s_logger.debug(String.format("Destination host %s has no storage access groups", destinationHost.getName()));
+            logger.debug("Destination host {} has no storage access groups", destinationHost.getName());
         }
 
         for (VolumeVO volume : vmVolumes) {
             if (volume.getPoolId() == null) {
-                s_logger.debug(String.format("Volume %s has no storage pool assigned, skipping storage access group validation", volume.getName()));
+                logger.debug("Volume {} has no storage pool assigned, skipping storage access group validation", volume.getName());
                 continue;
             }
             List<String> poolStorageAccessGroupsList = _storagePoolAndAccessGroupMapDao.getStorageAccessGroups(volume.getPoolId());
             if (CollectionUtils.isEmpty(poolStorageAccessGroupsList)) {
-                s_logger.debug(String.format("Storage pool %d has no storage access groups, skipping validation for volume %s",
-                        volume.getPoolId(), volume.getName()));
+                logger.debug("Storage pool {} has no storage access groups, skipping validation for volume {}",
+                        volume.getPoolId(), volume.getName());
                 continue;
             }
             if (Collections.disjoint(poolStorageAccessGroupsList, destHostStorageAccessGroupsList)) {
