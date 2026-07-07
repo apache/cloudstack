@@ -573,8 +573,9 @@ public class ApiServletTest {
 
     @Test
     public void testIsSensitiveParameter() {
-        Assert.assertTrue(ApiServlet.isSensitiveParameter("password"));
-        Assert.assertTrue(ApiServlet.isSensitiveParameter("secretkey"));
+        Assert.assertTrue(ApiServlet.isSensitiveParameter("adminpassword"));
+        Assert.assertTrue(ApiServlet.isSensitiveParameter("usersecretkey"));
+        Assert.assertTrue(ApiServlet.isSensitiveParameter("sessiontoken"));
         Assert.assertFalse(ApiServlet.isSensitiveParameter("username"));
     }
 }
