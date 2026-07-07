@@ -7262,7 +7262,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     String.join(", ", destHostStorageAccessGroupsList)
                 ));
             }
-            s_logger.debug(String.format("Storage access group validation passed for volume %s (Resource Class: %s) on storage pool %d. " +
+            logger.debug(String.format("Storage access group validation passed for volume %s (Resource Class: %s) on storage pool %d. " +
                 "Destination host %s has matching access groups.",
                 volume.getName(), volume.getVolumeType(), volume.getPoolId(), destinationHost.getName()));
         }
