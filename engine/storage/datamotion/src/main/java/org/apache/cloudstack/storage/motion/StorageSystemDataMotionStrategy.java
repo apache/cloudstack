@@ -148,8 +148,8 @@ import java.util.HashSet;
 import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
 
-import static org.apache.cloudstack.vm.UnmanagedVMsManagerImpl.KVM_VM_IMPORT_DEFAULT_TEMPLATE_NAME;
-import static org.apache.cloudstack.vm.UnmanagedVMsManagerImpl.VM_IMPORT_DEFAULT_TEMPLATE_NAME;
+import static org.apache.cloudstack.vm.UnmanagedVMsManager.KVM_VM_IMPORT_DEFAULT_TEMPLATE_NAME;
+import static org.apache.cloudstack.vm.UnmanagedVMsManager.VM_IMPORT_DEFAULT_TEMPLATE_NAME;
 
 public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     protected Logger logger = LogManager.getLogger(getClass());

@@ -1307,11 +1307,20 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
                 boolean result;
                 try {
-                    result = _resourceMgr.executeUserRequest(cmd.getHostId(), cmd.getEvent());
+                    result = _resourceMgr.executeUserRequest(cmd.getHostId(), cmd.getEvent(), cmd.isForced(), cmd.isForceDeleteStorage());
                     logger.debug("Result is {}", result);
                 } catch (final AgentUnavailableException ex) {
                     logger.warn("Agent is unavailable", ex);
                     return null;
+                } catch (final RuntimeException ex) {
+                    logger.error(String.format("Failed to execute propagated event %s for host %d", cmd.getEvent().name(), cmd.getHostId()), ex);
+                    final Answer[] answers = new Answer[1];
+                    String details = ex.getMessage();
+                    if (details == null || details.isEmpty()) {
+                        details = ex.toString();
+                    }
+                    answers[0] = new Answer(cmd, false, details);
+                    return _gson.toJson(answers);
                 }
 
                 final Answer[] answers = new Answer[1];

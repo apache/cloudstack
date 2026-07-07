@@ -83,6 +83,12 @@ public class CreateExtensionCmd extends BaseCmd {
             description = "Details in key/value pairs using format details[i].keyname=keyvalue. Example: details[0].endpoint.url=urlvalue")
     protected Map details;
 
+    @Parameter(name = ApiConstants.RESERVED_RESOURCE_DETAILS, type = CommandType.STRING,
+            description = "Resource detail names as comma separated string that should be reserved and not visible " +
+                    "to end users",
+            since = "4.22.1")
+    protected String reservedResourceDetails;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -113,6 +119,10 @@ public class CreateExtensionCmd extends BaseCmd {
 
     public Map<String, String> getDetails() {
         return convertDetailsToMap(details);
+    }
+
+    public String getReservedResourceDetails() {
+        return reservedResourceDetails;
     }
 
     /////////////////////////////////////////////////////

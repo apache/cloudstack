@@ -46,6 +46,14 @@
         <details-input
           v-model:value="form.details" />
       </a-form-item>
+      <a-form-item name="reservedresourcedetails" ref="reservedresourcedetails">
+        <template #label>
+          <tooltip-label :title="$t('label.reservedresourcedetails')" :tooltip="apiParams.reservedresourcedetails.description"/>
+        </template>
+        <a-input
+          v-model:value="form.reservedresourcedetails"
+          :placeholder="apiParams.reservedresourcedetails.description" />
+      </a-form-item>
       <div :span="24" class="action-button">
         <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
         <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
@@ -90,13 +98,16 @@ export default {
       this.form = reactive({
         description: this.resource.description,
         details: this.resource.details,
-        orchestratorrequirespreparevm: this.resource.orchestratorrequirespreparevm
+        orchestratorrequirespreparevm: this.resource.orchestratorrequirespreparevm,
+        reservedresourcedetails: this.resource.reservedresourcedetails
       })
     },
     fetchData () {
       this.loading = true
       getAPI('listExtensions', { id: this.resource.id }).then(json => {
-        this.form.details = json?.listextensionsresponse?.extension?.[0]?.details
+        const ext = json?.listextensionsresponse?.extension?.[0] || {}
+        this.form.details = ext.details
+        this.form.reservedresourcedetails = ext.reservedresourcedetails
       }).finally(() => {
         this.loading = false
       })
@@ -110,7 +121,7 @@ export default {
         const params = {
           id: this.resource.id
         }
-        const keys = ['description', 'orchestratorrequirespreparevm']
+        const keys = ['description', 'orchestratorrequirespreparevm', 'reservedresourcedetails']
         for (const key of keys) {
           if (values[key] !== undefined || values[key] !== null) {
             params[key] = values[key]

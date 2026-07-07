@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.user.account;
 
 import java.util.List;
 
+import com.cloud.exception.ResourceAllocationException;
 import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.BaseCmd;
@@ -106,7 +107,7 @@ public class AddAccountToProjectCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() {
+    public void execute() throws ResourceAllocationException {
         if (accountName == null && email == null) {
             throw new InvalidParameterValueException("Either accountName or email is required");
         }

@@ -56,6 +56,7 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -350,7 +351,8 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             volumePools.add(dataStore != null ? (PrimaryDataStoreTO)dataStore.getTO() : null);
 
             String volumePathPrefix = getVolumePathPrefix(storagePool);
-            volumePaths.add(String.format("%s/%s", volumePathPrefix, volume.getPath()));
+            String volumePathSuffix = getVolumePathSuffix(storagePool);
+            volumePaths.add(String.format("%s%s%s", volumePathPrefix, volume.getPath(), volumePathSuffix));
         }
         return new Pair<>(volumePools, volumePaths);
     }
@@ -360,12 +362,22 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         if (ScopeType.HOST.equals(storagePool.getScope()) ||
                 Storage.StoragePoolType.SharedMountPoint.equals(storagePool.getPoolType()) ||
                 Storage.StoragePoolType.RBD.equals(storagePool.getPoolType())) {
-            volumePathPrefix = storagePool.getPath();
+            volumePathPrefix = storagePool.getPath() + "/";
+        } else if (Storage.StoragePoolType.Linstor.equals(storagePool.getPoolType())) {
+            volumePathPrefix = "/dev/drbd/by-res/cs-";
         } else {
             // Should be Storage.StoragePoolType.NetworkFilesystem
-            volumePathPrefix = String.format("/mnt/%s", storagePool.getUuid());
+            volumePathPrefix = String.format("/mnt/%s/", storagePool.getUuid());
         }
         return volumePathPrefix;
+    }
+
+    private String getVolumePathSuffix(StoragePoolVO storagePool) {
+        if (Storage.StoragePoolType.Linstor.equals(storagePool.getPoolType())) {
+            return "/0";
+        } else {
+            return "";
+        }
     }
 
     @Override
@@ -412,7 +424,9 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         restoreCommand.setBackupRepoType(backupRepository.getType());
         restoreCommand.setBackupRepoAddress(backupRepository.getAddress());
         restoreCommand.setVmName(vmNameAndState.first());
-        restoreCommand.setRestoreVolumePaths(Collections.singletonList(String.format("%s/%s", getVolumePathPrefix(pool), volumeUUID)));
+        String restoreVolumePath = String.format("%s%s%s", getVolumePathPrefix(pool), volumeUUID, getVolumePathSuffix(pool));
+        restoreCommand.setRestoreVolumePaths(Collections.singletonList(restoreVolumePath));
+        restoreCommand.setRestoreVolumeSizes(Collections.singletonList(backedUpVolumeSize));
         DataStore dataStore = dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
         restoreCommand.setRestoreVolumePools(Collections.singletonList(dataStore != null ? (PrimaryDataStoreTO)dataStore.getTO() : null));
         restoreCommand.setDiskType(backupVolumeInfo.getType().name().toLowerCase(Locale.ROOT));
@@ -470,6 +484,9 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             host = getVMHypervisorHost(vm);
         } else {
             host = resourceManager.findOneRandomRunningHostByHypervisor(Hypervisor.HypervisorType.KVM, backup.getZoneId());
+        }
+        if (host == null) {
+            throw new CloudRuntimeException(String.format("Unable to find a running KVM host in zone %d to delete backup %s", backup.getZoneId(), backup.getUuid()));
         }
 
         DeleteBackupCommand command = new DeleteBackupCommand(backup.getExternalId(), backupRepository.getType(),
@@ -552,7 +569,14 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     @Override
     public void syncBackupStorageStats(Long zoneId) {
         final List<BackupRepository> repositories = backupRepositoryDao.listByZoneAndProvider(zoneId, getName());
+        if (CollectionUtils.isEmpty(repositories)) {
+            return;
+        }
         final Host host = resourceManager.findOneRandomRunningHostByHypervisor(Hypervisor.HypervisorType.KVM, zoneId);
+        if (host == null) {
+            logger.warn("Unable to find a running KVM host in zone {} to sync backup storage stats", zoneId);
+            return;
+        }
         for (final BackupRepository repository : repositories) {
             GetBackupStorageStatsCommand command = new GetBackupStorageStatsCommand(repository.getType(), repository.getAddress(), repository.getMountOptions());
             BackupStorageStatsAnswer answer;

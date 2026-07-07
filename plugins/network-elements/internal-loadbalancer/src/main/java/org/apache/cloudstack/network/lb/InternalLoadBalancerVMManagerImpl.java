@@ -513,7 +513,8 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
         }
         final LoadBalancerConfigCommand cmd =
                 new LoadBalancerConfigCommand(lbs, guestNic.getIPv4Address(), guestNic.getIPv4Address(), internalLbVm.getPrivateIpAddress(), _itMgr.toNicTO(guestNicProfile,
-                        internalLbVm.getHypervisorType()), internalLbVm.getVpcId(), maxconn, offering.isKeepAliveEnabled());
+                        internalLbVm.getHypervisorType()), internalLbVm.getVpcId(), maxconn, offering.isKeepAliveEnabled(),
+                        NetworkOrchestrationService.NETWORK_LB_HAPROXY_IDLE_TIMEOUT.value());
 
         cmd.lbStatsVisibility = _configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key());
         cmd.lbStatsUri = _configDao.getValue(Config.NetworkLBHaproxyStatsUri.key());

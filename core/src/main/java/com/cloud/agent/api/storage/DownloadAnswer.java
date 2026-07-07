@@ -140,7 +140,7 @@ public class DownloadAnswer extends Answer {
     }
 
     public Long getTemplateSize() {
-        return templateSize;
+        return templateSize == 0 ? templatePhySicalSize : templateSize;
     }
 
     public void setTemplatePhySicalSize(long templatePhySicalSize) {

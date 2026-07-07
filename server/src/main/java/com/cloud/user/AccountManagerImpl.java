@@ -1341,19 +1341,18 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         final String accountNameFinal = accountName;
         final Long domainIdFinal = domainId;
-        final String accountUUIDFinal = accountUUID;
+        final String resolvedAccountUUID = accountUUID != null ? accountUUID : UUID.randomUUID().toString();
+
+        // Check role escalation before the transaction — this is a read-only check
+        // that iterates all API commands and doesn't need a write transaction open.
+        AccountVO requestedAccount = new AccountVO(accountNameFinal, domainIdFinal, networkDomain, accountType, roleId, resolvedAccountUUID);
+        checkRoleEscalation(getCurrentCallingAccount(), requestedAccount);
+
         Pair<Long, Account> pair = Transaction.execute(new TransactionCallback<>() {
             @Override
             public Pair<Long, Account> doInTransaction(TransactionStatus status) {
-                // create account
-                String accountUUID = accountUUIDFinal;
-                if (accountUUID == null) {
-                    accountUUID = UUID.randomUUID().toString();
-                }
-                AccountVO account = createAccount(accountNameFinal, accountType, roleId, domainIdFinal, networkDomain, details, accountUUID);
+                AccountVO account = createAccount(accountNameFinal, accountType, roleId, domainIdFinal, networkDomain, details, resolvedAccountUUID);
                 long accountId = account.getId();
-
-                checkRoleEscalation(getCurrentCallingAccount(), account);
 
                 // create the first user for the account
                 UserVO user = createUser(accountId, userName, password, firstName, lastName, email, timezone, userUUID, source);
@@ -2099,6 +2098,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         checkIfAccountManagesProjects(accountId);
         verifyCallerPrivilegeForUserOrAccountOperations(account);
+        validateNoDeleteProtectedVmsForAccount(account);
 
         CallContext.current().putContextParameter(Account.class, account.getUuid());
 
@@ -2136,6 +2136,23 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new InvalidParameterValueException("The account is default and can't be removed");
         }
         return true;
+    }
+
+    private void validateNoDeleteProtectedVmsForAccount(Account account) {
+        long accountId = account.getId();
+        List<VMInstanceVO> deleteProtectedVms = _vmDao.listDeleteProtectedVmsByAccountId(accountId);
+        if (CollectionUtils.isEmpty(deleteProtectedVms)) {
+            return;
+        }
+
+        if (logger.isDebugEnabled()) {
+            List<String> vmUuids = deleteProtectedVms.stream().map(VMInstanceVO::getUuid).collect(Collectors.toList());
+            logger.debug("Cannot delete Account {}, delete protection enabled for Instances: {}", account, vmUuids);
+        }
+
+        throw new InvalidParameterValueException(
+                String.format("Cannot delete Account '%s'. One or more Instances have delete protection enabled.",
+                        account.getAccountName()));
     }
 
     @Override

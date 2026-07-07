@@ -26,7 +26,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -34,6 +33,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -41,14 +41,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
-import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventUtils;
-import com.cloud.host.HostVO;
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.vm.snapshot.VMSnapshot;
-import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
-import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.user.volume.CheckAndRepairVolumeCmd;
@@ -70,6 +62,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeAp
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.framework.jobs.Outcome;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDao;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.resourcedetail.dao.SnapshotPolicyDetailsDao;
@@ -91,6 +84,7 @@ import org.junit.runner.RunWith;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
@@ -99,7 +93,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.api.query.dao.ServiceOfferingJoinDao;
 import com.cloud.configuration.ConfigurationManager;
-import com.cloud.configuration.Resource;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
@@ -107,17 +100,23 @@ import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
+import com.cloud.resourcelimit.CheckedReservation;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementService;
 import com.cloud.server.TaggedResourceService;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.dao.DiskOfferingDao;
@@ -145,8 +144,11 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.snapshot.VMSnapshot;
+import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
 
 @RunWith(MockitoJUnitRunner.class)
 public class VolumeApiServiceImplTest {
@@ -551,7 +553,9 @@ public class VolumeApiServiceImplTest {
     @Test
     public void attachRootVolumePositive() throws NoSuchFieldException, IllegalAccessException {
         thrown.expect(NullPointerException.class);
-        volumeApiServiceImpl.attachVolumeToVM(2L, 6L, 0L, false);
+        try (MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
+            volumeApiServiceImpl.attachVolumeToVM(2L, 6L, 0L, false);
+        }
     }
 
     // Negative test - attach data volume, to the vm on non-kvm hypervisor
@@ -570,7 +574,9 @@ public class VolumeApiServiceImplTest {
         DiskOfferingVO diskOffering = Mockito.mock(DiskOfferingVO.class);
         when(diskOffering.getEncrypt()).thenReturn(true);
         when(_diskOfferingDao.findById(anyLong())).thenReturn(diskOffering);
-        volumeApiServiceImpl.attachVolumeToVM(4L, 10L, 1L, false);
+        try (MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
+            volumeApiServiceImpl.attachVolumeToVM(4L, 10L, 1L, false);
+        }
     }
 
     // volume not Ready
@@ -655,9 +661,7 @@ public class VolumeApiServiceImplTest {
      * The resource limit check for primary storage should not be skipped for Volume in 'Uploaded' state.
      */
     @Test
-    public void testResourceLimitCheckForUploadedVolume() throws NoSuchFieldException, IllegalAccessException, ResourceAllocationException {
-        doThrow(new ResourceAllocationException("primary storage resource limit check failed", Resource.ResourceType.primary_storage)).when(resourceLimitServiceMock)
-        .checkResourceLimit(any(AccountVO.class), any(Resource.ResourceType.class), any(Long.class));
+    public void testAttachVolumeToVMPerformsResourceReservation() throws NoSuchFieldException, IllegalAccessException, ResourceAllocationException {
         UserVmVO vm = Mockito.mock(UserVmVO.class);
         AccountVO acc = Mockito.mock(AccountVO.class);
         VolumeInfo volumeToAttach = Mockito.mock(VolumeInfo.class);
@@ -678,10 +682,10 @@ public class VolumeApiServiceImplTest {
         DataCenterVO zoneWithDisabledLocalStorage = Mockito.mock(DataCenterVO.class);
         when(_dcDao.findById(anyLong())).thenReturn(zoneWithDisabledLocalStorage);
         when(zoneWithDisabledLocalStorage.isLocalStorageEnabled()).thenReturn(true);
-        try {
+        doReturn(volumeVoMock).when(volumeApiServiceImpl).getVolumeAttachJobResult(Mockito.any(), Mockito.any(), Mockito.any());
+        try (MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
             volumeApiServiceImpl.attachVolumeToVM(2L, 9L, null, false);
-        } catch (InvalidParameterValueException e) {
-            Assert.assertEquals(e.getMessage(), ("primary storage resource limit check failed"));
+            Assert.assertEquals(1, mockCheckedReservation.constructed().size());
         }
     }
 
@@ -2209,6 +2213,36 @@ public class VolumeApiServiceImplTest {
     }
 
     @Test
+    public void getRequiredPrimaryStorageSizeForVolumeAttachTestTagsAreEmptyReturnsZero() {
+        List<String> tags = new ArrayList<>();
+
+        Long result = volumeApiServiceImpl.getRequiredPrimaryStorageSizeForVolumeAttach(tags, volumeInfoMock);
+
+        Assert.assertEquals(0L, (long) result);
+    }
+
+    @Test
+    public void getRequiredPrimaryStorageSizeForVolumeAttachTestVolumeIsReadyReturnsZero() {
+        List<String> tags = List.of("tag1", "tag2");
+        Mockito.doReturn(Volume.State.Ready).when(volumeInfoMock).getState();
+
+        Long result = volumeApiServiceImpl.getRequiredPrimaryStorageSizeForVolumeAttach(tags, volumeInfoMock);
+
+        Assert.assertEquals(0L, (long) result);
+    }
+
+    @Test
+    public void getRequiredPrimaryStorageSizeForVolumeAttachTestTagsAreNotEmptyAndVolumeIsUploadedReturnsVolumeSize() {
+        List<String> tags = List.of("tag1", "tag2");
+        Mockito.doReturn(Volume.State.Uploaded).when(volumeInfoMock).getState();
+        Mockito.doReturn(2L).when(volumeInfoMock).getSize();
+
+        Long result = volumeApiServiceImpl.getRequiredPrimaryStorageSizeForVolumeAttach(tags, volumeInfoMock);
+
+        Assert.assertEquals(2L, (long) result);
+    }
+
+    @Test
     public void validateNoVmSnapshotsTestNoInstanceId() {
         Mockito.doReturn(null).when(volumeVoMock).getInstanceId();
 
@@ -2287,5 +2321,187 @@ public class VolumeApiServiceImplTest {
         Mockito.doReturn(t2).when(mock2).getType();
         Mockito.doReturn(1L).when(mock2).getId();
         return List.of(mock1, mock2);
+    }
+
+// =====================================================================
+// VMware ROOT-volume resize / offering-change: VM power_state-lag tests
+//
+// Both private guards that protect VMware ROOT-volume resize operations
+// are covered here:
+//   • validateVolumeReadyStateAndHypervisorChecks  (called by changeDiskOfferingForVolumeInternal)
+//   • resizeVolumeInternal                         (called by both resize and change-offering flows)
+//
+// The "power_state lag" scenario: when a VMware VM is stopped via CloudStack
+// the VirtualMachine.State transitions to Stopped immediately, but the
+// VMware-side VirtualMachine.PowerState (polled from ESX) may still read
+// PoweredOn for some seconds. The production code must use only the
+// authoritative CloudStack State field and must NOT additionally gate on
+// PowerState.
+// =====================================================================
+
+    /**
+     * Positive – validateVolumeReadyStateAndHypervisorChecks:
+     * The guard must allow a VMware ROOT-volume resize when the CloudStack VM
+     * state is {@code Stopped}, regardless of the VMware power_state value.
+     * getPowerState() is intentionally left un-stubbed so that any invocation
+     * of that method would cause a Mockito strict-stubbing error and surface a
+     * regression.
+     */
+    @Test
+    public void testValidateVolumeReadyStateVMware_VMStopped_PowerStateLag_ShouldPass()
+            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+
+        long volumeId = 200L;
+        long vmId     = 201L;
+
+        VolumeVO volume = Mockito.mock(VolumeVO.class);
+        when(volume.getId()).thenReturn(volumeId);
+        when(volume.getInstanceId()).thenReturn(vmId);
+        when(volume.getVolumeType()).thenReturn(Volume.Type.ROOT);
+        when(volume.getState()).thenReturn(Volume.State.Ready);
+
+        // snapshotDaoMock returns an empty list by default (Mockito default behaviour)
+        when(volumeDaoMock.getHypervisorType(volumeId)).thenReturn(HypervisorType.VMware);
+
+        UserVmVO stoppedVm = Mockito.mock(UserVmVO.class);
+        // Authoritative cloud state: Stopped.
+        // getPowerState() is NOT stubbed – power_state lag scenario.
+        when(stoppedVm.getState()).thenReturn(State.Stopped);
+        when(userVmDaoMock.findById(vmId)).thenReturn(stoppedVm);
+
+        long currentSizeBytes = 10L << 30; // 10 GiB
+        Long newSizeBytes     = 20L << 30; // 20 GiB (grow; VMware prohibits shrink)
+
+        // Must complete without throwing any exception
+        volumeApiServiceImpl.validateVolumeReadyStateAndHypervisorChecks(volume, currentSizeBytes, newSizeBytes);
+    }
+
+    /**
+     * Negative – validateVolumeReadyStateAndHypervisorChecks:
+     * The guard must reject a VMware ROOT-volume resize when the CloudStack VM
+     * state is {@code Running}.
+     */
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateVolumeReadyStateVMware_VMRunning_ShouldThrowInvalidParameterValueException()
+            throws NoSuchMethodException, IllegalAccessException {
+
+        long volumeId = 200L;
+        long vmId     = 201L;
+
+        VolumeVO volume = Mockito.mock(VolumeVO.class);
+        when(volume.getId()).thenReturn(volumeId);
+        when(volume.getInstanceId()).thenReturn(vmId);
+        when(volume.getVolumeType()).thenReturn(Volume.Type.ROOT);
+        when(volume.getState()).thenReturn(Volume.State.Ready);
+
+        when(volumeDaoMock.getHypervisorType(volumeId)).thenReturn(HypervisorType.VMware);
+
+        UserVmVO runningVm = Mockito.mock(UserVmVO.class);
+        when(runningVm.getState()).thenReturn(State.Running);
+        when(userVmDaoMock.findById(vmId)).thenReturn(runningVm);
+
+        long currentSizeBytes = 10L << 30;
+        Long newSizeBytes     = 20L << 30;
+
+        volumeApiServiceImpl.validateVolumeReadyStateAndHypervisorChecks(volume, currentSizeBytes, newSizeBytes);
+        Assert.fail("Expected InvalidParameterValueException for VMware ROOT-volume resize "
+                + "when VM state is Running");
+    }
+
+    /**
+     * Positive – resizeVolumeInternal:
+     * The VMware stopped-state guard inside {@code resizeVolumeInternal} must NOT
+     * fire when the CloudStack VM state is {@code Stopped}, even when the VMware
+     * power_state has not yet transitioned to PowerOff.
+     * Any exception originating from deeper plumbing (job queue, storage layer)
+     * is acceptable; only the state-guard exception is a failure.
+     */
+    @Test
+    public void testResizeVolumeInternal_VMware_VMStopped_PowerStateLag_ShouldNotThrowStateGuardError()
+            throws NoSuchMethodException, IllegalAccessException {
+
+        long volumeId = 300L;
+        long vmId     = 301L;
+
+        VolumeVO volume = Mockito.mock(VolumeVO.class);
+        when(volume.getId()).thenReturn(volumeId);
+        when(volume.getInstanceId()).thenReturn(vmId);
+        when(volume.getVolumeType()).thenReturn(Volume.Type.ROOT);
+
+        UserVmVO stoppedVm = Mockito.mock(UserVmVO.class);
+        when(stoppedVm.getState()).thenReturn(State.Stopped); // authoritative cloud state
+        // getPowerState() deliberately NOT stubbed – power_state lag scenario
+        when(userVmDaoMock.findById(vmId)).thenReturn(stoppedVm);
+
+        when(volumeDaoMock.getHypervisorType(volumeId)).thenReturn(HypervisorType.VMware);
+
+        // Stub the job-queue call so OutcomeImpl.s_jobMgr (static, uninitialized in tests)
+        // is never reached.  The Outcome mock returns null from get() and a bare AsyncJobVO
+        // from getJob(), which is enough for the unmarshallResultObject path to return null.
+        @SuppressWarnings("unchecked")
+        Outcome<Volume> outcomemock = Mockito.mock(Outcome.class);
+        AsyncJobVO stubJob = new AsyncJobVO();
+        when(outcomemock.getJob()).thenReturn(stubJob);
+        doReturn(outcomemock).when(volumeApiServiceImpl).resizeVolumeThroughJobQueue(
+                anyLong(), anyLong(), anyLong(), anyLong(),
+                nullable(Long.class), nullable(Long.class),
+                nullable(Integer.class), nullable(Long.class), anyBoolean());
+
+        // resizeVolumeInternal(VolumeVO, DiskOfferingVO, Long, Long, Long, Long, Integer, boolean)
+        try {
+            volumeApiServiceImpl.resizeVolumeInternal(
+                    volume,
+                    /* newDiskOffering */          (DiskOfferingVO) null,
+                    /* currentSize     */          0L,
+                    /* newSize         */          1L,
+                    /* newMinIops      */          (Long) null,
+                    /* newMaxIops      */          (Long) null,
+                    /* snapshotReserve */          (Integer) null,
+                    /* shrinkOk        */          false);
+        } catch (ResourceAllocationException e) {
+            Assert.fail("Unexpected ResourceAllocationException");
+        } catch (InvalidParameterValueException e) {
+            Assert.fail("VMware ROOT-volume resize must be allowed when CloudStack VM state is "
+                    + "Stopped, even under a power_state lag. Unexpected exception: "
+                    + e.getMessage());
+        }
+    }
+
+    /**
+     * Negative – resizeVolumeInternal:
+     * The VMware stopped-state guard inside {@code resizeVolumeInternal} must
+     * reject the operation when the CloudStack VM state is {@code Running}.
+     */
+    @Test
+    public void testResizeVolumeInternal_VMware_VMRunning_ShouldThrowStateGuardError()
+            throws NoSuchMethodException, IllegalAccessException {
+
+        long volumeId = 300L;
+        long vmId = 301L;
+
+        VolumeVO volume = Mockito.mock(VolumeVO.class);
+        when(volume.getId()).thenReturn(volumeId);
+        when(volume.getInstanceId()).thenReturn(vmId);
+        when(volume.getVolumeType()).thenReturn(Volume.Type.ROOT);
+
+        UserVmVO runningVm = Mockito.mock(UserVmVO.class);
+        when(runningVm.getState()).thenReturn(State.Running);
+        when(userVmDaoMock.findById(vmId)).thenReturn(runningVm);
+
+        when(volumeDaoMock.getHypervisorType(volumeId)).thenReturn(HypervisorType.VMware);
+
+        try {
+            volumeApiServiceImpl.resizeVolumeInternal(
+                    volume,
+                    (DiskOfferingVO) null,
+                    0L, 1L, (Long) null, (Long) null, (Integer) null, false);
+            Assert.fail("Expected an InvalidParameterValueException for VMware ROOT-volume resize when VM state is Running");
+        } catch (ResourceAllocationException e) {
+            Assert.fail("Cause must be InvalidParameterValueException, was: " + e.getClass());
+        } catch (InvalidParameterValueException e) {
+            Assert.assertTrue(
+                    "Exception message must reference Stopped-state requirement, was: " + e.getMessage(),
+                    e.getMessage() != null && e.getMessage().contains("VM should be in"));
+        }
     }
 }

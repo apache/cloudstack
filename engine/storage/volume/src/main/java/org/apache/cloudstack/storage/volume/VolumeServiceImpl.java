@@ -395,9 +395,9 @@ public class VolumeServiceImpl implements VolumeService {
         }
 
         // Find out if the volume is at state of download_in_progress on secondary storage
-        VolumeDataStoreVO volumeStore = _volumeStoreDao.findByVolume(volume.getId());
-        if (volumeStore != null) {
-            if (volumeStore.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOAD_IN_PROGRESS) {
+        VolumeDataStoreVO volumeOnImageStore = _volumeStoreDao.findByVolume(volume.getId());
+        if (volumeOnImageStore != null) {
+            if (volumeOnImageStore.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOAD_IN_PROGRESS) {
                 String msg = String.format("Volume: %s is currently being uploaded; can't delete it.", volume);
                 logger.debug(msg);
                 result.setSuccess(false);
@@ -416,10 +416,10 @@ public class VolumeServiceImpl implements VolumeService {
 
         if (!volumeExistsOnPrimary(vol)) {
             // not created on primary store
-            if (volumeStore == null) {
+            if (volumeOnImageStore == null) {
                 // also not created on secondary store
                 if (logger.isDebugEnabled()) {
-                    logger.debug("Marking volume that was never created as destroyed: " + vol);
+                    logger.debug("Marking volume that was never created as destroyed: {}", vol);
                 }
                 VMTemplateVO template = templateDao.findById(vol.getTemplateId());
                 if (template != null && !template.isDeployAsIs()) {
@@ -435,11 +435,21 @@ public class VolumeServiceImpl implements VolumeService {
         if (volume.getDataStore().getRole() == DataStoreRole.Image) {
             // no need to change state in volumes table
             volume.processEventOnly(Event.DestroyRequested);
+            if (volumeOnImageStore == null) {
+                logger.debug("Volume {} doesn't exist on image store, no need to delete", vol);
+                future.complete(result);
+                return future;
+            }
         } else if (volume.getDataStore().getRole() == DataStoreRole.Primary) {
             if (vol.getState() == Volume.State.Expunging) {
                 logger.info("Volume {} is already in Expunging, retrying", volume);
             }
             volume.processEvent(Event.ExpungeRequested);
+            if (!volumeExistsOnPrimary(vol)) {
+                logger.debug("Volume {} doesn't exist on primary storage, no need to delete", vol);
+                future.complete(result);
+                return future;
+            }
         }
 
         DeleteVolumeContext<VolumeApiResult> context = new DeleteVolumeContext<>(null, vo, future);
@@ -460,13 +470,11 @@ public class VolumeServiceImpl implements VolumeService {
 
     private boolean volumeExistsOnPrimary(VolumeVO vol) {
         Long poolId = vol.getPoolId();
-
         if (poolId == null) {
             return false;
         }
 
         PrimaryDataStore primaryStore = dataStoreMgr.getPrimaryDataStore(poolId);
-
         if (primaryStore == null) {
             return false;
         }
@@ -476,8 +484,7 @@ public class VolumeServiceImpl implements VolumeService {
         }
 
         String volumePath = vol.getPath();
-
-        if (volumePath == null || volumePath.trim().isEmpty()) {
+        if (StringUtils.isBlank(volumePath)) {
             return false;
         }
 
