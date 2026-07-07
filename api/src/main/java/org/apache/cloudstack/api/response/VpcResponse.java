@@ -166,7 +166,7 @@ public class VpcResponse extends BaseResponseWithAnnotations implements Controll
     private String ipv4Routing;
 
     @SerializedName(ApiConstants.IPV6_ROUTING)
-    @Param(description = "The IPv6 routing mode of VPC", since = "4.22.1")
+    @Param(description = "The IPv6 routing mode of VPC", since = "4.22.2")
     private String ipv6Routing;
 
     @SerializedName(ApiConstants.IPV4_ROUTES)
