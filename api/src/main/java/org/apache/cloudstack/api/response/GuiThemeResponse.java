@@ -52,6 +52,11 @@ public class GuiThemeResponse extends BaseResponse {
     @Param(description = "A set of Common Names (CN) (fixed or wildcard) separated by comma that can retrieve the theme; e.g.: *acme.com,acme2.com")
     private String commonNames;
 
+    @SerializedName(ApiConstants.LOGIN_BASE_DOMAIN)
+    @Param(description = "The ACS domain to be used as base for the login when accessing the GUI through the common name defined in the theme. If a " +
+            "common name is not defined, this parameter is ignored on the GUI.")
+    private String loginBaseDomain;
+
     @SerializedName(ApiConstants.DOMAIN_IDS)
     @Param(description = "A set of domain UUIDs (also known as ID for the end-user) separated by comma that can retrieve the theme.")
     private String domainIds;
@@ -175,5 +180,13 @@ public class GuiThemeResponse extends BaseResponse {
 
     public void setRemoved(Date removed) {
         this.removed = removed;
+    }
+
+    public String getLoginBaseDomain() {
+        return loginBaseDomain;
+    }
+
+    public void setLoginBaseDomain(String loginBaseDomain) {
+        this.loginBaseDomain = loginBaseDomain;
     }
 }
