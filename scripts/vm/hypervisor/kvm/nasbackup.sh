@@ -34,7 +34,7 @@ BACKUP_DIR=""
 DISK_PATHS=""
 QUIESCE=""
 logFile="/var/log/cloudstack/agent/agent.log"
-
+UNMOUNT_TIMEOUT=60
 EXIT_CLEANUP_FAILED=20
 
 log() {
@@ -197,10 +197,10 @@ backup_running_vm() {
 
   # Print statistics
   virsh -c qemu:///system domjobinfo $VM --completed
-  du -sb $dest | cut -f1
-
-  umount $mount_point
-  rmdir $mount_point
+  backup_size=$(du -sb "$dest" 2>>"$logFile" | cut -f1) || { log -ne "WARNING: du failed for $dest, reporting size as 0"; backup_size=0; }
+  timeout "$UNMOUNT_TIMEOUT" umount "$mount_point" 2>>"$logFile" || { log "WARNING: umount of $mount_point failed or timed out"; true; }
+  rmdir "$mount_point" 2>>"$logFile" || { log "WARNING: rmdir of $mount_point failed"; true; }
+  echo "$backup_size"
 }
 
 backup_stopped_vm() {
