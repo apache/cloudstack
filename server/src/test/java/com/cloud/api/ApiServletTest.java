@@ -552,4 +552,29 @@ public class ApiServletTest {
         boolean result = servlet.isStateChangingCommandNotUsingPOST(command, method, params);
         Assert.assertTrue(result);
     }
+
+    @Test
+    public void testFormatValuesForLogMasksSensitiveParameters() {
+        String result = ApiServlet.formatValuesForLog(
+            "password",
+            new String[]{"SECRET_ONE", "SECRET_TWO"});
+
+        Assert.assertEquals("[REDACTED, REDACTED]", result);
+    }
+
+    @Test
+    public void testFormatValuesForLogDoesNotMaskNormalParameters() {
+        String result = ApiServlet.formatValuesForLog(
+            "username",
+            new String[]{"alice", "bob"});
+
+        Assert.assertEquals("[alice, bob]", result);
+    }
+
+    @Test
+    public void testIsSensitiveParameter() {
+        Assert.assertTrue(ApiServlet.isSensitiveParameter("password"));
+        Assert.assertTrue(ApiServlet.isSensitiveParameter("secretkey"));
+        Assert.assertFalse(ApiServlet.isSensitiveParameter("username"));
+    }
 }
