@@ -31,27 +31,27 @@ import com.cloud.serializer.Param;
 public class GlobalLoadBalancerResponse extends BaseResponse implements ControlledEntityResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "global load balancer rule ID")
+    @Param(description = "Global Load balancer rule ID")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "name of the global load balancer rule")
+    @Param(description = "Name of the global Load balancer rule")
     private String name;
 
     @SerializedName(ApiConstants.DESCRIPTION)
-    @Param(description = "the description of the global load balancer rule")
+    @Param(description = "The description of the global Load balancer rule")
     private String description;
 
     @SerializedName(ApiConstants.GSLB_SERVICE_DOMAIN_NAME)
-    @Param(description = "DNS domain name given for the global load balancer")
+    @Param(description = "DNS domain name given for the global Load balancer")
     private String gslbDomainName;
 
     @SerializedName(ApiConstants.GSLB_LB_METHOD)
-    @Param(description = "Load balancing method used for the global load balancer")
+    @Param(description = "Load balancing method used for the global Load balancer")
     private String algorithm;
 
     @SerializedName(ApiConstants.GSLB_STICKY_SESSION_METHOD)
-    @Param(description = "session persistence method used for the global load balancer")
+    @Param(description = "Session persistence method used for the global Load balancer")
     private String stickyMethod;
 
     @SerializedName(ApiConstants.GSLB_SERVICE_TYPE)
@@ -59,27 +59,27 @@ public class GlobalLoadBalancerResponse extends BaseResponse implements Controll
     private String serviceType;
 
     @SerializedName(ApiConstants.REGION_ID)
-    @Param(description = "Region Id in which global load balancer is created")
+    @Param(description = "Region ID in which global Load balancer is created")
     private Integer regionId;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the account of the load balancer rule")
+    @Param(description = "The Account of the Load balancer rule")
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project id of the load balancer")
+    @Param(description = "The project ID of the Load balancer")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project name of the load balancer")
+    @Param(description = "The project name of the Load balancer")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain ID of the load balancer rule")
+    @Param(description = "The domain ID of the Load balancer rule")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain of the load balancer rule")
+    @Param(description = "The domain of the Load balancer rule")
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
@@ -87,7 +87,7 @@ public class GlobalLoadBalancerResponse extends BaseResponse implements Controll
     private String domainPath;
 
     @SerializedName(ApiConstants.LOAD_BALANCER_RULE)
-    @Param(description = "List of load balancer rules that are part of GSLB rule", responseObject = LoadBalancerResponse.class)
+    @Param(description = "List of Load balancer rules that are part of GSLB rule", responseObject = LoadBalancerResponse.class)
     private List<LoadBalancerResponse> siteLoadBalancers;
 
     public void setRegionIdId(Integer regionId) {

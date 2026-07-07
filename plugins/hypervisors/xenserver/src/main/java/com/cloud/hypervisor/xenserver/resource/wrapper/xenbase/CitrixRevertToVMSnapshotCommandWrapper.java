@@ -71,7 +71,7 @@ public final class CitrixRevertToVMSnapshotCommandWrapper extends CommandWrapper
             }
 
             if (vm == null) {
-                return new RevertToVMSnapshotAnswer(command, false, "Revert to VM Snapshot Failed due to can not find vm: " + vmName);
+                return new RevertToVMSnapshotAnswer(command, false, "Revert to Instance Snapshot Failed due to can not find Instance: " + vmName);
             }
 
             // call plugin to execute revert

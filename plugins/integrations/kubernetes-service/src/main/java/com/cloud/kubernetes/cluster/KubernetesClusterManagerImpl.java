@@ -477,7 +477,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             logger.warn("Network offering: {} does not have necessary services to provision Kubernetes cluster", networkOffering);
             return false;
         }
-        if (!networkOffering.isEgressDefaultPolicy()) {
+        if (!networkOffering.isForVpc() && !networkOffering.isEgressDefaultPolicy()) {
             logger.warn("Network offering: {} has egress default policy turned off should be on to provision Kubernetes cluster", networkOffering);
             return false;
         }
@@ -641,7 +641,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             throw new InvalidParameterValueException(String.format("Custom service offerings are not supported for creating clusters, service offering ID: %s", serviceOffering.getUuid()));
         }
         if (serviceOffering.getCpu() < MIN_KUBERNETES_CLUSTER_NODE_CPU || serviceOffering.getRamSize() < MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE) {
-            throw new InvalidParameterValueException(String.format("Kubernetes cluster cannot be created with service offering ID: %s, Kubernetes cluster template needs minimum %d vCPUs and %d MB RAM", serviceOffering.getUuid(), MIN_KUBERNETES_CLUSTER_NODE_CPU, MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE));
+            throw new InvalidParameterValueException(String.format("Kubernetes cluster cannot be created with service offering ID: %s, Kubernetes cluster Template needs minimum %d vCPUs and %d MB RAM", serviceOffering.getUuid(), MIN_KUBERNETES_CLUSTER_NODE_CPU, MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE));
         }
         if (serviceOffering.getCpu() < version.getMinimumCpu()) {
             throw new InvalidParameterValueException(String.format("Kubernetes cluster cannot be created with service offering ID: %s, Kubernetes version ID: %s needs minimum %d vCPUs", serviceOffering.getUuid(), version.getUuid(), version.getMinimumCpu()));
@@ -1172,9 +1172,12 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
             CallContext networkContext = CallContext.register(CallContext.current(), ApiCommandResourceType.Network);
             try {
+                Long zoneId = zone.getId();
+                Integer publicMTU = NetworkService.VRPublicInterfaceMtu.valueIn(zoneId);
+                Integer privateMTU = NetworkService.VRPrivateInterfaceMtu.valueIn(zoneId);
                 network = networkService.createGuestNetwork(networkOffering.getId(), clusterName + "-network",
-                        owner.getAccountName() + "-network", owner, physicalNetwork, zone.getId(),
-                        ControlledEntity.ACLType.Account);
+                        owner.getAccountName() + "-network", owner, physicalNetwork, zoneId,
+                        ControlledEntity.ACLType.Account, new Pair<>(publicMTU, privateMTU));
                 if (!networkOffering.isForVpc() && NetworkOffering.RoutingMode.Dynamic == networkOffering.getRoutingMode()) {
                     bgpService.allocateASNumber(zone.getId(), asNumber, network.getId(), null);
                 }
@@ -1240,7 +1243,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (clusterSize > kubernetesCluster.getNodeCount()) { // Upscale
             VMTemplateVO template = templateDao.findById(kubernetesCluster.getTemplateId());
             if (template == null) {
-                throw new InvalidParameterValueException(String.format("Invalid template associated with Kubernetes cluster : %s",  kubernetesCluster.getName()));
+                throw new InvalidParameterValueException(String.format("Invalid Template associated with Kubernetes cluster : %s",  kubernetesCluster.getName()));
             }
             if (CollectionUtils.isEmpty(templateJoinDao.newTemplateView(template, zone.getId(), true))) {
                 throw new InvalidParameterValueException(String.format("Template : %s associated with Kubernetes cluster : %s is not in Ready state for datacenter : %s", template.getName(), kubernetesCluster.getName(), zone.getName()));
@@ -1383,8 +1386,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
 
         totalAdditionalVms += additional;
-        long effectiveCpu = (long) so.getCpu() * so.getSpeed();
-        totalAdditionalCpuUnits += effectiveCpu * additional;
+        totalAdditionalCpuUnits += so.getCpu() * additional;
         totalAdditionalRamMb += so.getRamSize() * additional;
 
         try {

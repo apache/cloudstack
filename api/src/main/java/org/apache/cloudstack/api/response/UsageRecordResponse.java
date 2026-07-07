@@ -29,119 +29,119 @@ import com.google.gson.annotations.SerializedName;
 @SuppressWarnings("unused")
 public class UsageRecordResponse extends BaseResponseWithTagInformation implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the user account name")
+    @Param(description = "The user Account name")
     private String accountName;
 
     @SerializedName(ApiConstants.ACCOUNT_ID)
-    @Param(description = "the user account Id")
+    @Param(description = "The user Account ID")
     private String accountId;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project id of the resource")
+    @Param(description = "The project ID of the resource")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project name of the resource")
+    @Param(description = "The project name of the resource")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain ID")
+    @Param(description = "The domain ID")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain the resource is associated with")
+    @Param(description = "The domain the resource is associated with")
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the domain to which the usage reocrd belongs", since = "4.19.2.0")
+    @Param(description = "Path of the domain to which the usage reocrd belongs", since = "4.19.2.0")
     private String domainPath;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "the zone ID")
+    @Param(description = "The zone ID")
     private String zoneId;
 
     @SerializedName(ApiConstants.DESCRIPTION)
-    @Param(description = "description of the usage record")
+    @Param(description = "Description of the usage record")
     private String description;
 
     @SerializedName("usage")
-    @Param(description = "usage in hours")
+    @Param(description = "Usage in hours")
     private String usage;
 
     @SerializedName("usagetype")
-    @Param(description = "usage type ID")
+    @Param(description = "Usage type ID")
     private Integer usageType;
 
     @SerializedName("rawusage")
-    @Param(description = "raw usage in hours")
+    @Param(description = "Raw usage in hours")
     private String rawUsage;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
-    @Param(description = "virtual machine ID")
+    @Param(description = "Instance ID")
     private String virtualMachineId;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "resource or virtual machine name")
+    @Param(description = "Resource or Instance name")
     private String resourceName;
 
     @SerializedName("offeringid")
-    @Param(description = "offering ID")
+    @Param(description = "Offering ID")
     private String offeringId;
 
     @SerializedName(ApiConstants.TEMPLATE_ID)
-    @Param(description = "template ID")
+    @Param(description = "Template ID")
     private String templateId;
 
     @SerializedName(ApiConstants.OS_TYPE_ID)
-    @Param(description = "virtual machine os type ID")
+    @Param(description = "Instance os type ID")
     private String osTypeId;
 
     @SerializedName(ApiConstants.OS_DISPLAY_NAME)
-    @Param(description = "virtual machine os display name")
+    @Param(description = "Instance os display name")
     private String osDisplayName;
 
     @SerializedName(ApiConstants.OS_CATEGORY_ID)
-    @Param(description = "virtual machine guest os category ID")
+    @Param(description = "Instance guest os category ID")
     private String osCategoryId;
 
     @SerializedName(ApiConstants.OS_CATEGORY_NAME)
-    @Param(description = "virtual machine os category name")
+    @Param(description = "Instance os category name")
     private String osCategoryName;
 
     @SerializedName("usageid")
-    @Param(description = "id of the resource")
+    @Param(description = "ID of the resource")
     private String usageId;
 
     @SerializedName(ApiConstants.TYPE)
-    @Param(description = "resource type")
+    @Param(description = "Resource type")
     private String type;
 
     @SerializedName(ApiConstants.SIZE)
-    @Param(description = "resource size")
+    @Param(description = "Resource size")
     private Long size;
 
     @SerializedName("virtualsize")
-    @Param(description = "virtual size of resource")
+    @Param(description = "Virtual size of resource")
     private Long virtualSize;
 
     @SerializedName(ApiConstants.CPU_NUMBER)
-    @Param(description = "number of cpu of resource")
+    @Param(description = "Number of CPU of resource")
     private Long cpuNumber;
 
     @SerializedName(ApiConstants.CPU_SPEED)
-    @Param(description = "speed of each cpu of resource")
+    @Param(description = "Speed of each CPU of resource")
     private Long cpuSpeed;
 
     @SerializedName(ApiConstants.MEMORY)
-    @Param(description = "memory allocated for the resource")
+    @Param(description = "Memory allocated for the resource")
     private Long memory;
 
     @SerializedName(ApiConstants.START_DATE)
-    @Param(description = "start date of the usage record")
+    @Param(description = "Start date of the usage record")
     private Date startDate;
 
     @SerializedName(ApiConstants.END_DATE)
-    @Param(description = "end date of the usage record")
+    @Param(description = "End date of the usage record")
     private Date endDate;
 
     @SerializedName("issourcenat")
@@ -149,11 +149,11 @@ public class UsageRecordResponse extends BaseResponseWithTagInformation implemen
     private Boolean isSourceNat;
 
     @SerializedName(ApiConstants.IS_SYSTEM)
-    @Param(description = "True if the IPAddress is system IP - allocated during vm deploy or lb rule create")
+    @Param(description = "True if the IPAddress is system IP - allocated during Instance deploy or LB rule create")
     private Boolean isSystem;
 
     @SerializedName("networkid")
-    @Param(description = "id of the network")
+    @Param(description = "ID of the Network")
     private String networkId;
 
     @SerializedName("isdefault")
@@ -161,7 +161,7 @@ public class UsageRecordResponse extends BaseResponseWithTagInformation implemen
     private Boolean isDefault;
 
     @SerializedName("vpcid")
-    @Param(description = "id of the vpc")
+    @Param(description = "ID of the VPC")
     private String vpcId;
 
     public UsageRecordResponse() {

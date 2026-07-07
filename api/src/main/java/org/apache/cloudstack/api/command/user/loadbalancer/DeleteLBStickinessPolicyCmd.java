@@ -45,7 +45,7 @@ public class DeleteLBStickinessPolicyCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = LBStickinessResponse.class,
                required = true,
-               description = "the ID of the LB stickiness policy")
+               description = "The ID of the LB stickiness policy")
     private Long id;
 
     // ///////////////////////////////////////////////////

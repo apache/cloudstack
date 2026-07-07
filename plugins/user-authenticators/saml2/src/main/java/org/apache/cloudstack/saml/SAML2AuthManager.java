@@ -82,6 +82,9 @@ public interface SAML2AuthManager extends PluggableAPIAuthenticator, PluggableSe
     ConfigKey<Boolean> SAMLRequirePasswordLogin = new ConfigKey<Boolean>("Advanced", Boolean.class, "saml2.require.password", "true",
     "When enabled SAML2 will validate that the SAML login was performed with a password.  If disabled, other forms of authentication are allowed (two-factor, certificate, etc) on the SAML Authentication Provider", true);
 
+    ConfigKey<Boolean> EnableLoginAfterSAMLDisable = new ConfigKey<>("Advanced", Boolean.class, "enable.login.with.disabled.saml", "false", "When enabled, if SAML SSO is disabled, enables user to login with user and password, otherwise a user with SAML SSO disabled cannot login", true);
+
+
 
     SAMLProviderMetadata getSPMetadata();
     SAMLProviderMetadata getIdPMetadata(String entityId);

@@ -54,22 +54,22 @@ public class AddBigSwitchBcfDeviceCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = PhysicalNetworkResponse.class,
                required = true,
-               description = "the Physical Network ID")
+               description = "The Physical Network ID")
     private Long physicalNetworkId;
 
     @Parameter(name = ApiConstants.HOST_NAME, type = CommandType.STRING, required = true, description = "Hostname of ip address of the BigSwitch BCF Controller.")
     private String host;
 
     @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required=true,
-            description="Username of the BigSwitch BCF Controller.")
+            description = "Username of the BigSwitch BCF Controller.")
     private String username;
 
     @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required=true,
-            description="Password of the BigSwitch BCF Controller.")
+            description = "Password of the BigSwitch BCF Controller.")
     private String password;
 
     @Parameter(name=BcfConstants.BIGSWITCH_BCF_DEVICE_NAT, type=CommandType.BOOLEAN, required=true,
-            description="NAT support of the BigSwitch BCF Controller.")
+            description = "NAT support of the BigSwitch BCF Controller.")
     private Boolean nat;
 
     /////////////////////////////////////////////////////

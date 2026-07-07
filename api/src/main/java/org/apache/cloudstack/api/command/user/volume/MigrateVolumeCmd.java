@@ -43,13 +43,13 @@ public class MigrateVolumeCmd extends BaseAsyncCmd implements UserCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.UUID, entityType = VolumeResponse.class, required = true, description = "the ID of the volume")
+    @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.UUID, entityType = VolumeResponse.class, required = true, description = "The ID of the volume")
     private Long volumeId;
 
-    @Parameter(name = ApiConstants.STORAGE_ID, type = CommandType.UUID, entityType = StoragePoolResponse.class, required = true, description = "destination storage pool ID to migrate the volume to")
+    @Parameter(name = ApiConstants.STORAGE_ID, type = CommandType.UUID, entityType = StoragePoolResponse.class, required = true, description = "Destination storage pool ID to migrate the volume to")
     private Long storageId;
 
-    @Parameter(name = ApiConstants.LIVE_MIGRATE, type = CommandType.BOOLEAN, required = false, description = "if the volume should be live migrated when it is attached to a running vm")
+    @Parameter(name = ApiConstants.LIVE_MIGRATE, type = CommandType.BOOLEAN, required = false, description = "If the volume should be live migrated when it is attached to a running Instance")
     private Boolean liveMigrate;
 
     @Parameter(name = ApiConstants.NEW_DISK_OFFERING_ID, type = CommandType.UUID, entityType = DiskOfferingResponse.class, description = "The new disk offering ID that replaces the current one used by the volume. This new disk offering is used to better reflect the new storage where the volume is going to be migrated to.")

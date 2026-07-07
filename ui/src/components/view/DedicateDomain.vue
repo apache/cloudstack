@@ -18,52 +18,44 @@
 <template>
   <div class="form">
     <div class="form__item" :class="{'error': domainError}">
-      <a-spin :spinning="domainsLoading">
-        <p class="form__label">{{ $t('label.domain') }}<span class="required">*</span></p>
-        <p class="required required-label">{{ $t('label.required') }}</p>
-        <a-select
-          style="width: 100%"
-          showSearch
-          optionFilterProp="label"
-          :filterOption="(input, option) => {
-            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-          }"
-          @change="handleChangeDomain"
-          v-focus="true"
-          v-model:value="domainId">
-          <a-select-option
-            v-for="(domain, index) in domainsList"
-            :value="domain.id"
-            :key="index"
-            :label="domain.path || domain.name || domain.description">
-            {{ domain.path || domain.name || domain.description }}
-          </a-select-option>
-        </a-select>
-      </a-spin>
-    </div>
-    <div class="form__item" v-if="accountsList">
-      <p class="form__label">{{ $t('label.account') }}</p>
-      <a-select
+      <p class="form__label">{{ $t('label.domain') }}<span class="required">*</span></p>
+      <p class="required required-label">{{ $t('label.required') }}</p>
+      <infinite-scroll-select
         style="width: 100%"
-        @change="handleChangeAccount"
-        showSearch
-        optionFilterProp="value"
-        :filterOption="(input, option) => {
-          return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
-        }" >
-        <a-select-option v-for="(account, index) in accountsList" :value="account.name" :key="index">
-          {{ account.name }}
-        </a-select-option>
-      </a-select>
+        v-model:value="domainId"
+        api="listDomains"
+        :apiParams="domainsApiParams"
+        resourceType="domain"
+        optionValueKey="id"
+        optionLabelKey="path"
+        defaultIcon="block-outlined"
+        v-focus="true"
+        @change-option-value="handleChangeDomain" />
+    </div>
+    <div class="form__item">
+      <p class="form__label">{{ $t('label.account') }}</p>
+      <infinite-scroll-select
+        style="width: 100%"
+        v-model:value="selectedAccount"
+        api="listAccounts"
+        :apiParams="accountsApiParams"
+        resourceType="account"
+        optionValueKey="name"
+        optionLabelKey="name"
+        defaultIcon="team-outlined"
+        @change-option-value="handleChangeAccount" />
     </div>
   </div>
 </template>
 
 <script>
-import { getAPI } from '@/api'
+import InfiniteScrollSelect from '@/components/widgets/InfiniteScrollSelect.vue'
 
 export default {
   name: 'DedicateDomain',
+  components: {
+    InfiniteScrollSelect
+  },
   props: {
     error: {
       type: Boolean,
@@ -72,11 +64,29 @@ export default {
   },
   data () {
     return {
-      domainsLoading: false,
       domainId: null,
-      accountsList: null,
-      domainsList: null,
+      selectedAccount: null,
       domainError: false
+    }
+  },
+  computed: {
+    domainsApiParams () {
+      return {
+        listall: true,
+        details: 'min'
+      }
+    },
+    accountsApiParams () {
+      if (!this.domainId) {
+        return {
+          listall: true,
+          showicon: true
+        }
+      }
+      return {
+        showicon: true,
+        domainid: this.domainId
+      }
     }
   },
   watch: {
@@ -85,46 +95,17 @@ export default {
     }
   },
   created () {
-    this.fetchData()
   },
   methods: {
-    fetchData () {
-      this.domainsLoading = true
-      getAPI('listDomains', {
-        listAll: true,
-        details: 'min'
-      }).then(response => {
-        this.domainsList = response.listdomainsresponse.domain
-
-        if (this.domainsList[0]) {
-          this.domainId = this.domainsList[0].id
-          this.handleChangeDomain(this.domainId)
-        }
-      }).catch(error => {
-        this.$notifyError(error)
-      }).finally(() => {
-        this.domainsLoading = false
-      })
-    },
-    fetchAccounts () {
-      getAPI('listAccounts', {
-        domainid: this.domainId
-      }).then(response => {
-        this.accountsList = response.listaccountsresponse.account || []
-        if (this.accountsList && this.accountsList.length === 0) {
-          this.handleChangeAccount(null)
-        }
-      }).catch(error => {
-        this.$notifyError(error)
-      })
-    },
-    handleChangeDomain (e) {
-      this.$emit('domainChange', e)
+    handleChangeDomain (domainId) {
+      this.domainId = domainId
+      this.selectedAccount = null
+      this.$emit('domainChange', domainId)
       this.domainError = false
-      this.fetchAccounts()
     },
-    handleChangeAccount (e) {
-      this.$emit('accountChange', e)
+    handleChangeAccount (accountName) {
+      this.selectedAccount = accountName
+      this.$emit('accountChange', accountName)
     }
   }
 }

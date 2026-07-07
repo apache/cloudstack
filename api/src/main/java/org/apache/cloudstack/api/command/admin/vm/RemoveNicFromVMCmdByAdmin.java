@@ -24,6 +24,6 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "removeNicFromVirtualMachine", description = "Removes VM from specified network by deleting a NIC", responseObject = UserVmResponse.class, responseView = ResponseView.Full, entityType = {VirtualMachine.class},
+@APICommand(name = "removeNicFromVirtualMachine", description = "Removes Instance from specified network by deleting a NIC", responseObject = UserVmResponse.class, responseView = ResponseView.Full, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class RemoveNicFromVMCmdByAdmin extends RemoveNicFromVMCmd implements AdminCmd {}

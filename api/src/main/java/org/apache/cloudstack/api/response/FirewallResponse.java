@@ -28,63 +28,63 @@ import com.google.gson.annotations.SerializedName;
 @SuppressWarnings("unused")
 public class FirewallResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the firewall rule")
+    @Param(description = "The ID of the firewall rule")
     private String id;
 
     @SerializedName(ApiConstants.PROTOCOL)
-    @Param(description = "the protocol of the firewall rule")
+    @Param(description = "The protocol of the firewall rule")
     private String protocol;
 
     @SerializedName(ApiConstants.START_PORT)
-    @Param(description = "the starting port of firewall rule's port range")
+    @Param(description = "The starting port of firewall rule's port range")
     private Integer startPort;
 
     @SerializedName(ApiConstants.END_PORT)
-    @Param(description = "the ending port of firewall rule's port range")
+    @Param(description = "The ending port of firewall rule's port range")
     private Integer endPort;
 
     @SerializedName(ApiConstants.IP_ADDRESS_ID)
-    @Param(description = "the public ip address id for the firewall rule")
+    @Param(description = "The public IP address ID for the firewall rule")
     private String publicIpAddressId;
 
     @SerializedName(ApiConstants.NETWORK_ID)
-    @Param(description = "the network id of the firewall rule")
+    @Param(description = "The Network ID of the firewall rule")
     private String networkId;
 
     @SerializedName(ApiConstants.IP_ADDRESS)
-    @Param(description = "the public ip address for the firewall rule")
+    @Param(description = "The public IP address for the firewall rule")
     private String publicIpAddress;
 
     @SerializedName(ApiConstants.STATE)
-    @Param(description = "the state of the rule")
+    @Param(description = "The state of the rule")
     private String state;
 
     @SerializedName(ApiConstants.CIDR_LIST)
-    @Param(description = "the cidr list to forward traffic from. Multiple entries are separated by a single comma character (,).")
+    @Param(description = "The CIDR list to forward traffic from. Multiple entries are separated by a single comma character (,).")
     private String cidrList;
 
     @SerializedName(ApiConstants.ICMP_TYPE)
-    @Param(description = "type of the icmp message being sent")
+    @Param(description = "Type of the ICMP message being sent")
     private Integer icmpType;
 
     @SerializedName(ApiConstants.ICMP_CODE)
-    @Param(description = "error code for this icmp message")
+    @Param(description = "Error code for this ICMP message")
     private Integer icmpCode;
 
     @SerializedName(ApiConstants.TAGS)
-    @Param(description = "the list of resource tags associated with the rule", responseObject = ResourceTagResponse.class)
+    @Param(description = "The list of resource tags associated with the rule", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
 
     @SerializedName(ApiConstants.FOR_DISPLAY)
-    @Param(description = "is rule for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
+    @Param(description = "Is rule for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
     private Boolean forDisplay;
 
     @SerializedName(ApiConstants.DEST_CIDR_LIST)
-    @Param(description = "the cidr list to forward traffic to. Multiple entries are separated by a single comma character (,).")
+    @Param(description = "The CIDR list to forward traffic to. Multiple entries are separated by a single comma character (,).")
     private String destCidr;
 
     @SerializedName(ApiConstants.TRAFFIC_TYPE)
-    @Param(description = "the traffic type for the firewall rule", since = "4.17.0")
+    @Param(description = "The traffic type for the firewall rule", since = "4.17.0")
     private String trafficType;
 
     public void setId(String id) {

@@ -26,11 +26,11 @@ import com.google.gson.annotations.SerializedName;
 
 public class VMUserDataResponse extends BaseResponse {
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
-    @Param(description = "the ID of the virtual machine")
+    @Param(description = "The ID of the Instance")
     private String vmId;
 
     @SerializedName(ApiConstants.USER_DATA)
-    @Param(description = "Base64 encoded VM user data")
+    @Param(description = "Base64 encoded Instance User Data")
     private String userData;
 
     public void setUserData(String userData) {

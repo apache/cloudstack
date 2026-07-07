@@ -38,19 +38,19 @@ public class UpdatePhysicalNetworkCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, required = true, description = "physical network id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, required = true, description = "Physical Network ID")
     private Long id;
 
-    @Parameter(name = ApiConstants.NETWORK_SPEED, type = CommandType.STRING, description = "the speed for the physical network[1G/10G]")
+    @Parameter(name = ApiConstants.NETWORK_SPEED, type = CommandType.STRING, description = "The speed for the physical Network[1G/10G]")
     private String speed;
 
-    @Parameter(name = ApiConstants.TAGS, type = CommandType.LIST, collectionType = CommandType.STRING, description = "Tag the physical network")
+    @Parameter(name = ApiConstants.TAGS, type = CommandType.LIST, collectionType = CommandType.STRING, description = "Tag the physical Network")
     private List<String> tags;
 
     @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "Enabled/Disabled")
     private String state;
 
-    @Parameter(name = ApiConstants.VLAN, type = CommandType.STRING, description = "the VLAN for the physical network")
+    @Parameter(name = ApiConstants.VLAN, type = CommandType.STRING, description = "The VLAN for the physical Network")
     private String vlan;
 
     /////////////////////////////////////////////////////

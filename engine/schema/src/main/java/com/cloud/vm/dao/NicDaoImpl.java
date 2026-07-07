@@ -18,12 +18,13 @@ package com.cloud.vm.dao;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.Filter;
@@ -71,7 +72,7 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         AllFieldsSearch.and("strategy", AllFieldsSearch.entity().getReservationStrategy(), Op.EQ);
         AllFieldsSearch.and("strategyNEQ", AllFieldsSearch.entity().getReservationStrategy(), Op.NEQ);
         AllFieldsSearch.and("reserverName",AllFieldsSearch.entity().getReserver(),Op.EQ);
-        AllFieldsSearch.and("macAddress", AllFieldsSearch.entity().getMacAddress(), Op.EQ);
+        AllFieldsSearch.and("macAddress", AllFieldsSearch.entity().getMacAddress(), Op.IN);
         AllFieldsSearch.and("deviceid", AllFieldsSearch.entity().getDeviceId(), Op.EQ);
         AllFieldsSearch.and("ipv6Gateway", AllFieldsSearch.entity().getIPv6Gateway(), Op.EQ);
         AllFieldsSearch.and("ipv6Cidr", AllFieldsSearch.entity().getIPv6Cidr(), Op.EQ);
@@ -420,10 +421,21 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
     }
 
     @Override
-    public NicVO findByMacAddress(String macAddress) {
+    public NicVO findByMacAddress(String macAddress, long networkId) {
         SearchCriteria<NicVO> sc = AllFieldsSearch.create();
         sc.setParameters("macAddress", macAddress);
+        sc.setParameters("network", networkId);
         return findOneBy(sc);
+    }
+
+    @Override
+    public List<NicVO> listByMacAddresses(List<String> macAddresses) {
+        if (CollectionUtils.isEmpty(macAddresses)) {
+            return Collections.emptyList();
+        }
+        SearchCriteria<NicVO> sc = AllFieldsSearch.create();
+        sc.setParameters("macAddress", macAddresses.toArray());
+        return listBy(sc);
     }
 
     @Override

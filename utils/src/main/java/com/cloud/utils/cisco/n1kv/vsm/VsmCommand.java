@@ -26,6 +26,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.logging.log4j.Logger;
+import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.logging.log4j.LogManager;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.DOMImplementation;
@@ -67,7 +68,7 @@ public class VsmCommand {
     public static String getAddPortProfile(String name, PortProfileType type, BindingType binding, SwitchPortMode mode, int vlanid, String vdc, String espName) {
         try {
             // Create the document and root element.
-            DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
             DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
             DOMImplementation domImpl = docBuilder.getDOMImplementation();
             Document doc = createDocument(domImpl);
@@ -100,7 +101,7 @@ public class VsmCommand {
     public static String getAddPortProfile(String name, PortProfileType type, BindingType binding, SwitchPortMode mode, int vlanid) {
         try {
             // Create the document and root element.
-            DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
             DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
             DOMImplementation domImpl = docBuilder.getDOMImplementation();
             Document doc = createDocument(domImpl);
@@ -133,7 +134,7 @@ public class VsmCommand {
     public static String getUpdatePortProfile(String name, SwitchPortMode mode, List<Pair<VsmCommand.OperationType, String>> params) {
         try {
             // Create the document and root element.
-            DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
             DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
             DOMImplementation domImpl = docBuilder.getDOMImplementation();
             Document doc = createDocument(domImpl);
@@ -166,7 +167,7 @@ public class VsmCommand {
     public static String getDeletePortProfile(String portName) {
         try {
             // Create the document and root element.
-            DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
             DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
             DOMImplementation domImpl = docBuilder.getDOMImplementation();
             Document doc = createDocument(domImpl);
@@ -199,7 +200,7 @@ public class VsmCommand {
     public static String getAddPolicyMap(String name, int averageRate, int maxRate, int burstRate) {
         try {
             // Create the document and root element.
-            DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
             DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
             DOMImplementation domImpl = docBuilder.getDOMImplementation();
             Document doc = createDocument(domImpl);
@@ -232,7 +233,7 @@ public class VsmCommand {
     public static String getDeletePolicyMap(String name) {
         try {
             // Create the document and root element.
-            DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
             DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
             DOMImplementation domImpl = docBuilder.getDOMImplementation();
             Document doc = createDocument(domImpl);
@@ -265,7 +266,7 @@ public class VsmCommand {
     public static String getServicePolicy(String policyMap, String portProfile, boolean attach) {
         try {
             // Create the document and root element.
-            DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
             DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
             DOMImplementation domImpl = docBuilder.getDOMImplementation();
             Document doc = createDocument(domImpl);
@@ -297,7 +298,7 @@ public class VsmCommand {
 
     public static String getPortProfile(String name) {
         try {
-            DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
             DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
             DOMImplementation domImpl = docBuilder.getDOMImplementation();
             Document doc = createDocument(domImpl);
@@ -334,7 +335,7 @@ public class VsmCommand {
 
     public static String getPolicyMap(String name) {
         try {
-            DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
             DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
             DOMImplementation domImpl = docBuilder.getDOMImplementation();
             Document doc = createDocument(domImpl);
@@ -367,7 +368,7 @@ public class VsmCommand {
 
     public static String getHello() {
         try {
-            DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
             DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
             DOMImplementation domImpl = docBuilder.getDOMImplementation();
 
@@ -395,7 +396,7 @@ public class VsmCommand {
     public static String getVServiceNode(String vlanId, String ipAddr) {
         try {
             // Create the document and root element.
-            DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
             DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
             DOMImplementation domImpl = docBuilder.getDOMImplementation();
             Document doc = createDocument(domImpl);

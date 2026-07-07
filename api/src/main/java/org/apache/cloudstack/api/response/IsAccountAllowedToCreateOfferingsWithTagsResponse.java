@@ -23,7 +23,7 @@ import org.apache.cloudstack.api.BaseResponse;
 public class IsAccountAllowedToCreateOfferingsWithTagsResponse extends BaseResponse {
 
     @SerializedName("isallowed")
-    @Param(description = "is domain admin allowed to create offerings with tags")
+    @Param(description = "Is domain admin allowed to create offerings with tags")
     private Boolean isAllowed;
 
 

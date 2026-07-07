@@ -30,47 +30,47 @@ import com.cloud.user.Account.State;
 public class QuotaSummaryResponse extends BaseResponse {
 
     @SerializedName("accountid")
-    @Param(description = "account id")
+    @Param(description = "Account ID")
     private String accountId;
 
     @SerializedName("account")
-    @Param(description = "account name")
+    @Param(description = "Account name")
     private String accountName;
 
     @SerializedName("domainid")
-    @Param(description = "domain id")
+    @Param(description = "Domain ID")
     private String domainId;
 
     @SerializedName("domain")
-    @Param(description = "domain name")
+    @Param(description = "Domain name")
     private String domainName;
 
     @SerializedName("balance")
-    @Param(description = "account balance")
+    @Param(description = "Account balance")
     private BigDecimal balance;
 
     @SerializedName("state")
-    @Param(description = "account state")
+    @Param(description = "Account state")
     private State state;
 
     @SerializedName("quota")
-    @Param(description = "quota usage of this period")
+    @Param(description = "Quota usage of this period")
     private BigDecimal quotaUsage;
 
     @SerializedName("startdate")
-    @Param(description = "start date")
+    @Param(description = "Start date")
     private Date startDate = null;
 
     @SerializedName("enddate")
-    @Param(description = "end date")
+    @Param(description = "End date")
     private Date endDate = null;
 
     @SerializedName("currency")
-    @Param(description = "currency")
+    @Param(description = "Currency")
     private String currency;
 
     @SerializedName("quotaenabled")
-    @Param(description = "if the account has the quota config enabled")
+    @Param(description = "If the account has the quota config enabled")
     private boolean quotaEnabled;
 
     public QuotaSummaryResponse() {

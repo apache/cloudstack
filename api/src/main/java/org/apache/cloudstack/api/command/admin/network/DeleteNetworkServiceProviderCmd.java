@@ -45,7 +45,7 @@ public class DeleteNetworkServiceProviderCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = ProviderResponse.class,
                required = true,
-               description = "the ID of the network service provider")
+               description = "The ID of the network service provider")
     private Long id;
 
     /////////////////////////////////////////////////////

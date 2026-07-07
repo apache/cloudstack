@@ -40,7 +40,7 @@ public class OVFHelperTest {
                 "<Description>This will enable the SSHD service and configure the specified public key</Description>" +
             "</Property>" +
             "<Property ovf:key=\"user-data\" ovf:type=\"string\" ovf:userConfigurable=\"true\" ovf:value=\"\">" +
-                "<Label>User data to be made available inside the instance</Label>" +
+                "<Label>User data to be made available inside the Instance</Label>" +
                 "<Description>This allows to pass any text to the appliance. The value should be encoded in base64</Description>" +
             "</Property>" +
         "</ProductSection>";
@@ -576,15 +576,15 @@ public class OVFHelperTest {
             "      <Category vmw:uioptional=\"false\">SSO Configuration</Category>\n" +
             "      <Property ovf:key=\"guestinfo.cis.vmdir.username\" ovf:type=\"string\" ovf:userConfigurable=\"false\" ovf:value=\"administrator@vsphere.local\">\n" +
             "        <Label>Directory Username</Label>\n" +
-            "        <Description>For the first instance of the identity domain, this is the username with Administrator privileges. Otherwise, this is the username of the replication partner.</Description>\n" +
+            "        <Description>For the first Instance of the identity domain, this is the username with Administrator privileges. Otherwise, this is the username of the replication partner.</Description>\n" +
             "      </Property>\n" +
             "      <Property ovf:key=\"guestinfo.cis.vmdir.password\" ovf:password=\"true\" ovf:type=\"string\" ovf:userConfigurable=\"true\">\n" +
             "        <Label>Directory Password</Label>\n" +
-            "        <Description>For the first instance of the identity domain, this is the password given to the Administrator account.  Otherwise, this is the password of the Administrator account of the replication partner.</Description>\n" +
+            "        <Description>For the first Instance of the identity domain, this is the password given to the Administrator account.  Otherwise, this is the password of the Administrator account of the replication partner.</Description>\n" +
             "      </Property>\n" +
             "      <Property ovf:key=\"guestinfo.cis.vmdir.domain-name\" ovf:type=\"string\" ovf:userConfigurable=\"false\" ovf:value=\"vsphere.local\">\n" +
             "        <Label>Directory Domain Name</Label>\n" +
-            "        <Description>For the first instance of the identity domain, this is the name of the newly created domain.</Description>\n" +
+            "        <Description>For the first Instance of the identity domain, this is the name of the newly created domain.</Description>\n" +
             "      </Property>\n" +
             "      <Property ovf:key=\"guestinfo.cis.vmdir.site-name\" ovf:type=\"string\" ovf:userConfigurable=\"false\" ovf:value=\"Default-First-Site\">\n" +
             "        <Label>Site Name</Label>\n" +
@@ -592,11 +592,11 @@ public class OVFHelperTest {
             "      </Property>\n" +
             "      <Property ovf:key=\"guestinfo.cis.vmdir.first-instance\" ovf:type=\"boolean\" ovf:userConfigurable=\"false\" ovf:value=\"True\">\n" +
             "        <Label>New Identity Domain</Label>\n" +
-            "        <Description>If this parameter is set to True, the VMware directory instance is setup as the first instance of a new identity domain. Otherwise, the instance is setup as a replication partner.</Description>\n" +
+            "        <Description>If this parameter is set to True, the VMware directory Instance is setup as the first Instance of a new identity domain. Otherwise, the Instance is setup as a replication partner.</Description>\n" +
             "      </Property>\n" +
             "      <Property ovf:key=\"guestinfo.cis.vmdir.replication-partner-hostname\" ovf:type=\"string\" ovf:userConfigurable=\"false\" ovf:value=\"\">\n" +
             "        <Label>Directory Replication Partner</Label>\n" +
-            "        <Description>The hostname of the VMware directory replication partner.  This value is ignored for the first instance of the identity domain.</Description>\n" +
+            "        <Description>The hostname of the VMware directory replication partner.  This value is ignored for the first Instance of the identity domain.</Description>\n" +
             "      </Property>\n" +
             "      <Category vmw:uioptional=\"false\">Database Configuration</Category>\n" +
             "      <Property ovf:key=\"guestinfo.cis.db.type\" ovf:type=\"string\" ovf:userConfigurable=\"false\" ovf:value=\"embedded\">\n" +
@@ -625,7 +625,7 @@ public class OVFHelperTest {
             "      </Property>\n" +
             "      <Property ovf:key=\"guestinfo.cis.db.instance\" ovf:type=\"string\" ovf:userConfigurable=\"false\" ovf:value=\"\">\n" +
             "        <Label>Database Instance</Label>\n" +
-            "        <Description>String describing the external database instance. Values could be anything depending on what the database instance name the DBA creates in the external db. (ignored when the db.type is &apos;embedded&apos;).</Description>\n" +
+            "        <Description>String describing the external database Instance. Values could be anything depending on what the database Instance name the DBA creates in the external db. (ignored when the db.type is &apos;embedded&apos;).</Description>\n" +
             "      </Property>\n" +
             "      <Category vmw:uioptional=\"false\">System Configuration</Category>\n" +
             "      <Property ovf:key=\"guestinfo.cis.appliance.root.passwd\" ovf:password=\"true\" ovf:type=\"string\" ovf:userConfigurable=\"true\">\n" +

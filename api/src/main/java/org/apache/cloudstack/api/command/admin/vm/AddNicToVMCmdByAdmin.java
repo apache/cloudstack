@@ -25,6 +25,6 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import com.cloud.vm.VirtualMachine;
 
 
-@APICommand(name = "addNicToVirtualMachine", description = "Adds VM to specified network by creating a NIC", responseObject = UserVmResponse.class, responseView = ResponseView.Full, entityType = {VirtualMachine.class},
+@APICommand(name = "addNicToVirtualMachine", description = "Adds Instance to specified network by creating a NIC", responseObject = UserVmResponse.class, responseView = ResponseView.Full, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class AddNicToVMCmdByAdmin extends AddNicToVMCmd implements AdminCmd {}

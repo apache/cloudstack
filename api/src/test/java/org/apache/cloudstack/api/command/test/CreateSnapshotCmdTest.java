@@ -137,7 +137,7 @@ public class CreateSnapshotCmdTest extends TestCase {
         try {
             createSnapshotCmd.execute();
         } catch (ServerApiException exception) {
-            Assert.assertEquals("Failed to create snapshot due to an internal error creating snapshot for volume 123", exception.getDescription());
+            Assert.assertEquals("Failed to create Snapshot due to an internal error creating Snapshot for volume 123", exception.getDescription());
         }
     }
 

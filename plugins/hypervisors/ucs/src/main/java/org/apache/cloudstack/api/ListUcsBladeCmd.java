@@ -38,7 +38,7 @@ public class ListUcsBladeCmd extends BaseListCmd {
     @Inject
     private UcsManager mgr;
 
-    @Parameter(name = ApiConstants.UCS_MANAGER_ID, type = CommandType.UUID, description = "ucs manager id", entityType = UcsManagerResponse.class, required = true)
+    @Parameter(name = ApiConstants.UCS_MANAGER_ID, type = CommandType.UUID, description = "Ucs manager ID", entityType = UcsManagerResponse.class, required = true)
     private Long ucsManagerId;
 
     public UcsManager getMgr() {

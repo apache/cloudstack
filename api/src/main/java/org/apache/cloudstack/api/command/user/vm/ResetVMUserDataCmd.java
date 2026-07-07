@@ -40,8 +40,8 @@ import org.apache.cloudstack.context.CallContext;
 
 import java.util.Map;
 
-@APICommand(name = "resetUserDataForVirtualMachine", responseObject = UserVmResponse.class, description = "Resets the UserData for virtual machine. " +
-        "The virtual machine must be in a \"Stopped\" state.", responseView = ResponseObject.ResponseView.Restricted, entityType = {VirtualMachine.class},
+@APICommand(name = "resetUserDataForVirtualMachine", responseObject = UserVmResponse.class, description = "Resets the UserData for Instance. " +
+        "The Instance must be in a \"Stopped\" state.", responseView = ResponseObject.ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true, since = "4.18.0")
 public class ResetVMUserDataCmd extends BaseCmd implements UserCmd {
 
@@ -52,12 +52,12 @@ public class ResetVMUserDataCmd extends BaseCmd implements UserCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     @ACL(accessType = SecurityChecker.AccessType.OperateEntry)
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserVmResponse.class, required = true, description = "The ID of the virtual machine")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserVmResponse.class, required = true, description = "The ID of the Instance")
     private Long id;
 
     @Parameter(name = ApiConstants.USER_DATA,
             type = CommandType.STRING,
-            description = "an optional binary data that can be sent to the virtual machine upon a successful deployment. " +
+            description = "An optional binary data that can be sent to the Instance upon a successful deployment. " +
                     "This binary data must be base64 encoded before adding it to the request. " +
                     "Using HTTP GET (via querystring), you can send up to 4KB of data after base64 encoding. " +
                     "Using HTTP POST (via POST body), you can send up to 1MB of data after base64 encoding. " +
@@ -65,23 +65,23 @@ public class ResetVMUserDataCmd extends BaseCmd implements UserCmd {
             length = 1048576)
     private String userData;
 
-    @Parameter(name = ApiConstants.USER_DATA_ID, type = CommandType.UUID, entityType = UserDataResponse.class, description = "the ID of the userdata")
+    @Parameter(name = ApiConstants.USER_DATA_ID, type = CommandType.UUID, entityType = UserDataResponse.class, description = "The ID of the userdata")
     private Long userdataId;
 
-    @Parameter(name = ApiConstants.USER_DATA_DETAILS, type = CommandType.MAP, description = "used to specify the parameters values for the variables in userdata.")
+    @Parameter(name = ApiConstants.USER_DATA_DETAILS, type = CommandType.MAP, description = "Used to specify the parameters values for the variables in userdata.")
     private Map userdataDetails;
 
     //Owner information
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account for the virtual machine. Must be used with domainId.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "An optional Account for the Instance. Must be used with domainId.")
     private String accountName;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
             type = CommandType.UUID,
             entityType = DomainResponse.class,
-            description = "an optional domainId for the virtual machine. If the account parameter is used, domainId must also be used.")
+            description = "An optional domainId for the Instance. If the Account parameter is used, domainId must also be used.")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "an optional project for the virtual machine")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "An optional project for the Instance")
     private Long projectId;
 
     /////////////////////////////////////////////////////
@@ -151,7 +151,7 @@ public class ResetVMUserDataCmd extends BaseCmd implements UserCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to reset vm SSHKey");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to reset  SSHKey");
         }
     }
 }

@@ -31,23 +31,23 @@ import com.cloud.template.VirtualMachineTemplate;
 @SuppressWarnings("unused")
 public class TemplatePermissionsResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the template ID")
+    @Param(description = "The Template ID")
     private String id;
 
     @SerializedName(ApiConstants.IS_PUBLIC)
-    @Param(description = "true if this template is a public template, false otherwise")
+    @Param(description = "True if this Template is a public Template, false otherwise")
     private Boolean publicTemplate;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the ID of the domain to which the template belongs")
+    @Param(description = "The ID of the domain to which the Template belongs")
     private String domainId;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the list of accounts the template is available for")
+    @Param(description = "The list of Accounts the Template is available for")
     private List<String> accountNames;
 
     @SerializedName(ApiConstants.PROJECT_IDS)
-    @Param(description = "the list of projects the template is available for")
+    @Param(description = "The list of projects the Template is available for")
     private List<String> projectIds;
 
     public void setId(String id) {

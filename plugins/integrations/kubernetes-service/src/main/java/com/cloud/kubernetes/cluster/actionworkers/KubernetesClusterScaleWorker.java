@@ -139,10 +139,14 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
 
         // Remove existing SSH firewall rules
         FirewallRule firewallRule = removeSshFirewallRule(publicIp, network.getId());
+        int existingFirewallRuleSourcePortEnd;
         if (firewallRule == null) {
-            throw new ManagementServerException("Firewall rule for node SSH access can't be provisioned");
+            logger.warn("SSH firewall rule not found for Kubernetes cluster: {}. It may have been manually deleted or modified.", kubernetesCluster.getName());
+            existingFirewallRuleSourcePortEnd = CLUSTER_NODES_DEFAULT_START_SSH_PORT + clusterVMIds.size() - 1;
+        } else {
+            existingFirewallRuleSourcePortEnd = firewallRule.getSourcePortEnd();
         }
-        int existingFirewallRuleSourcePortEnd = firewallRule.getSourcePortEnd();
+
         try {
             removePortForwardingRules(publicIp, network, owner, CLUSTER_NODES_DEFAULT_START_SSH_PORT, existingFirewallRuleSourcePortEnd);
         } catch (ResourceUnavailableException e) {
@@ -441,14 +445,28 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         if (this.nodeIds != null) {
             vmList = getKubernetesClusterVMMapsForNodes(this.nodeIds).stream().filter(vm -> !vm.isExternalNode()).collect(Collectors.toList());
         } else {
-            vmList  = getKubernetesClusterVMMaps();
-            vmList  = vmList.stream()
-                        .filter(vm -> !vm.isExternalNode() && !vm.isControlNode() && !vm.isEtcdNode())
-                        .collect(Collectors.toList());
-            vmList = vmList.subList((int) (kubernetesCluster.getControlNodeCount() + clusterSize - 1), vmList.size());
+            vmList = getWorkerNodesToRemove();
+            if (vmList.isEmpty()) {
+                logger.info("No nodes to remove from Kubernetes cluster: {}", kubernetesCluster);
+                return;
+            }
         }
         Collections.reverse(vmList);
         removeNodesFromCluster(vmList);
+    }
+
+    public List<KubernetesClusterVmMapVO> getWorkerNodesToRemove() {
+        List<KubernetesClusterVmMapVO> workerVMsMap = getKubernetesClusterVMMaps().stream()
+                .filter(vm -> !vm.isExternalNode() && !vm.isControlNode() && !vm.isEtcdNode())
+                .collect(Collectors.toList());
+        int totalWorkerNodes = workerVMsMap.size();
+        int desiredWorkerNodes = clusterSize == null ? (int) kubernetesCluster.getNodeCount() : clusterSize.intValue();
+        int toRemoveCount = Math.max(0, totalWorkerNodes - desiredWorkerNodes);
+        if (toRemoveCount == 0) {
+            return new ArrayList<>();
+        }
+        int startIndex = Math.max(0, totalWorkerNodes - toRemoveCount);
+        return new ArrayList<>(workerVMsMap.subList(startIndex, totalWorkerNodes));
     }
 
     private void scaleUpKubernetesClusterSize(final long newVmCount) throws CloudRuntimeException {

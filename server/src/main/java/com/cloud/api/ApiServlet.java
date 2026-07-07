@@ -38,6 +38,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.apache.cloudstack.api.APICommand;
+import com.cloud.api.auth.DefaultForgotPasswordAPIAuthenticatorCmd;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ApiServerService;
@@ -203,7 +204,6 @@ public class ApiServlet extends HttpServlet {
                 LOGGER.warn(message);
             }
         });
-
     }
 
     void processRequestInContext(final HttpServletRequest req, final HttpServletResponse resp) {
@@ -276,7 +276,6 @@ public class ApiServlet extends HttpServlet {
             }
 
             if (command != null && !command.equals(ValidateUserTwoFactorAuthenticationCodeCmd.APINAME)) {
-
                 APIAuthenticator apiAuthenticator = authManager.getAPIAuthenticator(command);
                 if (apiAuthenticator != null) {
                     auditTrailSb.append("command=");
@@ -312,7 +311,9 @@ public class ApiServlet extends HttpServlet {
                     } catch (ServerApiException e) {
                         httpResponseCode = e.getErrorCode().getHttpCode();
                         responseString = e.getMessage();
-                        LOGGER.debug("Authentication failure: " + e.getMessage());
+                        if (!DefaultForgotPasswordAPIAuthenticatorCmd.APINAME.equalsIgnoreCase(command) || StringUtils.isNotBlank(username)) {
+                            LOGGER.debug("Authentication failure: {}", e.getMessage());
+                        }
                     }
 
                     if (apiAuthenticator.getAPIType() == APIAuthenticationType.LOGOUT_API) {
@@ -393,7 +394,7 @@ public class ApiServlet extends HttpServlet {
                     }
                 }
 
-                if (! requestChecksoutAsSane(resp, auditTrailSb, responseType, params, session, command, userId, account, accountObj))
+                if (!requestChecksoutAsSane(resp, auditTrailSb, responseType, params, session, command, userId, account, accountObj))
                     return;
             } else {
                 CallContext.register(accountMgr.getSystemUser(), accountMgr.getSystemAccount());
@@ -425,7 +426,6 @@ public class ApiServlet extends HttpServlet {
                         apiServer.getSerializedApiError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials and/or request signature", params,
                                 responseType);
                 HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType, ApiServer.JSONcontentType.value());
-
             }
         } catch (final ServerApiException se) {
             final String serializedResponseText = apiServer.getSerializedApiError(se, params, responseType);
@@ -637,6 +637,9 @@ public class ApiServlet extends HttpServlet {
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace(msg);
             }
+            if (session == null) {
+                return;
+            }
             session.invalidate();
         } catch (final IllegalStateException ise) {
             if (LOGGER.isTraceEnabled()) {
@@ -679,38 +682,34 @@ public class ApiServlet extends HttpServlet {
         }
         return false;
     }
-    boolean doUseForwardHeaders() {
+    static boolean doUseForwardHeaders() {
         return Boolean.TRUE.equals(ApiServer.useForwardHeader.value());
     }
 
-    String[] proxyNets() {
+    static String[] proxyNets() {
         return ApiServer.proxyForwardList.value().split(",");
     }
     //This method will try to get login IP of user even if servlet is behind reverseProxy or loadBalancer
-    public InetAddress getClientAddress(final HttpServletRequest request) throws UnknownHostException {
-        String ip = null;
-        InetAddress pretender = InetAddress.getByName(request.getRemoteAddr());
-        if(doUseForwardHeaders()) {
-            if (NetUtils.isIpInCidrList(pretender, proxyNets())) {
+    public static InetAddress getClientAddress(final HttpServletRequest request) throws UnknownHostException {
+        final String remote = request.getRemoteAddr();
+        if (doUseForwardHeaders()) {
+            final InetAddress remoteAddr = InetAddress.getByName(remote);
+            if (NetUtils.isIpInCidrList(remoteAddr, proxyNets())) {
                 for (String header : getClientAddressHeaders()) {
                     header = header.trim();
-                    ip = getCorrectIPAddress(request.getHeader(header));
+                    final String ip = getCorrectIPAddress(request.getHeader(header));
                     if (StringUtils.isNotBlank(ip)) {
-                        LOGGER.debug(String.format("found ip %s in header %s ", ip, header));
-                        break;
+                        LOGGER.debug("found ip {} in header {}", ip, header);
+                        return InetAddress.getByName(ip);
                     }
-                } // no address found in header so ip is blank and use remote addr
-            } // else not an allowed proxy address, ip is blank and use remote addr
+                }
+            }
         }
-        if (StringUtils.isBlank(ip)) {
-            LOGGER.trace(String.format("no ip found in headers, returning remote address %s.", pretender.getHostAddress()));
-            return pretender;
-        }
-
-        return InetAddress.getByName(ip);
+        LOGGER.trace("no ip found in headers, returning remote address {}.", remote);
+        return InetAddress.getByName(remote);
     }
 
-    private String[] getClientAddressHeaders() {
+    private static String[] getClientAddressHeaders() {
         return ApiServer.listOfForwardHeaders.value().split(",");
     }
 

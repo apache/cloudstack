@@ -269,7 +269,7 @@ public class SnapshotTest extends CloudStackTestNGBase {
         to.setSize(1000L);
         CopyCmdAnswer answer = new CopyCmdAnswer(to);
         templateOnStore.processEvent(Event.CreateOnlyRequested);
-        templateOnStore.processEvent(Event.OperationSuccessed, answer);
+        templateOnStore.processEvent(Event.OperationSucceeded, answer);
 
     }
 

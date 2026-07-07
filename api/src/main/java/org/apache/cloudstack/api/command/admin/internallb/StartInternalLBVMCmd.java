@@ -38,7 +38,7 @@ import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "startInternalLoadBalancerVM", responseObject = DomainRouterResponse.class, description = "Starts an existing internal lb vm.", entityType = {VirtualMachine.class},
+@APICommand(name = "startInternalLoadBalancerVM", responseObject = DomainRouterResponse.class, description = "Starts an existing Internal LB Instance.", entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class StartInternalLBVMCmd extends BaseAsyncCmd {
     private static final String s_name = "startinternallbvmresponse";
@@ -47,7 +47,7 @@ public class StartInternalLBVMCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     @ACL(accessType = AccessType.OperateEntry)
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DomainRouterResponse.class, required = true, description = "the ID of the internal lb vm")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DomainRouterResponse.class, required = true, description = "The ID of the Internal LB Instance")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -77,7 +77,7 @@ public class StartInternalLBVMCmd extends BaseAsyncCmd {
         if (router != null && router.getRole() == Role.INTERNAL_LB_VM) {
             return router.getAccountId();
         } else {
-            throw new InvalidParameterValueException("Unable to find internal lb vm by id");
+            throw new InvalidParameterValueException("Unable to find Internal LB Instance by ID");
         }
     }
 
@@ -88,7 +88,7 @@ public class StartInternalLBVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "starting internal lb vm: " + getId();
+        return "starting Internal LB Instance: " + getId();
     }
 
     @Override
@@ -103,11 +103,11 @@ public class StartInternalLBVMCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-        CallContext.current().setEventDetails("Internal Lb Vm Id: " + getId());
+        CallContext.current().setEventDetails("Internal LB Instance ID: " + getId());
         VirtualRouter result = null;
         VirtualRouter router = _routerService.findRouter(getId());
         if (router == null || router.getRole() != Role.INTERNAL_LB_VM) {
-            throw new InvalidParameterValueException("Can't find internal lb vm by id");
+            throw new InvalidParameterValueException("Can't find Internal LB Instance by ID");
         } else {
             result = _internalLbSvc.startInternalLbVm(getId(), CallContext.current().getCallingAccount(), CallContext.current().getCallingUserId());
         }
@@ -117,7 +117,7 @@ public class StartInternalLBVMCmd extends BaseAsyncCmd {
             routerResponse.setResponseName(getCommandName());
             setResponseObject(routerResponse);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to start internal lb vm");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to start Internal LB Instance");
         }
     }
 }

@@ -54,7 +54,7 @@ public class ListBrocadeVcsDevicesCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, description = "the Physical Network ID")
+    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, description = "The Physical Network ID")
     private Long physicalNetworkId;
 
     @Parameter(name = Constants.BROCADE_VCS_DEVICE_ID, type = CommandType.UUID, entityType = BrocadeVcsDeviceResponse.class, description = "Brocade VCS switch ID")

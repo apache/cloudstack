@@ -28,19 +28,19 @@ import com.google.gson.annotations.SerializedName;
 
 public class VmMetricsStatsResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the virtual machine")
+    @Param(description = "The ID of the Instance")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the virtual machine")
+    @Param(description = "The Name of the Instance")
     private String name;
 
     @SerializedName("displayname")
-    @Param(description = "user generated name. The name of the virtual machine is returned if no displayname exists.")
+    @Param(description = "User generated name. The name of the Instance is returned if no displayname exists.")
     private String displayName;
 
     @SerializedName("stats")
-    @Param(description = "the list of VM stats", responseObject = StatsResponse.class)
+    @Param(description = "The list of Instance stats", responseObject = StatsResponse.class)
     private List<StatsResponse> stats;
 
     public void setId(String id) {

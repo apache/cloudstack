@@ -53,14 +53,14 @@ public class IssueOutOfBandManagementPowerActionCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, required = true,
-            validations = {ApiArgValidator.PositiveNumber}, description = "the ID of the host")
+            validations = {ApiArgValidator.PositiveNumber}, description = "The ID of the host")
     private Long hostId;
 
-    @Parameter(name = ApiConstants.TIMEOUT, type = CommandType.LONG, description = "optional operation timeout in seconds that overrides the global or cluster-level out-of-band management timeout setting")
+    @Parameter(name = ApiConstants.TIMEOUT, type = CommandType.LONG, description = "Optional operation timeout in seconds that overrides the global or cluster-level out-of-band management timeout setting")
     private Long actionTimeout;
 
     @Parameter(name = ApiConstants.ACTION, type = CommandType.STRING, required = true,
-            description = "out-of-band management power actions, valid actions are: ON, OFF, CYCLE, RESET, SOFT, STATUS")
+            description = "Out-of-band management power actions, valid actions are: ON, OFF, CYCLE, RESET, SOFT, STATUS")
     private String powerAction;
 
     /////////////////////////////////////////////////////

@@ -52,10 +52,10 @@ public class GetRouterHealthCheckResultsCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.ROUTER_ID, type = CommandType.UUID, entityType = DomainRouterResponse.class,
-            required = true, description = "the ID of the router")
+            required = true, description = "The ID of the router")
     private Long routerId;
 
-    @Parameter(name = ApiConstants.PERFORM_FRESH_CHECKS, type = CommandType.BOOLEAN, description = "if true is passed for this parameter, " +
+    @Parameter(name = ApiConstants.PERFORM_FRESH_CHECKS, type = CommandType.BOOLEAN, description = "If true is passed for this parameter, " +
             "health checks are performed on the fly. Else last performed checks data is fetched")
     private Boolean performFreshChecks;
 

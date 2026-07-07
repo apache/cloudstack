@@ -51,16 +51,16 @@ public class UpdateStorageNetworkIpRangeCmd extends BaseAsyncCmd {
                description = "UUID of storage network ip range")
     private Long id;
 
-    @Parameter(name = ApiConstants.START_IP, type = CommandType.STRING, description = "the beginning IP address")
+    @Parameter(name = ApiConstants.START_IP, type = CommandType.STRING, description = "The beginning IP address")
     private String startIp;
 
-    @Parameter(name = ApiConstants.END_IP, type = CommandType.STRING, description = "the ending IP address")
+    @Parameter(name = ApiConstants.END_IP, type = CommandType.STRING, description = "The ending IP address")
     private String endIp;
 
     @Parameter(name = ApiConstants.VLAN, type = CommandType.INTEGER, description = "Optional. the vlan the ip range sits on")
     private Integer vlan;
 
-    @Parameter(name = ApiConstants.NETMASK, type = CommandType.STRING, description = "the netmask for storage network")
+    @Parameter(name = ApiConstants.NETMASK, type = CommandType.STRING, description = "The netmask for storage network")
     private String netmask;
 
     /////////////////////////////////////////////////////

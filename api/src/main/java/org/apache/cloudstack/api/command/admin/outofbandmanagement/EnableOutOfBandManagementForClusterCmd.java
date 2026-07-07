@@ -54,7 +54,7 @@ public class EnableOutOfBandManagementForClusterCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.CLUSTER_ID, type = BaseCmd.CommandType.UUID, required = true, entityType = ClusterResponse.class,
-            validations = {ApiArgValidator.PositiveNumber}, description = "the ID of the cluster")
+            validations = {ApiArgValidator.PositiveNumber}, description = "The ID of the cluster")
     private Long clusterId;
 
     /////////////////////////////////////////////////////

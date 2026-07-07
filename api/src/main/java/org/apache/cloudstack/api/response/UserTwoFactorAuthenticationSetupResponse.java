@@ -26,19 +26,19 @@ import com.google.gson.annotations.SerializedName;
 
 public class UserTwoFactorAuthenticationSetupResponse extends BaseResponse {
     @SerializedName("id")
-    @Param(description = "the user ID")
+    @Param(description = "The user ID")
     private String id;
 
     @SerializedName("username")
-    @Param(description = "the user name")
+    @Param(description = "The user name")
     private String username;
 
     @SerializedName("accountid")
-    @Param(description = "the account ID of the user")
+    @Param(description = "The Account ID of the user")
     private String accountId;
 
     @SerializedName(ApiConstants.SECRET_CODE)
-    @Param(description = "secret code that needs to be registered with authenticator")
+    @Param(description = "Secret code that needs to be registered with authenticator")
     private String secretCode;
 
     public void setId(String id) {

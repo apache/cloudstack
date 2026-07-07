@@ -44,7 +44,7 @@ public class DeleteStaticRouteCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     @ACL(accessType = AccessType.OperateEntry)
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = StaticRouteResponse.class, required = true, description = "the ID of the static route")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = StaticRouteResponse.class, required = true, description = "The ID of the static route")
     private Long id;
 
     // unexposed parameter needed for events logging

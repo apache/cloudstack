@@ -28,7 +28,7 @@ import org.apache.cloudstack.response.DbMetricsResponse;
 
 import javax.inject.Inject;
 
-@APICommand(name="listDbMetrics", description = "list the db hosts and statistics",
+@APICommand(name="listDbMetrics", description = "List the db hosts and statistics",
         responseObject = DbMetricsResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         responseView = ResponseObject.ResponseView.Full, since = "4.17.0", authorized = {RoleType.Admin})
 public class ListDbMetricsCmd extends BaseCmd {

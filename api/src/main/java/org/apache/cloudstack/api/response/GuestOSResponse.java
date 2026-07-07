@@ -28,19 +28,19 @@ import com.cloud.storage.GuestOS;
 @EntityReference(value = GuestOS.class)
 public class GuestOSResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the OS type")
+    @Param(description = "The ID of the OS type")
     private String id;
 
     @SerializedName(ApiConstants.OS_CATEGORY_ID)
-    @Param(description = "the ID of the OS category")
+    @Param(description = "The ID of the OS category")
     private String osCategoryId;
 
     @SerializedName(ApiConstants.OS_CATEGORY_NAME)
-    @Param(description = "the name of the OS category")
+    @Param(description = "The name of the OS category")
     private String osCategoryName;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the OS type")
+    @Param(description = "The name of the OS type")
     private String name;
 
     /**
@@ -48,15 +48,15 @@ public class GuestOSResponse extends BaseResponse {
      */
     @Deprecated(since = "4.19")
     @SerializedName(ApiConstants.DESCRIPTION)
-    @Param(description = "the name/description of the OS type")
+    @Param(description = "The name/description of the OS type")
     private String description;
 
     @SerializedName(ApiConstants.IS_USER_DEFINED)
-    @Param(description = "is the guest OS user defined")
+    @Param(description = "Is the guest OS user defined")
     private Boolean isUserDefined;
 
     @SerializedName(ApiConstants.FOR_DISPLAY)
-    @Param(description = "is the guest OS visible for the users")
+    @Param(description = "Is the guest OS visible for the users")
     private Boolean forDisplay;
 
     public String getId() {

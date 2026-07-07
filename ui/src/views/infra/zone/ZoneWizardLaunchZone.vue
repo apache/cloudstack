@@ -1562,6 +1562,10 @@ export default {
         url = this.linstorURL(server)
         params.provider = 'Linstor'
         params['details[0].resourceGroup'] = this.prefillContent.primaryStorageLinstorResourceGroup
+        if (this.prefillContent.primaryStorageLinstorApiToken) {
+          params['details[0].lin.auth.apitoken'] = this.prefillContent.primaryStorageLinstorApiToken
+        }
+        params['details[0].lin.ssl.insecure'] = (this.prefillContent.primaryStorageLinstorInsecureSsl === false) ? 'false' : 'true'
       } else if (protocol === 'vmfs' || protocol === 'datastorecluster') {
         let path = this.prefillContent.primaryStorageVmfsDatacenter
         if (path.substring(0, 1) !== '/') {
@@ -1639,6 +1643,11 @@ export default {
         params.provider = this.prefillContent.secondaryStorageProvider
         params.zoneid = this.stepData.zoneReturned.id
         params.url = url
+        if (this.prefillContent.copyTemplatesFromOtherSecondaryStorages !== undefined) {
+          params['details[0].key'] = 'copytemplatesfromothersecondarystorages'
+          params['details[0].value'] =
+            this.prefillContent.copyTemplatesFromOtherSecondaryStorages
+        }
       } else if (this.prefillContent.secondaryStorageProvider === 'SMB') {
         const nfsServer = this.prefillContent.secondaryStorageServer
         const path = this.prefillContent.secondaryStoragePath

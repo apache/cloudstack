@@ -25,31 +25,31 @@ import com.cloud.serializer.Param;
 public class ExternalLoadBalancerResponse extends NetworkDeviceResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the external load balancer")
+    @Param(description = "The ID of the external Load balancer")
     private String id;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "the zone ID of the external load balancer")
+    @Param(description = "The zone ID of the external Load balancer")
     private String zoneId;
 
     @SerializedName(ApiConstants.IP_ADDRESS)
-    @Param(description = "the management IP address of the external load balancer")
+    @Param(description = "The management IP address of the external Load balancer")
     private String ipAddress;
 
     @SerializedName(ApiConstants.USERNAME)
-    @Param(description = "the username that's used to log in to the external load balancer")
+    @Param(description = "The username that's used to log in to the external Load balancer")
     private String username;
 
     @SerializedName(ApiConstants.PUBLIC_INTERFACE)
-    @Param(description = "the public interface of the external load balancer")
+    @Param(description = "The public interface of the external Load balancer")
     private String publicInterface;
 
     @SerializedName(ApiConstants.PRIVATE_INTERFACE)
-    @Param(description = "the private interface of the external load balancer")
+    @Param(description = "The private interface of the external Load balancer")
     private String privateInterface;
 
     @SerializedName(ApiConstants.NUM_RETRIES)
-    @Param(description = "the number of times to retry requests to the external load balancer")
+    @Param(description = "The number of times to retry requests to the external Load balancer")
     private String numRetries;
 
     @Override

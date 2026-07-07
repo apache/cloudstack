@@ -47,7 +47,7 @@ import org.apache.commons.lang3.BooleanUtils;
 import javax.inject.Inject;
 
 @APICommand(name = "unmanageVirtualMachine",
-        description = "Unmanage a guest virtual machine.",
+        description = "Unmanage a Guest Instance.",
         entityType = {VirtualMachine.class},
         responseObject = UnmanageVMInstanceResponse.class,
         requestHasSensitiveInfo = false,
@@ -65,7 +65,7 @@ public class UnmanageVMInstanceCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID,
             entityType = UserVmResponse.class, required = true,
-            description = "The ID of the virtual machine to unmanage")
+            description = "The ID of the Instance to unmanage")
     private Long vmId;
 
     @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID,
@@ -97,7 +97,7 @@ public class UnmanageVMInstanceCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "unmanaging VM. VM ID = " + vmId;
+        return "Unmanaging Instance. Instance ID = " + vmId;
     }
 
     public Long getHostId() {

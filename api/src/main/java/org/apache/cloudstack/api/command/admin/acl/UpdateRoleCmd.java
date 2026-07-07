@@ -46,7 +46,7 @@ public class UpdateRoleCmd extends RoleCmd {
             description = "ID of the role", validations = {ApiArgValidator.PositiveNumber})
     private Long roleId;
 
-    @Parameter(name = ApiConstants.NAME, type = BaseCmd.CommandType.STRING, description = "creates a role with this unique name")
+    @Parameter(name = ApiConstants.NAME, type = BaseCmd.CommandType.STRING, description = "Creates a role with this unique name")
     private String roleName;
 
     @Parameter(name = ApiConstants.DESCRIPTION, type = BaseCmd.CommandType.STRING, description = "The description of the role")

@@ -30,11 +30,11 @@ import com.cloud.storage.GuestOsCategory;
 @EntityReference(value = GuestOsCategory.class)
 public class GuestOSCategoryResponse extends BaseResponse implements SetResourceIconResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the OS category")
+    @Param(description = "The ID of the OS category")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the OS category")
+    @Param(description = "The name of the OS category")
     private String name;
 
     @SerializedName(ApiConstants.IS_FEATURED)

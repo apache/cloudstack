@@ -45,7 +45,7 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "assignToLoadBalancerRule",
-            description = "Assigns virtual machine or a list of virtual machines to a load balancer rule.",
+            description = "Assigns an Instance or a list of Instances to a load balancer rule.",
             responseObject = SuccessResponse.class,
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
@@ -60,14 +60,14 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = FirewallRuleResponse.class,
                required = true,
-               description = "the ID of the load balancer rule")
+               description = "The ID of the load balancer rule")
     private Long id;
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_IDS,
                type = CommandType.LIST,
                collectionType = CommandType.UUID,
                entityType = UserVmResponse.class,
-               description = "the list of IDs of the virtual machine that are being assigned to the load balancer rule(i.e. virtualMachineIds=1,2,3)")
+               description = "The list of IDs of the Instance that are being assigned to the load balancer rule(i.e. virtualMachineIds=1,2,3)")
     private List<Long> virtualMachineIds;
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID_IP,
@@ -112,7 +112,7 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "applying instances for load balancer: " + getLoadBalancerId() + " (ids: " + StringUtils.join(getVirtualMachineIds(), ",") + ")";
+        return "applying Instances for load balancer: " + getLoadBalancerId() + " (ids: " + StringUtils.join(getVirtualMachineIds(), ",") + ")";
     }
 
 
@@ -128,7 +128,7 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
 
                 VirtualMachine lbvm = _entityMgr.findByUuid(VirtualMachine.class, vmId);
                 if (lbvm == null) {
-                    throw new InvalidParameterValueException("Unable to find virtual machine ID: " + vmId);
+                    throw new InvalidParameterValueException("Unable to find Instance ID: " + vmId);
                 }
 
                 //check whether the given ip is valid ip or not
@@ -155,7 +155,7 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Load balancer Id: " + getLoadBalancerId() + " VmIds: " + StringUtils.join(getVirtualMachineIds(), ","));
+        CallContext.current().setEventDetails("Load balancer Id: " + getLoadBalancerId() + " Instance IDs: " + StringUtils.join(getVirtualMachineIds(), ","));
 
         Map<Long, List<String>> vmIdIpsMap = getVmIdIpListMap();
         boolean result = false;

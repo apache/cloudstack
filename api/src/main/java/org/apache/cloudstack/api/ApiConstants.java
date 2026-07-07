@@ -502,6 +502,7 @@ public class ApiConstants {
     public static final String RECOVER = "recover";
     public static final String REPAIR = "repair";
     public static final String REQUIRES_HVM = "requireshvm";
+    public static final String RESERVED_RESOURCE_DETAILS = "reservedresourcedetails";
     public static final String RESOURCES = "resources";
     public static final String RESOURCE_COUNT = "resourcecount";
     public static final String RESOURCE_NAME = "resourcename";
@@ -621,6 +622,7 @@ public class ApiConstants {
     public static final String USER_CONFIGURABLE = "userconfigurable";
     public static final String USER_SECURITY_GROUP_LIST = "usersecuritygrouplist";
     public static final String USER_SECRET_KEY = "usersecretkey";
+    public static final String USE_VDDK = "usevddk";
     public static final String USE_VIRTUAL_NETWORK = "usevirtualnetwork";
     public static final String USE_VIRTUAL_ROUTER_IP_RESOLVER = "userouteripresolver";
     public static final String UPDATE_IN_SEQUENCE = "updateinsequence";
@@ -1215,6 +1217,7 @@ public class ApiConstants {
     public static final String DOCKER_REGISTRY_EMAIL = "dockerregistryemail";
     public static final String ISO_NAME = "isoname";
     public static final String ISO_STATE = "isostate";
+    public static final String ISO_URL = "isourl";
     public static final String SEMANTIC_VERSION = "semanticversion";
     public static final String KUBERNETES_VERSION_ID = "kubernetesversionid";
     public static final String KUBERNETES_VERSION_NAME = "kubernetesversionname";
@@ -1404,7 +1407,7 @@ public class ApiConstants {
     }
 
     public enum HostDetails {
-        all, capacity, events, stats, min;
+        all, capacity, core, events, stats, min;
     }
 
     public enum VMDetails {

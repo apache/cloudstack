@@ -35,7 +35,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.as.AutoScaleVmGroup;
 
-@APICommand(name = "listAutoScaleVmGroups", description = "Lists autoscale vm groups.", responseObject = AutoScaleVmGroupResponse.class, entityType = {AutoScaleVmGroup.class},
+@APICommand(name = "listAutoScaleVmGroups", description = "Lists autoscale Instance groups.", responseObject = AutoScaleVmGroupResponse.class, entityType = {AutoScaleVmGroup.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListAutoScaleVmGroupsCmd extends BaseListProjectAndAccountResourcesCmd {
 
@@ -44,25 +44,25 @@ public class ListAutoScaleVmGroupsCmd extends BaseListProjectAndAccountResources
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AutoScaleVmGroupResponse.class, description = "the ID of the autoscale vm group")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AutoScaleVmGroupResponse.class, description = "The ID of the autoscale Instance group")
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the autoscale vmgroup", since = "4.18.0")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the autoscale vmgroup", since = "4.18.0")
     private String name;
 
-    @Parameter(name = ApiConstants.LBID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, description = "the ID of the loadbalancer")
+    @Parameter(name = ApiConstants.LBID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, description = "The ID of the loadbalancer")
     private Long loadBalancerId;
 
-    @Parameter(name = ApiConstants.VMPROFILE_ID, type = CommandType.UUID, entityType = AutoScaleVmProfileResponse.class, description = "the ID of the profile")
+    @Parameter(name = ApiConstants.VMPROFILE_ID, type = CommandType.UUID, entityType = AutoScaleVmProfileResponse.class, description = "The ID of the profile")
     private Long profileId;
 
-    @Parameter(name = ApiConstants.POLICY_ID, type = CommandType.UUID, entityType = AutoScalePolicyResponse.class, description = "the ID of the policy")
+    @Parameter(name = ApiConstants.POLICY_ID, type = CommandType.UUID, entityType = AutoScalePolicyResponse.class, description = "The ID of the policy")
     private Long policyId;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the availability zone ID")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The availability zone ID")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "List resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
     // ///////////////////////////////////////////////////

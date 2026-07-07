@@ -622,7 +622,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                     try {
                         destroyVm(vm, conn);
                     } catch (final Exception e) {
-                        logger.warn("Catch Exception " + e.getClass().getName() + ": unable to destroy VM " + vmRec.nameLabel + " due to ", e);
+                        logger.warn("Catch Exception " + e.getClass().getName() + ": unable to destroy Instance " + vmRec.nameLabel + " due to ", e);
                         success = false;
                     }
                 }
@@ -697,7 +697,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                 }
             }
         } catch (final Exception e) {
-            logger.debug("Ip Assoc failure on applying one ip due to exception:  ", e);
+            logger.debug("IP Assoc failure on applying one IP due to exception:  ", e);
             return new ExecutionResult(false, e.getMessage());
         }
         return new ExecutionResult(true, null);
@@ -803,7 +803,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                 }
             }
         } catch (final Throwable e) {
-            final String msg = "Unable to get vms through host " + _host.getUuid() + " due to " + e;
+            final String msg = "Unable to get Instances through host " + _host.getUuid() + " due to " + e;
             logger.warn(msg, e);
             throw new CloudRuntimeException(msg);
         }
@@ -982,7 +982,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         final Connection conn = getConnection();
         final String hostPath = "/tmp/";
 
-        logger.debug("Copying VR with ip " + routerIp + " config file into host " + _host.getIp());
+        logger.debug("Copying VR with IP " + routerIp + " config file into host " + _host.getIp());
         try {
             SshHelper.scpTo(_host.getIp(), 22, _username, null, _password.peek(), hostPath, content.getBytes(Charset.defaultCharset()), filename, null);
         } catch (final Exception e) {
@@ -1247,10 +1247,10 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
     }
 
     public VIF createVif(final Connection conn, final String vmName, final VM vm, final VirtualMachineTO vmSpec, final NicTO nic) throws XmlRpcException, XenAPIException {
-        assert nic.getUuid() != null : "Nic should have a uuid value";
+        assert nic.getUuid() != null : "NIC should have a UUID value";
 
         if (logger.isDebugEnabled()) {
-            logger.debug("Creating VIF for " + vmName + " on nic " + nic);
+            logger.debug("Creating VIF for " + vmName + " on NIC " + nic);
         }
         VIF.Record vifr = new VIF.Record();
         vifr.VM = vm;
@@ -1296,9 +1296,9 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         final String guestOsTypeName = getGuestOsType(vmSpec.getPlatformEmulator());
         final Set<VM> templates = VM.getByNameLabel(conn, guestOsTypeName);
         if (templates == null || templates.isEmpty()) {
-            throw new CloudRuntimeException("Cannot find template " + guestOsTypeName + " on XenServer host");
+            throw new CloudRuntimeException("Cannot find Template " + guestOsTypeName + " on XenServer host");
         }
-        assert templates.size() == 1 : "Should only have 1 template but found " + templates.size();
+        assert templates.size() == 1 : "Should only have 1 Template but found " + templates.size();
         final VM template = templates.iterator().next();
 
         final VM.Record vmr = template.getRecord(conn);
@@ -1347,7 +1347,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         } else {
             // scaling disallowed, set static memory target
             if (vmSpec.isEnableDynamicallyScaleVm() && !isDmcEnabled(conn, host)) {
-                logger.warn("Host " + host.getHostname(conn) + " does not support dynamic scaling, so the vm " + vmSpec.getName() + " is not dynamically scalable");
+                logger.warn("Host " + host.getHostname(conn) + " does not support dynamic scaling, so the Instance " + vmSpec.getName() + " is not dynamically scalable");
             }
             vmr.memoryStaticMin = vmSpec.getMinRam();
             vmr.memoryStaticMax = vmSpec.getMaxRam();
@@ -1373,7 +1373,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         }
 
         final VM vm = VM.create(conn, vmr);
-        logger.debug("Created VM " + vm.getUuid(conn) + " for " + vmSpec.getName());
+        logger.debug("Created Instance " + vm.getUuid(conn) + " for " + vmSpec.getName());
 
         final Map<String, String> vcpuParams = new HashMap<>();
 
@@ -1451,14 +1451,14 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         try {
             finalizeVmMetaData(vm, vmr, conn, vmSpec);
         } catch (final Exception e) {
-            throw new CloudRuntimeException("Unable to finalize VM MetaData: " + vmSpec);
+            throw new CloudRuntimeException("Unable to finalize Instance MetaData: " + vmSpec);
         }
         try {
             String bootMode = StringUtils.defaultIfEmpty(vmSpec.getDetails().get(ApiConstants.BootType.UEFI.toString()), null);
             String bootType = (bootMode == null) ? ApiConstants.BootType.BIOS.toString() : ApiConstants.BootType.UEFI.toString();
             setVmBootDetails(vm, conn, bootType, bootMode);
         } catch (final XenAPIException | XmlRpcException e) {
-            throw new CloudRuntimeException(String.format("Unable to handle VM boot options: %s", vmSpec), e);
+            throw new CloudRuntimeException(String.format("Unable to handle Instance boot options: %s", vmSpec), e);
         }
         return vm;
     }
@@ -1543,12 +1543,12 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                             vbd.eject(conn);
                         }
                     } catch (Exception e) {
-                        logger.debug("Cannot eject CD-ROM device for VM " + vmName + " due to " + e, e);
+                        logger.debug("Cannot eject CD-ROM device for Instance " + vmName + " due to " + e, e);
                     }
                     try {
                         vbd.destroy(conn);
                     } catch (Exception e) {
-                        logger.debug("Cannot destroy CD-ROM device for VM " + vmName + " due to " + e, e);
+                        logger.debug("Cannot destroy CD-ROM device for Instance " + vmName + " due to " + e, e);
                     }
                     break;
                 }
@@ -2366,7 +2366,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                 vm_map = VM.getAllRecords(conn);
                 break;
             } catch (final Throwable e) {
-                logger.warn("Unable to get vms", e);
+                logger.warn("Unable to get Instances", e);
             }
             try {
                 Thread.sleep(1000);
@@ -2852,7 +2852,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         final String name = nic.getName();
         final XsLocalNetwork network = getNativeNetworkForTraffic(conn, nic.getType(), name);
         if (network == null) {
-            logger.error("Network is not configured on the backend for nic " + nic);
+            logger.error("Network is not configured on the backend for NIC: " + nic);
             throw new CloudRuntimeException("Network for the backend is not configured correctly for network broadcast domain: " + nic.getBroadcastUri());
         }
         final URI uri = nic.getBroadcastUri();
@@ -3414,7 +3414,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                     }
                 }
             } catch (final Exception e) {
-                logger.debug("Exception occurs when calculate snapshot capacity for volumes: due to " + e);
+                logger.debug("Exception occurs when calculate Snapshot capacity for volumes: due to " + e);
             }
         }
         if (volumeTo.getVolumeType() == Volume.Type.ROOT) {
@@ -3441,7 +3441,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                                 }
                             }
                         } catch (Exception e) {
-                            logger.debug("Exception occurs when calculate snapshot capacity for memory: due to " + e);
+                            logger.debug("Exception occurs when calculate Snapshot capacity for memory: due to " + e);
                         }
 
                     }
@@ -4396,7 +4396,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                 }
             }
         } catch (final InternalErrorException e) {
-            logger.error("Ip Assoc failure on applying one ip due to exception:  ", e);
+            logger.error("IP Assoc failure on applying one IP due to exception:  ", e);
             return new ExecutionResult(false, e.getMessage());
         } catch (final Exception e) {
             return new ExecutionResult(false, e.getMessage());
@@ -4417,7 +4417,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                 setNicDevIdIfCorrectVifIsNotNull(conn, ip, correctVif);
             }
         } catch (final Exception e) {
-            logger.error("Ip Assoc failure on applying one ip due to exception:  ", e);
+            logger.error("IP Assoc failure on applying one IP due to exception:  ", e);
             return new ExecutionResult(false, e.getMessage());
         }
 
@@ -4441,7 +4441,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                 }
                 nic.setDeviceId(Integer.parseInt(vif.getDevice(conn)));
             } else {
-                final String msg = "Prepare SetNetworkACL failed due to nic is null for : " + routerName;
+                final String msg = "Prepare SetNetworkACL failed due to NIC is null for : " + routerName;
                 logger.error(msg);
                 return new ExecutionResult(false, msg);
             }
@@ -4644,7 +4644,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                     continue;
                 }
                 if (waittime >= 1800000) {
-                    final String msg = "This template is being used, try late time";
+                    final String msg = "This Template is being used, try later";
                     logger.warn(msg);
                     return msg;
                 }
@@ -5255,7 +5255,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         try {
             callHostPlugin(conn, "vmopsSnapshot", "unmountSnapshotsDir", "dcId", dcId.toString());
         } catch (final Exception e) {
-            logger.debug("Failed to umount snapshot dir", e);
+            logger.debug("Failed to umount Snapshot dir", e);
         }
     }
 

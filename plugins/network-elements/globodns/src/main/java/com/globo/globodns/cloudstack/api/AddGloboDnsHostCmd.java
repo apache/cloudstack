@@ -47,7 +47,7 @@ public class AddGloboDnsHostCmd extends BaseAsyncCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, required = true, description = "the Physical Network ID")
+    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, required = true, description = "The Physical Network ID")
     private Long physicalNetworkId;
 
     @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = true, description = "Username for GloboDNS")

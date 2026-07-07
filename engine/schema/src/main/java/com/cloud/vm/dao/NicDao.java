@@ -95,7 +95,9 @@ public interface NicDao extends GenericDao<NicVO, Long> {
 
     List<NicVO> listByVmIdAndKeyword(long instanceId, String keyword);
 
-    NicVO findByMacAddress(String macAddress);
+    NicVO findByMacAddress(String macAddress, long networkId);
+
+    List<NicVO> listByMacAddresses(List<String> macAddresses);
 
     NicVO findByNetworkIdAndMacAddressIncludingRemoved(long networkId, String mac);
 

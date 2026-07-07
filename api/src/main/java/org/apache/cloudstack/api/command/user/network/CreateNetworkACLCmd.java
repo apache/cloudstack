@@ -40,7 +40,7 @@ import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.user.Account;
 import com.cloud.utils.net.NetUtils;
 
-@APICommand(name = "createNetworkACL", description = "Creates a ACL rule in the given network (the network has to belong to VPC)", responseObject = NetworkACLItemResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "createNetworkACL", description = "Creates a ACL rule in the given Network (the Network has to belong to VPC)", responseObject = NetworkACLItemResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
 
 
@@ -48,40 +48,40 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, required = true, description = "the protocol for the ACL rule. Valid values are TCP/UDP/ICMP/ALL or valid protocol number")
+    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, required = true, description = "The protocol for the ACL rule. Valid values are TCP/UDP/ICMP/ALL or valid protocol number")
     private String protocol;
 
-    @Parameter(name = ApiConstants.START_PORT, type = CommandType.INTEGER, description = "the starting port of ACL")
+    @Parameter(name = ApiConstants.START_PORT, type = CommandType.INTEGER, description = "The starting port of ACL")
     private Integer publicStartPort;
 
-    @Parameter(name = ApiConstants.END_PORT, type = CommandType.INTEGER, description = "the ending port of ACL")
+    @Parameter(name = ApiConstants.END_PORT, type = CommandType.INTEGER, description = "The ending port of ACL")
     private Integer publicEndPort;
 
-    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the CIDR list to allow traffic from/to. Multiple entries must be separated by a single comma character (,).")
-    private List<String> cidrlist;
+    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "The CIDR list to allow traffic from/to. Multiple entries must be separated by a single comma character (,).")
+    private List<String> cidrList;
 
-    @Parameter(name = ApiConstants.ICMP_TYPE, type = CommandType.INTEGER, description = "type of the ICMP message being sent")
+    @Parameter(name = ApiConstants.ICMP_TYPE, type = CommandType.INTEGER, description = "Type of the ICMP message being sent")
     private Integer icmpType;
 
-    @Parameter(name = ApiConstants.ICMP_CODE, type = CommandType.INTEGER, description = "error code for this ICMP message")
+    @Parameter(name = ApiConstants.ICMP_CODE, type = CommandType.INTEGER, description = "Error code for this ICMP message")
     private Integer icmpCode;
 
-    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "The network of the VM the ACL will be created for")
+    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "The Network of the Instance the ACL will be created for")
     private Long networkId;
 
-    @Parameter(name = ApiConstants.ACL_ID, type = CommandType.UUID, entityType = NetworkACLResponse.class, description = "The network of the VM the ACL will be created for")
+    @Parameter(name = ApiConstants.ACL_ID, type = CommandType.UUID, entityType = NetworkACLResponse.class, description = "The network of the Instance the ACL will be created for")
     private Long aclId;
 
-    @Parameter(name = ApiConstants.TRAFFIC_TYPE, type = CommandType.STRING, description = "the traffic type for the ACL," + "can be ingress or egress, defaulted to ingress if not specified")
+    @Parameter(name = ApiConstants.TRAFFIC_TYPE, type = CommandType.STRING, description = "The traffic type for the ACL," + "can be ingress or egress, defaulted to ingress if not specified")
     private String trafficType;
 
     @Parameter(name = ApiConstants.NUMBER, type = CommandType.INTEGER, description = "The number of the ACL item, its ordering")
     private Integer number;
 
-    @Parameter(name = ApiConstants.ACTION, type = CommandType.STRING, description = "scl entry action, allow or deny")
+    @Parameter(name = ApiConstants.ACTION, type = CommandType.STRING, description = "ACL entry action, allow or deny")
     private String action;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "An optional field, whether to the display the rule to the end User or not", since = "4.4", authorized = {
             RoleType.Admin})
     private Boolean display;
 
@@ -118,8 +118,8 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
     }
 
     public List<String> getSourceCidrList() {
-        if (cidrlist != null) {
-            return cidrlist;
+        if (cidrList != null) {
+            return cidrList;
         } else {
             List<String> oneCidrList = new ArrayList<String>();
             oneCidrList.add(NetUtils.ALL_IP4_CIDRS);
@@ -236,6 +236,30 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
 
     public String getReason() {
         return reason;
+    }
+
+    public void setCidrList(List<String> cidrList) {
+        this.cidrList = cidrList;
+    }
+
+    public void setIcmpType(Integer icmpType) {
+        this.icmpType = icmpType;
+    }
+
+    public void setIcmpCode(Integer icmpCode) {
+        this.icmpCode = icmpCode;
+    }
+
+    public void setNumber(Integer number) {
+        this.number = number;
+    }
+
+    public void setDisplay(Boolean display) {
+        this.display = display;
+    }
+
+    public void setReason(String reason) {
+        this.reason = reason;
     }
 
     @Override

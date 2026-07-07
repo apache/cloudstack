@@ -98,7 +98,7 @@ public class SystemVmTemplateRegistrationTest {
             setupMetadataFile(mockedStatic, null);
             CloudRuntimeException exception = assertThrows(CloudRuntimeException.class,
                     SystemVmTemplateRegistration::parseMetadataFile);
-            assertTrue(exception.getMessage().contains("Failed to parse systemVM template metadata file"));
+            assertTrue(exception.getMessage().contains("Failed to parse systemVM Template metadata file"));
         }
     }
 
@@ -109,7 +109,7 @@ public class SystemVmTemplateRegistrationTest {
             setupMetadataFile(mockedStatic, "abc");
             CloudRuntimeException exception = assertThrows(CloudRuntimeException.class,
                     SystemVmTemplateRegistration::parseMetadataFile);
-            assertTrue(exception.getMessage().contains("Failed to parse systemVM template metadata file"));
+            assertTrue(exception.getMessage().contains("Failed to parse systemVM Template metadata file"));
         }
     }
 
@@ -155,7 +155,7 @@ public class SystemVmTemplateRegistrationTest {
         templateDetails =
                 SystemVmTemplateRegistration.NewTemplateMap.get("vmware");
         assertNotNull(templateDetails);
-        assertNull(templateDetails.getArch());
+        assertEquals(CPU.CPUArch.amd64, templateDetails.getArch());
         assertEquals(Hypervisor.HypervisorType.VMware, templateDetails.getHypervisorType());
     }
 

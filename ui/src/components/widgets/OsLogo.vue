@@ -31,6 +31,9 @@
 <script>
 import { getAPI } from '@/api'
 
+const CACHE_TTL_MS = 30_000
+const osTypeCache = new Map() // osId -> { ts, value?, promise? }
+
 export default {
   name: 'OsLogo',
   props: {
@@ -45,55 +48,57 @@ export default {
     size: {
       type: String,
       default: 'lg'
+    },
+    useCache: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
-    return {
-      name: '',
-      osLogo: ['fas', 'image']
-    }
+    return { name: '', osLogo: ['fas', 'image'] }
   },
-  computed: {
-    logo: function () {
-      if (!this.name) {
-        this.fetchData()
-      }
-      return this.osLogo
-    }
-  },
+  computed: { logo () { return this.osLogo } },
+  mounted () { this.fetchData() },
   watch: {
-    osId: function () {
-      this.fetchData()
-    }
+    osId () { this.fetchData() },
+    osName () { this.fetchData() }
   },
   methods: {
+    async fetchOsTypeName (osId, useCache = this.useCache) {
+      const now = Date.now()
+      if (useCache) {
+        const cached = osTypeCache.get(osId)
+        if (cached?.value && (now - cached.ts) < CACHE_TTL_MS) return cached.value
+        if (cached?.promise) return cached.promise
+        const promise = getAPI('listOsTypes', { id: osId })
+          .then(json => {
+            const t = json?.listostypesresponse?.ostype
+            const name = t?.length
+              ? (t[0].description || t[0].osdisplayname || 'Linux')
+              : 'Linux'
+            osTypeCache.set(osId, { ts: Date.now(), value: name })
+            return name
+          })
+          .catch(e => { osTypeCache.delete(osId); throw e })
+        osTypeCache.set(osId, { ts: now, promise })
+        return promise
+      }
+      const json = await getAPI('listOsTypes', { id: osId })
+      const t = json?.listostypesresponse?.ostype
+      return t?.length ? (t[0].description || t[0].osdisplayname || 'Linux') : 'Linux'
+    },
     fetchData () {
       if (this.osName) {
         this.discoverOsLogo(this.osName)
-      } else if (this.osId) {
-        this.findOsName(this.osId)
+      } else if (this.osId && ('listOsTypes' in this.$store.getters.apis)) {
+        this.fetchOsTypeName(this.osId)
+          .then(this.discoverOsLogo)
+          .catch(() => this.discoverOsLogo('Linux'))
       }
-    },
-    findOsName (osId) {
-      if (!('listOsTypes' in this.$store.getters.apis)) {
-        return
-      }
-      this.name = 'linux'
-      getAPI('listOsTypes', { id: osId }).then(json => {
-        if (json && json.listostypesresponse && json.listostypesresponse.ostype && json.listostypesresponse.ostype.length > 0) {
-          this.discoverOsLogo(json.listostypesresponse.ostype[0].description)
-        } else {
-          this.discoverOsLogo('Linux')
-        }
-      })
-    },
-    getFontAwesomeIcon (name) {
-      return ['fab', name]
     },
     discoverOsLogo (name) {
       this.name = name
-      this.$emit('update-osname', this.name)
-      const osname = name.toLowerCase()
+      const osname = (name || '').toLowerCase()
       const logos = [
         { name: 'centos' },
         { name: 'debian' },
@@ -119,6 +124,3 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-</style>

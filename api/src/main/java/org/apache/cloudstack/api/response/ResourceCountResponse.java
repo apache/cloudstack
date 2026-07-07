@@ -26,35 +26,35 @@ import com.google.gson.annotations.SerializedName;
 @SuppressWarnings("unused")
 public class ResourceCountResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the account for which resource count's are updated")
+    @Param(description = "The Account for which resource count's are updated")
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project id for which resource count's are updated")
+    @Param(description = "The project ID for which resource count's are updated")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project name for which resource count's are updated")
+    @Param(description = "The project name for which resource count's are updated")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain ID for which resource count's are updated")
+    @Param(description = "The domain ID for which resource count's are updated")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain name for which resource count's are updated")
+    @Param(description = "The domain name for which resource count's are updated")
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the domain to which the resource counts are updated", since = "4.19.2.0")
+    @Param(description = "Path of the domain to which the resource counts are updated", since = "4.19.2.0")
     private String domainPath;
 
     @SerializedName(ApiConstants.RESOURCE_TYPE)
-    @Param(description = "resource type. Values include 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11. See the resourceType parameter for more information on these values.")
+    @Param(description = "Resource type. Values include 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11. See the resourceType parameter for more information on these values.")
     private String resourceType;
 
     @SerializedName(ApiConstants.RESOURCE_TYPE_NAME)
-    @Param(description = "resource type name. Values include user_vm, public_ip, volume, snapshot, template, project, network, vpc, cpu, memory, primary_storage, secondary_storage.")
+    @Param(description = "Resource type name. Values include user_vm, public_ip, volume, Snapshot, Template, project, Network, VPC, CPU, memory, primary_storage, secondary_storage.")
     private String resourceTypeName;
 
     @SerializedName(ApiConstants.RESOURCE_COUNT)

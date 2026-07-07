@@ -101,15 +101,18 @@
     "eslint-plugin-vue": "^7.0.0",
     "less": "^3.0.4",
     "less-loader": "^5.0.0",
+    "nan": "2.18.0",
+    "node-gyp": "10.0.1",
     "sass": "^1.49.9",
     "sass-loader": "^8.0.2",
     "uglifyjs-webpack-plugin": "^2.2.0",
     "vue-jest": "^5.0.0-0",
     "vue-svg-loader": "^0.17.0-beta.2",
-    "webpack": "^4.46.0",
-    "node-gyp": "10.0.1",  "nan": "2.18.0"
+    "webpack": "^4.46.0"
   },
-  "resolutions": { "nan": "2.18.0" },
+  "resolutions": {
+    "nan": "2.18.0"
+  },
   "eslintConfig": {
     "root": true,
     "env": {

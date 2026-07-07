@@ -61,7 +61,8 @@
     "uk": "label.uk.keyboard",
     "fr": "label.french.azerty.keyboard",
     "jp": "label.japanese.keyboard",
-    "sc": "label.simplified.chinese.keyboard"
+    "sc": "label.simplified.chinese.keyboard",
+    "es-latam": "Spanish Latin American Keyboard"
   },
   "userCard": {
     "enabled": true,
@@ -105,6 +106,7 @@
   "showAllCategoryForModernImageSelection": false,
   "docHelpMappings": {},
   "notifyLatestCSVersion": true,
+  "showSearchFilters": true,
   "announcementBanner": {
     "enabled": false,
     "showIcon": false,

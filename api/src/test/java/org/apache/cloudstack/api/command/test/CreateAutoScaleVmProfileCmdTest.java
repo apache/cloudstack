@@ -122,7 +122,7 @@ public class CreateAutoScaleVmProfileCmdTest {
         Assert.assertEquals("autoscalevmprofileresponse", createAutoScaleVmProfileCmd.getCommandName());
         Assert.assertEquals("autoscalevmprofile", CreateAutoScaleVmProfileCmd.getResultObjectName());
         Assert.assertEquals(EventTypes.EVENT_AUTOSCALEVMPROFILE_CREATE, createAutoScaleVmProfileCmd.getEventType());
-        Assert.assertEquals("creating AutoScale Vm Profile", createAutoScaleVmProfileCmd.getEventDescription());
+        Assert.assertEquals("Creating AutoScale Instance Profile", createAutoScaleVmProfileCmd.getEventDescription());
         Assert.assertEquals(ApiCommandResourceType.AutoScaleVmProfile, createAutoScaleVmProfileCmd.getApiResourceType());
     }
 
