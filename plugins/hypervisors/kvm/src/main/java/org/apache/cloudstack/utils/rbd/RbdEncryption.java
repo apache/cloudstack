@@ -27,6 +27,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.PosixFilePermissions;
 
 /**
  * Thin wrapper around the {@code rbd} CLI to apply native librbd LUKS encryption to an
@@ -36,9 +38,12 @@ import java.nio.file.Path;
  * The CLI dependency is intentionally isolated in this class so it can later be replaced
  * by a native librbd (JNA) binding without touching callers. rados-java (0.x) does not
  * expose the rbd_encryption_format API, hence the CLI for now.
+ *
+ * The command builders ({@code build*Script}) are separated from execution so the generated
+ * argv can be unit-tested without a live Ceph cluster (see {@code RbdEncryptionTest}).
  */
 public class RbdEncryption {
-    protected static Logger LOGGER = LogManager.getLogger(RbdEncryption.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     protected String commandPath = "rbd";
     protected String qemuImgPath = "qemu-img";
@@ -47,6 +52,10 @@ public class RbdEncryption {
 
     public RbdEncryption(String commandPath) {
         this.commandPath = commandPath;
+    }
+
+    private static String monSpec(String monHost, int monPort) {
+        return monPort > 0 ? monHost + ":" + monPort : monHost;
     }
 
     /**
@@ -68,33 +77,42 @@ public class RbdEncryption {
     public void format(String monHost, int monPort, String authUser, String authSecret,
                        String cephPool, String image, byte[] passphrase, CryptSetup.LuksType luksType) {
         final String imageSpec = cephPool + "/" + image;
+        if (passphrase == null || passphrase.length == 0) {
+            throw new CloudRuntimeException("Cannot LUKS-format RBD image " + imageSpec + ": empty passphrase");
+        }
         try (KeyFile passFile = new KeyFile(passphrase);
              KeyFile cephKeyFile = new KeyFile(authSecret == null ? null : authSecret.getBytes(StandardCharsets.UTF_8))) {
-            final Script script = new Script(commandPath);
-            script.add("encryption");
-            script.add("format");
-            script.add(imageSpec);
-            script.add(luksType.toString());
-            script.add(passFile.toString());
-            script.add("--mon-host");
-            script.add(monPort > 0 ? monHost + ":" + monPort : monHost);
-            if (authUser != null) {
-                script.add("--id");
-                script.add(authUser);
-            }
-            if (cephKeyFile.isSet()) {
-                script.add("--keyfile");
-                script.add(cephKeyFile.toString());
-            }
-
+            final Script script = buildFormatScript(imageSpec, luksType, passFile.toString(),
+                    monSpec(monHost, monPort), authUser, cephKeyFile.isSet() ? cephKeyFile.toString() : null);
             final String result = script.execute();
             if (result != null) {
                 throw new CloudRuntimeException(String.format("Failed to apply librbd %s encryption to %s: %s", luksType, imageSpec, result));
             }
-            LOGGER.debug("Applied {} encryption to RBD image {}", luksType, imageSpec);
+            logger.debug("Applied {} encryption to RBD image {}", luksType, imageSpec);
         } catch (IOException ex) {
             throw new CloudRuntimeException(String.format("Failed to apply librbd %s encryption to %s", luksType, imageSpec), ex);
         }
+    }
+
+    protected Script buildFormatScript(String imageSpec, CryptSetup.LuksType luksType, String passFilePath,
+                                       String monSpec, String authUser, String cephKeyFilePath) {
+        final Script script = new Script(commandPath);
+        script.add("encryption");
+        script.add("format");
+        script.add(imageSpec);
+        script.add(luksType.toString());
+        script.add(passFilePath);
+        script.add("--mon-host");
+        script.add(monSpec);
+        if (authUser != null) {
+            script.add("--id");
+            script.add(authUser);
+        }
+        if (cephKeyFilePath != null) {
+            script.add("--keyfile");
+            script.add(cephKeyFilePath);
+        }
+        return script;
     }
 
     /**
@@ -107,38 +125,48 @@ public class RbdEncryption {
     public void resize(String monHost, int monPort, String authUser, String authSecret,
                        String cephPool, String image, long newSizeBytes, boolean allowShrink, byte[] passphrase) {
         final String imageSpec = cephPool + "/" + image;
-        final long sizeMiB = newSizeBytes / (1024L * 1024L);
+        if (passphrase == null || passphrase.length == 0) {
+            throw new CloudRuntimeException("Cannot resize encrypted RBD image " + imageSpec + ": empty passphrase");
+        }
+        // rbd --size is in MiB; round up so a non-MiB-aligned request never shrinks the volume below what was asked for.
+        final long sizeMiB = (newSizeBytes + (1024L * 1024L) - 1) / (1024L * 1024L);
         try (KeyFile passFile = new KeyFile(passphrase);
              KeyFile cephKeyFile = new KeyFile(authSecret == null ? null : authSecret.getBytes(StandardCharsets.UTF_8))) {
-            final Script script = new Script(commandPath);
-            script.add("resize");
-            script.add("--size");
-            script.add(String.valueOf(sizeMiB));
-            script.add(imageSpec);
-            script.add("--encryption-passphrase-file");
-            script.add(passFile.toString());
-            if (allowShrink) {
-                script.add("--allow-shrink");
-            }
-            script.add("--mon-host");
-            script.add(monPort > 0 ? monHost + ":" + monPort : monHost);
-            if (authUser != null) {
-                script.add("--id");
-                script.add(authUser);
-            }
-            if (cephKeyFile.isSet()) {
-                script.add("--keyfile");
-                script.add(cephKeyFile.toString());
-            }
-
+            final Script script = buildResizeScript(imageSpec, sizeMiB, passFile.toString(), allowShrink,
+                    monSpec(monHost, monPort), authUser, cephKeyFile.isSet() ? cephKeyFile.toString() : null);
             final String result = script.execute();
             if (result != null) {
                 throw new CloudRuntimeException(String.format("Failed to resize encrypted RBD image %s to %d MiB: %s", imageSpec, sizeMiB, result));
             }
-            LOGGER.debug("Resized encrypted RBD image {} to {} MiB", imageSpec, sizeMiB);
+            logger.debug("Resized encrypted RBD image {} to {} MiB", imageSpec, sizeMiB);
         } catch (IOException ex) {
             throw new CloudRuntimeException(String.format("Failed to resize encrypted RBD image %s", imageSpec), ex);
         }
+    }
+
+    protected Script buildResizeScript(String imageSpec, long sizeMiB, String passFilePath, boolean allowShrink,
+                                       String monSpec, String authUser, String cephKeyFilePath) {
+        final Script script = new Script(commandPath);
+        script.add("resize");
+        script.add("--size");
+        script.add(String.valueOf(sizeMiB));
+        script.add(imageSpec);
+        script.add("--encryption-passphrase-file");
+        script.add(passFilePath);
+        if (allowShrink) {
+            script.add("--allow-shrink");
+        }
+        script.add("--mon-host");
+        script.add(monSpec);
+        if (authUser != null) {
+            script.add("--id");
+            script.add(authUser);
+        }
+        if (cephKeyFilePath != null) {
+            script.add("--keyfile");
+            script.add(cephKeyFilePath);
+        }
+        return script;
     }
 
     /**
@@ -157,45 +185,56 @@ public class RbdEncryption {
                                String monHost, int monPort, String authUser, String authSecret,
                                String cephPool, String destImage, byte[] passphrase, CryptSetup.LuksType luksType) {
         final String imageSpec = cephPool + "/" + destImage;
-        final String monSpec = monPort > 0 ? monHost + ":" + monPort : monHost;
+        if (passphrase == null || passphrase.length == 0) {
+            throw new CloudRuntimeException("Cannot import template into encrypted RBD image " + imageSpec + ": empty passphrase");
+        }
         Path conf = null;
         Path keyring = null;
         try (KeyFile passFile = new KeyFile(passphrase)) {
-            keyring = Files.createTempFile("cs-ceph-", ".keyring"); // 0600 by default on POSIX
+            // These temp files hold the cephx secret; create them 0600 up front (matching KeyFile) rather than relying on the umask.
+            final FileAttribute<?> ownerOnly = PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------"));
+            keyring = Files.createTempFile("cs-ceph-", ".keyring", ownerOnly);
             Files.writeString(keyring, "[client." + authUser + "]\n\tkey = " + authSecret + "\n");
-            conf = Files.createTempFile("cs-ceph-", ".conf");
-            Files.writeString(conf, "[global]\nmon_host = " + monSpec + "\nkeyring = " + keyring + "\n");
+            conf = Files.createTempFile("cs-ceph-", ".conf", ownerOnly);
+            Files.writeString(conf, "[global]\nmon_host = " + monSpec(monHost, monPort) + "\nkeyring = " + keyring + "\n");
 
-            final Script q = new Script(qemuImgPath);
-            q.add("convert");
-            q.add("-n"); // target already exists (pre-created + luks-formatted)
-            if (srcRbdImage != null) {
-                q.add("--image-opts");
-                q.add("driver=rbd,pool=" + srcRbdPool + ",image=" + srcRbdImage + ",conf=" + conf + ",user=" + authUser);
-            } else {
-                if (srcFileFormat != null) {
-                    q.add("-f");
-                    q.add(srcFileFormat.toLowerCase());
-                }
-                q.add(srcFilePath);
-            }
-            q.add("--object");
-            q.add("secret,id=luks0,file=" + passFile.toString());
-            q.add("--target-image-opts");
-            q.add("driver=rbd,pool=" + cephPool + ",image=" + destImage + ",conf=" + conf + ",user=" + authUser
-                    + ",encrypt.format=" + luksType + ",encrypt.key-secret=luks0");
-
+            final Script q = buildConvertScript(srcRbdPool, srcRbdImage, srcFilePath, srcFileFormat,
+                    cephPool, destImage, conf.toString(), authUser, passFile.toString(), luksType);
             final String result = q.execute();
             if (result != null) {
                 throw new CloudRuntimeException(String.format("Failed to import template into encrypted RBD image %s: %s", imageSpec, result));
             }
-            LOGGER.debug("Imported template into encrypted RBD image {}", imageSpec);
+            logger.debug("Imported template into encrypted RBD image {}", imageSpec);
         } catch (IOException ex) {
             throw new CloudRuntimeException(String.format("Failed to import template into encrypted RBD image %s", imageSpec), ex);
         } finally {
             deleteQuietly(conf);
             deleteQuietly(keyring);
         }
+    }
+
+    protected Script buildConvertScript(String srcRbdPool, String srcRbdImage, String srcFilePath, String srcFileFormat,
+                                        String cephPool, String destImage, String confPath, String authUser,
+                                        String passFilePath, CryptSetup.LuksType luksType) {
+        final Script q = new Script(qemuImgPath);
+        q.add("convert");
+        q.add("-n"); // target already exists (pre-created + luks-formatted)
+        if (srcRbdImage != null) {
+            q.add("--image-opts");
+            q.add("driver=rbd,pool=" + srcRbdPool + ",image=" + srcRbdImage + ",conf=" + confPath + ",user=" + authUser);
+        } else {
+            if (srcFileFormat != null) {
+                q.add("-f");
+                q.add(srcFileFormat.toLowerCase());
+            }
+            q.add(srcFilePath);
+        }
+        q.add("--object");
+        q.add("secret,id=luks0,file=" + passFilePath);
+        q.add("--target-image-opts");
+        q.add("driver=rbd,pool=" + cephPool + ",image=" + destImage + ",conf=" + confPath + ",user=" + authUser
+                + ",encrypt.format=" + luksType + ",encrypt.key-secret=luks0");
+        return q;
     }
 
     private static void deleteQuietly(Path p) {

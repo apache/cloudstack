@@ -1370,85 +1370,10 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             boolean sameClusterRbd = srcPool.getType() == StoragePoolType.RBD
                     && srcPool.getSourceHost().equals(destPool.getSourceHost())
                     && srcPool.getSourceDir().equals(destPool.getSourceDir());
-
             if (sameClusterRbd) {
-                /*
-                 * Option A (thin CoW encrypted root). Per the Ceph "Image Encryption" clone recipe:
-                 * grow the template base to reserve LUKS2-header space, snapshot+protect that grown state,
-                 * clone from it, apply a LUKS2 header, then resize the clone to the requested size. The
-                 * inherited (plaintext) template data stays readable through the clone's encryption, and
-                 * the clone is a thin CoW image (only the header is written, not the OS data).
-                 */
-                String encSnap = rbdTemplateSnapName + "-luks";
-                try {
-                    Rados r = new Rados(destPool.getAuthUserName());
-                    r.confSet("mon_host", destPool.getSourceHost() + ":" + destPool.getSourcePort());
-                    r.confSet("key", destPool.getAuthSecret());
-                    r.confSet("client_mount_timeout", "30");
-                    r.connect();
-                    IoCTX io = r.ioCtxCreate(destPool.getSourceDir());
-                    Rbd rbd = new Rbd(io);
-                    RbdImage base = rbd.open(template.getName());
-                    boolean haveEncSnap = false;
-                    for (RbdSnapInfo s : base.snapList()) {
-                        if (encSnap.equals(s.name)) {
-                            haveEncSnap = true;
-                            break;
-                        }
-                    }
-                    if (!haveEncSnap) {
-                        base.resize(template.getVirtualSize() + LUKS2_HEADER_RESERVE_BYTES);
-                        base.snapCreate(encSnap);
-                        base.snapProtect(encSnap);
-                        logger.debug("Prepared LUKS-reserved template snapshot " + template.getName() + "@" + encSnap);
-                    }
-                    rbd.close(base);
-                    rbd.clone(template.getName(), encSnap, io, newUuid, RBD_FEATURES, rbdOrder);
-                    r.ioCtxDestroy(io);
-                } catch (RadosException | RbdException e) {
-                    logger.error("Failed to create encrypted CoW clone " + newUuid + ": " + e.getMessage());
-                    return null;
-                }
-                formatRbdImageEncryption(destPool, newUuid, passphrase);
-                if (disk.getVirtualSize() > template.getVirtualSize()) {
-                    // grow the clone to the requested root size (encryption-aware)
-                    new RbdEncryption().resize(destPool.getSourceHost(), destPool.getSourcePort(),
-                            destPool.getAuthUserName(), destPool.getAuthSecret(), destPool.getSourceDir(),
-                            newUuid, disk.getVirtualSize(), false, passphrase);
-                }
-                disk.setQemuEncryptFormat(QemuObject.EncryptFormat.LUKS2);
-                return disk;
+                return createEncryptedRootCoWClone(template, destPool, newUuid, disk, passphrase);
             }
-
-            /*
-             * Option B (full-copy encrypted root) for templates not on the same RBD cluster (e.g. first
-             * use from secondary storage). Create an empty image, apply a LUKS2 header, then import the
-             * template THROUGH the encryption layer (qemu-img convert -n). Correct but not thin (no CoW).
-             */
-            long createSize = disk.getVirtualSize() + LUKS2_HEADER_RESERVE_BYTES;
-            try {
-                Rados r = new Rados(destPool.getAuthUserName());
-                r.confSet("mon_host", destPool.getSourceHost() + ":" + destPool.getSourcePort());
-                r.confSet("key", destPool.getAuthSecret());
-                r.confSet("client_mount_timeout", "30");
-                r.connect();
-                IoCTX io = r.ioCtxCreate(destPool.getSourceDir());
-                Rbd rbd = new Rbd(io);
-                rbd.create(newUuid, createSize, RBD_FEATURES, rbdOrder);
-                r.ioCtxDestroy(io);
-            } catch (RadosException | RbdException e) {
-                logger.error("Failed to create encrypted RBD image " + newUuid + ": " + e.getMessage());
-                return null;
-            }
-            formatRbdImageEncryption(destPool, newUuid, passphrase);
-            boolean srcIsRbd = srcPool.getType() == StoragePoolType.RBD;
-            new RbdEncryption().importTemplate(
-                    srcIsRbd ? srcPool.getSourceDir() : null, srcIsRbd ? template.getName() : null,
-                    srcIsRbd ? null : template.getPath(), srcIsRbd ? null : template.getFormat().toString(),
-                    destPool.getSourceHost(), destPool.getSourcePort(), destPool.getAuthUserName(), destPool.getAuthSecret(),
-                    destPool.getSourceDir(), newUuid, passphrase, CryptSetup.LuksType.LUKS2);
-            disk.setQemuEncryptFormat(QemuObject.EncryptFormat.LUKS2);
-            return disk;
+            return createEncryptedRootFullCopy(srcPool, template, destPool, newUuid, disk, passphrase);
         }
 
         QemuImgFile srcFile;
@@ -1596,6 +1521,111 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
         // Encrypted volumes are handled by the early return above (create empty -> luks2 format ->
         // import template through encryption); the clone/convert path here is for plaintext volumes.
+        return disk;
+    }
+
+    /**
+     * Option A (thin CoW encrypted root), used when the template already lives on the same RBD cluster
+     * as the destination pool. Per the Ceph "Image Encryption" clone recipe: grow the template base to
+     * reserve LUKS2-header space, snapshot+protect that grown state, clone from it, apply a LUKS2 header,
+     * then resize the clone to the requested size. The inherited (plaintext) template data stays readable
+     * through the clone's encryption, and the clone is a thin CoW image (only the header is written).
+     *
+     * @return the encrypted CoW clone, or {@code null} if the Ceph operations failed
+     */
+    private KVMPhysicalDisk createEncryptedRootCoWClone(KVMPhysicalDisk template, KVMStoragePool destPool,
+            String newUuid, KVMPhysicalDisk disk, byte[] passphrase) {
+        String encSnap = rbdTemplateSnapName + "-luks";
+        Rados r = null;
+        IoCTX io = null;
+        Rbd rbd = null;
+        RbdImage base = null;
+        try {
+            r = new Rados(destPool.getAuthUserName());
+            r.confSet("mon_host", destPool.getSourceHost() + ":" + destPool.getSourcePort());
+            r.confSet("key", destPool.getAuthSecret());
+            r.confSet("client_mount_timeout", "30");
+            r.connect();
+            io = r.ioCtxCreate(destPool.getSourceDir());
+            rbd = new Rbd(io);
+            base = rbd.open(template.getName());
+            boolean haveEncSnap = false;
+            for (RbdSnapInfo s : base.snapList()) {
+                if (encSnap.equals(s.name)) {
+                    haveEncSnap = true;
+                    break;
+                }
+            }
+            if (!haveEncSnap) {
+                base.resize(template.getVirtualSize() + LUKS2_HEADER_RESERVE_BYTES);
+                base.snapCreate(encSnap);
+                base.snapProtect(encSnap);
+                logger.debug("Prepared LUKS-reserved template snapshot {}@{}", template.getName(), encSnap);
+            }
+            rbd.clone(template.getName(), encSnap, io, newUuid, RBD_FEATURES, rbdOrder);
+        } catch (RadosException | RbdException e) {
+            logger.error("Failed to create encrypted CoW clone {}: {}", newUuid, e.getMessage());
+            return null;
+        } finally {
+            if (rbd != null && base != null) {
+                try {
+                    rbd.close(base);
+                } catch (RbdException ignored) {
+                    // best-effort close of the template handle
+                }
+            }
+            if (r != null && io != null) {
+                r.ioCtxDestroy(io);
+            }
+        }
+        formatRbdImageEncryption(destPool, newUuid, passphrase);
+        if (disk.getVirtualSize() > template.getVirtualSize()) {
+            // grow the clone to the requested root size (encryption-aware)
+            new RbdEncryption().resize(destPool.getSourceHost(), destPool.getSourcePort(),
+                    destPool.getAuthUserName(), destPool.getAuthSecret(), destPool.getSourceDir(),
+                    newUuid, disk.getVirtualSize(), false, passphrase);
+        }
+        disk.setQemuEncryptFormat(QemuObject.EncryptFormat.LUKS2);
+        return disk;
+    }
+
+    /**
+     * Option B (full-copy encrypted root), used when the template is not on the same RBD cluster (e.g. first
+     * use from secondary storage). Create an empty image, apply a LUKS2 header, then import the template
+     * THROUGH the encryption layer (qemu-img convert -n). Correct but not thin (no CoW).
+     *
+     * @return the encrypted image, or {@code null} if the Ceph operations failed
+     */
+    private KVMPhysicalDisk createEncryptedRootFullCopy(KVMStoragePool srcPool, KVMPhysicalDisk template,
+            KVMStoragePool destPool, String newUuid, KVMPhysicalDisk disk, byte[] passphrase) {
+        long createSize = disk.getVirtualSize() + LUKS2_HEADER_RESERVE_BYTES;
+        Rados r = null;
+        IoCTX io = null;
+        try {
+            r = new Rados(destPool.getAuthUserName());
+            r.confSet("mon_host", destPool.getSourceHost() + ":" + destPool.getSourcePort());
+            r.confSet("key", destPool.getAuthSecret());
+            r.confSet("client_mount_timeout", "30");
+            r.connect();
+            io = r.ioCtxCreate(destPool.getSourceDir());
+            Rbd rbd = new Rbd(io);
+            rbd.create(newUuid, createSize, RBD_FEATURES, rbdOrder);
+        } catch (RadosException | RbdException e) {
+            logger.error("Failed to create encrypted RBD image {}: {}", newUuid, e.getMessage());
+            return null;
+        } finally {
+            if (r != null && io != null) {
+                r.ioCtxDestroy(io);
+            }
+        }
+        formatRbdImageEncryption(destPool, newUuid, passphrase);
+        boolean srcIsRbd = srcPool.getType() == StoragePoolType.RBD;
+        new RbdEncryption().importTemplate(
+                srcIsRbd ? srcPool.getSourceDir() : null, srcIsRbd ? template.getName() : null,
+                srcIsRbd ? null : template.getPath(), srcIsRbd ? null : template.getFormat().toString(),
+                destPool.getSourceHost(), destPool.getSourcePort(), destPool.getAuthUserName(), destPool.getAuthSecret(),
+                destPool.getSourceDir(), newUuid, passphrase, CryptSetup.LuksType.LUKS2);
+        disk.setQemuEncryptFormat(QemuObject.EncryptFormat.LUKS2);
         return disk;
     }
 
