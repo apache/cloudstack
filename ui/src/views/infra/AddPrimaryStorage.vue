@@ -438,6 +438,18 @@
             </template>
             <a-input v-model:value="form.resourcegroup" :placeholder="$t('message.linstor.resourcegroup.description')" />
           </a-form-item>
+          <a-form-item name="linstorApiToken" ref="linstorApiToken">
+            <template #label>
+              <tooltip-label :title="$t('label.linstor.apitoken')" :tooltip="$t('message.linstor.apitoken.description')"/>
+            </template>
+            <a-input v-model:value="form.linstorApiToken" :placeholder="$t('message.linstor.apitoken.description')" />
+          </a-form-item>
+          <a-form-item name="linstorInsecureSsl" ref="linstorInsecureSsl">
+            <template #label>
+              <tooltip-label :title="$t('label.linstor.ssl.insecure')" :tooltip="$t('message.linstor.ssl.insecure.description')"/>
+            </template>
+            <a-switch v-model:checked="form.linstorInsecureSsl" />
+          </a-form-item>
         </div>
         <a-form-item name="selectedTags" ref="selectedTags">
           <template #label>
@@ -512,7 +524,8 @@ export default {
       this.form = reactive({
         scope: 'cluster',
         hypervisor: this.hypervisors[0],
-        provider: 'DefaultPrimary'
+        provider: 'DefaultPrimary',
+        linstorInsecureSsl: true
       })
       this.rules = reactive({
         zone: [{ required: true, message: this.$t('label.required') }],
@@ -961,6 +974,10 @@ export default {
           url = this.linstorURL(server)
           values.managed = false
           params['details[0].resourceGroup'] = values.resourcegroup
+          if (values.linstorApiToken && values.linstorApiToken.length > 0) {
+            params['details[0].lin.auth.apitoken'] = values.linstorApiToken
+          }
+          params['details[0].lin.ssl.insecure'] = values.linstorInsecureSsl ? 'true' : 'false'
           if (values.capacityIops && values.capacityIops.length > 0) {
             params.capacityIops = values.capacityIops.split(',').join('')
           }
