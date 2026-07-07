@@ -1117,18 +1117,25 @@ public class AccountManagerImplTest extends AccountManagentImplTestBase {
     }
 
     @Test
-    public void testDisableUserTwoFactorAuthentication() {
+    public void testDisableUserTwoFactorAuthenticationByAdmin() {
         Long userId = 1L;
-        Long accountId = 2L;
+        long accountId = 2L;
+        Long callerId = 100L;
 
         UserVO userVO = Mockito.mock(UserVO.class);
         Account caller = Mockito.mock(Account.class);
+        Mockito.when(caller.getType()).thenReturn(Account.Type.ADMIN);
+        Mockito.when(caller.getId()).thenReturn(callerId);
         Account owner = Mockito.mock(Account.class);
+        Mockito.when(owner.getType()).thenReturn(Account.Type.NORMAL);
+        Mockito.doReturn(caller).when(accountManagerImpl).getCurrentCallingAccount();
+        Mockito.doReturn(true).when(accountManagerImpl).isRootAdmin(callerId);
 
         Mockito.doNothing().when(accountManagerImpl).checkAccess(nullable(Account.class), Mockito.isNull(), nullable(Boolean.class), nullable(Account.class));
 
         Mockito.when(userDaoMock.findById(userId)).thenReturn(userVO);
         Mockito.when(userVO.getAccountId()).thenReturn(accountId);
+        Mockito.doReturn(owner).when(accountManagerImpl).getAccount(accountId);
         Mockito.when(_accountService.getActiveAccountById(accountId)).thenReturn(owner);
 
         userVoMock.setKeyFor2fa("EUJEAEDVOURFZTE6OGWVTJZMI54QGMIL");
@@ -1143,6 +1150,27 @@ public class AccountManagerImplTest extends AccountManagentImplTestBase {
         Assert.assertNull(response.getSecretCode());
         Assert.assertNull(userVoMock.getKeyFor2fa());
         Assert.assertNull(userVoMock.getUser2faProvider());
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testDisableUserTwoFactorAuthenticationForAdminByDomainAdmin() {
+        Long userId = 1L;
+        long accountId = 2L;
+        Long callerId = 100L;
+
+        UserVO userVO = Mockito.mock(UserVO.class);
+        Account caller = Mockito.mock(Account.class);
+        Mockito.when(caller.getType()).thenReturn(Account.Type.DOMAIN_ADMIN);
+        Mockito.when(caller.getId()).thenReturn(callerId);
+        Account owner = Mockito.mock(Account.class);
+        Mockito.when(owner.getType()).thenReturn(Account.Type.ADMIN);
+        Mockito.doReturn(caller).when(accountManagerImpl).getCurrentCallingAccount();
+
+        Mockito.when(userDaoMock.findById(userId)).thenReturn(userVO);
+        Mockito.when(userVO.getAccountId()).thenReturn(accountId);
+        Mockito.doReturn(owner).when(accountManagerImpl).getAccount(accountId);
+
+        accountManagerImpl.disableTwoFactorAuthentication(userId, caller, owner);
     }
 
     @Test(expected = CloudRuntimeException.class)
@@ -1193,6 +1221,7 @@ public class AccountManagerImplTest extends AccountManagentImplTestBase {
     @Test
     public void testEnable2FAcode() {
         SetupUserTwoFactorAuthenticationCmd cmd = Mockito.mock(SetupUserTwoFactorAuthenticationCmd.class);
+        Mockito.when(cmd.getUserId()).thenReturn(null);
         Mockito.when(cmd.getProvider()).thenReturn("staticpin");
 
         AccountVO accountMock = Mockito.mock(AccountVO.class);
