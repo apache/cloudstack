@@ -29,7 +29,7 @@ import com.cloud.network.Network;
 @APICommand(name = "updateNetwork", description = "Updates a network", responseObject = NetworkResponse.class, responseView = ResponseView.Full, entityType = {Network.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateNetworkCmdByAdmin extends UpdateNetworkCmd implements AdminCmd {
-    @Parameter(name= ApiConstants.HIDE_IP_ADDRESS_USAGE, type=CommandType.BOOLEAN, description="when true ip address usage for the network will not be exported by the listUsageRecords API")
+    @Parameter(name= ApiConstants.HIDE_IP_ADDRESS_USAGE, type=CommandType.BOOLEAN, description = "When true IP address usage for the Network will not be exported by the listUsageRecords API")
     private Boolean hideIpAddressUsage;
 
     public Boolean getHideIpAddressUsage() {

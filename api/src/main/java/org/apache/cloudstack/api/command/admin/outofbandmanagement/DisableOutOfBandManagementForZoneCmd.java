@@ -54,7 +54,7 @@ public class DisableOutOfBandManagementForZoneCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.ZONE_ID, type = BaseCmd.CommandType.UUID, required = true, entityType = ZoneResponse.class,
-            validations = {ApiArgValidator.PositiveNumber}, description = "the ID of the zone")
+            validations = {ApiArgValidator.PositiveNumber}, description = "The ID of the zone")
     private Long zoneId;
 
     /////////////////////////////////////////////////////

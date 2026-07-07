@@ -44,7 +44,7 @@ public class DeleteLBHealthCheckPolicyCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = LBHealthCheckResponse.class,
                required = true,
-               description = "the ID of the load balancer health check policy")
+               description = "The ID of the load balancer health check policy")
     private Long id;
 
     // ///////////////////////////////////////////////////

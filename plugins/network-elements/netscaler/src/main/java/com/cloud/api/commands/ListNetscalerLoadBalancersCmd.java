@@ -39,7 +39,7 @@ import com.cloud.network.dao.ExternalLoadBalancerDeviceVO;
 import com.cloud.network.element.NetscalerLoadBalancerElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "listNetscalerLoadBalancers", responseObject = NetscalerLoadBalancerResponse.class, description = "lists netscaler load balancer devices",
+@APICommand(name = "listNetscalerLoadBalancers", responseObject = NetscalerLoadBalancerResponse.class, description = "Lists netscaler load balancer devices",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListNetscalerLoadBalancersCmd extends BaseListCmd {
 
@@ -51,13 +51,13 @@ public class ListNetscalerLoadBalancersCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, description = "the Physical Network ID")
+    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, description = "The Physical Network ID")
     private Long physicalNetworkId;
 
     @Parameter(name = ApiConstants.LOAD_BALANCER_DEVICE_ID,
                type = CommandType.UUID,
                entityType = NetscalerLoadBalancerResponse.class,
-               description = "netscaler load balancer device ID")
+               description = "Netscaler load balancer device ID")
     private Long lbDeviceId;
 
     /////////////////////////////////////////////////////

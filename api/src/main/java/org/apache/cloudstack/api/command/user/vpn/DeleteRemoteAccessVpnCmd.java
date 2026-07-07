@@ -34,7 +34,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.RemoteAccessVpn;
 
-@APICommand(name = "deleteRemoteAccessVpn", description = "Destroys a l2tp/ipsec remote access vpn", responseObject = SuccessResponse.class, entityType = {RemoteAccessVpn.class},
+@APICommand(name = "deleteRemoteAccessVpn", description = "Destroys a l2tp/ipsec remote access VPN", responseObject = SuccessResponse.class, entityType = {RemoteAccessVpn.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
 
@@ -47,7 +47,7 @@ public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = IPAddressResponse.class,
                required = true,
-               description = "public ip address id of the vpn server")
+               description = "Public IP address id of the VPN server")
     private Long publicIpId;
 
     // unexposed parameter needed for events logging
@@ -69,14 +69,14 @@ public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
             if (vpnEntity != null)
                 return vpnEntity.getAccountId();
 
-            throw new InvalidParameterValueException("The specified public ip is not allocated to any account");
+            throw new InvalidParameterValueException("The specified public ip is not allocated to any Account");
         }
         return ownerId;
     }
 
     @Override
     public String getEventDescription() {
-        return "Delete Remote Access VPN for account " + getEntityOwnerId() + " for  ip id=" + publicIpId;
+        return "Delete Remote Access VPN for Account " + getEntityOwnerId() + " for  ip id=" + publicIpId;
     }
 
     @Override
@@ -87,7 +87,7 @@ public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException {
         if (! _ravService.destroyRemoteAccessVpnForIp(publicIpId, CallContext.current().getCallingAccount(), false)) {
-                       throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete remote access vpn");
+                       throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete remote access VPN");
         }
         SuccessResponse response = new SuccessResponse(getCommandName());
         this.setResponseObject(response);

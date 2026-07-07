@@ -24,15 +24,15 @@ import org.apache.cloudstack.api.BaseResponse;
 
 public class ResourceIconResponse extends BaseResponse {
     @SerializedName(ApiConstants.RESOURCE_TYPE)
-    @Param(description = "resource type")
+    @Param(description = "Resource type")
     private ResourceTag.ResourceObjectType resourceType;
 
     @SerializedName(ApiConstants.RESOURCE_ID)
-    @Param(description = "id of the resource")
+    @Param(description = "ID of the resource")
     private String resourceId;
 
     @SerializedName(ApiConstants.BASE64_IMAGE)
-    @Param(description = "base64 representation of resource icon")
+    @Param(description = "Base64 representation of resource icon")
     private String image;
 
     public ResourceTag.ResourceObjectType getResourceType() {

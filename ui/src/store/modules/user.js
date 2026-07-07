@@ -562,15 +562,16 @@ const user = {
         }).catch(error => {
           reject(error)
         })
-
-        getAPI('listConfigurations', { name: 'hypervisor.custom.display.name' }).then(json => {
-          if (json.listconfigurationsresponse.configuration !== null) {
-            const config = json.listconfigurationsresponse.configuration[0]
-            commit('SET_CUSTOM_HYPERVISOR_NAME', config.value)
-          }
-        }).catch(error => {
-          reject(error)
-        })
+        if ('listConfigurations' in store.getters.apis) {
+          getAPI('listConfigurations', { name: 'hypervisor.custom.display.name' }).then(json => {
+            if (json.listconfigurationsresponse.configuration !== null) {
+              const config = json.listconfigurationsresponse.configuration[0]
+              commit('SET_CUSTOM_HYPERVISOR_NAME', config.value)
+            }
+          }).catch(error => {
+            reject(error)
+          })
+        }
       })
     },
     UpdateConfiguration ({ commit }) {

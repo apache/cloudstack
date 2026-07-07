@@ -50,7 +50,7 @@ public class ConfigureInternalLoadBalancerElementCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = InternalLoadBalancerElementResponse.class,
                required = true,
-               description = "the ID of the internal lb provider")
+               description = "The ID of the internal lb provider")
     private Long id;
 
     @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, required = true, description = "Enables/Disables the Internal Load Balancer element")

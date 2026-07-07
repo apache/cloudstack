@@ -30,15 +30,15 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import com.cloud.vm.VirtualMachine;
 
 
-@APICommand(name = "deployVirtualMachine", description = "Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.", responseObject = UserVmResponse.class, responseView = ResponseView.Full, entityType = {VirtualMachine.class},
+@APICommand(name = "deployVirtualMachine", description = "Creates and automatically starts  an Instance based on a service offering, disk offering, and Template.", responseObject = UserVmResponse.class, responseView = ResponseView.Full, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class DeployVMCmdByAdmin extends DeployVMCmd implements AdminCmd {
 
 
-    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, description = "destination Pod ID to deploy the VM to - parameter available for root admin only", since = "4.13")
+    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, description = "Destination Pod ID to deploy the Instance to - parameter available for root admin only", since = "4.13")
     private Long podId;
 
-    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class, description = "destination Cluster ID to deploy the VM to - parameter available for root admin only", since = "4.13")
+    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class, description = "Destination Cluster ID to deploy the Instance to - parameter available for root admin only", since = "4.13")
     private Long clusterId;
 
     public Long getPodId() {

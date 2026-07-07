@@ -31,7 +31,7 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.user.Account;
 import com.cloud.vm.InstanceGroup;
 
-@APICommand(name = "deleteInstanceGroup", description = "Deletes a vm group", responseObject = SuccessResponse.class, entityType = {InstanceGroup.class},
+@APICommand(name = "deleteInstanceGroup", description = "Deletes an Instance group", responseObject = SuccessResponse.class, entityType = {InstanceGroup.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteVMGroupCmd extends BaseCmd {
 
@@ -40,7 +40,7 @@ public class DeleteVMGroupCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @ACL(accessType = AccessType.OperateEntry)
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = InstanceGroupResponse.class, required = true, description = "the ID of the instance group")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = InstanceGroupResponse.class, required = true, description = "The ID of the Instance group")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -72,7 +72,7 @@ public class DeleteVMGroupCmd extends BaseCmd {
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete vm group");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete Instance group");
         }
     }
 }

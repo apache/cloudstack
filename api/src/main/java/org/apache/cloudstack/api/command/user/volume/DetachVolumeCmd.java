@@ -38,7 +38,7 @@ import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "detachVolume", description = "Detaches a disk volume from a virtual machine.", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
+@APICommand(name = "detachVolume", description = "Detaches a disk volume from  an Instance.", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DetachVolumeCmd extends BaseAsyncCmd implements UserCmd {
     private static final String s_name = "detachvolumeresponse";
@@ -48,17 +48,17 @@ public class DetachVolumeCmd extends BaseAsyncCmd implements UserCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=VolumeResponse.class,
-            description="the ID of the disk volume")
+            description= " The ID of the disk volume")
     private Long id;
 
-    @Parameter(name = ApiConstants.DEVICE_ID, type = CommandType.LONG, description = "the device ID on the virtual machine where volume is detached from")
+    @Parameter(name = ApiConstants.DEVICE_ID, type = CommandType.LONG, description = "The device ID on the Instance where volume is detached from")
     private Long deviceId;
 
     @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
                type = CommandType.UUID,
                entityType = UserVmResponse.class,
-               description = "the ID of the virtual machine where the volume is detached from")
+               description = "The ID of the Instance where the volume is detached from")
     private Long virtualMachineId;
 
     /////////////////////////////////////////////////////
@@ -130,7 +130,7 @@ public class DetachVolumeCmd extends BaseAsyncCmd implements UserCmd {
         if (id != null) {
             sb.append(": " + this._uuidMgr.getUuid(Volume.class, id));
         } else if ((deviceId != null) && (virtualMachineId != null)) {
-            sb.append(" with device id: " + deviceId + " from vm: " + ((getVirtualMachineId() != null) ? this._uuidMgr.getUuid(VirtualMachine.class, getVirtualMachineId()) : "" ));
+            sb.append(" with device id: " + deviceId + " from Instance: " + ((getVirtualMachineId() != null) ? this._uuidMgr.getUuid(VirtualMachine.class, getVirtualMachineId()) : "" ));
         } else {
             sb.append(" <error:  either volume id or deviceId/vmId need to be specified>");
         }

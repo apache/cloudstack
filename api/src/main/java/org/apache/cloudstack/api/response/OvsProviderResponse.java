@@ -29,33 +29,33 @@ import com.google.gson.annotations.SerializedName;
 public class OvsProviderResponse extends BaseResponse implements
         ControlledEntityResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the id of the ovs")
+    @Param(description = "The ID of the ovs")
     private String id;
     @SerializedName(ApiConstants.NSP_ID)
-    @Param(description = "the physical network service provider id of the provider")
+    @Param(description = "The physical Network service provider id of the provider")
     private String nspId;
     @SerializedName(ApiConstants.ENABLED)
     @Param(description = "Enabled/Disabled the service provider")
     private Boolean enabled;
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the account associated with the provider")
+    @Param(description = "The Account associated with the provider")
     private String accountName;
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project id of the ipaddress")
+    @Param(description = "The project ID of the IP address")
     private String projectId;
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project name of the address")
+    @Param(description = "The project name of the address")
     private String projectName;
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain ID associated with the provider")
+    @Param(description = "The domain ID associated with the provider")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain associated with the provider")
+    @Param(description = "The domain associated with the provider")
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the domain to which the provider belongs", since = "4.19.2.0")
+    @Param(description = "Path of the domain to which the provider belongs", since = "4.19.2.0")
     private String domainPath;
 
     @Override

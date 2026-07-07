@@ -30,19 +30,19 @@ import java.util.Date;
 @EntityReference(value = VMSchedule.class)
 public class VMScheduleResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of VM schedule")
+    @Param(description = "The ID of Instance schedule")
     private String id;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
-    @Param(description = "ID of virtual machine")
+    @Param(description = "ID of Instance")
     private String vmId;
 
     @SerializedName(ApiConstants.DESCRIPTION)
-    @Param(description = "Description of VM schedule")
+    @Param(description = "Description of Instance schedule")
     private String description;
 
     @SerializedName(ApiConstants.SCHEDULE)
-    @Param(description = "Cron formatted VM schedule")
+    @Param(description = "Cron formatted Instance schedule")
     private String schedule;
 
     @SerializedName(ApiConstants.TIMEZONE)

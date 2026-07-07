@@ -1067,7 +1067,7 @@ public class SolidFireUtil {
         }
 
         if (snapshotName == null) {
-            throw new CloudRuntimeException("Could not find SolidFire snapshot ID: " + snapshotId + " for the following SolidFire volume ID: " + volumeId);
+            throw new CloudRuntimeException("Could not find SolidFire Snapshot ID: " + snapshotId + " for the following SolidFire volume ID: " + volumeId);
         }
 
         return new SolidFireSnapshot(snapshotId, snapshotName, totalSize);

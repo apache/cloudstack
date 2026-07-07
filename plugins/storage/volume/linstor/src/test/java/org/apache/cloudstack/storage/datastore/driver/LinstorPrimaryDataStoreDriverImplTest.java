@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.cloudstack.storage.datastore.util.LinstorUtil;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -75,13 +76,13 @@ public class LinstorPrimaryDataStoreDriverImplTest {
         when(api.resourceGroupList(Collections.singletonList("EncryptedGrp"), Collections.emptyList(), null, null))
                 .thenReturn(Collections.singletonList(encryptedGrp));
 
-        List<LayerType> layers = linstorPrimaryDataStoreDriver.getEncryptedLayerList(api, "DfltRscGrp");
+        List<LayerType> layers = LinstorUtil.getEncryptedLayerList(api, "DfltRscGrp");
         Assert.assertEquals(Arrays.asList(LayerType.DRBD, LayerType.LUKS, LayerType.STORAGE), layers);
 
-        layers = linstorPrimaryDataStoreDriver.getEncryptedLayerList(api, "BcacheGrp");
+        layers = LinstorUtil.getEncryptedLayerList(api, "BcacheGrp");
         Assert.assertEquals(Arrays.asList(LayerType.DRBD, LayerType.BCACHE, LayerType.LUKS, LayerType.STORAGE), layers);
 
-        layers = linstorPrimaryDataStoreDriver.getEncryptedLayerList(api, "EncryptedGrp");
+        layers = LinstorUtil.getEncryptedLayerList(api, "EncryptedGrp");
         Assert.assertEquals(Arrays.asList(LayerType.DRBD, LayerType.LUKS, LayerType.STORAGE), layers);
     }
 }

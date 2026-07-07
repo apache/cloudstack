@@ -32,31 +32,31 @@ import com.cloud.serializer.Param;
 public class PortableIpRangeResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "portable IP range ID")
+    @Param(description = "Portable IP range ID")
     private String id;
 
     @SerializedName(ApiConstants.REGION_ID)
-    @Param(description = "Region Id in which portable ip range is provisioned")
+    @Param(description = "Region ID in which portable IP range is provisioned")
     private Integer regionId;
 
     @SerializedName(ApiConstants.GATEWAY)
-    @Param(description = "the gateway of the VLAN IP range")
+    @Param(description = "The gateway of the VLAN IP range")
     private String gateway;
 
     @SerializedName(ApiConstants.NETMASK)
-    @Param(description = "the netmask of the VLAN IP range")
+    @Param(description = "The netmask of the VLAN IP range")
     private String netmask;
 
     @SerializedName(ApiConstants.VLAN)
-    @Param(description = "the ID or VID of the VLAN.")
+    @Param(description = "The ID or VID of the VLAN.")
     private String vlan;
 
     @SerializedName(ApiConstants.START_IP)
-    @Param(description = "the start ip of the portable IP range")
+    @Param(description = "The start IP of the portable IP range")
     private String startIp;
 
     @SerializedName(ApiConstants.END_IP)
-    @Param(description = "the end ip of the portable IP range")
+    @Param(description = "The end IP of the portable IP range")
     private String endIp;
 
     @SerializedName(ApiConstants.PORTABLE_IP_ADDRESS)

@@ -34,7 +34,7 @@ import com.cloud.storage.Volume;
 
 import java.util.Map;
 
-@APICommand(name = AssignVolumeCmd.CMD_NAME, responseObject = VolumeResponse.class, description = "Changes ownership of a Volume from one account to another.", entityType = {
+@APICommand(name = AssignVolumeCmd.CMD_NAME, responseObject = VolumeResponse.class, description = "Changes ownership of a Volume from one Account to another.", entityType = {
         Volume.class}, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.18.0.0")
 public class AssignVolumeCmd extends BaseCmd implements UserCmd {
     public static final String CMD_NAME = "assignVolume";
@@ -47,7 +47,7 @@ public class AssignVolumeCmd extends BaseCmd implements UserCmd {
     private Long volumeId;
 
     @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class,
-            description = "The ID of the account to which the volume will be assigned. Mutually exclusive with parameter 'projectid'.")
+            description = "The ID of the Account to which the volume will be assigned. Mutually exclusive with parameter 'projectid'.")
     private Long accountId;
 
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class,
@@ -81,7 +81,7 @@ public class AssignVolumeCmd extends BaseCmd implements UserCmd {
             if (result == null) {
                 Map<String,String> fullParams = getFullUrlParams();
                 if (accountId != null) {
-                    throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to move volume [%s] to account [%s].", fullParams.get(ApiConstants.VOLUME_ID),
+                    throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to move volume [%s] to Account [%s].", fullParams.get(ApiConstants.VOLUME_ID),
                             fullParams.get(ApiConstants.ACCOUNT_ID)));
                 }
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to move volume [%s] to project [%s].", fullParams.get(ApiConstants.VOLUME_ID),

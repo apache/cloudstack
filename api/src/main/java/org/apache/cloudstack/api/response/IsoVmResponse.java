@@ -28,47 +28,47 @@ import com.cloud.template.VirtualMachineTemplate;
 @SuppressWarnings("unused")
 public class IsoVmResponse extends BaseResponse {
     @SerializedName("id")
-    @Param(description = "the ISO ID")
+    @Param(description = "The ISO ID")
     private String id;
 
     @SerializedName("name")
-    @Param(description = "the ISO name")
+    @Param(description = "The ISO name")
     private String name;
 
     @SerializedName("displaytext")
-    @Param(description = "the ISO display text")
+    @Param(description = "The ISO display text")
     private String displayText;
 
     @SerializedName("bootable")
-    @Param(description = "true if the ISO is bootable, false otherwise")
+    @Param(description = "True if the ISO is bootable, false otherwise")
     private Boolean bootable;
 
     @SerializedName("isfeatured")
-    @Param(description = "true if this template is a featured template, false otherwise")
+    @Param(description = "True if this Template is a featured Template, false otherwise")
     private Boolean featured;
 
     @SerializedName("ostypeid")
-    @Param(description = "the ID of the OS type for this template.")
+    @Param(description = "The ID of the OS type for this Template.")
     private String osTypeId;
 
     @SerializedName("ostypename")
-    @Param(description = "the name of the OS type for this template.")
+    @Param(description = "The name of the OS type for this Template.")
     private String osTypeName;
 
     @SerializedName("virtualmachineid")
-    @Param(description = "id of the virtual machine")
+    @Param(description = "ID of the Instance")
     private String virtualMachineId;
 
     @SerializedName("vmname")
-    @Param(description = "name of the virtual machine")
+    @Param(description = "Name of the Instance")
     private String virtualMachineName;
 
     @SerializedName("vmdisplayname")
-    @Param(description = "display name of the virtual machine")
+    @Param(description = "Display name of the Instance")
     private String virtualMachineDisplayName;
 
     @SerializedName("vmstate")
-    @Param(description = "state of the virtual machine")
+    @Param(description = "State of the Instance")
     private String virtualMachineState;
 
     @Override

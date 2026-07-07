@@ -530,21 +530,21 @@ class TestPathDisableStorage_Basic(cloudstackTestCase):
         Test Steps:
         =========
 
-        1. Deploy a VM and attach volume
+        1. Deploy an Instance and attach volume
         2. Disable Storage
-        3. Create Template from root volume of the VM
+        3. Create Template from root volume of the Instance
         4. Attach a new volume - should fail
         5. Resize DATA disk to a higher value
-        6. Take VM Snapshot of the VM (for supported hypervisors)
-        7. Destroy the VM and immediately restore the VM
+        6. Take Instance Snapshot of the Instance (for supported hypervisors)
+        7. Destroy the VM and immediately restore the Instance
         8. Enable a new storage pool
-        9. Re-install the VM with same template
-        10. Re-install the VM with the new template created earlier
+        9. Re-install the Instance with same template
+        10. Re-install the Instance with the new template created earlier
         11. Repeat tests with enabled pool, Attach new Volume to VM2
         12. Resize disk to a higher value
-        13. Reboot the VM
-        14. Take VM Snapshot of the VM
-        15. Destroy the VM and immediately restore the VM
+        13. Reboot the Instance
+        14. Take Instance Snapshot of the Instance
+        15. Destroy the VM and immediately restore the Instance
 
         """
 
@@ -732,7 +732,7 @@ class TestPathDisableStorage_Basic(cloudstackTestCase):
         if self.hypervisor.lower() not in ('kvm', 'hyperv', 'lxc'):
             try:
                 self.debug(
-                    "Step 6: Taking VM Snapshot for vm id % s" %
+                    "Step 6: Taking Instance Snapshot for Instance id % s" %
                     self.virtual_machine_1.id)
                 vm_snapshot = VmSnapshot.create(self.userapiclient,
                                                 self.virtual_machine_1.id,

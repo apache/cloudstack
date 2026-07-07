@@ -46,7 +46,7 @@ public class DataCenterDetailsDaoImpl extends ResourceDetailsDaoBase<DataCenterD
     @Override
     public String getConfigValue(long id, String key) {
         ResourceDetail vo = findDetail(id, key);
-        return vo == null ? null : vo.getValue();
+        return vo == null ? null : getActualValue(vo);
     }
 
     @Override

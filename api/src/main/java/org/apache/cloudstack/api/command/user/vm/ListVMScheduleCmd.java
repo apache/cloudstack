@@ -31,7 +31,7 @@ import org.apache.cloudstack.vm.schedule.VMScheduleManager;
 
 import javax.inject.Inject;
 
-@APICommand(name = "listVMSchedule", description = "List VM Schedules.", responseObject = VMScheduleResponse.class,
+@APICommand(name = "listVMSchedule", description = "List Instance Schedules.", responseObject = VMScheduleResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListVMScheduleCmd extends BaseListCmd {
@@ -42,14 +42,14 @@ public class ListVMScheduleCmd extends BaseListCmd {
             type = CommandType.UUID,
             entityType = UserVmResponse.class,
             required = true,
-            description = "ID of the VM for which schedule is to be defined")
+            description = "ID of the Instance for which schedule is to be defined")
     private Long vmId;
 
     @Parameter(name = ApiConstants.ID,
             type = CommandType.UUID,
             entityType = VMScheduleResponse.class,
             required = false,
-            description = "ID of VM schedule")
+            description = "ID of Instance schedule")
     private Long id;
 
     @Parameter(name = ApiConstants.ACTION,
@@ -61,7 +61,7 @@ public class ListVMScheduleCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.ENABLED,
             type = CommandType.BOOLEAN,
             required = false,
-            description = "ID of VM schedule")
+            description = "ID of Instance schedule")
     private Boolean enabled;
 
     /////////////////////////////////////////////////////

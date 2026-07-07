@@ -43,7 +43,7 @@ public class DeletePhysicalNetworkCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = PhysicalNetworkResponse.class,
                required = true,
-               description = "the ID of the Physical network")
+               description = "The ID of the Physical network")
     private Long id;
 
     /////////////////////////////////////////////////////

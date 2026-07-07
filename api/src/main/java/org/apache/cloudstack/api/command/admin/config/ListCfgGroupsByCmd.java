@@ -40,7 +40,7 @@ public class ListCfgGroupsByCmd extends BaseListCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.GROUP, type = CommandType.STRING, description = "lists configuration group by group name")
+    @Parameter(name = ApiConstants.GROUP, type = CommandType.STRING, description = "Lists configuration group by group name")
     private String groupName;
 
     // ///////////////////////////////////////////////////

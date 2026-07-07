@@ -35,19 +35,19 @@ public class ListVMsMetricsCmdByAdmin extends ListVMsMetricsCmd implements Admin
     /////////////////////////////////////////////////////
 
     @Parameter(name=ApiConstants.HOST_ID, type= BaseCmd.CommandType.UUID, entityType= HostResponse.class,
-            description="the host ID")
+            description = "The host ID")
     private Long hostId;
 
     @Parameter(name=ApiConstants.POD_ID, type= BaseCmd.CommandType.UUID, entityType= PodResponse.class,
-            description="the pod ID")
+            description = "The pod ID")
     private Long podId;
 
     @Parameter(name=ApiConstants.STORAGE_ID, type= BaseCmd.CommandType.UUID, entityType= StoragePoolResponse.class,
-            description="the storage ID where vm's volumes belong to")
+            description = "The storage ID where vm's volumes belong to")
     private Long storageId;
 
     @Parameter(name = ApiConstants.CLUSTER_ID, type = BaseCmd.CommandType.UUID, entityType = ClusterResponse.class,
-            description = "the cluster ID")
+            description = "The cluster ID")
     private Long clusterId;
 
 

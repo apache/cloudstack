@@ -44,6 +44,7 @@ import com.cloud.upgrade.dao.Upgrade41120to41130;
 import com.cloud.upgrade.dao.Upgrade41120to41200;
 import com.cloud.upgrade.dao.Upgrade41510to41520;
 import com.cloud.upgrade.dao.Upgrade41610to41700;
+import com.cloud.upgrade.dao.Upgrade42010to42100;
 import com.cloud.upgrade.dao.Upgrade452to453;
 import com.cloud.upgrade.dao.Upgrade453to460;
 import com.cloud.upgrade.dao.Upgrade460to461;
@@ -380,4 +381,23 @@ public class DatabaseUpgradeCheckerTest {
         assertFalse("DatabaseUpgradeChecker should not be a standalone component", checker.isStandalone());
     }
 
+    @Test
+    public void testCalculateUpgradePath42010to42100() {
+
+        final CloudStackVersion dbVersion = CloudStackVersion.parse("4.20.1.0");
+        assertNotNull(dbVersion);
+
+        final CloudStackVersion currentVersion = CloudStackVersion.parse("4.21.0.0");
+        assertNotNull(currentVersion);
+
+        final DatabaseUpgradeChecker checker = new DatabaseUpgradeChecker();
+        final DbUpgrade[] upgrades = checker.calculateUpgradePath(dbVersion, currentVersion);
+
+        assertNotNull(upgrades);
+        assertEquals(1, upgrades.length);
+        assertTrue(upgrades[0] instanceof Upgrade42010to42100);
+
+        assertArrayEquals(new String[]{"4.20.1.0", "4.21.0.0"}, upgrades[0].getUpgradableVersionRange());
+        assertEquals(currentVersion.toString(), upgrades[0].getUpgradedVersion());
+    }
 }

@@ -40,22 +40,22 @@ public class ListGuestOsMappingCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = GuestOsMappingResponse.class, required = false, description = "list mapping by its UUID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = GuestOsMappingResponse.class, required = false, description = "List mapping by its UUID")
     private Long id;
 
-    @Parameter(name = ApiConstants.OS_TYPE_ID, type = CommandType.UUID, entityType = GuestOSResponse.class, required = false, description = "list mapping by Guest OS Type UUID")
+    @Parameter(name = ApiConstants.OS_TYPE_ID, type = CommandType.UUID, entityType = GuestOSResponse.class, required = false, description = "List mapping by Guest OS Type UUID")
     private Long osTypeId;
 
-    @Parameter(name = ApiConstants.OS_DISPLAY_NAME, type = CommandType.STRING, required = false, description = "list Guest OS mapping by OS display name")
+    @Parameter(name = ApiConstants.OS_DISPLAY_NAME, type = CommandType.STRING, required = false, description = "List Guest OS mapping by OS display name")
     private String osDisplayName;
 
-    @Parameter(name = ApiConstants.OS_NAME_FOR_HYPERVISOR, type = CommandType.STRING, required = false, description = "list Guest OS mapping by OS mapping name with hypervisor")
+    @Parameter(name = ApiConstants.OS_NAME_FOR_HYPERVISOR, type = CommandType.STRING, required = false, description = "List Guest OS mapping by OS mapping name with hypervisor")
     private String osNameForHypervisor;
 
-    @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, required = false, description = "list Guest OS mapping by hypervisor")
+    @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, required = false, description = "List Guest OS mapping by hypervisor")
     private String hypervisor;
 
-    @Parameter(name = ApiConstants.HYPERVISOR_VERSION, type = CommandType.STRING, required = false, description = "list Guest OS mapping by hypervisor version. Must be used with hypervisor parameter")
+    @Parameter(name = ApiConstants.HYPERVISOR_VERSION, type = CommandType.STRING, required = false, description = "List Guest OS mapping by hypervisor version. Must be used with hypervisor parameter")
     private String hypervisorVersion;
 
     /////////////////////////////////////////////////////

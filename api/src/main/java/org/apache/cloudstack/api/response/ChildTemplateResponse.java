@@ -28,19 +28,19 @@ import com.google.gson.annotations.SerializedName;
 @SuppressWarnings("unused")
 public class ChildTemplateResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the template ID")
+    @Param(description = "The Template ID")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the template name")
+    @Param(description = "The Template name")
     private String name;
 
     @SerializedName(ApiConstants.SIZE)
-    @Param(description = "the size of the template")
+    @Param(description = "The size of the Template")
     private Integer size;
 
     @SerializedName(ApiConstants.TEMPLATE_TYPE)
-    @Param(description = "the type of the template")
+    @Param(description = "The type of the Template")
     private String templateType;
 
     public String getId() {

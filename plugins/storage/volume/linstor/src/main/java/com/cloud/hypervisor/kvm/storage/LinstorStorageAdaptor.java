@@ -30,6 +30,7 @@ import javax.annotation.Nonnull;
 import com.cloud.storage.Storage;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
+import org.apache.cloudstack.storage.datastore.util.LinstorConfigurationManager;
 import org.apache.cloudstack.storage.datastore.util.LinstorUtil;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
@@ -42,7 +43,6 @@ import com.cloud.utils.storage.TemplateDownloaderUtil;
 import com.linbit.linstor.api.ApiClient;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiException;
-import com.linbit.linstor.api.Configuration;
 import com.linbit.linstor.api.DevelopersApi;
 import com.linbit.linstor.api.model.ApiCallRc;
 import com.linbit.linstor.api.model.ApiCallRcList;
@@ -72,8 +72,17 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     private final String localNodeName;
 
     private DevelopersApi getLinstorAPI(KVMStoragePool pool) {
-        ApiClient client = Configuration.getDefaultApiClient();
+        // Use a fresh client per pool so a self-signed/insecure pool can't weaken the TLS settings
+        // of another pool sharing this agent.
+        ApiClient client = new ApiClient();
         client.setBasePath(pool.getSourceHost());
+        // The agent has no access to the per-pool API token config; fall back to the auth.json file
+        // on the host (/var/lib/linstor.d/auth.json), or stay unauthenticated if it is absent.
+        client.setAccessTokenWithFallback(null);
+        if (pool instanceof LinstorStoragePool && ((LinstorStoragePool) pool).isInsecureSsl()) {
+            client.setInsecureSsl();
+        }
+        client.discoverHttps();
         return new DevelopersApi(client);
     }
 
@@ -166,7 +175,16 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
                                             Storage.StoragePoolType type, Map<String, String> details, boolean isPrimaryStorage)
     {
         logger.debug("Linstor createStoragePool: name: '{}', host: '{}', path: {}, userinfo: {}", name, host, path, userInfo);
-        LinstorStoragePool storagePool = new LinstorStoragePool(name, host, port, userInfo, type, this);
+        // The management server ships the per-pool config in the details map; the controller TLS
+        // verification can be disabled here for self-signed certificates. The ConfigKey default is only
+        // applied on the management server (via valueIn()) and is NOT shipped in the details, so when the
+        // detail is absent we must fall back to that default here too - otherwise a pool without an
+        // explicit setting would verify the certificate on the agent while the MS thinks it is disabled.
+        final String insecureSslDetail = details != null ? details.get(LinstorConfigurationManager.InsecureSsl.key()) : null;
+        boolean insecureSsl = insecureSslDetail != null
+                ? Boolean.parseBoolean(insecureSslDetail)
+                : Boolean.parseBoolean(LinstorConfigurationManager.InsecureSsl.defaultValue());
+        LinstorStoragePool storagePool = new LinstorStoragePool(name, host, port, userInfo, type, this, insecureSsl);
 
         MapStorageUuidToStoragePool.put(name, storagePool);
 
@@ -233,7 +251,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
             makeResourceAvailable(api, foundRscName, false);
 
             if (!resources.isEmpty() && !resources.get(0).getVolumes().isEmpty()) {
-                final String devPath = resources.get(0).getVolumes().get(0).getDevicePath();
+                final String devPath = LinstorUtil.getDevicePathFromResource(resources.get(0));
                 logger.info("Linstor: Created drbd device: " + devPath);
                 final KVMPhysicalDisk kvmDisk = new KVMPhysicalDisk(devPath, name, pool);
                 kvmDisk.setFormat(QemuImg.PhysicalDiskFormat.RAW);
@@ -456,8 +474,9 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     private Optional<ResourceWithVolumes> getResourceByPathOrName(
             final List<ResourceWithVolumes> resources, String path) {
         return resources.stream()
-            .filter(rsc -> getLinstorRscName(path).equalsIgnoreCase(rsc.getName()) || rsc.getVolumes().stream()
-                .anyMatch(v -> path.equals(v.getDevicePath())))
+            .filter(rsc -> getLinstorRscName(path).equalsIgnoreCase(rsc.getName()) ||
+                    path.equals(LinstorUtil.formatDrbdByResDevicePath(rsc.getName())) ||
+                    rsc.getVolumes().stream().anyMatch(v -> path.equals(v.getDevicePath())))
             .findFirst();
     }
 
@@ -584,8 +603,8 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         Path propFile = diskPath.getParent().resolve("template.properties");
         if (Files.exists(propFile)) {
             java.util.Properties templateProps = new java.util.Properties();
-            try {
-                templateProps.load(new FileInputStream(propFile.toFile()));
+            try (FileInputStream in = new FileInputStream(propFile.toFile())) {
+                templateProps.load(in);
                 String desc = templateProps.getProperty("description");
                 if (desc != null && desc.startsWith("SystemVM Template")) {
                     return true;
@@ -741,7 +760,8 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
 
     public long getCapacity(LinstorStoragePool pool) {
         final String rscGroupName = pool.getResourceGroup();
-        return LinstorUtil.getCapacityBytes(pool.getSourceHost(), rscGroupName);
+        // Agent side: no per-pool token config; fall back to the host's auth.json (or unauthenticated).
+        return LinstorUtil.getCapacityBytes(pool.getSourceHost(), rscGroupName, null, pool.isInsecureSsl());
     }
 
     public long getAvailable(LinstorStoragePool pool) {

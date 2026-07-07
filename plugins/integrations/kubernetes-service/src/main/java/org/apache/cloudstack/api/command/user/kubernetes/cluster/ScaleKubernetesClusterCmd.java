@@ -64,12 +64,12 @@ public class ScaleKubernetesClusterCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, required = true,
         entityType = KubernetesClusterResponse.class,
-        description = "the ID of the Kubernetes cluster")
+        description = "The ID of the Kubernetes cluster")
     private Long id;
 
     @ACL(accessType = SecurityChecker.AccessType.UseEntry)
     @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class,
-        description = "the ID of the service offering for the virtual machines in the cluster.")
+        description = "The ID of the service offering for the virtual machines in the cluster.")
     private Long serviceOfferingId;
 
     @ACL(accessType = SecurityChecker.AccessType.UseEntry)
@@ -79,14 +79,14 @@ public class ScaleKubernetesClusterCmd extends BaseAsyncCmd {
     protected Map<String, Map<String, String>> serviceOfferingNodeTypeMap;
 
     @Parameter(name=ApiConstants.SIZE, type = CommandType.LONG,
-        description = "number of Kubernetes cluster nodes")
+        description = "Number of Kubernetes cluster nodes")
     private Long clusterSize;
 
     @Parameter(name = ApiConstants.NODE_IDS,
         type = CommandType.LIST,
         collectionType = CommandType.UUID,
         entityType = UserVmResponse.class,
-        description = "the IDs of the nodes to be removed")
+        description = "The IDs of the nodes to be removed")
     private List<Long> nodeIds;
 
     @Parameter(name=ApiConstants.AUTOSCALING_ENABLED, type = CommandType.BOOLEAN,

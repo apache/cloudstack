@@ -104,6 +104,6 @@ public final class DisableHAForHostCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "disable HA for host: " + getHostId();
+        return "Disable HA for host: " + getHostId();
     }
 }

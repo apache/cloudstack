@@ -24,27 +24,27 @@ import com.cloud.serializer.Param;
 
 public class DedicateClusterResponse extends BaseResponse {
     @SerializedName("id")
-    @Param(description = "the ID of the dedicated resource")
+    @Param(description = "The ID of the dedicated resource")
     private String id;
 
     @SerializedName("clusterid")
-    @Param(description = "the ID of the cluster")
+    @Param(description = "The ID of the cluster")
     private String clusterId;
 
     @SerializedName("clustername")
-    @Param(description = "the name of the cluster")
+    @Param(description = "The name of the cluster")
     private String clusterName;
 
     @SerializedName("domainid")
-    @Param(description = "the domain ID of the cluster")
+    @Param(description = "The domain ID of the cluster")
     private String domainId;
 
     @SerializedName("accountid")
-    @Param(description = "the Account ID of the cluster")
+    @Param(description = "The Account ID of the cluster")
     private String accountId;
 
     @SerializedName("affinitygroupid")
-    @Param(description = "the Dedication Affinity Group ID of the cluster")
+    @Param(description = "The Dedication Affinity Group ID of the cluster")
     private String affinityGroupId;
 
     public String getId() {

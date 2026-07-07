@@ -43,19 +43,19 @@ public class TungstenFabricTagResponse extends BaseResponse {
     private String name;
 
     @SerializedName(ApiConstants.NETWORK)
-    @Param(description = "list Tungsten-Fabric network")
+    @Param(description = "List Tungsten-Fabric network")
     private List<TungstenFabricNetworkResponse> networks;
 
     @SerializedName(ApiConstants.VM)
-    @Param(description = "list Tungsten-Fabric vm")
+    @Param(description = "List Tungsten-Fabric Instance")
     private List<TungstenFabricVmResponse> vms;
 
     @SerializedName(ApiConstants.NIC)
-    @Param(description = "list Tungsten-Fabric nic")
+    @Param(description = "List Tungsten-Fabric NIC")
     private List<TungstenFabricNicResponse> nics;
 
     @SerializedName(ApiConstants.POLICY)
-    @Param(description = "list Tungsten-Fabric policy")
+    @Param(description = "List Tungsten-Fabric policy")
     private List<TungstenFabricPolicyResponse> policys;
 
     @SerializedName(ApiConstants.ZONE_ID)

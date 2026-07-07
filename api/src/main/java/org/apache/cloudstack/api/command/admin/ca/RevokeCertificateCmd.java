@@ -105,6 +105,6 @@ public class RevokeCertificateCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "revoking certificate with serial id=" + serial + ", cn=" + cn;
+        return "Revoking certificate with serial id=" + serial + ", cn=" + cn;
     }
 }

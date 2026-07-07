@@ -48,16 +48,16 @@ public class ListEgressFirewallRulesCmd extends BaseListTaggedResourcesCmd imple
     @Parameter(name = ApiConstants.NETWORK_ID,
                type = CommandType.UUID,
                entityType = NetworkResponse.class,
-               description = "the network ID for the egress firewall services")
+               description = "The network ID for the egress firewall services")
     private Long networkId;
 
     @Parameter(name = ApiConstants.IP_ADDRESS_ID,
                type = CommandType.UUID,
                entityType = IPAddressResponse.class,
-               description = "the ID of IP address of the firewall services")
+               description = "The ID of IP address of the firewall services")
     private Long ipAddressId;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "List resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
     /////////////////////////////////////////////////////

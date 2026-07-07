@@ -37,7 +37,7 @@ public class TungstenFabricLogicalRouterResponse extends BaseResponse {
     private String name;
 
     @SerializedName(ApiConstants.NETWORK)
-    @Param(description = "list Tungsten-Fabric policy network name")
+    @Param(description = "List Tungsten-Fabric policy network name")
     private List<TungstenFabricNetworkResponse> networks;
 
     @SerializedName(ApiConstants.ZONE_ID)

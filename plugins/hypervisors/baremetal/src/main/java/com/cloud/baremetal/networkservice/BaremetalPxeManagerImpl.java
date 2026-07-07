@@ -225,19 +225,19 @@ public class BaremetalPxeManagerImpl extends ManagerBase implements BaremetalPxe
         sc.and(sc.entity().getPhysicalNetworkId(), Op.EQ, phy.getId());
         BaremetalPxeVO pxeVo = sc.find();
         if (pxeVo == null) {
-            throw new CloudRuntimeException("No PXE server found in pod: " + vm.getPodIdToDeployIn() + ", you need to add it before starting VM");
+            throw new CloudRuntimeException("No PXE server found in pod: " + vm.getPodIdToDeployIn() + ", you need to add it before starting Instance");
         }
 
         try {
             Answer ans = _agentMgr.send(pxeVo.getHostId(), cmd);
             if (!ans.getResult()) {
-                logger.debug(String.format("Add userdata to vm:%s failed because %s", vm.getInstanceName(), ans.getDetails()));
+                logger.debug(String.format("Add userdata to Instance:%s failed because %s", vm.getInstanceName(), ans.getDetails()));
                 return false;
             } else {
                 return true;
             }
         } catch (Exception e) {
-            logger.debug(String.format("Add userdata to vm:%s failed", vm.getInstanceName()), e);
+            logger.debug(String.format("Add userdata to Instance:%s failed", vm.getInstanceName()), e);
             return false;
         }
     }

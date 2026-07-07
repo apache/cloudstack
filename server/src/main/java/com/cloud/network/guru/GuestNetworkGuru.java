@@ -311,7 +311,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     public void deallocate(final Network network, final NicProfile nic, final VirtualMachineProfile vm) {
         if (network.getSpecifyIpRanges()) {
             if (logger.isDebugEnabled()) {
-                logger.debug("Deallocate network: {}, nic: {}", network, nic);
+                logger.debug("Deallocate Network: {}, NIC: {}", network, nic);
             }
 
             final IPAddressVO ip = _ipAddressDao.findByIpAndSourceNetworkId(nic.getNetworkId(), nic.getIPv4Address());

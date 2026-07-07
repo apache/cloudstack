@@ -45,46 +45,46 @@ public class UpdateCfgCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the configuration")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "The name of the configuration")
     private String cfgName;
 
-    @Parameter(name = ApiConstants.VALUE, type = CommandType.STRING, description = "the value of the configuration", length = 4096)
+    @Parameter(name = ApiConstants.VALUE, type = CommandType.STRING, description = "The value of the configuration", length = 4096)
     private String value;
 
     @Parameter(name = ApiConstants.ZONE_ID,
                type = CommandType.UUID,
                entityType = ZoneResponse.class,
-               description = "the ID of the Zone to update the parameter value for corresponding zone")
+               description = "The ID of the Zone to update the parameter value for corresponding zone")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.CLUSTER_ID,
                type = CommandType.UUID,
                entityType = ClusterResponse.class,
-               description = "the ID of the Cluster to update the parameter value for corresponding cluster")
+               description = "The ID of the Cluster to update the parameter value for corresponding cluster")
     private Long clusterId;
 
     @Parameter(name = ApiConstants.STORAGE_ID,
                type = CommandType.UUID,
                entityType = StoragePoolResponse.class,
-               description = "the ID of the Storage pool to update the parameter value for corresponding storage pool")
+               description = "The ID of the Storage pool to update the parameter value for corresponding storage pool")
     private Long storagePoolId;
 
     @Parameter(name = ApiConstants.ACCOUNT_ID,
                type = CommandType.UUID,
                entityType = AccountResponse.class,
-               description = "the ID of the Account to update the parameter value for corresponding account")
+               description = "The ID of the Account to update the parameter value for corresponding account")
     private Long accountId;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
                type = CommandType.UUID,
                entityType = DomainResponse.class,
-               description = "the ID of the Domain to update the parameter value for corresponding domain")
+               description = "The ID of the Domain to update the parameter value for corresponding domain")
     private Long domainId;
 
     @Parameter(name = ApiConstants.IMAGE_STORE_UUID,
             type = CommandType.UUID,
             entityType = ImageStoreResponse.class,
-            description = "the ID of the Image Store to update the parameter value for corresponding image store",
+            description = "The ID of the Image Store to update the parameter value for corresponding image store",
             validations = ApiArgValidator.PositiveNumber)
     private Long imageStoreId;
 
