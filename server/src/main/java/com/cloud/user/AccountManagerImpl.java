@@ -3697,6 +3697,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         Account owner = _accountService.getActiveAccountById(caller.getId());
 
         if (Boolean.TRUE.equals(cmd.getEnable())) {
+            if (cmd.getUserId() != null) {
+                throw new InvalidParameterValueException("User ID should not be provided when enabling 2FA for the current user");
+            }
             checkAccess(caller, null, true, owner);
             Long userId = CallContext.current().getCallingUserId();
 
@@ -3745,6 +3748,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         UserVO userVO;
         if (userId != null) {
             userVO = validateUser(userId);
+            verifyCallerPrivilegeForUserOrAccountOperations(userVO);
             owner = _accountService.getActiveAccountById(userVO.getAccountId());
         } else {
             userId = CallContext.current().getCallingUserId();
