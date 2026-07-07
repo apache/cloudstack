@@ -19,6 +19,9 @@ package org.apache.cloudstack.oauth2.google;
 
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
+import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeTokenRequest;
+import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse;
 import com.google.api.services.oauth2.Oauth2;
 import com.google.api.services.oauth2.model.Userinfo;
 import org.apache.cloudstack.oauth2.dao.OauthProviderDao;
@@ -35,10 +38,13 @@ import org.mockito.Spy;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class GoogleOAuth2ProviderTest {
@@ -62,6 +68,26 @@ public class GoogleOAuth2ProviderTest {
         closeable.close();
     }
 
+    private OauthProviderVO mockRegisteredProvider() {
+        OauthProviderVO providerVO = mock(OauthProviderVO.class);
+        when(_oauthProviderDao.findByProvider(anyString())).thenReturn(providerVO);
+        when(providerVO.getProvider()).thenReturn("testProvider");
+        when(providerVO.getSecretKey()).thenReturn("testSecret");
+        when(providerVO.getClientId()).thenReturn("testClientid");
+        return providerVO;
+    }
+
+    private GoogleAuthorizationCodeFlow mockTokenExchangeFlow(GoogleAuthorizationCodeTokenRequest tokenRequest) throws IOException {
+        GoogleAuthorizationCodeFlow flow = mock(GoogleAuthorizationCodeFlow.class);
+        GoogleTokenResponse tokenResponse = mock(GoogleTokenResponse.class);
+        when(flow.newTokenRequest(anyString())).thenReturn(tokenRequest);
+        when(tokenRequest.setRedirectUri(any())).thenReturn(tokenRequest);
+        when(tokenRequest.execute()).thenReturn(tokenResponse);
+        when(tokenResponse.getAccessToken()).thenReturn("testAccessToken");
+        when(tokenResponse.getRefreshToken()).thenReturn("testRefreshToken");
+        return flow;
+    }
+
     @Test(expected = CloudAuthenticationException.class)
     public void testVerifyUserWithNullEmail() {
         _googleOAuth2Provider.verifyUser(null, "secretCode");
@@ -80,15 +106,13 @@ public class GoogleOAuth2ProviderTest {
 
     @Test(expected = CloudRuntimeException.class)
     public void testVerifyUserWithInvalidSecretCode() throws IOException {
-        OauthProviderVO providerVO = mock(OauthProviderVO.class);
-        when(_oauthProviderDao.findByProvider(anyString())).thenReturn(providerVO);
-        when(providerVO.getProvider()).thenReturn("testProvider");
-        when(providerVO.getSecretKey()).thenReturn("testSecret");
-        when(providerVO.getClientId()).thenReturn("testClientid");
-        _googleOAuth2Provider.accessToken = "testAccessToken";
-        _googleOAuth2Provider.refreshToken = "testRefreshToken";
+        mockRegisteredProvider();
+        GoogleAuthorizationCodeTokenRequest tokenRequest = mock(GoogleAuthorizationCodeTokenRequest.class);
+        GoogleAuthorizationCodeFlow flow = mockTokenExchangeFlow(tokenRequest);
         Oauth2 oauth2 = mock(Oauth2.class);
-        try (MockedConstruction<Oauth2.Builder> ignored = Mockito.mockConstruction(Oauth2.Builder.class,
+        try (MockedConstruction<GoogleAuthorizationCodeFlow.Builder> ignoredFlow = Mockito.mockConstruction(GoogleAuthorizationCodeFlow.Builder.class,
+                (mock, context) -> when(mock.build()).thenReturn(flow));
+             MockedConstruction<Oauth2.Builder> ignored = Mockito.mockConstruction(Oauth2.Builder.class,
                 (mock, context) -> when(mock.build()).thenReturn(oauth2))) {
             Userinfo userinfo = mock(Userinfo.class);
             Oauth2.Userinfo userinfo1 = mock(Oauth2.Userinfo.class);
@@ -104,15 +128,13 @@ public class GoogleOAuth2ProviderTest {
 
     @Test(expected = CloudRuntimeException.class)
     public void testVerifyUserWithMismatchedEmail() throws IOException {
-        OauthProviderVO providerVO = mock(OauthProviderVO.class);
-        when(_oauthProviderDao.findByProvider(anyString())).thenReturn(providerVO);
-        when(providerVO.getProvider()).thenReturn("testProvider");
-        when(providerVO.getSecretKey()).thenReturn("testSecret");
-        when(providerVO.getClientId()).thenReturn("testClientid");
-        _googleOAuth2Provider.accessToken = "testAccessToken";
-        _googleOAuth2Provider.refreshToken = "testRefreshToken";
+        mockRegisteredProvider();
+        GoogleAuthorizationCodeTokenRequest tokenRequest = mock(GoogleAuthorizationCodeTokenRequest.class);
+        GoogleAuthorizationCodeFlow flow = mockTokenExchangeFlow(tokenRequest);
         Oauth2 oauth2 = mock(Oauth2.class);
-        try (MockedConstruction<Oauth2.Builder> ignored = Mockito.mockConstruction(Oauth2.Builder.class,
+        try (MockedConstruction<GoogleAuthorizationCodeFlow.Builder> ignoredFlow = Mockito.mockConstruction(GoogleAuthorizationCodeFlow.Builder.class,
+                (mock, context) -> when(mock.build()).thenReturn(flow));
+             MockedConstruction<Oauth2.Builder> ignored = Mockito.mockConstruction(Oauth2.Builder.class,
                 (mock, context) -> when(mock.build()).thenReturn(oauth2))) {
             Userinfo userinfo = mock(Userinfo.class);
             Oauth2.Userinfo userinfo1 = mock(Oauth2.Userinfo.class);
@@ -126,17 +148,29 @@ public class GoogleOAuth2ProviderTest {
         }
     }
 
+    @Test(expected = CloudRuntimeException.class)
+    public void testVerifyUserWithFailedTokenExchange() throws IOException {
+        mockRegisteredProvider();
+        GoogleAuthorizationCodeFlow flow = mock(GoogleAuthorizationCodeFlow.class);
+        GoogleAuthorizationCodeTokenRequest tokenRequest = mock(GoogleAuthorizationCodeTokenRequest.class);
+        when(flow.newTokenRequest(anyString())).thenReturn(tokenRequest);
+        when(tokenRequest.setRedirectUri(any())).thenReturn(tokenRequest);
+        when(tokenRequest.execute()).thenThrow(new IOException("invalid_grant"));
+        try (MockedConstruction<GoogleAuthorizationCodeFlow.Builder> ignoredFlow = Mockito.mockConstruction(GoogleAuthorizationCodeFlow.Builder.class,
+                (mock, context) -> when(mock.build()).thenReturn(flow))) {
+            _googleOAuth2Provider.verifyUser("email@example.com", "secretCode");
+        }
+    }
+
     @Test
     public void testVerifyUserEmail() throws IOException {
-        OauthProviderVO providerVO = mock(OauthProviderVO.class);
-        when(_oauthProviderDao.findByProvider(anyString())).thenReturn(providerVO);
-        when(providerVO.getProvider()).thenReturn("testProvider");
-        when(providerVO.getSecretKey()).thenReturn("testSecret");
-        when(providerVO.getClientId()).thenReturn("testClientid");
-        _googleOAuth2Provider.accessToken = "testAccessToken";
-        _googleOAuth2Provider.refreshToken = "testRefreshToken";
+        mockRegisteredProvider();
+        GoogleAuthorizationCodeTokenRequest tokenRequest = mock(GoogleAuthorizationCodeTokenRequest.class);
+        GoogleAuthorizationCodeFlow flow = mockTokenExchangeFlow(tokenRequest);
         Oauth2 oauth2 = mock(Oauth2.class);
-        try (MockedConstruction<Oauth2.Builder> ignored = Mockito.mockConstruction(Oauth2.Builder.class,
+        try (MockedConstruction<GoogleAuthorizationCodeFlow.Builder> ignoredFlow = Mockito.mockConstruction(GoogleAuthorizationCodeFlow.Builder.class,
+                (mock, context) -> when(mock.build()).thenReturn(flow));
+             MockedConstruction<Oauth2.Builder> ignored = Mockito.mockConstruction(Oauth2.Builder.class,
                 (mock, context) -> when(mock.build()).thenReturn(oauth2))) {
             Userinfo userinfo = mock(Userinfo.class);
             Oauth2.Userinfo userinfo1 = mock(Oauth2.Userinfo.class);
@@ -149,8 +183,34 @@ public class GoogleOAuth2ProviderTest {
             boolean result = _googleOAuth2Provider.verifyUser("email@example.com", "secretCode");
 
             assertTrue(result);
-            assertNull(_googleOAuth2Provider.accessToken);
-            assertNull(_googleOAuth2Provider.refreshToken);
+            verify(tokenRequest, times(1)).execute();
+        }
+    }
+
+    @Test
+    public void testVerifyCodeAndFetchEmailExchangesCodeOnEveryCall() throws IOException {
+        mockRegisteredProvider();
+        GoogleAuthorizationCodeTokenRequest tokenRequest = mock(GoogleAuthorizationCodeTokenRequest.class);
+        GoogleAuthorizationCodeFlow flow = mockTokenExchangeFlow(tokenRequest);
+        Oauth2 oauth2 = mock(Oauth2.class);
+        try (MockedConstruction<GoogleAuthorizationCodeFlow.Builder> ignoredFlow = Mockito.mockConstruction(GoogleAuthorizationCodeFlow.Builder.class,
+                (mock, context) -> when(mock.build()).thenReturn(flow));
+             MockedConstruction<Oauth2.Builder> ignored = Mockito.mockConstruction(Oauth2.Builder.class,
+                (mock, context) -> when(mock.build()).thenReturn(oauth2))) {
+            Userinfo userinfo = mock(Userinfo.class);
+            Oauth2.Userinfo userinfo1 = mock(Oauth2.Userinfo.class);
+            when(oauth2.userinfo()).thenReturn(userinfo1);
+            Oauth2.Userinfo.Get userinfoGet = mock(Oauth2.Userinfo.Get.class);
+            when(userinfo1.get()).thenReturn(userinfoGet);
+            when(userinfoGet.execute()).thenReturn(userinfo);
+            when(userinfo.getEmail()).thenReturn("email@example.com");
+
+            assertEquals("email@example.com", _googleOAuth2Provider.verifyCodeAndFetchEmail("secretCode1"));
+            assertEquals("email@example.com", _googleOAuth2Provider.verifyCodeAndFetchEmail("secretCode2"));
+
+            verify(flow, times(1)).newTokenRequest("secretCode1");
+            verify(flow, times(1)).newTokenRequest("secretCode2");
+            verify(tokenRequest, times(2)).execute();
         }
     }
 }

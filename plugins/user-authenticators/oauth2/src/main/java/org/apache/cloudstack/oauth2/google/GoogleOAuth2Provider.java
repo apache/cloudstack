@@ -40,9 +40,6 @@ import java.util.List;
 
 public class GoogleOAuth2Provider extends AdapterBase implements UserOAuth2Authenticator {
 
-    protected String accessToken = null;
-    protected String refreshToken = null;
-
     @Inject
     OauthProviderDao _oauthProviderDao;
 
@@ -71,7 +68,6 @@ public class GoogleOAuth2Provider extends AdapterBase implements UserOAuth2Authe
         if (verifiedEmail == null || !email.equals(verifiedEmail)) {
             throw new CloudRuntimeException("Unable to verify the email address with the provided secret");
         }
-        clearAccessAndRefreshTokens();
 
         return true;
     }
@@ -96,18 +92,16 @@ public class GoogleOAuth2Provider extends AdapterBase implements UserOAuth2Authe
                 httpTransport, jsonFactory, clientSecrets, scopes)
                 .build();
 
-        if (StringUtils.isAnyEmpty(accessToken, refreshToken)) {
-            GoogleTokenResponse tokenResponse = null;
-            try {
-                tokenResponse = flow.newTokenRequest(secretCode)
-                        .setRedirectUri(redirectURI)
-                        .execute();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            accessToken = tokenResponse.getAccessToken();
-            refreshToken = tokenResponse.getRefreshToken();
+        GoogleTokenResponse tokenResponse = null;
+        try {
+            tokenResponse = flow.newTokenRequest(secretCode)
+                    .setRedirectUri(redirectURI)
+                    .execute();
+        } catch (IOException e) {
+            throw new CloudRuntimeException(String.format("Failed to exchange the OAuth2 authorization code for tokens: %s", e.getMessage()), e);
         }
+        String accessToken = tokenResponse.getAccessToken();
+        String refreshToken = tokenResponse.getRefreshToken();
 
         GoogleCredential credential = new GoogleCredential.Builder()
                 .setTransport(httpTransport)
@@ -125,11 +119,6 @@ public class GoogleOAuth2Provider extends AdapterBase implements UserOAuth2Authe
             throw new CloudRuntimeException(String.format("Failed to fetch the email address with the provided secret: %s" + e.getMessage()));
         }
         return userinfo.getEmail();
-    }
-
-    protected void clearAccessAndRefreshTokens() {
-        accessToken = null;
-        refreshToken = null;
     }
 
     @Override
