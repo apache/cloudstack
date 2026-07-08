@@ -3219,12 +3219,10 @@ public class UserVmManagerImplTest {
         Mockito.when(volume1.getPoolId()).thenReturn(100L);
         Mockito.when(volume1.getName()).thenReturn("volume1");
         Mockito.when(volume1.getVolumeType()).thenReturn(Volume.Type.ROOT);
-        Mockito.when(storagePool1.getName()).thenReturn("pool1");
 
         Mockito.when(volume2.getPoolId()).thenReturn(200L);
         Mockito.when(volume2.getName()).thenReturn("volume2");
         Mockito.when(volume2.getVolumeType()).thenReturn(Volume.Type.DATADISK);
-        Mockito.when(storagePool2.getName()).thenReturn("pool2");
 
         Mockito.when(volumeDaoMock.findByInstance(1L)).thenReturn(vmVolumes);
 
@@ -3261,7 +3259,6 @@ public class UserVmManagerImplTest {
         Mockito.when(volume1.getPoolId()).thenReturn(100L);
         Mockito.when(volume1.getName()).thenReturn("volume1");
         Mockito.when(volume1.getVolumeType()).thenReturn(Volume.Type.ROOT);
-        Mockito.when(storagePool1.getName()).thenReturn("pool1");
 
         Mockito.when(volumeDaoMock.findByInstance(1L)).thenReturn(vmVolumes);
 
@@ -3287,12 +3284,9 @@ public class UserVmManagerImplTest {
 
         Mockito.when(vm.getId()).thenReturn(1L);
         Mockito.when(destinationHost.getId()).thenReturn(2L);
-        Mockito.when(destinationHost.getName()).thenReturn("destHost");
 
         Mockito.when(volume1.getPoolId()).thenReturn(100L);
         Mockito.when(volume1.getName()).thenReturn("volume1");
-        Mockito.when(volume1.getVolumeType()).thenReturn(Volume.Type.ROOT);
-        Mockito.when(storagePool1.getName()).thenReturn("pool1");
 
         Mockito.when(volumeDaoMock.findByInstance(1L)).thenReturn(vmVolumes);
 
@@ -3321,7 +3315,6 @@ public class UserVmManagerImplTest {
         Mockito.when(volume1.getPoolId()).thenReturn(100L);
         Mockito.when(volume1.getName()).thenReturn("volume1");
         Mockito.when(volume1.getVolumeType()).thenReturn(Volume.Type.ROOT);
-        Mockito.when(storagePool1.getName()).thenReturn("pool1");
 
         Mockito.when(volumeDaoMock.findByInstance(1L)).thenReturn(vmVolumes);
         Mockito.when(storageManager.getStorageAccessGroups(null, null, null, 2L))
@@ -3350,7 +3343,6 @@ public class UserVmManagerImplTest {
         Mockito.when(volume1.getPoolId()).thenReturn(100L);
         Mockito.when(volume1.getName()).thenReturn("volume1");
         Mockito.when(volume1.getVolumeType()).thenReturn(Volume.Type.ROOT);
-        Mockito.when(storagePool1.getName()).thenReturn("pool1");
 
         Mockito.when(volumeDaoMock.findByInstance(1L)).thenReturn(vmVolumes);
 
@@ -3382,12 +3374,10 @@ public class UserVmManagerImplTest {
         Mockito.when(volume1.getPoolId()).thenReturn(100L);
         Mockito.when(volume1.getName()).thenReturn("volume1");
         Mockito.when(volume1.getVolumeType()).thenReturn(Volume.Type.ROOT);
-        Mockito.when(storagePool1.getName()).thenReturn("pool1");
 
         Mockito.when(volume2.getPoolId()).thenReturn(200L);
         Mockito.when(volume2.getName()).thenReturn("volume2");
         Mockito.when(volume2.getVolumeType()).thenReturn(Volume.Type.DATADISK);
-        Mockito.when(storagePool2.getName()).thenReturn("pool2");
 
         Mockito.when(volumeDaoMock.findByInstance(1L)).thenReturn(vmVolumes);
 
