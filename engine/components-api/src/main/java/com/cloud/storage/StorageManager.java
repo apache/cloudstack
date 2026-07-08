@@ -195,6 +195,14 @@ public interface StorageManager extends StorageService {
             true,
             ConfigKey.Scope.StoragePool,
             null);
+    ConfigKey<Boolean> XenserverCreateCloneFull = new ConfigKey<>(Boolean.class,
+            "xenserver.create.full.clone",
+            "Storage",
+            "false",
+            "If set to true, creates VMs as full clones on XenServer hypervisor (uses VDI.copy instead of VDI.clone, removing the linked-clone parent relationship).",
+            true,
+            ConfigKey.Scope.StoragePool,
+            null);
     ConfigKey<Boolean> VmwareAllowParallelExecution = new ConfigKey<>(Boolean.class,
             "vmware.allow.parallel.command.execution",
             "Advanced",
