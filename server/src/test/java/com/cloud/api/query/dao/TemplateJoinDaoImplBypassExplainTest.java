@@ -25,8 +25,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-
-import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Assume;
 import org.junit.Before;
@@ -50,8 +48,6 @@ import static org.junit.Assert.assertTrue;
  *
  */
 public class TemplateJoinDaoImplBypassExplainTest {
-
-    private static final Logger LOG = Logger.getLogger(TemplateJoinDaoImplBypassExplainTest.class);
 
     private static final String BYPASS_SQL =
             "SELECT DISTINCT CONCAT(vt.id, '_', IFNULL(dc.id, 0)) AS pair " +
