@@ -1035,8 +1035,8 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     }
 
     /**
-     * Whether there are any live (not delete-pending, not Removed) children of {@code parent} within the
-     * same chain. Equivalent to "incrementals whose parent_backup_id points at parent".
+     * Whether there are any live (not tombstoned/Hidden, not Removed) descendants of {@code backup} within the
+     * same chain. This uses {@code CHAIN_POSITION} to detect dependents deeper in the chain.
      */
     private boolean hasLiveChildren(Backup backup) {
         String chainId = readDetail(backup, NASBackupChainKeys.CHAIN_ID);
