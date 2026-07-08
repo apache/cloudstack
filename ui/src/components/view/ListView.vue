@@ -207,6 +207,9 @@
       <template v-if="column.key === 'templatetype'">
         <span>{{ text }}</span>
       </template>
+      <template v-if="$route.path.startsWith('/dnsserver') && !['name', 'provider', 'state', 'ispublic'].includes(column.key)">
+        <span>{{ text }}</span>
+      </template>
       <template v-if="column.key === 'gpu'">
         <span v-if="record.gpucardname && record.vgpuprofilename">
           {{ record?.gpucount > 0 ? record.gpucount + 'x' : '' }}
@@ -1217,7 +1220,7 @@ export default {
           '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering',
           '/tungstenfabric', '/oauthsetting', '/guestos', '/guestoshypervisormapping', '/webhook', 'webhookdeliveries', 'webhookfilters', '/quotatariff', '/sharedfs',
           '/ipv4subnets', '/managementserver', '/gpucard', '/gpudevices', '/vgpuprofile', '/extension', '/snapshotpolicy', '/backupschedule',
-          '/kmskey', '/hsmprofile'].join('|'))
+          '/kmskey', '/hsmprofile', '/dnsserver', '/dnszone'].join('|'))
           .test(this.$route.path)
     },
     enableGroupAction () {

@@ -47,13 +47,13 @@ class CsAddress(CsDataBag):
 
     def get_guest_if_by_network_id(self):
         guest_interface = None
-        lowest_network_id = 1000
+        lowest_network_id = None
         for interface in self.get_interfaces():
             if interface.is_guest() and interface.is_added():
                 if not self.config.is_vpc():
                     return interface
                 network_id = self.config.guestnetwork().get_network_id(interface.get_device())
-                if network_id and network_id < lowest_network_id:
+                if network_id and (lowest_network_id is None or network_id < lowest_network_id):
                     lowest_network_id = network_id
                     guest_interface = interface
         return guest_interface
