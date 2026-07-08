@@ -87,6 +87,18 @@ public interface BackupProvider {
      */
     boolean deleteBackup(Backup backup, boolean forced);
 
+    /**
+     * Whether {@link #deleteBackup(Backup, boolean)} owns DB-row removal and resource-count /
+     * usage accounting for every backup it physically removes. Providers that manage incremental
+     * chains (e.g. NAS) delete several backups per call — the leaf plus swept delete-pending
+     * ancestors — and decrement once per removed backup themselves, so the manager must NOT
+     * decrement or remove the row again. Defaults to {@code false}: the manager does the
+     * single-backup accounting (the historical behaviour for non-chain providers).
+     */
+    default boolean handlesChainDeleteResourceAccounting() {
+        return false;
+    }
+
     Pair<Boolean, String> restoreBackupToVM(VirtualMachine vm, Backup backup, String hostIp, String dataStoreUuid);
 
     /**

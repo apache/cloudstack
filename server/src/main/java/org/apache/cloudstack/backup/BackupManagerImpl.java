@@ -1137,6 +1137,9 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("zoneId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
         sb.and("backupOfferingId", sb.entity().getBackupOfferingId(), SearchCriteria.Op.EQ);
+        // Tombstoned chain backups (Status.Hidden) are never shown to users; they exist only so the
+        // incremental chain GC can sweep them once their last descendant is deleted.
+        sb.and("statusNeq", sb.entity().getStatus(), SearchCriteria.Op.NEQ);
         sb.and("backupStatus", sb.entity().getStatus(), SearchCriteria.Op.EQ);
 
         if (keyword != null) {
@@ -1149,6 +1152,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         SearchCriteria<BackupVO> sc = sb.create();
         accountManager.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        sc.setParameters("statusNeq", Backup.Status.Hidden);
 
         if (id != null) {
             sc.setParameters("id", id);
@@ -1190,7 +1194,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             vm = guru.importVirtualMachineFromBackup(zoneId, domainId, accountId, userId, vmInternalName, backup);
         } catch (final Exception e) {
             logger.error(String.format("Failed to import VM [vmInternalName: %s] from backup restoration [%s] with hypervisor [type: %s] due to: [%s].", vmInternalName,
-                    ReflectionToStringBuilderUtils.reflectOnlySelectedFields(backup, "id", "uuid", "vmId", "externalId", "backupType"), hypervisorType, e.getMessage()), e);
+                    ReflectionToStringBuilderUtils.reflectOnlySelectedFields(backup, "id", "uuid", "vmId", "externalId", "type"), hypervisorType, e.getMessage()), e);
             ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_BACKUP_RESTORE,
                     String.format("Failed to import Instance %s from Backup %s with hypervisor [type: %s]", vmInternalName, backup.getUuid(), hypervisorType),
                     vm.getId(), ApiCommandResourceType.VirtualMachine.toString(),0);
@@ -1722,6 +1726,15 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                      reservationDao, resourceLimitMgr)) {
             boolean result = backupProvider.deleteBackup(backup, forced);
             if (result) {
+                // Chain-aware providers (e.g. NAS) physically remove several backups per call
+                // (leaf + swept delete-pending ancestors) and decrement resource count/usage and
+                // remove each DB row themselves, exactly once per removed backup. Decrementing or
+                // removing again here would double-handle and destroy delete-pending tombstones,
+                // so defer entirely to the provider for those.
+                if (backupProvider.handlesChainDeleteResourceAccounting()) {
+                    checkAndGenerateUsageForLastBackupDeletedAfterOfferingRemove(vm, backup);
+                    return true;
+                }
                 resourceLimitMgr.decrementResourceCount(backup.getAccountId(), Resource.ResourceType.backup);
                 resourceLimitMgr.decrementResourceCount(backup.getAccountId(), Resource.ResourceType.backup_storage, backupSize);
                 if (backupDao.remove(backup.getId())) {
