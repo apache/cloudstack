@@ -95,6 +95,7 @@ import org.apache.cloudstack.resourcedetail.DiskOfferingDetailVO;
 import org.apache.cloudstack.resourcedetail.SnapshotPolicyDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.SnapshotPolicyDetailsDao;
+import org.apache.cloudstack.kms.KMSManager;
 import org.apache.cloudstack.resourcelimit.Reserver;
 import org.apache.cloudstack.snapshot.SnapshotHelper;
 import org.apache.cloudstack.storage.command.AttachAnswer;
@@ -376,6 +377,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private ReservationDao reservationDao;
     @Inject
     private VMSnapshotDetailsDao vmSnapshotDetailsDao;
+    @Inject
+    private KMSManager kmsManager;
 
     public static final String KVM_FILE_BASED_STORAGE_SNAPSHOT = "kvmFileBasedStorageSnapshot";
 
@@ -771,15 +774,15 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     public VolumeVO allocVolume(CreateVolumeCmd cmd) throws ResourceAllocationException {
         return allocVolume(cmd.getEntityOwnerId(), cmd.getZoneId(), cmd.getDiskOfferingId(), cmd.getVirtualMachineId(),
                 cmd.getSnapshotId(), getVolumeNameFromCommand(cmd.getVolumeName()), cmd.getSize(),
-                cmd.getDisplayVolume(), cmd.getMinIops(), cmd.getMaxIops(), cmd.getCustomId());
+                cmd.getDisplayVolume(), cmd.getMinIops(), cmd.getMaxIops(), cmd.getCustomId(), cmd.getKmsKeyId());
     }
 
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_CREATE, eventDescription = "creating volume", create = true)
     public VolumeVO allocVolume(long ownerId, Long zoneId, Long diskOfferingId, Long vmId, Long snapshotId,
-            String name, Long cmdSize, Boolean displayVolume, Long cmdMinIops, Long cmdMaxIops, String customId)
-            throws ResourceAllocationException {
+                                String name, Long cmdSize, Boolean displayVolume, Long cmdMinIops, Long cmdMaxIops,
+                                String customId, Long kmsKeyId) throws ResourceAllocationException {
         Account caller = CallContext.current().getCallingAccount();
 
         Account owner = _accountMgr.getActiveAccountById(ownerId);
@@ -920,7 +923,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             parentVolume = _volsDao.findByIdIncludingRemoved(snapshotCheck.getVolumeId());
 
             // Don't support creating templates from encrypted volumes (yet)
-            if (parentVolume.getPassphraseId() != null) {
+            if (parentVolume.getPassphraseId() != null || parentVolume.getKmsKeyId() != null) {
                 throw new UnsupportedOperationException("Cannot create new volumes from encrypted volume snapshots");
             }
 
@@ -999,8 +1002,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             String userSpecifiedName = getVolumeNameFromCommand(name);
 
+            if (kmsKeyId != null) {
+                kmsManager.checkKmsKeyForVolumeEncryption(owner, kmsKeyId, zoneId);
+            }
+
             return commitVolume(snapshotId, caller, owner, displayVolume, zoneId, diskOfferingId, provisioningType, size, minIops, maxIops, parentVolume, userSpecifiedName,
-                    _uuidMgr.generateUuid(Volume.class, customId), details);
+                    _uuidMgr.generateUuid(Volume.class, customId), details, kmsKeyId);
         } finally {
             ReservationHelper.closeAll(reservations);
         }
@@ -1017,7 +1024,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     private VolumeVO commitVolume(final Long snapshotId, final Account caller, final Account owner, final Boolean displayVolume, final Long zoneId, final Long diskOfferingId,
-                                  final Storage.ProvisioningType provisioningType, final Long size, final Long minIops, final Long maxIops, final VolumeVO parentVolume, final String userSpecifiedName, final String uuid, final Map<String, String> details) {
+                                  final Storage.ProvisioningType provisioningType, final Long size, final Long minIops, final Long maxIops, final VolumeVO parentVolume, final String userSpecifiedName, final String uuid, final Map<String, String> details, final Long kmsKeyId) {
         return Transaction.execute(new TransactionCallback<VolumeVO>() {
             @Override
             public VolumeVO doInTransaction(TransactionStatus status) {
@@ -1061,6 +1068,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     if (!volumeDetailsVO.isEmpty()) {
                         _volsDetailsDao.saveDetails(volumeDetailsVO);
                     }
+                }
+
+                // Store KMS key ID if provided (for volume encryption)
+                if (volume != null && kmsKeyId != null) {
+                    volume.setKmsKeyId(kmsKeyId);
+                    _volsDao.update(volume.getId(), volume);
                 }
 
                 CallContext.current().setEventDetails("Volume ID: " + volume.getUuid());
@@ -1359,7 +1372,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         long currentSize = volume.getSize();
         VolumeInfo volInfo = volFactory.getVolume(volume.getId());
-        boolean isEncryptionRequired = volume.getPassphraseId() != null;
+        boolean isEncryptionRequired = volume.getPassphraseId() != null || volume.getKmsKeyId() != null;
         if (newDiskOffering != null) {
             isEncryptionRequired = newDiskOffering.getEncrypt();
         }
@@ -2383,14 +2396,16 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return a.equals(b);
     }
 
-    private VolumeVO resizeVolumeInternal(VolumeVO volume, DiskOfferingVO newDiskOffering, Long currentSize, Long newSize, Long newMinIops, Long newMaxIops, Integer newHypervisorSnapshotReserve, boolean shrinkOk) throws ResourceAllocationException {
+    VolumeVO resizeVolumeInternal(VolumeVO volume, DiskOfferingVO newDiskOffering, Long currentSize, Long newSize, Long newMinIops, Long newMaxIops, Integer newHypervisorSnapshotReserve, boolean shrinkOk) throws ResourceAllocationException {
         UserVmVO userVm = _userVmDao.findById(volume.getInstanceId());
         HypervisorType hypervisorType = _volsDao.getHypervisorType(volume.getId());
 
         if (userVm != null) {
-            if (volume.getVolumeType().equals(Volume.Type.ROOT) && userVm.getPowerState() != VirtualMachine.PowerState.PowerOff && hypervisorType == HypervisorType.VMware) {
-                logger.error(" For ROOT volume resize VM should be in Power Off state.");
-                throw new InvalidParameterValueException("VM current state is : " + userVm.getPowerState() + ". But VM should be in " + VirtualMachine.PowerState.PowerOff + " state.");
+            if (Volume.Type.ROOT.equals(volume.getVolumeType())
+                    && !State.Stopped.equals(userVm.getState())
+                    && HypervisorType.VMware.equals(hypervisorType)) {
+                logger.error("For ROOT volume resize VM should be in Stopped state.");
+                throw new InvalidParameterValueException("The current VM state is '" + userVm.getState() + "'. But the VM should be in " + State.Stopped + " state.");
             }
             // serialize VM operation
             AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
@@ -2444,7 +2459,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 shrinkOk);
     }
 
-    private void validateVolumeReadyStateAndHypervisorChecks(VolumeVO volume, long currentSize, Long newSize) {
+    void validateVolumeReadyStateAndHypervisorChecks(VolumeVO volume, long currentSize, Long newSize) {
         // checking if there are any ongoing snapshots on the volume which is to be resized
         List<SnapshotVO> ongoingSnapshots = _snapshotDao.listByStatus(volume.getId(), Snapshot.State.Creating, Snapshot.State.CreatedOnPrimary, Snapshot.State.BackingUp);
         if (ongoingSnapshots.size() > 0) {
@@ -2468,9 +2483,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         UserVmVO userVm = _userVmDao.findById(volume.getInstanceId());
         if (userVm != null) {
-            if (volume.getVolumeType().equals(Volume.Type.ROOT) && userVm.getPowerState() != VirtualMachine.PowerState.PowerOff && hypervisorType == HypervisorType.VMware) {
-                logger.error(" For ROOT volume resize VM should be in Power Off state.");
-                throw new InvalidParameterValueException("VM current state is : " + userVm.getPowerState() + ". But VM should be in " + VirtualMachine.PowerState.PowerOff + " state.");
+            if (Volume.Type.ROOT.equals(volume.getVolumeType())
+                    && !State.Stopped.equals(userVm.getState())
+                    && HypervisorType.VMware.equals(hypervisorType)) {
+                logger.error("For ROOT volume resize VM should be in Stopped state.");
+                throw new InvalidParameterValueException("The current VM state is '" + userVm.getState() + "'. But VM should be in " + State.Stopped + " state.");
             }
         }
     }
@@ -2487,7 +2504,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
     }
 
-    private void validateVolumeResizeWithNewDiskOfferingAndLoad(VolumeVO volume, DiskOfferingVO existingDiskOffering, DiskOfferingVO newDiskOffering, Long[] newSize, Long[] newMinIops, Long[] newMaxIops, Integer[] newHypervisorSnapshotReserve) {
+    void validateVolumeResizeWithNewDiskOfferingAndLoad(VolumeVO volume, DiskOfferingVO existingDiskOffering, DiskOfferingVO newDiskOffering, Long[] newSize, Long[] newMinIops, Long[] newMaxIops, Integer[] newHypervisorSnapshotReserve) {
         if (newDiskOffering.getRemoved() != null) {
             throw new InvalidParameterValueException("Requested disk offering has been removed.");
         }
@@ -3023,7 +3040,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(volumeToAttach.getDiskOfferingId());
-        if (diskOffering.getEncrypt() && rootDiskHyperType != HypervisorType.KVM) {
+            if (diskOffering.getEncrypt() && !(rootDiskHyperType == HypervisorType.KVM)) {
             throw new InvalidParameterValueException("Volume's disk offering has encryption enabled, but volume encryption is not supported for hypervisor type " + rootDiskHyperType);
         }
 
@@ -3776,7 +3793,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         }
 
-        if (vol.getPassphraseId() != null && !srcAndDestOnStorPool && !srcStoragePoolVO.getPoolType().equals(Storage.StoragePoolType.PowerFlex)) {
+        if ((vol.getPassphraseId() != null || vol.getKmsKeyId() != null) && !srcAndDestOnStorPool && !srcStoragePoolVO.getPoolType().equals(Storage.StoragePoolType.PowerFlex)) {
             throw new InvalidParameterValueException("Migration of encrypted volumes is unsupported");
         }
 
@@ -4559,7 +4576,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw ex;
         }
 
-        if (volume.getPassphraseId() != null) {
+        if (volume.getPassphraseId() != null || volume.getKmsKeyId() != null) {
             throw new InvalidParameterValueException("Extraction of encrypted volumes is unsupported");
         }
 
@@ -5044,7 +5061,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (host != null) {
             _hostDao.loadDetails(host);
             boolean hostSupportsEncryption = Boolean.parseBoolean(host.getDetail(Host.HOST_VOLUME_ENCRYPTION));
-            if (volumeToAttach.getPassphraseId() != null && !hostSupportsEncryption) {
+            if ((volumeToAttach.getPassphraseId() != null || volumeToAttach.getKmsKeyId() != null) && !hostSupportsEncryption) {
                 throw new CloudRuntimeException(errorMsg + " because target host " + host + " doesn't support volume encryption");
             }
         }

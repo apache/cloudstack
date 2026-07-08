@@ -96,6 +96,8 @@
         <module>integrations/kubernetes-service</module>
         <module>integrations/veeam-control-service</module>
 
+        <module>kms</module>
+
         <module>metrics</module>
 
         <module>network-elements/bigswitch</module>
@@ -154,6 +156,7 @@
 
         <module>user-two-factor-authenticators/totp</module>
         <module>user-two-factor-authenticators/static-pin</module>
+        <module>dns/powerdns</module>
 
     </modules>
     <dependencies>

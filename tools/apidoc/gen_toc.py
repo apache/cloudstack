@@ -56,6 +56,8 @@ known_categories = {
     'HypervisorGuestOsNames': 'Guest OS',
     'Domain': 'Domain',
     'Template': 'Template',
+    'KMS': 'Key Management System',
+    'HSM': 'Key Management System',
     'Iso': 'ISO',
     'Volume': 'Volume',
     'Vlan': 'VLAN',
@@ -279,7 +281,8 @@ known_categories = {
     'Extensions' : 'Extension',
     'CustomAction' : 'Extension',
     'CustomActions' : 'Extension',
-    'ImportVmTask': 'Import VM Task'
+    'ImportVmTask': 'Import VM Task',
+    'Dns': 'DNS'
 }
 
 

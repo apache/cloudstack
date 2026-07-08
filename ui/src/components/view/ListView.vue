@@ -207,6 +207,9 @@
       <template v-if="column.key === 'templatetype'">
         <router-link :to="{ path: $route.path + '/' + record.templatetype }">{{ text }}</router-link>
       </template>
+      <template v-if="$route.path.startsWith('/dnsserver') && !['name', 'provider', 'state', 'ispublic'].includes(column.key)">
+        <span>{{ text }}</span>
+      </template>
       <template v-if="column.key === 'gpu'">
         <span v-if="record.gpucardname && record.vgpuprofilename">
           {{ record?.gpucount > 0 ? record.gpucount + 'x' : '' }}
@@ -458,6 +461,9 @@
       <template v-if="column.key === 'isuserdefined'">
         <span>{{ text ? $t('label.yes') : $t('label.no') }}</span>
       </template>
+      <template v-if="column.key === 'ispublic'">
+        <span>{{ text ? $t('label.yes') : $t('label.no') }}</span>
+      </template>
       <template v-if="column.key === 'state'">
         <status
           v-if="$route.path.startsWith('/host')"
@@ -649,6 +655,10 @@
       </template>
       <template v-if="column.key === 'objectstore'">
         <router-link :to="{ path: '/objectstore/' + record.objectstorageid }">{{ text }}</router-link>
+      </template>
+      <template v-if="column.key === 'hsmprofile'">
+        <router-link v-if="record.hsmprofileid" :to="{ path: '/hsmprofile/' + record.hsmprofileid }">{{ text }}</router-link>
+        <span v-else>{{ text }}</span>
       </template>
       <template v-if="column.key === 'podname'">
         <router-link :to="{ path: '/pod/' + record.podid }">{{ text }}</router-link>
@@ -1198,7 +1208,8 @@ export default {
           '/zone', '/pod', '/cluster', '/host', '/storagepool', '/imagestore', '/systemvm', '/router', '/ilbvm', '/annotation',
           '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering',
           '/tungstenfabric', '/oauthsetting', '/guestos', '/guestoshypervisormapping', '/webhook', 'webhookdeliveries', 'webhookfilters', '/quotatariff', '/sharedfs',
-          '/ipv4subnets', '/managementserver', '/gpucard', '/gpudevices', '/vgpuprofile', '/extension', '/snapshotpolicy', '/backupschedule'].join('|'))
+          '/ipv4subnets', '/managementserver', '/gpucard', '/gpudevices', '/vgpuprofile', '/extension', '/snapshotpolicy', '/backupschedule',
+          '/kmskey', '/hsmprofile', '/dnsserver', '/dnszone'].join('|'))
           .test(this.$route.path)
     },
     enableGroupAction () {

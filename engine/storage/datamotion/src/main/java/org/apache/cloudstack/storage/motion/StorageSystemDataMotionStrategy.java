@@ -2592,7 +2592,11 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         newVol.setLastPoolId(lastPoolId);
         newVol.setLastId(volume.getId());
 
-        if (volume.getPassphraseId() != null) {
+        if (volume.getKmsKeyId() != null) {
+            newVol.setKmsKeyId(volume.getKmsKeyId());
+            newVol.setKmsWrappedKeyId(volume.getKmsWrappedKeyId());
+            newVol.setEncryptFormat(volume.getEncryptFormat());
+        } else if (volume.getPassphraseId() != null) {
             newVol.setPassphraseId(volume.getPassphraseId());
             newVol.setEncryptFormat(volume.getEncryptFormat());
         }

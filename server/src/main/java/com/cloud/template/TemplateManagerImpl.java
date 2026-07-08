@@ -943,6 +943,12 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 _tmplStoreDao.removeByTemplateStore(tmpltId, dstSecStore.getId());
             }
 
+            if (!_tmpltSvr.canCopyTemplateToImageStore(tmpltId, dstZoneId)) {
+                logger.info("Not copying template {} to image store {}: zone {} has reached the configured secondary storage copy limit.",
+                        template, dstSecStore, dstZone);
+                continue;
+            }
+
             AsyncCallFuture<TemplateApiResult> future = _tmpltSvr.copyTemplate(srcTemplate, dstSecStore);
             try {
                 TemplateApiResult result = future.get();
@@ -1914,6 +1920,13 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             _launchPermissionDao.removeAllPermissions(id);
             _messageBus.publish(_name, TemplateManager.MESSAGE_RESET_TEMPLATE_PERMISSION_EVENT, PublishScope.LOCAL, template.getId());
         }
+
+        if (isPublic != null || isFeatured != null || "reset".equalsIgnoreCase(operation)) {
+            for (VMTemplateZoneVO templateZone : _tmpltZoneDao.listByTemplateId(template.getId())) {
+                _tmpltSvr.enforceSecStorageCopyLimit(template.getId(), templateZone.getZoneId());
+                _tmpltSvr.replicateTemplateUpToCap(template.getId(), templateZone.getZoneId());
+            }
+        }
         return true;
     }
 
@@ -1931,10 +1944,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         Account caller = CallContext.current().getCallingAccount();
         boolean kvmSnapshotOnlyInPrimaryStorage = false;
         SnapshotInfo snapInfo = null;
+        long zoneId = 0;
 
         try {
             TemplateInfo tmplInfo = _tmplFactory.getTemplate(templateId, DataStoreRole.Image);
-            long zoneId = 0;
             if (snapshotId != null) {
                 snapshot = _snapshotDao.findById(snapshotId);
                 if (command.getZoneId() == null) {
@@ -2074,6 +2087,12 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         if (privateTemplate != null) {
+            try {
+                _tmpltSvr.replicateTemplateUpToCap(privateTemplate.getId(), zoneId);
+            } catch (Exception e) {
+                logger.warn("Failed to schedule additional copies for template [{}] in zone [{}]: {}",
+                        privateTemplate.getUniqueName(), zoneId, e.getMessage());
+            }
             return privateTemplate;
         } else {
             throw new CloudRuntimeException("Failed to create a Template");
@@ -2149,7 +2168,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             _accountMgr.checkAccess(caller, null, true, volume);
 
             // Don't support creating templates from encrypted volumes (yet)
-            if (volume.getPassphraseId() != null) {
+            if (volume.getPassphraseId() != null || volume.getKmsKeyId() != null) {
                 throw new UnsupportedOperationException("Cannot create Templates from encrypted volumes");
             }
 
@@ -2177,7 +2196,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             volume = _volumeDao.findByIdIncludingRemoved(snapshot.getVolumeId());
 
             // Don't support creating templates from encrypted volumes (yet)
-            if (volume != null && volume.getPassphraseId() != null) {
+            if (volume != null && (volume.getPassphraseId() != null || volume.getKmsKeyId() != null)) {
                 throw new UnsupportedOperationException("Cannot create Templates from Snapshots of encrypted volumes");
             }
 
@@ -2395,6 +2414,20 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             }
         }
         return stores;
+    }
+
+    @Override
+    public int getSecStorageCopyLimit(VMTemplateVO template, long zoneId) {
+        if (template == null) {
+            return 0;
+        }
+        TemplateType type = template.getTemplateType();
+        if (type == TemplateType.SYSTEM || type == TemplateType.ROUTING || type == TemplateType.BUILTIN) {
+            return 0;
+        }
+        return template.isPublicTemplate()
+                ? PublicTemplateSecStorageCopy.valueIn(zoneId)
+                : PrivateTemplateSecStorageCopy.valueIn(zoneId);
     }
 
     @Override
@@ -2718,6 +2751,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 TemplatePreloaderPoolSize,
                 ValidateUrlIsResolvableBeforeRegisteringTemplate,
                 TemplateDeleteFromPrimaryStorage,
+                PublicTemplateSecStorageCopy,
+                PrivateTemplateSecStorageCopy,
                 VmIsoMaxCount};
     }
 

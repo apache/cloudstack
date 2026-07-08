@@ -66,6 +66,7 @@ import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.kms.KMSManager;
 import org.apache.cloudstack.secret.dao.PassphraseDao;
 import org.apache.cloudstack.storage.RemoteHostEndPoint;
 import org.apache.cloudstack.storage.command.CommandResult;
@@ -85,6 +86,7 @@ import org.apache.cloudstack.storage.image.store.TemplateObject;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -225,6 +227,9 @@ public class VolumeServiceImpl implements VolumeService {
     protected DiskOfferingDao diskOfferingDao;
     @Inject
     ClvmPoolManager clvmPoolManager;
+
+    @Inject
+    private KMSManager kmsManager;
 
     public VolumeServiceImpl() {
     }
@@ -505,6 +510,13 @@ public class VolumeServiceImpl implements VolumeService {
 
                 if (vo.getPassphraseId() != null) {
                     vo.deletePassphrase();
+                }
+                if (vo.getKmsWrappedKeyId() != null) {
+                    try {
+                        kmsManager.deleteKMSWrappedKey(vo);
+                    } catch (Exception e) {
+                        logger.warn("Failed to delete KMS wrapped key for volume {}", vo, e);
+                    }
                 }
 
                 if (canVolumeBeRemoved(vo.getId())) {
@@ -1351,6 +1363,11 @@ public class VolumeServiceImpl implements VolumeService {
             primaryDataStore.setDetails(details);
 
             grantAccess(volumeInfo, destHost, primaryDataStore);
+            volumeInfo = volFactory.getVolume(volumeInfo.getId(), primaryDataStore);
+            // For Netapp ONTAP iscsiName or Lun path  is available only after grantAccess
+            String managedStoreTarget = ObjectUtils.defaultIfNull(volumeInfo.get_iScsiName(), volumeInfo.getUuid());
+            details.put(PrimaryDataStore.MANAGED_STORE_TARGET, managedStoreTarget);
+            primaryDataStore.setDetails(details);
 
             try {
                 motionSrv.copyAsync(srcTemplateInfo, destTemplateInfo, destHost, caller);
@@ -1758,6 +1775,11 @@ public class VolumeServiceImpl implements VolumeService {
         newVol.setPoolType(pool.getPoolType());
         newVol.setLastPoolId(lastPoolId);
         newVol.setPodId(pool.getPodId());
+        if (volume.getKmsKeyId() != null) {
+            newVol.setKmsKeyId(volume.getKmsKeyId());
+            newVol.setKmsWrappedKeyId(volume.getKmsWrappedKeyId());
+            newVol.setEncryptFormat(volume.getEncryptFormat());
+        }
         if (volume.getPassphraseId() != null) {
             newVol.setPassphraseId(volume.getPassphraseId());
             newVol.setEncryptFormat(volume.getEncryptFormat());
