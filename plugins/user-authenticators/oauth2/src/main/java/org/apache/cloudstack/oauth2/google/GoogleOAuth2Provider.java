@@ -74,7 +74,10 @@ public class GoogleOAuth2Provider extends AdapterBase implements UserOAuth2Authe
 
     @Override
     public String verifyCodeAndFetchEmail(String secretCode) {
-        OauthProviderVO githubProvider = _oauthProviderDao.findByProvider(getName());
+        OauthProviderVO googleProvider = _oauthProviderDao.findByProvider(getName());
+        String clientId = googleProvider.getClientId();
+        String secret = googleProvider.getSecretKey();
+        String redirectURI = googleProvider.getRedirectUri();
         String clientId = githubProvider.getClientId();
         String secret = githubProvider.getSecretKey();
         String redirectURI = githubProvider.getRedirectUri();
