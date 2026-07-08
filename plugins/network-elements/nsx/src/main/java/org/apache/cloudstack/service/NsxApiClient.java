@@ -696,6 +696,41 @@ public class NsxApiClient {
         }
         return members;
     }
+
+    /**
+     * Builds the final list of active monitor paths to set on the pool:
+     * any monitor already attached to the pool that was NOT created by
+     * this codebase (its id does not contain the pool name - consistent
+     * with the check already used in deleteNsxLbResources) is preserved
+     * as-is, plus the monitor path managed by this codebase. Without
+     * this, every pool update (e.g. on member list change) would
+     * silently detach any monitor attached outside of this plugin.
+     */
+    private List<String> mergeWithForeignActiveMonitorPaths(Optional<LBPool> existingPool, String lbServerPoolName,
+                                                            String activeMonitorPath) {
+        List<String> result = new ArrayList<>();
+        List<String> existingMonitorPaths = existingPool
+                .map(LBPool::getActiveMonitorPaths)
+                .orElseGet(List::of);
+        for (String path : existingMonitorPaths) {
+            if (!isMonitorOwnedByThisPool(path, lbServerPoolName)) {
+                result.add(path);
+            }
+        }
+        if (activeMonitorPath != null && !result.contains(activeMonitorPath)) {
+            result.add(activeMonitorPath);
+        }
+        return result;
+    }
+
+    private boolean isMonitorOwnedByThisPool(String monitorPath, String lbServerPoolName) {
+        if (monitorPath == null) {
+            return false;
+        }
+        String monitorId = monitorPath.substring(monitorPath.lastIndexOf('/') + 1);
+        return monitorId.contains(lbServerPoolName);
+    }
+
     public void createNsxLbServerPool(List<NsxLoadBalancerMember> memberList, String tier1GatewayName, String lbServerPoolName,
                                       String algorithm, String privatePort, String protocol) {
         try {
@@ -712,13 +747,15 @@ public class NsxApiClient {
                 }
             }
             String activeMonitorPath = getLbActiveMonitorPath(lbServerPoolName, privatePort, protocol);
+            List<String> activeMonitorPaths =  mergeWithForeignActiveMonitorPaths(
+                    nsxLbServerPool, lbServerPoolName, activeMonitorPath);
             LBPool lbPool = new LBPool.Builder()
                     .setId(lbServerPoolName)
                     .setDisplayName(lbServerPoolName)
                     .setAlgorithm(getLoadBalancerAlgorithm(algorithm))
                     .setMembers(members)
                     .setPassiveMonitorPath(NSX_LB_PASSIVE_MONITOR)
-                    .setActiveMonitorPaths(List.of(activeMonitorPath))
+                    .setActiveMonitorPaths(activeMonitorPaths)
                     .build();
             lbPools.patch(lbServerPoolName, lbPool);
         } catch (Error error) {
