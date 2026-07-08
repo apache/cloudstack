@@ -484,7 +484,8 @@ public class KubernetesClusterActionWorker {
 
     protected IpAddress getPublicIp(Network network) throws ManagementServerException {
         if (network.getVpcId() != null) {
-            IpAddress publicIp = getVpcTierKubernetesPublicIp(network);
+            String detailKey = manager.isNetrisNetwork(network) ? ApiConstants.NETRIS_NAT_PUBLIC_IP_ID : ApiConstants.PUBLIC_IP_ID;
+            IpAddress publicIp = getVpcTierKubernetesPublicIp(network, detailKey);
             if (publicIp == null) {
                 throw new ManagementServerException(String.format("No public IP addresses found for VPC tier : %s, Kubernetes cluster : %s", network.getName(), kubernetesCluster.getName()));
             }

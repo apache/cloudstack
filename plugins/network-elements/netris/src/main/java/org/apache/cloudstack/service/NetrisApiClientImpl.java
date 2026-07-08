@@ -1763,12 +1763,12 @@ public class NetrisApiClientImpl implements NetrisApiClient {
                 IpTreeSubnet existingSubnet = matchedSubnets.stream().filter(x -> x.getPrefix().equals(natIp)).collect(Collectors.toList()).get(0);
                 if (existingSubnet.getPurpose() != IpTreeSubnet.PurposeEnum.NAT) {
                     VPCListing systemVpc = getSystemVpc();
-                    logger.debug("Subnet: {} already exists, but purpose is not NAT, updating its purpose to 'nat'", natIp);
+                    logger.debug("Subnet: {} already exists with purpose '{}', updating its purpose to 'nat'", natIp, existingSubnet.getPurpose());
                     updateIpamSubnetInternal(existingSubnet.getId().intValue(), netrisSubnetName, natIp, SubnetBody.PurposeEnum.NAT, systemVpc, null);
                 }
             }
         } catch (ApiException e) {
-            throw new CloudRuntimeException(String.format("Failed to create subnet for %s with NAT purpose", natIp));
+            logAndThrowException(String.format("Failed to create subnet for %s with NAT purpose (current purpose conflicts and could not be changed)", natIp), e);
         }
     }
 
@@ -1784,12 +1784,13 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             if (matchedSubnets.isEmpty()) {
                 createIpamSubnetInternal(netrisSubnetName, lbIp, SubnetBody.PurposeEnum.LOAD_BALANCER, systemVpc, null);
             } else if (IpTreeSubnet.PurposeEnum.LOAD_BALANCER != matchedSubnets.get(0).getPurpose()){
-                logger.debug("Updating existing NAT subnet {} to have load balancer purpose", netrisSubnetName);
-                updateIpamSubnetInternal(matchedSubnets.get(0).getId().intValue(), netrisSubnetName, lbIp, SubnetBody.PurposeEnum.LOAD_BALANCER, systemVpc, null);
+                IpTreeSubnet existingSubnet = matchedSubnets.get(0);
+                logger.debug("Updating existing NAT subnet {} with purpose '{}' to have load balancer purpose", netrisSubnetName, existingSubnet.getPurpose());
+                updateIpamSubnetInternal(existingSubnet.getId().intValue(), netrisSubnetName, lbIp, SubnetBody.PurposeEnum.LOAD_BALANCER, systemVpc, null);
             }
             logger.debug("LB subnet: {} already exists", netrisSubnetName);
         } catch (ApiException e) {
-            throw new CloudRuntimeException(String.format("Failed to create subnet for %s with LB purpose", lbIp));
+            logAndThrowException(String.format("Failed to create subnet for %s with LB purpose (current purpose conflicts and could not be changed)", lbIp), e);
         }
     }
 
