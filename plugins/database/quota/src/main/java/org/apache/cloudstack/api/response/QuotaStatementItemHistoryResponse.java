@@ -28,11 +28,11 @@ public class QuotaStatementItemHistoryResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.START_DATE)
     @Param(description = "Start date of the item.")
-    private Date startDate = null;
+    private Date startDate;
 
     @SerializedName(ApiConstants.END_DATE)
     @Param(description = "End date of the item.")
-    private Date endDate = null;
+    private Date endDate;
 
     @SerializedName(ApiConstants.QUOTA_CONSUMED)
     @Param(description = "Amount of quota consumed.")

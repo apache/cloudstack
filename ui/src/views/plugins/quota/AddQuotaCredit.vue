@@ -137,21 +137,21 @@ export default {
     closeModal () {
       this.$emit('close-action')
     },
-    fetchOwnerOptions (OwnerOptions) {
+    fetchOwnerOptions (ownerOptions) {
       this.owner = {}
-      if (OwnerOptions.selectedAccountType === 'Account') {
-        if (!OwnerOptions.selectedAccount) {
+      if (ownerOptions.selectedAccountType === 'Account') {
+        if (!ownerOptions.selectedAccount) {
           return
         }
-        this.owner.account = OwnerOptions.selectedAccount
-        this.owner.domainid = OwnerOptions.selectedDomain
-        this.owner.name = OwnerOptions.selectedAccount
-      } else if (OwnerOptions.selectedAccountType === 'Project') {
-        if (!OwnerOptions.selectedProject) {
+        this.owner.account = ownerOptions.selectedAccount
+        this.owner.domainid = ownerOptions.selectedDomain
+        this.owner.name = ownerOptions.selectedAccount
+      } else if (ownerOptions.selectedAccountType === 'Project') {
+        if (!ownerOptions.selectedProject) {
           return
         }
-        this.owner.projectid = OwnerOptions.selectedProject
-        this.owner.name = OwnerOptions.projects.find(p => p.id === OwnerOptions.selectedProject).name
+        this.owner.projectid = ownerOptions.selectedProject
+        this.owner.name = ownerOptions.projects.find(p => p.id === ownerOptions.selectedProject).name
       }
     }
   }

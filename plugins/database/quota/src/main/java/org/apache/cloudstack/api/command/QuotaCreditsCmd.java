@@ -55,12 +55,12 @@ public class QuotaCreditsCmd extends BaseCmd {
 
     @ACL
     @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class,
-            description = "ID of the Account for which Quota credits will be added. Can not be specified with '" + ApiConstants.PROJECT_ID + "'.")
+            description = "ID of the Account for which Quota credits will be added. Cannot be specified with '" + ApiConstants.PROJECT_ID + "'.")
     private Long accountId;
 
     @ACL
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class,
-            description = "ID of the Project for which Quota credits will be added. Can not be specified with '" + ApiConstants.ACCOUNT_ID + "'.")
+            description = "ID of the Project for which Quota credits will be added. Cannot be specified with '" + ApiConstants.ACCOUNT_ID + "'.")
     private Long projectId;
 
     @Parameter(name = ApiConstants.VALUE, type = CommandType.DOUBLE, required = true, description = "Amount of credits to be added (in case of a positive value) or subtracted (in case of a negative value).")

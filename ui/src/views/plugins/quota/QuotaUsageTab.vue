@@ -226,7 +226,7 @@ import ExportToCsvButton from '@/components/view/buttons/ExportToCsvButton.vue'
 import { getChartColorObject } from '@/utils/chart'
 import { getQuotaTypeByName, getQuotaTypes } from '@/utils/quota'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
-import * as exportUtils from '@/utils/export'
+import { downloadDataAsCsv } from '@/utils/util.js'
 import * as dateUtils from '@/utils/date'
 
 export default {
@@ -535,7 +535,7 @@ export default {
           }
 
           if (isPreviousZero) {
-            // Last was zero, but we are not. Push our startdate to have an accurate curve
+            // Previous was zero, but we current is not. Push our startdate to have an accurate curve
             this.pushDateToLabelsIfNotPresent(lineChartLabels, this.getLineChartLabelForDate(item.startdate))
           }
 
@@ -550,11 +550,11 @@ export default {
       return lineChartLabels
     },
     pushDateToLabelsIfNotPresent (lineChartLabels, date) {
-      const hasDate = lineChartLabels.some(d => {
+      const hasNearDate = lineChartLabels.some(d => {
         const diff = Math.abs(new Date(date) - new Date(d).getTime())
         return diff < 5 * 1000 * 60 // Do not push the label if there is already one within 5 minutes
       })
-      if (!hasDate) {
+      if (!hasNearDate) {
         lineChartLabels.push(date)
         return true
       }
@@ -685,21 +685,21 @@ export default {
       return Math.pow(10, Math.floor(Math.log10(max)))
     },
     exportDataToCsv () {
-      exportUtils.exportDataToCsv({
+      downloadDataAsCsv({
         data: this.dataSource,
         keys: ['type', 'name', 'unit', 'quota'],
         fileName: `quota-usage-of-account-${this.$route.params.id}-between-${this.startDate}-and-${this.endDate}`
       })
     },
     exportResourcesToCsv () {
-      exportUtils.exportDataToCsv({
+      downloadDataAsCsv({
         data: this.dataSourceResource.map(row => ({ ...row, name: row.displayname })),
         keys: ['resourceid', 'name', 'quotaconsumed'],
         fileName: `quota-usage-of-resources-of-type-${this.selectedType}-of-account-${this.$route.params.id}-between-${this.startDate}-and-${this.endDate}`
       })
     },
     exportResourceDetailsToCsv () {
-      exportUtils.exportDataToCsv({
+      downloadDataAsCsv({
         data: this.dataSourceTariffs,
         keys: ['tariffid', 'tariffname', 'startdate', 'enddate', 'quotaconsumed'],
         fileName: `detailed-quota-usage-of-resource-${this.selectedResource}-of-type-${this.selectedType}-of-account-${this.$route.params.id}-between-${this.startDate}-and-${this.endDate}`

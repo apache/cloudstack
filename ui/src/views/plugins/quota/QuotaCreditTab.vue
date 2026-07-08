@@ -52,7 +52,7 @@
 import { getAPI } from '@/api'
 import BarChart from '@/components/view/charts/BarChart.vue'
 import * as dateUtils from '@/utils/date'
-import * as exportUtils from '@/utils/export'
+import { downloadDataAsCsv } from '@/utils/util.js'
 import FilterQuotaDataByPeriodView from './FilterQuotaDataByPeriodView.vue'
 import ExportToCsvButton from '@/components/view/buttons/ExportToCsvButton.vue'
 import * as chartUtils from '@/utils/chart'
@@ -136,7 +136,7 @@ export default {
         .catch(error => { error && this.$notification.info({ message: this.$t('message.request.no.data') }) })
     },
     exportDataToCsv () {
-      exportUtils.exportDataToCsv({
+      downloadDataAsCsv({
         data: this.dataSource,
         keys: ['date', 'credit', 'creditorusername'],
         fileName: `credits-of-account-${this.$route.params.id}-between-${this.startDate}-and-${this.endDate}`

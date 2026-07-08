@@ -51,7 +51,7 @@
 import { getAPI } from '@/api'
 import BarChart from '@/components/view/charts/BarChart.vue'
 import * as dateUtils from '@/utils/date'
-import * as exportUtils from '@/utils/export'
+import { downloadDataAsCsv } from '@/utils/util.js'
 import FilterQuotaDataByPeriodView from './FilterQuotaDataByPeriodView.vue'
 import ExportToCsvButton from '@/components/view/buttons/ExportToCsvButton.vue'
 import * as chartUtils from '@/utils/chart'
@@ -153,7 +153,7 @@ export default {
       }, [])
     },
     exportDataToCsv () {
-      exportUtils.exportDataToCsv({
+      downloadDataAsCsv({
         data: this.dataSource,
         headers: ['date', 'balance'],
         keys: ['lastBalance', 'balance'],

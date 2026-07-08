@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command;
 
 import com.cloud.utils.Pair;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
@@ -46,15 +47,15 @@ public class QuotaCreditsListCmd extends BaseCmd {
     QuotaResponseBuilder quotaResponseBuilder;
 
     @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class,
-            description = "ID of the Account for which the credit statement will be generated. Can not be specified with '" + ApiConstants.PROJECT_ID + "'.")
+            description = "ID of the Account for which the credit statement will be generated. Cannot be specified with '" + ApiConstants.PROJECT_ID + "'.")
     private Long accountId;
 
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class,
-            description = "ID of the Project for which the credit statement will be generated. Can not be specified with '" + ApiConstants.ACCOUNT_ID + "'.")
+            description = "ID of the Project for which the credit statement will be generated. Cannot be specified with '" + ApiConstants.ACCOUNT_ID + "'.")
     private Long projectId;
 
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "ID of the Domain for which credit statement will be generated. " +
-            "Available only for administrators.")
+            "Available only for administrators.", authorized = {RoleType.Admin, RoleType.DomainAdmin})
     private Long domainId;
 
     @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, description = "End date of the credit statement. If not provided, the current date will be " +
