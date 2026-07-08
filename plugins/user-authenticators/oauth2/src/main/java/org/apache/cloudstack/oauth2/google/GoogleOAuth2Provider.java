@@ -119,7 +119,7 @@ public class GoogleOAuth2Provider extends AdapterBase implements UserOAuth2Authe
         try {
             userinfo = oauth2.userinfo().get().execute();
         } catch (IOException e) {
-            throw new CloudRuntimeException(String.format("Failed to fetch the email address with the provided secret: %s" + e.getMessage()));
+            throw new CloudRuntimeException(String.format("Failed to fetch the email address with the provided secret: %s", e.getMessage()), e);
         }
         return userinfo.getEmail();
     }
