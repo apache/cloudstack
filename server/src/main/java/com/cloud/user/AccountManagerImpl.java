@@ -3321,7 +3321,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
         ApiKeyPair accessingKeyPair = apiKeyPairService.findByApiKey(apiKey);
         if (accessingKeyPair == null) {
-            logger.warn("Unable to find API key pair for the accessing API key: {}", apiKey);
+            logger.warn("Unable to find API key pair for the accessing API key.");
             return Boolean.FALSE;
         }
         return isApiKeySupersetOfPermission(new ArrayList<>(getAllKeypairPermissions(accessingKeyPair.getApiKey())), new ArrayList<>(getAllKeypairPermissions(accessedKeyPair.getApiKey())));
@@ -3338,8 +3338,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             if (accessedByApiKey) {
                 return accessingApiKey;
             }
-        } catch (NullPointerException e) {
-            logger.info("Accessing API through session.", e);
+        } catch (Exception e) {
+            logger.info("Error accessing API through session.", e);
         }
         return null;
     }
@@ -3587,7 +3587,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
         ApiKeyPair apiKeyPair = keyPairManager.findByApiKey(apiKey);
         if (apiKeyPair == null) {
-            logger.warn("Unable to find API key pair by API key: {}", apiKey);
+            logger.warn("Unable to find API key pair by API key.");
             return new ArrayList<>();
         }
         Account account = _accountDao.findById(apiKeyPair.getAccountId());
