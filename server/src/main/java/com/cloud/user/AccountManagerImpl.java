@@ -3322,7 +3322,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         ApiKeyPair accessingKeyPair = apiKeyPairService.findByApiKey(apiKey);
         if (accessingKeyPair == null) {
             logger.warn("Unable to find API key pair for the accessing API key: {}", apiKey);
-            return Boolean.TRUE;
+            return Boolean.FALSE;
         }
         return isApiKeySupersetOfPermission(new ArrayList<>(getAllKeypairPermissions(accessingKeyPair.getApiKey())), new ArrayList<>(getAllKeypairPermissions(accessedKeyPair.getApiKey())));
     }
