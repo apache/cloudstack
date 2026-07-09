@@ -28,9 +28,16 @@ from marvin.lib.utils import (isAlmostEqual,
 from marvin.lib.base import (Domain,
                              VpcOffering,
                              Account,
-                             VPC)
+                             VPC,
+                             NetworkOffering,
+                             Network,
+                             VirtualMachine,
+                             ServiceOffering,
+                             PublicIPAddress,
+                             NATRule)
 from marvin.lib.common import (get_domain,
-                               get_zone)
+                               get_zone,
+                               get_test_template)
 from nose.plugins.attrib import attr
 
 import time
@@ -222,6 +229,7 @@ class TestDomainsVpcOfferings(cloudstackTestCase):
         cls.apiclient = testClient.getApiClient()
         cls.localservices = Services().services
         cls.services = testClient.getParsedTestDataConfig()
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
         # Create domains
         cls.domain_1 = Domain.create(
             cls.apiclient,
@@ -402,3 +410,158 @@ class TestDomainsVpcOfferings(cloudstackTestCase):
         self.debug("Vpc created for first child subdomain %s" % self.valid_account_3.domainid)
 
         return
+
+    @attr(
+        tags=[
+            "advanced",
+            "eip",
+            "sg",
+            "advancedns",
+            "smoke"],
+        required_hardware="false")
+    def test_04_validate_vpc_offering_conserve_mode_disabled(self):
+        """Test to create and validate vpc with conserve mode disabled for an existing domain specified vpc offering"""
+
+        # Validate the following:
+        # 1. Create Vpc for user in domain for which offering is specified
+        # 2. Validate that conserve mode is disabled for the vpc (cannot reuse ip address on multiple VPC tiers)
+
+        template = get_test_template(
+            self.apiclient,
+            self.zone.id,
+            self.hypervisor)
+        if template == FAILED:
+            assert False, "get_test_template() failed to return template"
+
+        valid_account_1 = Account.create(
+            self.apiclient,
+            self.services["account"],
+            domainid=self.domain_1.id
+        )
+        self.cleanup.append(valid_account_1)
+
+        service_offering = ServiceOffering.create(
+            self.apiclient,
+            self.services["service_offerings"]["tiny"]
+        )
+        self.cleanup.append(service_offering)
+
+        self.services["vpc"]["cidr"] = "10.10.20.0/24"
+        vpc = VPC.create(
+            apiclient=self.apiclient,
+            services=self.services["vpc"],
+            account=valid_account_1.name,
+            domainid=valid_account_1.domainid,
+            zoneid=self.zone.id,
+            vpcofferingid=self.vpc_offering.id
+        )
+        self.debug("Vpc created for subdomain %s" % valid_account_1.domainid)
+
+        self.services["network_offering"]["supportedservices"] = 'Vpn,Dhcp,Dns,SourceNat,Lb,UserData,StaticNat,NetworkACL,PortForwarding'
+        self.services["network_offering"]["serviceProviderList"] = {
+            "Vpn": 'VpcVirtualRouter',
+            "Dhcp": 'VpcVirtualRouter',
+            "Dns": 'VpcVirtualRouter',
+            "SourceNat": 'VpcVirtualRouter',
+            "Lb": 'VpcVirtualRouter',
+            "UserData": 'VpcVirtualRouter',
+            "StaticNat": 'VpcVirtualRouter',
+            "NetworkACL": 'VpcVirtualRouter',
+            "PortForwarding": 'VpcVirtualRouter'
+        }
+        network_offering = NetworkOffering.create(
+            self.apiclient,
+            self.services["network_offering"]
+        )
+        network_offering.update(self.apiclient, state="Enabled")
+        self.cleanup.append(network_offering)
+
+        gateway_tier1 = "10.10.20.1"
+        netmask_tiers = "255.255.255.240"
+
+        self.services["network_offering"]["name"] = "tier1-" + vpc.id
+        self.services["network_offering"]["displayname"] = "tier1-" + vpc.id
+        tier1 = Network.create(
+            self.apiclient,
+            services=self.services["network_offering"],
+            accountid=valid_account_1.name,
+            domainid=valid_account_1.domainid,
+            networkofferingid=network_offering.id,
+            zoneid=self.zone.id,
+            vpcid=vpc.id,
+            gateway=gateway_tier1,
+            netmask=netmask_tiers,
+        )
+
+        gateway_tier2 = "10.10.20.17"
+        self.services["network_offering"]["name"] = "tier2-" + vpc.id
+        self.services["network_offering"]["displayname"] = "tier2-" + vpc.id
+        tier2 = Network.create(
+            self.apiclient,
+            services=self.services["network_offering"],
+            accountid=valid_account_1.name,
+            domainid=valid_account_1.domainid,
+            networkofferingid=network_offering.id,
+            zoneid=self.zone.id,
+            vpcid=vpc.id,
+            gateway=gateway_tier2,
+            netmask=netmask_tiers,
+        )
+
+        self.services["virtual_machine"]["displayname"] = "vm1" + vpc.id
+        vm1 = VirtualMachine.create(
+            self.apiclient,
+            services=self.services["virtual_machine"],
+            templateid=template.id,
+            zoneid=self.zone.id,
+            accountid=valid_account_1.name,
+            domainid=valid_account_1.domainid,
+            serviceofferingid=service_offering.id,
+            networkids=[tier1.id],
+        )
+
+        self.services["virtual_machine"]["displayname"] = "vm2" + vpc.id
+        vm2 = VirtualMachine.create(
+            self.apiclient,
+            services=self.services["virtual_machine"],
+            templateid=template.id,
+            zoneid=self.zone.id,
+            accountid=valid_account_1.name,
+            domainid=valid_account_1.domainid,
+            serviceofferingid=service_offering.id,
+            networkids=[tier2.id],
+        )
+
+        public_ip = PublicIPAddress.create(
+            self.apiclient,
+            zoneid=self.zone.id,
+            accountid=valid_account_1.name,
+            domainid=valid_account_1.domainid,
+            vpcid=vpc.id,
+        )
+
+        nat_rule = NATRule.create(
+            self.apiclient,
+            vm1,
+            self.services["natrule"],
+            ipaddressid=public_ip.ipaddress.id,
+            vpcid=vpc.id,
+            networkid=tier1.id,
+        )
+
+        self.services["natrule"]["privateport"] = 80
+        self.services["natrule"]["publicport"] = 80
+        try:
+            NATRule.create(
+                self.apiclient,
+                vm2,
+                self.services["natrule"],
+                ipaddressid=public_ip.ipaddress.id,
+                vpcid=vpc.id,
+                networkid=tier2.id,
+            )
+            self.fail(
+                "Expected cross-tier rule creation to fail with conserveMode=False, but succeeded"
+            )
+        except CloudstackAPIException as e:
+            self.debug("Expected cross-tier rule creation to failure with conserveMode=False")

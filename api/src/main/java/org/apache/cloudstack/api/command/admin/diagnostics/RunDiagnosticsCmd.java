@@ -153,7 +153,7 @@ public class RunDiagnosticsCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Executing diagnostics on System VM: " + this._uuidMgr.getUuid(VirtualMachine.class, getId());
+        return "Executing diagnostics on System Instance with ID: " + getResourceUuid(ApiConstants.TARGET_ID);
     }
 
     @Override

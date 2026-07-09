@@ -17,70 +17,39 @@
 package org.apache.cloudstack.api.response;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
+import java.util.List;
 
 import com.google.gson.annotations.SerializedName;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
 
 public class QuotaStatementItemResponse extends BaseResponse {
 
-    @SerializedName("type")
-    @Param(description = "Usage type")
+    @SerializedName(ApiConstants.TYPE)
+    @Param(description = "Usage type.")
     private int usageType;
 
-    @SerializedName("accountid")
-    @Param(description = "Account id")
-    private Long accountId;
-
-    @SerializedName("account")
-    @Param(description = "Account name")
-    private String accountName;
-
-    @SerializedName("domain")
-    @Param(description = "Domain id")
-    private Long domainId;
-
-    @SerializedName("name")
-    @Param(description = "Usage type name")
+    @SerializedName(ApiConstants.NAME)
+    @Param(description = "Name of the Usage type.")
     private String usageName;
 
-    @SerializedName("unit")
-    @Param(description = "Usage unit")
+    @SerializedName(ApiConstants.UNIT)
+    @Param(description = "Unit of the Usage type.")
     private String usageUnit;
 
-    @SerializedName("quota")
-    @Param(description = "Quota consumed")
+    @SerializedName(ApiConstants.QUOTA)
+    @Param(description = "Quota consumed.")
     private BigDecimal quotaUsed;
+
+    @SerializedName(ApiConstants.RESOURCES)
+    @Param(description = "Item's resources.")
+    private List<QuotaStatementItemResourceResponse> resources;
 
     public QuotaStatementItemResponse(final int usageType) {
         this.usageType = usageType;
-    }
-
-    public Long getAccountId() {
-        return accountId;
-    }
-
-    public void setAccountId(Long accountId) {
-        this.accountId = accountId;
-    }
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public void setAccountName(String accountName) {
-        this.accountName = accountName;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
-
-    public void setDomainId(Long domainId) {
-        this.domainId = domainId;
     }
 
     public String getUsageName() {
@@ -112,7 +81,15 @@ public class QuotaStatementItemResponse extends BaseResponse {
     }
 
     public void setQuotaUsed(BigDecimal quotaUsed) {
-        this.quotaUsed = quotaUsed.setScale(2, RoundingMode.HALF_EVEN);
+        this.quotaUsed = quotaUsed;
+    }
+
+    public List<QuotaStatementItemResourceResponse> getResources() {
+        return resources;
+    }
+
+    public void setResources(List<QuotaStatementItemResourceResponse> resources) {
+        this.resources = resources;
     }
 
 }

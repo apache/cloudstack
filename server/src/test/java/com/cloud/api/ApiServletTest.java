@@ -16,36 +16,8 @@
 // under the License.
 package com.cloud.api;
 
-import com.cloud.api.auth.ListUserTwoFactorAuthenticatorProvidersCmd;
-import com.cloud.api.auth.SetupUserTwoFactorAuthenticationCmd;
-import com.cloud.api.auth.ValidateUserTwoFactorAuthenticationCodeCmd;
-import com.cloud.server.ManagementServer;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManagerImpl;
-import com.cloud.user.AccountService;
-import com.cloud.user.User;
-import com.cloud.user.UserAccount;
-import com.cloud.utils.HttpUtils;
-import com.cloud.vm.UserVmManager;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.auth.APIAuthenticationManager;
-import org.apache.cloudstack.api.auth.APIAuthenticationType;
-import org.apache.cloudstack.api.auth.APIAuthenticator;
-import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import static org.mockito.ArgumentMatchers.nullable;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -57,10 +29,45 @@ import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.mockito.ArgumentMatchers.nullable;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.auth.APIAuthenticationManager;
+import org.apache.cloudstack.api.auth.APIAuthenticationType;
+import org.apache.cloudstack.api.auth.APIAuthenticator;
+import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
+import org.apache.cloudstack.api.command.admin.offering.IsAccountAllowedToCreateOfferingsWithTagsCmd;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import com.cloud.api.auth.ListUserTwoFactorAuthenticatorProvidersCmd;
+import com.cloud.api.auth.SetupUserTwoFactorAuthenticationCmd;
+import com.cloud.api.auth.ValidateUserTwoFactorAuthenticationCodeCmd;
+import com.cloud.server.ManagementServer;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManagerImpl;
+import com.cloud.user.AccountService;
+import com.cloud.user.User;
+import com.cloud.user.UserAccount;
+import com.cloud.utils.HttpUtils;
+import com.cloud.vm.UserVmManager;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ApiServletTest {
+
+    private static final String[] STATE_CHANGING_COMMAND_CHECK_NAME_PARAM =
+            {ApiServer.EnforcePostRequestsAndTimestamps.key()};
 
     @Mock
     ApiServer apiServer;
@@ -460,5 +467,89 @@ public class ApiServletTest {
                 responseType, request, response);
 
         Assert.assertEquals(false, result);
+    }
+
+    @Test
+    public void isStateChangingCommandNotUsingPOSTReturnsFalseForPostMethod() {
+        String command = "updateConfiguration";
+        String method = "POST";
+        Map<String, Object[]> params = new HashMap<>();
+
+        boolean result = servlet.isStateChangingCommandNotUsingPOST(command, method, params);
+
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void isStateChangingCommandNotUsingPOSTReturnsTrueForNullCommandAndMethod() {
+        String command = null;
+        String method = null;
+        Map<String, Object[]> params = new HashMap<>();
+
+        boolean result = servlet.isStateChangingCommandNotUsingPOST(command, method, params);
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void isStateChangingCommandNotUsingPOSTReturnsFalseForGetHttpMethodAnnotation() {
+        String command = "isAccountAllowedToCreateOfferingsWithTags";
+        String method = "GET";
+        Map<String, Object[]> params = new HashMap<>();
+        Class<?> cmdClass = IsAccountAllowedToCreateOfferingsWithTagsCmd.class;
+        APICommand apiCommand = cmdClass.getAnnotation(APICommand.class);
+        Mockito.doReturn(cmdClass).when(apiServer).getCmdClass(command);
+        Assert.assertNotNull(apiCommand);
+        Assert.assertEquals("GET", apiCommand.httpMethod());
+        boolean result = servlet.isStateChangingCommandNotUsingPOST(command, method, params);
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void isStateChangingCommandNotUsingPOSTReturnsFalseForMatchingGetRequestPattern() {
+        String command = "listZones";
+        String method = "GET";
+        Map<String, Object[]> params = new HashMap<>();
+        boolean result = servlet.isStateChangingCommandNotUsingPOST(command, method, params);
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void isStateChangingCommandNotUsingPOSTReturnsTrueForMissingNameParameter() {
+        String command = "updateConfiguration";
+        String method = "GET";
+        Map<String, Object[]> params = new HashMap<>();
+        boolean result = servlet.isStateChangingCommandNotUsingPOST(command, method, params);
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void isStateChangingCommandNotUsingPOSTReturnsFalseForUpdateConfigurationEnforcePostRequestsKey() {
+        String command = "updateConfiguration";
+        String method = "GET";
+        Map<String, Object[]> params = new HashMap<>();
+        params.put("name", STATE_CHANGING_COMMAND_CHECK_NAME_PARAM);
+        boolean result = servlet.isStateChangingCommandNotUsingPOST(command, method, params);
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void isStateChangingCommandNotUsingPOSTReturnsFalseForWrongApiEnforcePostRequestsKey() {
+        String command = "updateSomeApi";
+        String method = "GET";
+        Map<String, Object[]> params = new HashMap<>();
+        params.put("name", STATE_CHANGING_COMMAND_CHECK_NAME_PARAM);
+        boolean result = servlet.isStateChangingCommandNotUsingPOST(command, method, params);
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void isStateChangingCommandNotUsingPOSTReturnsFalseForUpdateConfigurationNonEnforcePostRequestsKey() {
+        String command = "updateConfiguration";
+        String method = "GET";
+        Map<String, Object[]> params = new HashMap<>();
+        params.put("name", new String[] { "key" });
+        boolean result = servlet.isStateChangingCommandNotUsingPOST(command, method, params);
+        Assert.assertTrue(result);
     }
 }

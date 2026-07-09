@@ -111,6 +111,6 @@ public class DeleteBackupCmd  extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Deleting backup ID " + backupId;
+        return "Deleting Backup with ID: " + getResourceUuid(ApiConstants.ID);
     }
 }

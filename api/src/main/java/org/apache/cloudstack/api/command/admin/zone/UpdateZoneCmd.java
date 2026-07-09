@@ -178,7 +178,7 @@ public class UpdateZoneCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Zone Id: " + getId());
+        CallContext.current().setEventDetails("Zone ID: " + getResourceUuid(ApiConstants.ID));
         DataCenter result = _configService.editZone(this);
         if (result != null) {
             ZoneResponse response = _responseGenerator.createZoneResponse(ResponseView.Full, result, false, false);

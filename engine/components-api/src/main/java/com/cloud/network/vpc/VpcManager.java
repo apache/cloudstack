@@ -211,4 +211,9 @@ public interface VpcManager {
     void reconfigStaticNatForVpcVr(Long vpcId);
 
     boolean applyStaticRouteForVpcVpnIfNeeded(Long vpcId, boolean updateAllVpn) throws ResourceUnavailableException;
+
+    /**
+     * Returns true if the network is part of a VPC, and the VPC is created from conserve mode enabled VPC offering
+     */
+    boolean isNetworkOnVpcEnabledConserveMode(Network network);
 }

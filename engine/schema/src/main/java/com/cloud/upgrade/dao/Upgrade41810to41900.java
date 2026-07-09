@@ -159,7 +159,7 @@ public class Upgrade41810to41900 extends DbUpgradeAbstractImpl implements DbUpgr
         try (PreparedStatement pstmt = conn.prepareStatement(createNewColumn)) {
             pstmt.execute();
         } catch (SQLException e) {
-            String message = String.format("Unable to crate new backups' column date due to [%s].", e.getMessage());
+            String message = String.format("Unable to create new backups' column date due to [%s].", e.getMessage());
             logger.error(message, e);
             throw new CloudRuntimeException(message, e);
         }

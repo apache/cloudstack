@@ -239,7 +239,8 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
                 if (!_networkACLItemDao.setStateToAdd(networkACLItemVOFromDatabase)) {
                     throw new CloudRuntimeException("Unable to update the state to add for " + networkACLItemVOFromDatabase);
                 }
-                CallContext.current().setEventDetails("ACL Item Id: " + networkACLItemVOFromDatabase.getId());
+
+                CallContext.current().setEventDetails("ACL Item ID: " + networkACLItemVOFromDatabase.getUuid());
                 CallContext.current().putContextParameter(NetworkACLItem.class, networkACLItemVOFromDatabase.getAclId());
                 return networkACLItemVOFromDatabase;
             }

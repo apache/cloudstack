@@ -100,7 +100,7 @@ public class ConfigureVirtualRouterElementCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "configuring virtual router provider: " + id;
+        return "Configuring virtual router with provider that has ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
@@ -115,7 +115,7 @@ public class ConfigureVirtualRouterElementCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-        CallContext.current().setEventDetails("Virtual router element: " + id);
+        CallContext.current().setEventDetails("Virtual router element ID: " + getResourceUuid(ApiConstants.ID));
         VirtualRouterProvider result = _service.get(0).configure(this);
         if (result != null) {
             VirtualRouterProviderResponse routerResponse = _responseGenerator.createVirtualRouterProviderResponse(result);

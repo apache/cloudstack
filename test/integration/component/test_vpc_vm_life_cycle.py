@@ -1274,7 +1274,7 @@ class TestVMLifeCycleBothIsolated(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to deploy the virtual instance: %s" % e)
 
-        self.debug("Verify the deployment of virtual instace")
+        self.debug("Verify the deployment of virtual instance")
         vms = VirtualMachine.list(
                                   self.apiclient,
                                   id=vm.id,

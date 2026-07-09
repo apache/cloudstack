@@ -85,7 +85,7 @@ public class CreateIpv4SubnetForGuestNetworkCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Creating guest IPv4 subnet " + getSubnet() + " in zone subnet=" + getParentId();
+        return "Creating guest IPv4 subnet " + getSubnet() + " in zone subnet: " + getResourceUuid(ApiConstants.PARENT_ID);
     }
 
     @Override

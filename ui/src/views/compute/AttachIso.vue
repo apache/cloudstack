@@ -17,23 +17,38 @@
 <template>
   <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
+      <a-alert
+        v-if="!loading && maxSelections === 0"
+        type="warning"
+        showIcon
+        :message="$t('label.iso.name') + ': max reached'"
+        style="margin-bottom: 12px;" />
       <a-form
         :ref="formRef"
         :model="form"
         :rules="rules"
         layout="vertical"
         @finish="handleSubmit">
-        <a-form-item :label="$t('label.iso.name')" ref="id" name="id">
+        <a-form-item
+          :label="$t('label.iso.name') + ' (' + form.ids.length + ' / ' + maxSelections + ')'"
+          ref="ids"
+          name="ids">
           <a-select
+            mode="multiple"
             :loading="loading"
-            v-model:value="form.id"
+            v-model:value="form.ids"
             v-focus="true"
+            :disabled="maxSelections === 0"
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
               return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }">
-            <a-select-option v-for="iso in isos" :key="iso.id" :label="iso.displaytext || iso.name">
+            <a-select-option
+              v-for="iso in isos"
+              :key="iso.id"
+              :label="iso.displaytext || iso.name"
+              :disabled="form.ids.length >= maxSelections && !form.ids.includes(iso.id)">
               {{ iso.displaytext || iso.name }}
             </a-select-option>
           </a-select>
@@ -69,33 +84,55 @@ export default {
   data () {
     return {
       loading: false,
-      isos: []
+      isos: [],
+      maxSelections: 1
     }
   },
   created () {
     this.initForm()
+    this.computeMaxSelections()
     this.fetchData()
   },
+  watch: {
+    'form.ids' (newVal) {
+      if (newVal && newVal.length > this.maxSelections) {
+        this.form.ids = newVal.slice(0, this.maxSelections)
+        this.$message.warning(this.$t('label.iso.name') + ': max ' + this.maxSelections)
+      }
+    }
+  },
   methods: {
+    computeMaxSelections () {
+      // Server pre-computes the effective cap (cluster-scoped vm.iso.max.count clamped to
+      // the hypervisor's own limit) and exposes it on the VM as isomaxcount.
+      const effectiveCap = this.resource.isomaxcount != null
+        ? this.resource.isomaxcount
+        : (this.resource.hypervisor === 'KVM' ? 2 : 1)
+      const alreadyAttached = (this.resource.isos && this.resource.isos.length) ||
+        (this.resource.isoid ? 1 : 0)
+      this.maxSelections = Math.max(0, effectiveCap - alreadyAttached)
+    },
     initForm () {
       this.formRef = ref()
-      this.form = reactive({})
+      this.form = reactive({ ids: [] })
       this.rules = reactive({
-        id: [{ required: true, message: `${this.$t('label.required')}` }]
+        ids: [{
+          required: true,
+          type: 'array',
+          min: 1,
+          message: `${this.$t('label.required')}`
+        }]
       })
     },
     fetchData () {
-      const isoFiters = ['featured', 'community', 'selfexecutable']
+      const isoFilters = ['featured', 'community', 'selfexecutable']
       this.loading = true
       const promises = []
-      isoFiters.forEach((filter) => {
+      isoFilters.forEach((filter) => {
         promises.push(this.fetchIsos(filter))
       })
       Promise.all(promises).then(() => {
         this.isos = _.uniqBy(this.isos, 'id')
-        if (this.isos.length > 0) {
-          this.form.id = this.isos[0].id
-        }
       }).catch((error) => {
         console.log(error)
       }).finally(() => {
@@ -127,35 +164,42 @@ export default {
       if (this.loading) return
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
-        const params = {
-          id: values.id,
-          virtualmachineid: this.resource.id
-        }
-
-        if (values.forced) {
-          params.forced = values.forced
-        }
+        const ids = values.ids || []
+        if (ids.length === 0) return
 
         this.loading = true
         const title = this.$t('label.action.attach.iso')
-        postAPI('attachIso', params).then(json => {
-          const jobId = json.attachisoresponse.jobid
-          if (jobId) {
-            this.$pollJob({
-              jobId,
-              title,
-              description: values.id,
-              successMessage: `${this.$t('label.action.attach.iso')} ${this.$t('label.success')}`,
-              loadingMessage: `${title} ${this.$t('label.in.progress')}`,
-              catchMessage: this.$t('error.fetching.async.job.result')
-            })
+        // attachIso is single-ISO server-side; fan out one call per selection.
+        const sendOne = (isoId) => {
+          const params = {
+            id: isoId,
+            virtualmachineid: this.resource.id
           }
-          this.closeAction()
-        }).catch(error => {
-          this.$notifyError(error)
-        }).finally(() => {
-          this.loading = false
-        })
+          if (values.forced) {
+            params.forced = values.forced
+          }
+          return new Promise((resolve, reject) => {
+            postAPI('attachIso', params).then(json => {
+              const jobId = json.attachisoresponse && json.attachisoresponse.jobid
+              if (jobId) {
+                this.$pollJob({
+                  jobId,
+                  title,
+                  description: isoId,
+                  successMessage: `${this.$t('label.action.attach.iso')} ${this.$t('label.success')}`,
+                  loadingMessage: `${title} ${this.$t('label.in.progress')}`,
+                  catchMessage: this.$t('error.fetching.async.job.result')
+                })
+              }
+              resolve()
+            }).catch(reject)
+          })
+        }
+
+        ids.reduce((p, id) => p.then(() => sendOne(id)), Promise.resolve())
+          .then(() => { this.closeAction() })
+          .catch(error => { this.$notifyError(error) })
+          .finally(() => { this.loading = false })
       }).catch(error => {
         this.formRef.value.scrollToField(error.errorFields[0].name)
       })

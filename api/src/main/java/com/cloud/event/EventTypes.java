@@ -36,6 +36,8 @@ import org.apache.cloudstack.gpu.GpuCard;
 import org.apache.cloudstack.gpu.GpuDevice;
 import org.apache.cloudstack.gpu.VgpuProfile;
 import org.apache.cloudstack.ha.HAConfig;
+import org.apache.cloudstack.kms.HSMProfile;
+import org.apache.cloudstack.kms.KMSKey;
 import org.apache.cloudstack.network.BgpPeer;
 import org.apache.cloudstack.network.Ipv4GuestSubnetNetworkMap;
 import org.apache.cloudstack.quota.QuotaTariff;
@@ -43,7 +45,7 @@ import org.apache.cloudstack.storage.object.Bucket;
 import org.apache.cloudstack.storage.object.ObjectStore;
 import org.apache.cloudstack.storage.sharedfs.SharedFS;
 import org.apache.cloudstack.usage.Usage;
-import org.apache.cloudstack.vm.schedule.VMSchedule;
+import org.apache.cloudstack.schedule.ResourceSchedule;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterGuestIpv6Prefix;
@@ -125,16 +127,17 @@ public class EventTypes {
     public static final String EVENT_VM_UNMANAGE = "VM.UNMANAGE";
     public static final String EVENT_VM_RECOVER = "VM.RECOVER";
 
-    // VM Schedule
-    public static final String EVENT_VM_SCHEDULE_CREATE = "VM.SCHEDULE.CREATE";
-    public static final String EVENT_VM_SCHEDULE_UPDATE = "VM.SCHEDULE.UPDATE";
-    public static final String EVENT_VM_SCHEDULE_DELETE = "VM.SCHEDULE.DELETE";
-
+    // VM Schedule action-execution events (fired when a scheduled action runs).
     public static final String EVENT_VM_SCHEDULE_START = "VM.SCHEDULE.START";
     public static final String EVENT_VM_SCHEDULE_STOP = "VM.SCHEDULE.STOP";
     public static final String EVENT_VM_SCHEDULE_REBOOT = "VM.SCHEDULE.REBOOT";
     public static final String EVENT_VM_SCHEDULE_FORCE_STOP = "VM.SCHEDULE.FORCE.STOP";
     public static final String EVENT_VM_SCHEDULE_FORCE_REBOOT = "VM.SCHEDULE.FORCE.REBOOT";
+
+    // Generic Resource Schedule CRUD events (apply to all resource types).
+    public static final String EVENT_SCHEDULE_CREATE = "SCHEDULE.CREATE";
+    public static final String EVENT_SCHEDULE_UPDATE = "SCHEDULE.UPDATE";
+    public static final String EVENT_SCHEDULE_DELETE = "SCHEDULE.DELETE";
 
     // Domain Router
     public static final String EVENT_ROUTER_CREATE = "ROUTER.CREATE";
@@ -271,6 +274,20 @@ public class EventTypes {
     public static final String EVENT_CA_CERTIFICATE_REVOKE = "CA.CERTIFICATE.REVOKE";
     public static final String EVENT_CA_CERTIFICATE_PROVISION = "CA.CERTIFICATE.PROVISION";
 
+    // KMS (Key Management Service) events
+    public static final String EVENT_KMS_KEY_WRAP = "KMS.KEY.WRAP";
+    public static final String EVENT_KMS_KEY_UNWRAP = "KMS.KEY.UNWRAP";
+    public static final String EVENT_KMS_KEY_CREATE = "KMS.KEY.CREATE";
+    public static final String EVENT_KMS_KEY_UPDATE = "KMS.KEY.UPDATE";
+    public static final String EVENT_KMS_KEY_ROTATE = "KMS.KEY.ROTATE";
+    public static final String EVENT_KMS_KEY_DELETE = "KMS.KEY.DELETE";
+    public static final String EVENT_VOLUME_MIGRATE_TO_KMS = "VOLUME.MIGRATE.TO.KMS";
+
+    // HSM Profile events
+    public static final String EVENT_HSM_PROFILE_CREATE = "HSM.PROFILE.CREATE";
+    public static final String EVENT_HSM_PROFILE_UPDATE = "HSM.PROFILE.UPDATE";
+    public static final String EVENT_HSM_PROFILE_DELETE = "HSM.PROFILE.DELETE";
+
     // Account events
     public static final String EVENT_ACCOUNT_ENABLE = "ACCOUNT.ENABLE";
     public static final String EVENT_ACCOUNT_DISABLE = "ACCOUNT.DISABLE";
@@ -298,8 +315,9 @@ public class EventTypes {
     public static final String EVENT_REGISTER_CNI_CONFIG = "REGISTER.CNI.CONFIG";
     public static final String EVENT_DELETE_CNI_CONFIG = "DELETE.CNI.CONFIG";
 
-    //register for user API and secret keys
+    //user API and secret keys
     public static final String EVENT_REGISTER_FOR_SECRET_API_KEY = "REGISTER.USER.KEY";
+    public static final String EVENT_DELETE_SECRET_API_KEY = "DELETE.USER.KEY";
     public static final String API_KEY_ACCESS_UPDATE = "API.KEY.ACCESS.UPDATE";
 
     // Template Events
@@ -374,11 +392,13 @@ public class EventTypes {
 
     // Service Offerings
     public static final String EVENT_SERVICE_OFFERING_CREATE = "SERVICE.OFFERING.CREATE";
+    public static final String EVENT_SERVICE_OFFERING_CLONE = "SERVICE.OFFERING.CLONE";
     public static final String EVENT_SERVICE_OFFERING_EDIT = "SERVICE.OFFERING.EDIT";
     public static final String EVENT_SERVICE_OFFERING_DELETE = "SERVICE.OFFERING.DELETE";
 
     // Disk Offerings
     public static final String EVENT_DISK_OFFERING_CREATE = "DISK.OFFERING.CREATE";
+    public static final String EVENT_DISK_OFFERING_CLONE = "DISK.OFFERING.CLONE";
     public static final String EVENT_DISK_OFFERING_EDIT = "DISK.OFFERING.EDIT";
     public static final String EVENT_DISK_OFFERING_DELETE = "DISK.OFFERING.DELETE";
 
@@ -399,6 +419,7 @@ public class EventTypes {
 
     // Network offerings
     public static final String EVENT_NETWORK_OFFERING_CREATE = "NETWORK.OFFERING.CREATE";
+    public static final String EVENT_NETWORK_OFFERING_CLONE = "NETWORK.OFFERING.CLONE";
     public static final String EVENT_NETWORK_OFFERING_ASSIGN = "NETWORK.OFFERING.ASSIGN";
     public static final String EVENT_NETWORK_OFFERING_EDIT = "NETWORK.OFFERING.EDIT";
     public static final String EVENT_NETWORK_OFFERING_REMOVE = "NETWORK.OFFERING.REMOVE";
@@ -503,6 +524,7 @@ public class EventTypes {
     public static final String EVENT_S2S_VPN_CUSTOMER_GATEWAY_CREATE = "VPN.S2S.CUSTOMER.GATEWAY.CREATE";
     public static final String EVENT_S2S_VPN_CUSTOMER_GATEWAY_DELETE = "VPN.S2S.CUSTOMER.GATEWAY.DELETE";
     public static final String EVENT_S2S_VPN_CUSTOMER_GATEWAY_UPDATE = "VPN.S2S.CUSTOMER.GATEWAY.UPDATE";
+    public static final String EVENT_S2S_VPN_GATEWAY_OBSOLETE_PARAMS = "VPN.S2S.GATEWAY.OBSOLETE.PARAMS";
     public static final String EVENT_S2S_VPN_CONNECTION_CREATE = "VPN.S2S.CONNECTION.CREATE";
     public static final String EVENT_S2S_VPN_CONNECTION_DELETE = "VPN.S2S.CONNECTION.DELETE";
     public static final String EVENT_S2S_VPN_CONNECTION_RESET = "VPN.S2S.CONNECTION.RESET";
@@ -597,6 +619,7 @@ public class EventTypes {
 
     // VPC offerings
     public static final String EVENT_VPC_OFFERING_CREATE = "VPC.OFFERING.CREATE";
+    public static final String EVENT_VPC_OFFERING_CLONE = "VPC.OFFERING.CLONE";
     public static final String EVENT_VPC_OFFERING_UPDATE = "VPC.OFFERING.UPDATE";
     public static final String EVENT_VPC_OFFERING_DELETE = "VPC.OFFERING.DELETE";
 
@@ -629,6 +652,7 @@ public class EventTypes {
 
     // Backup and Recovery events
     public static final String EVENT_VM_BACKUP_IMPORT_OFFERING = "BACKUP.IMPORT.OFFERING";
+    public static final String EVENT_VM_BACKUP_OFFERING_CLONE = "BACKUP.OFFERING.CLONE";
     public static final String EVENT_VM_BACKUP_OFFERING_ASSIGN = "BACKUP.OFFERING.ASSIGN";
     public static final String EVENT_VM_BACKUP_OFFERING_REMOVE = "BACKUP.OFFERING.REMOVE";
     public static final String EVENT_VM_BACKUP_CREATE = "BACKUP.CREATE";
@@ -669,6 +693,7 @@ public class EventTypes {
     public static final String EVENT_AUTOSCALEVMGROUP_DISABLE = "AUTOSCALEVMGROUP.DISABLE";
     public static final String EVENT_AUTOSCALEVMGROUP_SCALEDOWN = "AUTOSCALEVMGROUP.SCALEDOWN";
     public static final String EVENT_AUTOSCALEVMGROUP_SCALEUP = "AUTOSCALEVMGROUP.SCALEUP";
+    public static final String EVENT_AUTOSCALEVMGROUP_SCHEDULE_UPDATE = "AUTOSCALEVMGROUP.SCHEDULE.UPDATE";
 
     public static final String EVENT_BAREMETAL_DHCP_SERVER_ADD = "PHYSICAL.DHCP.ADD";
     public static final String EVENT_BAREMETAL_DHCP_SERVER_DELETE = "PHYSICAL.DHCP.DELETE";
@@ -881,15 +906,18 @@ public class EventTypes {
         entityEventDetails.put(EVENT_VM_IMPORT, VirtualMachine.class);
         entityEventDetails.put(EVENT_VM_UNMANAGE, VirtualMachine.class);
 
-        // VMSchedule
-        entityEventDetails.put(EVENT_VM_SCHEDULE_CREATE, VMSchedule.class);
-        entityEventDetails.put(EVENT_VM_SCHEDULE_DELETE, VMSchedule.class);
-        entityEventDetails.put(EVENT_VM_SCHEDULE_UPDATE, VMSchedule.class);
-        entityEventDetails.put(EVENT_VM_SCHEDULE_START, VMSchedule.class);
-        entityEventDetails.put(EVENT_VM_SCHEDULE_STOP, VMSchedule.class);
-        entityEventDetails.put(EVENT_VM_SCHEDULE_REBOOT, VMSchedule.class);
-        entityEventDetails.put(EVENT_VM_SCHEDULE_FORCE_STOP, VMSchedule.class);
-        entityEventDetails.put(EVENT_VM_SCHEDULE_FORCE_REBOOT, VMSchedule.class);
+        // VMSchedule action-execution events
+        entityEventDetails.put(EVENT_VM_SCHEDULE_START, ResourceSchedule.class);
+        entityEventDetails.put(EVENT_VM_SCHEDULE_STOP, ResourceSchedule.class);
+        entityEventDetails.put(EVENT_VM_SCHEDULE_REBOOT, ResourceSchedule.class);
+        entityEventDetails.put(EVENT_VM_SCHEDULE_FORCE_STOP, ResourceSchedule.class);
+        entityEventDetails.put(EVENT_VM_SCHEDULE_FORCE_REBOOT, ResourceSchedule.class);
+        entityEventDetails.put(EVENT_AUTOSCALEVMGROUP_SCHEDULE_UPDATE, ResourceSchedule.class);
+
+        // Generic Resource Schedule
+        entityEventDetails.put(EVENT_SCHEDULE_CREATE, ResourceSchedule.class);
+        entityEventDetails.put(EVENT_SCHEDULE_UPDATE, ResourceSchedule.class);
+        entityEventDetails.put(EVENT_SCHEDULE_DELETE, ResourceSchedule.class);
 
         entityEventDetails.put(EVENT_ROUTER_CREATE, VirtualRouter.class);
         entityEventDetails.put(EVENT_ROUTER_DESTROY, VirtualRouter.class);
@@ -1008,6 +1036,20 @@ public class EventTypes {
         entityEventDetails.put(EVENT_VOLUME_RECOVER, Volume.class);
         entityEventDetails.put(EVENT_VOLUME_CHANGE_DISK_OFFERING, Volume.class);
 
+        // KMS Key Events
+        entityEventDetails.put(EVENT_KMS_KEY_CREATE, KMSKey.class);
+        entityEventDetails.put(EVENT_KMS_KEY_UPDATE, KMSKey.class);
+        entityEventDetails.put(EVENT_KMS_KEY_UNWRAP, KMSKey.class);
+        entityEventDetails.put(EVENT_KMS_KEY_WRAP, KMSKey.class);
+        entityEventDetails.put(EVENT_KMS_KEY_DELETE, KMSKey.class);
+        entityEventDetails.put(EVENT_KMS_KEY_ROTATE, KMSKey.class);
+        entityEventDetails.put(EVENT_VOLUME_MIGRATE_TO_KMS, KMSKey.class);
+
+        // HSM Profile Events
+        entityEventDetails.put(EVENT_HSM_PROFILE_CREATE, HSMProfile.class);
+        entityEventDetails.put(EVENT_HSM_PROFILE_UPDATE, HSMProfile.class);
+        entityEventDetails.put(EVENT_HSM_PROFILE_DELETE, HSMProfile.class);
+
         // Domains
         entityEventDetails.put(EVENT_DOMAIN_CREATE, Domain.class);
         entityEventDetails.put(EVENT_DOMAIN_DELETE, Domain.class);
@@ -1044,11 +1086,13 @@ public class EventTypes {
 
         // Service Offerings
         entityEventDetails.put(EVENT_SERVICE_OFFERING_CREATE, ServiceOffering.class);
+        entityEventDetails.put(EVENT_SERVICE_OFFERING_CLONE, ServiceOffering.class);
         entityEventDetails.put(EVENT_SERVICE_OFFERING_EDIT, ServiceOffering.class);
         entityEventDetails.put(EVENT_SERVICE_OFFERING_DELETE, ServiceOffering.class);
 
         // Disk Offerings
         entityEventDetails.put(EVENT_DISK_OFFERING_CREATE, DiskOffering.class);
+        entityEventDetails.put(EVENT_DISK_OFFERING_CLONE, DiskOffering.class);
         entityEventDetails.put(EVENT_DISK_OFFERING_EDIT, DiskOffering.class);
         entityEventDetails.put(EVENT_DISK_OFFERING_DELETE, DiskOffering.class);
 
@@ -1069,6 +1113,7 @@ public class EventTypes {
 
         // Network offerings
         entityEventDetails.put(EVENT_NETWORK_OFFERING_CREATE, NetworkOffering.class);
+        entityEventDetails.put(EVENT_NETWORK_OFFERING_CLONE, NetworkOffering.class);
         entityEventDetails.put(EVENT_NETWORK_OFFERING_ASSIGN, NetworkOffering.class);
         entityEventDetails.put(EVENT_NETWORK_OFFERING_EDIT, NetworkOffering.class);
         entityEventDetails.put(EVENT_NETWORK_OFFERING_REMOVE, NetworkOffering.class);
@@ -1152,6 +1197,7 @@ public class EventTypes {
         entityEventDetails.put(EVENT_S2S_VPN_CUSTOMER_GATEWAY_CREATE, Site2SiteCustomerGateway.class);
         entityEventDetails.put(EVENT_S2S_VPN_CUSTOMER_GATEWAY_DELETE, Site2SiteCustomerGateway.class);
         entityEventDetails.put(EVENT_S2S_VPN_CUSTOMER_GATEWAY_UPDATE, Site2SiteCustomerGateway.class);
+        entityEventDetails.put(EVENT_S2S_VPN_GATEWAY_OBSOLETE_PARAMS, Site2SiteCustomerGateway.class);
         entityEventDetails.put(EVENT_S2S_VPN_CONNECTION_CREATE, Site2SiteVpnConnection.class);
         entityEventDetails.put(EVENT_S2S_VPN_CONNECTION_DELETE, Site2SiteVpnConnection.class);
         entityEventDetails.put(EVENT_S2S_VPN_CONNECTION_RESET, Site2SiteVpnConnection.class);

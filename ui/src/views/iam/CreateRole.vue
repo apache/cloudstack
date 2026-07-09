@@ -202,7 +202,7 @@ export default {
           this.$emit('refresh-data')
           this.$notification.success({
             message: 'Create Role',
-            description: 'Sucessfully created role ' + params.name
+            description: 'Successfully created role ' + params.name
           })
         }
         this.closeAction()

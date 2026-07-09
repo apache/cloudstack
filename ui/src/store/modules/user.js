@@ -44,7 +44,8 @@ import {
   MS_ID,
   OAUTH_DOMAIN,
   OAUTH_PROVIDER,
-  LATEST_CS_VERSION
+  LATEST_CS_VERSION,
+  PASSWORD_CHANGE_REQUIRED
 } from '@/store/mutation-types'
 
 import {
@@ -80,7 +81,8 @@ const user = {
     twoFaProvider: '',
     twoFaIssuer: '',
     customHypervisorName: 'Custom',
-    readyForShutdownPollingJob: ''
+    readyForShutdownPollingJob: '',
+    passwordChangeRequired: false
   },
 
   mutations: {
@@ -196,6 +198,14 @@ const user = {
         vueProps.$localStorage.set(LATEST_CS_VERSION, version)
         state.latestVersion = version
       }
+    },
+    SET_PASSWORD_CHANGE_REQUIRED: (state, required) => {
+      state.passwordChangeRequired = required
+      if (required) {
+        vueProps.$localStorage.set(PASSWORD_CHANGE_REQUIRED, true)
+      } else {
+        vueProps.$localStorage.remove(PASSWORD_CHANGE_REQUIRED)
+      }
     }
   },
 
@@ -243,6 +253,13 @@ const user = {
           commit('SET_LOGIN_FLAG', false)
           if (result && result.managementserverid) {
             commit('SET_MS_ID', result.managementserverid)
+          }
+          if (result.passwordchangerequired) {
+            commit('SET_PASSWORD_CHANGE_REQUIRED', true)
+            commit('SET_APIS', {})
+            vueProps.$localStorage.remove(APIS)
+          } else {
+            commit('SET_PASSWORD_CHANGE_REQUIRED', false)
           }
           const latestVersion = vueProps.$localStorage.get(LATEST_CS_VERSION, { version: '', fetchedTs: 0 })
           commit('SET_LATEST_VERSION', latestVersion)
@@ -323,6 +340,49 @@ const user = {
         commit('SET_DOMAIN_STORE', domainStore)
         commit('SET_DARK_MODE', darkMode)
         commit('SET_LATEST_VERSION', latestVersion)
+
+        const loadFeatures = (apis) => {
+          return new Promise(resolve => {
+            getAPI('listCapabilities').then(response => {
+              const result = response.listcapabilitiesresponse.capability
+              commit('SET_FEATURES', result)
+              if (result && result.defaultuipagesize) {
+                commit('SET_DEFAULT_LISTVIEW_PAGE_SIZE', result.defaultuipagesize)
+              }
+              if (result && result.customhypervisordisplayname) {
+                commit('SET_CUSTOM_HYPERVISOR_NAME', result.customhypervisordisplayname)
+              }
+              if (result && result.securitygroupsenabled) {
+                commit('SET_SHOW_SECURITY_GROUPS', result.securitygroupsenabled)
+              }
+
+              if ('listHSMProfiles' in apis) {
+                getAPI('listHSMProfiles', { listall: true }).then(response => {
+                  const hasHsmProfiles = (response.listhsmprofilesresponse.count > 0)
+                  const features = Object.assign({}, store.getters.features)
+                  features.hashsmprofiles = hasHsmProfiles
+                  commit('SET_FEATURES', features)
+                  resolve()
+                }).catch(ignored => {
+                  resolve()
+                })
+              } else {
+                resolve()
+              }
+            }).catch(() => {
+              resolve()
+            })
+          })
+        }
+
+        // This block is to enforce password change for first time login after admin resets password
+        const isPwdChangeRequired = vueProps.$localStorage.get(PASSWORD_CHANGE_REQUIRED)
+        commit('SET_PASSWORD_CHANGE_REQUIRED', isPwdChangeRequired)
+        if (isPwdChangeRequired) {
+          resolve()
+          return
+        }
+
         if (hasAuth) {
           console.log('Login detected, using cached APIs')
           commit('SET_ZONES', cachedZones)
@@ -338,7 +398,9 @@ const user = {
             const result = response.listusersresponse.user[0]
             commit('SET_INFO', result)
             commit('SET_NAME', result.firstname + ' ' + result.lastname)
-            resolve(cachedApis)
+            loadFeatures(cachedApis).then(() => {
+              resolve(cachedApis)
+            })
           }).catch(error => {
             reject(error)
           })
@@ -365,14 +427,16 @@ const user = {
               }
             }
             commit('SET_APIS', apis)
-            resolve(apis)
-            store.dispatch('GenerateRoutes', { apis }).then(() => {
-              store.getters.addRouters.map(route => {
-                router.addRoute(route)
+            loadFeatures(apis).then(() => {
+              resolve(apis)
+              store.dispatch('GenerateRoutes', { apis }).then(() => {
+                store.getters.addRouters.map(route => {
+                  router.addRoute(route)
+                })
               })
+              hide()
+              message.success(i18n.global.t('message.sussess.discovering.feature'))
             })
-            hide()
-            message.success(i18n.global.t('message.sussess.discovering.feature'))
           }).catch(error => {
             reject(error)
           })
@@ -426,22 +490,6 @@ const user = {
         }).catch(ignored => {
         })
 
-        getAPI('listCapabilities').then(response => {
-          const result = response.listcapabilitiesresponse.capability
-          commit('SET_FEATURES', result)
-          if (result && result.defaultuipagesize) {
-            commit('SET_DEFAULT_LISTVIEW_PAGE_SIZE', result.defaultuipagesize)
-          }
-          if (result && result.customhypervisordisplayname) {
-            commit('SET_CUSTOM_HYPERVISOR_NAME', result.customhypervisordisplayname)
-          }
-          if (result && result.securitygroupsenabled) {
-            commit('SET_SHOW_SECURITY_GROUPS', result.securitygroupsenabled)
-          }
-        }).catch(error => {
-          reject(error)
-        })
-
         getAPI('listLdapConfigurations').then(response => {
           const ldapEnable = (response.ldapconfigurationresponse.count > 0)
           commit('SET_LDAP', ldapEnable)
@@ -484,6 +532,8 @@ const user = {
         vueProps.$localStorage.remove(CURRENT_PROJECT)
         vueProps.$localStorage.remove(ACCESS_TOKEN)
         vueProps.$localStorage.remove(HEADER_NOTICES)
+
+        commit('SET_PASSWORD_CHANGE_REQUIRED', false)
 
         logout(state.token).then(() => {
           message.destroy()
@@ -558,7 +608,8 @@ const user = {
         getAPI('listCapabilities').then(response => {
           const result = response.listcapabilitiesresponse.capability
           resolve(result)
-          commit('SET_FEATURES', result)
+          const features = Object.assign({}, store.getters.features, result)
+          commit('SET_FEATURES', features)
         }).catch(error => {
           reject(error)
         })

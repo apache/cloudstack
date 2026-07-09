@@ -130,6 +130,11 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd implements UserCmd {
             description="(optional) for NSX based VPCs: when set to true, use the VR IP as nameserver, otherwise use DNS1 and DNS2")
     private Boolean useVrIpResolver;
 
+    @Parameter(name = ApiConstants.KEEP_MAC_ADDRESS_ON_PUBLIC_NIC,
+            description = ApiConstants.PARAMETER_DESCRIPTION_KEEP_MAC_ADDRESS_ON_PUBLIC_NIC,
+            type = CommandType.BOOLEAN, since = "4.23.0", authorized = {RoleType.Admin})
+    private boolean keepMacAddressOnPublicNic = true;
+
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
@@ -214,6 +219,10 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd implements UserCmd {
         return BooleanUtils.toBoolean(useVrIpResolver);
     }
 
+    public boolean getKeepMacAddressOnPublicNic() {
+        return keepMacAddressOnPublicNic;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -273,7 +282,7 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
+        Long accountId = _accountService.finalizeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }

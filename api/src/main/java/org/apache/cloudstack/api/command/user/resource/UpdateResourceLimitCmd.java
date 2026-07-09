@@ -100,7 +100,7 @@ public class UpdateResourceLimitCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
+        Long accountId = _accountService.finalizeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }
@@ -110,7 +110,7 @@ public class UpdateResourceLimitCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        ResourceLimit result = _resourceLimitService.updateResourceLimit(_accountService.finalyzeAccountId(accountName, domainId, projectId, true), getDomainId(), resourceType, max, getTag());
+        ResourceLimit result = _resourceLimitService.updateResourceLimit(_accountService.finalizeAccountId(accountName, domainId, projectId, true), getDomainId(), resourceType, max, getTag());
         if (result != null || (result == null && max != null && max.longValue() == -1L)) {
             ResourceLimitResponse response = _responseGenerator.createResourceLimitResponse(result);
             response.setResponseName(getCommandName());

@@ -64,8 +64,8 @@
           </div>
           <div v-else-if="$route.meta.name === 'backup' && item === 'volumes'">
             <div v-for="(volume, idx) in JSON.parse(dataResource[item])" :key="idx">
-              <router-link v-if="!dataResource['vmbackupofferingremoved']" :to="{ path: '/volume/' + volume.uuid }">{{ volume.type }} - {{ volume.path }}</router-link>
-              <span v-else>{{ volume.type }} - {{ volume.path }}</span> ({{ parseFloat(volume.size / (1024.0 * 1024.0 * 1024.0)).toFixed(1) }} GB)
+              <router-link v-if="!dataResource['vmbackupofferingremoved']" :to="{ path: '/volume/' + volume.uuid }">{{ volume.type }} - {{ volume.uuid }}</router-link>
+              <span v-else>{{ volume.type }} - {{ volume.uuid }}</span> ({{ parseFloat(volume.size / (1024.0 * 1024.0 * 1024.0)).toFixed(1) }} GB)
             </div>
           </div>
           <div v-else-if="$route.meta.name === 'computeoffering' && item === 'rootdisksize'">
@@ -97,7 +97,7 @@
             <span v-if="['USER.LOGIN', 'USER.LOGOUT', 'ROUTER.HEALTH.CHECKS', 'FIREWALL.CLOSE', 'ALERT.SERVICE.DOMAINROUTER'].includes(dataResource[item])">{{ $t(dataResource[item].toLowerCase()) }}</span>
             <span v-else>{{ dataResource[item] }}</span>
           </div>
-          <div v-else-if="['created', 'sent', 'lastannotated', 'collectiontime', 'lastboottime', 'lastserverstart', 'lastserverstop', 'removed', 'effectiveDate', 'endDate'].includes(item)">
+          <div v-else-if="['created', 'sent', 'lastannotated', 'collectiontime', 'lastboottime', 'lastserverstart', 'lastserverstop', 'removed', 'effectiveDate', 'endDate', 'startdate', 'enddate'].includes(item)">
             {{ $toLocaleDate(dataResource[item]) }}
           </div>
           <div style="white-space: pre-wrap;" v-else-if="$route.meta.name === 'quotatariff' && item === 'description'">{{ dataResource[item] }}</div>
@@ -168,7 +168,7 @@
           <div>{{ dataResource[item] }}</div>
         </div>
       </a-list-item>
-      <a-list-item v-else-if="['startdate', 'enddate'].includes(item)">
+      <a-list-item v-else-if="['startdate', 'enddate'].includes(item) && dataResource[item]">
         <div>
           <strong>{{ $t('label.' + item.replace('date', '.date.and.time'))}}</strong>
           <br/>
@@ -189,7 +189,7 @@
           <div>{{ dataResource[item].rbd_default_data_pool }}</div>
         </div>
       </a-list-item>
-      <a-list-item v-else-if="item === 'details' && ['extension', 'customaction'].includes($route.meta.name) && dataResource[item] && Object.keys(dataResource[item]).length > 0">
+      <a-list-item v-else-if="item === 'details' && ['extension', 'customaction', 'hsmprofile'].includes($route.meta.name) && dataResource[item] && Object.keys(dataResource[item]).length > 0">
         <div>
           <strong>{{ $t('label.configuration.details') }}</strong>
           <br/>
