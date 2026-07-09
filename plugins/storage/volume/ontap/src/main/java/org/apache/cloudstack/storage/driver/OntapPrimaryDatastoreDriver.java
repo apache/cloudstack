@@ -32,6 +32,8 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotDetailsDao;
 import com.cloud.storage.dao.SnapshotDetailsVO;
 import com.cloud.storage.dao.VolumeDao;
@@ -67,7 +69,6 @@ import org.apache.cloudstack.storage.service.model.CloudStackVolume;
 import org.apache.cloudstack.storage.service.model.ProtocolType;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.utils.OntapStorageUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -91,6 +92,7 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
     @Inject private VolumeDao volumeDao;
     @Inject private VolumeDetailsDao volumeDetailsDao;
     @Inject private SnapshotDetailsDao snapshotDetailsDao;
+    @Inject private SnapshotDao snapshotDao;
 
     @Override
     public Map<String, String> getCapabilities() {
@@ -98,6 +100,7 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
         Map<String, String> mapCapabilities = new HashMap<>();
         mapCapabilities.put(DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString(), Boolean.TRUE.toString());
         mapCapabilities.put(DataStoreCapabilities.CAN_CREATE_VOLUME_FROM_SNAPSHOT.toString(), Boolean.TRUE.toString());
+        mapCapabilities.put(DataStoreCapabilities.CAN_REVERT_VOLUME_TO_SNAPSHOT.toString(), Boolean.TRUE.toString());
         return mapCapabilities;
     }
 
@@ -210,8 +213,14 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
     /**
      * Deletes a volume or snapshot from the ONTAP storage system.
      *
-     * <p>For volumes, deletes the backend storage object (LUN for iSCSI, no-op for NFS).
-     * For snapshots, deletes the FlexVolume snapshot from ONTAP that was created by takeSnapshot.</p>
+     * <p>For volumes, deletes the backend storage object (LUN for iSCSI, file for NFS) via
+     * {@link StorageStrategy#deleteCloudStackVolume}.</p>
+     *
+     * <p>For <b>volume snapshots</b>, this driver is invoked by the standard CloudStack delete chain
+     * ({@code StorageSystemSnapshotStrategy} → {@code SnapshotServiceImpl.deleteSnapshot} →
+     * {@code deleteAsync}). It reads ONTAP metadata from {@code snapshot_details} and delegates
+     * the actual FlexVol snapshot delete to {@link StorageStrategy} (NFS or iSCSI implementation).
+     * ONTAP REST/delete-job logic must not live here — keep it in the storage-strategy layer.</p>
      */
     @Override
     public void deleteAsync(DataStore store, DataObject data, AsyncCompletionCallback<CommandResult> callback) {
@@ -237,8 +246,9 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
                 commandResult.setResult(null);
                 commandResult.setSuccess(true);
             } else if (data.getType() == DataObjectType.SNAPSHOT) {
-                // Delete the ONTAP FlexVolume snapshot that was created by takeSnapshot
-                deleteOntapSnapshot((SnapshotInfo) data, commandResult);
+                logger.info("deleteAsync: volume-snapshot delete for CloudStack snapshot [{}] on primary pool [{}] — "
+                        + "delegating ONTAP FlexVol cleanup to StorageStrategy", data.getId(), store.getId());
+                deleteCloudStackVolumeSnapshot((SnapshotInfo) data, commandResult);
             } else {
                 throw new CloudRuntimeException("Unsupported data object type: " + data.getType());
             }
@@ -252,79 +262,107 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
     }
 
     /**
-     * Deletes an ONTAP FlexVolume snapshot.
+     * Orchestrates CloudStack volume-snapshot delete on ONTAP.
      *
-     * <p>Retrieves the snapshot details stored during takeSnapshot and calls the ONTAP
-     * REST API to delete the FlexVolume snapshot.</p>
+     * <p>This method is intentionally thin: it resolves identifiers persisted during
+     * {@link #takeSnapshot} into {@code snapshot_details} and delegates to the protocol
+     * {@link StorageStrategy} selected from pool details (NFS → {@code UnifiedNASStrategy},
+     * iSCSI → {@code UnifiedSANStrategy}). Both protocols share the same FlexVol-level
+     * snapshot delete REST API.</p>
      *
-     * @param snapshotInfo  The CloudStack snapshot to delete
-     * @param commandResult Result object to populate with success/failure
+     * <p>Required {@code snapshot_details} keys (see {@link OntapStorageConstants}):</p>
+     * <ul>
+     *   <li>{@code base_ontap_fv_id} — FlexVol UUID</li>
+     *   <li>{@code ontap_snap_id} — ONTAP snapshot UUID</li>
+     *   <li>{@code ontap_snap_name} — snapshot name (logging)</li>
+     *   <li>{@code primary_pool_id} — pool used to obtain credentials/protocol strategy</li>
+     * </ul>
      */
-    private void deleteOntapSnapshot(SnapshotInfo snapshotInfo, CommandResult commandResult) {
+    private void deleteCloudStackVolumeSnapshot(SnapshotInfo snapshotInfo, CommandResult commandResult) {
         long snapshotId = snapshotInfo.getId();
-        logger.info("deleteOntapSnapshot: Deleting ONTAP FlexVolume snapshot for CloudStack snapshot [{}]", snapshotId);
+        logger.info("deleteCloudStackVolumeSnapshot: starting ONTAP delete for CloudStack volume snapshot [{}]", snapshotId);
 
         try {
-            // Retrieve snapshot details stored during takeSnapshot
             String flexVolUuid = getSnapshotDetail(snapshotId, OntapStorageConstants.BASE_ONTAP_FV_ID);
             String ontapSnapshotUuid = getSnapshotDetail(snapshotId, OntapStorageConstants.ONTAP_SNAP_ID);
             String snapshotName = getSnapshotDetail(snapshotId, OntapStorageConstants.ONTAP_SNAP_NAME);
             String poolIdStr = getSnapshotDetail(snapshotId, OntapStorageConstants.PRIMARY_POOL_ID);
 
             if (flexVolUuid == null || ontapSnapshotUuid == null) {
-                logger.warn("deleteOntapSnapshot: Missing ONTAP snapshot details for snapshot [{}]. " +
-                        "flexVolUuid={}, ontapSnapshotUuid={}. Snapshot may have been created by a different method or already deleted.",
+                logger.warn("deleteCloudStackVolumeSnapshot: missing ONTAP identity for snapshot [{}] "
+                        + "(flexVolUuid={}, ontapSnapshotUuid={}). Cannot call ONTAP delete; "
+                        + "treating as no-op — verify snapshot_details were written during takeSnapshot",
                         snapshotId, flexVolUuid, ontapSnapshotUuid);
-                // Consider this a success since there's nothing to delete on ONTAP
                 commandResult.setSuccess(true);
                 commandResult.setResult(null);
                 return;
             }
 
-            long poolId = Long.parseLong(poolIdStr);
+            long poolId = resolveSnapshotPoolId(poolIdStr, snapshotId);
             Map<String, String> poolDetails = storagePoolDetailsDao.listDetailsKeyPairs(poolId);
-
+            String protocol = poolDetails.get(OntapStorageConstants.PROTOCOL);
             StorageStrategy storageStrategy = OntapStorageUtils.getStrategyByStoragePoolDetails(poolDetails);
-            SnapshotFeignClient snapshotClient = storageStrategy.getSnapshotFeignClient();
-            String authHeader = storageStrategy.getAuthHeader();
 
-            logger.info("deleteOntapSnapshot: Deleting ONTAP snapshot [{}] (uuid={}) from FlexVol [{}]",
-                    snapshotName, ontapSnapshotUuid, flexVolUuid);
+            logger.info("deleteCloudStackVolumeSnapshot: snapshot [{}] — protocol [{}], pool [{}], "
+                    + "flexVol [{}], ontapSnapshot [{}] (name [{}])",
+                    snapshotId, protocol, poolId, flexVolUuid, ontapSnapshotUuid, snapshotName);
 
-            // Call ONTAP REST API to delete the snapshot
-            JobResponse jobResponse = snapshotClient.deleteSnapshot(authHeader, flexVolUuid, ontapSnapshotUuid);
+            storageStrategy.deleteFlexVolSnapshotForCloudStackVolume(flexVolUuid, ontapSnapshotUuid, snapshotName);
 
-            if (jobResponse != null && jobResponse.getJob() != null) {
-                // Poll for job completion
-                Boolean jobSucceeded = storageStrategy.jobPollForSuccess(jobResponse.getJob().getUuid(), 30, 2000);
-                if (!jobSucceeded) {
-                    throw new CloudRuntimeException("Delete job failed for snapshot [" +
-                            snapshotName + "] on FlexVol [" + flexVolUuid + "]");
-                }
-            }
-
-            logger.info("deleteOntapSnapshot: Successfully deleted ONTAP snapshot [{}] (uuid={}) for CloudStack snapshot [{}]",
-                    snapshotName, ontapSnapshotUuid, snapshotId);
-
+            logger.info("deleteCloudStackVolumeSnapshot: completed ONTAP delete for CloudStack volume snapshot [{}]", snapshotId);
             commandResult.setSuccess(true);
             commandResult.setResult(null);
-
         } catch (Exception e) {
-            // Check if the error indicates snapshot doesn't exist (already deleted)
-            String errorMsg = e.getMessage();
-            if (errorMsg != null && (errorMsg.contains("404") || errorMsg.contains("not found") ||
-                    errorMsg.contains("does not exist"))) {
-                logger.warn("deleteOntapSnapshot: ONTAP snapshot for CloudStack snapshot [{}] not found, " +
-                        "may have been already deleted. Treating as success.", snapshotId);
+            if (isSnapshotNotFoundError(e)) {
+                logger.warn("deleteCloudStackVolumeSnapshot: ONTAP snapshot for CloudStack snapshot [{}] "
+                        + "already absent (idempotent success): {}", snapshotId, e.getMessage());
                 commandResult.setSuccess(true);
                 commandResult.setResult(null);
-            } else {
-                logger.error("deleteOntapSnapshot: Failed to delete ONTAP snapshot for CloudStack snapshot [{}]: {}",
-                        snapshotId, e.getMessage(), e);
-                commandResult.setSuccess(false);
-                commandResult.setResult(e.getMessage());
+                return;
+            }
+            logger.error("deleteCloudStackVolumeSnapshot: ONTAP delete failed for CloudStack snapshot [{}]: {}",
+                    snapshotId, e.getMessage(), e);
+            commandResult.setSuccess(false);
+            commandResult.setResult(e.getMessage());
+        }
+    }
+
+    /**
+     * Returns true when the exception indicates the ONTAP snapshot was already removed.
+     * Delete is idempotent: a missing backend snapshot is treated as success.
+     */
+    private boolean isSnapshotNotFoundError(Throwable error) {
+        if (error == null) {
+            return false;
+        }
+        String message = error.getMessage();
+        if (message != null) {
+            String lower = message.toLowerCase();
+            if (lower.contains("404") || lower.contains("not found") || lower.contains("does not exist")
+                    || lower.contains("entry doesn't exist")) {
+                return true;
             }
         }
+        return isSnapshotNotFoundError(error.getCause());
+    }
+
+    private long resolveSnapshotPoolId(String poolIdStr, long snapshotId) {
+        if (poolIdStr != null && !poolIdStr.isEmpty()) {
+            return Long.parseLong(poolIdStr);
+        }
+        SnapshotVO snapshotVO = snapshotDao.findById(snapshotId);
+        if (snapshotVO == null) {
+            throw new CloudRuntimeException("Snapshot not found for snapshot [" + snapshotId + "]");
+        }
+        VolumeVO volumeVO = volumeDao.findByIdIncludingRemoved(snapshotVO.getVolumeId());
+        if (volumeVO == null) {
+            throw new CloudRuntimeException("CloudStack Volume not found for snapshot [" + snapshotId + "]");
+        }
+        Long poolId = volumeVO.getPoolId() != null ? volumeVO.getPoolId() : volumeVO.getLastPoolId();
+        if (poolId == null || poolId <= 0) {
+            throw new CloudRuntimeException("Cannot resolve storage pool for snapshot [" + snapshotId + "]");
+        }
+        return poolId;
     }
 
     @Override
@@ -647,7 +685,7 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
 
             VolumeVO volumeVO = volumeDao.findById(volumeInfo.getId());
             if (volumeVO == null) {
-                throw new CloudRuntimeException("VolumeVO not found for id: " + volumeInfo.getId());
+                throw new CloudRuntimeException("CloudStack Volume not found for id: " + volumeInfo.getId());
             }
 
             StoragePoolVO storagePool = storagePoolDao.findById(volumeVO.getPoolId());
@@ -670,8 +708,8 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
 
             SnapshotObjectTO snapshotObjectTo = (SnapshotObjectTO) snapshot.getTO();
 
-            // Build snapshot name using volume name and snapshot UUID
-            String snapshotName = buildSnapshotName(volumeInfo.getName(), snapshot.getUuid());
+            // Preserve CloudStack UI snapshot name with stable uniqueness suffix.
+            String snapshotName = buildSnapshotName(snapshot.getName(), snapshot.getId());
 
             // Resolve the volume path for storing in snapshot details (for revert operation)
             String volumePath = resolveVolumePathOnOntap(volumeVO, protocol, poolDetails);
@@ -680,10 +718,10 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
             String lunUuid = null;
             if (ProtocolType.ISCSI.name().equalsIgnoreCase(protocol)) {
                 VolumeDetailVO lunDetail = volumeDetailsDao.findDetail(volumeVO.getId(), OntapStorageConstants.LUN_DOT_UUID);
-                String lunUUID = lunDetail != null ? lunDetail.getValue() : null;
-                if (lunUUID == null) {
+                if (lunDetail == null || lunDetail.getValue() == null) {
                     throw new CloudRuntimeException("LUN UUID not found for iSCSI volume " + volumeVO.getId());
                 }
+                lunUuid = lunDetail.getValue();
             }
 
             // Create FlexVolume snapshot via ONTAP REST API
@@ -713,7 +751,8 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
             // Set snapshot path for CloudStack (format: snapshotName for identification)
             snapshotObjectTo.setPath(OntapStorageConstants.ONTAP_SNAP_ID + "=" + ontapSnapshotUuid);
 
-            // Persist snapshot details for revert/delete operations
+            // Persist snapshot_details so deleteAsync can resolve ONTAP FlexVol/snapshot UUIDs
+            // (see deleteCloudStackVolumeSnapshot and StorageStrategy.deleteFlexVolSnapshotForCloudStackVolume)
             updateSnapshotDetails(snapshot.getId(), volumeInfo.getId(), flexVolUuid,
                     ontapSnapshotUuid, snapshotName, volumePath, volumeVO.getPoolId(), protocol, lunUuid);
 
@@ -789,15 +828,8 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
      * specific file (NFS) or LUN (iSCSI) from the FlexVolume snapshot directly
      * via ONTAP REST API, without involving the hypervisor agent.</p>
      *
-     * <p><b>Protocol-specific handling (delegated to strategy classes):</b></p>
-     * <ul>
-     *   <li><b>NFS (UnifiedNASStrategy):</b> Uses the single-file restore API:
-     *       {@code POST /api/storage/volumes/{volume_uuid}/snapshots/{snapshot_uuid}/files/{file_path}/restore}
-     *       Restores the QCOW2 file from the FlexVolume snapshot to its original location.</li>
-     *   <li><b>iSCSI (UnifiedSANStrategy):</b> Uses the LUN restore API:
-     *       {@code POST /api/storage/luns/{lun.uuid}/restore}
-     *       Restores the LUN data from the snapshot to the specified destination path.</li>
-     * </ul>
+     * <p>Both NFS and iSCSI delegate to CLI-based SFSR:
+     * {@code POST /api/private/cli/volume/snapshot/restore-file}</p>
      */
     @Override
     public void revertSnapshot(SnapshotInfo snapshotOnImageStore, SnapshotInfo snapshotOnPrimaryStore,
@@ -847,17 +879,7 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
             JobResponse jobResponse = storageStrategy.revertSnapshotForCloudStackVolume(
                     snapshotName, flexVolUuid, ontapSnapshotUuid, volumePath, lunUuid, flexVolName);
 
-            if (jobResponse == null || jobResponse.getJob() == null) {
-                throw new CloudRuntimeException("Failed to initiate restore from snapshot [" +
-                        snapshotName + "]");
-            }
-
-            // Poll for job completion (use longer timeout for large LUNs/files)
-            Boolean jobSucceeded = storageStrategy.jobPollForSuccess(jobResponse.getJob().getUuid(), 60, 2000);
-            if (!jobSucceeded) {
-                throw new CloudRuntimeException("Restore job failed for snapshot [" +
-                        snapshotName + "]");
-            }
+            storageStrategy.executeCliSfsrRestore(jobResponse, "revert snapshot [" + snapshotName + "]");
 
             logger.info("revertSnapshot: Successfully restored {} [{}] from snapshot [{}]",
                     ProtocolType.ISCSI.name().equalsIgnoreCase(protocol) ? "LUN" : "file",
@@ -975,22 +997,20 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
     // ──────────────────────────────────────────────────────────────────────────
 
     /**
-     * Builds a snapshot name with proper length constraints.
-     * Format: {@code <volumeName>-<snapshotUuid>}
+     * Builds an ONTAP-safe snapshot name from the CloudStack UI name with uniqueness suffix.
      */
-    private String buildSnapshotName(String volumeName, String snapshotUuid) {
-        String name = volumeName + "-" + snapshotUuid;
-        int maxLength = OntapStorageConstants.MAX_SNAPSHOT_NAME_LENGTH;
-        int trimRequired = name.length() - maxLength;
-
-        if (trimRequired > 0) {
-            name = StringUtils.left(volumeName, volumeName.length() - trimRequired) + "-" + snapshotUuid;
-        }
-        return name;
+    private String buildSnapshotName(String cloudStackSnapshotName, long snapshotId) {
+        return OntapStorageUtils.buildOntapSnapshotName(cloudStackSnapshotName, OntapStorageConstants.CS + snapshotId);
     }
+
 
     /**
      * Persists snapshot metadata in snapshot_details table.
+     *
+     * Persists ONTAP snapshot metadata in {@code snapshot_details} for revert and delete.
+     *
+     * <p>Volume-snapshot delete reads {@code base_ontap_fv_id} and {@code ontap_snap_id} here
+     * during {@link #deleteCloudStackVolumeSnapshot}; missing rows prevent ONTAP cleanup.</p>
      *
      * @param csSnapshotId      CloudStack snapshot ID
      * @param csVolumeId        Source CloudStack volume ID

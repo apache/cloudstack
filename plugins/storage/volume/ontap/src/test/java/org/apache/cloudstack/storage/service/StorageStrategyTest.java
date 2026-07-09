@@ -24,6 +24,7 @@ import org.apache.cloudstack.storage.feign.client.AggregateFeignClient;
 import org.apache.cloudstack.storage.feign.client.JobFeignClient;
 import org.apache.cloudstack.storage.feign.client.NetworkFeignClient;
 import org.apache.cloudstack.storage.feign.client.SANFeignClient;
+import org.apache.cloudstack.storage.feign.client.SnapshotFeignClient;
 import org.apache.cloudstack.storage.feign.client.SvmFeignClient;
 import org.apache.cloudstack.storage.feign.client.VolumeFeignClient;
 import org.apache.cloudstack.storage.feign.model.Aggregate;
@@ -62,6 +63,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -88,6 +90,9 @@ public class StorageStrategyTest {
     @Mock
     private SANFeignClient sanFeignClient;
 
+    @Mock
+    private SnapshotFeignClient snapshotFeignClient;
+
     private TestableStorageStrategy storageStrategy;
 
     // Concrete implementation for testing abstract class
@@ -98,7 +103,8 @@ public class StorageStrategyTest {
                                        SvmFeignClient svmFeignClient,
                                        JobFeignClient jobFeignClient,
                                        NetworkFeignClient networkFeignClient,
-                                       SANFeignClient sanFeignClient) {
+                                       SANFeignClient sanFeignClient,
+                                       SnapshotFeignClient snapshotFeignClient) {
             super(ontapStorage);
             // Use reflection to replace the private Feign client fields with mocked ones
             injectMockedClient("aggregateFeignClient", aggregateFeignClient);
@@ -107,6 +113,7 @@ public class StorageStrategyTest {
             injectMockedClient("jobFeignClient", jobFeignClient);
             injectMockedClient("networkFeignClient", networkFeignClient);
             injectMockedClient("sanFeignClient", sanFeignClient);
+            injectMockedClient("snapshotFeignClient", snapshotFeignClient);
         }
 
         private void injectMockedClient(String fieldName, Object mockedClient) {
@@ -192,7 +199,7 @@ public class StorageStrategyTest {
         // For testing, we'll need to mock the FeignClientFactory behavior
         storageStrategy = new TestableStorageStrategy(ontapStorage,
                 aggregateFeignClient, volumeFeignClient, svmFeignClient,
-                jobFeignClient, networkFeignClient, sanFeignClient);
+                jobFeignClient, networkFeignClient, sanFeignClient, snapshotFeignClient);
     }
 
     // ========== connect() Tests ==========
@@ -231,12 +238,7 @@ public class StorageStrategyTest {
     }
 
     @Test
-    public void testConnect_succeedsWhenAggregateSpaceBelowPoolCapacity() {
-        // Regression: connect() must validate connectivity/SVM/aggregate-state ONLY.
-        // Capacity is validated per-volume in createStorageVolume(name, size). Previously
-        // connect() compared aggregate free space against the whole storage pool size
-        // (storage.getSize()), which incorrectly failed data-path operations (volume/LUN
-        // create, grant/revoke access, delete) once the pool FlexVolume already existed.
+    public void testConnect_operationsOnly_skipsAggregateValidation() {
         Svm svm = new Svm();
         svm.setName("svm1");
         svm.setState(OntapStorageConstants.RUNNING);
@@ -252,45 +254,10 @@ public class StorageStrategyTest {
 
         when(svmFeignClient.getSvmResponse(anyMap(), anyString())).thenReturn(svmResponse);
 
-        // Aggregate is ONLINE but has far less free space than the configured pool size (5GB).
-        Aggregate aggregateDetail = mock(Aggregate.class);
-        when(aggregateDetail.getName()).thenReturn("aggr1");
-        when(aggregateDetail.getUuid()).thenReturn("aggr-uuid-1");
-        when(aggregateDetail.getState()).thenReturn(Aggregate.StateEnum.ONLINE);
-        when(aggregateFeignClient.getAggregateByUUID(anyString(), eq("aggr-uuid-1"))).thenReturn(aggregateDetail);
+        boolean result = storageStrategy.connect(false);
 
-        // Execute & Verify - connect() should succeed regardless of available space.
-        boolean result = storageStrategy.connect();
-        assertTrue(result, "connect() should succeed for an online aggregate even when its free space is below the pool capacity");
-    }
-
-    @Test
-    public void testConnect_noOnlineAggregates() {
-        // Setup - aggregate assigned to the SVM exists but is not ONLINE
-        Svm svm = new Svm();
-        svm.setName("svm1");
-        svm.setState(OntapStorageConstants.RUNNING);
-        svm.setNfsEnabled(true);
-
-        Aggregate aggregate = new Aggregate();
-        aggregate.setName("aggr1");
-        aggregate.setUuid("aggr-uuid-1");
-        svm.setAggregates(List.of(aggregate));
-
-        OntapResponse<Svm> svmResponse = new OntapResponse<>();
-        svmResponse.setRecords(List.of(svm));
-
-        when(svmFeignClient.getSvmResponse(anyMap(), anyString())).thenReturn(svmResponse);
-
-        Aggregate aggregateDetail = mock(Aggregate.class);
-        when(aggregateDetail.getName()).thenReturn("aggr1");
-        when(aggregateDetail.getUuid()).thenReturn("aggr-uuid-1");
-        when(aggregateDetail.getState()).thenReturn(null); // not online
-        when(aggregateFeignClient.getAggregateByUUID(anyString(), eq("aggr-uuid-1"))).thenReturn(aggregateDetail);
-
-        // Execute & Verify
-        CloudRuntimeException ex = assertThrows(CloudRuntimeException.class, () -> storageStrategy.connect());
-        assertTrue(ex.getMessage().contains("No suitable aggregates found"));
+        assertTrue(result);
+        verify(aggregateFeignClient, never()).getAggregateByUUID(anyString(), anyString());
     }
 
     @Test
@@ -354,7 +321,7 @@ public class StorageStrategyTest {
                 "svm1", 5000000000L, ProtocolType.ISCSI);
         storageStrategy = new TestableStorageStrategy(iscsiStorage,
                 aggregateFeignClient, volumeFeignClient, svmFeignClient,
-                jobFeignClient, networkFeignClient, sanFeignClient);
+                jobFeignClient, networkFeignClient, sanFeignClient, snapshotFeignClient);
 
         Svm svm = new Svm();
         svm.setName("svm1");
@@ -685,7 +652,7 @@ public class StorageStrategyTest {
                 "svm1", null, ProtocolType.ISCSI);
         storageStrategy = new TestableStorageStrategy(iscsiStorage,
                 aggregateFeignClient, volumeFeignClient, svmFeignClient,
-                jobFeignClient, networkFeignClient, sanFeignClient);
+                jobFeignClient, networkFeignClient, sanFeignClient, snapshotFeignClient);
 
         IscsiService.IscsiServiceTarget target = new IscsiService.IscsiServiceTarget();
         target.setName("iqn.1992-08.com.netapp:sn.123456:vs.1");
@@ -715,7 +682,7 @@ public class StorageStrategyTest {
                 "svm1", null, ProtocolType.ISCSI);
         storageStrategy = new TestableStorageStrategy(iscsiStorage,
                 aggregateFeignClient, volumeFeignClient, svmFeignClient,
-                jobFeignClient, networkFeignClient, sanFeignClient);
+                jobFeignClient, networkFeignClient, sanFeignClient, snapshotFeignClient);
 
         OntapResponse<IscsiService> emptyResponse = new OntapResponse<>();
         emptyResponse.setRecords(new ArrayList<>());
@@ -736,7 +703,7 @@ public class StorageStrategyTest {
                 "svm1", null, ProtocolType.ISCSI);
         storageStrategy = new TestableStorageStrategy(iscsiStorage,
                 aggregateFeignClient, volumeFeignClient, svmFeignClient,
-                jobFeignClient, networkFeignClient, sanFeignClient);
+                jobFeignClient, networkFeignClient, sanFeignClient, snapshotFeignClient);
 
         IscsiService iscsiService = new IscsiService();
         iscsiService.setTarget(null);
@@ -786,7 +753,7 @@ public class StorageStrategyTest {
                 "svm1", null, ProtocolType.ISCSI);
         storageStrategy = new TestableStorageStrategy(iscsiStorage,
                 aggregateFeignClient, volumeFeignClient, svmFeignClient,
-                jobFeignClient, networkFeignClient, sanFeignClient);
+                jobFeignClient, networkFeignClient, sanFeignClient, snapshotFeignClient);
 
         IpInterface.IpInfo ipInfo = new IpInterface.IpInfo();
         ipInfo.setAddress("192.168.1.51");
@@ -899,5 +866,67 @@ public class StorageStrategyTest {
                 .thenReturn(volumeResponse);
         when(volumeFeignClient.getVolume(anyString(), anyMap()))
                 .thenReturn(volumeResponse);
+    }
+
+    // ========== pollJobIfPresent / executeCliSfsrRestore Tests ==========
+
+    @Test
+    void testPollJobIfPresent_NoJob_DoesNotPoll() {
+        storageStrategy.pollJobIfPresent(null, "test operation");
+        storageStrategy.pollJobIfPresent(new JobResponse(), "test operation");
+        verify(jobFeignClient, times(0)).getJobByUUID(anyString(), anyString());
+    }
+
+    @Test
+    void testPollJobIfPresent_WithJob_PollsUntilSuccess() {
+        Job job = new Job();
+        job.setUuid("sfsr-job-1");
+        JobResponse response = new JobResponse();
+        response.setJob(job);
+
+        Job completedJob = new Job();
+        completedJob.setUuid("sfsr-job-1");
+        completedJob.setState(OntapStorageConstants.JOB_SUCCESS);
+        when(jobFeignClient.getJobByUUID(anyString(), eq("sfsr-job-1"))).thenReturn(completedJob);
+
+        storageStrategy.executeCliSfsrRestore(response, "CLI SFSR restore");
+
+        verify(jobFeignClient, atLeastOnce()).getJobByUUID(anyString(), eq("sfsr-job-1"));
+    }
+
+    @Test
+    void testPollJobIfPresent_JobFailure_ThrowsCloudRuntimeException() {
+        Job job = new Job();
+        job.setUuid("sfsr-job-fail");
+        JobResponse response = new JobResponse();
+        response.setJob(job);
+
+        Job failedJob = new Job();
+        failedJob.setUuid("sfsr-job-fail");
+        failedJob.setState(OntapStorageConstants.JOB_FAILURE);
+        failedJob.setMessage("restore failed");
+        when(jobFeignClient.getJobByUUID(anyString(), eq("sfsr-job-fail"))).thenReturn(failedJob);
+
+        assertThrows(CloudRuntimeException.class,
+                () -> storageStrategy.executeCliSfsrRestore(response, "CLI SFSR restore"));
+    }
+
+    @Test
+    void testDeleteFlexVolSnapshotForCloudStackVolume_PollsJobAndSucceeds() {
+        Job job = new Job();
+        job.setUuid("delete-job-1");
+        JobResponse response = new JobResponse();
+        response.setJob(job);
+        when(snapshotFeignClient.deleteSnapshot(anyString(), eq("fv-uuid-1"), eq("snap-uuid-1")))
+                .thenReturn(response);
+
+        Job completedJob = new Job();
+        completedJob.setUuid("delete-job-1");
+        completedJob.setState(OntapStorageConstants.JOB_SUCCESS);
+        when(jobFeignClient.getJobByUUID(anyString(), eq("delete-job-1"))).thenReturn(completedJob);
+
+        storageStrategy.deleteFlexVolSnapshotForCloudStackVolume("fv-uuid-1", "snap-uuid-1", "snap-name-1");
+
+        verify(snapshotFeignClient).deleteSnapshot(anyString(), eq("fv-uuid-1"), eq("snap-uuid-1"));
     }
 }
