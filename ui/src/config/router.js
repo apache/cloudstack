@@ -218,9 +218,9 @@ export function asyncRouterMap () {
 
       generateRouterMap(compute),
       generateRouterMap(storage),
-      generateRouterMap(kms),
       generateRouterMap(network),
       generateRouterMap(image),
+      generateRouterMap(kms),
       generateRouterMap(event),
       generateRouterMap(project),
       generateRouterMap(user),
