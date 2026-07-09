@@ -142,6 +142,9 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
             }
             logger.info("Using Data LIF for storage access: " + dataLIF);
             details.put(OntapStorageConstants.DATA_LIF, dataLIF);
+            if (storageStrategy.getResolvedSvmUuid() != null && !storageStrategy.getResolvedSvmUuid().isEmpty()) {
+                details.put(OntapStorageConstants.SVM_UUID, storageStrategy.getResolvedSvmUuid());
+            }
             logger.info("Creating ONTAP volume '" + storagePoolName + "' with size: " + capacityBytes + " bytes (" +
                     (capacityBytes / (1024 * 1024 * 1024)) + " GB)");
             try {

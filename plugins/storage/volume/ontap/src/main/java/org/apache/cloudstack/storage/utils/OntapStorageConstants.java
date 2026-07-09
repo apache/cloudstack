@@ -36,6 +36,7 @@ public class OntapStorageConstants {
     public static final String SIZE = "size";
     public static final String PROTOCOL = "protocol";
     public static final String SVM_NAME = "svmName";
+    public static final String SVM_UUID = "svmUUID";
     public static final String USERNAME = "username";
     public static final String PASSWORD = "password";
     public static final String DATA_LIF = "dataLIF";
@@ -71,6 +72,8 @@ public class OntapStorageConstants {
     public static final String IP_ADDRESS = "ip.address";
     public static final String SERVICES = "services";
     public static final String RETURN_RECORDS = "return_records";
+    public static final String SVM = "svm";
+    public static final String VOLUMES = "volumes";
 
     public static final int JOB_MAX_RETRIES = 100;
     public static final int CREATE_VOLUME_CHECK_SLEEP_TIME = 2000;
@@ -106,6 +109,17 @@ public class OntapStorageConstants {
     public static final String ONTAP_SNAP_SIZE = "ontap_snap_size";
     public static final String FILE_PATH = "file_path";
     public static final int MAX_SNAPSHOT_NAME_LENGTH = 255;
+    public static final String ONTAP_TEMP_CG_PREFIX = "cs-temp-cg-";
+    /** ONTAP CG API: action required when referencing existing FlexVols in a consistency group. */
+    public static final String CG_VOLUME_PROVISIONING_ACTION_ADD = "add";
+    public static final int ONTAP_CG_JOB_MAX_RETRIES = 60;
+    public static final int ONTAP_CG_JOB_POLL_INTERVAL_MS = 2000;
+    public static final int ONTAP_CG_SNAPSHOT_RESOLVE_MAX_RETRIES = 30;
+    public static final int ONTAP_CG_SNAPSHOT_RESOLVE_POLL_INTERVAL_MS = 1000;
+    public static final int ONTAP_SFSR_JOB_MAX_RETRIES = 60;
+    public static final int ONTAP_SFSR_JOB_POLL_INTERVAL_MS = 2000;
+    public static final int ONTAP_SNAPSHOT_DELETE_JOB_MAX_RETRIES = 30;
+    public static final int ONTAP_SNAPSHOT_DELETE_JOB_POLL_INTERVAL_MS = 2000;
 
     /** vm_snapshot_details key for ONTAP FlexVolume-level VM snapshots. */
     public static final String ONTAP_FLEXVOL_SNAPSHOT = "ontapFlexVolSnapshot";
