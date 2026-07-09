@@ -2487,7 +2487,14 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
                 if (configVo != null) {
                     final ConfigKey<?> key = _configDepot.get(param.getName());
                     if (key != null) {
-                        Object value = key.valueInScope(scope, id);
+                        boolean useStrictLookup = key.isStrictScope()
+                                && scope == ConfigKey.Scope.Domain
+                                && id != null
+                                && id.longValue() != Domain.ROOT_DOMAIN;
+                        Object value = key.valueInScope(scope, id, useStrictLookup);
+                        if (value == null && useStrictLookup) {
+                            value = key.defaultValue();
+                        }
                         configVo.setValue(value == null ? null : value.toString());
                         configVOList.add(configVo);
                     } else {

@@ -74,14 +74,14 @@ public class GoogleOAuth2ProviderTest {
 
     @Test(expected = CloudAuthenticationException.class)
     public void testVerifyUserWithUnregisteredProvider() {
-        when(_oauthProviderDao.findByProvider(anyString())).thenReturn(null);
+        when(_oauthProviderDao.findByProviderAndDomainWithGlobalFallback(anyString(), Mockito.isNull())).thenReturn(null);
         _googleOAuth2Provider.verifyUser("email@example.com", "secretCode");
     }
 
     @Test(expected = CloudRuntimeException.class)
     public void testVerifyUserWithInvalidSecretCode() throws IOException {
         OauthProviderVO providerVO = mock(OauthProviderVO.class);
-        when(_oauthProviderDao.findByProvider(anyString())).thenReturn(providerVO);
+        when(_oauthProviderDao.findByProviderAndDomainWithGlobalFallback(anyString(), Mockito.isNull())).thenReturn(providerVO);
         when(providerVO.getProvider()).thenReturn("testProvider");
         when(providerVO.getSecretKey()).thenReturn("testSecret");
         when(providerVO.getClientId()).thenReturn("testClientid");
@@ -105,7 +105,7 @@ public class GoogleOAuth2ProviderTest {
     @Test(expected = CloudRuntimeException.class)
     public void testVerifyUserWithMismatchedEmail() throws IOException {
         OauthProviderVO providerVO = mock(OauthProviderVO.class);
-        when(_oauthProviderDao.findByProvider(anyString())).thenReturn(providerVO);
+        when(_oauthProviderDao.findByProviderAndDomainWithGlobalFallback(anyString(), Mockito.isNull())).thenReturn(providerVO);
         when(providerVO.getProvider()).thenReturn("testProvider");
         when(providerVO.getSecretKey()).thenReturn("testSecret");
         when(providerVO.getClientId()).thenReturn("testClientid");
@@ -129,7 +129,7 @@ public class GoogleOAuth2ProviderTest {
     @Test
     public void testVerifyUserEmail() throws IOException {
         OauthProviderVO providerVO = mock(OauthProviderVO.class);
-        when(_oauthProviderDao.findByProvider(anyString())).thenReturn(providerVO);
+        when(_oauthProviderDao.findByProviderAndDomainWithGlobalFallback(anyString(), Mockito.isNull())).thenReturn(providerVO);
         when(providerVO.getProvider()).thenReturn("testProvider");
         when(providerVO.getSecretKey()).thenReturn("testSecret");
         when(providerVO.getClientId()).thenReturn("testClientid");
