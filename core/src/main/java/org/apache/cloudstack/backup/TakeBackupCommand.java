@@ -36,6 +36,17 @@ public class TakeBackupCommand extends Command {
     @LogLevel(LogLevel.Log4jLevel.Off)
     private String mountOptions;
 
+    // Incremental backup fields (NAS provider; null/empty for legacy full-only callers).
+    private String mode;          // "full" or "incremental"; null => legacy behaviour (script default)
+    private String bitmapNew;     // Checkpoint/bitmap name to create with this backup (timestamp-based)
+    private String bitmapParent;  // Incremental: parent bitmap to read changes since
+
+    // Per-volume parent backup file paths (one per VM volume, ordered by deviceId — same
+    // order as volumePaths). The script rebases each new qcow2 onto the matching parent.
+    // Backup file UUIDs differ across volumes, so a single parentPath would have rebased
+    // every data disk onto the root file. New callers MUST populate parentPaths.
+    private List<String> parentPaths;
+
     public TakeBackupCommand(String vmName, String backupPath) {
         super();
         this.vmName = vmName;
@@ -104,6 +115,38 @@ public class TakeBackupCommand extends Command {
 
     public void setQuiesce(Boolean quiesce) {
         this.quiesce = quiesce;
+    }
+
+    public String getMode() {
+        return mode;
+    }
+
+    public void setMode(String mode) {
+        this.mode = mode;
+    }
+
+    public String getBitmapNew() {
+        return bitmapNew;
+    }
+
+    public void setBitmapNew(String bitmapNew) {
+        this.bitmapNew = bitmapNew;
+    }
+
+    public String getBitmapParent() {
+        return bitmapParent;
+    }
+
+    public void setBitmapParent(String bitmapParent) {
+        this.bitmapParent = bitmapParent;
+    }
+
+    public List<String> getParentPaths() {
+        return parentPaths;
+    }
+
+    public void setParentPaths(List<String> parentPaths) {
+        this.parentPaths = parentPaths;
     }
 
     @Override

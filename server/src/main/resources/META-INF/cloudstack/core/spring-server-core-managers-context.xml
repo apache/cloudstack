@@ -332,6 +332,11 @@
         <property name="caProviders" value="#{caProvidersRegistry.registered}" />
     </bean>
 
+    <!-- KMS manager -->
+    <bean id="kmsManager" class="org.apache.cloudstack.kms.KMSManagerImpl">
+        <property name="kmsProviders" value="#{kmsProvidersRegistry.registered}" />
+    </bean>
+
     <bean id="annotationService" class="org.apache.cloudstack.annotation.AnnotationManagerImpl">
         <property name="kubernetesServiceHelpers" value="#{kubernetesServiceHelperRegistry.registered}" />
     </bean>
@@ -376,8 +381,11 @@
     <bean id="bucketApiServiceImpl" class="org.apache.cloudstack.storage.object.BucketApiServiceImpl" />
     <bean id="routedIpv4ManagerImpl" class="org.apache.cloudstack.network.RoutedIpv4ManagerImpl" />
 
-    <bean id="VMScheduleManagerImpl" class="org.apache.cloudstack.vm.schedule.VMScheduleManagerImpl" />
-    <bean id="VMSchedulerImpl" class="org.apache.cloudstack.vm.schedule.VMSchedulerImpl">
+    <bean id="ResourceScheduleManagerImpl" class="org.apache.cloudstack.schedule.ResourceScheduleManagerImpl" />
+    <bean id="VMScheduleWorker" class="org.apache.cloudstack.schedule.vm.VMScheduleWorker">
+        <property name="asyncJobDispatcher" ref="ApiAsyncJobDispatcher" />
+    </bean>
+    <bean id="AutoScaleScheduleWorker" class="org.apache.cloudstack.schedule.autoscale.AutoScaleScheduleWorker">
         <property name="asyncJobDispatcher" ref="ApiAsyncJobDispatcher" />
     </bean>
 
@@ -406,4 +414,8 @@
     <bean id="ExternalOrchestratorDetailDaoImpl" class="org.apache.cloudstack.hypervisor.external.provisioner.dao.ExternalOrchestratorDetailDaoImpl" />
     <bean id="ExtensionResourceMapDaoImpl" class="org.apache.cloudstack.hypervisor.external.provisioner.dao.ExtensionResourceMapDaoImpl" />
     <bean id="ExtensionResourceMapDetailsDaoImpl" class="org.apache.cloudstack.hypervisor.external.provisioner.dao.ExtensionResourceMapDetailsDaoImpl" />
+
+    <bean id="dnsProviderManager" class="org.apache.cloudstack.dns.DnsProviderManagerImpl" >
+        <property name="dnsProviders" value="#{dnsProvidersRegistry.registered}" />
+    </bean>
 </beans>

@@ -30,12 +30,17 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.BackupRepositoryService;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.datacenter.DataCenterIpv4GuestSubnet;
+import org.apache.cloudstack.dns.DnsRecord;
+import org.apache.cloudstack.dns.DnsServer;
+import org.apache.cloudstack.dns.DnsZone;
 import org.apache.cloudstack.extension.Extension;
 import org.apache.cloudstack.extension.ExtensionCustomAction;
 import org.apache.cloudstack.gpu.GpuCard;
 import org.apache.cloudstack.gpu.GpuDevice;
 import org.apache.cloudstack.gpu.VgpuProfile;
 import org.apache.cloudstack.ha.HAConfig;
+import org.apache.cloudstack.kms.HSMProfile;
+import org.apache.cloudstack.kms.KMSKey;
 import org.apache.cloudstack.network.BgpPeer;
 import org.apache.cloudstack.network.Ipv4GuestSubnetNetworkMap;
 import org.apache.cloudstack.quota.QuotaTariff;
@@ -43,7 +48,7 @@ import org.apache.cloudstack.storage.object.Bucket;
 import org.apache.cloudstack.storage.object.ObjectStore;
 import org.apache.cloudstack.storage.sharedfs.SharedFS;
 import org.apache.cloudstack.usage.Usage;
-import org.apache.cloudstack.vm.schedule.VMSchedule;
+import org.apache.cloudstack.schedule.ResourceSchedule;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterGuestIpv6Prefix;
@@ -126,16 +131,17 @@ public class EventTypes {
     public static final String EVENT_VM_UNMANAGE = "VM.UNMANAGE";
     public static final String EVENT_VM_RECOVER = "VM.RECOVER";
 
-    // VM Schedule
-    public static final String EVENT_VM_SCHEDULE_CREATE = "VM.SCHEDULE.CREATE";
-    public static final String EVENT_VM_SCHEDULE_UPDATE = "VM.SCHEDULE.UPDATE";
-    public static final String EVENT_VM_SCHEDULE_DELETE = "VM.SCHEDULE.DELETE";
-
+    // VM Schedule action-execution events (fired when a scheduled action runs).
     public static final String EVENT_VM_SCHEDULE_START = "VM.SCHEDULE.START";
     public static final String EVENT_VM_SCHEDULE_STOP = "VM.SCHEDULE.STOP";
     public static final String EVENT_VM_SCHEDULE_REBOOT = "VM.SCHEDULE.REBOOT";
     public static final String EVENT_VM_SCHEDULE_FORCE_STOP = "VM.SCHEDULE.FORCE.STOP";
     public static final String EVENT_VM_SCHEDULE_FORCE_REBOOT = "VM.SCHEDULE.FORCE.REBOOT";
+
+    // Generic Resource Schedule CRUD events (apply to all resource types).
+    public static final String EVENT_SCHEDULE_CREATE = "SCHEDULE.CREATE";
+    public static final String EVENT_SCHEDULE_UPDATE = "SCHEDULE.UPDATE";
+    public static final String EVENT_SCHEDULE_DELETE = "SCHEDULE.DELETE";
 
     // Domain Router
     public static final String EVENT_ROUTER_CREATE = "ROUTER.CREATE";
@@ -271,6 +277,20 @@ public class EventTypes {
     public static final String EVENT_CA_CERTIFICATE_ISSUE = "CA.CERTIFICATE.ISSUE";
     public static final String EVENT_CA_CERTIFICATE_REVOKE = "CA.CERTIFICATE.REVOKE";
     public static final String EVENT_CA_CERTIFICATE_PROVISION = "CA.CERTIFICATE.PROVISION";
+
+    // KMS (Key Management Service) events
+    public static final String EVENT_KMS_KEY_WRAP = "KMS.KEY.WRAP";
+    public static final String EVENT_KMS_KEY_UNWRAP = "KMS.KEY.UNWRAP";
+    public static final String EVENT_KMS_KEY_CREATE = "KMS.KEY.CREATE";
+    public static final String EVENT_KMS_KEY_UPDATE = "KMS.KEY.UPDATE";
+    public static final String EVENT_KMS_KEY_ROTATE = "KMS.KEY.ROTATE";
+    public static final String EVENT_KMS_KEY_DELETE = "KMS.KEY.DELETE";
+    public static final String EVENT_VOLUME_MIGRATE_TO_KMS = "VOLUME.MIGRATE.TO.KMS";
+
+    // HSM Profile events
+    public static final String EVENT_HSM_PROFILE_CREATE = "HSM.PROFILE.CREATE";
+    public static final String EVENT_HSM_PROFILE_UPDATE = "HSM.PROFILE.UPDATE";
+    public static final String EVENT_HSM_PROFILE_DELETE = "HSM.PROFILE.DELETE";
 
     // Account events
     public static final String EVENT_ACCOUNT_ENABLE = "ACCOUNT.ENABLE";
@@ -682,6 +702,7 @@ public class EventTypes {
     public static final String EVENT_AUTOSCALEVMGROUP_DISABLE = "AUTOSCALEVMGROUP.DISABLE";
     public static final String EVENT_AUTOSCALEVMGROUP_SCALEDOWN = "AUTOSCALEVMGROUP.SCALEDOWN";
     public static final String EVENT_AUTOSCALEVMGROUP_SCALEUP = "AUTOSCALEVMGROUP.SCALEUP";
+    public static final String EVENT_AUTOSCALEVMGROUP_SCHEDULE_UPDATE = "AUTOSCALEVMGROUP.SCHEDULE.UPDATE";
 
     public static final String EVENT_BAREMETAL_DHCP_SERVER_ADD = "PHYSICAL.DHCP.ADD";
     public static final String EVENT_BAREMETAL_DHCP_SERVER_DELETE = "PHYSICAL.DHCP.DELETE";
@@ -871,6 +892,17 @@ public class EventTypes {
     public static final String EVENT_BACKUP_REPOSITORY_ADD = "BACKUP.REPOSITORY.ADD";
     public static final String EVENT_BACKUP_REPOSITORY_UPDATE = "BACKUP.REPOSITORY.UPDATE";
 
+    // DNS Framework Events
+    public static final String EVENT_DNS_SERVER_ADD = "DNS.SERVER.ADD";
+    public static final String EVENT_DNS_SERVER_UPDATE = "DNS.SERVER.UPDATE";
+    public static final String EVENT_DNS_SERVER_DELETE = "DNS.SERVER.DELETE";
+    public static final String EVENT_DNS_ZONE_CREATE = "DNS.ZONE.CREATE";
+    public static final String EVENT_DNS_ZONE_UPDATE = "DNS.ZONE.UPDATE";
+    public static final String EVENT_DNS_ZONE_DELETE = "DNS.ZONE.DELETE";
+    public static final String EVENT_DNS_RECORD_CREATE = "DNS.RECORD.CREATE";
+    public static final String EVENT_DNS_RECORD_DELETE = "DNS.RECORD.DELETE";
+    public static final String EVENT_DNS_NAME_COLLISION = "DNS.NAME.COLLISION";
+
     static {
 
         // TODO: need a way to force author adding event types to declare the entity details as well, with out braking
@@ -894,15 +926,18 @@ public class EventTypes {
         entityEventDetails.put(EVENT_VM_IMPORT, VirtualMachine.class);
         entityEventDetails.put(EVENT_VM_UNMANAGE, VirtualMachine.class);
 
-        // VMSchedule
-        entityEventDetails.put(EVENT_VM_SCHEDULE_CREATE, VMSchedule.class);
-        entityEventDetails.put(EVENT_VM_SCHEDULE_DELETE, VMSchedule.class);
-        entityEventDetails.put(EVENT_VM_SCHEDULE_UPDATE, VMSchedule.class);
-        entityEventDetails.put(EVENT_VM_SCHEDULE_START, VMSchedule.class);
-        entityEventDetails.put(EVENT_VM_SCHEDULE_STOP, VMSchedule.class);
-        entityEventDetails.put(EVENT_VM_SCHEDULE_REBOOT, VMSchedule.class);
-        entityEventDetails.put(EVENT_VM_SCHEDULE_FORCE_STOP, VMSchedule.class);
-        entityEventDetails.put(EVENT_VM_SCHEDULE_FORCE_REBOOT, VMSchedule.class);
+        // VMSchedule action-execution events
+        entityEventDetails.put(EVENT_VM_SCHEDULE_START, ResourceSchedule.class);
+        entityEventDetails.put(EVENT_VM_SCHEDULE_STOP, ResourceSchedule.class);
+        entityEventDetails.put(EVENT_VM_SCHEDULE_REBOOT, ResourceSchedule.class);
+        entityEventDetails.put(EVENT_VM_SCHEDULE_FORCE_STOP, ResourceSchedule.class);
+        entityEventDetails.put(EVENT_VM_SCHEDULE_FORCE_REBOOT, ResourceSchedule.class);
+        entityEventDetails.put(EVENT_AUTOSCALEVMGROUP_SCHEDULE_UPDATE, ResourceSchedule.class);
+
+        // Generic Resource Schedule
+        entityEventDetails.put(EVENT_SCHEDULE_CREATE, ResourceSchedule.class);
+        entityEventDetails.put(EVENT_SCHEDULE_UPDATE, ResourceSchedule.class);
+        entityEventDetails.put(EVENT_SCHEDULE_DELETE, ResourceSchedule.class);
 
         entityEventDetails.put(EVENT_ROUTER_CREATE, VirtualRouter.class);
         entityEventDetails.put(EVENT_ROUTER_DESTROY, VirtualRouter.class);
@@ -1020,6 +1055,20 @@ public class EventTypes {
         entityEventDetails.put(EVENT_VOLUME_DESTROY, Volume.class);
         entityEventDetails.put(EVENT_VOLUME_RECOVER, Volume.class);
         entityEventDetails.put(EVENT_VOLUME_CHANGE_DISK_OFFERING, Volume.class);
+
+        // KMS Key Events
+        entityEventDetails.put(EVENT_KMS_KEY_CREATE, KMSKey.class);
+        entityEventDetails.put(EVENT_KMS_KEY_UPDATE, KMSKey.class);
+        entityEventDetails.put(EVENT_KMS_KEY_UNWRAP, KMSKey.class);
+        entityEventDetails.put(EVENT_KMS_KEY_WRAP, KMSKey.class);
+        entityEventDetails.put(EVENT_KMS_KEY_DELETE, KMSKey.class);
+        entityEventDetails.put(EVENT_KMS_KEY_ROTATE, KMSKey.class);
+        entityEventDetails.put(EVENT_VOLUME_MIGRATE_TO_KMS, KMSKey.class);
+
+        // HSM Profile Events
+        entityEventDetails.put(EVENT_HSM_PROFILE_CREATE, HSMProfile.class);
+        entityEventDetails.put(EVENT_HSM_PROFILE_UPDATE, HSMProfile.class);
+        entityEventDetails.put(EVENT_HSM_PROFILE_DELETE, HSMProfile.class);
 
         // Domains
         entityEventDetails.put(EVENT_DOMAIN_CREATE, Domain.class);
@@ -1415,6 +1464,17 @@ public class EventTypes {
         // Backup Repository
         entityEventDetails.put(EVENT_BACKUP_REPOSITORY_ADD, BackupRepositoryService.class);
         entityEventDetails.put(EVENT_BACKUP_REPOSITORY_UPDATE, BackupRepositoryService.class);
+
+        // DNS Framework Events
+        entityEventDetails.put(EVENT_DNS_SERVER_ADD, DnsServer.class);
+        entityEventDetails.put(EVENT_DNS_SERVER_UPDATE, DnsServer.class);
+        entityEventDetails.put(EVENT_DNS_SERVER_DELETE, DnsServer.class);
+        entityEventDetails.put(EVENT_DNS_ZONE_CREATE, DnsZone.class);
+        entityEventDetails.put(EVENT_DNS_ZONE_UPDATE, DnsZone.class);
+        entityEventDetails.put(EVENT_DNS_ZONE_DELETE, DnsZone.class);
+        entityEventDetails.put(EVENT_DNS_RECORD_CREATE, DnsRecord.class);
+        entityEventDetails.put(EVENT_DNS_RECORD_DELETE, DnsRecord.class);
+
     }
 
     public static boolean isNetworkEvent(String eventType) {

@@ -96,11 +96,14 @@ import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
 import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.dns.DnsServer;
+import org.apache.cloudstack.dns.DnsZone;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
+import org.apache.cloudstack.kms.KMSManager;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
@@ -349,6 +352,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private NetworkPermissionDao networkPermissionDao;
     @Inject
     private SslCertDao sslCertDao;
+    @Inject
+    private KMSManager kmsManager;
 
     private List<QuerySelector> _querySelectors;
 
@@ -775,7 +780,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
             if (entity.getAccountId() != -1 && domainId != -1 && !(entity instanceof VirtualMachineTemplate)
                     && !(entity instanceof Network && (accessType == AccessType.UseEntry || accessType == AccessType.OperateEntry))
-                    && !(entity instanceof AffinityGroup) && !(entity instanceof VirtualRouter)) {
+                    && !(entity instanceof AffinityGroup) && !(entity instanceof VirtualRouter)
+                    && !(entity instanceof DnsServer) && !(entity instanceof DnsZone)) {
                 List<ControlledEntity> toBeChecked = domains.get(entity.getDomainId());
                 // for templates, we don't have to do cross domains check
                 if (toBeChecked == null) {
@@ -1248,6 +1254,17 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
             // Delete Webhooks
             deleteWebhooksForAccount(accountId);
+
+            // Delete KMS keys
+            try {
+                if (!kmsManager.deleteKMSKeysByAccountId(accountId)) {
+                    logger.warn("Failed to delete all KMS keys for account {}", account);
+                    accountCleanupNeeded = true;
+                }
+            } catch (Exception e) {
+                logger.error("Error deleting KMS keys for account {}: {}", account, e.getMessage(), e);
+                accountCleanupNeeded = true;
+            }
 
             return true;
         } catch (Exception ex) {
