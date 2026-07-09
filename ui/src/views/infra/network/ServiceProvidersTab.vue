@@ -1177,10 +1177,12 @@ export default {
       // Load NetworkOrchestrator extensions registered to this physical network
       getAPI('listExtensions', {
         type: 'NetworkOrchestrator',
-        resourceid: this.resource.id,
-        resourcetype: 'PhysicalNetwork'
+        details: 'resource'
       }).then(json => {
-        this.registeredExtensions = (json.listextensionsresponse && json.listextensionsresponse.extension) || []
+        const exts = (json?.listextensionsresponse?.extension) || []
+        this.registeredExtensions = exts.filter(ext =>
+          (ext.resources || []).some(r => r.type === 'PhysicalNetwork' && r.id === this.resource.id)
+        )
       }).catch(() => {
         this.registeredExtensions = []
       })
