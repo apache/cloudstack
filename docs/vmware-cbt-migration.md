@@ -148,6 +148,20 @@ Each KVM host that can be selected for VMware CBT migration needs:
 * Access to the destination KVM primary storage pool.
 * `virtio-win` drivers when migrating Windows guests.
 
+Destination-specific requirements:
+
+* Ceph/RBD destination pools additionally require qemu built with the RBD
+  block driver on the conversion host, plus in-place `virt-v2v` support
+  (the `virt-v2v-in-place` binary or the `virt-v2v --in-place` option).
+* Linstor destination pools additionally require in-place `virt-v2v` support,
+  and the conversion host must be a LINSTOR satellite connected to the
+  destination pool (the CloudStack primary storage must be attached to the
+  host, and the host's `hostname` must match its LINSTOR node name). Target
+  volumes are pre-created through the Linstor storage adaptor and written as
+  raw data to the local DRBD device path, so no extra qemu block driver is
+  needed. DRBD permits only one writer: make sure no other node holds the
+  target resource Primary while a migration writes to it.
+
 You do not have to install these packages on every KVM host in the zone unless
 you want every KVM host to be eligible for VMware CBT migration. A common
 deployment model is to prepare a smaller set of conversion-capable KVM hosts and
@@ -322,3 +336,16 @@ validate each command above manually.
 * Always clean up VMware snapshots after failed or cancelled cycles.
 * Treat CBT change IDs as per-disk state. If any disk loses valid CBT state,
   restart that disk from a full sync.
+* On Linstor destinations, prefer a conversion host that holds a diskful
+  replica of the target resources; writes from a diskless satellite traverse
+  the DRBD replication network. DRBD rounds volume sizes up to its extent
+  granularity, so target devices can be slightly larger than the source
+  disks; qemu writes only within the source capacity.
+* Linstor storage-pool heartbeats can fence (reboot) an HA-enabled KVM host if
+  the LINSTOR controller becomes unreachable. Prefer conversion hosts that do
+  not run HA-protected guests, or ensure controller availability for the whole
+  duration of long migrations.
+* Migrated Linstor volumes keep their migration-time names (the LINSTOR
+  resource is `cs-` plus the recorded volume path, e.g. `cs-cbt-<marker>-<disk>`
+  for warm migrations). This is expected and does not affect volume lifecycle
+  operations, which address volumes by their recorded path.

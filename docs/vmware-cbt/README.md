@@ -1018,6 +1018,21 @@ against the already finalized disk paths.
 - `RBD` maps to `RBD_RAW`. Initial sync writes a raw RBD image directly with
   `qemu-img convert -O raw`, delta sync writes changed ranges with `qemu-io -f
   raw`, and cutover finalization is in-place only.
+- `Linstor` maps to `RAW_BLOCK_DEVICE`. The agent pre-creates each target
+  volume at source capacity through the Linstor storage adaptor (qemu cannot
+  create DRBD devices the way it creates RBD images), then the initial sync
+  writes the local DRBD device with `qemu-img convert -n -O raw`, delta sync
+  patches changed ranges with `qemu-io -f raw` against the device path, and
+  cutover finalization is in-place only, using a plain `<disk type='block'>`
+  libvirt XML (no qemu-nbd bridges are needed for local block devices).
+  Target names are `cbt-<mig8>-<disk-id>` where `mig8` is the first eight
+  characters of the migration UUID: LINSTOR resource names ("cs-" + name) are
+  capped at 48 characters, so the RBD-style naming with the full migration
+  UUID does not fit; the short marker still guards cleanup on both the
+  management server and the agent. The conversion host must be a LINSTOR
+  satellite connected to the pool; host selection and the preflight storage
+  probe (create a 4 MiB volume, qemu-io write/read on the device, delete)
+  enforce this.
 - Other primary storage types are unsupported.
 
 For QCOW2 file targets, the initial replica is stored under the selected
