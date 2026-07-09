@@ -218,7 +218,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             Arrays.asList(Storage.StoragePoolType.NetworkFilesystem, Storage.StoragePoolType.Filesystem,
                     Storage.StoragePoolType.SharedMountPoint, Storage.StoragePoolType.RBD);
     private static final List<Storage.StoragePoolType> stagedConversionDestinationPoolTypes =
-            Arrays.asList(Storage.StoragePoolType.NetworkFilesystem, Storage.StoragePoolType.RBD);
+            Arrays.asList(Storage.StoragePoolType.NetworkFilesystem, Storage.StoragePoolType.RBD,
+                    Storage.StoragePoolType.Linstor);
     private static final String DETAIL_VDDK_TRANSPORTS = "vddk.transports";
     private static final String DETAIL_VDDK_THUMBPRINT = "vddk.thumbprint";
 
@@ -2319,7 +2320,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
         RemoteInstanceTO remoteInstanceTO = new RemoteInstanceTO(sourceVM, sourceVMwareInstance.getClusterName(), sourceVMwareInstance.getHostName());
         List<StoragePoolVO> destinationStoragePools = selectInstanceConversionDestinationStoragePools(convertStoragePools, sourceVMwareInstance.getDisks(), serviceOffering, dataDiskOfferingMap);
-        validateStagedRbdImportHostSupport(forceConvertToPool, destinationStoragePools, importHost);
+        validateStagedImportHostSupport(forceConvertToPool, destinationStoragePools, importHost);
         ConvertInstanceCommand cmd = new ConvertInstanceCommand(remoteInstanceTO,
                 Hypervisor.HypervisorType.KVM, temporaryConvertLocation,
                 ovfTemplateDirConvertLocation, false, false, sourceVM);
@@ -2346,7 +2347,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         RemoteInstanceTO remoteInstanceTO = new RemoteInstanceTO(sourceVMwareInstance.getName(), sourceVMwareInstance.getPath(), vcenterHost, vcenterUsername, vcenterPassword, datacenterName, sourceVMwareInstance.getClusterName(), sourceVMwareInstance.getHostName());
         remoteInstanceTO.setVmwareMoref(sourceVMwareInstance.getVmwareMoref());
         List<StoragePoolVO> destinationStoragePools = selectInstanceConversionDestinationStoragePools(convertStoragePools, sourceVMwareInstance.getDisks(), serviceOffering, dataDiskOfferingMap);
-        validateStagedRbdImportHostSupport(forceConvertToPool, destinationStoragePools, importHost);
+        validateStagedImportHostSupport(forceConvertToPool, destinationStoragePools, importHost);
         ConvertInstanceCommand cmd = new ConvertInstanceCommand(remoteInstanceTO,
                 Hypervisor.HypervisorType.KVM, temporaryConvertLocation, null, false, true, sourceVM);
         int timeoutSeconds = UnmanagedVMsManager.ConvertVmwareInstanceToKvmTimeout.value() * 60 * 60;
@@ -2405,15 +2406,26 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
     }
 
-    private void validateStagedRbdImportHostSupport(boolean forceConvertToPool, List<StoragePoolVO> destinationStoragePools, HostVO importHost) {
-        if (forceConvertToPool || destinationStoragePools.stream().noneMatch(pool -> pool.getPoolType() == Storage.StoragePoolType.RBD)) {
+    protected void validateStagedImportHostSupport(boolean forceConvertToPool, List<StoragePoolVO> destinationStoragePools, HostVO importHost) {
+        if (forceConvertToPool) {
             return;
         }
-        hostDao.loadDetails(importHost);
-        if (!Boolean.parseBoolean(importHost.getDetail(Host.HOST_QEMU_RBD_SUPPORT))) {
-            throw new CloudRuntimeException(String.format("Import host %s cannot copy converted qcow2 disks to RBD. " +
-                    "Please select an import host with %s=true, or use a non-RBD destination pool.",
-                    importHost.getName(), Host.HOST_QEMU_RBD_SUPPORT));
+        if (destinationStoragePools.stream().anyMatch(pool -> pool.getPoolType() == Storage.StoragePoolType.RBD)) {
+            hostDao.loadDetails(importHost);
+            if (!Boolean.parseBoolean(importHost.getDetail(Host.HOST_QEMU_RBD_SUPPORT))) {
+                throw new CloudRuntimeException(String.format("Import host %s cannot copy converted qcow2 disks to RBD. " +
+                        "Please select an import host with %s=true, or use a non-RBD destination pool.",
+                        importHost.getName(), Host.HOST_QEMU_RBD_SUPPORT));
+            }
+        }
+        for (StoragePoolVO pool : destinationStoragePools) {
+            if (pool.getPoolType() == Storage.StoragePoolType.Linstor &&
+                    storagePoolHostDao.findByPoolHost(pool.getId(), importHost.getId()) == null) {
+                throw new CloudRuntimeException(String.format("Import host %s does not have access to the Linstor " +
+                        "destination storage pool %s. Please select an import host that is a LINSTOR satellite " +
+                        "connected to the pool, or use a different destination pool.",
+                        importHost.getName(), pool.getName()));
+            }
         }
     }
 

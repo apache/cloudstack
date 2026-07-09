@@ -1499,6 +1499,41 @@ public class UnmanagedVMsManagerImplTest {
         unmanagedVMsManager.checkConversionStoragePool(destPoolId, true, true);
     }
 
+    @Test
+    public void testValidateStagedImportHostSupportLinstorPoolAccessibleFromImportHost() {
+        StoragePoolVO destPool = mock(StoragePoolVO.class);
+        Mockito.when(destPool.getPoolType()).thenReturn(Storage.StoragePoolType.Linstor);
+        Mockito.when(destPool.getId()).thenReturn(10L);
+        HostVO importHost = mock(HostVO.class);
+        Mockito.when(importHost.getId()).thenReturn(5L);
+        StoragePoolHostVO storagePoolHost = Mockito.mock(StoragePoolHostVO.class);
+        Mockito.when(storagePoolHostDao.findByPoolHost(10L, 5L)).thenReturn(storagePoolHost);
+
+        unmanagedVMsManager.validateStagedImportHostSupport(false, List.of(destPool), importHost);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testValidateStagedImportHostSupportLinstorPoolNotOnImportHost() {
+        StoragePoolVO destPool = mock(StoragePoolVO.class);
+        Mockito.when(destPool.getPoolType()).thenReturn(Storage.StoragePoolType.Linstor);
+        Mockito.when(destPool.getId()).thenReturn(10L);
+        HostVO importHost = mock(HostVO.class);
+        Mockito.when(importHost.getId()).thenReturn(5L);
+        Mockito.when(storagePoolHostDao.findByPoolHost(10L, 5L)).thenReturn(null);
+
+        unmanagedVMsManager.validateStagedImportHostSupport(false, List.of(destPool), importHost);
+    }
+
+    @Test
+    public void testValidateStagedImportHostSupportSkippedForForceConvertToPool() {
+        StoragePoolVO destPool = mock(StoragePoolVO.class);
+        HostVO importHost = mock(HostVO.class);
+
+        unmanagedVMsManager.validateStagedImportHostSupport(true, List.of(destPool), importHost);
+
+        Mockito.verifyNoInteractions(storagePoolHostDao);
+    }
+
     @Test(expected = CloudRuntimeException.class)
     public void testCheckConversionStoragePoolPrimaryStagingPoolTypeNotAllowedForce() {
         StoragePoolVO destPool = mock(StoragePoolVO.class);

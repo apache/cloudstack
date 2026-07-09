@@ -203,6 +203,32 @@ public class LibvirtImportConvertedInstanceCommandWrapperTest {
     }
 
     @Test
+    public void testMoveTemporaryDisksToLinstorDestinationUsesDestinationPoolType() {
+        KVMPhysicalDisk sourceDisk = Mockito.mock(KVMPhysicalDisk.class);
+        Mockito.lenient().when(sourceDisk.getPool()).thenReturn(temporaryPool);
+        List<KVMPhysicalDisk> disks = List.of(sourceDisk);
+        String destinationPoolUuid = UUID.randomUUID().toString();
+        List<String> destinationPools = List.of(destinationPoolUuid);
+        List<Storage.StoragePoolType> destinationPoolTypes = List.of(Storage.StoragePoolType.Linstor);
+
+        KVMPhysicalDisk destDisk = Mockito.mock(KVMPhysicalDisk.class);
+        Mockito.when(destDisk.getPath()).thenReturn("/dev/drbd/by-res/cs-volume/0");
+        Mockito.when(storagePoolManager.getStoragePool(Storage.StoragePoolType.Linstor, destinationPoolUuid))
+                .thenReturn(destinationPool);
+        Mockito.when(destinationPool.getType()).thenReturn(Storage.StoragePoolType.Linstor);
+        Mockito.when(storagePoolManager.copyPhysicalDisk(Mockito.eq(sourceDisk), Mockito.anyString(), Mockito.eq(destinationPool), Mockito.anyInt()))
+                .thenReturn(destDisk);
+
+        List<KVMPhysicalDisk> movedDisks = importInstanceCommandWrapper.moveTemporaryDisksToDestination(disks,
+                destinationPools, destinationPoolTypes, storagePoolManager);
+
+        Assert.assertEquals(1, movedDisks.size());
+        Assert.assertEquals("/dev/drbd/by-res/cs-volume/0", movedDisks.get(0).getPath());
+        Mockito.verify(storagePoolManager).getStoragePool(Storage.StoragePoolType.Linstor, destinationPoolUuid);
+        Mockito.verify(destinationPool, Mockito.never()).deletePhysicalDisk(Mockito.anyString(), Mockito.any());
+    }
+
+    @Test
     public void testGetUnmanagedInstanceDisks() {
         try (MockedStatic<Script> ignored = Mockito.mockStatic(Script.class)) {
             String relativePath = UUID.randomUUID().toString();
@@ -252,6 +278,30 @@ public class LibvirtImportConvertedInstanceCommandWrapperTest {
         Assert.assertEquals(Storage.StoragePoolType.RBD.name(), disk.getDatastoreType());
         Assert.assertEquals("10.0.0.1,10.0.0.2", disk.getDatastoreHost());
         Assert.assertEquals("cloudstack", disk.getDatastorePath());
+        Assert.assertEquals(LibvirtVMDef.DiskDef.DiskBus.VIRTIO.toString(), disk.getController());
+        Mockito.verify(importInstanceCommandWrapper, Mockito.never()).getNfsStoragePoolHostAndPath(destinationPool);
+    }
+
+    @Test
+    public void testGetUnmanagedInstanceDisksForLinstorDoesNotParseNfsMount() {
+        KVMPhysicalDisk sourceDisk = Mockito.mock(KVMPhysicalDisk.class);
+        Mockito.when(sourceDisk.getName()).thenReturn("linstor-volume");
+        Mockito.when(sourceDisk.getVirtualSize()).thenReturn(5242880L);
+        Mockito.when(sourceDisk.getPool()).thenReturn(destinationPool);
+        Mockito.when(destinationPool.getType()).thenReturn(Storage.StoragePoolType.Linstor);
+        Mockito.when(destinationPool.getUuid()).thenReturn("linstor-pool-uuid");
+        Mockito.when(destinationPool.getSourceHost()).thenReturn("linstor-controller");
+
+        List<UnmanagedInstanceTO.Disk> unmanagedInstanceDisks = importInstanceCommandWrapper.getUnmanagedInstanceDisks(List.of(sourceDisk), null);
+
+        Assert.assertEquals(1, unmanagedInstanceDisks.size());
+        UnmanagedInstanceTO.Disk disk = unmanagedInstanceDisks.get(0);
+        Assert.assertEquals("linstor-volume", disk.getFileBaseName());
+        Assert.assertEquals("linstor-volume", disk.getImagePath());
+        Assert.assertEquals("linstor-pool-uuid", disk.getDatastoreName());
+        Assert.assertEquals(Storage.StoragePoolType.Linstor.name(), disk.getDatastoreType());
+        Assert.assertEquals("linstor-controller", disk.getDatastoreHost());
+        Assert.assertNull(disk.getDatastorePath());
         Assert.assertEquals(LibvirtVMDef.DiskDef.DiskBus.VIRTIO.toString(), disk.getController());
         Mockito.verify(importInstanceCommandWrapper, Mockito.never()).getNfsStoragePoolHostAndPath(destinationPool);
     }

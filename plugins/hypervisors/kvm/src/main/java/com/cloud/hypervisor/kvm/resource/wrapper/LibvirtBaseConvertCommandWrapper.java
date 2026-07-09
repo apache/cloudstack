@@ -266,6 +266,11 @@ public abstract class LibvirtBaseConvertCommandWrapper <T extends Command, A ext
                 disk.setDatastoreHost(storagePool.getSourceHost());
                 disk.setDatastorePath(storagePool.getSourceDir());
                 disk.setImagePath(physicalDisk.getName());
+            } else if (storagePool.getType() == Storage.StoragePoolType.Linstor) {
+                // Linstor pools expose no local mount path; the management server resolves the
+                // pool by its UUID (datastore name), and the volume by its disk name (path).
+                disk.setDatastoreHost(storagePool.getSourceHost());
+                disk.setImagePath(physicalDisk.getName());
             } else {
                 Pair<String, String> storagePoolHostAndPath = getNfsStoragePoolHostAndPath(storagePool);
                 disk.setDatastoreHost(storagePoolHostAndPath.first());
