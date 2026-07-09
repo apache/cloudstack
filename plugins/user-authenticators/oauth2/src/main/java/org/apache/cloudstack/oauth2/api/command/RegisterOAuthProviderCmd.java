@@ -26,6 +26,7 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.oauth2.OAuth2AuthManager;
@@ -35,6 +36,8 @@ import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import com.cloud.api.ApiDBUtils;
+import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;
 
 @APICommand(name = "registerOauthProvider", responseObject = SuccessResponse.class, description = "Register the OAuth2 provider in CloudStack", since = "4.19.0")
@@ -58,6 +61,14 @@ public class RegisterOAuthProviderCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.REDIRECT_URI, type = CommandType.STRING, description = "Redirect URI pre-registered in the specific OAuth provider", required = true)
     private String redirectUri;
+
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class,
+            description = "Domain ID for domain-specific OAuth provider. If not provided, registers as global provider", since = "4.23.0")
+    private Long domainId;
+
+    @Parameter(name = ApiConstants.DOMAIN, type = CommandType.STRING,
+            description = "Domain path for domain-specific OAuth provider. Ignored when Domain ID is passed.", since = "4.23.0")
+    private String domainPath;
 
     @Parameter(name = ApiConstants.AUTHORIZE_URL, type = CommandType.STRING, description = "Authorize URL for OAuth initialization (only required for keycloak provider)")
     private String authorizeUrl;
@@ -94,6 +105,14 @@ public class RegisterOAuthProviderCmd extends BaseCmd {
         return redirectUri;
     }
 
+    public Long getDomainId() {
+        return domainId;
+    }
+
+    public String getDomainPath() {
+        return domainPath;
+    }
+
     public String getAuthorizeUrl() {
         return authorizeUrl;
     }
@@ -126,9 +145,10 @@ public class RegisterOAuthProviderCmd extends BaseCmd {
 
         OauthProviderVO provider = _oauth2mgr.registerOauthProvider(this);
 
+        Domain domain = provider.getDomainId() != null ? ApiDBUtils.findDomainById(provider.getDomainId()) : null;
         OauthProviderResponse response = new OauthProviderResponse(provider.getUuid(), provider.getProvider(),
                 provider.getDescription(), provider.getClientId(), provider.getSecretKey(), provider.getRedirectUri(),
-                provider.getAuthorizeUrl(), provider.getTokenUrl());
+                provider.getAuthorizeUrl(), provider.getTokenUrl(), domain);
         response.setResponseName(getCommandName());
         response.setObjectName(ApiConstants.OAUTH_PROVIDER);
         setResponseObject(response);
