@@ -80,13 +80,13 @@ public class KeycloakOAuth2ProviderTest {
 
     @Test(expected = CloudAuthenticationException.class)
     public void testVerifyUserProviderNotFound() {
-        when(oauthProviderDao.findByProvider("keycloak")).thenReturn(null);
+        when(oauthProviderDao.findByProviderAndDomainWithGlobalFallback("keycloak", null)).thenReturn(null);
         provider.verifyUser("test@example.com", "code123");
     }
 
     @Test(expected = CloudRuntimeException.class)
     public void testVerifyCodeAndFetchEmailHttpError() throws IOException {
-        when(oauthProviderDao.findByProvider("keycloak")).thenReturn(mockProviderVO);
+        when(oauthProviderDao.findByProviderAndDomainWithGlobalFallback("keycloak", null)).thenReturn(mockProviderVO);
 
         CloseableHttpResponse response = mock(CloseableHttpResponse.class);
         StatusLine statusLine = mock(StatusLine.class);
@@ -100,20 +100,20 @@ public class KeycloakOAuth2ProviderTest {
 
         when(httpClient.execute(any(HttpPost.class))).thenReturn(response);
 
-        provider.verifyCodeAndFetchEmail("invalid-code");
+        provider.verifySecretCodeAndFetchEmail("invalid-code");
     }
 
     @Test(expected = CloudRuntimeException.class)
     public void testVerifyCodeAndFetchEmailNetworkFailure() throws IOException {
-        when(oauthProviderDao.findByProvider("keycloak")).thenReturn(mockProviderVO);
+        when(oauthProviderDao.findByProviderAndDomainWithGlobalFallback("keycloak", null)).thenReturn(mockProviderVO);
         when(httpClient.execute(any(HttpPost.class))).thenThrow(new IOException("Connection refused"));
 
-        provider.verifyCodeAndFetchEmail("code");
+        provider.verifySecretCodeAndFetchEmail("code");
     }
 
     @Test(expected = CloudRuntimeException.class)
     public void testVerifyUserWithMismatchedEmail() throws IOException {
-        when(oauthProviderDao.findByProvider("keycloak")).thenReturn(mockProviderVO);
+        when(oauthProviderDao.findByProviderAndDomainWithGlobalFallback("keycloak", null)).thenReturn(mockProviderVO);
 
         String testEmail = "anotheruser@example.com";
         String secretCode = "valid-auth-code";
@@ -148,7 +148,7 @@ public class KeycloakOAuth2ProviderTest {
 
     @Test(expected = CloudRuntimeException.class)
     public void testVerifyUserWithMismatchedClient() throws IOException {
-        when(oauthProviderDao.findByProvider("keycloak")).thenReturn(mockProviderVO);
+        when(oauthProviderDao.findByProviderAndDomainWithGlobalFallback("keycloak", null)).thenReturn(mockProviderVO);
 
         String testEmail = "anotheruser@example.com";
         String secretCode = "valid-auth-code";
@@ -183,7 +183,7 @@ public class KeycloakOAuth2ProviderTest {
 
     @Test
     public void testVerifyUserEmail() throws IOException {
-        when(oauthProviderDao.findByProvider("keycloak")).thenReturn(mockProviderVO);
+        when(oauthProviderDao.findByProviderAndDomainWithGlobalFallback("keycloak", null)).thenReturn(mockProviderVO);
 
         String testEmail = "user@example.com";
         String secretCode = "valid-auth-code";
