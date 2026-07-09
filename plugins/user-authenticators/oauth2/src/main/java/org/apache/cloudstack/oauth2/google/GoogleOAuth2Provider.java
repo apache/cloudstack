@@ -17,6 +17,7 @@
 package org.apache.cloudstack.oauth2.google;
 
 import com.cloud.exception.CloudAuthenticationException;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
@@ -28,6 +29,9 @@ import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.services.oauth2.Oauth2;
 import com.google.api.services.oauth2.model.Userinfo;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import org.apache.cloudstack.auth.UserOAuth2Authenticator;
 import org.apache.cloudstack.oauth2.dao.OauthProviderDao;
 import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
@@ -37,8 +41,18 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 public class GoogleOAuth2Provider extends AdapterBase implements UserOAuth2Authenticator {
+
+    // The login flow exchanges the same one-time authorization code twice (once in
+    // verifyOauthCodeAndGetUser, once in the subsequent oauthlogin), so the tokens are
+    // cached per code; entries are short-lived as codes are only valid for a few minutes.
+    protected final Cache<String, Pair<String, String>> tokensByCode = CacheBuilder.newBuilder()
+            .maximumSize(1000)
+            .expireAfterWrite(10, TimeUnit.MINUTES)
+            .build();
 
     @Inject
     OauthProviderDao _oauthProviderDao;
@@ -92,16 +106,20 @@ public class GoogleOAuth2Provider extends AdapterBase implements UserOAuth2Authe
                 httpTransport, jsonFactory, clientSecrets, scopes)
                 .build();
 
-        GoogleTokenResponse tokenResponse = null;
+        Pair<String, String> tokens;
         try {
-            tokenResponse = flow.newTokenRequest(secretCode)
-                    .setRedirectUri(redirectURI)
-                    .execute();
-        } catch (IOException e) {
-            throw new CloudRuntimeException(String.format("Failed to exchange the OAuth2 authorization code for tokens: %s", e.getMessage()), e);
+            tokens = tokensByCode.get(secretCode, () -> {
+                GoogleTokenResponse tokenResponse = flow.newTokenRequest(secretCode)
+                        .setRedirectUri(redirectURI)
+                        .execute();
+                return new Pair<>(tokenResponse.getAccessToken(), tokenResponse.getRefreshToken());
+            });
+        } catch (ExecutionException | UncheckedExecutionException e) {
+            Throwable cause = e.getCause() != null ? e.getCause() : e;
+            throw new CloudRuntimeException(String.format("Failed to exchange the OAuth2 authorization code for tokens: %s", cause.getMessage()), cause);
         }
-        String accessToken = tokenResponse.getAccessToken();
-        String refreshToken = tokenResponse.getRefreshToken();
+        String accessToken = tokens.first();
+        String refreshToken = tokens.second();
 
         GoogleCredential credential = new GoogleCredential.Builder()
                 .setTransport(httpTransport)

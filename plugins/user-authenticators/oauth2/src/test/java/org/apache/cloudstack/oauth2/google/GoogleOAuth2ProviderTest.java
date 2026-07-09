@@ -188,7 +188,7 @@ public class GoogleOAuth2ProviderTest {
     }
 
     @Test
-    public void testVerifyCodeAndFetchEmailExchangesCodeOnEveryCall() throws IOException {
+    public void testVerifyCodeAndFetchEmailExchangesEachCodeIndependently() throws IOException {
         mockRegisteredProvider();
         GoogleAuthorizationCodeTokenRequest tokenRequest = mock(GoogleAuthorizationCodeTokenRequest.class);
         GoogleAuthorizationCodeFlow flow = mockTokenExchangeFlow(tokenRequest);
@@ -211,6 +211,32 @@ public class GoogleOAuth2ProviderTest {
             verify(flow, times(1)).newTokenRequest("secretCode1");
             verify(flow, times(1)).newTokenRequest("secretCode2");
             verify(tokenRequest, times(2)).execute();
+        }
+    }
+
+    @Test
+    public void testVerifyCodeAndFetchEmailReusesTokensForSameCode() throws IOException {
+        mockRegisteredProvider();
+        GoogleAuthorizationCodeTokenRequest tokenRequest = mock(GoogleAuthorizationCodeTokenRequest.class);
+        GoogleAuthorizationCodeFlow flow = mockTokenExchangeFlow(tokenRequest);
+        Oauth2 oauth2 = mock(Oauth2.class);
+        try (MockedConstruction<GoogleAuthorizationCodeFlow.Builder> ignoredFlow = Mockito.mockConstruction(GoogleAuthorizationCodeFlow.Builder.class,
+                (mock, context) -> when(mock.build()).thenReturn(flow));
+             MockedConstruction<Oauth2.Builder> ignored = Mockito.mockConstruction(Oauth2.Builder.class,
+                (mock, context) -> when(mock.build()).thenReturn(oauth2))) {
+            Userinfo userinfo = mock(Userinfo.class);
+            Oauth2.Userinfo userinfo1 = mock(Oauth2.Userinfo.class);
+            when(oauth2.userinfo()).thenReturn(userinfo1);
+            Oauth2.Userinfo.Get userinfoGet = mock(Oauth2.Userinfo.Get.class);
+            when(userinfo1.get()).thenReturn(userinfoGet);
+            when(userinfoGet.execute()).thenReturn(userinfo);
+            when(userinfo.getEmail()).thenReturn("email@example.com");
+
+            // the login flow uses the same one-time code twice: verifyOauthCodeAndGetUser then oauthlogin
+            assertEquals("email@example.com", _googleOAuth2Provider.verifyCodeAndFetchEmail("secretCode"));
+            assertTrue(_googleOAuth2Provider.verifyUser("email@example.com", "secretCode"));
+
+            verify(tokenRequest, times(1)).execute();
         }
     }
 }
