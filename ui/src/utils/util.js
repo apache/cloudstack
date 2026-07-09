@@ -113,7 +113,7 @@ export function toCsv ({ keys = null, data = null, columnDelimiter = ',', lineDe
 }
 
 export function downloadDataAsCsv ({ data = null, keys = null, headers = null, columnDelimiter = ',', lineDelimiter = '\n', fileName = 'data', dateFormat = undefined }) {
-  const dataParsed = toCsv(keys, data, columnDelimiter, lineDelimiter, headers, dateFormat)
+  const dataParsed = toCsv({ keys, data, columnDelimiter, lineDelimiter, headers, dateFormat })
   if (dataParsed === null) {
     return
   }
