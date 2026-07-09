@@ -46,9 +46,6 @@ import java.util.concurrent.TimeUnit;
 
 public class GoogleOAuth2Provider extends AdapterBase implements UserOAuth2Authenticator {
 
-    // The login flow exchanges the same one-time authorization code twice (once in
-    // verifyOauthCodeAndGetUser, once in the subsequent oauthlogin), so the tokens are
-    // cached per code; entries are short-lived as codes are only valid for a few minutes.
     protected final Cache<String, Pair<String, String>> tokensByCode = CacheBuilder.newBuilder()
             .maximumSize(1000)
             .expireAfterWrite(10, TimeUnit.MINUTES)
