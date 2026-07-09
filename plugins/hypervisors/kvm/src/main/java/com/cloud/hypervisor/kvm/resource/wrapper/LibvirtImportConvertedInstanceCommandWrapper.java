@@ -58,7 +58,7 @@ public class LibvirtImportConvertedInstanceCommandWrapper extends LibvirtBaseCon
         final String temporaryConvertPath = temporaryStoragePool.getLocalPath();
 
         try {
-            if (isForcedRbdConversion(conversionTemporaryLocation, forceConvertToPool)) {
+            if (isForcedBlockStorageConversion(conversionTemporaryLocation, forceConvertToPool)) {
                 List<KVMPhysicalDisk> disks = getTemporaryDisksWithPrefixFromTemporaryPool(temporaryStoragePool, temporaryConvertPath, temporaryConvertUuid);
                 UnmanagedInstanceTO convertedInstanceTO = getConvertedUnmanagedInstance(temporaryConvertUuid, disks, null);
                 return new ImportConvertedInstanceAnswer(cmd, convertedInstanceTO);
@@ -103,8 +103,11 @@ public class LibvirtImportConvertedInstanceCommandWrapper extends LibvirtBaseCon
         }
     }
 
-    private boolean isForcedRbdConversion(DataStoreTO conversionTemporaryLocation, boolean forceConvertToPool) {
-        return forceConvertToPool && conversionTemporaryLocation instanceof PrimaryDataStoreTO &&
-                ((PrimaryDataStoreTO) conversionTemporaryLocation).getPoolType() == Storage.StoragePoolType.RBD;
+    private boolean isForcedBlockStorageConversion(DataStoreTO conversionTemporaryLocation, boolean forceConvertToPool) {
+        if (!forceConvertToPool || !(conversionTemporaryLocation instanceof PrimaryDataStoreTO)) {
+            return false;
+        }
+        Storage.StoragePoolType poolType = ((PrimaryDataStoreTO) conversionTemporaryLocation).getPoolType();
+        return poolType == Storage.StoragePoolType.RBD || poolType == Storage.StoragePoolType.Linstor;
     }
 }

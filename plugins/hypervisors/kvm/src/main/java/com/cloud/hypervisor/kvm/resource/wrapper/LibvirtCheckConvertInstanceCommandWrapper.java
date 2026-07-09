@@ -38,6 +38,14 @@ public class LibvirtCheckConvertInstanceCommandWrapper extends CommandWrapper<Ch
                 logger.info(msg);
                 return new CheckConvertInstanceAnswer(cmd, false, msg);
             }
+            if (cmd.isCheckVddkInPlaceFinalizationSupport() && !serverResource.hostSupportsVirtV2vInPlace()) {
+                String msg = String.format("Cannot directly import VMware disks to a block storage pool on host %s as it lacks " +
+                                "in-place virt-v2v support (the virt-v2v-in-place binary or the virt-v2v --in-place option). " +
+                                "Use staged import with temporary conversion storage on this host, or select an EL9/Ubuntu 24.04-like conversion host.",
+                        serverResource.getPrivateIp());
+                logger.info(msg);
+                return new CheckConvertInstanceAnswer(cmd, false, msg);
+            }
             if (!serverResource.hostSupportsVddk(cmd.getVddkLibDir())) {
                 String msg = String.format("Cannot convert the instance from VMware using VDDK on host %s. " +
                                 "Please make sure virt-v2v%s, nbdkit-vddk and a valid VDDK library directory are available on the host.",

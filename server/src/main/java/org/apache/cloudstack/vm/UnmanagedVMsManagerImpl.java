@@ -216,7 +216,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                     Storage.StoragePoolType.SharedMountPoint);
     private static final List<Storage.StoragePoolType> vddkDirectConvertToPoolAllowedTypes =
             Arrays.asList(Storage.StoragePoolType.NetworkFilesystem, Storage.StoragePoolType.Filesystem,
-                    Storage.StoragePoolType.SharedMountPoint, Storage.StoragePoolType.RBD);
+                    Storage.StoragePoolType.SharedMountPoint, Storage.StoragePoolType.RBD,
+                    Storage.StoragePoolType.Linstor);
     private static final List<Storage.StoragePoolType> stagedConversionDestinationPoolTypes =
             Arrays.asList(Storage.StoragePoolType.NetworkFilesystem, Storage.StoragePoolType.RBD,
                     Storage.StoragePoolType.Linstor);
@@ -1755,6 +1756,9 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         StoragePoolVO selectedConversionStoragePool = convertStoragePoolId == null ? null : primaryDataStoreDao.findById(convertStoragePoolId);
         boolean directRbdVddkImport = useVddk && forceConvertToPool && selectedConversionStoragePool != null &&
                 selectedConversionStoragePool.getPoolType() == Storage.StoragePoolType.RBD;
+        StoragePoolVO directLinstorVddkImportPool = (useVddk && forceConvertToPool && selectedConversionStoragePool != null &&
+                selectedConversionStoragePool.getPoolType() == Storage.StoragePoolType.Linstor) ? selectedConversionStoragePool : null;
+        boolean directLinstorVddkImport = directLinstorVddkImportPool != null;
 
         checkConversionStoragePool(convertStoragePoolId, forceConvertToPool, useVddk);
         validateSelectedConversionStoragePoolForVddk(useVddk, forceConvertToPool, convertStoragePoolId, serviceOffering, dataDiskOfferingMap);
@@ -1781,13 +1785,13 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         ImportVmTask importVMTask = null;
         List<Reserver> reservations = new ArrayList<>();
         try {
-            HostVO convertHost = selectKVMHostForConversionInCluster(destinationCluster, convertInstanceHostId, useVddk, directRbdVddkImport);
+            HostVO convertHost = selectKVMHostForConversionInCluster(destinationCluster, convertInstanceHostId, useVddk, directRbdVddkImport, directLinstorVddkImportPool);
             HostVO importHost = (useVddk && importInstanceHostId == null)
                     ? convertHost
                     : selectKVMHostForImportingInCluster(destinationCluster, importInstanceHostId);
 
             boolean isOvfExportSupported = false;
-            CheckConvertInstanceAnswer conversionSupportAnswer = checkConversionSupportOnHost(convertHost, sourceVMName, false, useVddk, details, directRbdVddkImport);
+            CheckConvertInstanceAnswer conversionSupportAnswer = checkConversionSupportOnHost(convertHost, sourceVMName, false, useVddk, details, directRbdVddkImport, directLinstorVddkImport);
             if (!useVddk) {
                 isOvfExportSupported = conversionSupportAnswer.isOvfExportSupported();
             }
@@ -1810,14 +1814,14 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             Pair<UnmanagedInstanceTO, Boolean> sourceInstanceDetails = getSourceVmwareUnmanagedInstance(vcenter, datacenterName, username, password, clusterName, sourceHostName, sourceVMName, serviceOffering, details);
             sourceVMwareInstance = sourceInstanceDetails.first();
             isClonedInstance = sourceInstanceDetails.second();
-            validateDirectRbdVddkSourceVm(directRbdVddkImport, sourceVMName, sourceVMwareInstance, isClonedInstance);
+            validateDirectVddkImportSourceVm(directRbdVddkImport || directLinstorVddkImport, sourceVMName, sourceVMwareInstance, isClonedInstance);
 
             // Ensure that the configured resource limits will not be exceeded before beginning the conversion process
             checkVmResourceLimitsForUnmanagedInstanceImport(owner, sourceVMwareInstance, serviceOffering, template, reservations);
 
             boolean isWindowsVm = sourceVMwareInstance.getOperatingSystem().toLowerCase().contains("windows");
             if (isWindowsVm) {
-                checkConversionSupportOnHost(convertHost, sourceVMName, true, useVddk, details, directRbdVddkImport);
+                checkConversionSupportOnHost(convertHost, sourceVMName, true, useVddk, details, directRbdVddkImport, directLinstorVddkImport);
             }
 
             checkNetworkingBeforeConvertingVmwareInstance(zone, owner, displayName, hostName, sourceVMwareInstance, nicNetworkMap, nicIpAddressMap, forced);
@@ -1955,9 +1959,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 logFailureAndThrowException(String.format("The selected storage pool %s does not support direct conversion " +
                         "as its type %s", selectedStoragePool.getName(), selectedStoragePool.getPoolType().name()));
             }
-            if (forceConvertToPool && selectedStoragePool.getPoolType() == Storage.StoragePoolType.RBD && !useVddk) {
-                logFailureAndThrowException(String.format("The selected RBD storage pool %s can be used for direct conversion only with %s=true",
-                        selectedStoragePool.getName(), ApiConstants.USE_VDDK));
+            if (forceConvertToPool && !useVddk &&
+                    (selectedStoragePool.getPoolType() == Storage.StoragePoolType.RBD || selectedStoragePool.getPoolType() == Storage.StoragePoolType.Linstor)) {
+                logFailureAndThrowException(String.format("The selected %s storage pool %s can be used for direct conversion only with %s=true",
+                        selectedStoragePool.getPoolType().name(), selectedStoragePool.getName(), ApiConstants.USE_VDDK));
             }
         }
     }
@@ -2173,6 +2178,11 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     }
 
     HostVO selectKVMHostForConversionInCluster(Cluster destinationCluster, Long convertInstanceHostId, boolean useVddk, boolean requireVddkRbdDirectImportSupport) {
+        return selectKVMHostForConversionInCluster(destinationCluster, convertInstanceHostId, useVddk, requireVddkRbdDirectImportSupport, null);
+    }
+
+    HostVO selectKVMHostForConversionInCluster(Cluster destinationCluster, Long convertInstanceHostId, boolean useVddk, boolean requireVddkRbdDirectImportSupport,
+                                               StoragePoolVO linstorDirectImportPool) {
         if (convertInstanceHostId != null) {
             HostVO selectedHost = hostDao.findById(convertInstanceHostId);
             String err = null;
@@ -2195,6 +2205,12 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 err = String.format(
                         "Cannot perform the conversion on the host %s as it is not in the same zone as the destination cluster",
                         selectedHost);
+            } else if (linstorDirectImportPool != null &&
+                    storagePoolHostDao.findByPoolHost(linstorDirectImportPool.getId(), selectedHost.getId()) == null) {
+                err = String.format(
+                        "Cannot perform the direct Linstor VDDK import on the host %s as it does not have access to " +
+                        "the Linstor storage pool %s. The host must be a LINSTOR satellite connected to the pool.",
+                        selectedHost, linstorDirectImportPool.getName());
             }
             if (err != null) {
                 logger.error(err);
@@ -2216,6 +2232,9 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 List<HostVO> directRbdHosts = filterHostsWithVddkRbdDirectImportSupport(hosts);
                 hosts = directRbdHosts;
             }
+            if (linstorDirectImportPool != null) {
+                hosts = filterHostsForLinstorDirectImport(hosts, linstorDirectImportPool);
+            }
             if (CollectionUtils.isNotEmpty(hosts)) {
                 return hosts.get(new Random().nextInt(hosts.size()));
             }
@@ -2234,22 +2253,40 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 List<HostVO> directRbdHosts = filterHostsWithVddkRbdDirectImportSupport(hosts);
                 hosts = directRbdHosts;
             }
+            if (linstorDirectImportPool != null) {
+                hosts = filterHostsForLinstorDirectImport(hosts, linstorDirectImportPool);
+            }
             if (CollectionUtils.isNotEmpty(hosts)) {
                 return hosts.get(new Random().nextInt(hosts.size()));
             }
         }
 
-        String err = requireVddkRbdDirectImportSupport
-                ? String.format("Could not find any suitable %s host in cluster %s with '%s' enabled, which is required to perform direct RBD VDDK import. " +
-                        "This usually means the host is missing VDDK, qemu-img RBD support, or in-place virt-v2v support through the virt-v2v-in-place binary or virt-v2v --in-place option.",
-                        destinationCluster.getHypervisorType(), destinationCluster, Host.HOST_VDDK_RBD_DIRECT_IMPORT_SUPPORT)
-                : useVddk
-                ? String.format("Could not find any suitable %s host in cluster %s with '%s' configured to perform the VDDK-based instance conversion",
-                destinationCluster.getHypervisorType(), destinationCluster, Host.HOST_VDDK_SUPPORT)
-                : String.format("Could not find any suitable %s host in cluster %s to perform the instance conversion",
-                destinationCluster.getHypervisorType(), destinationCluster);
+        String err;
+        if (requireVddkRbdDirectImportSupport) {
+            err = String.format("Could not find any suitable %s host in cluster %s with '%s' enabled, which is required to perform direct RBD VDDK import. " +
+                    "This usually means the host is missing VDDK, qemu-img RBD support, or in-place virt-v2v support through the virt-v2v-in-place binary or virt-v2v --in-place option.",
+                    destinationCluster.getHypervisorType(), destinationCluster, Host.HOST_VDDK_RBD_DIRECT_IMPORT_SUPPORT);
+        } else if (linstorDirectImportPool != null) {
+            err = String.format("Could not find any suitable %s host in cluster %s to perform direct Linstor VDDK import. " +
+                    "The host must have VDDK, in-place virt-v2v support ('%s'), and access to the Linstor storage pool %s.",
+                    destinationCluster.getHypervisorType(), destinationCluster, Host.HOST_VIRTV2V_INPLACE_SUPPORT, linstorDirectImportPool.getName());
+        } else if (useVddk) {
+            err = String.format("Could not find any suitable %s host in cluster %s with '%s' configured to perform the VDDK-based instance conversion",
+                    destinationCluster.getHypervisorType(), destinationCluster, Host.HOST_VDDK_SUPPORT);
+        } else {
+            err = String.format("Could not find any suitable %s host in cluster %s to perform the instance conversion",
+                    destinationCluster.getHypervisorType(), destinationCluster);
+        }
         logger.error(err);
         throw new CloudRuntimeException(err);
+    }
+
+    private List<HostVO> filterHostsForLinstorDirectImport(List<HostVO> hosts, StoragePoolVO linstorPool) {
+        return hosts.stream().filter(h -> {
+            hostDao.loadDetails(h);
+            return Boolean.parseBoolean(h.getDetail(Host.HOST_VIRTV2V_INPLACE_SUPPORT)) &&
+                    storagePoolHostDao.findByPoolHost(linstorPool.getId(), h.getId()) != null;
+        }).collect(Collectors.toList());
     }
 
     private List<HostVO> filterHostsWithVddkSupport(List<HostVO> hosts) {
@@ -2269,19 +2306,21 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     private CheckConvertInstanceAnswer checkConversionSupportOnHost(HostVO convertHost, String sourceVM,
                                                                     boolean checkWindowsGuestConversionSupport,
                                                                     boolean useVddk, Map<String, String> details) {
-        return checkConversionSupportOnHost(convertHost, sourceVM, checkWindowsGuestConversionSupport, useVddk, details, false);
+        return checkConversionSupportOnHost(convertHost, sourceVM, checkWindowsGuestConversionSupport, useVddk, details, false, false);
     }
 
     private CheckConvertInstanceAnswer checkConversionSupportOnHost(HostVO convertHost, String sourceVM,
                                                                     boolean checkWindowsGuestConversionSupport,
                                                                     boolean useVddk, Map<String, String> details,
-                                                                    boolean checkVddkRbdDirectImportSupport) {
+                                                                    boolean checkVddkRbdDirectImportSupport,
+                                                                    boolean checkVddkInPlaceFinalizationSupport) {
         logger.debug(String.format("Checking the %s%s conversion support on the host %s",
                 useVddk ? "VDDK " : "",
                 checkWindowsGuestConversionSupport ? "windows guest " : "",
                 convertHost));
         CheckConvertInstanceCommand cmd = new CheckConvertInstanceCommand(checkWindowsGuestConversionSupport, useVddk);
         cmd.setCheckVddkRbdDirectImportSupport(checkVddkRbdDirectImportSupport);
+        cmd.setCheckVddkInPlaceFinalizationSupport(checkVddkInPlaceFinalizationSupport);
         if (MapUtils.isNotEmpty(details)) {
             cmd.setVddkLibDir(StringUtils.trimToNull(details.get(Host.HOST_VDDK_LIB_DIR)));
         }
@@ -2394,13 +2433,13 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         cmd.setVddkThumbprint(StringUtils.trimToNull(details.get(DETAIL_VDDK_THUMBPRINT)));
     }
 
-    private void validateDirectRbdVddkSourceVm(boolean directRbdVddkImport, String sourceVM,
+    private void validateDirectVddkImportSourceVm(boolean directBlockVddkImport, String sourceVM,
                                                UnmanagedInstanceTO sourceVMwareInstance, boolean isClonedInstance) {
-        if (!directRbdVddkImport) {
+        if (!directBlockVddkImport) {
             return;
         }
         if (isClonedInstance || sourceVMwareInstance == null || sourceVMwareInstance.getPowerState() != UnmanagedInstanceTO.PowerState.PowerOff) {
-            throw new CloudRuntimeException(String.format("Direct RBD VDDK import is supported only for powered-off VMware VMs. " +
+            throw new CloudRuntimeException(String.format("Direct VDDK import to a block storage pool is supported only for powered-off VMware VMs. " +
                     "Please power off VM %s, or disable %s and use staged import with temporary conversion storage.",
                     sourceVM, ApiConstants.FORCE_CONVERT_TO_POOL));
         }

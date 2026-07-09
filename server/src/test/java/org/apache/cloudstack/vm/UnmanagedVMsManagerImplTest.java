@@ -1500,6 +1500,66 @@ public class UnmanagedVMsManagerImplTest {
     }
 
     @Test
+    public void testCheckConversionStoragePoolLinstorAllowedForVddkForceConvertToPool() {
+        StoragePoolVO destPool = mock(StoragePoolVO.class);
+        Mockito.when(destPool.getPoolType()).thenReturn(Storage.StoragePoolType.Linstor);
+        long destPoolId = 1L;
+        Mockito.when(primaryDataStoreDao.findById(destPoolId)).thenReturn(destPool);
+        unmanagedVMsManager.checkConversionStoragePool(destPoolId, true, true);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testCheckConversionStoragePoolLinstorNotAllowedWithoutVddk() {
+        StoragePoolVO destPool = mock(StoragePoolVO.class);
+        Mockito.when(destPool.getPoolType()).thenReturn(Storage.StoragePoolType.Linstor);
+        long destPoolId = 1L;
+        Mockito.when(primaryDataStoreDao.findById(destPoolId)).thenReturn(destPool);
+        unmanagedVMsManager.checkConversionStoragePool(destPoolId, true, false);
+    }
+
+    @Test
+    public void testSelectKVMHostForConversionInClusterDirectLinstorAutoSelectsHostWithSupport() {
+        ClusterVO cluster = getClusterForTests();
+        HostVO hostWithoutInPlace = Mockito.mock(HostVO.class);
+        HostVO hostWithInPlace = Mockito.mock(HostVO.class);
+        when(hostWithoutInPlace.getDetail(Host.HOST_VDDK_SUPPORT)).thenReturn("true");
+        when(hostWithoutInPlace.getDetail(Host.HOST_VIRTV2V_INPLACE_SUPPORT)).thenReturn(null);
+        when(hostWithInPlace.getDetail(Host.HOST_VDDK_SUPPORT)).thenReturn("true");
+        when(hostWithInPlace.getDetail(Host.HOST_VIRTV2V_INPLACE_SUPPORT)).thenReturn("true");
+        when(hostWithInPlace.getId()).thenReturn(7L);
+
+        StoragePoolVO linstorPool = mock(StoragePoolVO.class);
+        when(linstorPool.getId()).thenReturn(10L);
+        StoragePoolHostVO storagePoolHost = Mockito.mock(StoragePoolHostVO.class);
+        when(storagePoolHostDao.findByPoolHost(10L, 7L)).thenReturn(storagePoolHost);
+
+        when(hostDao.listByClusterHypervisorTypeAndHostCapability(cluster.getId(),
+                cluster.getHypervisorType(), Host.HOST_INSTANCE_CONVERSION))
+                .thenReturn(List.of(hostWithoutInPlace, hostWithInPlace));
+
+        HostVO returnedHost = unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, null, true, false, linstorPool);
+        Assert.assertEquals(hostWithInPlace, returnedHost);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testSelectKVMHostForConversionInClusterDirectLinstorFailsWithoutSupport() {
+        ClusterVO cluster = getClusterForTests();
+        HostVO hostWithoutInPlace = Mockito.mock(HostVO.class);
+        when(hostWithoutInPlace.getDetail(Host.HOST_VDDK_SUPPORT)).thenReturn("true");
+        when(hostWithoutInPlace.getDetail(Host.HOST_VIRTV2V_INPLACE_SUPPORT)).thenReturn(null);
+
+        StoragePoolVO linstorPool = mock(StoragePoolVO.class);
+
+        when(hostDao.listByClusterHypervisorTypeAndHostCapability(cluster.getId(),
+                cluster.getHypervisorType(), Host.HOST_INSTANCE_CONVERSION))
+                .thenReturn(List.of(hostWithoutInPlace));
+        when(hostDao.listByClusterAndHypervisorType(cluster.getId(), cluster.getHypervisorType()))
+                .thenReturn(List.of(hostWithoutInPlace));
+
+        unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, null, true, false, linstorPool);
+    }
+
+    @Test
     public void testValidateStagedImportHostSupportLinstorPoolAccessibleFromImportHost() {
         StoragePoolVO destPool = mock(StoragePoolVO.class);
         Mockito.when(destPool.getPoolType()).thenReturn(Storage.StoragePoolType.Linstor);

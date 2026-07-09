@@ -105,6 +105,31 @@ public class LibvirtCheckConvertInstanceCommandWrapperTest {
     }
 
     @Test
+    public void testCheckInstanceCommand_vddkInPlaceFinalizationSuccess() {
+        Mockito.when(checkConvertInstanceCommandMock.isUseVddk()).thenReturn(true);
+        Mockito.when(checkConvertInstanceCommandMock.isCheckVddkInPlaceFinalizationSupport()).thenReturn(true);
+        Mockito.when(checkConvertInstanceCommandMock.getVddkLibDir()).thenReturn("/opt/vmware-vddk/vmware-vix-disklib-distrib");
+        Mockito.when(libvirtComputingResourceMock.hostSupportsVirtV2vInPlace()).thenReturn(true);
+        Mockito.when(libvirtComputingResourceMock.hostSupportsVddk("/opt/vmware-vddk/vmware-vix-disklib-distrib")).thenReturn(true);
+
+        Answer answer = checkConvertInstanceCommandWrapper.execute(checkConvertInstanceCommandMock, libvirtComputingResourceMock);
+
+        assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void testCheckInstanceCommand_vddkInPlaceFinalizationFailure() {
+        Mockito.when(checkConvertInstanceCommandMock.isUseVddk()).thenReturn(true);
+        Mockito.when(checkConvertInstanceCommandMock.isCheckVddkInPlaceFinalizationSupport()).thenReturn(true);
+        Mockito.when(libvirtComputingResourceMock.hostSupportsVirtV2vInPlace()).thenReturn(false);
+
+        Answer answer = checkConvertInstanceCommandWrapper.execute(checkConvertInstanceCommandMock, libvirtComputingResourceMock);
+
+        assertFalse(answer.getResult());
+        assertTrue(StringUtils.isNotBlank(answer.getDetails()));
+    }
+
+    @Test
     public void testCheckInstanceCommand_vddkFailure() {
         Mockito.when(checkConvertInstanceCommandMock.isUseVddk()).thenReturn(true);
         Mockito.when(checkConvertInstanceCommandMock.getVddkLibDir()).thenReturn("/opt/vmware-vddk/vmware-vix-disklib-distrib");
