@@ -20,21 +20,29 @@ package org.apache.cloudstack.storage.vmsnapshot;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotOptions;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.feign.client.SnapshotFeignClient;
-import org.apache.cloudstack.storage.feign.model.CliSnapshotRestoreRequest;
+import org.apache.cloudstack.storage.feign.model.ConsistencyGroup;
+import org.apache.cloudstack.storage.feign.model.ConsistencyGroupSnapshot;
+import org.apache.cloudstack.storage.feign.model.ConsistencyGroupVolume;
+import org.apache.cloudstack.storage.feign.model.ConsistencyGroupVolumeProvisioningOptions;
 import org.apache.cloudstack.storage.feign.model.FlexVolSnapshot;
+import org.apache.cloudstack.storage.feign.model.Svm;
+import org.apache.cloudstack.storage.feign.model.Job;
 import org.apache.cloudstack.storage.feign.model.response.JobResponse;
 import org.apache.cloudstack.storage.feign.model.response.OntapResponse;
 import org.apache.cloudstack.storage.service.StorageStrategy;
@@ -72,25 +80,22 @@ import com.cloud.vm.snapshot.VMSnapshotVO;
 import org.apache.cloudstack.storage.utils.OntapStorageConstants;
 
 /**
- * VM Snapshot strategy for NetApp ONTAP managed storage using FlexVolume-level snapshots.
+ * VM Snapshot strategy for NetApp ONTAP managed storage using temporary consistency-group orchestration.
  *
  * <p>This strategy handles VM-level (instance) snapshots for VMs whose volumes
- * reside on ONTAP managed primary storage. Instead of creating per-file clones
- * (the old approach), it takes <b>ONTAP FlexVolume-level snapshots</b> via the
- * ONTAP REST API ({@code POST /api/storage/volumes/{uuid}/snapshots}).</p>
- *
- * <h3>Key Advantage:</h3>
- * <p>When multiple CloudStack disks (ROOT + DATA) reside on the same ONTAP
- * FlexVolume, a single FlexVolume snapshot atomically captures all of them.
- * This is both faster and more storage-efficient than per-file clones.</p>
+ * reside on ONTAP managed primary storage. When VM volumes span multiple FlexVols,
+ * snapshot creation is coordinated through a <b>temporary ONTAP consistency group (CG)</b>
+ * and two-phase snapshot flow (start + commit). When all volumes share a single FlexVol,
+ * a direct FlexVol snapshot is used instead.</p>
  *
  * <h3>Flow:</h3>
  * <ol>
  *   <li>Group all VM volumes by their parent FlexVolume UUID</li>
  *   <li>Freeze the VM via QEMU guest agent ({@code fsfreeze}) — if quiesce requested</li>
- *   <li>For each unique FlexVolume, create one ONTAP snapshot</li>
+ *   <li>If VM spans multiple FlexVolumes: create temporary CG, start + commit CG snapshot (two-phase)</li>
+ *   <li>If VM spans a single FlexVolume: create one FlexVol snapshot directly (no CG overhead)</li>
  *   <li>Thaw the VM</li>
- *   <li>Record FlexVolume → snapshot UUID mappings in {@code vm_snapshot_details}</li>
+ *   <li>Resolve FlexVolume → snapshot UUID mappings and persist in {@code vm_snapshot_details}</li>
  * </ol>
  *
  * <h3>Metadata in vm_snapshot_details:</h3>
@@ -251,12 +256,14 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
 
     /**
      * Takes a VM-level snapshot by freezing the VM, creating ONTAP FlexVolume-level
-     * snapshots (one per unique FlexVolume), and then thawing the VM.
+     * snapshot(s), and then thawing the VM.
      *
      * <p>Volumes are grouped by their parent FlexVolume UUID (from storage pool details).
-     * For each unique FlexVolume, exactly one ONTAP snapshot is created via
-     * {@code POST /api/storage/volumes/{uuid}/snapshots}. This means if a VM has
-     * ROOT and DATA disks on the same FlexVolume, only one snapshot is created.</p>
+     * When the VM spans <b>more than one</b> unique FlexVolume, a temporary ONTAP
+     * consistency group is used with two-phase snapshot semantics (start + commit) so
+     * all FlexVols are captured at the same point in time. When all VM volumes reside
+     * on a <b>single</b> FlexVolume, a direct per-FlexVol snapshot is taken instead —
+     * CG orchestration is unnecessary in that case.</p>
      *
      * <p><b>Memory Snapshots Not Supported:</b> This strategy only supports disk-only
      * (crash-consistent) snapshots. Memory snapshots (snapshotmemory=true) are rejected
@@ -286,7 +293,7 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
         FreezeThawVMAnswer thawAnswer = null;
         long startFreeze = 0;
 
-        // Track which FlexVolume snapshots were created (for rollback)
+        // Track which FlexVolume snapshots were created (for rollback and detail persistence)
         List<FlexVolSnapshotDetail> createdSnapshots = new ArrayList<>();
 
         boolean result = false;
@@ -338,7 +345,8 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
             CreateVMSnapshotCommand ccmd = new CreateVMSnapshotCommand(
                     userVm.getInstanceName(), userVm.getUuid(), target, volumeTOs, guestOS.getDisplayName());
 
-            logger.info("takeVMSnapshot: Creating ONTAP FlexVolume VM Snapshot for VM [{}] with quiesce={}", userVm.getInstanceName(), quiesceVm);
+            logger.info("takeVMSnapshot: Creating ONTAP VM snapshot for VM [{}] with quiesce={}",
+                    userVm.getInstanceName(), quiesceVm);
 
             // Prepare volume info list and calculate sizes
             for (VolumeObjectTO volumeObjectTO : volumeTOs) {
@@ -375,56 +383,20 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
                         userVm.getInstanceName(), quiesceVm, vmIsRunning);
             }
 
-            // ── Step 2: Create FlexVolume-level snapshots ──
+            // ── Step 2: Create FlexVolume-level snapshot(s) ──
             try {
                 String snapshotNameBase = buildSnapshotName(vmSnapshot);
 
-                for (Map.Entry<String, FlexVolGroupInfo> entry : flexVolGroups.entrySet()) {
-                    String flexVolUuid = entry.getKey();
-                    FlexVolGroupInfo groupInfo = entry.getValue();
-                    long startSnapshot = System.nanoTime();
-
-                    // Build storage strategy from pool details to get the feign client
-                    StorageStrategy storageStrategy = OntapStorageUtils.getStrategyByStoragePoolDetails(groupInfo.poolDetails);
-                    SnapshotFeignClient snapshotClient = storageStrategy.getSnapshotFeignClient();
-                    String authHeader = storageStrategy.getAuthHeader();
-
-                    // Use the same snapshot name for all FlexVolumes in this VM snapshot
-                    // (each FlexVolume gets its own independent snapshot with this name)
-                    FlexVolSnapshot snapshotRequest = new FlexVolSnapshot(snapshotNameBase,
-                            "CloudStack VM snapshot " + vmSnapshot.getName() + " for VM " + userVm.getInstanceName());
-
-                    logger.info("takeVMSnapshot: Creating ONTAP FlexVolume snapshot [{}] on FlexVol UUID [{}] covering {} volume(s)",
-                            snapshotNameBase, flexVolUuid, groupInfo.volumeIds.size());
-
-                    JobResponse jobResponse = snapshotClient.createSnapshot(authHeader, flexVolUuid, snapshotRequest);
-                    if (jobResponse == null || jobResponse.getJob() == null) {
-                        throw new CloudRuntimeException("Failed to initiate FlexVolume snapshot on FlexVol UUID [" + flexVolUuid + "]");
-                    }
-
-                    // Poll for job completion
-                    Boolean jobSucceeded = storageStrategy.jobPollForSuccess(jobResponse.getJob().getUuid(), 30, 2000);
-                    if (!jobSucceeded) {
-                        throw new CloudRuntimeException("FlexVolume snapshot job failed on FlexVol UUID [" + flexVolUuid + "]");
-                    }
-
-                    // Retrieve the created snapshot UUID by name
-                    String snapshotUuid = resolveSnapshotUuid(snapshotClient, authHeader, flexVolUuid, snapshotNameBase);
-
-                    String protocol = groupInfo.poolDetails.get(OntapStorageConstants.PROTOCOL);
-
-                    // Create one detail per CloudStack volume in this FlexVol group (for single-file restore during revert)
-                    for (Long volumeId : groupInfo.volumeIds) {
-                        String volumePath = resolveVolumePathOnOntap(volumeId, protocol, groupInfo.poolDetails);
-                        FlexVolSnapshotDetail detail = new FlexVolSnapshotDetail(
-                                flexVolUuid, snapshotUuid, snapshotNameBase, volumePath, groupInfo.poolId, protocol);
-                        createdSnapshots.add(detail);
-                    }
-
-                    logger.info("takeVMSnapshot: ONTAP FlexVolume snapshot [{}] (uuid={}) on FlexVol [{}] completed in {} ms. Covers volumes: {}",
-                            snapshotNameBase, snapshotUuid, flexVolUuid,
-                            TimeUnit.MILLISECONDS.convert(System.nanoTime() - startSnapshot, TimeUnit.NANOSECONDS),
-                            groupInfo.volumeIds);
+                // CG orchestration is only required when VM disks span multiple FlexVols.
+                // A single FlexVol already provides atomic capture for all volumes on that FlexVol.
+                if (flexVolGroups.size() > 1) {
+                    logger.info("takeVMSnapshot: VM [{}] spans {} FlexVol(s); using temporary CG two-phase snapshot flow",
+                            userVm.getInstanceName(), flexVolGroups.size());
+                    createVmSnapshotsViaTemporaryCg(vmSnapshot, userVm, flexVolGroups, snapshotNameBase, createdSnapshots);
+                } else {
+                    logger.info("takeVMSnapshot: VM [{}] spans a single FlexVol; using direct FlexVol snapshot flow",
+                            userVm.getInstanceName());
+                    createVmSnapshotsViaSingleFlexVol(vmSnapshot, userVm, flexVolGroups, snapshotNameBase, createdSnapshots);
                 }
             } finally {
                 // ── Step 3: Thaw the VM (only if it was frozen, always even on error) ──
@@ -456,7 +428,7 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
             answer.setVolumeTOs(volumeTOs);
 
             processAnswer(vmSnapshotVO, userVm, answer, null);
-            logger.info("takeVMSnapshot: ONTAP FlexVolume VM Snapshot [{}] created successfully for VM [{}] ({} FlexVol snapshot(s))",
+            logger.info("takeVMSnapshot: ONTAP VM Snapshot [{}] created successfully for VM [{}] ({} detail row(s))",
                     vmSnapshot.getName(), userVm.getInstanceName(), createdSnapshots.size());
 
             long newChainSize = 0;
@@ -668,16 +640,140 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
     }
 
     /**
-     * Builds a deterministic, ONTAP-safe snapshot name for a VM snapshot.
-     * Format: {@code vmsnap_<vmSnapshotId>_<timestamp>}
+     * Creates VM snapshot artifacts via direct FlexVol snapshot API.
+     *
+     * <p>Used when all VM volumes map to a single FlexVol. In that case a CG is not
+     * needed because one FlexVol snapshot already captures every disk atomically.</p>
+     */
+    void createVmSnapshotsViaSingleFlexVol(VMSnapshot vmSnapshot, UserVm userVm,
+                                         Map<String, FlexVolGroupInfo> flexVolGroups,
+                                         String snapshotNameBase,
+                                         List<FlexVolSnapshotDetail> createdSnapshots) {
+        for (Map.Entry<String, FlexVolGroupInfo> entry : flexVolGroups.entrySet()) {
+            String flexVolUuid = entry.getKey();
+            FlexVolGroupInfo groupInfo = entry.getValue();
+            long startSnapshot = System.nanoTime();
+
+            StorageStrategy storageStrategy = resolveStorageStrategy(groupInfo.poolDetails);
+            SnapshotFeignClient snapshotClient = storageStrategy.getSnapshotFeignClient();
+            String authHeader = storageStrategy.getAuthHeader();
+
+            FlexVolSnapshot snapshotRequest = new FlexVolSnapshot(snapshotNameBase,
+                    "CloudStack VM snapshot " + vmSnapshot.getName() + " for VM " + userVm.getInstanceName());
+
+            logger.info("takeVMSnapshot: [FlexVol] Creating snapshot [{}] on FlexVol UUID [{}] covering {} volume(s)",
+                    snapshotNameBase, flexVolUuid, groupInfo.volumeIds.size());
+
+            JobResponse jobResponse = snapshotClient.createSnapshot(authHeader, flexVolUuid, snapshotRequest);
+            if (jobResponse == null || jobResponse.getJob() == null) {
+                throw new CloudRuntimeException("Failed to initiate FlexVolume snapshot on FlexVol UUID [" + flexVolUuid + "]");
+            }
+
+            Boolean jobSucceeded = storageStrategy.jobPollForSuccess(jobResponse.getJob().getUuid(), 30, 2000);
+            if (!jobSucceeded) {
+                throw new CloudRuntimeException("FlexVolume snapshot job failed on FlexVol UUID [" + flexVolUuid + "]");
+            }
+
+            String snapshotUuid = resolveSnapshotUuid(snapshotClient, authHeader, flexVolUuid, snapshotNameBase);
+            String protocol = groupInfo.poolDetails.get(OntapStorageConstants.PROTOCOL);
+
+            for (Long volumeId : groupInfo.volumeIds) {
+                String volumePath = resolveVolumePathOnOntap(volumeId, protocol, groupInfo.poolDetails);
+                createdSnapshots.add(new FlexVolSnapshotDetail(
+                        flexVolUuid, snapshotUuid, snapshotNameBase, volumePath, groupInfo.poolId, protocol));
+            }
+
+            logger.debug("takeVMSnapshot: [FlexVol] Snapshot [{}] (uuid={}) on FlexVol [{}] completed in {} ms. Covers volumes: {}",
+                    snapshotNameBase, snapshotUuid, flexVolUuid,
+                    TimeUnit.MILLISECONDS.convert(System.nanoTime() - startSnapshot, TimeUnit.NANOSECONDS),
+                    groupInfo.volumeIds);
+        }
+    }
+
+    /**
+     * Creates VM snapshot artifacts via temporary consistency-group two-phase flow.
+     *
+     * <p>Used when VM volumes span multiple FlexVols and require a consistent
+     * point-in-time capture across all participating FlexVolumes.</p>
+     */
+    void createVmSnapshotsViaTemporaryCg(VMSnapshot vmSnapshot, UserVm userVm,
+                                         Map<String, FlexVolGroupInfo> flexVolGroups,
+                                         String snapshotNameBase,
+                                         List<FlexVolSnapshotDetail> createdSnapshots) {
+        String tempCgName = buildTemporaryConsistencyGroupName(vmSnapshot);
+        String tempCgUuid = null;
+        String cgSnapshotUuid = null;
+        long cgFlowStart = System.nanoTime();
+
+        // All volumes in a VM snapshot belong to ONTAP-managed pools and share the same ONTAP credentials.
+        // Use any one FlexVol group to obtain strategy/client objects for this operation.
+        FlexVolGroupInfo referenceGroup = flexVolGroups.values().iterator().next();
+        StorageStrategy storageStrategy = resolveStorageStrategy(referenceGroup.poolDetails);
+        SnapshotFeignClient snapshotClient = storageStrategy.getSnapshotFeignClient();
+        String authHeader = storageStrategy.getAuthHeader();
+
+        try {
+            logger.info("takeVMSnapshot: [CG:Create] Creating temporary consistency group [{}] for VM [{}] over {} FlexVol(s)",
+                    tempCgName, userVm.getInstanceName(), flexVolGroups.size());
+            tempCgUuid = createTemporaryConsistencyGroup(snapshotClient, storageStrategy, authHeader, tempCgName,
+                    resolveConsistencyGroupScope(flexVolGroups), flexVolGroups.keySet());
+
+            logger.info("takeVMSnapshot: [CG:Start] Starting phase-1 snapshot [{}] for temporary consistency group [{}]",
+                    snapshotNameBase, tempCgUuid);
+            cgSnapshotUuid = resolveStartedConsistencyGroupSnapshotUuid(snapshotClient, storageStrategy,
+                    authHeader, tempCgUuid, snapshotNameBase);
+
+            logger.info("takeVMSnapshot: [CG:Commit] Committing phase-2 snapshot [{}] (uuid={}) for temporary consistency group [{}]",
+                    snapshotNameBase, cgSnapshotUuid, tempCgUuid);
+            commitConsistencyGroupSnapshot(snapshotClient, storageStrategy, authHeader, tempCgUuid, cgSnapshotUuid);
+
+            // Resolve per-FlexVol snapshot UUIDs and build one detail entry per CloudStack volume.
+            for (Map.Entry<String, FlexVolGroupInfo> entry : flexVolGroups.entrySet()) {
+                String flexVolUuid = entry.getKey();
+                FlexVolGroupInfo groupInfo = entry.getValue();
+                String snapshotUuid = resolveSnapshotUuid(snapshotClient, authHeader, flexVolUuid, snapshotNameBase);
+                String protocol = groupInfo.poolDetails.get(OntapStorageConstants.PROTOCOL);
+
+                for (Long volumeId : groupInfo.volumeIds) {
+                    String volumePath = resolveVolumePathOnOntap(volumeId, protocol, groupInfo.poolDetails);
+                    createdSnapshots.add(new FlexVolSnapshotDetail(
+                            flexVolUuid, snapshotUuid, snapshotNameBase, volumePath, groupInfo.poolId, protocol));
+                }
+
+                logger.debug("takeVMSnapshot: [CG:Resolve] Snapshot [{}] resolved to FlexVol snapshot uuid [{}] for FlexVol [{}], volumes={}",
+                        snapshotNameBase, snapshotUuid, flexVolUuid, groupInfo.volumeIds);
+            }
+        } finally {
+            // CG is only a transaction boundary; remove it after commit/failure and keep snapshots intact.
+            if (tempCgUuid != null) {
+                try {
+                    logger.info("takeVMSnapshot: [CG:Cleanup] Deleting temporary consistency group [{}]", tempCgUuid);
+                    deleteTemporaryConsistencyGroup(snapshotClient, storageStrategy, authHeader, tempCgUuid);
+                } catch (Exception cleanupEx) {
+                    logger.warn("takeVMSnapshot: Failed to delete temporary consistency group [{}]: {}",
+                            tempCgUuid, cleanupEx.getMessage());
+                }
+            }
+        }
+
+        logger.info("takeVMSnapshot: Temporary consistency-group two-phase flow completed for VM [{}] in {} ms. CG snapshot uuid={}, detail rows={}",
+                userVm.getInstanceName(),
+                TimeUnit.MILLISECONDS.convert(System.nanoTime() - cgFlowStart, TimeUnit.NANOSECONDS),
+                cgSnapshotUuid, createdSnapshots.size());
+    }
+
+    /**
+     * Builds an ONTAP-safe snapshot name from the CloudStack VM snapshot UI name.
      */
     String buildSnapshotName(VMSnapshot vmSnapshot) {
-        String name = "vmsnap_" + vmSnapshot.getId() + "_" + System.currentTimeMillis();
-        // ONTAP snapshot names: max 255 chars, must start with letter, only alphanumeric and underscores
-        if (name.length() > OntapStorageConstants.MAX_SNAPSHOT_NAME_LENGTH) {
-            name = name.substring(0, OntapStorageConstants.MAX_SNAPSHOT_NAME_LENGTH);
-        }
-        return name;
+        return OntapStorageUtils.buildOntapSnapshotName(vmSnapshot.getName(), "vm" + vmSnapshot.getId());
+    }
+
+    /**
+     * Wrapper for static utility to simplify unit testing and keep call sites explicit.
+     */
+    StorageStrategy resolveStorageStrategy(Map<String, String> poolDetails) {
+        return OntapStorageUtils.getStrategyByStoragePoolDetails(poolDetails);
     }
 
     /**
@@ -693,6 +789,227 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
                     "] on FlexVol [" + flexVolUuid + "] after creation");
         }
         return response.getRecords().get(0).getUuid();
+    }
+
+    /**
+     * Builds a deterministic temporary CG name for the VM snapshot transaction.
+     */
+    String buildTemporaryConsistencyGroupName(VMSnapshot vmSnapshot) {
+        return OntapStorageConstants.ONTAP_TEMP_CG_PREFIX + vmSnapshot.getId();
+    }
+
+    /**
+     * Validates and returns the ONTAP scope for a temporary consistency group.
+     *
+     * <p>CG membership requires all FlexVols on the same ONTAP management endpoint and SVM.
+     * SVM name alone is not sufficient — different clusters may reuse names such as {@code vs0}.
+     * Identity uses {@code storageIP} plus {@code svmUUID} when persisted, otherwise
+     * {@code storageIP} plus {@code svmName} for legacy pools.</p>
+     */
+    ConsistencyGroupScope resolveConsistencyGroupScope(Map<String, FlexVolGroupInfo> flexVolGroups) {
+        ConsistencyGroupScope scope = null;
+        for (FlexVolGroupInfo group : flexVolGroups.values()) {
+            ConsistencyGroupScope candidate = consistencyGroupScopeFromPoolDetails(group.poolDetails, group.poolId);
+            if (scope == null) {
+                scope = candidate;
+            } else if (!scope.matches(candidate)) {
+                throw new CloudRuntimeException("ONTAP consistency groups require all VM volumes on the same "
+                        + "ONTAP cluster and SVM. Found [" + scope + "] and [" + candidate + "]");
+            }
+        }
+        return scope;
+    }
+
+    ConsistencyGroupScope consistencyGroupScopeFromPoolDetails(Map<String, String> poolDetails, long poolId) {
+        String storageIp = poolDetails.get(OntapStorageConstants.STORAGE_IP);
+        if (StringUtils.isBlank(storageIp)) {
+            throw new CloudRuntimeException("ONTAP storage management IP not found in pool details for pool ["
+                    + poolId + "]");
+        }
+        String svmName = poolDetails.get(OntapStorageConstants.SVM_NAME);
+        if (StringUtils.isBlank(svmName)) {
+            throw new CloudRuntimeException("SVM name not found in pool details for pool [" + poolId + "]");
+        }
+        String svmUuid = poolDetails.get(OntapStorageConstants.SVM_UUID);
+        return new ConsistencyGroupScope(storageIp.trim(), svmName.trim(),
+                svmUuid != null && !svmUuid.trim().isEmpty() ? svmUuid.trim() : null);
+    }
+
+    /**
+     * Creates a temporary consistency group for the involved FlexVol UUIDs and returns its UUID.
+     */
+    String createTemporaryConsistencyGroup(SnapshotFeignClient client, StorageStrategy storageStrategy,
+                                           String authHeader, String cgName, ConsistencyGroupScope cgScope,
+                                           Set<String> flexVolUuids) {
+        if (cgScope == null) {
+            throw new CloudRuntimeException("ONTAP consistency group scope is required to create CG [" + cgName + "]");
+        }
+
+        List<ConsistencyGroupVolume> volumeRefs = new ArrayList<>();
+        for (String flexVolUuid : flexVolUuids) {
+            ConsistencyGroupVolumeProvisioningOptions provisioningOptions =
+                    new ConsistencyGroupVolumeProvisioningOptions(OntapStorageConstants.CG_VOLUME_PROVISIONING_ACTION_ADD);
+
+            ConsistencyGroupVolume volumeRef = new ConsistencyGroupVolume();
+            volumeRef.setUuid(flexVolUuid);
+            volumeRef.setProvisioningOptions(provisioningOptions);
+            volumeRefs.add(volumeRef);
+        }
+
+        ConsistencyGroup payload = new ConsistencyGroup();
+        payload.setName(cgName);
+        payload.setSvm(cgScope.toOntapSvm());
+        payload.setVolumes(volumeRefs);
+
+        JobResponse response = client.createConsistencyGroup(authHeader, payload);
+        storageStrategy.pollJobIfPresent(response, "create temporary consistency group " + cgName);
+
+        String cgUuid = resolveConsistencyGroupUuidByName(client, authHeader, cgName, cgScope);
+        if (cgUuid == null || cgUuid.isEmpty()) {
+            throw new CloudRuntimeException("Unable to resolve temporary consistency group UUID for [" + cgName + "]");
+        }
+        return cgUuid;
+    }
+
+    /**
+     * Starts phase-1 of the two-phase CG snapshot and returns the CG snapshot UUID when ONTAP exposes it in the job record.
+     */
+    String startConsistencyGroupSnapshot(SnapshotFeignClient client, StorageStrategy storageStrategy,
+                                       String authHeader, String cgUuid, String snapshotName) {
+        ConsistencyGroupSnapshot payload = new ConsistencyGroupSnapshot(snapshotName, "start");
+        JobResponse response = client.createConsistencyGroupSnapshot(authHeader, cgUuid, payload);
+        Job completedJob = storageStrategy.pollJobIfPresentAndGetCompletedJob(response,
+                "start CG snapshot " + snapshotName + " for " + cgUuid);
+        if (completedJob == null) {
+            return null;
+        }
+        String snapshotUuid = OntapStorageUtils.extractUuidFromOntapJobDescription(
+                completedJob.getDescription(), "/snapshots/");
+        if (snapshotUuid != null) {
+            logger.info("takeVMSnapshot: [CG:Start] Resolved CG snapshot UUID [{}] from ONTAP job for snapshot [{}]",
+                    snapshotUuid, snapshotName);
+        }
+        return snapshotUuid;
+    }
+
+    /**
+     * Commits phase-2 of the started CG snapshot.
+     */
+    void commitConsistencyGroupSnapshot(SnapshotFeignClient client, StorageStrategy storageStrategy,
+                                        String authHeader, String cgUuid, String snapshotUuid) {
+        ConsistencyGroupSnapshot payload = new ConsistencyGroupSnapshot();
+        payload.setAction("commit");
+        JobResponse response = client.commitConsistencyGroupSnapshot(authHeader, cgUuid, snapshotUuid, payload);
+        storageStrategy.pollJobIfPresent(response, "commit CG snapshot " + snapshotUuid + " for " + cgUuid);
+    }
+
+    /**
+     * Deletes the temporary consistency group used as a transaction boundary.
+     */
+    void deleteTemporaryConsistencyGroup(SnapshotFeignClient client, StorageStrategy storageStrategy,
+                                         String authHeader, String cgUuid) {
+        JobResponse response = client.deleteConsistencyGroup(authHeader, cgUuid);
+        storageStrategy.pollJobIfPresent(response, "delete temporary consistency group " + cgUuid);
+    }
+
+    /**
+     * Resolves consistency group UUID by name within the given ONTAP cluster/SVM scope.
+     */
+    String resolveConsistencyGroupUuidByName(SnapshotFeignClient client, String authHeader,
+                                             String cgName, ConsistencyGroupScope cgScope) {
+        Map<String, Object> query = new HashMap<>();
+        query.put("name", cgName);
+        cgScope.applySvmQueryFilter(query);
+        query.put("fields", "uuid,name");
+        OntapResponse<ConsistencyGroup> response = client.getConsistencyGroups(authHeader, query);
+        if (response == null || response.getRecords() == null || response.getRecords().isEmpty()) {
+            return null;
+        }
+        ConsistencyGroup consistencyGroup = response.getRecords().get(0);
+        return consistencyGroup != null ? consistencyGroup.getUuid() : null;
+    }
+
+    /**
+     * Resolves the started CG snapshot UUID after phase-1, using the job record when available and polling GET otherwise.
+     */
+    String resolveStartedConsistencyGroupSnapshotUuid(SnapshotFeignClient client, StorageStrategy storageStrategy,
+                                                    String authHeader, String cgUuid, String snapshotName) {
+        String snapshotUuidFromJob = startConsistencyGroupSnapshot(client, storageStrategy, authHeader, cgUuid, snapshotName);
+        if (snapshotUuidFromJob != null && !snapshotUuidFromJob.isEmpty()) {
+            return snapshotUuidFromJob;
+        }
+        return resolveConsistencyGroupSnapshotUuid(client, storageStrategy, authHeader, cgUuid, snapshotName);
+    }
+
+    /**
+     * Resolves consistency group snapshot UUID by name with retries (ONTAP list can lag behind job success).
+     */
+    String resolveConsistencyGroupSnapshotUuid(SnapshotFeignClient client, StorageStrategy storageStrategy,
+                                               String authHeader, String cgUuid, String snapshotName) {
+        int maxRetries = OntapStorageConstants.ONTAP_CG_SNAPSHOT_RESOLVE_MAX_RETRIES;
+        int pollIntervalMs = OntapStorageConstants.ONTAP_CG_SNAPSHOT_RESOLVE_POLL_INTERVAL_MS;
+
+        for (int attempt = 1; attempt <= maxRetries; attempt++) {
+            String snapshotUuid = lookupConsistencyGroupSnapshotUuid(client, authHeader, cgUuid, snapshotName);
+            if (snapshotUuid != null) {
+                if (attempt > 1) {
+                    logger.info("takeVMSnapshot: [CG:Resolve] CG snapshot [{}] resolved on attempt {}/{}",
+                            snapshotName, attempt, maxRetries);
+                }
+                return snapshotUuid;
+            }
+            if (attempt < maxRetries) {
+                logger.debug("takeVMSnapshot: [CG:Resolve] CG snapshot [{}] not yet visible in CG [{}], retry {}/{}",
+                        snapshotName, cgUuid, attempt, maxRetries);
+                try {
+                    Thread.sleep(pollIntervalMs);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new CloudRuntimeException("Interrupted while resolving CG snapshot [" + snapshotName + "]", e);
+                }
+            }
+        }
+
+        throw new CloudRuntimeException("Unable to resolve consistency group snapshot UUID for snapshot [" +
+                snapshotName + "] in CG [" + cgUuid + "] after " + maxRetries + " attempts");
+    }
+
+    /**
+     * Single GET attempt: try to match by name,
+     * then fall back to listing all CG snapshots in this group (And it would be one
+     * always since workflow is keep deleting the CG).
+     */
+    String lookupConsistencyGroupSnapshotUuid(SnapshotFeignClient client, String authHeader,
+                                              String cgUuid, String snapshotName) {
+        Map<String, Object> query = new HashMap<>();
+        query.put("name", snapshotName);
+        query.put("fields", "uuid,name");
+        OntapResponse<ConsistencyGroupSnapshot> response = client.getConsistencyGroupSnapshots(authHeader, cgUuid, query);
+        String snapshotUuid = findConsistencyGroupSnapshotUuidInRecords(response, snapshotName);
+        if (snapshotUuid != null) {
+            return snapshotUuid;
+        }
+
+        Map<String, Object> listAllQuery = new HashMap<>();
+        listAllQuery.put("fields", "uuid,name");
+        OntapResponse<ConsistencyGroupSnapshot> allSnapshots = client.getConsistencyGroupSnapshots(authHeader, cgUuid, listAllQuery);
+        return findConsistencyGroupSnapshotUuidInRecords(allSnapshots, snapshotName);
+    }
+
+    private String findConsistencyGroupSnapshotUuidInRecords(OntapResponse<ConsistencyGroupSnapshot> response,
+                                                               String snapshotName) {
+        if (response == null || response.getRecords() == null || response.getRecords().isEmpty()) {
+            return null;
+        }
+        for (ConsistencyGroupSnapshot record : response.getRecords()) {
+            if (record != null && snapshotName.equals(record.getName())) {
+                String uuid = record.getUuid();
+                if (uuid != null && !uuid.isEmpty()) {
+                    return uuid;
+                }
+            }
+        }
+        return null;
     }
 
     /**
@@ -735,7 +1052,7 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
     void rollbackFlexVolSnapshot(FlexVolSnapshotDetail detail) {
         try {
             Map<String, String> poolDetails = storagePoolDetailsDao.listDetailsKeyPairs(detail.poolId);
-            StorageStrategy storageStrategy = OntapStorageUtils.getStrategyByStoragePoolDetails(poolDetails);
+            StorageStrategy storageStrategy = resolveStorageStrategy(poolDetails);
             SnapshotFeignClient client = storageStrategy.getSnapshotFeignClient();
             String authHeader = storageStrategy.getAuthHeader();
 
@@ -757,36 +1074,52 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
      * <p>Since there is one detail row per CloudStack volume, multiple rows may reference
      * the same FlexVol + snapshot combination. This method deduplicates to delete each
      * underlying ONTAP snapshot only once.</p>
+     *
+     * <p>Detail rows are removed only after the underlying ONTAP snapshot delete succeeds
+     * (or was already deleted for the same FlexVol+snapshot pair in this pass). If delete
+     * throws, the detail row is retained so a retry can still find the ONTAP snapshot.</p>
      */
     void deleteFlexVolSnapshots(List<VMSnapshotDetailsVO> flexVolDetails) {
-        // Track which FlexVol+Snapshot pairs have already been deleted
         Map<String, Boolean> deletedSnapshots = new HashMap<>();
+        CloudRuntimeException deleteFailure = null;
 
         for (VMSnapshotDetailsVO detailVO : flexVolDetails) {
             FlexVolSnapshotDetail detail = FlexVolSnapshotDetail.parse(detailVO.getValue());
             String dedupeKey = detail.flexVolUuid + "::" + detail.snapshotUuid;
 
-            // Only delete the ONTAP snapshot once per FlexVol+Snapshot pair
-            if (!deletedSnapshots.containsKey(dedupeKey)) {
-                Map<String, String> poolDetails = storagePoolDetailsDao.listDetailsKeyPairs(detail.poolId);
-                StorageStrategy storageStrategy = OntapStorageUtils.getStrategyByStoragePoolDetails(poolDetails);
-                SnapshotFeignClient client = storageStrategy.getSnapshotFeignClient();
-                String authHeader = storageStrategy.getAuthHeader();
+            try {
+                if (!deletedSnapshots.containsKey(dedupeKey)) {
+                    Map<String, String> poolDetails = storagePoolDetailsDao.listDetailsKeyPairs(detail.poolId);
+                    StorageStrategy storageStrategy = resolveStorageStrategy(poolDetails);
 
-                logger.info("deleteFlexVolSnapshots: Deleting ONTAP FlexVol snapshot [{}] (uuid={}) on FlexVol [{}]",
-                        detail.snapshotName, detail.snapshotUuid, detail.flexVolUuid);
+                    logger.info("deleteFlexVolSnapshots: Deleting ONTAP FlexVol snapshot [{}] (uuid={}) on FlexVol [{}]",
+                            detail.snapshotName, detail.snapshotUuid, detail.flexVolUuid);
 
-                JobResponse jobResponse = client.deleteSnapshot(authHeader, detail.flexVolUuid, detail.snapshotUuid);
-                if (jobResponse != null && jobResponse.getJob() != null) {
-                    storageStrategy.jobPollForSuccess(jobResponse.getJob().getUuid(), 30, 2000);
+                    storageStrategy.deleteFlexVolSnapshotForCloudStackVolume(
+                            detail.flexVolUuid, detail.snapshotUuid, detail.snapshotName);
+
+                    deletedSnapshots.put(dedupeKey, Boolean.TRUE);
+                    logger.info("deleteFlexVolSnapshots: Deleted ONTAP FlexVol snapshot [{}] on FlexVol [{}]",
+                            detail.snapshotName, detail.flexVolUuid);
                 }
-
-                deletedSnapshots.put(dedupeKey, Boolean.TRUE);
-                logger.info("deleteFlexVolSnapshots: Deleted ONTAP FlexVol snapshot [{}] on FlexVol [{}]", detail.snapshotName, detail.flexVolUuid);
+            } catch (Exception e) {
+                logger.error("deleteFlexVolSnapshots: Failed to delete ONTAP FlexVol snapshot [{}] (uuid={}) "
+                        + "on FlexVol [{}] for detail [{}]: {}",
+                        detail.snapshotName, detail.snapshotUuid, detail.flexVolUuid, detailVO.getId(), e.getMessage(), e);
+                if (deleteFailure == null) {
+                    deleteFailure = e instanceof CloudRuntimeException
+                            ? (CloudRuntimeException) e
+                            : new CloudRuntimeException("Failed to delete ONTAP FlexVol snapshot: " + e.getMessage(), e);
+                }
+            } finally {
+                if (deletedSnapshots.containsKey(dedupeKey)) {
+                    vmSnapshotDetailsDao.remove(detailVO.getId());
+                }
             }
+        }
 
-            // Always remove the DB detail row
-            vmSnapshotDetailsDao.remove(detailVO.getId());
+        if (deleteFailure != null) {
+            throw deleteFailure;
         }
     }
 
@@ -818,41 +1151,24 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
             }
 
             Map<String, String> poolDetails = storagePoolDetailsDao.listDetailsKeyPairs(detail.poolId);
-            StorageStrategy storageStrategy = OntapStorageUtils.getStrategyByStoragePoolDetails(poolDetails);
-            SnapshotFeignClient snapshotClient = storageStrategy.getSnapshotFeignClient();
-            String authHeader = storageStrategy.getAuthHeader();
+            StorageStrategy storageStrategy = resolveStorageStrategy(poolDetails);
 
-            // Get SVM name and FlexVolume name from pool details
-            String svmName = poolDetails.get(OntapStorageConstants.SVM_NAME);
             String flexVolName = poolDetails.get(OntapStorageConstants.VOLUME_NAME);
-
-            if (svmName == null || svmName.isEmpty()) {
-                throw new CloudRuntimeException("SVM name not found in pool details for pool [" + detail.poolId + "]");
-            }
             if (flexVolName == null || flexVolName.isEmpty()) {
                 throw new CloudRuntimeException("FlexVolume name not found in pool details for pool [" + detail.poolId + "]");
             }
 
-            // The path must start with "/" for the ONTAP CLI API
             String ontapFilePath = detail.volumePath.startsWith("/") ? detail.volumePath : "/" + detail.volumePath;
 
             logger.info("revertFlexVolSnapshots: Restoring volume [{}] from FlexVol snapshot [{}] on FlexVol [{}] (protocol={})",
                     ontapFilePath, detail.snapshotName, flexVolName, detail.protocol);
 
-            // Use CLI-based restore API: POST /api/private/cli/volume/snapshot/restore-file
-            CliSnapshotRestoreRequest restoreRequest = new CliSnapshotRestoreRequest(
-                    svmName, flexVolName, detail.snapshotName, ontapFilePath);
+            JobResponse jobResponse = storageStrategy.revertSnapshotForCloudStackVolume(
+                    detail.snapshotName, detail.flexVolUuid, detail.snapshotUuid,
+                    detail.volumePath, null, flexVolName);
 
-            JobResponse jobResponse = snapshotClient.restoreFileFromSnapshotCli(authHeader, restoreRequest);
-
-            if (jobResponse != null && jobResponse.getJob() != null) {
-                Boolean success = storageStrategy.jobPollForSuccess(jobResponse.getJob().getUuid(), 60, 2000);
-                if (!success) {
-                    throw new CloudRuntimeException("Snapshot file restore failed for volume path [" +
-                            ontapFilePath + "] from snapshot [" + detail.snapshotName +
-                            "] on FlexVol [" + flexVolName + "]");
-                }
-            }
+            storageStrategy.executeCliSfsrRestore(jobResponse,
+                    "VM snapshot file restore for path [" + ontapFilePath + "] from snapshot [" + detail.snapshotName + "]");
 
             logger.info("revertFlexVolSnapshots: Successfully restored volume [{}] from snapshot [{}] on FlexVol [{}]",
                     ontapFilePath, detail.snapshotName, flexVolName);
@@ -874,6 +1190,69 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
         FlexVolGroupInfo(Map<String, String> poolDetails, long poolId) {
             this.poolDetails = poolDetails;
             this.poolId = poolId;
+        }
+    }
+
+    /**
+     * Identifies the ONTAP cluster management endpoint and SVM for CG operations.
+     */
+    static class ConsistencyGroupScope {
+        final String storageIp;
+        final String svmName;
+        final String svmUuid;
+
+        ConsistencyGroupScope(String storageIp, String svmName, String svmUuid) {
+            this.storageIp = storageIp;
+            this.svmName = svmName;
+            this.svmUuid = svmUuid;
+        }
+
+        boolean matches(ConsistencyGroupScope other) {
+            return other != null && identityKey().equals(other.identityKey());
+        }
+
+        String identityKey() {
+            if (svmUuid != null && !svmUuid.isEmpty()) {
+                return storageIp + "|" + svmUuid;
+            }
+            return storageIp + "|" + svmName;
+        }
+
+        Map<String, Object> toOntapSvmReference() {
+            Svm svm = toOntapSvm();
+            Map<String, Object> svmRef = new LinkedHashMap<>();
+            if (svm.getUuid() != null && !svm.getUuid().isEmpty()) {
+                svmRef.put("uuid", svm.getUuid());
+            } else {
+                svmRef.put("name", svm.getName());
+            }
+            return svmRef;
+        }
+
+        Svm toOntapSvm() {
+            Svm svm = new Svm();
+            if (svmUuid != null && !svmUuid.isEmpty()) {
+                svm.setUuid(svmUuid);
+            } else {
+                svm.setName(svmName);
+            }
+            return svm;
+        }
+
+        void applySvmQueryFilter(Map<String, Object> query) {
+            if (svmUuid != null && !svmUuid.isEmpty()) {
+                query.put("svm.uuid", svmUuid);
+            } else {
+                query.put("svm.name", svmName);
+            }
+        }
+
+        @Override
+        public String toString() {
+            if (svmUuid != null && !svmUuid.isEmpty()) {
+                return "storageIP=" + storageIp + ", svmUUID=" + svmUuid + ", svmName=" + svmName;
+            }
+            return "storageIP=" + storageIp + ", svmName=" + svmName;
         }
     }
 
