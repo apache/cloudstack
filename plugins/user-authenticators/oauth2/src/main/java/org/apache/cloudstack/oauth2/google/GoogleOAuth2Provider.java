@@ -78,9 +78,6 @@ public class GoogleOAuth2Provider extends AdapterBase implements UserOAuth2Authe
         String clientId = googleProvider.getClientId();
         String secret = googleProvider.getSecretKey();
         String redirectURI = googleProvider.getRedirectUri();
-        String clientId = githubProvider.getClientId();
-        String secret = githubProvider.getSecretKey();
-        String redirectURI = githubProvider.getRedirectUri();
         GoogleClientSecrets clientSecrets = new GoogleClientSecrets()
                 .setWeb(new GoogleClientSecrets.Details()
                         .setClientId(clientId)
