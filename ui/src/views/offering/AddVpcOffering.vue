@@ -431,12 +431,22 @@ export default {
         this.zoneLoading = false
       })
     },
-    isVpcCoreProvider (providerName) {
-      return ['VpcVirtualRouter', 'Netscaler', 'BigSwitchBcf', 'ConfigDrive'].includes(providerName)
+    isVpcCoreProvider (providerName, serviceName) {
+      if (['VpcVirtualRouter', 'Netscaler', 'BigSwitchBcf', 'ConfigDrive'].includes(providerName)) {
+        return true
+      }
+      return serviceName === 'Connectivity' && ['NiciraNvp', 'Ovs', 'JuniperContrailVpcRouter'].includes(providerName)
     },
-    isDynamicExtensionProvider (providerName) {
-      const knownProviders = ['VirtualRouter', 'VpcVirtualRouter', 'InternalLbVm', 'Netscaler', 'BigSwitchBcf', 'ConfigDrive', 'Nsx', 'Netris']
-      return !knownProviders.includes(providerName)
+    isBuiltInNetworkProvider (providerName) {
+      const builtInProviders = [
+        'VirtualRouter', 'JuniperContrailRouter', 'JuniperContrailVpcRouter', 'JuniperSRX', 'PaloAlto',
+        'F5BigIp', 'Netscaler', 'ExternalDhcpServer', 'ExternalGateWay', 'ElasticLoadBalancerVm',
+        'SecurityGroupProvider', 'VpcVirtualRouter', 'None', 'NiciraNvp', 'InternalLbVm', 'CiscoVnmc',
+        'Ovs', 'Opendaylight', 'BrocadeVcs', 'GloboDns', 'BigSwitchBcf', 'ConfigDrive', 'Tungsten',
+        'Nsx', 'Netris', 'BaremetalDhcpProvider', 'BaremetalPxeProvider', 'BaremetalUserdataProvider',
+        'StratosphereSsp'
+      ]
+      return builtInProviders.includes(providerName)
     },
     fetchSupportedServiceData () {
       var services = []
@@ -538,12 +548,14 @@ export default {
               const providers = [...(service.provider || []), ...(service.name === 'Lb' ? [{ name: 'InternalLbVm' }] : [])]
                 .map(provider => {
                   const providerName = provider.name === 'VirtualRouter' ? 'VpcVirtualRouter' : provider.name
+                  const isExtension = !this.isBuiltInNetworkProvider(providerName)
                   const enabled = providerName === 'InternalLbVm'
                     ? service.name === 'Lb'
-                    : this.isVpcCoreProvider(providerName) || this.isDynamicExtensionProvider(providerName)
+                    : this.isVpcCoreProvider(providerName, service.name) || isExtension
                   return {
                     name: providerName,
                     description: providerName,
+                    displaytext: isExtension ? `${providerName} (${this.$t('label.extension')})` : providerName,
                     enabled
                   }
                 })
