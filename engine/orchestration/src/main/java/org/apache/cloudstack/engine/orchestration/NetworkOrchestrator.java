@@ -2302,6 +2302,11 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
     }
 
+    private boolean isReservedForExternalProvider(Long vlanId) {
+        VlanDetailsVO vlanDetail = vlanDetailsDao.findDetail(vlanId, ApiConstants.NETRIS_DETAIL_KEY);
+        return vlanDetail != null && BooleanUtils.toBoolean(vlanDetail.getValue());
+    }
+
     /*
     Prepare All Nics for migration including the nics dynamically created and not stored in DB
     This is a temporary workaround work KVM migration
@@ -2350,6 +2355,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             final List<IPAddressVO> publicIps = _ipAddressDao.listByAssociatedNetwork(guestNetworkId, null);
             for (final IPAddressVO userIp : publicIps) {
                 final PublicIp publicIp = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
+                if (isReservedForExternalProvider(publicIp.getVlanId())) {
+                    logger.debug("Skipping public IP {} for migration NIC profile: managed by external network provider", publicIp.getAddress());
+                    continue;
+                }
                 final URI broadcastUri = BroadcastDomainType.Vlan.toUri(publicIp.getVlanTag());
                 final long ntwkId = publicIp.getNetworkId();
                 final Nic nic = _nicDao.findByNetworkIdInstanceIdAndBroadcastUri(ntwkId, vm.getId(),

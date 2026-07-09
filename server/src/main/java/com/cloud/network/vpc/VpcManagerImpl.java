@@ -3798,7 +3798,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             return ipAddressForVR;
         } else if (ipAddress != null) {
             if (ipAddress.isSourceNat()) {
-                throw new InvalidParameterValueException("Vpn service can not be configured on the Source NAT IP of VPC id=" + ipAddress.getVpcId());
+                throw new InvalidParameterValueException(String.format("Vpn service can not be configured on the Source NAT IP of VPC id = %s. Please acquire another IP to setup VPN", ipAddress.getVpcId()));
             }
             return ipAddress;
         }
