@@ -134,6 +134,32 @@ public class LibvirtVmwareCbtSyncCommandWrapperTest {
     }
 
     @Test
+    public void testExecuteWritesChangedBlocksToRawBlockDeviceTarget() {
+        KVMStoragePool linstorStoragePool = Mockito.mock(KVMStoragePool.class);
+        com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk targetDisk = Mockito.mock(com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk.class);
+        Mockito.when(storagePoolManager.getStoragePool(Storage.StoragePoolType.Linstor, "linstor-pool-uuid")).thenReturn(linstorStoragePool);
+        Mockito.when(linstorStoragePool.getType()).thenReturn(Storage.StoragePoolType.Linstor);
+        Mockito.when(targetDisk.getPath()).thenReturn("/dev/drbd/by-res/cs-cbt-abc12345-2000/0");
+        Mockito.when(linstorStoragePool.getPhysicalDisk("cbt-abc12345-2000")).thenReturn(targetDisk);
+
+        VmwareCbtDiskTO disk = createDisk("disk-1", "cbt-abc12345-2000", 8192, "raw");
+        VmwareCbtSyncCommand command = createCommand(List.of(disk),
+                List.of(new VmwareCbtChangedBlockRangeTO("disk-1", 0, 1024)));
+        command.setTargetStorageType(VmwareCbtTargetStorageType.RAW_BLOCK_DEVICE);
+        command.setDestinationStoragePoolType(Storage.StoragePoolType.Linstor);
+        command.setDestinationStoragePoolUuid("linstor-pool-uuid");
+        command.setVddkLibDir("/opt/vmware-vddk");
+        command.setVddkThumbprint("AA:BB:CC");
+
+        Answer answer = wrapper.execute(command, libvirtComputingResource);
+
+        Assert.assertTrue(answer.getDetails(), answer.getResult());
+        Assert.assertTrue(wrapper.lastDiskSyncScript.contains("target_format='raw'"));
+        Assert.assertTrue(wrapper.lastDiskSyncScript.contains("target_path='/dev/drbd/by-res/cs-cbt-abc12345-2000/0'"));
+        Assert.assertTrue(wrapper.lastDiskSyncScript.contains("qemu-io -f \"$target_format\""));
+    }
+
+    @Test
     public void testExecuteUsesCommandVddkLibDirOverrideForSupportCheck() throws IOException {
         VmwareCbtDiskTO disk = createDisk("disk-1", temporaryFolder.newFile("disk-1.qcow2").getAbsolutePath(), 8192);
         VmwareCbtSyncCommand command = createCommand(List.of(disk),

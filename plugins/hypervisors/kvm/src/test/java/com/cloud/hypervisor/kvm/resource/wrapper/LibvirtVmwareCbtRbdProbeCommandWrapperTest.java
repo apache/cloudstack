@@ -29,6 +29,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.VmwareCbtRbdProbeCommand;
+import com.cloud.agent.api.to.VmwareCbtTargetStorageType;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
@@ -95,6 +96,41 @@ public class LibvirtVmwareCbtRbdProbeCommandWrapperTest {
 
         Assert.assertFalse(answer.getResult());
         Assert.assertTrue(answer.getDetails(), answer.getDetails().contains("probe image name must match"));
+    }
+
+    @Test
+    public void testExecuteCreatesWritesReadsAndCleansTemporaryBlockDeviceVolume() {
+        KVMStoragePool linstorStoragePool = Mockito.mock(KVMStoragePool.class);
+        com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk probeDisk = Mockito.mock(com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk.class);
+        Mockito.when(storagePoolManager.getStoragePool(Storage.StoragePoolType.Linstor, "linstor-pool-uuid")).thenReturn(linstorStoragePool);
+        Mockito.when(linstorStoragePool.getType()).thenReturn(Storage.StoragePoolType.Linstor);
+        Mockito.when(probeDisk.getPath()).thenReturn("/dev/drbd/by-res/cs-cbt-probe-1234abcd/0");
+        Mockito.when(linstorStoragePool.createPhysicalDisk(Mockito.eq("cbt-probe-1234abcd"), Mockito.any(), Mockito.any(),
+                Mockito.anyLong(), Mockito.isNull())).thenReturn(probeDisk);
+
+        VmwareCbtRbdProbeCommand command = new VmwareCbtRbdProbeCommand(Storage.StoragePoolType.Linstor,
+                "linstor-pool-uuid", "cbt-probe-1234abcd");
+        command.setTargetStorageType(VmwareCbtTargetStorageType.RAW_BLOCK_DEVICE);
+
+        Answer answer = wrapper.execute(command, libvirtComputingResource);
+
+        Assert.assertTrue(answer.getDetails(), answer.getResult());
+        Assert.assertEquals(1, wrapper.commands.size());
+        Assert.assertTrue(wrapper.commands.get(0), wrapper.commands.get(0).contains("qemu-io -f raw"));
+        Assert.assertTrue(wrapper.commands.get(0), wrapper.commands.get(0).contains("/dev/drbd/by-res/cs-cbt-probe-1234abcd/0"));
+        Assert.assertTrue(wrapper.cleanedImages.contains("cbt-probe-1234abcd"));
+    }
+
+    @Test
+    public void testExecuteBlockDeviceProbeFailsForUnsafeName() {
+        VmwareCbtRbdProbeCommand command = new VmwareCbtRbdProbeCommand(Storage.StoragePoolType.Linstor,
+                "linstor-pool-uuid", "not-cloudstack-owned");
+        command.setTargetStorageType(VmwareCbtTargetStorageType.RAW_BLOCK_DEVICE);
+
+        Answer answer = wrapper.execute(command, libvirtComputingResource);
+
+        Assert.assertFalse(answer.getResult());
+        Assert.assertTrue(answer.getDetails(), answer.getDetails().contains("probe volume name must match"));
     }
 
     @Test

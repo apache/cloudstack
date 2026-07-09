@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.agent.api;
 
+import com.cloud.agent.api.to.VmwareCbtTargetStorageType;
 import com.cloud.storage.Storage;
 
 public class VmwareCbtRbdProbeCommand extends Command {
@@ -23,6 +24,7 @@ public class VmwareCbtRbdProbeCommand extends Command {
     private Storage.StoragePoolType destinationStoragePoolType;
     private String destinationStoragePoolUuid;
     private String probeImageName;
+    private VmwareCbtTargetStorageType targetStorageType;
 
     public VmwareCbtRbdProbeCommand() {
     }
@@ -44,6 +46,14 @@ public class VmwareCbtRbdProbeCommand extends Command {
 
     public String getProbeImageName() {
         return probeImageName;
+    }
+
+    public VmwareCbtTargetStorageType getTargetStorageType() {
+        return targetStorageType;
+    }
+
+    public void setTargetStorageType(VmwareCbtTargetStorageType targetStorageType) {
+        this.targetStorageType = targetStorageType;
     }
 
     @Override

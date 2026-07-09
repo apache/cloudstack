@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -92,6 +93,7 @@ import com.cloud.network.Network;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage;
+import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.UserVO;
@@ -124,7 +126,8 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
             Storage.StoragePoolType.NetworkFilesystem,
             Storage.StoragePoolType.Filesystem,
             Storage.StoragePoolType.SharedMountPoint,
-            Storage.StoragePoolType.RBD);
+            Storage.StoragePoolType.RBD,
+            Storage.StoragePoolType.Linstor);
     private static final int CLEANUP_WAIT_SECONDS = 300;
     private static final int DELETE_CLEANUP_WAIT_SECONDS = 30;
     private static final Logger LOGGER = LogManager.getLogger(VmwareCbtMigrationManagerImpl.class);
@@ -217,6 +220,8 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
     private VmwareCbtMigrationDiskDao vmwareCbtMigrationDiskDao;
     @Inject
     private VmwareCbtMigrationCycleDao vmwareCbtMigrationCycleDao;
+    @Inject
+    private StoragePoolHostDao storagePoolHostDao;
     @Inject
     private AgentManager agentManager;
     @Inject
@@ -756,7 +761,7 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
 
     private String getVolumePathForCbtTarget(String targetPath, String migrationUuid, Storage.StoragePoolType storagePoolType) {
         String normalizedPath = StringUtils.defaultString(targetPath).replace('\\', '/');
-        if (storagePoolType == Storage.StoragePoolType.RBD) {
+        if (storagePoolType == Storage.StoragePoolType.RBD || storagePoolType == Storage.StoragePoolType.Linstor) {
             return StringUtils.contains(normalizedPath, "/") ? StringUtils.substringAfterLast(normalizedPath, "/") : normalizedPath;
         }
         String marker = String.format("/cloudstack-cbt/%s/", migrationUuid);
@@ -991,6 +996,12 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
             String hostCapability = getRequiredHostCapability(requireInPlaceFinalization, requireRbdSupport);
             List<HostVO> hosts = hostDao.listByClusterHypervisorTypeAndHostCapability(destinationCluster.getId(),
                     destinationCluster.getHypervisorType(), hostCapability);
+            if (requiresBlockDeviceStorageSupport(storageTarget) && CollectionUtils.isNotEmpty(hosts)) {
+                StoragePoolVO pool = storageTarget.getPool();
+                hosts = hosts.stream()
+                        .filter(h -> pool != null && storagePoolHostDao.findByPoolHost(pool.getId(), h.getId()) != null)
+                        .collect(Collectors.toList());
+            }
             if (CollectionUtils.isEmpty(hosts)) {
                 throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
                         getNoSuitableCbtHostMessage(destinationCluster, requireInPlaceFinalization, requireRbdSupport));
@@ -1019,6 +1030,7 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
         }
         validateStorageTargetFinalizationSupport(storageTarget, host);
         validateRbdHostSupport(storageTarget, host);
+        validateBlockDeviceHostSupport(storageTarget, host);
         return host;
     }
 
@@ -1092,6 +1104,29 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
         return storageTarget != null && storageTarget.getTargetStorageType() == VmwareCbtTargetStorageType.RBD_RAW;
     }
 
+    private boolean requiresBlockDeviceStorageSupport(VmwareCbtStorageTarget storageTarget) {
+        return storageTarget != null && storageTarget.getTargetStorageType() == VmwareCbtTargetStorageType.RAW_BLOCK_DEVICE;
+    }
+
+    private boolean requiresStorageAccessProbe(VmwareCbtStorageTarget storageTarget) {
+        return requiresRbdStorageSupport(storageTarget) || requiresBlockDeviceStorageSupport(storageTarget);
+    }
+
+    private void validateBlockDeviceHostSupport(VmwareCbtStorageTarget storageTarget, HostVO host) {
+        if (!requiresBlockDeviceStorageSupport(storageTarget)) {
+            return;
+        }
+        StoragePoolVO pool = storageTarget.getPool();
+        if (host == null || pool == null || storagePoolHostDao.findByPoolHost(pool.getId(), host.getId()) == null) {
+            String hostName = host == null ? "selected KVM host" : host.getName();
+            String poolName = pool == null ? "selected storage pool" : pool.getName();
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+                    String.format("Destination block device storage requires the conversion host to have access to the storage pool, " +
+                                    "but %s does not have access to %s. For Linstor the host must be a LINSTOR satellite connected to the pool.",
+                            hostName, poolName));
+        }
+    }
+
     private void validateRbdHostSupport(VmwareCbtStorageTarget storageTarget, HostVO host) {
         if (!requiresRbdStorageSupport(storageTarget)) {
             return;
@@ -1131,7 +1166,7 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
         List<StoragePoolVO> pools = listCbtCompatibleStoragePools(zone, destinationCluster);
         if (CollectionUtils.isEmpty(pools)) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
-                    String.format("Cannot find a suitable CBT-compatible primary storage pool in cluster %s for VMware CBT migration. Supported target pool types are NetworkFilesystem, Filesystem, SharedMountPoint and RBD.",
+                    String.format("Cannot find a suitable CBT-compatible primary storage pool in cluster %s for VMware CBT migration. Supported target pool types are NetworkFilesystem, Filesystem, SharedMountPoint, RBD and Linstor.",
                             destinationCluster.getName()));
         }
         if (pools.size() > 1) {
@@ -1303,58 +1338,77 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
 
     private void addRbdStorageAccessFinding(VmwareCbtStorageTarget storageTarget, HostVO cbtHost,
                                             PreflightFindingCollector findings) {
-        if (!requiresRbdStorageSupport(storageTarget)) {
+        if (!requiresStorageAccessProbe(storageTarget)) {
             return;
         }
         StoragePoolVO pool = storageTarget.getPool();
         String resource = pool == null ? null : pool.getUuid();
+        String targetDescription = requiresRbdStorageSupport(storageTarget) ? "RBD image" : "block device volume";
         if (cbtHost == null) {
             findings.fail("destinationStorage.rbdAccess", "storage", resource,
-                    "No suitable KVM host was selected for the RBD access probe.");
+                    "No suitable KVM host was selected for the destination storage access probe.");
             return;
         }
-        Answer answer = probeRbdStorageAccess(storageTarget, cbtHost);
+        Answer answer = probeTargetStorageAccess(storageTarget, cbtHost);
         if (answer != null && answer.getResult()) {
             findings.pass("destinationStorage.rbdAccess", "storage", resource,
-                    String.format("KVM host %s can create, write, read and delete a temporary RBD image in storage pool %s.",
-                            cbtHost.getName(), pool.getName()));
+                    String.format("KVM host %s can create, write, read and delete a temporary %s in storage pool %s.",
+                            cbtHost.getName(), targetDescription, pool.getName()));
         } else {
-            findings.fail("destinationStorage.rbdAccess", "storage", resource, getRbdProbeFailureMessage(answer, cbtHost, pool));
+            findings.fail("destinationStorage.rbdAccess", "storage", resource, getStorageProbeFailureMessage(storageTarget, answer, cbtHost, pool));
         }
     }
 
     private void validateRbdStorageAccessForStart(VmwareCbtStorageTarget storageTarget, HostVO cbtHost) {
-        if (!requiresRbdStorageSupport(storageTarget)) {
+        if (!requiresStorageAccessProbe(storageTarget)) {
             return;
         }
-        Answer answer = probeRbdStorageAccess(storageTarget, cbtHost);
+        Answer answer = probeTargetStorageAccess(storageTarget, cbtHost);
         if (answer == null || !answer.getResult()) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
-                    getRbdProbeFailureMessage(answer, cbtHost, storageTarget.getPool()));
+                    getStorageProbeFailureMessage(storageTarget, answer, cbtHost, storageTarget.getPool()));
         }
     }
 
-    private Answer probeRbdStorageAccess(VmwareCbtStorageTarget storageTarget, HostVO cbtHost) {
+    private Answer probeTargetStorageAccess(VmwareCbtStorageTarget storageTarget, HostVO cbtHost) {
         StoragePoolVO pool = storageTarget.getPool();
-        VmwareCbtRbdProbeCommand command = new VmwareCbtRbdProbeCommand(pool.getPoolType(), pool.getUuid(),
-                RBD_PROBE_IMAGE_PREFIX + UUID.randomUUID());
+        String probeName = requiresBlockDeviceStorageSupport(storageTarget)
+                ? getBlockDeviceProbeVolumeName()
+                : RBD_PROBE_IMAGE_PREFIX + UUID.randomUUID();
+        VmwareCbtRbdProbeCommand command = new VmwareCbtRbdProbeCommand(pool.getPoolType(), pool.getUuid(), probeName);
+        command.setTargetStorageType(storageTarget.getTargetStorageType());
         command.setWait(getVmwareCbtMigrationAgentCommandTimeout());
         try {
             return agentManager.send(cbtHost.getId(), command);
         } catch (AgentUnavailableException | OperationTimedoutException e) {
-            String details = String.format("Unable to run VMware CBT RBD storage probe on host %s for storage pool %s: %s",
+            String details = String.format("Unable to run VMware CBT destination storage probe on host %s for storage pool %s: %s",
                     cbtHost.getName(), pool.getName(), StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()));
             LOGGER.warn(details, e);
             return new Answer(command, false, details);
         }
     }
 
-    private String getRbdProbeFailureMessage(Answer answer, HostVO cbtHost, StoragePoolVO pool) {
+    /**
+     * Probe volume names on block-device pools become LINSTOR resource names with a
+     * "cs-" prefix; LINSTOR caps resource names at 48 characters, so a short random
+     * suffix is used instead of the full RBD-style probe name.
+     */
+    private String getBlockDeviceProbeVolumeName() {
+        return "cbt-probe-" + UUID.randomUUID().toString().substring(0, 8);
+    }
+
+    private String getStorageProbeFailureMessage(VmwareCbtStorageTarget storageTarget, Answer answer, HostVO cbtHost, StoragePoolVO pool) {
         String details = answer == null ? null : answer.getDetails();
         if (StringUtils.isNotBlank(details)) {
             return details;
         }
         String hostName = cbtHost == null ? "selected KVM host" : cbtHost.getName();
+        if (requiresBlockDeviceStorageSupport(storageTarget)) {
+            String poolName = pool == null ? "selected block device storage pool" : pool.getName();
+            return String.format("KVM host %s cannot verify access to block device storage pool %s. Verify the CloudStack primary-storage configuration, " +
+                            "that the host is a LINSTOR satellite connected to the pool, controller connectivity and qemu-io availability.",
+                    hostName, poolName);
+        }
         String poolName = pool == null ? "selected RBD storage pool" : pool.getName();
         return String.format("KVM host %s cannot verify access to RBD storage pool %s. Verify CloudStack RBD primary-storage configuration, Ceph monitor connectivity, qemu RBD block-driver support, librados/librbd client library versions, Java RADOS/RBD bindings and Ceph authentication.",
                 hostName, poolName);
@@ -1811,9 +1865,17 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
             String targetFormat = getInitialSyncTargetFormat(storageTarget);
             disk.setTargetFormat(targetFormat);
             if (StringUtils.isBlank(disk.getTargetPath())) {
-                disk.setTargetPath(storageTarget.getTargetStorageType() == VmwareCbtTargetStorageType.RBD_RAW ?
-                        getRbdInitialSyncTargetImageName(migration, disk) :
-                        String.format("%s/%s", targetBasePath, getTargetDiskFileName(disk, targetFormat)));
+                switch (storageTarget.getTargetStorageType()) {
+                    case RBD_RAW:
+                        disk.setTargetPath(getRbdInitialSyncTargetImageName(migration, disk));
+                        break;
+                    case RAW_BLOCK_DEVICE:
+                        disk.setTargetPath(getBlockDeviceInitialSyncTargetName(migration, disk));
+                        break;
+                    default:
+                        disk.setTargetPath(String.format("%s/%s", targetBasePath, getTargetDiskFileName(disk, targetFormat)));
+                        break;
+                }
             }
             disk.setState(VmwareCbtMigrationDisk.State.Syncing);
             disk.setUpdated(new Date());
@@ -1822,7 +1884,8 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
     }
 
     private String getInitialSyncTargetFormat(VmwareCbtStorageTarget storageTarget) {
-        if (storageTarget.getTargetStorageType() == VmwareCbtTargetStorageType.RBD_RAW) {
+        if (storageTarget.getTargetStorageType() == VmwareCbtTargetStorageType.RBD_RAW ||
+                storageTarget.getTargetStorageType() == VmwareCbtTargetStorageType.RAW_BLOCK_DEVICE) {
             return "raw";
         }
         return "qcow2";
@@ -1849,6 +1912,22 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
         sourceName = StringUtils.substringBeforeLast(StringUtils.defaultIfBlank(sourceName, disk.getSourceDiskId()), ".");
         return String.format("cloudstack-cbt-%s-%s-%s", sanitizeFileName(migration.getUuid()),
                 sanitizeFileName(disk.getSourceDiskId()), sanitizeFileName(sourceName));
+    }
+
+    /**
+     * Block-device target names become LINSTOR resource names with a "cs-" prefix and
+     * LINSTOR caps resource names at 48 characters, so the RBD-style naming scheme with
+     * the full migration UUID does not fit. A short migration marker plus the source
+     * disk ID keeps the name unique, identifiable for cleanup and within the limit.
+     */
+    private String getBlockDeviceInitialSyncTargetName(VmwareCbtMigrationVO migration, VmwareCbtMigrationDiskVO disk) {
+        String name = String.format("%s%s", getBlockDeviceTargetMarker(migration.getUuid()),
+                sanitizeFileName(disk.getSourceDiskId()));
+        return name.length() > 44 ? name.substring(0, 44) : name;
+    }
+
+    static String getBlockDeviceTargetMarker(String migrationUuid) {
+        return String.format("cbt-%s-", StringUtils.defaultString(migrationUuid).replace("-", "").substring(0, 8));
     }
 
     private String sanitizeFileName(String value) {
@@ -2335,6 +2414,10 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
             }
             if (storageTarget != null && storageTarget.getTargetStorageType() == VmwareCbtTargetStorageType.RBD_RAW &&
                     StringUtils.contains(targetPath, rbdMigrationMarker)) {
+                return true;
+            }
+            if (storageTarget != null && storageTarget.getTargetStorageType() == VmwareCbtTargetStorageType.RAW_BLOCK_DEVICE &&
+                    targetPath.startsWith(getBlockDeviceTargetMarker(migration.getUuid()))) {
                 return true;
             }
         }

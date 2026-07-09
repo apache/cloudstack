@@ -45,6 +45,7 @@ import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.Storage;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
+import org.apache.cloudstack.utils.qemu.QemuImg;
 
 @ResourceWrapper(handles = VmwareCbtPrepareCommand.class)
 public class LibvirtVmwareCbtPrepareCommandWrapper extends CommandWrapper<VmwareCbtPrepareCommand, Answer, LibvirtComputingResource> {
@@ -87,6 +88,8 @@ public class LibvirtVmwareCbtPrepareCommandWrapper extends CommandWrapper<Vmware
             Path targetBasePath = null;
             if (cmd.getTargetStorageType() == VmwareCbtTargetStorageType.RBD_RAW) {
                 validateRbdTargetPool(cmd, targetPool);
+            } else if (cmd.getTargetStorageType() == VmwareCbtTargetStorageType.RAW_BLOCK_DEVICE) {
+                validateBlockDeviceTargetPool(cmd, targetPool);
             } else {
                 targetBasePath = getTargetBasePath(cmd, targetPool);
                 Files.createDirectories(targetBasePath);
@@ -162,6 +165,13 @@ public class LibvirtVmwareCbtPrepareCommandWrapper extends CommandWrapper<Vmware
         }
     }
 
+    private void validateBlockDeviceTargetPool(VmwareCbtPrepareCommand cmd, KVMStoragePool targetPool) {
+        if (targetPool == null || targetPool.getType() != Storage.StoragePoolType.Linstor) {
+            throw new IllegalArgumentException(String.format("VMware CBT migration %s requires a Linstor destination storage pool for block device target writing",
+                    cmd.getMigrationUuid()));
+        }
+    }
+
     private Path getTargetBasePath(VmwareCbtPrepareCommand cmd, KVMStoragePool targetPool) {
         if (targetPool != null) {
             return Path.of(targetPool.getLocalPath(), "cloudstack-cbt", cmd.getMigrationUuid()).normalize();
@@ -196,10 +206,15 @@ public class LibvirtVmwareCbtPrepareCommandWrapper extends CommandWrapper<Vmware
         String targetFormat = getTargetFormat(cmd, disk);
         String targetPath;
         String qemuTargetPath;
+        boolean preCreatedTarget = false;
         if (cmd.getTargetStorageType() == VmwareCbtTargetStorageType.RBD_RAW) {
             targetPath = getRbdTargetImageName(cmd, disk);
             deleteRbdTargetIfExists(targetPool, targetPath);
             qemuTargetPath = KVMPhysicalDisk.RBDStringBuilder(targetPool, getRbdImagePath(targetPool, targetPath));
+        } else if (cmd.getTargetStorageType() == VmwareCbtTargetStorageType.RAW_BLOCK_DEVICE) {
+            targetPath = getBlockDeviceTargetName(disk);
+            qemuTargetPath = createBlockDeviceTarget(targetPool, targetPath, disk);
+            preCreatedTarget = true;
         } else {
             Path fileTargetPath = getTargetPath(disk, targetBasePath, targetFormat);
             if (!fileTargetPath.startsWith(targetBasePath)) {
@@ -212,7 +227,7 @@ public class LibvirtVmwareCbtPrepareCommandWrapper extends CommandWrapper<Vmware
 
         String command = buildNbdkitQemuImgCommand(cmd, disk, passwordFilePath, vddkLibDir, vddkThumbprint,
                 StringUtils.defaultIfBlank(cmd.getVddkTransports(), serverResource.getVddkTransports()),
-                qemuTargetPath, targetFormat);
+                qemuTargetPath, targetFormat, preCreatedTarget);
         VmwareCbtCommandResult commandResult = executeLoggedBash(command, getTimeout(cmd),
                 String.format("(%s) VMware CBT initial full sync disk %s", cmd.getMigrationUuid(), disk.getDiskId()));
         long durationSeconds = Math.max(1L, (System.currentTimeMillis() - startTime) / 1000L);
@@ -228,10 +243,35 @@ public class LibvirtVmwareCbtPrepareCommandWrapper extends CommandWrapper<Vmware
     }
 
     private String getTargetFormat(VmwareCbtPrepareCommand cmd, VmwareCbtDiskTO disk) {
-        if (cmd.getTargetStorageType() == VmwareCbtTargetStorageType.RBD_RAW) {
+        if (cmd.getTargetStorageType() == VmwareCbtTargetStorageType.RBD_RAW ||
+                cmd.getTargetStorageType() == VmwareCbtTargetStorageType.RAW_BLOCK_DEVICE) {
             return "raw";
         }
         return StringUtils.defaultIfBlank(disk.getTargetFormat(), "qcow2");
+    }
+
+    private String getBlockDeviceTargetName(VmwareCbtDiskTO disk) {
+        String targetPath = StringUtils.trimToNull(disk.getTargetPath());
+        if (targetPath == null) {
+            throw new IllegalArgumentException(String.format("no block device target name was assigned for source disk %s", disk.getDiskId()));
+        }
+        String normalizedTargetPath = targetPath.replace('\\', '/');
+        return StringUtils.contains(normalizedTargetPath, "/") ? StringUtils.substringAfterLast(normalizedTargetPath, "/") : normalizedTargetPath;
+    }
+
+    private String createBlockDeviceTarget(KVMStoragePool targetPool, String targetName, VmwareCbtDiskTO disk) {
+        if (disk.getCapacityBytes() <= 0) {
+            throw new IllegalArgumentException(String.format("source disk %s does not have a valid capacity, " +
+                    "which is required to pre-create the block device target volume", disk.getDiskId()));
+        }
+        deleteRbdTargetIfExists(targetPool, targetName);
+        KVMPhysicalDisk targetDisk = targetPool.createPhysicalDisk(targetName, QemuImg.PhysicalDiskFormat.RAW,
+                Storage.ProvisioningType.THIN, disk.getCapacityBytes(), null);
+        String devicePath = targetDisk == null ? null : targetDisk.getPath();
+        if (StringUtils.isBlank(devicePath)) {
+            throw new IllegalStateException(String.format("could not resolve a local device path for block device target volume %s", targetName));
+        }
+        return devicePath;
     }
 
     private String getRbdTargetImageName(VmwareCbtPrepareCommand cmd, VmwareCbtDiskTO disk) {
@@ -284,7 +324,8 @@ public class LibvirtVmwareCbtPrepareCommandWrapper extends CommandWrapper<Vmware
 
     private String buildNbdkitQemuImgCommand(VmwareCbtPrepareCommand cmd, VmwareCbtDiskTO disk,
                                              String passwordFilePath, String vddkLibDir, String vddkThumbprint,
-                                             String vddkTransports, String targetPath, String targetFormat) {
+                                             String vddkTransports, String targetPath, String targetFormat,
+                                             boolean preCreatedTarget) {
         RemoteInstanceTO sourceInstance = cmd.getSourceInstance();
         String sourceVmMoref = getMorefValue(sourceInstance.getVmwareMoref());
         String snapshotMoref = getMorefValue(cmd.getBaselineSnapshotMor());
@@ -301,8 +342,8 @@ public class LibvirtVmwareCbtPrepareCommandWrapper extends CommandWrapper<Vmware
             appendPluginParameter(nbdkit, "transports", vddkTransports);
         }
 
-        String qemuImg = String.format("qemu-img convert -f raw -O %s \"$uri\" %s",
-                shellQuote(targetFormat), shellQuote(targetPath));
+        String qemuImg = String.format("qemu-img convert %s-f raw -O %s \"$uri\" %s",
+                preCreatedTarget ? "-n " : "", shellQuote(targetFormat), shellQuote(targetPath));
         return nbdkit.append("--run ").append(shellQuote(qemuImg)).toString();
     }
 

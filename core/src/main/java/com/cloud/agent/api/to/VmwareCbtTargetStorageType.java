@@ -18,5 +18,11 @@ package com.cloud.agent.api.to;
 
 public enum VmwareCbtTargetStorageType {
     QCOW2_FILE,
-    RBD_RAW
+    RBD_RAW,
+    /**
+     * Raw writes into a host-local block device provided by the destination
+     * primary storage (e.g. a Linstor/DRBD volume). The device is pre-created
+     * at source capacity through the storage adaptor before any data copy.
+     */
+    RAW_BLOCK_DEVICE
 }

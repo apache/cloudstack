@@ -108,6 +108,30 @@ public class LibvirtVmwareCbtCleanupCommandWrapperTest {
     }
 
     @Test
+    public void testExecuteDeletesOnlyMarkedBlockDeviceTargetVolumes() {
+        KVMStoragePool linstorStoragePool = Mockito.mock(KVMStoragePool.class);
+        Mockito.when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolManager);
+        Mockito.when(storagePoolManager.getStoragePool(Storage.StoragePoolType.Linstor, "linstor-pool-uuid")).thenReturn(linstorStoragePool);
+        Mockito.when(linstorStoragePool.getType()).thenReturn(Storage.StoragePoolType.Linstor);
+        Mockito.when(linstorStoragePool.deletePhysicalDisk(Mockito.eq("cbt-migratio-2000"), Mockito.eq(Storage.ImageFormat.RAW))).thenReturn(true);
+        VmwareCbtCleanupCommand command = new VmwareCbtCleanupCommand(MIGRATION_UUID,
+                List.of(new VmwareCbtDiskTO("disk-1", 2000, "[datastore] vm/disk.vmdk", "datastore",
+                                "cbt-migratio-2000", "raw", null, null, 8192),
+                        new VmwareCbtDiskTO("disk-2", 2001, "[datastore] vm/disk2.vmdk", "datastore",
+                                "live-volume-that-must-not-be-removed", "raw", null, null, 8192)),
+                true, true, true);
+        command.setTargetStorageType(VmwareCbtTargetStorageType.RAW_BLOCK_DEVICE);
+        command.setDestinationStoragePoolType(Storage.StoragePoolType.Linstor);
+        command.setDestinationStoragePoolUuid("linstor-pool-uuid");
+
+        Answer answer = wrapper.execute(command, libvirtComputingResource);
+
+        Assert.assertTrue(answer.getDetails(), answer.getResult());
+        Mockito.verify(linstorStoragePool).deletePhysicalDisk("cbt-migratio-2000", Storage.ImageFormat.RAW);
+        Mockito.verify(linstorStoragePool, Mockito.never()).deletePhysicalDisk("live-volume-that-must-not-be-removed", Storage.ImageFormat.RAW);
+    }
+
+    @Test
     public void testExecuteFailsWhenMarkedRbdTargetImageCannotBeDeleted() {
         Mockito.when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolManager);
         Mockito.when(storagePoolManager.getStoragePool(Storage.StoragePoolType.RBD, "rbd-pool-uuid")).thenReturn(rbdStoragePool);

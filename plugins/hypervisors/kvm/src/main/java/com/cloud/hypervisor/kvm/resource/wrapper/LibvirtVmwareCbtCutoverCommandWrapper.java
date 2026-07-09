@@ -80,6 +80,8 @@ public class LibvirtVmwareCbtCutoverCommandWrapper extends CommandWrapper<Vmware
             KVMStoragePool targetPool = getTargetStoragePool(cmd, serverResource.getStoragePoolMgr());
             if (cmd.getTargetStorageType() == VmwareCbtTargetStorageType.RBD_RAW) {
                 validateRbdTargetPool(cmd, targetPool);
+            } else if (cmd.getTargetStorageType() == VmwareCbtTargetStorageType.RAW_BLOCK_DEVICE) {
+                validateBlockDeviceTargetPool(cmd, targetPool);
             }
 
             VirtV2vFinalizationMode finalizationMode = getVirtV2vFinalizationMode(serverResource);
@@ -87,9 +89,12 @@ public class LibvirtVmwareCbtCutoverCommandWrapper extends CommandWrapper<Vmware
             if (cmd.getTargetStorageType() == VmwareCbtTargetStorageType.RBD_RAW && !inPlaceFinalization) {
                 throw new IllegalArgumentException("RBD target finalization requires virt-v2v in-place support on the selected KVM host; non-in-place fallback finalization cannot write directly back to RBD targets.");
             }
+            if (cmd.getTargetStorageType() == VmwareCbtTargetStorageType.RAW_BLOCK_DEVICE && !inPlaceFinalization) {
+                throw new IllegalArgumentException("Block device target finalization requires virt-v2v in-place support on the selected KVM host; non-in-place fallback finalization cannot write directly back to block device targets.");
+            }
             List<RbdNbdBridge> rbdNbdBridges = cmd.getTargetStorageType() == VmwareCbtTargetStorageType.RBD_RAW ?
                     createRbdNbdBridges(cmd, targetPool) : List.of();
-            sourceXmlPath = writeSourceXml(cmd, rbdNbdBridges);
+            sourceXmlPath = writeSourceXml(cmd, rbdNbdBridges, targetPool);
 
             String command;
             String logSuffix;
@@ -197,11 +202,12 @@ public class LibvirtVmwareCbtCutoverCommandWrapper extends CommandWrapper<Vmware
         if (StringUtils.isBlank(disk.getTargetPath())) {
             throw new IllegalArgumentException(String.format("target path is missing for disk %s", disk.getDiskId()));
         }
-        if (cmd.getTargetStorageType() == VmwareCbtTargetStorageType.RBD_RAW) {
+        if (cmd.getTargetStorageType() == VmwareCbtTargetStorageType.RBD_RAW ||
+                cmd.getTargetStorageType() == VmwareCbtTargetStorageType.RAW_BLOCK_DEVICE) {
             String targetFormat = StringUtils.defaultIfBlank(disk.getTargetFormat(), "raw").toLowerCase(Locale.ROOT);
             if (!StringUtils.equals(targetFormat, "raw")) {
-                throw new IllegalArgumentException(String.format("target disk %s uses unsupported finalization format %s; only raw RBD targets are supported for RBD finalization",
-                        disk.getDiskId(), targetFormat));
+                throw new IllegalArgumentException(String.format("target disk %s uses unsupported finalization format %s; only raw targets are supported for %s finalization",
+                        disk.getDiskId(), targetFormat, cmd.getTargetStorageType()));
             }
             return;
         }
@@ -216,14 +222,14 @@ public class LibvirtVmwareCbtCutoverCommandWrapper extends CommandWrapper<Vmware
         }
     }
 
-    private Path writeSourceXml(VmwareCbtCutoverCommand cmd, List<RbdNbdBridge> rbdNbdBridges) throws Exception {
+    private Path writeSourceXml(VmwareCbtCutoverCommand cmd, List<RbdNbdBridge> rbdNbdBridges, KVMStoragePool targetPool) throws Exception {
         Path sourceXmlPath = Files.createTempFile(String.format("vmware-cbt-%s-v2v-in-place-source-",
                 sanitizeFileName(cmd.getMigrationUuid())), ".xml");
-        Files.writeString(sourceXmlPath, buildSourceXml(cmd, rbdNbdBridges));
+        Files.writeString(sourceXmlPath, buildSourceXml(cmd, rbdNbdBridges, targetPool));
         return sourceXmlPath;
     }
 
-    private String buildSourceXml(VmwareCbtCutoverCommand cmd, List<RbdNbdBridge> rbdNbdBridges) {
+    private String buildSourceXml(VmwareCbtCutoverCommand cmd, List<RbdNbdBridge> rbdNbdBridges, KVMStoragePool targetPool) {
         StringBuilder xml = new StringBuilder();
         xml.append("<domain type='kvm'>\n");
         xml.append("  <name>").append(escapeXml(StringUtils.defaultIfBlank(cmd.getMigrationUuid(), "vmware-cbt-migration"))).append("</name>\n");
@@ -242,6 +248,8 @@ public class LibvirtVmwareCbtCutoverCommandWrapper extends CommandWrapper<Vmware
             VmwareCbtDiskTO disk = cmd.getDisks().get(index);
             if (cmd.getTargetStorageType() == VmwareCbtTargetStorageType.RBD_RAW) {
                 appendRbdNbdDiskXml(xml, disk, rbdNbdBridges.get(index), index);
+            } else if (cmd.getTargetStorageType() == VmwareCbtTargetStorageType.RAW_BLOCK_DEVICE) {
+                appendBlockDeviceDiskXml(xml, disk, targetPool, index);
             } else {
                 xml.append("    <disk type='file' device='disk'>\n");
                 xml.append("      <driver name='qemu' type='qcow2'/>\n");
@@ -265,6 +273,36 @@ public class LibvirtVmwareCbtCutoverCommandWrapper extends CommandWrapper<Vmware
         xml.append("    </disk>\n");
         logger.info("Prepared temporary localhost NBD bridge on port {} for VMware CBT RBD target disk {}",
                 rbdNbdBridge.port, disk.getDiskId());
+    }
+
+    private void appendBlockDeviceDiskXml(StringBuilder xml, VmwareCbtDiskTO disk, KVMStoragePool targetPool, int index) {
+        String devicePath = getBlockDevicePath(targetPool, disk);
+        xml.append("    <disk type='block' device='disk'>\n");
+        xml.append("      <driver name='qemu' type='raw'/>\n");
+        xml.append("      <source dev='").append(escapeXml(devicePath)).append("'/>\n");
+        xml.append("      <target dev='").append(getDiskDeviceName(index)).append("' bus='scsi'/>\n");
+        xml.append("    </disk>\n");
+        logger.info("Prepared block device {} for VMware CBT target disk {} finalization", devicePath, disk.getDiskId());
+    }
+
+    private String getBlockDevicePath(KVMStoragePool targetPool, VmwareCbtDiskTO disk) {
+        String normalizedTargetPath = StringUtils.defaultString(disk.getTargetPath()).replace('\\', '/');
+        String volumeName = StringUtils.contains(normalizedTargetPath, "/") ?
+                StringUtils.substringAfterLast(normalizedTargetPath, "/") : normalizedTargetPath;
+        com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk targetDisk = targetPool.getPhysicalDisk(volumeName);
+        String devicePath = targetDisk == null ? null : targetDisk.getPath();
+        if (StringUtils.isBlank(devicePath)) {
+            throw new IllegalStateException(String.format("could not resolve a local device path for block device target volume %s of disk %s",
+                    volumeName, disk.getDiskId()));
+        }
+        return devicePath;
+    }
+
+    private void validateBlockDeviceTargetPool(VmwareCbtCutoverCommand cmd, KVMStoragePool targetPool) {
+        if (targetPool == null || targetPool.getType() != Storage.StoragePoolType.Linstor) {
+            throw new IllegalArgumentException(String.format("VMware CBT migration %s requires a Linstor destination storage pool for block device target finalization",
+                    cmd.getMigrationUuid()));
+        }
     }
 
     private List<RbdNbdBridge> createRbdNbdBridges(VmwareCbtCutoverCommand cmd, KVMStoragePool targetPool) throws Exception {

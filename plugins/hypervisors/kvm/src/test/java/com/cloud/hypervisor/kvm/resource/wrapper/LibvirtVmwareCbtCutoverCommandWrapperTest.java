@@ -151,6 +151,52 @@ public class LibvirtVmwareCbtCutoverCommandWrapperTest {
     }
 
     @Test
+    public void testExecuteRunsVirtV2vInPlaceForRawBlockDeviceDisks() {
+        KVMStoragePool linstorStoragePool = Mockito.mock(KVMStoragePool.class);
+        com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk targetDisk = Mockito.mock(com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk.class);
+        Mockito.when(storagePoolManager.getStoragePool(Storage.StoragePoolType.Linstor, "linstor-pool-uuid")).thenReturn(linstorStoragePool);
+        Mockito.when(linstorStoragePool.getType()).thenReturn(Storage.StoragePoolType.Linstor);
+        Mockito.when(targetDisk.getPath()).thenReturn("/dev/drbd/by-res/cs-cbt-migratio-2000/0");
+        Mockito.when(linstorStoragePool.getPhysicalDisk("cbt-migratio-2000")).thenReturn(targetDisk);
+
+        VmwareCbtDiskTO disk = createDisk("disk-1", "cbt-migratio-2000", "raw");
+        VmwareCbtCutoverCommand command = createCommand(List.of(disk));
+        command.setTargetStorageType(VmwareCbtTargetStorageType.RAW_BLOCK_DEVICE);
+        command.setDestinationStoragePoolType(Storage.StoragePoolType.Linstor);
+        command.setDestinationStoragePoolUuid("linstor-pool-uuid");
+        command.setWait(1);
+
+        Answer answer = wrapper.execute(command, libvirtComputingResource);
+
+        Assert.assertTrue(answer.getDetails(), answer.getResult());
+        Assert.assertTrue(wrapper.lastSourceXml.contains("<disk type='block' device='disk'>"));
+        Assert.assertTrue(wrapper.lastSourceXml.contains("<source dev='/dev/drbd/by-res/cs-cbt-migratio-2000/0'/>"));
+        Assert.assertFalse(wrapper.lastSourceXml.contains("protocol='nbd'"));
+        Assert.assertFalse(wrapper.lastCommand.contains("qemu-nbd"));
+        Assert.assertEquals("cbt-migratio-2000",
+                ((VmwareCbtMigrationAnswer) answer).getDiskResults().get(0).getTargetPath());
+    }
+
+    @Test
+    public void testExecuteRejectsBlockDeviceWhenInPlaceFinalizationIsUnavailable() {
+        wrapper.finalizationMode = LibvirtVmwareCbtCutoverCommandWrapper.VirtV2vFinalizationMode.VIRT_V2V_FALLBACK;
+        KVMStoragePool linstorStoragePool = Mockito.mock(KVMStoragePool.class);
+        Mockito.when(storagePoolManager.getStoragePool(Storage.StoragePoolType.Linstor, "linstor-pool-uuid")).thenReturn(linstorStoragePool);
+        Mockito.when(linstorStoragePool.getType()).thenReturn(Storage.StoragePoolType.Linstor);
+        VmwareCbtDiskTO disk = createDisk("disk-1", "cbt-migratio-2000", "raw");
+        VmwareCbtCutoverCommand command = createCommand(List.of(disk));
+        command.setTargetStorageType(VmwareCbtTargetStorageType.RAW_BLOCK_DEVICE);
+        command.setDestinationStoragePoolType(Storage.StoragePoolType.Linstor);
+        command.setDestinationStoragePoolUuid("linstor-pool-uuid");
+        command.setAllowNonInPlaceFinalization(true);
+
+        Answer answer = wrapper.execute(command, libvirtComputingResource);
+
+        Assert.assertFalse(answer.getResult());
+        Assert.assertTrue(answer.getDetails().contains("Block device target finalization requires virt-v2v in-place support"));
+    }
+
+    @Test
     public void testExecuteRejectsRbdWhenInPlaceFinalizationIsUnavailable() {
         wrapper.finalizationMode = LibvirtVmwareCbtCutoverCommandWrapper.VirtV2vFinalizationMode.VIRT_V2V_FALLBACK;
         VmwareCbtDiskTO disk = createDisk("disk-1", "cloudstack-cbt-migration-uuid-disk-1-disk-1", "raw");

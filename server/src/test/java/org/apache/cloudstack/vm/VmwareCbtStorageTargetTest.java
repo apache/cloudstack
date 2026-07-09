@@ -59,6 +59,40 @@ public class VmwareCbtStorageTargetTest {
     }
 
     @Test
+    public void testLinstorTargetUsesRawBlockDeviceAndRequiresInPlaceFinalization() {
+        VmwareCbtStorageTarget target = VmwareCbtStorageTarget.forPool(createStoragePool(Storage.StoragePoolType.Linstor));
+
+        Assert.assertTrue(target.isSupported());
+        Assert.assertEquals(VmwareCbtTargetStorageType.RAW_BLOCK_DEVICE, target.getTargetStorageType());
+        Assert.assertTrue(target.requiresInPlaceFinalization());
+        Assert.assertFalse(target.supportsNonInPlaceFinalizationFallback());
+    }
+
+    @Test
+    public void testBlockDeviceTargetMarkerIsShortAndStable() {
+        String marker = VmwareCbtMigrationManagerImpl.getBlockDeviceTargetMarker("12345678-9abc-def0-1234-56789abcdef0");
+
+        Assert.assertEquals("cbt-12345678-", marker);
+    }
+
+    @Test
+    public void testListCbtCompatibleStoragePoolsIncludesLinstorPools() {
+        PrimaryDataStoreDao primaryDataStoreDao = Mockito.mock(PrimaryDataStoreDao.class);
+        ReflectionTestUtils.setField(manager, "primaryDataStoreDao", primaryDataStoreDao);
+        DataCenterVO zone = createZone(1L);
+        ClusterVO cluster = createCluster(2L);
+        StoragePoolVO linstorPool = createStoragePool(11L, Storage.StoragePoolType.Linstor);
+
+        Mockito.when(primaryDataStoreDao.findClusterWideStoragePoolsByHypervisorAndPoolType(2L,
+                Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.Linstor)).thenReturn(List.of(linstorPool));
+
+        List<StoragePoolVO> pools = manager.listCbtCompatibleStoragePools(zone, cluster);
+
+        Assert.assertEquals(1, pools.size());
+        Assert.assertSame(linstorPool, pools.get(0));
+    }
+
+    @Test
     public void testValidateStorageTargetFinalizationFailsWhenHostDoesNotSupportInPlace() {
         VmwareCbtStorageTarget target = VmwareCbtStorageTarget.forPool(createStoragePool(Storage.StoragePoolType.RBD));
         HostVO host = createHost("kvm1", "false");

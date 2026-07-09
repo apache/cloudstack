@@ -62,6 +62,14 @@ public class LibvirtVmwareCbtCleanupCommandWrapper extends CommandWrapper<Vmware
                 return new VmwareCbtMigrationAnswer(cmd, true, msg, cmd.getMigrationUuid());
             }
 
+            if (cmd.getTargetStorageType() == VmwareCbtTargetStorageType.RAW_BLOCK_DEVICE) {
+                int removedVolumes = deleteBlockDeviceTargetVolumes(cmd, serverResource.getStoragePoolMgr());
+                String msg = String.format("VMware CBT cleanup for migration %s removed %s replicated block device target volume(s).",
+                        cmd.getMigrationUuid(), removedVolumes);
+                logger.info(msg);
+                return new VmwareCbtMigrationAnswer(cmd, true, msg, cmd.getMigrationUuid());
+            }
+
             Set<Path> migrationDirectories = getMigrationDirectories(cmd);
             int removedDirectories = 0;
             for (Path migrationDirectory : migrationDirectories) {
@@ -116,6 +124,58 @@ public class LibvirtVmwareCbtCleanupCommandWrapper extends CommandWrapper<Vmware
                     StringUtils.join(failedImages, ", "), targetPool.getUuid()));
         }
         return removedImages;
+    }
+
+    private int deleteBlockDeviceTargetVolumes(VmwareCbtCleanupCommand cmd, KVMStoragePoolManager storagePoolMgr) {
+        KVMStoragePool targetPool = getTargetStoragePool(cmd, storagePoolMgr);
+        if (targetPool == null || targetPool.getType() != Storage.StoragePoolType.Linstor) {
+            throw new IllegalArgumentException(String.format("VMware CBT migration %s requires a Linstor destination storage pool for block device cleanup",
+                    cmd.getMigrationUuid()));
+        }
+        if (CollectionUtils.isEmpty(cmd.getDisks())) {
+            return 0;
+        }
+
+        int removedVolumes = 0;
+        List<String> failedVolumes = new ArrayList<>();
+        for (VmwareCbtDiskTO disk : cmd.getDisks()) {
+            String volumeName = getBlockDeviceCleanupVolumeName(cmd.getMigrationUuid(), disk.getTargetPath());
+            if (StringUtils.isBlank(volumeName)) {
+                continue;
+            }
+            try {
+                if (targetPool.deletePhysicalDisk(volumeName, Storage.ImageFormat.RAW)) {
+                    removedVolumes++;
+                } else {
+                    failedVolumes.add(volumeName);
+                }
+            } catch (RuntimeException e) {
+                logger.warn("Unable to delete VMware CBT block device volume {} for migration {}: {}",
+                        volumeName, cmd.getMigrationUuid(), StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()));
+                failedVolumes.add(volumeName);
+            }
+        }
+        if (CollectionUtils.isNotEmpty(failedVolumes)) {
+            throw new IllegalStateException(String.format("Unable to delete VMware CBT block device target volume(s) %s from storage pool %s",
+                    StringUtils.join(failedVolumes, ", "), targetPool.getUuid()));
+        }
+        return removedVolumes;
+    }
+
+    /**
+     * Block device target names carry a short migration marker ("cbt-" plus the first
+     * eight non-dash characters of the migration UUID) instead of the full RBD-style
+     * marker, because LINSTOR resource names are limited to 48 characters.
+     */
+    private String getBlockDeviceCleanupVolumeName(String migrationUuid, String targetPath) {
+        String normalizedTargetPath = StringUtils.defaultString(targetPath).replace('\\', '/');
+        String volumeName = StringUtils.contains(normalizedTargetPath, "/") ? StringUtils.substringAfterLast(normalizedTargetPath, "/") : normalizedTargetPath;
+        String marker = String.format("cbt-%s-", StringUtils.defaultString(migrationUuid).replace("-", "").substring(0, 8));
+        if (!StringUtils.startsWith(volumeName, marker)) {
+            logger.warn("Skipping VMware CBT block device cleanup target {} because it does not start with marker {}", targetPath, marker);
+            return null;
+        }
+        return volumeName;
     }
 
     private KVMStoragePool getTargetStoragePool(VmwareCbtCleanupCommand cmd, KVMStoragePoolManager storagePoolMgr) {

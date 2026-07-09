@@ -55,6 +55,10 @@ class VmwareCbtStorageTarget {
             return new VmwareCbtStorageTarget(pool, VmwareCbtTargetStorageType.RBD_RAW, true, true,
                     "Ceph/RBD primary storage will use raw RBD targets and requires in-place finalization.");
         }
+        if (poolType == Storage.StoragePoolType.Linstor) {
+            return new VmwareCbtStorageTarget(pool, VmwareCbtTargetStorageType.RAW_BLOCK_DEVICE, true, true,
+                    "Linstor primary storage will use raw block device targets and requires in-place finalization.");
+        }
         return new VmwareCbtStorageTarget(pool, VmwareCbtTargetStorageType.QCOW2_FILE, false, true,
                 String.format("Storage pool type %s is not supported for VMware CBT migration targets.", poolType));
     }

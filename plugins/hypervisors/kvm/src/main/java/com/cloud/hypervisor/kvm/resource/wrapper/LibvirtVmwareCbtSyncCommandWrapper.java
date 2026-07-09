@@ -110,6 +110,8 @@ public class LibvirtVmwareCbtSyncCommandWrapper extends CommandWrapper<VmwareCbt
             KVMStoragePool targetPool = getTargetStoragePool(cmd, serverResource.getStoragePoolMgr());
             if (cmd.getTargetStorageType() == VmwareCbtTargetStorageType.RBD_RAW) {
                 validateRbdTargetPool(cmd, targetPool);
+            } else if (cmd.getTargetStorageType() == VmwareCbtTargetStorageType.RAW_BLOCK_DEVICE) {
+                validateBlockDeviceTargetPool(cmd, targetPool);
             }
 
             String passwordFilePath = writePasswordFile(cmd);
@@ -198,10 +200,11 @@ public class LibvirtVmwareCbtSyncCommandWrapper extends CommandWrapper<VmwareCbt
         if (StringUtils.isBlank(disk.getTargetPath())) {
             throw new IllegalArgumentException(String.format("target disk path is missing for disk %s", disk.getDiskId()));
         }
-        if (cmd.getTargetStorageType() == VmwareCbtTargetStorageType.RBD_RAW) {
+        if (cmd.getTargetStorageType() == VmwareCbtTargetStorageType.RBD_RAW ||
+                cmd.getTargetStorageType() == VmwareCbtTargetStorageType.RAW_BLOCK_DEVICE) {
             if (!StringUtils.equalsIgnoreCase(StringUtils.defaultIfBlank(disk.getTargetFormat(), "raw"), "raw")) {
-                throw new IllegalArgumentException(String.format("only raw RBD target disks are supported for VMware CBT delta sync; disk %s uses %s",
-                        disk.getDiskId(), disk.getTargetFormat()));
+                throw new IllegalArgumentException(String.format("only raw target disks are supported for VMware CBT delta sync to %s; disk %s uses %s",
+                        cmd.getTargetStorageType(), disk.getDiskId(), disk.getTargetFormat()));
             }
             return;
         }
@@ -301,15 +304,39 @@ public class LibvirtVmwareCbtSyncCommandWrapper extends CommandWrapper<VmwareCbt
         }
     }
 
+    private void validateBlockDeviceTargetPool(VmwareCbtSyncCommand cmd, KVMStoragePool targetPool) {
+        if (targetPool == null || targetPool.getType() != Storage.StoragePoolType.Linstor) {
+            throw new IllegalArgumentException(String.format("VMware CBT migration %s requires a Linstor destination storage pool for block device target writing",
+                    cmd.getMigrationUuid()));
+        }
+    }
+
     private String getQemuTargetPath(VmwareCbtSyncCommand cmd, VmwareCbtDiskTO disk, KVMStoragePool targetPool) {
         if (cmd.getTargetStorageType() == VmwareCbtTargetStorageType.RBD_RAW) {
             return KVMPhysicalDisk.RBDStringBuilder(targetPool, getRbdImagePath(targetPool, disk.getTargetPath()));
         }
+        if (cmd.getTargetStorageType() == VmwareCbtTargetStorageType.RAW_BLOCK_DEVICE) {
+            return getBlockDevicePath(targetPool, disk);
+        }
         return disk.getTargetPath();
     }
 
+    private String getBlockDevicePath(KVMStoragePool targetPool, VmwareCbtDiskTO disk) {
+        String normalizedTargetPath = StringUtils.defaultString(disk.getTargetPath()).replace('\\', '/');
+        String volumeName = StringUtils.contains(normalizedTargetPath, "/") ?
+                StringUtils.substringAfterLast(normalizedTargetPath, "/") : normalizedTargetPath;
+        KVMPhysicalDisk targetDisk = targetPool.getPhysicalDisk(volumeName);
+        String devicePath = targetDisk == null ? null : targetDisk.getPath();
+        if (StringUtils.isBlank(devicePath)) {
+            throw new IllegalStateException(String.format("could not resolve a local device path for block device target volume %s of disk %s",
+                    volumeName, disk.getDiskId()));
+        }
+        return devicePath;
+    }
+
     private String getTargetFormat(VmwareCbtSyncCommand cmd, VmwareCbtDiskTO disk) {
-        if (cmd.getTargetStorageType() == VmwareCbtTargetStorageType.RBD_RAW) {
+        if (cmd.getTargetStorageType() == VmwareCbtTargetStorageType.RBD_RAW ||
+                cmd.getTargetStorageType() == VmwareCbtTargetStorageType.RAW_BLOCK_DEVICE) {
             return "raw";
         }
         return StringUtils.defaultIfBlank(disk.getTargetFormat(), "qcow2");
