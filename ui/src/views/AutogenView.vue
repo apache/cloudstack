@@ -1171,6 +1171,10 @@ export default {
           params.accountid = params.id
           delete params.id
         }
+        if (this.apiName === 'quotaEmailTemplateList' && params.id) {
+          params.templatetype = params.id
+          delete params.id
+        }
       }
 
       if (this.$store.getters.listAllProjects && !this.projectView) {
@@ -1217,7 +1221,11 @@ export default {
           break
         }
 
-        if ('id' in this.$route.params && !(this.$route.params.id === params.id || this.apiName === 'quotaSummary' && this.$route.params.id === params.accountid)) {
+        const idFromRouteMatchesApiParameter = this.$route.params.id === params.id ||
+          this.apiName === 'quotaSummary' && this.$route.params.id === params.accountid ||
+          this.apiName === 'quotaEmailTemplateList' && this.$route.params.id === params.templatetype
+
+        if ('id' in this.$route.params && !idFromRouteMatchesApiParameter) {
           console.log('DEBUG - Discarding API response as its `id` does not match the uuid on the browser path')
           return
         }
