@@ -70,7 +70,6 @@ public class LibvirtVmwareCbtCutoverCommandWrapper extends CommandWrapper<Vmware
 
         long startTime = System.currentTimeMillis();
         Path sourceXmlPath = null;
-        Path outputXmlPath = null;
         Path fallbackOutputDir = null;
         Path fallbackStagingDir = null;
         Path rbdNbdBridgeScriptPath = null;
@@ -99,11 +98,7 @@ public class LibvirtVmwareCbtCutoverCommandWrapper extends CommandWrapper<Vmware
             String command;
             String logSuffix;
             if (inPlaceFinalization) {
-                if (finalizationMode == VirtV2vFinalizationMode.VIRT_V2V_IN_PLACE_BINARY) {
-                    outputXmlPath = Files.createTempFile(String.format("vmware-cbt-%s-v2v-in-place-output-",
-                            sanitizeFileName(cmd.getMigrationUuid())), ".xml");
-                }
-                command = buildVirtV2vInPlaceCommand(sourceXmlPath, outputXmlPath, serverResource, finalizationMode);
+                command = buildVirtV2vInPlaceCommand(sourceXmlPath, serverResource, finalizationMode);
                 if (cmd.getTargetStorageType() == VmwareCbtTargetStorageType.RBD_RAW) {
                     rbdNbdBridgeScriptPath = writeRbdNbdBridgeScript(cmd, rbdNbdBridges, command);
                     command = String.format("bash %s", shellQuote(rbdNbdBridgeScriptPath.toString()));
@@ -160,7 +155,6 @@ public class LibvirtVmwareCbtCutoverCommandWrapper extends CommandWrapper<Vmware
                     0, 0, Math.max(1L, (System.currentTimeMillis() - startTime) / 1000L), false, null);
         } finally {
             deleteTempFile(sourceXmlPath);
-            deleteTempFile(outputXmlPath);
             deleteTempFile(rbdNbdBridgeScriptPath);
             deleteTempTree(fallbackStagingDir);
             if (!keepFallbackOutputDir) {
@@ -421,7 +415,7 @@ public class LibvirtVmwareCbtCutoverCommandWrapper extends CommandWrapper<Vmware
         return "sd" + suffix;
     }
 
-    private String buildVirtV2vInPlaceCommand(Path sourceXmlPath, Path outputXmlPath, LibvirtComputingResource serverResource,
+    private String buildVirtV2vInPlaceCommand(Path sourceXmlPath, LibvirtComputingResource serverResource,
                                               VirtV2vFinalizationMode finalizationMode) {
         StringBuilder command = new StringBuilder();
         appendLibguestfsBackend(command, serverResource);
@@ -430,9 +424,11 @@ public class LibvirtVmwareCbtCutoverCommandWrapper extends CommandWrapper<Vmware
             command.append(shellQuote(sourceXmlPath.toString())).append(" ");
             command.append("--in-place -v");
         } else {
+            // No -O (write updated output XML): nothing consumes it and the option only
+            // exists from virt-v2v 2.5 on, so passing it breaks otherwise capable hosts
+            // such as Ubuntu 24.04 with virt-v2v-in-place 2.4.
             command.append("virt-v2v-in-place --root first -i libvirtxml ");
             command.append(shellQuote(sourceXmlPath.toString())).append(" ");
-            command.append("-O ").append(shellQuote(outputXmlPath.toString())).append(" ");
             command.append("-v");
         }
         return command.toString();

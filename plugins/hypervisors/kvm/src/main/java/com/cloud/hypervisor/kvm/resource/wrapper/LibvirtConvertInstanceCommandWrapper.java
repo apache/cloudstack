@@ -505,18 +505,16 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
             }
 
             Path inputXml = Files.createTempFile("cloudstack-vddk-direct-" + temporaryConvertUuid, ".xml");
-            Path outputXml = Files.createTempFile("cloudstack-vddk-direct-" + temporaryConvertUuid + "-out", ".xml");
             String domainXml = linstorTarget
                     ? buildDirectBlockDeviceLibvirtXml(temporaryConvertUuid, blockDevicePaths)
                     : buildDirectRbdLibvirtXml(temporaryConvertUuid, targetPool, createdImages);
             Files.writeString(inputXml, domainXml);
 
-            boolean finalized = runInPlaceFinalization(inputXml, outputXml, libguestfsBackend, timeout, verboseModeEnabled, originalVMName, serverResource);
+            boolean finalized = runInPlaceFinalization(inputXml, libguestfsBackend, timeout, verboseModeEnabled, originalVMName, serverResource);
             if (!finalized) {
                 cleanupDirectImportDisks(targetPool, createdImages, originalVMName);
             }
             Files.deleteIfExists(inputXml);
-            Files.deleteIfExists(outputXml);
             return finalized;
         } catch (Exception e) {
             logger.error("({}) Direct {} VDDK import failed: {}", originalVMName, targetPool.getType(), e.getMessage(), e);
@@ -620,15 +618,17 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         return devicePath;
     }
 
-    private boolean runInPlaceFinalization(Path inputXml, Path outputXml, String libguestfsBackend, long timeout,
+    private boolean runInPlaceFinalization(Path inputXml, String libguestfsBackend, long timeout,
                                            boolean verboseModeEnabled, String originalVMName,
                                            LibvirtComputingResource serverResource) {
         StringBuilder command = new StringBuilder();
         command.append("export LIBGUESTFS_BACKEND=").append(shellQuote(libguestfsBackend)).append(" && ");
         if (serverResource.hostSupportsVirtV2vInPlaceBinary()) {
+            // No -O (write updated output XML): nothing consumes it and the option only
+            // exists from virt-v2v 2.5 on, so passing it breaks otherwise capable hosts
+            // such as Ubuntu 24.04 with virt-v2v-in-place 2.4.
             command.append("virt-v2v-in-place --root first -i libvirtxml ")
-                    .append(shellQuote(inputXml.toString())).append(" -O ")
-                    .append(shellQuote(outputXml.toString())).append(" ");
+                    .append(shellQuote(inputXml.toString())).append(" ");
         } else if (serverResource.hostSupportsVirtV2vInPlaceOption()) {
             command.append("virt-v2v --root first -i libvirtxml ")
                     .append(shellQuote(inputXml.toString())).append(" --in-place ");
