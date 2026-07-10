@@ -41,7 +41,10 @@
           {{ parseFloat(text).toFixed(2) }}
         </template>
         <template #creditor="{ text, record }">
-          <router-link :to="{ path: '/accountuser/' + record.creditoruserid }">{{ text }}</router-link>
+          <router-link v-if="this.userAccess[record.creditoruserid]" :to="{ path: '/accountuser/' + record.creditoruserid }">
+            {{ text }}
+          </router-link>
+          <span v-else>{{ text }}</span>
         </template>
       </a-table>
     </div>
@@ -70,7 +73,8 @@ export default {
       currency: '',
       dataSource: [],
       startDate: undefined,
-      endDate: undefined
+      endDate: undefined,
+      userAccess: {}
     }
   },
   computed: {
@@ -120,6 +124,12 @@ export default {
           ...row,
           date: dateUtils.parseDayJsObject({ value: row.creditedon, keepMoment: false })
         }))
+        const uniqueCreditorUserIds = [...new Set(
+          this.dataSource
+            .map(row => row.creditoruserid)
+            .filter(Boolean)
+        )]
+        await Promise.all(uniqueCreditorUserIds.map(userid => this.checkUserAccess(userid)))
       } finally {
         this.loading = false
       }
@@ -134,6 +144,26 @@ export default {
       return await getAPI('quotaCreditsList', params)
         .then(json => json.quotacreditslistresponse.credit || [])
         .catch(error => { error && this.$notification.info({ message: this.$t('message.request.no.data') }) })
+    },
+    async checkUserAccess (userid) {
+      if (userid === undefined) {
+        return
+      }
+      if (Object.prototype.hasOwnProperty.call(this.userAccess, userid)) {
+        return
+      }
+      if (this.$router.resolve('/accountuser/' + userid).matched[0].redirect === '/exception/404') {
+        return
+      }
+
+      const params = { id: userid }
+      const json = await getAPI('listUsers', params)
+      const response = json.listusersresponse.user || []
+      if (response?.[0]) {
+        this.userAccess[userid] = true
+      } else {
+        this.userAccess[userid] = false
+      }
     },
     exportDataToCsv () {
       downloadDataAsCsv({
