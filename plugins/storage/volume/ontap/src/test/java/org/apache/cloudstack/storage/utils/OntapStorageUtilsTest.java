@@ -29,7 +29,7 @@ public class OntapStorageUtilsTest {
     public void getIgroupName_returnsExpectedFormat_whenWithinLimit() {
         String result = OntapStorageUtils.getIgroupName("svm1", "host-uuid-123");
 
-        assertEquals("cs_svm1_host-uuid-123", result);
+        assertEquals("cs_host-uuid-123_svm1", result);
         assertTrue(result.length() <= OntapStorageConstants.IGROUP_NAME_MAX_LENGTH);
     }
 
@@ -38,12 +38,12 @@ public class OntapStorageUtilsTest {
         // Characters outside [a-zA-Z0-9_-] in the host uuid must be replaced with '_'.
         String result = OntapStorageUtils.getIgroupName("svm1", "host.uuid:123/abc");
 
-        assertEquals("cs_svm1_host_uuid_123_abc", result);
+        assertEquals("cs_host_uuid_123_abc_svm1", result);
     }
 
     @Test
     public void getIgroupName_doesNotTruncate_whenExactlyAtMaxLength() {
-        // Format: cs(2) + _(1) + svmName + _(1) + hostUuid
+        // Format: cs(2) + _(1) + hostUuid + _(1) + svmName
         // For an overall length of 96 with a 4-char uuid, svmName must be 88 chars.
         String svmName = "a".repeat(88);
         String hostUuid = "uuid";
@@ -51,7 +51,7 @@ public class OntapStorageUtilsTest {
         String result = OntapStorageUtils.getIgroupName(svmName, hostUuid);
 
         assertEquals(OntapStorageConstants.IGROUP_NAME_MAX_LENGTH, result.length());
-        assertEquals("cs_" + svmName + "_" + hostUuid, result);
+        assertEquals("cs_" + hostUuid + "_" + svmName, result);
     }
 
     @Test
@@ -63,7 +63,7 @@ public class OntapStorageUtilsTest {
 
         assertEquals(OntapStorageConstants.IGROUP_NAME_MAX_LENGTH, result.length());
         // The truncated value must still be a prefix of the full, untruncated name.
-        String fullName = "cs_" + svmName + "_" + hostUuid;
+        String fullName = "cs_" + hostUuid + "_" + svmName;
         assertEquals(fullName.substring(0, OntapStorageConstants.IGROUP_NAME_MAX_LENGTH), result);
         assertTrue(result.startsWith("cs_"));
     }
@@ -71,7 +71,7 @@ public class OntapStorageUtilsTest {
     @Test
     public void getIgroupName_truncates_whenOneCharOverMaxLength() {
         // Build a name that is exactly one character over the limit (97 chars):
-        // svmName of 89 chars + 4-char uuid -> 2 + 1 + 89 + 1 + 4 = 97.
+        // svmName of 89 chars + 4-char uuid -> 2 + 1 + 4 + 1 + 89 = 97.
         String svmName = "a".repeat(89);
         String hostUuid = "uuid";
 
