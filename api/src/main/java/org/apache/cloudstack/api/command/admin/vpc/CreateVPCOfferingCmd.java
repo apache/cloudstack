@@ -99,7 +99,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
         since = "4.17.0",
         allowedValues = {
                 "IPv4",
-                "dualstack"
+                "DualStack"
         })
     private String internetProtocol;
 
