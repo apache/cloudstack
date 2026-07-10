@@ -56,13 +56,17 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         # Check backup configuration values, set them to enable the nas provider
         backup_enabled_cfg = Configurations.list(cls.api_client, name='backup.framework.enabled')
         backup_provider_cfg = Configurations.list(cls.api_client, name='backup.framework.provider.plugin')
+        incremental_backup_enabled_cfg = Configurations.list(cls.api_client, name='nas.backup.incremental.enabled')
         cls.backup_enabled = backup_enabled_cfg[0].value
         cls.backup_provider = backup_provider_cfg[0].value
+        cls.incremental_backup_enabled = incremental_backup_enabled_cfg[0].value
 
         if cls.backup_enabled == "false":
             cls.skipTest(cls, reason="Test can be run only if the config backup.framework.enabled is true")
         if cls.backup_provider != "nas":
             Configurations.update(cls.api_client, 'backup.framework.provider.plugin', value='nas')
+        if cls.incremental_backup_enabled == "false":
+            Configurations.update(cls.api_client, 'nas.backup.incremental.enabled', value='true')
 
         cls.account = Account.create(cls.api_client, cls.services["account"], domainid=cls.domain.id)
 
@@ -94,6 +98,8 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
 
             if cls.backup_provider != "nas":
                 Configurations.update(cls.api_client, 'backup.framework.provider.plugin', value=cls.backup_provider)
+            if cls.incremental_backup_enabled == "false":
+                Configurations.update(cls.api_client, 'nas.backup.incremental.enabled', value="false")
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
@@ -519,10 +525,11 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
             self.backup_offering.removeOffering(self.apiclient, self.vm.id)
 
     @attr(tags=["advanced", "backup"], required_hardware="true")
-    def test_refuse_delete_full_with_children(self):
+    def test_delete_full_with_children_is_deferred(self):
         """
-        Deleting a FULL that has surviving incrementals must fail without forced=true.
-        With forced=true it must succeed and remove the entire chain.
+        Deleting a FULL that has surviving incrementals succeeds but is deferred: the
+        FULL is hidden from the backup list while its child survives, and it is
+        physically swept once the last descendant is deleted.
         """
         self.backup_offering.assignOffering(self.apiclient, self.vm.id)
         original_full_every = self._get_full_every()
@@ -535,19 +542,21 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
 
             backups = Backup.list(self.apiclient, self.vm.id)
             backups.sort(key=lambda b: b.created)
-            full = backups[0]
+            full, inc = backups[0], backups[1]
 
-            failed = False
-            try:
-                Backup.delete(self.apiclient, full.id)
-            except Exception:
-                failed = True
-            self.assertTrue(failed, "Deleting a FULL with children should be refused without forced=true")
-
-            # Forced delete should succeed and clear the whole chain
-            Backup.delete(self.apiclient, full.id, forced=True)
+            # Non-forced delete of the FULL is accepted but deferred: the FULL is
+            # tombstoned (Hidden) and disappears from the list, the child survives.
+            Backup.delete(self.apiclient, full.id)
             remaining = Backup.list(self.apiclient, self.vm.id)
-            self.assertIsNone(remaining, "Forced delete of FULL should remove the entire chain")
+            self.assertEqual(len(remaining), 1,
+                "Deleting a FULL with children should hide the FULL and keep the child")
+            self.assertEqual(remaining[0].id, inc.id,
+                "The surviving backup should be the incremental child")
+
+            # Deleting the last descendant sweeps the delete-pending FULL with it.
+            Backup.delete(self.apiclient, inc.id)
+            remaining = Backup.list(self.apiclient, self.vm.id)
+            self.assertIsNone(remaining, "Deleting the leaf should sweep the hidden FULL, removing the chain")
         finally:
             self._set_full_every(original_full_every)
             self.backup_offering.removeOffering(self.apiclient, self.vm.id)
