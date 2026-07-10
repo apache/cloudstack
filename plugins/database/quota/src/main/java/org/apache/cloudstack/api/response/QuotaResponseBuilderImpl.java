@@ -66,8 +66,6 @@ import com.cloud.user.UserVO;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.EntityManager;
-import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
@@ -710,14 +708,20 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         Long domainId = account.getDomainId();
 
         Date depositedOn = new Date();
-        QuotaBalanceVO qb = _quotaBalanceDao.findLaterBalanceEntry(accountId, domainId, depositedOn);
-        if (qb != null) {
-            throw new InvalidParameterValueException(String.format("Incorrect deposit date [%s], as there are balance entries after this date.",
-                    depositedOn));
-        }
-
         boolean lockAccountEnforcement = "true".equalsIgnoreCase(QuotaConfig.QuotaEnableEnforcement.value());
-        QuotaCreditsVO result = Transaction.execute(TransactionLegacy.USAGE_DB, (TransactionCallback<QuotaCreditsVO>) status -> persistQuotaCredits(cmd, value, depositedOn, account, lockAccountEnforcement));
+
+        QuotaCreditsVO result;
+        try (TransactionLegacy ignored = TransactionLegacy.open(TransactionLegacy.USAGE_DB)) {
+            QuotaBalanceVO qb = _quotaBalanceDao.findLaterBalanceEntry(accountId, domainId, depositedOn);
+            if (qb != null) {
+                throw new InvalidParameterValueException(String.format("Incorrect deposit date [%s], as there are balance entries after this date.",
+                        depositedOn));
+            }
+            result = persistQuotaCredits(cmd, value, depositedOn, account, lockAccountEnforcement);
+        } finally {
+            // Swap back to cloud
+            TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close();
+        }
 
         UserVO creditor = getCreditorForQuotaCredits(result);
         return createQuotaCreditsResponse(result, creditor);
@@ -747,7 +751,12 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         }
 
         if (lockAccountEnforcement) {
-            lockOrUnlockAccountIfRequired(currentAccountBalance, account, enforceQuota);
+            // Need to open a transaction for the cloud data base, and then swap back to cloud_usage
+            try (TransactionLegacy ignored = TransactionLegacy.open(TransactionLegacy.CLOUD_DB)) {
+                lockOrUnlockAccountIfRequired(currentAccountBalance, account, enforceQuota);
+            } finally {
+                TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
+            }
         }
 
         return result;

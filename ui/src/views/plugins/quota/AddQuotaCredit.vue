@@ -25,7 +25,7 @@
       :rules="rules"
       @finish="handleSubmit"
       v-ctrl-enter="handleSubmit">
-      <ownership-selection @fetch-owner="fetchOwnerOptions" />
+      <ownership-selection @fetch-owner="fetchOwnerOptions" :account-state="null"/>
       <a-form-item ref="value" name="value">
         <template #label>
           <tooltip-label :title="$t('label.value')" :tooltip="apiParams.value.description"/>
