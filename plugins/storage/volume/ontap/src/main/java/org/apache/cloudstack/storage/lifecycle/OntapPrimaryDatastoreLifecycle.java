@@ -341,10 +341,6 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
             logger.error("attachZone : ONTAP primary storage is supported only for KVM hypervisor");
             throw new CloudRuntimeException("ONTAP primary storage is supported only for KVM hypervisor");
         }
-        storagePool.setHypervisor(hypervisorType);
-        storagePoolDao.update(storagePool.getId(),storagePool);
-        logger.debug("attachZone : Set Hypervisor type for storage pool {} to {}", storagePool.getName(), hypervisorType);
-
         PrimaryDataStoreInfo primaryStore = (PrimaryDataStoreInfo)dataStore;
         List<HostVO> hostsToConnect = _resourceMgr.getEligibleUpAndEnabledHostsInZoneForStorageConnection(dataStore, scope.getScopeId(), hypervisorType);
         logger.debug(String.format("In createPool. Attaching the pool to each of the hosts in %s.", hostsToConnect));
@@ -371,7 +367,7 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
                 return  false;
             }
         }
-        _dataStoreHelper.attachZone(dataStore);
+        _dataStoreHelper.attachZone(dataStore, hypervisorType);
         return true;
     }
 

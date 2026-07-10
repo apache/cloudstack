@@ -612,7 +612,7 @@ public class OntapPrimaryDatastoreLifecycleTest {
         when(_resourceMgr.getEligibleUpAndEnabledHostsInZoneForStorageConnection(any(), eq(1L), eq(Hypervisor.HypervisorType.KVM)))
                 .thenReturn(mockHosts);
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(poolDetails);
-        when(_dataStoreHelper.attachZone(any(DataStore.class))).thenReturn(dataStore);
+        when(_dataStoreHelper.attachZone(any(DataStore.class), eq(Hypervisor.HypervisorType.KVM))).thenReturn(dataStore);
 
         try (MockedStatic<OntapStorageUtils> utilityMock = Mockito.mockStatic(OntapStorageUtils.class)) {
             utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(any()))
@@ -633,7 +633,7 @@ public class OntapPrimaryDatastoreLifecycleTest {
             verify(storagePoolDetailsDao, times(1)).listDetailsKeyPairs(1L);
             verify(storageStrategy, times(1)).createAccessGroup(any(AccessGroup.class));
             verify(_storageMgr, times(2)).connectHostToSharedPool(any(HostVO.class), eq(1L));
-            verify(_dataStoreHelper, times(1)).attachZone(any(DataStore.class));
+            verify(_dataStoreHelper, times(1)).attachZone(any(DataStore.class), eq(Hypervisor.HypervisorType.KVM));
         }
     }
 
@@ -647,7 +647,7 @@ public class OntapPrimaryDatastoreLifecycleTest {
         when(_resourceMgr.getEligibleUpAndEnabledHostsInZoneForStorageConnection(any(), eq(1L), eq(Hypervisor.HypervisorType.KVM)))
                 .thenReturn(singleHost);
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(poolDetails);
-        when(_dataStoreHelper.attachZone(any(DataStore.class))).thenReturn(dataStore);
+        when(_dataStoreHelper.attachZone(any(DataStore.class), eq(Hypervisor.HypervisorType.KVM))).thenReturn(dataStore);
 
         try (MockedStatic<OntapStorageUtils> utilityMock = Mockito.mockStatic(OntapStorageUtils.class)) {
             utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(any()))
@@ -662,7 +662,7 @@ public class OntapPrimaryDatastoreLifecycleTest {
             // Verify
             assertTrue(result, "attachZone should return true with single host");
             verify(_storageMgr, times(1)).connectHostToSharedPool(any(HostVO.class), eq(1L));
-            verify(_dataStoreHelper, times(1)).attachZone(any(DataStore.class));
+            verify(_dataStoreHelper, times(1)).attachZone(any(DataStore.class), eq(Hypervisor.HypervisorType.KVM));
         }
     }
 
@@ -679,7 +679,7 @@ public class OntapPrimaryDatastoreLifecycleTest {
         when(_resourceMgr.getEligibleUpAndEnabledHostsInZoneForStorageConnection(any(), eq(1L), eq(Hypervisor.HypervisorType.KVM)))
                 .thenReturn(mockHosts);
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(poolDetails);
-        when(_dataStoreHelper.attachZone(any(DataStore.class))).thenReturn(dataStore);
+        when(_dataStoreHelper.attachZone(any(DataStore.class), eq(Hypervisor.HypervisorType.KVM))).thenReturn(dataStore);
 
         try (MockedStatic<OntapStorageUtils> utilityMock = Mockito.mockStatic(OntapStorageUtils.class)) {
             utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(any()))
@@ -694,7 +694,7 @@ public class OntapPrimaryDatastoreLifecycleTest {
             // Verify
             assertTrue(result, "attachZone should return true with multiple hosts");
             verify(_storageMgr, times(3)).connectHostToSharedPool(any(HostVO.class), eq(1L));
-            verify(_dataStoreHelper, times(1)).attachZone(any(DataStore.class));
+            verify(_dataStoreHelper, times(1)).attachZone(any(DataStore.class), eq(Hypervisor.HypervisorType.KVM));
         }
     }
 
@@ -724,7 +724,7 @@ public class OntapPrimaryDatastoreLifecycleTest {
             verify(storageStrategy, times(1)).createAccessGroup(any(AccessGroup.class));
             verify(_storageMgr, times(1)).connectHostToSharedPool(any(HostVO.class), eq(1L));
             // _dataStoreHelper.attachZone should NOT be called due to early return
-            verify(_dataStoreHelper, times(0)).attachZone(any(DataStore.class));
+            verify(_dataStoreHelper, times(0)).attachZone(any(DataStore.class), eq(Hypervisor.HypervisorType.KVM));
         }
     }
 
@@ -737,7 +737,7 @@ public class OntapPrimaryDatastoreLifecycleTest {
         when(_resourceMgr.getEligibleUpAndEnabledHostsInZoneForStorageConnection(any(), eq(1L), eq(Hypervisor.HypervisorType.KVM)))
                 .thenReturn(emptyHosts);
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(poolDetails);
-        when(_dataStoreHelper.attachZone(any(DataStore.class))).thenReturn(dataStore);
+        when(_dataStoreHelper.attachZone(any(DataStore.class), eq(Hypervisor.HypervisorType.KVM))).thenReturn(dataStore);
 
         try (MockedStatic<OntapStorageUtils> utilityMock = Mockito.mockStatic(OntapStorageUtils.class)) {
             utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(any()))
@@ -751,7 +751,7 @@ public class OntapPrimaryDatastoreLifecycleTest {
             // Verify
             assertTrue(result, "attachZone should return true even with no hosts");
             verify(_storageMgr, times(0)).connectHostToSharedPool(any(HostVO.class), anyLong());
-            verify(_dataStoreHelper, times(1)).attachZone(any(DataStore.class));
+            verify(_dataStoreHelper, times(1)).attachZone(any(DataStore.class), eq(Hypervisor.HypervisorType.KVM));
         }
     }
 
@@ -780,7 +780,7 @@ public class OntapPrimaryDatastoreLifecycleTest {
             // Verify
             assertFalse(result, "attachZone should return false when any host connection fails");
             verify(_storageMgr, times(2)).connectHostToSharedPool(any(HostVO.class), eq(1L));
-            verify(_dataStoreHelper, times(0)).attachZone(any(DataStore.class));
+            verify(_dataStoreHelper, times(0)).attachZone(any(DataStore.class), eq(Hypervisor.HypervisorType.KVM));
         }
     }
 
@@ -791,7 +791,7 @@ public class OntapPrimaryDatastoreLifecycleTest {
         when(_resourceMgr.getEligibleUpAndEnabledHostsInZoneForStorageConnection(any(), eq(1L), eq(Hypervisor.HypervisorType.KVM)))
                 .thenReturn(mockHosts);
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(poolDetails);
-        when(_dataStoreHelper.attachZone(any(DataStore.class))).thenReturn(dataStore);
+        when(_dataStoreHelper.attachZone(any(DataStore.class), eq(Hypervisor.HypervisorType.KVM))).thenReturn(dataStore);
 
         try (MockedStatic<OntapStorageUtils> utilityMock = Mockito.mockStatic(OntapStorageUtils.class)) {
             utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(any()))
@@ -838,7 +838,7 @@ public class OntapPrimaryDatastoreLifecycleTest {
         when(_resourceMgr.getEligibleUpAndEnabledHostsInZoneForStorageConnection(any(), eq(1L), eq(Hypervisor.HypervisorType.KVM)))
                 .thenReturn(mockHosts);
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(poolDetails);
-        when(_dataStoreHelper.attachZone(any(DataStore.class))).thenReturn(dataStore);
+        when(_dataStoreHelper.attachZone(any(DataStore.class), eq(Hypervisor.HypervisorType.KVM))).thenReturn(dataStore);
 
         try (MockedStatic<OntapStorageUtils> utilityMock = Mockito.mockStatic(OntapStorageUtils.class)) {
             utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(any()))
@@ -850,7 +850,7 @@ public class OntapPrimaryDatastoreLifecycleTest {
                     dataStore, zoneScope, Hypervisor.HypervisorType.KVM);
 
             assertTrue(result, "attachZone should succeed for KVM hypervisor");
-            verify(storagePoolDao, times(1)).update(eq(1L), any(StoragePoolVO.class));
+            verify(_dataStoreHelper, times(1)).attachZone(any(DataStore.class), eq(Hypervisor.HypervisorType.KVM));
         }
     }
 

@@ -239,7 +239,7 @@ public abstract class StorageStrategy {
             final long availableBytes = aggrResp.getAvailableBlockStorageSpace().longValue();
             logger.debug("Aggregate " + aggr.getName() + " available bytes=" + availableBytes + ", requested=" + size);
 
-            if (availableBytes <= size) {
+            if (availableBytes < size) {
                 logger.warn("Aggregate " + aggr.getName() + " does not have sufficient available space. Required=" +
                         size + " bytes, available=" + availableBytes + " bytes. Skipping this aggregate.");
                 continue;
