@@ -432,6 +432,9 @@ export default {
       })
     },
     isVpcCoreProvider (providerName, serviceName) {
+      if (serviceName === 'Firewall') {
+        return ['VpcVirtualRouter'].includes(providerName)
+      }
       if (['VpcVirtualRouter', 'Netscaler', 'BigSwitchBcf', 'ConfigDrive'].includes(providerName)) {
         return true
       }
