@@ -3118,6 +3118,12 @@ public class VolumeServiceImpl implements VolumeService {
         }
 
         if (volumePoolId == null || !volumePoolId.equals(vmPoolId)) {
+            Long volumeLockHostId = findVolumeLockHost(volumeToAttach);
+            if (volumeLockHostId != null && vmHostId != null && !volumeLockHostId.equals(vmHostId)) {
+                logger.info("CLVM cross-pool lock transfer required: Volume {} on pool {} lock is on host {} but VM is on host {}",
+                        volumeToAttach.getUuid(), volumePoolId, volumeLockHostId, vmHostId);
+                return true;
+            }
             return false;
         }
 
