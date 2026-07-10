@@ -2507,9 +2507,14 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (isDisabled(zoneId)) {
             return new CapacityVO(null, zoneId, null, null, 0L, 0L, Capacity.CAPACITY_TYPE_BACKUP_STORAGE);
         }
-        final BackupProvider backupProvider = getBackupProvider(zoneId);
-        Pair<Long, Long> backupUsage = backupProvider.getBackupStorageStats(zoneId);
-        return new CapacityVO(null, zoneId, null, null, backupUsage.first(), backupUsage.second(), Capacity.CAPACITY_TYPE_BACKUP_STORAGE);
+        try {
+            final BackupProvider backupProvider = getBackupProvider(zoneId);
+            Pair<Long, Long> backupUsage = backupProvider.getBackupStorageStats(zoneId);
+            return new CapacityVO(null, zoneId, null, null, backupUsage.first(), backupUsage.second(), Capacity.CAPACITY_TYPE_BACKUP_STORAGE);
+        } catch (CloudRuntimeException e) {
+            logger.warn("Backup provider not found for zone {}: {}", zoneId, e.getMessage());
+            return new CapacityVO(null, zoneId, null, null, 0L, 0L, Capacity.CAPACITY_TYPE_BACKUP_STORAGE);
+        }
     }
 
     @Override
