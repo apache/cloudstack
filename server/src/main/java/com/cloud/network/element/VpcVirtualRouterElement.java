@@ -52,6 +52,7 @@ import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.router.VpcNetworkHelperImpl;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.NetworkACLItemDao;
 import com.cloud.network.vpc.NetworkACLItemVO;
@@ -139,19 +140,56 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
                 return false;
             }
         } else {
-            boolean supportsService;
-            if (service == Service.Firewall) {
-                supportsService = _vpcMgr.isProviderSupportServiceInVpc(network.getVpcId(), service, getProvider());
-            } else {
-                supportsService = _networkMdl.isProviderSupportServiceInNetwork(network.getId(), service, getProvider());
-            }
-            if (!supportsService) {
+            if (!_networkMdl.isProviderSupportServiceInNetwork(network.getId(), service, getProvider())) {
                 logger.trace("Element " + getProvider().getName() + " doesn't support service " + service.getName() + " in the network " + network);
                 return false;
             }
         }
 
         return true;
+    }
+
+    @Override
+    protected boolean canHandle(final Vpc vpc, final Service service) {
+        if (vpc == null) {
+            return false;
+        }
+
+        if (!_networkMdl.isProviderEnabledInZone(vpc.getZoneId(), Network.Provider.VPCVirtualRouter.getName())) {
+            return false;
+        }
+
+        if (service != null && !_vpcMgr.isProviderSupportServiceInVpc(vpc.getId(), service, getProvider())) {
+            logger.trace("Element " + getProvider().getName() + " doesn't support service " + service.getName() + " in the vpc " + vpc);
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public boolean applyFWRulesInVPC(final Vpc vpc, final List<? extends FirewallRule> rules) throws ResourceUnavailableException {
+        boolean result = true;
+        if (canHandle(vpc, Service.Firewall)) {
+            final List<DomainRouterVO> routers = _routerDao.listByVpcId(vpc.getId());
+            if (CollectionUtils.isEmpty(routers)) {
+                logger.debug("Virtual router element doesn't need to apply firewall rules on the backend; virtual router doesn't exist in the vpc");
+                return true;
+            }
+
+            Network network = null;
+            if (CollectionUtils.isNotEmpty(rules) && rules.get(0).getNetworkId() != null) {
+                network = _networkModel.getNetwork(rules.get(0).getNetworkId());
+            }
+
+            final DataCenterVO dcVO = _dcDao.findById(vpc.getZoneId());
+            final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+            for (final DomainRouterVO domainRouterVO : routers) {
+                result = result && networkTopology.applyFirewallRulesInVPC(vpc, rules, domainRouterVO);
+            }
+        }
+        return result;
     }
 
     @Override

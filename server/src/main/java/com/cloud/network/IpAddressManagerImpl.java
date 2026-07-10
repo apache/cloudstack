@@ -666,14 +666,12 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         List<PublicIp> publicIps = new ArrayList<PublicIp>();
 
         // For VPC firewall rules the networkId on the rule is null; resolve via VPC.
-        Network network;
+        Network network = null;
+        Vpc vpc = null;
         if (networkId != null) {
             network = _networksDao.findById(networkId);
         } else if (vpcId != null) {
-            List<? extends Network> vpcNetworks = _vpcMgr.getVpcNetworks(vpcId);
-            network = (vpcNetworks != null && !vpcNetworks.isEmpty()) ? _networksDao.findById(vpcNetworks.get(0).getId()) : null;
-        } else {
-            network = null;
+            vpc = _vpcDao.findById(vpcId);
         }
 
         if (network == null) {
@@ -707,10 +705,10 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         }
 
         try {
-            if (network != null) {
-                applier.applyRules(network, purpose, rules);
+            if (network != null || vpc != null) {
+                applier.applyRules(network, vpc, purpose, rules);
             } else {
-                logger.warn("Skipping applyRules: no network resolved for rules (vpcId={})", vpcId);
+                logger.warn("Skipping applyRules: no network or vpc resolved for rules (networkId={}, vpcId={})", networkId, vpcId);
                 success = false;
             }
         } catch (ResourceUnavailableException e) {

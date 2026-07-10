@@ -205,12 +205,13 @@ public class VpcVirtualRouterElementTest {
         final Network network = Mockito.mock(Network.class);
 
         when(_networkMdl.getPhysicalNetworkId(network)).thenReturn(1L);
+        when(network.getId()).thenReturn(200L);
         when(network.getVpcId()).thenReturn(100L);
         when(_networkMdl.isProviderEnabledInPhysicalNetwork(1L, Network.Provider.VPCVirtualRouter.getName())).thenReturn(true);
-        when(_vpcMgr.isProviderSupportServiceInVpc(100L, Network.Service.Firewall, Network.Provider.VPCVirtualRouter)).thenReturn(true);
+        when(_networkMdl.isProviderSupportServiceInNetwork(200L, Network.Service.Firewall, Network.Provider.VPCVirtualRouter)).thenReturn(true);
 
         assertTrue(vpcVirtualRouterElement.canHandle(network, Network.Service.Firewall));
-        verify(_vpcMgr).isProviderSupportServiceInVpc(100L, Network.Service.Firewall, Network.Provider.VPCVirtualRouter);
-        verify(_networkMdl, never()).isProviderSupportServiceInNetwork(network.getId(), Network.Service.Firewall, Network.Provider.VPCVirtualRouter);
+        verify(_networkMdl).isProviderSupportServiceInNetwork(200L, Network.Service.Firewall, Network.Provider.VPCVirtualRouter);
+        verify(_vpcMgr, never()).isProviderSupportServiceInVpc(100L, Network.Service.Firewall, Network.Provider.VPCVirtualRouter);
     }
 }

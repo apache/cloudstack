@@ -661,6 +661,10 @@ public class FirewallManagerTest {
 
     @Test
     public void testApplyRulesForVpcNetworkUsesVpcProviderCheck() throws ResourceUnavailableException {
+        FirewallManagerImpl firewallMgr = new FirewallManagerImpl();
+        firewallMgr._networkModel = _networkModel;
+        firewallMgr._vpcMgr = _vpcMgr;
+
         Network network = Mockito.mock(Network.class);
         FirewallServiceProvider fwProvider = Mockito.mock(FirewallServiceProvider.class);
         List<FirewallRule> rules = new ArrayList<>();
@@ -672,9 +676,9 @@ public class FirewallManagerTest {
         when(fwProvider.getProvider()).thenReturn(Network.Provider.VPCVirtualRouter);
         when(_vpcMgr.isProviderSupportServiceInVpc(10L, Service.Firewall, Network.Provider.VPCVirtualRouter)).thenReturn(true);
         when(fwProvider.applyFWRules(Mockito.eq(network), Mockito.anyList())).thenReturn(true);
-        _firewallMgr._firewallElements = List.of(fwProvider);
+        firewallMgr._firewallElements = List.of(fwProvider);
 
-        boolean result = _firewallMgr.applyRules(network, Purpose.Firewall, rules);
+        boolean result = firewallMgr.applyRules(network, Purpose.Firewall, rules);
 
         Assert.assertTrue(result);
         verify(_vpcMgr, times(1)).isProviderSupportServiceInVpc(10L, Service.Firewall, Network.Provider.VPCVirtualRouter);
@@ -683,6 +687,10 @@ public class FirewallManagerTest {
 
     @Test
     public void testApplyRulesForNonVpcNetworkUsesNetworkModelProviderCheck() throws ResourceUnavailableException {
+        FirewallManagerImpl firewallMgr = new FirewallManagerImpl();
+        firewallMgr._networkModel = _networkModel;
+        firewallMgr._vpcMgr = _vpcMgr;
+
         Network network = Mockito.mock(Network.class);
         FirewallServiceProvider fwProvider = Mockito.mock(FirewallServiceProvider.class);
         List<FirewallRule> rules = new ArrayList<>();
@@ -695,9 +703,9 @@ public class FirewallManagerTest {
         when(fwProvider.getProvider()).thenReturn(Network.Provider.VirtualRouter);
         when(_networkModel.isProviderSupportServiceInNetwork(1L, Service.Firewall, Network.Provider.VirtualRouter)).thenReturn(true);
         when(fwProvider.applyFWRules(Mockito.eq(network), Mockito.anyList())).thenReturn(true);
-        _firewallMgr._firewallElements = List.of(fwProvider);
+        firewallMgr._firewallElements = List.of(fwProvider);
 
-        boolean result = _firewallMgr.applyRules(network, Purpose.Firewall, rules);
+        boolean result = firewallMgr.applyRules(network, Purpose.Firewall, rules);
 
         Assert.assertTrue(result);
         verify(_networkModel, times(1)).isProviderSupportServiceInNetwork(1L, Service.Firewall, Network.Provider.VirtualRouter);

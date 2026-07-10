@@ -938,7 +938,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     }
 
     @Override
-    public boolean applyRules(Network network, Purpose purpose, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
+    public boolean applyRules(Network network, Vpc vpc, Purpose purpose, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
         boolean handled = false;
         switch (purpose) {
         /* StaticNatRule would be applied by Firewall provider, since the incompatible of two object */
@@ -948,15 +948,25 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
             for (FirewallServiceProvider fwElement : _firewallElements) {
                 Network.Provider provider = fwElement.getProvider();
                 boolean isFwProvider;
-                if (network.getVpcId() != null) {
-                    isFwProvider = _vpcMgr.isProviderSupportServiceInVpc(network.getVpcId(), Service.Firewall, provider);
+                Long effectiveVpcId = null;
+                if (vpc != null) {
+                    effectiveVpcId = vpc.getId();
+                } else if (network != null) {
+                    effectiveVpcId = network.getVpcId();
+                }
+                if (effectiveVpcId != null) {
+                    isFwProvider = _vpcMgr.isProviderSupportServiceInVpc(effectiveVpcId, Service.Firewall, provider);
                 } else {
                     isFwProvider = _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Firewall, provider);
                 }
                 if (!isFwProvider) {
                     continue;
                 }
-                handled = fwElement.applyFWRules(network, rules);
+                if (vpc != null) {
+                    handled = fwElement.applyFWRulesInVPC(vpc, rules);
+                } else {
+                    handled = fwElement.applyFWRules(network, rules);
+                }
                 if (handled)
                     break;
             }
@@ -1011,6 +1021,11 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
             throw new CloudRuntimeException("FirewallManager cannot process rules of type " + purpose);
         }
         return handled;
+    }
+
+    @Override
+    public boolean applyRules(Network network, Purpose purpose, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
+        return applyRules(network, null, purpose, rules);
     }
 
     @Override

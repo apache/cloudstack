@@ -212,6 +212,10 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         return true;
     }
 
+    protected boolean canHandle(final Vpc vpc, final Service service) {
+        return false;
+    }
+
     @Override
     public boolean implement(final Network network, final NetworkOffering offering, final DeployDestination dest, final ReservationContext context)
             throws ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
@@ -281,7 +285,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         if (canHandle(network, Service.Firewall)) {
             final List<DomainRouterVO> routers = getRouters(network);
             if (routers == null || routers.isEmpty()) {
-                logger.debug("Virtual router element doesn't need to apply firewall rules on the backend; virtual router doesn't exist in the network {}", network);
+                logger.debug("Virtual router element doesn't need to apply firewall rules on the backend; virtual router doesn't exist in the network {}");
                 return true;
             }
 
@@ -303,6 +307,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         }
         return result;
     }
+
 
     @Override
     public boolean validateLBRule(final Network network, final LoadBalancingRule rule) {

@@ -60,9 +60,10 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.network.rules.StaticNatImpl;
+import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.dc.dao.VlanDao;
-import com.cloud.dc.VlanVO;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.user.AccountVO;
@@ -114,6 +115,9 @@ public class IpAddressManagerTest {
 
     @Mock
     VpcManager vpcMgr;
+
+    @Mock
+    VpcDao vpcDao;
 
     @Mock
     VlanDao vlanDao;
@@ -543,7 +547,7 @@ public class IpAddressManagerTest {
 
         assertTrue(result);
         verify(networkDao).findById(networkId);
-        verify(applier).applyRules(network, FirewallRule.Purpose.Firewall, Collections.singletonList(rule));
+        verify(applier).applyRules(network, null, FirewallRule.Purpose.Firewall, Collections.singletonList(rule));
     }
 
     /**
@@ -553,21 +557,11 @@ public class IpAddressManagerTest {
     @Test
     public void applyRulesVpcRuleResolvesNetworkViaVpcManager() throws ResourceUnavailableException {
         long vpcId = 20L;
-        long resolvedNetworkId = 30L;
-        NetworkVO resolvedNetwork = mock(NetworkVO.class);
-        when(resolvedNetwork.getId()).thenReturn(resolvedNetworkId);
-        when(networkDao.findById(resolvedNetworkId)).thenReturn(resolvedNetwork);
-
-        doReturn(Collections.singletonList(resolvedNetwork)).when(vpcMgr).getVpcNetworks(vpcId);
+        VpcVO vpc = mock(VpcVO.class);
+        when(vpcDao.findById(vpcId)).thenReturn(vpc);
 
         FirewallRule rule = makeRule(null, vpcId, FirewallRule.Purpose.Firewall, FirewallRule.TrafficType.Ingress);
         NetworkRuleApplier applier = mock(NetworkRuleApplier.class);
-
-        IPAddressVO vpcIp = mock(IPAddressVO.class);
-        when(vpcIp.getVlanId()).thenReturn(1L);
-        VlanVO vlan = mock(VlanVO.class);
-        when(ipAddressDao.listByAssociatedVpc(vpcId, null)).thenReturn(Collections.singletonList(vpcIp));
-        when(vlanDao.findById(1L)).thenReturn(vlan);
 
         stubIpAssocHelpers();
 
@@ -575,9 +569,8 @@ public class IpAddressManagerTest {
                 Collections.singletonList(rule), FirewallRule.Purpose.Firewall, applier, false);
 
         assertTrue(result);
-        verify(vpcMgr).getVpcNetworks(vpcId);
-        verify(ipAddressDao).listByAssociatedVpc(vpcId, null);
-        verify(applier).applyRules(resolvedNetwork, FirewallRule.Purpose.Firewall, Collections.singletonList(rule));
+        verify(vpcDao).findById(vpcId);
+        verify(applier).applyRules(null, vpc, FirewallRule.Purpose.Firewall, Collections.singletonList(rule));
     }
 
 
@@ -587,11 +580,8 @@ public class IpAddressManagerTest {
     @Test
     public void applyRulesVpcEgressFirewallRuleSkipsIpCollection() throws ResourceUnavailableException {
         long vpcId = 20L;
-        long resolvedNetworkId = 30L;
-        NetworkVO resolvedNetwork = mock(NetworkVO.class);
-        when(resolvedNetwork.getId()).thenReturn(resolvedNetworkId);
-        when(networkDao.findById(resolvedNetworkId)).thenReturn(resolvedNetwork);
-        doReturn(Collections.singletonList(resolvedNetwork)).when(vpcMgr).getVpcNetworks(vpcId);
+        VpcVO vpc = mock(VpcVO.class);
+        when(vpcDao.findById(vpcId)).thenReturn(vpc);
 
         FirewallRule rule = makeRule(null, vpcId, FirewallRule.Purpose.Firewall, FirewallRule.TrafficType.Egress);
         NetworkRuleApplier applier = mock(NetworkRuleApplier.class);
@@ -603,7 +593,7 @@ public class IpAddressManagerTest {
 
         assertTrue(result);
         verify(ipAddressDao, never()).listByAssociatedVpc(anyLong(), any());
-        verify(applier).applyRules(resolvedNetwork, FirewallRule.Purpose.Firewall, Collections.singletonList(rule));
+        verify(applier).applyRules(null, vpc, FirewallRule.Purpose.Firewall, Collections.singletonList(rule));
     }
 
     /**
@@ -613,17 +603,8 @@ public class IpAddressManagerTest {
     @Test
     public void applyRulesVpcIngressRuleCollectsIpsFromVpcNotNetwork() throws ResourceUnavailableException {
         long vpcId = 20L;
-        long resolvedNetworkId = 30L;
-        NetworkVO resolvedNetwork = mock(NetworkVO.class);
-        when(resolvedNetwork.getId()).thenReturn(resolvedNetworkId);
-        when(networkDao.findById(resolvedNetworkId)).thenReturn(resolvedNetwork);
-        doReturn(Collections.singletonList(resolvedNetwork)).when(vpcMgr).getVpcNetworks(vpcId);
-
-        IPAddressVO vpcIp = mock(IPAddressVO.class);
-        when(vpcIp.getVlanId()).thenReturn(1L);
-        VlanVO vlan = mock(VlanVO.class);
-        when(ipAddressDao.listByAssociatedVpc(vpcId, null)).thenReturn(Collections.singletonList(vpcIp));
-        when(vlanDao.findById(1L)).thenReturn(vlan);
+        VpcVO vpc = mock(VpcVO.class);
+        when(vpcDao.findById(vpcId)).thenReturn(vpc);
 
         stubIpAssocHelpers();
 
@@ -632,7 +613,8 @@ public class IpAddressManagerTest {
 
         ipAddressManager.applyRules(Collections.singletonList(rule), FirewallRule.Purpose.Firewall, applier, false);
 
-        verify(ipAddressDao).listByAssociatedVpc(vpcId, null);
+        verify(applier).applyRules(null, vpc, FirewallRule.Purpose.Firewall, Collections.singletonList(rule));
+        verify(ipAddressDao, never()).listByAssociatedVpc(vpcId, null);
         verify(ipAddressDao, never()).listByAssociatedNetwork(anyLong(), any());
     }
 
@@ -643,22 +625,13 @@ public class IpAddressManagerTest {
     @Test
     public void applyRulesVpcRuleErrorHandlingWithContinueOnErrorTrue() throws ResourceUnavailableException {
         long vpcId = 20L;
-        long resolvedNetworkId = 30L;
-        NetworkVO resolvedNetwork = mock(NetworkVO.class);
-        when(resolvedNetwork.getId()).thenReturn(resolvedNetworkId);
-        when(networkDao.findById(resolvedNetworkId)).thenReturn(resolvedNetwork);
-        doReturn(Collections.singletonList(resolvedNetwork)).when(vpcMgr).getVpcNetworks(vpcId);
-
-        IPAddressVO vpcIp = mock(IPAddressVO.class);
-        when(vpcIp.getVlanId()).thenReturn(1L);
-        VlanVO vlan = mock(VlanVO.class);
-        when(ipAddressDao.listByAssociatedVpc(vpcId, null)).thenReturn(Collections.singletonList(vpcIp));
-        when(vlanDao.findById(1L)).thenReturn(vlan);
+        VpcVO vpc = mock(VpcVO.class);
+        when(vpcDao.findById(vpcId)).thenReturn(vpc);
 
         stubIpAssocHelpers();
 
         NetworkRuleApplier applier = mock(NetworkRuleApplier.class);
-        when(applier.applyRules(any(), any(), any())).thenThrow(new ResourceUnavailableException("test", Network.class, 0L));
+        when(applier.applyRules(any(), any(), any(), any())).thenThrow(new ResourceUnavailableException("test", Network.class, 0L));
 
         FirewallRule rule = makeRule(null, vpcId, FirewallRule.Purpose.Firewall, FirewallRule.TrafficType.Ingress);
 

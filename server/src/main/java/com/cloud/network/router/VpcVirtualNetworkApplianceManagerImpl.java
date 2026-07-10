@@ -660,7 +660,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         }
 
         logger.debug("Found {} VPC firewall ingress rule(s) to apply as a part of domR {} start for VPC {}", firewallRulesIngress.size(), domainRouterVO, vpcId);
-        _commandSetupHelper.createFirewallRulesCommands(firewallRulesIngress, domainRouterVO, cmds, null);
+        _commandSetupHelper.createFirewallRulesCommands(firewallRulesIngress, domainRouterVO, cmds, null, vpcId);
     }
 
     protected boolean sendNetworkRulesToRouter(final long routerId, final long networkId, final boolean reprogramNetwork) throws ResourceUnavailableException {
