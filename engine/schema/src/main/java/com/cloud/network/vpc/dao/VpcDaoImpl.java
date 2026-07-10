@@ -142,7 +142,7 @@ public class VpcDaoImpl extends GenericDaoBase<VpcVO, Long> implements VpcDao {
         txn.start();
         for (String service : serviceProviderMap.keySet()) {
             for (String provider : serviceProviderMap.get(service)) {
-                VpcServiceMapVO serviceMap = new VpcServiceMapVO(vpcId, Network.Service.getService(service), Network.Provider.getProvider(provider));
+                VpcServiceMapVO serviceMap = new VpcServiceMapVO(vpcId, Network.Service.getService(service).getName(), provider);
                 _vpcSvcMap.persist(serviceMap);
             }
         }
