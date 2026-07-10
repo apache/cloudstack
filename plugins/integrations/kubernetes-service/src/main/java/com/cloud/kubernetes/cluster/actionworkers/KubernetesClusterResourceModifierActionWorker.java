@@ -951,7 +951,11 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                 if (!result.first()) {
                     logMessage(Level.INFO, "Autoscaling files missing. Adding them now", null);
                     retrieveScriptFiles();
-                    copyScripts(publicIpAddress, sshPort);
+                    try {
+                        copyScripts(publicIpAddress, sshPort);
+                    } finally {
+                        cleanupScriptFiles();
+                    }
 
                     if (!createCloudStackSecret(keys)) {
                         logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup keys for Kubernetes cluster %s",
@@ -1003,19 +1007,23 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             if (Boolean.FALSE.equals(result.first())) {
                 logMessage(Level.INFO, "PV delete script missing. Adding it now", null);
                 retrieveScriptFiles();
-                if (deletePvScriptFile != null) {
-                    copyScriptFile(publicIpAddress, sshPort, deletePvScriptFile, deletePvScriptFilename);
-                    logMessage(Level.INFO, "Executing PV deletion script (this may take several minutes)...", null);
-                    result = SshHelper.sshExecute(publicIpAddress, sshPort, getControlNodeLoginUser(),
-                            pkFile, null, command, 10000, 10000, 600000); // 10 minute timeout
-                    if (Boolean.FALSE.equals(result.first())) {
-                        logMessage(Level.ERROR, "PV deletion script failed: " + result.second(), null);
-                        throw new CloudRuntimeException(result.second());
+                try {
+                    if (deletePvScriptFile != null) {
+                        copyScriptFile(publicIpAddress, sshPort, deletePvScriptFile, deletePvScriptFilename);
+                        logMessage(Level.INFO, "Executing PV deletion script (this may take several minutes)...", null);
+                        result = SshHelper.sshExecute(publicIpAddress, sshPort, getControlNodeLoginUser(),
+                                pkFile, null, command, 10000, 10000, 600000); // 10 minute timeout
+                        if (Boolean.FALSE.equals(result.first())) {
+                            logMessage(Level.ERROR, "PV deletion script failed: " + result.second(), null);
+                            throw new CloudRuntimeException(result.second());
+                        }
+                        logMessage(Level.INFO, "PV deletion script completed successfully", null);
+                    } else {
+                        logMessage(Level.WARN, "PV delete script file not found in resources, skipping PV deletion", null);
+                        return false;
                     }
-                    logMessage(Level.INFO, "PV deletion script completed successfully", null);
-                } else {
-                    logMessage(Level.WARN, "PV delete script file not found in resources, skipping PV deletion", null);
-                    return false;
+                } finally {
+                    cleanupScriptFiles();
                 }
             } else {
                 logMessage(Level.INFO, "PV deletion script completed successfully", null);
