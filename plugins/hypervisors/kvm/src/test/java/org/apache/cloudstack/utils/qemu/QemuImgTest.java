@@ -21,7 +21,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -589,7 +589,7 @@ public class QemuImgTest {
 
     @Test
     public void commitTestBasicCommand() throws Exception {
-        doReturn(scriptMock).when(qemuImgSpy).createScript(any(), anyInt());
+        doReturn(scriptMock).when(qemuImgSpy).createScript(any(), anyLong());
         doReturn(null).when(scriptMock).execute();
         doReturn(null).when(qemuImgFileMock1).getFormat();
         doReturn("file.qcow2").when(qemuImgFileMock1).getFileName();
@@ -602,7 +602,7 @@ public class QemuImgTest {
 
     @Test
     public void commitTestWithFormat() throws Exception {
-        doReturn(scriptMock).when(qemuImgSpy).createScript(any(), anyInt());
+        doReturn(scriptMock).when(qemuImgSpy).createScript(any(), anyLong());
         doReturn(null).when(scriptMock).execute();
         doReturn(PhysicalDiskFormat.QCOW2).when(qemuImgFileMock1).getFormat();
         doReturn("file.qcow2").when(qemuImgFileMock1).getFileName();
@@ -615,7 +615,7 @@ public class QemuImgTest {
 
     @Test
     public void commitTestWithBase() throws Exception {
-        doReturn(scriptMock).when(qemuImgSpy).createScript(any(), anyInt());
+        doReturn(scriptMock).when(qemuImgSpy).createScript(any(), anyLong());
         doReturn(null).when(scriptMock).execute();
 
         doReturn(null).when(qemuImgFileMock1).getFormat();
@@ -631,7 +631,7 @@ public class QemuImgTest {
 
     @Test
     public void commitTestSkipEmptyingFiles() throws Exception {
-        doReturn(scriptMock).when(qemuImgSpy).createScript(any(), anyInt());
+        doReturn(scriptMock).when(qemuImgSpy).createScript(any(), anyLong());
         doReturn(null).when(scriptMock).execute();
 
         doReturn(null).when(qemuImgFileMock1).getFormat();
@@ -644,7 +644,7 @@ public class QemuImgTest {
 
     @Test(expected = QemuImgException.class)
     public void commitTestExecutionFails() throws Exception {
-        doReturn(scriptMock).when(qemuImgSpy).createScript(any(), anyInt());
+        doReturn(scriptMock).when(qemuImgSpy).createScript(any(), anyLong());
         doReturn("error").when(scriptMock).execute();
 
         doReturn(null).when(qemuImgFileMock1).getFormat();

@@ -949,7 +949,7 @@ public class QemuImg {
     /**
      * This was created to facilitate testing
      * */
-    protected Script createScript(String path, int timeout) {
+    protected Script createScript(String path, long timeout) {
         return new Script(path, timeout);
     }
 

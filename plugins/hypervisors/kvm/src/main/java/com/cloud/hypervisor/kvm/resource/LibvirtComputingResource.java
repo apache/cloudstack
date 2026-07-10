@@ -7192,10 +7192,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
             logger.error(errorMsg, e);
             throw new BackupException(errorMsg, isVmConsistent);
-        } catch (Exception e) {
-            String errorMsg = String.format("Creation of disk-only VM snapshot for VM [%s] failed due to %s.", vmName, e.getMessage());
-            logger.error(errorMsg, e);
-            throw new CloudRuntimeException(errorMsg, e);
         } finally {
             if (dm != null) {
                 try {
