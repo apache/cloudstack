@@ -617,10 +617,10 @@ public class AgentProperties{
     /**
      * This parameter specifies if the host must be rebooted when something goes wrong with the heartbeat.<br>
      * Data type: Boolean.<br>
-     * Default value: <code>true</code>
+     * Default value: <code>false</code>
      */
     public static final Property<Boolean> REBOOT_HOST_AND_ALERT_MANAGEMENT_ON_HEARTBEAT_TIMEOUT
-        = new Property<>("reboot.host.and.alert.management.on.heartbeat.timeout", true);
+        = new Property<>("reboot.host.and.alert.management.on.heartbeat.timeout", false);
 
     /**
      * Enables manually setting CPU's topology on KVM's VM. <br>
@@ -937,6 +937,21 @@ public class AgentProperties{
      * Time, in seconds, to wait before retrying to rebase during the incremental snapshot process.
      * */
     public static final Property<Integer> INCREMENTAL_SNAPSHOT_RETRY_REBASE_WAIT = new Property<>("incremental.snapshot.retry.rebase.wait", 60);
+
+    /**
+     * When set to <code>true</code>, executes <code>modifymacip.sh</code> (resolved via the
+     * network scripts directory) on VM NIC plug (VM start) and unplug (VM stop) to manage static
+     * ARP/NDP entries and host routes for VM interfaces.<br>
+     * The script is invoked with:<br>
+     * &nbsp;&nbsp;add:    <code>-o add -b &lt;bridge&gt; -m &lt;mac&gt; [-4 &lt;ipv4&gt;] [-6 &lt;ipv6&gt;]</code><br>
+     * &nbsp;&nbsp;delete: <code>-o delete -b &lt;bridge&gt; -m &lt;mac&gt;</code><br>
+     * A bundled reference implementation is available at
+     * <code>scripts/vm/network/vnet/modifymacip.sh</code>.<br>
+     * Set to <code>false</code> or leave unset to disable this feature.<br>
+     * Data type: Boolean.<br>
+     * Default value: <code>false</code>
+     */
+    public static final Property<Boolean> VM_NETWORK_MACIP_STATIC = new Property<>("vm.network.macip.static", false, Boolean.class);
 
 
     /**

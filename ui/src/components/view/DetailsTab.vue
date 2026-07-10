@@ -147,6 +147,21 @@
           <div v-else>{{ dataResource[item] }}</div>
         </div>
       </a-list-item>
+      <a-list-item v-else-if="item === 'secretkey' && dataResource[item]">
+        <div>
+          <strong>{{ $t('label.secretkey') }}</strong>
+          <tooltip-button
+            tooltipPlacement="right"
+            :tooltip="$t('label.copy') + ' ' + $t('label.secretkey')"
+            icon="CopyOutlined"
+            type="dashed"
+            size="small"
+            @onClick="$message.success($t('label.copied.clipboard'))"
+            :copyResource="dataResource[item]" />
+          <br/>
+          <div>{{ dataResource[item].substring(0, 20) }}...</div>
+        </div>
+      </a-list-item>
       <a-list-item v-else-if="item === 'ip6address' && ipV6Address && ipV6Address.length > 0">
         <div>
           <strong>{{ $t('label.' + String(item).toLowerCase()) }}</strong>
@@ -207,6 +222,13 @@
           </div>
         </div>
       </a-list-item>
+      <a-list-item v-else-if="item === 'provider' && $route.path.includes('/dnsserver')">
+        <div>
+          <strong>{{ $t('label.provider') }}</strong>
+          <br/>
+          <div>{{ dataResource[item] }}</div>
+        </div>
+      </a-list-item>
       <div v-else-if="item === 'backupofferingdetails'">
         <a-list-item
           v-for="(value, key) in dataResource[item]"
@@ -236,6 +258,7 @@ import HostInfo from '@/views/infra/HostInfo'
 import VmwareData from './VmwareData'
 import ObjectListTable from '@/components/view/ObjectListTable'
 import ExternalConfigurationDetails from '@/views/extension/ExternalConfigurationDetails'
+import TooltipButton from '@/components/widgets/TooltipButton'
 import { genericCompare } from '@/utils/sort'
 
 export default {
@@ -245,7 +268,8 @@ export default {
     HostInfo,
     VmwareData,
     ObjectListTable,
-    ExternalConfigurationDetails
+    ExternalConfigurationDetails,
+    TooltipButton
   },
   props: {
     resource: {
@@ -283,7 +307,7 @@ export default {
   },
   computed: {
     customDisplayItems () {
-      var items = ['ip4routes', 'ip6routes', 'privatemtu', 'publicmtu', 'provider', 'details', 'parameters', 'backupofferingdetails']
+      var items = ['ip4routes', 'ip6routes', 'privatemtu', 'publicmtu', 'provider', 'details', 'parameters', 'secretkey', 'backupofferingdetails']
       if (this.$route.meta.name === 'webhookdeliveries') {
         items.push('startdate')
         items.push('enddate')

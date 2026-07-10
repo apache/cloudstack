@@ -548,6 +548,9 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
     ResourceIconManager resourceIconManager;
     @Inject
     AsyncJobDao asyncJobDao;
+    @Inject
+    NetworkModel networkModel;
+
 
     public static String getPrettyDomainPath(String path) {
         if (path == null) {
@@ -2657,6 +2660,14 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
             response.setDetails(details);
         }
 
+        Pair<String, String> dnsZoneAndSubDomain = ApiDBUtils.findDnsZoneByNetworkId(network.getId());
+        if (StringUtils.isNotBlank(dnsZoneAndSubDomain.first())) {
+            response.setDnsZone(dnsZoneAndSubDomain.first());
+        }
+        if (StringUtils.isNotBlank(dnsZoneAndSubDomain.second())) {
+            response.setDnsSubdomain(dnsZoneAndSubDomain.second());
+        }
+
         DataCenter zone = ApiDBUtils.findZoneById(network.getDataCenterId());
         if (zone != null) {
             response.setZoneId(zone.getUuid());
@@ -3307,9 +3318,11 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         }
         response.setServices(services);
 
-        Provider serviceProvider = Provider.getProvider(result.getProviderName());
-        boolean canEnableIndividualServices = ApiDBUtils.canElementEnableIndividualServices(serviceProvider);
-        response.setCanEnableIndividualServices(canEnableIndividualServices);
+        Provider serviceProvider = networkModel.resolveProvider(result.getProviderName());
+        if (serviceProvider != null) {
+            boolean canEnableIndividualServices = ApiDBUtils.canElementEnableIndividualServices(serviceProvider);
+            response.setCanEnableIndividualServices(canEnableIndividualServices);
+        }
 
         response.setObjectName("networkserviceprovider");
         return response;
@@ -5722,6 +5735,7 @@ protected Map<String, ResourceIcon> getResourceIconsUsingOsCategory(List<Templat
 
         guiThemeResponse.setJsonConfiguration(guiThemeJoin.getJsonConfiguration());
         guiThemeResponse.setCss(guiThemeJoin.getCss());
+        guiThemeResponse.setLoginBaseDomain(guiThemeJoin.getLoginBaseDomain());
         guiThemeResponse.setResponseName("guithemes");
 
         return guiThemeResponse;

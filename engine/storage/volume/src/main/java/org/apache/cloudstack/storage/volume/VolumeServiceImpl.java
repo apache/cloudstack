@@ -87,6 +87,7 @@ import org.apache.cloudstack.storage.image.store.TemplateObject;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -1367,6 +1368,11 @@ public class VolumeServiceImpl implements VolumeService {
             primaryDataStore.setDetails(details);
 
             grantAccess(volumeInfo, destHost, primaryDataStore);
+            volumeInfo = volFactory.getVolume(volumeInfo.getId(), primaryDataStore);
+            // For Netapp ONTAP iscsiName or Lun path  is available only after grantAccess
+            String managedStoreTarget = ObjectUtils.defaultIfNull(volumeInfo.get_iScsiName(), volumeInfo.getUuid());
+            details.put(PrimaryDataStore.MANAGED_STORE_TARGET, managedStoreTarget);
+            primaryDataStore.setDetails(details);
 
             try {
                 motionSrv.copyAsync(srcTemplateInfo, destTemplateInfo, destHost, caller);
@@ -3117,6 +3123,12 @@ public class VolumeServiceImpl implements VolumeService {
         }
 
         if (volumePoolId == null || !volumePoolId.equals(vmPoolId)) {
+            Long volumeLockHostId = findVolumeLockHost(volumeToAttach);
+            if (volumeLockHostId != null && vmHostId != null && !volumeLockHostId.equals(vmHostId)) {
+                logger.info("CLVM cross-pool lock transfer required: Volume {} on pool {} lock is on host {} but VM is on host {}",
+                        volumeToAttach.getUuid(), volumePoolId, volumeLockHostId, vmHostId);
+                return true;
+            }
             return false;
         }
 

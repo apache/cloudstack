@@ -1392,6 +1392,38 @@ public class ApiConstants {
                     " a VR, CloudStack will use the same MAC address for the public NIC of all VRs. Otherwise, if \"false\", new public NICs will always have " +
                     " a new MAC address.";
 
+    // DNS provider related
+    public static final String NAME_SERVERS = "nameservers";
+    public static final String DNS_USER_NAME = "dnsusername";
+    public static final String DNS_API_KEY = "dnsapikey";
+    public static final String DNS_ZONE_ID = "dnszoneid";
+    public static final String DNS_ZONE = "dnszone";
+    public static final String DNS_RECORD = "dnsrecord";
+    public static final String DNS_SUB_DOMAIN = "dnssubdomain";
+    public static final String DNS_SERVER_ID = "dnsserverid";
+    public static final String CONTENT = "content";
+    public static final String CONTENTS = "contents";
+    public static final String PUBLIC_DOMAIN_SUFFIX = "publicdomainsuffix";
+    public static final String AUTHORITATIVE = "authoritative";
+    public static final String KIND = "kind";
+    public static final String DNS_SEC = "dnssec";
+    public static final String TTL = "ttl";
+    public static final String CHANGE_TYPE = "changetype";
+    public static final String RECORDS = "records";
+    public static final String RR_SETS = "rrsets";
+    public static final String X_API_KEY = "X-API-Key";
+    public static final String DISABLED = "disabled";
+    public static final String CONTENT_TYPE = "Content-Type";
+    public static final String NATIVE_ZONE = "Native";
+    public static final String NIC_DNS_NAME = "nicdnsname";
+    public static final String TIME_STAMP = "timestamp";
+    public static final String INSTANCE_ID = "instanceId";
+    public static final String OLD_STATE = "oldState";
+    public static final String NEW_STATE = "newState";
+    public static final String OLD_HOST_NAME = "oldHostName";
+    public static final String EXISTING = "existing";
+    public static final String UNMANAGE = "unmanage";
+
     public static final String PARAMETER_DESCRIPTION_ACTIVATION_RULE = "Quota tariff's activation rule. It can receive a JS script that results in either " +
             "a boolean or a numeric value: if it results in a boolean value, the tariff value will be applied according to the result; if it results in a numeric value, the " +
             "numeric value will be applied; if the result is neither a boolean nor a numeric value, the tariff will not be applied. If the rule is not informed, the tariff " +
@@ -1418,6 +1450,7 @@ public class ApiConstants {
     public static final String CSS = "css";
 
     public static final String JSON_CONFIGURATION = "jsonconfiguration";
+    public static final String LOGIN_BASE_DOMAIN = "loginbasedomain";
 
     public static final String COMMON_NAMES = "commonnames";
 
@@ -1497,7 +1530,7 @@ public class ApiConstants {
     }
 
     public enum HostDetails {
-        all, capacity, events, stats, min;
+        all, capacity, core, events, stats, min;
     }
 
     public enum VMDetails {

@@ -7052,7 +7052,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                         continue;
                     }
                     VolumeObjectTO volumeTO = (VolumeObjectTO) diskTO.getData();
-                    if (!diskPath.equals(volumeTO.getPath()) && !diskPath.equals(diskTO.getPath())) {
+                    if (!diskPath.substring(diskPath.lastIndexOf(File.separator) + 1).equals(volumeTO.getPath())) {
                         continue;
                     }
                     DataStoreTO dataStore = volumeTO.getDataStore();
@@ -7192,6 +7192,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
             logger.error(errorMsg, e);
             throw new BackupException(errorMsg, isVmConsistent);
+        } catch (Exception e) {
+            String errorMsg = String.format("Creation of disk-only VM snapshot for VM [%s] failed due to %s.", vmName, e.getMessage());
+            logger.error(errorMsg, e);
+            throw new CloudRuntimeException(errorMsg, e);
         } finally {
             if (dm != null) {
                 try {
@@ -7227,26 +7231,30 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
                 mapVolumeToSnapshotSize.put(volumeObjectTO.getUuid(), getFileSize(currentDeltaFullPath));
             }
-        } catch (LibvirtException | QemuImgException e) {
+        } catch (Exception e) {
             logger.error("Exception while creating volume delta for VM [{}]. Deleting leftover deltas.", vmName, e);
-            for (Pair<VolumeObjectTO, String> volumeObjectTOAndNewPath : volumeTosAndNewPaths) {
-                VolumeObjectTO volumeObjectTO = volumeObjectTOAndNewPath.first();
-                Long volSize = mapVolumeToSnapshotSize.get(volumeObjectTO.getUuid());
-                if (volSize == null) {
-                    continue;
-                }
-                PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO) volumeObjectTO.getDataStore();
-                KVMStoragePool kvmStoragePool = getStoragePoolMgr().getStoragePool(primaryDataStoreTO.getPoolType(), primaryDataStoreTO.getUuid());
-                try {
-                    Files.deleteIfExists(Path.of(kvmStoragePool.getLocalPathFor(volumeObjectTOAndNewPath.second())));
-                } catch (IOException ex) {
-                    logger.warn("Tried to delete leftover delta at [{}]. Failed.", volumeObjectTOAndNewPath.second(), ex);
-                }
-            }
+            cleanupLeftoverDeltas(volumeTosAndNewPaths, mapVolumeToSnapshotSize);
             throw new BackupException(String.format("An exception was caught during the delta creation for VM [%s]. The leftover deltas have been deleted.", vmName), true);
         }
 
         return mapVolumeToSnapshotSize;
+    }
+
+    protected void cleanupLeftoverDeltas(List<Pair<VolumeObjectTO, String>> volumeTosAndNewPaths, Map<String, Long> mapVolumeToSnapshotSize) {
+        for (Pair<VolumeObjectTO, String> volumeObjectTOAndNewPath : volumeTosAndNewPaths) {
+            VolumeObjectTO volumeObjectTO = volumeObjectTOAndNewPath.first();
+            Long volSize = mapVolumeToSnapshotSize.get(volumeObjectTO.getUuid());
+            if (volSize == null) {
+                continue;
+            }
+            PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO) volumeObjectTO.getDataStore();
+            KVMStoragePool kvmStoragePool = getStoragePoolMgr().getStoragePool(primaryDataStoreTO.getPoolType(), primaryDataStoreTO.getUuid());
+            try {
+                Files.deleteIfExists(Path.of(kvmStoragePool.getLocalPathFor(volumeObjectTOAndNewPath.second())));
+            } catch (IOException ex) {
+                logger.warn("Tried to delete leftover delta at [{}]. Failed.", volumeObjectTOAndNewPath.second(), ex);
+            }
+        }
     }
 
     public void mergeDeltaForStoppedVm(DeltaMergeTreeTO deltaMergeTreeTO) throws QemuImgException, IOException, LibvirtException {

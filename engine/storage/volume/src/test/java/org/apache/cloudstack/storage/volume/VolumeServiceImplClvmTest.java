@@ -167,14 +167,49 @@ public class VolumeServiceImplClvmTest {
     }
 
     @Test
-    public void testIsLockTransferRequired_DifferentPools() {
+    public void testIsLockTransferRequired_DifferentPools_LockOnDifferentHost() {
+        when(volumeService.findVolumeLockHost(volumeInfoMock)).thenReturn(HOST_ID_2);
+
+        assertTrue(volumeService.isLockTransferRequired(
+                volumeInfoMock, StoragePoolType.CLVM, StoragePoolType.CLVM,
+                POOL_ID_1, POOL_ID_2, HOST_ID_1));
+    }
+
+    @Test
+    public void testIsLockTransferRequired_DifferentPools_LockOnSameHost() {
+        when(volumeService.findVolumeLockHost(volumeInfoMock)).thenReturn(HOST_ID_1);
+
         assertFalse(volumeService.isLockTransferRequired(
                 volumeInfoMock, StoragePoolType.CLVM, StoragePoolType.CLVM,
                 POOL_ID_1, POOL_ID_2, HOST_ID_1));
     }
 
     @Test
-    public void testIsLockTransferRequired_NullPoolIds() {
+    public void testIsLockTransferRequired_DifferentPools_NoLockHost() {
+        when(volumeService.findVolumeLockHost(volumeInfoMock)).thenReturn(null);
+
+        assertFalse(volumeService.isLockTransferRequired(
+                volumeInfoMock, StoragePoolType.CLVM, StoragePoolType.CLVM,
+                POOL_ID_1, POOL_ID_2, HOST_ID_1));
+    }
+
+    @Test
+    public void testIsLockTransferRequired_NullPoolIds_LockOnDifferentHost() {
+        when(volumeService.findVolumeLockHost(volumeInfoMock)).thenReturn(HOST_ID_2);
+
+        assertTrue(volumeService.isLockTransferRequired(
+                volumeInfoMock, StoragePoolType.CLVM, StoragePoolType.CLVM,
+                null, POOL_ID_1, HOST_ID_1));
+
+        assertTrue(volumeService.isLockTransferRequired(
+                volumeInfoMock, StoragePoolType.CLVM, StoragePoolType.CLVM,
+                POOL_ID_1, null, HOST_ID_1));
+    }
+
+    @Test
+    public void testIsLockTransferRequired_NullPoolIds_NoLockHost() {
+        when(volumeService.findVolumeLockHost(volumeInfoMock)).thenReturn(null);
+
         assertFalse(volumeService.isLockTransferRequired(
                 volumeInfoMock, StoragePoolType.CLVM, StoragePoolType.CLVM,
                 null, POOL_ID_1, HOST_ID_1));

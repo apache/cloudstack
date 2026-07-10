@@ -30,6 +30,9 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.BackupRepositoryService;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.datacenter.DataCenterIpv4GuestSubnet;
+import org.apache.cloudstack.dns.DnsRecord;
+import org.apache.cloudstack.dns.DnsServer;
+import org.apache.cloudstack.dns.DnsZone;
 import org.apache.cloudstack.extension.Extension;
 import org.apache.cloudstack.extension.ExtensionCustomAction;
 import org.apache.cloudstack.gpu.GpuCard;
@@ -873,6 +876,7 @@ public class EventTypes {
     public static final String EVENT_EXTENSION_DELETE = "EXTENSION.DELETE";
     public static final String EVENT_EXTENSION_RESOURCE_REGISTER = "EXTENSION.RESOURCE.REGISTER";
     public static final String EVENT_EXTENSION_RESOURCE_UNREGISTER = "EXTENSION.RESOURCE.UNREGISTER";
+    public static final String EVENT_EXTENSION_RESOURCE_UPDATE = "EXTENSION.RESOURCE.UPDATE";
     public static final String EVENT_EXTENSION_CUSTOM_ACTION_ADD = "EXTENSION.CUSTOM.ACTION.ADD";
     public static final String EVENT_EXTENSION_CUSTOM_ACTION_UPDATE = "EXTENSION.CUSTOM.ACTION.UPDATE";
     public static final String EVENT_EXTENSION_CUSTOM_ACTION_DELETE = "EXTENSION.CUSTOM.ACTION.DELETE";
@@ -883,6 +887,17 @@ public class EventTypes {
     // Backup Repository
     public static final String EVENT_BACKUP_REPOSITORY_ADD = "BACKUP.REPOSITORY.ADD";
     public static final String EVENT_BACKUP_REPOSITORY_UPDATE = "BACKUP.REPOSITORY.UPDATE";
+
+    // DNS Framework Events
+    public static final String EVENT_DNS_SERVER_ADD = "DNS.SERVER.ADD";
+    public static final String EVENT_DNS_SERVER_UPDATE = "DNS.SERVER.UPDATE";
+    public static final String EVENT_DNS_SERVER_DELETE = "DNS.SERVER.DELETE";
+    public static final String EVENT_DNS_ZONE_CREATE = "DNS.ZONE.CREATE";
+    public static final String EVENT_DNS_ZONE_UPDATE = "DNS.ZONE.UPDATE";
+    public static final String EVENT_DNS_ZONE_DELETE = "DNS.ZONE.DELETE";
+    public static final String EVENT_DNS_RECORD_CREATE = "DNS.RECORD.CREATE";
+    public static final String EVENT_DNS_RECORD_DELETE = "DNS.RECORD.DELETE";
+    public static final String EVENT_DNS_NAME_COLLISION = "DNS.NAME.COLLISION";
 
     static {
 
@@ -1442,6 +1457,17 @@ public class EventTypes {
         // Backup Repository
         entityEventDetails.put(EVENT_BACKUP_REPOSITORY_ADD, BackupRepositoryService.class);
         entityEventDetails.put(EVENT_BACKUP_REPOSITORY_UPDATE, BackupRepositoryService.class);
+
+        // DNS Framework Events
+        entityEventDetails.put(EVENT_DNS_SERVER_ADD, DnsServer.class);
+        entityEventDetails.put(EVENT_DNS_SERVER_UPDATE, DnsServer.class);
+        entityEventDetails.put(EVENT_DNS_SERVER_DELETE, DnsServer.class);
+        entityEventDetails.put(EVENT_DNS_ZONE_CREATE, DnsZone.class);
+        entityEventDetails.put(EVENT_DNS_ZONE_UPDATE, DnsZone.class);
+        entityEventDetails.put(EVENT_DNS_ZONE_DELETE, DnsZone.class);
+        entityEventDetails.put(EVENT_DNS_RECORD_CREATE, DnsRecord.class);
+        entityEventDetails.put(EVENT_DNS_RECORD_DELETE, DnsRecord.class);
+
     }
 
     public static boolean isNetworkEvent(String eventType) {

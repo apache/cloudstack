@@ -573,7 +573,11 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             final VolumeObjectTO newVol = new VolumeObjectTO();
             newVol.setPath(vol.getName());
-            newVol.setSize(volume.getSize());
+            if (StoragePoolType.CLVM_NG.equals(primaryStore.getPoolType()) && vol != null && vol.getVirtualSize() > 0) {
+                newVol.setSize(vol.getVirtualSize());
+            } else {
+                newVol.setSize(volume.getSize());
+            }
             if (vol.getQemuEncryptFormat() != null) {
                 newVol.setEncryptFormat(vol.getQemuEncryptFormat().toString());
             }
@@ -2762,7 +2766,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         QemuImgFile destFile = new QemuImgFile(snapshotPath);
         destFile.setFormat(PhysicalDiskFormat.QCOW2);
 
-        QemuImg q = new QemuImg(wait);
+        QemuImg q = new QemuImg(wait * 1000L);
         q.convert(srcFile, destFile, options, qemuObjects, qemuImageOpts, null, true);
     }
 

@@ -19,9 +19,11 @@
 
 package org.apache.cloudstack.storage.feign.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonValue;
 
 import java.util.List;
 import java.util.Objects;
@@ -71,6 +73,7 @@ public class Igroup {
             this.value = value;
         }
 
+        @JsonValue
         public String getValue() {
             return value;
         }
@@ -80,9 +83,11 @@ public class Igroup {
             return String.valueOf(value);
         }
 
+        @JsonCreator
         public static OsTypeEnum fromValue(String text) {
+            if (text == null) return null;
             for (OsTypeEnum b : OsTypeEnum.values()) {
-                if (String.valueOf(b.value).equals(text)) {
+                if (text.equalsIgnoreCase(b.value)) {
                     return b;
                 }
             }
@@ -122,6 +127,7 @@ public class Igroup {
             this.value = value;
         }
 
+        @JsonValue
         public String getValue() {
             return value;
         }
@@ -131,9 +137,11 @@ public class Igroup {
             return String.valueOf(value);
         }
 
+        @JsonCreator
         public static ProtocolEnum fromValue(String text) {
+            if (text == null) return null;
             for (ProtocolEnum b : ProtocolEnum.values()) {
-                if (String.valueOf(b.value).equals(text)) {
+                if (text.equalsIgnoreCase(b.value)) {
                     return b;
                 }
             }

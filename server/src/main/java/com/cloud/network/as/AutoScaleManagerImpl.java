@@ -1482,7 +1482,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         }
 
         // Validate Provider
-        Network.Provider provider = Network.Provider.getProvider(cmd.getProvider());
+        Network.Provider provider = networkModel.resolveProvider(cmd.getProvider());
         if (provider == null) {
             throw new InvalidParameterValueException("The Provider " + cmd.getProvider() + " does not exist; Unable to create Counter");
         }
@@ -1551,7 +1551,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         }
         String providerStr = cmd.getProvider();
         if (providerStr != null) {
-            Network.Provider provider = Network.Provider.getProvider(providerStr);
+            Network.Provider provider = networkModel.resolveProvider(providerStr);
             if (provider == null) {
                 throw new InvalidParameterValueException("The Provider " + providerStr + " does not exist; Unable to list Counter");
             }

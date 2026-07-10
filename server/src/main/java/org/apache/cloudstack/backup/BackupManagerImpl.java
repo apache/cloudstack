@@ -47,6 +47,7 @@ import com.cloud.vm.VmDiskInfo;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.cloud.utils.DomainHelper;
+import com.cloud.utils.EnumUtils;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.InternalIdentity;
@@ -261,6 +262,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
     private static Map<String, BackupProvider> backupProvidersMap = new HashMap<>();
     private List<BackupProvider> backupProviders;
+
+    private static final List<Backup.Status> INVALID_BACKUP_STATUS = List.of(Backup.Status.Expunged, Backup.Status.Removed);
 
     public static final String KBOSS_BACKUP_PROVIDER = "kboss";
 
@@ -1205,6 +1208,20 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
     }
 
+    private Backup.Status validateBackupStatus(final String backupStatus) {
+        if (backupStatus == null) {
+            return null;
+        }
+
+        Backup.Status status = EnumUtils.getEnumIgnoreCase(Backup.Status.class, backupStatus);
+        if (status == null || INVALID_BACKUP_STATUS.contains(status)) {
+            throw new InvalidParameterValueException(String.format("Invalid backup status: %s. Valid values are: " +
+                    "Allocated, Queued, BackingUp, BackedUp, Error, Failed, Restoring.", backupStatus));
+        }
+
+        return status;
+    }
+
     @Override
     public Pair<List<Backup>, Integer> listBackups(final ListBackupsCmd cmd) {
         final Long id = cmd.getId();
@@ -1212,6 +1229,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         final String name = cmd.getName();
         final Long zoneId = cmd.getZoneId();
         final Long backupOfferingId = cmd.getBackupOfferingId();
+        final Backup.Status backupStatus = validateBackupStatus(cmd.getBackupStatus());
         final Account caller = CallContext.current().getCallingAccount();
         final String keyword = cmd.getKeyword();
         List<Long> permittedAccounts = new ArrayList<Long>();
@@ -1240,6 +1258,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("zoneId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
         sb.and("backupOfferingId", sb.entity().getBackupOfferingId(), SearchCriteria.Op.EQ);
+        // Tombstoned chain backups (Status.Hidden) are never shown to users; they exist only so the
+        // incremental chain GC can sweep them once their last descendant is deleted.
+        sb.and("statusNeq", sb.entity().getStatus(), SearchCriteria.Op.NEQ);
+        sb.and("backupStatus", sb.entity().getStatus(), SearchCriteria.Op.EQ);
 
         if (keyword != null) {
             sb.and().op("keywordName", sb.entity().getName(), SearchCriteria.Op.LIKE);
@@ -1251,6 +1273,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         SearchCriteria<BackupVO> sc = sb.create();
         accountManager.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        sc.setParameters("statusNeq", Backup.Status.Hidden);
 
         if (id != null) {
             sc.setParameters("id", id);
@@ -1272,6 +1295,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             sc.setParameters("backupOfferingId", backupOfferingId);
         }
 
+        sc.setParametersIfNotNull("backupStatus", backupStatus);
+
         if (keyword != null) {
             String keywordMatch = "%" + keyword + "%";
             sc.setParameters("keywordName", keywordMatch);
@@ -1290,7 +1315,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             vm = guru.importVirtualMachineFromBackup(zoneId, domainId, accountId, userId, vmInternalName, backup, getBackupProvider(offering.getProvider()));
         } catch (final Exception e) {
             logger.error(String.format("Failed to import VM [vmInternalName: %s] from backup restoration [%s] with hypervisor [type: %s] due to: [%s].", vmInternalName,
-                    ReflectionToStringBuilderUtils.reflectOnlySelectedFields(backup, "id", "uuid", "vmId", "externalId", "backupType"), hypervisorType, e.getMessage()), e);
+                    ReflectionToStringBuilderUtils.reflectOnlySelectedFields(backup, "id", "uuid", "vmId", "externalId", "type"), hypervisorType, e.getMessage()), e);
             ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_BACKUP_RESTORE,
                     String.format("Failed to import Instance %s from Backup %s with hypervisor [type: %s]", vmInternalName, backup.getUuid(), hypervisorType),
                     vm.getId(), ApiCommandResourceType.VirtualMachine.toString(),0);
@@ -1734,7 +1759,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         validateHostIdParameter(hostId, callerAccount);
 
         if (vm.getBackupOfferingId() != null && !BackupEnableAttachDetachVolumes.value()) {
-            throw new CloudRuntimeException("The selected Instance has backups, cannot restore and attach Volume to the Instance.");
+            throw new CloudRuntimeException("The selected Instance is attached to a backup offering and, thus, it is not possible to restore and attach Volumes from backups to the Instance.");
         }
 
         if (backup.getZoneId() != vm.getDataCenterId()) {
@@ -1868,6 +1893,15 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                      reservationDao, resourceLimitMgr)) {
             boolean result = backupProvider.deleteBackup(backup, forced);
             if (result) {
+                // Chain-aware providers (e.g. NAS) physically remove several backups per call
+                // (leaf + swept delete-pending ancestors) and decrement resource count/usage and
+                // remove each DB row themselves, exactly once per removed backup. Decrementing or
+                // removing again here would double-handle and destroy delete-pending tombstones,
+                // so defer entirely to the provider for those.
+                if (backupProvider.handlesChainDeleteResourceAccounting()) {
+                    checkAndGenerateUsageForLastBackupDeletedAfterOfferingRemove(vm, backup);
+                    return true;
+                }
                 resourceLimitMgr.decrementResourceCount(backup.getAccountId(), Resource.ResourceType.backup);
                 resourceLimitMgr.decrementResourceCount(backup.getAccountId(), Resource.ResourceType.backup_storage, backupSize);
                 if (backupDao.remove(backup.getId())) {
@@ -2674,9 +2708,14 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (isDisabled(zoneId)) {
             return new CapacityVO(null, zoneId, null, null, 0L, 0L, Capacity.CAPACITY_TYPE_BACKUP_STORAGE);
         }
-        final BackupProvider backupProvider = getBackupProvider(zoneId);
-        Pair<Long, Long> backupUsage = backupProvider.getBackupStorageStats(zoneId);
-        return new CapacityVO(null, zoneId, null, null, backupUsage.first(), backupUsage.second(), Capacity.CAPACITY_TYPE_BACKUP_STORAGE);
+        try {
+            final BackupProvider backupProvider = getBackupProvider(zoneId);
+            Pair<Long, Long> backupUsage = backupProvider.getBackupStorageStats(zoneId);
+            return new CapacityVO(null, zoneId, null, null, backupUsage.first(), backupUsage.second(), Capacity.CAPACITY_TYPE_BACKUP_STORAGE);
+        } catch (CloudRuntimeException e) {
+            logger.warn("Backup provider not found for zone {}: {}", zoneId, e.getMessage());
+            return new CapacityVO(null, zoneId, null, null, 0L, 0L, Capacity.CAPACITY_TYPE_BACKUP_STORAGE);
+        }
     }
 
     @Override

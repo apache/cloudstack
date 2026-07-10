@@ -81,16 +81,21 @@ public class KeycloakOAuth2Provider extends AdapterBase implements UserOAuth2Aut
 
     @Override
     public boolean verifyUser(String email, String secretCode) {
+        return verifyUser(email, secretCode, null);
+    }
+
+    @Override
+    public boolean verifyUser(String email, String secretCode, Long domainId) {
         if (StringUtils.isAnyEmpty(email, secretCode)) {
             throw new CloudAuthenticationException("Either email or secret code should not be null/empty");
         }
 
-        OauthProviderVO providerVO = oauthProviderDao.findByProvider(getName());
+        OauthProviderVO providerVO = oauthProviderDao.findByProviderAndDomainWithGlobalFallback(getName(), domainId);
         if (providerVO == null) {
             throw new CloudAuthenticationException("Keycloak provider is not registered, so user cannot be verified");
         }
 
-        String verifiedEmail = verifyCodeAndFetchEmail(secretCode);
+        String verifiedEmail = verifySecretCodeAndFetchEmail(secretCode, domainId);
         if (StringUtils.isBlank(verifiedEmail) || !email.equals(verifiedEmail)) {
             throw new CloudRuntimeException("Unable to verify the email address with the provided secret");
         }
@@ -100,8 +105,13 @@ public class KeycloakOAuth2Provider extends AdapterBase implements UserOAuth2Aut
     }
 
     @Override
-    public String verifyCodeAndFetchEmail(String secretCode) {
-        OauthProviderVO provider = oauthProviderDao.findByProvider(getName());
+    public String verifySecretCodeAndFetchEmail(String secretCode) {
+        return verifySecretCodeAndFetchEmail(secretCode, null);
+    }
+
+    @Override
+    public String verifySecretCodeAndFetchEmail(String secretCode, Long domainId) {
+        OauthProviderVO provider = oauthProviderDao.findByProviderAndDomainWithGlobalFallback(getName(), domainId);
         if (provider == null) {
             throw new CloudAuthenticationException("Keycloak provider is not registered, so user cannot be verified");
         }
