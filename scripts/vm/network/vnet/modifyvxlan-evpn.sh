@@ -82,6 +82,8 @@ addVxlan() {
     bridge link show|grep ${VXLAN_BR}|awk '{print $2}'|grep "^${VXLAN_DEV}\$" > /dev/null
     if [[ $? -gt 0 ]]; then
         ip link set ${VXLAN_DEV} master ${VXLAN_BR}
+        bridge link set dev ${VXLAN_DEV} neigh_suppress on
+        bridge link set dev ${VXLAN_DEV} learning off
     fi
 }
 
