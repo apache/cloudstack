@@ -25,7 +25,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
@@ -41,8 +40,8 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -62,12 +61,10 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.secstorage.heuristics.HeuristicType;
 import org.apache.cloudstack.storage.command.BackupDeleteAnswer;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.heuristics.HeuristicRuleHelper;
 import org.apache.cloudstack.storage.to.BackupDeltaTO;
@@ -146,12 +143,6 @@ public class KbossBackupProviderTest {
     private VolumeVO volumeVoMock;
 
     @Mock
-    private SnapshotDataStoreDao snapshotDataStoreDaoMock;
-
-    @Mock
-    private SnapshotDataStoreVO snapshotDataStoreVoMock;
-
-    @Mock
     private VMSnapshotDao vmSnapshotDaoMock;
 
     @Mock
@@ -186,9 +177,6 @@ public class KbossBackupProviderTest {
 
     @Mock
     private BackupDetailVO backupDetailVoMock;
-
-    @Mock
-    private ConfigKey<Integer> backupChainSize;
 
     @Mock
     private DataStoreManager dataStoreManagerMock;
@@ -299,7 +287,7 @@ public class KbossBackupProviderTest {
     private long vmId = 319832;
     private long volumeId = 41;
 
-    Long backupId = 312L;
+    private Long backupId = 312L;
 
     @Before
     public void setup() {
@@ -371,7 +359,7 @@ public class KbossBackupProviderTest {
 
     @Test
     public void removeVMFromBackupOfferingTestWithActiveChain() {
-        doReturn(internalBackupJoinVoMock).when(internalBackupJoinDaoMock).findCurrent(vmId);
+        doReturn(List.of(internalBackupJoinVoMock)).when(internalBackupJoinDaoMock).listCurrents(vmId, true);
         doReturn(true).when(kbossBackupProviderSpy).mergeCurrentBackupDeltas(any());
         doReturn(VirtualMachine.State.Stopped).when(virtualMachineMock).getState();
 
@@ -382,24 +370,11 @@ public class KbossBackupProviderTest {
     }
 
     @Test
-    public void removeVMFromBackupOfferingTestFailedToEndChain() {
-        doReturn(VirtualMachine.State.Stopped).when(userVmVOMock).getState();
-        doReturn(false).when(kbossBackupProviderSpy).endBackupChain(any());
-        doReturn(userVmVOMock).when(userVmDaoMock).findById(any());
-        doNothing().when(vmInstanceDetailsDaoMock).addDetail(Mockito.anyLong(), any(), any(), Mockito.anyBoolean());
-
-        boolean result = kbossBackupProviderSpy.removeVMFromBackupOffering(userVmVOMock);
-
-        verify(vmInstanceDetailsDaoMock, Mockito.times(1)).addDetail(Mockito.anyLong(), any(), any(), Mockito.anyBoolean());
-        verify(userVmDaoMock, Mockito.times(1)).update(Mockito.anyLong(), any());
-        assertFalse(result);
-    }
-
-    @Test
     public void getBackupJoinParentsTestIncludeRemovedEmptyList() {
         Date date = DateUtil.now();
         doReturn(date).when(backupVoMock).getDate();
-        doReturn(new ArrayList<>()).when(internalBackupJoinDaoMock).listIncludingRemovedByVmIdAndBeforeDateOrderByCreatedDesc(vmId, date);
+        doReturn(null).when(backupVoMock).getBackupScheduleId();
+        doReturn(new ArrayList<>()).when(internalBackupJoinDaoMock).listIncludingRemovedByVmIdAndBeforeDateOrderByCreatedDesc(vmId, null, date);
 
         List<InternalBackupJoinVO> result = kbossBackupProviderSpy.getBackupJoinParents(backupVoMock, true);
 
@@ -410,8 +385,9 @@ public class KbossBackupProviderTest {
     public void getBackupJoinParentsTestIncludeRemovedAncestorIsEndOfChain() {
         Date date = DateUtil.now();
         doReturn(date).when(backupVoMock).getDate();
+        doReturn(null).when(backupVoMock).getBackupScheduleId();
         doReturn(true).when(internalBackupJoinVoMock).getEndOfChain();
-        doReturn(List.of(internalBackupJoinVoMock)).when(internalBackupJoinDaoMock).listIncludingRemovedByVmIdAndBeforeDateOrderByCreatedDesc(vmId, date);
+        doReturn(List.of(internalBackupJoinVoMock)).when(internalBackupJoinDaoMock).listIncludingRemovedByVmIdAndBeforeDateOrderByCreatedDesc(vmId, null, date);
 
         List<InternalBackupJoinVO> result = kbossBackupProviderSpy.getBackupJoinParents(backupVoMock, true);
 
@@ -422,12 +398,13 @@ public class KbossBackupProviderTest {
     public void getBackupJoinParentsTestIncludeRemovedAncestorMultipleAncestors() {
         Date date = DateUtil.now();
         doReturn(date).when(backupVoMock).getDate();
+        doReturn(null).when(backupVoMock).getBackupScheduleId();
         InternalBackupJoinVO internalBackupJoinVoMock1 = Mockito.mock(InternalBackupJoinVO.class);
         doReturn(false).when(internalBackupJoinVoMock1).getEndOfChain();
         InternalBackupJoinVO internalBackupJoinVoMock2 = Mockito.mock(InternalBackupJoinVO.class);
         doReturn(false).when(internalBackupJoinVoMock2).getEndOfChain();
         doReturn(true).when(internalBackupJoinVoMock).getEndOfChain();
-        doReturn(List.of(internalBackupJoinVoMock1, internalBackupJoinVoMock2, internalBackupJoinVoMock)).when(internalBackupJoinDaoMock).listIncludingRemovedByVmIdAndBeforeDateOrderByCreatedDesc(vmId, date);
+        doReturn(List.of(internalBackupJoinVoMock1, internalBackupJoinVoMock2, internalBackupJoinVoMock)).when(internalBackupJoinDaoMock).listIncludingRemovedByVmIdAndBeforeDateOrderByCreatedDesc(vmId, null, date);
 
         List<InternalBackupJoinVO> result = kbossBackupProviderSpy.getBackupJoinParents(backupVoMock, true);
 
@@ -438,12 +415,13 @@ public class KbossBackupProviderTest {
     public void getBackupJoinParentsTestIncludeRemovedAncestorMultipleAncestorsNoEndOfChain() {
         Date date = DateUtil.now();
         doReturn(date).when(backupVoMock).getDate();
+        doReturn(null).when(backupVoMock).getBackupScheduleId();
         InternalBackupJoinVO internalBackupJoinVoMock1 = Mockito.mock(InternalBackupJoinVO.class);
         doReturn(false).when(internalBackupJoinVoMock1).getEndOfChain();
         InternalBackupJoinVO internalBackupJoinVoMock2 = Mockito.mock(InternalBackupJoinVO.class);
         doReturn(false).when(internalBackupJoinVoMock2).getEndOfChain();
         doReturn(false).when(internalBackupJoinVoMock).getEndOfChain();
-        doReturn(List.of(internalBackupJoinVoMock1, internalBackupJoinVoMock2, internalBackupJoinVoMock)).when(internalBackupJoinDaoMock).listIncludingRemovedByVmIdAndBeforeDateOrderByCreatedDesc(vmId, date);
+        doReturn(List.of(internalBackupJoinVoMock1, internalBackupJoinVoMock2, internalBackupJoinVoMock)).when(internalBackupJoinDaoMock).listIncludingRemovedByVmIdAndBeforeDateOrderByCreatedDesc(vmId, null, date);
 
         List<InternalBackupJoinVO> result = kbossBackupProviderSpy.getBackupJoinParents(backupVoMock, true);
 
@@ -454,12 +432,13 @@ public class KbossBackupProviderTest {
     public void getBackupJoinParentsTestNoRemovedAncestorMultipleAncestorsNoEndOfChain() {
         Date date = DateUtil.now();
         doReturn(date).when(backupVoMock).getDate();
+        doReturn(null).when(backupVoMock).getBackupScheduleId();
         InternalBackupJoinVO internalBackupJoinVoMock1 = Mockito.mock(InternalBackupJoinVO.class);
         doReturn(false).when(internalBackupJoinVoMock1).getEndOfChain();
         InternalBackupJoinVO internalBackupJoinVoMock2 = Mockito.mock(InternalBackupJoinVO.class);
         doReturn(false).when(internalBackupJoinVoMock2).getEndOfChain();
         doReturn(false).when(internalBackupJoinVoMock).getEndOfChain();
-        doReturn(List.of(internalBackupJoinVoMock1, internalBackupJoinVoMock2, internalBackupJoinVoMock)).when(internalBackupJoinDaoMock).listByBackedUpAndVmIdAndDateBeforeOrAfterOrderBy(vmId, date, true,
+        doReturn(List.of(internalBackupJoinVoMock1, internalBackupJoinVoMock2, internalBackupJoinVoMock)).when(internalBackupJoinDaoMock).listByBackedUpAndVmIdAndDateBeforeOrAfterOrderBy(vmId, null, date, true,
                 false);
 
         List<InternalBackupJoinVO> result = kbossBackupProviderSpy.getBackupJoinParents(backupVoMock, false);
@@ -668,32 +647,30 @@ public class KbossBackupProviderTest {
     }
 
     @Test
-    public void mapVolumesToVmSnapshotReferencesTestVmSnapshotVOListIsEmpty() {
-        kbossBackupProviderSpy.mapVolumesToVmSnapshotReferences(List.of(), List.of());
+    public void mapVolumesToVmSnapshotReferencesTestVmSnapshotAndBackupVOListIsEmpty() {
+        kbossBackupProviderSpy.mapVolumesToVmSnapshotAndBackupReferences(List.of(), List.of(), List.of());
 
         verify(vmSnapshotHelperMock, Mockito.never()).getVolumeSnapshotsAssociatedWithKvmDiskOnlyVmSnapshot(1);
     }
 
     @Test
-    public void mapVolumesToVmSnapshotReferencesTestVmSnapshotVOListHasTwoElements() {
+    public void mapVolumesToVmSnapshotAndBackupReferencesTestVmSnapshotAndBackupVOListHasTwoElements() {
         VMSnapshotVO vmSnapshotVoMock1 = Mockito.mock(VMSnapshotVO.class);
         doReturn(1L).when(vmSnapshotVoMock).getId();
         doReturn(2L).when(vmSnapshotVoMock1).getId();
-        doNothing().when(kbossBackupProviderSpy).mapVolumesToSnapshotReferences(Mockito.anyList(), Mockito.anyList(), anyMap());
 
-        kbossBackupProviderSpy.mapVolumesToVmSnapshotReferences(List.of(), List.of(vmSnapshotVoMock, vmSnapshotVoMock1));
+        kbossBackupProviderSpy.mapVolumesToVmSnapshotAndBackupReferences(List.of(), List.of(vmSnapshotVoMock, vmSnapshotVoMock1), List.of());
 
         verify(vmSnapshotHelperMock, times(1)).getVolumeSnapshotsAssociatedWithKvmDiskOnlyVmSnapshot(1);
         verify(vmSnapshotHelperMock, times(1)).getVolumeSnapshotsAssociatedWithKvmDiskOnlyVmSnapshot(2);
-        verify(kbossBackupProviderSpy, times(1)).mapVolumesToSnapshotReferences(Mockito.anyList(), Mockito.anyList(), anyMap());
     }
 
     @Test
     public void createDeltaReferencesTestFullBackupEndOfChain() {
         doReturn(internalBackupDataStoreVoMock).when(internalBackupDataStoreDaoMock).persist(any());
 
-        kbossBackupProviderSpy.createDeltaReferences(true,
-                true, true, backupVoMock, List.of(), List.of(), new HashMap<>(), new HashMap<>(), null, new KbossTO(volumeObjectToMock, List.of()));
+        kbossBackupProviderSpy.createDeltaReferences(true, true, backupVoMock, List.of(), List.of(), new HashMap<>(), new HashMap<>(), null, new KbossTO(volumeObjectToMock,
+                new LinkedList<>()));
 
         verify(internalBackupDataStoreDaoMock, Mockito.times(1)).persist(any());
     }
@@ -702,8 +679,8 @@ public class KbossBackupProviderTest {
     public void createDeltaReferencesTestIsolatedBackup() {
         doReturn(internalBackupDataStoreVoMock).when(internalBackupDataStoreDaoMock).persist(any());
 
-        kbossBackupProviderSpy.createDeltaReferences(true,
-                true, true, backupVoMock, List.of(), List.of(), new HashMap<>(), new HashMap<>(), null, new KbossTO(volumeObjectToMock, List.of()));
+        kbossBackupProviderSpy.createDeltaReferences(true, true, backupVoMock, List.of(), List.of(), new HashMap<>(), new HashMap<>(), null, new KbossTO(volumeObjectToMock,
+                new LinkedList<>()));
 
         verify(internalBackupDataStoreDaoMock, Mockito.times(1)).persist(any());
         verify(kbossBackupProviderSpy, Mockito.times(0)).findAndSetParentBackupPath(any(), any(), any());
@@ -714,11 +691,11 @@ public class KbossBackupProviderTest {
     @Test
     public void createDeltaReferencesTestNotFullBackupEndOfChain() {
         doReturn(internalBackupDataStoreVoMock).when(internalBackupDataStoreDaoMock).persist(any());
-        KbossTO kbossTO = new KbossTO(volumeObjectToMock, List.of());
-        doReturn(null).when(kbossBackupProviderSpy).createDeltaMergeTreeForVolume(false, true, List.of(), null, kbossTO);
+        KbossTO kbossTO = new KbossTO(volumeObjectToMock, new LinkedList<>());
+        doReturn(null).when(kbossBackupProviderSpy).createDeltaMergeTreeForVolume(false, true, List.of(), null, kbossTO, List.of());
         doNothing().when(kbossBackupProviderSpy).findAndSetParentBackupPath(List.of(), null, kbossTO);
 
-        kbossBackupProviderSpy.createDeltaReferences(false, true, true, backupVoMock, List.of(), List.of(), new HashMap<>(), new HashMap<>(), null, kbossTO);
+        kbossBackupProviderSpy.createDeltaReferences(false, true, backupVoMock, List.of(), List.of(), new HashMap<>(), new HashMap<>(), null, kbossTO);
 
         verify(internalBackupDataStoreDaoMock, Mockito.times(1)).persist(any());
         verify(kbossBackupProviderSpy, Mockito.times(1)).findAndSetParentBackupPath(List.of(), null, kbossTO);
@@ -728,8 +705,8 @@ public class KbossBackupProviderTest {
     public void createDeltaReferencesTestFullBackupNotEndOfChainDoesNotHaveVmSnapshotSucceedingLastBackup() {
         doReturn(internalBackupDataStoreVoMock).when(internalBackupDataStoreDaoMock).persist(any());
 
-        kbossBackupProviderSpy.createDeltaReferences(true,
-                false, true, backupVoMock, List.of(), List.of(), new HashMap<>(), new HashMap<>(), null, new KbossTO(volumeObjectToMock, List.of()));
+        kbossBackupProviderSpy.createDeltaReferences(true, true, backupVoMock, List.of(), List.of(), new HashMap<>(), new HashMap<>(), null, new KbossTO(volumeObjectToMock,
+                new LinkedList<>()));
 
         verify(internalBackupDataStoreDaoMock, Mockito.times(1)).persist(any());
     }
@@ -792,7 +769,7 @@ public class KbossBackupProviderTest {
         assertFalse(result.first());
         assertNull(result.second());
         verify(kbossBackupProviderSpy, Mockito.times(1)).setBackupAsIsolated(backupVoMock);
-        verify(kbossBackupProviderSpy, Mockito.times(2)).createDeltaReferences(Mockito.anyBoolean(), Mockito.anyBoolean(), Mockito.anyBoolean(), any(), any(), any(), any(), any(), any(), any());
+        verify(kbossBackupProviderSpy, Mockito.times(2)).createDeltaReferences(Mockito.anyBoolean(), Mockito.anyBoolean(), any(), any(), any(), any(), any(), any(), any());
         verify(kbossBackupProviderSpy, Mockito.times(1)).processBackupFailure(any(), any(), Mockito.anyLong(), Mockito.anyBoolean(), any());
     }
 
@@ -815,7 +792,7 @@ public class KbossBackupProviderTest {
         doReturn(takeKbossBackupAnswerMock).when(kbossBackupProviderSpy).sendBackupCommand(anyLong(), any());
         doReturn(true).when(takeKbossBackupAnswerMock).getResult();
         doNothing().when(kbossBackupProviderSpy).processBackupSuccess(anyBoolean(), any(), any(), any(), any(), any(), any(), any(), anyBoolean(), any(),
-                anyLong(), anyBoolean(), anyBoolean());
+                anyLong(), anyBoolean(), anyBoolean(), any());
         doReturn(true).when(kbossBackupProviderSpy).offeringSupportsCompression(internalBackupJoinVoMock);
         doNothing().when(kbossBackupProviderSpy).compressBackupAsync(internalBackupJoinVoMock, 0, 0);
 
@@ -823,9 +800,9 @@ public class KbossBackupProviderTest {
         assertTrue(result.first());
         assertEquals(backupId, result.second());
         verify(kbossBackupProviderSpy, Mockito.times(1)).setBackupAsIsolated(backupVoMock);
-        verify(kbossBackupProviderSpy, Mockito.times(2)).createDeltaReferences(Mockito.anyBoolean(), Mockito.anyBoolean(), Mockito.anyBoolean(), any(), any(), any(), any(), any(), any(), any());
+        verify(kbossBackupProviderSpy, Mockito.times(2)).createDeltaReferences(Mockito.anyBoolean(), Mockito.anyBoolean(), any(), any(), any(), any(), any(), any(), any());
         verify(kbossBackupProviderSpy, Mockito.times(1)).processBackupSuccess(anyBoolean(), any(), any(), any(), any(), any(), any(), any(), anyBoolean(), any(),
-                anyLong(), anyBoolean(), anyBoolean());
+                anyLong(), anyBoolean(), anyBoolean(), any());
         verify(kbossBackupProviderSpy, Mockito.times(1)).compressBackupAsync(internalBackupJoinVoMock, 0, 0);
     }
 
@@ -850,7 +827,7 @@ public class KbossBackupProviderTest {
         doReturn(takeKbossBackupAnswerMock).when(kbossBackupProviderSpy).sendBackupCommand(anyLong(), any());
         doReturn(true).when(takeKbossBackupAnswerMock).getResult();
         doNothing().when(kbossBackupProviderSpy).processBackupSuccess(anyBoolean(), any(), any(), any(), any(), any(), any(), any(), anyBoolean(), any(),
-                anyLong(), anyBoolean(), anyBoolean());
+                anyLong(), anyBoolean(), anyBoolean(), any());
         doReturn(false).when(kbossBackupProviderSpy).offeringSupportsCompression(internalBackupJoinVoMock);
         doNothing().when(kbossBackupProviderSpy).validateBackupAsyncIfHasOfferingSupport(any(), anyLong(), anyLong());
 
@@ -859,9 +836,9 @@ public class KbossBackupProviderTest {
         assertEquals(backupId, result.second());
         verify(internalBackupStoragePoolDaoMock).listByBackupId(0);
         verify(internalBackupDataStoreDaoMock).listByBackupId(0);
-        verify(kbossBackupProviderSpy, Mockito.times(2)).createDeltaReferences(Mockito.anyBoolean(), Mockito.anyBoolean(), Mockito.anyBoolean(), any(), any(), any(), any(), any(), any(), any());
+        verify(kbossBackupProviderSpy, Mockito.times(2)).createDeltaReferences(Mockito.anyBoolean(), Mockito.anyBoolean(), any(), any(), any(), any(), any(), any(), any());
         verify(kbossBackupProviderSpy, Mockito.times(1)).processBackupSuccess(anyBoolean(), any(), any(), any(), any(), any(), any(), any(), anyBoolean(), any(),
-                anyLong(), anyBoolean(), anyBoolean());
+                anyLong(), anyBoolean(), anyBoolean(), any());
         verify(kbossBackupProviderSpy, Mockito.times(1)).validateBackupAsyncIfHasOfferingSupport(internalBackupJoinVoMock, 0, 0);
     }
 
@@ -998,7 +975,7 @@ public class KbossBackupProviderTest {
         doReturn(new Pair<>(List.of(), parentVo)).when(kbossBackupProviderSpy).getParentsToBeExpungedWithBackupAndAddThemToListOfDeleteCommands(any(), any());
         doReturn(endPointMock).when(endPointSelectorMock).select((DataStore)null);
         doReturn(null).when(kbossBackupProviderSpy).sendBackupCommands(anyLong(), any());
-        doReturn(false).when(kbossBackupProviderSpy).processRemoveBackupFailures(anyBoolean(), any(), any(), any());
+        doReturn(false).when(kbossBackupProviderSpy).processRemoveBackupFailures(anyBoolean(), any(), any(), any(), any());
         doNothing().when(kbossBackupProviderSpy).processRemovedBackups(any());
 
 
@@ -1028,7 +1005,7 @@ public class KbossBackupProviderTest {
         doReturn(new Pair<>(List.of(), parentVo)).when(kbossBackupProviderSpy).getParentsToBeExpungedWithBackupAndAddThemToListOfDeleteCommands(any(), any());
         doReturn(endPointMock).when(endPointSelectorMock).select((DataStore)null);
         doReturn(null).when(kbossBackupProviderSpy).sendBackupCommands(anyLong(), any());
-        doReturn(true).when(kbossBackupProviderSpy).processRemoveBackupFailures(anyBoolean(), any(), any(), any());
+        doReturn(true).when(kbossBackupProviderSpy).processRemoveBackupFailures(anyBoolean(), any(), any(), any(), any());
         doNothing().when(kbossBackupProviderSpy).processRemovedBackups(any());
 
 
@@ -1071,8 +1048,6 @@ public class KbossBackupProviderTest {
         doReturn(new Pair<>(true, backupVoMock)).when(kbossBackupProviderSpy).validateCompressionStateForRestoreAndGetBackup(backupId);
         long currentBackupId = 39;
         InternalBackupJoinVO currentBackup = Mockito.mock(InternalBackupJoinVO.class);
-        doReturn(currentBackupId).when(currentBackup).getId();
-        doReturn(currentBackup).when(internalBackupJoinDaoMock).findCurrent(vmId);
         doReturn(hostVOMock).when(kbossBackupProviderSpy).getHostToRestore(virtualMachineMock, false, null);
         doNothing().when(kbossBackupProviderSpy).createAndAttachVolumes(any(), any(), any(), any());
         doReturn(Set.of()).when(kbossBackupProviderSpy).generateBackupAndVolumePairsToRestore(any(), any(), any(), anyBoolean());
@@ -1095,8 +1070,6 @@ public class KbossBackupProviderTest {
         doReturn(new Pair<>(true, backupVoMock)).when(kbossBackupProviderSpy).validateCompressionStateForRestoreAndGetBackup(backupId);
         long currentBackupId = 39;
         InternalBackupJoinVO currentBackup = Mockito.mock(InternalBackupJoinVO.class);
-        doReturn(currentBackupId).when(currentBackup).getId();
-        doReturn(currentBackup).when(internalBackupJoinDaoMock).findCurrent(vmId);
         doReturn(hostVOMock).when(kbossBackupProviderSpy).getHostToRestore(virtualMachineMock, false, null);
         doNothing().when(kbossBackupProviderSpy).createAndAttachVolumes(any(), any(), any(), any());
         doReturn(Set.of()).when(kbossBackupProviderSpy).generateBackupAndVolumePairsToRestore(any(), any(), any(), anyBoolean());
@@ -1107,7 +1080,6 @@ public class KbossBackupProviderTest {
 
         boolean result = kbossBackupProviderSpy.orchestrateRestoreVMFromBackup(backupVoMock, virtualMachineMock, false, null, true);
 
-        verify(internalBackupStoragePoolDaoMock).listByBackupId(currentBackupId);
         verify(kbossBackupProviderSpy).createAndAttachVolumes(any(), any(), any(), any());
         verify(kbossBackupProviderSpy).populateDeltasToRemoveAndToMergeAndUpdateVolumePaths(any(), any(), any(), any(), any());
         assertFalse(result);
@@ -1120,8 +1092,6 @@ public class KbossBackupProviderTest {
         doReturn(new Pair<>(true, backupVoMock)).when(kbossBackupProviderSpy).validateCompressionStateForRestoreAndGetBackup(backupId);
         long currentBackupId = 39;
         InternalBackupJoinVO currentBackup = Mockito.mock(InternalBackupJoinVO.class);
-        doReturn(currentBackupId).when(currentBackup).getId();
-        doReturn(currentBackup).when(internalBackupJoinDaoMock).findCurrent(vmId);
         doReturn(hostVOMock).when(kbossBackupProviderSpy).getHostToRestore(virtualMachineMock, false, null);
         doNothing().when(kbossBackupProviderSpy).createAndAttachVolumes(any(), any(), any(), any());
         doReturn(Set.of()).when(kbossBackupProviderSpy).generateBackupAndVolumePairsToRestore(any(), any(), any(), anyBoolean());
@@ -1133,7 +1103,6 @@ public class KbossBackupProviderTest {
 
         boolean result = kbossBackupProviderSpy.orchestrateRestoreVMFromBackup(backupVoMock, virtualMachineMock, false, null, true);
 
-        verify(internalBackupStoragePoolDaoMock).listByBackupId(currentBackupId);
         verify(kbossBackupProviderSpy).createAndAttachVolumes(any(), any(), any(), any());
         verify(kbossBackupProviderSpy).populateDeltasToRemoveAndToMergeAndUpdateVolumePaths(any(), any(), any(), any(), any());
         assertFalse(result);
@@ -1146,8 +1115,6 @@ public class KbossBackupProviderTest {
         doReturn(new Pair<>(true, backupVoMock)).when(kbossBackupProviderSpy).validateCompressionStateForRestoreAndGetBackup(backupId);
         long currentBackupId = 39;
         InternalBackupJoinVO currentBackup = Mockito.mock(InternalBackupJoinVO.class);
-        doReturn(currentBackupId).when(currentBackup).getId();
-        doReturn(currentBackup).when(internalBackupJoinDaoMock).findCurrent(vmId);
         doReturn(hostVOMock).when(kbossBackupProviderSpy).getHostToRestore(virtualMachineMock, true, null);
         doNothing().when(kbossBackupProviderSpy).createAndAttachVolumes(any(), any(), any(), any());
         doReturn(Set.of()).when(kbossBackupProviderSpy).generateBackupAndVolumePairsToRestore(any(), any(), any(), anyBoolean());
@@ -1156,18 +1123,14 @@ public class KbossBackupProviderTest {
         doReturn(VirtualMachine.State.Stopped).when(virtualMachineMock).getState();
         doReturn(new Answer[]{Mockito.mock(Answer.class)}).when(kbossBackupProviderSpy).sendBackupCommands(anyLong(), any());
         doReturn(true).when(kbossBackupProviderSpy).processRestoreAnswers(any(), any(), anyBoolean());
-        doNothing().when(kbossBackupProviderSpy).setEndOfChainAndRemoveCurrentForBackup(currentBackup);
         doReturn(List.of()).when(kbossBackupProviderSpy).getVolumesToConsolidate(any(), any(), any(), anyLong(), anyBoolean());
         doReturn(true).when(kbossBackupProviderSpy).finalizeQuickRestore(any(), anyList(), anyLong());
 
         boolean result = kbossBackupProviderSpy.orchestrateRestoreVMFromBackup(backupVoMock, virtualMachineMock, true, null, true);
 
-        verify(internalBackupStoragePoolDaoMock).listByBackupId(currentBackupId);
         verify(kbossBackupProviderSpy).createAndAttachVolumes(any(), any(), any(), any());
         verify(kbossBackupProviderSpy).populateDeltasToRemoveAndToMergeAndUpdateVolumePaths(any(), any(), any(), any(), any());
         verify(kbossBackupProviderSpy).updateVolumePathsAndSizeIfNeeded(any(), any(), anyList(), anyList(), anyBoolean());
-        verify(internalBackupStoragePoolDaoMock).expungeByBackupId(currentBackupId);
-        verify(kbossBackupProviderSpy).setEndOfChainAndRemoveCurrentForBackup(currentBackup);
         verify(kbossBackupProviderSpy).finalizeQuickRestore(any(), anyList(), anyLong());
         assertTrue(result);
     }
@@ -1377,25 +1340,25 @@ public class KbossBackupProviderTest {
     }
 
     @Test
-    public void finishBackupChainTestInvalidState() {
+    public void finishBackupChainsTestInvalidState() {
         doReturn(userVmVOMock).when(userVmDaoMock).findById(vmId);
         doReturn(VirtualMachine.State.Migrating).when(userVmVOMock).getState();
 
-        boolean result = kbossBackupProviderSpy.finishBackupChain(virtualMachineMock);
+        boolean result = kbossBackupProviderSpy.finishBackupChains(virtualMachineMock);
 
         assertFalse(result);
     }
 
     @Test
-    public void finishBackupChainTestRunningVm() {
+    public void finishBackupChainsTestRunningVm() {
         doReturn(userVmVOMock).when(userVmDaoMock).findById(vmId);
         doReturn(VirtualMachine.State.Running).when(userVmVOMock).getState();
-        doReturn(true).when(kbossBackupProviderSpy).endBackupChain(userVmVOMock);
+        doReturn(true).when(kbossBackupProviderSpy).finishAllChains(eq(userVmVOMock), any());
 
-        boolean result = kbossBackupProviderSpy.finishBackupChain(virtualMachineMock);
+        boolean result = kbossBackupProviderSpy.finishBackupChains(virtualMachineMock);
 
         assertTrue(result);
-        verify(kbossBackupProviderSpy).endBackupChain(userVmVOMock);
+        verify(kbossBackupProviderSpy).finishAllChains(eq(userVmVOMock), any());
     }
 
     @Test
@@ -1404,7 +1367,7 @@ public class KbossBackupProviderTest {
         doReturn(VirtualMachine.State.BackupError).when(userVmVOMock).getState();
         doReturn(true).when(kbossBackupProviderSpy).normalizeBackupErrorAndFinishChain(userVmVOMock);
 
-        boolean result = kbossBackupProviderSpy.finishBackupChain(virtualMachineMock);
+        boolean result = kbossBackupProviderSpy.finishBackupChains(virtualMachineMock);
 
         assertTrue(result);
         verify(kbossBackupProviderSpy).normalizeBackupErrorAndFinishChain(userVmVOMock);
@@ -1412,8 +1375,6 @@ public class KbossBackupProviderTest {
 
     @Test
     public void prepareVmForSnapshotRevertTestNoCurrentBackup() {
-        doReturn(null).when(internalBackupJoinDaoMock).findCurrent(vmId);
-
         kbossBackupProviderSpy.prepareVmForSnapshotRevert(vmSnapshotVoMock, virtualMachineMock);
 
         verify(kbossBackupProviderSpy, never()).getSucceedingVmSnapshot(any());
@@ -1421,7 +1382,7 @@ public class KbossBackupProviderTest {
 
     @Test
     public void prepareVmForSnapshotRevertTestCurrentBackupBeforeVmSnapshot() {
-        doReturn(internalBackupJoinVoMock).when(internalBackupJoinDaoMock).findCurrent(vmId);
+        doReturn(List.of(internalBackupJoinVoMock)).when(internalBackupJoinDaoMock).listCurrents(anyLong(), anyBoolean());
         doReturn(Date.from(Instant.EPOCH)).when(internalBackupJoinVoMock).getDate();
         doReturn(Date.from(Instant.now())).when(vmSnapshotVoMock).getCreated();
 
@@ -1432,12 +1393,12 @@ public class KbossBackupProviderTest {
 
     @Test (expected = CloudRuntimeException.class)
     public void prepareVmForSnapshotRevertTestCurrentBackupAfterVmSnapshotTimeout() throws OperationTimedoutException, AgentUnavailableException {
-        doReturn(internalBackupJoinVoMock).when(internalBackupJoinDaoMock).findCurrent(vmId);
+        doReturn(List.of(internalBackupJoinVoMock)).when(internalBackupJoinDaoMock).listCurrents(anyLong(), anyBoolean());
         doReturn(Date.from(Instant.now())).when(internalBackupJoinVoMock).getDate();
         doReturn(Date.from(Instant.EPOCH)).when(vmSnapshotVoMock).getCreated();
         doReturn(List.of()).when(vmSnapshotHelperMock).getVolumeTOList(vmId);
         doReturn(vmSnapshotVoMock).when(kbossBackupProviderSpy).getSucceedingVmSnapshot(internalBackupJoinVoMock);
-        doNothing().when(kbossBackupProviderSpy).createDeleteCommandsAndMergeTrees(any(), any(), any(), any(), anyList());
+        doNothing().when(kbossBackupProviderSpy).createDeleteCommandsAndMergeTrees(any(), any(), any(), any(), anyList(), any());
         doThrow(OperationTimedoutException.class).when(kbossBackupProviderSpy).sendBackupCommands(any(), any());
 
         kbossBackupProviderSpy.prepareVmForSnapshotRevert(vmSnapshotVoMock, virtualMachineMock);
@@ -1447,12 +1408,12 @@ public class KbossBackupProviderTest {
 
     @Test (expected = CloudRuntimeException.class)
     public void prepareVmForSnapshotRevertTestCurrentBackupAfterVmSnapshotNullAnswer() throws OperationTimedoutException, AgentUnavailableException {
-        doReturn(internalBackupJoinVoMock).when(internalBackupJoinDaoMock).findCurrent(vmId);
+        doReturn(List.of(internalBackupJoinVoMock)).when(internalBackupJoinDaoMock).listCurrents(anyLong(), anyBoolean());
         doReturn(Date.from(Instant.now())).when(internalBackupJoinVoMock).getDate();
         doReturn(Date.from(Instant.EPOCH)).when(vmSnapshotVoMock).getCreated();
         doReturn(List.of()).when(vmSnapshotHelperMock).getVolumeTOList(vmId);
         doReturn(vmSnapshotVoMock).when(kbossBackupProviderSpy).getSucceedingVmSnapshot(internalBackupJoinVoMock);
-        doNothing().when(kbossBackupProviderSpy).createDeleteCommandsAndMergeTrees(any(), any(), any(), any(), anyList());
+        doNothing().when(kbossBackupProviderSpy).createDeleteCommandsAndMergeTrees(any(), any(), any(), any(), anyList(), any());
         doReturn(null).when(kbossBackupProviderSpy).sendBackupCommands(any(), any());
 
         kbossBackupProviderSpy.prepareVmForSnapshotRevert(vmSnapshotVoMock, virtualMachineMock);
@@ -1462,12 +1423,12 @@ public class KbossBackupProviderTest {
 
     @Test
     public void prepareVmForSnapshotRevertTestCurrentBackupAfterVmSnapshotSuccess() throws OperationTimedoutException, AgentUnavailableException {
-        doReturn(internalBackupJoinVoMock).when(internalBackupJoinDaoMock).findCurrent(vmId);
+        doReturn(List.of(internalBackupJoinVoMock)).when(internalBackupJoinDaoMock).listCurrents(anyLong(), anyBoolean());
         doReturn(Date.from(Instant.now())).when(internalBackupJoinVoMock).getDate();
         doReturn(Date.from(Instant.EPOCH)).when(vmSnapshotVoMock).getCreated();
         doReturn(List.of()).when(vmSnapshotHelperMock).getVolumeTOList(vmId);
         doReturn(vmSnapshotVoMock).when(kbossBackupProviderSpy).getSucceedingVmSnapshot(internalBackupJoinVoMock);
-        doNothing().when(kbossBackupProviderSpy).createDeleteCommandsAndMergeTrees(any(), any(), any(), any(), anyList());
+        doNothing().when(kbossBackupProviderSpy).createDeleteCommandsAndMergeTrees(any(), any(), any(), any(), anyList(), any());
         doReturn(new Answer[]{}).when(kbossBackupProviderSpy).sendBackupCommands(any(), any());
         doNothing().when(kbossBackupProviderSpy).updateReferencesAfterPrepareForSnapshotRevert(any(), any(), any(), any());
 
@@ -1667,7 +1628,7 @@ public class KbossBackupProviderTest {
 
         kbossBackupProviderSpy.endBackupChainIfConfigured(backupVoMock);
 
-        verify(kbossBackupProviderSpy, never()).endBackupChain(any());
+        verify(kbossBackupProviderSpy, never()).endBackupChain(any(), any());
     }
 
     @Test
@@ -1681,7 +1642,7 @@ public class KbossBackupProviderTest {
 
         kbossBackupProviderSpy.endBackupChainIfConfigured(backupVoMock);
 
-        verify(kbossBackupProviderSpy, never()).endBackupChain(any());
+        verify(kbossBackupProviderSpy, never()).endBackupChain(any(), any());
     }
 
     @Test
@@ -1691,11 +1652,11 @@ public class KbossBackupProviderTest {
         doReturn(internalBackupJoinVoMock).when(internalBackupJoinDaoMock).findById(anyLong());
         doReturn(List.of()).when(kbossBackupProviderSpy).getBackupJoinChildren(any());
         doReturn(userVmVOMock).when(userVmDaoMock).findById(anyLong());
-        doReturn(true).when(kbossBackupProviderSpy).endBackupChain(any());
+        doReturn(true).when(kbossBackupProviderSpy).endBackupChain(any(), any());
 
         kbossBackupProviderSpy.endBackupChainIfConfigured(backupVoMock);
 
-        verify(kbossBackupProviderSpy, times(1)).endBackupChain(userVmVOMock);
+        verify(kbossBackupProviderSpy, times(1)).endBackupChain(eq(userVmVOMock), anyLong());
     }
 
     @Test
@@ -1707,11 +1668,11 @@ public class KbossBackupProviderTest {
         doReturn(true).when(child).getCurrent();
         doReturn(List.of(child)).when(kbossBackupProviderSpy).getBackupJoinChildren(any());
         doReturn(userVmVOMock).when(userVmDaoMock).findById(anyLong());
-        doReturn(true).when(kbossBackupProviderSpy).endBackupChain(any());
+        doReturn(true).when(kbossBackupProviderSpy).endBackupChain(any(), any());
 
         kbossBackupProviderSpy.endBackupChainIfConfigured(backupVoMock);
 
-        verify(kbossBackupProviderSpy, times(1)).endBackupChain(userVmVOMock);
+        verify(kbossBackupProviderSpy, times(1)).endBackupChain(eq(userVmVOMock), anyLong());
     }
 
 
@@ -1726,7 +1687,7 @@ public class KbossBackupProviderTest {
         doReturn(parentId).when(internalBackupJoinVoMock).getParentId();
         doReturn(null).when(internalBackupJoinDaoMock).findById(parentId);
         doReturn(List.of()).when(internalBackupDataStoreDaoMock).listByBackupId(anyLong());
-        doNothing().when(kbossBackupProviderSpy).configureKbossTosForCleanup(any(), any(), any(), anyBoolean(), any(), any());
+        doNothing().when(kbossBackupProviderSpy).configureKbossTosForCleanup(any(), any(), any(), any(), any(), any(),anyBoolean());
         doReturn(null).when(kbossBackupProviderSpy).sendBackupCommand(anyLong(), any());
 
         boolean result = kbossBackupProviderSpy.normalizeBackupErrorAndFinishChain(userVmVOMock);
@@ -1745,7 +1706,7 @@ public class KbossBackupProviderTest {
         doReturn(parentId).when(internalBackupJoinVoMock).getParentId();
         doReturn(null).when(internalBackupJoinDaoMock).findById(parentId);
         doReturn(List.of()).when(internalBackupDataStoreDaoMock).listByBackupId(anyLong());
-        doNothing().when(kbossBackupProviderSpy).configureKbossTosForCleanup(any(), any(), any(), anyBoolean(), any(), any());
+        doNothing().when(kbossBackupProviderSpy).configureKbossTosForCleanup(any(), any(), any(), any(), any(), any(), anyBoolean());
         doReturn(answerMock).when(kbossBackupProviderSpy).sendBackupCommand(anyLong(), any());
         doReturn(false).when(answerMock).getResult();
 
@@ -1756,6 +1717,8 @@ public class KbossBackupProviderTest {
 
     @Test
     public void normalizeBackupErrorAndFinishChainTestSuccessCallsEndChain() {
+        doReturn(userVmVOMock).when(userVmDaoMock).findById(any());
+        doReturn(VirtualMachine.State.Running).when(userVmVOMock).getState();
         doReturn(null).when(vmInstanceDetailsDaoMock).findDetail(anyLong(), any());
         doReturn(backupVoMock).when(backupDaoMock).findLatestByStatusAndVmId(any(), anyLong());
         doReturn(internalBackupJoinVoMock).when(internalBackupJoinDaoMock).findById(anyLong());
@@ -1765,21 +1728,23 @@ public class KbossBackupProviderTest {
         doReturn(parentId).when(internalBackupJoinVoMock).getParentId();
         doReturn(null).when(internalBackupJoinDaoMock).findById(parentId);
         doReturn(List.of()).when(internalBackupDataStoreDaoMock).listByBackupId(anyLong());
-        doNothing().when(kbossBackupProviderSpy).configureKbossTosForCleanup(any(), any(), any(), anyBoolean(), any(), any());
+        doNothing().when(kbossBackupProviderSpy).configureKbossTosForCleanup(any(), any(), any(), any(), any(), any(), anyBoolean());
         doReturn(answerMock).when(kbossBackupProviderSpy).sendBackupCommand(anyLong(), any());
         doReturn(true).when(answerMock).getResult();
-        doReturn(false).when(kbossBackupProviderSpy).processCleanupBackupErrorAnswer(any(), any());
-        doReturn(true).when(kbossBackupProviderSpy).endBackupChain(any());
+        doReturn(false).when(kbossBackupProviderSpy).processCleanupBackupErrorAnswer(any(), any(), any(), any(), any());
 
         boolean result = kbossBackupProviderSpy.normalizeBackupErrorAndFinishChain(userVmVOMock);
 
         assertTrue(result);
-        verify(kbossBackupProviderSpy).endBackupChain(userVmVOMock);
+        verify(kbossBackupProviderSpy).mergeCurrentBackupDeltas(internalBackupJoinVoMock);
+        verify(kbossBackupProviderSpy).finishBackupChains(userVmVOMock);
     }
 
 
     @Test
     public void normalizeBackupErrorAndFinishChainTestChainAlreadyEnded() {
+        doReturn(userVmVOMock).when(userVmDaoMock).findById(any());
+        doReturn(VirtualMachine.State.Running).when(userVmVOMock).getState();
         doReturn(null).when(vmInstanceDetailsDaoMock).findDetail(anyLong(), any());
         doReturn(backupVoMock).when(backupDaoMock).findLatestByStatusAndVmId(any(), anyLong());
         doReturn(internalBackupJoinVoMock).when(internalBackupJoinDaoMock).findById(anyLong());
@@ -1789,12 +1754,12 @@ public class KbossBackupProviderTest {
         doReturn(parentId).when(internalBackupJoinVoMock).getParentId();
         doReturn(null).when(internalBackupJoinDaoMock).findById(parentId);
         doReturn(List.of()).when(internalBackupDataStoreDaoMock).listByBackupId(anyLong());
-        doNothing().when(kbossBackupProviderSpy).configureKbossTosForCleanup(any(), any(), any(), anyBoolean(), any(), any());
+        doNothing().when(kbossBackupProviderSpy).configureKbossTosForCleanup(any(), any(), any(), any(), any(), any(), anyBoolean());
         doReturn(answerMock).when(kbossBackupProviderSpy).sendBackupCommand(anyLong(), any());
         doReturn(true).when(answerMock).getResult();
-        doReturn(true).when(kbossBackupProviderSpy).processCleanupBackupErrorAnswer(any(), any());
+        doReturn(true).when(kbossBackupProviderSpy).processCleanupBackupErrorAnswer(any(), any(), any(), any(), any());
         InternalBackupJoinVO current = mock(InternalBackupJoinVO.class);
-        doReturn(current).when(internalBackupJoinDaoMock).findCurrent(anyLong());
+        doReturn(current).when(internalBackupJoinDaoMock).findCurrent(anyLong(), any());
         doNothing().when(internalBackupStoragePoolDaoMock).expungeByBackupId(anyLong());
         doNothing().when(kbossBackupProviderSpy).setEndOfChainAndRemoveCurrentForBackup(any());
 
@@ -2027,57 +1992,53 @@ public class KbossBackupProviderTest {
     @Test
     public void mergeCurrentDeltaIntoVolumeTestNoDeltaDoesNothing() {
         doReturn(volumeId).when(volumeVoMock).getId();
-        doReturn(null).when(internalBackupStoragePoolDaoMock).findOneByVolumeId(volumeId);
+        doReturn(List.of()).when(internalBackupJoinDaoMock).listCurrentsByVolumeIdDesc(volumeId);
 
-        kbossBackupProviderSpy.mergeCurrentDeltaIntoVolume(volumeVoMock, virtualMachineMock, "detach", true);
+        kbossBackupProviderSpy.mergeCurrentDeltasIntoVolume(volumeVoMock, virtualMachineMock, "detach", true);
 
-        verify(internalBackupStoragePoolDaoMock, times(1)).findOneByVolumeId(volumeId);
+        verify(internalBackupJoinDaoMock, times(1)).listCurrentsByVolumeIdDesc(volumeId);
         verify(internalBackupJoinDaoMock, never()).findById(anyLong());
     }
 
     @Test (expected = CloudRuntimeException.class)
     public void mergeCurrentDeltaIntoVolumeTestNullAnswer() {
         doReturn(volumeId).when(volumeVoMock).getId();
-        doReturn(internalBackupStoragePoolVoMock).when(internalBackupStoragePoolDaoMock).findOneByVolumeId(volumeId);
-        doReturn(backupId).when(internalBackupStoragePoolVoMock).getBackupId();
-        doReturn(internalBackupJoinVoMock).when(internalBackupJoinDaoMock).findById(backupId);
-        doReturn(null).when(kbossBackupProviderSpy).getSucceedingVmSnapshot(internalBackupJoinVoMock);
-        doReturn(deltaMergeTreeToMock).when(kbossBackupProviderSpy).createDeltaMergeTree(anyBoolean(), anyBoolean(), any(), any(), any());
+        doReturn(List.of(internalBackupJoinVoMock)).when(internalBackupJoinDaoMock).listCurrentsByVolumeIdDesc(volumeId);
+        doReturn(deltaMergeTreeToMock).when(kbossBackupProviderSpy).createDeltaMergeTree(anyBoolean(), anyBoolean(), any(), any(), any(), any());
         doReturn(null).when(kbossBackupProviderSpy).sendBackupCommand(anyLong(), any());
         try (MockedStatic<VolumeObject> volumeObjectMockedStatic = Mockito.mockStatic(VolumeObject.class)) {
             when(VolumeObject.getVolumeObject(any(), any())).thenReturn(volumeObjectMock);
 
-            kbossBackupProviderSpy.mergeCurrentDeltaIntoVolume(volumeVoMock, virtualMachineMock, "detach", true);
+            kbossBackupProviderSpy.mergeCurrentDeltasIntoVolume(volumeVoMock, virtualMachineMock, "detach", true);
 
             verify(kbossBackupProviderSpy).sendBackupCommand(anyLong(), any());
-            verify(kbossBackupProviderSpy, never()).expungeOldDeltasAndUpdateVmSnapshotIfNeeded(anyList(), any());
+            verify(kbossBackupProviderSpy, never()).expungeOldDeltasAndUpdateVmSnapshotOrBackup(anyList(), any(), any());
         }
     }
 
     @Test
     public void mergeCurrentDeltaIntoVolumeTestNoSucceedingSnapshot() {
         doReturn(volumeId).when(volumeVoMock).getId();
-        doReturn(internalBackupStoragePoolVoMock).when(internalBackupStoragePoolDaoMock).findOneByVolumeId(volumeId);
+        doReturn(List.of(internalBackupJoinVoMock)).when(internalBackupJoinDaoMock).listCurrentsByVolumeIdDesc(volumeId);
         doReturn(backupId).when(internalBackupStoragePoolVoMock).getBackupId();
-        doReturn(internalBackupJoinVoMock).when(internalBackupJoinDaoMock).findById(backupId);
-        doReturn(null).when(kbossBackupProviderSpy).getSucceedingVmSnapshot(internalBackupJoinVoMock);
-        doReturn(deltaMergeTreeToMock).when(kbossBackupProviderSpy).createDeltaMergeTree(anyBoolean(), anyBoolean(), any(), any(), any());
+        doReturn(deltaMergeTreeToMock).when(kbossBackupProviderSpy).createDeltaMergeTree(anyBoolean(), anyBoolean(), any(), any(), any(), any());
         doReturn(answerMock).when(kbossBackupProviderSpy).sendBackupCommand(anyLong(), any());
         doReturn(true).when(answerMock).getResult();
         doReturn(volumeVoMock).when(volumeDaoMock).findById(anyLong());
         doReturn(backupDeltaToMock).when(deltaMergeTreeToMock).getParent();
-        doNothing().when(kbossBackupProviderSpy).expungeOldDeltasAndUpdateVmSnapshotIfNeeded(anyList(), any());
+        doNothing().when(kbossBackupProviderSpy).expungeOldDeltasAndUpdateVmSnapshotOrBackup(anyList(), any(), any());
         doReturn(List.of()).when(internalBackupStoragePoolDaoMock).listByBackupId(backupId);
         doNothing().when(kbossBackupProviderSpy).setEndOfChainAndRemoveCurrentForBackup(any());
+        doReturn(internalBackupStoragePoolVoMock).when(internalBackupStoragePoolDaoMock).findOneByVolumeIdAndBackupId(anyLong(), anyLong());
 
         try (MockedStatic<VolumeObject> volumeObjectMockedStatic = Mockito.mockStatic(VolumeObject.class)) {
             when(VolumeObject.getVolumeObject(any(), any())).thenReturn(volumeObjectMock);
 
-            kbossBackupProviderSpy.mergeCurrentDeltaIntoVolume(volumeVoMock, virtualMachineMock, "detach", true);
+            kbossBackupProviderSpy.mergeCurrentDeltasIntoVolume(volumeVoMock, virtualMachineMock, "detach", true);
 
             verify(kbossBackupProviderSpy).sendBackupCommand(anyLong(), any());
             verify(volumeDaoMock).update(volumeId, volumeVoMock);
-            verify(kbossBackupProviderSpy).expungeOldDeltasAndUpdateVmSnapshotIfNeeded(anyList(), any());
+            verify(kbossBackupProviderSpy).expungeOldDeltasAndUpdateVmSnapshotOrBackup(anyList(), any(), any());
             verify(kbossBackupProviderSpy).setEndOfChainAndRemoveCurrentForBackup(any());
         }
     }
@@ -2085,24 +2046,24 @@ public class KbossBackupProviderTest {
     @Test
     public void mergeCurrentDeltaIntoVolumeTestWithSucceedingSnapshotWithMoreDeltas() {
         doReturn(volumeId).when(volumeVoMock).getId();
-        doReturn(internalBackupStoragePoolVoMock).when(internalBackupStoragePoolDaoMock).findOneByVolumeId(volumeId);
+        doReturn(List.of(internalBackupJoinVoMock)).when(internalBackupJoinDaoMock).listCurrentsByVolumeIdDesc(volumeId);
         doReturn(backupId).when(internalBackupStoragePoolVoMock).getBackupId();
-        doReturn(internalBackupJoinVoMock).when(internalBackupJoinDaoMock).findById(backupId);
-        doReturn(vmSnapshotVoMock).when(kbossBackupProviderSpy).getSucceedingVmSnapshot(internalBackupJoinVoMock);
-        doReturn(deltaMergeTreeToMock).when(kbossBackupProviderSpy).createDeltaMergeTree(anyBoolean(), anyBoolean(), any(), any(), any());
+        doReturn(deltaMergeTreeToMock).when(kbossBackupProviderSpy).createDeltaMergeTree(anyBoolean(), anyBoolean(), any(), any(), any(), any());
+        doReturn(backupDeltaToMock).when(deltaMergeTreeToMock).getParent();
         doReturn(answerMock).when(kbossBackupProviderSpy).sendBackupCommand(anyLong(), any());
         doReturn(true).when(answerMock).getResult();
-        doNothing().when(kbossBackupProviderSpy).expungeOldDeltasAndUpdateVmSnapshotIfNeeded(anyList(), any());
+        doNothing().when(kbossBackupProviderSpy).expungeOldDeltasAndUpdateVmSnapshotOrBackup(anyList(), any(), any());
         doReturn(List.of(internalBackupStoragePoolVoMock)).when(internalBackupStoragePoolDaoMock).listByBackupId(backupId);
+        doReturn(volumeVoMock).when(volumeDaoMock).findById(anyLong());
+        doReturn(internalBackupStoragePoolVoMock).when(internalBackupStoragePoolDaoMock).findOneByVolumeIdAndBackupId(anyLong(), anyLong());
 
         try (MockedStatic<VolumeObject> volumeObjectMockedStatic = Mockito.mockStatic(VolumeObject.class)) {
             when(VolumeObject.getVolumeObject(any(), any())).thenReturn(volumeObjectMock);
 
-            kbossBackupProviderSpy.mergeCurrentDeltaIntoVolume(volumeVoMock, virtualMachineMock, "detach", true);
+            kbossBackupProviderSpy.mergeCurrentDeltasIntoVolume(volumeVoMock, virtualMachineMock, "detach", true);
 
             verify(kbossBackupProviderSpy).sendBackupCommand(anyLong(), any());
-            verify(volumeDaoMock, never()).update(volumeId, volumeVoMock);
-            verify(kbossBackupProviderSpy).expungeOldDeltasAndUpdateVmSnapshotIfNeeded(anyList(), any());
+            verify(kbossBackupProviderSpy).expungeOldDeltasAndUpdateVmSnapshotOrBackup(anyList(), any(), any());
             verify(kbossBackupProviderSpy, never()).setEndOfChainAndRemoveCurrentForBackup(any());
         }
     }
@@ -2183,89 +2144,12 @@ public class KbossBackupProviderTest {
     }
 
     @Test
-    public void gatherSnapshotReferencesOfChildrenSnapshotTestVmSnapshotIsNull() {
-        List<VolumeObjectTO> volumeObjectTOs = List.of(volumeObjectToMock);
-
-        Map<Long, List<SnapshotDataStoreVO>> result = kbossBackupProviderSpy.gatherSnapshotReferencesOfChildrenSnapshot(volumeObjectTOs, null);
-
-        assertTrue(result.isEmpty());
-        verify(vmSnapshotDaoMock, never()).listByParent(anyLong());
-        verify(vmSnapshotHelperMock, never()).getVolumeSnapshotsAssociatedWithKvmDiskOnlyVmSnapshot(anyLong());
-        verify(kbossBackupProviderSpy, never()).mapVolumesToSnapshotReferences(anyList(), anyList(), anyMap());
-    }
-
-    @Test
-    public void gatherSnapshotReferencesOfChildrenSnapshotTestChildrenListIsEmpty() {
-        doReturn(100L).when(vmSnapshotVoMock).getId();
-        doReturn(List.of()).when(vmSnapshotDaoMock).listByParent(100L);
-
-        List<VolumeObjectTO> volumeObjectTOs = List.of(volumeObjectToMock);
-
-        Map<Long, List<SnapshotDataStoreVO>> result = kbossBackupProviderSpy.gatherSnapshotReferencesOfChildrenSnapshot(volumeObjectTOs, vmSnapshotVoMock);
-
-        assertTrue(result.isEmpty());
-        verify(vmSnapshotDaoMock, times(1)).listByParent(100L);
-        verify(vmSnapshotHelperMock, never()).getVolumeSnapshotsAssociatedWithKvmDiskOnlyVmSnapshot(anyLong());
-        verify(kbossBackupProviderSpy, never()).mapVolumesToSnapshotReferences(anyList(), anyList(), anyMap());
-    }
-
-    @Test
-    public void gatherSnapshotReferencesOfChildrenSnapshotTestSingleChildWithSingleSnapshotReference() {
-        VMSnapshotVO childSnapshot = Mockito.mock(VMSnapshotVO.class);
-        SnapshotDataStoreVO snapshotDataStoreVO = Mockito.mock(SnapshotDataStoreVO.class);
-
-        doReturn(100L).when(vmSnapshotVoMock).getId();
-        doReturn(List.of(childSnapshot)).when(vmSnapshotDaoMock).listByParent(100L);
-        doReturn(200L).when(childSnapshot).getId();
-        doReturn(List.of(snapshotDataStoreVO)).when(vmSnapshotHelperMock).getVolumeSnapshotsAssociatedWithKvmDiskOnlyVmSnapshot(200L);
-        doNothing().when(kbossBackupProviderSpy).mapVolumesToSnapshotReferences(anyList(), anyList(), anyMap());
-
-        List<VolumeObjectTO> volumeObjectTOs = List.of(volumeObjectToMock);
-
-        Map<Long, List<SnapshotDataStoreVO>> result =
-                kbossBackupProviderSpy.gatherSnapshotReferencesOfChildrenSnapshot(volumeObjectTOs, vmSnapshotVoMock);
-
-        assertTrue(result.isEmpty());
-        verify(vmSnapshotDaoMock, times(1)).listByParent(100L);
-        verify(vmSnapshotHelperMock, times(1)).getVolumeSnapshotsAssociatedWithKvmDiskOnlyVmSnapshot(200L);
-        verify(kbossBackupProviderSpy, times(1)).mapVolumesToSnapshotReferences(eq(volumeObjectTOs), anyList(), anyMap());
-    }
-
-    @Test
-    public void gatherSnapshotReferencesOfChildrenSnapshotTestMultipleChildrenAggregatesSnapshotReferences() {
-        VMSnapshotVO childSnapshot1 = Mockito.mock(VMSnapshotVO.class);
-        VMSnapshotVO childSnapshot2 = Mockito.mock(VMSnapshotVO.class);
-        SnapshotDataStoreVO snapshotDataStoreVO1 = Mockito.mock(SnapshotDataStoreVO.class);
-        SnapshotDataStoreVO snapshotDataStoreVO2 = Mockito.mock(SnapshotDataStoreVO.class);
-
-        doReturn(100L).when(vmSnapshotVoMock).getId();
-        doReturn(List.of(childSnapshot1, childSnapshot2)).when(vmSnapshotDaoMock).listByParent(100L);
-        doReturn(201L).when(childSnapshot1).getId();
-        doReturn(202L).when(childSnapshot2).getId();
-        doReturn(List.of(snapshotDataStoreVO1)).when(vmSnapshotHelperMock)
-                .getVolumeSnapshotsAssociatedWithKvmDiskOnlyVmSnapshot(201L);
-        doReturn(List.of(snapshotDataStoreVO2)).when(vmSnapshotHelperMock)
-                .getVolumeSnapshotsAssociatedWithKvmDiskOnlyVmSnapshot(202L);
-        doNothing().when(kbossBackupProviderSpy).mapVolumesToSnapshotReferences(anyList(), anyList(), anyMap());
-
-        List<VolumeObjectTO> volumeObjectTOs = List.of(volumeObjectToMock);
-
-        Map<Long, List<SnapshotDataStoreVO>> result =
-                kbossBackupProviderSpy.gatherSnapshotReferencesOfChildrenSnapshot(volumeObjectTOs, vmSnapshotVoMock);
-
-        assertTrue(result.isEmpty());
-        verify(vmSnapshotHelperMock, times(1)).getVolumeSnapshotsAssociatedWithKvmDiskOnlyVmSnapshot(201L);
-        verify(vmSnapshotHelperMock, times(1)).getVolumeSnapshotsAssociatedWithKvmDiskOnlyVmSnapshot(202L);
-        verify(kbossBackupProviderSpy, times(1)).mapVolumesToSnapshotReferences(eq(volumeObjectTOs), anyList(), anyMap());
-    }
-
-    @Test
     public void createDeltaMergeTreeTestChildIsVolumeWithoutSucceedingSnapshot() {
         doReturn(dataStoreMock).when(dataStoreManagerMock).getDataStore(anyLong(), eq(DataStoreRole.Primary));
         doReturn("parent-path").when(internalBackupStoragePoolVoMock).getBackupDeltaParentPath();
 
         DeltaMergeTreeTO result = kbossBackupProviderSpy.createDeltaMergeTree(true, true, internalBackupStoragePoolVoMock,
-                volumeObjectToMock, null);
+                volumeObjectToMock, null, null);
 
         assertEquals(volumeObjectToMock, result.getVolumeObjectTO());
         assertTrue(result.getGrandChildren().isEmpty());
@@ -2280,7 +2164,7 @@ public class KbossBackupProviderTest {
         doReturn("child-path").when(internalBackupStoragePoolVoMock).getBackupDeltaPath();
 
         DeltaMergeTreeTO result = kbossBackupProviderSpy.createDeltaMergeTree(false, true, internalBackupStoragePoolVoMock,
-                volumeObjectToMock, null);
+                volumeObjectToMock, null, null);
 
         assertEquals(volumeObjectToMock, result.getVolumeObjectTO());
         assertEquals("parent-path", result.getParent().getPath());
@@ -2296,16 +2180,14 @@ public class KbossBackupProviderTest {
         doReturn("parent-path").when(internalBackupStoragePoolVoMock).getBackupDeltaParentPath();
         doReturn("child-path").when(internalBackupStoragePoolVoMock).getBackupDeltaPath();
         doReturn(volumeId).when(volumeObjectToMock).getVolumeId();
-        doReturn("snapshot-grandchild").when(snapshotRefMock).getInstallPath();
+        doReturn("path").when(volumeObjectToMock).getPath();
 
-        doReturn(Map.of(volumeId, List.of(snapshotRefMock))).when(kbossBackupProviderSpy).gatherSnapshotReferencesOfChildrenSnapshot(List.of(volumeObjectToMock), vmSnapshotVoMock);
-
-        DeltaMergeTreeTO result = kbossBackupProviderSpy.createDeltaMergeTree(false, true, internalBackupStoragePoolVoMock,
-                volumeObjectToMock, vmSnapshotVoMock);
+        DeltaMergeTreeTO result = kbossBackupProviderSpy.createDeltaMergeTree(false, false, internalBackupStoragePoolVoMock,
+                volumeObjectToMock, vmSnapshotVoMock, List.of());
 
         assertEquals("child-path", result.getChild().getPath());
         assertEquals(1, result.getGrandChildren().size());
-        assertEquals("snapshot-grandchild", result.getGrandChildren().get(0).getPath());
+        assertEquals("path", result.getGrandChildren().get(0).getPath());
     }
 
     @Test
@@ -2315,11 +2197,8 @@ public class KbossBackupProviderTest {
         doReturn("child-path").when(internalBackupStoragePoolVoMock).getBackupDeltaPath();
         doReturn("/volume/path").when(volumeObjectToMock).getPath();
 
-        doReturn(Map.of()).when(kbossBackupProviderSpy)
-                .gatherSnapshotReferencesOfChildrenSnapshot(List.of(volumeObjectToMock), vmSnapshotVoMock);
-
         DeltaMergeTreeTO result = kbossBackupProviderSpy.createDeltaMergeTree(false, false, internalBackupStoragePoolVoMock,
-                volumeObjectToMock, vmSnapshotVoMock);
+                volumeObjectToMock, vmSnapshotVoMock, List.of());
 
         assertEquals(1, result.getGrandChildren().size());
         assertEquals("/volume/path", result.getGrandChildren().get(0).getPath());
@@ -2396,14 +2275,16 @@ public class KbossBackupProviderTest {
 
         Set<BackupDeltaTO> deltasToRemove = new java.util.HashSet<>();
 
-        doReturn(deltaMergeTreeToMock).when(kbossBackupProviderSpy).createDeltaMergeTree(true, false, internalBackupStoragePoolVoMock, volumeObjectToMock, null);
+        doReturn(deltaMergeTreeToMock).when(kbossBackupProviderSpy).createDeltaMergeTree(eq(true), eq(false), eq(internalBackupStoragePoolVoMock), eq(volumeObjectToMock), eq(null),
+                eq(new ArrayList<>()));
 
         List<DeltaMergeTreeTO> result = kbossBackupProviderSpy.populateDeltasToRemoveAndToMergeAndUpdateVolumePaths(List.of(internalBackupStoragePoolVoMock), deltasToRemove,
                 List.of(volumeObjectToMock), List.of(volumeObjectToMock), "vm-uuid");
 
         assertEquals(List.of(deltaMergeTreeToMock), result);
         assertTrue(deltasToRemove.isEmpty());
-        verify(kbossBackupProviderSpy, times(1)).createDeltaMergeTree(true, false, internalBackupStoragePoolVoMock, volumeObjectToMock, null);
+        verify(kbossBackupProviderSpy, times(1)).createDeltaMergeTree(eq(true), eq(false), eq(internalBackupStoragePoolVoMock), eq(volumeObjectToMock), eq(null),
+                eq(new ArrayList<>()));
         verify(dataStoreManagerMock, never()).getDataStore(anyLong(), eq(DataStoreRole.Primary));
     }
 
@@ -2503,7 +2384,7 @@ public class KbossBackupProviderTest {
 
         List<Long> removedBackupIds = new ArrayList<>(List.of(backupId, 200L));
 
-        boolean result = kbossBackupProviderSpy.processRemoveBackupFailures(false, deleteAnswers, removedBackupIds, internalBackupJoinVoMock);
+        boolean result = kbossBackupProviderSpy.processRemoveBackupFailures(false, deleteAnswers, removedBackupIds, internalBackupJoinVoMock, virtualMachineMock);
 
         assertTrue(result);
         assertEquals(List.of(backupId, 200L), removedBackupIds);
@@ -2522,10 +2403,11 @@ public class KbossBackupProviderTest {
 
         doReturn(backupId).when(backupVoMock).getId();
         doReturn(backupVoMock).when(backupDaoMock).findByIdIncludingRemoved(backupId);
+        doReturn(VirtualMachine.State.Stopped).when(virtualMachineMock).getState();
 
         List<Long> removedBackupIds = new ArrayList<>(List.of(backupId, 200L));
 
-        boolean result = kbossBackupProviderSpy.processRemoveBackupFailures(false, new Answer[]{failedCurrentBackupAnswer}, removedBackupIds, internalBackupJoinVoMock);
+        boolean result = kbossBackupProviderSpy.processRemoveBackupFailures(false, new Answer[]{failedCurrentBackupAnswer}, removedBackupIds, internalBackupJoinVoMock, virtualMachineMock);
 
         assertFalse(result);
         assertEquals(List.of(200L), removedBackupIds);
@@ -2544,7 +2426,7 @@ public class KbossBackupProviderTest {
 
         List<Long> removedBackupIds = new ArrayList<>(List.of(backupId, 200L));
 
-        boolean result = kbossBackupProviderSpy.processRemoveBackupFailures(true, new Answer[]{failedCurrentBackupAnswer}, removedBackupIds, internalBackupJoinVoMock);
+        boolean result = kbossBackupProviderSpy.processRemoveBackupFailures(true, new Answer[]{failedCurrentBackupAnswer}, removedBackupIds, internalBackupJoinVoMock, virtualMachineMock);
 
         assertFalse(result);
         assertEquals(List.of(200L), removedBackupIds);
@@ -2567,7 +2449,7 @@ public class KbossBackupProviderTest {
 
         List<Long> removedBackupIds = new ArrayList<>(List.of(backupId, 200L));
 
-        boolean result = kbossBackupProviderSpy.processRemoveBackupFailures(false, new Answer[]{failedOtherBackupAnswer}, removedBackupIds, internalBackupJoinVoMock);
+        boolean result = kbossBackupProviderSpy.processRemoveBackupFailures(false, new Answer[]{failedOtherBackupAnswer}, removedBackupIds, internalBackupJoinVoMock, virtualMachineMock);
 
         assertFalse(result);
         assertEquals(List.of(backupId), removedBackupIds);

@@ -39,6 +39,8 @@ import org.apache.cloudstack.utils.qemu.QemuImageOptions;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.libvirt.LibvirtException;
 
 import java.io.File;
@@ -142,8 +144,8 @@ public class LibvirtTakeKbossBackupCommandWrapper extends CommandWrapper<TakeKbo
             volumeObjectTO.setPath(kbossTO.getDeltaPathOnPrimary());
 
             if (deltaMergeTreeTO != null) {
-                List<String> snapshotDataStoreVos = kbossTO.getVmSnapshotDeltaPaths();
-                mergeBackupDelta(resource, deltaMergeTreeTO, volumeObjectTO, vmName, runningVM, volumeUuid, snapshotDataStoreVos.isEmpty());
+                List<String> snapshotDataStoreVos = kbossTO.getDeltaPaths();
+                mergeBackupDelta(resource, deltaMergeTreeTO, volumeObjectTO, vmName, runningVM, volumeUuid, CollectionUtils.isEmpty(snapshotDataStoreVos));
             }
 
             if (command.isEndChain() || command.isIsolated()) {
@@ -167,7 +169,7 @@ public class LibvirtTakeKbossBackupCommandWrapper extends CommandWrapper<TakeKbo
             int waitInMillis) {
         VolumeObjectTO delta = kbossTO.getVolumeObjectTO();
         String parentDeltaPathOnSecondary = kbossTO.getPathBackupParentOnSecondary();
-        List<String> deltaPathsToCopy = kbossTO.getVmSnapshotDeltaPaths();
+        List<String> deltaPathsToCopy = ObjectUtils.defaultIfNull(kbossTO.getDeltaPaths(), new ArrayList<>());
         deltaPathsToCopy.add(delta.getPath());
 
         KVMStoragePool parentImagePool = null;

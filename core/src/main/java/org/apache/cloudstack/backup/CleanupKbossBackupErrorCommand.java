@@ -25,17 +25,38 @@ public class CleanupKbossBackupErrorCommand extends Command {
 
     private boolean runningVM;
 
+    private boolean errorOnCreate;
+
+    private boolean endOfChain;
+
+    private boolean isTopDelta;
+
     private String vmName;
 
     private String imageStoreUrl;
 
     private List<KbossTO> kbossTOS;
 
-    public CleanupKbossBackupErrorCommand(boolean runningVM, String vmName, String imageStoreUrl, List<KbossTO> kbossTOS) {
+    public CleanupKbossBackupErrorCommand(boolean runningVM, boolean errorOnCreate, boolean endOfChain, boolean isTopDelta, String vmName, String imageStoreUrl, List<KbossTO> kbossTOS) {
+        this.errorOnCreate = errorOnCreate;
         this.runningVM = runningVM;
+        this.endOfChain = endOfChain;
+        this.isTopDelta = isTopDelta;
         this.vmName = vmName;
         this.imageStoreUrl = imageStoreUrl;
         this.kbossTOS = kbossTOS;
+    }
+
+    public boolean isErrorOnCreate() {
+        return errorOnCreate;
+    }
+
+    public boolean isEndOfChain() {
+        return endOfChain;
+    }
+
+    public boolean isTopDelta() {
+        return isTopDelta;
     }
 
     public boolean isRunningVM() {

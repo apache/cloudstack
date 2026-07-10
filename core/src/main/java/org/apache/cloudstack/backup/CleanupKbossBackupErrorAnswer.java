@@ -18,25 +18,26 @@
  */
 package org.apache.cloudstack.backup;
 
+import java.util.Map;
+
+import org.apache.commons.collections4.MapUtils;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.commons.collections4.CollectionUtils;
-
-import java.util.List;
+import com.cloud.utils.Pair;
 
 public class CleanupKbossBackupErrorAnswer extends Answer {
-    private List<VolumeObjectTO> volumeObjectTos;
+    private Map<String, Pair<String, Boolean>> volumeIdToPathAndChainEnded;
     private boolean vmRunning;
 
-    public CleanupKbossBackupErrorAnswer(Command cmd, List<VolumeObjectTO> volumeObjectTos, boolean vmRunning) {
-        super(cmd, CollectionUtils.isNotEmpty(volumeObjectTos), null);
-        this.volumeObjectTos = volumeObjectTos;
+    public CleanupKbossBackupErrorAnswer(Command cmd, Map<String, Pair<String, Boolean>> volumeIdToPathAndChainEnded, boolean vmRunning) {
+        super(cmd, MapUtils.isNotEmpty(volumeIdToPathAndChainEnded), null);
+        this.volumeIdToPathAndChainEnded = volumeIdToPathAndChainEnded;
         this.vmRunning = vmRunning;
     }
 
-    public List<VolumeObjectTO> getVolumeObjectTos() {
-        return volumeObjectTos;
+    public Map<String, Pair<String, Boolean>> getVolumeIdToPathAndChainEnded() {
+        return volumeIdToPathAndChainEnded;
     }
 
     public boolean isVmRunning() {

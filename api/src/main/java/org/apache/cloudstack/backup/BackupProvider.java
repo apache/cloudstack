@@ -64,6 +64,17 @@ public interface BackupProvider {
     boolean removeVMFromBackupOffering(VirtualMachine vm);
 
     /**
+     * Removes the specified backup schedule from a virtual machine.
+     *
+     * @param vm the virtual machine from which the schedule will be removed.
+     * @param backupSchedule the backup schedule to be removed.
+     * @return {@code true} if the operation was successful; {@code false} otherwise.
+     */
+    default boolean removeVMBackupSchedule(VirtualMachine vm, BackupSchedule backupSchedule) {
+        return true;
+    }
+
+    /**
      * Whether the provider will delete backups on removal of VM from the offering
      * @return boolean result
      */
@@ -80,7 +91,7 @@ public interface BackupProvider {
      * @param isolated
      * @return the result and {code}Backup{code} {code}Object{code}
      */
-    Pair<Boolean, Backup> takeBackup(VirtualMachine vm, Boolean quiesceVM, boolean isolated);
+    Pair<Boolean, Backup> takeBackup(VirtualMachine vm, Boolean quiesceVM, boolean isolated, Long backupScheduleId);
 
     /**
      * Delete an existing backup

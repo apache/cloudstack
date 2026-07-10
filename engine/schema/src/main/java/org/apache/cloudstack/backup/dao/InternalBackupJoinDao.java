@@ -24,11 +24,15 @@ import java.util.List;
 
 public interface InternalBackupJoinDao extends GenericDao<InternalBackupJoinVO, Long> {
 
-    List<InternalBackupJoinVO> listByBackedUpAndVmIdAndDateBeforeOrAfterOrderBy(long vmId, Date date, boolean before, boolean ascending);
+    List<InternalBackupJoinVO> listByBackedUpAndVmIdAndDateBeforeOrAfterOrderBy(long vmId, Long scheduleId, Date date, boolean before, boolean ascending);
 
-    List<InternalBackupJoinVO> listIncludingRemovedByVmIdAndBeforeDateOrderByCreatedDesc(long vmId, Date beforeDate);
+    List<InternalBackupJoinVO> listIncludingRemovedByVmIdAndBeforeDateOrderByCreatedDesc(long vmId, Long scheduleId, Date beforeDate);
 
-    InternalBackupJoinVO findCurrent(long vmId);
+    InternalBackupJoinVO findCurrent(long vmId, Long scheduleId);
+
+    List<InternalBackupJoinVO> listCurrents(long vmId, boolean descending);
+
+    List<InternalBackupJoinVO> listCurrentsByVolumeIdDesc(long volumeId);
 
     InternalBackupJoinVO findByParentId(long parentId);
 

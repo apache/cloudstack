@@ -17,74 +17,35 @@
 
 package org.apache.cloudstack.backup;
 
-import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
-import com.cloud.agent.api.storage.MergeDiskOnlyVmSnapshotCommand;
-import com.cloud.agent.api.to.DataStoreTO;
-import com.cloud.agent.api.to.DataTO;
-import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.agent.manager.Commands;
-import com.cloud.alert.AlertManager;
-import com.cloud.exception.AgentUnavailableException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.OperationTimedoutException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.host.HostVO;
-import com.cloud.host.Status;
-import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.hypervisor.HypervisorGuru;
-import com.cloud.hypervisor.HypervisorGuruManager;
-import com.cloud.resource.ResourceState;
-import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.Storage;
-import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeApiService;
-import com.cloud.storage.VolumeApiServiceImpl;
-import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.DiskOfferingDao;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.uservm.UserVm;
-import com.cloud.utils.DateUtil;
-import com.cloud.utils.Pair;
-import com.cloud.utils.Predicate;
-import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.db.EntityManager;
-import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.TransactionCallback;
-import com.cloud.utils.db.TransactionLegacy;
-import com.cloud.utils.exception.BackupException;
-import com.cloud.utils.exception.BackupProviderException;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.fsm.NoTransitionException;
-import com.cloud.vm.NicVO;
-import com.cloud.vm.UserVmManager;
-import com.cloud.vm.UserVmVO;
-import com.cloud.vm.VMInstanceDetailVO;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.VirtualMachineManagerImpl;
-import com.cloud.vm.VirtualMachineProfileImpl;
-import com.cloud.vm.VmDetailConstants;
-import com.cloud.vm.VmWork;
-import com.cloud.vm.VmWorkConstants;
-import com.cloud.vm.VmWorkDeleteBackup;
-import com.cloud.vm.VmWorkRestoreBackup;
-import com.cloud.vm.VmWorkRestoreVolumeBackupAndAttach;
-import com.cloud.vm.VmWorkSerializer;
-import com.cloud.vm.VmWorkTakeBackup;
-import com.cloud.vm.dao.NicDao;
-import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.VMInstanceDetailsDao;
-import com.cloud.vm.snapshot.VMSnapshot;
-import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
-import com.cloud.vm.snapshot.VMSnapshotVO;
-import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
+import static org.apache.cloudstack.backup.dao.BackupDetailsDao.BACKUP_HASH;
+import static org.apache.cloudstack.backup.dao.BackupDetailsDao.CURRENT;
+import static org.apache.cloudstack.backup.dao.BackupDetailsDao.END_OF_CHAIN;
+import static org.apache.cloudstack.backup.dao.BackupDetailsDao.IMAGE_STORE_ID;
+import static org.apache.cloudstack.backup.dao.BackupDetailsDao.ISOLATED;
+import static org.apache.cloudstack.backup.dao.BackupDetailsDao.PARENT_ID;
+import static org.apache.cloudstack.backup.dao.BackupDetailsDao.SCREENSHOT_PATH;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
+
+import javax.inject.Inject;
+
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
@@ -135,31 +96,75 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import javax.inject.Inject;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
-
-import static org.apache.cloudstack.backup.dao.BackupDetailsDao.BACKUP_HASH;
-import static org.apache.cloudstack.backup.dao.BackupDetailsDao.CURRENT;
-import static org.apache.cloudstack.backup.dao.BackupDetailsDao.END_OF_CHAIN;
-import static org.apache.cloudstack.backup.dao.BackupDetailsDao.IMAGE_STORE_ID;
-import static org.apache.cloudstack.backup.dao.BackupDetailsDao.ISOLATED;
-import static org.apache.cloudstack.backup.dao.BackupDetailsDao.PARENT_ID;
-import static org.apache.cloudstack.backup.dao.BackupDetailsDao.SCREENSHOT_PATH;
+import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
+import com.cloud.agent.api.storage.MergeDiskOnlyVmSnapshotCommand;
+import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.agent.manager.Commands;
+import com.cloud.alert.AlertManager;
+import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.OperationTimedoutException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.host.HostVO;
+import com.cloud.host.Status;
+import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.HypervisorGuru;
+import com.cloud.hypervisor.HypervisorGuruManager;
+import com.cloud.resource.ResourceState;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.Storage;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeApiService;
+import com.cloud.storage.VolumeApiServiceImpl;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.uservm.UserVm;
+import com.cloud.utils.DateUtil;
+import com.cloud.utils.Pair;
+import com.cloud.utils.Predicate;
+import com.cloud.utils.Ternary;
+import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.exception.BackupException;
+import com.cloud.utils.exception.BackupProviderException;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.vm.NicVO;
+import com.cloud.vm.UserVmManager;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VMInstanceDetailVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.VirtualMachineManagerImpl;
+import com.cloud.vm.VirtualMachineProfileImpl;
+import com.cloud.vm.VmDetailConstants;
+import com.cloud.vm.VmWork;
+import com.cloud.vm.VmWorkConstants;
+import com.cloud.vm.VmWorkDeleteBackup;
+import com.cloud.vm.VmWorkRestoreBackup;
+import com.cloud.vm.VmWorkRestoreVolumeBackupAndAttach;
+import com.cloud.vm.VmWorkSerializer;
+import com.cloud.vm.VmWorkTakeBackup;
+import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
+import com.cloud.vm.snapshot.VMSnapshot;
+import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
+import com.cloud.vm.snapshot.VMSnapshotVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
 
 public class KbossBackupProvider extends AdapterBase implements InternalBackupProvider, Configurable {
     protected ConfigKey<Integer> backupChainSize = new ConfigKey<>("Advanced", Integer.class, "backup.chain.size", "8", "Determines the max size of a backup chain." +
@@ -329,11 +334,23 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         logger.info("Removing VM [{}] from KBOSS backup offering.", vm.getUuid());
 
         validateVmState(vm, "remove backup offering", VirtualMachine.State.Expunging, VirtualMachine.State.Destroyed);
-        if (endBackupChain(vm)) {
+        List<InternalBackupJoinVO> currents = internalBackupJoinDao.listCurrents(vm.getId(), true);
+
+        return finishAllChains(vm, currents);
+    }
+
+    @Override
+    public boolean removeVMBackupSchedule(VirtualMachine vm, BackupSchedule backupSchedule) {
+        logger.info("Removing VM [{}] from KBOSS backup schedule.", vm.getUuid());
+
+        if (endBackupChain(vm, backupSchedule.getId())) {
             return true;
         }
         UserVmVO vmVO = userVmDao.findById(vm.getId());
-        logger.error("Failed to merge deltas for VM [{}] during backup offering removal process. Changing its state to [{}].", vm, VirtualMachine.State.BackupError);
+        logger.error("Failed to merge deltas for VM [{}] during backup schedule removal process. Changing its state to [{}].", vm, VirtualMachine.State.BackupError);
+        BackupVO backupVO = backupDao.findById(internalBackupJoinDao.findCurrent(vm.getId(), backupSchedule.getId()).getId());
+        backupVO.setStatus(Backup.Status.Error);
+        backupDao.update(backupVO.getId(), backupVO);
         vmInstanceDetailsDao.addDetail(vm.getId(), VmDetailConstants.LAST_KNOWN_STATE, vmVO.getState().name(), false);
         vmVO.setState(VirtualMachine.State.BackupError);
         userVmDao.update(vmVO.getId(), vmVO);
@@ -347,9 +364,9 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
     }
 
     @Override
-    public Pair<Boolean, Backup> takeBackup(VirtualMachine vm, Boolean quiesceVm, boolean isolated) {
+    public Pair<Boolean, Backup> takeBackup(VirtualMachine vm, Boolean quiesceVm, boolean isolated, Long backupScheduleId) {
         logger.debug("Queueing backup on VM [{}].", vm.getUuid());
-        Outcome<?> outcome = createBackupThroughJobQueue(vm, ObjectUtils.defaultIfNull(quiesceVm, false), isolated);
+        Outcome<?> outcome = createBackupThroughJobQueue(vm, ObjectUtils.defaultIfNull(quiesceVm, false), isolated, backupScheduleId);
 
         try {
             outcome.get();
@@ -421,13 +438,6 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         HashMap<String, InternalBackupStoragePoolVO> volumeUuidToDeltaPrimaryRef = new HashMap<>();
         HashMap<String, InternalBackupDataStoreVO> volumeUuidToDeltaSecondaryRef = new HashMap<>();
 
-        if (!fullBackup) {
-            parentBackupDeltasOnPrimary = internalBackupStoragePoolDao.listByBackupId(parentBackup.getId());
-            parentBackupDeltasOnSecondary = internalBackupDataStoreDao.listByBackupId(parentBackup.getId());
-
-            chainImageStoreUrls = getChainImageStoreUrls(backupChain);
-        }
-
         boolean runningVm = userVm.getState() == VirtualMachine.State.Running;
         transitVmState(userVm, VirtualMachine.Event.BackupRequested, hostId);
         updateBackupStatusToBackingUp(volumeTOs, backupVO);
@@ -435,14 +445,24 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         DataStore imageStore = getImageStoreForBackup(userVm.getDataCenterId(), backupVO);
         createBasicBackupDetails(imageStore.getId(), fullBackup ? 0L : parentBackup.getId(), backupVO);
 
+        List<InternalBackupJoinVO> succeedingBackupList = getSucceedingBackupList(parentBackup);
+        InternalBackupJoinVO succeedingBackup = succeedingBackupList.isEmpty() ? null : succeedingBackupList.get(0);
+
         List<VMSnapshotVO> succeedingVmSnapshotList = getSucceedingVmSnapshotList(parentBackup);
         VMSnapshotVO succeedingVmSnapshot = succeedingVmSnapshotList.isEmpty() ? null : succeedingVmSnapshotList.get(0);
 
-        Map<Long, List<SnapshotDataStoreVO>> volumeIdToSnapshotDataStoreList = mapVolumesToVmSnapshotReferences(volumeTOs, succeedingVmSnapshotList);
+        if (!fullBackup) {
+            parentBackupDeltasOnPrimary = internalBackupStoragePoolDao.listByBackupId(parentBackup.getId());
+            parentBackupDeltasOnSecondary = internalBackupDataStoreDao.listByBackupId(parentBackup.getId());
+
+            chainImageStoreUrls = getChainImageStoreUrls(backupChain);
+        }
+
+        Map<Long, LinkedList<String>> volumeIdToSnapshotDataStoreAndBackupPathList = mapVolumesToVmSnapshotAndBackupReferences(volumeTOs, succeedingVmSnapshotList, succeedingBackupList);
         for (VolumeObjectTO volumeObjectTO : volumeTOs) {
-            KbossTO kbossTO = new KbossTO(volumeObjectTO, volumeIdToSnapshotDataStoreList.getOrDefault(volumeObjectTO.getId(), new ArrayList<>()));
+            KbossTO kbossTO = new KbossTO(volumeObjectTO, volumeIdToSnapshotDataStoreAndBackupPathList.getOrDefault(volumeObjectTO.getId(), new LinkedList<>()));
             kbossTOs.add(kbossTO);
-            createDeltaReferences(fullBackup, !succeedingVmSnapshotList.isEmpty(), runningVm, backup, parentBackupDeltasOnSecondary,
+            createDeltaReferences(fullBackup, runningVm, backup, parentBackupDeltasOnSecondary,
                     parentBackupDeltasOnPrimary, volumeUuidToDeltaPrimaryRef, volumeUuidToDeltaSecondaryRef, succeedingVmSnapshot, kbossTO);
         }
 
@@ -457,7 +477,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         }
 
         processBackupSuccess(runningVm, volumeTOs, volumeUuidToDeltaPrimaryRef, volumeUuidToDeltaSecondaryRef, (TakeKbossBackupAnswer)answer, parentBackupDeltasOnPrimary,
-                succeedingVmSnapshotList, backupVO, fullBackup, userVm, hostId, newBackupJoin.getEndOfChain(), isolated);
+                succeedingVmSnapshot, backupVO, fullBackup, userVm, hostId, newBackupJoin.getEndOfChain(), isolated, succeedingBackup);
 
         if (!isolated) {
             updateCurrentBackup(newBackupJoin);
@@ -557,7 +577,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         List<Long> removedBackupIds = backupParentsToBeRemovedAndLastAliveBackup.first().stream().map(InternalBackupJoinVO::getId).collect(Collectors.toList());
         removedBackupIds.add(backup.getId());
 
-        boolean isFailedSetEmpty = processRemoveBackupFailures(forced, deleteAnswers, removedBackupIds, backupJoinVO);
+        boolean isFailedSetEmpty = processRemoveBackupFailures(forced, deleteAnswers, removedBackupIds, backupJoinVO, virtualMachine);
 
         processRemovedBackups(removedBackupIds);
 
@@ -605,10 +625,10 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         }
 
         InternalBackupJoinVO backupJoinVO = internalBackupJoinDao.findById(backupId);
-        InternalBackupJoinVO currentBackup = sameVmAsBackup ? internalBackupJoinDao.findCurrent(vm.getId()) : null;
+        List<InternalBackupJoinVO> currentBackups = sameVmAsBackup ? internalBackupJoinDao.listCurrents(vm.getId(), false) : List.of();
         List<InternalBackupStoragePoolVO> deltasOnPrimary = new ArrayList<>();
-        if (currentBackup != null) {
-            deltasOnPrimary = internalBackupStoragePoolDao.listByBackupId(currentBackup.getId());
+        for (InternalBackupJoinVO currentBackup : currentBackups) {
+            deltasOnPrimary.addAll(0, internalBackupStoragePoolDao.listByBackupId(currentBackup.getId()));
         }
         List<InternalBackupDataStoreVO> deltasOnSecondary = internalBackupDataStoreDao.listByBackupId(backupId);
         List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(vm.getId());
@@ -665,7 +685,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
 
         updateVolumePathsAndSizeIfNeeded(vm, volumeTOs, volumeInfos, deltasToBeMerged, sameVmAsBackup);
 
-        if (currentBackup != null) {
+        for (InternalBackupJoinVO currentBackup : currentBackups) {
             internalBackupStoragePoolDao.expungeByBackupId(currentBackup.getId());
             setEndOfChainAndRemoveCurrentForBackup(currentBackup);
         }
@@ -881,16 +901,17 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
     }
 
     @Override
-    public boolean finishBackupChain(VirtualMachine virtualMachine) {
-        UserVmVO userVmVO = userVmDao.findById(virtualMachine.getId());
-        if (allowedVmStates.contains(userVmVO.getState())) {
-            return endBackupChain(userVmVO);
+    public boolean finishBackupChains(VirtualMachine virtualMachine) {
+        UserVmVO vm = userVmDao.findById(virtualMachine.getId());
+        List<InternalBackupJoinVO> currents = internalBackupJoinDao.listCurrents(vm.getId(), true);
+        if (allowedVmStates.contains(vm.getState())) {
+            return finishAllChains(vm, currents);
         }
-        if (userVmVO.getState() != VirtualMachine.State.BackupError) {
-            logger.error("VM [{}] is not in the right state to finish backup chain. It can only be in states [Running, Stopped and BackupError].", userVmVO.getUuid());
+        if (vm.getState() != VirtualMachine.State.BackupError) {
+            logger.error("VM [{}] is not in the right state to finish backup chain. It can only be in states [Running, Stopped and BackupError].", vm.getUuid());
             return false;
         }
-        return normalizeBackupErrorAndFinishChain(userVmVO);
+        return normalizeBackupErrorAndFinishChain(vm);
     }
 
     @Override
@@ -924,14 +945,14 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
     @Override
     public void prepareVolumeForDetach(Volume volume, VirtualMachine virtualMachine) {
         logger.info("Preparing volume [{}] for detach.", volume.getUuid());
-        mergeCurrentDeltaIntoVolume(volume, virtualMachine, "detach", virtualMachine.getState().equals(VirtualMachine.State.Running));
+        mergeCurrentDeltasIntoVolume(volume, virtualMachine, "detach", virtualMachine.getState().equals(VirtualMachine.State.Running));
     }
 
     @Override
     public void prepareVolumeForMigration(Volume volume, VirtualMachine vm) {
         if (VirtualMachine.State.Migrating.equals(vm.getState())) {
             logger.info("Preparing volume [{}] for live migration.", volume.getUuid());
-            mergeCurrentDeltaIntoVolume(volume, vm, "live migration", true);
+            mergeCurrentDeltasIntoVolume(volume, vm, "live migration", true);
         }
     }
 
@@ -942,30 +963,37 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
 
     @Override
     public void prepareVmForSnapshotRevert(VMSnapshot vmSnapshot, VirtualMachine virtualMachine) {
-        InternalBackupJoinVO currentBackup = internalBackupJoinDao.findCurrent(virtualMachine.getId());
+        List<InternalBackupJoinVO> currentBackups = internalBackupJoinDao.listCurrents(virtualMachine.getId(), true);
 
-        if (currentBackup == null) {
+        if (currentBackups.isEmpty()) {
             logger.debug("There is no current backup delta, the VM [{}] is already prepared for VM snapshot revert.", virtualMachine.getUuid());
             return;
         }
-        if (currentBackup.getDate().before(vmSnapshot.getCreated())) {
-            logger.debug("The current backup delta was taken before [{}] the VM snapshot being reverted [{}], no need to prepare the VM.", currentBackup.getDate(),
-                    vmSnapshot.getCreated());
+        currentBackups = currentBackups.stream().filter(backup -> backup.getDate().after(vmSnapshot.getCreated())).collect(Collectors.toList());
+        if (currentBackups.isEmpty()) {
+            logger.debug("Existing backup deltas [{}] were created before the target VM snapshot [{}]. No preparation needed for VM [{}].",
+                    currentBackups, vmSnapshot.getCreated(), virtualMachine.getUuid());
             return;
         }
 
         logger.debug("Preparing VM [{}] for VM snapshot reversion.", virtualMachine.getUuid());
 
         List<VolumeObjectTO> volumeObjectTOs = vmSnapshotHelper.getVolumeTOList(virtualMachine.getId());
-        VMSnapshotVO vmSnapshotSucceedingCurrentBackup = getSucceedingVmSnapshot(currentBackup);
 
         List<DeltaMergeTreeTO> deltaMergeTreeTOList = new ArrayList<>();
         Commands commands = new Commands(Command.OnError.Stop);
         List<InternalBackupStoragePoolVO> deletedDeltas = new ArrayList<>();
 
-        createDeleteCommandsAndMergeTrees(volumeObjectTOs, commands, deletedDeltas, vmSnapshotSucceedingCurrentBackup, deltaMergeTreeTOList);
+        Map<InternalBackupJoinVO, VMSnapshotVO> backupVmSnapshotMap = new HashMap<>();
 
-        if (!deltaMergeTreeTOList.isEmpty()) {
+        for (InternalBackupJoinVO currentBackup : currentBackups) {
+            VMSnapshotVO vmSnapshotSucceedingCurrentBackup = getSucceedingVmSnapshot(currentBackup);
+
+            createDeleteCommandsAndMergeTrees(volumeObjectTOs, commands, deletedDeltas, vmSnapshotSucceedingCurrentBackup, deltaMergeTreeTOList, currentBackup);
+            backupVmSnapshotMap.put(currentBackup, vmSnapshotSucceedingCurrentBackup);
+        }
+
+        if (CollectionUtils.isNotEmpty(deltaMergeTreeTOList)) {
             commands.addCommand(new MergeDiskOnlyVmSnapshotCommand(deltaMergeTreeTOList, false, virtualMachine.getInstanceName()));
         }
 
@@ -984,13 +1012,18 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
             throw new CloudRuntimeException(String.format("Unable to prepare VM [%s] for VM snapshot reversion.", virtualMachine.getUuid()));
         }
 
-        List<SnapshotDataStoreVO> snapRefsSucceedingCurrentBackup = new ArrayList<>();
+        for (Map.Entry<InternalBackupJoinVO, VMSnapshotVO> backupAndVmSnapshot : backupVmSnapshotMap.entrySet()) {
+            InternalBackupJoinVO backup = backupAndVmSnapshot.getKey();
+            VMSnapshotVO vmSnapshotSucceedingBackup = backupAndVmSnapshot.getValue();
 
-        if (vmSnapshotSucceedingCurrentBackup != null) {
-            snapRefsSucceedingCurrentBackup = vmSnapshotHelper.getVolumeSnapshotsAssociatedWithKvmDiskOnlyVmSnapshot(vmSnapshotSucceedingCurrentBackup.getId());
+            List<SnapshotDataStoreVO> snapRefsSucceedingCurrentBackup = new ArrayList<>();
+
+            if (vmSnapshotSucceedingBackup != null) {
+                snapRefsSucceedingCurrentBackup = vmSnapshotHelper.getVolumeSnapshotsAssociatedWithKvmDiskOnlyVmSnapshot(vmSnapshotSucceedingBackup.getId());
+            }
+
+            updateReferencesAfterPrepareForSnapshotRevert(deltaMergeTreeTOList, snapRefsSucceedingCurrentBackup, deletedDeltas, backup);
         }
-
-        updateReferencesAfterPrepareForSnapshotRevert(deltaMergeTreeTOList, snapRefsSucceedingCurrentBackup, deletedDeltas, currentBackup);
     }
 
     /**
@@ -1031,14 +1064,14 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
                 backupCompressionCoroutines};
     }
 
-    protected Outcome<?> createBackupThroughJobQueue(VirtualMachine vm, boolean quiesceVm, boolean isolated) {
+    protected Outcome<?> createBackupThroughJobQueue(VirtualMachine vm, boolean quiesceVm, boolean isolated, Long backupScheduleId) {
         final CallContext context = CallContext.current();
         long userId = context.getCallingUser().getId();
         long accountId = context.getCallingAccount().getAccountId();
         long vmId = vm.getId();
 
         BackupVO backup = new BackupVO(String.format("%s-%s", vm.getHostName(), DateUtil.getDateInSystemTimeZone()), vmId, vm.getBackupOfferingId(), accountId,
-                vm.getDomainId(), vm.getDataCenterId(), 0, Backup.Status.Queued, null);
+                vm.getDomainId(), vm.getDataCenterId(), 0, Backup.Status.Queued, backupScheduleId);
 
         VmWorkJobVO workJob = new VmWorkJobVO(AsyncJobExecutionContext.getOriginJobId(), userId, accountId, VmWorkTakeBackup.class.getName(), vmId, VirtualMachine.Type.Instance,
                 VmWorkJobVO.Step.Starting);
@@ -1231,7 +1264,6 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
     /**
      * If backupValidationEndChainOnFail is true for the account, and the backup being validated is part of the current chain, we end the current chain.
      * */
-
     protected void endBackupChainIfConfigured(BackupVO backupVO) {
         if (!getValidationEndChainOnFail(backupVO)) {
             return;
@@ -1241,9 +1273,9 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         // Get updated record
         InternalBackupJoinVO backupJoinVO = internalBackupJoinDao.findById(backupVO.getId());
         if (backupJoinVO.getCurrent() || (!backupChildren.isEmpty() && backupChildren.get(backupChildren.size() - 1).getCurrent())) {
-            logger.info("As [{}] is true, we are ending the backup chain for VM [{}]. The next backup will be a full backup.",
-                    BackupValidationServiceJobController.backupValidationEndChainOnFail.toString());
-            endBackupChain(userVmDao.findById(backupVO.getVmId()));
+            logger.info("As [{}] is true, we are ending the backup chain of schedule [{}] for VM [{}]. The next backup will be a full backup.",
+                    backupVO.getBackupScheduleId(), BackupValidationServiceJobController.backupValidationEndChainOnFail.toString());
+            endBackupChain(userVmDao.findById(backupVO.getVmId()), backupVO.getBackupScheduleId());
         }
     }
 
@@ -1259,12 +1291,20 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         boolean runningVM = detail == null || VirtualMachine.State.valueOf(detail.getValue()) == VirtualMachine.State.Running;
 
         BackupVO backupVO = backupDao.findLatestByStatusAndVmId(Backup.Status.Error, userVmVO.getId());
-        InternalBackupJoinVO internalBackupJoinVO = internalBackupJoinDao.findById(backupVO.getId());
-        ImageStoreVO imageStoreVO = imageStoreDao.findById(internalBackupJoinVO.getImageStoreId());
+        InternalBackupJoinVO currentOnThisChain = internalBackupJoinDao.findCurrent(userVmVO.getId(), backupVO.getBackupScheduleId());
+        InternalBackupJoinVO errorBackup = internalBackupJoinDao.findById(backupVO.getId());
+
+        boolean errorOnBackupCreation = currentOnThisChain == null || currentOnThisChain.getId() != errorBackup.getId();
+
+        List<InternalBackupJoinVO> succeedingBackupList = getSucceedingBackupList(currentOnThisChain);
+        List<VMSnapshotVO> succeedingVmSnapshotList = getSucceedingVmSnapshotList(currentOnThisChain);
+        List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(userVmVO.getId());
+
+        Map<Long, LinkedList<String>> volumeToDeltasAfterCurrent = mapVolumesToVmSnapshotAndBackupReferences(volumeTOs, succeedingVmSnapshotList, succeedingBackupList);
 
         List<KbossTO> kbossTOS = new ArrayList<>();
-        List<InternalBackupStoragePoolVO> deltasOnPrimary = internalBackupStoragePoolDao.listByBackupId(internalBackupJoinVO.getId());
-        InternalBackupJoinVO parent = internalBackupJoinDao.findById(internalBackupJoinVO.getParentId());
+        List<InternalBackupStoragePoolVO> deltasOnPrimary = internalBackupStoragePoolDao.listByBackupId(errorBackup.getId());
+        InternalBackupJoinVO parent = internalBackupJoinDao.findById(errorBackup.getParentId());
 
         // There is a possibility that the cleanup step of the backup creation was executed, and thus we would have to merge with the old parent's parent
         List<InternalBackupStoragePoolVO> parentDeltasOnPrimary = new ArrayList<>();
@@ -1272,9 +1312,11 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
             parentDeltasOnPrimary = internalBackupStoragePoolDao.listByBackupId(parent.getId());
         }
 
-        List<InternalBackupDataStoreVO> deltasOnSecondary = internalBackupDataStoreDao.listByBackupId(internalBackupJoinVO.getId());
-        configureKbossTosForCleanup(userVmVO, deltasOnPrimary, deltasOnSecondary, runningVM, parentDeltasOnPrimary, kbossTOS);
-        CleanupKbossBackupErrorCommand command = new CleanupKbossBackupErrorCommand(runningVM, userVmVO.getInstanceName(), imageStoreVO.getUrl(), kbossTOS);
+        List<InternalBackupDataStoreVO> deltasOnSecondary = internalBackupDataStoreDao.listByBackupId(errorBackup.getId());
+        ImageStoreVO imageStoreVO = imageStoreDao.findById(errorBackup.getImageStoreId());
+        configureKbossTosForCleanup(userVmVO, deltasOnPrimary, volumeToDeltasAfterCurrent, deltasOnSecondary, parentDeltasOnPrimary, kbossTOS, errorOnBackupCreation);
+        CleanupKbossBackupErrorCommand command = new CleanupKbossBackupErrorCommand(runningVM, errorOnBackupCreation, errorBackup.getEndOfChain(), succeedingBackupList.isEmpty(),
+                userVmVO.getInstanceName(), imageStoreVO.getUrl(), kbossTOS);
 
         long hostId = userVmVO.getHostId() != null ? userVmVO.getHostId() : vmSnapshotHelper.pickRunningHost(userVmVO.getId());
         Answer answer = sendBackupCommand(hostId, command);
@@ -1283,38 +1325,60 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
             return false;
         }
 
-        boolean chainAlreadyEnded = processCleanupBackupErrorAnswer(userVmVO, answer);
+        boolean chainAlreadyEnded = processCleanupBackupErrorAnswer(userVmVO, answer, errorBackup, currentOnThisChain, succeedingBackupList);
 
         if (!chainAlreadyEnded) {
-            return endBackupChain(userVmVO);
+            mergeCurrentBackupDeltas(errorBackup);
         }
-        InternalBackupJoinVO current = internalBackupJoinDao.findCurrent(userVmVO.getId());
-        internalBackupStoragePoolDao.expungeByBackupId(current.getId());
-        setEndOfChainAndRemoveCurrentForBackup(current);
 
-        return true;
+        if (currentOnThisChain != null) {
+            internalBackupStoragePoolDao.expungeByBackupId(currentOnThisChain.getId());
+            setEndOfChainAndRemoveCurrentForBackup(currentOnThisChain);
+        }
+
+        return finishBackupChains(userVmVO);
     }
 
-    protected boolean processCleanupBackupErrorAnswer(UserVmVO userVmVO, Answer answer) {
+    protected boolean processCleanupBackupErrorAnswer(UserVmVO userVmVO, Answer answer, InternalBackupJoinVO errorBackup, InternalBackupJoinVO currentBackup,
+            List<InternalBackupJoinVO> succeedingBackups) {
         boolean runningVM;
         CleanupKbossBackupErrorAnswer cleanAnswer = (CleanupKbossBackupErrorAnswer) answer;
         logger.info("Successfully finished chain for VM [{}] and normalizing the BackupError state. Cleaning up metadata.", userVmVO.getUuid());
 
-        boolean chainAlreadyEnded = false;
-        for (VolumeObjectTO volumeObjectTO : cleanAnswer.getVolumeObjectTos()) {
-            VolumeVO volumeVO = volumeDao.findById(volumeObjectTO.getId());
-            if (!volumeObjectTO.getPath().equals(volumeVO.getPath())) {
-                volumeVO.setPath(volumeObjectTO.getPath());
+        boolean chainAlreadyEnded = true;
+        for (Map.Entry<String, Pair<String,Boolean>> entry : cleanAnswer.getVolumeIdToPathAndChainEnded().entrySet()) {
+            VolumeVO volumeVO = volumeDao.findByUuid(entry.getKey());
+            if (!entry.getValue().first().equals(volumeVO.getPath())) {
+                volumeVO.setPath(entry.getValue().first());
                 volumeDao.update(volumeVO.getId(), volumeVO);
-                chainAlreadyEnded = true;
+                if (!entry.getValue().second()) {
+                    chainAlreadyEnded = false;
+                    continue;
+                }
+                internalBackupStoragePoolDao.expungeByVolumeIdAndBackupId(volumeVO.getId(), errorBackup.getId());
             }
         }
+        updateSucceedingBackupIfNeeded(currentBackup, succeedingBackups);
 
         runningVM = cleanAnswer.isVmRunning();
         userVmVO.setState(runningVM ? VirtualMachine.State.Running : VirtualMachine.State.Stopped);
         userVmDao.update(userVmVO.getId(), userVmVO);
         vmInstanceDetailsDao.removeDetail(userVmVO.getId(), VmDetailConstants.LAST_KNOWN_STATE);
         return chainAlreadyEnded;
+    }
+
+    private void updateSucceedingBackupIfNeeded(InternalBackupJoinVO currentBackup, List<InternalBackupJoinVO> succeedingBackups) {
+        if (currentBackup == null || succeedingBackups.isEmpty()) {
+            return;
+        }
+        InternalBackupJoinVO succeedingBackup = succeedingBackups.get(0);
+        for (InternalBackupStoragePoolVO deltaRef : internalBackupStoragePoolDao.listByBackupId(currentBackup.getId())) {
+            InternalBackupStoragePoolVO succeedingDelta = internalBackupStoragePoolDao.findOneByVolumeIdAndBackupId(deltaRef.getVolumeId(), succeedingBackup.getId());
+            if (succeedingDelta != null) {
+                succeedingDelta.setBackupDeltaParentPath(deltaRef.getBackupDeltaParentPath());
+                internalBackupStoragePoolDao.update(succeedingDelta.getId(), succeedingDelta);
+            }
+        }
     }
 
     protected void calculateAndSaveHash(Set<Pair<BackupDeltaTO, VolumeObjectTO>> backupDeltaAndVolumePairs, BackupVO backupVO, long hostId) {
@@ -1521,50 +1585,9 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
     }
 
     /**
-     * Merges the current delta on primary storage, if any, into the given volume. If the backup has no more deltas on primary storage, will set the backup as end_of_chain.
-     * */
-    protected void mergeCurrentDeltaIntoVolume(Volume volume, VirtualMachine virtualMachine, String operation, boolean isVmRunning) {
-        InternalBackupStoragePoolVO delta = internalBackupStoragePoolDao.findOneByVolumeId(volume.getId());
-        if (delta == null) {
-            logger.debug("Volume [{}] has no deltas to merge, doing nothing.", volume.getUuid());
-            return;
-        }
-        InternalBackupJoinVO internalBackupJoinVO = internalBackupJoinDao.findById(delta.getBackupId());
-        VMSnapshotVO succeedingVmSnapshotVO = getSucceedingVmSnapshot(internalBackupJoinVO);
-
-        DataStore store = dataStoreManager.getDataStore(volume.getPoolId(), DataStoreRole.Primary);
-        VolumeObject volumeObject = VolumeObject.getVolumeObject(store, (VolumeVO)volume);
-
-        DeltaMergeTreeTO deltaMergeTreeTO = createDeltaMergeTree(succeedingVmSnapshotVO == null, isVmRunning, delta, (VolumeObjectTO)volumeObject.getTO(), succeedingVmSnapshotVO);
-        MergeDiskOnlyVmSnapshotCommand cmd = new MergeDiskOnlyVmSnapshotCommand(List.of(deltaMergeTreeTO), isVmRunning, virtualMachine.getInstanceName());
-
-        Answer answer = sendBackupCommand(vmSnapshotHelper.pickRunningHost(virtualMachine.getId()), cmd);
-
-        if (answer == null || !answer.getResult()) {
-            logger.error("Error while trying to prepare volume [{}] for {}. Got [{}] as answer from host.", volume.getUuid(), operation, answer != null ? answer.getDetails() : null);
-            throw new CloudRuntimeException(String.format("Unable to prepare volume [%s] for [%s].", volume.getUuid(), operation));
-        }
-
-        if (succeedingVmSnapshotVO == null) {
-            VolumeVO volumeVO = volumeDao.findById(volumeObject.getId());
-            volumeVO.setPath(deltaMergeTreeTO.getParent().getPath());
-            volumeDao.update(volumeVO.getId(), volumeVO);
-        }
-
-        expungeOldDeltasAndUpdateVmSnapshotIfNeeded(List.of(delta), succeedingVmSnapshotVO);
-
-        List<InternalBackupStoragePoolVO> backupDeltas = internalBackupStoragePoolDao.listByBackupId(delta.getBackupId());
-        if (backupDeltas.isEmpty()) {
-            logger.debug("Backup [{}] has no more deltas on primary storage due to prepare volume [{}] for {} operation. Will set it as end of chain and not current.",
-                    internalBackupJoinVO.getUuid(), volume.getUuid(), operation);
-            setEndOfChainAndRemoveCurrentForBackup(internalBackupJoinVO);
-        }
-    }
-
-    /**
      * Creates the necessary delta references on both primary and secondary storage. Also maps the volume to the parent delta backup and create the delta merge tree.
      * */
-    protected void createDeltaReferences(boolean fullBackup, boolean hasVmSnapshotSucceedingLastBackup, boolean runningVm, Backup backup,
+    protected void createDeltaReferences(boolean fullBackup, boolean runningVm, Backup backup,
             List<InternalBackupDataStoreVO> parentBackupDeltasOnSecondary, List<InternalBackupStoragePoolVO> parentBackupDeltasOnPrimary,
             HashMap<String, InternalBackupStoragePoolVO> volumeUuidToDeltaPrimaryRef, HashMap<String, InternalBackupDataStoreVO> volumeUuidToDeltaSecondaryRef,
             VMSnapshotVO succeedingVmSnapshot, KbossTO kbossTO) {
@@ -1579,7 +1602,8 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
 
         InternalBackupDataStoreVO deltaSecondaryRef = new InternalBackupDataStoreVO(backup.getId(), volumeObjectTO.getVolumeId(), volumeObjectTO.getDeviceId(), relativePathOnSecondary);
         if (!fullBackup) {
-            InternalBackupStoragePoolVO parentDeltaOnPrimary = createDeltaMergeTreeForVolume(false, runningVm, parentBackupDeltasOnPrimary, succeedingVmSnapshot, kbossTO);
+            InternalBackupStoragePoolVO parentDeltaOnPrimary = createDeltaMergeTreeForVolume(false, runningVm, parentBackupDeltasOnPrimary, succeedingVmSnapshot, kbossTO,
+                    new ArrayList<>());
             findAndSetParentBackupPath(parentBackupDeltasOnSecondary, parentDeltaOnPrimary, kbossTO);
         }
 
@@ -1590,15 +1614,56 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         InternalBackupStoragePoolVO deltaPrimaryRef = new InternalBackupStoragePoolVO(backup.getId(), volumeObjectTO.getPoolId(), volumeObjectTO.getVolumeId(), filename,
                 volumeObjectTO.getPath());
 
-        if (kbossTO.getDeltaMergeTreeTO() != null && !hasVmSnapshotSucceedingLastBackup) {
+        if (kbossTO.getDeltaMergeTreeTO() != null && CollectionUtils.isEmpty(kbossTO.getDeltaPaths())) {
             deltaPrimaryRef.setBackupDeltaParentPath(kbossTO.getDeltaMergeTreeTO().getParent().getPath());
-        } else if (hasVmSnapshotSucceedingLastBackup) {
-            deltaPrimaryRef.setBackupDeltaParentPath(volumeObjectTO.getPath());
         }
 
         InternalBackupStoragePoolVO referenceOnPrimary = internalBackupStoragePoolDao.persist(deltaPrimaryRef);
         logger.trace("Created reference [{}] for backup [{}] of volume [{}].", referenceOnPrimary, backup, volumeObjectTO);
         volumeUuidToDeltaPrimaryRef.put(volumeObjectTO.getUuid(), referenceOnPrimary);
+    }
+
+    /**
+     * Merges the current delta on primary storage, if any, into the given volume. If the backup has no more deltas on primary storage, will set the backup as end_of_chain.
+     * */
+    protected void mergeCurrentDeltasIntoVolume(Volume volume, VirtualMachine virtualMachine, String operation, boolean isVmRunning) {
+        List<InternalBackupJoinVO> currents = internalBackupJoinDao.listCurrentsByVolumeIdDesc(volume.getId());
+        if (currents.isEmpty()) {
+            logger.debug("Volume [{}] has no deltas to merge, doing nothing.", volume.getUuid());
+            return;
+        }
+
+        for (InternalBackupJoinVO current : currents) {
+            InternalBackupStoragePoolVO delta = internalBackupStoragePoolDao.findOneByVolumeIdAndBackupId(volume.getId(), current.getId());
+
+            DataStore store = dataStoreManager.getDataStore(volume.getPoolId(), DataStoreRole.Primary);
+            VolumeObject volumeObject = VolumeObject.getVolumeObject(store, (VolumeVO)volume);
+
+            DeltaMergeTreeTO deltaMergeTreeTO = createDeltaMergeTree(true, isVmRunning, delta, (VolumeObjectTO)volumeObject.getTO(), null, new ArrayList<>());
+            MergeDiskOnlyVmSnapshotCommand cmd = new MergeDiskOnlyVmSnapshotCommand(List.of(deltaMergeTreeTO), isVmRunning, virtualMachine.getInstanceName());
+
+            Answer answer = sendBackupCommand(vmSnapshotHelper.pickRunningHost(virtualMachine.getId()), cmd);
+
+            if (answer == null || !answer.getResult()) {
+                logger.error("Error while trying to prepare volume [{}] for {}. Got [{}] as answer from host.", volume.getUuid(), operation, answer != null ? answer.getDetails() : null);
+                throw new CloudRuntimeException(String.format("Unable to prepare volume [%s] for [%s].", volume.getUuid(), operation));
+            }
+            VolumeVO volumeVO = volumeDao.findById(volumeObject.getId());
+            volumeVO.setPath(deltaMergeTreeTO.getParent().getPath());
+            volumeDao.update(volumeVO.getId(), volumeVO);
+
+            volume = volumeVO;
+
+            List<InternalBackupStoragePoolVO> deltaOnPrimary = List.of(delta);
+            expungeOldDeltasAndUpdateVmSnapshotOrBackup(deltaOnPrimary, null, null);
+
+            List<InternalBackupStoragePoolVO> backupDeltas = internalBackupStoragePoolDao.listByBackupId(delta.getBackupId());
+            if (backupDeltas.isEmpty()) {
+                logger.debug("Backup [{}] has no more deltas on primary storage due to prepare volume [{}] for {} operation. Will set it as end of chain and not current.",
+                        current.getUuid(), volume.getUuid(), operation);
+                setEndOfChainAndRemoveCurrentForBackup(current);
+            }
+        }
     }
 
     protected HostVO getHostToRestore(VirtualMachine vm, boolean quickRestore, Long hostId) throws AgentUnavailableException {
@@ -1666,57 +1731,58 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
     }
 
     /**
-     * Given a VM snapshot, returns a map of volume id to list of snapshot references of the children of the VM snapshot.
+     * Returns ordered list of backups taken after the last backup. The list is ordered from oldest to newest.
      * */
-    protected Map<Long, List<SnapshotDataStoreVO>> gatherSnapshotReferencesOfChildrenSnapshot(List<VolumeObjectTO> volumeObjectTOs, VMSnapshot vmSnapshotVO) {
-        Map<Long, List<SnapshotDataStoreVO>> volumeToSnapshotRefs = new HashMap<>();
-
-        if (vmSnapshotVO == null) {
-            return volumeToSnapshotRefs;
+    protected List<InternalBackupJoinVO> getSucceedingBackupList(InternalBackupJoinVO backup) {
+        List<InternalBackupJoinVO> internalBackupJoinVOS = new ArrayList<>();
+        if (backup == null) {
+            return internalBackupJoinVOS;
         }
 
-        List<VMSnapshotVO> snapshotChildren = vmSnapshotDao.listByParent(vmSnapshotVO.getId());
-
-        if (CollectionUtils.isEmpty(snapshotChildren)) {
-            return volumeToSnapshotRefs;
+        List<InternalBackupJoinVO> currentBackups = internalBackupJoinDao.listCurrents(backup.getVmId(), false);
+        if (currentBackups.isEmpty()) {
+            return internalBackupJoinVOS;
         }
 
-        List<SnapshotDataStoreVO> snapshotDataStoreVOS = new ArrayList<>();
-        snapshotChildren.stream()
-                .map(snapshotVo -> vmSnapshotHelper.getVolumeSnapshotsAssociatedWithKvmDiskOnlyVmSnapshot(snapshotVo.getId()))
-                .forEach(snapshotDataStoreVOS::addAll);
+        internalBackupJoinVOS = currentBackups.stream().filter(internalBackupJoinVO -> internalBackupJoinVO.getDate().after(backup.getDate())).collect(Collectors.toList());
+        logger.debug("Found the following backups that succeed the backup [{}]: [{}].", backup.getUuid(), internalBackupJoinVOS);
 
-        mapVolumesToSnapshotReferences(volumeObjectTOs, snapshotDataStoreVOS, volumeToSnapshotRefs);
-
-        if (logger.isDebugEnabled()) {
-            StringBuilder log = new StringBuilder(String.format("Found the following snapshot references that succeed the VM snapshot [%s].", vmSnapshotVO.getUuid()));
-            for (VolumeObjectTO volumeObjectTO : volumeObjectTOs) {
-                log.append(String.format(" Volume [%s]; Snapshot references [%s].", volumeObjectTO.getUuid(), volumeToSnapshotRefs.get(volumeObjectTO.getId())));
-            }
-            logger.debug(log.toString());
-        }
-
-        return volumeToSnapshotRefs;
+        return internalBackupJoinVOS;
     }
 
     /**
-     * Given a list of volumes and VM snapshots, maps the volumes to the snapshot references of the VM snapshots.
+     * Given a list of volumes and VM snapshots/backups, maps the volumes to the delta references of the VM snapshots/backups.
      * */
-    protected Map<Long, List<SnapshotDataStoreVO>> mapVolumesToVmSnapshotReferences(List<VolumeObjectTO> volumeObjectTOs, List<VMSnapshotVO> vmSnapshotVOList) {
-        Map<Long, List<SnapshotDataStoreVO>> volumeToSnapshotRefs = new HashMap<>();
-        if (vmSnapshotVOList.isEmpty()) {
-            logger.trace("No VM snapshot to map to any volume, returning.");
-            return volumeToSnapshotRefs;
+    protected Map<Long, LinkedList<String>> mapVolumesToVmSnapshotAndBackupReferences(List<VolumeObjectTO> volumeObjectTOs, List<VMSnapshotVO> vmSnapshotVOList, List<InternalBackupJoinVO> internalBackupJoinVOList) {
+        Map<Long, LinkedList<String>> volumeToSnapshotAndBackupRefs = new HashMap<>();
+        if (vmSnapshotVOList.isEmpty() && internalBackupJoinVOList.isEmpty()) {
+            logger.trace("No VM snapshot nor backup to map to any volume, returning.");
+            return volumeToSnapshotAndBackupRefs;
         }
 
-        ArrayList<SnapshotDataStoreVO> allRefs = new ArrayList<>();
-        for (VMSnapshotVO vmSnapshotVO : vmSnapshotVOList) {
-            allRefs.addAll(vmSnapshotHelper.getVolumeSnapshotsAssociatedWithKvmDiskOnlyVmSnapshot(vmSnapshotVO.getId()));
+        List<Ternary<Long, String, Date>> volumeIdAndResourcePathAndCreatedDateList = new ArrayList<>();
+        for (InternalBackupJoinVO internalBackupJoinVO : internalBackupJoinVOList) {
+            volumeIdAndResourcePathAndCreatedDateList.add(new Ternary<>(internalBackupJoinVO.getVolumeId(), internalBackupJoinVO.getStoragePoolDeltaPath(), internalBackupJoinVO.getDate()));
         }
-        mapVolumesToSnapshotReferences(volumeObjectTOs, allRefs, volumeToSnapshotRefs);
-        logger.trace("Given volume objects [{}] and VM snapshots [{}], created the following map [{}].", volumeObjectTOs, vmSnapshotVOList, volumeToSnapshotRefs);
-        return volumeToSnapshotRefs;
+
+        for (VMSnapshotVO vmSnapshotVO : vmSnapshotVOList) {
+            vmSnapshotHelper.getVolumeSnapshotsAssociatedWithKvmDiskOnlyVmSnapshot(vmSnapshotVO.getId())
+                    .forEach(snapshotDataStoreVO -> volumeIdAndResourcePathAndCreatedDateList.add(new Ternary<>(snapshotDataStoreVO.getVolumeId(), snapshotDataStoreVO.getInstallPath(), snapshotDataStoreVO.getCreated())));
+        }
+
+        volumeIdAndResourcePathAndCreatedDateList.sort(Comparator.comparing(Ternary::third));
+
+        for (Ternary<Long, String, Date> volumeIdAndResourcePathAndCreatedDate : volumeIdAndResourcePathAndCreatedDateList) {
+            long volumeId = volumeIdAndResourcePathAndCreatedDate.first();
+            String resourcePath = volumeIdAndResourcePathAndCreatedDate.second();
+
+            volumeToSnapshotAndBackupRefs.computeIfAbsent(volumeId, k -> new LinkedList<>()).addLast(resourcePath);
+        }
+
+        logger.trace("Given volume objects [{}], VM snapshots [{}] and backups [{}], created the following map [{}].", volumeObjectTOs, vmSnapshotVOList, internalBackupJoinVOList, volumeToSnapshotAndBackupRefs);
+        return volumeToSnapshotAndBackupRefs;
     }
+
 
     protected void mapVolumesToSnapshotReferences(List<VolumeObjectTO> volumeObjectTOs, List<SnapshotDataStoreVO> snapshotDataStoreVOS, Map<Long, List<SnapshotDataStoreVO>> volumeToSnapshotRefs) {
         for (VolumeObjectTO volumeObjectTO : volumeObjectTOs) {
@@ -1760,22 +1826,60 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
     }
 
     /**
-     * Expunge the old backup deltas and if there were disk-only VM snapshot deltas after the last backup, update their paths.
+     * Expunge the old backup deltas and if there were disk-only VM snapshot or backup deltas after the last backup, update their paths.
      * */
-    protected void expungeOldDeltasAndUpdateVmSnapshotIfNeeded(List<InternalBackupStoragePoolVO> oldDeltasOnPrimary, VMSnapshot vmSnapshot) {
+    protected void expungeOldDeltasAndUpdateVmSnapshotOrBackupIfNeeded(List<InternalBackupStoragePoolVO> oldDeltasOnPrimary, VMSnapshot vmSnapshot,
+            InternalBackupJoinVO lastBackup) {
         List<SnapshotDataStoreVO> snapshotRefs = vmSnapshot == null ? List.of() : vmSnapshotHelper.getVolumeSnapshotsAssociatedWithKvmDiskOnlyVmSnapshot(vmSnapshot.getId());
+        List<InternalBackupStoragePoolVO> newBackupDeltas = new ArrayList<>();
+        Map<Long, InternalBackupStoragePoolVO> volumeIdNewBackupDeltaMap = new HashMap<>();
+
+        if (lastBackup != null) {
+            newBackupDeltas = internalBackupStoragePoolDao.listByBackupId(lastBackup.getId());
+            volumeIdNewBackupDeltaMap = newBackupDeltas.stream().collect(Collectors.toMap(InternalBackupStoragePoolVO::getVolumeId, nbsp -> nbsp));
+        }
+
         for (InternalBackupStoragePoolVO oldBackupDelta : oldDeltasOnPrimary) {
             logger.trace("Expunging old backup delta [{}].", oldBackupDelta);
             internalBackupStoragePoolDao.expunge(oldBackupDelta.getId());
             SnapshotDataStoreVO snapshotDataStoreVO = snapshotRefs.stream().filter(ref -> ref.getVolumeId() == oldBackupDelta.getVolumeId()).findFirst().orElse(null);
-            if (snapshotDataStoreVO == null) {
+            if (snapshotDataStoreVO != null) {
+                snapshotDataStoreVO.setInstallPath(oldBackupDelta.getBackupDeltaParentPath());
+                logger.debug("Updating snapshot delta [{}] path to [{}].", snapshotDataStoreVO.getId(), oldBackupDelta.getBackupDeltaParentPath());
+                snapshotDataStoreDao.update(snapshotDataStoreVO.getId(), snapshotDataStoreVO);
                 continue;
             }
-            snapshotDataStoreVO.setInstallPath(oldBackupDelta.getBackupDeltaParentPath());
-            logger.debug("Updating snapshot delta [{}] path to [{}].", snapshotDataStoreVO.getId(), oldBackupDelta.getBackupDeltaParentPath());
-            snapshotDataStoreDao.update(snapshotDataStoreVO.getId(), snapshotDataStoreVO);
+            if (lastBackup != null) {
+                InternalBackupStoragePoolVO newBackupDelta = volumeIdNewBackupDeltaMap.get(oldBackupDelta.getVolumeId());
+                newBackupDelta.setBackupDeltaParentPath(oldBackupDelta.getBackupDeltaParentPath());
+                logger.debug("Updating backup delta [{}] path to [{}].", newBackupDelta.getId(), oldBackupDelta.getBackupDeltaParentPath());
+                internalBackupStoragePoolDao.update(newBackupDelta.getId(), newBackupDelta);
+            }
         }
     }
+
+    /**
+     * Expunges old deltas on primary storage and updates the metadata for either
+     * the succeeding VM snapshot or the succeeding backup based on their chronological order.
+     * If only one (or neither) is provided, it proceeds with the available entities.
+     *
+     * @param oldDeltasOnPrimary     The list of delta references on the primary storage to be removed;
+     * @param succeedingVmSnapshotVO The VM snapshot that follows the deltas being expunged;
+     * @param succeedingBackup       The backup entity that follows the deltas being expunged.
+     */
+    protected void expungeOldDeltasAndUpdateVmSnapshotOrBackup(List<InternalBackupStoragePoolVO> oldDeltasOnPrimary, VMSnapshot succeedingVmSnapshotVO,
+            InternalBackupJoinVO succeedingBackup) {
+        if (ObjectUtils.allNotNull(succeedingVmSnapshotVO, succeedingBackup)) {
+            if (succeedingVmSnapshotVO.getCreated().before(succeedingBackup.getDate())) {
+                expungeOldDeltasAndUpdateVmSnapshotOrBackupIfNeeded(oldDeltasOnPrimary, succeedingVmSnapshotVO, null);
+            } else {
+                expungeOldDeltasAndUpdateVmSnapshotOrBackupIfNeeded(oldDeltasOnPrimary, null, succeedingBackup);
+            }
+        } else {
+            expungeOldDeltasAndUpdateVmSnapshotOrBackupIfNeeded(oldDeltasOnPrimary, succeedingVmSnapshotVO, succeedingBackup);
+        }
+    }
+
 
     /**
      * Create a {@link DeltaMergeTreeTO} for the volume if it has a delta on primary and add it to the list.
@@ -1783,7 +1887,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
      * @return the delta on primary of the volume. Null if no delta.
      * */
     protected InternalBackupStoragePoolVO createDeltaMergeTreeForVolume(boolean childIsVolume, boolean runningVm, List<InternalBackupStoragePoolVO> deltasOnPrimary, VMSnapshotVO succeedingVmSnapshot,
-            KbossTO kbossTO) {
+            KbossTO kbossTO, List<InternalBackupJoinVO> succeedingBackupList) {
         VolumeObjectTO volumeObjectTO = kbossTO.getVolumeObjectTO();
 
         InternalBackupStoragePoolVO deltaOnPrimary = deltasOnPrimary.stream()
@@ -1797,12 +1901,12 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
 
         logger.debug("Volume [{}] has a backup delta on primary storage [{}].", volumeObjectTO.getUuid(), deltaOnPrimary);
 
-        kbossTO.setDeltaMergeTreeTO(createDeltaMergeTree(childIsVolume, runningVm, deltaOnPrimary, volumeObjectTO, succeedingVmSnapshot));
+        kbossTO.setDeltaMergeTreeTO(createDeltaMergeTree(childIsVolume, runningVm, deltaOnPrimary, volumeObjectTO, succeedingVmSnapshot, succeedingBackupList));
         return deltaOnPrimary;
     }
 
     protected DeltaMergeTreeTO createDeltaMergeTree(boolean childIsVolume, boolean runningVm, InternalBackupStoragePoolVO deltaOnPrimary,
-            VolumeObjectTO volumeObjectTO, VMSnapshotVO succeedingVmSnapshot) {
+            VolumeObjectTO volumeObjectTO, VMSnapshotVO succeedingVmSnapshot, List<InternalBackupJoinVO> succeedingBackupsList) {
         DataStore store = dataStoreManager.getDataStore(deltaOnPrimary.getStoragePoolId(), DataStoreRole.Primary);
         DataTO deltaChild;
         if (childIsVolume) {
@@ -1812,11 +1916,12 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         }
 
         BackupDeltaTO deltaParent = new BackupDeltaTO(store.getTO(), Hypervisor.HypervisorType.KVM, deltaOnPrimary.getBackupDeltaParentPath());
+        List<VMSnapshotVO> succeedingSnapshotList = succeedingVmSnapshot != null ? vmSnapshotDao.listByParent(succeedingVmSnapshot.getId()) : new ArrayList<>();
 
         List<String> succeedingDeltaPaths = new ArrayList<>();
-        if (succeedingVmSnapshot != null) {
-            succeedingDeltaPaths = gatherSnapshotReferencesOfChildrenSnapshot(List.of(volumeObjectTO), succeedingVmSnapshot).getOrDefault(volumeObjectTO.getVolumeId(), List.of())
-                    .stream().map(SnapshotDataStoreVO::getInstallPath).collect(Collectors.toList());
+        if (succeedingVmSnapshot != null || CollectionUtils.isNotEmpty(succeedingBackupsList)) {
+            succeedingDeltaPaths = mapVolumesToVmSnapshotAndBackupReferences(List.of(volumeObjectTO), succeedingSnapshotList, succeedingBackupsList)
+                    .getOrDefault(volumeObjectTO.getVolumeId(), new LinkedList<>());
 
             if (!childIsVolume && !runningVm && succeedingDeltaPaths.isEmpty()) {
                 succeedingDeltaPaths = List.of(volumeObjectTO.getPath());
@@ -1824,7 +1929,6 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
                         " rebased. Setting it as the grand-child.", volumeObjectTO.getUuid());
             }
         }
-
 
         List<DataTO> deltaGrandchildren = succeedingDeltaPaths.stream()
                 .map(deltaPath -> new BackupDeltaTO(store.getTO(), Hypervisor.HypervisorType.KVM, deltaPath))
@@ -1966,7 +2070,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
             VolumeObjectTO volumeObjectTO = optional.get();
 
             if (volumesNotPartOfTheBackupBeingRestored.contains(volumeObjectTO)) {
-                deltasToBeMerged.add(createDeltaMergeTree(true, false, deltaOnPrimary, volumeObjectTO, null));
+                deltasToBeMerged.add(createDeltaMergeTree(true, false, deltaOnPrimary, volumeObjectTO, null, new ArrayList<>()));
                 continue;
             }
 
@@ -2084,7 +2188,8 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
 
     protected void processBackupSuccess(boolean runningVm, List<VolumeObjectTO> volumeTOs, HashMap<String, InternalBackupStoragePoolVO> volumeUuidToDeltaPrimaryRef,
             HashMap<String, InternalBackupDataStoreVO> volumeUuidToDeltaSecondaryRef, TakeKbossBackupAnswer answer, List<InternalBackupStoragePoolVO> parentBackupDeltasOnPrimary,
-            List<VMSnapshotVO> succeedingVmSnapshots, BackupVO backupVO, boolean fullBackup, VirtualMachine userVm, Long hostId, boolean endChain, boolean isolated) {
+            VMSnapshotVO succeedingVmSnapshot, BackupVO backupVO, boolean fullBackup, VirtualMachine userVm, Long hostId, boolean endChain, boolean isolated,
+            InternalBackupJoinVO succeedingBackup) {
         long physicalBackupSize = 0;
         logger.debug("Processing backup [{}] success.", backupVO.getUuid());
         for (VolumeObjectTO volumeObjectTO : volumeTOs) {
@@ -2092,7 +2197,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
                     physicalBackupSize, endChain, isolated, backupVO);
         }
 
-        expungeOldDeltasAndUpdateVmSnapshotIfNeeded(parentBackupDeltasOnPrimary, succeedingVmSnapshots.isEmpty() ? null : succeedingVmSnapshots.get(0));
+        expungeOldDeltasAndUpdateVmSnapshotOrBackup(parentBackupDeltasOnPrimary, succeedingVmSnapshot, succeedingBackup);
 
         backupVO.setSize(physicalBackupSize);
         backupVO.setStatus(Backup.Status.BackedUp);
@@ -2135,7 +2240,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
      * For every backup, except for the one which the command was issued, will set them as Expunged regardless and hope operators will look
      * at the logs. For the current one, if forced=false, will set it as error, otherwise, will set it as Expunged as well.
      * */
-    protected boolean processRemoveBackupFailures(boolean forced, Answer[] deleteAnswers, List<Long> removedBackupIds, InternalBackupJoinVO backupJoinVO) {
+    protected boolean processRemoveBackupFailures(boolean forced, Answer[] deleteAnswers, List<Long> removedBackupIds, InternalBackupJoinVO backupJoinVO, VirtualMachine vm) {
         List<Answer> failures = Arrays.stream(deleteAnswers).filter(answer -> !answer.getResult()).collect(Collectors.toList());
         Set<Long> failedToRemoveBackupIdSet = new HashSet<>();
         if (CollectionUtils.isNotEmpty(failures)) {
@@ -2156,6 +2261,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
             logger.info("Since backup delete command was not forced, will not set the main backup [{}] as Expunged, will set it as error instead.", failedVO.getUuid());
             failedVO.setStatus(Backup.Status.Error);
             backupDao.update(failedVO.getId(), failedVO);
+            vmInstanceDetailsDao.addDetail(vm.getId(), VmDetailConstants.LAST_KNOWN_STATE, vm.getState().name(), false);
         }
 
         for (Long failedToRemove : failedToRemoveBackupIdSet) {
@@ -2262,15 +2368,40 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         } else if (jobResult instanceof BackupProviderException) {
             throw (BackupProviderException) jobResult;
         }
-        throw new CloudRuntimeException(String.format("Exception while restoring KVM native incremental backup [%s]. Check the logs for more information.", backup.getUuid()), ((Throwable)jobResult).getCause());
+        throw new CloudRuntimeException(String.format("Exception while restoring KVM internal incremental backup [%s]. Check the logs for more information.", backup.getUuid()), ((Throwable)jobResult).getCause());
     }
 
-    protected boolean endBackupChain(VirtualMachine vm) {
-        InternalBackupJoinVO current = internalBackupJoinDao.findCurrent(vm.getId());
+    protected boolean finishAllChains(VirtualMachine vm, List<InternalBackupJoinVO> currents) {
+        if (currents.isEmpty()) {
+            logger.debug("There is no current active chain, no need to do anything.");
+            return true;
+        }
+
+        for (InternalBackupJoinVO current : currents) {
+            if (!mergeCurrentBackupDeltas(current)) {
+                UserVmVO vmVO = userVmDao.findById(vm.getId());
+                logger.error("Failed to merge deltas for VM [{}] during backup offering removal process. Changing its state to [{}].", vm, VirtualMachine.State.BackupError);
+                BackupVO backupVO = backupDao.findById(current.getId());
+                backupVO.setStatus(Backup.Status.Error);
+                backupDao.update(backupVO.getId(), backupVO);
+                vmVO.setState(VirtualMachine.State.BackupError);
+                userVmDao.update(vmVO.getId(), vmVO);
+
+                return false;
+            }
+            setEndOfChainAndRemoveCurrentForBackup(current);
+        }
+        return true;
+    }
+
+    protected boolean endBackupChain(VirtualMachine vm, Long backupScheduleId) {
+        InternalBackupJoinVO current = internalBackupJoinDao.findCurrent(vm.getId(), backupScheduleId);
         if (current == null) {
             logger.debug("There is no current active chain, no need to do anything.");
             return true;
         }
+
+        validateVmState(vm, "end backup chain");
 
         if (mergeCurrentBackupDeltas(current)) {
             setEndOfChainAndRemoveCurrentForBackup(current);
@@ -2287,8 +2418,10 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
     protected boolean mergeCurrentBackupDeltas(InternalBackupJoinVO backupJoinVO) {
         VirtualMachine userVm = userVmDao.findById(backupJoinVO.getVmId());
 
+        List<InternalBackupJoinVO> succeedingBackupList = getSucceedingBackupList(backupJoinVO);
+        InternalBackupJoinVO succeedingBackup = succeedingBackupList.isEmpty() ? null : succeedingBackupList.get(0);
         VMSnapshotVO succeedingVmSnapshot = getSucceedingVmSnapshot(backupJoinVO);
-        MergeDiskOnlyVmSnapshotCommand cmd = buildMergeDiskOnlyVmSnapshotCommandForCurrentBackup(backupJoinVO, userVm, succeedingVmSnapshot);
+        MergeDiskOnlyVmSnapshotCommand cmd = buildMergeDiskOnlyVmSnapshotCommandForCurrentBackup(backupJoinVO, userVm, succeedingVmSnapshot, succeedingBackupList);
         Long hostId = vmSnapshotHelper.pickRunningHost(backupJoinVO.getVmId());
 
         Answer answer = sendBackupCommand(hostId, cmd);
@@ -2298,9 +2431,10 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
             return false;
         }
 
-        expungeOldDeltasAndUpdateVmSnapshotIfNeeded(internalBackupStoragePoolDao.listByBackupId(backupJoinVO.getId()), succeedingVmSnapshot);
+        List<InternalBackupStoragePoolVO> deltasOnPrimary = internalBackupStoragePoolDao.listByBackupId(backupJoinVO.getId());
+        expungeOldDeltasAndUpdateVmSnapshotOrBackup(deltasOnPrimary, succeedingVmSnapshot, succeedingBackup);
 
-        if (succeedingVmSnapshot != null) {
+        if (ObjectUtils.anyNotNull(succeedingVmSnapshot, succeedingBackup)) {
             return true;
         }
 
@@ -2315,18 +2449,18 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
     }
 
     protected void createDeleteCommandsAndMergeTrees(List<VolumeObjectTO> volumeObjectTOs, Commands commands, List<InternalBackupStoragePoolVO> deletedDeltas,
-            VMSnapshotVO vmSnapshotSucceedingCurrentBackup, List<DeltaMergeTreeTO> deltaMergeTreeTOList) {
+            VMSnapshotVO vmSnapshotSucceedingCurrentBackup, List<DeltaMergeTreeTO> deltaMergeTreeTOList, InternalBackupJoinVO currentBackup) {
         for (VolumeObjectTO volumeObjectTO : volumeObjectTOs) {
-            InternalBackupStoragePoolVO delta = internalBackupStoragePoolDao.findOneByVolumeId(volumeObjectTO.getVolumeId());
+            InternalBackupStoragePoolVO delta = internalBackupStoragePoolDao.findOneByVolumeIdAndBackupId(volumeObjectTO.getVolumeId(), currentBackup.getId());
             if (delta == null) {
                 continue;
             }
-            if (delta.getBackupDeltaPath().equals(volumeObjectTO.getPath())) {
+            if (vmSnapshotSucceedingCurrentBackup == null) {
                 commands.addCommand(new DeleteCommand(new BackupDeltaTO(volumeObjectTO.getDataStore(), Hypervisor.HypervisorType.KVM, delta.getBackupDeltaParentPath())));
                 deletedDeltas.add(delta);
                 logger.debug("Volume [{}] has a backup delta that will be deleted as part of the preparation to revert a VM snapshot.", volumeObjectTO.getUuid());
             } else {
-                deltaMergeTreeTOList.add(createDeltaMergeTree(false, false, delta, volumeObjectTO, vmSnapshotSucceedingCurrentBackup));
+                deltaMergeTreeTOList.add(createDeltaMergeTree(false, false, delta, volumeObjectTO, vmSnapshotSucceedingCurrentBackup, new ArrayList<>()));
             }
         }
     }
@@ -2360,16 +2494,17 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         return new Pair<>(backupParentsToBeExpunged, lastAliveBackup);
     }
 
-    protected MergeDiskOnlyVmSnapshotCommand buildMergeDiskOnlyVmSnapshotCommandForCurrentBackup(InternalBackupJoinVO backupJoinVO, VirtualMachine userVm, VMSnapshotVO vmSnapshot) {
+    private MergeDiskOnlyVmSnapshotCommand buildMergeDiskOnlyVmSnapshotCommandForCurrentBackup(InternalBackupJoinVO backupJoinVO, VirtualMachine userVm, VMSnapshotVO vmSnapshot,
+            List<InternalBackupJoinVO> succeedingBackupList) {
         List<DeltaMergeTreeTO> deltaMergeTreeTOs = new ArrayList<>();
 
         List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(backupJoinVO.getVmId());
-        Map<Long, List<SnapshotDataStoreVO>> volumeIdToSnapshotDataStoreList = gatherSnapshotReferencesOfChildrenSnapshot(volumeTOs, vmSnapshot);
         List<InternalBackupStoragePoolVO> deltasOnPrimary = internalBackupStoragePoolDao.listByBackupId(backupJoinVO.getId());
 
         for (VolumeObjectTO volumeObjectTO : volumeTOs) {
-            KbossTO kbossTO = new KbossTO(volumeObjectTO, volumeIdToSnapshotDataStoreList.getOrDefault(volumeObjectTO.getId(), new ArrayList<>()));
-            createDeltaMergeTreeForVolume(vmSnapshot == null, userVm.getState() == VirtualMachine.State.Running, deltasOnPrimary, vmSnapshot, kbossTO);
+            KbossTO kbossTO = new KbossTO(volumeObjectTO, new LinkedList<>());
+            boolean childIsVolume = vmSnapshot == null && succeedingBackupList.isEmpty();
+            createDeltaMergeTreeForVolume(childIsVolume, userVm.getState() == VirtualMachine.State.Running, deltasOnPrimary, vmSnapshot, kbossTO, succeedingBackupList);
             if (kbossTO.getDeltaMergeTreeTO() != null) {
                 deltaMergeTreeTOs.add(kbossTO.getDeltaMergeTreeTO());
             } else {
@@ -2422,9 +2557,11 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         List<InternalBackupJoinVO> ancestorBackups;
 
         if (includeRemoved) {
-            ancestorBackups = internalBackupJoinDao.listIncludingRemovedByVmIdAndBeforeDateOrderByCreatedDesc(backupVO.getVmId(), backupVO.getDate());
+            ancestorBackups = internalBackupJoinDao.listIncludingRemovedByVmIdAndBeforeDateOrderByCreatedDesc(backupVO.getVmId(), backupVO.getBackupScheduleId(),
+                    backupVO.getDate());
         } else {
-            ancestorBackups = internalBackupJoinDao.listByBackedUpAndVmIdAndDateBeforeOrAfterOrderBy(backupVO.getVmId(), backupVO.getDate(), true, false);
+            ancestorBackups = internalBackupJoinDao.listByBackedUpAndVmIdAndDateBeforeOrAfterOrderBy(backupVO.getVmId(), backupVO.getBackupScheduleId(), backupVO.getDate(), true,
+                    false);
         }
 
         for (int i = 0; i < ancestorBackups.size(); i++) {
@@ -2451,7 +2588,8 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
      * @return list of children, or and empty list if no children found.
      * */
     protected List<InternalBackupJoinVO> getBackupJoinChildren(BackupVO backupVO) {
-        List<InternalBackupJoinVO> children = internalBackupJoinDao.listByBackedUpAndVmIdAndDateBeforeOrAfterOrderBy(backupVO.getVmId(), backupVO.getDate(), false, true);
+        List<InternalBackupJoinVO> children = internalBackupJoinDao.listByBackedUpAndVmIdAndDateBeforeOrAfterOrderBy(backupVO.getVmId(), backupVO.getBackupScheduleId(),
+                backupVO.getDate(), false, true);
 
         long parentId = backupVO.getId();
         for (int i = 0; i < children.size(); i++) {
@@ -2493,7 +2631,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
      * Retrieves the current backup and removes the CURRENT detail. If the informed backup is not the end of chain, sets it as the new CURRENT
      * */
     protected void updateCurrentBackup(InternalBackupJoinVO backup) {
-        InternalBackupJoinVO current = internalBackupJoinDao.findCurrent(backup.getVmId());
+        InternalBackupJoinVO current = internalBackupJoinDao.findCurrent(backup.getVmId(), backup.getScheduleId());
 
         if (current != null) {
             backupDetailDao.removeDetail(current.getId(), CURRENT);
@@ -2534,20 +2672,28 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
                 backupVO.getName()), msg);
     }
 
-    protected void configureKbossTosForCleanup(UserVmVO userVmVO, List<InternalBackupStoragePoolVO> deltasOnPrimary, List<InternalBackupDataStoreVO> deltasOnSecondary, boolean runningVM,
-            List<InternalBackupStoragePoolVO> parentDeltasOnPrimary, List<KbossTO> kbossTOS) {
+    protected void configureKbossTosForCleanup(UserVmVO userVmVO, List<InternalBackupStoragePoolVO> deltasOnPrimary, Map<Long, LinkedList<String>> volumeIdToDeltasAfterCurrent,
+            List<InternalBackupDataStoreVO> deltasOnSecondary, List<InternalBackupStoragePoolVO> parentDeltasOnPrimary, List<KbossTO> kbossTOS, boolean errorOnCreation) {
         for (VolumeObjectTO volumeObjectTO : vmSnapshotHelper.getVolumeTOList(userVmVO.getId())) {
             InternalBackupStoragePoolVO deltaOnPrimary = deltasOnPrimary.stream()
                             .filter(delta -> delta.getVolumeId() == volumeObjectTO.getVolumeId()).findFirst().orElseThrow();
-            volumeObjectTO.setPath(deltaOnPrimary.getBackupDeltaPath());
-
             InternalBackupDataStoreVO deltaOnSecondary =
                     deltasOnSecondary.stream().filter(delta -> delta.getVolumeId() == volumeObjectTO.getVolumeId()).findFirst().orElseThrow();
-            KbossTO kbossTO = new KbossTO(volumeObjectTO, deltaOnPrimary.getBackupDeltaParentPath(), deltaOnSecondary.getBackupPath());
-
-            parentDeltasOnPrimary.stream()
-                    .filter(delta -> delta.getVolumeId() == volumeObjectTO.getVolumeId()).findFirst()
-                    .ifPresent(parentDelta -> kbossTO.setParentDeltaPathOnPrimary(parentDelta.getBackupDeltaParentPath()));
+            KbossTO kbossTO;
+            if (errorOnCreation) {
+                InternalBackupStoragePoolVO parent = parentDeltasOnPrimary.stream().filter(delta -> delta.getVolumeId() == volumeObjectTO.getVolumeId()).findFirst().orElse(null);
+                kbossTO = new KbossTO(volumeObjectTO, parent == null ? deltaOnPrimary.getBackupDeltaParentPath() : parent.getBackupDeltaPath(), deltaOnSecondary.getBackupPath(),
+                        volumeIdToDeltasAfterCurrent.get(volumeObjectTO.getId()));
+                if (parent != null) {
+                    kbossTO.setParentDeltaPathOnPrimary(parent.getBackupDeltaParentPath());
+                }
+                kbossTO.setOldVolumePath(volumeObjectTO.getPath());
+                volumeObjectTO.setPath(deltaOnPrimary.getBackupDeltaPath());
+            } else {
+                kbossTO = new KbossTO(volumeObjectTO, deltaOnPrimary.getBackupDeltaPath(), deltaOnSecondary.getBackupPath(),
+                        volumeIdToDeltasAfterCurrent.get(volumeObjectTO.getId()));
+                kbossTO.setParentDeltaPathOnPrimary(deltaOnPrimary.getBackupDeltaParentPath());
+            }
 
             kbossTOS.add(kbossTO);
         }
@@ -2614,11 +2760,11 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
                 logger.debug("Updating snapshot reference [{}] path to [{}] as part of the preparation to restore a VM snapshot.", snapshotRef.getId(), snapshotRef.getInstallPath());
                 snapshotDataStoreDao.update(snapshotRef.getId(), snapshotRef);
             }
-            internalBackupStoragePoolDao.expungeByVolumeId(deltaMergeTreeTO.getVolumeObjectTO().getVolumeId());
+            internalBackupStoragePoolDao.expungeByVolumeIdAndBackupId(deltaMergeTreeTO.getVolumeObjectTO().getVolumeId(), backupVO.getId());
         }
 
         for (InternalBackupStoragePoolVO delta : deletedDeltas) {
-            internalBackupStoragePoolDao.expungeByVolumeId(delta.getVolumeId());
+            internalBackupStoragePoolDao.expungeByVolumeIdAndBackupId(delta.getVolumeId(), delta.getBackupId());
         }
 
         setEndOfChainAndRemoveCurrentForBackup(backupVO);

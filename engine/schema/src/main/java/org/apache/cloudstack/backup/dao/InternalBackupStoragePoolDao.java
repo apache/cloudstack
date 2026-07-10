@@ -25,9 +25,13 @@ public interface InternalBackupStoragePoolDao extends GenericDao<InternalBackupS
 
     List<InternalBackupStoragePoolVO> listByBackupId(long backupId);
 
-    InternalBackupStoragePoolVO findOneByVolumeId(long volumeId);
+    List<InternalBackupStoragePoolVO> listByVolumeId(long volumeId);
+
+    InternalBackupStoragePoolVO findOneByVolumeIdAndBackupId(long volumeId, long backupId);
 
     void expungeByBackupId(long backupId);
 
     void expungeByVolumeId(long volumeId);
+
+    void expungeByVolumeIdAndBackupId(long volumeId, long backupId);
 }

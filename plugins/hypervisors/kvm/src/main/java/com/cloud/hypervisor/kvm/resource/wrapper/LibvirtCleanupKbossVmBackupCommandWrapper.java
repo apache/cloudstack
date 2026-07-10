@@ -16,17 +16,16 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
-import com.cloud.hypervisor.kvm.resource.LibvirtDomainXMLParser;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
-import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
-import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
-import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
-import com.cloud.resource.CommandWrapper;
-import com.cloud.resource.ResourceWrapper;
-import com.cloud.utils.Pair;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.cloudstack.backup.CleanupKbossBackupErrorAnswer;
 import org.apache.cloudstack.backup.CleanupKbossBackupErrorCommand;
 import org.apache.cloudstack.storage.to.BackupDeltaTO;
@@ -40,12 +39,19 @@ import org.libvirt.Domain;
 import org.libvirt.Error;
 import org.libvirt.LibvirtException;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.hypervisor.kvm.resource.LibvirtDomainXMLParser;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
+import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
+import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
+import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
+import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
+import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @ResourceWrapper(handles = CleanupKbossBackupErrorCommand.class)
 public class LibvirtCleanupKbossVmBackupCommandWrapper extends CommandWrapper<CleanupKbossBackupErrorCommand, Answer, LibvirtComputingResource> {
@@ -58,14 +64,14 @@ public class LibvirtCleanupKbossVmBackupCommandWrapper extends CommandWrapper<Cl
         cleanupBackupDeltasOnSecondary(command, storagePoolManager, kbossTOS);
 
         if (command.isRunningVM()) {
-            Pair<List<VolumeObjectTO>, Boolean> volumeTosAndIsVmRunning = cleanupRunningVm(command, serverResource);
+            Pair<Map<String, Pair<String,Boolean>>, Boolean> volumeTosAndIsVmRunning = cleanupRunningVm(command, serverResource);
             return new CleanupKbossBackupErrorAnswer(command, volumeTosAndIsVmRunning.first(), volumeTosAndIsVmRunning.second());
         }
 
         return new CleanupKbossBackupErrorAnswer(command, mergeDeltasForStoppedVmIfNeeded(command, serverResource), false);
     }
 
-    private Pair<List<VolumeObjectTO>, Boolean> cleanupRunningVm(CleanupKbossBackupErrorCommand command, LibvirtComputingResource serverResource) {
+    private Pair<Map<String, Pair<String,Boolean>>, Boolean> cleanupRunningVm(CleanupKbossBackupErrorCommand command, LibvirtComputingResource serverResource) {
         Domain dm = null;
         try {
             dm = serverResource.getDomain(serverResource.getLibvirtUtilitiesHelper().getConnection(), command.getVmName());
@@ -75,7 +81,7 @@ public class LibvirtCleanupKbossVmBackupCommandWrapper extends CommandWrapper<Cl
                 return new Pair<>(mergeDeltasForStoppedVmIfNeeded(command, serverResource), false);
             }
             logger.error("Error while trying to get VM [{}]. Aborting the process.", command.getVmName(), e);
-            return new Pair<>(List.of(), false);
+            return new Pair<>(Map.of(), false);
         } finally {
             if (dm != null) {
                 try {
@@ -87,87 +93,140 @@ public class LibvirtCleanupKbossVmBackupCommandWrapper extends CommandWrapper<Cl
         }
     }
 
-    private List<VolumeObjectTO> mergeDeltasForStoppedVmIfNeeded(CleanupKbossBackupErrorCommand command, LibvirtComputingResource serverResource) {
-        List<VolumeObjectTO> volumeObjectTOList = new ArrayList<>();
+    private Map<String, Pair<String,Boolean>> mergeDeltasForStoppedVmIfNeeded(CleanupKbossBackupErrorCommand command, LibvirtComputingResource serverResource) {
+        HashMap<String, Pair<String,Boolean>> volumeToChainEnded = new HashMap<>();
         for (KbossTO kbossTO : command.getKbossTOs()) {
             VolumeObjectTO volumeObjectTO = kbossTO.getVolumeObjectTO();
             PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO)volumeObjectTO.getDataStore();
             KVMStoragePool kvmStoragePool = serverResource.getStoragePoolMgr().getStoragePool(primaryDataStoreTO.getPoolType(), primaryDataStoreTO.getUuid());
-            boolean backupErrorDeltaExists = Files.exists(Path.of(kvmStoragePool.getLocalPathFor(volumeObjectTO.getPath())));
-            boolean parentBackupDeltaExists = Files.exists(Path.of(kvmStoragePool.getLocalPathFor(kbossTO.getDeltaPathOnPrimary())));
-            boolean shouldBaseDeltaExist = kbossTO.getParentDeltaPathOnPrimary() != null;
-            boolean baseDeltaExists = shouldBaseDeltaExist && Files.exists(Path.of(kvmStoragePool.getLocalPathFor(kbossTO.getParentDeltaPathOnPrimary())));
+            boolean volumePathMissing = !Files.exists(Path.of(kvmStoragePool.getLocalPathFor(volumeObjectTO.getPath())));
+            boolean deltaPathMissing = !Files.exists(Path.of(kvmStoragePool.getLocalPathFor(kbossTO.getDeltaPathOnPrimary())));
+            boolean basePathMissing = kbossTO.getParentDeltaPathOnPrimary() != null && !Files.exists(Path.of(kvmStoragePool.getLocalPathFor(kbossTO.getParentDeltaPathOnPrimary())));
+            List<DataTO> grandchildren = kbossTO.getDeltaPaths().isEmpty() ? List.of() : List.of(new BackupDeltaTO(volumeObjectTO.getDataStore(),
+                    Hypervisor.HypervisorType.KVM, kbossTO.getDeltaPaths().get(0)));
 
-            if(!mergeDeltaIfNeeded(serverResource, kbossTO, backupErrorDeltaExists, parentBackupDeltaExists, shouldBaseDeltaExist, baseDeltaExists,
-                    false, volumeObjectTO, volumeObjectTOList)) {
-                return List.of();
-            }
+            Boolean chainEnded = mergeDeltaIfNeeded(serverResource, kbossTO, volumeObjectTO, grandchildren, volumePathMissing, deltaPathMissing, basePathMissing,
+                    command.isErrorOnCreate(), false, command.isTopDelta(), command.isEndOfChain());
+            volumeToChainEnded.put(volumeObjectTO.getUuid(), new Pair<>(volumeObjectTO.getPath(), chainEnded));
         }
-        return volumeObjectTOList;
+        return volumeToChainEnded;
     }
 
-    private List<VolumeObjectTO> mergeDeltasForRunningVmIfNeeded(CleanupKbossBackupErrorCommand command, LibvirtComputingResource serverResource, Domain dm) throws LibvirtException {
+    private Map<String, Pair<String, Boolean>> mergeDeltasForRunningVmIfNeeded(CleanupKbossBackupErrorCommand command, LibvirtComputingResource serverResource, Domain dm) throws LibvirtException {
+        HashMap<String, Pair<String, Boolean>> volumeIdToPathAndChainEnded = new HashMap<>();
         String xmlDesc = dm.getXMLDesc(0);
         LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
         parser.parseDomainXML(xmlDesc);
-        List<VolumeObjectTO> volumeObjectTOList = new ArrayList<>();
         for (KbossTO kbossTO : command.getKbossTOs()) {
+            VolumeObjectTO volumeObjectTO = kbossTO.getVolumeObjectTO();
+            String volumePath = volumeObjectTO.getPath();
             LibvirtVMDef.DiskDef diskDef = parser.getDisks().stream()
-                    .filter(disk -> StringUtils.contains(disk.getDiskPath(), kbossTO.getVolumeObjectTO().getPath()) ||
-                            StringUtils.contains(disk.getDiskPath(), kbossTO.getDeltaPathOnPrimary()) ||
-                            StringUtils.contains(disk.getDiskPath(), kbossTO.getParentDeltaPathOnPrimary())).findFirst().orElse(null);
+                    .filter(disk -> hasPath(disk, volumePath, kbossTO.getDeltaPathOnPrimary(), kbossTO.getParentDeltaPathOnPrimary()))
+                    .findFirst().orElse(null);
 
             if (diskDef == null) {
-                logger.warn("Volume [{}] does not match any record we have. This must be manually normalized.", kbossTO.getVolumeObjectTO().getUuid());
-                return List.of();
+                logger.warn("Volume [{}] does not match any record we have. This must be manually normalized.", volumeObjectTO.getUuid());
+                return Map.of();
             }
 
-            boolean backupErrorDeltaExists = diskDef.getDiskPath().contains(kbossTO.getVolumeObjectTO().getPath());
-            boolean parentBackupDeltaExists = diskDef.getDiskPath().contains(kbossTO.getDeltaPathOnPrimary()) ||
-                    diskDef.getBackingStoreList().stream().anyMatch(path -> path.contains(kbossTO.getDeltaPathOnPrimary()));
-            boolean shouldBaseDeltaExist = kbossTO.getParentDeltaPathOnPrimary() != null;
-            boolean baseDeltaExists = shouldBaseDeltaExist && StringUtils.contains(diskDef.getDiskPath(), kbossTO.getParentDeltaPathOnPrimary()) ||
-                    diskDef.getBackingStoreList().stream().anyMatch(path -> StringUtils.contains(path, kbossTO.getParentDeltaPathOnPrimary()));
+            List<String> backingStoreList = diskDef.getBackingStoreList();
+            backingStoreList.add(0, diskDef.getDiskPath());
 
-            mergeDeltaIfNeeded(serverResource, kbossTO, backupErrorDeltaExists, parentBackupDeltaExists, shouldBaseDeltaExist, baseDeltaExists, true,
-                    kbossTO.getVolumeObjectTO(), volumeObjectTOList);
+            boolean volumePathMissing = true;
+            boolean deltaPathMissing = true;
+            boolean basePathMissing = kbossTO.getParentDeltaPathOnPrimary() != null;
+            for (String delta : backingStoreList) {
+                if (StringUtils.contains(delta, volumePath)) {
+                    volumePathMissing = false;
+                }
+                if (StringUtils.contains(delta, kbossTO.getDeltaPathOnPrimary())) {
+                    deltaPathMissing = false;
+                }
+                if (StringUtils.contains(delta, kbossTO.getParentDeltaPathOnPrimary())) {
+                    basePathMissing = false;
+                }
+            }
+
+            Boolean chainEnded = mergeDeltaIfNeeded(serverResource, kbossTO, volumeObjectTO, List.of(), volumePathMissing, deltaPathMissing, basePathMissing,
+                    command.isErrorOnCreate(), true, command.isTopDelta(), command.isEndOfChain());
+            volumeIdToPathAndChainEnded.put(volumeObjectTO.getUuid(), new Pair<>(volumeObjectTO.getPath(), chainEnded));
         }
 
-        return volumeObjectTOList;
+        return volumeIdToPathAndChainEnded;
     }
 
-    private boolean mergeDeltaIfNeeded(LibvirtComputingResource serverResource, KbossTO kbossTO, boolean backupErrorDeltaExists,
-            boolean parentBackupDeltaExists, boolean shouldBaseDeltaExist, boolean baseDeltaExists, boolean runningVm, VolumeObjectTO volumeObjectTO,
-            List<VolumeObjectTO> volumeObjectTOList) {
-        DeltaMergeTreeTO deltaMergeTreeTO;
-        if (!backupErrorDeltaExists) {
-            if (parentBackupDeltaExists && (!shouldBaseDeltaExist || baseDeltaExists)) {
-                volumeObjectTO.setPath(kbossTO.getDeltaPathOnPrimary());
-                logger.debug("Volume [{}] is already consistent. Its path is [{}].", volumeObjectTO.getUuid(), volumeObjectTO.getPath());
-                volumeObjectTOList.add(volumeObjectTO);
+    private boolean hasPath(LibvirtVMDef.DiskDef diskDef, String... paths) {
+        List<String> chain = diskDef.getBackingStoreList();
+        chain = chain != null ? chain : new ArrayList<>();
+        chain.add(diskDef.getDiskPath());
+        for (String delta : chain) {
+            if (Arrays.stream(paths).anyMatch(path -> StringUtils.contains(delta, path))) {
                 return true;
-            } else if (baseDeltaExists) {
-                volumeObjectTO.setPath(kbossTO.getParentDeltaPathOnPrimary());
-                logger.debug("Volume [{}] is already consistent. Its path is [{}].", volumeObjectTO.getUuid(), volumeObjectTO.getPath());
-                volumeObjectTOList.add(volumeObjectTO);
-                return true;
-            } else {
-                logger.warn("Volume [{}] is inconsistent in an anomalous way. We cannot normalize it automatically.", volumeObjectTO.getUuid());
-                return false;
             }
-        } else if (parentBackupDeltaExists) {
-            logger.debug("Volume [{}] is inconsistent, but we can normalize it. We will merge the delta created by this backup with the delta created by the previous " +
-                    "backup.", volumeObjectTO.getUuid());
+        }
+        return false;
+    }
+
+    /**
+     * @return True if error chain is already ended, false otherwise.
+     * */
+    private boolean mergeDeltaIfNeeded(LibvirtComputingResource serverResource, KbossTO kbossTO, VolumeObjectTO volumeObjectTO, List<DataTO> grandChildren,
+            boolean volumePathMissing, boolean deltaPathMissing, boolean basePathMissing, boolean errorOnCreate, boolean runningVm, boolean isTopDelta, boolean isEndOfChain) {
+        String errorMessage = String.format("Volume [%s] is inconsistent in an anomalous way. We cannot normalize it automatically.", volumeObjectTO.getUuid());
+        if (!errorOnCreate) {
+            // Base should never be missing if it is not an error from creation. If the volume path is missing and it is not the delta that was being removed, it is an anomaly as well.
+            if (basePathMissing || (volumePathMissing && !isTopDelta)) {
+                logger.warn(errorMessage);
+                throw new CloudRuntimeException(String.format ("Unable to find the base delta or the volume path was not found. We cannot normalize it automatically. At least " +
+                        "one of these should exist: volume [%s]; base path [%s].", volumeObjectTO.getPath(), kbossTO.getParentDeltaPathOnPrimary()));
+            }
+            // This means that the delta merge likely succeeded but the host was unable to reply to the Management Server
+            if (deltaPathMissing) {
+                // This is if the delta being merged was the top delta. Then we must update its path.
+                if (volumePathMissing) {
+                    volumeObjectTO.setPath(kbossTO.getParentDeltaPathOnPrimary());
+                }
+                logger.debug("Volume [{}] is already consistent. Its path is [{}].", volumeObjectTO.getUuid(), volumeObjectTO.getPath());
+                return true;
+            }
+            return false;
+        }
+
+        DeltaMergeTreeTO deltaMergeTreeTO;
+        boolean errorChainFinished;
+        if (volumePathMissing && !deltaPathMissing) { // The process was not started for this volume
+            DataTO child;
+            // If it is the top delta, we should set the volume path as the delta path on primary, as it is the real path. This will get updated later after being merged.
+            if (isTopDelta) {
+                volumeObjectTO.setPath(kbossTO.getDeltaPathOnPrimary());
+                child = volumeObjectTO;
+            } else { // Otherwise, we set it as the old path of the volume. In this case, this will be its final path.
+                volumeObjectTO.setPath(kbossTO.getOldVolumePath());
+                child = new BackupDeltaTO(volumeObjectTO.getDataStore(), Hypervisor.HypervisorType.KVM, kbossTO.getDeltaPathOnPrimary());
+            }
+            logger.debug("Volume [{}] is consistent, the backup process for it was not started. Its current path is [{}]. We will merge the old backup chain.",
+                    volumeObjectTO.getUuid(), volumeObjectTO.getPath());
             deltaMergeTreeTO = new DeltaMergeTreeTO(volumeObjectTO, new BackupDeltaTO(volumeObjectTO.getDataStore(), Hypervisor.HypervisorType.KVM,
-                    kbossTO.getDeltaPathOnPrimary()), volumeObjectTO, List.of());
-        } else if (baseDeltaExists) {
-            logger.debug("Volume [{}] is inconsistent, but we can normalize it. We will merge the delta created by this backup with the base volume.",
+                    kbossTO.getParentDeltaPathOnPrimary()), child, grandChildren);
+            errorChainFinished = true;
+        } else if (!isEndOfChain && !volumePathMissing && (deltaPathMissing || kbossTO.getParentDeltaPathOnPrimary() == null)) { // The process was completed for this volume
+            logger.debug("Volume [{}] is consistent, the backup process was completed for it. Its current path is [{}].", volumeObjectTO.getUuid(), volumeObjectTO.getPath());
+            return false;
+        } else if (isEndOfChain && volumePathMissing && !basePathMissing) { // The process was completed for this volume
+            volumeObjectTO.setPath(kbossTO.getParentDeltaPathOnPrimary());
+            logger.debug("Volume [{}] is consistent, the backup process was completed for it. Its current path is [{}].", volumeObjectTO.getUuid(), volumeObjectTO.getPath());
+            return true;
+        } else if (!volumePathMissing && !deltaPathMissing) { // The process stopped midway
+            logger.debug("Volume [{}] is inconsistent, but we can normalize it. We will merge the delta created by the last backup with the base volume.",
                     volumeObjectTO.getUuid());
             deltaMergeTreeTO = new DeltaMergeTreeTO(volumeObjectTO, new BackupDeltaTO(volumeObjectTO.getDataStore(), Hypervisor.HypervisorType.KVM,
-                    kbossTO.getParentDeltaPathOnPrimary()), volumeObjectTO, List.of());
+                    kbossTO.getParentDeltaPathOnPrimary()), new BackupDeltaTO(volumeObjectTO.getDataStore(), Hypervisor.HypervisorType.KVM, kbossTO.getDeltaPathOnPrimary()),
+                    grandChildren);
+            errorChainFinished = false;
+            isTopDelta = false;
         } else {
-            logger.warn("Volume [{}] is inconsistent in an anomalous way. We cannot normalize it automatically.", volumeObjectTO.getUuid());
-            return false;
+            logger.warn(errorMessage);
+            throw new CloudRuntimeException(errorMessage + " Maybe it is a good idea to open an issue to get help on this.");
         }
 
         try {
@@ -176,15 +235,19 @@ public class LibvirtCleanupKbossVmBackupCommandWrapper extends CommandWrapper<Cl
             } else {
                 serverResource.mergeDeltaForStoppedVm(deltaMergeTreeTO);
             }
-            volumeObjectTO.setPath(deltaMergeTreeTO.getParent().getPath());
-            volumeObjectTOList.add(volumeObjectTO);
-            return true;
+            if (isTopDelta) {
+                volumeObjectTO.setPath(deltaMergeTreeTO.getParent().getPath());
+            }
+            return errorChainFinished;
         } catch (QemuImgException | IOException | LibvirtException ex) {
             logger.error("Got an exception while trying to merge delta for volume [{}].", volumeObjectTO.getUuid(), ex);
-            return false;
+            throw new CloudRuntimeException(ex);
         }
     }
 
+    /**
+     * Checks if the VM is really stopped by checking if its root volume has had any writes on the last 30 seconds.
+     * */
     private boolean isVmReallyStopped(CleanupKbossBackupErrorCommand command, LibvirtComputingResource serverResource) {
         VolumeObjectTO volume = command.getKbossTOs().stream()
                 .filter(kbossTO -> kbossTO.getVolumeObjectTO().getDeviceId() == 0)

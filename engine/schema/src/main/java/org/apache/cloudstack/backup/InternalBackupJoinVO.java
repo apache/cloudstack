@@ -101,6 +101,15 @@ public class InternalBackupJoinVO {
     @Column(name = "isolated")
     private Boolean isolated;
 
+    @Column(name = "storage_pool_delta_path")
+    private String storagePoolDeltaPath;
+
+    @Column(name = "storage_pool_parent_path")
+    private String storagePoolParentPath;
+
+    @Column(name = "schedule_id")
+    private Long scheduleId;
+
     public InternalBackupJoinVO() {
     }
 
@@ -181,6 +190,18 @@ public class InternalBackupJoinVO {
 
     public Backup.CompressionStatus getCompressionStatus() {
         return compressionStatus;
+    }
+
+    public String getStoragePoolDeltaPath() {
+        return storagePoolDeltaPath;
+    }
+
+    public String getStoragePoolParentPath() {
+        return storagePoolParentPath;
+    }
+
+    public Long getScheduleId() {
+        return scheduleId;
     }
 
     @Override

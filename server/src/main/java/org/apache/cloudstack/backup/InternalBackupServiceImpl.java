@@ -69,6 +69,7 @@ import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class InternalBackupServiceImpl extends ComponentLifecycleBase implements InternalBackupService, VmWorkJobHandler {
     protected Logger logger = LogManager.getLogger(getClass());
@@ -125,16 +126,17 @@ public class InternalBackupServiceImpl extends ComponentLifecycleBase implements
             return;
         }
         VolumeObjectTO volumeObjectTO = (VolumeObjectTO) volumeTo;
-        InternalBackupStoragePoolVO backupDelta = internalBackupStoragePoolDao.findOneByVolumeId(volumeObjectTO.getVolumeId());
-        if (backupDelta == null) {
+        List<InternalBackupStoragePoolVO> backupDeltas = internalBackupStoragePoolDao.listByVolumeId(volumeObjectTO.getVolumeId());
+        if (backupDeltas.isEmpty()) {
             return;
         }
-        volumeObjectTO.setChainInfo(backupDelta.getBackupDeltaParentPath());
+        volumeObjectTO.setDeltasToRemove(backupDeltas.stream().map(InternalBackupStoragePoolVO::getBackupDeltaParentPath).collect(Collectors.toSet()));
         if (cmd instanceof DeleteCommand) {
             ((DeleteCommand) cmd).setDeleteChain(true);
-        }
-        if (cmd instanceof RevertSnapshotCommand) {
+        } else if (cmd instanceof RevertSnapshotCommand) {
             ((RevertSnapshotCommand) cmd).setDeleteChain(true);
+        } else {
+            return;
         }
         logger.debug("Configured chain info for volume [{}]. Set it as [{}].", volumeObjectTO.getUuid(), volumeObjectTO.getChainInfo());
     }
@@ -142,21 +144,23 @@ public class InternalBackupServiceImpl extends ComponentLifecycleBase implements
     @Override
     public void cleanupBackupMetadata(long volumeId) {
         logger.debug("Cleaning up backup metadata for volume [{}].", volumeId);
-        InternalBackupStoragePoolVO delta = internalBackupStoragePoolDao.findOneByVolumeId(volumeId);
-        if (delta == null) {
+        List<InternalBackupJoinVO> currents = internalBackupJoinDao.listCurrentsByVolumeIdDesc(volumeId);
+        if (currents.isEmpty()) {
             return;
         }
         internalBackupStoragePoolDao.expungeByVolumeId(volumeId);
-        if (CollectionUtils.isNotEmpty(internalBackupStoragePoolDao.listByBackupId(delta.getBackupId()))) {
-            return;
+        for (InternalBackupJoinVO current : currents) {
+            if (CollectionUtils.isNotEmpty(internalBackupStoragePoolDao.listByBackupId(current.getId()))) {
+                continue;
+            }
+
+            logger.debug("Volume [{}] was the last volume with deltas in backup [{}]. Setting the backup as END_OF_CHAIN and not current.", volumeId, current.getUuid());
+            backupDetailDao.removeDetail(current.getId(), BackupDetailsDao.CURRENT);
+            if (!current.getEndOfChain()) {
+                backupDetailDao.persist(new BackupDetailVO(current.getId(), BackupDetailsDao.END_OF_CHAIN, Boolean.TRUE.toString(), true));
+            }
         }
 
-        InternalBackupJoinVO joinVO = internalBackupJoinDao.findById(delta.getBackupId());
-        logger.debug("Volume [{}] was the last volume with deltas in backup [{}]. Setting the backup as not current and not END_OF_CHAIN.", volumeId, joinVO.getUuid());
-        backupDetailDao.removeDetail(joinVO.getId(), BackupDetailsDao.CURRENT);
-        if (!joinVO.getEndOfChain()) {
-            backupDetailDao.persist(new BackupDetailVO(joinVO.getId(), BackupDetailsDao.END_OF_CHAIN, Boolean.TRUE.toString(), true));
-        }
     }
 
 
@@ -299,7 +303,7 @@ public class InternalBackupServiceImpl extends ComponentLifecycleBase implements
         if (internalBackupProvider == null) {
             return false;
         }
-        return internalBackupProvider.finishBackupChain(vm);
+        return internalBackupProvider.finishBackupChains(vm);
     }
 
     @Override
