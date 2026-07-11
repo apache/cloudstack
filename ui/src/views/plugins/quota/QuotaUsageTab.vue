@@ -544,8 +544,6 @@ export default {
         }
       }
 
-      this.pushDateToLabelsIfNotPresent(lineChartLabels, this.getLineChartLabelForDate(this.endDate))
-
       lineChartLabels.sort((a, b) => new Date(a) - new Date(b))
       return lineChartLabels
     },
