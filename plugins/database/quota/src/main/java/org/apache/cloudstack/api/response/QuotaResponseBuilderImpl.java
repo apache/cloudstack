@@ -44,12 +44,23 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.network.VpnUserVO;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.LoadBalancerDao;
+import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.dao.VpnUserDao;
+import com.cloud.network.rules.PortForwardingRuleVO;
+import com.cloud.network.rules.dao.PortForwardingRulesDao;
+import com.cloud.network.security.SecurityGroupVO;
+import com.cloud.network.security.dao.SecurityGroupDao;
+import com.cloud.network.vpc.VpcVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.storage.BucketVO;
+import com.cloud.storage.dao.BucketDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.SnapshotDao;
@@ -68,6 +79,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.Ip;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -115,6 +127,7 @@ import org.apache.cloudstack.quota.dao.QuotaTariffDao;
 import org.apache.cloudstack.quota.dao.QuotaTariffUsageDao;
 import org.apache.cloudstack.quota.dao.QuotaUsageDao;
 import org.apache.cloudstack.quota.dao.QuotaUsageJoinDao;
+import org.apache.cloudstack.quota.dao.VpcDao;
 import org.apache.cloudstack.quota.vo.QuotaAccountVO;
 import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
 import org.apache.cloudstack.quota.vo.QuotaCreditsVO;
@@ -181,6 +194,8 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     @Inject
     private NetworkDao networkDao;
     @Inject
+    private VpcDao vpcDao;
+    @Inject
     private NetworkOfferingDao networkOfferingDao;
     @Inject
     private SnapshotDao snapshotDao;
@@ -190,6 +205,16 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     private VMTemplateDao vmTemplateDao;
     @Inject
     private VolumeDao volumeDao;
+    @Inject
+    private BucketDao bucketDao;
+    @Inject
+    private VpnUserDao vpnUserDao;
+    @Inject
+    private LoadBalancerDao loadBalancerDao;
+    @Inject
+    private PortForwardingRulesDao portForwardingRulesDao;
+    @Inject
+    private SecurityGroupDao securityGroupDao;
     @Inject
     private QuotaUsageJoinDao quotaUsageJoinDao;
     @Inject
@@ -478,6 +503,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         switch (usageType) {
             case QuotaTypes.ALLOCATED_VM:
             case QuotaTypes.RUNNING_VM:
+            case QuotaTypes.BACKUP:
                 VMInstanceVO vmInstance = vmInstanceDao.findByIdIncludingRemoved(resourceId);
                 if (vmInstance != null) {
                     return new QuotaUsageResourceVO(vmInstance.getUuid(), vmInstance.getHostName(), vmInstance.getRemoved());
@@ -504,9 +530,16 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
                 break;
             case QuotaTypes.NETWORK_BYTES_SENT:
             case QuotaTypes.NETWORK_BYTES_RECEIVED:
+            case QuotaTypes.NETWORK:
                 NetworkVO network = networkDao.findByIdIncludingRemoved(resourceId);
                 if (network != null) {
                     return new QuotaUsageResourceVO(network.getUuid(), network.getName(), network.getRemoved());
+                }
+                break;
+            case QuotaTypes.VPC:
+                VpcVO vpc = vpcDao.findByIdIncludingRemoved(resourceId);
+                if (vpc != null) {
+                    return new QuotaUsageResourceVO(vpc.getUuid(), vpc.getName(), vpc.getRemoved());
                 }
                 break;
             case QuotaTypes.TEMPLATE:
@@ -528,6 +561,44 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
                     return new QuotaUsageResourceVO(ipAddress.getUuid(), ipAddress.getName(), ipAddress.getRemoved());
                 }
                 break;
+            case QuotaTypes.BUCKET:
+                BucketVO bucket = bucketDao.findByIdIncludingRemoved(resourceId);
+                if (bucket != null) {
+                    return new QuotaUsageResourceVO(bucket.getUuid(), bucket.getName(), bucket.getRemoved());
+                }
+                break;
+            case QuotaTypes.VPN_USERS:
+                VpnUserVO vpnUser = vpnUserDao.findByIdIncludingRemoved(resourceId);
+                if (vpnUser != null) {
+                    return new QuotaUsageResourceVO(vpnUser.getUuid(), vpnUser.getUsername(), null);
+                }
+                break;
+            case QuotaTypes.SECURITY_GROUP:
+                SecurityGroupVO securityGroup = securityGroupDao.findByIdIncludingRemoved(resourceId);
+                if (securityGroup != null) {
+                    return new QuotaUsageResourceVO(securityGroup.getUuid(), securityGroup.getName(), null);
+                }
+                break;
+            case QuotaTypes.LOAD_BALANCER_POLICY:
+                LoadBalancerVO loadBalancer = loadBalancerDao.findByIdIncludingRemoved(resourceId);
+                if (loadBalancer != null) {
+                    return new QuotaUsageResourceVO(loadBalancer.getUuid(), loadBalancer.getName(), loadBalancer.getRemoved());
+                }
+                break;
+            case QuotaTypes.PORT_FORWARDING_RULE:
+                PortForwardingRuleVO portForwardingRule = portForwardingRulesDao.findByIdIncludingRemoved(resourceId);
+                if (portForwardingRule == null) {
+                    return null;
+                }
+                IPAddressVO source = ipAddressDao.findByIdIncludingRemoved(portForwardingRule.getSourceIpAddressId());
+                Ip destination = portForwardingRule.getDestinationIpAddress();
+                if (ObjectUtils.anyNull(source, destination)) {
+                    return null;
+                }
+                String displayName = String.format("%s:%s-%s to %s:%s-%s", source.getAddress(), portForwardingRule.getSourcePortStart(),
+                        portForwardingRule.getSourcePortEnd(), destination, portForwardingRule.getDestinationPortStart(),
+                        portForwardingRule.getDestinationPortEnd());
+                return new QuotaUsageResourceVO(portForwardingRule.getUuid(), displayName, portForwardingRule.getRemoved());
         }
         return null;
     }
