@@ -1226,7 +1226,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
                 Map<Object, Object> metrics = new HashMap<>();
                 for (HostVO host : hosts) {
-                    if (host.getHypervisorType() == HypervisorType.KVM && ManagementServerNode.getManagementServerId() != host.getManagementServerId()) {
+                    if (HypervisorType.KVM.equals(host.getHypervisorType()) && ManagementServerNode.getManagementServerId() != host.getManagementServerId()) {
                         // When there are multiple Management Server nodes on the environment, all of them request stat collections for the same VM in different moments; with that,
                         // the interval from "vm.stats.interval" is not respected. Also, the stats commands are routed to the Management Server connected to the Agent where the VM is running.
                         // Furthermore, the number of stat entries on the DB scales with the number of Management Servers. Therefore, we only request the stat collections from
