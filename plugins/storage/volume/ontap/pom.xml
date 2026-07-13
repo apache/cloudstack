@@ -163,7 +163,6 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven-surefire-plugin.version}</version>
                 <configuration>
-                    <skipTests>false</skipTests>
                     <includes>
                         <include>**/*Test.java</include>
                     </includes>
