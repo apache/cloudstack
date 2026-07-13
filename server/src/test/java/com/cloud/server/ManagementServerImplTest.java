@@ -43,8 +43,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
@@ -59,6 +61,7 @@ import org.apache.cloudstack.api.command.user.userdata.ListUserDataCmd;
 import org.apache.cloudstack.api.command.user.userdata.RegisterUserDataCmd;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.framework.config.ConfigDepot;
@@ -69,24 +72,45 @@ import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 import org.apache.cloudstack.userdata.UserDataManager;
 
 import com.cloud.cpu.CPU;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.deploy.DataCenterDeployment;
+import com.cloud.deploy.DeploymentPlanningManager;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.gpu.GPU;
+import com.cloud.gpu.VgpuProfileVO;
+import com.cloud.gpu.dao.VgpuProfileDao;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
+import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
+import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManagerImpl;
 import com.cloud.network.dao.IPAddressVO;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.service.dao.ServiceOfferingDetailsDao;
+import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.GuestOsCategory;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.SSHKeyPair;
@@ -97,14 +121,18 @@ import com.cloud.user.UserDataVO;
 import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserDataDao;
 import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceDetailVO;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.agent.manager.allocator.HostAllocator;
 
@@ -157,6 +185,42 @@ public class ManagementServerImplTest {
     HostDetailsDao hostDetailsDao;
 
     @Mock
+    VMInstanceDao vmInstanceDao;
+
+    @Mock
+    HostDao hostDao;
+
+    @Mock
+    ServiceOfferingDetailsDao serviceOfferingDetailsDao;
+
+    @Mock
+    VolumeDao volumeDao;
+
+    @Mock
+    ServiceOfferingDao offeringDao;
+
+    @Mock
+    DiskOfferingDao diskOfferingDao;
+
+    @Mock
+    HypervisorCapabilitiesDao hypervisorCapabilitiesDao;
+
+    @Mock
+    DataStoreManager dataStoreManager;
+
+    @Mock
+    DpdkHelper dpdkHelper;
+
+    @Mock
+    AffinityGroupVMMapDao affinityGroupVMMapDao;
+
+    @Mock
+    DeploymentPlanningManager dpMgr;
+
+    @Mock
+    DataCenterDao dcDao;
+
+    @Mock
     ConfigurationDao configDao;
 
     @Mock
@@ -181,6 +245,12 @@ public class ManagementServerImplTest {
     @Mock
     HostAllocator hostAllocator;
 
+    @Mock
+    VgpuProfileDao vgpuProfileDao;
+
+    @Mock
+    VgpuProfileVO vgpuProfileVO;
+
     private AutoCloseable closeable;
     private MockedStatic<ApiDBUtils> apiDBUtilsMock;
 
@@ -203,6 +273,9 @@ public class ManagementServerImplTest {
         // Return empty list to avoid architecture filtering in most tests
         apiDBUtilsMock.when(() -> ApiDBUtils.listZoneClustersArchs(Mockito.anyLong()))
                 .thenReturn(new ArrayList<>());
+
+        when(vgpuProfileDao.findById(any())).thenReturn(vgpuProfileVO);
+        when(vgpuProfileVO.getName()).thenReturn("test-vgpu-profile");
     }
 
     @After
@@ -1067,7 +1140,7 @@ public class ManagementServerImplTest {
         mockRunningVM(1L, HypervisorType.KVM);
         Account caller = Mockito.mock(Account.class);
         Mockito.doReturn(caller).when(spy).getCaller();
-        Mockito.when(_accountMgr.isRootAdmin(caller.getId())).thenReturn(false);
+        Mockito.when(accountManager.isRootAdmin(caller.getId())).thenReturn(false);
 
         spy.listHostsForMigrationOfVM(1L, 0L, 20L, null);
     }
@@ -1127,7 +1200,7 @@ public class ManagementServerImplTest {
         Mockito.when(serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.pciDevice.toString()))
             .thenReturn(Mockito.mock(com.cloud.service.ServiceOfferingDetailsVO.class));
 
-        Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, java.util.Map<Host, Boolean>> result =
+        Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> result =
             spy.listHostsForMigrationOfVM(1L, 0L, 20L, null);
 
         Assert.assertNotNull(result);
@@ -2327,7 +2400,7 @@ public class ManagementServerImplTest {
     private Account mockRootAdminAccount() {
         Account account = Mockito.mock(Account.class);
         Mockito.when(account.getId()).thenReturn(1L);
-        Mockito.when(_accountMgr.isRootAdmin(1L)).thenReturn(true);
+        Mockito.when(accountManager.isRootAdmin(1L)).thenReturn(true);
         return account;
     }
 
