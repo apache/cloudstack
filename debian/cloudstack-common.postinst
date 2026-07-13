@@ -22,11 +22,11 @@ CLOUDUTILS_DIR="/usr/share/pyshared/"
 DIST_DIR=$(python3 -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")
 
 if which pycompile >/dev/null 2>&1; then
-    pycompile -p cloudstack-common
+    pycompile -p cloudstack-common || true
 fi
 
 if which pycompile >/dev/null 2>&1; then
-    pycompile -p cloudstack-common /usr/share/cloudstack-common
+    pycompile -p cloudstack-common /usr/share/cloudstack-common || true
 fi
 
 cp $CLOUDUTILS_DIR/cloud_utils.py $DIST_DIR
