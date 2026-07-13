@@ -20,6 +20,7 @@ package org.apache.cloudstack.backup;
 
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.DataTO;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage;
@@ -299,6 +300,9 @@ public class InternalBackupServiceImpl extends ComponentLifecycleBase implements
     @Override
     public boolean finishBackupChain(long vmId) {
         VirtualMachine vm = virtualMachineManager.findById(vmId);
+        if (vm == null) {
+            throw new InvalidParameterValueException(String.format("Unable to find VM with ID [%s].", vmId));
+        }
         InternalBackupProvider internalBackupProvider = getInternalBackupProviderForZone(vm.getDataCenterId());
         if (internalBackupProvider == null) {
             return false;

@@ -1962,7 +1962,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 }
                 List<HostVO> listHost =
                         hostDao.listAllUpAndEnabledNonHAHosts(Host.Type.Routing, storagePool.getClusterId(), storagePool.getPodId(), storagePool.getDataCenterId(), null);
-                return new Pair<>(listHost.stream().findFirst().orElseThrow(), null);
+                return new Pair<>(listHost.stream().findFirst().orElseThrow(() -> new CloudRuntimeException(String.format("Unable to find a host to restore backup for VM " +
+                        "[%s].", vm.getUuid()))), null);
             }
         }
         if (hostId == null) {

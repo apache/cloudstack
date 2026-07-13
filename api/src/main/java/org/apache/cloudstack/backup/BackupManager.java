@@ -141,7 +141,7 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
 
     /**
      * Create a new Backup and Recovery policy to CloudStack. Currently only supported for KBOSS.
-     * @param cmd import backup offering cmd
+     * @param cmd create backup offering cmd
      */
     BackupOffering createBackupOffering(final CreateBackupOfferingCmd cmd);
 
