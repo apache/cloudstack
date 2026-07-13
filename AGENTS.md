@@ -17,7 +17,7 @@ specific language governing permissions and limitations
 under the License.
 -->
 
-# Agent Guide for cloudstack
+# Agent Guide for Apache CloudStack
 
 This file is read by automated agents (security scanners, code
 analyzers, AI assistants) operating on this repository.
@@ -29,4 +29,4 @@ Security model: [SECURITY.md](./SECURITY.md)
 Agents that scan this repository should consult `SECURITY.md` and the
 threat model it links before reporting issues.
 
-The project-wide security threat model lives in draft-THREAT-MODEL.md (merged via #13293); SECURITY.md points to it.
+The project-wide security threat model is linked from `SECURITY.md`.
