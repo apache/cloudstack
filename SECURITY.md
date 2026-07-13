@@ -22,8 +22,9 @@ under the License.
 ## Reporting a Vulnerability
 
 `apache/cloudstack` follows the [Apache Software Foundation security process](https://www.apache.org/security/). Please report suspected
-vulnerabilities privately to `security@apache.org`; do not open public
-GitHub issues or pull requests for security reports.
+vulnerabilities privately to `security@apache.org`; do not open public GitHub issues or pull requests for security reports.
+
+For more details, see https://cloudstack.apache.org/security.html.
 
 ## Threat Model
 
