@@ -56,7 +56,7 @@ def main():
         sys.exit(2)
     params = {}
     pos = 0;
-    for i in range(len(paramList) / 2):
+    for i in range(len(paramList) // 2):
         params[str(paramList[pos])] = str(paramList[pos+1])
         pos = pos + 2
     print("call: " + pluginName + " " + funcName + ", with params: " + str(params))

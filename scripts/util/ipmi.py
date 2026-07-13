@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -57,7 +57,7 @@ class Command:
 
         cmd = self.__get_recursive_name() + list(args)
         #print "    ",cmd
-        popen = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        popen = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE,universal_newlines=True)
         m = popen.communicate()
         ret = popen.wait()
         return CommandOutput(ret,*m)

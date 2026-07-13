@@ -67,7 +67,7 @@ def prepare():
 
 if __name__ == "__main__":
     if len(sys.argv) < 4:
-        print("Usage: prepare_kickstart_kerneal_initrd.py path_to_kernel path_to_initrd path_kernel_initrd_copy_to")
+        print("Usage: prepare_kickstart_kernel_initrd.py path_to_kernel path_to_initrd path_kernel_initrd_copy_to")
         sys.exit(1)
 
     (kernel, initrd, copy_to) = sys.argv[1:]

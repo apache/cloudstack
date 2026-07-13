@@ -79,7 +79,7 @@ def prepare(is_restore):
 
 if __name__ == "__main__":
     if len(sys.argv) < 12:
-        print("Usage: prepare_tftp_bootfile.py tftp_dir mac cifs_server share directory image_to_restor cifs_username cifs_password ip netmask gateway")
+        print("Usage: prepare_tftp_bootfile.py tftp_dir mac cifs_server share directory image_to_restore cifs_username cifs_password ip netmask gateway")
         exit(1)
 
     (cmd, tftp_dir, mac, cifs_server, share, directory, template_dir, cifs_username, cifs_password, ip, netmask, gateway) = sys.argv[1:]

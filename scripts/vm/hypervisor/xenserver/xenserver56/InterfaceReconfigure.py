@@ -849,7 +849,7 @@ def DatapathFactory(pif):
         network_backend = network_conf.readline().strip()
         network_conf.close()
     except Exception as e:
-        raise Error("failed to determine network backend:" + e)
+        raise Error("failed to determine network backend:" + str(e))
 
     if network_backend == "bridge":
         from InterfaceReconfigureBridge import DatapathBridge

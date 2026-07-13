@@ -71,7 +71,7 @@ class Check(object):
     """ We only want mounted nfs filesystems """
     def nfsoutput(self):
         command="mount -v -t nfs"
-        p=subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+        p=subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, universal_newlines=True)
         lines=[line.split()[2] for line in p.stdout.readlines()]
         test=re.compile("^%s" % (primary))
         lines=list(filter(test.search, lines))

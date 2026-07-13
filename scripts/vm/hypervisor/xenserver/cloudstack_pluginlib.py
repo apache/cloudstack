@@ -17,7 +17,12 @@
 
 # Common function for Cloudstack's XenAPI plugins
 
-import configparser
+# This file is deployed to XenServer hosts whose plugins run under Python 2
+# (see xenserver65/patch); it must stay importable on both Python 2 and 3.
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
 import logging
 import os
 import subprocess

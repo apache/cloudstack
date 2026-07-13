@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -90,7 +90,6 @@ class InstallSysTemplate(object):
       self.databaseuserpassword = ""
     if self.args.templatesuffix:
       self.templatesuffix = self.args.templatesuffix
-    print('Password for DB: %s'%self.databaseuserpassword)
 
   def errorAndExit(self, msg):
     err = '''\n\nWe apologize for below error:
@@ -108,7 +107,7 @@ for full help
     sys.exit(1)
 
   def runCmd(self, cmds):
-    process = subprocess.Popen(' '.join(cmds), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    process = subprocess.Popen(' '.join(cmds), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
     stdout, stderr = process.communicate()
     print(stdout)
     if process.returncode != 0:
@@ -171,14 +170,14 @@ for full help
       compressedFile = gzip.GzipFile(self.systemvmtemplatepath, 'rb')
       decompressedData = compressedFile.read()
       compressedFile.close()
-      decompressedFile = file(fileName, 'wb')
+      decompressedFile = open(fileName, 'wb')
       decompressedFile.write(decompressedData)
       decompressedFile.close()
     elif self.fileextension == 'bz2':
       compressedFile = bz2.BZ2File(self.systemvmtemplatepath)
       decompressedData = compressedFile.read()
       compressedFile.close()
-      decompressedFile = file(fileName, 'wb')
+      decompressedFile = open(fileName, 'wb')
       decompressedFile.write(decompressedData)
       decompressedFile.close()
       print('')
@@ -187,7 +186,7 @@ for full help
       zippedFiles = zippedFile.namelist()
       compressedFile = zippedFiles[0]
       decompressedData = zippedFile.read(compressedFile)
-      decompressedFile = file(fileName, 'wb')
+      decompressedFile = open(fileName, 'wb')
       decompressedFile.write(decompressedData)
       decompressedFile.close()
       zippedFile.close()
@@ -197,7 +196,7 @@ for full help
     self.fileSize = os.path.getsize(fileName)
 
   def writeProperties(self):
-    propertiesFile = file(self.destDir + os.sep + 'template.properties', 'wb')
+    propertiesFile = open(self.destDir + os.sep + 'template.properties', 'w')
     propertiesFile.write('filename=%s\n'%self.templateName)
     propertiesFile.write('description=SystemVM Template\n')
     propertiesFile.write('checksum=\n')

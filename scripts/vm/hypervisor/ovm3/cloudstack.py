@@ -564,7 +564,7 @@ if __name__ == '__main__':
     modfile = "%s/%s.py" % (modpath, cs.getName().lower())
     me = os.path.abspath(__file__)
     if os.path.isfile(modfile):
-        if hashlib.md5(open(me).read()).hexdigest() != hashlib.md5(open(modfile).read()).hexdigest():
+        if hashlib.md5(open(me, 'rb').read()).hexdigest() != hashlib.md5(open(modfile, 'rb').read()).hexdigest():
             print("Module copy, %s" % (modfile))
             copyfile(me, modfile)
         else:
