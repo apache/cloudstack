@@ -946,6 +946,9 @@ export default {
                   provider.enabled = self.isVpcCoreProvider(provider.name, svc.name) ||
                     !self.isBuiltInNetworkProvider(provider.name)
                 }
+                if (svc.name === 'Firewall' && provider.name === 'VpcVirtualRouter') {
+                  provider.enabled = false
+                }
               } else { // *** non-vpc ***
                 provider.enabled = !['InternalLbVm', 'VpcVirtualRouter', 'Nsx', 'Netris'].includes(provider.name)
               }
