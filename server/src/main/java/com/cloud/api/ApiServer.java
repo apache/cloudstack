@@ -355,7 +355,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             "true",
             "When enabled, APIs will not honour requests containing internal database IDs. "
                     + "Only UUIDs will be accepted as entity identifiers. "
-                    + "By default, internal IDs are still accepted for backward compatibility with pre-3.x APIs.",
+                    + "By default, internal IDs are not accepted even for pre-3.x APIs.",
             true,
             ConfigKey.Scope.Global
     );
