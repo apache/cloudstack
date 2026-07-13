@@ -224,7 +224,7 @@ class NFSSR(FileSR.FileSR):
     def scan_exports(self, target):
         util.SMlog("scanning2 (target=%s)" % target)
         dom = nfs.scan_exports(target)
-        print >>sys.stderr,dom.toprettyxml()
+        print(dom.toprettyxml(), file=sys.stderr)
 
     def _isvalidpathstring(self, path):
         if not path.startswith("/"):

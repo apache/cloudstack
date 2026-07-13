@@ -66,19 +66,19 @@ class NFSSR(FileSR.FileSR):
         self.ops_exclusive = FileSR.OPS_EXCLUSIVE
         self.lock = Lock(vhdutil.LOCK_TYPE_SR, self.uuid)
         self.sr_vditype = SR.DEFAULT_TAP
-        if not self.dconf.has_key('server'):
+        if 'server' not in self.dconf:
             raise xs_errors.XenError('ConfigServerMissing')
         self.remoteserver = self.dconf['server']
         self.path = os.path.join(SR.MOUNT_BASE, sr_uuid)
 
         # Test for the optional 'nfsoptions' dconf attribute
         self.transport = DEFAULT_TRANSPORT
-        if self.dconf.has_key('useUDP') and self.dconf['useUDP'] == 'true':
+        if 'useUDP' in self.dconf and self.dconf['useUDP'] == 'true':
             self.transport = "udp"
 
 
     def validate_remotepath(self, scan):
-        if not self.dconf.has_key('serverpath'):
+        if 'serverpath' not in self.dconf:
             if scan:
                 try:
                     self.scan_exports(self.dconf['server'])
@@ -92,7 +92,7 @@ class NFSSR(FileSR.FileSR):
     def check_server(self):
         try:
             nfs.check_server_tcp(self.remoteserver)
-        except nfs.NfsException, exc:
+        except nfs.NfsException as exc:
             raise xs_errors.XenError('NFSVersion',
                                      opterr=exc.errstr)
 
@@ -100,7 +100,7 @@ class NFSSR(FileSR.FileSR):
     def mount(self, mountpoint, remotepath):
         try:
             nfs.soft_mount(mountpoint, self.remoteserver, remotepath, self.transport)
-        except nfs.NfsException, exc:
+        except nfs.NfsException as exc:
             raise xs_errors.XenError('NFSMount', opterr=exc.errstr)
 
 
@@ -150,7 +150,7 @@ class NFSSR(FileSR.FileSR):
 
         try:
             nfs.unmount(self.path, True)
-        except nfs.NfsException, exc:
+        except nfs.NfsException as exc:
             raise xs_errors.XenError('NFSUnMount', opterr=exc.errstr)
 
         return super(NFSSR, self).detach(sr_uuid)
@@ -167,7 +167,7 @@ class NFSSR(FileSR.FileSR):
         self.remotepath = self.dconf['serverpath']
         try:
             self.mount_remotepath(sr_uuid)
-        except Exception, exn:
+        except Exception as exn:
             try:
                 os.rmdir(self.path)
             except:
@@ -192,7 +192,7 @@ class NFSSR(FileSR.FileSR):
             if util.ioretry(lambda: util.pathexists(newpath)):
                 util.ioretry(lambda: os.rmdir(newpath))
             self.detach(sr_uuid)
-        except util.CommandException, inst:
+        except util.CommandException as inst:
             self.detach(sr_uuid)
             if inst.code != errno.ENOENT:
                 raise xs_errors.XenError('NFSDelete')
@@ -209,7 +209,7 @@ class NFSSR(FileSR.FileSR):
     def scan_exports(self, target):
         util.SMlog("scanning2 (target=%s)" % target)
         dom = nfs.scan_exports(target)
-        print >>sys.stderr,dom.toprettyxml()
+        print(dom.toprettyxml(), file=sys.stderr)
 
 class NFSFileVDI(FileSR.FileVDI):
     def attach(self, sr_uuid, vdi_uuid):
