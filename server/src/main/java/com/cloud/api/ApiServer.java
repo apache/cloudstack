@@ -352,7 +352,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             ConfigKey.CATEGORY_ADVANCED,
             Boolean.class,
             "api.disallow.internal.ids",
-            "false",
+            "true",
             "When enabled, APIs will not honour requests containing internal database IDs. "
                     + "Only UUIDs will be accepted as entity identifiers. "
                     + "By default, internal IDs are still accepted for backward compatibility with pre-3.x APIs.",
