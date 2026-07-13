@@ -398,6 +398,21 @@ public class QemuImgTest {
     }
 
     @Test
+    public void testHelpSupportsImageFormatQemu101Header() throws QemuImgException, LibvirtException {
+        // qemu-img 10.1.0 (e.g. RHEL 9.8: qemu-kvm-10.1.0-17.el9_8.3) changed the
+        // help header from "Supported formats:" to "Supported image formats:"
+        String help = "Supported image formats:\n" +
+                "  blkdebug blklogwrites blkverify compress copy-before-write copy-on-read\n" +
+                "  file ftp ftps host_cdrom host_device http https io_uring luks nbd null-aio\n" +
+                "  null-co nvme nvme-io_uring preallocate qcow2 quorum raw rbd\n" +
+                "  snapshot-access throttle vdi vhdx virtio-blk-vfio-pci\n" +
+                "  virtio-blk-vhost-user virtio-blk-vhost-vdpa vmdk vpc\n";
+        Assert.assertTrue("should support luks", QemuImg.helpSupportsImageFormat(help, PhysicalDiskFormat.LUKS));
+        Assert.assertTrue("should support qcow2", QemuImg.helpSupportsImageFormat(help, PhysicalDiskFormat.QCOW2));
+        Assert.assertFalse("should not support sheepdog", QemuImg.helpSupportsImageFormat(help, PhysicalDiskFormat.SHEEPDOG));
+    }
+
+    @Test
     public void testCheckAndRepair() throws LibvirtException {
         String filename = "/tmp/" + UUID.randomUUID() + ".qcow2";
 

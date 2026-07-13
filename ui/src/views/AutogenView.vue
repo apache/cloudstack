@@ -558,7 +558,7 @@
       <div v-if="dataView">
         <slot
           name="resource"
-          v-if="$route.path.startsWith('/quotasummary') || $route.path.startsWith('/publicip')"
+          v-if="$route.path.startsWith('/publicip')"
         ></slot>
         <resource-view
           v-else
@@ -1067,7 +1067,7 @@ export default {
       const customRender = {}
       for (var columnKey of this.columnKeys) {
         let key = columnKey
-        let title = columnKey === 'cidr' && this.columnKeys.includes('ip6cidr') ? 'ipv4.cidr' : columnKey
+        let title = columnKey === 'cidr' && this.columnKeys.includes('ip6cidr') ? 'ipv4.cidr' : key
         if (typeof columnKey === 'object') {
           if ('customTitle' in columnKey && 'field' in columnKey) {
             key = columnKey.field
@@ -1075,7 +1075,7 @@ export default {
             customRender[key] = columnKey[key]
           } else {
             key = Object.keys(columnKey)[0]
-            title = Object.keys(columnKey)[0]
+            title = (typeof title === 'object') ? key : title
             customRender[key] = columnKey[key]
           }
         }
@@ -1120,6 +1120,13 @@ export default {
         params.details = 'group,nics,secgrp,tmpl,servoff,diskoff,iso,volume,affgrp,backoff'
       }
 
+      if (this.apiName === 'quotaTariffList' && !('quotaTariffCreate' in store.getters.apis || 'quotaTariffUpdate' in store.getters.apis)) {
+        const index = this.columns.findIndex(col => col.dataIndex === 'hasActivationRule')
+        if (index >= 0) {
+          this.columns.splice(index, 1)
+        }
+      }
+
       this.loading = true
       if (this.$route.path.startsWith('/cniconfiguration')) {
         params.forcks = true
@@ -1159,6 +1166,14 @@ export default {
         }
         if (this.$route.path.startsWith('/tungstenfirewallpolicy/')) {
           params.firewallpolicyuuid = this.$route.params.id
+        }
+        if (this.apiName === 'quotaSummary' && params.id) {
+          params.accountid = params.id
+          delete params.id
+        }
+        if (this.apiName === 'quotaEmailTemplateList' && params.id) {
+          params.templatetype = params.id
+          delete params.id
         }
       }
 
@@ -1206,7 +1221,11 @@ export default {
           break
         }
 
-        if ('id' in this.$route.params && this.$route.params.id !== params.id) {
+        const idFromRouteMatchesApiParameter = this.$route.params.id === params.id ||
+          this.apiName === 'quotaSummary' && this.$route.params.id === params.accountid ||
+          this.apiName === 'quotaEmailTemplateList' && this.$route.params.id === params.templatetype
+
+        if ('id' in this.$route.params && !idFromRouteMatchesApiParameter) {
           console.log('DEBUG - Discarding API response as its `id` does not match the uuid on the browser path')
           return
         }

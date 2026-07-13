@@ -65,6 +65,7 @@ import com.cloud.network.rules.UserdataToRouterRules;
 import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRouteProfile;
+import com.cloud.network.vpc.Vpc;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
@@ -229,6 +230,26 @@ public class BasicNetworkTopology implements NetworkTopology {
     }
 
     @Override
+    public boolean applyFirewallRulesInVPC(final Vpc vpc, final List<? extends FirewallRule> rules, final VirtualRouter router)
+            throws ResourceUnavailableException {
+        if (rules == null || rules.isEmpty()) {
+            logger.debug("No firewall rules to be applied for vpc {}", vpc);
+            return true;
+        }
+
+        logger.debug("APPLYING FIREWALL RULES");
+
+        final String typeString = "firewall rules";
+        final boolean isPodLevelException = false;
+        final boolean failWhenDisconnect = false;
+        final Long podId = null;
+
+        final FirewallRules firewallRules = new FirewallRules(vpc, rules);
+
+        return applyRulesInVPC(vpc, router, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(firewallRules));
+    }
+
+    @Override
     public boolean applyStaticNats(final Network network, final List<? extends StaticNat> rules, final VirtualRouter router) throws ResourceUnavailableException {
         if (rules == null || rules.isEmpty()) {
             logger.debug("No static nat rules to be applied for network {}", network);
@@ -377,6 +398,102 @@ public class BasicNetworkTopology implements NetworkTopology {
         final String msg = "Unable to apply " + typeString + " on disconnected router ";
         if (router.getState() == State.Running) {
             logger.debug("Applying " + typeString + " in network " + network);
+
+            if (router.isStopPending()) {
+                if (_hostDao.findById(router.getHostId()).getState() == Status.Up) {
+                    throw new ResourceUnavailableException("Unable to process due to the stop pending router " + router.getInstanceName()
+                            + " haven't been stopped after it's host coming back!", DataCenter.class, router.getDataCenterId());
+                }
+                logger.debug("Router {} is stop pending, so not sending apply {} commands to the backend", router, typeString);
+                return false;
+            }
+
+            try {
+                result = ruleApplier.accept(getVisitor(), router);
+                connectedRouters.add(router);
+            } catch (final AgentUnavailableException e) {
+                logger.warn("{}{}", msg, router, e);
+                disconnectedRouters.add(router);
+            }
+
+            // If rules fail to apply on one domR and not due to
+            // disconnection, no need to proceed with the rest
+            if (!result) {
+                if (isZoneBasic && isPodLevelException) {
+                    throw new ResourceUnavailableException("Unable to apply " + typeString + " on router ", Pod.class, podId);
+                }
+                throw new ResourceUnavailableException("Unable to apply " + typeString + " on router ", DataCenter.class, router.getDataCenterId());
+            }
+
+        } else if (router.getState() == State.Stopped || router.getState() == State.Stopping) {
+            logger.debug("Router {} is in {}, so not sending apply {} commands to the backend", router, router.getState(), typeString);
+        } else {
+            logger.warn("Unable to apply " + typeString + ", virtual router is not in the right state " + router.getState());
+            if (isZoneBasic && isPodLevelException) {
+                throw new ResourceUnavailableException("Unable to apply " + typeString + ", virtual router is not in the right state", Pod.class, podId);
+            }
+            throw new ResourceUnavailableException("Unable to apply " + typeString + ", virtual router is not in the right state", DataCenter.class, router.getDataCenterId());
+        }
+
+        if (!connectedRouters.isEmpty()) {
+            // Shouldn't we include this check inside the method?
+            if (!isZoneBasic && !disconnectedRouters.isEmpty()) {
+                // These disconnected redundant virtual routers are out of sync
+                // now, stop them for synchronization
+                for (final VirtualRouter virtualRouter : disconnectedRouters) {
+                    // If we have at least 1 disconnected redundant router, callhandleSingleWorkingRedundantRouter().
+                    if (virtualRouter.getIsRedundantRouter()) {
+                        _networkHelper.handleSingleWorkingRedundantRouter(connectedRouters, disconnectedRouters, msg);
+                        break;
+                    }
+                }
+            }
+        } else if (!disconnectedRouters.isEmpty()) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("{}{}", msg, router);
+            }
+            if (isZoneBasic && isPodLevelException) {
+                throw new ResourceUnavailableException(msg, Pod.class, podId);
+            }
+            throw new ResourceUnavailableException(msg, DataCenter.class, disconnectedRouters.get(0).getDataCenterId());
+        }
+
+        result = true;
+        if (failWhenDisconnect) {
+            result = !connectedRouters.isEmpty();
+        }
+        return result;
+    }
+
+    @Override
+    public boolean applyRulesInVPC(final Vpc vpc, final VirtualRouter router, final String typeString, final boolean isPodLevelException, final Long podId,
+            final boolean failWhenDisconnect, final RuleApplierWrapper<RuleApplier> ruleApplierWrapper) throws ResourceUnavailableException {
+
+        if (vpc == null) {
+            throw new CloudRuntimeException("Unable to apply " + typeString + " because VPC is null");
+        }
+
+        if (router == null) {
+            logger.warn("Unable to apply {}, virtual router doesn't exist in vpc {}", typeString, vpc);
+            final Long dcId = vpc.getZoneId();
+            throw new ResourceUnavailableException("Unable to apply " + typeString, DataCenter.class, dcId);
+        }
+
+        final RuleApplier ruleApplier = ruleApplierWrapper.getRuleType();
+
+        final Long dcId = vpc.getZoneId();
+        final DataCenter dc = _dcDao.findById(dcId);
+        final boolean isZoneBasic = dc.getNetworkType() == NetworkType.Basic;
+
+        // isPodLevelException and podId is only used for basic zone
+        assert !(!isZoneBasic && isPodLevelException || isZoneBasic && isPodLevelException && podId == null);
+
+        final List<VirtualRouter> connectedRouters = new ArrayList<VirtualRouter>();
+        final List<VirtualRouter> disconnectedRouters = new ArrayList<VirtualRouter>();
+        boolean result = true;
+        final String msg = "Unable to apply " + typeString + " on disconnected router ";
+        if (router.getState() == State.Running) {
+            logger.debug("Applying {} in vpc {}", typeString, vpc);
 
             if (router.isStopPending()) {
                 if (_hostDao.findById(router.getHostId()).getState() == Status.Up) {

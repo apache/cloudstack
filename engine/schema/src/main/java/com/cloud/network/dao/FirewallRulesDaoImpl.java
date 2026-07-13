@@ -74,6 +74,7 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         AllFieldsSearch.and("domain", AllFieldsSearch.entity().getDomainId(), Op.EQ);
         AllFieldsSearch.and("id", AllFieldsSearch.entity().getId(), Op.EQ);
         AllFieldsSearch.and("networkId", AllFieldsSearch.entity().getNetworkId(), Op.EQ);
+        AllFieldsSearch.and("vpcId", AllFieldsSearch.entity().getVpcId(), Op.EQ);
         AllFieldsSearch.and("related", AllFieldsSearch.entity().getRelated(), Op.EQ);
         AllFieldsSearch.and("trafficType", AllFieldsSearch.entity().getTrafficType(), Op.EQ);
         AllFieldsSearch.done();
@@ -352,6 +353,22 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         }
 
         sc.setParameters("trafficType", trafficType);
+
+        return listBy(sc);
+    }
+
+    @Override
+    public List<FirewallRuleVO> listByVpcPurposeTrafficType(long vpcId, Purpose purpose, TrafficType trafficType) {
+        SearchCriteria<FirewallRuleVO> sc = AllFieldsSearch.create();
+        sc.setParameters("vpcId", vpcId);
+
+        if (purpose != null) {
+            sc.setParameters("purpose", purpose);
+        }
+
+        if (trafficType != null) {
+            sc.setParameters("trafficType", trafficType);
+        }
 
         return listBy(sc);
     }

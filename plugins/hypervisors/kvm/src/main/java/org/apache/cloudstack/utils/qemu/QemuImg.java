@@ -986,7 +986,10 @@ public class QemuImg {
     }
 
     protected static boolean helpSupportsImageFormat(String text, QemuImg.PhysicalDiskFormat format) {
-        Pattern pattern = Pattern.compile("Supported\\sformats:[a-zA-Z0-9-_\\s]*?\\b" + format + "\\b", CASE_INSENSITIVE);
+        // QEMU >= 10.1.0 changed the qemu-img --help header from
+        // "Supported formats:" to "Supported image formats:", so the word
+        // "image" must be treated as optional here.
+        Pattern pattern = Pattern.compile("Supported\\s(image\\s)?formats:[a-zA-Z0-9-_\\s]*?\\b" + format + "\\b", CASE_INSENSITIVE);
         return pattern.matcher(text).find();
     }
 

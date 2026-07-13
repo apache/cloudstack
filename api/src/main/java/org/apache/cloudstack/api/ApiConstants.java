@@ -287,6 +287,7 @@ public class ApiConstants {
     public static final String HEALTH = "health";
     public static final String HEADERS = "headers";
     public static final String HIDE_IP_ADDRESS_USAGE = "hideipaddressusage";
+    public static final String HISTORY = "history";
     public static final String HOST_ID = "hostid";
     public static final String HOST_IDS = "hostids";
     public static final String HOST_IP = "hostip";

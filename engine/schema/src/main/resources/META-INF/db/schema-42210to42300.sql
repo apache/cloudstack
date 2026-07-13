@@ -589,6 +589,9 @@ CREATE TABLE IF NOT EXISTS `cloud`.`dns_zone_network_map` (
   CONSTRAINT `fk_dns_map__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- This is part of allowing firewall rules on public IP addresses in VPC network
+ALTER TABLE `cloud`.`firewall_rules` MODIFY COLUMN `network_id` BIGINT UNSIGNED NULL;
+
 -- KBOSS
 
 CREATE TABLE IF NOT EXISTS `cloud`.`internal_backup_pool_ref` (
