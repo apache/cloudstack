@@ -269,6 +269,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
     private static List<String> quiesceSupported = List.of("nas", KBOSS_BACKUP_PROVIDER);
 
+    private static List<String> providersThatIgnoreHostAndDatastore = List.of("nas", KBOSS_BACKUP_PROVIDER);
+
     public AsyncJobDispatcher getAsyncJobDispatcher() {
         return asyncJobDispatcher;
     }
@@ -1710,7 +1712,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
             String host = null;
             String dataStore = null;
-            if (!"nas".equals(offering.getProvider())) {
+            if (!providersThatIgnoreHostAndDatastore.contains(offering.getProvider())) {
                 Pair<HostVO, StoragePoolVO> restoreInfo = getRestoreVolumeHostAndDatastore(vm);
                 host = restoreInfo.first().getPrivateIpAddress();
                 dataStore = restoreInfo.second().getUuid();

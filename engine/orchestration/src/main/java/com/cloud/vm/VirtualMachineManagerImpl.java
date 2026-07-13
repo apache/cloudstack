@@ -1396,6 +1396,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         Throwable lastKnownError = null;
         boolean canRetry = true;
         ExcludeList avoids = null;
+        long deployedHostId = -1;
         try {
             final Journal journal = start.second().getJournal();
 
@@ -1527,6 +1528,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     if (params != null) {
                         Boolean returnAfterVolumePrepare = (Boolean) params.get(VirtualMachineProfile.Param.ReturnAfterVolumePrepare);
                         if (Boolean.TRUE.equals(returnAfterVolumePrepare)) {
+                            deployedHostId = vm.getHostId();
                             logger.info("Returning from VM start command execution for VM {} as requested. Volumes are prepared and ready.", vm.getUuid());
 
                             if (!changeState(vm, Event.AgentReportStopped, destHostId, work, Step.Done)) {
@@ -1733,7 +1735,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             if (params != null && Boolean.TRUE.equals(params.get(VirtualMachineProfile.Param.ReturnAfterVolumePrepare))) {
                 vm.setHostId(null);
-                vm.setLastHostId(vm.getHostId());
+                vm.setLastHostId(deployedHostId);
                 _vmDao.update(vm.getId(), vm);
             }
         }
