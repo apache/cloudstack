@@ -8486,7 +8486,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     private Map<String, String> getSourceOfferingDetails(Long sourceOfferingId) {
         List<NetworkOfferingDetailsVO> sourceDetailsVOs = networkOfferingDetailsDao.listDetails(sourceOfferingId);
         Map<String, String> sourceDetailsMap = new HashMap<>();
-        List<String> ignoredSourceDetails = Arrays.asList(Detail.internetProtocol.name(), Detail.domainid.name(), Detail.zoneid.name());
+        Set<String> ignoredSourceDetails = new HashSet<>(Arrays.asList(Detail.internetProtocol.name(), Detail.domainid.name(), Detail.zoneid.name()));
         for (NetworkOfferingDetailsVO detailVO : sourceDetailsVOs) {
             if (!ignoredSourceDetails.contains(detailVO.getName())) {
                 sourceDetailsMap.put(detailVO.getName(), detailVO.getValue());
