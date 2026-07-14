@@ -304,7 +304,7 @@ class UnifiedSANStrategyTest {
 
         List<HostVO> hosts = new ArrayList<>();
         HostVO host1 = mock(HostVO.class);
-        when(host1.getName()).thenReturn("host1");
+        when(host1.getUuid()).thenReturn("host1");
         when(host1.getStorageUrl()).thenReturn("iqn.1993-08.org.debian:01:host1");
         hosts.add(host1);
         accessGroup.setHostsToConnect(hosts);
@@ -357,7 +357,7 @@ class UnifiedSANStrategyTest {
 
         List<HostVO> hosts = new ArrayList<>();
         HostVO host1 = mock(HostVO.class);
-        when(host1.getName()).thenReturn("host1");
+        when(host1.getUuid()).thenReturn("host1");
         when(host1.getStorageUrl()).thenReturn("iqn.1993-08.org.debian:01:host1");
         hosts.add(host1);
         accessGroup.setHostsToConnect(hosts);
@@ -396,7 +396,7 @@ class UnifiedSANStrategyTest {
 
         List<HostVO> hosts = new ArrayList<>();
         HostVO host1 = mock(HostVO.class);
-        lenient().when(host1.getName()).thenReturn("host1");
+        lenient().when(host1.getUuid()).thenReturn("host1");
         hosts.add(host1);
         accessGroup.setHostsToConnect(hosts);
 
@@ -444,7 +444,7 @@ class UnifiedSANStrategyTest {
 
         List<HostVO> hosts = new ArrayList<>();
         HostVO host1 = mock(HostVO.class);
-        lenient().when(host1.getName()).thenReturn("host1");
+        lenient().when(host1.getUuid()).thenReturn("host1");
         hosts.add(host1);
         accessGroup.setHostsToConnect(hosts);
 
@@ -1042,7 +1042,7 @@ class UnifiedSANStrategyTest {
 
         List<HostVO> hosts = new ArrayList<>();
         HostVO host1 = mock(HostVO.class);
-        when(host1.getName()).thenReturn("host1");
+        when(host1.getUuid()).thenReturn("host1");
         hosts.add(host1);
         accessGroup.setHostsToConnect(hosts);
 
@@ -1079,7 +1079,7 @@ class UnifiedSANStrategyTest {
 
         List<HostVO> hosts = new ArrayList<>();
         HostVO host1 = mock(HostVO.class);
-        when(host1.getName()).thenReturn("host1");
+        when(host1.getUuid()).thenReturn("host1");
         hosts.add(host1);
         accessGroup.setHostsToConnect(hosts);
 
@@ -1728,7 +1728,7 @@ class UnifiedSANStrategyTest {
         accessGroup.setStoragePoolId(1L);
         List<HostVO> hosts = new ArrayList<>();
         HostVO host1 = mock(HostVO.class);
-        when(host1.getName()).thenReturn("host1");
+        when(host1.getUuid()).thenReturn("host1");
         hosts.add(host1);
         accessGroup.setHostsToConnect(hosts);
 
@@ -1754,7 +1754,7 @@ class UnifiedSANStrategyTest {
         accessGroup.setStoragePoolId(1L);
         List<HostVO> hosts = new ArrayList<>();
         HostVO host1 = mock(HostVO.class);
-        when(host1.getName()).thenReturn("host1");
+        when(host1.getUuid()).thenReturn("host1");
         hosts.add(host1);
         accessGroup.setHostsToConnect(hosts);
 
