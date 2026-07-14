@@ -28,6 +28,8 @@ import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ExceptionResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.context.ResponseMessageResolver;
+import org.apache.cloudstack.error.Exceptions;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
@@ -39,6 +41,7 @@ import com.cloud.user.User;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -112,7 +115,8 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
                 // serialize this to the async job table
                 _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.SUCCEEDED, 0, ApiSerializerHelper.toSerializedString(cmdObj.getResponseObject()));
             } catch (InvalidParameterValueException ipve) {
-                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, ipve.getMessage());
+                throw Exceptions.serverApiException(ApiErrorCode.PARAM_ERROR, ipve.getMessage(), ipve.getMessageKey(),
+                        ipve.getMetadata());
             } finally {
                 CallContext.unregister();
             }
@@ -131,6 +135,10 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
             ExceptionResponse response = new ExceptionResponse();
             response.setErrorCode(errorCode);
             response.setErrorText(errorMsg);
+            if (e instanceof CloudRuntimeException) {
+                ResponseMessageResolver.updateExceptionResponse(response, (CloudRuntimeException)e,
+                        job.getAccountId(), job.getUserId());
+            }
             response.setResponseName((cmdObj == null) ? "unknowncommandresponse" : cmdObj.getCommandName());
 
             _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.FAILED, errorCode, ApiSerializerHelper.toSerializedString(response));

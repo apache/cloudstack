@@ -47,6 +47,7 @@ import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserDataResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.error.Exceptions;
 import org.apache.cloudstack.kms.KMSKey;
 import org.apache.cloudstack.vm.lease.VMLeaseManager;
 import org.apache.commons.collections.CollectionUtils;
@@ -672,7 +673,8 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
             try {
                 networkId = Long.parseLong(networkid);
             } catch (NumberFormatException e) {
-                throw new InvalidParameterValueException("Unable to translate and find entity with networkId: " + networkid);
+                throw Exceptions.invalidParameterValueException("vm.deploy.network.not.found.ip.map",
+                        Map.of("networkId", networkid));
             }
         }
         return networkId;

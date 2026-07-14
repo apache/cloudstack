@@ -397,6 +397,7 @@ public class UnmanagedVMsManagerImplTest {
         when(responseGenerator.createUserVmResponse(any(ResponseObject.ResponseView.class), Mockito.anyString(), any(UserVm.class))).thenReturn(userVmResponses);
 
         when(vmDao.findById(virtualMachineId)).thenReturn(virtualMachine);
+        when(virtualMachine.getUuid()).thenReturn(UUID.randomUUID().toString());
         when(virtualMachine.getState()).thenReturn(VirtualMachine.State.Running);
 
         when(unmanagedInstanceMock.getCpuCores()).thenReturn(8);

@@ -34,7 +34,9 @@ import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.error.Exceptions;
 
+import com.cloud.configuration.Resource;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
@@ -264,7 +266,19 @@ public class DeployVMCmd extends BaseDeployVMCmd {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         } catch (ResourceAllocationException ex) {
             logger.warn("Exception: ", ex);
-            throw new ServerApiException(ApiErrorCode.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
+            handleCreateResourceAllocationException(ex);
         }
+    }
+
+    protected void handleCreateResourceAllocationException(ResourceAllocationException ex) {
+        Object cause = CallContext.current().getErrorContextParameters().get("resourceLimitCause");
+        if (Resource.ResourceOwnerType.Account.equals(cause)) {
+            throw Exceptions.serverApiException(ApiErrorCode.RESOURCE_ALLOCATION_ERROR,
+                    "vm.deploy.resourcelimit.exceeded.account");
+        } else if (Resource.ResourceOwnerType.Domain.equals(cause)) {
+            throw Exceptions.serverApiException(ApiErrorCode.RESOURCE_ALLOCATION_ERROR,
+                    "vm.deploy.resourcelimit.exceeded.domain");
+        }
+        throw new ServerApiException(ApiErrorCode.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
     }
 }

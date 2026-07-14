@@ -19,7 +19,6 @@ package com.cloud.user;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.utils.Pair;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.RolePermissionEntity;
 import org.apache.cloudstack.acl.RoleType;
@@ -28,14 +27,6 @@ import org.apache.cloudstack.acl.apikeypair.ApiKeyPair;
 import org.apache.cloudstack.acl.apikeypair.ApiKeyPairPermission;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.admin.account.CreateAccountCmd;
-
-import com.cloud.dc.DataCenter;
-import com.cloud.domain.Domain;
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.network.vpc.VpcOffering;
-import com.cloud.offering.DiskOffering;
-import com.cloud.offering.NetworkOffering;
-import com.cloud.offering.ServiceOffering;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.ListUserKeyRulesCmd;
@@ -46,6 +37,15 @@ import org.apache.cloudstack.api.response.ApiKeyPairResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
 import org.apache.cloudstack.backup.BackupOffering;
+
+import com.cloud.dc.DataCenter;
+import com.cloud.domain.Domain;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.network.vpc.VpcOffering;
+import com.cloud.offering.DiskOffering;
+import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.ServiceOffering;
+import com.cloud.utils.Pair;
 
 public interface AccountService {
 
@@ -101,6 +101,8 @@ public interface AccountService {
     User getUserIncludingRemoved(long userId);
 
     boolean isRootAdmin(Long accountId);
+
+    boolean isRootAdmin(Account account);
 
     boolean isDomainAdmin(Long accountId);
 

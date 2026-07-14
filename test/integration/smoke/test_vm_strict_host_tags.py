@@ -170,14 +170,14 @@ class TestVMDeploymentPlannerStrictTags(cloudstackTestCase):
             self.cleanup.append(vm)
             self.fail("VM should not be deployed")
         except Exception as e:
-            self.assertTrue("Cannot deploy VM, destination host" in str(e))
+            self.assertTrue("Cannot deploy Instance, destination host" in str(e))
 
         try:
             vm = self.deploy_vm(self.host_h1.id, self.template_t2.id, self.service_offering_h2.id)
             self.cleanup.append(vm)
             self.fail("VM should not be deployed")
         except Exception as e:
-            self.assertTrue("Cannot deploy VM, destination host" in str(e))
+            self.assertTrue("Cannot deploy Instance, destination host" in str(e))
 
     @attr(tags=["advanced", "advancedns", "ssh", "smoke"], required_hardware="false")
     def test_06_deploy_vm_on_any_host_with_strict_tags_failure(self):
@@ -310,7 +310,7 @@ class TestScaleVMStrictTags(cloudstackTestCase):
             vm.start(self.apiclient)
             self.fail("VM should not be be able scale and start")
         except Exception as e:
-            self.assertTrue("Unable to orchestrate the start of VM instance" in str(e))
+            self.assertTrue("Unable to orchestrate the start of Instance" in str(e))
 
 
 class TestRestoreVMStrictTags(cloudstackTestCase):
@@ -423,7 +423,7 @@ class TestRestoreVMStrictTags(cloudstackTestCase):
             vm.restore(self.apiclient, templateid=self.template_t2.id, expunge=True)
             self.fail("VM should not be restored")
         except Exception as e:
-            self.assertTrue("Unable to create a deployment for " in str(e))
+            self.assertTrue("Unable to start the Instance" in str(e))
 
 
 class TestMigrateVMStrictTags(cloudstackTestCase):
@@ -549,4 +549,4 @@ class TestMigrateVMStrictTags(cloudstackTestCase):
             VirtualMachine.list(self.apiclient, id=vm.id, listall=True)[0]
             self.fail("VM should not be migrated")
         except Exception as e:
-            self.assertTrue("Cannot deploy VM, destination host:" in str(e))
+            self.assertTrue("Cannot deploy Instance, destination host" in str(e))
