@@ -142,6 +142,10 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
         return responseObject;
     }
 
+    /**
+     * handles the case where signature is absent but required.
+     * @param signature should contain a value or be configured to be optional/not be checked
+     */
     protected void checkAndFailOnMissingSAMLSignature(Signature signature) {
         if (signature == null && SAML2AuthManager.SAMLCheckSignature.value()) {
             logger.error("Failing SAML login due to missing signature in the SAML response and signature check is enforced. " +
@@ -153,11 +157,11 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
     /**
      * Validates the given SAML {@link Signature} against the signing certificate registered for the IdP.
      *
-     * <p>Security note: when a signature element IS present in a SAMLResponse or Assertion we must
+     * note: when a signature element IS present in a SAMLResponse or Assertion we must
      * always verify it.  Silently skipping verification when the IdP has no signing certificate
-     * registered would allow an attacker to forge an arbitrary response and bypass authentication
-     * (CWE-347).  Therefore, if a signature is present but the IdP has no signing certificate we
-     * explicitly reject the request rather than trusting an unverifiable signature.</p>
+     * registered would allow an attacker to forge an arbitrary response and bypass authentication.
+     * Therefore, if a signature is present but the IdP has no signing certificate we
+     * explicitly reject the request rather than trusting an unverifiable signature.
      *
      * @param sig         the {@link Signature} element extracted from the SAML message; may be {@code null}
      *                    (no signature present — handled by {@link #checkAndFailOnMissingSAMLSignature})
@@ -170,13 +174,9 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
     protected void validateSAMLSignature(Signature sig, SAMLProviderMetadata idpMetadata,
             Map<String, Object[]> params, String responseType) {
         if (sig == null) {
-            // No signature present — already handled by checkAndFailOnMissingSAMLSignature.
             return;
         }
         if (idpMetadata.getSigningCertificate() == null) {
-            // A signature is present but there is no certificate to verify it against.
-            // Accepting the response would mean trusting an unverifiable, potentially forged
-            // signature — reject immediately.
             logger.error("SAML Response contains a signature but the IdP has no signing certificate " +
                     "registered; refusing to trust the signed SAMLResponse to prevent authentication bypass.");
             throw new ServerApiException(ApiErrorCode.ACCOUNT_ERROR, apiServer.getSerializedApiError(
@@ -286,12 +286,8 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
                 // Set IdpId for this session
                 session.setAttribute(SAMLPluginConstants.SAML_IDPID, issuer.getValue());
 
-                // Validate the top-level response signature.
-                // checkAndFailOnMissingSAMLSignature handles the case where signature is absent but required.
-                // validateSAMLSignature handles the case where a signature IS present: it rejects the
-                // request if no signing cert is registered (prevents cert-less IdP bypass) and verifies
-                // the signature cryptographically otherwise.
                 Signature sig = processedSAMLResponse.getSignature();
+                // Validate the top-level response signature.
                 checkAndFailOnMissingSAMLSignature(sig);
                 validateSAMLSignature(sig, idpMetadata, params, responseType);
 
@@ -326,8 +322,6 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
                             if (assertion == null) {
                                 continue;
                             }
-                            // Validate the per-assertion signature using the same strict logic as the
-                            // top-level response signature — a cert-less IdP must not be trusted.
                             Signature encSig = assertion.getSignature();
                             checkAndFailOnMissingSAMLSignature(encSig);
                             validateSAMLSignature(encSig, idpMetadata, params, responseType);
