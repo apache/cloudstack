@@ -19,14 +19,14 @@
 
 set -e
 CLOUDUTILS_DIR="/usr/share/pyshared/"
-DIST_DIR=$(python3 -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")
 
-if which pycompile >/dev/null 2>&1; then
-    pycompile -p cloudstack-common || echo "Warning: pycompile failed for cloudstack-common" >&2
-fi
+# distutils was removed in Python 3.12 (Ubuntu 24.04); the Debian/Ubuntu-patched
+# sysconfig 'deb_system' scheme gives the same /usr/lib/python3/dist-packages path.
+DIST_DIR=$(python3 -c "import sysconfig; print(sysconfig.get_path('platlib', 'deb_system'))")
 
-if which pycompile >/dev/null 2>&1; then
-    pycompile -p cloudstack-common /usr/share/cloudstack-common || true
+if command -v py3compile >/dev/null 2>&1; then
+    py3compile -p cloudstack-common 2>/dev/null || echo "Warning: py3compile failed for cloudstack-common" >&2
+    py3compile -p cloudstack-common /usr/share/cloudstack-common 2>/dev/null || echo "Warning: py3compile failed for cloudstack-common (/usr/share/cloudstack-common)" >&2
 fi
 
 cp $CLOUDUTILS_DIR/cloud_utils.py $DIST_DIR
