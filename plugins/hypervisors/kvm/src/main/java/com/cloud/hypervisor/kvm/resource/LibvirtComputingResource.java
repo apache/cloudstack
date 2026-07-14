@@ -1007,6 +1007,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
+        params.put(AgentProperties.HOST.getName(), AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HOST));
+        params.put(AgentProperties.PRIVATE_NETWORK_DEVICE_ADDRESS.getName(), AgentPropertiesFileHandler.getPropertyValue(AgentProperties.PRIVATE_NETWORK_DEVICE_ADDRESS));
         boolean success = super.configure(name, params);
         if (!success) {
             return false;

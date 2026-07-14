@@ -22,6 +22,9 @@ package com.cloud.resource;
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.ArrayList;
@@ -29,8 +32,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.naming.ConfigurationException;
 
@@ -76,6 +81,12 @@ public abstract class ServerResourceBase implements ServerResource {
         defineResourceNetworkInterfaces(params);
 
         if (privateNic == null) {
+            checkForPrivateInterfaceDefinedByIp(params);
+        }
+        if (privateNic == null) {
+            tryToAutoDiscoverResourcePrivateNetworkInterfaceByRouteLookup(params);
+        }
+        if (privateNic == null) {
             tryToAutoDiscoverResourcePrivateNetworkInterface();
         }
 
@@ -106,8 +117,74 @@ public abstract class ServerResourceBase implements ServerResource {
         this.storageNic2 = NetUtils.getNetworkInterface(storageNic2);
     }
 
+    private void checkForPrivateInterfaceDefinedByIp(Map<String, Object> params) {
+        final String ifAddr = (String) params.get("private.network.address");
+        if (ifAddr != null) {
+            logger.debug(String.format("Trying to use private address to resolve interface: [%s]", ifAddr));
+            try {
+                InetAddress rawAddr = InetAddress.getByAddress(InetAddress.getByName(ifAddr).getAddress());
+                final NetworkInterface nic = NetworkInterface.getByInetAddress(rawAddr);
+                if (nic != null) {
+                    logger.info(String.format("Using NIC [%s] as private NIC. Source: InterfaceAddress [%s]", nic, ifAddr));
+                    privateNic = nic;
+                } else {
+                    logger.info(String.format("Unable to found private NIC with defined ip [%s]", ifAddr));
+                }
+            } catch (Throwable e) {
+                 // Logging only, if this method was unnable to find a valid interface, iteration will be tested
+                logger.info(String.format("Unable to use private address to get the management interface: [%s]", e.getMessage()));
+            }
+        }
+    }
+
+    private String[] collectMgmtHostIp(Map<String, Object> params) {
+        final String hosts = (String) params.get("host");
+        if (hosts != null && hosts.trim().length() > 0) {
+            logger.info(String.format("Parsing host setting: [%s]", hosts));
+            final Set<String> hostCollection = new LinkedHashSet<String>();
+            if (hosts.contains(",")) {
+                for(final String ip : hosts.split(",")) {
+                    final String h = ip.contains("@") ? ip.split("@")[0] : ip;
+                    hostCollection.add(h.trim());
+                }
+            } else {
+                hostCollection.add(hosts.trim());
+            }
+            return hostCollection.isEmpty() ? null : hostCollection.toArray(new String[0]);
+        }
+        return null;
+    }
+
+    protected void tryToAutoDiscoverResourcePrivateNetworkInterfaceByRouteLookup(Map<String, Object> params) throws ConfigurationException {
+        logger.info("Trying to autodiscover this resource's private network interface by route lookup");
+        final String[] mgmtIps = collectMgmtHostIp(params);
+        if (mgmtIps == null) {
+            logger.info("Unable to resolve any management server ip address. Aborting private network search by route lookup.");
+            return;
+        }
+        for (String mgmtIp : mgmtIps) {
+            logger.info(String.format("Using management server IP [%s] to lookup", mgmtIp));
+            try {
+                try (DatagramSocket socket = new DatagramSocket()) {
+                    socket.connect(new InetSocketAddress(mgmtIp, 8250));
+                    // Asking for source address to mgmgt destination to O.S routing tables.
+                    InetAddress localAddress = socket.getLocalAddress();
+                    NetworkInterface nic = NetworkInterface.getByInetAddress(localAddress);
+                    if (nic != null) {
+                        logger.info(String.format("Using NIC [%s] as private NIC.", nic));
+                        privateNic = nic;
+                        break;
+                    }
+                }
+            } catch (Throwable e) {
+                // Logging only, if this method was unnable to find a valid interface, iteration will be tested
+                logger.debug(String.format("Unable to use routing table to determine private management interface: [%s]", e.getMessage()));
+            }
+        }
+    }
+
     protected void tryToAutoDiscoverResourcePrivateNetworkInterface() throws ConfigurationException {
-        logger.info("Trying to autodiscover this resource's private network interface.");
+        logger.info("Trying to autodiscover this resource's private network interface by simple iteration.");
 
         List<NetworkInterface> nics;
         try {
