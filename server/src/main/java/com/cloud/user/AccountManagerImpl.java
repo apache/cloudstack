@@ -1016,7 +1016,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 logger.debug("Successfully deleted snapshots directories for all volumes under account {} across all zones", account);
             }
 
-            
+
             // clean up templates
             List<VMTemplateVO> userTemplates = _templateDao.listByAccountId(accountId);
             boolean allTemplatesDeleted = true;
