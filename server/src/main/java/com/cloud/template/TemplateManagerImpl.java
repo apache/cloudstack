@@ -354,6 +354,15 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         return adapter;
     }
 
+    private long validateUrlAndGetSecondaryStorageUsage(TemplateAdapter adapter, String format, String url, boolean isDirectDownload) {
+        boolean isHypervisorTemplateAdapter = adapter instanceof HypervisorTemplateAdapter && !isDirectDownload;
+        if (isHypervisorTemplateAdapter) {
+            UriUtils.validateUrl(format, url, !TemplateManager.getValidateUrlIsResolvableBeforeRegisteringTemplateValue(), isDirectDownload);
+        }
+        return isHypervisorTemplateAdapter ?
+                UriUtils.getRemoteSize(url, StorageManager.DataStoreDownloadFollowRedirects.value()) : 0L;
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ISO_CREATE, eventDescription = "Creating ISO")
     public VirtualMachineTemplate registerIso(RegisterIsoCmd cmd) throws ResourceAllocationException {
@@ -363,8 +372,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         // Secondary storage resource count is not incremented for BareMetalTemplateAdapter
         // Note: checking the file size before registering will require the Management Server host to have access to the Internet and a DNS server
         // If it does not, UriUtils.getRemoteSize will return 0L.
-        long secondaryStorageUsage = adapter instanceof HypervisorTemplateAdapter && !cmd.isDirectDownload() ?
-                UriUtils.getRemoteSize(cmd.getUrl(), StorageManager.DataStoreDownloadFollowRedirects.value()) : 0L;
+        long secondaryStorageUsage = validateUrlAndGetSecondaryStorageUsage(adapter, ImageFormat.ISO.getFileExtension(), cmd.getUrl(), cmd.isDirectDownload());
 
         try (CheckedReservation templateReservation = new CheckedReservation(owner, ResourceType.template, null, null, 1L, reservationDao, _resourceLimitMgr);
              CheckedReservation secondaryStorageReservation = new CheckedReservation(owner, ResourceType.secondary_storage, null, null, secondaryStorageUsage, reservationDao, _resourceLimitMgr)) {
@@ -403,8 +411,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         TemplateAdapter adapter = getAdapter(HypervisorType.getType(cmd.getHypervisor()));
         Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
 
-        long secondaryStorageUsage = adapter instanceof HypervisorTemplateAdapter && !cmd.isDirectDownload() ?
-                UriUtils.getRemoteSize(cmd.getUrl(), StorageManager.DataStoreDownloadFollowRedirects.value()) : 0L;
+        long secondaryStorageUsage = validateUrlAndGetSecondaryStorageUsage(adapter, cmd.getFormat(), cmd.getUrl(), cmd.isDirectDownload());
 
         try (CheckedReservation templateReservation = new CheckedReservation(owner, ResourceType.template, null, null, 1L, reservationDao, _resourceLimitMgr);
              CheckedReservation secondaryStorageReservation = new CheckedReservation(owner, ResourceType.secondary_storage, null, null, secondaryStorageUsage, reservationDao, _resourceLimitMgr)) {
