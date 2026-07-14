@@ -32,11 +32,12 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.Volume;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
-public class VolumeObjectTO extends DownloadableObjectTO implements DataTO {
+public class VolumeObjectTO extends DownloadableObjectTO implements DataTO, Serializable {
     private String uuid;
     private Volume.Type volumeType;
     private DataStoreTO dataStore;
@@ -80,6 +81,7 @@ public class VolumeObjectTO extends DownloadableObjectTO implements DataTO {
     private String encryptFormat;
     private List<String> checkpointPaths;
     private Set<String> checkpointImageStoreUrls;
+    private Set<String> deltasToRemove;
 
     public VolumeObjectTO() {
 
@@ -423,5 +425,13 @@ public class VolumeObjectTO extends DownloadableObjectTO implements DataTO {
 
     public void setCheckpointImageStoreUrls(Set<String> checkpointImageStoreUrls) {
         this.checkpointImageStoreUrls = checkpointImageStoreUrls;
+    }
+
+    public Set<String> getDeltasToRemove() {
+        return deltasToRemove;
+    }
+
+    public void setDeltasToRemove(Set<String> deltasToRemove) {
+        this.deltasToRemove = deltasToRemove;
     }
 }

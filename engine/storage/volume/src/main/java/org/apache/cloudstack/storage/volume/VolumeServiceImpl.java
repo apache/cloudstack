@@ -38,6 +38,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.command.user.volume.CheckAndRepairVolumeCmd;
+import org.apache.cloudstack.backup.InternalBackupService;
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
@@ -227,6 +228,8 @@ public class VolumeServiceImpl implements VolumeService {
     protected DiskOfferingDao diskOfferingDao;
     @Inject
     ClvmPoolManager clvmPoolManager;
+    @Inject
+    private InternalBackupService internalBackupService;
 
     @Inject
     private KMSManager kmsManager;
@@ -524,6 +527,8 @@ public class VolumeServiceImpl implements VolumeService {
                     snapshotMgr.deletePoliciesForVolume(vo.getId());
                     volDao.remove(vo.getId());
                 }
+
+                internalBackupService.cleanupBackupMetadata(vo.getVolumeId());
 
                 List<SnapshotDataStoreVO> snapStoreVOs = _snapshotStoreDao.listAllByVolumeAndDataStore(vo.getId(), DataStoreRole.Primary);
 
@@ -1696,7 +1701,7 @@ public class VolumeServiceImpl implements VolumeService {
 
         if (vol.getAttachedVM() == null || vol.getAttachedVM().getType() == VirtualMachine.Type.User) {
             // Decrement the resource count for volumes and primary storage belonging user VM's only
-            _resourceLimitMgr.decrementVolumeResourceCount(vol.getAccountId(), vol.isDisplay(), vol.getSize(), diskOfferingDao.findById(vol.getDiskOfferingId()));
+            _resourceLimitMgr.decrementVolumeResourceCount(vol.getAccountId(), vol.isDisplay(), vol.getSize(), diskOfferingDao.findById(vol.getDiskOfferingId()), null);
         }
     }
 

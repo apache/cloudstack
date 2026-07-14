@@ -282,7 +282,8 @@ known_categories = {
     'CustomAction' : 'Extension',
     'CustomActions' : 'Extension',
     'ImportVmTask': 'Import VM Task',
-    'Dns': 'DNS'
+    'Dns': 'DNS',
+    'downloadValidationScreenshot': 'Backup and Recovery'
 }
 
 

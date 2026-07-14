@@ -251,7 +251,7 @@ public class NASBackupProviderTest {
         Mockito.when(backupDao.persist(Mockito.any(BackupVO.class))).thenAnswer(invocation -> invocation.getArgument(0));
         Mockito.when(backupDao.update(Mockito.anyLong(), Mockito.any(BackupVO.class))).thenReturn(true);
 
-        Pair<Boolean, Backup> result = nasBackupProvider.takeBackup(vm, false);
+        Pair<Boolean, Backup> result = nasBackupProvider.takeBackup(vm, false, false, null);
 
         Assert.assertTrue(result.first());
         Assert.assertNotNull(result.second());
@@ -569,7 +569,7 @@ public class NASBackupProviderTest {
         Mockito.when(existing.getValue()).thenReturn("backup-1715000000");
         Mockito.when(vmInstanceDetailsDao.findDetail(vmId, NASBackupChainKeys.VM_ACTIVE_CHECKPOINT_ID)).thenReturn(existing);
 
-        boolean ok = nasBackupProvider.restoreVMFromBackup(vm, backup);
+        boolean ok = nasBackupProvider.restoreVMFromBackup(vm, backup, false, null);
         Assert.assertTrue(ok);
         Mockito.verify(vmInstanceDetailsDao).removeDetail(vmId, NASBackupChainKeys.VM_ACTIVE_CHECKPOINT_ID);
     }
@@ -636,7 +636,7 @@ public class NASBackupProviderTest {
         Mockito.when(vmInstanceDetailsDao.findDetail(targetVmId, NASBackupChainKeys.VM_ACTIVE_CHECKPOINT_ID)).thenReturn(existing);
 
         Pair<Boolean, String> result = nasBackupProvider.restoreBackedUpVolume(
-                backup, backedUp, hostIp, dsUuid, new Pair<>(targetVmName, VirtualMachine.State.Stopped));
+                backup, backedUp, hostIp, dsUuid, new Pair<>(targetVmName, VirtualMachine.State.Stopped), null, false);
 
         Assert.assertTrue(result.first());
         Mockito.verify(vmInstanceDetailsDao).removeDetail(targetVmId, NASBackupChainKeys.VM_ACTIVE_CHECKPOINT_ID);

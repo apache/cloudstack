@@ -232,6 +232,19 @@
           <div>{{ dataResource[item] }}</div>
         </div>
       </a-list-item>
+      <div v-else-if="item === 'backupofferingdetails'">
+        <a-list-item
+          v-for="(value, key) in dataResource[item]"
+          :key="key">
+          <div>
+            <strong>{{ $t('label.' + String(key).toLowerCase()) }}</strong>
+            <br/>
+            <div>
+              {{ value }}
+            </div>
+          </div>
+        </a-list-item>
+      </div>
       <external-configuration-details
         v-else-if="item === 'externaldetails' && (['host', 'computeoffering'].includes($route.meta.name) || (['cluster'].includes($route.meta.name) && dataResource.extensionid))"
         :resource="dataResource" />
@@ -300,7 +313,7 @@ export default {
   },
   computed: {
     customDisplayItems () {
-      var items = ['ip4routes', 'ip6routes', 'privatemtu', 'publicmtu', 'provider', 'details', 'parameters', 'secretkey']
+      var items = ['ip4routes', 'ip6routes', 'privatemtu', 'publicmtu', 'provider', 'details', 'parameters', 'secretkey', 'backupofferingdetails']
       if (this.$route.meta.name === 'webhookdeliveries') {
         items.push('startdate')
         items.push('enddate')

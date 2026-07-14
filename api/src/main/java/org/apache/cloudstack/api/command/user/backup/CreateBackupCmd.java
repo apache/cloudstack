@@ -81,6 +81,12 @@ public class CreateBackupCmd extends BaseAsyncCreateCmd {
             since = "4.21.0")
     private Boolean quiesceVM;
 
+    @Parameter(name = ApiConstants.ISOLATED,
+            type = CommandType.BOOLEAN,
+            description = ApiConstants.PARAMETER_DESCRIPTION_ISOLATED_BACKUPS,
+            since = "4.23.0")
+    private boolean isolated;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -99,6 +105,10 @@ public class CreateBackupCmd extends BaseAsyncCreateCmd {
 
     public Boolean getQuiesceVM() {
         return quiesceVM;
+    }
+
+    public boolean isIsolated() {
+        return isolated;
     }
 
     /////////////////////////////////////////////////////

@@ -84,6 +84,7 @@ import org.apache.cloudstack.storage.command.SnapshotAndCopyAnswer;
 import org.apache.cloudstack.storage.command.SnapshotAndCopyCommand;
 import org.apache.cloudstack.storage.command.SyncVolumePathCommand;
 import org.apache.cloudstack.storage.formatinspector.Qcow2Inspector;
+import org.apache.cloudstack.storage.to.BackupDeltaTO;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
@@ -98,6 +99,7 @@ import org.apache.cloudstack.utils.qemu.QemuObject;
 import org.apache.cloudstack.utils.qemu.QemuObject.EncryptFormat;
 import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.BooleanUtils;
@@ -248,6 +250,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             "  </devices>\n" +
             "</domain>";
 
+    public static final List<StoragePoolType> poolTypesToDeleteChainInfo = Arrays.asList(StoragePoolType.Filesystem, StoragePoolType.NetworkFilesystem, StoragePoolType.SharedMountPoint);
 
     public KVMStorageProcessor(final KVMStoragePoolManager storagePoolMgr, final LibvirtComputingResource resource) {
         this.storagePoolMgr = storagePoolMgr;
@@ -2493,7 +2496,7 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             String convertResult = convertBaseFileToSnapshotFileInStorageDir(ObjectUtils.defaultIfNull(secondaryPool, primaryPool), disk, snapshotPath, directoryPath, volume, cmd.getWait());
 
-            resource.mergeSnapshotIntoBaseFile(vm, diskLabel, diskPath, null, true, snapshotName, volume, conn);
+            resource.mergeDeltaIntoBaseFile(vm, diskLabel, diskPath, null, true, snapshotName, volume, conn);
 
             validateConvertResult(convertResult, snapshotPath);
         } catch (LibvirtException e) {
@@ -2904,6 +2907,12 @@ public class KVMStorageProcessor implements StorageProcessor {
                 }
             }
             pool.deletePhysicalDisk(vol.getPath(), vol.getFormat());
+            if (CollectionUtils.isNotEmpty(vol.getDeltasToRemove()) && poolTypesToDeleteChainInfo.contains(pool.getType()) && vol.getFormat() == ImageFormat.QCOW2 && cmd.isDeleteChain()) {
+                for (String deltaPath : vol.getDeltasToRemove()) {
+                    logger.debug("Deleting leftover backup delta at [{}].", deltaPath);
+                    pool.deletePhysicalDisk(deltaPath, vol.getFormat());
+                }
+            }
             return new Answer(null);
         } catch (final CloudRuntimeException e) {
             logger.debug("Failed to delete volume: ", e);
@@ -3472,6 +3481,20 @@ public class KVMStorageProcessor implements StorageProcessor {
     public Answer syncVolumePath(SyncVolumePathCommand cmd) {
         logger.info("SyncVolumePathCommand not currently applicable for KVMStorageProcessor");
         return new Answer(cmd, false, "Not currently applicable for KVMStorageProcessor");
+    }
+
+    @Override
+    public Answer deleteBackup(DeleteCommand cmd) {
+        BackupDeltaTO delta = (BackupDeltaTO)cmd.getData();
+        logger.debug("Deleting backup delta [{}].", delta);
+        PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)delta.getDataStore();
+        KVMStoragePool pool = storagePoolMgr.getStoragePool(primaryStore.getPoolType(), primaryStore.getUuid());
+        try {
+            pool.deletePhysicalDisk(delta.getPath(), delta.getFormat());
+        } catch (CloudRuntimeException e) {
+            return new Answer(cmd, e);
+        }
+        return new Answer(cmd);
     }
 
     /**
