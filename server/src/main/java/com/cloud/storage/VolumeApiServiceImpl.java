@@ -5097,7 +5097,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 // Reload volume from DB after grantAccess — managed storage drivers (e.g. ONTAP)
                 // may update the volume's path and iScsiName during grantAccess, so the local
                 // volumeToAttach object can be stale.
-                if(DataStoreProvider.ONTAP_PLUGIN_NAME.equals(volumeToAttachStoragePool.getStorageProviderName())){
+                if (volumeToAttachStoragePool != null && DataStoreProvider.ONTAP_PLUGIN_NAME.equals(volumeToAttachStoragePool.getStorageProviderName())) {
                     volumeToAttach = _volsDao.findById(volumeToAttach.getId());
                 }
             }

@@ -337,7 +337,7 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
             logger.error("attachZone : Storage Pool not found for id: " + dataStore.getId());
             throw new CloudRuntimeException("Storage Pool not found for id: " + dataStore.getId());
         }
-        if (!Hypervisor.HypervisorType.KVM.equals(hypervisorType)){
+        if (!Hypervisor.HypervisorType.KVM.equals(hypervisorType)) {
             logger.error("attachZone : ONTAP primary storage is supported only for KVM hypervisor");
             throw new CloudRuntimeException("ONTAP primary storage is supported only for KVM hypervisor");
         }
