@@ -1016,15 +1016,20 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 logger.debug("Successfully deleted snapshots directories for all volumes under account {} across all zones", account);
             }
 
+            
             // clean up templates
             List<VMTemplateVO> userTemplates = _templateDao.listByAccountId(accountId);
             boolean allTemplatesDeleted = true;
             for (VMTemplateVO template : userTemplates) {
                 if (template.getRemoved() == null) {
                     try {
-                        allTemplatesDeleted = _tmpltMgr.delete(callerUserId, template.getId(), null);
+                        // Fix 1: Prevent boolean overwriting by checking failure explicitly
+                        if (!_tmpltMgr.delete(callerUserId, template.getId(), null)) {
+                            logger.warn("TemplateManager returned false when deleting template {} for account {}", template, account);
+                            allTemplatesDeleted = false;
+                        }
                     } catch (Exception e) {
-                        logger.warn("Failed to delete template {} while removing account {} due to: ", template, account, e);
+                        logger.warn("Failed to delete template {} while removing account {} due to exception: ", template, account, e);
                         allTemplatesDeleted = false;
                     }
                 }
