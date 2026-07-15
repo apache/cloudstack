@@ -1159,7 +1159,11 @@ namespace HypervResource
                 try
                 {
                     string systemVmIsoPath = null;
-                    String uriStr = (String)cmd.secondaryStorage;
+                    String uriStr;
+                    foreach (var item in cmd.secondaryStorages)
+                    {
+                        uriStr = item;
+                    }
                     if (!String.IsNullOrEmpty(uriStr))
                     {
                         NFSTO share = new NFSTO();

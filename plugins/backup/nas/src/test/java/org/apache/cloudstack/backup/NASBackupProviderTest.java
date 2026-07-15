@@ -55,6 +55,7 @@ import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.Pair;
+import com.cloud.utils.db.GlobalLock;
 import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -250,7 +251,7 @@ public class NASBackupProviderTest {
         Mockito.when(backupDao.persist(Mockito.any(BackupVO.class))).thenAnswer(invocation -> invocation.getArgument(0));
         Mockito.when(backupDao.update(Mockito.anyLong(), Mockito.any(BackupVO.class))).thenReturn(true);
 
-        Pair<Boolean, Backup> result = nasBackupProvider.takeBackup(vm, false);
+        Pair<Boolean, Backup> result = nasBackupProvider.takeBackup(vm, false, false, null);
 
         Assert.assertTrue(result.first());
         Assert.assertNotNull(result.second());
@@ -568,7 +569,7 @@ public class NASBackupProviderTest {
         Mockito.when(existing.getValue()).thenReturn("backup-1715000000");
         Mockito.when(vmInstanceDetailsDao.findDetail(vmId, NASBackupChainKeys.VM_ACTIVE_CHECKPOINT_ID)).thenReturn(existing);
 
-        boolean ok = nasBackupProvider.restoreVMFromBackup(vm, backup);
+        boolean ok = nasBackupProvider.restoreVMFromBackup(vm, backup, false, null);
         Assert.assertTrue(ok);
         Mockito.verify(vmInstanceDetailsDao).removeDetail(vmId, NASBackupChainKeys.VM_ACTIVE_CHECKPOINT_ID);
     }
@@ -635,7 +636,7 @@ public class NASBackupProviderTest {
         Mockito.when(vmInstanceDetailsDao.findDetail(targetVmId, NASBackupChainKeys.VM_ACTIVE_CHECKPOINT_ID)).thenReturn(existing);
 
         Pair<Boolean, String> result = nasBackupProvider.restoreBackedUpVolume(
-                backup, backedUp, hostIp, dsUuid, new Pair<>(targetVmName, VirtualMachine.State.Stopped));
+                backup, backedUp, hostIp, dsUuid, new Pair<>(targetVmName, VirtualMachine.State.Stopped), null, false);
 
         Assert.assertTrue(result.first());
         Mockito.verify(vmInstanceDetailsDao).removeDetail(targetVmId, NASBackupChainKeys.VM_ACTIVE_CHECKPOINT_ID);
@@ -679,9 +680,11 @@ public class NASBackupProviderTest {
 
         // CHAIN_ID on the parent => not the no-chain fast path.
         BackupDetailVO chainIdDetail = new BackupDetailVO(50L, NASBackupChainKeys.CHAIN_ID, "chain-1", true);
+        BackupDetailVO chainPosDetail = new BackupDetailVO(50L, NASBackupChainKeys.CHAIN_POSITION, "0", true);
         Mockito.when(backupDetailsDao.findDetail(50L, NASBackupChainKeys.CHAIN_ID)).thenReturn(chainIdDetail);
+        Mockito.when(backupDetailsDao.findDetail(50L, NASBackupChainKeys.CHAIN_POSITION)).thenReturn(chainPosDetail);
 
-        // A live child references parent-uuid via PARENT_BACKUP_ID.
+        // A live child sits deeper in the chain (higher CHAIN_POSITION).
         BackupVO child = new BackupVO();
         child.setVmId(vmId);
         child.setBackupOfferingId(offeringId);
@@ -692,13 +695,14 @@ public class NASBackupProviderTest {
         ReflectionTestUtils.setField(child, "uuid", "child-uuid");
 
         BackupDetailVO childChainId = new BackupDetailVO(51L, NASBackupChainKeys.CHAIN_ID, "chain-1", true);
-        BackupDetailVO childParent = new BackupDetailVO(51L, NASBackupChainKeys.PARENT_BACKUP_ID, "parent-uuid", true);
+        BackupDetailVO childChainPos = new BackupDetailVO(51L, NASBackupChainKeys.CHAIN_POSITION, "1", true);
         Mockito.when(backupDetailsDao.findDetail(51L, NASBackupChainKeys.CHAIN_ID)).thenReturn(childChainId);
-        Mockito.when(backupDetailsDao.findDetail(51L, NASBackupChainKeys.PARENT_BACKUP_ID)).thenReturn(childParent);
+        Mockito.when(backupDetailsDao.findDetail(51L, NASBackupChainKeys.CHAIN_POSITION)).thenReturn(childChainPos);
 
         Mockito.when(backupDao.listByVmId(null, vmId)).thenReturn(List.of(parent, child));
-        // markDeletePending loads the row to flip its status to Hidden.
+        // Re-read under the chain lock + markDeletePending both load the row by id.
         Mockito.when(backupDao.findById(50L)).thenReturn(parent);
+        Mockito.doReturn(mock(GlobalLock.class)).when(nasBackupProvider).acquireChainDeleteLock(vmId);
 
         boolean result = nasBackupProvider.deleteBackup(parent, false);
         Assert.assertTrue(result);
@@ -771,13 +775,13 @@ public class NASBackupProviderTest {
         parent.setStatus(Backup.Status.Hidden);
         Mockito.when(backupDetailsDao.findDetail(50L, NASBackupChainKeys.CHAIN_ID)).thenReturn(parentChainId);
         Mockito.when(backupDetailsDao.findDetail(50L, NASBackupChainKeys.CHAIN_POSITION)).thenReturn(parentChainPos);
-        // Parent has no parent of its own (it's the full anchor).
-        Mockito.when(backupDetailsDao.findDetail(50L, NASBackupChainKeys.PARENT_BACKUP_ID)).thenReturn(null);
 
-        // listByVmId is called once now (chain snapshot taken before the leaf delete).
         // We still use a mutable list + remove() answer so the DAO contract is realistic.
         java.util.List<Backup> liveBackups = new java.util.ArrayList<>(List.of(parent, leaf));
         Mockito.when(backupDao.listByVmId(null, vmId)).thenAnswer(inv -> new java.util.ArrayList<>(liveBackups));
+        // The target row is re-read under the chain lock before any chain decision.
+        Mockito.when(backupDao.findById(51L)).thenReturn(leaf);
+        Mockito.doReturn(mock(GlobalLock.class)).when(nasBackupProvider).acquireChainDeleteLock(vmId);
 
         // Agent acknowledges every delete.
         Mockito.when(agentManager.send(Mockito.anyLong(), Mockito.any(DeleteBackupCommand.class)))
@@ -804,5 +808,230 @@ public class NASBackupProviderTest {
                 .decrementResourceCount(Mockito.anyLong(), Mockito.eq(Resource.ResourceType.backup));
         Mockito.verify(resourceLimitMgr, Mockito.times(2))
                 .decrementResourceCount(Mockito.anyLong(), Mockito.eq(Resource.ResourceType.backup_storage), Mockito.any());
+    }
+
+    @Test
+    public void deletingLastLiveMemberCollectsDeeperOrphanTombstones()
+            throws AgentUnavailableException, OperationTimedoutException {
+        Long zoneId = 1L;
+        Long vmId = 2L;
+        Long hostId = 3L;
+        Long offeringId = 4L;
+
+        BackupVO full = new BackupVO();
+        full.setVmId(vmId);
+        full.setBackupOfferingId(offeringId);
+        full.setExternalId("i-2-2-VM/2026.05.10.10.00.00");
+        full.setZoneId(zoneId);
+        full.setStatus(Backup.Status.BackedUp);
+        ReflectionTestUtils.setField(full, "id", 50L);
+
+        // The last live incremental — the one being deleted.
+        BackupVO inc1 = new BackupVO();
+        inc1.setVmId(vmId);
+        inc1.setBackupOfferingId(offeringId);
+        inc1.setExternalId("i-2-2-VM/2026.05.10.10.30.00");
+        inc1.setZoneId(zoneId);
+        inc1.setStatus(Backup.Status.BackedUp);
+        ReflectionTestUtils.setField(inc1, "id", 51L);
+
+        // A stranded tombstone deeper in the chain: its own descendants are long gone, so
+        // only a sweep triggered by an ancestor's deletion can ever collect it.
+        BackupVO orphan = new BackupVO();
+        orphan.setVmId(vmId);
+        orphan.setBackupOfferingId(offeringId);
+        orphan.setExternalId("i-2-2-VM/2026.05.10.11.00.00");
+        orphan.setZoneId(zoneId);
+        orphan.setStatus(Backup.Status.Hidden);
+        ReflectionTestUtils.setField(orphan, "id", 52L);
+
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        Mockito.when(vm.getLastHostId()).thenReturn(hostId);
+        HostVO host = mock(HostVO.class);
+        Mockito.when(host.getStatus()).thenReturn(Status.Up);
+        Mockito.when(host.getId()).thenReturn(hostId);
+        Mockito.when(hostDao.findById(hostId)).thenReturn(host);
+
+        BackupRepositoryVO repo = new BackupRepositoryVO(1L, "nas", "test-repo",
+                "nfs", "address", "sync", 1024L, null);
+        Mockito.when(backupRepositoryDao.findByBackupOfferingId(offeringId)).thenReturn(repo);
+        Mockito.when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
+
+        Mockito.when(backupDetailsDao.findDetail(50L, NASBackupChainKeys.CHAIN_ID))
+                .thenReturn(new BackupDetailVO(50L, NASBackupChainKeys.CHAIN_ID, "chain-1", true));
+        Mockito.when(backupDetailsDao.findDetail(50L, NASBackupChainKeys.CHAIN_POSITION))
+                .thenReturn(new BackupDetailVO(50L, NASBackupChainKeys.CHAIN_POSITION, "0", true));
+        Mockito.when(backupDetailsDao.findDetail(51L, NASBackupChainKeys.CHAIN_ID))
+                .thenReturn(new BackupDetailVO(51L, NASBackupChainKeys.CHAIN_ID, "chain-1", true));
+        Mockito.when(backupDetailsDao.findDetail(51L, NASBackupChainKeys.CHAIN_POSITION))
+                .thenReturn(new BackupDetailVO(51L, NASBackupChainKeys.CHAIN_POSITION, "1", true));
+        Mockito.when(backupDetailsDao.findDetail(52L, NASBackupChainKeys.CHAIN_ID))
+                .thenReturn(new BackupDetailVO(52L, NASBackupChainKeys.CHAIN_ID, "chain-1", true));
+        Mockito.when(backupDetailsDao.findDetail(52L, NASBackupChainKeys.CHAIN_POSITION))
+                .thenReturn(new BackupDetailVO(52L, NASBackupChainKeys.CHAIN_POSITION, "2", true));
+
+        Mockito.when(backupDao.listByVmId(null, vmId)).thenReturn(List.of(full, inc1, orphan));
+        Mockito.when(backupDao.findById(51L)).thenReturn(inc1);
+        Mockito.doReturn(mock(GlobalLock.class)).when(nasBackupProvider).acquireChainDeleteLock(vmId);
+
+        Mockito.when(agentManager.send(Mockito.anyLong(), Mockito.any(DeleteBackupCommand.class)))
+                .thenReturn(new BackupAnswer(new DeleteBackupCommand(null, null, null, null), true, "ok"));
+
+        Assert.assertTrue(nasBackupProvider.deleteBackup(inc1, false));
+
+        // inc1 and the deeper orphan tombstone are physically removed; the live full survives.
+        Mockito.verify(agentManager, Mockito.times(2))
+                .send(Mockito.anyLong(), Mockito.any(DeleteBackupCommand.class));
+        Mockito.verify(backupDao).remove(51L);
+        Mockito.verify(backupDao).remove(52L);
+        Mockito.verify(backupDao, Mockito.never()).remove(50L);
+    }
+
+    @Test
+    public void deletingAncestorOfTombstoneWithLiveDescendantTombstonesIt()
+            throws AgentUnavailableException, OperationTimedoutException {
+        Long zoneId = 1L;
+        Long vmId = 2L;
+        Long hostId = 3L;
+        Long offeringId = 4L;
+
+        BackupVO full = new BackupVO();
+        full.setVmId(vmId);
+        full.setBackupOfferingId(offeringId);
+        full.setExternalId("i-2-2-VM/2026.05.10.10.00.00");
+        full.setZoneId(zoneId);
+        full.setStatus(Backup.Status.BackedUp);
+        ReflectionTestUtils.setField(full, "id", 50L);
+
+        BackupVO inc1 = new BackupVO();
+        inc1.setVmId(vmId);
+        inc1.setBackupOfferingId(offeringId);
+        inc1.setExternalId("i-2-2-VM/2026.05.10.10.30.00");
+        inc1.setZoneId(zoneId);
+        inc1.setStatus(Backup.Status.Hidden);
+        ReflectionTestUtils.setField(inc1, "id", 51L);
+
+        BackupVO inc2 = new BackupVO();
+        inc2.setVmId(vmId);
+        inc2.setBackupOfferingId(offeringId);
+        inc2.setExternalId("i-2-2-VM/2026.05.10.11.00.00");
+        inc2.setZoneId(zoneId);
+        inc2.setStatus(Backup.Status.BackedUp);
+        ReflectionTestUtils.setField(inc2, "id", 52L);
+
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        Mockito.when(vm.getLastHostId()).thenReturn(hostId);
+        HostVO host = mock(HostVO.class);
+        Mockito.when(host.getStatus()).thenReturn(Status.Up);
+        Mockito.when(hostDao.findById(hostId)).thenReturn(host);
+
+        BackupRepositoryVO repo = new BackupRepositoryVO(1L, "nas", "test-repo",
+                "nfs", "address", "sync", 1024L, null);
+        Mockito.when(backupRepositoryDao.findByBackupOfferingId(offeringId)).thenReturn(repo);
+        Mockito.when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
+
+        Mockito.when(backupDetailsDao.findDetail(50L, NASBackupChainKeys.CHAIN_ID))
+                .thenReturn(new BackupDetailVO(50L, NASBackupChainKeys.CHAIN_ID, "chain-1", true));
+        Mockito.when(backupDetailsDao.findDetail(50L, NASBackupChainKeys.CHAIN_POSITION))
+                .thenReturn(new BackupDetailVO(50L, NASBackupChainKeys.CHAIN_POSITION, "0", true));
+        Mockito.when(backupDetailsDao.findDetail(51L, NASBackupChainKeys.CHAIN_ID))
+                .thenReturn(new BackupDetailVO(51L, NASBackupChainKeys.CHAIN_ID, "chain-1", true));
+        Mockito.when(backupDetailsDao.findDetail(52L, NASBackupChainKeys.CHAIN_ID))
+                .thenReturn(new BackupDetailVO(52L, NASBackupChainKeys.CHAIN_ID, "chain-1", true));
+        Mockito.when(backupDetailsDao.findDetail(52L, NASBackupChainKeys.CHAIN_POSITION))
+                .thenReturn(new BackupDetailVO(52L, NASBackupChainKeys.CHAIN_POSITION, "2", true));
+
+        Mockito.when(backupDao.listByVmId(null, vmId)).thenReturn(List.of(full, inc1, inc2));
+        Mockito.when(backupDao.findById(50L)).thenReturn(full);
+        Mockito.doReturn(mock(GlobalLock.class)).when(nasBackupProvider).acquireChainDeleteLock(vmId);
+
+        Assert.assertTrue(nasBackupProvider.deleteBackup(full, false));
+
+        // The full anchor must NOT be physically deleted — inc2 (live) still restores
+        // through inc1's and full's files. It becomes a tombstone instead.
+        Mockito.verify(agentManager, Mockito.never()).send(Mockito.anyLong(), Mockito.any(DeleteBackupCommand.class));
+        Mockito.verify(backupDao, Mockito.never()).remove(Mockito.anyLong());
+        ArgumentCaptor<BackupVO> captor = ArgumentCaptor.forClass(BackupVO.class);
+        Mockito.verify(backupDao).update(Mockito.eq(50L), captor.capture());
+        Assert.assertEquals(Backup.Status.Hidden, captor.getValue().getStatus());
+    }
+
+    @Test
+    public void sweepContinuesPastFailedTombstoneDelete()
+            throws AgentUnavailableException, OperationTimedoutException {
+        Long zoneId = 1L;
+        Long vmId = 2L;
+        Long hostId = 3L;
+        Long offeringId = 4L;
+
+        BackupVO full = new BackupVO();
+        full.setVmId(vmId);
+        full.setBackupOfferingId(offeringId);
+        full.setExternalId("i-2-2-VM/2026.05.10.10.00.00");
+        full.setZoneId(zoneId);
+        full.setStatus(Backup.Status.Hidden);
+        ReflectionTestUtils.setField(full, "id", 50L);
+
+        BackupVO inc1 = new BackupVO();
+        inc1.setVmId(vmId);
+        inc1.setBackupOfferingId(offeringId);
+        inc1.setExternalId("i-2-2-VM/2026.05.10.10.30.00");
+        inc1.setZoneId(zoneId);
+        inc1.setStatus(Backup.Status.Hidden);
+        ReflectionTestUtils.setField(inc1, "id", 51L);
+
+        // The last live member — deleting it triggers the sweep of both tombstones.
+        BackupVO inc2 = new BackupVO();
+        inc2.setVmId(vmId);
+        inc2.setBackupOfferingId(offeringId);
+        inc2.setExternalId("i-2-2-VM/2026.05.10.11.00.00");
+        inc2.setZoneId(zoneId);
+        inc2.setStatus(Backup.Status.BackedUp);
+        ReflectionTestUtils.setField(inc2, "id", 52L);
+
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        Mockito.when(vm.getLastHostId()).thenReturn(hostId);
+        HostVO host = mock(HostVO.class);
+        Mockito.when(host.getStatus()).thenReturn(Status.Up);
+        Mockito.when(host.getId()).thenReturn(hostId);
+        Mockito.when(hostDao.findById(hostId)).thenReturn(host);
+
+        BackupRepositoryVO repo = new BackupRepositoryVO(1L, "nas", "test-repo",
+                "nfs", "address", "sync", 1024L, null);
+        Mockito.when(backupRepositoryDao.findByBackupOfferingId(offeringId)).thenReturn(repo);
+        Mockito.when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
+
+        Mockito.when(backupDetailsDao.findDetail(50L, NASBackupChainKeys.CHAIN_ID))
+                .thenReturn(new BackupDetailVO(50L, NASBackupChainKeys.CHAIN_ID, "chain-1", true));
+        Mockito.when(backupDetailsDao.findDetail(50L, NASBackupChainKeys.CHAIN_POSITION))
+                .thenReturn(new BackupDetailVO(50L, NASBackupChainKeys.CHAIN_POSITION, "0", true));
+        Mockito.when(backupDetailsDao.findDetail(51L, NASBackupChainKeys.CHAIN_ID))
+                .thenReturn(new BackupDetailVO(51L, NASBackupChainKeys.CHAIN_ID, "chain-1", true));
+        Mockito.when(backupDetailsDao.findDetail(51L, NASBackupChainKeys.CHAIN_POSITION))
+                .thenReturn(new BackupDetailVO(51L, NASBackupChainKeys.CHAIN_POSITION, "1", true));
+        Mockito.when(backupDetailsDao.findDetail(52L, NASBackupChainKeys.CHAIN_ID))
+                .thenReturn(new BackupDetailVO(52L, NASBackupChainKeys.CHAIN_ID, "chain-1", true));
+        Mockito.when(backupDetailsDao.findDetail(52L, NASBackupChainKeys.CHAIN_POSITION))
+                .thenReturn(new BackupDetailVO(52L, NASBackupChainKeys.CHAIN_POSITION, "2", true));
+
+        Mockito.when(backupDao.listByVmId(null, vmId)).thenReturn(List.of(full, inc1, inc2));
+        Mockito.when(backupDao.findById(52L)).thenReturn(inc2);
+        Mockito.doReturn(mock(GlobalLock.class)).when(nasBackupProvider).acquireChainDeleteLock(vmId);
+
+        // Deletes run leaf-to-root: inc2 succeeds, inc1's rm FAILS, full succeeds.
+        DeleteBackupCommand dummy = new DeleteBackupCommand(null, null, null, null);
+        Mockito.when(agentManager.send(Mockito.anyLong(), Mockito.any(DeleteBackupCommand.class)))
+                .thenReturn(new BackupAnswer(dummy, true, "ok"),
+                        new BackupAnswer(dummy, false, "rm failed"),
+                        new BackupAnswer(dummy, true, "ok"));
+
+        Assert.assertTrue(nasBackupProvider.deleteBackup(inc2, false));
+
+        // All three members were attempted; the failed inc1 keeps its row, full is collected.
+        Mockito.verify(agentManager, Mockito.times(3))
+                .send(Mockito.anyLong(), Mockito.any(DeleteBackupCommand.class));
+        Mockito.verify(backupDao).remove(52L);
+        Mockito.verify(backupDao, Mockito.never()).remove(51L);
+        Mockito.verify(backupDao).remove(50L);
     }
 }

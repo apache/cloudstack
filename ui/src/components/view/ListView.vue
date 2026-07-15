@@ -205,7 +205,7 @@
         </span>
       </template>
       <template v-if="column.key === 'templatetype'">
-        <span>{{ text }}</span>
+        <router-link :to="{ path: $route.path + '/' + record.templatetype }">{{ text }}</router-link>
       </template>
       <template v-if="$route.path.startsWith('/dnsserver') && !['name', 'provider', 'state', 'ispublic'].includes(column.key)">
         <span>{{ text }}</span>
@@ -483,6 +483,12 @@
           displayText
         />
       </template>
+      <template v-if="column.key === 'compressionstatus'">
+        <status :text="text ? text : ''" displayText />
+      </template>
+      <template v-if="column.key === 'validationstatus'">
+        <status :text="text ? text : ''" displayText />
+      </template>
       <template v-if="column.key === 'allocationstate'">
         <status
           :text="text ? text : ''"
@@ -684,20 +690,19 @@
             </span>
           </template>
         </template>
-        <template v-if="text && !text.startsWith('PrjAcct-')">
-          <router-link
-            v-if="'quota' in record && $router.resolve(`${$route.path}/${record.account}`).matched[0].redirect !== '/exception/404'"
-            :to="{ path: `${$route.path}/${record.account}`, query: { account: record.account, domainid: record.domainid, quota: true } }"
-          >{{ text }}</router-link>
-          <router-link
-            :to="{ path: '/account/' + record.accountid }"
-            v-else-if="record.accountid"
-          >{{ text }}</router-link>
-          <router-link
-            :to="{ path: '/account', query: { name: record.account, domainid: record.domainid, dataView: true } }"
-            v-else-if="$store.getters.userInfo.roletype !== 'User'"
-          >{{ text }}</router-link>
-          <span v-else>{{ text }}</span>
+        <template v-if="text">
+          <template v-if="!text.startsWith('PrjAcct-')">
+            <router-link
+              v-if="$route.path.startsWith('/quotasummary') && $router.resolve(`${$route.path}/${record.accountid}`).matched[0].redirect !== '/exception/404'"
+              :to="{ path: `${$route.path}/${record.accountid}` }">{{ text }}</router-link>
+            <span v-else>{{ text }}</span>
+          </template>
+          <template v-else>
+            <router-link
+              v-if="$route.path.startsWith('/quotasummary') && $router.resolve(`${$route.path}/${record.accountid}`).matched[0].redirect !== '/exception/404'"
+              :to="{ path: `${$route.path}/${record.accountid}` }">{{ (record.projectname || record.account).concat(' (').concat($t('label.project')).concat(')') }}</router-link>
+            <span v-else>{{ text }}</span>
+          </template>
         </template>
       </template>
       <template v-if="column.key === 'resource'">
@@ -1037,16 +1042,6 @@
         />
         <slot></slot>
       </template>
-      <template v-if="column.key === 'tariffActions'">
-        <tooltip-button
-          :tooltip="$t('label.edit')"
-          v-if="editableValueKey !== record.key"
-          :disabled="!('quotaTariffUpdate' in $store.getters.apis)"
-          icon="edit-outlined"
-          @onClick="editTariffValue(record)"
-        />
-        <slot></slot>
-      </template>
       <template v-if="column.key === 'scheduleActions'">
         <slot
           name="scheduleActions"
@@ -1231,8 +1226,8 @@ export default {
         'vmsnapshot', 'backup', 'guestnetwork', 'vpc', 'publicip', 'vpnuser', 'vpncustomergateway', 'vnfapp',
         'project', 'account', 'systemvm', 'router', 'computeoffering', 'systemoffering',
         'diskoffering', 'backupoffering', 'networkoffering', 'vpcoffering', 'ilbvm', 'kubernetes', 'comment', 'buckets',
-        'webhook', 'webhookdeliveries', 'sharedfs', 'ipv4subnets', 'asnumbers', 'guestos', 'gpucard', 'gpudevices', 'vgpuprofile'
-      ].includes(this.$route.name)
+        'webhook', 'webhookdeliveries', 'sharedfs', 'ipv4subnets', 'asnumbers', 'guestos', 'gpucard', 'gpudevices', 'vgpuprofile',
+        'quotatariff'].includes(this.$route.name)
     },
     getDateAtTimeZone (date, timezone) {
       return date ? moment(date).tz(timezone).format('YYYY-MM-DD HH:mm:ss') : null
@@ -1400,9 +1395,6 @@ export default {
       if (index === data.length - 1) return
       data.push(data.splice(index, 1)[0])
       this.updateOrder(data)
-    },
-    editTariffValue (record) {
-      this.$emit('edit-tariff-action', true, record)
     },
     ipV6Address (text, record) {
       if (!record || !record.nic || record.nic.length === 0) {

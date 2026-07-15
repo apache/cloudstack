@@ -38,6 +38,7 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.vm.VMInstanceDetailVO;
@@ -49,7 +50,6 @@ import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
-
 
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupDetailsDao;
@@ -82,6 +82,8 @@ import static org.apache.cloudstack.backup.BackupManager.BackupFrameworkEnabled;
 
 public class NASBackupProvider extends AdapterBase implements BackupProvider, Configurable {
     private static final Logger LOG = LogManager.getLogger(NASBackupProvider.class);
+
+    private static final int CHAIN_LOCK_TIMEOUT_SECONDS = 300;
 
     ConfigKey<Integer> NASBackupRestoreMountTimeout = new ConfigKey<>("Advanced", Integer.class,
             "nas.backup.restore.mount.timeout",
@@ -548,7 +550,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     }
 
     @Override
-    public Pair<Boolean, Backup> takeBackup(final VirtualMachine vm, Boolean quiesceVM) {
+    public Pair<Boolean, Backup> takeBackup(final VirtualMachine vm, Boolean quiesceVM, boolean isolated, Long scheduleId) {
         final Host host = getVMHypervisorHostForBackup(vm);
 
         final BackupRepository backupRepository = backupRepositoryDao.findByBackupOfferingId(vm.getBackupOfferingId());
@@ -639,7 +641,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             }
         } else {
             logger.error("Failed to take backup for VM {}: {}", vm.getInstanceName(), answer != null ? answer.getDetails() : "No answer received");
-            if (answer.getNeedsCleanup()) {
+            if (answer != null && answer.getNeedsCleanup()) {
                 logger.error("Backup cleanup failed for VM {}. Leaving the backup in Error state. Backup should be manually deleted to free up the space", vm.getInstanceName());
                 backupVO.setStatus(Backup.Status.Error);
                 backupDao.update(backupVO.getId(), backupVO);
@@ -677,12 +679,12 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     }
 
     @Override
-    public Pair<Boolean, String> restoreBackupToVM(VirtualMachine vm, Backup backup, String hostIp, String dataStoreUuid) {
+    public Pair<Boolean, String> restoreBackupToVM(VirtualMachine vm, Backup backup, String hostIp, String dataStoreUuid, boolean quickrestore) {
         return restoreVMBackup(vm, backup);
     }
 
     @Override
-    public boolean restoreVMFromBackup(VirtualMachine vm, Backup backup) {
+    public boolean restoreVMFromBackup(VirtualMachine vm, Backup backup, boolean quickRestore, Long hostId) {
         return restoreVMBackup(vm, backup).first();
     }
 
@@ -783,7 +785,8 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     }
 
     @Override
-    public Pair<Boolean, String> restoreBackedUpVolume(Backup backup, Backup.VolumeInfo backupVolumeInfo, String hostIp, String dataStoreUuid, Pair<String, VirtualMachine.State> vmNameAndState) {
+    public Pair<Boolean, String> restoreBackedUpVolume(Backup backup, Backup.VolumeInfo backupVolumeInfo, String hostIp, String dataStoreUuid,
+            Pair<String, VirtualMachine.State> vmNameAndState, VirtualMachine vm, boolean quickRestore) {
         final VolumeVO volume = volumeDao.findByUuid(backupVolumeInfo.getUuid());
         final DiskOffering diskOffering = diskOfferingDao.findByUuid(backupVolumeInfo.getDiskOfferingId());
         final StoragePoolVO pool = primaryDataStoreDao.findByUuid(dataStoreUuid);
@@ -912,26 +915,58 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             return deleteBackupFileAndRow(backup, backupRepository, host);
         }
 
-        // Snapshot-style cascade: defer the on-NAS rm + DB row while there are live children,
-        // mark this backup as delete-pending, and let the leaf's deletion sweep it up later.
-        // See DefaultSnapshotStrategy#deleteSnapshotChain for the same pattern on incremental
-        // snapshots. forced=true means the caller wants the entire subtree gone right now.
-        if (forced) {
-            return cascadeDeleteSubtree(backup, backupRepository, host);
-        }
+        // Concurrent deletes can mutate the same chain concurrently resulting in inconsistent states.
+        // take a per-VM lock before modifying the chain.
+        final GlobalLock chainLock = acquireChainDeleteLock(backup.getVmId());
+        try {
+            Backup current = backupDao.findById(backup.getId());
+            if (current == null) {
+                LOG.debug("Backup {} was already removed by a concurrent chain delete", backup.getUuid());
+                return true;
+            }
+            backup = current;
 
-        List<Backup> liveChildren = findLiveChildren(backup);
-        if (!liveChildren.isEmpty()) {
-            markDeletePending(backup);
-            LOG.debug("Backup {} has {} live child backup(s); marking as delete-pending. The on-NAS file " +
-                            "and DB row will be removed once the last descendant is gone, or pass forced=true.",
-                    backup.getUuid(), liveChildren.size());
-            return true;
-        }
+            // Snapshot-style cascade: defer the on-NAS rm + DB row while there are live children,
+            // mark this backup as delete-pending, and let the leaf's deletion sweep it up later.
+            // See DefaultSnapshotStrategy#deleteSnapshotChain for the same pattern on incremental
+            // snapshots. forced=true means the caller wants the entire subtree gone right now.
+            if (forced) {
+                return cascadeDeleteSubtree(backup, backupRepository, host);
+            }
 
-        // No live children — physically delete this backup, then walk up the chain and
-        // collect any ancestors that were left in delete-pending state.
-        return deleteLeafBackupAndSweepPendingAncestors(backup, backupRepository, host);
+            if (hasLiveChildren(backup)) {
+                markDeletePending(backup);
+                LOG.debug("Backup {} has live descendants in its chain; setting status as Hidden. " +
+                                "The on-NAS file and DB row will be removed once the last descendant is gone, " +
+                                "or pass forced=true.",
+                        backup.getUuid());
+                return true;
+            }
+
+            // No live children — physically delete this backup, then walk up the chain and
+            // collect any ancestors that were left in Hidden state.
+            return deleteLeafBackupAndSweepPendingAncestors(backup, backupRepository, host);
+        } finally {
+            releaseChainDeleteLock(chainLock);
+        }
+    }
+
+    /**
+     * Take the per-VM lock that serializes chain-mutating backup deletes.
+     */
+    protected GlobalLock acquireChainDeleteLock(long vmId) {
+        GlobalLock lock = GlobalLock.getInternLock("nas.backup.chain.vm." + vmId);
+        if (!lock.lock(CHAIN_LOCK_TIMEOUT_SECONDS)) {
+            lock.releaseRef();
+            throw new CloudRuntimeException(String.format(
+                    "Timed out waiting for concurrent backup chain operations on VM %d to finish, please try again", vmId));
+        }
+        return lock;
+    }
+
+    protected void releaseChainDeleteLock(GlobalLock lock) {
+        lock.unlock();
+        lock.releaseRef();
     }
 
     /**
@@ -951,7 +986,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             throw new CloudRuntimeException("Operation to delete backup timed out, please try again");
         }
         if (answer == null || !answer.getResult()) {
-            logger.warn("Failed to delete backup file for {} ({}); leaving DB row intact",
+            logger.error("Failed to delete backup file for {} ({}); leaving DB row intact",
                     backup.getUuid(), backup.getExternalId());
             return false;
         }
@@ -1000,53 +1035,24 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     }
 
     /**
-     * Return the live (not delete-pending, not Removed) children of {@code parent} within the
-     * same chain. Equivalent to "incrementals whose parent_backup_id points at parent".
+     * Whether there are any live (not tombstoned/Hidden, not Removed) descendants of {@code backup} within the
+     * same chain. This uses {@code CHAIN_POSITION} to detect dependents deeper in the chain.
      */
-    private List<Backup> findLiveChildren(Backup parent) {
-        String parentUuid = parent.getUuid();
-        String chainId = readDetail(parent, NASBackupChainKeys.CHAIN_ID);
-        if (parentUuid == null || chainId == null) {
-            return Collections.emptyList();
+    private boolean hasLiveChildren(Backup backup) {
+        String chainId = readDetail(backup, NASBackupChainKeys.CHAIN_ID);
+        if (chainId == null) {
+            return false;
         }
-        List<Backup> children = new ArrayList<>();
-        for (Backup b : backupDao.listByVmId(null, parent.getVmId())) {
-            if (b.getId() == parent.getId()) {
-                continue;
-            }
-            if (!chainId.equals(readDetail(b, NASBackupChainKeys.CHAIN_ID))) {
-                continue;
-            }
-            if (!parentUuid.equals(readDetail(b, NASBackupChainKeys.PARENT_BACKUP_ID))) {
-                continue;
-            }
-            if (isDeletePending(b)) {
-                // Tombstoned children don't keep us alive — they're already on the way out.
-                continue;
-            }
-            children.add(b);
-        }
-        return children;
-    }
-
-    /**
-     * Look up this backup's immediate parent in the chain (by {@code PARENT_BACKUP_ID}).
-     * Returns {@code null} if this is the full (no parent) or the parent row is gone.
-     *
-     * <p>Prefer {@link #getChainOrderedLeafToRoot(Backup)} when walking the whole chain —
-     * this method hits the DB on each call and is O(N²) when used in a loop.
-     */
-    private Backup findChainParent(Backup backup) {
-        String parentUuid = readDetail(backup, NASBackupChainKeys.PARENT_BACKUP_ID);
-        if (parentUuid == null || parentUuid.isEmpty()) {
-            return null;
-        }
+        int position = chainPosition(backup);
         for (Backup b : backupDao.listByVmId(null, backup.getVmId())) {
-            if (parentUuid.equals(b.getUuid())) {
-                return b;
+            if (b.getId() == backup.getId() || !chainId.equals(readDetail(b, NASBackupChainKeys.CHAIN_ID))) {
+                continue;
+            }
+            if (!isDeletePending(b) && chainPosition(b) > position) {
+                return true;
             }
         }
-        return null;
+        return false;
     }
 
     /**
@@ -1078,7 +1084,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
     /**
      * Physically delete the leaf {@code backup}, then walk up the chain while each ancestor
-     * is in delete-pending state. Mirrors the snapshot subsystem pattern: once a leaf is
+     * is in Hidden state. Mirrors the snapshot subsystem pattern: once a leaf is
      * gone, garbage-collect any tombstoned parents.
      *
      * <p>Caller must guarantee {@code backup} is a leaf (no live children). Each tombstoned
@@ -1092,23 +1098,14 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         if (!deleteBackupFileAndRow(backup, repo, host)) {
             return false;
         }
-        // Walk the snapshot from leaf+1 upward, deleting tombstoned ancestors until a live
-        // one is reached or the root is past.
-        int leafIdx = indexOfBackupById(chain, backup.getId());
-        if (leafIdx < 0) {
-            // Leaf wasn't in its own CHAIN_ID list — degenerate case, nothing more to sweep.
-            return true;
-        }
-        for (int i = leafIdx + 1; i < chain.size(); i++) {
-            Backup ancestor = chain.get(i);
-            if (!isDeletePending(ancestor)) {
+        for (Backup member : chain) {
+            if (member.getId() == backup.getId()) {
+                continue;
+            }
+            if (!isDeletePending(member)) {
                 break;
             }
-            if (!deleteBackupFileAndRow(ancestor, repo, host)) {
-                // Stop the sweep; the rest of the tombstoned chain will be collected on a
-                // future delete that re-runs the sweep.
-                return true;
-            }
+            deleteBackupFileAndRow(member, repo, host);
         }
         return true;
     }
@@ -1125,42 +1122,6 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             }
         }
         return true;
-    }
-
-    private static int indexOfBackupById(List<Backup> chain, long id) {
-        for (int i = 0; i < chain.size(); i++) {
-            if (chain.get(i).getId() == id) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    /**
-     * Return the backup with the highest {@code CHAIN_POSITION} sharing {@code root}'s
-     * {@code CHAIN_ID}. Returns {@code root} if it has no chain metadata or is itself the tail.
-     */
-    private Backup findChainTail(Backup root) {
-        String chainId = readDetail(root, NASBackupChainKeys.CHAIN_ID);
-        if (chainId == null) {
-            return root;
-        }
-        Backup tail = root;
-        int tailPos = chainPosition(root);
-        for (Backup b : backupDao.listByVmId(null, root.getVmId())) {
-            if (b.getId() == root.getId()) {
-                continue;
-            }
-            if (!chainId.equals(readDetail(b, NASBackupChainKeys.CHAIN_ID))) {
-                continue;
-            }
-            int pos = chainPosition(b);
-            if (pos > tailPos) {
-                tail = b;
-                tailPos = pos;
-            }
-        }
-        return tail;
     }
 
     private int chainPosition(Backup b) {

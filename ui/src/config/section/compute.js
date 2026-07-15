@@ -302,6 +302,21 @@ export default {
           }
         },
         {
+          api: 'finishBackupChain',
+          icon: 'vertical-align-middle-outlined',
+          label: 'label.backup.chain.finish',
+          dataView: true,
+          args: ['virtualmachineid'],
+          show: (record) => {
+            return ['Running', 'Stopped', 'BackupError'].includes(record.state) && record.backupofferingid && record.backupprovider === 'kboss'
+          },
+          mapping: {
+            virtualmachineid: {
+              value: (record, params) => { return record.id }
+            }
+          }
+        },
+        {
           api: 'attachIso',
           icon: 'paper-clip-outlined',
           label: 'label.action.attach.iso',

@@ -48,6 +48,7 @@ public class BridgeVifDriver extends VifDriverBase {
     private final Object _vnetBridgeMonitor = new Object();
     private String _modifyVlanPath;
     private String _modifyVxlanPath;
+    private String _macIpScriptPath;
     private String _controlCidr = NetUtils.getLinkLocalCIDR();
     private Long libvirtVersion;
 
@@ -81,6 +82,14 @@ public class BridgeVifDriver extends VifDriverBase {
         _modifyVxlanPath = Script.findScript(networkScriptsDir, vxlanScript);
         if (_modifyVxlanPath == null) {
             throw new ConfigurationException("Unable to find " + vxlanScript);
+        }
+
+        if (Boolean.TRUE.equals(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_NETWORK_MACIP_STATIC))) {
+            _macIpScriptPath = Script.findScript(networkScriptsDir, "modifymacip.sh");
+            if (_macIpScriptPath == null) {
+                throw new ConfigurationException("Unable to find modifymacip.sh");
+            }
+            logger.info("VM network MAC/IP static script configured: {}", _macIpScriptPath);
         }
 
         libvirtVersion = (Long) params.get("libvirtVersion");
@@ -279,11 +288,14 @@ public class BridgeVifDriver extends VifDriverBase {
         }
         intf.setLinkStateUp(nic.isEnabled());
 
+        executeMacIpScript(intf.getBrName(), nic.getMac(), nic.getIp(), nic.getIp6Address(), nic.getNicSecIps());
+
         return intf;
     }
 
     @Override
     public void unplug(LibvirtVMDef.InterfaceDef iface, boolean deleteBr) {
+        executeMacIpScript(iface.getBrName(), iface.getMacAddress());
         deleteVnetBr(iface.getBrName(), deleteBr);
     }
 
@@ -400,6 +412,60 @@ public class BridgeVifDriver extends VifDriverBase {
             if (result != null) {
                 logger.debug("Delete bridge " + brName + " failed: " + result);
             }
+        }
+    }
+
+    private void executeMacIpScript(String brName, String mac) {
+        if (_macIpScriptPath == null || mac == null || brName == null) {
+            return;
+        }
+        try {
+            final Script command = new Script(_macIpScriptPath, _timeout, logger);
+            command.add("-o", "delete");
+            command.add("-b", brName);
+            command.add("-m", mac);
+            final String result = command.execute();
+            if (result != null) {
+                logger.warn("MAC/IP script returned error for delete on {}: {}", mac, result);
+            }
+        } catch (Exception e) {
+            // Managing host neighbour/route entries is best-effort and must never break VM lifecycle operations
+            logger.warn("Failed to run MAC/IP script for delete on {} ({})", mac, brName, e);
+        }
+    }
+
+    private void executeMacIpScript(String brName, String mac, String ipv4, String ipv6, List<String> secondaryIps) {
+        if (_macIpScriptPath == null || mac == null || brName == null) {
+            return;
+        }
+        try {
+            final Script command = new Script(_macIpScriptPath, _timeout, logger);
+            command.add("-o", "add");
+            command.add("-b", brName);
+            command.add("-m", mac);
+            if (ipv4 != null && !ipv4.isEmpty()) {
+                command.add("-4", ipv4);
+            }
+            command.add("-6", NetUtils.ipv6LinkLocal(mac).toString());
+            if (ipv6 != null && !ipv6.isEmpty()) {
+                command.add("-6", ipv6);
+            }
+            if (secondaryIps != null) {
+                for (String secIp : secondaryIps) {
+                    if (NetUtils.isValidIp6(secIp)) {
+                        command.add("-6", secIp);
+                    } else {
+                        command.add("-4", secIp);
+                    }
+                }
+            }
+            final String result = command.execute();
+            if (result != null) {
+                logger.warn("MAC/IP script returned error for add on {}: {}", mac, result);
+            }
+        } catch (Exception e) {
+            // Managing host neighbour/route entries is best-effort and must never break VM lifecycle operations
+            logger.warn("Failed to run MAC/IP script for add on {} ({})", mac, brName, e);
         }
     }
 

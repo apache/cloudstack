@@ -626,37 +626,37 @@ public class VolumeApiServiceImplTest {
     // Negative test - try to attach non-root non-datadisk volume
     @Test(expected = InvalidParameterValueException.class)
     public void attachIncorrectDiskType() throws NoSuchFieldException, IllegalAccessException {
-        volumeApiServiceImpl.attachVolumeToVM(1L, 5L, 0L, false);
+        volumeApiServiceImpl.attachVolumeToVM(1L, 5L, 0L, false, false);
     }
 
     // Negative test - attach root volume to running vm
     @Test(expected = InvalidParameterValueException.class)
     public void attachRootDiskToRunningVm() throws NoSuchFieldException, IllegalAccessException {
-        volumeApiServiceImpl.attachVolumeToVM(1L, 6L, 0L, false);
+        volumeApiServiceImpl.attachVolumeToVM(1L, 6L, 0L, false, false);
     }
 
     // Negative test - attach root volume to non-xen vm
     @Test(expected = InvalidParameterValueException.class)
     public void attachRootDiskToHyperVm() throws NoSuchFieldException, IllegalAccessException {
-        volumeApiServiceImpl.attachVolumeToVM(3L, 6L, 0L, false);
+        volumeApiServiceImpl.attachVolumeToVM(3L, 6L, 0L, false, false);
     }
 
     // Negative test - attach root volume from the managed data store
     @Test(expected = InvalidParameterValueException.class)
     public void attachRootDiskOfManagedDataStore() throws NoSuchFieldException, IllegalAccessException {
-        volumeApiServiceImpl.attachVolumeToVM(2L, 7L, 0L, false);
+        volumeApiServiceImpl.attachVolumeToVM(2L, 7L, 0L, false, false);
     }
 
     // Negative test - root volume can't be attached to the vm already having a root volume attached
     @Test(expected = InvalidParameterValueException.class)
     public void attachRootDiskToVmHavingRootDisk() throws NoSuchFieldException, IllegalAccessException {
-        volumeApiServiceImpl.attachVolumeToVM(4L, 6L, 0L, false);
+        volumeApiServiceImpl.attachVolumeToVM(4L, 6L, 0L, false, false);
     }
 
     // Negative test - root volume in uploaded state can't be attached
     @Test(expected = InvalidParameterValueException.class)
     public void attachRootInUploadedState() throws NoSuchFieldException, IllegalAccessException {
-        volumeApiServiceImpl.attachVolumeToVM(2L, 8L, 0L, false);
+        volumeApiServiceImpl.attachVolumeToVM(2L, 8L, 0L, false, false);
     }
 
     // Positive test - attach ROOT volume in correct state, to the vm not having root volume attached
@@ -664,7 +664,7 @@ public class VolumeApiServiceImplTest {
     public void attachRootVolumePositive() throws NoSuchFieldException, IllegalAccessException {
         thrown.expect(NullPointerException.class);
         try (MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
-            volumeApiServiceImpl.attachVolumeToVM(2L, 6L, 0L, false);
+            volumeApiServiceImpl.attachVolumeToVM(2L, 6L, 0L, false, false);
         }
     }
 
@@ -674,7 +674,7 @@ public class VolumeApiServiceImplTest {
         DiskOfferingVO diskOffering = Mockito.mock(DiskOfferingVO.class);
         when(diskOffering.getEncrypt()).thenReturn(true);
         when(_diskOfferingDao.findById(anyLong())).thenReturn(diskOffering);
-        volumeApiServiceImpl.attachVolumeToVM(2L, 10L, 1L, false);
+        volumeApiServiceImpl.attachVolumeToVM(2L, 10L, 1L, false, false);
     }
 
     // Positive test - attach data volume, to the vm on kvm hypervisor
@@ -685,7 +685,7 @@ public class VolumeApiServiceImplTest {
         when(diskOffering.getEncrypt()).thenReturn(true);
         when(_diskOfferingDao.findById(anyLong())).thenReturn(diskOffering);
         try (MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
-            volumeApiServiceImpl.attachVolumeToVM(4L, 10L, 1L, false);
+            volumeApiServiceImpl.attachVolumeToVM(4L, 10L, 1L, false, false);
         }
     }
 
@@ -790,7 +790,7 @@ public class VolumeApiServiceImplTest {
         when(zoneWithDisabledLocalStorage.isLocalStorageEnabled()).thenReturn(true);
         doReturn(volumeVoMock).when(volumeApiServiceImpl).getVolumeAttachJobResult(Mockito.any(), Mockito.any(), Mockito.any());
         try (MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
-            volumeApiServiceImpl.attachVolumeToVM(2L, 9L, null, false);
+            volumeApiServiceImpl.attachVolumeToVM(2L, 9L, null, false, false);
             Assert.assertEquals(1, mockCheckedReservation.constructed().size());
         }
     }
@@ -1044,7 +1044,7 @@ public class VolumeApiServiceImplTest {
 
     private void verifyMocksForTestDestroyVolumeWhenVolumeIsNotInRightState() {
         Mockito.verify(volumeServiceMock, Mockito.times(0)).destroyVolume(volumeMockId);
-        Mockito.verify(resourceLimitServiceMock, Mockito.times(0)).decrementVolumeResourceCount(accountMockId, true, volumeSizeMock, newDiskOfferingMock);
+        Mockito.verify(resourceLimitServiceMock, Mockito.times(0)).decrementVolumeResourceCount(accountMockId, true, volumeSizeMock, newDiskOfferingMock, null);
     }
 
     private void configureMocksForTestDestroyVolumeWhenVolume() {
@@ -1052,7 +1052,7 @@ public class VolumeApiServiceImplTest {
         Mockito.lenient().doReturn(true).when(volumeVoMock).isDisplayVolume();
 
         Mockito.lenient().doNothing().when(volumeServiceMock).destroyVolume(volumeMockId);
-        Mockito.lenient().doNothing().when(resourceLimitServiceMock).decrementVolumeResourceCount(accountMockId, true, volumeSizeMock, newDiskOfferingMock);
+        Mockito.lenient().doNothing().when(resourceLimitServiceMock).decrementVolumeResourceCount(accountMockId, true, volumeSizeMock, newDiskOfferingMock, null);
     }
 
     @Test
@@ -1420,7 +1420,7 @@ public class VolumeApiServiceImplTest {
         try {
             UserVmVO vm = Mockito.mock(UserVmVO.class);
             when(vm.getBackupOfferingId()).thenReturn(1l);
-            volumeApiServiceImpl.checkForBackups(vm, false);
+            volumeApiServiceImpl.validateIfVmHasBackups(vm, false);
         } catch (Exception e) {
             Assert.assertEquals("Unable to detach volume, cannot detach volume from a VM that has backups. First remove the VM from the backup offering or set the global configuration 'backup.enable.attach.detach.of.volumes' to true.", e.getMessage());
         }
@@ -1431,7 +1431,7 @@ public class VolumeApiServiceImplTest {
         try {
             UserVmVO vm = Mockito.mock(UserVmVO.class);
             when(vm.getBackupOfferingId()).thenReturn(1l);
-            volumeApiServiceImpl.checkForBackups(vm, true);
+            volumeApiServiceImpl.validateIfVmHasBackups(vm, true);
         } catch (Exception e) {
             Assert.assertEquals("Unable to attach volume, please specify a VM that does not have any backups or set the global configuration 'backup.enable.attach.detach.of.volumes' to true.", e.getMessage());
         }
@@ -1441,7 +1441,7 @@ public class VolumeApiServiceImplTest {
     public void validateIfVmHaveBackupsTestSuccessWhenVMDontHaveBackupOffering() {
         UserVmVO vm = Mockito.mock(UserVmVO.class);
         when(vm.getBackupOfferingId()).thenReturn(null);
-        volumeApiServiceImpl.checkForBackups(vm, true);
+        volumeApiServiceImpl.validateIfVmHasBackups(vm, true);
     }
 
     @Test
@@ -1600,7 +1600,7 @@ public class VolumeApiServiceImplTest {
             usageEventUtilsMocked.verify(() -> UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volumeVoMock.getAccountId(), volumeVoMock.getDataCenterId(), volumeVoMock.getId(),
                     volumeVoMock.getName(), Volume.class.getName(), volumeVoMock.getUuid(), volumeVoMock.isDisplayVolume()));
 
-            Mockito.verify(resourceLimitServiceMock).decrementVolumeResourceCount(accountMock.getAccountId(), true, volumeVoMock.getSize(), newDiskOfferingMock);
+            Mockito.verify(resourceLimitServiceMock).decrementVolumeResourceCount(accountMock.getAccountId(), true, volumeVoMock.getSize(), newDiskOfferingMock, null);
 
             Mockito.verify(volumeVoMock).setAccountId(newAccountMock.getAccountId());
             Mockito.verify(volumeVoMock).setDomainId(newAccountMock.getDomainId());
@@ -2223,7 +2223,7 @@ public class VolumeApiServiceImplTest {
         Mockito.when(primaryDataStoreDaoMock.findById(1L)).thenReturn(destPrimaryStorage);
         VolumeInfo newVolumeOnPrimaryStorage = Mockito.mock(VolumeInfo.class);
         try {
-            Mockito.when(volumeOrchestrationService.createVolumeOnPrimaryStorage(vm, volumeToAttach, vm.getHypervisorType(), destPrimaryStorage))
+            Mockito.when(volumeOrchestrationService.createVolumeOnPrimaryStorage(vm, volumeToAttach, vm.getHypervisorType(), destPrimaryStorage, null, null))
                     .thenReturn(newVolumeOnPrimaryStorage);
         } catch (NoTransitionException nte) {
             Assert.fail(nte.getMessage());
@@ -2244,7 +2244,7 @@ public class VolumeApiServiceImplTest {
         VolumeInfo newVolumeOnPrimaryStorage = Mockito.mock(VolumeInfo.class);
         try {
             Mockito.when(volumeOrchestrationService.createVolumeOnPrimaryStorage(
-                    vm, volumeToAttach, vm.getHypervisorType(), destPrimaryStorage))
+                    vm, volumeToAttach, vm.getHypervisorType(), destPrimaryStorage, null, null))
                 .thenReturn(newVolumeOnPrimaryStorage);
         } catch (NoTransitionException nte) {
             Assert.fail(nte.getMessage());
@@ -2276,7 +2276,7 @@ public class VolumeApiServiceImplTest {
         Mockito.doReturn(destPrimaryStorage).when(volumeApiServiceImpl)
                 .getSuitablePoolForAllocatedOrUploadedVolumeForAttach(volumeToAttach, vm);
         try {
-            Mockito.when(volumeOrchestrationService.createVolumeOnPrimaryStorage(vm, volumeToAttach, vm.getHypervisorType(), destPrimaryStorage))
+            Mockito.when(volumeOrchestrationService.createVolumeOnPrimaryStorage(vm, volumeToAttach, vm.getHypervisorType(), destPrimaryStorage, null, null))
                     .thenThrow(new NoTransitionException("Mocked exception"));
         } catch (NoTransitionException nte) {
             Assert.fail(nte.getMessage());
@@ -2312,7 +2312,7 @@ public class VolumeApiServiceImplTest {
         Assert.assertSame(volumeToAttach, result);
         try {
             Mockito.verify(volumeOrchestrationService, Mockito.never()).createVolumeOnPrimaryStorage(Mockito.any(),
-                    Mockito.any(), Mockito.any(), Mockito.any());
+                    Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
         } catch (NoTransitionException e) {
             Assert.fail();
         }

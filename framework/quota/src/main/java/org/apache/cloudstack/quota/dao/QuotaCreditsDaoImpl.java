@@ -21,7 +21,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import com.cloud.domain.dao.DomainDao;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
@@ -40,8 +39,6 @@ import com.cloud.utils.db.TransactionStatus;
 public class QuotaCreditsDaoImpl extends GenericDaoBase<QuotaCreditsVO, Long> implements QuotaCreditsDao {
 
     @Inject
-    DomainDao domainDao;
-    @Inject
     QuotaBalanceDao quotaBalanceDao;
 
     private SearchBuilder<QuotaCreditsVO> quotaCreditsVoSearch;
@@ -50,19 +47,18 @@ public class QuotaCreditsDaoImpl extends GenericDaoBase<QuotaCreditsVO, Long> im
         quotaCreditsVoSearch = createSearchBuilder();
         quotaCreditsVoSearch.and("updatedOn", quotaCreditsVoSearch.entity().getUpdatedOn(), SearchCriteria.Op.BETWEEN);
         quotaCreditsVoSearch.and("accountId", quotaCreditsVoSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-        quotaCreditsVoSearch.and("domainId", quotaCreditsVoSearch.entity().getDomainId(), SearchCriteria.Op.IN);
+        quotaCreditsVoSearch.and("domainIds", quotaCreditsVoSearch.entity().getDomainId(), SearchCriteria.Op.IN);
         quotaCreditsVoSearch.done();
     }
 
     @Override
-    public List<QuotaCreditsVO> findCredits(Long accountId, Long domainId, Date startDate, Date endDate, boolean recursive) {
+    public List<QuotaCreditsVO> findCredits(Long accountId, List<Long> domainIds, Date startDate, Date endDate) {
         SearchCriteria<QuotaCreditsVO> sc = quotaCreditsVoSearch.create();
         Filter filter = new Filter(QuotaCreditsVO.class, "updatedOn", true, 0L, Long.MAX_VALUE);
 
         sc.setParametersIfNotNull("accountId", accountId);
-        if (domainId != null) {
-            List<Long> domainIds = recursive ? domainDao.getDomainAndChildrenIds(domainId) : List.of(domainId);
-            sc.setParameters("domainId", domainIds.toArray());
+        if (domainIds != null) {
+            sc.setParameters("domainIds", domainIds.toArray());
         }
 
         if (ObjectUtils.allNotNull(startDate, endDate)) {

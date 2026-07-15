@@ -298,7 +298,7 @@ public class StorageVmSharedFSLifeCycle implements SharedFSLifeCycle {
             expunge = true;
             forceExpunge = true;
         }
-        volumeApiService.destroyVolume(volume.getId(), CallContext.current().getCallingAccount(), expunge, forceExpunge);
+        volumeApiService.destroyVolume(volume.getId(), CallContext.current().getCallingAccount(), expunge, forceExpunge, null);
         return true;
     }
 

@@ -1135,12 +1135,22 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                 VirtualMachineManager.ExecuteInSequence.value());
             cmd.setOptions(options);
 
-            Optional<RemoteHostEndPoint> optEP = getDiskfullEP(api, pool, rscName);
+            // For encrypted volumes Linstor adds a LUKS layer (DRBD -> LUKS -> STORAGE). The storage
+            // layer snapshot device (getSnapshotPath) therefore only exposes the raw LUKS ciphertext,
+            // while restore writes onto the decrypted DRBD device (/dev/drbd/by-res/.../0). Backing up
+            // the ciphertext and writing it back to the decrypted layer corrupts the volume (and the
+            // shrink to the net volume size would even truncate the ciphertext). So for encrypted
+            // volumes we never read the storage snapshot directly: restore the snapshot into a temporary
+            // resource and back up its decrypted DRBD device instead, symmetric to the restore path.
+            final boolean encrypted = snapshotObject.getBaseVolume().getPassphraseId() != null;
+            Optional<RemoteHostEndPoint> optEP = encrypted ?
+                Optional.empty() : getDiskfullEP(api, pool, rscName);
             Answer answer;
             if (optEP.isPresent()) {
                 answer = optEP.get().sendMessage(cmd);
             } else {
-                logger.debug("No diskfull endpoint found to copy image, creating diskless endpoint");
+                logger.debug("No diskfull endpoint used to copy image (encrypted={}), using temporary resource",
+                    encrypted);
                 answer = copyFromTemporaryResource(api, pool, rscName, snapshotName, snapshotObject, cmd);
             }
             return answer;

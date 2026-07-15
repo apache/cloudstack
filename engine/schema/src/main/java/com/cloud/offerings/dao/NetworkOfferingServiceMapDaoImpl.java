@@ -40,6 +40,7 @@ public class NetworkOfferingServiceMapDaoImpl extends GenericDaoBase<NetworkOffe
     final GenericSearchBuilder<NetworkOfferingServiceMapVO, String> ProvidersSearch;
     final GenericSearchBuilder<NetworkOfferingServiceMapVO, String> ServicesSearch;
     final GenericSearchBuilder<NetworkOfferingServiceMapVO, String> DistinctProvidersSearch;
+    final GenericSearchBuilder<NetworkOfferingServiceMapVO, Long> OfferingIdsByServiceAndProviderSearch;
 
     protected NetworkOfferingServiceMapDaoImpl() {
         super();
@@ -71,6 +72,12 @@ public class NetworkOfferingServiceMapDaoImpl extends GenericDaoBase<NetworkOffe
         DistinctProvidersSearch.and("provider", DistinctProvidersSearch.entity().getProvider(), SearchCriteria.Op.EQ);
         DistinctProvidersSearch.selectFields(DistinctProvidersSearch.entity().getProvider());
         DistinctProvidersSearch.done();
+
+        OfferingIdsByServiceAndProviderSearch = createSearchBuilder(Long.class);
+        OfferingIdsByServiceAndProviderSearch.selectFields(OfferingIdsByServiceAndProviderSearch.entity().getNetworkOfferingId());
+        OfferingIdsByServiceAndProviderSearch.and("service", OfferingIdsByServiceAndProviderSearch.entity().getService(), SearchCriteria.Op.EQ);
+        OfferingIdsByServiceAndProviderSearch.and("provider", OfferingIdsByServiceAndProviderSearch.entity().getProvider(), SearchCriteria.Op.EQ);
+        OfferingIdsByServiceAndProviderSearch.done();
     }
 
     @Override
@@ -169,5 +176,13 @@ public class NetworkOfferingServiceMapDaoImpl extends GenericDaoBase<NetworkOffe
         sc.setParameters("offId", offId);
         List<String> results = customSearch(sc, null);
         return results;
+    }
+
+    @Override
+    public List<Long> listOfferingIdsByServiceAndProvider(Service service, String provider) {
+        SearchCriteria<Long> sc = OfferingIdsByServiceAndProviderSearch.create();
+        sc.setParameters("service", service.getName());
+        sc.setParameters("provider", provider);
+        return customSearch(sc, null);
     }
 }

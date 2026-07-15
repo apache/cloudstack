@@ -18,7 +18,7 @@ package org.apache.cloudstack.api.command;
 
 import com.cloud.utils.Pair;
 
-import org.apache.cloudstack.api.ACL;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
@@ -26,8 +26,10 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.QuotaCreditsResponse;
 import org.apache.cloudstack.api.response.QuotaResponseBuilder;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.time.DateUtils;
 
@@ -44,13 +46,16 @@ public class QuotaCreditsListCmd extends BaseCmd {
     @Inject
     QuotaResponseBuilder quotaResponseBuilder;
 
-    @ACL
-    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "ID of the account for which the credit statement will be generated.")
+    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class,
+            description = "ID of the Account for which the credit statement will be generated. Cannot be specified with '" + ApiConstants.PROJECT_ID + "'.")
     private Long accountId;
 
-    @ACL
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "ID of the domain for which credit statement will be generated. " +
-            "Available only for administrators.")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class,
+            description = "ID of the Project for which the credit statement will be generated. Cannot be specified with '" + ApiConstants.ACCOUNT_ID + "'.")
+    private Long projectId;
+
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "ID of the Domain for which credit statement will be generated. " +
+            "Available only for administrators.", authorized = {RoleType.Admin, RoleType.DomainAdmin})
     private Long domainId;
 
     @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, description = "End date of the credit statement. If not provided, the current date will be " +
@@ -97,12 +102,16 @@ public class QuotaCreditsListCmd extends BaseCmd {
         this.startDate = startDate;
     }
 
-    public Boolean getRecursive() {
-        return recursive;
+    public boolean isRecursive() {
+        return BooleanUtils.isTrue(recursive);
     }
 
     public void setRecursive(Boolean recursive) {
         this.recursive = recursive;
+    }
+
+    public Long getProjectId() {
+        return projectId;
     }
 
     @Override
@@ -116,7 +125,10 @@ public class QuotaCreditsListCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return -1;
+        if (ObjectUtils.allNull(accountId, projectId)) {
+            return -1;
+        }
+        return _accountService.finalizeAccountId(accountId, null, null, projectId);
     }
 
 }
