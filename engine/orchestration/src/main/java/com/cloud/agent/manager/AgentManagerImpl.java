@@ -220,6 +220,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     private boolean _reconcileCommandsEnabled = false;
     private Integer _reconcileCommandInterval;
 
+    private static final int AGENT_CONNECT_CORE_POOL_SIZE = 100;
+    private static final int AGENT_CONNECT_MAX_POOL_SIZE = 500;
+
     @Inject
     ResourceManager _resourceMgr;
     @Inject
@@ -427,9 +430,26 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     }
 
     private void initConnectExecutor() {
-        _connectExecutor = new ThreadPoolExecutor(AgentConnectExecutorCorePoolSize.value(), AgentConnectExecutorMaxPoolSize.value(), 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<>(), new NamedThreadFactory("AgentConnectTaskPool"));
+        Pair<Integer, Integer> poolSizeValues = retrieveAgentConnectPoolCoreSizeAndMaxSize();
+        _connectExecutor = new ThreadPoolExecutor(poolSizeValues.first(), poolSizeValues.second(), 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<>(), new NamedThreadFactory("AgentConnectTaskPool"));
         // allow core threads to time out even when there are no items in the queue
         _connectExecutor.allowCoreThreadTimeOut(true);
+    }
+
+    private Pair<Integer, Integer> retrieveAgentConnectPoolCoreSizeAndMaxSize() {
+        Integer agentConnectCorePoolSize = AgentConnectExecutorCorePoolSize.value();
+        Integer agentConnectMaxSize = AgentConnectExecutorMaxPoolSize.value();
+        if (agentConnectCorePoolSize == null || agentConnectCorePoolSize < 0 || agentConnectMaxSize == null || agentConnectMaxSize < 0) {
+            logger.warn("Invalid agent connect pool size values. Defaulting to core pool size {} and max pool size {}", AGENT_CONNECT_CORE_POOL_SIZE, AGENT_CONNECT_MAX_POOL_SIZE);
+            return new Pair<>(AGENT_CONNECT_CORE_POOL_SIZE, AGENT_CONNECT_MAX_POOL_SIZE);
+
+        }
+        if (agentConnectMaxSize > agentConnectCorePoolSize) {
+            logger.warn("Max agent connect pool size {} is greater than core pool size {}. " +
+                    "Defaulting to core pool size {} and max pool size {}", agentConnectMaxSize, agentConnectCorePoolSize, AGENT_CONNECT_CORE_POOL_SIZE, AGENT_CONNECT_MAX_POOL_SIZE);
+            return new Pair<>(AGENT_CONNECT_CORE_POOL_SIZE, AGENT_CONNECT_MAX_POOL_SIZE);
+        }
+        return new Pair<>(agentConnectCorePoolSize, agentConnectMaxSize);
     }
 
     private void initAndScheduleMonitorExecutor() {
