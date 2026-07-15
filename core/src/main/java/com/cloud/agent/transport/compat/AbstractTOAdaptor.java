@@ -39,7 +39,8 @@ import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import com.google.gson.reflect.TypeToken;
 import org.apache.cloudstack.transport.HypervisorTypeAdaptor;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.lang.reflect.Type;
 import java.util.LinkedHashMap;
@@ -53,7 +54,7 @@ import java.util.Map;
  */
 
 public class AbstractTOAdaptor<T> implements JsonSerializer<T> {
-    private static final Logger s_logger = Logger.getLogger(AbstractTOAdaptor.class);
+    private static final Logger LOGGER = LogManager.getLogger(AbstractTOAdaptor.class);
     private static final Gson gson;
 
     static {
@@ -61,7 +62,7 @@ public class AbstractTOAdaptor<T> implements JsonSerializer<T> {
         gson = setDefaultGsonConfig(gsonBuilder);
         GsonBuilder loggerBuilder = new GsonBuilder();
         loggerBuilder.disableHtmlEscaping();
-        loggerBuilder.setExclusionStrategies(new LoggingExclusionStrategy(s_logger));
+        loggerBuilder.setExclusionStrategies(new LoggingExclusionStrategy(LOGGER));
     }
 
     private Map<String, String> fieldMappings;
