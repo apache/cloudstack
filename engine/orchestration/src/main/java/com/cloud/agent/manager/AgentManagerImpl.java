@@ -444,8 +444,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             return new Pair<>(AGENT_CONNECT_CORE_POOL_SIZE, AGENT_CONNECT_MAX_POOL_SIZE);
 
         }
-        if (agentConnectMaxSize > agentConnectCorePoolSize) {
-            logger.warn("Max agent connect pool size {} is greater than core pool size {}. " +
+        if (agentConnectMaxSize < agentConnectCorePoolSize) {
+            logger.warn("Max agent connect pool size {} is lower than core pool size {}. " +
                     "Defaulting to core pool size {} and max pool size {}", agentConnectMaxSize, agentConnectCorePoolSize, AGENT_CONNECT_CORE_POOL_SIZE, AGENT_CONNECT_MAX_POOL_SIZE);
             return new Pair<>(AGENT_CONNECT_CORE_POOL_SIZE, AGENT_CONNECT_MAX_POOL_SIZE);
         }
