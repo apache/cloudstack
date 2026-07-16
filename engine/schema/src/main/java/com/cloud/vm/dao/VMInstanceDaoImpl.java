@@ -1261,4 +1261,17 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         List<Integer> count = customSearch(sc, null);
         return count.get(0);
     }
+
+    @Override
+    public List<VMInstanceVO> listByIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return new ArrayList<>();
+        }
+        SearchBuilder<VMInstanceVO> sb = createSearchBuilder();
+        sb.and("id", sb.entity().getId(), Op.IN);
+        sb.done();
+        SearchCriteria<VMInstanceVO> sc = sb.create();
+        sc.setParameters("id", ids.toArray());
+        return listBy(sc);
+    }
 }

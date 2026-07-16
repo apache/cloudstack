@@ -33,9 +33,11 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -45,6 +47,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiConstants;
@@ -187,6 +190,9 @@ public class UserVmManagerImplTest {
 
     @Mock
     protected NicDao nicDao;
+
+    @Mock
+    protected VMInstanceDao vmInstanceDao;
 
     @Mock
     private NetworkDao _networkDao;
@@ -3206,5 +3212,60 @@ public class UserVmManagerImplTest {
         InvalidParameterValueException ex = Assert.assertThrows(InvalidParameterValueException.class, () ->
                 userVmManagerImpl.verifyVmLimits(userVmVoMock, customParameters));
         Assert.assertTrue(ex.getMessage().startsWith("The CPU speed of this offering"));
+    }
+
+    @Test
+    public void testLoadVmDetailsInMapForExternalDhcpIpSeedsOnlyRunningNullIpNics() {
+        NetworkVO network = mock(NetworkVO.class);
+        when(network.getId()).thenReturn(100L);
+        when(network.getNetworkOfferingId()).thenReturn(7L);
+        when(_networkDao.listByGuestType(Network.GuestType.Shared)).thenReturn(Arrays.asList(network));
+        when(networkModel.listNetworkOfferingServices(7L)).thenReturn(new ArrayList<>());
+
+        NicVO runningNullIp = mock(NicVO.class);
+        when(runningNullIp.getId()).thenReturn(11L);
+        when(runningNullIp.getInstanceId()).thenReturn(1000L);
+        when(runningNullIp.getIPv4Address()).thenReturn(null);
+
+        NicVO withIp = mock(NicVO.class);
+        when(withIp.getIPv4Address()).thenReturn("10.1.1.5");
+
+        NicVO stoppedNullIp = mock(NicVO.class);
+        when(stoppedNullIp.getInstanceId()).thenReturn(2000L);
+        when(stoppedNullIp.getIPv4Address()).thenReturn(null);
+
+        when(nicDao.listByNetworkId(100L)).thenReturn(Arrays.asList(runningNullIp, withIp, stoppedNullIp));
+
+        VMInstanceVO running = mock(VMInstanceVO.class);
+        when(running.getId()).thenReturn(1000L);
+        when(running.getState()).thenReturn(VirtualMachine.State.Running);
+        VMInstanceVO stopped = mock(VMInstanceVO.class);
+        when(stopped.getState()).thenReturn(VirtualMachine.State.Stopped);
+        when(vmInstanceDao.listByIds(Mockito.anyList())).thenReturn(Arrays.asList(running, stopped));
+
+        userVmManagerImpl.loadVmDetailsInMapForExternalDhcpIp();
+
+        @SuppressWarnings("unchecked")
+        Map<Long, ?> vmIdCountMap = (Map<Long, ?>) ReflectionTestUtils.getField(userVmManagerImpl, "vmIdCountMap");
+        assertNotNull(vmIdCountMap);
+        assertEquals(1, vmIdCountMap.size());
+        assertTrue(vmIdCountMap.containsKey(11L));
+        assertFalse(vmIdCountMap.containsKey(12L));
+        Mockito.verify(vmInstanceDao, times(1)).listByIds(Mockito.anyList());
+        Mockito.verify(vmInstanceDao, Mockito.never()).findById(Mockito.anyLong());
+    }
+
+    @Test
+    public void testStartSeedsExternalDhcpMapAsynchronously() {
+        java.util.concurrent.ScheduledExecutorService expungeExecutor = mock(java.util.concurrent.ScheduledExecutorService.class);
+        java.util.concurrent.ScheduledExecutorService ipFetchExecutor = mock(java.util.concurrent.ScheduledExecutorService.class);
+        ReflectionTestUtils.setField(userVmManagerImpl, "_executor", expungeExecutor);
+        ReflectionTestUtils.setField(userVmManagerImpl, "_vmIpFetchExecutor", ipFetchExecutor);
+
+        boolean result = userVmManagerImpl.start();
+
+        assertTrue(result);
+        Mockito.verify(ipFetchExecutor, times(1)).submit(any(Runnable.class));
+        Mockito.verify(userVmManagerImpl, Mockito.never()).loadVmDetailsInMapForExternalDhcpIp();
     }
 }
