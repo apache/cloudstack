@@ -50,7 +50,7 @@ import java.util.Map;
 /**
  * JSON serializer adapter for transport classes (com.cloud.agent.api.to.*) that ensures backward compatibility
  * with older Agent versions due to rename of the fields
- * (see https://github.com/shapeblue/cloudstack-apple/pull/532/changes)
+ * (see https://github.com/apache/cloudstack/pull/10514)
  */
 
 public class AbstractTOAdaptor<T> implements JsonSerializer<T> {
