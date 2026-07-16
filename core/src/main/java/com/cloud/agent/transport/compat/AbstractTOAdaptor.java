@@ -52,7 +52,6 @@ import java.util.Map;
  * with older Agent versions due to rename of the fields
  * (see https://github.com/apache/cloudstack/pull/10514)
  */
-
 public class AbstractTOAdaptor<T> implements JsonSerializer<T> {
     private static final Logger LOGGER = LogManager.getLogger(AbstractTOAdaptor.class);
     private static final Gson gson;
