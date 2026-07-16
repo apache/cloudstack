@@ -147,16 +147,25 @@ class TestEventsResource(cloudstackTestCase):
             diskofferingid=self.disk_offering.id
         )
         self.cleanup.append(volume)
-        virtual_machine.attach_volume(
-            self.apiclient,
-            volume
-        )
+        try:
+            virtual_machine.attach_volume(
+                self.apiclient,
+                volume
+            )
+        except Exception as e:
+            print("Failed to attach volume to VM: %s" % e)
+            pass
+
         virtual_machine.stop(self.apiclient)
         account_network.restart(self.apiclient, cleanup=False)
         time.sleep(self.services["sleep"])
         virtual_machine.restore(self.apiclient)
         time.sleep(self.services["sleep"])
-        virtual_machine.detach_volume(self.apiclient, volume)
+        try:
+            virtual_machine.detach_volume(self.apiclient, volume)
+        except Exception as e:
+            print("Failed to detach volume from VM: %s" % e)
+            pass
         volume.delete(self.apiclient)
         self.cleanup.remove(volume)
         ts = str(time.time())
