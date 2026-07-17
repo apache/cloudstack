@@ -48,7 +48,7 @@
     "chart.js": "^3.7.1",
     "chartjs-adapter-moment": "^1.0.1",
     "core-js": "^3.49.0",
-    "cronstrue": "^2.26.0",
+    "cronstrue": "^2.59.0",
     "dompurify": "^3.4.12",
     "enquire.js": "^2.1.6",
     "js-cookie": "^3.0.8",
