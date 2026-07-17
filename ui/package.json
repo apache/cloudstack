@@ -66,7 +66,7 @@
     "vue-chartjs": "^4.0.7",
     "vue-clipboard2": "^0.3.1",
     "vue-code-highlight": "^0.7.8",
-    "vue-cropper": "^1.0.2",
+    "vue-cropper": "^1.1.4",
     "vue-i18n": "^9.14.5",
     "vue-loader": "^16.8.3",
     "vue-qrious": "^3.1.0",
