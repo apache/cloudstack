@@ -109,7 +109,7 @@
     "uglifyjs-webpack-plugin": "^2.2.0",
     "vue-jest": "^5.0.0-0",
     "vue-svg-loader": "^0.17.0-beta.2",
-    "webpack": "^4.46.0"
+    "webpack": "^4.47.0"
   },
   "resolutions": {
     "nan": "2.18.0"
