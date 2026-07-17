@@ -433,7 +433,7 @@ backup_stopped_vm() {
   done
   sync
 
-  ls -l --numeric-uid-gid $dest | awk '{print $5}'
+  find "$dest" -type f -exec stat -c '%s' {} +
 }
 
 delete_backup() {
