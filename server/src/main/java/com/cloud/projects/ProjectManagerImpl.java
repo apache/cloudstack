@@ -277,40 +277,39 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
         }
 
         try (CheckedReservation projectReservation = new CheckedReservation(owner, ResourceType.project, null, null, 1L, reservationDao, _resourceLimitMgr)) {
+            final Account ownerFinal = owner;
+            User finalUser = user;
+            Project project =  Transaction.execute(new TransactionCallback<Project>() {
+                @Override
+                public Project doInTransaction(TransactionStatus status) {
 
-        final Account ownerFinal = owner;
-        User finalUser = user;
-        Project project =  Transaction.execute(new TransactionCallback<Project>() {
-            @Override
-            public Project doInTransaction(TransactionStatus status) {
+                    //Create an account associated with the project
+                    StringBuilder acctNm = new StringBuilder("PrjAcct-");
+                    acctNm.append(name).append("-").append(ownerFinal.getDomainId());
 
-                //Create an account associated with the project
-                StringBuilder acctNm = new StringBuilder("PrjAcct-");
-                acctNm.append(name).append("-").append(ownerFinal.getDomainId());
+                    Account projectAccount = _accountMgr.createAccount(acctNm.toString(), Account.Type.PROJECT, null, domainId, null, null, UUID.randomUUID().toString());
 
-                Account projectAccount = _accountMgr.createAccount(acctNm.toString(), Account.Type.PROJECT, null, domainId, null, null, UUID.randomUUID().toString());
+                    Project project = _projectDao.persist(new ProjectVO(name, displayText, ownerFinal.getDomainId(), projectAccount.getId()));
 
-                Project project = _projectDao.persist(new ProjectVO(name, displayText, ownerFinal.getDomainId(), projectAccount.getId()));
+                    //assign owner to the project
+                    assignAccountToProject(project, ownerFinal.getId(), ProjectAccount.Role.Admin,
+                            Optional.ofNullable(finalUser).map(User::getId).orElse(null),  null);
 
-                //assign owner to the project
-                assignAccountToProject(project, ownerFinal.getId(), ProjectAccount.Role.Admin,
-                        Optional.ofNullable(finalUser).map(User::getId).orElse(null),  null);
+                    if (project != null) {
+                        CallContext.current().setEventDetails("Project id=" + project.getId());
+                        CallContext.current().putContextParameter(Project.class, project.getUuid());
+                    }
 
-                if (project != null) {
-                    CallContext.current().setEventDetails("Project id=" + project.getId());
-                    CallContext.current().putContextParameter(Project.class, project.getUuid());
+                    //Increment resource count
+                    _resourceLimitMgr.incrementResourceCount(ownerFinal.getId(), ResourceType.project);
+
+                    return project;
                 }
+            });
 
-                //Increment resource count
-                _resourceLimitMgr.incrementResourceCount(ownerFinal.getId(), ResourceType.project);
+            messageBus.publish(_name, ProjectManager.MESSAGE_CREATE_TUNGSTEN_PROJECT_EVENT, PublishScope.LOCAL, project);
 
-                return project;
-            }
-        });
-
-        messageBus.publish(_name, ProjectManager.MESSAGE_CREATE_TUNGSTEN_PROJECT_EVENT, PublishScope.LOCAL, project);
-
-        return project;
+            return project;
         }
     }
 
@@ -604,16 +603,16 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
 
             boolean shouldIncrementResourceCount = projectRole != null && Role.Admin == projectRole;
             try (CheckedReservation cr = new CheckedReservation(userAccount, ResourceType.project, shouldIncrementResourceCount ? 1L : 0L, reservationDao, _resourceLimitMgr)) {
-            if (assignUserToProject(project, user.getId(), user.getAccountId(), projectRole,
-                    Optional.ofNullable(role).map(ProjectRole::getId).orElse(null)) != null) {
-                if (shouldIncrementResourceCount) {
-                    _resourceLimitMgr.incrementResourceCount(userAccount.getId(), ResourceType.project);
+                if (assignUserToProject(project, user.getId(), user.getAccountId(), projectRole,
+                        Optional.ofNullable(role).map(ProjectRole::getId).orElse(null)) != null) {
+                    if (shouldIncrementResourceCount) {
+                        _resourceLimitMgr.incrementResourceCount(userAccount.getId(), ResourceType.project);
+                    }
+                    return true;
+                } else {
+                    logger.warn("Failed to add user to project: {}", project);
+                    return false;
                 }
-                return true;
-            } else {
-                logger.warn("Failed to add user to project: {}", project);
-                return false;
-            }
             }
         }
     }
@@ -671,13 +670,13 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
         boolean shouldIncrementResourceCount = Role.Admin == newAccRole;
 
         try (CheckedReservation checkedReservation = new CheckedReservation(account, ResourceType.project, shouldIncrementResourceCount ? 1L : 0L, reservationDao, _resourceLimitMgr)) {
-        futureOwner.setAccountRole(newAccRole);
-        _projectAccountDao.update(futureOwner.getId(), futureOwner);
-        if (shouldIncrementResourceCount) {
-            _resourceLimitMgr.incrementResourceCount(accountId, ResourceType.project);
-        } else {
-            _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.project);
-        }
+            futureOwner.setAccountRole(newAccRole);
+            _projectAccountDao.update(futureOwner.getId(), futureOwner);
+            if (shouldIncrementResourceCount) {
+                _resourceLimitMgr.incrementResourceCount(accountId, ResourceType.project);
+            } else {
+                _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.project);
+            }
         }
     }
 
@@ -721,16 +720,16 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
                         }
 
                         try (CheckedReservation checkedReservation = new CheckedReservation(futureOwnerAccount, ResourceType.project, null, null, 1L, reservationDao, _resourceLimitMgr)) {
-                        //unset the role for the old owner
-                        ProjectAccountVO currentOwner = _projectAccountDao.findByProjectIdAccountId(projectId, currentOwnerAccount.getId());
-                        currentOwner.setAccountRole(Role.Regular);
-                        _projectAccountDao.update(currentOwner.getId(), currentOwner);
-                        _resourceLimitMgr.decrementResourceCount(currentOwnerAccount.getId(), ResourceType.project);
+                            //unset the role for the old owner
+                            ProjectAccountVO currentOwner = _projectAccountDao.findByProjectIdAccountId(projectId, currentOwnerAccount.getId());
+                            currentOwner.setAccountRole(Role.Regular);
+                            _projectAccountDao.update(currentOwner.getId(), currentOwner);
+                            _resourceLimitMgr.decrementResourceCount(currentOwnerAccount.getId(), ResourceType.project);
 
-                        //set new owner
-                        futureOwner.setAccountRole(Role.Admin);
-                        _projectAccountDao.update(futureOwner.getId(), futureOwner);
-                        _resourceLimitMgr.incrementResourceCount(futureOwnerAccount.getId(), ResourceType.project);
+                            //set new owner
+                            futureOwner.setAccountRole(Role.Admin);
+                            _projectAccountDao.update(futureOwner.getId(), futureOwner);
+                            _resourceLimitMgr.incrementResourceCount(futureOwnerAccount.getId(), ResourceType.project);
                         }
                     } else {
                         logger.trace("Future owner {}is already the owner of the project {}", newOwnerName, project);
@@ -877,16 +876,16 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
 
             boolean shouldIncrementResourceCount = projectRoleType != null && Role.Admin == projectRoleType;
             try (CheckedReservation cr = new CheckedReservation(account, ResourceType.project, shouldIncrementResourceCount ? 1L : 0L, reservationDao, _resourceLimitMgr)) {
-            if (assignAccountToProject(project, account.getId(), projectRoleType, null,
-                    Optional.ofNullable(projectRole).map(ProjectRole::getId).orElse(null)) != null) {
-                if (shouldIncrementResourceCount) {
-                    _resourceLimitMgr.incrementResourceCount(account.getId(), ResourceType.project);
+                if (assignAccountToProject(project, account.getId(), projectRoleType, null,
+                        Optional.ofNullable(projectRole).map(ProjectRole::getId).orElse(null)) != null) {
+                    if (shouldIncrementResourceCount) {
+                        _resourceLimitMgr.incrementResourceCount(account.getId(), ResourceType.project);
+                    }
+                    return true;
+                } else {
+                    logger.warn("Failed to add account {} to project {}", accountName, project);
+                    return false;
                 }
-                return true;
-            } else {
-                logger.warn("Failed to add account {} to project {}", accountName, project);
-                return false;
-            }
             }
         }
     }

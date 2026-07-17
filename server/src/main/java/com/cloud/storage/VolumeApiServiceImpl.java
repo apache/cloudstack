@@ -2311,14 +2311,16 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return a.equals(b);
     }
 
-    private VolumeVO resizeVolumeInternal(VolumeVO volume, DiskOfferingVO newDiskOffering, Long currentSize, Long newSize, Long newMinIops, Long newMaxIops, Integer newHypervisorSnapshotReserve, boolean shrinkOk) throws ResourceAllocationException {
+    VolumeVO resizeVolumeInternal(VolumeVO volume, DiskOfferingVO newDiskOffering, Long currentSize, Long newSize, Long newMinIops, Long newMaxIops, Integer newHypervisorSnapshotReserve, boolean shrinkOk) throws ResourceAllocationException {
         UserVmVO userVm = _userVmDao.findById(volume.getInstanceId());
         HypervisorType hypervisorType = _volsDao.getHypervisorType(volume.getId());
 
         if (userVm != null) {
-            if (volume.getVolumeType().equals(Volume.Type.ROOT) && userVm.getPowerState() != VirtualMachine.PowerState.PowerOff && hypervisorType == HypervisorType.VMware) {
-                logger.error(" For ROOT volume resize VM should be in Power Off state.");
-                throw new InvalidParameterValueException("VM current state is : " + userVm.getPowerState() + ". But VM should be in " + VirtualMachine.PowerState.PowerOff + " state.");
+            if (Volume.Type.ROOT.equals(volume.getVolumeType())
+                    && !State.Stopped.equals(userVm.getState())
+                    && HypervisorType.VMware.equals(hypervisorType)) {
+                logger.error("For ROOT volume resize VM should be in Stopped state.");
+                throw new InvalidParameterValueException("The current VM state is '" + userVm.getState() + "'. But the VM should be in " + State.Stopped + " state.");
             }
             // serialize VM operation
             AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
@@ -2372,7 +2374,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 shrinkOk);
     }
 
-    private void validateVolumeReadyStateAndHypervisorChecks(VolumeVO volume, long currentSize, Long newSize) {
+    void validateVolumeReadyStateAndHypervisorChecks(VolumeVO volume, long currentSize, Long newSize) {
         // checking if there are any ongoing snapshots on the volume which is to be resized
         List<SnapshotVO> ongoingSnapshots = _snapshotDao.listByStatus(volume.getId(), Snapshot.State.Creating, Snapshot.State.CreatedOnPrimary, Snapshot.State.BackingUp);
         if (ongoingSnapshots.size() > 0) {
@@ -2396,9 +2398,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         UserVmVO userVm = _userVmDao.findById(volume.getInstanceId());
         if (userVm != null) {
-            if (volume.getVolumeType().equals(Volume.Type.ROOT) && userVm.getPowerState() != VirtualMachine.PowerState.PowerOff && hypervisorType == HypervisorType.VMware) {
-                logger.error(" For ROOT volume resize VM should be in Power Off state.");
-                throw new InvalidParameterValueException("VM current state is : " + userVm.getPowerState() + ". But VM should be in " + VirtualMachine.PowerState.PowerOff + " state.");
+            if (Volume.Type.ROOT.equals(volume.getVolumeType())
+                    && !State.Stopped.equals(userVm.getState())
+                    && HypervisorType.VMware.equals(hypervisorType)) {
+                logger.error("For ROOT volume resize VM should be in Stopped state.");
+                throw new InvalidParameterValueException("The current VM state is '" + userVm.getState() + "'. But VM should be in " + State.Stopped + " state.");
             }
         }
     }
@@ -2415,7 +2419,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
     }
 
-    private void validateVolumeResizeWithNewDiskOfferingAndLoad(VolumeVO volume, DiskOfferingVO existingDiskOffering, DiskOfferingVO newDiskOffering, Long[] newSize, Long[] newMinIops, Long[] newMaxIops, Integer[] newHypervisorSnapshotReserve) {
+    void validateVolumeResizeWithNewDiskOfferingAndLoad(VolumeVO volume, DiskOfferingVO existingDiskOffering, DiskOfferingVO newDiskOffering, Long[] newSize, Long[] newMinIops, Long[] newMaxIops, Integer[] newHypervisorSnapshotReserve) {
         if (newDiskOffering.getRemoved() != null) {
             throw new InvalidParameterValueException("Requested disk offering has been removed.");
         }
@@ -2761,13 +2765,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         try (CheckedReservation primaryStorageReservation = new CheckedReservation(owner, ResourceType.primary_storage, resourceLimitStorageTags, requiredPrimaryStorageSpace, reservationDao, _resourceLimitMgr)) {
 
-        _jobMgr.updateAsyncJobAttachment(job.getId(), "Volume", volumeId);
+            _jobMgr.updateAsyncJobAttachment(job.getId(), "Volume", volumeId);
 
-        if (asyncExecutionContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
-            return safelyOrchestrateAttachVolume(vmId, volumeId, deviceId);
-        } else {
-            return getVolumeAttachJobResult(vmId, volumeId, deviceId);
-        }
+            if (asyncExecutionContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
+                return safelyOrchestrateAttachVolume(vmId, volumeId, deviceId);
+            } else {
+                return getVolumeAttachJobResult(vmId, volumeId, deviceId);
+            }
 
         } catch (ResourceAllocationException e) {
             logger.error("primary storage resource limit check failed", e);
@@ -4400,12 +4404,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         try {
         _resourceLimitMgr.checkVolumeResourceLimit(newAccount, true, volume.getSize(), _diskOfferingDao.findById(volume.getDiskOfferingId()), reservations);
 
-        Transaction.execute(new TransactionCallbackNoReturn() {
-            @Override
-            public void doInTransactionWithoutResult(TransactionStatus status) {
-                updateVolumeAccount(oldAccount, volume, newAccount);
-            }
-        });
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(TransactionStatus status) {
+                    updateVolumeAccount(oldAccount, volume, newAccount);
+                }
+            });
 
         return volume;
 

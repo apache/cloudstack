@@ -375,10 +375,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             if (template != null) {
                 CallContext.current().putContextParameter(VirtualMachineTemplate.class, template.getUuid());
                 return template;
-            } else {
-                throw new CloudRuntimeException("Failed to create ISO");
             }
         }
+
+        throw new CloudRuntimeException("Failed to create ISO");
     }
 
     @Override
@@ -407,7 +407,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             TemplateProfile profile = adapter.prepare(cmd);
             VMTemplateVO template = adapter.create(profile);
 
-            // Secondary storage resource usage will be recalculated in com.cloud.template.HypervisorTemplateAdapter.createTemplateAsyncCallBack
+            // Secondary storage resource usage will be incremented in com.cloud.template.HypervisorTemplateAdapter.createTemplateAsyncCallBack
             // for HypervisorTemplateAdapter
             _resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.template);
             if (secondaryStorageUsage > 0) {
@@ -420,10 +420,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                     vnfTemplateManager.persistVnfTemplate(template.getId(), (RegisterVnfTemplateCmd) cmd);
                 }
                 return template;
-            } else {
-                throw new CloudRuntimeException("Failed to create a Template");
             }
         }
+        throw new CloudRuntimeException("Failed to create a Template");
     }
 
     /**
@@ -1034,12 +1033,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                     logger.debug("There is Template {} in secondary storage {} in zone {} , don't need to copy", template, dstSecStore, dataCenterVOs.get(destZoneId));
                     continue;
                 }
-                try (CheckedReservation secondaryStorageReservation = new CheckedReservation(templateOwner, ResourceType.secondary_storage, null, null, template.getSize(), reservationDao, _resourceLimitMgr)) {
-                    if (!copy(userId, template, srcSecStore, dataCenterVOs.get(destZoneId))) {
-                        failedZones.add(dataCenterVOs.get(destZoneId).getName());
-                        continue;
+                if (template.getSize() != null) {
+                    try (CheckedReservation secondaryStorageReservation = new CheckedReservation(templateOwner, ResourceType.secondary_storage, null, null, template.getSize(), reservationDao, _resourceLimitMgr)) {
+                        if (!copy(userId, template, srcSecStore, dataCenterVOs.get(destZoneId))) {
+                            failedZones.add(dataCenterVOs.get(destZoneId).getName());
+                            continue;
+                        }
+                        _resourceLimitMgr.incrementResourceCount(templateOwner.getId(), ResourceType.secondary_storage, template.getSize());
                     }
-                    _resourceLimitMgr.incrementResourceCount(templateOwner.getId(), ResourceType.secondary_storage, template.getSize());
                 }
             }
         }
