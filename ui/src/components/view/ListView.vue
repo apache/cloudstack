@@ -689,7 +689,7 @@
             </span>
           </template>
         </template>
-        <template v-else-if="text">
+        <template v-if="text">
           <template v-if="!text.startsWith('PrjAcct-')">
             <router-link
               v-if="$route.path.startsWith('/quotasummary')"
