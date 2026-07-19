@@ -255,7 +255,12 @@ export default {
       message: 'label.ha.configure',
       docHelp: 'adminguide/reliability.html#ha-for-hosts',
       dataView: true,
-      show: (record) => { return ['KVM', 'Simulator'].includes(record.hypervisor) },
+      show: (record) => {
+        if (record.hypervisor === 'KVM') {
+          return Boolean(record?.outofbandmanagement?.enabled)
+        }
+        return record.hypervisor === 'Simulator'
+      },
       args: ['hostid', 'provider'],
       mapping: {
         hostid: {
@@ -274,7 +279,13 @@ export default {
       docHelp: 'adminguide/reliability.html#ha-for-hosts',
       dataView: true,
       show: (record) => {
-        return record.hypervisor !== 'External' && !(record?.hostha?.haenable === true)
+        if (record.hypervisor === 'External' || record?.hostha?.haenable === true) {
+          return false
+        }
+        if (record.hypervisor === 'KVM') {
+          return Boolean(record?.outofbandmanagement?.enabled)
+        }
+        return true
       },
       args: ['hostid'],
       mapping: {
