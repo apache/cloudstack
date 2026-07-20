@@ -969,6 +969,8 @@ public class DeploymentPlanningManagerImplTest {
         Mockito.when(_dedicatedDao.listAllClusters()).thenReturn(new ArrayList<>());
         Mockito.when(_hostDao.listAllHosts(Mockito.anyLong())).thenReturn(new ArrayList<>());
         Mockito.when(_dedicatedDao.listAllHosts()).thenReturn(new ArrayList<>());
+        Mockito.when(_dedicatedDao.searchDedicatedPods(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
+                .thenReturn(new Pair<>(new ArrayList<>(), 0));
         Mockito.when(_dedicatedDao.searchDedicatedClusters(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenReturn(new Pair<>(new ArrayList<>(), 0));
         Mockito.when(_dedicatedDao.searchDedicatedHosts(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))

@@ -972,8 +972,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
         // If the VM owner's domain has an ExplicitDedication domain-level affinity group,
         // resources dedicated to that domain are accessible to the VM owner (fixes issue #5803).
-        boolean hasDomainExplicitDedicationGroup =
-                _affinityGroupDao.findDomainLevelGroupByType(vmDomainId, "ExplicitDedication") != null;
+        List<AffinityGroupDomainMapVO> domainGroupMappings = _affinityGroupDomainMapDao.listByDomain(vmDomainId);
+        boolean hasDomainExplicitDedicationGroup = domainGroupMappings != null && !domainGroupMappings.isEmpty();
 
         // Sort by id ascending, no pagination — retrieve all dedicated resources for this domain/account
         Filter filter = new Filter(DedicatedResourceVO.class, "id", true);
