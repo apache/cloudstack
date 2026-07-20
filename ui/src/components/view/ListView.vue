@@ -655,7 +655,8 @@
       <template v-if="column.key === 'usageType'">
         {{ usageTypeMap[record.usagetype] }}
       </template>
-<template v-if="column.key === 'clustername'">
+
+      <template v-if="column.key === 'clustername'">
         <router-link :to="{ path: '/cluster/' + record.clusterid }">{{ text }}</router-link>
       </template>
       <template v-if="column.key === 'objectstore'">
