@@ -230,6 +230,7 @@ public class LibvirtVmwareCbtSyncCommandWrapper extends CommandWrapper<VmwareCbt
     protected String writeDiskSyncScript(VmwareCbtSyncCommand cmd, VmwareCbtSyncPlan.DiskPlan diskPlan,
                                          KVMStoragePool targetPool) throws Exception {
         VmwareCbtDiskTO disk = diskPlan.getDisk();
+        boolean directBlockTarget = cmd.getTargetStorageType() == VmwareCbtTargetStorageType.RAW_BLOCK_DEVICE;
         Path scriptPath = Files.createTempFile(String.format("vmware-cbt-%s-%s-", sanitizeFileName(cmd.getMigrationUuid()),
                 sanitizeFileName(disk.getDiskId())), ".sh");
         StringBuilder script = new StringBuilder();
@@ -237,13 +238,6 @@ public class LibvirtVmwareCbtSyncCommandWrapper extends CommandWrapper<VmwareCbt
         script.append("set -euo pipefail\n");
         script.append("target_path=").append(shellQuote(getQemuTargetPath(cmd, disk, targetPool))).append("\n");
         script.append("target_format=").append(shellQuote(getTargetFormat(cmd, disk))).append("\n");
-        script.append("max_chunk_bytes=").append(DEFAULT_MAX_COPY_CHUNK_BYTES).append("\n");
-        script.append("tmp_dir=$(mktemp -d /var/tmp/cloudstack-cbt-").append(sanitizeFileName(cmd.getMigrationUuid()))
-                .append("-").append(sanitizeFileName(disk.getDiskId())).append("-XXXXXX)\n");
-        script.append("cleanup() {\n");
-        script.append("  rm -rf \"$tmp_dir\"\n");
-        script.append("}\n");
-        script.append("trap cleanup EXIT\n");
         script.append("get_nbd_socket_path() {\n");
         script.append("  local socket_path=\"${uri#*socket=}\"\n");
         script.append("  socket_path=\"${socket_path%%&*}\"\n");
@@ -254,25 +248,47 @@ public class LibvirtVmwareCbtSyncCommandWrapper extends CommandWrapper<VmwareCbt
         script.append("  echo \"$socket_path\"\n");
         script.append("}\n");
         script.append("nbd_socket_path=$(get_nbd_socket_path)\n");
-        script.append("copy_range() {\n");
-        script.append("  local range_start=\"$1\"\n");
-        script.append("  local range_length=\"$2\"\n");
-        script.append("  local current_start=\"$range_start\"\n");
-        script.append("  local remaining=\"$range_length\"\n");
-        script.append("  while (( remaining > 0 )); do\n");
-        script.append("    local chunk_length=\"$remaining\"\n");
-        script.append("    if (( chunk_length > max_chunk_bytes )); then\n");
-        script.append("      chunk_length=\"$max_chunk_bytes\"\n");
-        script.append("    fi\n");
-        script.append("    local chunk_file=\"$tmp_dir/range-${current_start}-${chunk_length}.raw\"\n");
-        script.append("    local source_opts=\"driver=raw,offset=$current_start,size=$chunk_length,file.driver=nbd,file.server.type=unix,file.server.path=$nbd_socket_path\"\n");
-        script.append("    qemu-img convert --image-opts -O raw \"$source_opts\" \"$chunk_file\" >/dev/null\n");
-        script.append("    qemu-io -f \"$target_format\" -c \"write -s $chunk_file $current_start $chunk_length\" \"$target_path\"\n");
-        script.append("    rm -f \"$chunk_file\"\n");
-        script.append("    remaining=$((remaining - chunk_length))\n");
-        script.append("    current_start=$((current_start + chunk_length))\n");
-        script.append("  done\n");
-        script.append("}\n");
+        if (directBlockTarget) {
+            // Local raw block device (e.g. Linstor/DRBD): copy each changed extent straight from the
+            // nbdkit source window into the same target window in a single qemu-img convert, avoiding
+            // the temporary-file round-trip the qemu-io path needs. -S 0 disables zero/sparse skipping
+            // so blocks the source cleared to zero are actually overwritten in the target (delta
+            // correctness); -n keeps the pre-created device.
+            script.append("copy_range() {\n");
+            script.append("  local range_start=\"$1\"\n");
+            script.append("  local range_length=\"$2\"\n");
+            script.append("  local source_opts=\"driver=raw,offset=$range_start,size=$range_length,file.driver=nbd,file.server.type=unix,file.server.path=$nbd_socket_path\"\n");
+            script.append("  local target_opts=\"driver=raw,offset=$range_start,size=$range_length,file.driver=host_device,file.filename=$target_path\"\n");
+            script.append("  qemu-img convert -n -S 0 --image-opts --target-image-opts \"$source_opts\" \"$target_opts\"\n");
+            script.append("}\n");
+        } else {
+            script.append("max_chunk_bytes=").append(DEFAULT_MAX_COPY_CHUNK_BYTES).append("\n");
+            script.append("tmp_dir=$(mktemp -d /var/tmp/cloudstack-cbt-").append(sanitizeFileName(cmd.getMigrationUuid()))
+                    .append("-").append(sanitizeFileName(disk.getDiskId())).append("-XXXXXX)\n");
+            script.append("cleanup() {\n");
+            script.append("  rm -rf \"$tmp_dir\"\n");
+            script.append("}\n");
+            script.append("trap cleanup EXIT\n");
+            script.append("copy_range() {\n");
+            script.append("  local range_start=\"$1\"\n");
+            script.append("  local range_length=\"$2\"\n");
+            script.append("  local current_start=\"$range_start\"\n");
+            script.append("  local remaining=\"$range_length\"\n");
+            script.append("  while (( remaining > 0 )); do\n");
+            script.append("    local chunk_length=\"$remaining\"\n");
+            script.append("    if (( chunk_length > max_chunk_bytes )); then\n");
+            script.append("      chunk_length=\"$max_chunk_bytes\"\n");
+            script.append("    fi\n");
+            script.append("    local chunk_file=\"$tmp_dir/range-${current_start}-${chunk_length}.raw\"\n");
+            script.append("    local source_opts=\"driver=raw,offset=$current_start,size=$chunk_length,file.driver=nbd,file.server.type=unix,file.server.path=$nbd_socket_path\"\n");
+            script.append("    qemu-img convert --image-opts -O raw \"$source_opts\" \"$chunk_file\" >/dev/null\n");
+            script.append("    qemu-io -f \"$target_format\" -c \"write -s $chunk_file $current_start $chunk_length\" \"$target_path\"\n");
+            script.append("    rm -f \"$chunk_file\"\n");
+            script.append("    remaining=$((remaining - chunk_length))\n");
+            script.append("    current_start=$((current_start + chunk_length))\n");
+            script.append("  done\n");
+            script.append("}\n");
+        }
         for (VmwareCbtChangedBlockRangeTO changedBlock : diskPlan.getChangedBlocks()) {
             script.append("copy_range ").append(changedBlock.getStartOffset()).append(" ")
                     .append(changedBlock.getLength()).append("\n");

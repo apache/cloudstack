@@ -156,7 +156,12 @@ public class LibvirtVmwareCbtSyncCommandWrapperTest {
         Assert.assertTrue(answer.getDetails(), answer.getResult());
         Assert.assertTrue(wrapper.lastDiskSyncScript.contains("target_format='raw'"));
         Assert.assertTrue(wrapper.lastDiskSyncScript.contains("target_path='/dev/drbd/by-res/cs-cbt-abc12345-2000/0'"));
-        Assert.assertTrue(wrapper.lastDiskSyncScript.contains("qemu-io -f \"$target_format\""));
+        // Block device deltas copy each changed extent directly (no temp-file round-trip):
+        // a single qemu-img convert from the nbd source window into the target device window.
+        Assert.assertTrue(wrapper.lastDiskSyncScript.contains("qemu-img convert -n -S 0 --image-opts --target-image-opts"));
+        Assert.assertTrue(wrapper.lastDiskSyncScript.contains("file.driver=host_device,file.filename=$target_path"));
+        Assert.assertFalse(wrapper.lastDiskSyncScript.contains("qemu-io -f \"$target_format\""));
+        Assert.assertFalse(wrapper.lastDiskSyncScript.contains("mktemp"));
     }
 
     @Test
