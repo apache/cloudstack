@@ -693,15 +693,20 @@
         <template v-if="text">
           <template v-if="!text.startsWith('PrjAcct-')">
             <router-link
-              v-if="$route.path.startsWith('/quotasummary') && $router.resolve(`${$route.path}/${record.accountid}`).matched[0].redirect !== '/exception/404'"
+              v-if="$route.path.startsWith('/quotasummary')"
               :to="{ path: `${$route.path}/${record.accountid}` }">{{ text }}</router-link>
+            <router-link v-else-if="record.accountid" :to="{ path: '/account/' + record.accountid }">{{ text }}</router-link>
+            <router-link
+              v-else-if="$store.getters.userInfo.roletype !== 'User'"
+              :to="{ path: '/account', query: { name: record.account, domainid: record.domainid, dataView: true } }">
+              {{ text }}
+            </router-link>
             <span v-else>{{ text }}</span>
           </template>
-          <template v-else>
-            <router-link
-              v-if="$route.path.startsWith('/quotasummary') && $router.resolve(`${$route.path}/${record.accountid}`).matched[0].redirect !== '/exception/404'"
-              :to="{ path: `${$route.path}/${record.accountid}` }">{{ (record.projectname || record.account).concat(' (').concat($t('label.project')).concat(')') }}</router-link>
-            <span v-else>{{ text }}</span>
+          <template v-else-if="$route.path.startsWith('/quotasummary')">
+            <router-link :to="{ path: `${$route.path}/${record.accountid}` }">
+              {{ (record.projectname || record.account).concat(' (').concat($t('label.project')).concat(')') }}
+            </router-link>
           </template>
         </template>
       </template>
