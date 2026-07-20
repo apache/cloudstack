@@ -2740,7 +2740,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         cmd.setExpectedResult(scriptExpectedResult != null ? scriptExpectedResult.getValue() : "0");
         VMInstanceDetailVO scriptTimeout = vmInstanceDetailsDao.findDetail(vmId, VmDetailConstants.VALIDATION_COMMAND_TIMEOUT);
         cmd.setScriptTimeout(scriptTimeout != null ? Integer.valueOf(scriptTimeout.getValue()) :
-                BackupValidationServiceJobController.backupValidationScriptDefaultTimeout.valueIn(backupVO.getId()));
+                BackupValidationServiceJobController.backupValidationScriptDefaultTimeout.valueIn(backupVO.getAccountId()));
     }
 
     protected void createBasicBackupDetails(Long imageStoreId, Long parentId, BackupVO backupVO) {
@@ -2881,7 +2881,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
                 }
 
                 if (Backup.ValidationStatus.Validating.equals(backupVO.getValidationStatus())) {
-                    logger.error("Backup [{}] is being validated, we cannot delete it. Please wait for the validation process to end and try again later.");
+                    logger.error("Backup [{}] is being validated, we cannot delete it. Please wait for the validation process to end and try again later.", backupVO.getUuid());
                     return false;
                 }
                 return true;
