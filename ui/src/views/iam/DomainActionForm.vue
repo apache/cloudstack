@@ -133,7 +133,7 @@
   </div>
 </template>
 
-<script>
+<script lang="jsx">
 import { postAPI } from '@/api'
 import { ref, reactive, toRaw } from 'vue'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
