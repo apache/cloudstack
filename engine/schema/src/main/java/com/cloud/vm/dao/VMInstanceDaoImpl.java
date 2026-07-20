@@ -21,6 +21,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -1264,8 +1265,8 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
 
     @Override
     public List<VMInstanceVO> listByIds(List<Long> ids) {
-        if (ids == null || ids.isEmpty()) {
-            return new ArrayList<>();
+        if (CollectionUtils.isEmpty(ids)) {
+            return Collections.emptyList();
         }
         SearchBuilder<VMInstanceVO> sb = createSearchBuilder();
         sb.and("id", sb.entity().getId(), Op.IN);
