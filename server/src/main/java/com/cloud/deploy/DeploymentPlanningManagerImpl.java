@@ -963,6 +963,11 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
     }
 
     private void findAvoidSetForNonExplicitUserVM(ExcludeList avoids, VirtualMachine vm, List<Long> allPodsInDc, List<Long> allClustersInDc, List<Long> allHostsInDc) {
+        if (allPodsInDc.isEmpty() && allClustersInDc.isEmpty() && allHostsInDc.isEmpty()) {
+            // Nothing in this DC is dedicated to anyone, so there is nothing to avoid or to check dedication for.
+            return;
+        }
+
         long vmAccountId = vm.getAccountId();
         long vmDomainId = vm.getDomainId();
 
@@ -972,8 +977,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
         // If the VM owner's domain has an ExplicitDedication domain-level affinity group,
         // resources dedicated to that domain are accessible to the VM owner (fixes issue #5803).
-        List<AffinityGroupDomainMapVO> domainGroupMappings = _affinityGroupDomainMapDao.listByDomain(vmDomainId);
-        boolean hasDomainExplicitDedicationGroup = domainGroupMappings != null && !domainGroupMappings.isEmpty();
+        boolean hasDomainExplicitDedicationGroup =
+                _affinityGroupDao.findDomainLevelGroupByType(vmDomainId, "ExplicitDedication") != null;
 
         // Sort by id ascending, no pagination — retrieve all dedicated resources for this domain/account
         Filter filter = new Filter(DedicatedResourceVO.class, "id", true);
