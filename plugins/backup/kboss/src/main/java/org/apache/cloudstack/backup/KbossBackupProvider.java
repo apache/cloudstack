@@ -2881,7 +2881,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
                 }
 
                 if (Backup.ValidationStatus.Validating.equals(backupVO.getValidationStatus())) {
-                    logger.error("Backup [{}] is being validated, we cannot delete it. Please wait for the validation process to end and try again later.");
+                    logger.error("Backup [{}] is being validated, we cannot delete it. Please wait for the validation process to end and try again later.", backupVO.getUuid());
                     return false;
                 }
                 return true;

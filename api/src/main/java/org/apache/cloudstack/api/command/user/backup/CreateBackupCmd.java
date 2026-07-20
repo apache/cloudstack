@@ -75,7 +75,7 @@ public class CreateBackupCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.QUIESCE_VM,
             type = CommandType.BOOLEAN,
             required = false,
-            description = "Quiesce the instance before checkpointing the disks for backup. Applicable only to NAS backup provider. " +
+            description = "Quiesce the instance before checkpointing the disks for backup. Applicable only to NAS and KBOSS backup providers. " +
                     "The filesystem is frozen before the backup starts and thawed immediately after. " +
                     "Requires the instance to have the QEMU Guest Agent installed and running.",
             since = "4.21.0")
