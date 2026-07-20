@@ -162,7 +162,11 @@ const vueConfig = {
   lintOnSave: undefined,
 
   // babel-loader no-ignore node_modules/*
-  transpileDependencies: [],
+  // minio (and its fast-xml-parser dependency) and vue-router ship modern
+  // syntax (class fields, optional chaining) in both their ESM and CJS
+  // builds, which webpack 4's parser can't handle unless babel transpiles
+  // them like first-party source.
+  transpileDependencies: [/[\\/]node_modules[\\/](minio|fast-xml-parser|vue-router)[\\/]/],
 
   pluginOptions: {
     i18n: {
