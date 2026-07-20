@@ -89,9 +89,9 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.AffinityGroupService;
+import org.apache.cloudstack.affinity.AffinityGroupVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -248,8 +248,8 @@ public class DeploymentPlanningManagerImplTest {
     @Inject
     HostDao _hostDao;
 
-    @Inject
-    AffinityGroupDomainMapDao _affinityGroupDomainMapDao;
+    @Mock
+    AffinityGroupDao _affinityGroupDao;
 
     private static final long dataCenterId = 1L;
     private static final long instanceId = 123L;
@@ -1167,11 +1167,9 @@ public class DeploymentPlanningManagerImplTest {
         Mockito.when(_podDao.listAllPods(dataCenterId)).thenReturn(podsInDc);
         Mockito.when(_dedicatedDao.listAllPods()).thenReturn(new ArrayList<>(Arrays.asList(dedicatedPodId)));
 
-        // Domain has affinity group mappings (pod dedicated to this domain).
-        // The content of the list entries does not matter; only emptiness is checked.
-        AffinityGroupDomainMapVO domainMap = Mockito.mock(AffinityGroupDomainMapVO.class);
-        Mockito.when(_affinityGroupDomainMapDao.listByDomain(vmDomainId))
-                .thenReturn(Arrays.asList(domainMap));
+        // Domain has an ExplicitDedication domain-level affinity group (pod dedicated to this domain).
+        Mockito.when(_affinityGroupDao.findDomainLevelGroupByType(vmDomainId, "ExplicitDedication"))
+                .thenReturn(Mockito.mock(AffinityGroupVO.class));
 
         // The pod is found when searching by domain (accountId = null)
         DedicatedResourceVO dedicatedPod = Mockito.mock(DedicatedResourceVO.class);
@@ -1212,9 +1210,9 @@ public class DeploymentPlanningManagerImplTest {
         Mockito.when(_podDao.listAllPods(dataCenterId)).thenReturn(podsInDc);
         Mockito.when(_dedicatedDao.listAllPods()).thenReturn(new ArrayList<>(Arrays.asList(dedicatedPodId)));
 
-        // VM owner's domain has NO affinity group mappings (no dedicated resources for vmDomainId)
-        Mockito.when(_affinityGroupDomainMapDao.listByDomain(vmDomainId))
-                .thenReturn(new ArrayList<>());
+        // VM owner's domain has no ExplicitDedication domain-level affinity group
+        Mockito.when(_affinityGroupDao.findDomainLevelGroupByType(vmDomainId, "ExplicitDedication"))
+                .thenReturn(null);
 
         // No pods dedicated to the VM owner's account
         Mockito.when(_dedicatedDao.searchDedicatedPods(Mockito.isNull(), Mockito.eq(vmDomainId),
@@ -1253,9 +1251,9 @@ public class DeploymentPlanningManagerImplTest {
         Mockito.when(_podDao.listAllPods(dataCenterId)).thenReturn(podsInDc);
         Mockito.when(_dedicatedDao.listAllPods()).thenReturn(new ArrayList<>(Arrays.asList(dedicatedPodId)));
 
-        // Domain has NO affinity group mappings (account-level dedication, not domain-level)
-        Mockito.when(_affinityGroupDomainMapDao.listByDomain(vmDomainId))
-                .thenReturn(new ArrayList<>());
+        // Domain has no ExplicitDedication domain-level affinity group (account-level dedication, not domain-level)
+        Mockito.when(_affinityGroupDao.findDomainLevelGroupByType(vmDomainId, "ExplicitDedication"))
+                .thenReturn(null);
 
         // The pod IS found when searching by account
         DedicatedResourceVO dedicatedPod = Mockito.mock(DedicatedResourceVO.class);
@@ -1296,9 +1294,9 @@ public class DeploymentPlanningManagerImplTest {
         Mockito.when(_podDao.listAllPods(dataCenterId)).thenReturn(podsInDc);
         Mockito.when(_dedicatedDao.listAllPods()).thenReturn(new ArrayList<>(Arrays.asList(dedicatedPodId)));
 
-        // Domain has NO affinity group mappings
-        Mockito.when(_affinityGroupDomainMapDao.listByDomain(vmDomainId))
-                .thenReturn(new ArrayList<>());
+        // Domain has no ExplicitDedication domain-level affinity group
+        Mockito.when(_affinityGroupDao.findDomainLevelGroupByType(vmDomainId, "ExplicitDedication"))
+                .thenReturn(null);
 
         // No pods dedicated to this account
         Mockito.when(_dedicatedDao.searchDedicatedPods(Mockito.isNull(), Mockito.eq(vmDomainId),
