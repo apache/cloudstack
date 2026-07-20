@@ -552,7 +552,7 @@ public class Link {
             LOGGER.error(String.format("SSL error caught during wrap data: %s, for local address=%s, remote address=%s.",
                     sslException.getMessage(), socketChannel.getLocalAddress(), socketChannel.getRemoteAddress()));
             sslEngine.closeOutbound();
-            return new HandshakeHolder(myAppData, myNetData, true);
+            return new HandshakeHolder(myAppData, myNetData, false);
         }
         if (result == null) {
             return new HandshakeHolder(myAppData, myNetData, false);

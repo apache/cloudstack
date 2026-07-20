@@ -37,6 +37,7 @@ public class VpcOfferingServiceMapDaoImpl extends GenericDaoBase<VpcOfferingServ
     final SearchBuilder<VpcOfferingServiceMapVO> AllFieldsSearch;
     final SearchBuilder<VpcOfferingServiceMapVO> MultipleServicesSearch;
     final GenericSearchBuilder<VpcOfferingServiceMapVO, String> ServicesSearch;
+    final GenericSearchBuilder<VpcOfferingServiceMapVO, Long> OfferingIdsByServiceAndProviderSearch;
 
     protected VpcOfferingServiceMapDaoImpl() {
         super();
@@ -56,6 +57,12 @@ public class VpcOfferingServiceMapDaoImpl extends GenericDaoBase<VpcOfferingServ
         ServicesSearch.and("offeringId", ServicesSearch.entity().getVpcOfferingId(), SearchCriteria.Op.EQ);
         ServicesSearch.select(null, Func.DISTINCT, ServicesSearch.entity().getService());
         ServicesSearch.done();
+
+        OfferingIdsByServiceAndProviderSearch = createSearchBuilder(Long.class);
+        OfferingIdsByServiceAndProviderSearch.selectFields(OfferingIdsByServiceAndProviderSearch.entity().getVpcOfferingId());
+        OfferingIdsByServiceAndProviderSearch.and("service", OfferingIdsByServiceAndProviderSearch.entity().getService(), SearchCriteria.Op.EQ);
+        OfferingIdsByServiceAndProviderSearch.and("provider", OfferingIdsByServiceAndProviderSearch.entity().getProvider(), SearchCriteria.Op.EQ);
+        OfferingIdsByServiceAndProviderSearch.done();
     }
 
     @Override
@@ -127,6 +134,14 @@ public class VpcOfferingServiceMapDaoImpl extends GenericDaoBase<VpcOfferingServ
         sc.setParameters("vpcOffId", vpcOfferingId);
         sc.setParameters("service", service.getName());
 
+        return customSearch(sc, null);
+    }
+
+    @Override
+    public List<Long> listOfferingIdsByServiceAndProvider(Service service, String provider) {
+        SearchCriteria<Long> sc = OfferingIdsByServiceAndProviderSearch.create();
+        sc.setParameters("service", service.getName());
+        sc.setParameters("provider", provider);
         return customSearch(sc, null);
     }
 }

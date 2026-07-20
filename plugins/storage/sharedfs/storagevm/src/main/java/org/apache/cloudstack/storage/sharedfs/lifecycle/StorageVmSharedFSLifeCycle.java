@@ -199,7 +199,7 @@ public class StorageVmSharedFSLifeCycle implements SharedFSLifeCycle {
                         diskOfferingId, size, null, null, Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData,
                         null, null, keypairs, null, addrs, null, null, null,
                         customParameterMap, null, null, null, null,
-                        true, UserVmManager.SHAREDFSVM, null, null, null);
+                        true, UserVmManager.SHAREDFSVM, null, null, null, null);
                 vmContext.setEventResourceId(vm.getId());
                 userVmService.startVirtualMachine(vm, null);
             } catch (InsufficientCapacityException ex) {
@@ -298,7 +298,7 @@ public class StorageVmSharedFSLifeCycle implements SharedFSLifeCycle {
             expunge = true;
             forceExpunge = true;
         }
-        volumeApiService.destroyVolume(volume.getId(), CallContext.current().getCallingAccount(), expunge, forceExpunge);
+        volumeApiService.destroyVolume(volume.getId(), CallContext.current().getCallingAccount(), expunge, forceExpunge, null);
         return true;
     }
 

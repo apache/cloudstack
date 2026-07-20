@@ -56,13 +56,17 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         # Check backup configuration values, set them to enable the nas provider
         backup_enabled_cfg = Configurations.list(cls.api_client, name='backup.framework.enabled')
         backup_provider_cfg = Configurations.list(cls.api_client, name='backup.framework.provider.plugin')
+        incremental_backup_enabled_cfg = Configurations.list(cls.api_client, name='nas.backup.incremental.enabled')
         cls.backup_enabled = backup_enabled_cfg[0].value
         cls.backup_provider = backup_provider_cfg[0].value
+        cls.incremental_backup_enabled = incremental_backup_enabled_cfg[0].value
 
         if cls.backup_enabled == "false":
             cls.skipTest(cls, reason="Test can be run only if the config backup.framework.enabled is true")
         if cls.backup_provider != "nas":
             Configurations.update(cls.api_client, 'backup.framework.provider.plugin', value='nas')
+        if cls.incremental_backup_enabled == "false":
+            Configurations.update(cls.api_client, 'nas.backup.incremental.enabled', value='true')
 
         cls.account = Account.create(cls.api_client, cls.services["account"], domainid=cls.domain.id)
 
@@ -94,6 +98,8 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
 
             if cls.backup_provider != "nas":
                 Configurations.update(cls.api_client, 'backup.framework.provider.plugin', value=cls.backup_provider)
+            if cls.incremental_backup_enabled == "false":
+                Configurations.update(cls.api_client, 'nas.backup.incremental.enabled', value="false")
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
@@ -265,3 +271,326 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         self.assertEqual(backup_repository.crosszoneinstancecreation, True, "Cross-Zone Instance Creation could not be enabled on the backup repository")
 
         self.vm_backup_create_vm_from_backup_int(template.id, [network.id])
+
+    # ------------------------------------------------------------------
+    # Incremental backup tests (RFC #12899 / PR #13074)
+    # ------------------------------------------------------------------
+    # These tests exercise the incremental NAS backup chain semantics:
+    # full -> incN cadence, restore-from-incremental, delete-middle chain
+    # repair, refuse-delete-full-with-children, and stopped-VM fallback.
+    #
+    # All tests set nas.backup.full.every to a small value (3) so a chain
+    # forms quickly without needing many backup iterations. The original
+    # zone value (whatever the test environment has configured) is captured
+    # before the test runs and restored verbatim in finally, so we don't
+    # leak config changes across tests on shared environments.
+
+    def _set_full_every(self, value):
+        Configurations.update(self.apiclient, name='nas.backup.full.every',
+                              value=str(value), zoneid=self.zone.id)
+
+    def _get_full_every(self):
+        """Read the current zone-scoped (or global fallback) value of nas.backup.full.every."""
+        configs = Configurations.list(self.apiclient, name='nas.backup.full.every',
+                                      zoneid=self.zone.id)
+        if configs and len(configs) > 0 and configs[0].value is not None:
+            return configs[0].value
+        # Fall back to global default — Configurations.list returns the global value
+        # when no zone override exists. Defensive fallback to '10' (the framework default).
+        return '10'
+
+    def _backup_type(self, backup):
+        # Backup objects expose `type`; for chained backups it's "INCREMENTAL", else "FULL".
+        return getattr(backup, 'type', 'FULL') or 'FULL'
+
+    @attr(tags=["advanced", "backup"], required_hardware="true")
+    def test_incremental_chain_cadence(self):
+        """
+        With nas.backup.full.every=3, the sequence of backups should be
+        FULL, INCREMENTAL, INCREMENTAL, FULL, INCREMENTAL, ...
+        """
+        self.backup_offering.assignOffering(self.apiclient, self.vm.id)
+        original_full_every = self._get_full_every()
+        self._set_full_every(3)
+        try:
+            ssh_client_vm = self.vm.get_ssh_client(reconnect=True)
+            ssh_client_vm.execute("touch /root/incremental_marker_1.txt")
+
+            created = []
+            for i in range(5):
+                Backup.create(self.apiclient, self.vm.id, "inc_chain_%d" % i)
+                # write a small change so each incremental has something to capture
+                ssh_client_vm.execute("dd if=/dev/urandom of=/root/delta_%d bs=64k count=4 2>/dev/null" % i)
+                time.sleep(2)
+                created = Backup.list(self.apiclient, self.vm.id)
+
+            self.assertEqual(len(created), 5, "Expected 5 backups after 5 Backup.create calls")
+            # Sort oldest-first by date
+            created.sort(key=lambda b: b.created)
+
+            expected = ['FULL', 'INCREMENTAL', 'INCREMENTAL', 'FULL', 'INCREMENTAL']
+            actual = [self._backup_type(b).upper() for b in created]
+            self.assertEqual(actual, expected,
+                "With nas.backup.full.every=3, chain pattern should be %s but was %s" % (expected, actual))
+
+            # Cleanup all backups (newest first to satisfy chain rules without forced=true)
+            for b in reversed(created):
+                Backup.delete(self.apiclient, b.id)
+        finally:
+            self._set_full_every(original_full_every)
+            self.backup_offering.removeOffering(self.apiclient, self.vm.id)
+
+    @attr(tags=["advanced", "backup"], required_hardware="true")
+    def test_incremental_after_vm_restart(self):
+        """
+        Regression for the parent-checkpoint recreation bug (PR #13074): an incremental
+        backup taken AFTER the VM has been restarted must still succeed and restore
+        correctly.
+
+        A VM (re)start rebuilds the libvirt domain XML and wipes libvirt's checkpoint
+        registry, while the dirty bitmap persists on the qcow2. The agent must then
+        re-register the parent checkpoint with `checkpoint-create --redefine` (from the
+        saved checkpoint XML) rather than a fresh create — a fresh create fails with
+        "Bitmap already exists", and qemu-img cannot drop the bitmap on a running disk.
+
+        How this was reproduced manually on a libvirt 10.0.0 host, and what this test
+        automates:
+            FULL + marker1  ->  stop/start the VM (wipes the checkpoint registry)
+            ->  INCREMENTAL + marker2  ->  restore the tip  ->  both markers present.
+        """
+        self.backup_offering.assignOffering(self.apiclient, self.vm.id)
+        original_full_every = self._get_full_every()
+        # High cadence so the post-restart backup is INCREMENTAL, not a periodic FULL.
+        self._set_full_every(100)
+        backups = []
+        try:
+            ssh_client_vm = self.vm.get_ssh_client(reconnect=True)
+            ssh_client_vm.execute("echo restart-test-1 > /root/restart_marker_1.txt; sync")
+
+            # 1) FULL anchor
+            Backup.create(self.apiclient, self.vm.id, "restart_full")
+            time.sleep(2)
+
+            # 2) Restart the VM — wipes libvirt's checkpoint registry (the bug trigger).
+            self.vm.stop(self.apiclient)
+            self.vm.start(self.apiclient)
+            ssh_client_vm = self.vm.get_ssh_client(reconnect=True)
+            ssh_client_vm.execute("echo restart-test-2 > /root/restart_marker_2.txt; sync")
+
+            # 3) INCREMENTAL after the restart — the previously-broken path.
+            Backup.create(self.apiclient, self.vm.id, "restart_incr")
+            time.sleep(2)
+
+            backups = Backup.list(self.apiclient, self.vm.id)
+            self.assertEqual(len(backups), 2,
+                "Expected FULL + INCREMENTAL after restart, got %d" % len(backups))
+            backups.sort(key=lambda b: b.created)
+            self.assertEqual(self._backup_type(backups[0]).upper(), 'FULL',
+                "First backup should be FULL")
+            self.assertEqual(self._backup_type(backups[1]).upper(), 'INCREMENTAL',
+                "Backup taken after the VM restart must be INCREMENTAL, not silently a FULL")
+
+            # 4) Restore the tip (incremental) and verify BOTH markers survived the chain
+            #    across the restart — i.e. the post-restart incremental really captured data.
+            new_vm_name = "vm-restart-restore-" + str(int(time.time()))
+            new_vm = Backup.createVMFromBackup(
+                self.apiclient,
+                self.services["small"],
+                mode=self.services["mode"],
+                backupid=backups[1].id,
+                vmname=new_vm_name,
+                accountname=self.account.name,
+                domainid=self.account.domainid,
+                zoneid=self.zone.id
+            )
+            self.cleanup.append(new_vm)
+            self.assertIsNotNone(new_vm, "Failed to create VM from the post-restart incremental backup")
+            self.assertEqual(new_vm.state, "Running", "Restored VM should be Running")
+
+            ssh_new = new_vm.get_ssh_client(reconnect=True)
+            r1 = "".join(ssh_new.execute("cat /root/restart_marker_1.txt"))
+            r2 = "".join(ssh_new.execute("cat /root/restart_marker_2.txt"))
+            self.assertIn("restart-test-1", r1,
+                "Marker written before the restart is missing from the restore")
+            self.assertIn("restart-test-2", r2,
+                "Marker written after the restart (captured by the post-restart incremental) "
+                "is missing from the restore")
+        finally:
+            for b in reversed(backups):
+                try:
+                    Backup.delete(self.apiclient, b.id)
+                except Exception:
+                    pass
+            self._set_full_every(original_full_every)
+            self.backup_offering.removeOffering(self.apiclient, self.vm.id)
+
+    @attr(tags=["advanced", "backup"], required_hardware="true")
+    def test_restore_from_incremental(self):
+        """
+        Take FULL + 2 INCREMENTAL backups, each with a marker file. Restore from the
+        latest incremental and verify all three markers are present (chain flatten).
+        """
+        self.backup_offering.assignOffering(self.apiclient, self.vm.id)
+        original_full_every = self._get_full_every()
+        self._set_full_every(5)
+        try:
+            ssh_client_vm = self.vm.get_ssh_client(reconnect=True)
+            ssh_client_vm.execute("touch /root/marker_full.txt")
+            Backup.create(self.apiclient, self.vm.id, "rfi_full")
+            time.sleep(3)
+
+            ssh_client_vm.execute("touch /root/marker_inc1.txt")
+            Backup.create(self.apiclient, self.vm.id, "rfi_inc1")
+            time.sleep(3)
+
+            ssh_client_vm.execute("touch /root/marker_inc2.txt")
+            Backup.create(self.apiclient, self.vm.id, "rfi_inc2")
+            time.sleep(3)
+
+            backups = Backup.list(self.apiclient, self.vm.id)
+            backups.sort(key=lambda b: b.created)
+            self.assertEqual(len(backups), 3)
+            self.assertEqual(self._backup_type(backups[0]).upper(), 'FULL')
+            self.assertEqual(self._backup_type(backups[2]).upper(), 'INCREMENTAL')
+
+            new_vm_name = "vm-from-inc-" + str(int(time.time()))
+            new_vm = Backup.createVMFromBackup(self.apiclient, self.services["small"],
+                mode=self.services["mode"], backupid=backups[2].id, vmname=new_vm_name,
+                accountname=self.account.name, domainid=self.account.domainid,
+                zoneid=self.zone.id)
+            self.cleanup.append(new_vm)
+
+            ssh_new = new_vm.get_ssh_client(reconnect=True)
+            for marker in ("marker_full.txt", "marker_inc1.txt", "marker_inc2.txt"):
+                result = ssh_new.execute("ls /root/%s" % marker)
+                self.assertIn(marker, result[0],
+                    "Restored VM should have %s (chain flattened correctly)" % marker)
+
+            for b in reversed(backups):
+                Backup.delete(self.apiclient, b.id)
+        finally:
+            self._set_full_every(original_full_every)
+            self.backup_offering.removeOffering(self.apiclient, self.vm.id)
+
+    @attr(tags=["advanced", "backup"], required_hardware="true")
+    def test_delete_middle_incremental_repairs_chain(self):
+        """
+        Delete a MIDDLE incremental from a FULL -> INC1 -> INC2 chain.
+        The chain repair should rebase INC2 onto FULL, and the final restore
+        should still produce a working VM with all expected blocks.
+        """
+        self.backup_offering.assignOffering(self.apiclient, self.vm.id)
+        original_full_every = self._get_full_every()
+        self._set_full_every(5)
+        try:
+            ssh_client_vm = self.vm.get_ssh_client(reconnect=True)
+            ssh_client_vm.execute("touch /root/dmi_full.txt")
+            Backup.create(self.apiclient, self.vm.id, "dmi_full")
+            time.sleep(3)
+            ssh_client_vm.execute("touch /root/dmi_inc1.txt")
+            Backup.create(self.apiclient, self.vm.id, "dmi_inc1")
+            time.sleep(3)
+            ssh_client_vm.execute("touch /root/dmi_inc2.txt")
+            Backup.create(self.apiclient, self.vm.id, "dmi_inc2")
+            time.sleep(3)
+
+            backups = Backup.list(self.apiclient, self.vm.id)
+            backups.sort(key=lambda b: b.created)
+            full, inc1, inc2 = backups[0], backups[1], backups[2]
+
+            # Delete the middle incremental — should succeed via chain repair (no force needed)
+            Backup.delete(self.apiclient, inc1.id)
+            remaining = Backup.list(self.apiclient, self.vm.id)
+            self.assertEqual(len(remaining), 2, "After deleting middle inc, two backups should remain")
+
+            # Restore from the remaining tail (formerly inc2) — must still produce a usable VM
+            new_vm_name = "vm-after-mid-del-" + str(int(time.time()))
+            new_vm = Backup.createVMFromBackup(self.apiclient, self.services["small"],
+                mode=self.services["mode"], backupid=inc2.id, vmname=new_vm_name,
+                accountname=self.account.name, domainid=self.account.domainid,
+                zoneid=self.zone.id)
+            self.cleanup.append(new_vm)
+            ssh_new = new_vm.get_ssh_client(reconnect=True)
+            # Both the FULL marker and (importantly) the deleted-INC1 marker should still
+            # be present, because the rebase merged INC1's blocks into INC2.
+            for marker in ("dmi_full.txt", "dmi_inc1.txt", "dmi_inc2.txt"):
+                result = ssh_new.execute("ls /root/%s" % marker)
+                self.assertIn(marker, result[0],
+                    "After mid-incremental delete and rebase, %s should still be restorable" % marker)
+
+            Backup.delete(self.apiclient, inc2.id)
+            Backup.delete(self.apiclient, full.id)
+        finally:
+            self._set_full_every(original_full_every)
+            self.backup_offering.removeOffering(self.apiclient, self.vm.id)
+
+    @attr(tags=["advanced", "backup"], required_hardware="true")
+    def test_delete_full_with_children_is_deferred(self):
+        """
+        Deleting a FULL that has surviving incrementals succeeds but is deferred: the
+        FULL is hidden from the backup list while its child survives, and it is
+        physically swept once the last descendant is deleted.
+        """
+        self.backup_offering.assignOffering(self.apiclient, self.vm.id)
+        original_full_every = self._get_full_every()
+        self._set_full_every(5)
+        try:
+            Backup.create(self.apiclient, self.vm.id, "rdc_full")
+            time.sleep(3)
+            Backup.create(self.apiclient, self.vm.id, "rdc_inc")
+            time.sleep(3)
+
+            backups = Backup.list(self.apiclient, self.vm.id)
+            backups.sort(key=lambda b: b.created)
+            full, inc = backups[0], backups[1]
+
+            # Non-forced delete of the FULL is accepted but deferred: the FULL is
+            # tombstoned (Hidden) and disappears from the list, the child survives.
+            Backup.delete(self.apiclient, full.id)
+            remaining = Backup.list(self.apiclient, self.vm.id)
+            self.assertEqual(len(remaining), 1,
+                "Deleting a FULL with children should hide the FULL and keep the child")
+            self.assertEqual(remaining[0].id, inc.id,
+                "The surviving backup should be the incremental child")
+
+            # Deleting the last descendant sweeps the delete-pending FULL with it.
+            Backup.delete(self.apiclient, inc.id)
+            remaining = Backup.list(self.apiclient, self.vm.id)
+            self.assertIsNone(remaining, "Deleting the leaf should sweep the hidden FULL, removing the chain")
+        finally:
+            self._set_full_every(original_full_every)
+            self.backup_offering.removeOffering(self.apiclient, self.vm.id)
+
+    @attr(tags=["advanced", "backup"], required_hardware="true")
+    def test_stopped_vm_falls_back_to_full(self):
+        """
+        When a backup is requested while the VM is stopped, even if the chain cadence
+        would call for an incremental, the agent must fall back to a full and start a
+        new chain. The incrementalFallback flag should be reflected in backup.type=FULL.
+        """
+        self.backup_offering.assignOffering(self.apiclient, self.vm.id)
+        original_full_every = self._get_full_every()
+        self._set_full_every(2)  # next backup after the first should be incremental
+        try:
+            Backup.create(self.apiclient, self.vm.id, "svf_first")
+            time.sleep(3)
+
+            # Stop the VM and trigger another backup — should fall back to FULL
+            self.vm.stop(self.apiclient)
+            time.sleep(5)
+            Backup.create(self.apiclient, self.vm.id, "svf_second")
+            time.sleep(3)
+
+            backups = Backup.list(self.apiclient, self.vm.id)
+            backups.sort(key=lambda b: b.created)
+            self.assertEqual(len(backups), 2)
+            self.assertEqual(self._backup_type(backups[0]).upper(), 'FULL')
+            self.assertEqual(self._backup_type(backups[1]).upper(), 'FULL',
+                "Stopped-VM backup must be a FULL even when cadence would have asked for an INCREMENTAL")
+
+            self.vm.start(self.apiclient)
+            for b in reversed(backups):
+                Backup.delete(self.apiclient, b.id)
+        finally:
+            self._set_full_every(original_full_every)
+            self.backup_offering.removeOffering(self.apiclient, self.vm.id)

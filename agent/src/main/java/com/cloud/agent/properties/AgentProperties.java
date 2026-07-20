@@ -124,6 +124,20 @@ public class AgentProperties{
     public static final Property<String> LOCAL_STORAGE_PATH = new Property<>("local.storage.path", "/var/lib/libvirt/images/");
 
     /**
+     * Enables TLS on the KVM image server transfer endpoint.<br>
+     * Data type: Boolean.<br>
+     * Default value: <code>true</code>
+     */
+    public static final Property<Boolean> IMAGE_SERVER_TLS_ENABLED = new Property<>("image.server.tls.enabled", true);
+
+    /**
+     * The IP address that the KVM image server listens on.<br>
+     * Data type: String.<br>
+     * Default value: <code>null</code>
+     */
+    public static final Property<String> IMAGE_SERVER_LISTEN_ADDRESS = new Property<>("image.server.listen.address", null, String.class);
+
+    /**
      * Directory where Qemu sockets are placed.<br>
      * These sockets are for the Qemu Guest Agent and SSVM provisioning.<br>
      * Make sure that AppArmor or SELinux allows Libvirt to write there.<br>
@@ -156,7 +170,8 @@ public class AgentProperties{
     public static final Property<Integer> CMDS_TIMEOUT = new Property<>("cmds.timeout", 7200);
 
     /**
-     * The timeout (in seconds) for the snapshot merge operation, mainly used for classic volume snapshots and disk-only VM snapshots on file-based storage.<br>
+     * The timeout (in seconds) for QCOW2 delta merge operations, mainly used for classic volume snapshots, disk-only VM snapshots on file-based storage, and the KBOSS plugin.
+     * If a value of 0 or less is informed, the default will be used.<br>
      * This configuration is only considered if libvirt.events.enabled is also true. <br>
      * Data type: Integer.<br>
      * Default value: <code>259200</code>
@@ -303,6 +318,15 @@ public class AgentProperties{
      * Default value: <code>native</code>
      */
     public static final Property<String> NETWORK_BRIDGE_TYPE = new Property<>("network.bridge.type", "native");
+
+    /**
+     * Sets the VXLAN networking mode used by the BridgeVifDriver.<br>
+     * Possible values: multicast | evpn <br>
+     * When set to <code>evpn</code>, the driver will use modifyvxlan-evpn.sh instead of modifyvxlan.sh.<br>
+     * Data type: String.<br>
+     * Default value: <code>multicast</code>
+     */
+    public static final Property<String> NETWORK_VXLAN_MODE = new Property<>("network.vxlan.mode", "multicast");
 
     /**
      * Sets the driver used to plug and unplug NICs from the bridges.<br>
@@ -593,10 +617,10 @@ public class AgentProperties{
     /**
      * This parameter specifies if the host must be rebooted when something goes wrong with the heartbeat.<br>
      * Data type: Boolean.<br>
-     * Default value: <code>true</code>
+     * Default value: <code>false</code>
      */
     public static final Property<Boolean> REBOOT_HOST_AND_ALERT_MANAGEMENT_ON_HEARTBEAT_TIMEOUT
-        = new Property<>("reboot.host.and.alert.management.on.heartbeat.timeout", true);
+        = new Property<>("reboot.host.and.alert.management.on.heartbeat.timeout", false);
 
     /**
      * Enables manually setting CPU's topology on KVM's VM. <br>
@@ -914,6 +938,33 @@ public class AgentProperties{
      * */
     public static final Property<Integer> INCREMENTAL_SNAPSHOT_RETRY_REBASE_WAIT = new Property<>("incremental.snapshot.retry.rebase.wait", 60);
 
+    /**
+     * When set to <code>true</code>, executes <code>modifymacip.sh</code> (resolved via the
+     * network scripts directory) on VM NIC plug (VM start) and unplug (VM stop) to manage static
+     * ARP/NDP entries and host routes for VM interfaces.<br>
+     * The script is invoked with:<br>
+     * &nbsp;&nbsp;add:    <code>-o add -b &lt;bridge&gt; -m &lt;mac&gt; [-4 &lt;ipv4&gt;] [-6 &lt;ipv6&gt;]</code><br>
+     * &nbsp;&nbsp;delete: <code>-o delete -b &lt;bridge&gt; -m &lt;mac&gt;</code><br>
+     * A bundled reference implementation is available at
+     * <code>scripts/vm/network/vnet/modifymacip.sh</code>.<br>
+     * Set to <code>false</code> or leave unset to disable this feature.<br>
+     * Data type: Boolean.<br>
+     * Default value: <code>false</code>
+     */
+    public static final Property<Boolean> VM_NETWORK_MACIP_STATIC = new Property<>("vm.network.macip.static", false, Boolean.class);
+
+
+    /**
+     * Maximum number of backup validation jobs that can be executed at the same time. Values lower than 0 remove the limit, meaning that as many validations as possible will be done at
+     * the same time.
+     */
+    public static final Property<Integer> BACKUP_VALIDATION_MAX_CONCURRENT_OPERATIONS_PER_HOST = new Property<>("backup.validation.max.concurrent.operations.per.host", null, Integer.class);
+
+    /**
+     * Maximum number of backup compression jobs that can be executed at the same time. Values lower than 0 remove the limit, meaning that as many compressions as possible will be
+     * done at the same time.
+     */
+    public static final Property<Integer> BACKUP_COMPRESSION_MAX_CONCURRENT_OPERATIONS_PER_HOST = new Property<>("backup.compression.max.concurrent.operations.per.host", null, Integer.class);
 
     public static class Property <T>{
         private String name;

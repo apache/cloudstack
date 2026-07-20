@@ -91,6 +91,10 @@ public interface NetworkOrchestrationService {
     ConfigKey<Integer> NetworkThrottlingRate = new ConfigKey<>("Network", Integer.class, NetworkThrottlingRateCK, "200",
             "Default data transfer rate in megabits per second allowed in network.", true, ConfigKey.Scope.Zone);
 
+    ConfigKey<Integer> DhcpLeaseTimeout = new ConfigKey<>("Network", Integer.class, "dhcp.lease.timeout", "0",
+            "DHCP lease time in seconds for VMs. Use 0 for infinite lease time (default). A non-zero value sets the lease duration in seconds.",
+            true, ConfigKey.Scope.Zone);
+
     ConfigKey<Boolean> PromiscuousMode = new ConfigKey<>("Advanced", Boolean.class, "network.promiscuous.mode", "false",
             "Whether to allow or deny promiscuous mode on NICs for applicable network elements such as for vswitch/dvswitch portgroups.", true);
 
@@ -131,12 +135,17 @@ public interface NetworkOrchestrationService {
                     true,
                     Scope.Global);
 
+    ConfigKey<Integer> VmNetworkThrottlingRate = new ConfigKey<Integer>("Network", Integer.class, "vm.network.throttling.rate", "200",
+            "Default data transfer rate in megabits per second allowed in User vm's default network.", true, ConfigKey.Scope.Zone);
+
     List<? extends Network> setupNetwork(Account owner, NetworkOffering offering, DeploymentPlan plan, String name, String displayText, boolean isDefault)
         throws ConcurrentOperationException;
 
     List<? extends Network> setupNetwork(Account owner, NetworkOffering offering, Network predefined, DeploymentPlan plan, String name, String displayText,
         boolean errorIfAlreadySetup, Long domainId, ACLType aclType, Boolean subdomainAccess, Long vpcId, Boolean isDisplayNetworkEnabled)
         throws ConcurrentOperationException;
+
+    boolean isIsolationMethodNetworkExtension(Long networkOfferingId);
 
     void allocate(VirtualMachineProfile vm, LinkedHashMap<? extends Network, List<? extends NicProfile>> networks, Map<String, Map<Integer, String>> extraDhcpOptions) throws InsufficientCapacityException,
         ConcurrentOperationException;
