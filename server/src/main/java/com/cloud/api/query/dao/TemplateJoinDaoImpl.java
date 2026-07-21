@@ -136,8 +136,8 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
     protected TemplateJoinDaoImpl() {
 
         tmpltIdPairSearch = createSearchBuilder();
-        tmpltIdPairSearch.and("templateState", tmpltIdPairSearch.entity().getTemplateState(), SearchCriteria.Op.IN);
-        tmpltIdPairSearch.and("tempZonePairIN", tmpltIdPairSearch.entity().getTempZonePair(), SearchCriteria.Op.IN);
+        tmpltIdPairSearch.and("template_dc_pair_templateid", tmpltIdPairSearch.entity().getId(), SearchCriteria.Op.EQ);
+        tmpltIdPairSearch.and("template_dc_pair_dcid", tmpltIdPairSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         tmpltIdPairSearch.done();
 
         tmpltIdPairCrossZoneSearch = createSearchBuilder();
