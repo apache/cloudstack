@@ -177,6 +177,15 @@ export default {
   methods: {
     execAction (action) {
       action.resource = this.resource
+      const record = this.resource || this.item
+      if (action?.api === 'disableOutOfBandManagementForHost' && (record?.hostha?.haenable === true || record?.hastate === 'Enabled')) {
+        this.$notification.error({
+          message: this.$t('label.error'),
+          description: 'Please disable High Availability (HA) on this host before disabling Out-of-Band Management (OOBM).',
+          duration: 0
+        })
+        return
+      }
       if (action.docHelp) {
         action.docHelp = this.$applyDocHelpMappings(action.docHelp)
       }
