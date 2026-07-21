@@ -407,7 +407,7 @@ backup_stopped_vm() {
       volUuid="${disk##*/}"
     fi
     output="$dest/$name.$volUuid.qcow2"
-    if ! qemu-img convert -O qcow2 "$disk" "$output" > "$logFile" 2> >(cat >&2); then
+    if ! qemu-img convert -O qcow2 "$disk" "$output" >> "$logFile" 2> >(cat >&2); then
       echo "qemu-img convert failed for $disk $output"
       cleanup
       exit 1
