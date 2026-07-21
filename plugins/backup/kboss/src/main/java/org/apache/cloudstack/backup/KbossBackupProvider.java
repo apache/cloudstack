@@ -1071,7 +1071,8 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         long vmId = vm.getId();
 
         BackupVO backup = new BackupVO(String.format("%s-%s", vm.getHostName(), DateUtil.getDateInSystemTimeZone()), vmId, vm.getBackupOfferingId(), accountId,
-                vm.getDomainId(), vm.getDataCenterId(), 0, Backup.Status.Queued, backupScheduleId);
+                vm.getDomainId(), vm.getDataCenterId(), 0, Backup.Status.Queued, backupScheduleId,
+                Backup.CompressionStatus.Uncompressed, Backup.ValidationStatus.NotValidated);
 
         VmWorkJobVO workJob = new VmWorkJobVO(AsyncJobExecutionContext.getOriginJobId(), userId, accountId, VmWorkTakeBackup.class.getName(), vmId, VirtualMachine.Type.Instance,
                 VmWorkJobVO.Step.Starting);

@@ -74,7 +74,9 @@
           apiName="listBackups"
           :resource="resource"
           :params="{virtualmachineid: dataResource.id}"
-          :columns="['name', 'status', 'compressionstatus', 'validationstatus', 'size', 'virtualsize', 'type', 'intervaltype', 'created']"
+          :columns="dataResource.backupprovider === 'kboss'
+            ? ['name', 'status', 'compressionstatus', 'validationstatus', 'size', 'virtualsize', 'type', 'intervaltype', 'created']
+            : ['name', 'status', 'size', 'virtualsize', 'type', 'intervaltype', 'created']"
           :routerlinks="(record) => { return { name: '/backup/' + record.id } }"
           :showSearch="false"/>
       </a-tab-pane>
