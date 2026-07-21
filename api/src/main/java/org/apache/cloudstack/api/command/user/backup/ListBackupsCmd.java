@@ -97,7 +97,7 @@ public class ListBackupsCmd extends BaseListProjectAndAccountResourcesCmd {
 
     @Parameter(name = ApiConstants.TYPE,
             type = CommandType.STRING,
-            since = "4.23.0",
+            since = "4.24.0",
             description = "list backups by type")
     private String backupType;
 
