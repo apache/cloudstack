@@ -147,7 +147,6 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.net.MacAddress;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmManager;
@@ -383,7 +382,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private ScheduledExecutorService _diskStatsUpdateExecutor;
     private int _usageAggregationRange = 1440;
     private String _usageTimeZone = "GMT";
-    private final long mgmtSrvrId = MacAddress.getMacAddress().toLong();
+    private final long mgmtSrvrId = ManagementServerNode.getManagementServerId();
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 5;    // 5 seconds
     private boolean _dailyOrHourly = false;
     protected long managementServerNodeId = ManagementServerNode.getManagementServerId();
