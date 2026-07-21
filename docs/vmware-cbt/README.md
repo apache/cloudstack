@@ -22,7 +22,7 @@ under the License.
 ## Introduction
 
 This document describes the VMware Changed Block Tracking (CBT) migration design
-and implementation for Apache CloudStack 4.23. It is written as source material
+and implementation for Apache CloudStack 4.24.0.0. It is written as source material
 for an Apache CloudStack CWIKI architecture page and should be treated as an
 implementation guide, not only as a design sketch.
 
@@ -861,10 +861,15 @@ remove CloudStack-owned `cloudstack-cbt/<migration-uuid>` working files.
 
 ## Database Changes
 
-The schema upgrade path is in:
+The feature targets the Apache CloudStack 4.24.0.0 release, so the schema changes
+are delivered through the 4.24.0.0 upgrade path:
 
-- `engine/schema/src/main/resources/META-INF/db/schema-42210to42300.sql`
-- `engine/schema/src/main/java/com/cloud/upgrade/dao/Upgrade42210to42300.java`
+- `engine/schema/src/main/resources/META-INF/db/schema-42300to42400.sql`
+- `engine/schema/src/main/java/com/cloud/upgrade/dao/Upgrade42300to42400.java`
+
+> Until `main` opens `4.24.0.0-SNAPSHOT`, the DDL rides in the current
+> in-development `schema-42210to42300.sql`; it is moved to the 4.24.0.0 upgrade
+> file before merge.
 
 ### `cloud.vmware_cbt_migration`
 
@@ -1213,12 +1218,12 @@ FROM cloud.host h
 JOIN cloud.host_details hd ON hd.host_id = h.id
 WHERE h.name = '<kvm-host-name>'
   AND hd.name IN (
-    'host.vmware.cbt.support',
-    'host.vmware.cbt.in.place.finalization.support',
-    'host.vmware.cbt.rbd.support',
+    'host.vddk.blockcopy.support',
+    'host.vddk.blockcopy.inplace.finalization.support',
+    'host.vddk.blockcopy.rbd.support',
     'host.vddk.support',
     'host.vddk.version',
-    'host.virtv2v.in.place.version',
+    'host.virtv2v.inplace.version',
     'vddk.lib.dir'
   )
 ORDER BY hd.name;
@@ -1243,12 +1248,12 @@ The agent checks these on startup/ready and sends them as host details. Manageme
 | `host.qemu.img.version` | Runs `qemu-img --version`, parses first non-empty line. |
 | `host.qemu.nbd.version` | Runs `qemu-nbd --version`, parses first non-empty line. |
 | `host.qemu.io.version` | Runs `qemu-io --version`, parses first non-empty line. |
-| `host.vmware.cbt.support` | True only if `host.vddk.support` is true and `qemu-img --version`, `qemu-nbd --version`, and `qemu-io --version` all exit `0`. |
-| `host.vmware.cbt.in.place.finalization.support` | True only if CBT support is true and either `virt-v2v-in-place --version` works, or `virt-v2v --help 2>&1 \| grep -q -- '--in-place'` succeeds. |
-| `host.virtv2v.in.place.version` | If `virt-v2v-in-place` exists, parses `virt-v2v-in-place --version`. If only `virt-v2v --in-place` exists, reports the normal `virt-v2v` version. |
-| `host.vmware.cbt.rbd.support` | True only if in-place finalization support is true and `qemu-img --help` advertises the `rbd` block driver. |
+| `host.vddk.blockcopy.support` | True only if `host.vddk.support` is true and `qemu-img --version`, `qemu-nbd --version`, and `qemu-io --version` all exit `0`. |
+| `host.vddk.blockcopy.inplace.finalization.support` | True only if CBT support is true and either `virt-v2v-in-place --version` works, or `virt-v2v --help 2>&1 \| grep -q -- '--in-place'` succeeds. |
+| `host.virtv2v.inplace.version` | If `virt-v2v-in-place` exists, parses `virt-v2v-in-place --version`. If only `virt-v2v --in-place` exists, reports the normal `virt-v2v` version. |
+| `host.vddk.blockcopy.rbd.support` | True only if in-place finalization support is true and `qemu-img --help` advertises the `rbd` block driver. |
 
-Important nuance: `host.vmware.cbt.rbd.support` is only the coarse host capability. For an actual selected RBD pool, preflight/start also runs an active probe: create a temporary `cloudstack-cbt-probe-<uuid>` RBD image, write/read 4 KiB using `qemu-io`, then delete it through CloudStack's RBD storage adapter. That catches Ceph auth, monitor, qemu RBD, librados/librbd, and Java binding problems.
+Important nuance: `host.vddk.blockcopy.rbd.support` is only the coarse host capability. For an actual selected RBD pool, preflight/start also runs an active probe: create a temporary `cloudstack-cbt-probe-<uuid>` RBD image, write/read 4 KiB using `qemu-io`, then delete it through CloudStack's RBD storage adapter. That catches Ceph auth, monitor, qemu RBD, librados/librbd, and Java binding problems.
 
 Windows source VMs also require `virtio-win` on the selected KVM conversion
 host. CBT preflight and `startVmwareCbtMigration` use the same
@@ -1510,7 +1515,7 @@ Useful host capability check:
 
 ```bash
 cmk list hosts name=<kvm-host-name> details=all | egrep \
-'host.vmware.cbt.support|host.vmware.cbt.in.place.finalization.support|host.vmware.cbt.rbd.support|host.vddk.support|host.vddk.version|host.virtv2v.version|host.virtv2v.in.place.version|host.qemu.img.version|host.qemu.nbd.version|host.qemu.io.version|vddk.lib.dir'
+'host.vddk.blockcopy.support|host.vddk.blockcopy.inplace.finalization.support|host.vddk.blockcopy.rbd.support|host.vddk.support|host.vddk.version|host.virtv2v.version|host.virtv2v.inplace.version|host.qemu.img.version|host.qemu.nbd.version|host.qemu.io.version|vddk.lib.dir'
 ```
 
 Useful VDDK plugin check on the KVM host:
@@ -1532,7 +1537,7 @@ Useful target disk inspection:
 qemu-img info /mnt/<pool-uuid>/cloudstack-cbt/<migration-uuid>/<disk>.qcow2
 ```
 
-Manual SQL for labs that do not run the 4.22.1-to-4.23 upgrade path:
+Manual SQL for labs that do not run the 4.24.0.0 upgrade path:
 
 ```sql
 INSERT INTO `cloud`.`configuration`
@@ -1800,7 +1805,7 @@ Planned behavior:
 
 ## References
 
-- Apache CloudStack 4.23 Design Documents CWIKI page.
+- Apache CloudStack 4.24.0.0 Design Documents CWIKI page.
 - Multiple CD-ROM / ISO Support Per VM design page.
 - CloudStack Veeam KVM Integration design page.
 - DNS Framework and Plugins design page.
