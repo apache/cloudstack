@@ -635,7 +635,7 @@ export default {
       },
       {
         name: 'local',
-        label: 'Import QCOW2 image from Local Storage',
+        label: 'Import Instance using existing ROOT disk from Local Storage',
         anyApis: ['importVm'],
         sourceDestHypervisors: {
           kvm: 'kvm'
@@ -645,7 +645,7 @@ export default {
       },
       {
         name: 'shared',
-        label: 'Import QCOW2 image from Shared Storage',
+        label: 'Import Instance using existing ROOT disk from Shared Storage',
         anyApis: ['importVm'],
         sourceDestHypervisors: {
           kvm: 'kvm'
