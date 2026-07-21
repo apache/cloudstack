@@ -225,9 +225,13 @@ public class LibvirtVmwareCbtPrepareCommandWrapper extends CommandWrapper<Vmware
             qemuTargetPath = targetPath;
         }
 
-        String command = buildNbdkitQemuImgCommand(cmd, disk, passwordFilePath, vddkLibDir, vddkThumbprint,
+        // For a local raw block-device target (preCreatedTarget), use nbdcopy for the full copy
+        // when it is available - it is typically faster than a single-connection qemu-img convert.
+        // The RBD URI and qcow2 file targets keep qemu-img convert.
+        boolean useNbdcopy = preCreatedTarget && serverResource.hostSupportsNbdcopy();
+        String command = buildNbdkitFullCopyCommand(cmd, disk, passwordFilePath, vddkLibDir, vddkThumbprint,
                 StringUtils.defaultIfBlank(cmd.getVddkTransports(), serverResource.getVddkTransports()),
-                qemuTargetPath, targetFormat, preCreatedTarget);
+                qemuTargetPath, targetFormat, preCreatedTarget, useNbdcopy);
         VmwareCbtCommandResult commandResult = executeLoggedBash(command, getTimeout(cmd),
                 String.format("(%s) VMware CBT initial full sync disk %s", cmd.getMigrationUuid(), disk.getDiskId()));
         long durationSeconds = Math.max(1L, (System.currentTimeMillis() - startTime) / 1000L);
@@ -322,10 +326,10 @@ public class LibvirtVmwareCbtPrepareCommandWrapper extends CommandWrapper<Vmware
         }
     }
 
-    private String buildNbdkitQemuImgCommand(VmwareCbtPrepareCommand cmd, VmwareCbtDiskTO disk,
-                                             String passwordFilePath, String vddkLibDir, String vddkThumbprint,
-                                             String vddkTransports, String targetPath, String targetFormat,
-                                             boolean preCreatedTarget) {
+    private String buildNbdkitFullCopyCommand(VmwareCbtPrepareCommand cmd, VmwareCbtDiskTO disk,
+                                              String passwordFilePath, String vddkLibDir, String vddkThumbprint,
+                                              String vddkTransports, String targetPath, String targetFormat,
+                                              boolean preCreatedTarget, boolean useNbdcopy) {
         RemoteInstanceTO sourceInstance = cmd.getSourceInstance();
         String sourceVmMoref = getMorefValue(sourceInstance.getVmwareMoref());
         String snapshotMoref = getMorefValue(cmd.getBaselineSnapshotMor());
@@ -342,9 +346,11 @@ public class LibvirtVmwareCbtPrepareCommandWrapper extends CommandWrapper<Vmware
             appendPluginParameter(nbdkit, "transports", vddkTransports);
         }
 
-        String qemuImg = String.format("qemu-img convert %s-f raw -O %s \"$uri\" %s",
-                preCreatedTarget ? "-n " : "", shellQuote(targetFormat), shellQuote(targetPath));
-        return nbdkit.append("--run ").append(shellQuote(qemuImg)).toString();
+        String runCommand = useNbdcopy
+                ? String.format("nbdcopy \"$uri\" %s", shellQuote(targetPath))
+                : String.format("qemu-img convert %s-f raw -O %s \"$uri\" %s",
+                        preCreatedTarget ? "-n " : "", shellQuote(targetFormat), shellQuote(targetPath));
+        return nbdkit.append("--run ").append(shellQuote(runCommand)).toString();
     }
 
     private void appendPluginParameter(StringBuilder command, String key, String value) {

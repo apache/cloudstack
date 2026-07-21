@@ -394,6 +394,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public static final String QEMU_NBD_SUPPORTED_CHECK_CMD = "qemu-nbd --version";
     public static final String QEMU_IO_SUPPORTED_CHECK_CMD = "qemu-io --version";
     public static final String QEMU_IMG_RBD_SUPPORTED_CHECK_CMD = "qemu-img --help 2>&1 | grep -Eq '(^|[[:space:]])rbd([[:space:]]|$)'";
+    public static final String NBDCOPY_SUPPORTED_CHECK_CMD = "nbdcopy --version";
 
     public static final int LIBVIRT_CGROUP_CPU_SHARES_MIN = 2;
     public static final int LIBVIRT_CGROUP_CPU_SHARES_MAX = 262144;
@@ -6319,6 +6320,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public boolean hostSupportsVirtV2vInPlace() {
         return hostSupportsVirtV2vInPlaceBinary() || hostSupportsVirtV2vInPlaceOption();
+    }
+
+    /**
+     * nbdcopy (from libnbd) is an optional accelerator for full-disk copies from an
+     * nbdkit/VDDK source into a local raw block device: it uses multiple in-flight
+     * requests and connections, so it is typically faster than a single-connection
+     * qemu-img convert. It is a pure optimization - callers fall back to
+     * qemu-img convert when it is absent.
+     */
+    public boolean hostSupportsNbdcopy() {
+        return Script.runSimpleBashScriptForExitValue(NBDCOPY_SUPPORTED_CHECK_CMD) == 0;
     }
 
     public boolean hostSupportsVirtV2vInPlaceBinary() {

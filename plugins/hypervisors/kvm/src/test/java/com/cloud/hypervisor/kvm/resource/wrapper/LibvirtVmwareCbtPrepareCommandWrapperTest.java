@@ -127,6 +127,32 @@ public class LibvirtVmwareCbtPrepareCommandWrapperTest {
                 Mockito.eq(8192L), Mockito.isNull());
     }
 
+    @Test
+    public void testExecuteUsesNbdcopyForBlockDeviceWhenAvailable() {
+        Mockito.when(libvirtComputingResource.hostSupportsNbdcopy()).thenReturn(true);
+        KVMStoragePool linstorStoragePool = Mockito.mock(KVMStoragePool.class);
+        com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk targetDisk = Mockito.mock(com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk.class);
+        Mockito.when(storagePoolManager.getStoragePool(Storage.StoragePoolType.Linstor, "linstor-pool-uuid")).thenReturn(linstorStoragePool);
+        Mockito.when(linstorStoragePool.getType()).thenReturn(Storage.StoragePoolType.Linstor);
+        Mockito.when(targetDisk.getPath()).thenReturn("/dev/drbd/by-res/cs-cbt-abc12345-2000/0");
+        Mockito.when(linstorStoragePool.createPhysicalDisk(Mockito.eq("cbt-abc12345-2000"), Mockito.any(), Mockito.any(),
+                Mockito.eq(8192L), Mockito.isNull())).thenReturn(targetDisk);
+
+        VmwareCbtDiskTO disk = new VmwareCbtDiskTO("disk-1", 2000, "[datastore1] vm/disk-1.vmdk",
+                "datastore1", "cbt-abc12345-2000", "raw", "*", null, 8192);
+        VmwareCbtPrepareCommand command = new VmwareCbtPrepareCommand(MIGRATION_UUID, createRemoteInstance(), List.of(disk),
+                Storage.StoragePoolType.Linstor, "linstor-pool-uuid", VmwareCbtTargetStorageType.RAW_BLOCK_DEVICE,
+                "VirtualMachineSnapshot:snapshot-1");
+        command.setVddkLibDir("/opt/vmware-vddk");
+        command.setVddkThumbprint("AA:BB:CC");
+
+        Answer answer = wrapper.execute(command, libvirtComputingResource);
+
+        Assert.assertTrue(answer.getDetails(), answer.getResult());
+        Assert.assertTrue(wrapper.lastCommand, wrapper.lastCommand.matches("(?s).*nbdcopy \\\"\\$uri\\\" .*/dev/drbd/by-res/cs-cbt-abc12345-2000/0.*"));
+        Assert.assertFalse(wrapper.lastCommand, wrapper.lastCommand.contains("qemu-img convert"));
+    }
+
     private VmwareCbtPrepareCommand createCommand() {
         VmwareCbtDiskTO disk = new VmwareCbtDiskTO("disk-1", 2000, "[datastore1] vm/disk-1.vmdk",
                 "datastore1", null, "qcow2", "*", null, 8192);

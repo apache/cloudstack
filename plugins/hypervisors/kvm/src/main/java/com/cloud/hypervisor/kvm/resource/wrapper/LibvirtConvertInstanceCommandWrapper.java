@@ -494,7 +494,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
                     String diskName = buildLinstorDiskName(temporaryConvertUuid, i);
                     createdImages.add(diskName);
                     String devicePath = copyVddkSourceDiskToLinstor(vmwareInstance, sourceDisk, targetPool, diskName, passwordFilePath,
-                            vddkLibDir, vddkTransports, vddkThumbprint, timeout, originalVMName);
+                            vddkLibDir, vddkTransports, vddkThumbprint, timeout, originalVMName, serverResource.hostSupportsNbdcopy());
                     blockDevicePaths.add(devicePath);
                 } else {
                     String imageName = buildRbdImageName(temporaryConvertUuid, i);
@@ -572,7 +572,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
     private String copyVddkSourceDiskToLinstor(RemoteInstanceTO vmwareInstance, VmwareVddkSourceDiskTO sourceDisk,
                                                KVMStoragePool targetPool, String diskName, String passwordFilePath,
                                                String vddkLibDir, String vddkTransports, String vddkThumbprint,
-                                               long timeout, String originalVMName) {
+                                               long timeout, String originalVMName, boolean useNbdcopy) {
         if (StringUtils.isBlank(sourceDisk.getSourceDiskPath())) {
             throw new CloudRuntimeException(String.format("VMware source disk %s does not have a VMDK path", sourceDisk.getDiskId()));
         }
@@ -602,13 +602,20 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         if (StringUtils.isNotBlank(vddkTransports)) {
             command.append("transports=").append(shellQuote(vddkTransports)).append(" ");
         }
-        String runCommand = "qemu-img convert -n -f raw -O raw \"$uri\" " + shellQuote(devicePath);
+        // Full-disk copy into the local raw device: prefer nbdcopy (libnbd) when present -
+        // it pipelines many in-flight requests and is typically faster than a single-connection
+        // qemu-img convert - and fall back to qemu-img convert otherwise. Both skip source holes,
+        // which is correct because the freshly spawned thin device reads back as zeros.
+        String runCommand = useNbdcopy
+                ? "nbdcopy \"$uri\" " + shellQuote(devicePath)
+                : "qemu-img convert -n -f raw -O raw \"$uri\" " + shellQuote(devicePath);
         command.append("--run ").append(shellQuote(runCommand));
 
         Script script = new Script("/bin/bash", timeout, logger);
         script.add("-c");
         script.add(command.toString());
-        String logPrefix = String.format("(%s) vddk to linstor disk %s", originalVMName, sourceDisk.getDiskId());
+        String logPrefix = String.format("(%s) %s to linstor disk %s", originalVMName,
+                useNbdcopy ? "vddk(nbdcopy)" : "vddk", sourceDisk.getDiskId());
         OutputInterpreter.LineByLineOutputLogger outputLogger = new OutputInterpreter.LineByLineOutputLogger(logger, logPrefix);
         logger.info("({}) Copying VMware disk {} to Linstor device {}", originalVMName, sourceDisk.getSourceDiskPath(), devicePath);
         script.execute(outputLogger);
