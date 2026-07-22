@@ -91,6 +91,7 @@ import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.storage.volume.VolumeOnStorageTO;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.cryptsetup.CryptSetup;
+import org.apache.cloudstack.utils.rbd.RbdEncryption;
 import org.apache.cloudstack.utils.hypervisor.HypervisorUtils;
 import org.apache.cloudstack.utils.linux.CPUStat;
 import org.apache.cloudstack.utils.linux.KVMHostInfo;
@@ -3882,7 +3883,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 if (volumeObjectTO.requiresEncryption() &&
                         pool.getType().encryptionSupportMode() == Storage.EncryptionSupport.Hypervisor ) {
                     String secretUuid = createLibvirtVolumeSecret(conn, volumeObjectTO.getPath(), volumeObjectTO.getPassphrase());
-                    DiskDef.LibvirtDiskEncryptDetails encryptDetails = new DiskDef.LibvirtDiskEncryptDetails(secretUuid, QemuObject.EncryptFormat.enumValue(volumeObjectTO.getEncryptFormat()));
+                    // RBD volumes are encrypted natively by librbd, so request the librbd encryption engine.
+                    String encryptEngine = (pool.getType() == StoragePoolType.RBD) ? "librbd" : null;
+                    DiskDef.LibvirtDiskEncryptDetails encryptDetails = new DiskDef.LibvirtDiskEncryptDetails(secretUuid, QemuObject.EncryptFormat.enumValue(volumeObjectTO.getEncryptFormat()), encryptEngine);
                     disk.setLibvirtDiskEncryptDetails(encryptDetails);
                 }
             }
@@ -6195,10 +6198,28 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     /**
-     * Test host for volume encryption support
+     * Test host for volume encryption support. A host is considered encryption-capable if it
+     * supports EITHER mechanism CloudStack can use:
+     *  - qemu-native LUKS (qemu-img LUKS + cryptsetup) for file/block backed pools, or
+     *  - librbd native encryption (rbd encryption format) for RBD/Ceph pools.
+     * NOTE: HOST_VOLUME_ENCRYPTION is a single host-wide flag and is not per-pool, so a host that
+     * advertises encryption via only one mechanism could still be selected for a volume that needs
+     * the other. In practice hosts that do encryption have the qemu-native stack; the librbd branch
+     * additionally covers Ceph-only hosts.
      * @return boolean
      */
     public boolean hostSupportsVolumeEncryption() {
+        boolean supported = hostSupportsQemuNativeVolumeEncryption() || hostSupportsRbdVolumeEncryption();
+        if (!supported) {
+            LOGGER.info("Host does not support volume encryption (no qemu-native LUKS + cryptsetup, and no librbd rbd encryption)");
+        }
+        return supported;
+    }
+
+    /**
+     * Test host for qemu-native LUKS volume encryption (qemu-img LUKS support + cryptsetup).
+     */
+    public boolean hostSupportsQemuNativeVolumeEncryption() {
         // test qemu-img
         try {
             QemuImg qemu = new QemuImg(0);
@@ -6218,6 +6239,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         return true;
+    }
+
+    /**
+     * Test host for librbd native LUKS encryption support (rbd CLI with the encryption subcommand).
+     */
+    public boolean hostSupportsRbdVolumeEncryption() {
+        return new RbdEncryption().isSupported();
     }
 
     public boolean isSecureMode(String bootMode) {

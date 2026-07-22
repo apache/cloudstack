@@ -183,6 +183,12 @@ public class KVMStorageProcessor implements StorageProcessor {
     private static final String CEPH_AUTH_KEY = "key";
     private static final String CEPH_CLIENT_MOUNT_TIMEOUT = "client_mount_timeout";
     private static final String CEPH_DEFAULT_MOUNT_TIMEOUT = "30";
+
+    // libvirt < 10.1.0 has an object apply-order bug (fixed in 10.1.0) that breaks hot-plug of an encrypted
+    // blockdev: on attach the disk is opened before its LUKS secret object is defined, so the attach fails with
+    // "No secret with id '...-format-encryption-secret0'". Booting a VM from an encrypted disk is unaffected (the
+    // QEMU command line resolves all -object before -blockdev). See qemuBlockStorageSourceAttachApply() in libvirt.
+    private static final long MIN_LIBVIRT_VERSION_FOR_RBD_ENCRYPTED_HOTPLUG = 10001000L; // libvirt 10.1.0
     /**
      * Time interval before rechecking virsh commands
      */
@@ -1796,6 +1802,20 @@ public class KVMStorageProcessor implements StorageProcessor {
         return DiskDef.DiskBus.VIRTIO;
     }
 
+    /**
+     * libvirt &lt; 10.1.0 cannot hot-plug an encrypted rbd blockdev (the LUKS secret is applied after the disk is
+     * opened), so refuse the attach with a clear message rather than letting libvirt fail with an opaque
+     * "No secret with id ..." error. Only the RBD hot-plug path is affected; booting a VM from an encrypted RBD
+     * disk works on older libvirt, so this does not gate the boot/root path.
+     */
+    protected void ensureLibvirtSupportsEncryptedRbdHotplug(StoragePoolType poolType) {
+        if (poolType == StoragePoolType.RBD
+                && resource.getHypervisorLibvirtVersion() < MIN_LIBVIRT_VERSION_FOR_RBD_ENCRYPTED_HOTPLUG) {
+            throw new CloudRuntimeException("Libvirt version 10.1.0 required to attach an encrypted RBD volume to a running VM, but version "
+                    + resource.getHypervisorLibvirtVersion() + " detected. Booting a VM from an encrypted RBD disk is not affected.");
+        }
+    }
+
     @Override
     public Answer attachVolume(final AttachCommand cmd) {
         final DiskTO disk = cmd.getDisk();
@@ -1808,8 +1828,13 @@ public class KVMStorageProcessor implements StorageProcessor {
             final Connect conn = LibvirtConnection.getConnectionByVmName(vmName);
             DiskDef.LibvirtDiskEncryptDetails encryptDetails = null;
             if (vol.requiresEncryption()) {
+                // Encrypted RBD is decrypted by librbd inside qemu; hot-plugging it needs a libvirt new enough to
+                // emit the LUKS secret before the rbd blockdev. Booting from an encrypted RBD disk is unaffected.
+                ensureLibvirtSupportsEncryptedRbdHotplug(primaryStore.getPoolType());
                 String secretUuid = resource.createLibvirtVolumeSecret(conn, vol.getPath(), vol.getPassphrase());
-                encryptDetails = new DiskDef.LibvirtDiskEncryptDetails(secretUuid, QemuObject.EncryptFormat.enumValue(vol.getEncryptFormat()));
+                // RBD volumes are encrypted natively by librbd, so request the librbd encryption engine.
+                String encryptEngine = (primaryStore.getPoolType() == StoragePoolType.RBD) ? "librbd" : null;
+                encryptDetails = new DiskDef.LibvirtDiskEncryptDetails(secretUuid, QemuObject.EncryptFormat.enumValue(vol.getEncryptFormat()), encryptEngine);
                 vol.clearPassphrase();
             }
 
