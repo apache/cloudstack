@@ -1111,6 +1111,11 @@ class TestVolumeEncryption(cloudstackTestCase):
             cls.unsupportedHypervisor = True
             return
 
+        list_volume_pool_response = list_storage_pools(cls.apiclient)
+        volume_pool = list_volume_pool_response[0]
+        if volume_pool.type == "RBD":
+            cls.skipTest(cls, reason="Volume encryption is unsupported for volumes on RBD storage pool")
+
         # Get Zone and Domain
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
