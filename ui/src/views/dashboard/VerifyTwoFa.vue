@@ -33,9 +33,11 @@
       @finish="handleSubmit"
       layout="vertical">
       <a-form-item name="code" ref="code" style="text-align: center;">
-        <a-input-password
+        <a-input
           style="width: 500px"
           v-model:value="form.code"
+          autocomplete="one-time-code"
+          inputmode="numeric"
           placeholder="xxxxxx" />
       </a-form-item>
       <br/>
@@ -83,7 +85,7 @@ export default {
       })
     },
     focusInput () {
-      const inputElement = this.$refs.code.$el.querySelector('input[type=password]')
+      const inputElement = this.$refs.code.$el.querySelector('input')
       if (inputElement) {
         inputElement.focus()
       }
