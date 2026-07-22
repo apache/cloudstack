@@ -21,6 +21,14 @@ package com.cloud.serializer;
 
 import java.util.List;
 
+import com.cloud.agent.api.MigrateCommand;
+import com.cloud.agent.api.to.DiskTO;
+import com.cloud.agent.api.to.NetworkTO;
+import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.agent.transport.compat.DiskTOAdaptor;
+import com.cloud.agent.transport.compat.MigrateCommandAdaptor;
+import com.cloud.agent.transport.compat.NetworkTOAdaptor;
+import com.cloud.agent.transport.compat.VirtualMachineTOAdaptor;
 import com.cloud.hypervisor.Hypervisor;
 import org.apache.cloudstack.transport.HypervisorTypeAdaptor;
 import org.apache.logging.log4j.Logger;
@@ -78,6 +86,11 @@ public class GsonHelper {
         }.getType(), new NwGroupsCommandTypeAdaptor());
         builder.registerTypeAdapter(Storage.StoragePoolType.class, new StoragePoolTypeAdaptor());
         builder.registerTypeAdapter(Hypervisor.HypervisorType.class, new HypervisorTypeAdaptor());
+        // added for compatibility purposes, remove after all Agents migrate to the new version
+        builder.registerTypeAdapter(VirtualMachineTO.class, new VirtualMachineTOAdaptor());
+        builder.registerTypeAdapter(DiskTO.class, new DiskTOAdaptor());
+        builder.registerTypeAdapter(NetworkTO.class, new NetworkTOAdaptor());
+        builder.registerTypeAdapter(MigrateCommand.class, new MigrateCommandAdaptor());
         Gson gson = builder.create();
         dsAdaptor.initGson(gson);
         dtAdaptor.initGson(gson);
