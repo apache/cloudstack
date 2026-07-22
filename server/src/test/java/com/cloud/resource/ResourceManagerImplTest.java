@@ -210,8 +210,10 @@ public class ResourceManagerImplTest {
         actionEventUtilsMocked = Mockito.mockStatic(ActionEventUtils.class);
         BDDMockito.given(ActionEventUtils.onCompletedActionEvent(anyLong(), anyLong(), anyString(), anyString(), anyString(), anyLong(), anyString(), anyLong()))
                 .willReturn(1L);
+        when(getVncPortAnswerVm1.getResult()).thenReturn(true);
         when(getVncPortAnswerVm1.getAddress()).thenReturn(vm1VncAddress);
         when(getVncPortAnswerVm1.getPort()).thenReturn(vm1VncPort);
+        when(getVncPortAnswerVm2.getResult()).thenReturn(true);
         when(getVncPortAnswerVm2.getAddress()).thenReturn(vm2VncAddress);
         when(getVncPortAnswerVm2.getPort()).thenReturn(vm2VncPort);
         getVncPortCommandMockedConstruction = Mockito.mockConstruction(GetVncPortCommand.class, (mock,context) -> {
