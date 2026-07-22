@@ -63,6 +63,12 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
         upgradeScriptFile = retrieveScriptFile(upgradeScriptFilename);
     }
 
+    @Override
+    protected void cleanupScriptFiles() {
+        super.cleanupScriptFiles();
+        deleteScriptFileQuietly(upgradeScriptFile);
+    }
+
     private Pair<Boolean, String> runInstallScriptOnVM(final UserVm vm, final int index) throws Exception {
         int nodeSshPort = sshPort == 22 ? sshPort : sshPort + index;
         String nodeAddress = (index > 0 && sshPort == 22) ? vm.getPrivateIpAddress() : publicIpAddress;
@@ -176,7 +182,11 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
         retrieveScriptFiles();
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.UpgradeRequested);
         attachIsoKubernetesVMs(clusterVMs, upgradeVersion);
-        upgradeKubernetesClusterNodes();
+        try {
+            upgradeKubernetesClusterNodes();
+        } finally {
+            cleanupScriptFiles();
+        }
         detachIsoKubernetesVMs(clusterVMs);
         KubernetesClusterVO kubernetesClusterVO = kubernetesClusterDao.findById(kubernetesCluster.getId());
         kubernetesClusterVO.setKubernetesVersionId(upgradeVersion.getId());
