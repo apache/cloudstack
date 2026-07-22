@@ -123,8 +123,7 @@ class Services:
                                   "displaytext": "Test Network",
                                   "netmask": '255.255.255.0',
                                   "limit": 5,
-                                  # Max networks allowed as per hypervisor
-                                  # Xenserver -> 5, VMWare -> 9
+                                  # Max networks allowed per VPC
                                 },
                          "natrule": {
                                     "privateport": 22,
@@ -1344,8 +1343,8 @@ class TestVMDeployVPC(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"], required_hardware="false")
-    def test_05_create_network_max_limit(self):
-        """ Test create networks in VPC upto maximum limit for hypervisor
+    def test_05_create_network_max_limit_vpc(self):
+        """ Test create networks in VPC up to maximum limit for VPC.
         """
 
         # Validate the following
