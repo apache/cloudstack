@@ -36,6 +36,8 @@
         <a-input
           style="width: 500px"
           v-model:value="form.code"
+          autocomplete="one-time-code"
+          inputmode="numeric"
           placeholder="xxxxxx" />
       </a-form-item>
       <br/>
