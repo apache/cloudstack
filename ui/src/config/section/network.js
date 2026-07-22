@@ -71,7 +71,7 @@ export default {
       }, {
         name: 'bgp.peers',
         component: shallowRef(defineAsyncComponent(() => import('@/views/infra/zone/BgpPeersTab.vue'))),
-        show: (record, route, user) => { return !record.vpcid && ['Admin'].includes(user.roletype) && record.ip4routing === 'Dynamic' }
+        show: (record, route, user) => { return !record.vpcid && ['Admin'].includes(user.roletype) && (record.ip4routing === 'Dynamic' || record.ip6routing === 'Dynamic') }
       }, {
         name: 'routing.firewall',
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/RoutingFirewallRulesTab.vue'))),
