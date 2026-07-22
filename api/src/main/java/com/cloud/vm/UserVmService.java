@@ -40,6 +40,7 @@ import org.apache.cloudstack.api.command.user.vm.UpdateVmNicIpCmd;
 import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.deploy.DeploymentPlanner;
@@ -64,6 +65,11 @@ import com.cloud.utils.exception.ExecutionException;
 
 public interface UserVmService {
 
+    ConfigKey<Boolean> AllowExposingVmAssignFailureDetails = new ConfigKey<>("Advanced", Boolean.class,
+            "vm.assign.failure.detailed.message.enabled", "true",
+            "If true, the reason a VM ownership change (assignVirtualMachine) fails, e.g. remaining port forwarding rules or volume snapshots, is returned to the API caller. " +
+            "If false, only a generic error message referencing the Instance ID is returned, and the detailed reason is only available in the management server logs.",
+            true, ConfigKey.Scope.Global);
 
     /**
      * Destroys one virtual machine
