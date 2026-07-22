@@ -2653,11 +2653,15 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         response.setProtectedSize(backup.getProtectedSize());
         response.setStatus(backup.getStatus());
         response.setIntervalType("MANUAL");
-        response.setCompressionStatus(backup.getCompressionStatus());
-        if (backup.getUncompressedSize() != null && backup.getUncompressedSize() > 0) {
-            response.setUncompressedSize(backup.getUncompressedSize());
+        if (backup.getCompressionStatus() != null) {
+            response.setCompressionStatus(backup.getCompressionStatus());
+            if (backup.getUncompressedSize() != null && backup.getUncompressedSize() > 0) {
+                response.setUncompressedSize(backup.getUncompressedSize());
+            }
         }
-        response.setValidationStatus(backup.getValidationStatus());
+        if (backup.getValidationStatus() != null) {
+            response.setValidationStatus(backup.getValidationStatus());
+        }
         if (backup.getBackupScheduleId() != null) {
             BackupScheduleVO scheduleVO = backupScheduleDao.findById(backup.getBackupScheduleId());
             if (scheduleVO != null) {
