@@ -128,9 +128,13 @@ public class SSHCmdHelper {
     }
 
     public static boolean sshExecuteCmd(com.trilead.ssh2.Connection sshConnection, String cmd, int nTimes) {
+        return sshExecuteCmd(sshConnection, cmd, null, nTimes);
+    }
+
+    public static boolean sshExecuteCmd(com.trilead.ssh2.Connection sshConnection, String cmd, String maskedCmd, int nTimes) {
         for (int i = 0; i < nTimes; i++) {
             try {
-                final SSHCmdResult result = sshExecuteCmdOneShot(sshConnection, cmd);
+                final SSHCmdResult result = sshExecuteCmdOneShot(sshConnection, cmd, maskedCmd);
                 if (result.isSuccess()) {
                     return true;
                 }
@@ -142,9 +146,13 @@ public class SSHCmdHelper {
     }
 
     public static SSHCmdResult sshExecuteCmdWithResult(com.trilead.ssh2.Connection sshConnection, String cmd, int nTimes) {
+        return sshExecuteCmdWithResult(sshConnection, cmd, null, nTimes);
+    }
+
+    public static SSHCmdResult sshExecuteCmdWithResult(com.trilead.ssh2.Connection sshConnection, String cmd, String maskedCmd, int nTimes) {
         for (int i = 0; i < nTimes; i++) {
             try {
-                final SSHCmdResult result = sshExecuteCmdOneShot(sshConnection, cmd);
+                final SSHCmdResult result = sshExecuteCmdOneShot(sshConnection, cmd, maskedCmd);
                 if (result.isSuccess()) {
                     return result;
                 }
@@ -159,12 +167,32 @@ public class SSHCmdHelper {
         return sshExecuteCmd(sshConnection, cmd, 3);
     }
 
+    /**
+     * Same as {@link #sshExecuteCmd(com.trilead.ssh2.Connection, String)}, but takes a
+     * separate, already-redacted version of {@code cmd} to use for logging. Callers that build
+     * commands containing secrets (passwords, user-data, keys, etc.) must supply a
+     * {@code maskedCmd} with those values replaced, since generic log sanitization cannot
+     * reliably detect arbitrary positional/free-form secrets.
+     */
+    public static boolean sshExecuteCmd(com.trilead.ssh2.Connection sshConnection, String cmd, String maskedCmd) {
+        return sshExecuteCmd(sshConnection, cmd, maskedCmd, 3);
+    }
+
     public static SSHCmdResult sshExecuteCmdWithResult(com.trilead.ssh2.Connection sshConnection, String cmd) {
         return sshExecuteCmdWithResult(sshConnection, cmd, 3);
     }
 
+    public static SSHCmdResult sshExecuteCmdWithResult(com.trilead.ssh2.Connection sshConnection, String cmd, String maskedCmd) {
+        return sshExecuteCmdWithResult(sshConnection, cmd, maskedCmd, 3);
+    }
+
     public static SSHCmdResult sshExecuteCmdOneShot(com.trilead.ssh2.Connection sshConnection, String cmd) throws SshException {
-        LOGGER.debug("Executing cmd: " + cmd.split(KeyStoreUtils.KS_FILENAME)[0]);
+        return sshExecuteCmdOneShot(sshConnection, cmd, null);
+    }
+
+    public static SSHCmdResult sshExecuteCmdOneShot(com.trilead.ssh2.Connection sshConnection, String cmd, String maskedCmd) throws SshException {
+        String cmdForLogging = getCmdForLogging(cmd, maskedCmd);
+        LOGGER.debug("Executing cmd: " + cmdForLogging);
         Session sshSession = null;
         try {
             sshSession = sshConnection.openSession();
@@ -227,7 +255,7 @@ public class SSHCmdHelper {
 
             final SSHCmdResult result = new SSHCmdResult(-1, sbStdoutResult.toString(), sbStdErrResult.toString());
             if (!StringUtils.isAllEmpty(result.getStdOut(), result.getStdErr())) {
-                LOGGER.debug("SSH command: " + cmd.split(KeyStoreUtils.KS_FILENAME)[0] + "\nSSH command output:" + result.getStdOut().split("-----BEGIN")[0] + "\n" + result.getStdErr());
+                LOGGER.debug("SSH command: " + cmdForLogging + "\nSSH command output:" + result.getStdOut().split("-----BEGIN")[0] + "\n" + result.getStdErr());
             }
 
             // exit status delivery might get delayed
@@ -247,5 +275,19 @@ public class SSHCmdHelper {
             if (sshSession != null)
                 sshSession.close();
         }
+    }
+
+    /**
+     * Returns the version of {@code cmd} that should be logged. When the caller provides an
+     * already-redacted {@code maskedCmd}, that is used as-is. Otherwise, falls back to the
+     * legacy heuristic of stripping everything from the first occurrence of the keystore
+     * filename onwards, which only hides secrets that happen to follow it (e.g. keystore
+     * setup commands built by {@code LibvirtServerDiscoverer}).
+     */
+    protected static String getCmdForLogging(String cmd, String maskedCmd) {
+        if (maskedCmd != null) {
+            return maskedCmd;
+        }
+        return cmd.split(KeyStoreUtils.KS_FILENAME)[0];
     }
 }
