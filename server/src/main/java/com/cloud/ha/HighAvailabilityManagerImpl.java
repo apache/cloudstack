@@ -112,8 +112,8 @@ import com.cloud.vm.dao.VMInstanceDao;
  * the VM.
  *
  * @config {@table || Param Name | Description | Values | Default || || workers | number of worker threads to spin off to do the
- *         processing | int | 1 || || time.to.sleep | Time to sleep if no work items are found | seconds | 60 || || max.retries
- *         | number of times to retry start | int | 5 || || time.between.failure | Time elapsed between failures before we
+ *         processing | int | 1 || || time.to.sleep | Time to sleep if no work items are found | seconds | 60 || || vm.ha.migration.max.retries
+ *         | number of times to retry start and other HA work items | int | 5 || || time.between.failure | Time elapsed between failures before we
  *         consider it as another retry | seconds | 3600 || || time.between.cleanup | Time to wait before the cleanup thread
  *         runs | seconds | 86400 || || force.ha | Force HA to happen even if the VM says no | boolean | false || ||
  *         ha.retry.wait | time to wait before retrying the work item | seconds | 120 || || stop.retry.wait | time to wait
