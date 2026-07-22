@@ -1348,6 +1348,8 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
          */
 
         KVMStoragePool srcPool = template.getPool();
+        Map<String, String> destDetails = destPool.getDetails();
+        String dataPool = (destDetails == null) ? null : destDetails.get(KVMPhysicalDisk.RBD_DEFAULT_DATA_POOL);
         KVMPhysicalDisk disk = null;
         String newUuid = name;
 
@@ -1396,6 +1398,10 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     r.confSet("mon_host", srcPool.getSourceHost() + ":" + srcPool.getSourcePort());
                     r.confSet("key", srcPool.getAuthSecret());
                     r.confSet("client_mount_timeout", "30");
+                    if (dataPool != null) {
+                        logger.debug("Setting RBD data pool to " + dataPool + " for the new image " + disk.getName());
+                        r.confSet(KVMPhysicalDisk.RBD_DEFAULT_DATA_POOL, dataPool);
+                    }
                     r.connect();
                     logger.debug("Successfully connected to Ceph cluster at " + r.confGet("mon_host"));
 
@@ -1474,6 +1480,10 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     rDest.confSet("mon_host", destPool.getSourceHost() + ":" + destPool.getSourcePort());
                     rDest.confSet("key", destPool.getAuthSecret());
                     rDest.confSet("client_mount_timeout", "30");
+                    if (dataPool != null) {
+                        logger.debug("Setting RBD data pool to " + dataPool + " on the destination cluster for the new image " + disk.getName());
+                        rDest.confSet(KVMPhysicalDisk.RBD_DEFAULT_DATA_POOL, dataPool);
+                    }
                     rDest.connect();
                     logger.debug("Successfully connected to source Ceph cluster at " + rDest.confGet("mon_host"));
 
