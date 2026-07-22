@@ -3492,7 +3492,13 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         long futureIops = currentIops + requestedIops;
         boolean hasEnoughIops = futureIops <= pool.getCapacityIops();
         String hasCapacity = hasEnoughIops ? "has" : "does not have";
-        logger.debug(String.format("Pool [%s] %s enough IOPS to allocate volumes [%s].", pool, hasCapacity, requestedVolumes));
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append(String.format("Pool [%s] %s enough IOPS to allocate volumes [%s]", pool, hasCapacity, requestedVolumes));
+        if (!hasEnoughIops) {
+            stringBuilder.append(String.format(" - Insufficient un-allocated IOPS for storage allocation: " +
+                    "capacityIops : %d, usedIops : %d, requestedIops : %d", pool.getCapacityIops(), currentIops, requestedIops));
+        }
+        logger.debug(stringBuilder.toString());
         return hasEnoughIops;
     }
 
