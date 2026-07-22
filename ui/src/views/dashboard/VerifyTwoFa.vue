@@ -33,7 +33,7 @@
       @finish="handleSubmit"
       layout="vertical">
       <a-form-item name="code" ref="code" style="text-align: center;">
-        <a-input-password
+        <a-input
           style="width: 500px"
           v-model:value="form.code"
           placeholder="xxxxxx" />

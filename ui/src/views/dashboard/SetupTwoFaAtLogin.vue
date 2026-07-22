@@ -109,7 +109,7 @@
           <a-row :gutter="24">
             <a-col :md="24" :lg="22">
               <a-form-item @finish="submitPin" v-ctrl-enter="submitPin" name="code" ref="code">
-                <a-input-password
+                <a-input
                   v-model:value="form.code"
                   placeholder="xxxxxx" />
               </a-form-item>
