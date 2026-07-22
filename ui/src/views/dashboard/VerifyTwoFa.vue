@@ -85,7 +85,7 @@ export default {
       })
     },
     focusInput () {
-      const inputElement = this.$refs.code.$el.querySelector('input[type=password]')
+      const inputElement = this.$refs.code.$el.querySelector('input')
       if (inputElement) {
         inputElement.focus()
       }
