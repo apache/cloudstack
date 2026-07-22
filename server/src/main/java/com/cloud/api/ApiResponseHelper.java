@@ -37,6 +37,9 @@ import java.util.TimeZone;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -5439,18 +5442,18 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         return response;
     }
 
-protected void handleCertificateResponse(String certStr, DirectDownloadCertificateResponse response) {
+    protected void handleCertificateResponse(String certStr, DirectDownloadCertificateResponse response) {
         try {
-            java.security.cert.Certificate cert = CertificateHelper.buildCertificate(certStr);
-            if (cert instanceof java.security.cert.X509Certificate) {
-                java.security.cert.X509Certificate certificate = (java.security.cert.X509Certificate) cert;
+            Certificate cert = CertificateHelper.buildCertificate(certStr);
+            if (cert instanceof X509Certificate) {
+                X509Certificate certificate = (X509Certificate) cert;
                 response.setVersion(String.valueOf(certificate.getVersion()));
                 response.setSubject(certificate.getSubjectDN().toString());
                 response.setIssuer(certificate.getIssuerDN().toString());
                 response.setSerialNum(certificate.getSerialNumber().toString());
                 response.setValidity(String.format("From: [%s] - To: [%s]", certificate.getNotBefore(), certificate.getNotAfter()));
             }
-        } catch (java.security.cert.CertificateException e) {
+        } catch (CertificateException e) {
             logger.error("Error parsing direct download certificate: " + certStr, e);
         }
     }
