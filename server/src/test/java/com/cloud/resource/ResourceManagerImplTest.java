@@ -23,6 +23,8 @@ import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.event.ActionEventUtils;
+import com.cloud.event.EventTypes;
+import com.cloud.event.EventVO;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.Host;
@@ -79,6 +81,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -532,6 +535,7 @@ public class ResourceManagerImplTest {
     }
 
     private void verifyErrorInPrepareForMaintenanceCalls() throws NoTransitionException {
+        when(host.getResourceState()).thenReturn(ResourceState.PrepareForMaintenance);
         boolean enterMaintenanceMode = resourceManager.checkAndMaintain(hostId);
         verify(resourceManager).attemptMaintain(host);
         verify(resourceManager).setHostIntoErrorInPrepareForMaintenance(eq(host), any());
@@ -539,7 +543,16 @@ public class ResourceManagerImplTest {
         verify(resourceManager, never()).setHostIntoErrorInMaintenance(any(), any());
         verify(resourceManager, never()).setHostIntoPrepareForMaintenanceAfterErrorsFixed(any());
         verify(resourceManager).resourceStateTransitTo(eq(host), eq(UnableToMigrate), anyLong());
+        String expectedDescription = String.format("failed to prepare host %s for maintenance due to migration or VM state errors", host);
+        actionEventUtilsMocked.verify(() -> ActionEventUtils.onCompletedActionEvent(
+                anyLong(), anyLong(), eq(EventVO.LEVEL_ERROR), eq(EventTypes.EVENT_MAINTENANCE_PREPARE_ERROR),
+                eq(expectedDescription), eq(hostId), isNull(), eq(0L)));
         Assert.assertFalse(enterMaintenanceMode);
+    }
+
+    @Test
+    public void testMaintenancePrepareErrorEventMapsToHostEntity() {
+        Assert.assertEquals(Host.class, EventTypes.getEntityClassForEvent(EventTypes.EVENT_MAINTENANCE_PREPARE_ERROR));
     }
 
     private void verifyReturnToPrepareForMaintenanceCalls() throws NoTransitionException {
