@@ -167,8 +167,11 @@
                       :minimum-cpunumber="templateConfigurationExists && selectedTemplateConfiguration && selectedTemplateConfiguration.cpunumber ? selectedTemplateConfiguration.cpunumber : 0"
                       :minimum-cpuspeed="templateConfigurationExists && selectedTemplateConfiguration && selectedTemplateConfiguration.cpuspeed ? selectedTemplateConfiguration.cpuspeed : 0"
                       :minimum-memory="templateConfigurationExists && selectedTemplateConfiguration && selectedTemplateConfiguration.memory ? selectedTemplateConfiguration.memory : 0"
+                      :service-offering-categories="options.serviceOfferingCategories"
+                      :selected-service-offering-category-id="selectedServiceOfferingCategoryId"
                       @select-compute-item="($event) => updateComputeOffering($event)"
                       @handle-search-filter="($event) => handleSearchFilter('serviceOfferings', $event)"
+                      @service-offering-category-change="($event) => handleServiceOfferingCategoryChange($event)"
                     ></compute-offering-selection>
                     <compute-selection
                       v-if="serviceOffering && (serviceOffering.iscustomized || serviceOffering.iscustomizediops)"
@@ -935,8 +938,10 @@ export default {
         rootdisksize: null,
         disksize: null
       },
+      selectedServiceOfferingCategoryId: '-1',
       options: {
         guestOsCategories: [],
+        serviceOfferingCategories: [],
         templates: {},
         isos: {},
         hypervisors: [],
@@ -960,6 +965,7 @@ export default {
       loading: {
         deploy: false,
         guestOsCategories: false,
+        serviceOfferingCategories: false,
         templates: false,
         isos: false,
         hypervisors: false,
@@ -2639,6 +2645,8 @@ export default {
       if (this.isModernImageSelection && guestOsFetch) {
         await guestOsFetch
       }
+      // Load service offering categories
+      this.fetchServiceOfferingCategories()
       this.fetchAllTemplates()
       this.updateTemplateKey()
       this.formModel = toRaw(this.form)
@@ -2699,6 +2707,46 @@ export default {
     handleSearchFilter (name, options) {
       this.params[name].options = { ...this.params[name].options, ...options }
       this.fetchOptions(this.params[name], name)
+    },
+    fetchServiceOfferingCategories () {
+      this.loading.serviceOfferingCategories = true
+      return new Promise((resolve, reject) => {
+        getAPI('listServiceOfferingCategories').then(json => {
+          const categories = json.listserviceofferingcategoriesresponse.serviceofferingcategory || []
+          this.options.serviceOfferingCategories = [
+            {
+              id: '-1',
+              name: this.$t('label.all')
+            },
+            ...categories
+          ]
+          resolve()
+        }).catch(error => {
+          console.error('Error fetching service offering categories:', error)
+          this.options.serviceOfferingCategories = [
+            {
+              id: '-1',
+              name: this.$t('label.all')
+            }
+          ]
+          reject(error)
+        }).finally(() => {
+          this.loading.serviceOfferingCategories = false
+        })
+      })
+    },
+    handleServiceOfferingCategoryChange (categoryId) {
+      this.selectedServiceOfferingCategoryId = categoryId
+      const params = {
+        page: 1,
+        pageSize: 10
+      }
+      if (categoryId && categoryId !== '-1') {
+        params.categoryid = categoryId
+      } else {
+        this.deleteFrom(this.params.serviceOfferings.options, ['categoryid'])
+      }
+      this.handleSearchFilter('serviceOfferings', params)
     },
     onTabChange (key, type) {
       this[type] = key

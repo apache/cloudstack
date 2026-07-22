@@ -502,6 +502,10 @@ export default {
           params.diskofferingid = values.diskofferingid
         }
 
+        if (values.categoryid) {
+          params.categoryid = values.categoryid
+        }
+
         if (values.vgpuprofile) {
           params.vgpuprofileid = values.vgpuprofile
         }
