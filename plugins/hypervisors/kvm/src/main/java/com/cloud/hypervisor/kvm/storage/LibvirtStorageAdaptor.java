@@ -505,6 +505,12 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         return parser.parseStoragePoolXML(poolDefXML);
     }
 
+    private String getBackingFileOfVolumeIfExists(StorageVol vol) throws LibvirtException {
+        String volDefXML = vol.getXMLDesc(0);
+        LibvirtStorageVolumeXMLParser parser = new LibvirtStorageVolumeXMLParser();
+        return parser.getBackingFileNameIfExists(volDefXML);
+    }
+
     public LibvirtStorageVolumeDef getStorageVolumeDef(Connect conn, StorageVol vol) throws LibvirtException {
         String volDefXML = vol.getXMLDesc(0);
         LibvirtStorageVolumeXMLParser parser = new LibvirtStorageVolumeXMLParser();
@@ -655,6 +661,28 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
     }
 
+    private Long getBackingFileSizes(StoragePool pool, StorageVol vol) throws LibvirtException {
+        long total = 0L;
+        Set<String> visited = new HashSet<>();
+        StorageVol current = vol;
+
+        while (current != null) {
+            total += current.getInfo().allocation;
+            String backingName = getBackingFileOfVolumeIfExists(current);
+            if (StringUtils.isBlank(backingName) || !visited.add(backingName)) {
+                break;
+            }
+            try {
+                current = getVolume(pool, backingName);
+            } catch (CloudRuntimeException e) {
+                logger.debug("Unable to resolve backing volume {} in pool {}: {}", backingName, pool.getName(), e.getMessage());
+                break;
+            }
+        }
+
+        return total;
+    }
+
     @Override
     public KVMPhysicalDisk getPhysicalDisk(String volumeUuid, KVMStoragePool pool) {
         LibvirtStoragePool libvirtPool = (LibvirtStoragePool)pool;
@@ -663,8 +691,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             StorageVol vol = getVolume(libvirtPool.getPool(), volumeUuid);
             KVMPhysicalDisk disk;
             LibvirtStorageVolumeDef voldef = getStorageVolumeDef(libvirtPool.getPool().getConnect(), vol);
+            Long allSizes = getBackingFileSizes(libvirtPool.getPool(), vol);
             disk = new KVMPhysicalDisk(vol.getPath(), vol.getName(), pool);
-            disk.setSize(vol.getInfo().allocation);
+            disk.setSize(allSizes);
             disk.setVirtualSize(vol.getInfo().capacity);
 
             /**
