@@ -195,7 +195,10 @@ export default {
       docHelp: 'adminguide/hosts.html#out-of-band-management',
       dataView: true,
       show: (record) => {
-        return record?.outofbandmanagement?.enabled === true
+        if (record.hypervisor === 'KVM' && record?.hostha?.haenable === true) {
+          return false;
+        }
+        return record?.outofbandmanagement?.enabled === true;
       },
       args: ['hostid'],
       mapping: {
