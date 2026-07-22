@@ -95,14 +95,16 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
         String clientIp = session.getRemoteAddress().getAddress().getHostAddress();
         boolean sessionRequiresNewViewer = Boolean.parseBoolean(queryMap.get("sessionRequiresNewViewer"));
 
-        if (tag == null)
+        if (tag == null) {
             tag = "";
+        }
 
         long ajaxSessionId = 0;
         int port;
 
-        if (host == null || portStr == null || sid == null)
+        if (host == null || portStr == null || sid == null) {
             throw new IllegalArgumentException();
+        }
 
         try {
             port = Integer.parseInt(portStr);
@@ -125,6 +127,14 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
         }
 
         try {
+            if (ConsoleProxy.sessionTimeoutMillis > 0) {
+                session.setIdleTimeout(ConsoleProxy.sessionTimeoutMillis);
+                logger.debug("Set noVNC WebSocket idle timeout to {} ms for session UUID {}.",
+                        ConsoleProxy.sessionTimeoutMillis, sessionUuid);
+            } else {
+                logger.debug("Using default noVNC WebSocket idle timeout for session UUID {}.", sessionUuid);
+            }
+
             ConsoleProxyClientParam param = new ConsoleProxyClientParam();
             param.setClientHostAddress(host);
             param.setClientHostPort(port);
@@ -185,12 +195,21 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
 
     @OnWebSocketFrame
     public void onFrame(Frame f) throws IOException {
+        if (viewer == null) {
+            logger.warn("Ignoring WebSocket frame because viewer is not initialized yet.");
+            return;
+        }
         logger.trace("Sending client [ID: {}] frame of {} bytes.", viewer.getClientId(), f.getPayloadLength());
         viewer.sendClientFrame(f);
     }
 
     @OnWebSocketError
     public void onError(Throwable cause) {
-        logger.error("Error on WebSocket [client ID: {}, session UUID: {}].", cause, viewer.getClientId(), viewer.getSessionUuid());
+        if (viewer != null) {
+            logger.error("Error on WebSocket [client ID: {}, session UUID: {}].",
+                    viewer.getClientId(), viewer.getSessionUuid(), cause);
+        } else {
+            logger.error("Error on WebSocket before viewer initialization.", cause);
+        }
     }
 }
