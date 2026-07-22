@@ -1630,9 +1630,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                             }
 
                             if (answer == null || !answer.getResult()) {
-                                logger.warn("Unable to stop {} dut to {}", vm, (answer != null ? answer.getDetails() : "no answers"));
+                                String errorDetails = (answer != null ? answer.getDetails() : "no answers");
+                                logger.warn("Unable to stop {} dut to {}", vm, errorDetails);
                                 _haMgr.scheduleStop(vm, destHostId, WorkType.ForceStop);
-                                throw new ExecutionException("Unable to stop this VM, " + vm.getUuid() + " so we are unable to retry the start operation");
+                                throw new ExecutionException("Unable to stop this VM, " + vm.getUuid() + " so we are unable to retry the start operation due to " + errorDetails);
                             }
                             throw new ExecutionException("Unable to start  VM:" + vm.getUuid() + " due to error in finalizeStart, not retrying");
                         }
@@ -2208,7 +2209,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return volumesToDisconnect;
     }
 
-    protected boolean sendStop(final VirtualMachineGuru guru, final VirtualMachineProfile profile, final boolean force, final boolean checkBeforeCleanup) {
+    protected Pair<Boolean, String> sendStop(final VirtualMachineGuru guru, final VirtualMachineProfile profile, final boolean force, final boolean checkBeforeCleanup) {
         final VirtualMachine vm = profile.getVirtualMachine();
         Map<String, Boolean> vlanToPersistenceMap = getVlanToPersistenceMapForVM(vm.getId());
         StopCommand stpCmd = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), checkBeforeCleanup);
@@ -2241,7 +2242,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 if (!answer.getResult()) {
                     final String details = answer.getDetails();
                     logger.debug("Unable to stop VM due to {}", details);
-                    return false;
+                    return new Pair<>(false, details);
                 }
 
                 guru.finalizeStop(profile, answer);
@@ -2254,21 +2255,23 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     }
                 }
             } else {
-                logger.error("Invalid answer received in response to a StopCommand for {}", vm.getInstanceName());
-                return false;
+                String errorMsg = String.format("Invalid answer received in response to a StopCommand for %s", vm.getInstanceName());
+                logger.error(errorMsg);
+                return new Pair<>(false, errorMsg);
             }
 
         } catch (final AgentUnavailableException | OperationTimedoutException e) {
-            logger.warn("Unable to stop {} due to [{}].", vm.toString(), e.getMessage(), e);
+            String errorMsg = String.format("Unable to stop %s due to [%s].", vm.toString(), e.getMessage());
+            logger.warn(errorMsg, e);
             if (!force) {
-                return false;
+                return new Pair<>(false, errorMsg);
             }
         }
 
-        return true;
+        return new Pair<>(true, null);
     }
 
-    protected boolean cleanup(final VirtualMachineGuru guru, final VirtualMachineProfile profile, final ItWorkVO work, final Event event, final boolean cleanUpEvenIfUnableToStop) {
+    protected Pair<Boolean, String> cleanup(final VirtualMachineGuru guru, final VirtualMachineProfile profile, final ItWorkVO work, final Event event, final boolean cleanUpEvenIfUnableToStop) {
         final VirtualMachine vm = profile.getVirtualMachine();
         final State state = vm.getState();
         logger.debug("Cleaning up resources for the vm {} in {} state", vm, state);
@@ -2277,57 +2280,63 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 if (work != null) {
                     final Step step = work.getStep();
                     if (step == Step.Starting && !cleanUpEvenIfUnableToStop) {
-                        logger.warn("Unable to cleanup vm {}; work state is incorrect: {}", vm, step);
-                        return false;
+                        String errorMsg = String.format("Unable to cleanup vm %s; work state is incorrect: %s", vm, step);
+                        logger.warn(errorMsg);
+                        return new Pair<>(false, errorMsg);
                     }
 
                     if (step == Step.Started || step == Step.Starting || step == Step.Release) {
                         if (vm.getHostId() != null) {
-                            if (!sendStop(guru, profile, cleanUpEvenIfUnableToStop, false)) {
+                            Pair<Boolean, String> result = sendStop(guru, profile, cleanUpEvenIfUnableToStop, false);
+                            if (!result.first()) {
                                 logger.warn("Failed to stop vm {} in {} state as a part of cleanup process", vm, State.Starting);
-                                return false;
+                                return result;
                             }
                         }
                     }
 
                     if (step != Step.Release && step != Step.Prepare && step != Step.Started && step != Step.Starting) {
                         logger.debug("Cleanup is not needed for vm {}; work state is incorrect: {}", vm, step);
-                        return true;
+                        return new Pair<>(true, null);
                     }
                 } else {
                     if (vm.getHostId() != null) {
-                        if (!sendStop(guru, profile, cleanUpEvenIfUnableToStop, false)) {
+                        Pair<Boolean, String> result = sendStop(guru, profile, cleanUpEvenIfUnableToStop, false);
+                        if (!result.first()) {
                             logger.warn("Failed to stop vm {} in {} state as a part of cleanup process", vm, State.Starting);
-                            return false;
+                            return result;
                         }
                     }
                 }
 
             } else if (state == State.Stopping) {
                 if (vm.getHostId() != null) {
-                    if (!sendStop(guru, profile, cleanUpEvenIfUnableToStop, false)) {
+                    Pair<Boolean, String> result = sendStop(guru, profile, cleanUpEvenIfUnableToStop, false);
+                    if (!result.first()) {
                         logger.warn("Failed to stop vm {} in {} state as a part of cleanup process", vm, State.Stopping);
-                        return false;
+                        return result;
                     }
                 }
             } else if (state == State.Migrating) {
                 if (vm.getHostId() != null || vm.getLastHostId() != null) {
-                    if (!sendStop(guru, profile, cleanUpEvenIfUnableToStop, false)) {
+                    Pair<Boolean, String> result = sendStop(guru, profile, cleanUpEvenIfUnableToStop, false);
+                    if (!result.first()) {
                         logger.warn("Failed to stop vm {} in {} state as a part of cleanup process", vm, State.Migrating);
-                        return false;
+                        return result;
                     }
                 }
             } else if (state == State.Running) {
-                if (!sendStop(guru, profile, cleanUpEvenIfUnableToStop, false)) {
+                Pair<Boolean, String> result = sendStop(guru, profile, cleanUpEvenIfUnableToStop, false);
+                if (!result.first()) {
                     logger.warn("Failed to stop vm {} in {} state as a part of cleanup process", vm, State.Running);
-                    return false;
+                    return result;
                 }
             }
         } finally {
             releaseVmResources(profile, cleanUpEvenIfUnableToStop);
         }
 
-        return true;
+        return new Pair<>(true, null);
     }
 
     protected void releaseVmResources(final VirtualMachineProfile profile, final boolean forced) {
@@ -2509,7 +2518,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             logger.warn("Unable to transition the state but we're moving on because it's forced stop", e1);
 
             if (doCleanup) {
-                if (cleanup(vmGuru, new VirtualMachineProfileImpl(vm), work, Event.StopRequested, cleanUpEvenIfUnableToStop)) {
+                Pair<Boolean, String> cleanupResult = cleanup(vmGuru, new VirtualMachineProfileImpl(vm), work, Event.StopRequested, cleanUpEvenIfUnableToStop);
+                if (cleanupResult.first()) {
                     try {
                         if (work != null) {
                             logger.debug("Updating work item to Done, id: {}", work.getId());
@@ -2524,7 +2534,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     }
                 } else {
                     logger.debug("Failed to cleanup VM: {}", vm);
-                    throw new CloudRuntimeException("Failed to cleanup " + vm + " , current state " + vm.getState());
+                    String errorDetails = cleanupResult.second() != null ? " due to " + cleanupResult.second() : "";
+                    throw new CloudRuntimeException("Failed to cleanup " + vm + " , current state " + vm.getState() + errorDetails);
                 }
             }
         }
@@ -2582,7 +2593,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     } catch (final NoTransitionException e) {
                         logger.warn("Unable to transition the state " + vm, e);
                     }
-                    throw new CloudRuntimeException("Unable to stop " + vm);
+                    String errorDetails = (answer != null && answer.getDetails() != null) ? " due to " + answer.getDetails() : "";
+                    throw new CloudRuntimeException("Unable to stop " + vm + errorDetails);
                 } else {
                     logger.warn("Unable to actually stop {} but continue with release because it's a force stop", vm);
                     vmGuru.finalizeStop(profile, answer);
@@ -3261,8 +3273,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     } catch (final AgentUnavailableException e) {
                         logger.error("AgentUnavailableException while cleanup on source host: {}", fromHost, e);
                     }
-                    cleanup(vmGuru, new VirtualMachineProfileImpl(vm), work, Event.AgentReportStopped, true);
-                    throw new CloudRuntimeException("Unable to complete migration for " + vm);
+                    Pair<Boolean, String> cleanupResult = cleanup(vmGuru, new VirtualMachineProfileImpl(vm), work, Event.AgentReportStopped, true);
+                    String errorDetails = (cleanupResult.second() != null) ? " due to " + cleanupResult.second() : "";
+                    throw new CloudRuntimeException("Unable to complete migration for " + vm + errorDetails);
                 }
             } catch (final OperationTimedoutException e) {
                 logger.warn("Error while checking the vm {} on host {}", vm, dest.getHost(), e);
@@ -3718,8 +3731,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     } catch (final AgentUnavailableException e) {
                         logger.error("AgentUnavailableException while cleanup on source host: {}", srcHost, e);
                     }
-                    cleanup(vmGuru, new VirtualMachineProfileImpl(vm), work, Event.AgentReportStopped, true);
-                    throw new CloudRuntimeException("VM not found on destination host. Unable to complete migration for " + vm);
+                    Pair<Boolean, String> cleanupResult = cleanup(vmGuru, new VirtualMachineProfileImpl(vm), work, Event.AgentReportStopped, true);
+                    String errorDetails = (cleanupResult.second() != null) ? " due to " + cleanupResult.second() : "";
+                    throw new CloudRuntimeException("VM not found on destination host. Unable to complete migration for " + vm + errorDetails);
                 }
             } catch (final OperationTimedoutException e) {
                 logger.error("Error while checking the vm {} is on host {}", vm, destHost, e);
@@ -5003,8 +5017,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     } catch (final AgentUnavailableException e) {
                         logger.error("Unable to cleanup source host [{}] due to [{}].", fromHost, e.getMessage(), e);
                     }
-                    cleanup(vmGuru, new VirtualMachineProfileImpl(vm), work, Event.AgentReportStopped, true);
-                    throw new CloudRuntimeException("Unable to complete migration for " + vm);
+                    Pair<Boolean, String> cleanupResult = cleanup(vmGuru, new VirtualMachineProfileImpl(vm), work, Event.AgentReportStopped, true);
+                    String errorDetails = (cleanupResult.second() != null) ? " due to " + cleanupResult.second() : "";
+                    throw new CloudRuntimeException("Unable to complete migration for " + vm + errorDetails);
                 }
             } catch (final OperationTimedoutException e) {
                 logger.debug("Error while checking the {} on {}", vm, dstHost, e);
@@ -5465,7 +5480,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if (PowerState.PowerOff.equals(vm.getPowerState())) {
                 final VirtualMachineGuru vmGuru = getVmGuru(vm);
                 final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
-                if (!sendStop(vmGuru, profile, true, true)) {
+                Pair<Boolean, String> result = sendStop(vmGuru, profile, true, true);
+                if (!result.first()) {
                     return;
                 } else {
                     // Release resources on StopCommand success
