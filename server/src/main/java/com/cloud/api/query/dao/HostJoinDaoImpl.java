@@ -135,21 +135,16 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
             hostResponse.setHypervisor(hypervisorType);
         }
         hostResponse.setHostType(host.getType());
-        if (host.getType().equals(Host.Type.ConsoleProxy) || host.getType().equals(Host.Type.SecondaryStorageVM)) {
+        if (!details.contains(HostDetails.core) && (host.getType().equals(Host.Type.ConsoleProxy) || host.getType().equals(Host.Type.SecondaryStorageVM))) {
             VMInstanceVO vm = virtualMachineDao.findVMByInstanceNameIncludingRemoved(host.getName());
             if (vm != null) {
                 hostResponse.setVirtualMachineId(vm.getUuid());
             }
         }
         hostResponse.setLastPinged(new Date(host.getLastPinged()));
-        Long mshostId = host.getManagementServerId();
-        if (mshostId != null) {
-            ManagementServerHostVO managementServer = managementServerHostDao.findByMsid(host.getManagementServerId());
-            if (managementServer != null) {
-                hostResponse.setManagementServerId(managementServer.getUuid());
-                hostResponse.setManagementServerName(managementServer.getName());
-            }
-        }
+
+        setManagementServerResponse(hostResponse, host, details);
+
         hostResponse.setName(host.getName());
         hostResponse.setPodId(host.getPodUuid());
         hostResponse.setRemoved(host.getRemoved());
@@ -159,41 +154,44 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
         hostResponse.setVersion(host.getVersion());
         hostResponse.setCreated(host.getCreated());
 
-        List<HostGpuGroupsVO> gpuGroups = ApiDBUtils.getGpuGroups(host.getId());
-        if (gpuGroups != null && !gpuGroups.isEmpty()) {
-            List<GpuResponse> gpus = new ArrayList<GpuResponse>();
-            long gpuRemaining = 0;
-            long gpuTotal = 0;
-            for (HostGpuGroupsVO entry : gpuGroups) {
-                GpuResponse gpuResponse = new GpuResponse();
-                gpuResponse.setGpuGroupName(entry.getGroupName());
-                List<VGPUTypesVO> vgpuTypes = ApiDBUtils.getVgpus(entry.getId());
-                if (vgpuTypes != null && !vgpuTypes.isEmpty()) {
-                    List<VgpuResponse> vgpus = new ArrayList<VgpuResponse>();
-                    for (VGPUTypesVO vgpuType : vgpuTypes) {
-                        VgpuResponse vgpuResponse = new VgpuResponse();
-                        vgpuResponse.setName(vgpuType.getVgpuType());
-                        vgpuResponse.setVideoRam(vgpuType.getVideoRam());
-                        vgpuResponse.setMaxHeads(vgpuType.getMaxHeads());
-                        vgpuResponse.setMaxResolutionX(vgpuType.getMaxResolutionX());
-                        vgpuResponse.setMaxResolutionY(vgpuType.getMaxResolutionY());
-                        vgpuResponse.setMaxVgpuPerPgpu(vgpuType.getMaxVgpuPerPgpu());
-                        vgpuResponse.setRemainingCapacity(vgpuType.getRemainingCapacity());
-                        vgpuResponse.setmaxCapacity(vgpuType.getMaxCapacity());
-                        vgpus.add(vgpuResponse);
-                        gpuRemaining += vgpuType.getRemainingCapacity();
-                        gpuTotal += vgpuType.getMaxCapacity();
+        if (!details.contains(HostDetails.core)) {
+            List<HostGpuGroupsVO> gpuGroups = ApiDBUtils.getGpuGroups(host.getId());
+            if (gpuGroups != null && !gpuGroups.isEmpty()) {
+                List<GpuResponse> gpus = new ArrayList<GpuResponse>();
+                long gpuRemaining = 0;
+                long gpuTotal = 0;
+                for (HostGpuGroupsVO entry : gpuGroups) {
+                    GpuResponse gpuResponse = new GpuResponse();
+                    gpuResponse.setGpuGroupName(entry.getGroupName());
+                    List<VGPUTypesVO> vgpuTypes = ApiDBUtils.getVgpus(entry.getId());
+                    if (vgpuTypes != null && !vgpuTypes.isEmpty()) {
+                        List<VgpuResponse> vgpus = new ArrayList<VgpuResponse>();
+                        for (VGPUTypesVO vgpuType : vgpuTypes) {
+                            VgpuResponse vgpuResponse = new VgpuResponse();
+                            vgpuResponse.setName(vgpuType.getVgpuType());
+                            vgpuResponse.setVideoRam(vgpuType.getVideoRam());
+                            vgpuResponse.setMaxHeads(vgpuType.getMaxHeads());
+                            vgpuResponse.setMaxResolutionX(vgpuType.getMaxResolutionX());
+                            vgpuResponse.setMaxResolutionY(vgpuType.getMaxResolutionY());
+                            vgpuResponse.setMaxVgpuPerPgpu(vgpuType.getMaxVgpuPerPgpu());
+                            vgpuResponse.setRemainingCapacity(vgpuType.getRemainingCapacity());
+                            vgpuResponse.setmaxCapacity(vgpuType.getMaxCapacity());
+                            vgpus.add(vgpuResponse);
+                            gpuRemaining += vgpuType.getRemainingCapacity();
+                            gpuTotal += vgpuType.getMaxCapacity();
+                        }
+                        gpuResponse.setVgpu(vgpus);
                     }
-                    gpuResponse.setVgpu(vgpus);
+                    gpus.add(gpuResponse);
                 }
-                gpus.add(gpuResponse);
+                hostResponse.setGpuTotal(gpuTotal);
+                hostResponse.setGpuUsed(gpuTotal - gpuRemaining);
+                hostResponse.setGpuGroup(gpus);
             }
-            hostResponse.setGpuTotal(gpuTotal);
-            hostResponse.setGpuUsed(gpuTotal - gpuRemaining);
-            hostResponse.setGpuGroup(gpus);
         }
-        if (details.contains(HostDetails.all) || details.contains(HostDetails.capacity) || details.contains(HostDetails.stats) || details.contains(HostDetails.events)) {
 
+        if (details.contains(HostDetails.all) || details.contains(HostDetails.capacity) || details.contains(HostDetails.core) ||
+                details.contains(HostDetails.stats) || details.contains(HostDetails.events)) {
             hostResponse.setOsCategoryId(host.getOsCategoryUuid());
             hostResponse.setOsCategoryName(host.getOsCategoryName());
             hostResponse.setZoneName(host.getZoneName());
@@ -206,23 +204,9 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
 
         DecimalFormat decimalFormat = new DecimalFormat("#.##");
         if (host.getType() == Host.Type.Routing) {
-            float cpuOverprovisioningFactor = ApiDBUtils.getCpuOverprovisioningFactor(host.getClusterId());
-            if (details.contains(HostDetails.all) || details.contains(HostDetails.capacity)) {
-                // set allocated capacities
-                Long mem = host.getMemReservedCapacity() + host.getMemUsedCapacity();
-                Long cpu = host.getCpuReservedCapacity() + host.getCpuUsedCapacity();
-
-                Float memWithOverprovisioning = host.getTotalMemory() * ApiDBUtils.getMemOverprovisioningFactor(host.getClusterId());
-                hostResponse.setMemoryTotal(memWithOverprovisioning.longValue());
-                hostResponse.setMemWithOverprovisioning(decimalFormat.format(memWithOverprovisioning));
-                hostResponse.setMemoryAllocated(mem);
-                hostResponse.setMemoryAllocatedBytes(mem);
-                hostResponse.setMemoryAllocatedPercentage(calculateResourceAllocatedPercentage(mem, memWithOverprovisioning));
-
+            if (details.contains(HostDetails.all) || details.contains(HostDetails.capacity) || details.contains(HostDetails.core)) {
                 String hostTags = host.getTag();
                 hostResponse.setHostTags(hostTags);
-                hostResponse.setIsTagARule(host.getIsTagARule());
-                hostResponse.setHaHost(containsHostHATag(hostTags));
                 hostResponse.setExplicitHostTags(host.getExplicitTag());
                 hostResponse.setImplicitHostTags(host.getImplicitTag());
                 hostResponse.setGuestOsRule(host.getGuestOsRule());
@@ -236,14 +220,36 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
                 hostResponse.setClusterStorageAccessGroups(host.getClusterStorageAccessGroups());
                 hostResponse.setPodStorageAccessGroups(host.getPodStorageAccessGroups());
                 hostResponse.setZoneStorageAccessGroups(host.getZoneStorageAccessGroups());
+                hostResponse.setHypervisorVersion(host.getHypervisorVersion());
 
-                float cpuWithOverprovisioning = host.getCpus() * host.getSpeed() * cpuOverprovisioningFactor;
-                hostResponse.setCpuAllocatedValue(cpu);
-                String cpuAllocated = calculateResourceAllocatedPercentage(cpu, cpuWithOverprovisioning);
-                hostResponse.setCpuAllocated(cpuAllocated);
-                hostResponse.setCpuAllocatedPercentage(cpuAllocated);
-                hostResponse.setCpuAllocatedWithOverprovisioning(cpuAllocated);
-                hostResponse.setCpuWithOverprovisioning(decimalFormat.format(cpuWithOverprovisioning));
+                if (!details.contains(HostDetails.core)) {
+                    float cpuOverprovisioningFactor = ApiDBUtils.getCpuOverprovisioningFactor(host.getClusterId());
+                    // set allocated capacities
+                    Long mem = host.getMemReservedCapacity() + host.getMemUsedCapacity();
+                    Long cpu = host.getCpuReservedCapacity() + host.getCpuUsedCapacity();
+
+                    Float memWithOverprovisioning = host.getTotalMemory() * ApiDBUtils.getMemOverprovisioningFactor(host.getClusterId());
+                    hostResponse.setMemoryTotal(memWithOverprovisioning.longValue());
+                    hostResponse.setMemWithOverprovisioning(decimalFormat.format(memWithOverprovisioning));
+                    hostResponse.setMemoryAllocated(mem);
+                    hostResponse.setMemoryAllocatedBytes(mem);
+                    hostResponse.setMemoryAllocatedPercentage(calculateResourceAllocatedPercentage(mem, memWithOverprovisioning));
+
+                    hostResponse.setIsTagARule(host.getIsTagARule());
+                    hostResponse.setHaHost(containsHostHATag(hostTags));
+
+                    if (host.getArch() != null) {
+                        hostResponse.setArch(host.getArch().getType());
+                    }
+
+                    float cpuWithOverprovisioning = host.getCpus() * host.getSpeed() * cpuOverprovisioningFactor;
+                    hostResponse.setCpuAllocatedValue(cpu);
+                    String cpuAllocated = calculateResourceAllocatedPercentage(cpu, cpuWithOverprovisioning);
+                    hostResponse.setCpuAllocated(cpuAllocated);
+                    hostResponse.setCpuAllocatedPercentage(cpuAllocated);
+                    hostResponse.setCpuAllocatedWithOverprovisioning(cpuAllocated);
+                    hostResponse.setCpuWithOverprovisioning(decimalFormat.format(cpuWithOverprovisioning));
+                }
             }
 
             if (details.contains(HostDetails.all) || details.contains(HostDetails.stats)) {
@@ -262,27 +268,29 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
                 }
             }
 
-            Map<String, String> hostDetails = hostDetailsDao.findDetails(host.getId());
-            if (hostDetails != null) {
-                if (hostDetails.containsKey(Host.HOST_UEFI_ENABLE)) {
-                    hostResponse.setUefiCapability(Boolean.parseBoolean((String) hostDetails.get(Host.HOST_UEFI_ENABLE)));
-                } else {
-                    hostResponse.setUefiCapability(new Boolean(false));
+            if (!details.contains(HostDetails.core)) {
+                Map<String, String> hostDetails = hostDetailsDao.findDetails(host.getId());
+                if (hostDetails != null) {
+                    if (hostDetails.containsKey(Host.HOST_UEFI_ENABLE)) {
+                        hostResponse.setUefiCapability(Boolean.parseBoolean((String) hostDetails.get(Host.HOST_UEFI_ENABLE)));
+                    } else {
+                        hostResponse.setUefiCapability(new Boolean(false));
+                    }
                 }
-            }
-            if (details.contains(HostDetails.all) &&
-                    Arrays.asList(Hypervisor.HypervisorType.KVM,
-                            Hypervisor.HypervisorType.Custom,
-                            Hypervisor.HypervisorType.External).contains(host.getHypervisorType())) {
-                //only kvm has the requirement to return host details
-                try {
-                    hostResponse.setDetails(hostDetails, host.getHypervisorType());
-                } catch (Exception e) {
-                    logger.debug("failed to get host details", e);
+                if (details.contains(HostDetails.all) &&
+                        Arrays.asList(Hypervisor.HypervisorType.KVM,
+                                Hypervisor.HypervisorType.Custom,
+                                Hypervisor.HypervisorType.External).contains(host.getHypervisorType())) {
+                    //only kvm has the requirement to return host details
+                    try {
+                        hostResponse.setDetails(hostDetails, host.getHypervisorType());
+                    } catch (Exception e) {
+                        logger.debug("failed to get host details", e);
+                    }
                 }
             }
 
-        } else if (host.getType() == Host.Type.SecondaryStorage) {
+        } else if (host.getType() == Host.Type.SecondaryStorage && !details.contains(HostDetails.core)) {
             StorageStats secStorageStats = ApiDBUtils.getSecondaryStorageStatistics(host.getId());
             if (secStorageStats != null) {
                 hostResponse.setDiskSizeTotal(secStorageStats.getCapacityBytes());
@@ -290,7 +298,16 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
             }
         }
 
-        hostResponse.setLocalStorageActive(ApiDBUtils.isLocalStorageActiveOnHost(host.getId()));
+        if (!details.contains(HostDetails.core)) {
+            hostResponse.setLocalStorageActive(ApiDBUtils.isLocalStorageActiveOnHost(host.getId()));
+            hostResponse.setHostHAResponse(haConfigDao.findHAResource(host.getId(), HAResource.ResourceType.Host));
+            hostResponse.setOutOfBandManagementResponse(outOfBandManagementDao.findByHost(host.getId()));
+            hostResponse.setHasAnnotation(annotationDao.hasAnnotations(host.getUuid(), AnnotationService.EntityType.HOST.name(),
+                    accountManager.isRootAdmin(CallContext.current().getCallingAccount().getId())));
+            hostResponse.setAnnotation(host.getAnnotation());
+            hostResponse.setLastAnnotated(host.getLastAnnotated());
+            hostResponse.setUsername(host.getUsername());
+        }
 
         if (details.contains(HostDetails.all) || details.contains(HostDetails.events)) {
             Set<com.cloud.host.Status.Event> possibleEvents = host.getStatus().getPossibleEvents();
@@ -308,8 +325,6 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
             }
         }
 
-        hostResponse.setHostHAResponse(haConfigDao.findHAResource(host.getId(), HAResource.ResourceType.Host));
-        hostResponse.setOutOfBandManagementResponse(outOfBandManagementDao.findByHost(host.getId()));
         hostResponse.setResourceState(host.getResourceState().toString());
 
         // set async job
@@ -317,13 +332,23 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
             hostResponse.setJobId(host.getJobUuid());
             hostResponse.setJobStatus(host.getJobStatus());
         }
-        hostResponse.setHasAnnotation(annotationDao.hasAnnotations(host.getUuid(), AnnotationService.EntityType.HOST.name(),
-                accountManager.isRootAdmin(CallContext.current().getCallingAccount().getId())));
-        hostResponse.setAnnotation(host.getAnnotation());
-        hostResponse.setLastAnnotated(host.getLastAnnotated ());
-        hostResponse.setUsername(host.getUsername());
 
         hostResponse.setObjectName("host");
+    }
+
+    private void setManagementServerResponse(HostResponse hostResponse, HostJoinVO host, EnumSet<HostDetails> details) {
+        if (host.getManagementServerId() != null) {
+            if (details.size() == 1 && details.contains(HostDetails.core)) {
+                // msid is returned as-is; callers resolve it to avoid a per-host lookup
+                hostResponse.setMsId(host.getManagementServerId());
+            } else {
+                ManagementServerHostVO managementServer = managementServerHostDao.findByMsid(host.getManagementServerId());
+                if (managementServer != null) {
+                    hostResponse.setManagementServerId(managementServer.getUuid());
+                    hostResponse.setManagementServerName(managementServer.getName());
+                }
+            }
+        }
     }
 
     @Override

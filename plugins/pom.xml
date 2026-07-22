@@ -63,6 +63,7 @@
         <module>backup/dummy</module>
         <module>backup/networker</module>
         <module>backup/nas</module>
+        <module>backup/kboss</module>
 
         <module>ca/root-ca</module>
 
@@ -95,6 +96,8 @@
         <module>integrations/prometheus</module>
         <module>integrations/kubernetes-service</module>
         <module>integrations/veeam-control-service</module>
+
+        <module>kms</module>
 
         <module>metrics</module>
 
@@ -154,6 +157,7 @@
 
         <module>user-two-factor-authenticators/totp</module>
         <module>user-two-factor-authenticators/static-pin</module>
+        <module>dns/powerdns</module>
 
     </modules>
     <dependencies>

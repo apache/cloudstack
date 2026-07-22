@@ -646,16 +646,22 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         sc.setParameters("lastPinged", lastPingSecondsAfter);
         sc.setParameters("status", Status.Disconnected, Status.Down, Status.Alert);
 
-        StringBuilder sb = new StringBuilder();
-        List<HostVO> hosts = lockRows(sc, null, true); // exclusive lock
-        for (HostVO host : hosts) {
-            host.setManagementServerId(null);
-            update(host.getId(), host);
-            sb.append(host.getId());
-            sb.append(" ");
+        // SELECT before bulk UPDATE to preserve per-host-ID trace logging — the bulk UPDATE
+        // cannot return which rows it matched since the WHERE column is being set to NULL
+        if (logger.isTraceEnabled()) {
+            List<HostVO> hosts = listBy(sc);
+            StringBuilder sb = new StringBuilder();
+            for (HostVO host : hosts) {
+                sb.append(host.getId());
+                sb.append(" ");
+            }
+            logger.trace("Following hosts will be reset: {}", sb);
         }
 
-        logger.trace("Following hosts got reset: {}", sb);
+        HostVO host = createForUpdate();
+        host.setManagementServerId(null);
+        UpdateBuilder ub = getUpdateBuilder(host);
+        update(ub, sc, null);
     }
 
     /*
@@ -1336,6 +1342,14 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
 
     @Override
+    public List<HostVO> findRoutingByClusterId(Long clusterId) {
+        SearchCriteria<HostVO> sc = ClusterSearch.create();
+        sc.setParameters("clusterId", clusterId);
+        sc.setParameters("type", Type.Routing);
+        return listBy(sc);
+    }
+
+    @Override
     public List<HostVO> findByClusterIdAndEncryptionSupport(Long clusterId) {
         SearchBuilder<DetailVO> hostCapabilitySearch = _detailsDao.createSearchBuilder();
         DetailVO tagEntity = hostCapabilitySearch.entity();
@@ -1447,6 +1461,16 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         if (hypervisorType != null) {
             sc.setParameters("hypervisorType", hypervisorType.toString());
         }
+        return listBy(sc);
+    }
+
+    @Override
+    public List<HostVO> listAllRoutingHostsByZoneAndHypervisorType(long zoneId, HypervisorType hypervisorType) {
+        SearchCriteria<HostVO> sc = DcSearch.create();
+        sc.setParameters("dc", zoneId);
+        sc.setParameters("hypervisorType", hypervisorType.toString());
+        sc.setParameters("type", Type.Routing);
+
         return listBy(sc);
     }
 

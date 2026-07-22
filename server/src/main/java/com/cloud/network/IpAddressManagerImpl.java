@@ -659,28 +659,58 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         }
 
         boolean success = true;
-        Network network = _networksDao.findById(rules.get(0).getNetworkId());
-        FirewallRuleVO.TrafficType trafficType = rules.get(0).getTrafficType();
+        FirewallRule firstRule = rules.get(0);
+        Long networkId = firstRule.getNetworkId();
+        Long vpcId = firstRule.getVpcId();
+        FirewallRuleVO.TrafficType trafficType = firstRule.getTrafficType();
         List<PublicIp> publicIps = new ArrayList<PublicIp>();
 
-        if (!(rules.get(0).getPurpose() == FirewallRule.Purpose.Firewall && trafficType == FirewallRule.TrafficType.Egress)) {
-            // get the list of public ip's owned by the network
-            List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(network.getId(), null);
-            if (userIps != null && !userIps.isEmpty()) {
-                for (IPAddressVO userIp : userIps) {
-                    PublicIp publicIp = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
-                    publicIps.add(publicIp);
+        // For VPC firewall rules the networkId on the rule is null; resolve via VPC.
+        Network network = null;
+        Vpc vpc = null;
+        if (networkId != null) {
+            network = _networksDao.findById(networkId);
+        } else if (vpcId != null) {
+            vpc = _vpcDao.findById(vpcId);
+        }
+
+        if (network == null) {
+            logger.warn("Unable to resolve network for firewall rules (networkId={}, vpcId={}); skipping IP association", networkId, vpcId);
+        } else if (!(firstRule.getPurpose() == FirewallRule.Purpose.Firewall && trafficType == FirewallRule.TrafficType.Egress)) {
+            // For VPC ingress rules, collect public IPs tied to the VPC rather than network association
+            if (vpcId != null && networkId == null) {
+                List<IPAddressVO> vpcIps = _ipAddressDao.listByAssociatedVpc(vpcId, null);
+                if (vpcIps != null) {
+                    for (IPAddressVO userIp : vpcIps) {
+                        PublicIp publicIp = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
+                        publicIps.add(publicIp);
+                    }
+                }
+            } else {
+                // get the list of public ip's owned by the network
+                List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(network.getId(), null);
+                if (userIps != null && !userIps.isEmpty()) {
+                    for (IPAddressVO userIp : userIps) {
+                        PublicIp publicIp = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
+                        publicIps.add(publicIp);
+                    }
                 }
             }
         }
-        // rules can not programmed unless IP is associated with network service provider, so run IP assoication for
+
+        // rules can not programmed unless IP is associated with network service provider, so run IP association for
         // the network so as to ensure IP is associated before applying rules (in add state)
-        if (checkIfIpAssocRequired(network, false, publicIps)) {
+        if (network != null && checkIfIpAssocRequired(network, false, publicIps)) {
             applyIpAssociations(network, false, continueOnError, publicIps);
         }
 
         try {
-            applier.applyRules(network, purpose, rules);
+            if (network != null || vpc != null) {
+                applier.applyRules(network, vpc, purpose, rules);
+            } else {
+                logger.warn("Skipping applyRules: no network or vpc resolved for rules (networkId={}, vpcId={})", networkId, vpcId);
+                success = false;
+            }
         } catch (ResourceUnavailableException e) {
             if (!continueOnError) {
                 throw e;
@@ -691,7 +721,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
         // if there are no active rules associated with a public IP, then public IP need not be associated with a provider.
         // This IPAssoc ensures, public IP is dis-associated after last active rule is revoked.
-        if (checkIfIpAssocRequired(network, true, publicIps)) {
+        if (network != null && checkIfIpAssocRequired(network, true, publicIps)) {
             applyIpAssociations(network, true, continueOnError, publicIps);
         }
 

@@ -151,6 +151,10 @@ export default {
   props: {
     override: {
       type: Object
+    },
+    accountState: {
+      type: String,
+      default: 'Enabled'
     }
   },
   created () {
@@ -199,7 +203,7 @@ export default {
         response: 'json',
         domainId: this.selectedDomain,
         showicon: true,
-        state: 'Enabled',
+        state: this.accountState,
         isrecursive: false
       })
         .then((response) => {

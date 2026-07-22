@@ -24,28 +24,21 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.network.BgpPeer;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.ObjectUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-
-import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.vm.VirtualMachineProfileImpl;
-import com.cloud.vm.VmDetailConstants;
-import com.cloud.vm.dao.NicDao;
-import com.google.gson.Gson;
-
 import org.apache.cloudstack.api.command.admin.router.ConfigureOvsElementCmd;
 import org.apache.cloudstack.api.command.admin.router.ConfigureVirtualRouterElementCmd;
 import org.apache.cloudstack.api.command.admin.router.CreateVirtualRouterElementCmd;
 import org.apache.cloudstack.api.command.admin.router.ListOvsElementsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListVirtualRouterElementsCmd;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.network.BgpPeer;
 import org.apache.cloudstack.network.router.deployment.RouterDeploymentDefinition;
 import org.apache.cloudstack.network.router.deployment.RouterDeploymentDefinitionBuilder;
 import org.apache.cloudstack.network.topology.NetworkTopology;
 import org.apache.cloudstack.network.topology.NetworkTopologyContext;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.configuration.ConfigurationManager;
@@ -101,6 +94,7 @@ import com.cloud.network.vpc.Vpc;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.component.AdapterBase;
@@ -117,8 +111,12 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VirtualMachineProfileImpl;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.DomainRouterDao;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
+import com.google.gson.Gson;
 
 public class VirtualRouterElement extends AdapterBase implements VirtualRouterElementService, DhcpServiceProvider, UserDataServiceProvider, SourceNatServiceProvider,
 StaticNatServiceProvider, FirewallServiceProvider, LoadBalancingServiceProvider, PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, IpDeployer,
@@ -212,6 +210,10 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         return true;
     }
 
+    protected boolean canHandle(final Vpc vpc, final Service service) {
+        return false;
+    }
+
     @Override
     public boolean implement(final Network network, final NetworkOffering offering, final DeployDestination dest, final ReservationContext context)
             throws ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
@@ -281,7 +283,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         if (canHandle(network, Service.Firewall)) {
             final List<DomainRouterVO> routers = getRouters(network);
             if (routers == null || routers.isEmpty()) {
-                logger.debug("Virtual router element doesn't need to apply firewall rules on the backend; virtual router doesn't exist in the network {}", network);
+                logger.debug("Virtual router element doesn't need to apply firewall rules on the backend; virtual router doesn't exist in the network {}");
                 return true;
             }
 
@@ -303,6 +305,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         }
         return result;
     }
+
 
     @Override
     public boolean validateLBRule(final Network network, final LoadBalancingRule rule) {
@@ -738,7 +741,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
 
         _userVmDao.loadDetails(userVmVO);
         userVmVO.setDetail(VmDetailConstants.PASSWORD, password_encrypted);
-        _userVmDao.saveDetails(userVmVO);
+        _userVmDao.saveDetails(userVmVO, List.of(VmDetailConstants.PASSWORD));
 
         userVmVO.setUpdateParameters(true);
         _userVmDao.update(userVmVO.getId(), userVmVO);

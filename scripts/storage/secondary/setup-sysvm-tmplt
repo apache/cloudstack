@@ -105,7 +105,7 @@ if [[ "$destfiles" != "" ]]; then
   failed 2 "Data already exists at destination $destdir"
 fi
 
-tmpfolder=/tmp/cloud/templates/
+tmpfolder=/var/tmp/cloud/templates/
 mkdir -p $tmpfolder
 tmplfile=$tmpfolder/$localfile
 

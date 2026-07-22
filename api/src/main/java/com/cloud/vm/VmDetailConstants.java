@@ -136,4 +136,14 @@ public interface VmDetailConstants {
     String ACTIVE_CHECKPOINT_CREATE_TIME = "active.checkpoint.create.time";
     String LAST_CHECKPOINT_ID = "last.checkpoint.id";
     String LAST_CHECKPOINT_CREATE_TIME = "last.checkpoint.create.time";
+
+    // KBOSS specific
+    String LINKED_VOLUMES_SECONDARY_STORAGE_UUIDS = "linkedVolumesSecondaryStorageUuids";
+    String VALIDATION_COMMAND = "backupValidationCommand";
+    String VALIDATION_COMMAND_ARGUMENTS = "backupValidationCommandArguments";
+    String VALIDATION_COMMAND_EXPECTED_RESULT = "backupValidationCommandExpectedResult";
+    String VALIDATION_COMMAND_TIMEOUT = "backupValidationCommandTimeout";
+    String VALIDATION_SCREENSHOT_WAIT = "backupValidationScreenshotWait";
+    String VALIDATION_BOOT_TIMEOUT = "backupValidationBootTimeout";
+    String LAST_KNOWN_STATE = "last_known_state";
 }

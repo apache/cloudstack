@@ -112,6 +112,7 @@ import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.ValidatedConfigKey;
+import org.apache.cloudstack.kms.KMSManager;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.dao.ConfigurationGroupDao;
 import org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDao;
@@ -1515,6 +1516,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         if (type.equals(Integer.class)) {
             int val = Integer.parseInt(value);
+            if (KMSManager.KMSDekSizeBits.key().equalsIgnoreCase(name)) {
+                if (val != 128 && val != 192 && val != 256) {
+                    return String.format("Please enter a valid value for configuration parameter [%s]. Supported values are 128, 192, or 256.", name);
+                }
+            }
             if (NetworkModel.MACIdentifier.key().equalsIgnoreCase(name)) {
                 // The value needs to be between 0 to 255 because the MAC generation needs a value of 8 bits
                 // 0 is considered as disabled.
@@ -7257,7 +7263,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
 
             if (forVpc == null) {
-                if (service == Service.SecurityGroup || service == Service.Firewall) {
+                if (service == Service.SecurityGroup) {
                     forVpc = false;
                 } else if (service == Service.NetworkACL) {
                     forVpc = true;
@@ -7302,7 +7308,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     }
                     for (final String prvNameStr : svcPrv.get(serviceStr)) {
                         // check if provider is supported
-                        final Network.Provider provider = Network.Provider.getProvider(prvNameStr);
+                        final Network.Provider provider = _networkModel.resolveProvider(prvNameStr);
                         if (provider == null) {
                             throw new InvalidParameterValueException("Invalid service provider: " + prvNameStr);
                         }
@@ -7988,7 +7994,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 // 1) Vaidate the detail values - have to match the lb provider
                 // name
                 final String providerStr = details.get(detail);
-                if (Network.Provider.getProvider(providerStr) == null) {
+                if (_networkModel.resolveProvider(providerStr) == null) {
                     throw new InvalidParameterValueException("Invalid value " + providerStr + " for the detail " + detail);
                 }
                 if (serviceProviderMap.get(Service.Lb) != null) {
@@ -8480,8 +8486,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     private Map<String, String> getSourceOfferingDetails(Long sourceOfferingId) {
         List<NetworkOfferingDetailsVO> sourceDetailsVOs = networkOfferingDetailsDao.listDetails(sourceOfferingId);
         Map<String, String> sourceDetailsMap = new HashMap<>();
+        Set<String> ignoredSourceDetails = new HashSet<>(Arrays.asList(Detail.internetProtocol.name(), Detail.domainid.name(), Detail.zoneid.name()));
         for (NetworkOfferingDetailsVO detailVO : sourceDetailsVOs) {
-            sourceDetailsMap.put(detailVO.getName(), detailVO.getValue());
+            if (!ignoredSourceDetails.contains(detailVO.getName())) {
+                sourceDetailsMap.put(detailVO.getName(), detailVO.getValue());
+            }
         }
         return sourceDetailsMap;
     }
@@ -8629,7 +8638,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
             if (cmd.getDetails() == null || cmd.getDetails().isEmpty()) {
                 if (!sourceDetailsMap.isEmpty()) {
-                    setField(cmd, "details", sourceDetailsMap);
+                    setField(cmd, "sourceDetailsMap", sourceDetailsMap);
                 }
             }
 
@@ -9199,7 +9208,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             if (offering.getVmType() != null && offering.getVmType().equalsIgnoreCase(VirtualMachine.Type.DomainRouter.toString())) {
                 networkRate = NetworkOrchestrationService.NetworkThrottlingRate.valueIn(dataCenterId);
             } else {
-                networkRate = Integer.parseInt(_configDao.getValue(Config.VmNetworkThrottlingRate.key()));
+                networkRate = NetworkOrchestrationService.VmNetworkThrottlingRate.valueIn(dataCenterId);
             }
         }
 

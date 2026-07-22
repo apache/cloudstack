@@ -746,6 +746,11 @@ class Handler(BaseHTTPRequestHandler):
                     dirty_bitmap_ctx = f"qemu:dirty-bitmap:{export_bitmap}"
                     extents = backend.get_dirty_extents(dirty_bitmap_ctx)
                     if is_fallback_dirty_response(extents):
+                        logging.warning(
+                            "EXTENTS image_id=%s: no usable dirty bitmap data for "
+                            "context %r; reporting all allocated extents as dirty",
+                            image_id, dirty_bitmap_ctx,
+                        )
                         allocation = backend.get_allocation_extents()
                         extents = [
                             {

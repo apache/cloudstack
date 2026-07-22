@@ -35,6 +35,12 @@
             <tooltip-label :title="$t('label.use.backup.ip.address')" :tooltip="$t('label.use.backup.ip.address.tooltip')"/>
           </template>
         </a-form-item>
+        <a-form-item name="quickRestore" ref="quickRestore" >
+          <template #label>
+            <tooltip-label :title="$t('label.quickrestore')" :tooltip="apiParams.quickrestore?.description"/>
+          </template>
+          <a-switch v-model:checked="form.quickRestore" />
+        </a-form-item>
       </a-form>
       <div class="card-footer">
         <a-button @click="closeAction">
@@ -81,6 +87,7 @@ export default {
       loading: true,
       form: {
         name: '',
+        quickRestore: false,
         preserveIpAddresses: false
       }
     }
@@ -90,6 +97,9 @@ export default {
       type: Object,
       required: true
     }
+  },
+  beforeCreate () {
+    this.apiParams = this.$getApiParams('createVMFromBackup')
   },
   async created () {
     await Promise.all([
@@ -203,7 +213,7 @@ export default {
         args.name = this.form.name
         args.displayname = this.form.name
       }
-
+      args.quickRestore = this.form.quickRestore
       if (this.form.preserveIpAddresses) {
         args.preserveip = this.form.preserveIpAddresses
       }

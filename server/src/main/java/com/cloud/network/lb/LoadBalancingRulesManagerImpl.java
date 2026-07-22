@@ -119,6 +119,7 @@ import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.SslCertVO;
 import com.cloud.network.element.LoadBalancingServiceProvider;
+import com.cloud.network.element.NetworkElement;
 import com.cloud.network.lb.LoadBalancingRule.LbAutoScalePolicy;
 import com.cloud.network.lb.LoadBalancingRule.LbAutoScaleVmGroup;
 import com.cloud.network.lb.LoadBalancingRule.LbAutoScaleVmProfile;
@@ -862,7 +863,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 success = false;
             }
         } else {
-            _lb2stickinesspoliciesDao.expunge(stickinessPolicyId);
+            _lb2stickinesspoliciesDao.remove(stickinessPolicyId);
         }
         return success;
     }
@@ -1664,6 +1665,12 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                     _lb2healthcheckDao.persist(lbHealthCheck);
                 }
 
+                List<LBStickinessPolicyVO> stickinessPolicies = _lb2stickinesspoliciesDao.listByLoadBalancerId(loadBalancerId);
+                for (LBStickinessPolicyVO stickinessPolicy : stickinessPolicies) {
+                    stickinessPolicy.setRevoke(true);
+                    _lb2stickinesspoliciesDao.persist(stickinessPolicy);
+                }
+
                 if (generateUsageEvent) {
                     // Generate usage event right after all rules were marked for revoke
                     Network network = _networkModel.getNetwork(lb.getNetworkId());
@@ -2048,6 +2055,16 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             handled = lbElement.applyLBRules(network, rules);
             if (handled)
                 break;
+        }
+        if (!handled) {
+            // Get provider name and get the element by provider name (it could be an external provider)
+            String lbProviderName = _ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Service.Lb);
+            if (lbProviderName != null) {
+                NetworkElement element = _networkModel.getElementImplementingProvider(lbProviderName);
+                if (element instanceof LoadBalancingServiceProvider) {
+                    handled = ((LoadBalancingServiceProvider) element).applyLBRules(network, rules);
+                }
+            }
         }
         return handled;
     }
@@ -2678,7 +2695,12 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
     @Override
     public void removeLBRule(LoadBalancer rule) {
-        // remove the rule
+        FirewallRule relatedFirewallRule = _firewallDao.findByRelatedId(rule.getId());
+        if (relatedFirewallRule != null) {
+            logger.debug("Load balancer [{}] has a related firewall rule [{}]. Removing it.", rule.getUuid(), relatedFirewallRule.getUuid());
+            _firewallDao.remove(relatedFirewallRule.getId());
+        }
+
         _lbDao.remove(rule.getId());
     }
 

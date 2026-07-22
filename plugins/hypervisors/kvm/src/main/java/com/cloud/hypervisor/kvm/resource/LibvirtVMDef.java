@@ -57,6 +57,10 @@ import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 public class LibvirtVMDef {
     protected static Logger LOGGER = LogManager.getLogger(LibvirtVMDef.class);
 
+    // CD-ROM slot allocation: getDevLabel() maps deviceSeq=3,4 to hdc and hdd on the IDE bus.
+    // Bumping this requires extending getDevLabel() (e.g. to spill onto SATA or a second IDE controller).
+    public static final int MAX_CDROMS_PER_VM = 2;
+
     private String _hvsType;
     private static long s_libvirtVersion;
     private static long s_qemuVersion;
@@ -971,6 +975,7 @@ public class LibvirtVMDef {
         private BlockIOSize logicalBlockIOSize = null;
         private BlockIOSize physicalBlockIOSize = null;
         private DiskGeometry geometry = null;
+        private List<String> backingStoreList = null; // Ordered list of backing stores, the first in the list is the immediate backing store, and the last in the list is the base
 
         public DiscardType getDiscard() {
             return _discard;
@@ -1340,6 +1345,14 @@ public class LibvirtVMDef {
 
         public String getSourcePath() {
             return _sourcePath;
+        }
+
+        public List<String> getBackingStoreList() {
+            return backingStoreList;
+        }
+
+        public void setBackingStoreList(List<String> backingStoreList) {
+            this.backingStoreList = backingStoreList;
         }
 
         @Override

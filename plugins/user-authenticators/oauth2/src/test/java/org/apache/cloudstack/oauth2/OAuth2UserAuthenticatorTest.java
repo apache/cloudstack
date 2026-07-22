@@ -69,7 +69,7 @@ public class OAuth2UserAuthenticatorTest {
     @Before
     public void setUp() {
         closeable = MockitoAnnotations.openMocks(this);
-        doReturn(true).when(authenticator).isOAuthPluginEnabled();
+        doReturn(true).when(authenticator).isOAuthPluginEnabled(anyLong());
     }
 
     @After
@@ -93,7 +93,7 @@ public class OAuth2UserAuthenticatorTest {
         when(userAccountDao.getUserAccount(username, domainId)).thenReturn(userAccount);
         when(userDao.getUser(userAccount.getId())).thenReturn(user);
         when(userOAuth2mgr.getUserOAuth2AuthenticationProvider(provider[0])).thenReturn(userOAuth2Authenticator);
-        when(userOAuth2Authenticator.verifyUser(email[0], secretCode[0])).thenReturn(true);
+        when(userOAuth2Authenticator.verifyUser(email[0], secretCode[0], domainId)).thenReturn(true);
 
         Map<String, Object[]> requestParameters = new HashMap<>();
         requestParameters.put("provider", provider);
@@ -108,7 +108,7 @@ public class OAuth2UserAuthenticatorTest {
         verify(userAccountDao).getUserAccount(username, domainId);
         verify(userDao).getUser(userAccount.getId());
         verify(userOAuth2mgr).getUserOAuth2AuthenticationProvider(provider[0]);
-        verify(userOAuth2Authenticator).verifyUser(email[0], secretCode[0]);
+        verify(userOAuth2Authenticator).verifyUser(email[0], secretCode[0], domainId);
     }
 
     @Test
@@ -126,7 +126,7 @@ public class OAuth2UserAuthenticatorTest {
         when(userAccountDao.getUserAccount(username, domainId)).thenReturn(userAccount);
         when(userDao.getUser(userAccount.getId())).thenReturn(user);
         when(userOAuth2mgr.getUserOAuth2AuthenticationProvider(provider[0])).thenReturn(userOAuth2Authenticator);
-        when(userOAuth2Authenticator.verifyUser(email[0], secretCode[0])).thenReturn(false);
+        when(userOAuth2Authenticator.verifyUser(email[0], secretCode[0], domainId)).thenReturn(false);
 
         Map<String, Object[]> requestParameters = new HashMap<>();
         requestParameters.put("provider", provider);
@@ -141,7 +141,7 @@ public class OAuth2UserAuthenticatorTest {
         verify(userAccountDao).getUserAccount(username, domainId);
         verify(userDao).getUser(userAccount.getId());
         verify(userOAuth2mgr).getUserOAuth2AuthenticationProvider(provider[0]);
-        verify(userOAuth2Authenticator).verifyUser(email[0], secretCode[0]);
+        verify(userOAuth2Authenticator).verifyUser(email[0], secretCode[0], domainId);
     }
 
     @Test
@@ -166,6 +166,50 @@ public class OAuth2UserAuthenticatorTest {
 
         verify(userAccountDao).getUserAccount(username, domainId);
         verify(userDao, never()).getUser(anyLong());
+        verify(userOAuth2mgr, never()).getUserOAuth2AuthenticationProvider(anyString());
+    }
+
+    @Test
+    public void testAuthenticatePluginDisabled() {
+        doReturn(false).when(authenticator).isOAuthPluginEnabled(anyLong());
+
+        Pair<Boolean, OAuth2UserAuthenticator.ActionOnFailedAuthentication> result =
+                authenticator.authenticate("testuser", null, 1L, new HashMap<>());
+
+        assertFalse(result.first());
+        assertNull(result.second());
+        verify(userAccountDao, never()).getUserAccount(anyString(), anyLong());
+    }
+
+    @Test
+    public void testAuthenticateNullRequestParameters() {
+        Pair<Boolean, OAuth2UserAuthenticator.ActionOnFailedAuthentication> result =
+                authenticator.authenticate("testuser", null, 1L, null);
+
+        assertFalse(result.first());
+        assertNull(result.second());
+        verify(userAccountDao, never()).getUserAccount(anyString(), anyLong());
+    }
+
+    @Test
+    public void testAuthenticateNullProvider() {
+        String username = "testuser";
+        Long domainId = 1L;
+
+        UserAccount userAccount = mock(UserAccount.class);
+        when(userAccountDao.getUserAccount(username, domainId)).thenReturn(userAccount);
+        when(userDao.getUser(userAccount.getId())).thenReturn(mock(UserVO.class));
+
+        Map<String, Object[]> requestParameters = new HashMap<>();
+        requestParameters.put("email", new String[]{"test@email.com"});
+        requestParameters.put("secretcode", new String[]{"code"});
+        // No provider in params
+
+        Pair<Boolean, OAuth2UserAuthenticator.ActionOnFailedAuthentication> result =
+                authenticator.authenticate(username, null, domainId, requestParameters);
+
+        assertFalse(result.first());
+        assertNull(result.second());
         verify(userOAuth2mgr, never()).getUserOAuth2AuthenticationProvider(anyString());
     }
 }

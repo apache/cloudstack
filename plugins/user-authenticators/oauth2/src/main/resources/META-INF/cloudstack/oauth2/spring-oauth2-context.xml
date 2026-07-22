@@ -35,6 +35,9 @@
     <bean id="GithubOAuth2Provider" class="org.apache.cloudstack.oauth2.github.GithubOAuth2Provider">
         <property name="name" value="github" />
     </bean>
+    <bean id="KeycloakOAuth2Provider" class="org.apache.cloudstack.oauth2.keycloak.KeycloakOAuth2Provider">
+        <property name="name" value="keycloak" />
+    </bean>
 
     <bean id="OAuth2AuthManager" class="org.apache.cloudstack.oauth2.OAuth2AuthManagerImpl">
         <property name="name" value="OAUTH2Auth" />
@@ -45,7 +48,7 @@
           class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
         <property name="orderConfigKey" value="user.oauth2.providers.order" />
         <property name="excludeKey" value="oauth2.plugins.exclude" />
-        <property name="orderConfigDefault" value="google,github" />
+        <property name="orderConfigDefault" value="google,github,keycloak" />
     </bean>
 
     <bean class="org.apache.cloudstack.spring.lifecycle.registry.RegistryLifecycle">

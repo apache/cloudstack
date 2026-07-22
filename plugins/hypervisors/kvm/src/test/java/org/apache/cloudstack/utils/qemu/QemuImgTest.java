@@ -20,6 +20,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -41,7 +46,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.utils.script.Script;
@@ -391,6 +398,21 @@ public class QemuImgTest {
     }
 
     @Test
+    public void testHelpSupportsImageFormatQemu101Header() throws QemuImgException, LibvirtException {
+        // qemu-img 10.1.0 (e.g. RHEL 9.8: qemu-kvm-10.1.0-17.el9_8.3) changed the
+        // help header from "Supported formats:" to "Supported image formats:"
+        String help = "Supported image formats:\n" +
+                "  blkdebug blklogwrites blkverify compress copy-before-write copy-on-read\n" +
+                "  file ftp ftps host_cdrom host_device http https io_uring luks nbd null-aio\n" +
+                "  null-co nvme nvme-io_uring preallocate qcow2 quorum raw rbd\n" +
+                "  snapshot-access throttle vdi vhdx virtio-blk-vfio-pci\n" +
+                "  virtio-blk-vhost-user virtio-blk-vhost-vdpa vmdk vpc\n";
+        Assert.assertTrue("should support luks", QemuImg.helpSupportsImageFormat(help, PhysicalDiskFormat.LUKS));
+        Assert.assertTrue("should support qcow2", QemuImg.helpSupportsImageFormat(help, PhysicalDiskFormat.QCOW2));
+        Assert.assertFalse("should not support sheepdog", QemuImg.helpSupportsImageFormat(help, PhysicalDiskFormat.SHEEPDOG));
+    }
+
+    @Test
     public void testCheckAndRepair() throws LibvirtException {
         String filename = "/tmp/" + UUID.randomUUID() + ".qcow2";
 
@@ -417,8 +439,8 @@ public class QemuImgTest {
         QemuImg qemu = new QemuImg(0);
         qemu.addScriptOptionsFromMap(options, script);
 
-        Mockito.verify(script, Mockito.times(1)).add("-o");
-        Mockito.verify(script, Mockito.times(1)).add("key1=value1,key2=value2");
+        verify(script, Mockito.times(1)).add("-o");
+        verify(script, Mockito.times(1)).add("key1=value1,key2=value2");
     }
 
     @Test
@@ -429,7 +451,7 @@ public class QemuImgTest {
         QemuImg qemu = new QemuImg(0);
         qemu.addScriptOptionsFromMap(options, script);
 
-        Mockito.verify(script, Mockito.never()).add(Mockito.anyString());
+        verify(script, never()).add(Mockito.anyString());
     }
 
     @Test
@@ -439,7 +461,7 @@ public class QemuImgTest {
         QemuImg qemu = new QemuImg(0);
         qemu.addScriptOptionsFromMap(null, script);
 
-        Mockito.verify(script, Mockito.never()).add(Mockito.anyString());
+        verify(script, never()).add(Mockito.anyString());
     }
 
     @Test
@@ -451,8 +473,8 @@ public class QemuImgTest {
         QemuImg qemu = new QemuImg(0);
         qemu.addScriptOptionsFromMap(options, script);
 
-        Mockito.verify(script, Mockito.times(1)).add("-o");
-        Mockito.verify(script, Mockito.times(1)).add("key1=value1");
+        verify(script, Mockito.times(1)).add("-o");
+        verify(script, Mockito.times(1)).add("key1=value1");
     }
 
     @Test
@@ -521,8 +543,8 @@ public class QemuImgTest {
         QemuImg qemuImg = new QemuImg(0);
         qemuImg.addScriptResizeOptionsFromMap(options, script);
 
-        Mockito.verify(script, Mockito.times(1)).add("--preallocation=metadata");
-        Mockito.verify(script, Mockito.never()).add("-o");
+        verify(script, Mockito.times(1)).add("--preallocation=metadata");
+        verify(script, never()).add("-o");
         assertTrue(options.isEmpty());
     }
 
@@ -534,7 +556,7 @@ public class QemuImgTest {
         QemuImg qemuImg = new QemuImg(0);
         qemuImg.addScriptResizeOptionsFromMap(options, script);
 
-        Mockito.verify(script, Mockito.never()).add(Mockito.anyString());
+        verify(script, never()).add(Mockito.anyString());
     }
 
     @Test
@@ -544,7 +566,7 @@ public class QemuImgTest {
         QemuImg qemuImg = new QemuImg(0);
         qemuImg.addScriptResizeOptionsFromMap(null, script);
 
-        Mockito.verify(script, Mockito.never()).add(Mockito.anyString());
+        verify(script, never()).add(Mockito.anyString());
     }
 
     @Test
@@ -557,9 +579,92 @@ public class QemuImgTest {
         QemuImg qemuImg = new QemuImg(0);
         qemuImg.addScriptResizeOptionsFromMap(options, script);
 
-        Mockito.verify(script, Mockito.times(1)).add("--preallocation=full");
-        Mockito.verify(script, Mockito.times(1)).add("-o");
-        Mockito.verify(script, Mockito.times(1)).add("key=value");
+        verify(script, Mockito.times(1)).add("--preallocation=full");
+        verify(script, Mockito.times(1)).add("-o");
+        verify(script, Mockito.times(1)).add("key=value");
         assertFalse(options.containsKey(QemuImg.PREALLOCATION));
+    }
+
+    @Spy
+    private QemuImg qemuImgSpy;
+
+    @Mock
+    private Script scriptMock;
+
+    @Mock
+    private QemuImgFile qemuImgFileMock1;
+
+    @Mock
+    private QemuImgFile qemuImgFileMock2;
+
+    @Test(expected = QemuImgException.class)
+    public void commitTestNullFileThrows() throws Exception {
+        qemuImgSpy.commit(null, null, false);
+    }
+
+    @Test
+    public void commitTestBasicCommand() throws Exception {
+        doReturn(scriptMock).when(qemuImgSpy).createScript(any(), anyLong());
+        doReturn(null).when(scriptMock).execute();
+        doReturn(null).when(qemuImgFileMock1).getFormat();
+        doReturn("file.qcow2").when(qemuImgFileMock1).getFileName();
+
+        qemuImgSpy.commit(qemuImgFileMock1, null, false);
+
+        verify(scriptMock).add("commit");
+        verify(scriptMock).add("file.qcow2");
+    }
+
+    @Test
+    public void commitTestWithFormat() throws Exception {
+        doReturn(scriptMock).when(qemuImgSpy).createScript(any(), anyLong());
+        doReturn(null).when(scriptMock).execute();
+        doReturn(PhysicalDiskFormat.QCOW2).when(qemuImgFileMock1).getFormat();
+        doReturn("file.qcow2").when(qemuImgFileMock1).getFileName();
+
+        qemuImgSpy.commit(qemuImgFileMock1, null, false);
+
+        verify(scriptMock).add("-f");
+        verify(scriptMock).add("qcow2");
+    }
+
+    @Test
+    public void commitTestWithBase() throws Exception {
+        doReturn(scriptMock).when(qemuImgSpy).createScript(any(), anyLong());
+        doReturn(null).when(scriptMock).execute();
+
+        doReturn(null).when(qemuImgFileMock1).getFormat();
+        doReturn("file.qcow2").when(qemuImgFileMock1).getFileName();
+        doReturn("base.qcow2").when(qemuImgFileMock2).getFileName();
+
+        qemuImgSpy.commit(qemuImgFileMock1, qemuImgFileMock2, true);
+
+        verify(scriptMock).add("-b");
+        verify(scriptMock).add("base.qcow2");
+        verify(scriptMock, never()).add("-d");
+    }
+
+    @Test
+    public void commitTestSkipEmptyingFiles() throws Exception {
+        doReturn(scriptMock).when(qemuImgSpy).createScript(any(), anyLong());
+        doReturn(null).when(scriptMock).execute();
+
+        doReturn(null).when(qemuImgFileMock1).getFormat();
+        doReturn("file.qcow2").when(qemuImgFileMock1).getFileName();
+
+        qemuImgSpy.commit(qemuImgFileMock1, null, true);
+
+        verify(scriptMock).add("-d");
+    }
+
+    @Test(expected = QemuImgException.class)
+    public void commitTestExecutionFails() throws Exception {
+        doReturn(scriptMock).when(qemuImgSpy).createScript(any(), anyLong());
+        doReturn("error").when(scriptMock).execute();
+
+        doReturn(null).when(qemuImgFileMock1).getFormat();
+        doReturn("file.qcow2").when(qemuImgFileMock1).getFileName();
+
+        qemuImgSpy.commit(qemuImgFileMock1, null, false);
     }
 }

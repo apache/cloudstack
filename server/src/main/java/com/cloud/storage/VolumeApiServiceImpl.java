@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.clvm.ClvmPoolManager;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.InternalIdentity;
@@ -53,6 +54,8 @@ import org.apache.cloudstack.api.command.user.volume.UploadVolumeCmd;
 import org.apache.cloudstack.api.response.GetUploadParamsResponse;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupManager;
+import org.apache.cloudstack.backup.BackupManagerImpl;
+import org.apache.cloudstack.backup.InternalBackupService;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.direct.download.DirectDownloadHelper;
@@ -63,6 +66,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
@@ -94,6 +98,7 @@ import org.apache.cloudstack.resourcedetail.DiskOfferingDetailVO;
 import org.apache.cloudstack.resourcedetail.SnapshotPolicyDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.SnapshotPolicyDetailsDao;
+import org.apache.cloudstack.kms.KMSManager;
 import org.apache.cloudstack.resourcelimit.Reserver;
 import org.apache.cloudstack.snapshot.SnapshotHelper;
 import org.apache.cloudstack.storage.command.AttachAnswer;
@@ -370,9 +375,18 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     @Inject
     EndPointSelector _epSelector;
     @Inject
+    ClvmPoolManager clvmPoolManager;
+    @Inject
     private ReservationDao reservationDao;
     @Inject
     private VMSnapshotDetailsDao vmSnapshotDetailsDao;
+    @Inject
+    private KMSManager kmsManager;
+    @Inject
+    private InternalBackupService internalBackupService;
+
+    @Inject
+    private BackupManager backupManager;
 
     public static final String KVM_FILE_BASED_STORAGE_SNAPSHOT = "kvmFileBasedStorageSnapshot";
 
@@ -768,15 +782,15 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     public VolumeVO allocVolume(CreateVolumeCmd cmd) throws ResourceAllocationException {
         return allocVolume(cmd.getEntityOwnerId(), cmd.getZoneId(), cmd.getDiskOfferingId(), cmd.getVirtualMachineId(),
                 cmd.getSnapshotId(), getVolumeNameFromCommand(cmd.getVolumeName()), cmd.getSize(),
-                cmd.getDisplayVolume(), cmd.getMinIops(), cmd.getMaxIops(), cmd.getCustomId());
+                cmd.getDisplayVolume(), cmd.getMinIops(), cmd.getMaxIops(), cmd.getCustomId(), cmd.getKmsKeyId());
     }
 
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_CREATE, eventDescription = "creating volume", create = true)
     public VolumeVO allocVolume(long ownerId, Long zoneId, Long diskOfferingId, Long vmId, Long snapshotId,
-            String name, Long cmdSize, Boolean displayVolume, Long cmdMinIops, Long cmdMaxIops, String customId)
-            throws ResourceAllocationException {
+                                String name, Long cmdSize, Boolean displayVolume, Long cmdMinIops, Long cmdMaxIops,
+                                String customId, Long kmsKeyId) throws ResourceAllocationException {
         Account caller = CallContext.current().getCallingAccount();
 
         Account owner = _accountMgr.getActiveAccountById(ownerId);
@@ -917,7 +931,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             parentVolume = _volsDao.findByIdIncludingRemoved(snapshotCheck.getVolumeId());
 
             // Don't support creating templates from encrypted volumes (yet)
-            if (parentVolume.getPassphraseId() != null) {
+            if (parentVolume.getPassphraseId() != null || parentVolume.getKmsKeyId() != null) {
                 throw new UnsupportedOperationException("Cannot create new volumes from encrypted volume snapshots");
             }
 
@@ -968,7 +982,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         Storage.ProvisioningType provisioningType = diskOffering.getProvisioningType();
 
-        List<String> tags = _resourceLimitMgr.getResourceLimitStorageTagsForResourceCountOperation(displayVolume, diskOffering);
+        List<String> tags = _resourceLimitMgr.getResourceLimitStorageTagsForResourceCountOperation(displayVolume, diskOffering, null);
         if (tags.size() == 1 && tags.get(0) == null) {
             tags = new ArrayList<>();
         }
@@ -996,8 +1010,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             String userSpecifiedName = getVolumeNameFromCommand(name);
 
+            if (kmsKeyId != null) {
+                kmsManager.checkKmsKeyForVolumeEncryption(owner, kmsKeyId, zoneId);
+            }
+
             return commitVolume(snapshotId, caller, owner, displayVolume, zoneId, diskOfferingId, provisioningType, size, minIops, maxIops, parentVolume, userSpecifiedName,
-                    _uuidMgr.generateUuid(Volume.class, customId), details);
+                    _uuidMgr.generateUuid(Volume.class, customId), details, kmsKeyId);
         } finally {
             ReservationHelper.closeAll(reservations);
         }
@@ -1014,7 +1032,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     private VolumeVO commitVolume(final Long snapshotId, final Account caller, final Account owner, final Boolean displayVolume, final Long zoneId, final Long diskOfferingId,
-                                  final Storage.ProvisioningType provisioningType, final Long size, final Long minIops, final Long maxIops, final VolumeVO parentVolume, final String userSpecifiedName, final String uuid, final Map<String, String> details) {
+                                  final Storage.ProvisioningType provisioningType, final Long size, final Long minIops, final Long maxIops, final VolumeVO parentVolume, final String userSpecifiedName, final String uuid, final Map<String, String> details, final Long kmsKeyId) {
         return Transaction.execute(new TransactionCallback<VolumeVO>() {
             @Override
             public VolumeVO doInTransaction(TransactionStatus status) {
@@ -1058,6 +1076,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     if (!volumeDetailsVO.isEmpty()) {
                         _volsDetailsDao.saveDetails(volumeDetailsVO);
                     }
+                }
+
+                // Store KMS key ID if provided (for volume encryption)
+                if (volume != null && kmsKeyId != null) {
+                    volume.setKmsKeyId(kmsKeyId);
+                    _volsDao.update(volume.getId(), volume);
                 }
 
                 CallContext.current().setEventDetails("Volume ID: " + volume.getUuid());
@@ -1138,7 +1162,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 // if VM Id is provided, attach the volume to the VM
                 if (vmId != null) {
                     try {
-                        attachVolumeToVM(vmId, volume.getId(), volume.getDeviceId(), false);
+                        attachVolumeToVM(vmId, volume.getId(), volume.getDeviceId(), false, false);
                     } catch (Exception ex) {
                         StringBuilder message = new StringBuilder("Volume: ");
                         message.append(volume.getUuid());
@@ -1166,7 +1190,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 VolumeVO finalVolume = volume;
                 logger.trace("Decrementing volume resource count for account {} as volume failed to create on the backend", () -> _accountMgr.getAccount(finalVolume.getAccountId()));
                 _resourceLimitMgr.decrementVolumeResourceCount(volume.getAccountId(), display,
-                        volume.getSize(), _diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId()));
+                        volume.getSize(), _diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId()), null);
             }
         }
     }
@@ -1356,7 +1380,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         long currentSize = volume.getSize();
         VolumeInfo volInfo = volFactory.getVolume(volume.getId());
-        boolean isEncryptionRequired = volume.getPassphraseId() != null;
+        boolean isEncryptionRequired = volume.getPassphraseId() != null || volume.getKmsKeyId() != null;
         if (newDiskOffering != null) {
             isEncryptionRequired = newDiskOffering.getEncrypt();
         }
@@ -1721,7 +1745,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      * Otherwise, after the removal in the database, we will try to remove the volume from both primary and secondary storage.
      */
     public boolean deleteVolume(long volumeId, Account caller) throws ConcurrentOperationException {
-        Volume volume = destroyVolume(volumeId, caller, true, true);
+        Volume volume = destroyVolume(volumeId, caller, true, true, null);
         return (volume != null);
     }
 
@@ -1836,6 +1860,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (DataStoreRole.Image.equals(role)) {
                 _resourceLimitMgr.decrementResourceCount(volOnStorage.getAccountId(), ResourceType.secondary_storage, volOnStorage.getSize());
             }
+
+            // Clean up CLVM lock host tracking detail after successful deletion from primary storage
+            if (DataStoreRole.Primary.equals(role)) {
+                clvmPoolManager.clearClvmLockHostDetail(volume);
+            }
         }
     }
 
@@ -1894,7 +1923,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_DESTROY, eventDescription = "destroying a volume")
-    public Volume destroyVolume(long volumeId, Account caller, boolean expunge, boolean forceExpunge) {
+    public Volume destroyVolume(long volumeId, Account caller, boolean expunge, boolean forceExpunge, Boolean enforceResourceLimitOnDisplayFalse) {
         VolumeVO volume = retrieveAndValidateVolume(volumeId, caller);
 
         validateDestroyVolume(volume, caller, expunge, forceExpunge);
@@ -1913,7 +1942,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     return null;
                 }
                 _resourceLimitMgr.decrementVolumeResourceCount(volume.getAccountId(), volume.isDisplay(),
-                        volume.getSize(), _diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId()));
+                        volume.getSize(), _diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId()), enforceResourceLimitOnDisplayFalse);
                 return volume;
             }
             if (!deleteVolumeFromStorage(volume, caller)) {
@@ -2375,14 +2404,16 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return a.equals(b);
     }
 
-    private VolumeVO resizeVolumeInternal(VolumeVO volume, DiskOfferingVO newDiskOffering, Long currentSize, Long newSize, Long newMinIops, Long newMaxIops, Integer newHypervisorSnapshotReserve, boolean shrinkOk) throws ResourceAllocationException {
+    VolumeVO resizeVolumeInternal(VolumeVO volume, DiskOfferingVO newDiskOffering, Long currentSize, Long newSize, Long newMinIops, Long newMaxIops, Integer newHypervisorSnapshotReserve, boolean shrinkOk) throws ResourceAllocationException {
         UserVmVO userVm = _userVmDao.findById(volume.getInstanceId());
         HypervisorType hypervisorType = _volsDao.getHypervisorType(volume.getId());
 
         if (userVm != null) {
-            if (volume.getVolumeType().equals(Volume.Type.ROOT) && userVm.getPowerState() != VirtualMachine.PowerState.PowerOff && hypervisorType == HypervisorType.VMware) {
-                logger.error(" For ROOT volume resize VM should be in Power Off state.");
-                throw new InvalidParameterValueException("VM current state is : " + userVm.getPowerState() + ". But VM should be in " + VirtualMachine.PowerState.PowerOff + " state.");
+            if (Volume.Type.ROOT.equals(volume.getVolumeType())
+                    && !State.Stopped.equals(userVm.getState())
+                    && HypervisorType.VMware.equals(hypervisorType)) {
+                logger.error("For ROOT volume resize VM should be in Stopped state.");
+                throw new InvalidParameterValueException("The current VM state is '" + userVm.getState() + "'. But the VM should be in " + State.Stopped + " state.");
             }
             // serialize VM operation
             AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
@@ -2436,7 +2467,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 shrinkOk);
     }
 
-    private void validateVolumeReadyStateAndHypervisorChecks(VolumeVO volume, long currentSize, Long newSize) {
+    void validateVolumeReadyStateAndHypervisorChecks(VolumeVO volume, long currentSize, Long newSize) {
         // checking if there are any ongoing snapshots on the volume which is to be resized
         List<SnapshotVO> ongoingSnapshots = _snapshotDao.listByStatus(volume.getId(), Snapshot.State.Creating, Snapshot.State.CreatedOnPrimary, Snapshot.State.BackingUp);
         if (ongoingSnapshots.size() > 0) {
@@ -2460,9 +2491,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         UserVmVO userVm = _userVmDao.findById(volume.getInstanceId());
         if (userVm != null) {
-            if (volume.getVolumeType().equals(Volume.Type.ROOT) && userVm.getPowerState() != VirtualMachine.PowerState.PowerOff && hypervisorType == HypervisorType.VMware) {
-                logger.error(" For ROOT volume resize VM should be in Power Off state.");
-                throw new InvalidParameterValueException("VM current state is : " + userVm.getPowerState() + ". But VM should be in " + VirtualMachine.PowerState.PowerOff + " state.");
+            if (Volume.Type.ROOT.equals(volume.getVolumeType())
+                    && !State.Stopped.equals(userVm.getState())
+                    && HypervisorType.VMware.equals(hypervisorType)) {
+                logger.error("For ROOT volume resize VM should be in Stopped state.");
+                throw new InvalidParameterValueException("The current VM state is '" + userVm.getState() + "'. But VM should be in " + State.Stopped + " state.");
             }
         }
     }
@@ -2479,7 +2512,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
     }
 
-    private void validateVolumeResizeWithNewDiskOfferingAndLoad(VolumeVO volume, DiskOfferingVO existingDiskOffering, DiskOfferingVO newDiskOffering, Long[] newSize, Long[] newMinIops, Long[] newMaxIops, Integer[] newHypervisorSnapshotReserve) {
+    void validateVolumeResizeWithNewDiskOfferingAndLoad(VolumeVO volume, DiskOfferingVO existingDiskOffering, DiskOfferingVO newDiskOffering, Long[] newSize, Long[] newMinIops, Long[] newMaxIops, Integer[] newHypervisorSnapshotReserve) {
         if (newDiskOffering.getRemoved() != null) {
             throw new InvalidParameterValueException("Requested disk offering has been removed.");
         }
@@ -2622,7 +2655,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_ATTACH, eventDescription = "attaching volume", async = true)
     public Volume attachVolumeToVM(AttachVolumeCmd command) {
-        return attachVolumeToVM(command.getVirtualMachineId(), command.getId(), command.getDeviceId(), false);
+        return attachVolumeToVM(command.getVirtualMachineId(), command.getId(), command.getDeviceId(), false, false);
     }
 
     protected VolumeVO getVmExistingVolumeForVolumeAttach(UserVmVO vm, VolumeInfo volumeToAttach) {
@@ -2711,7 +2744,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 throw new InvalidParameterValueException("Cannot attach uploaded volume, this operation is unsupported on storage pool type " + destPrimaryStorage.getPoolType());
             }
             newVolumeOnPrimaryStorage = _volumeMgr.createVolumeOnPrimaryStorage(vm, volumeToAttach,
-                    vm.getHypervisorType(), destPrimaryStorage);
+                    vm.getHypervisorType(), destPrimaryStorage, null, null);
         } catch (NoTransitionException e) {
             logger.debug("Failed to create volume on primary storage", e);
             throw new CloudRuntimeException("Failed to create volume on primary storage", e);
@@ -2738,21 +2771,42 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             logger.trace(String.format("is it needed to move the volume: %b?", moveVolumeNeeded));
         }
 
-        if (moveVolumeNeeded) {
+        // Check if CLVM lock transfer is needed (even if moveVolumeNeeded is false)
+        // This handles the case where the volume is already on the correct storage pool
+        // but the VM is running on a different host, requiring only a lock transfer
+        boolean isClvmLockTransferNeeded = !moveVolumeNeeded &&
+                isClvmLockTransferRequired(newVolumeOnPrimaryStorage, existingVolumeOfVm, vm);
+
+        if (isClvmLockTransferNeeded) {
+            // CLVM lock transfer - no data copy, no pool change needed
+            newVolumeOnPrimaryStorage = executeLightweightLockMigration(
+                    newVolumeOnPrimaryStorage, vm, existingVolumeOfVm,
+                    "CLVM lock transfer", "same pool to different host");
+        } else if (moveVolumeNeeded) {
             PrimaryDataStoreInfo primaryStore = (PrimaryDataStoreInfo)newVolumeOnPrimaryStorage.getDataStore();
             if (primaryStore.isLocal()) {
                 throw new CloudRuntimeException(
                         "Failed to attach local data volume " + volumeToAttach.getName() + " to VM " + vm.getDisplayName() + " as migration of local data volume is not allowed");
             }
-            StoragePoolVO vmRootVolumePool = _storagePoolDao.findById(existingVolumeOfVm.getPoolId());
 
-            try {
-                HypervisorType volumeToAttachHyperType = _volsDao.getHypervisorType(volumeToAttach.getId());
-                newVolumeOnPrimaryStorage = _volumeMgr.moveVolume(newVolumeOnPrimaryStorage, vmRootVolumePool.getDataCenterId(), vmRootVolumePool.getPodId(), vmRootVolumePool.getClusterId(),
-                        volumeToAttachHyperType);
-            } catch (ConcurrentOperationException | StorageUnavailableException e) {
-                logger.debug("move volume failed", e);
-                throw new CloudRuntimeException("move volume failed", e);
+            boolean isClvmLightweightMigration = isClvmLightweightMigrationNeeded(
+                    newVolumeOnPrimaryStorage, existingVolumeOfVm);
+
+            if (isClvmLightweightMigration) {
+                newVolumeOnPrimaryStorage = executeLightweightLockMigration(
+                        newVolumeOnPrimaryStorage, vm, existingVolumeOfVm,
+                        "CLVM lightweight migration", "different pools, same VG");
+            } else {
+                StoragePoolVO vmRootVolumePool = _storagePoolDao.findById(existingVolumeOfVm.getPoolId());
+
+                try {
+                    HypervisorType volumeToAttachHyperType = _volsDao.getHypervisorType(volumeToAttach.getId());
+                    newVolumeOnPrimaryStorage = _volumeMgr.moveVolume(newVolumeOnPrimaryStorage, vmRootVolumePool.getDataCenterId(), vmRootVolumePool.getPodId(), vmRootVolumePool.getClusterId(),
+                            volumeToAttachHyperType);
+                } catch (ConcurrentOperationException | StorageUnavailableException e) {
+                    logger.debug("move volume failed", e);
+                    throw new CloudRuntimeException("move volume failed", e);
+                }
             }
         }
         VolumeVO newVol = _volsDao.findById(newVolumeOnPrimaryStorage.getId());
@@ -2767,14 +2821,191 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return newVol;
     }
 
+    /**
+     * Helper method to get storage pools for volume and VM.
+     *
+     * @param volumeToAttach The volume being attached
+     * @param vmExistingVolume The VM's existing volume
+     * @return Pair of StoragePoolVO objects (volumePool, vmPool), or null if either pool is missing
+     */
+    private Pair<StoragePoolVO, StoragePoolVO> getStoragePoolsForVolumeAttachment(VolumeInfo volumeToAttach, VolumeVO vmExistingVolume) {
+        if (volumeToAttach == null || vmExistingVolume == null) {
+            return null;
+        }
+
+        StoragePoolVO volumePool = _storagePoolDao.findById(volumeToAttach.getPoolId());
+        StoragePoolVO vmPool = _storagePoolDao.findById(vmExistingVolume.getPoolId());
+
+        if (volumePool == null || vmPool == null) {
+            return null;
+        }
+
+        return new Pair<>(volumePool, vmPool);
+    }
+
+    /**
+     * Determines if a CLVM volume needs lightweight lock migration instead of full data copy.
+     *
+     * Lightweight migration is needed when:
+     * 1. Volume is on CLVM storage
+     * 2. Source and destination are in the same Volume Group
+     * 3. Only the host/lock needs to change (not the storage pool)
+     *
+     * @param volumeToAttach The volume being attached
+     * @param vmExistingVolume The VM's existing volume (typically root volume)
+     * @param vm The VM to attach the volume to
+     * @return true if lightweight CLVM lock migration should be used
+     */
+    private boolean isClvmLightweightMigrationNeeded(VolumeInfo volumeToAttach, VolumeVO vmExistingVolume) {
+        Pair<StoragePoolVO, StoragePoolVO> pools = getStoragePoolsForVolumeAttachment(volumeToAttach, vmExistingVolume);
+        if (pools == null) {
+            return false;
+        }
+
+        StoragePoolVO volumePool = pools.first();
+        StoragePoolVO vmPool = pools.second();
+
+        return volService.isLightweightMigrationNeeded(volumePool.getPoolType(), vmPool.getPoolType(),
+                volumePool.getPath(), vmPool.getPath());
+    }
+
+    /**
+     * Determines if a CLVM volume requires lock transfer when already on the correct storage pool.
+     *
+     * Lock transfer is needed when:
+     * 1. Volume is already on the same CLVM storage pool as VM's volumes
+     * 2. But the volume lock is held by a different host than where the VM is running
+     * 3. Only the lock needs to change (no pool change, no data copy)
+     *
+     * @param volumeToAttach The volume being attached
+     * @param vmExistingVolume The VM's existing volume (typically root volume)
+     * @param vm The VM to attach the volume to
+     * @return true if CLVM lock transfer is needed (but not full migration)
+     */
+    private boolean isClvmLockTransferRequired(VolumeInfo volumeToAttach, VolumeVO vmExistingVolume, UserVmVO vm) {
+        if (vm == null) {
+            return false;
+        }
+
+        Pair<StoragePoolVO, StoragePoolVO> pools = getStoragePoolsForVolumeAttachment(volumeToAttach, vmExistingVolume);
+        if (pools == null) {
+            return false;
+        }
+
+        StoragePoolVO volumePool = pools.first();
+        StoragePoolVO vmPool = pools.second();
+
+        Long vmHostId = vm.getHostId();
+        if (vmHostId == null) {
+            vmHostId = vm.getLastHostId();
+        }
+
+        return volService.isLockTransferRequired(volumeToAttach, volumePool.getPoolType(), vmPool.getPoolType(),
+                volumePool.getId(), vmPool.getId(), vmHostId);
+    }
+
+    /**
+     * Determines the destination host for CLVM lock migration.
+     *
+     * If VM is running, uses the VM's current host.
+     * If VM is stopped, picks an available UP host from the storage pool's cluster.
+     *
+     * @param vm The VM
+     * @param vmExistingVolume The VM's existing volume (to determine cluster)
+     * @return Host ID, or null if cannot be determined
+     */
+    private Long determineClvmLockDestinationHost(UserVmVO vm, VolumeVO vmExistingVolume) {
+        Long destHostId = vm.getHostId();
+        if (destHostId != null) {
+            return destHostId;
+        }
+
+        if (vmExistingVolume == null || vmExistingVolume.getPoolId() == null) {
+            return null;
+        }
+        StoragePoolVO pool = _storagePoolDao.findById(vmExistingVolume.getPoolId());
+        if (pool == null || pool.getClusterId() == null) {
+            return null;
+        }
+        List<HostVO> hosts = _hostDao.findByClusterId(pool.getClusterId());
+        if (hosts == null || hosts.isEmpty()) {
+            return null;
+        }
+        // Pick first available UP host
+        for (HostVO host : hosts) {
+            if (host.getStatus() == Status.Up) {
+                destHostId = host.getId();
+                logger.debug("VM {} is stopped, selected host {} from cluster {} for CLVM lock migration",
+                        vm.getUuid(), destHostId, pool.getClusterId());
+                return destHostId;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Executes CLVM lightweight migration with consistent logging and error handling.
+     *
+     * This helper method wraps the actual migration logic to eliminate code duplication
+     * between different CLVM migration scenarios (lock transfer vs. lightweight migration).
+     *
+     * @param volume The volume to migrate locks for
+     * @param vm The VM to attach the volume to
+     * @param vmExistingVolume The VM's existing volume (to determine target host)
+     * @param operationType Description of the operation type for logging (e.g., "CLVM lock transfer")
+     * @param scenarioDescription Description of the scenario for logging (e.g., "same pool to different host")
+     * @return Updated VolumeInfo after lock migration
+     * @throws CloudRuntimeException if migration fails
+     */
+    private VolumeInfo executeLightweightLockMigration(VolumeInfo volume, UserVmVO vm, VolumeVO vmExistingVolume,
+                                                        String operationType, String scenarioDescription) {
+        logger.info("Performing {} for volume {} to VM {} ({})",
+                operationType, volume.getUuid(), vm.getUuid(), scenarioDescription);
+
+        try {
+            return performLightweightLockMigration(volume, vm, vmExistingVolume);
+        } catch (Exception e) {
+            logger.error("{} failed for volume {}: {}",
+                    operationType, volume.getUuid(), e.getMessage(), e);
+            throw new CloudRuntimeException(operationType + " failed", e);
+        }
+    }
+
+    /**
+     * Performs lightweight CLVM lock migration for volume attachment.
+     * Delegates to VolumeService for the actual lock migration.
+     *
+     * @param volume The volume to migrate locks for
+     * @param vm The VM to attach the volume to
+     * @param vmExistingVolume The VM's existing volume (to determine target host)
+     * @return Updated VolumeInfo after lock migration
+     * @throws Exception if lock migration fails
+     */
+    private VolumeInfo performLightweightLockMigration(VolumeInfo volume, UserVmVO vm, VolumeVO vmExistingVolume) throws CloudRuntimeException {
+        Long destHostId = determineClvmLockDestinationHost(vm, vmExistingVolume);
+
+        if (destHostId == null) {
+            throw new CloudRuntimeException(
+                "Cannot determine destination host for CLVM lock migration - VM has no host and no available cluster hosts");
+        }
+
+        try {
+            return volService.performLockMigration(volume, destHostId);
+        } catch (CloudRuntimeException e) {
+            logger.error("CLVM lock migration failed for volume {}: {}", volume.getUuid(), e.getMessage(), e);
+            throw e;
+        }
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_ATTACH, eventDescription = "attaching volume", async = true)
-    public Volume attachVolumeToVM(Long vmId, Long volumeId, Long deviceId, Boolean allowAttachForSharedFS) {
+    public Volume attachVolumeToVM(Long vmId, Long volumeId, Long deviceId, Boolean allowAttachForSharedFS, boolean allowAttachOnRestoring) {
         Account caller = CallContext.current().getCallingAccount();
 
         VolumeInfo volumeToAttach = getAndCheckVolumeInfo(volumeId);
 
-        UserVmVO vm = getAndCheckUserVmVO(vmId, volumeToAttach);
+        UserVmVO vm = getAndCheckUserVmVO(vmId, volumeToAttach, allowAttachOnRestoring);
 
         if (!allowAttachForSharedFS && UserVmManager.SHAREDFSVM.equals(vm.getUserVmType())) {
             throw new InvalidParameterValueException("Can't attach a volume to a Shared FileSystem Instance");
@@ -2795,7 +3026,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         checkForVMSnapshots(vmId, vm);
 
-        checkForBackups(vm, true);
+        validateIfVmHasBackups(vm, true);
 
         _accountMgr.checkAccess(caller, null, true, volumeToAttach, vm);
 
@@ -2817,12 +3048,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(volumeToAttach.getDiskOfferingId());
-        if (diskOffering.getEncrypt() && rootDiskHyperType != HypervisorType.KVM) {
+            if (diskOffering.getEncrypt() && !(rootDiskHyperType == HypervisorType.KVM)) {
             throw new InvalidParameterValueException("Volume's disk offering has encryption enabled, but volume encryption is not supported for hypervisor type " + rootDiskHyperType);
         }
 
         Account owner = _accountDao.findById(volumeToAttach.getAccountId());
-        List<String> resourceLimitStorageTags = _resourceLimitMgr.getResourceLimitStorageTagsForResourceCountOperation(true, diskOffering);
+        List<String> resourceLimitStorageTags = _resourceLimitMgr.getResourceLimitStorageTagsForResourceCountOperation(true, diskOffering, null);
         Long requiredPrimaryStorageSpace = getRequiredPrimaryStorageSizeForVolumeAttach(resourceLimitStorageTags, volumeToAttach);
 
         try (CheckedReservation primaryStorageReservation = new CheckedReservation(owner, ResourceType.primary_storage, resourceLimitStorageTags, requiredPrimaryStorageSpace, reservationDao, _resourceLimitMgr)) {
@@ -2955,15 +3186,16 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      *
      * @return the user vm vo object correcponding to the vmId to attach to
      */
-    @NotNull private UserVmVO getAndCheckUserVmVO(Long vmId, VolumeInfo volumeToAttach) {
+    @NotNull private UserVmVO getAndCheckUserVmVO(Long vmId, VolumeInfo volumeToAttach, boolean allowAttachOnRestoring) {
         UserVmVO vm = _userVmDao.findById(vmId);
         if (vm == null || vm.getType() != VirtualMachine.Type.User) {
             throw new InvalidParameterValueException("Please specify a valid User VM.");
         }
 
-        // Check that the VM is in the correct state
-        if (vm.getState() != State.Running && vm.getState() != State.Stopped) {
-            throw new InvalidParameterValueException("Please specify a VM that is either running or stopped.");
+        if (allowAttachOnRestoring) {
+            validateVmState(vm, State.Running, State.Stopped, State.Restoring);
+        } else {
+            validateVmState(vm, State.Running, State.Stopped);
         }
 
         // Check that the VM and the volume are in the same zone
@@ -2971,6 +3203,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("Please specify a VM that is in the same zone as the volume.");
         }
         return vm;
+    }
+
+    private void validateVmState(UserVmVO vm, State... states) {
+        List<State> allowedStates = Arrays.asList(states);
+        if (!allowedStates.contains(vm.getState())) {
+            throw new InvalidParameterValueException(String.format("Please specify a VM that is on of the following states: %s.", allowedStates));
+        }
     }
 
     /**
@@ -3002,9 +3241,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return volumeToAttach;
     }
 
-    protected void checkForBackups(UserVmVO vm, boolean attach) {
-        if ((vm.getBackupOfferingId() == null || CollectionUtils.isEmpty(vm.getBackupVolumeList())) || BooleanUtils.isTrue(BackupManager.BackupEnableAttachDetachVolumes.value())) {
-            return;
+    protected boolean validateIfVmHasBackups(UserVmVO vm, boolean attach) {
+        if (vm.getBackupOfferingId() == null || CollectionUtils.isEmpty(backupDao.listByVmId(vm.getDataCenterId(), vm.getId()))) {
+            return false;
+        } else if (BooleanUtils.isTrue(BackupManager.BackupEnableAttachDetachVolumes.value())) {
+            return true;
         }
         String errorMsg = String.format("Unable to detach volume, cannot detach volume from a VM that has backups. First remove the VM from the backup offering or "
                 + "set the global configuration '%s' to true.", BackupManager.BackupEnableAttachDetachVolumes.key());
@@ -3131,7 +3372,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // Update only when the flag has changed.
         if (displayVolume != null && displayVolume != volume.isDisplayVolume()) {
             if (Boolean.FALSE.equals(displayVolume)) {
-                _resourceLimitMgr.decrementVolumeResourceCount(volume.getAccountId(), true, volume.getSize(), _diskOfferingDao.findById(volume.getDiskOfferingId()));
+                _resourceLimitMgr.decrementVolumeResourceCount(volume.getAccountId(), true, volume.getSize(), _diskOfferingDao.findById(volume.getDiskOfferingId()), null);
             } else {
                 _resourceLimitMgr.incrementVolumeResourceCount(volume.getAccountId(), true, volume.getSize(), _diskOfferingDao.findById(volume.getDiskOfferingId()));
             }
@@ -3227,7 +3468,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("Unable to detach volume, please specify an Instance that does not have Instance Snapshots");
         }
 
-        checkForBackups(vm, false);
+        boolean hasBackup = validateIfVmHasBackups(vm, false);
+        if (hasBackup) {
+            internalBackupService.prepareVolumeForDetach(volume, vm);
+        }
 
         AsyncJobExecutionContext asyncExecutionContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if (asyncExecutionContext != null) {
@@ -3570,7 +3814,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         }
 
-        if (vol.getPassphraseId() != null && !srcAndDestOnStorPool && !srcStoragePoolVO.getPoolType().equals(Storage.StoragePoolType.PowerFlex)) {
+        if ((vol.getPassphraseId() != null || vol.getKmsKeyId() != null) && !srcAndDestOnStorPool && !srcStoragePoolVO.getPoolType().equals(Storage.StoragePoolType.PowerFlex)) {
             throw new InvalidParameterValueException("Migration of encrypted volumes is unsupported");
         }
 
@@ -4227,6 +4471,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         }
 
+        VirtualMachine attachedVm = volume.getAttachedVM();
+        if (attachedVm != null && HypervisorType.KVM.equals(attachedVm.getHypervisorType()) && SnapshotManager.kvmIncrementalSnapshot.valueIn(_hostDao.findClusterIdByVolumeInfo(volume)) &&
+                backupManager.getBackupProvider(attachedVm.getDataCenterId()).getName().equals(BackupManagerImpl.KBOSS_BACKUP_PROVIDER) &&
+                CollectionUtils.isNotEmpty(backupDao.listByVmId(attachedVm.getDataCenterId(), attachedVm.getId()))) {
+            throw new CloudRuntimeException(String.format("VM [%s] has KBOSS backups, cannot take incremental snapshots of it.", attachedVm.getUuid()));
+        }
 
         return snapshotMgr.allocSnapshot(volumeId, policyId, snapshotName, locationType, false, zoneIds);
     }
@@ -4353,7 +4603,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw ex;
         }
 
-        if (volume.getPassphraseId() != null) {
+        if (volume.getPassphraseId() != null || volume.getKmsKeyId() != null) {
             throw new InvalidParameterValueException("Extraction of encrypted volumes is unsupported");
         }
 
@@ -4486,7 +4736,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 Volume.class.getName(), volume.getUuid(), volume.isDisplayVolume());
         DiskOfferingVO diskOfferingVO = _diskOfferingDao.findById(volume.getDiskOfferingId());
         _resourceLimitMgr.decrementVolumeResourceCount(oldAccount.getAccountId(), true, volume.getSize(),
-                diskOfferingVO);
+                diskOfferingVO, null);
 
         volume.setAccountId(newAccount.getAccountId());
         volume.setDomainId(newAccount.getDomainId());
@@ -4838,7 +5088,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (host != null) {
             _hostDao.loadDetails(host);
             boolean hostSupportsEncryption = Boolean.parseBoolean(host.getDetail(Host.HOST_VOLUME_ENCRYPTION));
-            if (volumeToAttach.getPassphraseId() != null && !hostSupportsEncryption) {
+            if ((volumeToAttach.getPassphraseId() != null || volumeToAttach.getKmsKeyId() != null) && !hostSupportsEncryption) {
                 throw new CloudRuntimeException(errorMsg + " because target host " + host + " doesn't support volume encryption");
             }
         }
@@ -4868,6 +5118,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     volService.revokeAccess(volFactory.getVolume(volumeToAttach.getId()), host, dataStore);
 
                     throw new CloudRuntimeException(e.getMessage());
+                }
+
+                // Reload volume from DB after grantAccess — managed storage drivers (e.g. ONTAP)
+                // may update the volume's path and iScsiName during grantAccess, so the local
+                // volumeToAttach object can be stale.
+                if (volumeToAttachStoragePool != null && DataStoreProvider.ONTAP_PLUGIN_NAME.equals(volumeToAttachStoragePool.getStorageProviderName())) {
+                    volumeToAttach = _volsDao.findById(volumeToAttach.getId());
                 }
             }
 
