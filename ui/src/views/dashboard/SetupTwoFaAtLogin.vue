@@ -111,6 +111,8 @@
               <a-form-item @finish="submitPin" v-ctrl-enter="submitPin" name="code" ref="code">
                 <a-input
                   v-model:value="form.code"
+                  autocomplete="one-time-code"
+                  inputmode="numeric"
                   placeholder="xxxxxx" />
               </a-form-item>
             </a-col>
