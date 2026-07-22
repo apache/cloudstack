@@ -174,11 +174,11 @@
           </a-input>
         </a-form-item>
         <div
-          v-if="(oauthGithubProvider || oauthGoogleProvider || oauthKeycloakProvider) && !form.oauthDomain"
+          v-if="(oauthGithubProvider || oauthGoogleProvider || oauthKeycloakProvider || oauthForgerockProvider) && !form.oauthDomain"
           style="text-align: center; color: #999; font-size: 12px; margin-bottom: 8px;">
           Enter your domain to see domain-specific providers
         </div>
-        <div class="center" v-if="oauthGithubProvider || oauthGoogleProvider || oauthKeycloakProvider">
+        <div class="center" v-if="oauthGithubProvider || oauthGoogleProvider || oauthKeycloakProvider || oauthForgerockProvider">
           <div class="social-auth" v-if="oauthGithubProvider">
             <a-button
               @click="handleGithubProviderAndDomain"
@@ -213,6 +213,18 @@
               style="height: 38px; width: 185px; padding: 0" >
               <img src="/assets/keycloak.svg" alt="Keycloak" style="width: 32px; padding: 5px" />
               <a-typography-text>Sign in with Keycloak</a-typography-text>
+            </a-button>
+          </div>
+          <div class="social-auth" v-if="oauthForgerockProvider">
+            <a-button
+              @click="handleForgerockProviderAndDomain"
+              tag="a"
+              color="primary"
+              :href="getForgerockUrl(from)"
+              class="auth-btn forgerock-auth"
+              style="height: 38px; width: 185px; padding: 0" >
+              <img src="/assets/forgerock.svg" alt="ForgeRock" style="width: 32px; padding: 5px" />
+              <a-typography-text>Sign in with ForgeRock</a-typography-text>
             </a-button>
           </div>
         </div>
@@ -277,23 +289,31 @@ export default {
       googleprovider: false,
       githubprovider: false,
       keycloakprovider: false,
+      forgerockprovider: false,
       googleredirecturi: '',
       githubredirecturi: '',
       keycloakredirecturi: '',
+      forgerockredirecturi: '',
       googleclientid: '',
       githubclientid: '',
       keycloakclientid: '',
       keycloakauthorizeurl: '',
+      forgerockclientid: '',
+      forgerockauthorizeurl: '',
       oauthGoogleProvider: false,
       oauthGithubProvider: false,
       oauthKeycloakProvider: false,
+      oauthForgerockProvider: false,
       oauthGoogleClientId: '',
       oauthGithubClientId: '',
       oauthKeycloakClientId: '',
+      oauthForgerockClientId: '',
       oauthGoogleRedirectUri: '',
       oauthGithubRedirectUri: '',
       oauthKeycloakRedirectUri: '',
       oauthKeycloakAuthorizeUrl: '',
+      oauthForgerockRedirectUri: '',
+      oauthForgerockAuthorizeUrl: '',
       oauthLoading: false,
       oauthDomainQueried: false,
       loginType: 0,
@@ -411,23 +431,34 @@ export default {
                 this.keycloakredirecturi = item.redirecturi
                 this.keycloakauthorizeurl = item.authorizeurl
               }
+              if (item.provider === 'forgerock') {
+                this.forgerockprovider = item.enabled
+                this.forgerockclientid = item.clientid
+                this.forgerockredirecturi = item.redirecturi
+                this.forgerockauthorizeurl = item.authorizeurl
+              }
             })
             const totalCount = response.listoauthproviderresponse.count || 0
             this.socialLogin = totalCount > 0
             this.oauthGithubProvider = this.githubprovider
             this.oauthGoogleProvider = this.googleprovider
             this.oauthKeycloakProvider = this.keycloakprovider
+            this.oauthForgerockProvider = this.forgerockprovider
             this.oauthGithubClientId = this.githubclientid
             this.oauthGoogleClientId = this.googleclientid
             this.oauthKeycloakClientId = this.keycloakclientid
+            this.oauthForgerockClientId = this.forgerockclientid
             this.oauthGithubRedirectUri = this.githubredirecturi
             this.oauthGoogleRedirectUri = this.googleredirecturi
             this.oauthKeycloakRedirectUri = this.keycloakredirecturi
             this.oauthKeycloakAuthorizeUrl = this.keycloakauthorizeurl
+            this.oauthForgerockRedirectUri = this.forgerockredirecturi
+            this.oauthForgerockAuthorizeUrl = this.forgerockauthorizeurl
           } else {
             this.oauthGithubProvider = false
             this.oauthGoogleProvider = false
             this.oauthKeycloakProvider = false
+            this.oauthForgerockProvider = false
             oauthproviders.forEach(item => {
               if (item.provider === 'google') {
                 this.oauthGoogleProvider = item.enabled
@@ -444,6 +475,12 @@ export default {
                 this.oauthKeycloakClientId = item.clientid
                 this.oauthKeycloakRedirectUri = item.redirecturi
                 this.oauthKeycloakAuthorizeUrl = item.authorizeurl
+              }
+              if (item.provider === 'forgerock') {
+                this.oauthForgerockProvider = item.enabled
+                this.oauthForgerockClientId = item.clientid
+                this.oauthForgerockRedirectUri = item.redirecturi
+                this.oauthForgerockAuthorizeUrl = item.authorizeurl
               }
             })
           }
@@ -469,13 +506,17 @@ export default {
         this.oauthGithubProvider = this.githubprovider
         this.oauthGoogleProvider = this.googleprovider
         this.oauthKeycloakProvider = this.keycloakprovider
+        this.oauthForgerockProvider = this.forgerockprovider
         this.oauthGithubClientId = this.githubclientid
         this.oauthGoogleClientId = this.googleclientid
         this.oauthKeycloakClientId = this.keycloakclientid
+        this.oauthForgerockClientId = this.forgerockclientid
         this.oauthGithubRedirectUri = this.githubredirecturi
         this.oauthGoogleRedirectUri = this.googleredirecturi
         this.oauthKeycloakRedirectUri = this.keycloakredirecturi
         this.oauthKeycloakAuthorizeUrl = this.keycloakauthorizeurl
+        this.oauthForgerockRedirectUri = this.forgerockredirecturi
+        this.oauthForgerockAuthorizeUrl = this.forgerockauthorizeurl
       }
       this.setRules()
     },
@@ -489,13 +530,17 @@ export default {
         this.oauthGithubProvider = this.githubprovider
         this.oauthGoogleProvider = this.googleprovider
         this.oauthKeycloakProvider = this.keycloakprovider
+        this.oauthForgerockProvider = this.forgerockprovider
         this.oauthGithubClientId = this.githubclientid
         this.oauthGoogleClientId = this.googleclientid
         this.oauthKeycloakClientId = this.keycloakclientid
+        this.oauthForgerockClientId = this.forgerockclientid
         this.oauthGithubRedirectUri = this.githubredirecturi
         this.oauthGoogleRedirectUri = this.googleredirecturi
         this.oauthKeycloakRedirectUri = this.keycloakredirecturi
         this.oauthKeycloakAuthorizeUrl = this.keycloakauthorizeurl
+        this.oauthForgerockRedirectUri = this.forgerockredirecturi
+        this.oauthForgerockAuthorizeUrl = this.forgerockauthorizeurl
       }
     },
     handleGithubProviderAndDomain () {
@@ -509,6 +554,10 @@ export default {
     handleKeycloakProviderAndDomain () {
       this.handleDomain()
       this.$store.commit('SET_OAUTH_PROVIDER_USED_TO_LOGIN', 'keycloak')
+    },
+    handleForgerockProviderAndDomain () {
+      this.handleDomain()
+      this.$store.commit('SET_OAUTH_PROVIDER_USED_TO_LOGIN', 'forgerock')
     },
     handleDomain () {
       const values = toRaw(this.form)
@@ -565,6 +614,22 @@ export default {
       const rootURl = this.customActiveKey === 'oauth' ? this.oauthKeycloakAuthorizeUrl : this.keycloakauthorizeurl
       const redirectUri = this.customActiveKey === 'oauth' ? this.oauthKeycloakRedirectUri : this.keycloakredirecturi
       const clientId = this.customActiveKey === 'oauth' ? this.oauthKeycloakClientId : this.keycloakclientid
+      const options = {
+        redirect_uri: redirectUri,
+        client_id: clientId,
+        response_type: 'code',
+        scope: 'openid email',
+        state: 'cloudstack'
+      }
+
+      const qs = new URLSearchParams(options)
+
+      return `${rootURl}?${qs.toString()}`
+    },
+    getForgerockUrl (from) {
+      const rootURl = this.customActiveKey === 'oauth' ? this.oauthForgerockAuthorizeUrl : this.forgerockauthorizeurl
+      const redirectUri = this.customActiveKey === 'oauth' ? this.oauthForgerockRedirectUri : this.forgerockredirecturi
+      const clientId = this.customActiveKey === 'oauth' ? this.oauthForgerockClientId : this.forgerockclientid
       const options = {
         redirect_uri: redirectUri,
         client_id: clientId,
