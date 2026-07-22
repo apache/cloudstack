@@ -26,9 +26,13 @@ import org.apache.cloudstack.framework.config.Configurable;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class PrometheusExporterServerImpl extends ManagerBase implements PrometheusExporterServer, Configurable {
 
@@ -47,11 +51,21 @@ public class PrometheusExporterServerImpl extends ManagerBase implements Prometh
 
         @Override
         public void handle(final HttpExchange httpExchange) throws IOException {
-            final String remoteClientAddress = httpExchange.getRemoteAddress().getAddress().toString().replace("/", "");
+            final String remoteClientAddress = httpExchange.getRemoteAddress().getAddress().getHostAddress();
             logger.debug("Prometheus exporter received client request from: " + remoteClientAddress);
             String response = "Forbidden";
             int responseCode = 403;
-            if (Arrays.asList(PrometheusExporterAllowedAddresses.value().split(",")).contains(remoteClientAddress)) {
+            final List<String> allowedAddresses = Arrays.stream(PrometheusExporterAllowedAddresses.value().split(","))
+                    .map(addr -> {
+                        try {
+                            return InetAddress.getByName(addr.trim()).getHostAddress();
+                        } catch (UnknownHostException e) {
+                            logger.warn("Invalid IP address in prometheus.exporter.allowed.ips: " + addr.trim());
+                            return addr.trim();
+                        }
+                    })
+                    .collect(Collectors.toList());
+            if (allowedAddresses.contains(remoteClientAddress)) {
                 prometheusExporter.updateMetrics();
                 response = prometheusExporter.getMetrics();
                 responseCode = 200;
