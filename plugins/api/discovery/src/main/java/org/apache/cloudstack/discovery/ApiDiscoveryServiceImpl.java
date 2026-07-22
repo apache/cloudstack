@@ -19,6 +19,7 @@ package org.apache.cloudstack.discovery;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -236,10 +237,19 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
                     paramResponse.setSince(parameterAnnotation.since());
                 }
                 paramResponse.setRelated(parameterAnnotation.entityType()[0].getName());
-                if (parameterAnnotation.authorized() != null) {
-                    paramResponse.setAuthorizedRoleTypes(Arrays.asList(parameterAnnotation.authorized()));
-                }
-                response.addParam(paramResponse);
+
+            String[] allowedValues = parameterAnnotation.allowedValues();
+            if (allowedValues.length > 0) {
+                paramResponse.setAllowedValues(
+                    Collections.unmodifiableList(Arrays.asList(allowedValues))
+                );
+            }
+
+            if (parameterAnnotation.authorized() != null) {
+                paramResponse.setAuthorizedRoleTypes(Arrays.asList(parameterAnnotation.authorized()));
+            }
+
+            response.addParam(paramResponse);
             }
         }
         return response;

@@ -61,14 +61,24 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd implements UserCmd {
     private Boolean ready;
 
     @Parameter(name = ApiConstants.ISO_FILTER,
-               type = CommandType.STRING,
-               description = "Possible values are \"featured\", \"self\", \"selfexecutable\",\"sharedexecutable\",\"executable\", and \"community\". "
-                   + "* featured : Templates that have been marked as featured and public. "
-                   + "* self : Templates that have been registered or created by the calling User. "
-                   + "* selfexecutable : same as self, but only returns Templates that can be used to deploy a new Instance. "
-                   + "* sharedexecutable : Templates ready to be deployed that have been granted to the calling User by another User. "
-                   + "* executable : Templates that are owned by the calling User, or public Templates, that can be used to deploy an Instance. "
-                   + "* community : Templates that have been marked as public but not featured. " + "* all : all Templates (only usable by admins).")
+           type = CommandType.STRING,
+           description = "Possible values are \"featured\", \"self\", \"selfexecutable\",\"sharedexecutable\",\"executable\", and \"community\". "
+               + "* featured : Templates that have been marked as featured and public. "
+               + "* self : Templates that have been registered or created by the calling User. "
+               + "* selfexecutable : same as self, but only returns Templates that can be used to deploy a new Instance. "
+               + "* sharedexecutable : Templates ready to be deployed that have been granted to the calling User by another User. "
+               + "* executable : Templates that are owned by the calling User, or public Templates, that can be used to deploy an Instance. "
+               + "* community : Templates that have been marked as public but not featured. "
+               + "* all : all Templates (only usable by admins).",
+           allowedValues = {
+               "featured",
+               "self",
+               "selfexecutable",
+               "sharedexecutable",
+               "executable",
+               "community",
+               "all"
+           })
     private String isoFilter = TemplateFilter.selfexecutable.toString();
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "List all ISOs by name")
@@ -86,9 +96,15 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd implements UserCmd {
     @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN, description = "Flag to display the resource image for the ISOs")
     private Boolean showIcon;
 
-    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
-            description = "the CPU arch of the ISO. Valid options are: x86_64, aarch64, s390x",
-            since = "4.20")
+    @Parameter(name = ApiConstants.ARCH,
+        type = CommandType.STRING,
+        description = "the CPU arch of the ISO. Valid options are: x86_64, aarch64, s390x",
+        since = "4.20",
+        allowedValues = {
+            "x86_64",
+            "aarch64",
+            "s390x"
+        })
     private String arch;
 
     @Parameter(name = ApiConstants.OS_CATEGORY_ID, type = CommandType.UUID, entityType= GuestOSCategoryResponse.class,
