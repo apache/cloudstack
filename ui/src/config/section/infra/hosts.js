@@ -196,9 +196,9 @@ export default {
       dataView: true,
       show: (record) => {
         if (record.hypervisor === 'KVM' && record?.hostha?.haenable === true) {
-          return false;
+          return false
         }
-        return record?.outofbandmanagement?.enabled === true;
+        return record?.outofbandmanagement?.enabled === true
       },
       args: ['hostid'],
       mapping: {
