@@ -491,14 +491,6 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
     public void updateMetrics() {
         final List<Item> latestMetricsItems = new ArrayList<Item>();
         try {
-            // NOTE: capacity data is refreshed independently by AlertManagerImpl's own
-            // periodic CapacityChecker timer (see AlertManagerImpl#start()). Do NOT force a
-            // synchronous recalculateCapacity() here: it spins up a fresh thread pool per host
-            // and per storage pool across ALL zones on every single scrape, so with Z zones a
-            // single Prometheus scrape triggered Z redundant full recalculations. That extra,
-            // uncoordinated load compounds over time (thread churn + overlapping runs with the
-            // timer) and was the cause of https://github.com/apache/cloudstack/issues/13586
-            // (scrape_duration_seconds climbing until a management-server restart).
             for (final DataCenterVO dc : dcDao.listAll()) {
                 final String zoneName = dc.getName();
                 final String zoneUuid = dc.getUuid();
