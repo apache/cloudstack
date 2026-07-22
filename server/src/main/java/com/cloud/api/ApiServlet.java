@@ -80,10 +80,12 @@ import com.cloud.utils.net.NetUtils;
 
 @Component("apiServlet")
 public class ApiServlet extends HttpServlet {
-    protected static Logger LOGGER = LogManager.getLogger(ApiServlet.class);
-    private static final Logger ACCESSLOGGER = LogManager.getLogger("apiserver." + ApiServlet.class.getName());
-    private static final String REPLACEMENT = "_";
-    private static final String LOGGER_REPLACEMENTS = "[\n\r\t]";
+protected static Logger LOGGER = LogManager.getLogger(ApiServlet.class);
+private static final Logger ACCESSLOGGER = LogManager.getLogger("apiserver." + ApiServlet.class.getName());
+
+private static final String REPLACEMENT = "_";
+private static final String REDACTED = "REDACTED";
+private static final String LOGGER_REPLACEMENTS = "[\n\r\t]";
     public static final Pattern GET_REQUEST_COMMANDS = Pattern.compile("^(get|list|query|find)(\\w+)+$");
     private static final HashSet<String> POST_REQUESTS_TO_DISABLE_LOGGING = new HashSet<>(Set.of(
             "login",
@@ -197,10 +199,44 @@ public class ApiServlet extends HttpServlet {
         params.forEach((k, v) -> {
             if (v.length > 1) {
                 String message = String.format("Query parameter '%s' has multiple values %s. Only the last value will be respected." +
-                    "It is advised to pass only a single parameter", k, Arrays.toString(v));
+                    "It is advised to pass only a single parameter", k, formatValuesForLog(k, v));
                 LOGGER.warn(message);
             }
         });
+    }
+
+    private static final Set<String> SENSITIVE_PARAMETER_KEYWORDS = Set.of(
+        "password",
+        "privatekey",
+        "accesskey",
+        "secretkey",
+        "apikey",
+        "signature",
+        "sessionkey",
+        "token"
+    );
+
+    static boolean isSensitiveParameter(final String parameterName) {
+        if (parameterName == null) {
+            return false;
+        }
+
+        final String key = parameterName.toLowerCase(java.util.Locale.ROOT);
+
+        return SENSITIVE_PARAMETER_KEYWORDS.stream()
+            .anyMatch(key::contains);
+    }
+
+    static String formatValuesForLog(final String parameterName, final String[] values){
+        if (!isSensitiveParameter(parameterName)) {
+            return Arrays.toString(values);
+        }
+
+        final String[] masked = new String[values.length];
+
+        Arrays.fill(masked, REDACTED);
+
+        return Arrays.toString(masked);
     }
 
     void processRequestInContext(final HttpServletRequest req, final HttpServletResponse resp) {
@@ -761,10 +797,7 @@ public class ApiServlet extends HttpServlet {
             cleanParamsString.append(reqParam.getKey());
             cleanParamsString.append("=");
 
-            if (reqParam.getKey().toLowerCase().contains("password")
-                    || reqParam.getKey().toLowerCase().contains("privatekey")
-                    || reqParam.getKey().toLowerCase().contains("accesskey")
-                    || reqParam.getKey().toLowerCase().contains("secretkey")) {
+            if (isSensitiveParameter(reqParam.getKey())) {
                 cleanParamsString.append("\n");
                 continue;
             }
