@@ -28,7 +28,7 @@ import com.cloud.utils.db.GenericDao;
 public interface BackupScheduleDao extends GenericDao<BackupScheduleVO, Long> {
     List<BackupScheduleVO> listByVM(Long vmId);
 
-    BackupScheduleVO findByVMAndIntervalType(Long vmId, DateUtil.IntervalType intervalType);
+    List<BackupScheduleVO> listByVMAndIntervalType(Long vmId, DateUtil.IntervalType intervalType);
 
     List<BackupScheduleVO> getSchedulesToExecute(Date currentTimestamp);
 }
