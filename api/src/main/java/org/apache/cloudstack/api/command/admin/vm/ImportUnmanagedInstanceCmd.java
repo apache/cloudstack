@@ -135,6 +135,14 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
             description = "VM NIC to ip address mapping using keys NIC, ip4Address")
     private Map nicIpAddressList;
 
+    @Parameter(name = ApiConstants.NIC_MAC_ADDRESS_LIST,
+            type = CommandType.MAP,
+            description = "VM NIC to MAC address mapping using keys nic and macAddress. " +
+                    "Example: nicmacaddresslist[0].nic=nic1&nicmacaddresslist[0].macAddress=aa:bb:cc:dd:ee:ff. " +
+                    "Overrides the MAC address reported by the hypervisor for the given NIC.",
+            since = "4.21.0")
+    private Map nicMacAddressList;
+
     @Parameter(name = ApiConstants.DATADISK_OFFERING_LIST,
             type = CommandType.MAP,
             description = "Datadisk Template to disk-offering mapping using keys disk and diskOffering")
@@ -232,6 +240,32 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
             }
         }
         return nicIpAddressMap;
+    }
+
+    public Map<String, String> getNicMacAddressList() {
+        Map<String, String> nicMacMap = new HashMap<>();
+        if (MapUtils.isEmpty(nicMacAddressList)) {
+            return nicMacMap;
+        }
+        for (Map<String, String> entry : (Collection<Map<String, String>>) nicMacAddressList.values()) {
+            String nic = entry.get(VmDetailConstants.NIC);
+            String mac = entry.get(VmDetailConstants.NIC_MAC_ADDRESS);
+            logger.debug("Checking if MAC address '{}' can be mapped to NIC '{}'", mac, nic);
+            if (StringUtils.isEmpty(nic)) {
+                throw new InvalidParameterValueException(String.format("NIC ID: '%s' is invalid for MAC address mapping", nic));
+            }
+            if (StringUtils.isEmpty(mac)) {
+                throw new InvalidParameterValueException(String.format("Empty MAC address for NIC ID: %s is invalid", nic));
+            }
+            if (!NetUtils.isValidMac(mac)) {
+                throw new InvalidParameterValueException(String.format("MAC address '%s' for NIC ID: %s is not valid", mac, nic));
+            }
+            if (!NetUtils.isUnicastMac(mac)) {
+                throw new InvalidParameterValueException(String.format("MAC address '%s' for NIC ID: %s is not a unicast address", mac, nic));
+            }
+            nicMacMap.put(nic, NetUtils.standardizeMacAddress(mac));
+        }
+        return nicMacMap;
     }
 
     public Map<String, Long> getDataDiskToDiskOfferingList() {
