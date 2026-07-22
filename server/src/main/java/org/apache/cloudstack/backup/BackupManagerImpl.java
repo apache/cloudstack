@@ -1232,6 +1232,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         final Long zoneId = cmd.getZoneId();
         final Long backupOfferingId = cmd.getBackupOfferingId();
         final Backup.Status backupStatus = validateBackupStatus(cmd.getBackupStatus());
+        final String backupType = cmd.getBackupType();
         final Account caller = CallContext.current().getCallingAccount();
         final String keyword = cmd.getKeyword();
         List<Long> permittedAccounts = new ArrayList<Long>();
@@ -1264,6 +1265,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         // incremental chain GC can sweep them once their last descendant is deleted.
         sb.and("statusNeq", sb.entity().getStatus(), SearchCriteria.Op.NEQ);
         sb.and("backupStatus", sb.entity().getStatus(), SearchCriteria.Op.EQ);
+        sb.and("backupType", sb.entity().getType(), SearchCriteria.Op.EQ);
 
         if (keyword != null) {
             sb.and().op("keywordName", sb.entity().getName(), SearchCriteria.Op.LIKE);
@@ -1298,6 +1300,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
 
         sc.setParametersIfNotNull("backupStatus", backupStatus);
+
+        sc.setParametersIfNotNull("backupType", backupType);
 
         if (keyword != null) {
             String keywordMatch = "%" + keyword + "%";
