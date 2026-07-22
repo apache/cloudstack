@@ -196,7 +196,7 @@
         <cs.caffeine.version>3.1.7</cs.caffeine.version>
         <cs.protobuf.version>3.25.5</cs.protobuf.version>
         <cs.minio.version>8.6.0</cs.minio.version>
-        <cs.opentelemetry.version>1.51.0</cs.opentelemetry.version>
+        <cs.opentelemetry.version>1.62.0</cs.opentelemetry.version>
         <cs.opentelemetry-instrumentation.version>2.16.0</cs.opentelemetry-instrumentation.version>
     </properties>
 
