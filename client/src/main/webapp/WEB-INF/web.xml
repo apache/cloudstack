@@ -36,6 +36,16 @@
         <param-value>classpath:META-INF/cloudstack/webApplicationContext.xml</param-value>
     </context-param>
 
+    <filter>
+        <filter-name>apiTraceFilter</filter-name>
+        <filter-class>org.apache.cloudstack.api.filter.ApiTraceFilter</filter-class>
+    </filter>
+
+    <filter-mapping>
+        <filter-name>apiTraceFilter</filter-name>
+        <url-pattern>/api/*</url-pattern>
+    </filter-mapping>
+
     <servlet>
         <servlet-name>cloudStartupServlet</servlet-name>
         <servlet-class>com.cloud.servlet.CloudStartupServlet</servlet-class>

@@ -53,6 +53,10 @@ public class LogContext {
     private long userId;
     private final Map<String, String> context = new HashMap<String, String>();
 
+    public final static String X_B3_TRACEID_KEY = "traceid";
+    public final static String MOSAIC_TRACE_ID_KEY = "mosaic_trace_id";
+    public final static String MOSAIC_SPAN_ID_KEY = "mosaic_span_id";
+
     static EntityManager s_entityMgr;
 
     public static void init(EntityManager entityMgr) {
@@ -78,6 +82,18 @@ public class LogContext {
 
     public void putContextParameter(String key, String value) {
         context.put(key, value);
+        MDC.put(key, value);
+    }
+
+    public void removeContextParameter(String key) {
+        context.remove(key);
+        MDC.remove(key);
+    }
+
+    public void removeContextParameters() {
+        for (Map.Entry<String, String> entry : context.entrySet()) {
+            removeContextParameter(entry.getKey());
+        }
     }
 
     public String getContextParameter(String key) {

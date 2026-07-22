@@ -71,6 +71,11 @@
             <artifactId>cloud-framework-direct-download</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-api</artifactId>
+            <version>1.51.0</version>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
