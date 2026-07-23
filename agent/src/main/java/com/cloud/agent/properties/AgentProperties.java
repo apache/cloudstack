@@ -849,6 +849,19 @@ public class AgentProperties{
     public static final Property<String> VDDK_TRANSPORTS = new Property<>("vddk.transports", null, String.class);
 
     /**
+     * NBD-transport compression used between the VDDK and the VMware server for the
+     * agent-driven nbdkit full-disk copies (cold direct import and CBT initial full
+     * sync). Passed to the nbdkit vddk plugin as <code>compression=&lt;value&gt;</code>.
+     * Valid values: <code>none</code>, <code>zlib</code>, <code>fastlz</code>,
+     * <code>skipz</code> (nbdkit &ge; 1.24, vSphere &ge; 6.5). <code>fastlz</code>
+     * compresses both zero regions and real data at low CPU cost; <code>skipz</code>
+     * only elides zero blocks. Does not affect the staged virt-v2v conversion path.
+     * Data type: String.<br>
+     * Default value: <code>fastlz</code>
+     */
+    public static final Property<String> VDDK_NBD_COMPRESSION = new Property<>("vddk.nbd.compression", "fastlz", String.class);
+
+    /**
      * vCenter TLS certificate thumbprint used by virt-v2v VDDK mode, passed as <code>-io vddk-thumbprint=&lt;value&gt;</code>.
      * If unset, the KVM host computes it at runtime from the vCenter endpoint.
      * Data type: String.<br>

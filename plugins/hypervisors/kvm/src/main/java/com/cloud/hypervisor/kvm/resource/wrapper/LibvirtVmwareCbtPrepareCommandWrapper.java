@@ -32,6 +32,7 @@ import org.apache.commons.lang3.StringUtils;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.VmwareCbtMigrationAnswer;
 import com.cloud.agent.api.VmwareCbtPrepareCommand;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.agent.api.to.RemoteInstanceTO;
 import com.cloud.agent.api.to.VmwareCbtDiskSyncResultTO;
 import com.cloud.agent.api.to.VmwareCbtDiskTO;
@@ -225,13 +226,14 @@ public class LibvirtVmwareCbtPrepareCommandWrapper extends CommandWrapper<Vmware
             qemuTargetPath = targetPath;
         }
 
-        // For a local raw block-device target (preCreatedTarget), use nbdcopy for the full copy
-        // when it is available - it is typically faster than a single-connection qemu-img convert.
-        // The RBD URI and qcow2 file targets keep qemu-img convert.
-        boolean useNbdcopy = preCreatedTarget && serverResource.hostSupportsNbdcopy();
+        // Prefer multi-connection nbdcopy over a single-stream qemu-img convert when available:
+        // for a pre-created local raw block-device target (Linstor) nbdcopy writes it directly;
+        // for an RBD target it copies over a localhost qemu-nbd bridge (see the builder). qcow2
+        // file targets keep qemu-img convert.
+        boolean nbdcopyAvailable = serverResource.hostSupportsNbdcopy();
         String command = buildNbdkitFullCopyCommand(cmd, disk, passwordFilePath, vddkLibDir, vddkThumbprint,
                 StringUtils.defaultIfBlank(cmd.getVddkTransports(), serverResource.getVddkTransports()),
-                qemuTargetPath, targetFormat, preCreatedTarget, useNbdcopy);
+                serverResource.getVddkNbdCompression(), qemuTargetPath, targetFormat, preCreatedTarget, nbdcopyAvailable);
         VmwareCbtCommandResult commandResult = executeLoggedBash(command, getTimeout(cmd),
                 String.format("(%s) VMware CBT initial full sync disk %s", cmd.getMigrationUuid(), disk.getDiskId()));
         long durationSeconds = Math.max(1L, (System.currentTimeMillis() - startTime) / 1000L);
@@ -328,8 +330,8 @@ public class LibvirtVmwareCbtPrepareCommandWrapper extends CommandWrapper<Vmware
 
     private String buildNbdkitFullCopyCommand(VmwareCbtPrepareCommand cmd, VmwareCbtDiskTO disk,
                                               String passwordFilePath, String vddkLibDir, String vddkThumbprint,
-                                              String vddkTransports, String targetPath, String targetFormat,
-                                              boolean preCreatedTarget, boolean useNbdcopy) {
+                                              String vddkTransports, String vddkNbdCompression, String targetPath,
+                                              String targetFormat, boolean preCreatedTarget, boolean nbdcopyAvailable) {
         RemoteInstanceTO sourceInstance = cmd.getSourceInstance();
         String sourceVmMoref = getMorefValue(sourceInstance.getVmwareMoref());
         String snapshotMoref = getMorefValue(cmd.getBaselineSnapshotMor());
@@ -345,16 +347,64 @@ public class LibvirtVmwareCbtPrepareCommandWrapper extends CommandWrapper<Vmware
         if (StringUtils.isNotBlank(vddkTransports)) {
             appendPluginParameter(nbdkit, "transports", vddkTransports);
         }
+        if (StringUtils.isNotBlank(vddkNbdCompression)) {
+            appendPluginParameter(nbdkit, "compression", vddkNbdCompression);
+        }
+
+        boolean rbdTarget = cmd.getTargetStorageType() == VmwareCbtTargetStorageType.RBD_RAW;
+
+        // RBD target with nbdcopy available: copy over a localhost qemu-nbd bridge (nbdcopy
+        // needs both ends as NBD, and qemu-img create - which nbdcopy cannot do - pre-creates
+        // the raw image). Multi-connection nbdcopy is typically faster than the single-stream
+        // qemu-img convert. The fresh raw image reads as zeros, so --destination-is-zero keeps
+        // it sparse.
+        if (rbdTarget && nbdcopyAvailable && disk.getCapacityBytes() > 0) {
+            return buildRbdNbdcopyBridgeCommand(nbdkit, targetPath, disk.getCapacityBytes());
+        }
 
         // A pre-created target is a freshly provisioned (thin) volume that reads back as
         // zeros, but the tools may not assume that for a block device on their own:
         // without --destination-is-zero / --target-is-zero every zero block is written
         // out and the thin volume becomes fully allocated.
+        boolean useNbdcopy = preCreatedTarget && nbdcopyAvailable;
         String runCommand = useNbdcopy
                 ? String.format("nbdcopy %s\"$uri\" %s", preCreatedTarget ? "--destination-is-zero " : "", shellQuote(targetPath))
                 : String.format("qemu-img convert %s-f raw -O %s \"$uri\" %s",
                         preCreatedTarget ? "-n --target-is-zero " : "", shellQuote(targetFormat), shellQuote(targetPath));
         return nbdkit.append("--run ").append(shellQuote(runCommand)).toString();
+    }
+
+    /**
+     * Wraps the nbdkit VDDK source with a localhost qemu-nbd bridge over the RBD target so
+     * nbdcopy can copy NBD-to-NBD. The returned string is a self-contained bash script (run
+     * via bash -c) that pre-creates the raw RBD image, starts qemu-nbd, runs the nbdcopy, and
+     * tears the bridge down on exit. Package-private for unit testing.
+     */
+    String buildRbdNbdcopyBridgeCommand(StringBuilder nbdkitSource, String qemuRbdTarget, long capacityBytes) {
+        int port = allocateLocalhostPort();
+        nbdkitSource.append("--run ").append(shellQuote(
+                String.format("nbdcopy --destination-is-zero \"$uri\" nbd://localhost:%d", port)));
+        StringBuilder script = new StringBuilder();
+        script.append("set -euo pipefail; ");
+        script.append("__pidf=$(mktemp); ");
+        script.append("cleanup() { set +e; if [[ -s \"$__pidf\" ]]; then __p=$(cat \"$__pidf\"); ");
+        script.append("kill \"$__p\" >/dev/null 2>&1 || true; ");
+        script.append("for __a in {1..20}; do kill -0 \"$__p\" >/dev/null 2>&1 || break; sleep 0.1; done; fi; ");
+        script.append("rm -f \"$__pidf\"; }; trap cleanup EXIT; ");
+        script.append("qemu-img create -f raw ").append(shellQuote(qemuRbdTarget)).append(" ").append(capacityBytes).append("; ");
+        script.append("qemu-nbd --fork --persistent --shared=8 --format=raw --bind=127.0.0.1 --port=").append(port)
+                .append(" --pid-file=\"$__pidf\" ").append(shellQuote(qemuRbdTarget)).append("; ");
+        script.append(nbdkitSource);
+        return script.toString();
+    }
+
+    private int allocateLocalhostPort() {
+        try (java.net.ServerSocket socket = new java.net.ServerSocket(0)) {
+            socket.setReuseAddress(false);
+            return socket.getLocalPort();
+        } catch (java.io.IOException e) {
+            throw new CloudRuntimeException("Unable to allocate a localhost port for the RBD qemu-nbd bridge", e);
+        }
     }
 
     private void appendPluginParameter(StringBuilder command, String key, String value) {

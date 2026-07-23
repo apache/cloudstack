@@ -977,6 +977,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected String directDownloadTemporaryDownloadPath;
     protected String cachePath;
     private String vddkTransports = null;
+    private String vddkNbdCompression = null;
     private String vddkThumbprint = null;
     private String vddkVersion = null;
     private String detectedPasswordFileOption = null;
@@ -1054,6 +1055,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public String getVddkTransports() {
         return vddkTransports;
+    }
+
+    public String getVddkNbdCompression() {
+        return vddkNbdCompression;
     }
 
     public String getVddkThumbprint() {
@@ -1294,6 +1299,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         vddkTransports = StringUtils.trimToNull(
                 AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VDDK_TRANSPORTS));
+        vddkNbdCompression = StringUtils.trimToNull(
+                AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VDDK_NBD_COMPRESSION));
         vddkThumbprint = StringUtils.trimToNull(
                 AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VDDK_THUMBPRINT));
 

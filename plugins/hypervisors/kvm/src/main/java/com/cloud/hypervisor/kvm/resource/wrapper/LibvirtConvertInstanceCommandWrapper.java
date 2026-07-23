@@ -489,19 +489,21 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
             Files.writeString(Path.of(passwordFilePath), vcenterPassword);
             Files.setPosixFilePermissions(Path.of(passwordFilePath), Set.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE));
 
+            String vddkNbdCompression = serverResource.getVddkNbdCompression();
             for (int i = 0; i < sourceDisks.size(); i++) {
                 VmwareVddkSourceDiskTO sourceDisk = sourceDisks.get(i);
                 if (linstorTarget) {
                     String diskName = buildLinstorDiskName(temporaryConvertUuid, i);
                     createdImages.add(diskName);
                     String devicePath = copyVddkSourceDiskToLinstor(vmwareInstance, sourceDisk, targetPool, diskName, passwordFilePath,
-                            vddkLibDir, vddkTransports, vddkThumbprint, timeout, originalVMName, serverResource.hostSupportsNbdcopy());
+                            vddkLibDir, vddkTransports, vddkNbdCompression, vddkThumbprint, timeout, originalVMName, serverResource.hostSupportsNbdcopy());
                     blockDevicePaths.add(devicePath);
                 } else {
                     String imageName = buildRbdImageName(temporaryConvertUuid, i);
                     createdImages.add(imageName);
                     copyVddkSourceDiskToRbd(vmwareInstance, sourceDisk, targetPool, imageName, passwordFilePath,
-                            vddkLibDir, vddkTransports, vddkThumbprint, timeout, originalVMName);
+                            vddkLibDir, vddkTransports, vddkNbdCompression, vddkThumbprint, timeout, originalVMName,
+                            serverResource.hostSupportsNbdcopy());
                 }
             }
 
@@ -534,48 +536,107 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
 
     private void copyVddkSourceDiskToRbd(RemoteInstanceTO vmwareInstance, VmwareVddkSourceDiskTO sourceDisk,
                                          KVMStoragePool targetPool, String imageName, String passwordFilePath,
-                                         String vddkLibDir, String vddkTransports, String vddkThumbprint,
-                                         long timeout, String originalVMName) {
+                                         String vddkLibDir, String vddkTransports, String vddkNbdCompression,
+                                         String vddkThumbprint, long timeout, String originalVMName, boolean useNbdcopy) {
         if (StringUtils.isBlank(sourceDisk.getSourceDiskPath())) {
             throw new CloudRuntimeException(String.format("VMware source disk %s does not have a VMDK path", sourceDisk.getDiskId()));
         }
         String rbdImagePath = targetPool.getSourceDir() + "/" + imageName;
         String qemuRbdTarget = KVMPhysicalDisk.RBDStringBuilder(targetPool, rbdImagePath);
-        StringBuilder command = new StringBuilder();
-        command.append("nbdkit -r -U - vddk ");
-        command.append("file=").append(shellQuote(sourceDisk.getSourceDiskPath())).append(" ");
-        command.append("server=").append(shellQuote(vmwareInstance.getVcenterHost())).append(" ");
-        command.append("user=").append(shellQuote(vmwareInstance.getVcenterUsername())).append(" ");
-        command.append("password=+").append(shellQuote(passwordFilePath)).append(" ");
-        if (StringUtils.isNotBlank(vmwareInstance.getVmwareMoref())) {
-            command.append("vm=").append(shellQuote("moref=" + vmwareInstance.getVmwareMoref())).append(" ");
-        } else {
-            command.append("vm=").append(shellQuote(vmwareInstance.getInstanceName())).append(" ");
-        }
-        command.append("libdir=").append(shellQuote(vddkLibDir)).append(" ");
-        command.append("thumbprint=").append(shellQuote(vddkThumbprint)).append(" ");
-        if (StringUtils.isNotBlank(vddkTransports)) {
-            command.append("transports=").append(shellQuote(vddkTransports)).append(" ");
-        }
-        String runCommand = "qemu-img convert -f raw -O raw \"$uri\" " + shellQuote(qemuRbdTarget);
-        command.append("--run ").append(shellQuote(runCommand));
 
-        Script script = new Script("/bin/bash", timeout, logger);
-        script.add("-c");
-        script.add(command.toString());
-        String logPrefix = String.format("(%s) vddk to rbd disk %s", originalVMName, sourceDisk.getDiskId());
-        OutputInterpreter.LineByLineOutputLogger outputLogger = new OutputInterpreter.LineByLineOutputLogger(logger, logPrefix);
-        logger.info("({}) Copying VMware disk {} to RBD image {}", originalVMName, sourceDisk.getSourceDiskPath(), rbdImagePath);
-        script.execute(outputLogger);
-        if (script.getExitValue() != 0) {
-            throw new CloudRuntimeException(String.format("Failed to copy VMware disk %s to RBD image %s", sourceDisk.getSourceDiskPath(), rbdImagePath));
+        StringBuilder nbdkit = new StringBuilder();
+        nbdkit.append("nbdkit -r -U - vddk ");
+        nbdkit.append("file=").append(shellQuote(sourceDisk.getSourceDiskPath())).append(" ");
+        nbdkit.append("server=").append(shellQuote(vmwareInstance.getVcenterHost())).append(" ");
+        nbdkit.append("user=").append(shellQuote(vmwareInstance.getVcenterUsername())).append(" ");
+        nbdkit.append("password=+").append(shellQuote(passwordFilePath)).append(" ");
+        if (StringUtils.isNotBlank(vmwareInstance.getVmwareMoref())) {
+            nbdkit.append("vm=").append(shellQuote("moref=" + vmwareInstance.getVmwareMoref())).append(" ");
+        } else {
+            nbdkit.append("vm=").append(shellQuote(vmwareInstance.getInstanceName())).append(" ");
+        }
+        nbdkit.append("libdir=").append(shellQuote(vddkLibDir)).append(" ");
+        nbdkit.append("thumbprint=").append(shellQuote(vddkThumbprint)).append(" ");
+        if (StringUtils.isNotBlank(vddkTransports)) {
+            nbdkit.append("transports=").append(shellQuote(vddkTransports)).append(" ");
+        }
+        if (StringUtils.isNotBlank(vddkNbdCompression)) {
+            nbdkit.append("compression=").append(shellQuote(vddkNbdCompression)).append(" ");
+        }
+
+        boolean bridgeCopy = useNbdcopy && sourceDisk.getCapacityBytes() > 0;
+        Path scriptFile = null;
+        try {
+            Script script;
+            if (bridgeCopy) {
+                // Multi-connection nbdcopy is typically faster than a single-stream qemu-img
+                // convert, but nbdcopy needs both ends as NBD. qemu-img cannot create the
+                // image here (nbdcopy does not), so pre-create it, then serve it over a
+                // localhost qemu-nbd bridge and copy NBD-to-NBD. The fresh raw image reads
+                // as zeros, so --destination-is-zero keeps it sparse.
+                int port = allocateLocalhostPort();
+                Path pidFile = Files.createTempFile("cloudstack-vddk-rbd-nbd-" + imageName + "-", ".pid");
+                Files.deleteIfExists(pidFile);
+                nbdkit.append("--run ").append(shellQuote(
+                        "nbdcopy --destination-is-zero \"$uri\" " + String.format("nbd://localhost:%d", port)));
+
+                StringBuilder scriptBody = new StringBuilder();
+                scriptBody.append("#!/bin/bash\n");
+                scriptBody.append("set -euo pipefail\n");
+                scriptBody.append("cleanup() {\n");
+                scriptBody.append("  set +e\n");
+                scriptBody.append("  if [[ -s ").append(shellQuote(pidFile.toString())).append(" ]]; then\n");
+                scriptBody.append("    pid=$(cat ").append(shellQuote(pidFile.toString())).append(")\n");
+                scriptBody.append("    kill \"$pid\" >/dev/null 2>&1 || true\n");
+                scriptBody.append("    for attempt in {1..20}; do kill -0 \"$pid\" >/dev/null 2>&1 || break; sleep 0.1; done\n");
+                scriptBody.append("  fi\n");
+                scriptBody.append("  rm -f ").append(shellQuote(pidFile.toString())).append("\n");
+                scriptBody.append("}\n");
+                scriptBody.append("trap cleanup EXIT\n");
+                scriptBody.append("qemu-img create -f raw ").append(shellQuote(qemuRbdTarget)).append(" ")
+                        .append(sourceDisk.getCapacityBytes()).append("\n");
+                scriptBody.append("qemu-nbd --fork --persistent --shared=8 --format=raw --bind=127.0.0.1 --port=")
+                        .append(port).append(" --pid-file=").append(shellQuote(pidFile.toString()))
+                        .append(" ").append(shellQuote(qemuRbdTarget)).append("\n");
+                scriptBody.append(nbdkit).append("\n");
+
+                scriptFile = Files.createTempFile("cloudstack-vddk-rbd-copy-" + imageName + "-", ".sh");
+                Files.writeString(scriptFile, scriptBody.toString());
+                Files.setPosixFilePermissions(scriptFile, Set.of(PosixFilePermission.OWNER_READ,
+                        PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_EXECUTE));
+
+                script = new Script("/bin/bash", timeout, logger);
+                script.add(scriptFile.toString());
+            } else {
+                // qemu-img convert creates and writes the RBD image in one step (fallback when
+                // nbdcopy is unavailable or the source capacity is unknown).
+                nbdkit.append("--run ").append(shellQuote("qemu-img convert -f raw -O raw \"$uri\" " + shellQuote(qemuRbdTarget)));
+                script = new Script("/bin/bash", timeout, logger);
+                script.add("-c");
+                script.add(nbdkit.toString());
+            }
+
+            String logPrefix = String.format("(%s) vddk%s to rbd disk %s", originalVMName,
+                    bridgeCopy ? "(nbdcopy)" : "", sourceDisk.getDiskId());
+            OutputInterpreter.LineByLineOutputLogger outputLogger = new OutputInterpreter.LineByLineOutputLogger(logger, logPrefix);
+            logger.info("({}) Copying VMware disk {} to RBD image {}{}", originalVMName, sourceDisk.getSourceDiskPath(),
+                    rbdImagePath, bridgeCopy ? " via nbdcopy over qemu-nbd bridge" : "");
+            script.execute(outputLogger);
+            if (script.getExitValue() != 0) {
+                throw new CloudRuntimeException(String.format("Failed to copy VMware disk %s to RBD image %s", sourceDisk.getSourceDiskPath(), rbdImagePath));
+            }
+        } catch (java.io.IOException e) {
+            throw new CloudRuntimeException(String.format("Failed to prepare RBD copy for VMware disk %s: %s",
+                    sourceDisk.getDiskId(), e.getMessage()), e);
+        } finally {
+            deleteQuietly(scriptFile);
         }
     }
 
     private String copyVddkSourceDiskToLinstor(RemoteInstanceTO vmwareInstance, VmwareVddkSourceDiskTO sourceDisk,
                                                KVMStoragePool targetPool, String diskName, String passwordFilePath,
-                                               String vddkLibDir, String vddkTransports, String vddkThumbprint,
-                                               long timeout, String originalVMName, boolean useNbdcopy) {
+                                               String vddkLibDir, String vddkTransports, String vddkNbdCompression,
+                                               String vddkThumbprint, long timeout, String originalVMName, boolean useNbdcopy) {
         if (StringUtils.isBlank(sourceDisk.getSourceDiskPath())) {
             throw new CloudRuntimeException(String.format("VMware source disk %s does not have a VMDK path", sourceDisk.getDiskId()));
         }
@@ -604,6 +665,9 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         command.append("thumbprint=").append(shellQuote(vddkThumbprint)).append(" ");
         if (StringUtils.isNotBlank(vddkTransports)) {
             command.append("transports=").append(shellQuote(vddkTransports)).append(" ");
+        }
+        if (StringUtils.isNotBlank(vddkNbdCompression)) {
+            command.append("compression=").append(shellQuote(vddkNbdCompression)).append(" ");
         }
         // Full-disk copy into the local raw device: prefer nbdcopy (libnbd) when present -
         // it pipelines many in-flight requests and is typically faster than a single-connection

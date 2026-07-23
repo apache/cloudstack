@@ -87,6 +87,7 @@ public class LibvirtVmwareCbtPrepareCommandWrapperTest {
 
     @Test
     public void testExecuteCopiesInitialSyncDirectlyToRbdRawImage() {
+        Mockito.when(libvirtComputingResource.hostSupportsNbdcopy()).thenReturn(false);
         VmwareCbtPrepareCommand command = createRbdCommand();
         command.setVddkLibDir("/opt/vmware-vddk");
         command.setVddkThumbprint("AA:BB:CC");
@@ -97,6 +98,39 @@ public class LibvirtVmwareCbtPrepareCommandWrapperTest {
         Assert.assertTrue(wrapper.lastCommand, wrapper.lastCommand.matches("(?s).*qemu-img convert -f raw -O .*raw.*\\\"\\$uri\\\".*"));
         Assert.assertTrue(wrapper.lastCommand.contains("rbd:cloudstack/cloudstack-cbt-migration-uuid-disk-1-disk-1"));
         Assert.assertFalse(wrapper.lastCommand.contains("-O qcow2"));
+        Assert.assertFalse(wrapper.lastCommand, wrapper.lastCommand.contains("nbdcopy"));
+    }
+
+    @Test
+    public void testExecuteUsesNbdcopyBridgeForRbdWhenAvailable() {
+        Mockito.when(libvirtComputingResource.hostSupportsNbdcopy()).thenReturn(true);
+        VmwareCbtPrepareCommand command = createRbdCommand();
+        command.setVddkLibDir("/opt/vmware-vddk");
+        command.setVddkThumbprint("AA:BB:CC");
+
+        Answer answer = wrapper.execute(command, libvirtComputingResource);
+
+        Assert.assertTrue(answer.getDetails(), answer.getResult());
+        // pre-create the raw RBD image (nbdcopy/qemu-nbd cannot create it), bridge it over
+        // localhost qemu-nbd, and copy NBD-to-NBD keeping the fresh image sparse.
+        Assert.assertTrue(wrapper.lastCommand, wrapper.lastCommand.contains("qemu-img create -f raw "));
+        Assert.assertTrue(wrapper.lastCommand, wrapper.lastCommand.contains("rbd:cloudstack/cloudstack-cbt-migration-uuid-disk-1-disk-1"));
+        Assert.assertTrue(wrapper.lastCommand, wrapper.lastCommand.matches("(?s).*qemu-nbd --fork --persistent --shared=8 --format=raw --bind=127.0.0.1 --port=[0-9]+.*"));
+        Assert.assertTrue(wrapper.lastCommand, wrapper.lastCommand.matches("(?s).*nbdcopy --destination-is-zero \\\"\\$uri\\\" nbd://localhost:[0-9]+.*"));
+        Assert.assertFalse(wrapper.lastCommand, wrapper.lastCommand.contains("qemu-img convert"));
+    }
+
+    @Test
+    public void testAppliesVddkNbdCompressionToFullCopy() {
+        Mockito.when(libvirtComputingResource.getVddkNbdCompression()).thenReturn("fastlz");
+        VmwareCbtPrepareCommand command = createRbdCommand();
+        command.setVddkLibDir("/opt/vmware-vddk");
+        command.setVddkThumbprint("AA:BB:CC");
+
+        Answer answer = wrapper.execute(command, libvirtComputingResource);
+
+        Assert.assertTrue(answer.getResult());
+        Assert.assertTrue(wrapper.lastCommand, wrapper.lastCommand.contains("compression='fastlz'"));
     }
 
     @Test
