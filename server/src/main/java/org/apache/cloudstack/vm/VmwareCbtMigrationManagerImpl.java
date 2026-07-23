@@ -477,6 +477,7 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
         validateWindowsGuestConversionSupportForStart(convertHost, sourceVmName, preflightInfo, cmd.getDetails());
         ensureSourceVmChangeTrackingEnabledForStart(source, sourceVmName, preflightInfo);
         List<VmwareCbtDiskInfo> sourceDisks = discoverSourceDisks(source, sourceVmName);
+        validateDataDiskOfferingMappingsForStart(sourceVmName, sourceDisks, cmd.getDataDiskToDiskOfferingList());
         String displayName = StringUtils.defaultIfBlank(cmd.getDisplayName(), sourceVmName);
 
         VmwareCbtMigrationVO migration = new VmwareCbtMigrationVO(zone.getId(), owner.getId(), getUserIdForOwner(owner),
@@ -2318,6 +2319,24 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
         }
     }
 
+    /**
+     * Pre-flight for the cutover-time data-disk offering requirement: the final
+     * import needs one disk offering per data disk, but without this check the
+     * mismatch only surfaced AFTER the full initial sync and delta cycles were
+     * paid for. Fail at start instead, while nothing has been copied yet.
+     */
+    protected void validateDataDiskOfferingMappingsForStart(String sourceVmName, List<VmwareCbtDiskInfo> sourceDisks,
+                                                            Map<String, Long> dataDiskOfferingMap) {
+        int dataDiskCount = sourceDisks == null ? 0 : Math.max(0, sourceDisks.size() - 1);
+        int mappedCount = dataDiskOfferingMap == null ? 0 : dataDiskOfferingMap.size();
+        if (dataDiskCount > mappedCount) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format(
+                    "Source VM %s has %d data disk(s) but %d disk offering mapping(s) were provided. " +
+                    "Provide one datadiskofferinglist entry per data disk so the cutover import can place every disk.",
+                    sourceVmName, dataDiskCount, mappedCount));
+        }
+    }
+
     private void markCycleFailed(VmwareCbtMigrationCycleVO cycle, String details) {
         cycle.setState(VmwareCbtMigrationCycle.State.Failed);
         cycle.setDescription(details);
@@ -2326,6 +2345,15 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
     }
 
     private void markMigrationFailed(VmwareCbtMigrationVO migration, String currentStep, String details) {
+        VmwareCbtMigrationVO current = vmwareCbtMigrationDao.findById(migration.getId());
+        if (current != null && current.getState() != null && current.getState().isTerminal()) {
+            // e.g. a cancel raced with an in-flight sync: keep the operator-driven
+            // terminal state (Cancelled) instead of overwriting it when the aborted
+            // sync's failure lands afterwards.
+            LOGGER.debug("Not marking VMware CBT migration {} as Failed: it is already in terminal state {}",
+                    migration.getUuid(), current.getState());
+            return;
+        }
         migration.setState(VmwareCbtMigration.State.Failed);
         migration.setCurrentStep(currentStep);
         migration.setLastError(details);

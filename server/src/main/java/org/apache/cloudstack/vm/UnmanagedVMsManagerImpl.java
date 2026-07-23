@@ -1815,6 +1815,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             sourceVMwareInstance = sourceInstanceDetails.first();
             isClonedInstance = sourceInstanceDetails.second();
             validateDirectVddkImportSourceVm(directRbdVddkImport || directLinstorVddkImport, sourceVMName, sourceVMwareInstance, isClonedInstance);
+            checkDataDiskOfferingsBeforeConvertingVmwareInstance(sourceVMName, sourceVMwareInstance, dataDiskOfferingMap);
 
             // Ensure that the configured resource limits will not be exceeded before beginning the conversion process
             checkVmResourceLimitsForUnmanagedInstanceImport(owner, sourceVMwareInstance, serviceOffering, template, reservations);
@@ -2431,6 +2432,25 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         cmd.setVddkLibDir(StringUtils.trimToNull(details.get(Host.HOST_VDDK_LIB_DIR)));
         cmd.setVddkTransports(StringUtils.trimToNull(details.get(DETAIL_VDDK_TRANSPORTS)));
         cmd.setVddkThumbprint(StringUtils.trimToNull(details.get(DETAIL_VDDK_THUMBPRINT)));
+    }
+
+    /**
+     * Pre-conversion twin of the getRootAndDataDisks() disk-offering requirement:
+     * the same mismatch used to surface only AFTER every byte of the source disks
+     * had been copied and converted. Fail before the conversion starts instead.
+     */
+    protected void checkDataDiskOfferingsBeforeConvertingVmwareInstance(String sourceVMName, UnmanagedInstanceTO sourceVMwareInstance,
+                                                                        Map<String, Long> dataDiskOfferingMap) {
+        int diskCount = sourceVMwareInstance == null || CollectionUtils.isEmpty(sourceVMwareInstance.getDisks()) ?
+                0 : sourceVMwareInstance.getDisks().size();
+        int mappedCount = dataDiskOfferingMap == null ? 0 : dataDiskOfferingMap.size();
+        if (diskCount > 0 && mappedCount != diskCount - 1) {
+            String msg = String.format("Source VM %s has total %d disks for which %d disk offering mappings were provided; %d disk(s) need a disk offering. " +
+                    "%s parameter can be used to provide disk offerings for the data disks", sourceVMName, diskCount, mappedCount, diskCount - 1,
+                    ApiConstants.DATADISK_OFFERING_LIST);
+            logger.error(msg);
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, msg);
+        }
     }
 
     private void validateDirectVddkImportSourceVm(boolean directBlockVddkImport, String sourceVM,
