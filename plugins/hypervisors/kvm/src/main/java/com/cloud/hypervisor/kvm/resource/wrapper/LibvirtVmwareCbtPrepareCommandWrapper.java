@@ -346,10 +346,14 @@ public class LibvirtVmwareCbtPrepareCommandWrapper extends CommandWrapper<Vmware
             appendPluginParameter(nbdkit, "transports", vddkTransports);
         }
 
+        // A pre-created target is a freshly provisioned (thin) volume that reads back as
+        // zeros, but the tools may not assume that for a block device on their own:
+        // without --destination-is-zero / --target-is-zero every zero block is written
+        // out and the thin volume becomes fully allocated.
         String runCommand = useNbdcopy
-                ? String.format("nbdcopy \"$uri\" %s", shellQuote(targetPath))
+                ? String.format("nbdcopy %s\"$uri\" %s", preCreatedTarget ? "--destination-is-zero " : "", shellQuote(targetPath))
                 : String.format("qemu-img convert %s-f raw -O %s \"$uri\" %s",
-                        preCreatedTarget ? "-n " : "", shellQuote(targetFormat), shellQuote(targetPath));
+                        preCreatedTarget ? "-n --target-is-zero " : "", shellQuote(targetFormat), shellQuote(targetPath));
         return nbdkit.append("--run ").append(shellQuote(runCommand)).toString();
     }
 

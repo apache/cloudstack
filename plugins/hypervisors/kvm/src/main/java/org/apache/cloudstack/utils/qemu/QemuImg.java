@@ -132,26 +132,42 @@ public class QemuImg {
      */
     public QemuImg(final long timeout, final boolean skipZeroIfSupported, final boolean noCache) throws LibvirtException {
         if (skipZeroIfSupported) {
-            final Script s = new Script(_qemuImgPath, timeout);
-            s.add("--help");
-
-            final OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
-            final String result = s.execute(parser);
-
-            // Older Qemu returns output in result due to --help reporting error status
-            if (result != null) {
-                if (result.contains(TARGET_ZERO_FLAG)) {
-                    this.skipZero = true;
-                }
-            } else {
-                if (parser.getLines().contains(TARGET_ZERO_FLAG)) {
-                    this.skipZero = true;
-                }
-            }
+            this.skipZero = isTargetZeroFlagSupported(timeout);
         }
         this.timeout = timeout;
         this.noCache = noCache;
         this.version = LibvirtConnection.getConnection().getVersion();
+    }
+
+    /**
+     * Detects support for the convert --target-is-zero flag. The flag used to be
+     * discovered via "qemu-img --help", but newer qemu (observed with 10.x on EL9)
+     * no longer lists it in the help text while still supporting it - which
+     * silently disabled zero-skipping and fully allocated thin block-device
+     * targets. Probe the option directly instead: a recognized option fails with
+     * "--target-is-zero requires use of -n flag", an unknown one with
+     * "unrecognized option".
+     */
+    private boolean isTargetZeroFlagSupported(final long timeout) {
+        // Fast path for older qemu that documents the flag in --help.
+        final Script help = new Script(_qemuImgPath, timeout);
+        help.add("--help");
+        final OutputInterpreter.AllLinesParser helpParser = new OutputInterpreter.AllLinesParser();
+        final String helpResult = help.execute(helpParser);
+        final String helpOutput = (helpResult != null ? helpResult : "") + StringUtils.defaultString(helpParser.getLines());
+        if (helpOutput.contains(TARGET_ZERO_FLAG)) {
+            return true;
+        }
+
+        final Script probe = new Script(_qemuImgPath, timeout);
+        probe.add("convert");
+        probe.add(TARGET_ZERO_FLAG);
+        final OutputInterpreter.AllLinesParser probeParser = new OutputInterpreter.AllLinesParser();
+        final String probeResult = probe.execute(probeParser);
+        final String probeOutput = (probeResult != null ? probeResult : "") + StringUtils.defaultString(probeParser.getLines());
+        return probeOutput.contains(TARGET_ZERO_FLAG)
+                && !probeOutput.contains("unrecognized option")
+                && !probeOutput.contains("invalid option");
     }
 
     /**

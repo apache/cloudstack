@@ -607,11 +607,14 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         }
         // Full-disk copy into the local raw device: prefer nbdcopy (libnbd) when present -
         // it pipelines many in-flight requests and is typically faster than a single-connection
-        // qemu-img convert - and fall back to qemu-img convert otherwise. Both skip source holes,
-        // which is correct because the freshly spawned thin device reads back as zeros.
+        // qemu-img convert - and fall back to qemu-img convert otherwise. The freshly created
+        // thin device reads back as zeros, but neither tool may assume that for a block-device
+        // target on its own: without --destination-is-zero / --target-is-zero they explicitly
+        // write every zero block and fully allocate the thin volume (defeating thin
+        // provisioning and risking pool exhaustion).
         String runCommand = useNbdcopy
-                ? "nbdcopy \"$uri\" " + shellQuote(devicePath)
-                : "qemu-img convert -n -f raw -O raw \"$uri\" " + shellQuote(devicePath);
+                ? "nbdcopy --destination-is-zero \"$uri\" " + shellQuote(devicePath)
+                : "qemu-img convert -n --target-is-zero -f raw -O raw \"$uri\" " + shellQuote(devicePath);
         command.append("--run ").append(shellQuote(runCommand));
 
         Script script = new Script("/bin/bash", timeout, logger);

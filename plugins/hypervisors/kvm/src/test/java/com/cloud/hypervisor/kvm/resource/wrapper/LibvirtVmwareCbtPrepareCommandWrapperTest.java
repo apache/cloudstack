@@ -120,8 +120,8 @@ public class LibvirtVmwareCbtPrepareCommandWrapperTest {
         Answer answer = wrapper.execute(command, libvirtComputingResource);
 
         Assert.assertTrue(answer.getDetails(), answer.getResult());
-        Assert.assertTrue(wrapper.lastCommand, wrapper.lastCommand.contains("qemu-img convert -n -f raw -O "));
-        Assert.assertTrue(wrapper.lastCommand, wrapper.lastCommand.matches("(?s).*qemu-img convert -n -f raw -O .*raw.*\\\"\\$uri\\\".*"));
+        Assert.assertTrue(wrapper.lastCommand, wrapper.lastCommand.contains("qemu-img convert -n --target-is-zero -f raw -O "));
+        Assert.assertTrue(wrapper.lastCommand, wrapper.lastCommand.matches("(?s).*qemu-img convert -n --target-is-zero -f raw -O .*raw.*\\\"\\$uri\\\".*"));
         Assert.assertTrue(wrapper.lastCommand, wrapper.lastCommand.contains("/dev/drbd/by-res/cs-cbt-abc12345-2000/0"));
         Mockito.verify(linstorStoragePool).createPhysicalDisk(Mockito.eq("cbt-abc12345-2000"), Mockito.any(), Mockito.any(),
                 Mockito.eq(8192L), Mockito.isNull());
@@ -149,7 +149,7 @@ public class LibvirtVmwareCbtPrepareCommandWrapperTest {
         Answer answer = wrapper.execute(command, libvirtComputingResource);
 
         Assert.assertTrue(answer.getDetails(), answer.getResult());
-        Assert.assertTrue(wrapper.lastCommand, wrapper.lastCommand.matches("(?s).*nbdcopy \\\"\\$uri\\\" .*/dev/drbd/by-res/cs-cbt-abc12345-2000/0.*"));
+        Assert.assertTrue(wrapper.lastCommand, wrapper.lastCommand.matches("(?s).*nbdcopy --destination-is-zero \\\"\\$uri\\\" .*/dev/drbd/by-res/cs-cbt-abc12345-2000/0.*"));
         Assert.assertFalse(wrapper.lastCommand, wrapper.lastCommand.contains("qemu-img convert"));
     }
 
