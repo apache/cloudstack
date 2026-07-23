@@ -334,4 +334,21 @@ public class LibvirtConvertInstanceCommandWrapperTest {
                     .getVcenterThumbprint(Mockito.anyString(), Mockito.anyLong(), Mockito.anyString());
         }
     }
+
+    @Test
+    public void testBuildDirectRbdNbdLibvirtXmlUsesLocalhostNbdSourcesWithoutSecrets() {
+        // virt-v2v's "-i libvirtxml" input runs without a libvirt connection: a native
+        // rbd network disk with a <secret> auth reference attaches zero drives there,
+        // so the finalization XML must use localhost qemu-nbd bridge endpoints.
+        String xml = convertInstanceCommandWrapper.buildDirectRbdNbdLibvirtXml("tmp-uuid", List.of(10809, 10810));
+
+        Assert.assertTrue(xml, xml.contains("<source protocol='nbd'>"));
+        Assert.assertTrue(xml, xml.contains("<host name='localhost' port='10809'/>"));
+        Assert.assertTrue(xml, xml.contains("<host name='localhost' port='10810'/>"));
+        Assert.assertTrue(xml, xml.contains("<target dev='sda' bus='scsi'/>"));
+        Assert.assertTrue(xml, xml.contains("<target dev='sdb' bus='scsi'/>"));
+        Assert.assertFalse(xml, xml.contains("protocol='rbd'"));
+        Assert.assertFalse(xml, xml.contains("<secret"));
+        Assert.assertFalse(xml, xml.contains("<auth"));
+    }
 }

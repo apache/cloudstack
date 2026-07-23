@@ -18,6 +18,7 @@
 //
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import java.net.ServerSocket;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -504,17 +505,19 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
                 }
             }
 
-            Path inputXml = Files.createTempFile("cloudstack-vddk-direct-" + temporaryConvertUuid, ".xml");
-            String domainXml = linstorTarget
-                    ? buildDirectBlockDeviceLibvirtXml(temporaryConvertUuid, blockDevicePaths)
-                    : buildDirectRbdLibvirtXml(temporaryConvertUuid, targetPool, createdImages);
-            Files.writeString(inputXml, domainXml);
-
-            boolean finalized = runInPlaceFinalization(inputXml, libguestfsBackend, timeout, verboseModeEnabled, originalVMName, serverResource);
+            boolean finalized;
+            if (linstorTarget) {
+                Path inputXml = Files.createTempFile("cloudstack-vddk-direct-" + temporaryConvertUuid, ".xml");
+                Files.writeString(inputXml, buildDirectBlockDeviceLibvirtXml(temporaryConvertUuid, blockDevicePaths));
+                finalized = runInPlaceFinalization(inputXml, libguestfsBackend, timeout, verboseModeEnabled, originalVMName, serverResource);
+                Files.deleteIfExists(inputXml);
+            } else {
+                finalized = runRbdInPlaceFinalizationOverNbdBridges(targetPool, createdImages, temporaryConvertUuid,
+                        libguestfsBackend, timeout, verboseModeEnabled, originalVMName, serverResource);
+            }
             if (!finalized) {
                 cleanupDirectImportDisks(targetPool, createdImages, originalVMName);
             }
-            Files.deleteIfExists(inputXml);
             return finalized;
         } catch (Exception e) {
             logger.error("({}) Direct {} VDDK import failed: {}", originalVMName, targetPool.getType(), e.getMessage(), e);
@@ -672,7 +675,114 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         return command.toString();
     }
 
-    private String buildDirectRbdLibvirtXml(String temporaryConvertUuid, KVMStoragePool targetPool, List<String> imageNames) {
+    /**
+     * Finalizes direct-RBD import disks with in-place virt-v2v over temporary
+     * localhost qemu-nbd bridges (one per image), mirroring the CBT cutover
+     * approach. Native {@code <disk type='network' protocol='rbd'>} sources cannot
+     * be used here: their cephx {@code <auth>} element references a libvirt secret,
+     * and virt-v2v's {@code -i libvirtxml} input runs without a libvirt connection,
+     * so the secret cannot be resolved and no drives are attached (observed as
+     * "you must call guestfs_add_drive before guestfs_launch" on EL9).
+     */
+    protected boolean runRbdInPlaceFinalizationOverNbdBridges(KVMStoragePool targetPool, List<String> imageNames,
+                                                              String temporaryConvertUuid, String libguestfsBackend,
+                                                              long timeout, boolean verboseModeEnabled,
+                                                              String originalVMName, LibvirtComputingResource serverResource) {
+        List<Integer> ports = new ArrayList<>();
+        List<Path> pidFiles = new ArrayList<>();
+        Path inputXml = null;
+        Path scriptPath = null;
+        try {
+            for (int i = 0; i < imageNames.size(); i++) {
+                ports.add(allocateLocalhostPort());
+                Path pidFile = Files.createTempFile("cloudstack-vddk-rbd-nbd-" + temporaryConvertUuid + "-", ".pid");
+                Files.deleteIfExists(pidFile);
+                pidFiles.add(pidFile);
+            }
+
+            inputXml = Files.createTempFile("cloudstack-vddk-rbd-" + temporaryConvertUuid, ".xml");
+            Files.writeString(inputXml, buildDirectRbdNbdLibvirtXml(temporaryConvertUuid, ports));
+
+            String inPlaceCommand = buildInPlaceCommand(inputXml, libguestfsBackend, verboseModeEnabled, serverResource);
+            if (inPlaceCommand == null) {
+                logger.error("({}) No virt-v2v in-place finalization method is available", originalVMName);
+                return false;
+            }
+
+            StringBuilder script = new StringBuilder();
+            script.append("#!/bin/bash\n");
+            script.append("set -euo pipefail\n");
+            script.append("cleanup() {\n");
+            script.append("  set +e\n");
+            script.append("  for pid_file in");
+            for (Path pidFile : pidFiles) {
+                script.append(" ").append(shellQuote(pidFile.toString()));
+            }
+            script.append("; do\n");
+            script.append("    if [[ -s \"$pid_file\" ]]; then\n");
+            script.append("      pid=$(cat \"$pid_file\")\n");
+            script.append("      kill \"$pid\" >/dev/null 2>&1 || true\n");
+            script.append("      for attempt in {1..20}; do\n");
+            script.append("        kill -0 \"$pid\" >/dev/null 2>&1 || break\n");
+            script.append("        sleep 0.1\n");
+            script.append("      done\n");
+            script.append("    fi\n");
+            script.append("    rm -f \"$pid_file\"\n");
+            script.append("  done\n");
+            script.append("}\n");
+            script.append("trap cleanup EXIT\n");
+            for (int i = 0; i < imageNames.size(); i++) {
+                String qemuRbdPath = KVMPhysicalDisk.RBDStringBuilder(targetPool,
+                        targetPool.getSourceDir() + "/" + imageNames.get(i));
+                script.append("qemu-nbd --fork --persistent --shared=1 --format=raw --bind=127.0.0.1 --port=")
+                        .append(ports.get(i))
+                        .append(" --pid-file=").append(shellQuote(pidFiles.get(i).toString()))
+                        .append(" ").append(shellQuote(qemuRbdPath)).append("\n");
+            }
+            script.append(inPlaceCommand).append("\n");
+
+            scriptPath = Files.createTempFile("cloudstack-vddk-rbd-finalize-" + temporaryConvertUuid + "-", ".sh");
+            Files.writeString(scriptPath, script.toString());
+            Files.setPosixFilePermissions(scriptPath, Set.of(PosixFilePermission.OWNER_READ,
+                    PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_EXECUTE));
+
+            Script runner = new Script("/bin/bash", timeout, logger);
+            runner.add(scriptPath.toString());
+            OutputInterpreter.LineByLineOutputLogger outputLogger = new OutputInterpreter.LineByLineOutputLogger(logger,
+                    String.format("(%s) virt-v2v rbd in-place", originalVMName));
+            runner.execute(outputLogger);
+            return runner.getExitValue() == 0;
+        } catch (Exception e) {
+            logger.error("({}) RBD in-place finalization over NBD bridges failed: {}", originalVMName, e.getMessage(), e);
+            return false;
+        } finally {
+            deleteQuietly(inputXml);
+            deleteQuietly(scriptPath);
+            for (Path pidFile : pidFiles) {
+                deleteQuietly(pidFile);
+            }
+        }
+    }
+
+    private void deleteQuietly(Path path) {
+        if (path == null) {
+            return;
+        }
+        try {
+            Files.deleteIfExists(path);
+        } catch (Exception e) {
+            logger.debug("Unable to delete temporary file {}: {}", path, e.getMessage());
+        }
+    }
+
+    private int allocateLocalhostPort() throws java.io.IOException {
+        try (ServerSocket socket = new ServerSocket(0)) {
+            socket.setReuseAddress(false);
+            return socket.getLocalPort();
+        }
+    }
+
+    protected String buildDirectRbdNbdLibvirtXml(String temporaryConvertUuid, List<Integer> ports) {
         StringBuilder xml = new StringBuilder();
         xml.append("<domain type='kvm'>\n");
         xml.append("  <name>").append(xmlEscape("cloudstack-vddk-rbd-" + temporaryConvertUuid)).append("</name>\n");
@@ -680,24 +790,12 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         xml.append("  <vcpu>1</vcpu>\n");
         xml.append("  <os><type>hvm</type><boot dev='hd'/></os>\n");
         xml.append("  <devices>\n");
-        for (int i = 0; i < imageNames.size(); i++) {
-            String imageName = imageNames.get(i);
+        for (int i = 0; i < ports.size(); i++) {
             xml.append("    <disk type='network' device='disk'>\n");
             xml.append("      <driver name='qemu' type='raw'/>\n");
-            xml.append("      <source protocol='rbd' name='").append(xmlEscape(targetPool.getSourceDir() + "/" + imageName)).append("'>\n");
-            for (String sourceHost : StringUtils.split(StringUtils.defaultString(targetPool.getSourceHost()), ",")) {
-                xml.append("        <host name='").append(xmlEscape(sourceHost.replace("[", "").replace("]", ""))).append("'");
-                if (targetPool.getSourcePort() != 0) {
-                    xml.append(" port='").append(targetPool.getSourcePort()).append("'");
-                }
-                xml.append("/>\n");
-            }
+            xml.append("      <source protocol='nbd'>\n");
+            xml.append("        <host name='localhost' port='").append(ports.get(i)).append("'/>\n");
             xml.append("      </source>\n");
-            if (StringUtils.isNotBlank(targetPool.getAuthUserName())) {
-                xml.append("      <auth username='").append(xmlEscape(targetPool.getAuthUserName())).append("'>\n");
-                xml.append("        <secret type='ceph' uuid='").append(xmlEscape(targetPool.getUuid())).append("'/>\n");
-                xml.append("      </auth>\n");
-            }
             xml.append("      <target dev='").append(diskTargetName(i)).append("' bus='scsi'/>\n");
             xml.append("    </disk>\n");
         }
