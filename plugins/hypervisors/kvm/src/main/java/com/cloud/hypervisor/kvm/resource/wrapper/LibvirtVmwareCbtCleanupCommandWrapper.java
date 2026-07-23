@@ -40,6 +40,7 @@ import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.Storage;
+import com.cloud.utils.script.Script;
 
 @ResourceWrapper(handles = VmwareCbtCleanupCommand.class)
 public class LibvirtVmwareCbtCleanupCommandWrapper extends CommandWrapper<VmwareCbtCleanupCommand, Answer, LibvirtComputingResource> {
@@ -100,6 +101,8 @@ public class LibvirtVmwareCbtCleanupCommandWrapper extends CommandWrapper<Vmware
             return 0;
         }
 
+        killInFlightCopyProcesses(String.format("cloudstack-cbt-%s-", cmd.getMigrationUuid()), cmd.getMigrationUuid());
+
         int removedImages = 0;
         List<String> failedImages = new ArrayList<>();
         for (VmwareCbtDiskTO disk : cmd.getDisks()) {
@@ -107,15 +110,9 @@ public class LibvirtVmwareCbtCleanupCommandWrapper extends CommandWrapper<Vmware
             if (StringUtils.isBlank(imageName)) {
                 continue;
             }
-            try {
-                if (targetPool.deletePhysicalDisk(imageName, Storage.ImageFormat.RAW)) {
-                    removedImages++;
-                } else {
-                    failedImages.add(imageName);
-                }
-            } catch (RuntimeException e) {
-                logger.warn("Unable to delete VMware CBT RBD image {} for migration {}: {}",
-                        imageName, cmd.getMigrationUuid(), StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()));
+            if (deletePhysicalDiskWithRetries(targetPool, imageName, cmd.getMigrationUuid())) {
+                removedImages++;
+            } else {
                 failedImages.add(imageName);
             }
         }
@@ -136,6 +133,9 @@ public class LibvirtVmwareCbtCleanupCommandWrapper extends CommandWrapper<Vmware
             return 0;
         }
 
+        killInFlightCopyProcesses(String.format("cbt-%s-", StringUtils.defaultString(cmd.getMigrationUuid()).replace("-", "").substring(0, 8)),
+                cmd.getMigrationUuid());
+
         int removedVolumes = 0;
         List<String> failedVolumes = new ArrayList<>();
         for (VmwareCbtDiskTO disk : cmd.getDisks()) {
@@ -143,15 +143,9 @@ public class LibvirtVmwareCbtCleanupCommandWrapper extends CommandWrapper<Vmware
             if (StringUtils.isBlank(volumeName)) {
                 continue;
             }
-            try {
-                if (targetPool.deletePhysicalDisk(volumeName, Storage.ImageFormat.RAW)) {
-                    removedVolumes++;
-                } else {
-                    failedVolumes.add(volumeName);
-                }
-            } catch (RuntimeException e) {
-                logger.warn("Unable to delete VMware CBT block device volume {} for migration {}: {}",
-                        volumeName, cmd.getMigrationUuid(), StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()));
+            if (deletePhysicalDiskWithRetries(targetPool, volumeName, cmd.getMigrationUuid())) {
+                removedVolumes++;
+            } else {
                 failedVolumes.add(volumeName);
             }
         }
@@ -176,6 +170,65 @@ public class LibvirtVmwareCbtCleanupCommandWrapper extends CommandWrapper<Vmware
             return null;
         }
         return volumeName;
+    }
+
+    /**
+     * A cancelled migration's initial/delta sync may still be copying into the
+     * target volumes when this cleanup runs (the data-plane copy is not aborted by
+     * the cancel itself). Any surviving copy keeps the target device/image busy -
+     * volume deletion then fails and the copy keeps burning VDDK/network/storage on
+     * a dead migration. Kill processes whose command line references this
+     * migration's marker-guarded target names before deleting them: this matches
+     * the nbdcopy / qemu-img convert / qemu-io processes (their arguments carry the
+     * marker-named target); the nbdkit --run parent exits with its child.
+     */
+    protected void killInFlightCopyProcesses(String marker, String migrationUuid) {
+        if (StringUtils.isBlank(marker)) {
+            return;
+        }
+        int exitValue = Script.runSimpleBashScriptForExitValue(String.format("pkill -f -- %s", quoteShellArgument(marker)));
+        if (exitValue == 0) {
+            logger.info("Killed in-flight copy process(es) matching marker {} for VMware CBT migration {}", marker, migrationUuid);
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
+    /**
+     * Retries volume deletion briefly: right after in-flight copies are killed the
+     * device may still be held open (DRBD demotion, qemu teardown) for a moment.
+     */
+    protected boolean deletePhysicalDiskWithRetries(KVMStoragePool targetPool, String volumeName, String migrationUuid) {
+        final int attempts = 3;
+        for (int attempt = 1; attempt <= attempts; attempt++) {
+            try {
+                if (targetPool.deletePhysicalDisk(volumeName, Storage.ImageFormat.RAW)) {
+                    return true;
+                }
+                logger.warn("Attempt {}/{} to delete VMware CBT target {} for migration {} returned false",
+                        attempt, attempts, volumeName, migrationUuid);
+            } catch (RuntimeException e) {
+                logger.warn("Attempt {}/{} to delete VMware CBT target {} for migration {} failed: {}",
+                        attempt, attempts, volumeName, migrationUuid,
+                        StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()));
+            }
+            if (attempt < attempts) {
+                try {
+                    Thread.sleep(2000L * attempt);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return false;
+                }
+            }
+        }
+        return false;
+    }
+
+    private String quoteShellArgument(String value) {
+        return "'" + StringUtils.defaultString(value).replace("'", "'\"'\"'") + "'";
     }
 
     private KVMStoragePool getTargetStoragePool(VmwareCbtCleanupCommand cmd, KVMStoragePoolManager storagePoolMgr) {
