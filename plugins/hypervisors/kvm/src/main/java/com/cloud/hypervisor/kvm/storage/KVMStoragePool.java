@@ -74,6 +74,19 @@ public interface KVMStoragePool {
 
     boolean refresh();
 
+    /**
+     * Whether a freshly created volume on this pool is guaranteed to read back as
+     * all zeros. Callers that skip writing zero blocks into a pre-created target
+     * (e.g. qemu-img convert --target-is-zero / nbdcopy --destination-is-zero) must
+     * only do so when this returns true; block backends that do not zero-initialize
+     * new volumes (e.g. LVM-thick) return false so those callers write the zeros and
+     * do not leak stale data from previously deleted volumes into unwritten regions.
+     * Defaults to false so any backend that has not opted in is treated as unsafe.
+     */
+    default boolean isVolumeZeroInitialized(String volumeName) {
+        return false;
+    }
+
     boolean isExternalSnapshot();
 
     String getLocalPath();

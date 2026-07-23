@@ -231,9 +231,13 @@ public class LibvirtVmwareCbtPrepareCommandWrapper extends CommandWrapper<Vmware
         // for an RBD target it copies over a localhost qemu-nbd bridge (see the builder). qcow2
         // file targets keep qemu-img convert.
         boolean nbdcopyAvailable = serverResource.hostSupportsNbdcopy();
+        // Only skip zero-writes into a pre-created block-device target when the backend
+        // guarantees a fresh volume reads back as zeros (thin providers); on backends that do
+        // not (e.g. LVM-thick) the zeros must be written or stale data leaks into the disk.
+        boolean targetIsZero = preCreatedTarget && targetPool.isVolumeZeroInitialized(targetPath);
         String command = buildNbdkitFullCopyCommand(cmd, disk, passwordFilePath, vddkLibDir, vddkThumbprint,
                 StringUtils.defaultIfBlank(cmd.getVddkTransports(), serverResource.getVddkTransports()),
-                serverResource.getVddkNbdCompression(), qemuTargetPath, targetFormat, preCreatedTarget, nbdcopyAvailable);
+                serverResource.getVddkNbdCompression(), qemuTargetPath, targetFormat, preCreatedTarget, nbdcopyAvailable, targetIsZero);
         VmwareCbtCommandResult commandResult = executeLoggedBash(command, getTimeout(cmd),
                 String.format("(%s) VMware CBT initial full sync disk %s", cmd.getMigrationUuid(), disk.getDiskId()));
         long durationSeconds = Math.max(1L, (System.currentTimeMillis() - startTime) / 1000L);
@@ -331,7 +335,8 @@ public class LibvirtVmwareCbtPrepareCommandWrapper extends CommandWrapper<Vmware
     private String buildNbdkitFullCopyCommand(VmwareCbtPrepareCommand cmd, VmwareCbtDiskTO disk,
                                               String passwordFilePath, String vddkLibDir, String vddkThumbprint,
                                               String vddkTransports, String vddkNbdCompression, String targetPath,
-                                              String targetFormat, boolean preCreatedTarget, boolean nbdcopyAvailable) {
+                                              String targetFormat, boolean preCreatedTarget, boolean nbdcopyAvailable,
+                                              boolean targetIsZero) {
         RemoteInstanceTO sourceInstance = cmd.getSourceInstance();
         String sourceVmMoref = getMorefValue(sourceInstance.getVmwareMoref());
         String snapshotMoref = getMorefValue(cmd.getBaselineSnapshotMor());
@@ -362,15 +367,18 @@ public class LibvirtVmwareCbtPrepareCommandWrapper extends CommandWrapper<Vmware
             return buildRbdNbdcopyBridgeCommand(nbdkit, targetPath, disk.getCapacityBytes());
         }
 
-        // A pre-created target is a freshly provisioned (thin) volume that reads back as
-        // zeros, but the tools may not assume that for a block device on their own:
-        // without --destination-is-zero / --target-is-zero every zero block is written
-        // out and the thin volume becomes fully allocated.
+        // For a pre-created block-device target, skip writing zero blocks
+        // (--destination-is-zero / --target-is-zero) only when the backend guarantees the
+        // fresh volume reads back as zeros (targetIsZero, i.e. thin providers). On backends
+        // that do not (e.g. LVM-thick) the zeros must be written or stale data from a
+        // previously deleted volume would leak into the unwritten regions.
         boolean useNbdcopy = preCreatedTarget && nbdcopyAvailable;
+        String nbdcopyZeroFlag = (preCreatedTarget && targetIsZero) ? "--destination-is-zero " : "";
+        String qemuImgFlags = preCreatedTarget ? ("-n " + (targetIsZero ? "--target-is-zero " : "")) : "";
         String runCommand = useNbdcopy
-                ? String.format("nbdcopy %s\"$uri\" %s", preCreatedTarget ? "--destination-is-zero " : "", shellQuote(targetPath))
+                ? String.format("nbdcopy %s\"$uri\" %s", nbdcopyZeroFlag, shellQuote(targetPath))
                 : String.format("qemu-img convert %s-f raw -O %s \"$uri\" %s",
-                        preCreatedTarget ? "-n --target-is-zero " : "", shellQuote(targetFormat), shellQuote(targetPath));
+                        qemuImgFlags, shellQuote(targetFormat), shellQuote(targetPath));
         return nbdkit.append("--run ").append(shellQuote(runCommand)).toString();
     }
 

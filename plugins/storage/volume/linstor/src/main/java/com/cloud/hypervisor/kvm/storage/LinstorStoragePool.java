@@ -27,6 +27,7 @@ import com.cloud.storage.Storage;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
+import org.apache.cloudstack.storage.datastore.util.LinstorUtil;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonIOException;
@@ -213,6 +214,17 @@ public class LinstorStoragePool implements KVMStoragePool {
 
     public String getResourceGroup() {
         return _resourceGroup;
+    }
+
+    /**
+     * A freshly spawned Linstor resource reads back as zeros only on providers that
+     * zero-initialize new volumes (LVM-thin, ZFS, and diskless). Thick providers
+     * (e.g. plain LVM) may expose stale data from previously deleted volumes, so the
+     * caller must write the zeros rather than skip them.
+     */
+    @Override
+    public boolean isVolumeZeroInitialized(String volumeName) {
+        return LinstorUtil.resourceSupportZeroBlocks(this, LinstorUtil.RSC_PREFIX + volumeName);
     }
 
     public boolean isInsecureSsl() {

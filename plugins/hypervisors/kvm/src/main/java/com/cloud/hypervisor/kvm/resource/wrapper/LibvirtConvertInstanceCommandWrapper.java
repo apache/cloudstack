@@ -671,14 +671,15 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         }
         // Full-disk copy into the local raw device: prefer nbdcopy (libnbd) when present -
         // it pipelines many in-flight requests and is typically faster than a single-connection
-        // qemu-img convert - and fall back to qemu-img convert otherwise. The freshly created
-        // thin device reads back as zeros, but neither tool may assume that for a block-device
-        // target on its own: without --destination-is-zero / --target-is-zero they explicitly
-        // write every zero block and fully allocate the thin volume (defeating thin
-        // provisioning and risking pool exhaustion).
+        // qemu-img convert - and fall back to qemu-img convert otherwise. Skip writing zero
+        // blocks (nbdcopy --destination-is-zero / qemu-img --target-is-zero) only when the
+        // backend guarantees a freshly created volume reads back as zeros (thin providers);
+        // on backends that do not (e.g. LVM-thick) the zeros must be written or stale data from
+        // a previously deleted volume would leak into the unwritten regions.
+        boolean targetIsZero = targetPool.isVolumeZeroInitialized(diskName);
         String runCommand = useNbdcopy
-                ? "nbdcopy --destination-is-zero \"$uri\" " + shellQuote(devicePath)
-                : "qemu-img convert -n --target-is-zero -f raw -O raw \"$uri\" " + shellQuote(devicePath);
+                ? "nbdcopy " + (targetIsZero ? "--destination-is-zero " : "") + "\"$uri\" " + shellQuote(devicePath)
+                : "qemu-img convert -n " + (targetIsZero ? "--target-is-zero " : "") + "-f raw -O raw \"$uri\" " + shellQuote(devicePath);
         command.append("--run ").append(shellQuote(runCommand));
 
         Script script = new Script("/bin/bash", timeout, logger);

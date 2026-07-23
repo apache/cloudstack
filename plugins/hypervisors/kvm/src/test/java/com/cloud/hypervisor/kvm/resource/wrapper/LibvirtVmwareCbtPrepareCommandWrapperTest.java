@@ -142,6 +142,7 @@ public class LibvirtVmwareCbtPrepareCommandWrapperTest {
         Mockito.when(targetDisk.getPath()).thenReturn("/dev/drbd/by-res/cs-cbt-abc12345-2000/0");
         Mockito.when(linstorStoragePool.createPhysicalDisk(Mockito.eq("cbt-abc12345-2000"), Mockito.any(), Mockito.any(),
                 Mockito.eq(8192L), Mockito.isNull())).thenReturn(targetDisk);
+        Mockito.when(linstorStoragePool.isVolumeZeroInitialized("cbt-abc12345-2000")).thenReturn(true);
 
         VmwareCbtDiskTO disk = new VmwareCbtDiskTO("disk-1", 2000, "[datastore1] vm/disk-1.vmdk",
                 "datastore1", "cbt-abc12345-2000", "raw", "*", null, 8192);
@@ -171,6 +172,7 @@ public class LibvirtVmwareCbtPrepareCommandWrapperTest {
         Mockito.when(targetDisk.getPath()).thenReturn("/dev/drbd/by-res/cs-cbt-abc12345-2000/0");
         Mockito.when(linstorStoragePool.createPhysicalDisk(Mockito.eq("cbt-abc12345-2000"), Mockito.any(), Mockito.any(),
                 Mockito.eq(8192L), Mockito.isNull())).thenReturn(targetDisk);
+        Mockito.when(linstorStoragePool.isVolumeZeroInitialized("cbt-abc12345-2000")).thenReturn(true);
 
         VmwareCbtDiskTO disk = new VmwareCbtDiskTO("disk-1", 2000, "[datastore1] vm/disk-1.vmdk",
                 "datastore1", "cbt-abc12345-2000", "raw", "*", null, 8192);
@@ -185,6 +187,36 @@ public class LibvirtVmwareCbtPrepareCommandWrapperTest {
         Assert.assertTrue(answer.getDetails(), answer.getResult());
         Assert.assertTrue(wrapper.lastCommand, wrapper.lastCommand.matches("(?s).*nbdcopy --destination-is-zero \\\"\\$uri\\\" .*/dev/drbd/by-res/cs-cbt-abc12345-2000/0.*"));
         Assert.assertFalse(wrapper.lastCommand, wrapper.lastCommand.contains("qemu-img convert"));
+    }
+
+    @Test
+    public void testExecuteWritesZerosForNonZeroInitializedBlockDevice() {
+        // LVM-thick (or any provider that does not zero-initialize new volumes): the copy must
+        // NOT skip zeros, or stale data from a previously deleted volume would leak into the disk.
+        KVMStoragePool linstorStoragePool = Mockito.mock(KVMStoragePool.class);
+        com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk targetDisk = Mockito.mock(com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk.class);
+        Mockito.when(storagePoolManager.getStoragePool(Storage.StoragePoolType.Linstor, "linstor-pool-uuid")).thenReturn(linstorStoragePool);
+        Mockito.when(linstorStoragePool.getType()).thenReturn(Storage.StoragePoolType.Linstor);
+        Mockito.when(targetDisk.getPath()).thenReturn("/dev/drbd/by-res/cs-cbt-abc12345-2000/0");
+        Mockito.when(linstorStoragePool.createPhysicalDisk(Mockito.eq("cbt-abc12345-2000"), Mockito.any(), Mockito.any(),
+                Mockito.eq(8192L), Mockito.isNull())).thenReturn(targetDisk);
+        Mockito.when(linstorStoragePool.isVolumeZeroInitialized("cbt-abc12345-2000")).thenReturn(false);
+
+        VmwareCbtDiskTO disk = new VmwareCbtDiskTO("disk-1", 2000, "[datastore1] vm/disk-1.vmdk",
+                "datastore1", "cbt-abc12345-2000", "raw", "*", null, 8192);
+        VmwareCbtPrepareCommand command = new VmwareCbtPrepareCommand(MIGRATION_UUID, createRemoteInstance(), List.of(disk),
+                Storage.StoragePoolType.Linstor, "linstor-pool-uuid", VmwareCbtTargetStorageType.RAW_BLOCK_DEVICE,
+                "VirtualMachineSnapshot:snapshot-1");
+        command.setVddkLibDir("/opt/vmware-vddk");
+        command.setVddkThumbprint("AA:BB:CC");
+
+        Answer answer = wrapper.execute(command, libvirtComputingResource);
+
+        Assert.assertTrue(answer.getDetails(), answer.getResult());
+        // still no-create (-n) into the pre-created device, but zeros ARE written (no --target-is-zero)
+        Assert.assertTrue(wrapper.lastCommand, wrapper.lastCommand.contains("qemu-img convert -n -f raw -O "));
+        Assert.assertFalse(wrapper.lastCommand, wrapper.lastCommand.contains("--target-is-zero"));
+        Assert.assertFalse(wrapper.lastCommand, wrapper.lastCommand.contains("--destination-is-zero"));
     }
 
     private VmwareCbtPrepareCommand createCommand() {
