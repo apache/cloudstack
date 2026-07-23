@@ -29,10 +29,13 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class PrometheusExporterServerImpl extends ManagerBase implements PrometheusExporterServer, Configurable {
 
     private static HttpServer httpServer;
+    private ExecutorService httpExecutor;
 
     @Inject
     private PrometheusExporter prometheusExporter;
@@ -79,6 +82,8 @@ public class PrometheusExporterServerImpl extends ManagerBase implements Prometh
         if (EnablePrometheusExporter.value()) {
             try {
                 httpServer = HttpServer.create(new InetSocketAddress(PrometheusExporterServerPort.value()), 0);
+                httpExecutor = Executors.newFixedThreadPool(2);
+                httpServer.setExecutor(httpExecutor);
                 httpServer.createContext("/metrics", new ExporterHandler(prometheusExporter));
                 httpServer.createContext("/", new HttpHandler() {
                     @Override
@@ -108,6 +113,10 @@ public class PrometheusExporterServerImpl extends ManagerBase implements Prometh
             httpServer.stop(0);
             logger.debug("Stopped Prometheus exporter http server");
         }
+        if (httpExecutor != null) {
+            httpExecutor.shutdownNow();
+            logger.debug("Shut down Prometheus exporter http executor");
+        }
         return true;
     }
 
@@ -122,7 +131,8 @@ public class PrometheusExporterServerImpl extends ManagerBase implements Prometh
                 EnablePrometheusExporter,
                 PrometheusExporterServerPort,
                 PrometheusExporterAllowedAddresses,
-                PrometheusExporterOfferingCountLimit
+                PrometheusExporterOfferingCountLimit,
+                PrometheusExporterMinRefreshInterval
         };
     }
 }
