@@ -1288,7 +1288,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         protected void runInContext() {
             try {
                 cleanUpVirtualMachineStats();
-            } catch (CloudRuntimeException e) {
+            } catch (RuntimeException e) {
                 logger.error("Error trying to clean up VM stats", e);
             }
         }
@@ -1298,7 +1298,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         protected void runInContext() {
             try {
                 cleanUpVolumeStats();
-            } catch (CloudRuntimeException e) {
+            } catch (RuntimeException e) {
                 logger.error("Error trying to clean up Volume stats", e);
             }
         }
