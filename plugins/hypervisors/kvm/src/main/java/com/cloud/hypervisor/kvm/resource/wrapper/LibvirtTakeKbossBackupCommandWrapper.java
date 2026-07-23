@@ -19,15 +19,18 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
-import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
-import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
-import com.cloud.resource.CommandWrapper;
-import com.cloud.resource.ResourceWrapper;
-import com.cloud.utils.Pair;
-import com.cloud.utils.exception.BackupException;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
+
 import org.apache.cloudstack.backup.TakeKbossBackupAnswer;
 import org.apache.cloudstack.backup.TakeKbossBackupCommand;
 import org.apache.cloudstack.storage.to.BackupDeltaTO;
@@ -40,20 +43,17 @@ import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.ObjectUtils;
 import org.libvirt.LibvirtException;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.TimeoutException;
-import java.util.stream.Collectors;
+import com.cloud.agent.api.Answer;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
+import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
+import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
+import com.cloud.utils.Pair;
+import com.cloud.utils.exception.BackupException;
 
 @ResourceWrapper(handles = TakeKbossBackupCommand.class)
 public class LibvirtTakeKbossBackupCommandWrapper extends CommandWrapper<TakeKbossBackupCommand, Answer, LibvirtComputingResource> {
@@ -144,8 +144,8 @@ public class LibvirtTakeKbossBackupCommandWrapper extends CommandWrapper<TakeKbo
             volumeObjectTO.setPath(kbossTO.getDeltaPathOnPrimary());
 
             if (deltaMergeTreeTO != null) {
-                List<String> snapshotDataStoreVos = kbossTO.getDeltaPaths();
-                mergeBackupDelta(resource, deltaMergeTreeTO, volumeObjectTO, vmName, runningVM, volumeUuid, CollectionUtils.isEmpty(snapshotDataStoreVos));
+                List<String> deltasSucceedingLastBackupInChain = kbossTO.getDeltaPaths();
+                mergeBackupDelta(resource, deltaMergeTreeTO, volumeObjectTO, vmName, runningVM, volumeUuid, CollectionUtils.isEmpty(deltasSucceedingLastBackupInChain));
             }
 
             if (command.isEndChain() || command.isIsolated()) {
@@ -169,7 +169,7 @@ public class LibvirtTakeKbossBackupCommandWrapper extends CommandWrapper<TakeKbo
             int waitInMillis) {
         VolumeObjectTO delta = kbossTO.getVolumeObjectTO();
         String parentDeltaPathOnSecondary = kbossTO.getPathBackupParentOnSecondary();
-        List<String> deltaPathsToCopy = ObjectUtils.defaultIfNull(kbossTO.getDeltaPaths(), new ArrayList<>());
+        List<String> deltaPathsToCopy = CollectionUtils.isEmpty(kbossTO.getDeltaPaths()) ? new ArrayList<>() : new ArrayList<>(kbossTO.getDeltaPaths());
         deltaPathsToCopy.add(delta.getPath());
 
         KVMStoragePool parentImagePool = null;
