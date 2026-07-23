@@ -346,4 +346,10 @@ public class DateUtil {
     public static int getHoursInCurrentMonth(Date date) {
         return YearMonth.of(date.getYear(), date.getMonth() + 1).lengthOfMonth() * 24;
     }
+
+    public static String getDateInSystemTimeZone() {
+        ZonedDateTime nowInLocalZone = ZonedDateTime.now(ZoneId.systemDefault());
+        return nowInLocalZone.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+    }
+
 }

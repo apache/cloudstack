@@ -199,6 +199,11 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
     @Parameter(name=ApiConstants.AS_NUMBER, type=CommandType.LONG, since = "4.20.0", description="the AS Number of the network")
     private Long asNumber;
 
+    @Parameter(name = ApiConstants.KEEP_MAC_ADDRESS_ON_PUBLIC_NIC,
+            description = ApiConstants.PARAMETER_DESCRIPTION_KEEP_MAC_ADDRESS_ON_PUBLIC_NIC,
+            type = CommandType.BOOLEAN, since = "4.23.0", authorized = {RoleType.Admin})
+    private Boolean keepMacAddressOnPublicNic;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -284,6 +289,10 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
 
     public String getSourceNatIP() {
         return sourceNatIP;
+    }
+
+    public Boolean getKeepMacAddressOnPublicNic() {
+        return keepMacAddressOnPublicNic;
     }
 
     @Override
@@ -410,6 +419,27 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
+
+    public CreateNetworkCmd() {
+    }
+
+    public CreateNetworkCmd(long networkOfferingId, String name, String displayText, String gateway, String netmask, String startIp, String endIp, long domainId,
+            String accountName, long zoneId, String aclType, boolean subdomainAccess, boolean displayNetwork) {
+        this.networkOfferingId = networkOfferingId;
+        this.name = name;
+        this.displayText = displayText;
+        this.gateway = gateway;
+        this.netmask = netmask;
+        this.startIp = startIp;
+        this.endIp = endIp;
+        this.domainId = domainId;
+        this.accountName = accountName;
+        this.zoneId = zoneId;
+        this.aclType = aclType;
+        this.subdomainAccess = subdomainAccess;
+        this.displayNetwork = displayNetwork;
+    }
+
     @Override
     public String getCommandName() {
         return s_name;
@@ -417,7 +447,7 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
+        Long accountId = _accountService.finalizeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }

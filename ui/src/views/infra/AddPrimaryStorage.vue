@@ -242,7 +242,7 @@
             </a-select>
           </a-form-item>
         </div>
-        <div v-if="form.provider !== 'DefaultPrimary' && form.provider !== 'PowerFlex' && form.provider !== 'Linstor' && form.protocol !== 'FiberChannel'">
+        <div v-if="form.provider !== 'DefaultPrimary' && form.provider !== 'PowerFlex' && form.provider !== 'Linstor' && form.provider !== 'NetApp ONTAP' && form.protocol !== 'FiberChannel'">
           <a-form-item name="managed" ref="managed">
             <template #label>
               <tooltip-label :title="$t('label.ismanaged')" :tooltip="apiParams.managed.description"/>
@@ -268,6 +268,38 @@
               <tooltip-label :title="$t('label.url')" :tooltip="apiParams.url.description"/>
             </template>
             <a-input v-model:value="form.url" :placeholder="apiParams.url.description" />
+          </a-form-item>
+        </div>
+        <div v-if="form.provider === 'NetApp ONTAP'">
+          <a-form-item name="ontapIP" ref="ontapIP">
+            <template #label>
+              <tooltip-label :title="$t('label.ontap.ip')" :tooltip="$t('label.ontap.ip.tooltip')"/>
+            </template>
+            <a-input v-model:value="form.ontapIP" :placeholder="$t('label.ontap.ip.tooltip')"/>
+          </a-form-item>
+          <a-form-item name="ontapUsername" ref="ontapUsername">
+            <template #label>
+              <tooltip-label :title="$t('label.username')" :tooltip="$t('label.ontap.username.tooltip')"/>
+            </template>
+            <a-input v-model:value="form.ontapUsername" :placeholder="$t('label.ontap.username.tooltip')"/>
+          </a-form-item>
+          <a-form-item name="ontapPassword" ref="ontapPassword">
+            <template #label>
+              <tooltip-label :title="$t('label.password')" :tooltip="$t('label.ontap.password.tooltip')"/>
+            </template>
+            <a-input-password v-model:value="form.ontapPassword" :placeholder="$t('label.ontap.password.tooltip')"/>
+          </a-form-item>
+          <a-form-item name="ontapSvmName" ref="ontapSvmName">
+            <template #label>
+              <tooltip-label :title="$t('label.ontap.svm.name')" :tooltip="$t('label.ontap.svm.name.tooltip')"/>
+            </template>
+            <a-input v-model:value="form.ontapSvmName" :placeholder="$t('label.ontap.svm.name.tooltip')"/>
+          </a-form-item>
+          <a-form-item name="capacityBytes" ref="capacityBytes">
+            <template #label>
+              <tooltip-label :title="$t('label.capacitybytes')" :tooltip="apiParams.capacitybytes.description"/>
+            </template>
+            <a-input v-model:value="form.capacityBytes" :placeholder="apiParams.capacitybytes.description" />
           </a-form-item>
         </div>
         <div v-if="form.provider === 'PowerFlex'">
@@ -383,7 +415,7 @@
             <a-input v-model:value="form.radossecret" :placeholder="$t('label.rados.secret')" />
           </a-form-item>
         </div>
-        <div v-if="form.protocol === 'CLVM'">
+        <div v-if="form.protocol === 'CLVM' || form.protocol === 'CLVM_NG'">
           <a-form-item name="volumegroup" ref="volumegroup" :label="$t('label.volumegroup')">
             <a-input v-model:value="form.volumegroup" :placeholder="$t('label.volumegroup')" />
           </a-form-item>
@@ -529,7 +561,11 @@ export default {
         primeraPassword: [{ required: true, message: this.$t('label.password') }],
         flashArrayURL: [{ required: true, message: this.$t('label.url') }],
         flashArrayUsername: [{ required: true, message: this.$t('label.username') }],
-        flashArrayPassword: [{ required: true, message: this.$t('label.password') }]
+        flashArrayPassword: [{ required: true, message: this.$t('label.password') }],
+        ontapIP: [{ required: true, message: this.$t('label.required') }],
+        ontapUsername: [{ required: true, message: this.$t('label.required') }],
+        ontapPassword: [{ required: true, message: this.$t('label.required') }],
+        ontapSvmName: [{ required: true, message: this.$t('label.required') }]
       })
     },
     fetchData () {
@@ -620,7 +656,7 @@ export default {
       const cluster = this.clusters.find(cluster => cluster.id === this.form.cluster)
       this.hypervisorType = cluster.hypervisortype
       if (this.hypervisorType === 'KVM') {
-        this.protocols = ['nfs', 'SharedMountPoint', 'RBD', 'CLVM', 'Gluster', 'Linstor', 'custom', 'FiberChannel']
+        this.protocols = ['nfs', 'SharedMountPoint', 'RBD', 'CLVM', 'CLVM_NG', 'Gluster', 'Linstor', 'custom', 'FiberChannel']
         if (this.form.scope === 'host') {
           this.protocols.push('Filesystem')
         }
@@ -742,6 +778,15 @@ export default {
       }
       return url
     },
+    clvmNgURL (vgname) {
+      var url
+      if (vgname.indexOf('://') === -1) {
+        url = 'clvm_ng://localhost/' + vgname
+      } else {
+        url = vgname
+      }
+      return url
+    },
     vmfsURL (server, path) {
       var url
       if (server.indexOf('://') === -1) {
@@ -774,6 +819,12 @@ export default {
        gateway + '/' + encodeURIComponent(pool)
       return url
     },
+
+    ontapURL (ontapIp) {
+      var url = 'https://' + ontapIp
+      return url
+    },
+
     updateProviderAndProtocol (value) {
       if (value === 'PowerFlex') {
         this.protocols = ['custom']
@@ -781,6 +832,9 @@ export default {
       } else if (value === 'Flash Array' || value === 'Primera') {
         this.protocols = ['FiberChannel']
         this.form.protocol = 'FiberChannel'
+      } else if (value === 'NetApp ONTAP') {
+        this.protocols = ['NFS3', 'ISCSI']
+        this.form.protocol = 'NFS3'
       } else {
         this.fetchHypervisor(value)
       }
@@ -866,6 +920,9 @@ export default {
         } else if (values.protocol === 'CLVM') {
           var vg = (values.volumegroup.substring(0, 1) !== '/') ? ('/' + values.volumegroup) : values.volumegroup
           url = this.clvmURL(vg)
+        } else if (values.protocol === 'CLVM_NG') {
+          vg = (values.volumegroup.substring(0, 1) !== '/') ? ('/' + values.volumegroup) : values.volumegroup
+          url = this.clvmNgURL(vg)
         } else if (values.protocol === 'RBD') {
           url = this.rbdURL(values.radosmonitor, values.radospool, values.radosuser, values.radossecret)
           if (values.datapool) {
@@ -903,6 +960,14 @@ export default {
           params['details[0].api_username'] = values.flashArrayUsername
           params['details[0].api_password'] = values.flashArrayPassword
           url = values.flashArrayURL
+        } else if (values.provider === 'NetApp ONTAP') {
+          params['details[0].storageIP'] = values.ontapIP
+          params['details[0].username'] = values.ontapUsername
+          params['details[0].password'] = btoa(values.ontapPassword)
+          params['details[0].svmName'] = values.ontapSvmName
+          params['details[0].protocol'] = values.protocol
+          values.managed = true
+          url = this.ontapURL(values.ontapIP)
         }
 
         if (values.provider === 'Linstor' || values.protocol === 'Linstor') {

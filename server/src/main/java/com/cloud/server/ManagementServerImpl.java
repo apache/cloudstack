@@ -43,6 +43,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.acl.ApiKeyPairVO;
 import com.cloud.api.query.MutualExclusiveIdsManagerBase;
 import com.cloud.network.vpc.VpcVO;
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -132,6 +133,7 @@ import org.apache.cloudstack.api.command.admin.management.ListMgmtsCmd;
 import org.apache.cloudstack.api.command.admin.management.RemoveManagementServerCmd;
 import org.apache.cloudstack.api.command.admin.network.AddNetworkDeviceCmd;
 import org.apache.cloudstack.api.command.admin.network.AddNetworkServiceProviderCmd;
+import org.apache.cloudstack.api.command.admin.network.CloneNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
@@ -162,6 +164,8 @@ import org.apache.cloudstack.api.command.admin.network.UpdateNetworkServiceProvi
 import org.apache.cloudstack.api.command.admin.network.UpdatePhysicalNetworkCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdatePodManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdateStorageNetworkIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.offering.CloneDiskOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.CloneServiceOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.DeleteDiskOfferingCmd;
@@ -276,15 +280,18 @@ import org.apache.cloudstack.api.command.admin.usage.ListUsageTypesCmd;
 import org.apache.cloudstack.api.command.admin.usage.RemoveRawUsageRecordsCmd;
 import org.apache.cloudstack.api.command.admin.usage.UpdateTrafficTypeCmd;
 import org.apache.cloudstack.api.command.admin.user.CreateUserCmd;
+import org.apache.cloudstack.api.command.admin.user.DeleteUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.DisableUserCmd;
 import org.apache.cloudstack.api.command.admin.user.EnableUserCmd;
 import org.apache.cloudstack.api.command.admin.user.GetUserCmd;
 import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
+import org.apache.cloudstack.api.command.admin.user.ListUserKeyRulesCmd;
+import org.apache.cloudstack.api.command.admin.user.ListUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
 import org.apache.cloudstack.api.command.admin.user.LockUserCmd;
 import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
-import org.apache.cloudstack.api.command.admin.user.RegisterUserKeyCmd;
+import org.apache.cloudstack.api.command.admin.user.RegisterUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
@@ -325,6 +332,7 @@ import org.apache.cloudstack.api.command.admin.volume.RecoverVolumeCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.volume.ResizeVolumeCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.volume.UpdateVolumeCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.volume.UploadVolumeCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.vpc.CloneVPCOfferingCmd;
 import org.apache.cloudstack.api.command.admin.vpc.CreatePrivateGatewayByAdminCmd;
 import org.apache.cloudstack.api.command.admin.vpc.CreateVPCCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.vpc.CreateVPCOfferingCmd;
@@ -559,6 +567,7 @@ import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
 import org.apache.cloudstack.api.command.user.vm.StopVMCmd;
 import org.apache.cloudstack.api.command.user.vm.UpdateDefaultNicForVMCmd;
 import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
+import org.apache.cloudstack.api.command.user.vm.UpdateVmNicCmd;
 import org.apache.cloudstack.api.command.user.vm.UpdateVmNicIpCmd;
 import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
@@ -723,6 +732,7 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.deploy.DeploymentPlanningManager;
+import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
@@ -764,6 +774,7 @@ import com.cloud.network.IpAddressManagerImpl;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
+import com.cloud.network.vpn.Site2SiteVpnManagerImpl;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerDao;
@@ -1071,8 +1082,6 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
 
     protected List<DeploymentPlanner> _planners;
 
-    private boolean jsInterpretationEnabled = false;
-
     private final List<HypervisorType> supportedHypervisors = new ArrayList<>();
 
     public List<DeploymentPlanner> getPlanners() {
@@ -1152,8 +1161,6 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
 
         supportedHypervisors.add(HypervisorType.KVM);
         supportedHypervisors.add(HypervisorType.XenServer);
-
-        jsInterpretationEnabled = JsInterpretationEnabled.value();
 
         return true;
     }
@@ -1684,11 +1691,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         List<Host> suitableHosts = new ArrayList<>();
 
         for (final HostAllocator allocator : hostAllocators) {
-            if (CollectionUtils.isNotEmpty(compatibleHosts)) {
-                suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, compatibleHosts, HostAllocator.RETURN_UPTO_ALL, false);
-            } else {
-                suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, HostAllocator.RETURN_UPTO_ALL, false);
-            }
+            suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, compatibleHosts, HostAllocator.RETURN_UPTO_ALL, false);
 
             if (CollectionUtils.isNotEmpty(suitableHosts)) {
                 break;
@@ -1697,18 +1700,17 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
 
         _dpMgr.reorderHostsByPriority(plan.getHostPriorities(), suitableHosts);
 
-        if (suitableHosts.isEmpty()) {
+        if (CollectionUtils.isEmpty(suitableHosts)) {
             logger.warn("No suitable hosts found.");
-        } else {
-            logger.debug("Hosts having capacity and suitable for migration: {}", suitableHosts);
+            return suitableHosts;
         }
 
+        logger.debug("Hosts having capacity and are suitable for migration: {}", suitableHosts);
+
         // Only list hosts of the same architecture as the source Host in a multi-arch zone
-        if (!suitableHosts.isEmpty()) {
-            List<CPU.CPUArch> clusterArchs = ApiDBUtils.listZoneClustersArchs(vm.getDataCenterId());
-            if (CollectionUtils.isNotEmpty(clusterArchs) && clusterArchs.size() > 1) {
-                suitableHosts = suitableHosts.stream().filter(h -> h.getArch() == srcHost.getArch()).collect(Collectors.toList());
-            }
+        List<CPU.CPUArch> clusterArchs = ApiDBUtils.listZoneClustersArchs(vm.getDataCenterId());
+        if (CollectionUtils.isNotEmpty(clusterArchs) && clusterArchs.size() > 1) {
+            suitableHosts = suitableHosts.stream().filter(h -> h.getArch() == srcHost.getArch()).collect(Collectors.toList());
         }
 
         return suitableHosts;
@@ -2366,6 +2368,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         final Long clusterId = cmd.getClusterId();
         final Long storagepoolId = cmd.getStoragepoolId();
         final Long imageStoreId = cmd.getImageStoreId();
+        final Long managementServerId = cmd.getManagementServerId();
         Long accountId = cmd.getAccountId();
         Long domainId = cmd.getDomainId();
         final String groupName = cmd.getGroupName();
@@ -2417,6 +2420,11 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         if (imageStoreId != null) {
             scope = ConfigKey.Scope.ImageStore;
             id = imageStoreId;
+            paramCountCheck++;
+        }
+        if (managementServerId != null) {
+            scope = ConfigKey.Scope.ManagementServer;
+            id = managementServerId;
             paramCountCheck++;
         }
 
@@ -2490,7 +2498,14 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
                 if (configVo != null) {
                     final ConfigKey<?> key = _configDepot.get(param.getName());
                     if (key != null) {
-                        Object value = key.valueInScope(scope, id);
+                        boolean useStrictLookup = key.isStrictScope()
+                                && scope == ConfigKey.Scope.Domain
+                                && id != null
+                                && id.longValue() != Domain.ROOT_DOMAIN;
+                        Object value = key.valueInScope(scope, id, useStrictLookup);
+                        if (value == null && useStrictLookup) {
+                            value = key.defaultValue();
+                        }
                         configVo.setValue(value == null ? null : value.toString());
                         configVOList.add(configVo);
                     } else {
@@ -3878,6 +3893,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         cmdList.add(AddNetworkDeviceCmd.class);
         cmdList.add(AddNetworkServiceProviderCmd.class);
         cmdList.add(CreateNetworkOfferingCmd.class);
+        cmdList.add(CloneNetworkOfferingCmd.class);
         cmdList.add(CreatePhysicalNetworkCmd.class);
         cmdList.add(CreateStorageNetworkIpRangeCmd.class);
         cmdList.add(DeleteNetworkDeviceCmd.class);
@@ -3898,7 +3914,9 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         cmdList.add(ListDedicatedGuestVlanRangesCmd.class);
         cmdList.add(ReleaseDedicatedGuestVlanRangeCmd.class);
         cmdList.add(CreateDiskOfferingCmd.class);
+        cmdList.add(CloneDiskOfferingCmd.class);
         cmdList.add(CreateServiceOfferingCmd.class);
+        cmdList.add(CloneServiceOfferingCmd.class);
         cmdList.add(DeleteDiskOfferingCmd.class);
         cmdList.add(DeleteServiceOfferingCmd.class);
         cmdList.add(IsAccountAllowedToCreateOfferingsWithTagsCmd.class);
@@ -3969,7 +3987,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         cmdList.add(ListUsersCmd.class);
         cmdList.add(LockUserCmd.class);
         cmdList.add(MoveUserCmd.class);
-        cmdList.add(RegisterUserKeyCmd.class);
+        cmdList.add(RegisterUserKeysCmd.class);
         cmdList.add(UpdateUserCmd.class);
         cmdList.add(CreateVlanIpRangeCmd.class);
         cmdList.add(UpdateVlanIpRangeCmd.class);
@@ -3983,6 +4001,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         cmdList.add(RecoverVMCmd.class);
         cmdList.add(CreatePrivateGatewayCmd.class);
         cmdList.add(CreateVPCOfferingCmd.class);
+        cmdList.add(CloneVPCOfferingCmd.class);
         cmdList.add(DeletePrivateGatewayCmd.class);
         cmdList.add(DeleteVPCOfferingCmd.class);
         cmdList.add(UpdateVPCOfferingCmd.class);
@@ -4162,6 +4181,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         cmdList.add(StopVMCmd.class);
         cmdList.add(UpdateDefaultNicForVMCmd.class);
         cmdList.add(UpdateVMCmd.class);
+        cmdList.add(UpdateVmNicCmd.class);
         cmdList.add(UpgradeVMCmd.class);
         cmdList.add(CreateVMGroupCmd.class);
         cmdList.add(DeleteVMGroupCmd.class);
@@ -4369,10 +4389,8 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         cmdList.add(ListGuestVlansCmd.class);
         cmdList.add(AssignVolumeCmd.class);
         cmdList.add(ListSecondaryStorageSelectorsCmd.class);
-        if (jsInterpretationEnabled) {
-            cmdList.add(CreateSecondaryStorageSelectorCmd.class);
-            cmdList.add(UpdateSecondaryStorageSelectorCmd.class);
-        }
+        cmdList.add(CreateSecondaryStorageSelectorCmd.class);
+        cmdList.add(UpdateSecondaryStorageSelectorCmd.class);
         cmdList.add(RemoveSecondaryStorageSelectorCmd.class);
         cmdList.add(ListAffectedVmsForStorageScopeChangeCmd.class);
         cmdList.add(ListGuiThemesCmd.class);
@@ -4396,6 +4414,10 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         // Console Session APIs
         cmdList.add(CreateConsoleEndpointCmd.class);
         cmdList.add(ListConsoleSessionsCmd.class);
+
+        cmdList.add(DeleteUserKeysCmd.class);
+        cmdList.add(ListUserKeysCmd.class);
+        cmdList.add(ListUserKeyRulesCmd.class);
 
         //user data APIs
         cmdList.add(RegisterUserDataCmd.class);
@@ -4426,8 +4448,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {exposeCloudStackVersionInApiXmlResponse, exposeCloudStackVersionInApiListCapabilities, vmPasswordLength, sshKeyLength, humanReadableSizes, customCsIdentifier,
-        JsInterpretationEnabled};
+        return new ConfigKey<?>[] {exposeCloudStackVersionInApiXmlResponse, exposeCloudStackVersionInApiListCapabilities, vmPasswordLength, sshKeyLength, humanReadableSizes, customCsIdentifier};
     }
 
     protected class EventPurgeTask extends ManagedContextRunnable {
@@ -4799,7 +4820,13 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         try {
             // get the user obj to get their secret key
             user = _accountMgr.getActiveUser(userId);
-            final String secretKey = user.getSecretKey();
+            ApiKeyPairVO latestKeypair = ApiDBUtils.searchForLatestUserKeyPair(user.getId());
+
+            if (latestKeypair == null) {
+                throw new InvalidParameterValueException(String.format("No API keypair for user [%s]. Please generate it.", user.getUsername()));
+            }
+
+            final String secretKey = latestKeypair.getSecretKey();
             signature = signRequest(cloudIdentifier, secretKey);
         } catch (final Exception e) {
             logger.warn("Exception whilst creating a signature:" + e);
@@ -4817,6 +4844,14 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         final Map<String, Object> capabilities = new HashMap<>();
 
         final Account caller = getCaller();
+        Long domainId = cmd.getDomainId();
+        if (domainId == null) {
+            domainId = caller.getDomainId();
+        } else {
+            Domain domain = _domainDao.findById(domainId);
+            _accountService.checkAccess(caller, domain);
+        }
+
         final boolean isCallerRootAdmin = _accountService.isRootAdmin(caller.getId());
         final boolean isCallerAdmin = isCallerRootAdmin || _accountService.isAdmin(caller.getId());
         boolean securityGroupsEnabled = false;
@@ -4852,7 +4887,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         final boolean allowUserExpungeRecoverVolume = (VolumeApiServiceImpl.AllowUserExpungeRecoverVolume.valueIn(caller.getId()) | isCallerAdmin);
         final boolean allowUserForceStopVM = (UserVmManager.AllowUserForceStopVm.valueIn(caller.getId()) | isCallerAdmin);
 
-        final boolean allowUserViewAllDomainAccounts = (QueryService.AllowUserViewAllDomainAccounts.valueIn(caller.getDomainId()));
+        final boolean allowUserViewAllDomainAccounts = (QueryService.AllowUserViewAllDomainAccounts.valueIn(domainId));
 
         final boolean kubernetesServiceEnabled = Boolean.parseBoolean(_configDao.getValue("cloud.kubernetes.service.enabled"));
         final boolean kubernetesClusterExperimentalFeaturesEnabled = Boolean.parseBoolean(_configDao.getValue("cloud.kubernetes.cluster.experimental.features.enabled"));
@@ -4906,7 +4941,51 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         }
         capabilities.put(ApiConstants.ADDITONAL_CONFIG_ENABLED, UserVmManager.EnableAdditionalVmConfig.valueIn(caller.getId()));
 
+        Map<String, Object> vpnParams = getVpnCustomerGatewayParameters(domainId);
+        if (!vpnParams.isEmpty()) {
+            capabilities.put(ApiConstants.VPN_CUSTOMER_GATEWAY_PARAMETERS, vpnParams);
+        }
+
         return capabilities;
+    }
+
+    private Map<String, Object> getVpnCustomerGatewayParameters(Long domainId) {
+        Map<String, Object> vpnParams = new HashMap<>();
+
+        String excludedEncryption = Site2SiteVpnManagerImpl.VpnCustomerGatewayExcludedEncryptionAlgorithms.valueIn(domainId);
+        String excludedHashing = Site2SiteVpnManagerImpl.VpnCustomerGatewayExcludedHashingAlgorithms.valueIn(domainId);
+        String excludedIkeVersions = Site2SiteVpnManagerImpl.VpnCustomerGatewayExcludedIkeVersions.valueIn(domainId);
+        String excludedDhGroup = Site2SiteVpnManagerImpl.VpnCustomerGatewayExcludedDhGroup.valueIn(domainId);
+        String obsoleteEncryption = Site2SiteVpnManagerImpl.VpnCustomerGatewayObsoleteEncryptionAlgorithms.valueIn(domainId);
+        String obsoleteHashing = Site2SiteVpnManagerImpl.VpnCustomerGatewayObsoleteHashingAlgorithms.valueIn(domainId);
+        String obsoleteIkeVersions = Site2SiteVpnManagerImpl.VpnCustomerGatewayObsoleteIkeVersions.valueIn(domainId);
+        String obsoleteDhGroup = Site2SiteVpnManagerImpl.VpnCustomerGatewayObsoleteDhGroup.valueIn(domainId);
+
+        if (!excludedEncryption.isEmpty()) {
+            vpnParams.put("excludedencryptionalgorithms", excludedEncryption);
+        }
+        if (!obsoleteEncryption.isEmpty()) {
+            vpnParams.put("obsoleteencryptionalgorithms", obsoleteEncryption);
+        }
+        if (!excludedHashing.isEmpty()) {
+            vpnParams.put("excludedhashingalgorithms", excludedHashing);
+        }
+        if (!obsoleteHashing.isEmpty()) {
+            vpnParams.put("obsoletehashingalgorithms", obsoleteHashing);
+        }
+        if (!excludedIkeVersions.isEmpty()) {
+            vpnParams.put("excludedikeversions", excludedIkeVersions);
+        }
+        if (!obsoleteIkeVersions.isEmpty()) {
+            vpnParams.put("obsoleteikeversions", obsoleteIkeVersions);
+        }
+        if (!excludedDhGroup.isEmpty()) {
+            vpnParams.put("excludeddhgroups", excludedDhGroup);
+        }
+        if (!obsoleteDhGroup.isEmpty()) {
+            vpnParams.put("obsoletedhgroups", obsoleteDhGroup);
+        }
+        return vpnParams;
     }
 
     @Override
@@ -5688,7 +5767,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
 
         if (_hypervisorCapabilitiesDao.update(id, hpvCapabilities)) {
             hpvCapabilities = _hypervisorCapabilitiesDao.findById(id);
-            CallContext.current().setEventDetails("Hypervisor Capabilities id=" + hpvCapabilities.getId());
+            CallContext.current().setEventDetails("Hypervisor Capabilities ID: " + hpvCapabilities.getUuid());
             return hpvCapabilities;
         } else {
             return null;
@@ -5935,13 +6014,5 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
     public Answer getExternalVmConsole(VirtualMachine vm, Host host) {
         return extensionsManager.getInstanceConsole(vm, host);
     }
-    @Override
-    public void checkJsInterpretationAllowedIfNeededForParameterValue(String paramName, boolean paramValue) {
-        if (!paramValue || jsInterpretationEnabled) {
-            return;
-        }
-        throw new InvalidParameterValueException(String.format(
-                "The parameter %s cannot be set to true as JS interpretation is disabled",
-                paramName));
-    }
+
 }

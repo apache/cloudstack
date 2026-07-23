@@ -76,6 +76,7 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DataCenterDeployment;
+import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanningManager;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.api.ApiDBUtils;
@@ -130,6 +131,7 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -250,6 +252,21 @@ public class ManagementServerImplTest {
 
     @Mock
     VgpuProfileVO vgpuProfileVO;
+
+    @Mock
+    VirtualMachine virtualMachineMock;
+
+    @Mock
+    VirtualMachineProfile virtualMachineProfileMock;
+
+    @Mock
+    DataCenterDeployment dataCenterDeploymentMock;
+
+    @Mock
+    DeploymentPlanner.ExcludeList excludeListMock;
+
+    @Mock
+    Host hostMock;
 
     private AutoCloseable closeable;
     private MockedStatic<ApiDBUtils> apiDBUtilsMock;
@@ -839,6 +856,7 @@ public class ManagementServerImplTest {
         Mockito.when(cmd.getAccountId()).thenReturn(null);
         Mockito.when(cmd.getDomainId()).thenReturn(null);
         Mockito.when(cmd.getImageStoreId()).thenReturn(null);
+        Mockito.when(cmd.getManagementServerId()).thenReturn(null);
 
         SearchCriteria<ConfigurationVO> sc = Mockito.mock(SearchCriteria.class);
         Mockito.when(configDao.createSearchCriteria()).thenReturn(sc);
@@ -1126,11 +1144,20 @@ public class ManagementServerImplTest {
 
     @Test
     public void testGetExternalVmConsole() {
-        VirtualMachine virtualMachine = Mockito.mock(VirtualMachine.class);
         Host host = Mockito.mock(Host.class);
-        Mockito.when(extensionManager.getInstanceConsole(virtualMachine, host)).thenReturn(Mockito.mock(com.cloud.agent.api.Answer.class));
-        Assert.assertNotNull(spy.getExternalVmConsole(virtualMachine, host));
-        Mockito.verify(extensionManager).getInstanceConsole(virtualMachine, host);
+        Mockito.when(extensionManager.getInstanceConsole(virtualMachineMock, host)).thenReturn(Mockito.mock(com.cloud.agent.api.Answer.class));
+        Assert.assertNotNull(spy.getExternalVmConsole(virtualMachineMock, host));
+        Mockito.verify(extensionManager).getInstanceConsole(virtualMachineMock, host);
+    }
+
+    @Test
+    public void getCapableSuitableHostsTestHostArchIsNotFilteredWhenNoSuitableHostsAreFound() {
+        List<Host> compatibleHosts = List.of(hostMock);
+        Mockito.doReturn(null).when(hostAllocator).allocateTo(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyList(), Mockito.anyInt(), Mockito.anyBoolean());
+
+        spy.getCapableSuitableHosts(virtualMachineMock, virtualMachineProfileMock, dataCenterDeploymentMock, compatibleHosts, excludeListMock, hostMock);
+
+        apiDBUtilsMock.verify(() -> ApiDBUtils.listZoneClustersArchs(Mockito.anyLong()), Mockito.never());
     }
 
     // ============= Tests for listHostsForMigrationOfVM =============

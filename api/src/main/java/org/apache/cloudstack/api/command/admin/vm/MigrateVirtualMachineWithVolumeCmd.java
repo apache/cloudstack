@@ -135,7 +135,7 @@ public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Attempting to migrate Instance Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getVirtualMachineId()) + " to host Id: " + this._uuidMgr.getUuid(Host.class, getHostId());
+        return "Attempting to migrate Instance with ID: " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID) + " to host with ID: " + getResourceUuid(ApiConstants.HOST_ID);
     }
 
     @Override
@@ -155,7 +155,7 @@ public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
         Host destinationHost = _resourceService.getHost(getHostId());
         // OfflineVmwareMigration: destination host would have to not be a required parameter for stopped VMs
         if (destinationHost == null) {
-            logger.error(String.format("Unable to find the host with ID [%s].", getHostId()));
+            logger.error("Unable to find the host with ID [{}].", getHostId());
             throw new InvalidParameterValueException("Unable to find the specified host to migrate the Instance.");
         }
         return destinationHost;

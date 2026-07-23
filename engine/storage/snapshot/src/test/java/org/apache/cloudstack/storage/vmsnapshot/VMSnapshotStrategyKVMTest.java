@@ -29,6 +29,8 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.backup.BackupManager;
+import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
@@ -42,6 +44,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.test.utils.SpringUtils;
@@ -235,7 +238,6 @@ public class VMSnapshotStrategyKVMTest extends TestCase{
         when(vol.getDataStore()).thenReturn(dataStore);
         when(snapshotVO.getId()).thenReturn(1L);
         when(_snapshotService.revertSnapshot(snapshotVO.getId())).thenReturn(snap);
-    //    testFindSnapshotByName(name);
         vmStrategy.revertDiskSnapshot(vmSnapshot);
     }
 
@@ -430,6 +432,21 @@ public class VMSnapshotStrategyKVMTest extends TestCase{
         @Bean
         public VMSnapshotDetailsDao vmSnapshotDetailsDao () {
             return Mockito.mock(VMSnapshotDetailsDao.class);
+        }
+
+        @Bean
+        public BackupOfferingDao backupOfferingDao() {
+            return Mockito.mock(BackupOfferingDao.class);
+        }
+
+        @Bean
+        public BackupManager backupManager() {
+            return Mockito.mock(BackupManager.class);
+        }
+
+        @Bean
+        public SnapshotDataStoreDao snapshotDataStoreDao() {
+            return Mockito.mock(SnapshotDataStoreDao.class);
         }
     }
 }

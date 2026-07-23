@@ -2078,7 +2078,7 @@
 "message.success.create.internallb": "Interne LB erfolgreich erstellt",
 "message.success.create.isolated.network": "Isoliertes Netzwerk erfolgreich erstellt",
 "message.success.create.keypair": "SSH-Schlüsselpaar erfolgreich erstellt",
-"message.success.create.kubernetes.cluter": "Kubernetes Cluster erfolgreich erstellt",
+"message.success.create.kubernetes.cluster": "Kubernetes Cluster erfolgreich erstellt",
 "message.success.create.l2.network": "L2 Netzwerk erfolgreich erstellt",
 "message.success.create.volume": "Speicher erfolgreich erstellt",
 "message.success.delete": "Erfolgreich gelöscht",

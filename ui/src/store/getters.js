@@ -55,7 +55,8 @@ const getters = {
   loginFlag: state => state.user.loginFlag,
   allProjects: (state) => state.app.allProjects,
   customHypervisorName: state => state.user.customHypervisorName,
-  readyForShutdownPollingJob: state => state.user.readyForShutdownPollingJob
+  readyForShutdownPollingJob: state => state.user.readyForShutdownPollingJob,
+  passwordChangeRequired: state => state.user.passwordChangeRequired
 }
 
 export default getters

@@ -95,7 +95,7 @@ export default {
       loading: false,
       configLoading: false,
       serviceofferings: [],
-      serviceofferingLoding: false
+      serviceofferingLoading: false
     }
   },
   beforeCreate () {

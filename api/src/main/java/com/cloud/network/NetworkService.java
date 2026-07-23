@@ -232,7 +232,7 @@ public interface NetworkService {
     /**
      * Requests an IP address for the guest NIC
      */
-    NicSecondaryIp allocateSecondaryGuestIP(long nicId, IpAddresses requestedIpPair) throws InsufficientAddressCapacityException;
+    NicSecondaryIp allocateSecondaryGuestIP(long nicId, IpAddresses requestedIpPair, String description) throws InsufficientAddressCapacityException;
 
     boolean releaseSecondaryIpFromNic(long ipAddressId);
 
@@ -279,4 +279,6 @@ public interface NetworkService {
     IpAddresses getIpAddressesFromIps(String ipAddress, String ip6Address, String macAddress);
 
     String getNicVlanValueForExternalVm(NicTO nic);
+
+    Long getPreferredNetworkIdForPublicIpRuleAssignment(IpAddress ip, Long networkId);
 }

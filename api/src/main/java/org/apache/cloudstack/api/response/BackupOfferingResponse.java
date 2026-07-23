@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.response;
 
 import java.util.Date;
+import java.util.Map;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
@@ -61,6 +62,16 @@ public class BackupOfferingResponse extends BaseResponse {
     @Param(description = "Zone name")
     private String zoneName;
 
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    @Param(description = "the domain ID(s) this backup offering belongs to.",
+    since = "4.23.0")
+    private String domainId;
+
+    @SerializedName(ApiConstants.DOMAIN)
+    @Param(description = "the domain name(s) this backup offering belongs to.",
+    since = "4.23.0")
+    private String domain;
+
     @SerializedName(ApiConstants.CROSS_ZONE_INSTANCE_CREATION)
     @Param(description = "the backups with this offering can be used to create Instances on all Zones", since = "4.22.0")
     private Boolean crossZoneInstanceCreation;
@@ -68,6 +79,10 @@ public class BackupOfferingResponse extends BaseResponse {
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "The date this backup offering was created")
     private Date created;
+
+    @SerializedName(ApiConstants.BACKUP_OFFERING_DETAILS)
+    @Param(description = "Details for the backup offering", since = "4.23.0")
+    private Map<String, String> details;
 
     public void setId(String id) {
         this.id = id;
@@ -107,5 +122,17 @@ public class BackupOfferingResponse extends BaseResponse {
 
     public void setCreated(Date created) {
         this.created = created;
+    }
+
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
+    }
+
+    public void setDomain(String domain) {
+        this.domain = domain;
+    }
+
+    public void setDetails(Map<String, String> details) {
+        this.details = details;
     }
 }

@@ -26,21 +26,21 @@ import javax.naming.ldap.LdapContext;
 
 public interface LdapUserManager {
 
-    public enum Provider {
-        MICROSOFTAD, OPENLDAP;
+    enum Provider {
+        MICROSOFTAD, OPENLDAP
     }
 
-    public LdapUser getUser(final String username, final LdapContext context, Long domainId) throws NamingException, IOException;
+    LdapUser getUser(final String username, final LdapContext context, Long domainId) throws NamingException, IOException;
 
-    public LdapUser getUser(final String username, final String type, final String name, final LdapContext context, Long domainId) throws NamingException, IOException;
+    LdapUser getUser(final String username, final String type, final String name, final LdapContext context, Long domainId) throws NamingException, IOException;
 
-    public List<LdapUser> getUsers(final LdapContext context, Long domainId) throws NamingException, IOException;
+    List<LdapUser> getUsers(final LdapContext context, Long domainId) throws NamingException, IOException;
 
-    public List<LdapUser> getUsers(final String username, final LdapContext context, Long domainId) throws NamingException, IOException;
+    List<LdapUser> getUsers(final String username, final LdapContext context, Long domainId) throws NamingException, IOException;
 
-    public List<LdapUser> getUsersInGroup(String groupName, LdapContext context, Long domainId) throws NamingException;
+    List<LdapUser> getUsersInGroup(String groupName, LdapContext context, Long domainId) throws NamingException;
 
-    public List<LdapUser> searchUsers(final LdapContext context, Long domainId) throws NamingException, IOException;
+    List<LdapUser> searchUsers(final LdapContext context, Long domainId) throws NamingException, IOException;
 
-    public List<LdapUser> searchUsers(final String username, final LdapContext context, Long domainId) throws NamingException, IOException;
+    List<LdapUser> searchUsers(final String username, final LdapContext context, Long domainId) throws NamingException, IOException;
 }

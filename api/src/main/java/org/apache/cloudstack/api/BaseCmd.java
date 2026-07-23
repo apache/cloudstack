@@ -35,10 +35,12 @@ import com.cloud.bgp.BGPService;
 import org.apache.cloudstack.acl.ProjectRoleService;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPairService;
 import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.dns.DnsProviderManager;
 import org.apache.cloudstack.gpu.GpuService;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerService;
@@ -220,6 +222,8 @@ public abstract class BaseCmd {
     @Inject
     public Ipv6Service ipv6Service;
     @Inject
+    public ApiKeyPairService apiKeyPairService;
+    @Inject
     public VnfTemplateManager vnfTemplateManager;
     @Inject
     public BucketApiService _bucketService;
@@ -228,6 +232,9 @@ public abstract class BaseCmd {
 
     @Inject
     public RoutedIpv4Manager routedIpv4Manager;
+
+    @Inject
+    public DnsProviderManager dnsProviderManager;
 
     public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
         ResourceAllocationException, NetworkRuleConflictException;
@@ -382,7 +389,7 @@ public abstract class BaseCmd {
             if (roleIsAllowed) {
                 validFields.add(field);
             } else {
-                logger.debug("Ignoring parameter " + parameterAnnotation.name() + " as the caller is not authorized to pass it in");
+                logger.debug("Ignoring parameter {} as the caller is not authorized to pass it in", parameterAnnotation.name());
             }
         }
 
@@ -497,5 +504,9 @@ public abstract class BaseCmd {
             details.put(VmDetailConstants.EXTERNAL_DETAIL_PREFIX + key, value);
         }
         return details;
+    }
+
+    public String getResourceUuid(String parameterName) {
+        return CallContext.current().getApiResourceUuid(parameterName);
     }
 }

@@ -76,7 +76,7 @@ public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Delete Remote Access VPN for Account " + getEntityOwnerId() + " for  ip id=" + publicIpId;
+        return "Delete Remote Access VPN for Account " + getEntityOwnerId() + " for IP: " + getResourceUuid(ApiConstants.PUBLIC_IP_ID);
     }
 
     @Override

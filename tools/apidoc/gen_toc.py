@@ -56,6 +56,8 @@ known_categories = {
     'HypervisorGuestOsNames': 'Guest OS',
     'Domain': 'Domain',
     'Template': 'Template',
+    'KMS': 'Key Management System',
+    'HSM': 'Key Management System',
     'Iso': 'ISO',
     'Volume': 'Volume',
     'Vlan': 'VLAN',
@@ -174,6 +176,7 @@ known_categories = {
     'removeIpFromNic': 'Nic',
     'updateVmNicIp': 'Nic',
     'listNics':'Nic',
+    'updateVmNic': 'Nic',
     'AffinityGroup': 'Affinity Group',
     'ImageStore': 'Image Store',
     'addImageStore': 'Image Store',
@@ -222,6 +225,10 @@ known_categories = {
     'Management': 'Management',
     'Backup' : 'Backup and Recovery',
     'Restore' : 'Backup and Recovery',
+    'startBackup' : 'Backup and Recovery',
+    'finalizeBackup' : 'Backup and Recovery',
+    'ImageTransfer' : 'Backup and Recovery',
+    'VmCheckpoint' : 'Backup and Recovery',
     'UnmanagedInstance': 'Virtual Machine',
     'KubernetesSupportedVersion': 'Kubernetes Service',
     'KubernetesCluster': 'Kubernetes Service',
@@ -237,6 +244,7 @@ known_categories = {
     'removeQuarantinedIp': 'IP Quarantine',
     'Shutdown': 'Maintenance',
     'Maintenance': 'Maintenance',
+    'ResourceSchedule': 'Resource Schedule',
     'addObjectStoragePool': 'Object Store',
     'listObjectStoragePools': 'Object Store',
     'deleteObjectStoragePool': 'Object Store',
@@ -273,7 +281,9 @@ known_categories = {
     'Extensions' : 'Extension',
     'CustomAction' : 'Extension',
     'CustomActions' : 'Extension',
-    'ImportVmTask': 'Import VM Task'
+    'ImportVmTask': 'Import VM Task',
+    'Dns': 'DNS',
+    'downloadValidationScreenshot': 'Backup and Recovery'
 }
 
 

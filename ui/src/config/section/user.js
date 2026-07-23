@@ -63,6 +63,12 @@ export default {
       resourceType: 'User',
       component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
       show: () => { return 'listEvents' in store.getters.apis }
+    },
+    {
+      name: 'apikeypairs',
+      resourceType: 'User',
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/ApiKeyPairsTab.vue'))),
+      show: () => { return 'listUserKeys' in store.getters.apis }
     }
   ],
   actions: [
@@ -81,6 +87,24 @@ export default {
       dataView: true,
       popup: true,
       component: shallowRef(defineAsyncComponent(() => import('@/views/iam/EditUser.vue')))
+    },
+    {
+      api: 'updateUser',
+      icon: 'redo-outlined',
+      label: 'label.change.password.reset',
+      message: 'message.change.password.reset',
+      dataView: true,
+      args: ['passwordchangerequired'],
+      mapping: {
+        passwordchangerequired: {
+          value: (record) => { return true }
+        }
+      },
+      popup: true,
+      show: (record, store) => {
+        return ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && !record.isdefault &&
+          store.userInfo.id !== record.id && record.state === 'enabled' && record.usersource === 'native'
+      }
     },
     {
       api: 'updateUser',
@@ -161,7 +185,7 @@ export default {
       dataView: true,
       popup: true,
       show: (record, store) => {
-        return (record.is2faenabled === false && record.id === store.userInfo.id)
+        return (!record.is2faenabled && record.id === store.userInfo.id)
       },
       component: shallowRef(defineAsyncComponent(() => import('@/views/iam/SetupTwoFaAtUserProfile.vue')))
     },

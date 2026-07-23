@@ -269,6 +269,17 @@ public class ConfigKey<T> {
 
     private String _defaultValueIfEmpty = null;
 
+    private boolean _strictScope = false;
+
+    public boolean isStrictScope() {
+        return _strictScope;
+    }
+
+    public ConfigKey<T> withStrictScope() {
+        this._strictScope = true;
+        return this;
+    }
+
     public static void init(ConfigDepotImpl depot) {
         s_depot = depot;
     }
@@ -429,11 +440,18 @@ public class ConfigKey<T> {
     }
 
     public T valueInScope(Scope scope, Long id) {
+        return valueInScope(scope, id, false);
+    }
+
+    public T valueInScope(Scope scope, Long id, boolean strictScope) {
         if (id == null) {
-            return value();
+            return strictScope ? null : value();
         }
         String value = s_depot != null ? s_depot.getConfigStringValue(_name, scope, id) : null;
         if (value == null) {
+            if (strictScope) {
+                return null;
+            }
             return valueInGlobalOrAvailableParentScope(scope, id);
         }
         logger.trace("Scope({}) value for config ({}): {}", scope, _name, _value);

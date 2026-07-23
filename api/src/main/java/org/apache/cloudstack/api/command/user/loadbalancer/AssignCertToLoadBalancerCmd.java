@@ -83,7 +83,7 @@ public class AssignCertToLoadBalancerCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Assigning a certificate to a load balancer";
+        return "Assigning certificate with ID: " + getResourceUuid(ApiConstants.CERTIFICATE_ID) + " to load balancer with ID: " + getResourceUuid(ApiConstants.LBID);
     }
 
     @Override

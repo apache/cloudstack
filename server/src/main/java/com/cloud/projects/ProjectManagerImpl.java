@@ -295,10 +295,10 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
                     assignAccountToProject(project, ownerFinal.getId(), ProjectAccount.Role.Admin,
                             Optional.ofNullable(finalUser).map(User::getId).orElse(null),  null);
 
-                    if (project != null) {
-                        CallContext.current().setEventDetails("Project id=" + project.getId());
-                        CallContext.current().putContextParameter(Project.class, project.getUuid());
-                    }
+                if (project != null) {
+                    CallContext.current().setEventDetails("Project ID: " + project.getUuid());
+                    CallContext.current().putContextParameter(Project.class, project.getUuid());
+                }
 
                     //Increment resource count
                     _resourceLimitMgr.incrementResourceCount(ownerFinal.getId(), ResourceType.project);

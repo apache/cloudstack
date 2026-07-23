@@ -49,7 +49,7 @@
       </div>
     </template>
     <template #bodyCell="{ column, text, record }">
-      <template v-if="['name', 'provider'].includes(column.key) ">
+      <template v-if="['name', 'provider'].includes(column.key)">
         <span
           v-if="['vm', 'vnfapp'].includes($route.path.split('/')[1])"
           style="margin-right: 5px"
@@ -70,7 +70,7 @@
             style="margin-left: 5px"
             :actions="actions"
             :resource="record"
-            :enabled="quickViewEnabled() && actions.length > 0 && columns && ['name', 'provider'].includes(columns[0].dataIndex)"
+            :enabled="quickViewEnabled(actions, columns, column.key)"
             @exec-action="$parent.execAction"
           />
           <span
@@ -170,6 +170,14 @@
                 <warning-outlined style="color: #f5222d" />
               </a-tooltip>
             </span>
+            <span v-else-if="$route.path.startsWith('/vpncustomergateway')">
+              &nbsp;
+              <a-tooltip
+                v-if="record.excludedparameters || record.obsoleteparameters"
+                :title="$t('message.vpn.customer.gateway.contains.excluded.obsolete.parameters')">
+                <warning-outlined :style="{ color: $config.theme['@warning-color'] }" />
+              </a-tooltip>
+            </span>
           </span>
           <span
             v-if="record.leaseduration !== undefined"
@@ -197,6 +205,9 @@
         </span>
       </template>
       <template v-if="column.key === 'templatetype'">
+        <router-link :to="{ path: $route.path + '/' + record.templatetype }">{{ text }}</router-link>
+      </template>
+      <template v-if="$route.path.startsWith('/dnsserver') && !['name', 'provider', 'state', 'ispublic'].includes(column.key)">
         <span>{{ text }}</span>
       </template>
       <template v-if="column.key === 'gpu'">
@@ -249,7 +260,7 @@
           style="margin-right: 8px"
           :actions="actions"
           :resource="record"
-          :enabled="quickViewEnabled() && actions.length > 0"
+          :enabled="quickViewEnabled(actions, columns, column.key)"
           @exec-action="$parent.execAction"
         />
         <span v-if="record.intervaltype===0">
@@ -274,7 +285,7 @@
           style="margin-left: 5px"
           :actions="actions"
           :resource="record"
-          :enabled="quickViewEnabled() && actions.length > 0 && columns && columns[0].dataIndex === 'displayname' "
+          :enabled="quickViewEnabled(actions, columns, column.key)"
           @exec-action="$parent.execAction"
         />
         <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
@@ -428,7 +439,7 @@
             style="margin-left: 5px"
             :actions="actions"
             :resource="record"
-            :enabled="quickViewEnabled() && actions.length > 0 && columns && columns[0].dataIndex === 'hypervisor' "
+            :enabled="quickViewEnabled(actions, columns, column.key)"
             @exec-action="$parent.execAction"
           />
           <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
@@ -450,6 +461,9 @@
       <template v-if="column.key === 'isuserdefined'">
         <span>{{ text ? $t('label.yes') : $t('label.no') }}</span>
       </template>
+      <template v-if="column.key === 'ispublic'">
+        <span>{{ text ? $t('label.yes') : $t('label.no') }}</span>
+      </template>
       <template v-if="column.key === 'state'">
         <status
           v-if="$route.path.startsWith('/host')"
@@ -468,6 +482,12 @@
           :text="text ? text : ''"
           displayText
         />
+      </template>
+      <template v-if="column.key === 'compressionstatus'">
+        <status :text="text ? text : $t('label.unknown')" displayText />
+      </template>
+      <template v-if="column.key === 'validationstatus'">
+        <status :text="text ? text : $t('label.unknown')" displayText />
       </template>
       <template v-if="column.key === 'allocationstate'">
         <status
@@ -642,6 +662,10 @@
       <template v-if="column.key === 'objectstore'">
         <router-link :to="{ path: '/objectstore/' + record.objectstorageid }">{{ text }}</router-link>
       </template>
+      <template v-if="column.key === 'hsmprofile'">
+        <router-link v-if="record.hsmprofileid" :to="{ path: '/hsmprofile/' + record.hsmprofileid }">{{ text }}</router-link>
+        <span v-else>{{ text }}</span>
+      </template>
       <template v-if="column.key === 'podname'">
         <router-link :to="{ path: '/pod/' + record.podid }">{{ text }}</router-link>
       </template>
@@ -666,20 +690,24 @@
             </span>
           </template>
         </template>
-        <template v-if="text && !text.startsWith('PrjAcct-')">
-          <router-link
-            v-if="'quota' in record && $router.resolve(`${$route.path}/${record.account}`).matched[0].redirect !== '/exception/404'"
-            :to="{ path: `${$route.path}/${record.account}`, query: { account: record.account, domainid: record.domainid, quota: true } }"
-          >{{ text }}</router-link>
-          <router-link
-            :to="{ path: '/account/' + record.accountid }"
-            v-else-if="record.accountid"
-          >{{ text }}</router-link>
-          <router-link
-            :to="{ path: '/account', query: { name: record.account, domainid: record.domainid, dataView: true } }"
-            v-else-if="$store.getters.userInfo.roletype !== 'User'"
-          >{{ text }}</router-link>
-          <span v-else>{{ text }}</span>
+        <template v-if="text">
+          <template v-if="!text.startsWith('PrjAcct-')">
+            <router-link
+              v-if="$route.path.startsWith('/quotasummary')"
+              :to="{ path: `${$route.path}/${record.accountid}` }">{{ text }}</router-link>
+            <router-link v-else-if="record.accountid" :to="{ path: '/account/' + record.accountid }">{{ text }}</router-link>
+            <router-link
+              v-else-if="$store.getters.userInfo.roletype !== 'User'"
+              :to="{ path: '/account', query: { name: record.account, domainid: record.domainid, dataView: true } }">
+              {{ text }}
+            </router-link>
+            <span v-else>{{ text }}</span>
+          </template>
+          <template v-else-if="$route.path.startsWith('/quotasummary')">
+            <router-link :to="{ path: `${$route.path}/${record.accountid}` }">
+              {{ (record.projectname || record.account).concat(' (').concat($t('label.project')).concat(')') }}
+            </router-link>
+          </template>
         </template>
       </template>
       <template v-if="column.key === 'resource'">
@@ -787,12 +815,12 @@
         {{ record.enabled ? 'Enabled' : 'Disabled' }}
       </template>
       <template
-        v-if="['created', 'sent', 'removed', 'effectiveDate', 'endDate', 'allocated'].includes(column.key) || (['startdate'].includes(column.key) && ['webhook'].includes($route.path.split('/')[1])) || (column.key === 'allocated' && ['asnumbers', 'publicip', 'ipv4subnets'].includes($route.meta.name) && text)"
+        v-if="['created', 'sent', 'removed', 'effectiveDate', 'endDate', 'allocated', 'startdate', 'enddate'].includes(column.key) || (['startdate'].includes(column.key) && ['webhook'].includes($route.path.split('/')[1])) || (column.key === 'allocated' && ['asnumbers', 'publicip', 'ipv4subnets'].includes($route.meta.name) && text)"
       >
         {{ text && $toLocaleDate(text) }}
       </template>
       <template
-        v-if="['startdate', 'enddate'].includes(column.key) && ['vm', 'vnfapp'].includes($route.path.split('/')[1])"
+        v-if="['startdate', 'enddate'].includes(column.key) && ['vm', 'vnfapp', 'autoscalevmgroup'].includes($route.path.split('/')[1])"
       >
         {{ getDateAtTimeZone(text, record.timezone) }}
       </template>
@@ -837,7 +865,7 @@
           style="margin-left: 5px"
           :actions="actions"
           :resource="record"
-          :enabled="quickViewEnabled() && actions.length > 0"
+          :enabled="quickViewEnabled(actions, columns, column.key)"
           @exec-action="$parent.execAction"
         />
       </template>
@@ -935,6 +963,16 @@
           @pressEnter="saveValue(record)"
         >
         </a-input>
+        <template v-else-if="['webhook'].includes($route.path.split('/')[1])">
+          <span style="word-break: break-all">{{ text }}</span>
+          <QuickView
+            style="margin-left: 5px"
+            :actions="actions"
+            :resource="record"
+            :enabled="quickViewEnabled(actions, columns, column.key)"
+            @exec-action="$parent.execAction"
+          />
+        </template>
         <div
           v-else
           style="width: 200px; word-break: break-all"
@@ -970,7 +1008,7 @@
           @onClick="$resetConfigurationValueConfirm(item, resetConfig)"
           v-if="editableValueKey !== record.key"
           icon="reload-outlined"
-          :disabled="!('updateConfiguration' in $store.getters.apis)"
+          :disabled="!('resetConfiguration' in $store.getters.apis) || record.value === record.defaultvalue"
         />
       </template>
       <template v-if="column.key === 'gpuDeviceActions'">
@@ -1009,31 +1047,11 @@
         />
         <slot></slot>
       </template>
-      <template v-if="column.key === 'tariffActions'">
-        <tooltip-button
-          :tooltip="$t('label.edit')"
-          v-if="editableValueKey !== record.key"
-          :disabled="!('quotaTariffUpdate' in $store.getters.apis)"
-          icon="edit-outlined"
-          @onClick="editTariffValue(record)"
-        />
-        <slot></slot>
-      </template>
-      <template v-if="column.key === 'vmScheduleActions'">
-        <tooltip-button
-          :tooltip="$t('label.edit')"
-          :disabled="!('updateVMSchedule' in $store.getters.apis)"
-          icon="edit-outlined"
-          @onClick="updateVMSchedule(record)"
-        />
-        <tooltip-button
-          :tooltip="$t('label.remove')"
-          :disabled="!('deleteVMSchedule' in $store.getters.apis)"
-          icon="delete-outlined"
-          :danger="true"
-          type="primary"
-          @onClick="removeVMSchedule(record)"
-        />
+      <template v-if="column.key === 'scheduleActions'">
+        <slot
+          name="scheduleActions"
+          :record="record"
+        ></slot>
       </template>
       <template v-if="column.key === 'vgpuActions'">
         <slot name="actionButtons" :record="record" :actions="actions"></slot>
@@ -1190,25 +1208,28 @@ export default {
         '/tungstenpolicyset', '/tungstenroutingpolicy', '/firewallrule', '/tungstenfirewallpolicy'].includes(this.$route.path)
     },
     createPathBasedOnVmType: createPathBasedOnVmType,
-    quickViewEnabled () {
-      return new RegExp(['/vm', '/kubernetes', '/ssh', '/userdata', '/vmgroup', '/affinitygroup', '/autoscalevmgroup',
-        '/volume', '/snapshot', '/vmsnapshot', '/backup',
-        '/guestnetwork', '/vpc', '/vpncustomergateway', '/vnfapp',
-        '/template', '/iso',
-        '/project', '/account', 'buckets', 'objectstore',
-        '/zone', '/pod', '/cluster', '/host', '/storagepool', '/imagestore', '/systemvm', '/router', '/ilbvm', '/annotation',
-        '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering',
-        '/tungstenfabric', '/oauthsetting', '/guestos', '/guestoshypervisormapping', '/webhook', 'webhookdeliveries', '/quotatariff', '/sharedfs',
-        '/ipv4subnets', '/managementserver', '/gpucard', '/gpudevices', '/vgpuprofile', '/extension', '/snapshotpolicy', '/backupschedule'].join('|'))
-        .test(this.$route.path)
+    quickViewEnabled (actions, columns, key) {
+      return actions.length > 0 &&
+        (columns && key === columns[0].dataIndex) &&
+        new RegExp(['/vm', '/kubernetes', '/ssh', '/userdata', '/vmgroup', '/affinitygroup', '/autoscalevmgroup',
+          '/volume', '/snapshot', '/vmsnapshot', '/backup',
+          '/guestnetwork', '/vpc', '/vpncustomergateway', '/vnfapp',
+          '/template', '/iso',
+          '/project', '/account', 'buckets', 'objectstore',
+          '/zone', '/pod', '/cluster', '/host', '/storagepool', '/imagestore', '/systemvm', '/router', '/ilbvm', '/annotation',
+          '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering',
+          '/tungstenfabric', '/oauthsetting', '/guestos', '/guestoshypervisormapping', '/webhook', 'webhookdeliveries', 'webhookfilters', '/quotatariff', '/sharedfs',
+          '/ipv4subnets', '/managementserver', '/gpucard', '/gpudevices', '/vgpuprofile', '/extension', '/snapshotpolicy', '/backupschedule',
+          '/kmskey', '/hsmprofile', '/dnsserver', '/dnszone'].join('|'))
+          .test(this.$route.path)
     },
     enableGroupAction () {
       return ['vm', 'alert', 'vmgroup', 'ssh', 'userdata', 'affinitygroup', 'autoscalevmgroup', 'volume', 'snapshot',
         'vmsnapshot', 'backup', 'guestnetwork', 'vpc', 'publicip', 'vpnuser', 'vpncustomergateway', 'vnfapp',
         'project', 'account', 'systemvm', 'router', 'computeoffering', 'systemoffering',
         'diskoffering', 'backupoffering', 'networkoffering', 'vpcoffering', 'ilbvm', 'kubernetes', 'comment', 'buckets',
-        'webhook', 'webhookdeliveries', 'sharedfs', 'ipv4subnets', 'asnumbers', 'guestos', 'gpucard', 'gpudevices', 'vgpuprofile'
-      ].includes(this.$route.name)
+        'webhook', 'webhookdeliveries', 'sharedfs', 'ipv4subnets', 'asnumbers', 'guestos', 'gpucard', 'gpudevices', 'vgpuprofile',
+        'quotatariff'].includes(this.$route.name)
     },
     getDateAtTimeZone (date, timezone) {
       return date ? moment(date).tz(timezone).format('YYYY-MM-DD HH:mm:ss') : null
@@ -1373,15 +1394,6 @@ export default {
       if (index === data.length - 1) return
       data.push(data.splice(index, 1)[0])
       this.updateOrder(data)
-    },
-    editTariffValue (record) {
-      this.$emit('edit-tariff-action', true, record)
-    },
-    updateVMSchedule (record) {
-      this.$emit('update-vm-schedule', record)
-    },
-    removeVMSchedule (record) {
-      this.$emit('remove-vm-schedule', record)
     },
     ipV6Address (text, record) {
       if (!record || !record.nic || record.nic.length === 0) {

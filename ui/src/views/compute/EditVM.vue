@@ -255,7 +255,7 @@ export default {
       this.fetchZoneDetails()
       this.fetchSecurityGroups()
       this.fetchOsTypes()
-      this.fetchInstaceGroups()
+      this.fetchInstanceGroups()
       this.fetchServiceOfferingData()
       this.fetchTemplateData()
       this.fetchUserData()
@@ -335,7 +335,7 @@ export default {
         this.$notifyError(error)
       }).finally(() => { this.osTypes.loading = false })
     },
-    fetchInstaceGroups () {
+    fetchInstanceGroups () {
       this.groups.loading = true
       this.groups.opts = []
       const params = {
@@ -425,6 +425,8 @@ export default {
         }
         if (values.extraconfig && values.extraconfig.length > 0) {
           params.extraconfig = encodeURIComponent(values.extraconfig)
+        } else if (this.combinedExtraConfig) {
+          params.cleanupextraconfig = true
         }
         this.loading = true
 

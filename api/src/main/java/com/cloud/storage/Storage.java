@@ -35,7 +35,8 @@ public class Storage {
         VDI(true, true, false, "vdi"),
         TAR(false, false, false, "tar"),
         ZIP(false, false, false, "zip"),
-        DIR(false, false, false, "dir");
+        DIR(false, false, false, "dir"),
+        PNG(false, false, false, "png");
 
         private final boolean supportThinProvisioning;
         private final boolean supportSparse;
@@ -128,7 +129,7 @@ public class Storage {
     public static enum TemplateType {
         ROUTING, // Router template
         SYSTEM, /* routing, system vm template */
-        BUILTIN, /* buildin template */
+        BUILTIN, /* builtin template */
         PERHOST, /* every host has this template, don't need to install it in secondary storage */
         USER, /* User supplied template/iso */
         VNF,    /* VNFs (virtual network functions) template */
@@ -170,6 +171,7 @@ public class Storage {
         ISO(false, false, EncryptionSupport.Unsupported), // for iso image
         LVM(false, false, EncryptionSupport.Unsupported), // XenServer local LVM SR
         CLVM(true, false, EncryptionSupport.Unsupported),
+        CLVM_NG(true, false, EncryptionSupport.Hypervisor),
         RBD(true, true, EncryptionSupport.Unsupported), // http://libvirt.org/storage.html#StorageBackendRBD
         SharedMountPoint(true, true, EncryptionSupport.Hypervisor),
         VMFS(true, true, EncryptionSupport.Unsupported), // VMware VMFS storage

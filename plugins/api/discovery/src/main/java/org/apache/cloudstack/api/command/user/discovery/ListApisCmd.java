@@ -52,7 +52,7 @@ public class ListApisCmd extends BaseCmd {
     public void execute() throws ServerApiException {
         if (_apiDiscoveryService != null) {
             User user = CallContext.current().getCallingUser();
-            ListResponse<ApiDiscoveryResponse> response = (ListResponse<ApiDiscoveryResponse>)_apiDiscoveryService.listApis(user, name);
+            ListResponse<ApiDiscoveryResponse> response = (ListResponse<ApiDiscoveryResponse>)_apiDiscoveryService.listApis(user, name, this);
             if (response == null) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Api Discovery plugin was unable to find an api by that name or process any apis");
             }

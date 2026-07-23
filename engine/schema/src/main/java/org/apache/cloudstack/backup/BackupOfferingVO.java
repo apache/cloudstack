@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.backup;
 
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+
 import java.util.Date;
 import java.util.UUID;
 
@@ -81,6 +83,11 @@ public class BackupOfferingVO implements BackupOffering {
         this.created = new Date();
     }
 
+    public BackupOfferingVO(final long zoneId, final String provider, final String name, final String description, final boolean userDrivenBackupAllowed) {
+        this(zoneId, null, provider, name, description, userDrivenBackupAllowed);
+        this.externalId = this.uuid;
+    }
+
     public String getUuid() {
         return uuid;
     }
@@ -130,5 +137,10 @@ public class BackupOfferingVO implements BackupOffering {
 
     public Date getCreated() {
         return created;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Backup offering %s.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "name", "uuid"));
     }
 }

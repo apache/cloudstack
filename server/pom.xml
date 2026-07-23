@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack</artifactId>
-        <version>4.22.2.0-SNAPSHOT</version>
+        <version>4.23.0.0-SNAPSHOT</version>
     </parent>
 
     <dependencies>
@@ -67,6 +67,11 @@
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-framework-ca</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-framework-kms</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -194,7 +199,7 @@
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-framework-extensions</artifactId>
-            <version>4.22.2.0-SNAPSHOT</version>
+            <version>4.23.0.0-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>
         <dependency>

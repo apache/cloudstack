@@ -47,8 +47,8 @@
           <tooltip-label :title="$t('label.path')" :tooltip="apiParams.path.description"/>
         </template>
         <div class="path-input-container">
-          <span v-if="!!safeName" :title="extenstionBasePath" class="path-input-base">
-            {{ extenstionBasePath }}
+          <span v-if="!!safeName" :title="extensionBasePath" class="path-input-base">
+            {{ extensionBasePath }}
           </span>
           <a-input
             v-model:value="form.path"
@@ -145,7 +145,7 @@ export default {
       }
       return value.replace(/[^a-zA-Z0-9._-]/g, '_').toLowerCase()
     },
-    extenstionBasePath () {
+    extensionBasePath () {
       return (this.$store.getters.features.extensionspath || '[EXTENSIONS_PATH]') + '/' + this.safeName + '/'
     }
   },
@@ -162,7 +162,7 @@ export default {
     },
     fetchExtensionTypes () {
       this.extensionTypes = []
-      const extensionTypesList = ['Orchestrator']
+      const extensionTypesList = ['Orchestrator', 'NetworkOrchestrator']
       extensionTypesList.forEach((item) => {
         this.extensionTypes.push({
           id: item,

@@ -25,18 +25,18 @@ import org.apache.commons.lang3.StringUtils;
 
 public final class Rule {
     private final String rule;
-    private final Pattern compiledPattern;
+    private final Pattern matchingPattern;
     private final static Pattern ALLOWED_PATTERN = Pattern.compile("^[a-zA-Z0-9*]+$");
 
     public Rule(final String rule) {
         validate(rule);
         this.rule = rule;
-        this.compiledPattern = Pattern.compile(rule.replace("*", "\\w*"), Pattern.CASE_INSENSITIVE);
+        matchingPattern = Pattern.compile(rule.toLowerCase().replace("*", "(\\w*\\*?)+"));
     }
 
     public boolean matches(final String commandName) {
-        return StringUtils.isNotEmpty(commandName)
-                && compiledPattern.matcher(commandName).matches();
+        return StringUtils.isNotEmpty(commandName) &&
+                matchingPattern.matcher(commandName.toLowerCase()).matches();
     }
 
     public String getRuleString() {

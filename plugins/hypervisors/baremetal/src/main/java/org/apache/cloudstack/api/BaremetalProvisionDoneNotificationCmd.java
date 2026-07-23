@@ -50,7 +50,7 @@ public class BaremetalProvisionDoneNotificationCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "notify management server that baremetal provision has been done on a host";
+        return "Notifying management server that baremetal provision has been done on a host";
     }
 
     @Override

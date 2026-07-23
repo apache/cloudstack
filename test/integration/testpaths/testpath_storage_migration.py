@@ -2809,7 +2809,7 @@ class TestLiveStorageMigration(cloudstackTestCase):
             disk=root_volume_cluster,
             disk_type="rootdiskdevice")
 
-        # Get Destnation Pool
+        # Get Destination Pool
         # Avoid storage Pool on which ROOT disk exists
         storagePools_to_avoid = [root_volume_cluster.storage]
 
@@ -2840,7 +2840,7 @@ class TestLiveStorageMigration(cloudstackTestCase):
             disk=data_volume_1_cluster,
             disk_type="datadiskdevice_1")
 
-        # Get Destnation Pool
+        # Get Destination Pool
         # Avoid storage Pool allocated for ROOT disk, and Pool on which DATA
         # disk1 exists
         storagePools_to_avoid = [
@@ -3021,7 +3021,7 @@ class TestLiveStorageMigration(cloudstackTestCase):
             disk=root_volume_cluster,
             disk_type="rootdiskdevice")
 
-        # Get Destnation Pool
+        # Get Destination Pool
         # Avoid storage Pool on which ROOT disk exists
         storagePools_to_avoid = [root_volume_cluster.storage]
 
@@ -3052,7 +3052,7 @@ class TestLiveStorageMigration(cloudstackTestCase):
             disk=data_volume_1_cluster,
             disk_type="datadiskdevice_1")
 
-        # Get Destnation Pool
+        # Get Destination Pool
         # Avoid storage Pool allocated for ROOT disk, and Pool on which DATA
         # disk1 exists
 
