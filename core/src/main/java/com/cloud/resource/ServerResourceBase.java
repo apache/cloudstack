@@ -155,7 +155,7 @@ public abstract class ServerResourceBase implements ServerResource {
         return null;
     }
 
-    protected void tryToAutoDiscoverResourcePrivateNetworkInterfaceByRouteLookup(Map<String, Object> params) throws ConfigurationException {
+    private void tryToAutoDiscoverResourcePrivateNetworkInterfaceByRouteLookup(Map<String, Object> params) throws ConfigurationException {
         logger.info("Trying to autodiscover this resource's private network interface by route lookup");
         final String[] mgmtIps = collectMgmtHostIp(params);
         if (mgmtIps == null) {
