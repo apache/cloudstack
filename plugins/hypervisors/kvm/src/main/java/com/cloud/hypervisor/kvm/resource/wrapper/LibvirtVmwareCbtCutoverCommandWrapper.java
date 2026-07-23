@@ -424,10 +424,13 @@ public class LibvirtVmwareCbtCutoverCommandWrapper extends CommandWrapper<Vmware
             command.append(shellQuote(sourceXmlPath.toString())).append(" ");
             command.append("--in-place -v");
         } else {
+            // Resolve the binary through the server resource: EL9-family distributions
+            // install virt-v2v-in-place in /usr/libexec, outside $PATH.
+            String inPlaceBinary = StringUtils.defaultIfBlank(serverResource.getVirtV2vInPlaceBinary(), "virt-v2v-in-place");
             // No -O (write updated output XML): nothing consumes it and the option only
             // exists from virt-v2v 2.5 on, so passing it breaks otherwise capable hosts
             // such as Ubuntu 24.04 with virt-v2v-in-place 2.4.
-            command.append("virt-v2v-in-place --root first -i libvirtxml ");
+            command.append(inPlaceBinary).append(" --root first -i libvirtxml ");
             command.append(shellQuote(sourceXmlPath.toString())).append(" ");
             command.append("-v");
         }

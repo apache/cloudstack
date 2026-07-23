@@ -380,6 +380,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public static final String INSTANCE_CONVERSION_SUPPORTED_CHECK_CMD = "virt-v2v --version";
     // virt-v2v --version => sample output: virt-v2v 1.42.0rhel=8,release=22.module+el8.10.0+1590+a67ab969
     public static final String INSTANCE_CONVERSION_IN_PLACE_SUPPORTED_CHECK_CMD = "virt-v2v-in-place --version";
+    // EL9-family distributions install virt-v2v-in-place in libexecdir, outside $PATH
+    public static final String VIRT_V2V_IN_PLACE_LIBEXEC_PATH = "/usr/libexec/virt-v2v-in-place";
     public static final String INSTANCE_CONVERSION_IN_PLACE_OPTION_SUPPORTED_CHECK_CMD = "virt-v2v --help 2>&1 | grep -q -- '--in-place'";
     public static final String OVF_EXPORT_SUPPORTED_CHECK_CMD = "ovftool --version";
     // ovftool --version => sample output: VMware ovftool 4.6.0 (build-21452615)
@@ -6334,7 +6336,23 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public boolean hostSupportsVirtV2vInPlaceBinary() {
-        return Script.runSimpleBashScriptForExitValue(INSTANCE_CONVERSION_IN_PLACE_SUPPORTED_CHECK_CMD) == 0;
+        return getVirtV2vInPlaceBinary() != null;
+    }
+
+    /**
+     * Resolves the virt-v2v-in-place executable. Ubuntu/Debian install it on $PATH,
+     * but EL9-family distributions ship it in /usr/libexec, so probing the bare name
+     * alone would (wrongly) disable in-place finalization there. Returns the
+     * invocable binary (name or absolute path), or null when neither works.
+     */
+    public String getVirtV2vInPlaceBinary() {
+        if (Script.runSimpleBashScriptForExitValue(INSTANCE_CONVERSION_IN_PLACE_SUPPORTED_CHECK_CMD) == 0) {
+            return "virt-v2v-in-place";
+        }
+        if (Script.runSimpleBashScriptForExitValue(VIRT_V2V_IN_PLACE_LIBEXEC_PATH + " --version") == 0) {
+            return VIRT_V2V_IN_PLACE_LIBEXEC_PATH;
+        }
+        return null;
     }
 
     public boolean hostSupportsVirtV2vInPlaceOption() {
@@ -6345,10 +6363,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (!hostSupportsVirtV2vInPlace()) {
             return "";
         }
-        if (hostSupportsVirtV2vInPlaceOption() && !hostSupportsVirtV2vInPlaceBinary()) {
+        String inPlaceBinary = getVirtV2vInPlaceBinary();
+        if (inPlaceBinary == null) {
             return getHostVirtV2vVersion();
         }
-        String cmd = String.format("%s | awk '{print $2}'", INSTANCE_CONVERSION_IN_PLACE_SUPPORTED_CHECK_CMD);
+        String cmd = String.format("%s --version | awk '{print $2}'", inPlaceBinary);
         String version = Script.runSimpleBashScript(cmd);
         return StringUtils.isNotBlank(version) ? version.split(",")[0] : "";
     }

@@ -628,32 +628,48 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
     private boolean runInPlaceFinalization(Path inputXml, String libguestfsBackend, long timeout,
                                            boolean verboseModeEnabled, String originalVMName,
                                            LibvirtComputingResource serverResource) {
+        String inPlaceCommand = buildInPlaceCommand(inputXml, libguestfsBackend, verboseModeEnabled, serverResource);
+        if (inPlaceCommand == null) {
+            logger.error("({}) No virt-v2v in-place finalization method is available", originalVMName);
+            return false;
+        }
+
+        Script script = new Script("/bin/bash", timeout, logger);
+        script.add("-c");
+        script.add(inPlaceCommand);
+        OutputInterpreter.LineByLineOutputLogger outputLogger = new OutputInterpreter.LineByLineOutputLogger(logger,
+                String.format("(%s) virt-v2v in-place", originalVMName));
+        script.execute(outputLogger);
+        return script.getExitValue() == 0;
+    }
+
+    /**
+     * Builds the in-place finalization command, resolving the virt-v2v-in-place
+     * binary through the server resource (EL9 ships it in /usr/libexec, outside
+     * $PATH) and falling back to "virt-v2v --in-place". Returns null when the host
+     * has no in-place method.
+     */
+    private String buildInPlaceCommand(Path inputXml, String libguestfsBackend, boolean verboseModeEnabled,
+                                       LibvirtComputingResource serverResource) {
         StringBuilder command = new StringBuilder();
         command.append("export LIBGUESTFS_BACKEND=").append(shellQuote(libguestfsBackend)).append(" && ");
-        if (serverResource.hostSupportsVirtV2vInPlaceBinary()) {
+        String inPlaceBinary = serverResource.getVirtV2vInPlaceBinary();
+        if (inPlaceBinary != null) {
             // No -O (write updated output XML): nothing consumes it and the option only
             // exists from virt-v2v 2.5 on, so passing it breaks otherwise capable hosts
             // such as Ubuntu 24.04 with virt-v2v-in-place 2.4.
-            command.append("virt-v2v-in-place --root first -i libvirtxml ")
+            command.append(inPlaceBinary).append(" --root first -i libvirtxml ")
                     .append(shellQuote(inputXml.toString())).append(" ");
         } else if (serverResource.hostSupportsVirtV2vInPlaceOption()) {
             command.append("virt-v2v --root first -i libvirtxml ")
                     .append(shellQuote(inputXml.toString())).append(" --in-place ");
         } else {
-            logger.error("({}) No virt-v2v in-place finalization method is available", originalVMName);
-            return false;
+            return null;
         }
         if (verboseModeEnabled) {
             command.append("-v ");
         }
-
-        Script script = new Script("/bin/bash", timeout, logger);
-        script.add("-c");
-        script.add(command.toString());
-        OutputInterpreter.LineByLineOutputLogger outputLogger = new OutputInterpreter.LineByLineOutputLogger(logger,
-                String.format("(%s) virt-v2v rbd in-place", originalVMName));
-        script.execute(outputLogger);
-        return script.getExitValue() == 0;
+        return command.toString();
     }
 
     private String buildDirectRbdLibvirtXml(String temporaryConvertUuid, KVMStoragePool targetPool, List<String> imageNames) {
