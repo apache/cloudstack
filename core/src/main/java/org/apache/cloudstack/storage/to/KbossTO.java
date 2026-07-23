@@ -16,9 +16,10 @@ package org.apache.cloudstack.storage.to;
 // specific language governing permissions and limitations
 // under the License.
 
-import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
@@ -29,22 +30,20 @@ public class KbossTO {
     private String deltaPathOnPrimary;
     private String parentDeltaPathOnPrimary;
     private String deltaPathOnSecondary;
-    private String oldVolumePath;
 
     private DeltaMergeTreeTO deltaMergeTreeTO;
 
-    private List<String> deltaPaths;
+    private List<String> vmSnapshotDeltaPaths;
 
-    public KbossTO(VolumeObjectTO volumeObjectTO, LinkedList<String> deltaPaths) {
+    public KbossTO(VolumeObjectTO volumeObjectTO, List<SnapshotDataStoreVO> snapshotDataStoreVOs) {
         this.volumeObjectTO = volumeObjectTO;
-        this.deltaPaths = deltaPaths;
+        this.vmSnapshotDeltaPaths = snapshotDataStoreVOs.stream().map(SnapshotDataStoreVO::getInstallPath).collect(Collectors.toList());
     }
 
-    public KbossTO(VolumeObjectTO volumeObjectTO, String deltaPathOnPrimary, String deltaPathOnSecondary, LinkedList<String> deltaPaths) {
+    public KbossTO(VolumeObjectTO volumeObjectTO, String deltaPathOnPrimary, String deltaPathOnSecondary) {
         this.volumeObjectTO = volumeObjectTO;
         this.deltaPathOnPrimary = deltaPathOnPrimary;
         this.deltaPathOnSecondary = deltaPathOnSecondary;
-        this.deltaPaths = deltaPaths;
     }
 
     public String getPathBackupParentOnSecondary() {
@@ -59,8 +58,8 @@ public class KbossTO {
         return deltaMergeTreeTO;
     }
 
-    public List<String> getDeltaPaths() {
-        return deltaPaths;
+    public List<String> getVmSnapshotDeltaPaths() {
+        return vmSnapshotDeltaPaths;
     }
 
     public String getDeltaPathOnPrimary() {
@@ -93,14 +92,6 @@ public class KbossTO {
 
     public void setDeltaPathOnSecondary(String deltaPathOnSecondary) {
         this.deltaPathOnSecondary = deltaPathOnSecondary;
-    }
-
-    public String getOldVolumePath() {
-        return oldVolumePath;
-    }
-
-    public void setOldVolumePath(String oldVolumePath) {
-        this.oldVolumePath = oldVolumePath;
     }
 
     @Override

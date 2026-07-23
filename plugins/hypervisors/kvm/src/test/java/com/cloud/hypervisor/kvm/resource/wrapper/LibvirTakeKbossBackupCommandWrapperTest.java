@@ -266,7 +266,7 @@ public class LibvirTakeKbossBackupCommandWrapperTest {
         doReturn(volumePath).when(volumeObjectToMock1).getPath();
         doReturn(volUuid1).when(volumeObjectToMock1).getUuid();
         doReturn(parentPath).when(kbossTO1).getPathBackupParentOnSecondary();
-        doReturn(new ArrayList<>(List.of(deltaPath2))).when(kbossTO1).getDeltaPaths();
+        doReturn(new ArrayList<>(List.of(deltaPath2))).when(kbossTO1).getVmSnapshotDeltaPaths();
         doReturn(deltaPath1).when(kbossTO1).getDeltaPathOnSecondary();
         doReturn(kvmStoragePool1).when(kvmStoragePoolManagerMock).getStoragePoolByURI(secondaryUrl);
         doReturn(kvmStoragePool2).when(kvmStoragePoolManagerMock).getStoragePoolByURI(secondaryUrl2);

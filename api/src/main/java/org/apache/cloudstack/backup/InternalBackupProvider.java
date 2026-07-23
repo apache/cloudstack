@@ -136,7 +136,7 @@ public interface InternalBackupProvider extends BackupProvider {
     default void prepareVmForSnapshotRevert(VMSnapshot vmSnapshot, VirtualMachine virtualMachine) {
     }
 
-    default boolean finishBackupChains(VirtualMachine virtualMachine) {
+    default boolean finishBackupChain(VirtualMachine virtualMachine) {
         return false;
     }
 }
