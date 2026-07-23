@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.inject.Inject;
 import javax.servlet.ServletConfig;
@@ -78,7 +79,19 @@ public class ApiServlet extends HttpServlet {
     protected static Logger LOGGER = LogManager.getLogger(ApiServlet.class);
     private static final Logger ACCESSLOGGER = LogManager.getLogger("apiserver." + ApiServlet.class.getName());
     private static final String REPLACEMENT = "_";
-    private static final String LOGGER_REPLACEMENTS = "[\n\r\t]";
+private static final String REDACTED = "REDACTED";
+private static final String LOGGER_REPLACEMENTS = "[\n\r\t]";
+
+private static final Set<String> SENSITIVE_PARAMETER_KEYWORDS = Set.of(
+    "password",
+    "privatekey",
+    "accesskey",
+    "secretkey",
+    "apikey",
+    "signature",
+    "sessionkey",
+    "token"
+);
 
     @Inject
     ApiServerService apiServer;
@@ -161,11 +174,31 @@ public class ApiServlet extends HttpServlet {
         params.forEach((k, v) -> {
             if (v.length > 1) {
                 String message = String.format("Query parameter '%s' has multiple values %s. Only the last value will be respected." +
-                    "It is advised to pass only a single parameter", k, Arrays.toString(v));
+                    "It is advised to pass only a single parameter", k, formatValuesForLog(k, v));
                 LOGGER.warn(message);
             }
         });
     }
+
+    static boolean isSensitiveParameter(String parameterName) {
+    if (parameterName == null) {
+        return false;
+    }
+
+    String lowerCaseParameter = parameterName.toLowerCase();
+    return SENSITIVE_PARAMETER_KEYWORDS.stream()
+            .anyMatch(lowerCaseParameter::contains);
+}
+
+static String formatValuesForLog(String parameterName, String[] values) {
+    if (!isSensitiveParameter(parameterName)) {
+        return Arrays.toString(values);
+    }
+
+    String[] masked = new String[values.length];
+    Arrays.fill(masked, REDACTED);
+    return Arrays.toString(masked);
+}
 
     void processRequestInContext(final HttpServletRequest req, final HttpServletResponse resp) {
         InetAddress remoteAddress = null;
