@@ -31,7 +31,10 @@ import SR, VDI, SRCommand, util, lvutil
 from util import CommandException
 import vhdutil
 import shutil
-import lvhdutil
+try:
+    import lvhdutil
+except ImportError:
+    lvhdutil = None
 import errno
 import subprocess
 import xs_errors
