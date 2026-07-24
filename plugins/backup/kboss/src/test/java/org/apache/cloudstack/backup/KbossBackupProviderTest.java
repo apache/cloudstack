@@ -1604,6 +1604,7 @@ public class KbossBackupProviderTest {
         doReturn(virtualMachineToMock).when(hypervisorGuruMock).implement(any());
         doReturn(false).when(kbossBackupProviderSpy).validateBackup(anyLong(), any(), any(), any(), any(), any());
         doNothing().when(kbossBackupProviderSpy).sendCleanupFailedEmail(any(), any());
+        doNothing().when(kbossBackupProviderSpy).validateVmState(any(), any(), any(), any());
 
         boolean result = kbossBackupProviderSpy.validateWithValidationVm(backupId, 2L, backupVoMock);
 
@@ -1678,6 +1679,7 @@ public class KbossBackupProviderTest {
         InternalBackupJoinVO child = mock(InternalBackupJoinVO.class);
         doReturn(false).when(child).getCurrent();
         doReturn(List.of(child)).when(kbossBackupProviderSpy).getBackupJoinChildren(any());
+        doNothing().when(kbossBackupProviderSpy).validateVmState(any(), any(), any(), any());
 
         kbossBackupProviderSpy.endBackupChainIfConfigured(backupVoMock);
 
@@ -1692,6 +1694,7 @@ public class KbossBackupProviderTest {
         doReturn(List.of()).when(kbossBackupProviderSpy).getBackupJoinChildren(any());
         doReturn(userVmVOMock).when(userVmDaoMock).findById(anyLong());
         doReturn(true).when(kbossBackupProviderSpy).endBackupChain(any());
+        doNothing().when(kbossBackupProviderSpy).validateVmState(any(), any(), any(), any());
 
         kbossBackupProviderSpy.endBackupChainIfConfigured(backupVoMock);
 
@@ -1708,6 +1711,7 @@ public class KbossBackupProviderTest {
         doReturn(List.of(child)).when(kbossBackupProviderSpy).getBackupJoinChildren(any());
         doReturn(userVmVOMock).when(userVmDaoMock).findById(anyLong());
         doReturn(true).when(kbossBackupProviderSpy).endBackupChain(any());
+        doNothing().when(kbossBackupProviderSpy).validateVmState(any(), any(), any(), any());
 
         kbossBackupProviderSpy.endBackupChainIfConfigured(backupVoMock);
 

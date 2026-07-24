@@ -1239,6 +1239,8 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         if (!getValidationEndChainOnFail(backupVO)) {
             return;
         }
+        VirtualMachine vm = userVmDao.findByIdIncludingRemoved(backupVO.getVmId());
+        validateVmState(vm, "end backup chain", VirtualMachine.State.Expunging, VirtualMachine.State.Destroyed);
         List<InternalBackupJoinVO> backupChildren = getBackupJoinChildren(backupVO);
 
         // Get updated record
