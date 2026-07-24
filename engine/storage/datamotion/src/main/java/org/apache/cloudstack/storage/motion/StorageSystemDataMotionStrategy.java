@@ -2014,10 +2014,6 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
      * If any disk is backed by a direct-download template, force the request to full clone so libvirt does
      * not use incremental shared-backing semantics for a disk whose backing chain is not guaranteed on the destination.
      */
-    protected boolean shouldForceFullCloneMigration(Map<VolumeInfo, DataStore> volumeDataStoreMap, Host destHost) {
-        return shouldForceFullCloneMigration(volumeDataStoreMap, destHost, new HashMap<>());
-    }
-
     protected boolean shouldForceFullCloneMigration(Map<VolumeInfo, DataStore> volumeDataStoreMap, Host destHost, Map<Long, StoragePoolVO> storagePoolsById) {
         for (Map.Entry<VolumeInfo, DataStore> entry : volumeDataStoreMap.entrySet()) {
             VolumeInfo srcVolumeInfo = entry.getKey();
