@@ -374,6 +374,9 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
         this.connectionAlive = false;
         // Clear buffer reference to allow GC when client disconnects
         this.readBuffer = null;
+        if (client != null) {
+            client.close();
+        }
         ConsoleProxy.removeViewer(this);
     }
 
