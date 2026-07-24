@@ -21,10 +21,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
-
-import org.jasypt.exceptions.EncryptionOperationNotPossibleException;
+import java.util.regex.Pattern;
 
 import com.cloud.utils.crypt.DBEncryptionUtil;
+import com.cloud.utils.crypt.EncryptionSecretKeyChecker;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class Upgrade42210to42220 extends DbUpgradeAbstractImpl implements DbUpgrade {
@@ -44,19 +44,36 @@ public class Upgrade42210to42220 extends DbUpgradeAbstractImpl implements DbUpgr
         encryptExistingTwoFactorAuthenticationKeys(conn);
     }
 
+    // A stored TOTP secret is Base32 (RFC 4648 alphabet A-Z, 2-7, optional '=' padding). An
+    // encrypted value is Base64 and therefore contains characters outside this set (lowercase,
+    // 0/1/8/9, '+', '/'). This shape test distinguishes a not-yet-encrypted secret from one that
+    // is already encrypted, without relying on decrypt() throwing a particular exception type.
+    private static final Pattern BASE32_SECRET = Pattern.compile("^[A-Z2-7]+=*$");
+
     /**
      * The {@code user.key_for_2fa} column was previously stored in plaintext. It is now annotated
-     * with {@code @Encrypt}, so existing plaintext secrets must be encrypted in place. This is
-     * idempotent: a value that already decrypts cleanly is left untouched.
+     * with {@code @Encrypt}, so {@link DBEncryptionUtil} decrypts it on every read — meaning any
+     * row left in plaintext would fail to decrypt and lock the user out of 2FA. This migration
+     * encrypts existing plaintext secrets in place.
+     *
+     * It is a no-op when DB encryption is disabled (then {@code @Encrypt} reads return the value
+     * unchanged, so nothing needs encrypting), and idempotent when enabled (values already in
+     * encrypted, non-Base32 form are skipped), so re-running after a partial failure is safe.
      */
     protected void encryptExistingTwoFactorAuthenticationKeys(Connection conn) {
+        if (!EncryptionSecretKeyChecker.useEncryption()) {
+            logger.debug("DB encryption is disabled; user.key_for_2fa is stored as-is, nothing to migrate.");
+            return;
+        }
+
         Map<Long, String> keysToEncrypt = new LinkedHashMap<>();
         try (PreparedStatement selectStmt = conn.prepareStatement("SELECT id, key_for_2fa FROM cloud.user WHERE key_for_2fa IS NOT NULL AND key_for_2fa <> ''");
              ResultSet rs = selectStmt.executeQuery()) {
             while (rs.next()) {
                 long id = rs.getLong(1);
                 String value = rs.getString(2);
-                if (isAlreadyEncrypted(value)) {
+                if (!isPlaintextSecret(value)) {
+                    // Already encrypted (or not a recognizable plaintext secret) — leave it alone.
                     continue;
                 }
                 keysToEncrypt.put(id, value);
@@ -87,12 +104,11 @@ public class Upgrade42210to42220 extends DbUpgradeAbstractImpl implements DbUpgr
         }
     }
 
-    private boolean isAlreadyEncrypted(String value) {
-        try {
-            DBEncryptionUtil.decrypt(value);
-            return true;
-        } catch (EncryptionOperationNotPossibleException e) {
-            return false;
-        }
+    /**
+     * True if the value looks like a plaintext Base32 TOTP secret (and therefore still needs
+     * encrypting). Encrypted (Base64) values contain characters outside the Base32 alphabet.
+     */
+    protected boolean isPlaintextSecret(String value) {
+        return value != null && BASE32_SECRET.matcher(value).matches();
     }
 }
