@@ -24,7 +24,6 @@ import com.cloud.exception.CloudTwoFactorAuthenticationException;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 import com.cloud.user.UserAccount;
-import com.cloud.user.UserAccountVO;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.commons.codec.binary.Base32;
@@ -86,8 +85,11 @@ public class TotpUserTwoFactorAuthenticator extends AdapterBase implements UserT
         for (long step = baseStep - windowSteps; step <= baseStep + windowSteps; step++) {
             String expectedCode = generateCode(secretBytes, step);
             if (constantTimeEquals(expectedCode, code)) {
-                verifyNotReplayed(userAccount, step);
-                recordUsedStep(userAccount, step);
+                if (!recordUsedStepIfNewer(userAccount, step)) {
+                    String msg = "two-factor authentication code has already been used";
+                    logger.error(msg);
+                    throw new CloudTwoFactorAuthenticationException(msg);
+                }
                 logger.info("2FA matches user's input");
                 return;
             }
@@ -136,27 +138,14 @@ public class TotpUserTwoFactorAuthenticator extends AdapterBase implements UserT
     }
 
     /**
-     * Rejects a code whose time-step is not strictly newer than the last accepted step, so a
-     * valid code cannot be replayed within (or across) its acceptance window.
+     * Atomically records the matched time-step as used, rejecting replay: returns true if the
+     * step was newer than the last recorded one (and is now persisted), false if it was already
+     * used. The check-and-set is a single conditional UPDATE so two concurrent verifications of
+     * the same code cannot both succeed. {@code check2FA} receives a read-only snapshot of the
+     * user, so the persistence is delegated to the DAO rather than mutating the snapshot.
      */
-    protected void verifyNotReplayed(UserAccount userAccount, long matchedStep) throws CloudTwoFactorAuthenticationException {
-        Long lastUsedStep = userAccount.getLastUsed2faStep();
-        if (lastUsedStep != null && matchedStep <= lastUsedStep) {
-            String msg = "two-factor authentication code has already been used";
-            logger.error(msg);
-            throw new CloudTwoFactorAuthenticationException(msg);
-        }
-    }
-
-    /**
-     * Persists the accepted time-step so subsequent verifications reject reuse. Uses a fresh
-     * update object (mirroring how 2FA setup persists) since {@code check2FA} receives a
-     * read-only snapshot of the user.
-     */
-    protected void recordUsedStep(UserAccount userAccount, long matchedStep) {
-        UserAccountVO forUpdate = _userAccountDao.createForUpdate();
-        forUpdate.setLastUsed2faStep(matchedStep);
-        _userAccountDao.update(userAccount.getId(), forUpdate);
+    protected boolean recordUsedStepIfNewer(UserAccount userAccount, long matchedStep) {
+        return _userAccountDao.updateLastUsed2faStepIfNewer(userAccount.getId(), matchedStep);
     }
 
     /**

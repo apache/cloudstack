@@ -32,8 +32,8 @@ public class TotpUserTwoFactorAuthenticatorTest {
 
     /**
      * Test subclass that lets each test drive the accepted window without touching the
-     * global {@link org.apache.cloudstack.framework.config.ConfigKey}, and records the
-     * accepted step in memory instead of hitting the (un-injected) DAO.
+     * global {@link org.apache.cloudstack.framework.config.ConfigKey}, and simulates the DAO's
+     * atomic "record step if newer" in memory instead of hitting the (un-injected) DAO.
      */
     private static class TestableAuthenticator extends TotpUserTwoFactorAuthenticator {
         private int window;
@@ -43,14 +43,22 @@ public class TotpUserTwoFactorAuthenticatorTest {
             this.window = window;
         }
 
+        void seedLastUsedStep(Long step) {
+            this.recordedStep = step;
+        }
+
         @Override
         protected int getWindowSteps(UserAccount userAccount) {
             return window;
         }
 
         @Override
-        protected void recordUsedStep(UserAccount userAccount, long matchedStep) {
+        protected boolean recordUsedStepIfNewer(UserAccount userAccount, long matchedStep) {
+            if (recordedStep != null && matchedStep <= recordedStep) {
+                return false;
+            }
             recordedStep = matchedStep;
+            return true;
         }
     }
 
@@ -150,10 +158,11 @@ public class TotpUserTwoFactorAuthenticatorTest {
 
     @Test
     public void testReplayOfAlreadyUsedStepRejected() {
-        // Simulate a previously-accepted step at or after the code's step: reuse must be rejected.
+        // A step at or before the last recorded one must be rejected (the atomic record-if-newer
+        // returns false).
         authenticator.setWindow(1);
         long step = currentStep();
-        Mockito.when(userAccount.getLastUsed2faStep()).thenReturn(step + 1);
+        authenticator.seedLastUsedStep(step + 1);
         assertThrows(CloudTwoFactorAuthenticationException.class,
                 () -> authenticator.check2FA(codeForStep(step), userAccount));
     }
@@ -163,7 +172,19 @@ public class TotpUserTwoFactorAuthenticatorTest {
         // A code strictly newer than the last used step is accepted.
         authenticator.setWindow(1);
         long step = currentStep();
-        Mockito.when(userAccount.getLastUsed2faStep()).thenReturn(step - 5);
+        authenticator.seedLastUsedStep(step - 5);
         authenticator.check2FA(codeForStep(step), userAccount);
+    }
+
+    @Test
+    public void testSameCodeCannotBeUsedTwice() throws CloudTwoFactorAuthenticationException {
+        // First use succeeds and records the step; an immediate second use of the same code is
+        // rejected as replay.
+        authenticator.setWindow(1);
+        long step = currentStep();
+        String code = codeForStep(step);
+        authenticator.check2FA(code, userAccount);
+        assertThrows(CloudTwoFactorAuthenticationException.class,
+                () -> authenticator.check2FA(code, userAccount));
     }
 }

@@ -32,4 +32,12 @@ public interface UserAccountDao extends GenericDao<UserAccountVO, Long> {
     boolean validateUsernameInDomain(String username, Long domainId);
 
     UserAccount getUserByApiKey(String apiKey);
+
+    /**
+     * Atomically records the given TOTP time-step as the last used one for the user, but only if
+     * it is newer than the currently recorded step (or none is recorded). Returns true if the row
+     * was updated; false means a concurrent verification already recorded this or a newer step,
+     * i.e. the code is being replayed.
+     */
+    boolean updateLastUsed2faStepIfNewer(long userAccountId, long step);
 }

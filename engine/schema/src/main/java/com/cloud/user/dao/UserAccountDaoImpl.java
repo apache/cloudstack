@@ -29,11 +29,21 @@ import java.util.List;
 public class UserAccountDaoImpl extends GenericDaoBase<UserAccountVO, Long> implements UserAccountDao {
 
     protected final SearchBuilder<UserAccountVO> userAccountSearch;
+    protected final SearchBuilder<UserAccountVO> newer2faStepSearch;
 
     public UserAccountDaoImpl() {
         userAccountSearch = createSearchBuilder();
         userAccountSearch.and("apiKey", userAccountSearch.entity().getApiKey(), SearchCriteria.Op.EQ);
         userAccountSearch.done();
+
+        // Matches a user whose recorded 2FA step is older than a given step (or never set),
+        // used for an atomic conditional update that rejects TOTP code replay under concurrency.
+        newer2faStepSearch = createSearchBuilder();
+        newer2faStepSearch.and("id", newer2faStepSearch.entity().getId(), SearchCriteria.Op.EQ);
+        newer2faStepSearch.and().op("nullStep", newer2faStepSearch.entity().getLastUsed2faStep(), SearchCriteria.Op.NULL);
+        newer2faStepSearch.or("olderStep", newer2faStepSearch.entity().getLastUsed2faStep(), SearchCriteria.Op.LT);
+        newer2faStepSearch.cp();
+        newer2faStepSearch.done();
     }
 
     @Override
@@ -85,6 +95,19 @@ public class UserAccountDaoImpl extends GenericDaoBase<UserAccountVO, Long> impl
         SearchCriteria<UserAccountVO> sc = userAccountSearch.create();
         sc.setParameters("apiKey", apiKey);
         return findOneBy(sc);
+    }
+
+    @Override
+    public boolean updateLastUsed2faStepIfNewer(long userAccountId, long step) {
+        SearchCriteria<UserAccountVO> sc = newer2faStepSearch.create();
+        sc.setParameters("id", userAccountId);
+        sc.setParameters("olderStep", step);
+        UserAccountVO forUpdate = createForUpdate();
+        forUpdate.setLastUsed2faStep(step);
+        // Atomic conditional UPDATE: only rows whose recorded step is null or older than this
+        // step are updated. A return of 0 means another concurrent verification already recorded
+        // this (or a newer) step, i.e. the code is being replayed.
+        return update(forUpdate, sc) > 0;
     }
 
 }
