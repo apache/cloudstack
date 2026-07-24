@@ -17,7 +17,7 @@
 
 <template>
   <a-form layout="vertical" >
-    <a-form-item :label="$t('label.owner.type')">
+    <a-form-item :label="$t('label.owner.type')" v-if="$props.showOwnerTypeField === true">
       <a-select
         @change="changeAccountTypeOrDomain"
         v-model:value="selectedAccountType"
@@ -151,6 +151,10 @@ export default {
   props: {
     override: {
       type: Object
+    },
+    showOwnerTypeField: {
+      type: Boolean,
+      default: true
     }
   },
   created () {
