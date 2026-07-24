@@ -112,8 +112,12 @@ public class UserVO implements User, Identity, InternalIdentity {
     @Column(name = "user_2fa_provider")
     private String user2faProvider;
 
+    @Encrypt
     @Column(name = "key_for_2fa")
     private String keyFor2fa;
+
+    @Column(name = "last_used_2fa_step")
+    private Long lastUsed2faStep;
 
     @Column(name = "api_key_access")
     private Boolean apiKeyAccess;
@@ -343,6 +347,14 @@ public class UserVO implements User, Identity, InternalIdentity {
 
     public void setKeyFor2fa(String keyFor2fa) {
         this.keyFor2fa = keyFor2fa;
+    }
+
+    public Long getLastUsed2faStep() {
+        return lastUsed2faStep;
+    }
+
+    public void setLastUsed2faStep(Long lastUsed2faStep) {
+        this.lastUsed2faStep = lastUsed2faStep;
     }
 
     public String getUser2faProvider() {

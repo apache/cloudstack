@@ -119,8 +119,12 @@ public class UserAccountVO implements UserAccount, InternalIdentity {
     @Column(name = "user_2fa_provider")
     private String user2faProvider;
 
+    @Encrypt
     @Column(name = "key_for_2fa")
     private String keyFor2fa;
+
+    @Column(name = "last_used_2fa_step")
+    private Long lastUsed2faStep;
 
     @Transient
     Map<String, String> details;
@@ -349,6 +353,16 @@ public class UserAccountVO implements UserAccount, InternalIdentity {
     @Override
     public void setKeyFor2fa(String keyFor2fa) {
         this.keyFor2fa = keyFor2fa;
+    }
+
+    @Override
+    public Long getLastUsed2faStep() {
+        return lastUsed2faStep;
+    }
+
+    @Override
+    public void setLastUsed2faStep(Long lastUsed2faStep) {
+        this.lastUsed2faStep = lastUsed2faStep;
     }
 
     @Override
