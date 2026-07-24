@@ -47,6 +47,8 @@ jobs:
       - name: Install Non-OSS
         uses: ./.github/actions/install-nonoss
       - name: Run Build and Tests with Coverage
+        env:
+          NODE_OPTIONS: "--max-old-space-size=4096"
         run: mvn -B -T$(nproc) -P developer,systemvm,quality -Dsimulator -Dnoredist clean install
       - name: Upload to SonarQube
         if: github.repository == 'apache/cloudstack' && github.event.pull_request.head.repo.full_name == github.repository
@@ -56,7 +58,15 @@ jobs:
           PR_ID: ${{ github.event.pull_request.number }}
           HEADREF: ${{ github.event.pull_request.head.ref }}
         run: |
-          mvn -B -P quality org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=apache_cloudstack -Dsonar.pullrequest.key="$PR_ID" -Dsonar.pullrequest.branch="$HEADREF" -Dsonar.pullrequest.github.repository=apache/cloudstack -Dsonar.pullrequest.provider=GitHub -Dsonar.pullrequest.github.summary_comment=true
+          mvn -B -P quality org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+            -Dsonar.projectKey=apache_cloudstack \
+            -Dsonar.pullrequest.key="$PR_ID" \
+            -Dsonar.pullrequest.branch="$HEADREF" \
+            -Dsonar.pullrequest.base=main \
+            -Dsonar.sources=. \
+            -Dsonar.projectBaseDir=/home/runner/work/cloudstack/cloudstack \
+            -Dsonar.java.binaries=/home/runner/work/cloudstack/cloudstack/target/classes \
+            -Dsonar.exclusions=**/*.js
       - uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         with:
           files: ./client/target/site/jacoco-aggregate/jacoco.xml
@@ -69,17 +79,23 @@ jobs:
         id: grade
         run: bash scripts/coverage-grade.sh client/target/site/jacoco-aggregate/jacoco.xml
       - name: Post Coverage Grade Comment on PR
+        if: github.repository == 'apache/cloudstack' && github.event.pull_request.head.repo.full_name == github.repository && steps.grade.outputs.coverage_grade != ''
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const grade     = '${{ steps.grade.outputs.coverage_grade }}';
-            const label     = '${{ steps.grade.outputs.coverage_grade_label }}';
-            const linePct   = '${{ steps.grade.outputs.line_coverage }}';
-            const branchPct = '${{ steps.grade.outputs.branch_coverage }}';
+            const grade     = '${{ steps.grade.outputs.coverage_grade || 'N/A' }}';
+            const label     = '${{ steps.grade.outputs.coverage_grade_label || 'Unknown' }}';
+            const linePct   = '${{ steps.grade.outputs.line_coverage || 'N/A' }}';
+            const branchPct = '${{ steps.grade.outputs.branch_coverage || 'N/A' }}';
             const emojiMap  = { A: '🟢', B: '🟡', C: '🟠', D: '🔴', F: '⛔' };
             const emoji     = emojiMap[grade] ?? '❓';
             const runUrl    = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+            if (!grade || grade === 'N/A') {
+              console.log('Coverage grade not available, skipping comment');
+              return;
+            }
 
             const branchRow = branchPct !== 'N/A'
               ? `| Branch coverage | **${branchPct}%** |`
