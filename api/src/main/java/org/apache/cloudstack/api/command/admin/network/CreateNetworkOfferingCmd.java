@@ -42,8 +42,6 @@ public class CreateNetworkOfferingCmd extends NetworkOfferingBaseCmd {
     @Parameter(name = ApiConstants.GUEST_IP_TYPE, type = CommandType.STRING, required = true, description = "Guest type of the network offering: Shared or Isolated")
     private String guestIptype;
 
-<<<<<<< Updated upstream
-=======
     @Parameter(name = ApiConstants.INTERNET_PROTOCOL,
             type = CommandType.STRING,
             description = "The internet protocol of network offering. Options are IPv4 and dualstack. Default is IPv4. dualstack will create a network offering that supports both IPv4 and IPv6",
@@ -162,7 +160,7 @@ public class CreateNetworkOfferingCmd extends NetworkOfferingBaseCmd {
             description = "the routing mode for the network offering. Supported types are: Static or Dynamic.")
     private String routingMode;
 
->>>>>>> Stashed changes
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
