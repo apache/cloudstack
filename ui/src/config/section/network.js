@@ -803,6 +803,7 @@ export default {
       }, {
         name: 'vpn',
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/VpnDetails.vue'))),
+        networkServiceFilter: networkService => networkService.filter(x => x.name === 'Vpn').length > 0,
         show: (record) => { return record.issourcenat || record.virtualmachinetype === 'DomainRouter' || !record.hasrules }
       },
       {
