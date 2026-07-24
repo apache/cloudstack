@@ -346,6 +346,10 @@ public class NetworkOfferingVO implements NetworkOffering {
         return egressdefaultpolicy;
     }
 
+    public void setEgressDefaultPolicy(boolean egressdefaultpolicy) {
+        this.egressdefaultpolicy = egressdefaultpolicy;
+    }
+
     public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps,
             Integer multicastRateMbps, boolean isDefault, Availability availability, String tags, Network.GuestType guestType, boolean conserveMode,
             boolean specifyIpRanges, boolean isPersistent, boolean internalLb, boolean publicLb, boolean isForVpc) {

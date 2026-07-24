@@ -84,6 +84,15 @@ public interface NetworkService {
             "allow.end.users.to.specify.vr.mtu", "false", "Allow end Users to specify VR MTU",
             true, ConfigKey.Scope.Zone);
 
+    public static final ConfigKey<Boolean> DefaultEgressPolicyForIsolatedNetworksAllow = new ConfigKey<>("Network", Boolean.class,
+            "network.isolated.default.egress.policy.allow", "true",
+            "Default egress policy for Isolated guest networks when no policy is specified. When true (default), egress " +
+            "traffic is allowed unless explicitly denied by egress firewall rules, matching the behaviour of VPC tiers. When " +
+            "false, egress is denied unless explicitly allowed. Applies to the built-in default Isolated network offerings " +
+            "seeded on a fresh installation and to network offerings created via createNetworkOffering without an explicit " +
+            "egressdefaultpolicy. Existing network offerings and already-created networks are not affected.",
+            true, ConfigKey.Scope.Global);
+
     List<? extends Network> getIsolatedNetworksOwnedByAccountInZone(long zoneId, Account owner);
 
     IpAddress allocateIP(Account ipOwner, long zoneId, Long networkId, Boolean displayIp, String ipaddress) throws ResourceAllocationException, InsufficientAddressCapacityException,

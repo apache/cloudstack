@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.admin.network;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
+import com.cloud.network.NetworkService;
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
@@ -335,7 +336,7 @@ public abstract class NetworkOfferingBaseCmd extends BaseCmd {
 
     public Boolean getEgressDefaultPolicy() {
         if (egressDefaultPolicy == null) {
-            return true;
+            return NetworkService.DefaultEgressPolicyForIsolatedNetworksAllow.value();
         }
         return egressDefaultPolicy;
     }
