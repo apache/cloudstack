@@ -64,6 +64,7 @@ import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterUserKeyCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.cloudstack.api.response.UserTwoFactorAuthenticationSetupResponse;
+import org.apache.cloudstack.api.response.UserTwoFactorAuthenticationBackupCodesResponse;
 import org.apache.cloudstack.auth.UserAuthenticator;
 import org.apache.cloudstack.auth.UserAuthenticator.ActionOnFailedAuthentication;
 import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
@@ -90,6 +91,7 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.auth.SetupUserTwoFactorAuthenticationCmd;
+import com.cloud.api.auth.GenerateUserTwoFactorAuthenticationBackupCodesCmd;
 import com.cloud.api.query.vo.ControlledViewEntity;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -3651,9 +3653,36 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             UserDetailVO userDetailVO = _userDetailsDao.findDetail(userAccountId, UserDetailVO.Setup2FADetail);
             if (userDetailVO != null && userDetailVO.getValue().equals(UserAccountVO.Setup2FAstatus.ENABLED.name())) {
                 disableTwoFactorAuthentication(userAccountId, caller, owner);
+                throw e;
             }
-            throw e;
+            // A provider code did not match. For an already-verified user, allow a one-time
+            // backup (recovery) code as an alternative. This is provider-agnostic and only
+            // applies to real logins, never to the initial setup verification above.
+            if (!consumeTwoFactorBackupCode(userAccountId, code)) {
+                throw e;
+            }
         }
+    }
+
+    /**
+     * Attempts to consume a one-time 2FA backup code for the user. Returns true if the code
+     * matched an unused backup code (which is then removed); false otherwise. Codes are stored
+     * hashed (see {@link TwoFactorAuthenticationBackupCodes}).
+     */
+    protected boolean consumeTwoFactorBackupCode(Long userAccountId, String code) {
+        UserDetailVO backupCodesDetail = _userDetailsDao.findDetail(userAccountId, UserDetailVO.Backup2FACodesDetail);
+        if (backupCodesDetail == null || StringUtils.isEmpty(backupCodesDetail.getValue())) {
+            return false;
+        }
+        String remaining = TwoFactorAuthenticationBackupCodes.consume(code, backupCodesDetail.getValue());
+        if (remaining == null) {
+            return false;
+        }
+        backupCodesDetail.setValue(remaining);
+        _userDetailsDao.update(backupCodesDetail.getId(), backupCodesDetail);
+        logger.info(String.format("A two-factor backup code was used for user account %d; %d backup code(s) remain",
+                userAccountId, TwoFactorAuthenticationBackupCodes.remainingCount(remaining)));
+        return true;
     }
 
     @Override
@@ -3738,11 +3767,44 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         user.setUser2faEnabled(false);
         _userDao.update(userVO.getId(), user);
         _userDetailsDao.removeDetail(userId, UserDetailVO.Setup2FADetail);
+        _userDetailsDao.removeDetail(userId, UserDetailVO.Backup2FACodesDetail);
 
         UserTwoFactorAuthenticationSetupResponse response = new UserTwoFactorAuthenticationSetupResponse();
         response.setId(userVO.getUuid());
         response.setUsername(userVO.getUsername());
 
+        return response;
+    }
+
+    @Override
+    public UserTwoFactorAuthenticationBackupCodesResponse generateUserTwoFactorAuthenticationBackupCodes(GenerateUserTwoFactorAuthenticationBackupCodesCmd cmd) {
+        Account caller = CallContext.current().getCallingAccount();
+        Account owner = _accountService.getActiveAccountById(caller.getId());
+        checkAccess(caller, null, true, owner);
+
+        Long userId = CallContext.current().getCallingUserId();
+        UserAccountVO userAccount = userAccountDao.findById(userId);
+        UserVO userVO = _userDao.findById(userId);
+        if (!userAccount.isUser2faEnabled()) {
+            throw new CloudRuntimeException(String.format("Two factor authentication is not enabled for the user %s; enable and verify 2FA before generating backup codes", userAccount.getUsername()));
+        }
+
+        TwoFactorAuthenticationBackupCodes.GeneratedCodes generated =
+                TwoFactorAuthenticationBackupCodes.generate(TwoFactorAuthenticationBackupCodes.DEFAULT_CODE_COUNT);
+
+        // Replace any existing backup codes with the fresh set (regeneration invalidates old ones).
+        UserDetailVO existing = _userDetailsDao.findDetail(userId, UserDetailVO.Backup2FACodesDetail);
+        if (existing != null) {
+            existing.setValue(generated.getStoredValue());
+            _userDetailsDao.update(existing.getId(), existing);
+        } else {
+            _userDetailsDao.persist(new UserDetailVO(userId, UserDetailVO.Backup2FACodesDetail, generated.getStoredValue()));
+        }
+
+        UserTwoFactorAuthenticationBackupCodesResponse response = new UserTwoFactorAuthenticationBackupCodesResponse();
+        response.setId(userVO.getUuid());
+        response.setUsername(userAccount.getUsername());
+        response.setBackupCodes(generated.getPlaintextCodes());
         return response;
     }
 

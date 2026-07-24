@@ -26,11 +26,13 @@ import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.cloudstack.api.response.UserTwoFactorAuthenticationSetupResponse;
+import org.apache.cloudstack.api.response.UserTwoFactorAuthenticationBackupCodesResponse;
 import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
 import com.cloud.api.auth.SetupUserTwoFactorAuthenticationCmd;
+import com.cloud.api.auth.GenerateUserTwoFactorAuthenticationBackupCodesCmd;
 import com.cloud.api.query.vo.ControlledViewEntity;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -197,6 +199,8 @@ public interface AccountManager extends AccountService, Configurable {
     void verifyUsingTwoFactorAuthenticationCode(String code, Long domainId, Long userAccountId);
 
     UserTwoFactorAuthenticationSetupResponse setupUserTwoFactorAuthentication(SetupUserTwoFactorAuthenticationCmd cmd);
+
+    UserTwoFactorAuthenticationBackupCodesResponse generateUserTwoFactorAuthenticationBackupCodes(GenerateUserTwoFactorAuthenticationBackupCodesCmd cmd);
 
     List<String> getApiNameList();
 
