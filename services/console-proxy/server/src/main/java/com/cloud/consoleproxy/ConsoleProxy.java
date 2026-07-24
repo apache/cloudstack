@@ -26,7 +26,6 @@ import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Properties;
@@ -83,8 +82,10 @@ public class ConsoleProxy {
     static String encryptorPassword = "Dummy";
     static final String[] skipProperties = new String[]{"certificate", "cacertificate", "keystore_password", "privatekey"};
 
-    static Set<String> allowedSessions = new HashSet<>();
+    static Set<String> allowedSessions = ConcurrentHashMap.newKeySet();
+    private static final Object allowedSessionsLock = new Object();
 
+    // Invoked through reflection
     public static void addAllowedSession(String sessionUuid) {
         allowedSessions.add(sessionUuid);
     }
@@ -209,13 +210,15 @@ public class ConsoleProxy {
         }
 
         String sessionUuid = param.getSessionUuid();
-        if (allowedSessions.contains(sessionUuid)) {
-            LOGGER.debug("Acquiring the session " + sessionUuid + " not available for future use");
-            allowedSessions.remove(sessionUuid);
-        } else {
-            LOGGER.info("Session " + sessionUuid + " has already been used, cannot connect");
-            authResult.setSuccess(false);
-            return authResult;
+        synchronized (allowedSessionsLock) {
+            if (allowedSessions.contains(sessionUuid)) {
+                LOGGER.debug("Acquiring the session " + sessionUuid + " not available for future use");
+                allowedSessions.remove(sessionUuid);
+            } else {
+                LOGGER.info("Session " + sessionUuid + " has already been used, cannot connect");
+                authResult.setSuccess(false);
+                return authResult;
+            }
         }
 
         String websocketUrl = param.getWebsocketUrl();
