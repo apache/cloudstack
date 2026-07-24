@@ -1804,4 +1804,50 @@ public class UnmanagedVMsManagerImplTest {
         details.put("key", "not-a-number");
         unmanagedVMsManager.getDetailAsInteger("key", details);
     }
+
+    private UnmanagedInstanceTO.Disk diskWithImagePath(String imagePath) {
+        UnmanagedInstanceTO.Disk disk = new UnmanagedInstanceTO.Disk();
+        disk.setImagePath(imagePath);
+        return disk;
+    }
+
+    @Test
+    public void testExtractConvertedPoolDiskPosition() {
+        String uuid = "4ee0d2a1-080d-4377-b209-9f3479678dcc";
+        Assert.assertEquals(Integer.valueOf(0), unmanagedVMsManager.extractConvertedPoolDiskPosition("pr13656/" + uuid + "-disk-000"));
+        Assert.assertEquals(Integer.valueOf(1), unmanagedVMsManager.extractConvertedPoolDiskPosition("pr13656/" + uuid + "-disk-001"));
+        Assert.assertEquals(Integer.valueOf(2), unmanagedVMsManager.extractConvertedPoolDiskPosition("linstorpool/" + uuid + "-d02"));
+        // OVF-converted images carry no position -> null (falls back to index pairing)
+        Assert.assertNull(unmanagedVMsManager.extractConvertedPoolDiskPosition("/mnt/nfs/" + uuid + "-sda"));
+        Assert.assertNull(unmanagedVMsManager.extractConvertedPoolDiskPosition(null));
+    }
+
+    @Test
+    public void testResolveConvertedToSourceDiskIndexesRbdReversedDomainOrder() {
+        // Converted disks discovered from the finalized domain in reversed order: [disk-001, disk-000]
+        java.util.List<UnmanagedInstanceTO.Disk> converted = java.util.List.of(
+                diskWithImagePath("pr13656/uuid-disk-001"),
+                diskWithImagePath("pr13656/uuid-disk-000"));
+        int[] idx = unmanagedVMsManager.resolveConvertedToSourceDiskIndexes(converted, 2);
+        // converted[0]=disk-001 -> source idx 1 (data); converted[1]=disk-000 -> source idx 0 (root)
+        Assert.assertArrayEquals(new int[]{1, 0}, idx);
+    }
+
+    @Test
+    public void testResolveConvertedToSourceDiskIndexesOvfFallsBackToIndex() {
+        java.util.List<UnmanagedInstanceTO.Disk> converted = java.util.List.of(
+                diskWithImagePath("/mnt/nfs/uuid-sda"),
+                diskWithImagePath("/mnt/nfs/uuid-sdb"));
+        int[] idx = unmanagedVMsManager.resolveConvertedToSourceDiskIndexes(converted, 2);
+        Assert.assertArrayEquals(new int[]{0, 1}, idx);
+    }
+
+    @Test
+    public void testResolveConvertedToSourceDiskIndexesInSourceOrder() {
+        java.util.List<UnmanagedInstanceTO.Disk> converted = java.util.List.of(
+                diskWithImagePath("pr13656/uuid-disk-000"),
+                diskWithImagePath("pr13656/uuid-disk-001"));
+        int[] idx = unmanagedVMsManager.resolveConvertedToSourceDiskIndexes(converted, 2);
+        Assert.assertArrayEquals(new int[]{0, 1}, idx);
+    }
 }

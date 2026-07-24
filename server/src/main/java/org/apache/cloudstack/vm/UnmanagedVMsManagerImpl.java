@@ -190,6 +190,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -2056,6 +2058,52 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
     }
 
+    // Matches the creation position embedded in a direct-to-pool converted disk image name:
+    // RBD "<uuid>-disk-NNN" (see buildRbdImageName) and Linstor "<uuid>-dNN" (see buildLinstorDiskName).
+    private static final Pattern CONVERTED_POOL_DISK_POSITION_PATTERN = Pattern.compile("-(?:disk-|d)(\\d+)");
+
+    /**
+     * Extracts the creation position encoded in a direct-to-pool converted disk's image path, or
+     * {@code null} when the path carries no such position (e.g. OVF-converted qcow2 images). When a
+     * path contains multiple candidate matches, the last one wins so that digits inside the conversion
+     * UUID are not mistaken for the position.
+     */
+    protected Integer extractConvertedPoolDiskPosition(String imagePath) {
+        if (StringUtils.isBlank(imagePath)) {
+            return null;
+        }
+        Matcher matcher = CONVERTED_POOL_DISK_POSITION_PATTERN.matcher(imagePath);
+        Integer position = null;
+        while (matcher.find()) {
+            position = Integer.parseInt(matcher.group(1));
+        }
+        return position;
+    }
+
+    /**
+     * Resolves, for each converted disk, the index of the source VMware disk whose ID it should adopt.
+     * Direct-to-pool (RBD/Linstor) converted disks are matched to source disks by the creation position
+     * embedded in their image name; this is used only when every converted disk yields a distinct, valid
+     * position for the given source disk count. Otherwise (OVF path) it falls back to list-index pairing.
+     */
+    protected int[] resolveConvertedToSourceDiskIndexes(List<UnmanagedInstanceTO.Disk> convertedDisks, int sourceDiskCount) {
+        int[] indexes = new int[convertedDisks.size()];
+        Integer[] positions = new Integer[convertedDisks.size()];
+        boolean usePositions = convertedDisks.size() == sourceDiskCount;
+        Set<Integer> seenPositions = new HashSet<>();
+        for (int i = 0; i < convertedDisks.size(); i++) {
+            Integer position = extractConvertedPoolDiskPosition(convertedDisks.get(i).getImagePath());
+            positions[i] = position;
+            if (position == null || position < 0 || position >= sourceDiskCount || !seenPositions.add(position)) {
+                usePositions = false;
+            }
+        }
+        for (int i = 0; i < convertedDisks.size(); i++) {
+            indexes[i] = usePositions ? positions[i] : i;
+        }
+        return indexes;
+    }
+
     private void sanitizeConvertedInstance(UnmanagedInstanceTO convertedInstance, UnmanagedInstanceTO sourceVMwareInstance) {
         convertedInstance.setCpuCores(sourceVMwareInstance.getCpuCores());
         convertedInstance.setCpuSpeed(sourceVMwareInstance.getCpuSpeed());
@@ -2064,9 +2112,17 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         convertedInstance.setPowerState(UnmanagedInstanceTO.PowerState.PowerOff);
         List<UnmanagedInstanceTO.Disk> convertedInstanceDisks = convertedInstance.getDisks();
         List<UnmanagedInstanceTO.Disk> sourceVMwareInstanceDisks = sourceVMwareInstance.getDisks();
+        // The source disk IDs (which drive the root-vs-data classification during import) must be
+        // copied onto the matching converted disk. Direct-to-pool conversions (RBD/Linstor) discover
+        // the converted disks from the finalized libvirt domain, whose device order (vda, vdb, ...) need
+        // not match the source disk order, so pairing purely by list index would swap root and data on
+        // multi-disk imports. Their image names embed the creation position (<uuid>-disk-NNN for RBD,
+        // <uuid>-dNN for Linstor), which follows the source order, so pair by that position when present
+        // and fall back to index pairing for OVF conversions (whose image names carry no such position).
+        int[] sourceIndexForConvertedDisk = resolveConvertedToSourceDiskIndexes(convertedInstanceDisks, sourceVMwareInstanceDisks.size());
         for (int i = 0; i < convertedInstanceDisks.size(); i++) {
             UnmanagedInstanceTO.Disk disk = convertedInstanceDisks.get(i);
-            disk.setDiskId(sourceVMwareInstanceDisks.get(i).getDiskId());
+            disk.setDiskId(sourceVMwareInstanceDisks.get(sourceIndexForConvertedDisk[i]).getDiskId());
         }
         List<UnmanagedInstanceTO.Nic> convertedInstanceNics = convertedInstance.getNics();
         List<UnmanagedInstanceTO.Nic> sourceVMwareInstanceNics = sourceVMwareInstance.getNics();
