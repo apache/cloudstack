@@ -105,6 +105,18 @@ public class DomainResponse extends BaseResponseWithAnnotations implements Resou
     @SerializedName("snapshotavailable") @Param(description = "The total number of Snapshots available for this domain")
     private String snapshotAvailable;
 
+    @SerializedName(ApiConstants.INSTANCE_SNAPSHOT_LIMIT)
+    @Param(description = "the number of Instance snapshots that can be stored by this domain")
+    private String vmSnapshotLimit;
+
+    @SerializedName(ApiConstants.INSTANCE_SNAPSHOT_TOTAL)
+    @Param(description = "the number of Instance snapshots stored by this domain")
+    private Long vmSnapshotTotal;
+
+    @SerializedName(ApiConstants.INSTANCE_SNAPSHOT_AVAILABLE)
+    @Param(description = "the number of Instance snapshots available for this domain")
+    private String vmSnapshotAvailable;
+
     @SerializedName("templatelimit") @Param(description = "The total number of Templates which can be created by this domain")
     private String templateLimit;
 
@@ -311,6 +323,21 @@ public class DomainResponse extends BaseResponseWithAnnotations implements Resou
     @Override
     public void setSnapshotAvailable(String snapshotAvailable) {
         this.snapshotAvailable = snapshotAvailable;
+    }
+
+    @Override
+    public void setVmSnapshotLimit(String vmSnapshotLimit) {
+        this.vmSnapshotLimit = vmSnapshotLimit;
+    }
+
+    @Override
+    public void setVmSnapshotTotal(Long vmSnapshotTotal) {
+        this.vmSnapshotTotal = vmSnapshotTotal;
+    }
+
+    @Override
+    public void setVmSnapshotAvailable(String vmSnapshotAvailable) {
+        this.vmSnapshotAvailable = vmSnapshotAvailable;
     }
 
     @Override
