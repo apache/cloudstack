@@ -1285,6 +1285,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
      * can be enabled/disabled independently.</p>
      */
     class VmStatsCleaner extends ManagedContextRunnable{
+        @Override
         protected void runInContext() {
             try {
                 cleanUpVirtualMachineStats();
@@ -1295,6 +1296,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     }
 
     class VolumeStatsCleaner extends ManagedContextRunnable{
+        @Override
         protected void runInContext() {
             try {
                 cleanUpVolumeStats();

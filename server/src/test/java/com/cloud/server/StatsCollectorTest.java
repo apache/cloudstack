@@ -359,7 +359,7 @@ public class StatsCollectorTest {
     }
 
     @Test
-    public void vmStatsCleanerTestCatchesCloudRuntimeExceptionAndKeepsRunning() {
+    public void vmStatsCleanerTestCatchesRuntimeExceptionAndKeepsRunning() {
         Mockito.doThrow(new CloudRuntimeException("Communications link failure")).when(statsCollector).cleanUpVirtualMachineStats();
         StatsCollector.VmStatsCleaner vmStatsCleaner = statsCollector.new VmStatsCleaner();
 
