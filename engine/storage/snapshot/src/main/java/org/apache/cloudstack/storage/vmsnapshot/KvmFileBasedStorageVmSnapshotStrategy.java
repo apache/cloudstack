@@ -18,6 +18,40 @@
  */
 package org.apache.cloudstack.storage.vmsnapshot;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import javax.inject.Inject;
+
+import org.apache.cloudstack.backup.BackupManagerImpl;
+import org.apache.cloudstack.backup.BackupOfferingVO;
+import org.apache.cloudstack.backup.InternalBackupService;
+import org.apache.cloudstack.backup.InternalBackupStoragePoolVO;
+import org.apache.cloudstack.backup.dao.BackupOfferingDao;
+import org.apache.cloudstack.backup.dao.InternalBackupStoragePoolDao;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
+import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotOptions;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.snapshot.SnapshotObject;
+import org.apache.cloudstack.storage.to.BackupDeltaTO;
+import org.apache.cloudstack.storage.to.DeltaMergeTreeTO;
+import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.commons.collections.CollectionUtils;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.VMSnapshotTO;
 import com.cloud.agent.api.storage.CreateDiskOnlyVmSnapshotAnswer;
@@ -49,40 +83,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
 import com.cloud.vm.snapshot.VMSnapshotVO;
-import org.apache.cloudstack.backup.BackupManagerImpl;
-import org.apache.cloudstack.backup.BackupOfferingVO;
-import org.apache.cloudstack.backup.InternalBackupJoinVO;
-import org.apache.cloudstack.backup.InternalBackupService;
-import org.apache.cloudstack.backup.InternalBackupStoragePoolVO;
-import org.apache.cloudstack.backup.dao.BackupOfferingDao;
-import org.apache.cloudstack.backup.dao.InternalBackupJoinDao;
-import org.apache.cloudstack.backup.dao.InternalBackupStoragePoolDao;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
-import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotOptions;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.storage.snapshot.SnapshotObject;
-import org.apache.cloudstack.storage.to.BackupDeltaTO;
-import org.apache.cloudstack.storage.to.DeltaMergeTreeTO;
-import org.apache.cloudstack.storage.to.SnapshotObjectTO;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.commons.collections.CollectionUtils;
-
-import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Objects;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStrategy {
 
@@ -106,8 +106,6 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
     @Inject
     private SnapshotDao snapshotDao;
 
-    @Inject
-    private InternalBackupJoinDao internalBackupJoinDao;
 
     @Override
     public VMSnapshot takeVMSnapshot(VMSnapshot vmSnapshot) {
@@ -153,7 +151,7 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
 
         List<SnapshotVO> volumeSnapshotVos = new ArrayList<>();
         if (isCurrent && numberOfChildren == 0) {
-            volumeSnapshotVos = mergeSucceedingDeltaOnSnapshot(vmSnapshotBeingDeleted, userVm, hostId, volumeTOs);
+            volumeSnapshotVos = mergeCurrentDeltaOnSnapshot(vmSnapshotBeingDeleted, userVm, hostId, volumeTOs);
         } else if (numberOfChildren == 0) {
             logger.debug("Deleting VM snapshot [{}] as no snapshots/volumes depend on it.", vmSnapshot.getUuid());
             volumeSnapshotVos = deleteSnapshot(vmSnapshotBeingDeleted, hostId);
@@ -278,7 +276,7 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
         List<SnapshotVO> snapshotVos;
 
         if (oldParent.getCurrent()) {
-            snapshotVos = mergeSucceedingDeltaOnSnapshot(oldParent, userVm, hostId, volumeTOs);
+            snapshotVos = mergeCurrentDeltaOnSnapshot(oldParent, userVm, hostId, volumeTOs);
         } else {
             List<VMSnapshotVO> oldSiblings = vmSnapshotDao.listByParentAndStateIn(oldParent.getId(), VMSnapshot.State.Ready, VMSnapshot.State.Hidden);
 
@@ -426,7 +424,7 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
             SnapshotObjectTO parentTO = (SnapshotObjectTO) deltaMergeTreeTO.getParent();
 
             if (childTO instanceof BackupDeltaTO) {
-                InternalBackupStoragePoolVO backupDelta = internalBackupStoragePoolDao.findOneByVolumeIdAndBackupId(parentTO.getVolume().getVolumeId(), childTO.getId());
+                InternalBackupStoragePoolVO backupDelta = internalBackupStoragePoolDao.findOneByVolumeId(parentTO.getVolume().getVolumeId());
                 backupDelta.setBackupDeltaParentPath(parentTO.getPath());
                 logger.debug("The child was also a KBOSS backup delta, will update the backup delta metadata. Updating backupDeltaParentPath of backupDelta [{}] to [{}].", backupDelta.getId(), parentTO.getPath());
                 internalBackupStoragePoolDao.update(backupDelta.getId(), backupDelta);
@@ -447,27 +445,26 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
         return snapshotVOList;
     }
 
-    private List<SnapshotVO> mergeSucceedingDeltaOnSnapshot(VMSnapshotVO vmSnapshotVo, UserVmVO userVmVO, Long hostId, List<VolumeObjectTO> volumeObjectTOS) {
-        logger.debug(String.format("Merging VM snapshot [%s] with the succeeding delta.", vmSnapshotVo.getUuid()));
+    private List<SnapshotVO> mergeCurrentDeltaOnSnapshot(VMSnapshotVO vmSnapshotVo, UserVmVO userVmVO, Long hostId, List<VolumeObjectTO> volumeObjectTOS) {
+        logger.debug("Merging VM snapshot [{}] with the current volume delta.", vmSnapshotVo.getUuid());
         List<DeltaMergeTreeTO> deltaMergeTreeTOs = new ArrayList<>();
         List<SnapshotDataStoreVO> volumeSnapshots = vmSnapshotHelper.getVolumeSnapshotsAssociatedWithKvmDiskOnlyVmSnapshot(vmSnapshotVo.getId());
-        Map<Long, InternalBackupJoinVO> volumeIdAndSucceedingBackupMap = getVolumeIdAndSucceedingBackupMap(vmSnapshotVo);
 
         for (VolumeObjectTO volumeObjectTO : volumeObjectTOS) {
-            Long volumeId = volumeObjectTO.getId();
-            SnapshotDataStoreVO volumeParentSnapshot = volumeSnapshots.stream().filter(snapshot -> Objects.equals(snapshot.getVolumeId(), volumeId))
+            SnapshotDataStoreVO volumeParentSnapshot = volumeSnapshots.stream().filter(snapshot -> Objects.equals(snapshot.getVolumeId(), volumeObjectTO.getId()))
                     .findFirst()
                     .orElseThrow(() -> new CloudRuntimeException(String.format("Failed to find volume snapshot for volume [%s].", volumeObjectTO.getUuid())));
             DataTO parentSnapshot = snapshotDataFactory.getSnapshot(volumeParentSnapshot.getSnapshotId(), volumeParentSnapshot.getDataStoreId(), DataStoreRole.Primary).getTO();
 
-            if (volumeIdAndSucceedingBackupMap.containsKey(volumeId)) {
-                InternalBackupJoinVO succeedingBackup = volumeIdAndSucceedingBackupMap.get(volumeId);
-                logger.debug("The succeeding delta is also a KNIB backup delta. Will merge the snapshot delta of volume [{}] with the parent backup delta at [{}].",
-                        volumeObjectTO.getUuid(), succeedingBackup.getStoragePoolParentPath());
-                BackupDeltaTO childTo =  new BackupDeltaTO(succeedingBackup.getId(), volumeObjectTO.getDataStore(), Hypervisor.HypervisorType.KVM, succeedingBackup.getStoragePoolParentPath());
+            InternalBackupStoragePoolVO backupDelta = internalBackupStoragePoolDao.findOneByVolumeId(volumeObjectTO.getVolumeId());
+
+            if (backupDelta != null && backupDelta.getBackupDeltaPath().equals(volumeObjectTO.getPath())) {
+                logger.debug("The current volume delta is also a KBOSS backup delta. Will merge the snapshot delta of volume [{}] with the parent backup delta at [{}].",
+                        volumeObjectTO.getUuid(), backupDelta.getBackupDeltaParentPath());
+                BackupDeltaTO childTo =  new BackupDeltaTO(volumeObjectTO.getDataStore(), Hypervisor.HypervisorType.KVM, backupDelta.getBackupDeltaParentPath());
                 ArrayList<DataTO> grandChildren = new ArrayList<>();
                 if (userVmVO.getState().equals(VirtualMachine.State.Stopped)) {
-                    grandChildren.add(new BackupDeltaTO(volumeObjectTO.getDataStore(), Hypervisor.HypervisorType.KVM, succeedingBackup.getStoragePoolDeltaPath()));
+                    grandChildren.add(new BackupDeltaTO(volumeObjectTO.getDataStore(), Hypervisor.HypervisorType.KVM, backupDelta.getBackupDeltaPath()));
                 }
                 deltaMergeTreeTOs.add(new DeltaMergeTreeTO(volumeObjectTO, parentSnapshot, childTo, grandChildren));
             } else {
@@ -491,7 +488,7 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
 
             if (dataTO instanceof BackupDeltaTO) {
                 logger.debug("The child of deltaMergeTree [{}] is a backupDeltaTO, thus, we will update the backup delta metadata.", deltaMergeTreeTO);
-                InternalBackupStoragePoolVO backupDelta = internalBackupStoragePoolDao.findOneByVolumeIdAndBackupId(parentTO.getVolume().getVolumeId(), dataTO.getId());
+                InternalBackupStoragePoolVO backupDelta = internalBackupStoragePoolDao.findOneByVolumeId(parentTO.getVolume().getVolumeId());
                 backupDelta.setBackupDeltaParentPath(parentTO.getPath());
                 internalBackupStoragePoolDao.update(backupDelta.getId(), backupDelta);
             } else {
@@ -655,7 +652,6 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
         List<SnapshotDataStoreVO> parentVolumeSnapshots = vmSnapshotHelper.getVolumeSnapshotsAssociatedWithKvmDiskOnlyVmSnapshot(parent.getId());
         List<SnapshotDataStoreVO> childVolumeSnapshots = vmSnapshotHelper.getVolumeSnapshotsAssociatedWithKvmDiskOnlyVmSnapshot(child.getId());
         List<SnapshotDataStoreVO> grandChildrenVolumeSnapshots = new ArrayList<>();
-        Map<Long, InternalBackupJoinVO> volumeIdAndSucceedingBackupMap = getVolumeIdAndSucceedingBackupMap(parent);
 
         for (VMSnapshotVO grandChild : grandChildren) {
             grandChildrenVolumeSnapshots.addAll(vmSnapshotHelper.getVolumeSnapshotsAssociatedWithKvmDiskOnlyVmSnapshot(grandChild.getId()));
@@ -664,14 +660,14 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
         for (SnapshotDataStoreVO parentSnapshotDataStoreVO : parentVolumeSnapshots) {
             SnapshotObjectTO parentTO = (SnapshotObjectTO) snapshotDataFactory.getSnapshot(parentSnapshotDataStoreVO.getSnapshotId(), parentSnapshotDataStoreVO.getDataStoreId(), DataStoreRole.Primary).getTO();
             VolumeObjectTO volumeObjectTO = parentTO.getVolume();
-            InternalBackupJoinVO succeedingBackup = volumeIdAndSucceedingBackupMap.get(volumeObjectTO.getId());
 
             SnapshotDataStoreVO childVO = childVolumeSnapshots.stream()
                     .filter(childSnapshot -> Objects.equals(parentSnapshotDataStoreVO.getVolumeId(), childSnapshot.getVolumeId()))
                     .findFirst().orElseThrow(() -> new CloudRuntimeException(String.format("Could not find child snapshot of parent [%s].", parentSnapshotDataStoreVO.getSnapshotId())));
 
+            InternalBackupStoragePoolVO backupDelta = internalBackupStoragePoolDao.findOneByVolumeId(childVO.getVolumeId());
             List<DataTO> grandChildrenTOList = new ArrayList<>();
-            DataTO childTO = getChildAndGrandChildren(child, stoppedVm, parentSnapshotDataStoreVO, succeedingBackup, childVO, volumeObjectTO, grandChildrenTOList,
+            DataTO childTO = getChildAndGrandChildren(child, stoppedVm, parentSnapshotDataStoreVO, backupDelta, childVO, volumeObjectTO, grandChildrenTOList,
                     grandChildrenVolumeSnapshots);
 
             snapshotMergeTrees.add(new DeltaMergeTreeTO(volumeObjectTO, parentTO, childTO, grandChildrenTOList));
@@ -684,16 +680,16 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
     /**
      * Gets the correct children and grandchildren, taking KBOSS backups into account.
      * */
-    private DataTO getChildAndGrandChildren(VMSnapshotVO childSnapshot, boolean stoppedVm, SnapshotDataStoreVO parentSnapshotDataStoreVO, InternalBackupJoinVO childBackup,
+    private DataTO getChildAndGrandChildren(VMSnapshotVO child, boolean stoppedVm, SnapshotDataStoreVO parentSnapshotDataStoreVO, InternalBackupStoragePoolVO backupDelta,
             SnapshotDataStoreVO childVO, VolumeObjectTO volumeObjectTO, List<DataTO> grandChildrenTOList, List<SnapshotDataStoreVO> grandChildrenVolumeSnapshots) {
 
         DataTO childTO;
-        if (childBackup != null && childBackup.getDate().before(childSnapshot.getCreated())) {
+        if (backupDelta != null && backupDelta.getBackupDeltaPath().equals(childVO.getInstallPath())) {
             logger.debug("The child snapshot delta is also a backup delta. We will set the backup delta parent path [{}] as the child and the backup delta path [{}] " +
-                    "as the grand-child.", parentSnapshotDataStoreVO.getInstallPath(), childBackup.getStoragePoolDeltaPath());
-            childTO = new BackupDeltaTO(childBackup.getId(), volumeObjectTO.getDataStore(), Hypervisor.HypervisorType.KVM, childBackup.getStoragePoolParentPath());
-            if (stoppedVm) {
-                grandChildrenTOList.add(new BackupDeltaTO(volumeObjectTO.getDataStore(), Hypervisor.HypervisorType.KVM, childBackup.getStoragePoolDeltaPath()));
+                    "as the grand-child.", backupDelta.getBackupDeltaParentPath(), backupDelta.getBackupDeltaPath());
+            childTO = new BackupDeltaTO(volumeObjectTO.getDataStore(), Hypervisor.HypervisorType.KVM, backupDelta.getBackupDeltaParentPath());
+            if (!child.getCurrent() && stoppedVm) {
+                grandChildrenTOList.add(new BackupDeltaTO(volumeObjectTO.getDataStore(), Hypervisor.HypervisorType.KVM, backupDelta.getBackupDeltaPath()));
             }
         } else {
             childTO = snapshotDataFactory.getSnapshot(childVO.getSnapshotId(), childVO.getDataStoreId(), DataStoreRole.Primary).getTO();
@@ -703,7 +699,7 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
                     .collect(Collectors.toList()));
         }
 
-        if (childSnapshot.getCurrent() && stoppedVm && grandChildrenTOList.isEmpty()) {
+        if (child.getCurrent() && stoppedVm) {
             grandChildrenTOList.add(volumeObjectTO);
         }
 
@@ -761,27 +757,5 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
             logger.error(msg, e);
             throw new CloudRuntimeException(msg, e);
         }
-    }
-
-
-    private Map<Long, InternalBackupJoinVO> getVolumeIdAndSucceedingBackupMap(VMSnapshotVO vmSnapshotVO) {
-        Map<Long, InternalBackupJoinVO> volumeIdAndSucceedingBackupMap = new HashMap<>();
-        if (vmSnapshotVO == null) {
-            return volumeIdAndSucceedingBackupMap;
-        }
-
-        List<InternalBackupJoinVO> currents = internalBackupJoinDao.listCurrents(vmSnapshotVO.getVmId(), false)
-                .stream().filter(internalBackupJoinVO -> internalBackupJoinVO.getDate().after(vmSnapshotVO.getCreated())).collect(Collectors.toList());
-        if (currents.isEmpty()) {
-            logger.debug("No backups created after the VM snapshot [{}] were found, returning.", vmSnapshotVO.getUuid());
-            return volumeIdAndSucceedingBackupMap;
-        }
-
-        InternalBackupJoinVO succeedingBackup = currents.get(0);
-        volumeIdAndSucceedingBackupMap = currents.stream().filter(b -> succeedingBackup.getId() == b.getId())
-                .collect(Collectors.toMap(InternalBackupJoinVO::getVolumeId, internalBackupJoinVO -> internalBackupJoinVO));
-        logger.debug("Found the following backups that succeeds the VM snapshot [{}]: [{}].", vmSnapshotVO.getUuid(), volumeIdAndSucceedingBackupMap.values());
-
-        return volumeIdAndSucceedingBackupMap;
     }
 }

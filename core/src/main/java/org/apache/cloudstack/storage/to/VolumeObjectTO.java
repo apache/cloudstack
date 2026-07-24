@@ -81,7 +81,6 @@ public class VolumeObjectTO extends DownloadableObjectTO implements DataTO, Seri
     private String encryptFormat;
     private List<String> checkpointPaths;
     private Set<String> checkpointImageStoreUrls;
-    private Set<String> deltasToRemove;
 
     public VolumeObjectTO() {
 
@@ -425,13 +424,5 @@ public class VolumeObjectTO extends DownloadableObjectTO implements DataTO, Seri
 
     public void setCheckpointImageStoreUrls(Set<String> checkpointImageStoreUrls) {
         this.checkpointImageStoreUrls = checkpointImageStoreUrls;
-    }
-
-    public Set<String> getDeltasToRemove() {
-        return deltasToRemove;
-    }
-
-    public void setDeltasToRemove(Set<String> deltasToRemove) {
-        this.deltasToRemove = deltasToRemove;
     }
 }
