@@ -26,7 +26,11 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.object.datastore.ObjectStoreProviderManager;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.storage.image.datastore.ImageStoreProviderManager;
@@ -37,12 +41,16 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class DataStoreManagerImpl implements DataStoreManager {
+    protected Logger logger = LogManager.getLogger(DataStoreManagerImpl.class);
+
     @Inject
     PrimaryDataStoreProviderManager primaryStoreMgr;
     @Inject
     ImageStoreProviderManager imageDataStoreMgr;
     @Inject
     ObjectStoreProviderManager objectStoreProviderMgr;
+    @Inject
+    ImageStoreDao imageStoreDao;
 
     @Override
     public DataStore getDataStore(long storeId, DataStoreRole role) {
@@ -198,5 +206,19 @@ public class DataStoreManagerImpl implements DataStoreManager {
             }
         } catch (CloudRuntimeException ignored) {}
         return null;
+    }
+
+    @Override
+    public boolean isRemovedOrReadonly(DataStore store) {
+        ImageStoreVO storeVO = imageStoreDao.findById(store.getId());
+        if (storeVO  == null) {
+            logger.debug("Could not find image store with id [{}], skipping it.", store.getId());
+            return true;
+        }
+        if (storeVO.isReadonly()) {
+            logger.debug("Image store [{}] is read-only, skipping it.", storeVO);
+            return true;
+        }
+        return false;
     }
 }
