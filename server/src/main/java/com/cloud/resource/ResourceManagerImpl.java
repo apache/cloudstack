@@ -1726,6 +1726,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         logger.debug("Host {} entering in PrepareForMaintenanceWithErrors state", host);
         configureVncAccessForKVMHostFailedMigrations(host, errorVms);
         resourceStateTransitTo(host, ResourceState.Event.UnableToMigrate, _nodeId);
+        ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), CallContext.current().getCallingAccountId(),
+                EventVO.LEVEL_ERROR, EventTypes.EVENT_MAINTENANCE_PREPARE_ERROR,
+                String.format("failed to prepare host %s for maintenance due to migration or VM state errors", host), host.getId(), null, 0);
         return false;
     }
 

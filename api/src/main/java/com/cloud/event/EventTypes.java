@@ -458,6 +458,7 @@ public class EventTypes {
     public static final String EVENT_MAINTENANCE_CANCEL = "MAINT.CANCEL";
     public static final String EVENT_MAINTENANCE_CANCEL_PRIMARY_STORAGE = "MAINT.CANCEL.PS";
     public static final String EVENT_MAINTENANCE_PREPARE = "MAINT.PREPARE";
+    public static final String EVENT_MAINTENANCE_PREPARE_ERROR = "MAINT.PREPARE.ERROR";
     public static final String EVENT_MAINTENANCE_PREPARE_PRIMARY_STORAGE = "MAINT.PREPARE.PS";
 
     // Primary storage pool
@@ -1046,6 +1047,7 @@ public class EventTypes {
         entityEventDetails.put(EVENT_MAINTENANCE_CANCEL, Host.class);
         entityEventDetails.put(EVENT_MAINTENANCE_CANCEL_PRIMARY_STORAGE, Host.class);
         entityEventDetails.put(EVENT_MAINTENANCE_PREPARE, Host.class);
+        entityEventDetails.put(EVENT_MAINTENANCE_PREPARE_ERROR, Host.class);
         entityEventDetails.put(EVENT_MAINTENANCE_PREPARE_PRIMARY_STORAGE, Host.class);
 
         // Primary storage pool
