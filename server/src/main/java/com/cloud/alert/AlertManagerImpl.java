@@ -161,6 +161,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
 
     private final ExecutorService _executor;
 
+    private ExecutorService _capacityExecutorService;
+
     protected SMTPMailSender mailSender;
     protected String[] recipients = null;
     protected String senderAddress = null;
@@ -249,6 +251,9 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     @Override
     public boolean stop() {
         _timer.cancel();
+        if (_capacityExecutorService != null) {
+            _capacityExecutorService.shutdown();
+        }
         return true;
     }
 
@@ -282,6 +287,24 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     }
 
     /**
+     * Shared, long-lived pool for capacity recalculation, reused across every
+     * recalculateHostCapacities()/recalculateStorageCapacities() call instead of creating and
+     * tearing down a new thread pool per invocation. Repeatedly creating/shutting down pools was
+     * unnecessary overhead under frequent callers (e.g. the Prometheus exporter used to trigger a
+     * full recalculation on every scrape, see https://github.com/apache/cloudstack/issues/13586).
+     * Lazily created so this remains safe for callers that invoke the recalculate methods directly
+     * without going through configure()/start() (e.g. unit tests).
+     */
+    private synchronized ExecutorService getCapacityExecutorService() {
+        if (_capacityExecutorService == null || _capacityExecutorService.isShutdown()) {
+            _capacityExecutorService = Executors.newFixedThreadPool(
+                    Math.max(1, CapacityManager.CapacityCalculateWorkers.value()),
+                    new NamedThreadFactory("Capacity-Calculator"));
+        }
+        return _capacityExecutorService;
+    }
+
+    /**
      * Recalculates the capacities of hosts, including CPU and RAM.
      */
     protected void recalculateHostCapacities() {
@@ -290,10 +313,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
             return;
         }
         ConcurrentHashMap<Long, Future<Void>> futures = new ConcurrentHashMap<>();
-        ExecutorService executorService = Executors.newFixedThreadPool(Math.max(1,
-                Math.min(CapacityManager.CapacityCalculateWorkers.value(), hostIds.size())));
         for (Long hostId : hostIds) {
-            futures.put(hostId, executorService.submit(() -> {
+            futures.put(hostId, getCapacityExecutorService().submit(() -> {
                 final HostVO host = hostDao.findById(hostId);
                 _capacityMgr.updateCapacityForHost(host);
                 return null;
@@ -307,7 +328,6 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                         entry.getKey(), e.getMessage()), e);
             }
         }
-        executorService.shutdown();
     }
 
     protected void recalculateStorageCapacities() {
@@ -316,10 +336,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
             return;
         }
         ConcurrentHashMap<Long, Future<Void>> futures = new ConcurrentHashMap<>();
-        ExecutorService executorService = Executors.newFixedThreadPool(Math.max(1,
-                Math.min(CapacityManager.CapacityCalculateWorkers.value(), storagePoolIds.size())));
         for (Long poolId: storagePoolIds) {
-            futures.put(poolId, executorService.submit(() -> {
+            futures.put(poolId, getCapacityExecutorService().submit(() -> {
                 Transaction.execute(new TransactionCallbackNoReturn() {
                     @Override
                     public void doInTransactionWithoutResult(TransactionStatus status) {
@@ -343,7 +361,6 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                         entry.getKey(), e.getMessage()), e);
             }
         }
-        executorService.shutdown();
     }
 
     @Override

@@ -32,7 +32,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.commons.lang3.StringUtils;
 
-import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.dao.DomainJoinDao;
 import com.cloud.api.query.dao.StoragePoolJoinDao;
@@ -125,8 +124,6 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
     private ImageStoreDao imageStoreDao;
     @Inject
     private DomainJoinDao domainDao;
-    @Inject
-    private AlertManager alertManager;
     @Inject
     DedicatedResourceDao _dedicatedDao;
     @Inject
@@ -497,7 +494,6 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
             for (final DataCenterVO dc : dcDao.listAll()) {
                 final String zoneName = dc.getName();
                 final String zoneUuid = dc.getUuid();
-                alertManager.recalculateCapacity();
                 addHostMetrics(latestMetricsItems, dc.getId(), zoneName, zoneUuid);
                 addVMMetrics(latestMetricsItems, dc.getId(), zoneName, zoneUuid);
                 addVolumeMetrics(latestMetricsItems, dc.getId(), zoneName, zoneUuid);
