@@ -404,7 +404,7 @@ public class StorageSystemDataMotionStrategyTest {
         volumeMap.put(regularVolume, otherDestPrimary);
         volumeMap.put(directDownloadVolume, destPrimary);
 
-        Assert.assertTrue(strategy.shouldForceFullCloneMigration(volumeMap, destHost));
+        Assert.assertTrue(strategy.shouldForceFullCloneMigration(volumeMap, destHost, new HashMap<>()));
     }
 
     @Test
@@ -424,7 +424,7 @@ public class StorageSystemDataMotionStrategyTest {
         volumeMap.put(skippedDirectDownloadVolume, samePowerFlexStore);
         volumeMap.put(regularVolume, destPrimary);
 
-        Assert.assertFalse(strategy.shouldForceFullCloneMigration(volumeMap, destHost));
+        Assert.assertFalse(strategy.shouldForceFullCloneMigration(volumeMap, destHost, new HashMap<>()));
         Mockito.verify(skippedDirectDownloadVolume, Mockito.never()).isDirectDownload();
     }
 
@@ -439,7 +439,7 @@ public class StorageSystemDataMotionStrategyTest {
         Mockito.when(regularVolume.isDirectDownload()).thenReturn(false);
         volumeMap.put(regularVolume, destPrimary);
 
-        Assert.assertFalse(strategy.shouldForceFullCloneMigration(volumeMap, destHost));
+        Assert.assertFalse(strategy.shouldForceFullCloneMigration(volumeMap, destHost, new HashMap<>()));
     }
 
     private void configurePoolLookup(VolumeInfo volume, DataStore destStore, long sourcePoolId, long destPoolId, StoragePoolType sourcePoolType, StoragePoolType destPoolType) {
