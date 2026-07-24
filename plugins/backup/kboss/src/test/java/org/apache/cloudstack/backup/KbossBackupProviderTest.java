@@ -1692,7 +1692,7 @@ public class KbossBackupProviderTest {
         doReturn(true).when(internalBackupJoinVoMock).getCurrent();
         doReturn(internalBackupJoinVoMock).when(internalBackupJoinDaoMock).findById(anyLong());
         doReturn(List.of()).when(kbossBackupProviderSpy).getBackupJoinChildren(any());
-        doReturn(userVmVOMock).when(userVmDaoMock).findById(anyLong());
+        doReturn(userVmVOMock).when(userVmDaoMock).findByIdIncludingRemoved(anyLong());
         doReturn(true).when(kbossBackupProviderSpy).endBackupChain(any());
         doNothing().when(kbossBackupProviderSpy).validateVmState(any(), any(), any(), any());
 
@@ -1709,7 +1709,7 @@ public class KbossBackupProviderTest {
         InternalBackupJoinVO child = mock(InternalBackupJoinVO.class);
         doReturn(true).when(child).getCurrent();
         doReturn(List.of(child)).when(kbossBackupProviderSpy).getBackupJoinChildren(any());
-        doReturn(userVmVOMock).when(userVmDaoMock).findById(anyLong());
+        doReturn(userVmVOMock).when(userVmDaoMock).findByIdIncludingRemoved(anyLong());
         doReturn(true).when(kbossBackupProviderSpy).endBackupChain(any());
         doNothing().when(kbossBackupProviderSpy).validateVmState(any(), any(), any(), any());
 
