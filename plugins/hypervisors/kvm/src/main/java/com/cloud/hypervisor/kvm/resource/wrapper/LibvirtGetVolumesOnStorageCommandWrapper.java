@@ -128,7 +128,16 @@ public final class LibvirtGetVolumesOnStorageCommandWrapper extends CommandWrapp
         if (StringUtils.isNotBlank(encrypted) && encrypted.equalsIgnoreCase("yes")) {
             volumeOnStorageTO.addDetail(VolumeOnStorageTO.Detail.IS_ENCRYPTED, String.valueOf(Boolean.TRUE));
         }
-        Boolean isLocked = isDiskFileLocked(storagePool, disk);
+        boolean isLocked = isDiskFileLocked(storagePool, disk);
+        if (!isLocked) {
+            // Clustered block storage (Linstor/DRBD): the host-local qemu-img lock cannot see a
+            // volume in use by a running VM on another node — consult the cluster-wide state.
+            String inUseNode = storagePool.getVolumeInUseNode(disk.getName());
+            if (inUseNode != null) {
+                logger.info("Volume {} is in use on node {}; marking as locked", disk.getName(), inUseNode);
+                isLocked = true;
+            }
+        }
         volumeOnStorageTO.addDetail(VolumeOnStorageTO.Detail.IS_LOCKED, String.valueOf(isLocked));
     }
 

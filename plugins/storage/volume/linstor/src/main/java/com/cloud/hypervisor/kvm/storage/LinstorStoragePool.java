@@ -227,6 +227,16 @@ public class LinstorStoragePool implements KVMStoragePool {
         return LinstorUtil.resourceSupportZeroBlocks(this, LinstorUtil.RSC_PREFIX + volumeName);
     }
 
+    /**
+     * A DRBD resource can be in use (Primary/open) on any node in the cluster, which a
+     * host-local qemu-img lock cannot see. Report the node it is in use on so adoption
+     * refuses a volume still attached to a running VM elsewhere.
+     */
+    @Override
+    public String getVolumeInUseNode(String volumeName) {
+        return LinstorUtil.isResourceInUse(this, LinstorUtil.RSC_PREFIX + volumeName);
+    }
+
     public boolean isInsecureSsl() {
         return _insecureSsl;
     }

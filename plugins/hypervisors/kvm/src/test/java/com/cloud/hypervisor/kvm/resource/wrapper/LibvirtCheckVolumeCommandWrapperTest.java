@@ -177,6 +177,25 @@ public class LibvirtCheckVolumeCommandWrapperTest {
     }
 
     @Test
+    public void testLinstorVolumeInUseOnAnotherNodeIsReportedLocked() throws Exception {
+        mockLinstorPool();
+        Mockito.when(disk.getVirtualSize()).thenReturn(virtualSize);
+        Mockito.when(disk.getName()).thenReturn(srcFile);
+        // qemu-img info succeeds, so the host-local file lock is clear ...
+        qemuImg = Mockito.mockConstruction(QemuImg.class, (mock, context) ->
+                Mockito.when(mock.info(Mockito.any(QemuImgFile.class), Mockito.anyBoolean())).thenReturn(qemuInfo));
+        // ... but Linstor reports the DRBD resource in use on another node.
+        Mockito.when(storagePool.getVolumeInUseNode(srcFile)).thenReturn("node-2");
+
+        Answer answer = wrapper.execute(buildCommand(), libvirtComputingResource);
+
+        Assert.assertTrue(answer instanceof CheckVolumeAnswer);
+        Map<VolumeOnStorageTO.Detail, String> details = ((CheckVolumeAnswer) answer).getVolumeDetails();
+        Assert.assertEquals("cluster-wide in-use must mark the volume locked so adoption refuses it",
+                "true", details.get(VolumeOnStorageTO.Detail.IS_LOCKED));
+    }
+
+    @Test
     public void testRbdVolumeReportsLockedWhenInfoProbeFails() {
         mockRbdPool();
         Mockito.when(disk.getVirtualSize()).thenReturn(virtualSize);

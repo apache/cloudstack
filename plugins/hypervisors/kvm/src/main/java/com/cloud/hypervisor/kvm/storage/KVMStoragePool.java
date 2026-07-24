@@ -87,6 +87,17 @@ public interface KVMStoragePool {
         return false;
     }
 
+    /**
+     * For clustered block storage whose host-local file lock is not authoritative
+     * (e.g. Linstor/DRBD), returns the node name on which the given volume is currently
+     * in use — attached to a running VM anywhere in the cluster — or null if not in use.
+     * Adoption/import callers treat a non-null result as "locked". Defaults to null so
+     * the host-local qemu-img lock remains the sole in-use signal for other pool types.
+     */
+    default String getVolumeInUseNode(String volumeName) {
+        return null;
+    }
+
     boolean isExternalSnapshot();
 
     String getLocalPath();
