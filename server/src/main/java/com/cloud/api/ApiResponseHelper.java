@@ -4254,7 +4254,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
     private UsageResourceDetails populateRunningOrAllocatedVmUsageResponse(Usage usageRecord, UsageRecordResponse usageRecResponse, boolean oldFormat,
             VMInstanceVO vmInstance, VMTemplateVO template) {
         UsageResourceDetails resourceDetails = new UsageResourceDetails();
-        ServiceOfferingVO svcOffering = _entityMgr.findByIdIncludingRemoved(ServiceOfferingVO.class, usageRecord.getOfferingId().toString());
+        ServiceOfferingVO svcOffering = _entityMgr.findByIdIncludingRemoved(ServiceOfferingVO.class, usageRecord.getOfferingId());
         //Service Offering Id
         if(svcOffering != null) {
             usageRecResponse.setOfferingId(svcOffering.getUuid());
@@ -4264,7 +4264,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         if (usageRecord.getUsageId() != null && usageRecord.getUsageId().equals(usageRecord.getVmInstanceId())) {
             vm = vmInstance;
         } else {
-            vm = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getUsageId().toString());
+            vm = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getUsageId());
         }
         if (vm != null) {
             resourceDetails.resourceType = ResourceTag.ResourceObjectType.UserVm;
@@ -4323,7 +4323,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
     private UsageResourceDetails populateIpAddressUsageResponse(Usage usageRecord, UsageRecordResponse usageRecResponse) {
         UsageResourceDetails resourceDetails = new UsageResourceDetails();
         //IP Address ID
-        IPAddressVO ip = _entityMgr.findByIdIncludingRemoved(IPAddressVO.class, usageRecord.getUsageId().toString());
+        IPAddressVO ip = _entityMgr.findByIdIncludingRemoved(IPAddressVO.class, usageRecord.getUsageId());
         if (ip != null) {
             resourceDetails.resourceType = ResourceObjectType.PublicIpAddress;
             resourceDetails.resourceId = ip.getId();
@@ -4345,14 +4345,14 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         HostVO host = null;
         if (usageRecord.getType().equals("DomainRouter") || usageRecord.getType().equals("UserVm")) {
             //Domain Router Id
-            vm = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getUsageId().toString());
+            vm = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getUsageId());
             if (vm != null) {
                 resourceDetails.resourceId = vm.getId();
                 usageRecResponse.setUsageId(vm.getUuid());
             }
         } else {
             //External Device Host Id
-            host = _entityMgr.findByIdIncludingRemoved(HostVO.class, usageRecord.getUsageId().toString());
+            host = _entityMgr.findByIdIncludingRemoved(HostVO.class, usageRecord.getUsageId());
             if (host != null) {
                 usageRecResponse.setUsageId(host.getUuid());
             }
@@ -4360,7 +4360,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         //Network ID
         NetworkVO network = null;
         if((usageRecord.getNetworkId() != null) && (usageRecord.getNetworkId() != 0)) {
-            network = _entityMgr.findByIdIncludingRemoved(NetworkVO.class, usageRecord.getNetworkId().toString());
+            network = _entityMgr.findByIdIncludingRemoved(NetworkVO.class, usageRecord.getNetworkId());
             if (network != null) {
                 resourceDetails.resourceType = ResourceObjectType.Network;
                 if (network.getTrafficType() == TrafficType.Public) {
@@ -4412,7 +4412,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         usageRecResponse.setType(usageRecord.getType());
         resourceDetails.resourceType = ResourceObjectType.Volume;
         //Volume ID
-        VolumeVO volume = _entityMgr.findByIdIncludingRemoved(VolumeVO.class, usageRecord.getUsageId().toString());
+        VolumeVO volume = _entityMgr.findByIdIncludingRemoved(VolumeVO.class, usageRecord.getUsageId());
         if (volume != null) {
             usageRecResponse.setUsageId(volume.getUuid());
             resourceDetails.resourceId = volume.getId();
@@ -4446,7 +4446,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
             VMInstanceVO vmInstance, VMTemplateVO template) {
         UsageResourceDetails resourceDetails = new UsageResourceDetails();
         //Volume ID
-        VolumeVO volume = _entityMgr.findByIdIncludingRemoved(VolumeVO.class, usageRecord.getUsageId().toString());
+        VolumeVO volume = _entityMgr.findByIdIncludingRemoved(VolumeVO.class, usageRecord.getUsageId());
         resourceDetails.resourceType = ResourceObjectType.Volume;
         if (volume != null) {
             usageRecResponse.setUsageId(volume.getUuid());
@@ -4457,7 +4457,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         //Disk Offering Id
         DiskOfferingVO diskOff = null;
         if (usageRecord.getOfferingId() != null) {
-            diskOff = _entityMgr.findByIdIncludingRemoved(DiskOfferingVO.class, usageRecord.getOfferingId().toString());
+            diskOff = _entityMgr.findByIdIncludingRemoved(DiskOfferingVO.class, usageRecord.getOfferingId());
             if (diskOff != null) {
                 usageRecResponse.setOfferingId(diskOff.getUuid());
             }
@@ -4488,7 +4488,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
     private UsageResourceDetails populateTemplateOrIsoUsageResponse(Usage usageRecord, UsageRecordResponse usageRecResponse, boolean oldFormat) {
         UsageResourceDetails resourceDetails = new UsageResourceDetails();
         //Template/ISO ID
-        VMTemplateVO tmpl = _entityMgr.findByIdIncludingRemoved(VMTemplateVO.class, usageRecord.getUsageId().toString());
+        VMTemplateVO tmpl = _entityMgr.findByIdIncludingRemoved(VMTemplateVO.class, usageRecord.getUsageId());
         if (tmpl != null) {
             usageRecResponse.setUsageId(tmpl.getUuid());
             resourceDetails.resourceId = tmpl.getId();
@@ -4521,7 +4521,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
     private UsageResourceDetails populateSnapshotUsageResponse(Usage usageRecord, UsageRecordResponse usageRecResponse, boolean oldFormat) {
         UsageResourceDetails resourceDetails = new UsageResourceDetails();
         //Snapshot ID
-        SnapshotVO snap = _entityMgr.findByIdIncludingRemoved(SnapshotVO.class, usageRecord.getUsageId().toString());
+        SnapshotVO snap = _entityMgr.findByIdIncludingRemoved(SnapshotVO.class, usageRecord.getUsageId());
         resourceDetails.resourceType = ResourceObjectType.Snapshot;
         if (snap != null) {
             usageRecResponse.setUsageId(snap.getUuid());
@@ -4544,7 +4544,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
     private UsageResourceDetails populateLoadBalancerPolicyUsageResponse(Usage usageRecord, UsageRecordResponse usageRecResponse, boolean oldFormat) {
         UsageResourceDetails resourceDetails = new UsageResourceDetails();
         //Load Balancer Policy ID
-        LoadBalancerVO lb = _entityMgr.findByIdIncludingRemoved(LoadBalancerVO.class, usageRecord.getUsageId().toString());
+        LoadBalancerVO lb = _entityMgr.findByIdIncludingRemoved(LoadBalancerVO.class, usageRecord.getUsageId());
         resourceDetails.resourceType = ResourceObjectType.LoadBalancer;
         if (lb != null) {
             usageRecResponse.setUsageId(lb.getUuid());
@@ -4564,7 +4564,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
     private UsageResourceDetails populatePortForwardingRuleUsageResponse(Usage usageRecord, UsageRecordResponse usageRecResponse, boolean oldFormat) {
         UsageResourceDetails resourceDetails = new UsageResourceDetails();
         //Port Forwarding Rule ID
-        PortForwardingRuleVO pf = _entityMgr.findByIdIncludingRemoved(PortForwardingRuleVO.class, usageRecord.getUsageId().toString());
+        PortForwardingRuleVO pf = _entityMgr.findByIdIncludingRemoved(PortForwardingRuleVO.class, usageRecord.getUsageId());
         resourceDetails.resourceType = ResourceObjectType.PortForwardingRule;
         if (pf != null) {
             usageRecResponse.setUsageId(pf.getUuid());
@@ -4583,7 +4583,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
 
     private UsageResourceDetails populateNetworkOfferingUsageResponse(Usage usageRecord, UsageRecordResponse usageRecResponse, boolean oldFormat, VMInstanceVO vmInstance) {
         //Network Offering Id
-        NetworkOfferingVO netOff = _entityMgr.findByIdIncludingRemoved(NetworkOfferingVO.class, usageRecord.getOfferingId().toString());
+        NetworkOfferingVO netOff = _entityMgr.findByIdIncludingRemoved(NetworkOfferingVO.class, usageRecord.getOfferingId());
         if (netOff != null) {
             usageRecResponse.setOfferingId(netOff.getUuid());
         }
@@ -4605,7 +4605,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
 
     private UsageResourceDetails populateVpnUsersUsageResponse(Usage usageRecord, UsageRecordResponse usageRecResponse, boolean oldFormat) {
         //VPN User ID
-        VpnUserVO vpnUser = _entityMgr.findByIdIncludingRemoved(VpnUserVO.class, usageRecord.getUsageId().toString());
+        VpnUserVO vpnUser = _entityMgr.findByIdIncludingRemoved(VpnUserVO.class, usageRecord.getUsageId());
         if (vpnUser != null) {
             usageRecResponse.setUsageId(vpnUser.getUuid());
         }
@@ -4623,7 +4623,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
     private UsageResourceDetails populateSecurityGroupUsageResponse(Usage usageRecord, UsageRecordResponse usageRecResponse, boolean oldFormat, VMInstanceVO vmInstance) {
         UsageResourceDetails resourceDetails = new UsageResourceDetails();
         //Security Group Id
-        SecurityGroupVO sg = _entityMgr.findByIdIncludingRemoved(SecurityGroupVO.class, usageRecord.getUsageId().toString());
+        SecurityGroupVO sg = _entityMgr.findByIdIncludingRemoved(SecurityGroupVO.class, usageRecord.getUsageId());
         resourceDetails.resourceType = ResourceObjectType.SecurityGroup;
         if (sg != null) {
             resourceDetails.resourceId = sg.getId();
@@ -4690,12 +4690,12 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
             usageRecResponse.setVirtualSize(usageRecord.getVirtualSize());
         }
         if (usageRecord.getOfferingId() != null) {
-            usageRecResponse.setOfferingId(usageRecord.getOfferingId().toString());
+            usageRecResponse.setOfferingId(usageRecord.getOfferingId());
         }
         if (!oldFormat) {
             VolumeVO volume = null;
             if (vmSnapshotVO == null && usageRecord.getUsageId() != null) {
-                 volume = _entityMgr.findByIdIncludingRemoved(VolumeVO.class, usageRecord.getUsageId().toString());
+                 volume = _entityMgr.findByIdIncludingRemoved(VolumeVO.class, usageRecord.getUsageId());
             }
 
             DiskOfferingVO diskOff = null;
@@ -4725,7 +4725,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
     }
 
     private UsageResourceDetails populateVolumeSecondaryUsageResponse(Usage usageRecord, UsageRecordResponse usageRecResponse, boolean oldFormat) {
-        VolumeVO volume = _entityMgr.findByIdIncludingRemoved(VolumeVO.class, usageRecord.getUsageId().toString());
+        VolumeVO volume = _entityMgr.findByIdIncludingRemoved(VolumeVO.class, usageRecord.getUsageId());
         if (!oldFormat) {
             final StringBuilder builder = new StringBuilder();
             builder.append("Volume on secondary storage usage");
@@ -4771,7 +4771,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
     }
 
     private UsageResourceDetails populateBucketUsageResponse(Usage usageRecord, UsageRecordResponse usageRecResponse) {
-        BucketVO bucket = _entityMgr.findByIdIncludingRemoved(BucketVO.class, usageRecord.getUsageId().toString());
+        BucketVO bucket = _entityMgr.findByIdIncludingRemoved(BucketVO.class, usageRecord.getUsageId());
         if (bucket != null) {
             usageRecResponse.setUsageId(bucket.getUuid());
             usageRecResponse.setResourceName(bucket.getName());
