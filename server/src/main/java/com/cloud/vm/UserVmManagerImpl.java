@@ -54,6 +54,7 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.cloud.utils.Profiler;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -2452,33 +2453,53 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     public boolean start() {
         _executor.scheduleWithFixedDelay(new ExpungeTask(), _expungeInterval, _expungeInterval, TimeUnit.SECONDS);
         _vmIpFetchExecutor.scheduleWithFixedDelay(new VmIpFetchTask(), VmIpFetchWaitInterval.value(), VmIpFetchWaitInterval.value(), TimeUnit.SECONDS);
-        loadVmDetailsInMapForExternalDhcpIp();
+        _vmIpFetchExecutor.submit(this::loadVmDetailsInMapForExternalDhcpIp);
         return true;
     }
 
-    private void loadVmDetailsInMapForExternalDhcpIp() {
+    protected void loadVmDetailsInMapForExternalDhcpIp() {
+        try {
+            Profiler profiler = new Profiler();
+            profiler.start();
 
-        List<NetworkVO> networks = _networkDao.listByGuestType(Network.GuestType.Shared);
-        networks.addAll(_networkDao.listByGuestType(Network.GuestType.L2));
+            List<NetworkVO> networks = _networkDao.listByGuestType(Network.GuestType.Shared);
+            Map<Long, Boolean> offeringWithoutServices = new HashMap<>();
+            int networksScanned = 0;
+            int nicsAdded = 0;
 
-        for (NetworkVO network: networks) {
-            if (GuestType.L2.equals(network.getGuestType()) || _networkModel.isSharedNetworkWithoutServices(network.getId())) {
-                List<NicVO> nics = _nicDao.listByNetworkId(network.getId());
+            for (NetworkVO network : networks) {
+                boolean withoutServices = offeringWithoutServices.computeIfAbsent(network.getNetworkOfferingId(),
+                        offeringId -> _networkModel.listNetworkOfferingServices(offeringId).isEmpty());
+                if (!withoutServices) {
+                    continue;
+                }
+                networksScanned++;
 
-                for (NicVO nic : nics) {
-                    if (nic.getIPv4Address() == null) {
-                        long nicId = nic.getId();
-                        long vmId = nic.getInstanceId();
-                        VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
+                List<NicVO> nullIpNics = _nicDao.listByNetworkId(network.getId()).stream()
+                        .filter(nic -> nic.getIPv4Address() == null)
+                        .collect(Collectors.toList());
+                if (nullIpNics.isEmpty()) {
+                    continue;
+                }
 
-                        // only load running vms. For stopped vms get loaded on starting
-                        if (vmInstance != null && vmInstance.getState() == State.Running) {
-                            VmAndCountDetails vmAndCount = new VmAndCountDetails(vmId, VmIpFetchTrialMax.value());
-                            vmIdCountMap.put(nicId, vmAndCount);
-                        }
+                List<Long> vmIds = nullIpNics.stream().map(NicVO::getInstanceId).distinct().collect(Collectors.toList());
+                Map<Long, VMInstanceVO> runningVmsById = _vmInstanceDao.listByIds(vmIds).stream()
+                        .filter(vm -> vm != null && vm.getState() == State.Running)
+                        .collect(Collectors.toMap(VMInstanceVO::getId, vm -> vm));
+
+                for (NicVO nic : nullIpNics) {
+                    if (runningVmsById.containsKey(nic.getInstanceId())) {
+                        vmIdCountMap.put(nic.getId(), new VmAndCountDetails(nic.getInstanceId(), VmIpFetchTrialMax.value()));
+                        nicsAdded++;
                     }
                 }
             }
+
+            profiler.stop();
+            logger.info("External-DHCP VM-IP map seeded: {} shared-without-service networks, {} nics added, took {} ms",
+                    networksScanned, nicsAdded, profiler.getDurationInMillis());
+        } catch (Exception e) {
+            logger.error("Failed to seed external-DHCP VM-IP retrieval map", e);
         }
     }
 
