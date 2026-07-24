@@ -628,7 +628,7 @@ public class ConsoleProxy {
                 } catch (IOException e) {
                     LOGGER.error("Exception while disconnect session of novnc viewer object: " + viewer, e);
                 }
-                removeViewer(viewer);
+                viewer.closeClient();
                 viewer = new ConsoleProxyNoVncClient(session);
                 viewer.initClient(param);
                 connectionMap.put(clientKey, viewer);
