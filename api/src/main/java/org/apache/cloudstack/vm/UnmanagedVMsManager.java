@@ -17,10 +17,19 @@
 
 package org.apache.cloudstack.vm;
 
+import java.util.Map;
+
+import com.cloud.dc.DataCenter;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.network.Network;
+import com.cloud.org.Cluster;
+import com.cloud.user.Account;
 import com.cloud.utils.component.PluggableService;
+import com.cloud.uservm.UserVm;
+
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+
 import static com.cloud.hypervisor.Hypervisor.HypervisorType.KVM;
 import static com.cloud.hypervisor.Hypervisor.HypervisorType.VMware;
 
@@ -75,4 +84,15 @@ public interface UnmanagedVMsManager extends VmImportService, UnmanageVMService,
     static boolean isSupported(Hypervisor.HypervisorType hypervisorType) {
         return hypervisorType == VMware || hypervisorType == KVM;
     }
+
+    UserVm importConvertedVmwareCbtInstanceToKvm(String vcenter, String datacenterName, String username, String password,
+                                                 String clusterName, String sourceHostName, String sourceVMName,
+                                                 UnmanagedInstanceTO convertedInstance, DataCenter zone,
+                                                 Cluster destinationCluster, String displayName, String hostName,
+                                                 Account caller, Account owner, long userId, Long templateId,
+                                                 Long serviceOfferingId, Map<String, Long> dataDiskOfferingMap,
+                                                 Map<String, Long> nicNetworkMap,
+                                                 Map<String, Network.IpAddresses> nicIpAddressMap,
+                                                 Long guestOsId, Map<String, String> details, boolean forced,
+                                                 Long storagePoolId);
 }

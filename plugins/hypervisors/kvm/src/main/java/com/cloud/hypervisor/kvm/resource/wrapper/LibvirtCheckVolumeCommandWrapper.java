@@ -50,7 +50,9 @@ public final class LibvirtCheckVolumeCommandWrapper extends CommandWrapper<Check
     private static final List<Storage.StoragePoolType> STORAGE_POOL_TYPES_SUPPORTED = Arrays.asList(
             Storage.StoragePoolType.Filesystem,
             Storage.StoragePoolType.NetworkFilesystem,
-            Storage.StoragePoolType.SharedMountPoint);
+            Storage.StoragePoolType.SharedMountPoint,
+            Storage.StoragePoolType.RBD,
+            Storage.StoragePoolType.Linstor);
 
     @Override
     public Answer execute(final CheckVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {
@@ -63,6 +65,14 @@ public final class LibvirtCheckVolumeCommandWrapper extends CommandWrapper<Check
         try {
             if (STORAGE_POOL_TYPES_SUPPORTED.contains(storageFilerTO.getType())) {
                 final KVMPhysicalDisk vol = pool.getPhysicalDisk(srcFile);
+                if (Storage.StoragePoolType.RBD.equals(storageFilerTO.getType())
+                        || Storage.StoragePoolType.Linstor.equals(storageFilerTO.getType())) {
+                    // RBD and Linstor volumes are raw block devices, not local qcow2 files:
+                    // inspect them through qemu-img (RBD by its rbd: URI, Linstor by its
+                    // /dev/drbd device path) rather than checkQcow2File, which would reject
+                    // a raw device.
+                    return checkRbdVolume(command, pool, vol);
+                }
                 final String path = vol.getPath();
                 try {
                     KVMPhysicalDisk.checkQcow2File(path);
@@ -79,6 +89,21 @@ public final class LibvirtCheckVolumeCommandWrapper extends CommandWrapper<Check
             logger.error("Error while checking the disk: {}", e.getMessage());
             return new Answer(command, false, result);
         }
+    }
+
+    /**
+     * RBD (Ceph) volumes are raw images that cannot be inspected through direct file reads
+     * (checkQcow2File / getVirtualSizeFromFile operate on a local path). Instead the volume is
+     * inspected through the RBD URI via qemu-img (see {@link #getDiskFileInfo}). The virtual size
+     * is taken from the disk reported by the storage pool, and the encrypted/backing-file/locked
+     * details are still collected so the management server can apply its import validations.
+     */
+    private Answer checkRbdVolume(final CheckVolumeCommand command, final KVMStoragePool pool, final KVMPhysicalDisk disk) {
+        Map<VolumeOnStorageTO.Detail, String> volumeDetails = getVolumeDetails(pool, disk);
+        if (volumeDetails == null) {
+            return new CheckVolumeAnswer(command, false, "", 0, null);
+        }
+        return new CheckVolumeAnswer(command, true, "", disk.getVirtualSize(), volumeDetails);
     }
 
     private Map<VolumeOnStorageTO.Detail, String> getVolumeDetails(KVMStoragePool pool, KVMPhysicalDisk disk) {
@@ -109,7 +134,17 @@ public final class LibvirtCheckVolumeCommandWrapper extends CommandWrapper<Check
         if (StringUtils.isNotBlank(encrypted) && encrypted.equalsIgnoreCase("yes")) {
             volumeDetails.put(VolumeOnStorageTO.Detail.IS_ENCRYPTED, String.valueOf(Boolean.TRUE));
         }
-        Boolean isLocked = isDiskFileLocked(pool, disk);
+        boolean isLocked = isDiskFileLocked(pool, disk);
+        if (!isLocked) {
+            // For clustered block storage (Linstor/DRBD) the host-local qemu-img lock is not
+            // authoritative: a volume can be attached to a running VM on another node. Consult
+            // the backend's cluster-wide in-use state so such a volume is not adopted.
+            String inUseNode = pool.getVolumeInUseNode(disk.getName());
+            if (inUseNode != null) {
+                logger.info("Volume {} is in use on node {}; marking as locked", disk.getName(), inUseNode);
+                isLocked = true;
+            }
+        }
         volumeDetails.put(VolumeOnStorageTO.Detail.IS_LOCKED, String.valueOf(isLocked));
 
         return volumeDetails;
@@ -122,6 +157,10 @@ public final class LibvirtCheckVolumeCommandWrapper extends CommandWrapper<Check
         try {
             QemuImg qemu = new QemuImg(0);
             QemuImgFile qemuFile = new QemuImgFile(disk.getPath(), disk.getFormat());
+            if (Storage.StoragePoolType.RBD.equals(pool.getType())) {
+                String rbdDestFile = KVMPhysicalDisk.RBDStringBuilder(pool, disk.getPath());
+                qemuFile = new QemuImgFile(rbdDestFile, disk.getFormat());
+            }
             return qemu.info(qemuFile, secure);
         } catch (QemuImgException | LibvirtException ex) {
             logger.error("Failed to get info of disk file: " + ex.getMessage());

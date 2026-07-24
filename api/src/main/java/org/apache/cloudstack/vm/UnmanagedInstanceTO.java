@@ -66,6 +66,7 @@ public class UnmanagedInstanceTO {
 
     private String bootType;
     private String bootMode;
+    private String vmwareMoref;
 
     public String getName() {
         return name;
@@ -232,6 +233,14 @@ public class UnmanagedInstanceTO {
 
     public void setBootMode(String bootMode) {
         this.bootMode = bootMode;
+    }
+
+    public String getVmwareMoref() {
+        return vmwareMoref;
+    }
+
+    public void setVmwareMoref(String vmwareMoref) {
+        this.vmwareMoref = vmwareMoref;
     }
 
     public static class Disk {

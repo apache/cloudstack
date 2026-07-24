@@ -303,6 +303,25 @@ public class LinstorUtil {
     }
 
     /**
+     * Cluster-wide in-use check by pool (builds the API from the pool, mirroring
+     * {@link #resourceSupportZeroBlocks}). Unlike a host-local qemu-img file lock, this
+     * reflects the DRBD InUse state across every node, so a volume attached to a running
+     * VM on another host is detected.
+     *
+     * @return the node the resource is in use on, or null if not in use / on API error.
+     */
+    public static String isResourceInUse(KVMStoragePool pool, String resName) {
+        final boolean insecureSsl = pool instanceof LinstorStoragePool && ((LinstorStoragePool) pool).isInsecureSsl();
+        final DevelopersApi api = getLinstorAPI(pool.getSourceHost(), null, insecureSsl);
+        try {
+            return isResourceInUse(api, resName);
+        } catch (ApiException apiExc) {
+            LOGGER.error("isResourceInUse: " + apiExc.getBestMessage());
+            return null;
+        }
+    }
+
+    /**
      * Check if the given resources are diskless.
      *
      * @param api developer api object to use

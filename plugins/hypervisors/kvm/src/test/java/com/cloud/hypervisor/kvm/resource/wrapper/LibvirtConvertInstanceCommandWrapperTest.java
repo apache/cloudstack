@@ -44,6 +44,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
+import com.cloud.storage.Storage;
 import com.cloud.utils.script.Script;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -149,6 +150,26 @@ public class LibvirtConvertInstanceCommandWrapperTest {
         ConvertInstanceCommand cmd = getConvertInstanceCommand(remoteInstanceTO, Hypervisor.HypervisorType.KVM, true);
         Answer answer = convertInstanceCommandWrapper.execute(cmd, libvirtComputingResourceMock);
         Assert.assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testExecuteDirectRbdVddkFailsWhenHostLacksDirectRbdSupport() {
+        RemoteInstanceTO remoteInstanceTO = getRemoteInstanceTO(Hypervisor.HypervisorType.VMware);
+        ConvertInstanceCommand cmd = getConvertInstanceCommand(remoteInstanceTO, Hypervisor.HypervisorType.KVM, false);
+        Mockito.when(cmd.isUseVddk()).thenReturn(true);
+        Mockito.when(cmd.getVddkLibDir()).thenReturn("/opt/vddk");
+        Mockito.when(cmd.getConversionTemporaryLocation()).thenReturn(primaryDataStore);
+        Mockito.when(primaryDataStore.getPoolType()).thenReturn(Storage.StoragePoolType.RBD);
+        Mockito.when(primaryDataStore.getUuid()).thenReturn("rbd-pool-uuid");
+        Mockito.when(storagePoolManager.getStoragePool(Storage.StoragePoolType.RBD, "rbd-pool-uuid")).thenReturn(destinationPool);
+        Mockito.when(destinationPool.getLocalPath()).thenReturn("/rbd");
+        Mockito.when(libvirtComputingResourceMock.getVddkLibDir()).thenReturn("/opt/vddk");
+        Mockito.when(libvirtComputingResourceMock.hostSupportsVddkRbdDirectImport("/opt/vddk")).thenReturn(false);
+
+        Answer answer = convertInstanceCommandWrapper.execute(cmd, libvirtComputingResourceMock);
+
+        Assert.assertFalse(answer.getResult());
+        Assert.assertTrue(answer.getDetails().contains("Direct RBD VDDK import requires"));
     }
 
     @Test
@@ -312,5 +333,22 @@ public class LibvirtConvertInstanceCommandWrapperTest {
             Mockito.verify(convertInstanceCommandWrapper, Mockito.never())
                     .getVcenterThumbprint(Mockito.anyString(), Mockito.anyLong(), Mockito.anyString());
         }
+    }
+
+    @Test
+    public void testBuildDirectRbdNbdLibvirtXmlUsesLocalhostNbdSourcesWithoutSecrets() {
+        // virt-v2v's "-i libvirtxml" input runs without a libvirt connection: a native
+        // rbd network disk with a <secret> auth reference attaches zero drives there,
+        // so the finalization XML must use localhost qemu-nbd bridge endpoints.
+        String xml = convertInstanceCommandWrapper.buildDirectRbdNbdLibvirtXml("tmp-uuid", List.of(10809, 10810));
+
+        Assert.assertTrue(xml, xml.contains("<source protocol='nbd'>"));
+        Assert.assertTrue(xml, xml.contains("<host name='localhost' port='10809'/>"));
+        Assert.assertTrue(xml, xml.contains("<host name='localhost' port='10810'/>"));
+        Assert.assertTrue(xml, xml.contains("<target dev='sda' bus='scsi'/>"));
+        Assert.assertTrue(xml, xml.contains("<target dev='sdb' bus='scsi'/>"));
+        Assert.assertFalse(xml, xml.contains("protocol='rbd'"));
+        Assert.assertFalse(xml, xml.contains("<secret"));
+        Assert.assertFalse(xml, xml.contains("<auth"));
     }
 }

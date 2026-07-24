@@ -74,6 +74,30 @@ public interface KVMStoragePool {
 
     boolean refresh();
 
+    /**
+     * Whether a freshly created volume on this pool is guaranteed to read back as
+     * all zeros. Callers that skip writing zero blocks into a pre-created target
+     * (e.g. qemu-img convert --target-is-zero / nbdcopy --destination-is-zero) must
+     * only do so when this returns true; block backends that do not zero-initialize
+     * new volumes (e.g. LVM-thick) return false so those callers write the zeros and
+     * do not leak stale data from previously deleted volumes into unwritten regions.
+     * Defaults to false so any backend that has not opted in is treated as unsafe.
+     */
+    default boolean isVolumeZeroInitialized(String volumeName) {
+        return false;
+    }
+
+    /**
+     * For clustered block storage whose host-local file lock is not authoritative
+     * (e.g. Linstor/DRBD), returns the node name on which the given volume is currently
+     * in use — attached to a running VM anywhere in the cluster — or null if not in use.
+     * Adoption/import callers treat a non-null result as "locked". Defaults to null so
+     * the host-local qemu-img lock remains the sole in-use signal for other pool types.
+     */
+    default String getVolumeInUseNode(String volumeName) {
+        return null;
+    }
+
     boolean isExternalSnapshot();
 
     String getLocalPath();
