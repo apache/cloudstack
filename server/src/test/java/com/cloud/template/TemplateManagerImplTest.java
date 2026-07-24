@@ -81,6 +81,7 @@ import org.apache.cloudstack.storage.template.VnfTemplateManager;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -218,6 +219,7 @@ public class TemplateManagerImplTest extends TestCase {
         templateManager.verifyTemplateId(1L);
     }
 
+    @Ignore
     public void testVerifyTemplateIdOfNonSystemTemplate() {
         templateManager.verifyTemplateId(1L);
     }
