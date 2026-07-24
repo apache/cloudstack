@@ -100,6 +100,17 @@ public class LibvirtCheckVolumeCommandWrapperTest {
         Mockito.when(storagePool.getDetails()).thenReturn(null);
     }
 
+    private void mockLinstorPool() {
+        Mockito.when(storageFilerTO.getType()).thenReturn(Storage.StoragePoolType.Linstor);
+        Mockito.when(storageFilerTO.getUuid()).thenReturn(poolUuid);
+        Mockito.when(storagePoolMgr.getStoragePool(Storage.StoragePoolType.Linstor, poolUuid)).thenReturn(storagePool);
+        Mockito.when(storagePool.getType()).thenReturn(Storage.StoragePoolType.Linstor);
+        Mockito.when(storagePool.getPhysicalDisk(srcFile)).thenReturn(disk);
+        // Linstor resolves the resource to a local /dev/drbd block device path.
+        Mockito.when(disk.getPath()).thenReturn("/dev/drbd/by-res/" + srcFile + "/0");
+        Mockito.when(disk.getFormat()).thenReturn(QemuImg.PhysicalDiskFormat.RAW);
+    }
+
     private CheckVolumeCommand buildCommand() {
         CheckVolumeCommand command = new CheckVolumeCommand();
         command.setSrcFile(srcFile);
@@ -140,6 +151,29 @@ public class LibvirtCheckVolumeCommandWrapperTest {
                 .info(fileCaptor.capture(), Mockito.anyBoolean());
         Assert.assertTrue("qemu-img should be pointed at the RBD URI",
                 fileCaptor.getValue().getFileName().startsWith("rbd:" + srcFile));
+    }
+
+    @Test
+    public void testLinstorVolumeReturnsSuccessInspectedViaDevicePath() throws Exception {
+        mockLinstorPool();
+        Mockito.when(disk.getVirtualSize()).thenReturn(virtualSize);
+        qemuImg = Mockito.mockConstruction(QemuImg.class, (mock, context) ->
+                Mockito.when(mock.info(Mockito.any(QemuImgFile.class), Mockito.anyBoolean())).thenReturn(qemuInfo));
+
+        Answer answer = wrapper.execute(buildCommand(), libvirtComputingResource);
+
+        Assert.assertTrue(answer instanceof CheckVolumeAnswer);
+        Assert.assertTrue("Linstor raw volume should validate (not rejected as non-qcow2)", answer.getResult());
+        Assert.assertEquals(virtualSize, ((CheckVolumeAnswer) answer).getSize());
+        // A Linstor volume is a local block device: qemu-img must inspect the
+        // /dev/drbd device path directly, never build an rbd: URI.
+        ArgumentCaptor<QemuImgFile> fileCaptor = ArgumentCaptor.forClass(QemuImgFile.class);
+        Mockito.verify(qemuImg.constructed().get(0), Mockito.atLeastOnce())
+                .info(fileCaptor.capture(), Mockito.anyBoolean());
+        String fileName = fileCaptor.getValue().getFileName();
+        Assert.assertTrue("qemu-img should point at the /dev/drbd device path, got " + fileName,
+                fileName.startsWith("/dev/drbd/"));
+        Assert.assertFalse("Linstor must not build an rbd: URI", fileName.startsWith("rbd:"));
     }
 
     @Test

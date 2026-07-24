@@ -1337,12 +1337,13 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
     /**
      * Returns the image format for a volume taking the underlying storage pool type into account.
-     * On KVM the default cluster format is QCOW2, but block-based pools such as RBD (Ceph) store
-     * volumes as RAW images. This is relevant when importing/adopting an existing volume so the
-     * recorded format matches what is actually on the pool.
+     * On KVM the default cluster format is QCOW2, but block-based pools such as RBD (Ceph) and
+     * Linstor (DRBD) store volumes as RAW images. This is relevant when importing/adopting an
+     * existing volume so the recorded format matches what is actually on the pool.
      */
     protected ImageFormat getSupportedImageFormatForCluster(HypervisorType hyperType, Storage.StoragePoolType poolType) {
-        if (hyperType == HypervisorType.KVM && poolType == Storage.StoragePoolType.RBD) {
+        if (hyperType == HypervisorType.KVM
+                && (poolType == Storage.StoragePoolType.RBD || poolType == Storage.StoragePoolType.Linstor)) {
             return ImageFormat.RAW;
         }
         return getSupportedImageFormatForCluster(hyperType);

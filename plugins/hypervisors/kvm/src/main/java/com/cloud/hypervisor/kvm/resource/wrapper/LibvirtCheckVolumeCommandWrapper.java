@@ -51,7 +51,8 @@ public final class LibvirtCheckVolumeCommandWrapper extends CommandWrapper<Check
             Storage.StoragePoolType.Filesystem,
             Storage.StoragePoolType.NetworkFilesystem,
             Storage.StoragePoolType.SharedMountPoint,
-            Storage.StoragePoolType.RBD);
+            Storage.StoragePoolType.RBD,
+            Storage.StoragePoolType.Linstor);
 
     @Override
     public Answer execute(final CheckVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {
@@ -64,7 +65,12 @@ public final class LibvirtCheckVolumeCommandWrapper extends CommandWrapper<Check
         try {
             if (STORAGE_POOL_TYPES_SUPPORTED.contains(storageFilerTO.getType())) {
                 final KVMPhysicalDisk vol = pool.getPhysicalDisk(srcFile);
-                if (Storage.StoragePoolType.RBD.equals(storageFilerTO.getType())) {
+                if (Storage.StoragePoolType.RBD.equals(storageFilerTO.getType())
+                        || Storage.StoragePoolType.Linstor.equals(storageFilerTO.getType())) {
+                    // RBD and Linstor volumes are raw block devices, not local qcow2 files:
+                    // inspect them through qemu-img (RBD by its rbd: URI, Linstor by its
+                    // /dev/drbd device path) rather than checkQcow2File, which would reject
+                    // a raw device.
                     return checkRbdVolume(command, pool, vol);
                 }
                 final String path = vol.getPath();

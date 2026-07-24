@@ -182,6 +182,9 @@ public class VolumeOrchestratorTest {
     public void testGetSupportedImageFormatForClusterKvmRbdIsRaw() {
         Assert.assertEquals(Storage.ImageFormat.RAW,
                 volumeOrchestrator.getSupportedImageFormatForCluster(Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.RBD));
+        // Linstor (DRBD) volumes are also raw block devices.
+        Assert.assertEquals(Storage.ImageFormat.RAW,
+                volumeOrchestrator.getSupportedImageFormatForCluster(Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.Linstor));
     }
 
     @Test
