@@ -31,6 +31,8 @@ public interface ManagementServerHostDao extends GenericDao<ManagementServerHost
 
     ManagementServerHostVO findByMsid(long msid);
 
+    List<ManagementServerHostVO> findAllByName(String name);
+
     int increaseAlertCount(long id);
 
     void update(long id, long runid, String name, String version, String serviceIP, int servicePort, Date lastUpdate);
