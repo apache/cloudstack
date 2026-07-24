@@ -71,6 +71,7 @@ import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Network.State;
+import com.cloud.network.NetworkService;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
@@ -1017,6 +1018,12 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
+                // Default egress policy for the built-in Isolated network offerings. Allow by default (matching VPC tiers),
+                // overridable via the global setting network.isolated.default.egress.policy.allow before first initialization.
+                final boolean isolatedNetworkEgressDefaultPolicyAllow = Boolean.parseBoolean(_configDao.getValueAndInitIfNotExist(
+                        NetworkService.DefaultEgressPolicyForIsolatedNetworksAllow.key(), "Network",
+                        NetworkService.DefaultEgressPolicyForIsolatedNetworksAllow.defaultValue()));
+
                 // Offering #1
                 NetworkOfferingVO defaultSharedSGNetworkOffering =
                         new NetworkOfferingVO(NetworkOffering.DefaultSharedNetworkOfferingWithSGService, "Offering for Shared Security group enabled networks",
@@ -1068,6 +1075,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
 
                 defaultIsolatedSourceNatEnabledNetworkOffering.setState(NetworkOffering.State.Enabled);
                 defaultIsolatedSourceNatEnabledNetworkOffering.setSupportsVmAutoScaling(true);
+                defaultIsolatedSourceNatEnabledNetworkOffering.setEgressDefaultPolicy(isolatedNetworkEgressDefaultPolicyAllow);
                 defaultIsolatedSourceNatEnabledNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultIsolatedSourceNatEnabledNetworkOffering);
 
                 for (Service service : defaultIsolatedSourceNatEnabledNetworkOfferingProviders.keySet()) {
@@ -1084,6 +1092,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                                 false, true, null, null, true, Availability.Optional, null, Network.GuestType.Isolated, true, true, false, false, false, false);
 
                 defaultIsolatedEnabledNetworkOffering.setState(NetworkOffering.State.Enabled);
+                defaultIsolatedEnabledNetworkOffering.setEgressDefaultPolicy(isolatedNetworkEgressDefaultPolicyAllow);
                 defaultIsolatedEnabledNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultIsolatedEnabledNetworkOffering);
 
                 for (Service service : defaultIsolatedNetworkOfferingProviders.keySet()) {
