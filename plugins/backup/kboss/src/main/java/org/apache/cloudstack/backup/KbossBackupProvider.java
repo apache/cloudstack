@@ -1248,7 +1248,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         if (backupJoinVO.getCurrent() || (!backupChildren.isEmpty() && backupChildren.get(backupChildren.size() - 1).getCurrent())) {
             logger.info("As [{}] is true, we are ending the backup chain for VM [{}]. The next backup will be a full backup.",
                     BackupValidationServiceJobController.backupValidationEndChainOnFail.toString());
-            endBackupChain(userVmDao.findById(backupVO.getVmId()));
+            endBackupChain(vm);
         }
     }
 
