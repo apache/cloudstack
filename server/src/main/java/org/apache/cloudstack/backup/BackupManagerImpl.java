@@ -971,39 +971,11 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 throw new InvalidParameterValueException("Could not find the requested backup schedule.");
             }
             checkCallerAccessToBackupScheduleVm(schedule.getVmId());
-            finalizeBackupScheduleIfNeeded(schedule);
             return backupScheduleDao.remove(schedule.getId());
         }
 
         checkCallerAccessToBackupScheduleVm(vmId);
         return deleteAllVmBackupSchedules(vmId);
-    }
-
-    /**
-     * Terminates the backup schedule if necessary.
-     *
-     * @param backupSchedule the backup schedule to be processed for termination.
-     * @throws CloudRuntimeException if the backup offering associated with the
-     * virtual machine was not found or if the backup provider could not finalize
-     * the backup schedule.
-     */
-    protected void finalizeBackupScheduleIfNeeded(BackupSchedule backupSchedule) {
-        VMInstanceVO vm = findVmById(backupSchedule.getVmId());
-
-        if (vm.getBackupOfferingId() == null) {
-            logger.debug("The virtual machine {} backup offering has already been removed; therefore, it is not necessary to finalize the backup schedule.", vm.getUuid());
-            return;
-        }
-
-        BackupOfferingVO backupOffering = backupOfferingDao.findById(vm.getBackupOfferingId());
-        if (backupOffering == null) {
-            throw new CloudRuntimeException("Could not find the backup offering of the backup schedule virtual machine.");
-        }
-
-        BackupProvider backupProvider = getBackupProvider(backupOffering.getProvider());
-        if (!backupProvider.removeVMBackupSchedule(vm, backupSchedule)) {
-            throw new CloudRuntimeException(String.format("Failed to finalize VM backup schedule with ID [%s].", backupSchedule.getUuid()));
-        }
     }
 
     /**
@@ -1030,7 +1002,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         List<BackupScheduleVO> vmBackupSchedules = backupScheduleDao.listByVM(vmId);
         boolean success = true;
         for (BackupScheduleVO vmBackupSchedule : vmBackupSchedules) {
-            finalizeBackupScheduleIfNeeded(vmBackupSchedule);
             success = success && backupScheduleDao.remove(vmBackupSchedule.getId());
         }
         return success;
@@ -1096,7 +1067,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
              CheckedReservation backupStorageReservation = new CheckedReservation(owner,
                      Resource.ResourceType.backup_storage, backupSize, reservationDao, resourceLimitMgr)) {
 
-            Pair<Boolean, Backup> result = backupProvider.takeBackup(vm, cmd.getQuiesceVM(), cmd.isIsolated(), backupScheduleId);
+            Pair<Boolean, Backup> result = backupProvider.takeBackup(vm, cmd.getQuiesceVM(), cmd.isIsolated());
             if (!result.first()) {
                 throw new CloudRuntimeException("Failed to create Instance Backup");
             }

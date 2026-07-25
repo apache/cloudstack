@@ -37,15 +37,11 @@ SELECT  b.id,
         MAX(CASE WHEN bd.name = 'current' THEN bd.value END) current,
         COALESCE(MAX(CASE WHEN bd.name = 'isolated' THEN bd.value END), 'false') isolated,
         nbpr.volume_id,
-        nbpr.backup_delta_path storage_pool_delta_path,
-        nbpr.backup_parent_path storage_pool_parent_path,
-        nbsr.path image_store_path,
-        bs.id schedule_id
+        nbsr.path image_store_path
 FROM    backups b
 LEFT    JOIN backup_details bd ON b.id = bd.backup_id
 LEFT    JOIN backup_offering bo ON b.backup_offering_id = bo.id
 LEFT    JOIN internal_backup_store_ref nbsr ON b.id = nbsr.backup_id
-LEFT    JOIN internal_backup_pool_ref nbpr ON nbpr.volume_id = nbsr.volume_id and nbpr.backup_id = b.id
-LEFT    JOIN backup_schedule bs ON bs.id = b.backup_schedule_id
+LEFT    JOIN internal_backup_pool_ref nbpr ON nbpr.volume_id = nbsr.volume_id
 WHERE   bo.provider='kboss'
 GROUP BY b.id, nbsr.volume_id;
