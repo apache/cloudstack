@@ -5938,14 +5938,25 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             final VirtualMachine vm, final Nic nic) {
         Long vmId = vm.getId();
         String commandName = VmWorkRemoveNicFromVm.class.getName();
-        Pair<VmWorkJobVO, Long> pendingWorkJob = retrievePendingWorkJob(vmId, commandName);
 
-        VmWorkJobVO workJob = pendingWorkJob.first();
+        // The nic uuid must be part of the pending-job lookup key. Without it, a concurrent request
+        // to remove a different nic from the same vm matches this still-pending job and joins it
+        // instead of submitting its own, so only one nic is removed while both callers wait on the
+        // single job and both receive its success. Mirrors the symmetric addVmToNetworkThroughJobQueue.
+        final List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(
+                VirtualMachine.Type.Instance, vmId, commandName, nic.getUuid());
 
-        if (workJob == null) {
+        VmWorkJobVO workJob;
+        if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
+            if (pendingWorkJobs.size() > 1) {
+                throw new CloudRuntimeException(String.format("The number of jobs to remove nic %s from vm %s are %d", nic.getUuid(), vm.getInstanceName(), pendingWorkJobs.size()));
+            }
+            workJob = pendingWorkJobs.get(0);
+        } else {
             Pair<VmWorkJobVO, VmWork> newVmWorkJobAndInfo = createWorkJobAndWorkInfo(commandName, vmId);
 
             workJob = newVmWorkJobAndInfo.first();
+            workJob.setSecondaryObjectIdentifier(nic.getUuid());
             VmWorkRemoveNicFromVm workInfo = new VmWorkRemoveNicFromVm(newVmWorkJobAndInfo.second(), nic.getId());
 
             setCmdInfoAndSubmitAsyncJob(workJob, workInfo, vmId);
