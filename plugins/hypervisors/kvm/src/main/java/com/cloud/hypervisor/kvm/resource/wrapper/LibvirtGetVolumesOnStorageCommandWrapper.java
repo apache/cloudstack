@@ -65,7 +65,21 @@ public final class LibvirtGetVolumesOnStorageCommandWrapper extends CommandWrapp
         final KVMStoragePool storagePool = storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid(), true, true);
 
         if (StringUtils.isNotBlank(volumePath)) {
-            return addVolumeByVolumePath(command, storagePool, volumePath);
+            // A Linstor volume is a DRBD device that only appears on this host once its resource
+            // is made available here (a diskless assignment); connect it before qemu-img inspects
+            // the device and release the diskless assignment afterwards (the replicated data on
+            // the storage nodes is untouched). RBD needs no such step.
+            boolean linstorConnected = false;
+            if (StoragePoolType.Linstor.equals(pool.getType())) {
+                linstorConnected = storagePoolMgr.connectPhysicalDisk(pool.getType(), pool.getUuid(), volumePath, null);
+            }
+            try {
+                return addVolumeByVolumePath(command, storagePool, volumePath);
+            } finally {
+                if (linstorConnected) {
+                    storagePoolMgr.disconnectPhysicalDisk(pool.getType(), pool.getUuid(), volumePath);
+                }
+            }
         } else {
             return addAllVolumes(command, storagePool, keyword);
         }

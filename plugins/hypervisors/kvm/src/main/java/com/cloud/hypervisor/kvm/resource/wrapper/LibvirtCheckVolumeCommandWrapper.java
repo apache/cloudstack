@@ -71,7 +71,24 @@ public final class LibvirtCheckVolumeCommandWrapper extends CommandWrapper<Check
                     // inspect them through qemu-img (RBD by its rbd: URI, Linstor by its
                     // /dev/drbd device path) rather than checkQcow2File, which would reject
                     // a raw device.
-                    return checkRbdVolume(command, pool, vol);
+                    //
+                    // A Linstor volume only materialises as a local /dev/drbd device once the
+                    // resource is made available on THIS host (a diskless DRBD assignment). RBD
+                    // needs no such step — qemu-img reaches it over the network by its rbd: URI.
+                    // So for Linstor we connect the resource here before qemu-img inspects it and
+                    // release the diskless assignment afterwards; the replicated data on the
+                    // storage nodes is untouched (disconnect only drops a local diskless copy).
+                    boolean linstorConnected = false;
+                    if (Storage.StoragePoolType.Linstor.equals(storageFilerTO.getType())) {
+                        linstorConnected = poolMgr.connectPhysicalDisk(storageFilerTO.getType(), storageFilerTO.getUuid(), srcFile, null);
+                    }
+                    try {
+                        return checkRbdVolume(command, pool, vol);
+                    } finally {
+                        if (linstorConnected) {
+                            poolMgr.disconnectPhysicalDisk(storageFilerTO.getType(), storageFilerTO.getUuid(), srcFile);
+                        }
+                    }
                 }
                 final String path = vol.getPath();
                 try {
