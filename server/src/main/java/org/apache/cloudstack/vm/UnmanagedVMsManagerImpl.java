@@ -1822,7 +1822,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             // Ensure that the configured resource limits will not be exceeded before beginning the conversion process
             checkVmResourceLimitsForUnmanagedInstanceImport(owner, sourceVMwareInstance, serviceOffering, template, reservations);
 
-            boolean isWindowsVm = sourceVMwareInstance.getOperatingSystem().toLowerCase().contains("windows");
+            boolean isWindowsVm = isWindowsGuest(sourceVMwareInstance);
             if (isWindowsVm) {
                 checkConversionSupportOnHost(convertHost, sourceVMName, true, useVddk, details, directRbdVddkImport, directLinstorVddkImport);
             }
@@ -2056,6 +2056,12 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             logger.error(err);
             throw new CloudRuntimeException(err);
         }
+    }
+
+    protected boolean isWindowsGuest(UnmanagedInstanceTO sourceVMwareInstance) {
+        return sourceVMwareInstance != null
+                && StringUtils.isNotBlank(sourceVMwareInstance.getOperatingSystem())
+                && sourceVMwareInstance.getOperatingSystem().toLowerCase().contains("windows");
     }
 
     // Matches the creation position embedded in a direct-to-pool converted disk image name:
@@ -2423,6 +2429,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         if (StringUtils.isNotBlank(extraParams)) {
             cmd.setExtraParams(extraParams);
         }
+        cmd.setWindowsGuest(isWindowsGuest(sourceVMwareInstance));
         int timeoutSeconds = UnmanagedVMsManager.ConvertVmwareInstanceToKvmTimeout.value() * 60 * 60;
         cmd.setWait(timeoutSeconds);
 
@@ -2461,6 +2468,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         if (useVddk) {
             cmd.setVmwareVddkSourceDisks(toVmwareVddkSourceDisks(sourceVMwareInstance.getDisks()));
         }
+        cmd.setWindowsGuest(isWindowsGuest(sourceVMwareInstance));
         applyVddkOverridesFromDetails(cmd, details);
         return convertAndImportToKVM(cmd, convertHost, importHost, sourceVM,
                 remoteInstanceTO, getStoragePoolUuids(destinationStoragePools), getStoragePoolTypes(destinationStoragePools),

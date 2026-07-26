@@ -39,6 +39,7 @@ public class ConvertInstanceCommand extends Command {
     private String vddkTransports;
     private String vddkThumbprint;
     private List<VmwareVddkSourceDiskTO> vmwareVddkSourceDisks;
+    private boolean windowsGuest;
 
     public ConvertInstanceCommand() {
     }
@@ -136,6 +137,14 @@ public class ConvertInstanceCommand extends Command {
 
     public void setVmwareVddkSourceDisks(List<VmwareVddkSourceDiskTO> vmwareVddkSourceDisks) {
         this.vmwareVddkSourceDisks = vmwareVddkSourceDisks;
+    }
+
+    public boolean isWindowsGuest() {
+        return windowsGuest;
+    }
+
+    public void setWindowsGuest(boolean windowsGuest) {
+        this.windowsGuest = windowsGuest;
     }
 
     @Override
