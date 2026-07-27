@@ -85,6 +85,18 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     HostVO findByGuid(String guid);
 
+    /**
+     * Finds a host by its exact GUID, including hosts that have been (soft-)removed.
+     * Used to detect an agent trying to re-register with the GUID of a previously deleted host.
+     */
+    HostVO findByGuidIncludingRemoved(String guid);
+
+    /**
+     * Finds a host whose GUID starts with the given prefix, including hosts that have been (soft-)removed.
+     * Used to detect an agent trying to re-register with the GUID of a previously deleted host.
+     */
+    HostVO findByGuidPrefixIncludingRemoved(String guidPrefix);
+
     HostVO findByTypeNameAndZoneId(long zoneId, String name, Host.Type type);
 
     List<HostVO> findHypervisorHostInCluster(long clusterId);
