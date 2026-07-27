@@ -357,7 +357,7 @@ public class DomainResponse extends BaseResponseWithAnnotations implements Resou
 
     @Override
     public void setVpcLimit(String vpcLimit) {
-        this.vpcLimit = vpcLimit;
+        this.vpcLimit = networkLimit;
     }
 
     @Override
