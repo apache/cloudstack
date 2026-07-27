@@ -22,6 +22,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -31,6 +33,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 public class ListQuery {
+    private static final Pattern PAGE_CLAUSE_PATTERN = Pattern.compile("(?i)\\bpage\\s+(\\d+)\\b");
+
     boolean allContent;
     Long max;
     Long page;
@@ -51,6 +55,14 @@ public class ListQuery {
 
     public void setMax(Long max) {
         this.max = max;
+    }
+
+    public Long getPage() {
+        return page;
+    }
+
+    public void setPage(Long page) {
+        this.page = page;
     }
 
     public void setSearch(Map<String, String> search) {
@@ -108,10 +120,13 @@ public class ListQuery {
         query.setFollow(follow);
         Map<String, String> searchItems = getSearchMap(request.getParameter("search"));
         if (!searchItems.isEmpty()) {
-            try {
-                query.setMax(Long.parseLong(searchItems.get("page")));
-            } catch (NumberFormatException e) {
-                // Ignore invalid page and keep default null value.
+            String pageValue = searchItems.get("page");
+            if (StringUtils.isNotBlank(pageValue)) {
+                try {
+                    query.setPage(Long.parseLong(pageValue));
+                } catch (NumberFormatException e) {
+                    // Ignore invalid page and keep default null value.
+                }
             }
             query.setSearch(searchItems);
         }
@@ -119,39 +134,19 @@ public class ListQuery {
         return query;
     }
 
-    // Parse search clause. Only keep items which use simple '=' operator, and ignore others. For example:
-    //   name=myvm and status=up  --> {name=myvm, status=up}
-    //   name=myvm and status!=down --> {name=myvm} (ignore status!=down because it uses '!=' operator)
+    // Parse search clause. For now, only extract the oVirt paging clause.
+    // Examples:
+    //   page 3 --> {page=3}
+    //   sortby name page 2 --> {page=2}
     @NotNull
     private static Map<String, String> getSearchMap(String searchClause) {
         Map<String, String> searchItems = new LinkedHashMap<>();
         if (StringUtils.isBlank(searchClause)) {
             return searchItems;
         }
-        String[] terms = searchClause.trim().split("(?i)\\s+and\\s+");
-        for (String term : terms) {
-            if (term == null) {
-                continue;
-            }
-            String trimmedTerm = term.trim();
-            if (trimmedTerm.isEmpty()) {
-                continue;
-            }
-
-            int eqIdx = trimmedTerm.indexOf('=');
-            if (eqIdx <= 0 || eqIdx != trimmedTerm.lastIndexOf('=')) {
-                continue;
-            }
-            char prev = trimmedTerm.charAt(eqIdx - 1);
-            if (prev == '!' || prev == '<' || prev == '>') {
-                continue;
-            }
-
-            String key = trimmedTerm.substring(0, eqIdx).trim();
-            String value = trimmedTerm.substring(eqIdx + 1).trim();
-            if (!key.isEmpty() && !value.isEmpty()) {
-                searchItems.put(key, value);
-            }
+        Matcher matcher = PAGE_CLAUSE_PATTERN.matcher(searchClause);
+        if (matcher.find()) {
+            searchItems.put("page", matcher.group(1));
         }
         return searchItems;
     }

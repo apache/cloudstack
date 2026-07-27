@@ -43,8 +43,9 @@ import com.cloud.user.UserVO;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.acl.RoleVO;
 import org.apache.cloudstack.acl.dao.RoleDao;
-import com.cloud.dc.Pod;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.Pod;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.org.Cluster;
 import com.cloud.server.ManagementService;
@@ -96,6 +97,7 @@ import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.address.ListQuarantinedIpsCmd;
 import org.apache.cloudstack.api.command.user.affinitygroup.ListAffinityGroupsCmd;
+import org.apache.cloudstack.api.command.user.backup.ListBackupServiceJobsCmd;
 import org.apache.cloudstack.api.command.user.bucket.ListBucketsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.api.command.user.iso.ListIsosCmd;
@@ -118,6 +120,7 @@ import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.command.user.zone.ListZonesCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
+import org.apache.cloudstack.api.response.BackupServiceJobResponse;
 import org.apache.cloudstack.api.response.BucketResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.DetailOptionsResponse;
@@ -155,7 +158,12 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VirtualMachineResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.backup.InternalBackupServiceJobType;
+import org.apache.cloudstack.backup.InternalBackupServiceJobVO;
 import org.apache.cloudstack.backup.BackupOfferingVO;
+import org.apache.cloudstack.backup.BackupVO;
+import org.apache.cloudstack.backup.dao.InternalBackupServiceJobDao;
+import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -656,6 +664,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     RoleDao roleDao;
+
+    @Inject
+    private InternalBackupServiceJobDao internalBackupServiceJobDao;
+
+    @Inject
+    private BackupDao backupDao;
 
     /*
      * (non-Javadoc)
@@ -5500,6 +5514,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             options.put(VmDetailConstants.GUEST_CPU_MODEL, Collections.emptyList());
             options.put(VmDetailConstants.KVM_GUEST_OS_MACHINE_TYPE, Collections.emptyList());
             options.put(VmDetailConstants.KVM_SKIP_FORCE_DISK_CONTROLLER, Arrays.asList("true", "false"));
+            options.put(VmDetailConstants.VALIDATION_COMMAND, Collections.emptyList());
+            options.put(VmDetailConstants.VALIDATION_COMMAND_ARGUMENTS, Collections.emptyList());
+            options.put(VmDetailConstants.VALIDATION_COMMAND_EXPECTED_RESULT, Collections.emptyList());
+            options.put(VmDetailConstants.VALIDATION_COMMAND_TIMEOUT, Collections.emptyList());
+            options.put(VmDetailConstants.VALIDATION_BOOT_TIMEOUT, Collections.emptyList());
+            options.put(VmDetailConstants.VALIDATION_SCREENSHOT_WAIT, Collections.emptyList());
+
         }
 
         if (HypervisorType.VMware.equals(hypervisorType)) {
@@ -6352,6 +6373,34 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         return bucketDao.searchByIds(bktIds);
+    }
+
+    @Override
+    public ListResponse<BackupServiceJobResponse> listBackupServiceJobs(ListBackupServiceJobsCmd cmd) {
+        ListResponse<BackupServiceJobResponse> responses = new ListResponse<>();
+        Pair<List<InternalBackupServiceJobVO>, Integer> result = listBackupServiceJobsInternal(cmd);
+        List<BackupServiceJobResponse> compressionJobResponses = new ArrayList<>();
+
+        for (InternalBackupServiceJobVO jobVO : result.first()) {
+            BackupVO backup = backupDao.findByIdIncludingRemoved(jobVO.getBackupId());
+            DataCenterVO zone = dataCenterDao.findByIdIncludingRemoved(jobVO.getZoneId());
+
+            BackupServiceJobResponse response =  new BackupServiceJobResponse(jobVO.getId(), backup.getUuid(), zone.getUuid(), jobVO.getAttempts(),
+                    jobVO.getType().toString(), jobVO.getStartTime(), jobVO.getScheduledStartTime(), jobVO.getRemoved());
+
+            if (jobVO.getHostId() != null) {
+                response.setHostId(hostDao.findByIdIncludingRemoved(jobVO.getHostId()).getUuid());
+            }
+            compressionJobResponses.add(response);
+        }
+
+        responses.setResponses(compressionJobResponses, result.second());
+        return responses;
+    }
+
+    private Pair<List<InternalBackupServiceJobVO>, Integer> listBackupServiceJobsInternal(ListBackupServiceJobsCmd cmd) {
+        return internalBackupServiceJobDao.searchAndCountForListApi(cmd.getId(), cmd.getBackupId(), cmd.getHostId(), cmd.getZoneId(),
+                InternalBackupServiceJobType.valueOf(cmd.getType()), cmd.getExecuting(), cmd.getScheduled(), cmd.getStartIndex(), cmd.getPageSizeVal());
     }
 
     @Override

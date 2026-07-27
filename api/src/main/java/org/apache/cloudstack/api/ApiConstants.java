@@ -63,6 +63,7 @@ public class ApiConstants {
     public static final String BACKUP_LIMIT = "backuplimit";
     public static final String BACKUP_OFFERING_NAME = "backupofferingname";
     public static final String BACKUP_OFFERING_ID = "backupofferingid";
+    public static final String BACKUP_OFFERING_DETAILS = "backupofferingdetails";
     public static final String BACKUP_STORAGE_AVAILABLE = "backupstorageavailable";
     public static final String BACKUP_STORAGE_LIMIT = "backupstoragelimit";
     public static final String BACKUP_STORAGE_TOTAL = "backupstoragetotal";
@@ -286,6 +287,7 @@ public class ApiConstants {
     public static final String HEALTH = "health";
     public static final String HEADERS = "headers";
     public static final String HIDE_IP_ADDRESS_USAGE = "hideipaddressusage";
+    public static final String HISTORY = "history";
     public static final String HOST_ID = "hostid";
     public static final String HOST_IDS = "hostids";
     public static final String HOST_IP = "hostip";
@@ -533,6 +535,7 @@ public class ApiConstants {
     public static final String QUALIFIERS = "qualifiers";
     public static final String QUERY_FILTER = "queryfilter";
     public static final String QUIESCE_VM = "quiescevm";
+    public static final String QUICK_RESTORE = "quickrestore";
     public static final String SCHEDULE = "schedule";
     public static final String SCHEDULE_ID = "scheduleid";
     public static final String SCOPE = "scope";
@@ -583,6 +586,8 @@ public class ApiConstants {
     public static final String STATE = "state";
     public static final String STATS = "stats";
     public static final String STATUS = "status";
+    public static final String COMPRESSION_STATUS = "compressionstatus";
+    public static final String VALIDATION_STATUS = "validationstatus";
     public static final String STORAGE_TYPE = "storagetype";
     public static final String STORAGE_POLICY = "storagepolicy";
     public static final String STORAGE_MOTION_ENABLED = "storagemotionenabled";
@@ -681,6 +686,7 @@ public class ApiConstants {
     public static final String ETCD_SERVICE_OFFERING_NAME = "etcdofferingname";
     public static final String REMOVE_VLAN = "removevlan";
     public static final String VLAN_ID = "vlanid";
+    public static final String ISOLATED = "isolated";
     public static final String ISOLATED_PVLAN = "isolatedpvlan";
     public static final String ISOLATED_PVLAN_TYPE = "isolatedpvlantype";
     public static final String ISOLATION_URI = "isolationuri";
@@ -1205,6 +1211,7 @@ public class ApiConstants {
     public static final String CLEAN_UP_EXTRA_CONFIG = "cleanupextraconfig";
     public static final String CLEAN_UP_PARAMETERS = "cleanupparameters";
     public static final String VIRTUAL_SIZE = "virtualsize";
+    public static final String UNCOMPRESSED_SIZE = "uncompressedsize";
     public static final String NETSCALER_CONTROLCENTER_ID = "netscalercontrolcenterid";
     public static final String NETSCALER_SERVICEPACKAGE_ID = "netscalerservicepackageid";
     public static final String FETCH_ROUTER_HEALTH_CHECK_RESULTS = "fetchhealthcheckresults";
@@ -1341,7 +1348,7 @@ public class ApiConstants {
     public static final String IMPORT_SOURCE = "importsource";
     public static final String TEMP_PATH = "temppath";
     public static final String HEURISTIC_RULE = "heuristicrule";
-    public static final String HEURISTIC_TYPE_VALID_OPTIONS = "Valid options are: ISO, SNAPSHOT, TEMPLATE and VOLUME.";
+    public static final String HEURISTIC_TYPE_VALID_OPTIONS = "Valid options are: ISO, SNAPSHOT, BACKUP, TEMPLATE and VOLUME.";
     public static final String MANAGEMENT = "management";
     public static final String IS_VNF = "isvnf";
     public static final String VNF_NICS = "vnfnics";
@@ -1386,6 +1393,38 @@ public class ApiConstants {
                     " a VR, CloudStack will use the same MAC address for the public NIC of all VRs. Otherwise, if \"false\", new public NICs will always have " +
                     " a new MAC address.";
 
+    // DNS provider related
+    public static final String NAME_SERVERS = "nameservers";
+    public static final String DNS_USER_NAME = "dnsusername";
+    public static final String DNS_API_KEY = "dnsapikey";
+    public static final String DNS_ZONE_ID = "dnszoneid";
+    public static final String DNS_ZONE = "dnszone";
+    public static final String DNS_RECORD = "dnsrecord";
+    public static final String DNS_SUB_DOMAIN = "dnssubdomain";
+    public static final String DNS_SERVER_ID = "dnsserverid";
+    public static final String CONTENT = "content";
+    public static final String CONTENTS = "contents";
+    public static final String PUBLIC_DOMAIN_SUFFIX = "publicdomainsuffix";
+    public static final String AUTHORITATIVE = "authoritative";
+    public static final String KIND = "kind";
+    public static final String DNS_SEC = "dnssec";
+    public static final String TTL = "ttl";
+    public static final String CHANGE_TYPE = "changetype";
+    public static final String RECORDS = "records";
+    public static final String RR_SETS = "rrsets";
+    public static final String X_API_KEY = "X-API-Key";
+    public static final String DISABLED = "disabled";
+    public static final String CONTENT_TYPE = "Content-Type";
+    public static final String NATIVE_ZONE = "Native";
+    public static final String NIC_DNS_NAME = "nicdnsname";
+    public static final String TIME_STAMP = "timestamp";
+    public static final String INSTANCE_ID = "instanceId";
+    public static final String OLD_STATE = "oldState";
+    public static final String NEW_STATE = "newState";
+    public static final String OLD_HOST_NAME = "oldHostName";
+    public static final String EXISTING = "existing";
+    public static final String UNMANAGE = "unmanage";
+
     public static final String PARAMETER_DESCRIPTION_ACTIVATION_RULE = "Quota tariff's activation rule. It can receive a JS script that results in either " +
             "a boolean or a numeric value: if it results in a boolean value, the tariff value will be applied according to the result; if it results in a numeric value, the " +
             "numeric value will be applied; if the result is neither a boolean nor a numeric value, the tariff will not be applied. If the rule is not informed, the tariff " +
@@ -1404,6 +1443,10 @@ public class ApiConstants {
             "This parameter is only supported for the Dummy, NAS and EMC Networker backup provider.";
 
     public static final String VMWARE_DC = "vmwaredc";
+
+    public static final String PARAMETER_DESCRIPTION_ISOLATED_BACKUPS = "Whether the backup will be isolated, defaults to false. " +
+            "Isolated backups are always created as full backups in independent chains. Therefore, they will never depend on any existing backup chain " +
+            "and no backup chain will depend on them. Currently only supported for the KBOSS provider.";
 
     public static final String CSS = "css";
 
@@ -1425,6 +1468,27 @@ public class ApiConstants {
     public static final String VPN_CUSTOMER_GATEWAY_PARAMETERS = "vpncustomergatewayparameters";
     public static final String OBSOLETE_PARAMETERS = "obsoleteparameters";
     public static final String EXCLUDED_PARAMETERS = "excludedparameters";
+
+    public static final String COMPRESS = "compress";
+
+    public static final String VALIDATE = "validate";
+
+    public static final String VALIDATION_STEPS = "validationsteps";
+
+    public static final String ALLOW_QUICK_RESTORE = "allowquickrestore";
+
+    public static final String ALLOW_EXTRACT_FILE = "allowextractfile";
+
+    public static final String BACKUP_CHAIN_SIZE = "backupchainsize";
+
+    public static final String COMPRESSION_LIBRARY = "compressionlibrary";
+    public static final String ATTEMPTS = "attempts";
+
+    public static final String EXECUTING = "executing";
+
+    public static final String SCHEDULED = "scheduled";
+    public static final String SCHEDULED_DATE = "scheduleddate";
+    public static final String BACKUP_PROVIDER = "backupprovider";
 
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.
@@ -1467,7 +1531,7 @@ public class ApiConstants {
     }
 
     public enum HostDetails {
-        all, capacity, events, stats, min;
+        all, capacity, core, events, stats, min;
     }
 
     public enum VMDetails {

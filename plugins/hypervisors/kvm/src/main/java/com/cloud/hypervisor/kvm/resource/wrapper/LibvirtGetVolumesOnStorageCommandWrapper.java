@@ -62,7 +62,7 @@ public final class LibvirtGetVolumesOnStorageCommandWrapper extends CommandWrapp
         final String keyword = command.getKeyword();
 
         final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
-        final KVMStoragePool storagePool = storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid(), true);
+        final KVMStoragePool storagePool = storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid(), true, true);
 
         if (StringUtils.isNotBlank(volumePath)) {
             return addVolumeByVolumePath(command, storagePool, volumePath);

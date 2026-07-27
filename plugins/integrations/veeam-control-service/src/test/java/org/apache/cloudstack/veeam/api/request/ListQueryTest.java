@@ -67,18 +67,18 @@ public class ListQueryTest {
     }
 
     @Test
-    public void testFromRequest_SearchParserIgnoresNonEqualsAndUsesPageValueAsMaxCurrentBehavior() {
+    public void testFromRequest_SearchParserExtractsPageOnly() {
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        when(request.getParameterMap()).thenReturn(Map.of("search", new String[]{"name=vm and page=3 and status!=down and x>=1"}));
+        when(request.getParameterMap()).thenReturn(Map.of("search", new String[]{"sortby name page 3"}));
         when(request.getParameter("all_content")).thenReturn(null);
         when(request.getParameter("max")).thenReturn(null);
         when(request.getParameter("follow")).thenReturn(null);
-        when(request.getParameter("search")).thenReturn("name=vm and page=3 and status!=down and x>=1");
+        when(request.getParameter("search")).thenReturn("sortby name page 3");
 
         final ListQuery query = ListQuery.fromRequest(request);
 
-        // Document existing behavior: when search contains page=..., max is set from it.
-        org.junit.Assert.assertEquals(Long.valueOf(3L), query.getLimit());
+        // Only page key is extracted from search clause in oVirt format "page N"
+        org.junit.Assert.assertEquals(Long.valueOf(3L), query.getPage());
     }
 
     @Test

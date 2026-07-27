@@ -48,6 +48,10 @@ public class QuotaStatementItemResponse extends BaseResponse {
     @Param(description = "Item's resources.")
     private List<QuotaStatementItemResourceResponse> resources;
 
+    @SerializedName(ApiConstants.HISTORY)
+    @Param(description = "Quota consumption history.")
+    private List<QuotaStatementItemHistoryResponse> history;
+
     public QuotaStatementItemResponse(final int usageType) {
         this.usageType = usageType;
     }
@@ -92,4 +96,7 @@ public class QuotaStatementItemResponse extends BaseResponse {
         this.resources = resources;
     }
 
+    public void setHistory(List<QuotaStatementItemHistoryResponse> history) {
+        this.history = history;
+    }
 }

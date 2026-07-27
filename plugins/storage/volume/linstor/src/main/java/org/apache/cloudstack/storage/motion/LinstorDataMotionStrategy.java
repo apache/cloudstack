@@ -70,6 +70,7 @@ import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.datastore.util.LinstorConfigurationManager;
 import org.apache.cloudstack.storage.datastore.util.LinstorUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -170,7 +171,9 @@ public class LinstorDataMotionStrategy implements DataMotionStrategy {
 
     private void removeExactSizeProperty(VolumeInfo volumeInfo) {
         StoragePoolVO destStoragePool = _storagePool.findById(volumeInfo.getDataStore().getId());
-        DevelopersApi api = LinstorUtil.getLinstorAPI(destStoragePool.getHostAddress());
+        DevelopersApi api = LinstorUtil.getLinstorAPI(destStoragePool.getHostAddress(),
+                LinstorConfigurationManager.ApiToken.valueIn(destStoragePool.getId()),
+                Boolean.TRUE.equals(LinstorConfigurationManager.InsecureSsl.valueIn(destStoragePool.getId())));
 
         ResourceDefinitionModify rdm = new ResourceDefinitionModify();
         rdm.setDeleteProps(Collections.singletonList(LinstorUtil.LIN_PROP_DRBDOPT_EXACT_SIZE));
@@ -290,7 +293,9 @@ public class LinstorDataMotionStrategy implements DataMotionStrategy {
     private boolean needsExactSizeProp(VolumeInfo srcVolumeInfo) {
         StoragePoolVO srcStoragePool = _storagePool.findById(srcVolumeInfo.getDataStore().getId());
         if (srcStoragePool.getPoolType() == Storage.StoragePoolType.Linstor) {
-            DevelopersApi api = LinstorUtil.getLinstorAPI(srcStoragePool.getHostAddress());
+            DevelopersApi api = LinstorUtil.getLinstorAPI(srcStoragePool.getHostAddress(),
+                    LinstorConfigurationManager.ApiToken.valueIn(srcStoragePool.getId()),
+                    Boolean.TRUE.equals(LinstorConfigurationManager.InsecureSsl.valueIn(srcStoragePool.getId())));
 
             String rscName = LinstorUtil.RSC_PREFIX + srcVolumeInfo.getPath();
             try {
