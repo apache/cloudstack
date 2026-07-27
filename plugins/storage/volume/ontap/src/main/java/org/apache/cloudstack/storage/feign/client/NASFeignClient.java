@@ -32,7 +32,7 @@ import java.util.Map;
 public interface NASFeignClient {
 
     // File Operations
-    @RequestLine("GET /api/storage/volumes/{volumeUuid}/files/{path}")
+    @RequestLine("GET /api/storage/volumes/{volumeUuid}/files/{path}?return_metadata=true")
     @Headers({"Authorization: {authHeader}"})
     OntapResponse<FileInfo> getFileResponse(@Param("authHeader") String authHeader,
                                             @Param("volumeUuid") String volumeUUID,

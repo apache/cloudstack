@@ -295,6 +295,9 @@ export default {
         params[this.scopeKey] = this.resource?.id
       }
       postAPI('updateConfiguration', params).then(json => {
+        // The updateConfiguration response can return a stale value for
+        // non-global scopes (server-side issue). Trust the value the user
+        // just submitted — the API returned success, so we know it was persisted.
         const apiRecord = json.updateconfigurationresponse.configuration
         configRecordEntry = { ...apiRecord, value: String(newValue) }
         this.editableValue = this.getEditableValue(configRecordEntry)

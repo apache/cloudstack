@@ -21,7 +21,7 @@ import store from '@/store'
 export default {
   name: 'kms',
   title: 'label.kms',
-  icon: 'hdd-outlined',
+  icon: 'lock-outlined',
   show: () => {
     return ['Admin'].includes(store.getters.userInfo.roletype) || store.getters.features.hashsmprofiles
   },

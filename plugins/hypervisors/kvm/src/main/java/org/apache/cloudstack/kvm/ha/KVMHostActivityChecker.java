@@ -109,6 +109,7 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
         }
 
         Status hostStatusFromNeighbour = checkHostStatusWithNeighbourHosts(host);
+        logger.debug("{} status reported from itself: {} and neighbor: {}", host.toString(), hostStatusFromItself, hostStatusFromNeighbour);
         Status hostStatus = hostStatusFromItself;
         if (hostStatusFromNeighbour == Status.Up && (hostStatusFromItself == Status.Disconnected || hostStatusFromItself == Status.Down)) {
             hostStatus = Status.Disconnected;

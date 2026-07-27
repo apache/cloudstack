@@ -100,6 +100,9 @@
           <div v-else-if="['created', 'sent', 'lastannotated', 'collectiontime', 'lastboottime', 'lastserverstart', 'lastserverstop', 'removed', 'effectiveDate', 'endDate', 'startdate', 'enddate'].includes(item)">
             {{ $toLocaleDate(dataResource[item]) }}
           </div>
+          <code-highlight v-else-if="['activationRule'].includes(item)" language="javascript">
+            {{ dataResource[item] }}
+          </code-highlight>
           <div style="white-space: pre-wrap;" v-else-if="$route.meta.name === 'quotatariff' && item === 'description'">{{ dataResource[item] }}</div>
           <div v-else-if="$route.meta.name === 'userdata' && item === 'userdata'">
             <div style="white-space: pre-wrap;"> {{ decodeUserData(dataResource.userdata)}} </div>
@@ -145,6 +148,21 @@
             {{ dataResource[item].join(', ') }}
           </div>
           <div v-else>{{ dataResource[item] }}</div>
+        </div>
+      </a-list-item>
+      <a-list-item v-else-if="item === 'secretkey' && dataResource[item]">
+        <div>
+          <strong>{{ $t('label.secretkey') }}</strong>
+          <tooltip-button
+            tooltipPlacement="right"
+            :tooltip="$t('label.copy') + ' ' + $t('label.secretkey')"
+            icon="CopyOutlined"
+            type="dashed"
+            size="small"
+            @onClick="$message.success($t('label.copied.clipboard'))"
+            :copyResource="dataResource[item]" />
+          <br/>
+          <div>{{ dataResource[item].substring(0, 20) }}...</div>
         </div>
       </a-list-item>
       <a-list-item v-else-if="item === 'ip6address' && ipV6Address && ipV6Address.length > 0">
@@ -207,6 +225,26 @@
           </div>
         </div>
       </a-list-item>
+      <a-list-item v-else-if="item === 'provider' && $route.path.includes('/dnsserver')">
+        <div>
+          <strong>{{ $t('label.provider') }}</strong>
+          <br/>
+          <div>{{ dataResource[item] }}</div>
+        </div>
+      </a-list-item>
+      <div v-else-if="item === 'backupofferingdetails'">
+        <a-list-item
+          v-for="(value, key) in dataResource[item]"
+          :key="key">
+          <div>
+            <strong>{{ $t('label.' + String(key).toLowerCase()) }}</strong>
+            <br/>
+            <div>
+              {{ value }}
+            </div>
+          </div>
+        </a-list-item>
+      </div>
       <external-configuration-details
         v-else-if="item === 'externaldetails' && (['host', 'computeoffering'].includes($route.meta.name) || (['cluster'].includes($route.meta.name) && dataResource.extensionid))"
         :resource="dataResource" />
@@ -223,7 +261,10 @@ import HostInfo from '@/views/infra/HostInfo'
 import VmwareData from './VmwareData'
 import ObjectListTable from '@/components/view/ObjectListTable'
 import ExternalConfigurationDetails from '@/views/extension/ExternalConfigurationDetails'
+import TooltipButton from '@/components/widgets/TooltipButton'
 import { genericCompare } from '@/utils/sort'
+import CodeHighlight from 'vue-code-highlight/src/CodeHighlight.vue'
+import 'vue-code-highlight/themes/prism-okaidia.css'
 
 export default {
   name: 'DetailsTab',
@@ -232,7 +273,9 @@ export default {
     HostInfo,
     VmwareData,
     ObjectListTable,
-    ExternalConfigurationDetails
+    ExternalConfigurationDetails,
+    TooltipButton,
+    CodeHighlight
   },
   props: {
     resource: {
@@ -270,7 +313,7 @@ export default {
   },
   computed: {
     customDisplayItems () {
-      var items = ['ip4routes', 'ip6routes', 'privatemtu', 'publicmtu', 'provider', 'details', 'parameters']
+      var items = ['ip4routes', 'ip6routes', 'privatemtu', 'publicmtu', 'provider', 'details', 'parameters', 'secretkey', 'backupofferingdetails']
       if (this.$route.meta.name === 'webhookdeliveries') {
         items.push('startdate')
         items.push('enddate')

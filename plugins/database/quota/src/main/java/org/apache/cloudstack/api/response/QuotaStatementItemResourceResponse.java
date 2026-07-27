@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.response;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import com.google.gson.annotations.SerializedName;
 
@@ -43,6 +44,10 @@ public class QuotaStatementItemResourceResponse extends BaseResponse {
     @Param(description = "Indicates whether the resource is removed or active.")
     private boolean removed;
 
+    @SerializedName(ApiConstants.HISTORY)
+    @Param(description = "Quota consumption history.")
+    private List<QuotaStatementItemHistoryResponse> history;
+
     public void setQuotaUsed(BigDecimal quotaUsed) {
         this.quotaUsed = quotaUsed;
     }
@@ -58,4 +63,9 @@ public class QuotaStatementItemResourceResponse extends BaseResponse {
     public void setRemoved(boolean removed) {
         this.removed = removed;
     }
+
+    public void setHistory(List<QuotaStatementItemHistoryResponse> history) {
+        this.history = history;
+    }
+
 }
