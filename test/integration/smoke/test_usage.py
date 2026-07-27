@@ -43,6 +43,7 @@ from marvin.lib.common import (get_zone,
                                list_storage_pools,
                                find_storage_pool_type)
 
+import time
 
 
 class Services:
@@ -782,6 +783,7 @@ class TestVolumeUsage(cloudstackTestCase):
         )
         rool_volume_pool = rool_volume_pool_response[0]
         try:
+            time.sleep(10)
             self.virtual_machine.attach_volume(self.apiclient,volume_uploaded)
         except Exception as e:
             self.debug("Exception %s: " % e)
