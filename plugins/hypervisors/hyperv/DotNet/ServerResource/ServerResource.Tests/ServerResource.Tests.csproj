@@ -63,8 +63,9 @@
       <HintPath>..\packages\log4net.2.0.0\lib\net40-full\log4net.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\packages\Newtonsoft.Json.4.5.11\lib\net40\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed">
+      <HintPath>..\packages\Newtonsoft.Json.13.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="NSubstitute">
       <HintPath>..\packages\NSubstitute.1.6.1.0\lib\NET40\NSubstitute.dll</HintPath>
@@ -122,8 +123,8 @@
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <Target Name="BeforeBuild" Condition="'$(BuildWithMono)' == 'true' ">
-    <RemoveDir Directories="$(ProjectDir)$(BaseIntermediateOutputPath)" Condition="Exists('$(ProjectDir)$(BaseIntermediateOutputPath)')"/>
-    <RemoveDir Directories="$(ProjectDir)$(OutputPath)" Condition="Exists('$(ProjectDir)$(OutputPath)')"/>
+    <RemoveDir Directories="$(ProjectDir)$(BaseIntermediateOutputPath)" Condition="Exists('$(ProjectDir)$(BaseIntermediateOutputPath)')" />
+    <RemoveDir Directories="$(ProjectDir)$(OutputPath)" Condition="Exists('$(ProjectDir)$(OutputPath)')" />
   </Target>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
