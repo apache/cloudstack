@@ -100,8 +100,10 @@
           <a-row :gutter="12">
             <a-col :md="24" :lg="20">
               <a-form-item @finish="submitPin" v-ctrl-enter="submitPin" name="code" ref="code">
-                <a-input-password
+                <a-input
                   v-model:value="form.code"
+                  autocomplete="one-time-code"
+                  inputmode="numeric"
                   placeholder="xxxxxx" />
               </a-form-item>
             </a-col>
