@@ -85,9 +85,57 @@ public class ConsoleProxy {
     static Set<String> allowedSessions = ConcurrentHashMap.newKeySet();
     private static final Object allowedSessionsLock = new Object();
 
+    private static final Map<String, ReconnectGrant> sessionReconnectGrants = new ConcurrentHashMap<>();
+    static int sessionReconnectGraceSeconds = 1;
+
     // Invoked through reflection
     public static void addAllowedSession(String sessionUuid) {
         allowedSessions.add(sessionUuid);
+    }
+
+    /**
+     * Grant a short, single-use window to reconnect with the same session UUID in case of a disconnection.
+     * The grant is bound to the client IP that was using the session so it cannot be redeemed by another client.
+     * @param sessionUuid session UUID to grant a reconnect window for
+     * @param clientIp source IP of the client the session was granted to
+     */
+    public static void grantReconnectWindow(String sessionUuid, String clientIp) {
+        sessionReconnectGrants.put(sessionUuid, new ReconnectGrant(System.currentTimeMillis() + sessionReconnectGraceSeconds * 1000L, clientIp));
+    }
+
+    private static boolean consumeReconnectGrant(String sessionUuid, String clientIp) {
+        ReconnectGrant grant = sessionReconnectGrants.remove(sessionUuid);
+        if (grant == null || grant.isExpired(System.currentTimeMillis())) {
+            return false;
+        }
+        if (grant.clientIp != null && !grant.clientIp.equals(clientIp)) {
+            LOGGER.warn("Rejecting reconnect for session " + sessionUuid + " as it was requested from IP " +
+                    clientIp + " but the reconnect window was granted to IP " + grant.clientIp);
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Drops expired, unclaimed reconnect grants so sessionReconnectGrants doesn't grow unbounded
+     * when a client never reconnects after a disconnection. Invoked periodically by {@link ConsoleProxyGCThread}.
+     */
+    static void cleanupExpiredReconnectGrants() {
+        sessionReconnectGrants.entrySet().removeIf(entry -> entry.getValue().isExpired(System.currentTimeMillis()));
+    }
+
+    private static final class ReconnectGrant {
+        final long expiryMillis;
+        final String clientIp;
+
+        ReconnectGrant(long expiryMillis, String clientIp) {
+            this.expiryMillis = expiryMillis;
+            this.clientIp = clientIp;
+        }
+
+        boolean isExpired(long now) {
+            return now >= expiryMillis;
+        }
     }
 
     private static void configLog4j() {
@@ -167,6 +215,12 @@ public class ConsoleProxy {
             defaultBufferSize = Integer.parseInt(s);
             LOGGER.info("Setting defaultBufferSize=" + defaultBufferSize);
         }
+
+        s = conf.getProperty("consoleproxy.sessionReconnectGraceSeconds");
+        if (s != null) {
+            sessionReconnectGraceSeconds = Integer.parseInt(s);
+            LOGGER.info("Setting sessionReconnectGraceSeconds=" + sessionReconnectGraceSeconds);
+        }
     }
 
     public static ConsoleProxyServerFactory getHttpServerFactory() {
@@ -211,9 +265,10 @@ public class ConsoleProxy {
 
         String sessionUuid = param.getSessionUuid();
         synchronized (allowedSessionsLock) {
-            if (allowedSessions.contains(sessionUuid)) {
-                LOGGER.debug("Acquiring the session " + sessionUuid + " not available for future use");
-                allowedSessions.remove(sessionUuid);
+            if (allowedSessions.remove(sessionUuid)) {
+                LOGGER.debug("Acquiring the session " + sessionUuid + " for use");
+            } else if (consumeReconnectGrant(sessionUuid, param.getClientIp())) {
+                LOGGER.info("Reconnecting the session " + sessionUuid + " after a dropped connection");
             } else {
                 LOGGER.info("Session " + sessionUuid + " has already been used, cannot connect");
                 authResult.setSuccess(false);
