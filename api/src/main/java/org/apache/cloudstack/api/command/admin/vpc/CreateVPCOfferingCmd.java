@@ -145,10 +145,9 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
     private Boolean enable;
 
     @Parameter(
-    name = ApiConstants.NETWORK_MODE,
-    type = CommandType.STRING,
-    required = true,
-    description = "the network mode of the vpc, possible values are NATTED and ROUTED"
+            name = ApiConstants.NETWORK_MODE,
+            type = CommandType.STRING,
+            description = "the network mode of the vpc, possible values are NATTED and ROUTED"
     )
     private String networkMode;
 

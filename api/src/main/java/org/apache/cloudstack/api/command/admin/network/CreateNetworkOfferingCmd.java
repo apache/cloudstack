@@ -16,12 +16,18 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.network;
 
+
+import java.util.List;
+import java.util.Map;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
+
 
 import com.cloud.offering.NetworkOffering;
 
@@ -98,7 +104,6 @@ public class CreateNetworkOfferingCmd extends NetworkOfferingBaseCmd {
     @Parameter(
     name = ApiConstants.NETWORK_MODE,
     type = CommandType.STRING,
-    required = true,
     description = "the network mode of the network offering, possible values are NATTED and ROUTED"
     )
     private String networkMode;
