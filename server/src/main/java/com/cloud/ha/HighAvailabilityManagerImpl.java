@@ -19,7 +19,6 @@ package com.cloud.ha;
 import static org.apache.cloudstack.framework.config.ConfigKey.Scope.Zone;
 import static com.cloud.event.Event.State;
 
-import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -30,7 +29,6 @@ import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Predicate;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -43,8 +41,6 @@ import com.cloud.event.EventVO;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
@@ -151,14 +147,6 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
 
     protected static final List<ReasonType> CancellableWorkReasonTypes =
             Arrays.asList(ReasonType.HostMaintenance, ReasonType.HostDown, ReasonType.HostDegraded);
-
-    /**
-     * Matcher to identify VM ID field in the command.
-     */
-    private static final Predicate<Annotation> RESOURCE_ID_MATCHER =
-            (annotation) -> annotation instanceof Parameter
-                    && ((Parameter) annotation).required()
-                    && ((Parameter) annotation).type() == BaseCmd.CommandType.UUID;
 
     WorkerThread[] _workers;
     boolean _stopped;
@@ -976,7 +964,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         try {
             String vmHostName = Optional.ofNullable(_hostDao.findById(vm.getHostId())).map(HostVO::getName)
                     .orElse(null);
-            String msg = String.format("Starting migration from host %s, skipping migration. HA Work %s (attempt %s of %s)",
+            String msg = String.format("Starting migration from host %s. HA Work %s (attempt %s of %s)",
                     vmHostName, work.getId(), attemptNumber, _maxRetries);
             createEvent(vmId, resourceType, eventType, msg, State.Started, EventVO.LEVEL_INFO);
             work.setStep(Step.Migrating);

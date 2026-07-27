@@ -940,13 +940,13 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         return findOneIncludingRemovedBy(sc);
     }
 
-    @Override
     @DB()
-    public T findOneBy(SearchCriteria<T> sc, final Filter filter) {
+    protected T findLastOneBy(SearchCriteria<T> sc) {
         sc = checkAndSetRemovedIsNull(sc);
-        filter.setLimit(1L);
+        Filter filter = new Filter(_entityBeanType, "id", Boolean.FALSE, 0L, 1L);
         List<T> results = searchIncludingRemoved(sc, filter, null, false);
-        return results.isEmpty() ? null : results.get(0);
+        assert results.size() <= 1 : "Didn't the limiting worked?";
+        return results.size() == 0 ? null : results.get(0);
     }
 
     @DB()

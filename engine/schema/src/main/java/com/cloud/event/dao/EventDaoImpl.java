@@ -94,9 +94,7 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
         sc.setParameters("resourceId", resourceId);
         sc.setParameters("resourceType", resourceType);
         sc.setParameters("archived", false);
-
-        Filter filter = new Filter(EventVO.class, "id", Boolean.FALSE, 0L, 1L);
-        return findOneBy(sc, filter);
+        return findLastOneBy(sc);
     }
 
     @Override
