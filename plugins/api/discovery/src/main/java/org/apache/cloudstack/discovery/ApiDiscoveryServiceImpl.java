@@ -238,18 +238,18 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
                 }
                 paramResponse.setRelated(parameterAnnotation.entityType()[0].getName());
 
-            String[] allowedValues = parameterAnnotation.allowedValues();
-            if (allowedValues.length > 0) {
-                paramResponse.setAllowedValues(
-                    Collections.unmodifiableList(Arrays.asList(allowedValues))
-                );
-            }
+                    String[] allowedValues = parameterAnnotation.allowedValues();
+                    if (allowedValues.length > 0) {
+                        paramResponse.setAllowedValues(
+                                Collections.unmodifiableList(Arrays.asList(allowedValues))
+                        );
+                    }
 
-            if (parameterAnnotation.authorized() != null) {
-                paramResponse.setAuthorizedRoleTypes(Arrays.asList(parameterAnnotation.authorized()));
-            }
+                    if (parameterAnnotation.authorized() != null) {
+                        paramResponse.setAuthorizedRoleTypes(Arrays.asList(parameterAnnotation.authorized()));
+                    }
 
-            response.addParam(paramResponse);
+                    response.addParam(paramResponse);
             }
         }
         return response;
