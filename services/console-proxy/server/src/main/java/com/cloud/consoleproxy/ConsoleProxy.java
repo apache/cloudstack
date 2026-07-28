@@ -86,7 +86,7 @@ public class ConsoleProxy {
     private static final Object allowedSessionsLock = new Object();
 
     private static final Map<String, ReconnectGrant> sessionReconnectGrants = new ConcurrentHashMap<>();
-    static int sessionReconnectGraceSeconds = 1;
+    private static long sessionReconnectionWindowMs = 0L;
 
     // Invoked through reflection
     public static void addAllowedSession(String sessionUuid) {
@@ -94,23 +94,34 @@ public class ConsoleProxy {
     }
 
     /**
-     * Grant a short, single-use window to reconnect with the same session UUID in case of a disconnection.
+     * Grant the client IP a reconnection window of #{@link #sessionReconnectionWindowMs} ms to the same session UUID in case of a disconnection.
      * The grant is bound to the client IP that was using the session so it cannot be redeemed by another client.
      * @param sessionUuid session UUID to grant a reconnect window for
      * @param clientIp source IP of the client the session was granted to
      */
-    public static void grantReconnectWindow(String sessionUuid, String clientIp) {
-        sessionReconnectGrants.put(sessionUuid, new ReconnectGrant(System.currentTimeMillis() + sessionReconnectGraceSeconds * 1000L, clientIp));
+    public static void grantReconnectWindowForSessionAndClientIp(String sessionUuid, String clientIp) {
+        if (sessionReconnectionWindowMs > 0) {
+            ReconnectGrant grant = new ReconnectGrant(System.currentTimeMillis() + sessionReconnectionWindowMs, clientIp);
+            sessionReconnectGrants.put(sessionUuid, grant);
+        }
     }
 
-    private static boolean consumeReconnectGrant(String sessionUuid, String clientIp) {
+    /**
+     * True if the session UUID has been granted reconnection, within the reconnection window #{@link #sessionReconnectionWindowMs}.
+     */
+    private static boolean isSessionReconnectionGrantedForClientIp(String sessionUuid, String clientIp) {
         ReconnectGrant grant = sessionReconnectGrants.remove(sessionUuid);
-        if (grant == null || grant.isExpired(System.currentTimeMillis())) {
+        if (grant == null) {
+            return false;
+        }
+        if (grant.isExpired(System.currentTimeMillis())) {
+            LOGGER.warn("Rejecting reconnection for session {} as the reconnect window: {}ms is already expired",
+                    sessionUuid, sessionReconnectionWindowMs);
             return false;
         }
         if (grant.clientIp != null && !grant.clientIp.equals(clientIp)) {
-            LOGGER.warn("Rejecting reconnect for session " + sessionUuid + " as it was requested from IP " +
-                    clientIp + " but the reconnect window was granted to IP " + grant.clientIp);
+            LOGGER.warn("Rejecting reconnection for session {} as it was requested from IP {} " +
+                    "but the session was granted to IP {}", sessionUuid, clientIp, grant.clientIp);
             return false;
         }
         return true;
@@ -216,10 +227,10 @@ public class ConsoleProxy {
             LOGGER.info("Setting defaultBufferSize=" + defaultBufferSize);
         }
 
-        s = conf.getProperty("consoleproxy.sessionReconnectGraceSeconds");
+        s = conf.getProperty("session_reconnection_window");
         if (s != null) {
-            sessionReconnectGraceSeconds = Integer.parseInt(s);
-            LOGGER.info("Setting sessionReconnectGraceSeconds=" + sessionReconnectGraceSeconds);
+            sessionReconnectionWindowMs = Long.parseLong(s);
+            LOGGER.info("Setting sessionReconnectionWindowMs=" + sessionReconnectionWindowMs);
         }
     }
 
@@ -266,11 +277,12 @@ public class ConsoleProxy {
         String sessionUuid = param.getSessionUuid();
         synchronized (allowedSessionsLock) {
             if (allowedSessions.remove(sessionUuid)) {
-                LOGGER.debug("Acquiring the session " + sessionUuid + " for use");
-            } else if (consumeReconnectGrant(sessionUuid, param.getClientIp())) {
-                LOGGER.info("Reconnecting the session " + sessionUuid + " after a dropped connection");
+                LOGGER.debug("Acquiring the session {} from client IP {}", sessionUuid, param.getClientIp());
+            } else if (isSessionReconnectionGrantedForClientIp(sessionUuid, param.getClientIp())) {
+                LOGGER.info("Reconnecting the session {} after a dropped connection", sessionUuid);
+                return authResult;
             } else {
-                LOGGER.info("Session " + sessionUuid + " has already been used, cannot connect");
+                LOGGER.info("Invalid or already used session {}, cannot connect", sessionUuid);
                 authResult.setSuccess(false);
                 return authResult;
             }

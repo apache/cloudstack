@@ -1210,6 +1210,10 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         if (Boolean.TRUE.equals(disableRpFilter)) {
             buf.append(" disable_rp_filter=true");
         }
+        Long sessionReconnectionWindow = ConsoleProxySessionReconnectionWindow.valueIn(datacenterId);
+        if (sessionReconnectionWindow != null && sessionReconnectionWindow > 0) {
+            buf.append(" session_reconnection_window=").append(sessionReconnectionWindow);
+        }
 
         String msPublicKey = configurationDao.getValue("ssh.publickey");
         buf.append(" authorized_key=").append(VirtualMachineGuru.getEncodedMsPublicKey(msPublicKey));
@@ -1588,7 +1592,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         return new ConfigKey<?>[] {ConsoleProxySslEnabled, NoVncConsoleDefault, NoVncConsoleSourceIpCheckEnabled, ConsoleProxyServiceOffering,
                                    ConsoleProxyCapacityStandby, ConsoleProxyCapacityScanInterval, ConsoleProxyRestart, ConsoleProxyUrlDomain, ConsoleProxySessionMax, ConsoleProxySessionTimeout, ConsoleProxyDisableRpFilter, ConsoleProxyLaunchMax,
                                    ConsoleProxyManagementLastState, ConsoleProxyServiceManagementState, NoVncConsoleShowDot,
-                                   ConsoleProxyVmUserData};
+                                   ConsoleProxyVmUserData, ConsoleProxySessionReconnectionWindow};
     }
 
     protected ConsoleProxyStatus parseJsonToConsoleProxyStatus(String json) throws JsonParseException {
