@@ -1746,16 +1746,9 @@ class TestVpnUsage(cloudstackTestCase):
             domainid=cls.account.domainid,
             serviceofferingid=cls.service_offering.id
         )
-        cls.public_ip = PublicIPAddress.create(
-            cls.api_client,
-            accountid=cls.virtual_machine.account,
-            zoneid=cls.virtual_machine.zoneid,
-            domainid=cls.virtual_machine.domainid,
-            services=cls.services["server"]
-        )
         src_nat_list = PublicIPAddress.list(
             cls.api_client,
-            accountid=cls.virtual_machine.account,
+            account=cls.virtual_machine.account,
             zoneid=cls.virtual_machine.zoneid,
             domainid=cls.virtual_machine.domainid,
             issourcenat=True
