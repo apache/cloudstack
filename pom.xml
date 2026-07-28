@@ -55,6 +55,10 @@
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
         <sonar.exclusions>engine/schema/src/main/java/org/apache/cloudstack/backup/BackupOfferingDetailsVO.java</sonar.exclusions>
         <sonar.exclusions>api/src/main/java/org/apache/cloudstack/api/response/BackupOfferingResponse.java</sonar.exclusions>
+        <sonar.exclusions>core/src/main/java/com/cloud/agent/api/PostMigrationAnswer.java</sonar.exclusions>
+        <sonar.exclusions>core/src/main/java/com/cloud/agent/api/PostMigrationCommand.java</sonar.exclusions>
+        <sonar.exclusions>core/src/main/java/com/cloud/agent/api/PreMigrationCommand.java</sonar.exclusions>
+        <sonar.exclusions>core/src/main/java/org/apache/cloudstack/storage/command/ClvmLockTransferCommand.java</sonar.exclusions>
 
         <!-- Build properties -->
         <cs.jdk.version>11</cs.jdk.version>
@@ -175,7 +179,7 @@
         <cs.nitro.version>10.1</cs.nitro.version>
         <cs.opensaml.version>2.6.6</cs.opensaml.version>
         <cs.rados-java.version>0.6.0</cs.rados-java.version>
-        <cs.java-linstor.version>0.6.1</cs.java-linstor.version>
+        <cs.java-linstor.version>0.7.0</cs.java-linstor.version>
         <cs.reflections.version>0.10.2</cs.reflections.version>
         <cs.servicemix.version>3.4.4_1</cs.servicemix.version>
         <cs.servlet.version>4.0.1</cs.servlet.version>
@@ -192,6 +196,8 @@
         <cs.caffeine.version>3.1.7</cs.caffeine.version>
         <cs.protobuf.version>3.25.5</cs.protobuf.version>
         <cs.minio.version>8.6.0</cs.minio.version>
+        <cs.opentelemetry.version>1.51.0</cs.opentelemetry.version>
+        <cs.opentelemetry-instrumentation.version>2.16.0</cs.opentelemetry-instrumentation.version>
     </properties>
 
     <distributionManagement>
@@ -429,6 +435,16 @@
                 <groupId>commons-validator</groupId>
                 <artifactId>commons-validator</artifactId>
                 <version>${cs.commons-validator.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-api</artifactId>
+                <version>${cs.opentelemetry.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.opentelemetry.instrumentation</groupId>
+                <artifactId>opentelemetry-instrumentation-annotations</artifactId>
+                <version>${cs.opentelemetry-instrumentation.version}</version>
             </dependency>
             <dependency>
                 <groupId>javax.annotation</groupId>

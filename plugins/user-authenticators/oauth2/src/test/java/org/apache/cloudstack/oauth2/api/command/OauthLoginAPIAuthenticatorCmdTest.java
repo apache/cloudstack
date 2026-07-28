@@ -19,17 +19,24 @@ package org.apache.cloudstack.oauth2.api.command;
 
 import com.cloud.api.ApiServer;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.ServerApiException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.MockitoAnnotations;
 
+import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -74,6 +81,29 @@ public class OauthLoginAPIAuthenticatorCmdTest {
         String domain = cmd.getDomainName(auditTrailSb, domainName);
         assertEquals("/example/", domain);
         assertEquals(" domain=example/", auditTrailSb.toString());
+    }
+
+    @Test
+    public void testAuthenticateWithMissingParamsReturnsSerializedServerApiException() throws Exception {
+        ApiServer apiServer = mock(ApiServer.class);
+        cmd._apiServer = apiServer;
+        String serializedError = "{\"oauthloginresponse\":{\"errorcode\":531,\"errortext\":\"...\"}}";
+        when(apiServer.getSerializedApiError(anyInt(), anyString(), any(), anyString())).thenReturn(serializedError);
+
+        Map<String, Object[]> params = new HashMap<>();
+        // missing provider, email, secretCode — should trip the empty check
+        params.put(ApiConstants.PROVIDER, new String[]{""});
+        params.put(ApiConstants.EMAIL, new String[]{""});
+        params.put(ApiConstants.SECRET_CODE, new String[]{""});
+
+        try {
+            cmd.authenticate("oauthlogin", params, null, InetAddress.getLoopbackAddress(),
+                    "json", new StringBuilder(), null, null);
+            fail("Expected ServerApiException to be thrown");
+        } catch (ServerApiException ex) {
+            assertEquals(ApiErrorCode.ACCOUNT_ERROR, ex.getErrorCode());
+            assertEquals(serializedError, ex.getDescription());
+        }
     }
 
     @Test

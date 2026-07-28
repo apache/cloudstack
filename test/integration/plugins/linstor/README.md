@@ -48,3 +48,21 @@ nosetests --with-marvin --marvin-config=<marvin-cfg-file> <cloudstack-dir>/test/
 ```
 
 You can also run these tests out of the box with PyDev or PyCharm or whatever.
+
+## Encrypted snapshot tests
+
+`test_linstor_encrypted_snapshots.py` covers the encrypted-volume snapshot round trip
+(create encrypted root disk -> snapshot -> revert / create-volume-from-snapshot) and that the
+backed-up qcow2 on secondary storage is itself LUKS encrypted.
+
+Extra prerequisites:
+
+* At least one KVM host with volume-encryption support (`host.encryptionsupported == true`, i.e.
+  cryptsetup/qemu LUKS available). Tests self-skip if none is found.
+* The Linstor resource group used (`acs-basic`) must be able to add a LUKS layer to its volumes.
+* `lin.backup.snapshots` must be enabled (default) so snapshots are backed up to secondary storage;
+  the test sets it. With it disabled the qcow2 path is not exercised.
+
+```
+nosetests --with-marvin --marvin-config=<marvin-cfg-file> <cloudstack-dir>/test/integration/plugins/linstor/test_linstor_encrypted_snapshots.py --zone=<zone> --hypervisor=kvm
+```

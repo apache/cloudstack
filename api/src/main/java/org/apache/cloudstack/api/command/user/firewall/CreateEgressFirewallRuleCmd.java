@@ -212,7 +212,7 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
     }
 
     @Override
-    public long getNetworkId() {
+    public Long getNetworkId() {
         return networkId;
     }
 

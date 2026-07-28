@@ -36,6 +36,7 @@
             v-focus="true"
             showSearch
             optionFilterProp="label"
+            @change="onRoleChange"
             :filterOption="(input, option) => {
               return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }">
@@ -211,6 +212,7 @@ export default {
       domain: { id: null, loading: false },
       domainsList: [],
       dom: null,
+      roleManuallySelected: false,
       roleLoading: false,
       roles: [],
       timeZoneLoading: false,
@@ -299,8 +301,13 @@ export default {
         })
       }
     },
+    onRoleChange (newRoleId) {
+      if (newRoleId) {
+        this.roleManuallySelected = true
+      }
+    },
     setDefaultRole () {
-      if (this.roles.length === 0) return
+      if (this.roles.length === 0 || this.roleManuallySelected) return
 
       let targetRoleType = null
 

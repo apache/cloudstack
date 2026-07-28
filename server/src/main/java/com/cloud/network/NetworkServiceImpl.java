@@ -891,7 +891,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
      */
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NIC_SECONDARY_IP_ASSIGN, eventDescription = "Assigning secondary IP to NIC", create = true)
-    public NicSecondaryIp allocateSecondaryGuestIP(final long nicId, IpAddresses requestedIpPair) throws InsufficientAddressCapacityException {
+    public NicSecondaryIp allocateSecondaryGuestIP(final long nicId, IpAddresses requestedIpPair, String description) throws InsufficientAddressCapacityException {
 
         Account caller = CallContext.current().getCallingAccount();
         String ipv4Address = requestedIpPair.getIp4Address();
@@ -989,7 +989,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
                     logger.debug("Setting nic_secondary_ip table ...");
                     Long vmId = nicVO.getInstanceId();
-                    NicSecondaryIpVO secondaryIpVO = new NicSecondaryIpVO(nicId, ip4AddrFinal, ip6AddrFinal, vmId, ipOwner.getId(), ipOwner.getDomainId(), networkId);
+                    NicSecondaryIpVO secondaryIpVO = new NicSecondaryIpVO(nicId, ip4AddrFinal, ip6AddrFinal, vmId, ipOwner.getId(), ipOwner.getDomainId(), networkId, description);
                     _nicSecondaryIpDao.persist(secondaryIpVO);
                     return secondaryIpVO.getId();
                 }
@@ -2975,7 +2975,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             throw new InvalidParameterValueException("Network is not in the right state to be restarted. Correct states are: " + Network.State.Implemented + ", " + Network.State.Setup);
         }
 
-        if (network.getBroadcastDomainType() == BroadcastDomainType.Lswitch) {
+        if (network.getBroadcastDomainType() == BroadcastDomainType.Lswitch && !_networkMgr.isIsolationMethodNetworkExtension(network.getNetworkOfferingId())) {
             /**
              * Unable to restart these networks now.
              * TODO Restarting a SDN based network requires updating the nics and the configuration
@@ -3087,8 +3087,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
     protected boolean providersConfiguredForExternalNetworking(Collection<String> providers) {
         for (String providerStr : providers) {
-            Provider provider = Network.Provider.getProvider(providerStr);
-            if (provider.isExternal()) {
+            Provider provider = _networkModel.resolveProvider(providerStr);
+            if (provider != null && provider.isExternal()) {
                 return true;
             }
         }
@@ -4449,6 +4449,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             addOrRemoveVnets(listOfRanges, network);
         }
         _physicalNetworkDao.update(id, network);
+
         return network;
 
     }
@@ -5121,7 +5122,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         Provider provider = null;
         if (providerName != null) {
-            provider = Network.Provider.getProvider(providerName);
+            provider = _networkModel.resolveProvider(providerName);
             if (provider == null) {
                 throw new InvalidParameterValueException("Invalid Network Service Provider=" + providerName);
             }
@@ -5158,7 +5159,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         if (providerName != null) {
-            Provider provider = Network.Provider.getProvider(providerName);
+            Provider provider = _networkModel.resolveProvider(providerName);
             if (provider == null) {
                 throw new InvalidParameterValueException("Invalid Network Service Provider=" + providerName);
             }

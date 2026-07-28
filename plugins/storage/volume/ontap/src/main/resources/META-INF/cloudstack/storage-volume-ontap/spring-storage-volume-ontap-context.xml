@@ -30,4 +30,7 @@
     <bean id="ontapPrimaryDataStoreProvider"
         class="org.apache.cloudstack.storage.provider.OntapPrimaryDatastoreProvider" />
 
+    <bean id="ontapVMSnapshotStrategy"
+        class="org.apache.cloudstack.storage.vmsnapshot.OntapVMSnapshotStrategy" />
+
 </beans>
