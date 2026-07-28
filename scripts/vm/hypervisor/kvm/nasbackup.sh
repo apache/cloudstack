@@ -490,9 +490,8 @@ mount_operation() {
   if [ ${NAS_TYPE} == "cifs" ]; then
     MOUNT_OPTS="${MOUNT_OPTS},nobrl"
   fi
-  # Test mount's own exit in an if-condition: under `set -eo pipefail` the previous
-  # `mount ... | tee` form aborted before the check on failure, and `$?` captured tee's
-  # status (always 0), masking mount failures. Output is appended to the agent log.
+  # Test mount's exit directly: the old `mount | tee` form let pipefail abort before the
+  # check, and `$?` saw tee's status (always 0), masking mount failures.
   if mount -t "${NAS_TYPE}" "${NAS_ADDRESS}" "${mount_point}" $([[ -n "${MOUNT_OPTS}" ]] && echo -o "${MOUNT_OPTS}") >> "$logFile" 2>&1; then
       log -ne "Successfully mounted ${NAS_TYPE} store"
   else
