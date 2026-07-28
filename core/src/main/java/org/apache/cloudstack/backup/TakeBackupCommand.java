@@ -89,12 +89,8 @@ public class TakeBackupCommand extends Command {
 
     @Override
     public boolean executeInSequence() {
-        // Returning false lets the KVM agent dispatch this command in parallel with
-        // other backup commands (notably DeleteBackupCommand). A long-running snapshot
-        // copy must not block a concurrent delete on a different VM's backup. Safe
-        // because each backup operates on its own on-NAS path (named after the VM
-        // uuid + timestamp) and the NFS mount lifecycle is per-script-invocation,
-        // not shared — so there is no path-level contention between parallel runs.
+        // Run in parallel with other backup/delete commands; each backup uses its
+        // own per-VM on-NAS path, so concurrent runs do not contend.
         return false;
     }
 }
