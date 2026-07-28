@@ -35,9 +35,9 @@ import org.apache.cloudstack.backup.TakeBackupCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.io.FileOutputStream;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;

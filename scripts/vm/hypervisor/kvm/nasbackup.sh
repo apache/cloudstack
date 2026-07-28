@@ -103,7 +103,7 @@ encrypt_backup() {
   log -ne "Encrypting backup files with LUKS"
   # Preserve compression if it was requested upstream — otherwise the
   # encrypt-step re-convert produces an uncompressed (but encrypted) qcow2,
-  # silently discarding the compression work done earlier (Copilot review).
+  # silently discarding the compression work done earlier.
   local compress_flag=""
   if [[ "$COMPRESS" == "true" ]]; then
     compress_flag="-c"
@@ -131,7 +131,7 @@ verify_backup() {
   # If encryption was applied to this backup, qemu-img check has to open the
   # qcow2 with the same LUKS secret — otherwise every verification call fails
   # with a "Could not open" error and --verify is unusable on encrypted
-  # backups (Copilot review).
+  # backups.
   local check_secret=()
   if [[ -n "$ENCRYPT_PASSFILE" && -f "$ENCRYPT_PASSFILE" ]]; then
     check_secret=(--object "secret,id=sec0,file=$ENCRYPT_PASSFILE")
