@@ -16,54 +16,33 @@
 // under the License.
 package com.cloud.agent.transport.compat;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
-import com.cloud.agent.api.SecStorageFirewallCfgCommand;
-import com.cloud.agent.api.to.DataStoreTO;
-import com.cloud.agent.api.to.DataTO;
-import com.cloud.agent.transport.ArrayTypeAdaptor;
-import com.cloud.agent.transport.InterfaceTypeAdaptor;
-import com.cloud.agent.transport.LoggingExclusionStrategy;
-import com.cloud.agent.transport.Request;
-import com.cloud.agent.transport.StoragePoolTypeAdaptor;
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.storage.Storage;
-import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
-import com.google.gson.reflect.TypeToken;
-import org.apache.cloudstack.transport.HypervisorTypeAdaptor;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 
 import java.lang.reflect.Type;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
  * JSON serializer adapter for transport classes (com.cloud.agent.api.to.*) that ensures backward compatibility
  * with older Agent versions due to rename of the fields
  * (see https://github.com/apache/cloudstack/pull/10514)
+ *
+ * This class does not build its own Gson instance: doing so would silently drop whichever exclusion
+ * strategy (e.g. log redaction) and sibling compat adaptors (for nested TOs) the enclosing Gson was
+ * configured with. Instead, whoever registers an instance of this class into a GsonBuilder is
+ * responsible for also calling {@link #initGson(Gson)} with a Gson that (a) carries that same
+ * exclusion strategy and (b) has adapters registered for any nested TO types that also need field
+ * renaming, but not for this adaptor's own type (to avoid infinite recursion). See
+ * {@link com.cloud.serializer.GsonHelper#setDefaultGsonConfig(com.google.gson.GsonBuilder)}.
  */
 public class AbstractTOAdaptor<T> implements JsonSerializer<T> {
-    private static final Logger LOGGER = LogManager.getLogger(AbstractTOAdaptor.class);
-    private static final Gson gson;
-
-    static {
-        GsonBuilder gsonBuilder = new GsonBuilder();
-        gson = setDefaultGsonConfig(gsonBuilder);
-        GsonBuilder loggerBuilder = new GsonBuilder();
-        loggerBuilder.disableHtmlEscaping();
-        loggerBuilder.setExclusionStrategies(new LoggingExclusionStrategy(LOGGER));
-    }
-
+    private Gson gson;
     private Map<String, String> fieldMappings;
 
     protected AbstractTOAdaptor(String... fields) {
@@ -82,29 +61,8 @@ public class AbstractTOAdaptor<T> implements JsonSerializer<T> {
         }
     }
 
-    private static Gson setDefaultGsonConfig(GsonBuilder builder) {
-        builder.setVersion(1.5);
-        InterfaceTypeAdaptor<DataStoreTO> dsAdaptor = new InterfaceTypeAdaptor<DataStoreTO>();
-        builder.registerTypeAdapter(DataStoreTO.class, dsAdaptor);
-        InterfaceTypeAdaptor<DataTO> dtAdaptor = new InterfaceTypeAdaptor<DataTO>();
-        builder.registerTypeAdapter(DataTO.class, dtAdaptor);
-        ArrayTypeAdaptor<Command> cmdAdaptor = new ArrayTypeAdaptor<Command>();
-        builder.registerTypeAdapter(Command[].class, cmdAdaptor);
-        ArrayTypeAdaptor<Answer> ansAdaptor = new ArrayTypeAdaptor<Answer>();
-        builder.registerTypeAdapter(Answer[].class, ansAdaptor);
-        builder.registerTypeAdapter(new TypeToken<List<SecStorageFirewallCfgCommand.PortConfig>>() {
-        }.getType(), new Request.PortConfigListTypeAdaptor());
-        builder.registerTypeAdapter(new TypeToken<Pair<Long, Long>>() {
-        }.getType(), new Request.NwGroupsCommandTypeAdaptor());
-        builder.registerTypeAdapter(Storage.StoragePoolType.class, new StoragePoolTypeAdaptor());
-        builder.registerTypeAdapter(Hypervisor.HypervisorType.class, new HypervisorTypeAdaptor());
-
-        Gson gson = builder.create();
-        dsAdaptor.initGson(gson);
-        dtAdaptor.initGson(gson);
-        cmdAdaptor.initGson(gson);
-        ansAdaptor.initGson(gson);
-        return gson;
+    public void initGson(Gson gson) {
+        this.gson = gson;
     }
 
     @Override
@@ -112,8 +70,9 @@ public class AbstractTOAdaptor<T> implements JsonSerializer<T> {
         if (src == null) {
             return null;
         }
-        JsonObject obj = gson.toJsonTree(src).getAsJsonObject();
-        if (obj != null) {
+        JsonElement tree = gson.toJsonTree(src);
+        if (tree.isJsonObject()) {
+            JsonObject obj = tree.getAsJsonObject();
             for (Map.Entry<String, String> field : fieldMappings.entrySet()) {
                 String sourceField = field.getKey();
                 String destinationField = field.getValue();
@@ -122,6 +81,6 @@ public class AbstractTOAdaptor<T> implements JsonSerializer<T> {
                 }
             }
         }
-        return obj;
+        return tree;
     }
 }

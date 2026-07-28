@@ -86,11 +86,42 @@ public class GsonHelper {
         }.getType(), new NwGroupsCommandTypeAdaptor());
         builder.registerTypeAdapter(Storage.StoragePoolType.class, new StoragePoolTypeAdaptor());
         builder.registerTypeAdapter(Hypervisor.HypervisorType.class, new HypervisorTypeAdaptor());
+
         // added for compatibility purposes, remove after all Agents migrate to the new version
-        builder.registerTypeAdapter(VirtualMachineTO.class, new VirtualMachineTOAdaptor());
-        builder.registerTypeAdapter(DiskTO.class, new DiskTOAdaptor());
-        builder.registerTypeAdapter(NetworkTO.class, new NetworkTOAdaptor());
-        builder.registerTypeAdapter(MigrateCommand.class, new MigrateCommandAdaptor());
+        //
+        // Each compat adaptor below needs a "base" Gson to run its own reflective (pre-rename)
+        // serialization through, so that nested TOs are renamed too and the exclusion strategy set
+        // on `builder` (e.g. log redaction) is honoured consistently at every nesting level. That base
+        // Gson is built incrementally off the same builder, snapshotted (via builder.create()) just
+        // before each adaptor's own type is registered on it, so it carries every sibling adaptor it
+        // can nest without ever routing back into itself and recursing forever.
+        DiskTOAdaptor diskAdaptor = new DiskTOAdaptor();
+        NetworkTOAdaptor netAdaptor = new NetworkTOAdaptor();
+        VirtualMachineTOAdaptor vmAdaptor = new VirtualMachineTOAdaptor();
+        MigrateCommandAdaptor migrateAdaptor = new MigrateCommandAdaptor();
+
+        // DiskTO and NetworkTO don't nest any other compat TO, so the plain config built so far is
+        // already the correct base Gson for them.
+        Gson leafDelegateGson = builder.create();
+        diskAdaptor.initGson(leafDelegateGson);
+        netAdaptor.initGson(leafDelegateGson);
+
+        // VirtualMachineTO nests DiskTO[] and NicTO[] (NicTO extends NetworkTO), so its base Gson needs
+        // Disk/Network adapters too. registerTypeHierarchyAdapter is used for NetworkTO so that the
+        // NicTO[]-declared "nics" field is matched via its supertype.
+        builder.registerTypeAdapter(DiskTO.class, diskAdaptor);
+        builder.registerTypeHierarchyAdapter(NetworkTO.class, netAdaptor);
+        Gson vmDelegateGson = builder.create();
+        vmAdaptor.initGson(vmDelegateGson);
+
+        // MigrateCommand nests a VirtualMachineTO, so its base Gson needs the VirtualMachineTO adapter
+        // (which already renames the nested disks/nics above).
+        builder.registerTypeAdapter(VirtualMachineTO.class, vmAdaptor);
+        Gson migrateDelegateGson = builder.create();
+        migrateAdaptor.initGson(migrateDelegateGson);
+
+        builder.registerTypeAdapter(MigrateCommand.class, migrateAdaptor);
+
         Gson gson = builder.create();
         dsAdaptor.initGson(gson);
         dtAdaptor.initGson(gson);
