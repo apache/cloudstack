@@ -35,6 +35,7 @@ import com.cloud.agent.api.VmwareCbtMigrationAnswer;
 import com.cloud.agent.api.to.VmwareCbtDiskTO;
 import com.cloud.agent.api.to.VmwareCbtTargetStorageType;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.resource.CommandWrapper;
@@ -215,6 +216,9 @@ public class LibvirtVmwareCbtCleanupCommandWrapper extends CommandWrapper<Vmware
                         attempt, attempts, volumeName, migrationUuid,
                         StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()));
             }
+            if (isTargetAlreadyAbsent(targetPool, volumeName, migrationUuid)) {
+                return true;
+            }
             if (attempt < attempts) {
                 try {
                     Thread.sleep(2000L * attempt);
@@ -224,7 +228,39 @@ public class LibvirtVmwareCbtCleanupCommandWrapper extends CommandWrapper<Vmware
                 }
             }
         }
-        return false;
+        return isTargetAlreadyAbsent(targetPool, volumeName, migrationUuid);
+    }
+
+    /**
+     * Target cleanup has to be idempotent. A cancelled migration has already had its targets
+     * removed by the cancel itself, and deleting the migration afterwards runs cleanup again
+     * (the delete API defaults to cleanup=true). Without this check that second pass fails on
+     * targets that are legitimately gone, and the migration record can never be removed.
+     * <p>
+     * Absence is only reported when it can be positively confirmed by listing the pool; if the
+     * pool cannot be inspected the target is assumed to still exist, so a genuine failure is
+     * still surfaced rather than being masked.
+     */
+    protected boolean isTargetAlreadyAbsent(KVMStoragePool targetPool, String volumeName, String migrationUuid) {
+        try {
+            List<KVMPhysicalDisk> disks = targetPool.listPhysicalDisks();
+            if (disks == null) {
+                return false;
+            }
+            for (KVMPhysicalDisk disk : disks) {
+                if (disk != null && StringUtils.equals(disk.getName(), volumeName)) {
+                    return false;
+                }
+            }
+            logger.info("VMware CBT target {} for migration {} is no longer present on storage pool {}; treating cleanup as complete",
+                    volumeName, migrationUuid, targetPool.getUuid());
+            return true;
+        } catch (RuntimeException e) {
+            logger.warn("Unable to confirm whether VMware CBT target {} for migration {} still exists on storage pool {}: {}",
+                    volumeName, migrationUuid, targetPool.getUuid(),
+                    StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()));
+            return false;
+        }
     }
 
     private String quoteShellArgument(String value) {
