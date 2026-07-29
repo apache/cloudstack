@@ -37,6 +37,7 @@ import org.apache.cloudstack.storage.feign.client.SvmFeignClient;
 import org.apache.cloudstack.storage.feign.client.NetworkFeignClient;
 import org.apache.cloudstack.storage.feign.client.SANFeignClient;
 import org.apache.cloudstack.storage.feign.model.ExportPolicy;
+import org.apache.cloudstack.storage.feign.model.ExportRule;
 import org.apache.cloudstack.storage.feign.model.Job;
 import org.apache.cloudstack.storage.feign.model.OntapStorage;
 import org.apache.cloudstack.storage.feign.model.response.JobResponse;
@@ -63,6 +64,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -72,6 +74,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -582,4 +585,350 @@ public class UnifiedNASStrategyTest {
             strategy.deleteCloudStackVolume(cloudStackVolume);
         });
     }
-}
+
+    // -------------------------------------------------------------------------
+    // updateAccessGroup tests
+    // -------------------------------------------------------------------------
+
+    private Map<String, String> detailsWithExportPolicyId() {
+        Map<String, String> details = new HashMap<>();
+        details.put(OntapStorageConstants.EXPORT_POLICY_ID, "policy-42");
+        return details;
+    }
+
+    private ExportPolicy existingPolicyWithClients(String... matchIps) {
+        ExportRule rule = new ExportRule();
+        List<ExportRule.ExportClient> clients = new ArrayList<>();
+        for (String ip : matchIps) {
+            ExportRule.ExportClient client = new ExportRule.ExportClient();
+            client.setMatch(ip);
+            clients.add(client);
+        }
+        rule.setClients(clients);
+        ExportPolicy policy = new ExportPolicy();
+        policy.setName("test-policy");
+        policy.setRules(new ArrayList<>(List.of(rule)));
+        return policy;
+    }
+
+    // updateAccessGroup - null accessGroup
+    @Test
+    public void testUpdateAccessGroup_NullAccessGroup() {
+        assertThrows(CloudRuntimeException.class, () -> strategy.updateAccessGroup(null));
+    }
+
+    // updateAccessGroup - null storagePoolId
+    @Test
+    public void testUpdateAccessGroup_NullStoragePoolId() {
+        AccessGroup accessGroup = new AccessGroup();
+        accessGroup.setHostsToConnect(List.of(mock(HostVO.class)));
+        // storagePoolId is null by default
+        assertThrows(CloudRuntimeException.class, () -> strategy.updateAccessGroup(accessGroup));
+    }
+
+    // updateAccessGroup - null hostsToConnect
+    @Test
+    public void testUpdateAccessGroup_NullHostsToConnect() {
+        AccessGroup accessGroup = new AccessGroup();
+        accessGroup.setStoragePoolId(1L);
+        // hostsToConnect is null by default
+        assertThrows(CloudRuntimeException.class, () -> strategy.updateAccessGroup(accessGroup));
+    }
+
+    // updateAccessGroup - empty hostsToConnect
+    @Test
+    public void testUpdateAccessGroup_EmptyHostsToConnect() {
+        AccessGroup accessGroup = new AccessGroup();
+        accessGroup.setStoragePoolId(1L);
+        accessGroup.setHostsToConnect(new ArrayList<>());
+        assertThrows(CloudRuntimeException.class, () -> strategy.updateAccessGroup(accessGroup));
+    }
+
+    // updateAccessGroup - storagePoolDetailsDao returns null
+    @Test
+    public void testUpdateAccessGroup_NoStoragePoolDetails() {
+        AccessGroup accessGroup = new AccessGroup();
+        accessGroup.setStoragePoolId(1L);
+        accessGroup.setHostsToConnect(List.of(mock(HostVO.class)));
+        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(null);
+        assertThrows(CloudRuntimeException.class, () -> strategy.updateAccessGroup(accessGroup));
+    }
+
+    // updateAccessGroup - details missing EXPORT_POLICY_ID key
+    @Test
+    public void testUpdateAccessGroup_MissingExportPolicyId() {
+        AccessGroup accessGroup = new AccessGroup();
+        accessGroup.setStoragePoolId(1L);
+        accessGroup.setHostsToConnect(List.of(mock(HostVO.class)));
+        Map<String, String> details = new HashMap<>();
+        details.put("someOtherKey", "someValue");
+        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);
+        assertThrows(CloudRuntimeException.class, () -> strategy.updateAccessGroup(accessGroup));
+    }
+
+    // updateAccessGroup - getExportPolicyById returns null
+    @Test
+    public void testUpdateAccessGroup_ExportPolicyNotFound() {
+        AccessGroup accessGroup = new AccessGroup();
+        accessGroup.setStoragePoolId(1L);
+        accessGroup.setHostsToConnect(List.of(mock(HostVO.class)));
+        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(detailsWithExportPolicyId());
+        when(nasFeignClient.getExportPolicyById(anyString(), eq("policy-42"))).thenReturn(null);
+        assertThrows(CloudRuntimeException.class, () -> strategy.updateAccessGroup(accessGroup));
+    }
+
+    // updateAccessGroup - existing policy has null rules
+    @Test
+    public void testUpdateAccessGroup_NullRules() {
+        AccessGroup accessGroup = new AccessGroup();
+        accessGroup.setStoragePoolId(1L);
+        accessGroup.setHostsToConnect(List.of(mock(HostVO.class)));
+        ExportPolicy policy = new ExportPolicy();
+        policy.setName("test-policy");
+        policy.setRules(null);
+        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(detailsWithExportPolicyId());
+        when(nasFeignClient.getExportPolicyById(anyString(), eq("policy-42"))).thenReturn(policy);
+        assertThrows(CloudRuntimeException.class, () -> strategy.updateAccessGroup(accessGroup));
+    }
+
+    // updateAccessGroup - existing policy has empty rules list
+    @Test
+    public void testUpdateAccessGroup_EmptyRules() {
+        AccessGroup accessGroup = new AccessGroup();
+        accessGroup.setStoragePoolId(1L);
+        accessGroup.setHostsToConnect(List.of(mock(HostVO.class)));
+        ExportPolicy policy = new ExportPolicy();
+        policy.setName("test-policy");
+        policy.setRules(new ArrayList<>());
+        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(detailsWithExportPolicyId());
+        when(nasFeignClient.getExportPolicyById(anyString(), eq("policy-42"))).thenReturn(policy);
+        assertThrows(CloudRuntimeException.class, () -> strategy.updateAccessGroup(accessGroup));
+    }
+
+    // updateAccessGroup - all hosts have no IP: returns early without ONTAP patch
+    @Test
+    public void testUpdateAccessGroup_AllHostsHaveNoIp_ReturnsEarly() {
+        HostVO host = mock(HostVO.class);
+        when(host.getStorageIpAddress()).thenReturn(null);
+        when(host.getPrivateIpAddress()).thenReturn(null);
+
+        AccessGroup accessGroup = new AccessGroup();
+        accessGroup.setStoragePoolId(1L);
+        accessGroup.setHostsToConnect(List.of(host));
+
+        ExportPolicy existingPolicy = existingPolicyWithClients("10.0.0.1/32");
+        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(detailsWithExportPolicyId());
+        when(nasFeignClient.getExportPolicyById(anyString(), eq("policy-42"))).thenReturn(existingPolicy);
+
+        AccessGroup result = strategy.updateAccessGroup(accessGroup);
+
+        assertNotNull(result);
+        assertSame(existingPolicy, result.getPolicy());
+        verify(nasFeignClient, never()).updateExportPolicy(anyString(), anyString(), any());
+    }
+
+    // updateAccessGroup - ADD: new host IP added to policy
+    @Test
+    public void testUpdateAccessGroup_Add_NewHost_Success() {
+        HostVO host = mock(HostVO.class);
+        when(host.getStorageIpAddress()).thenReturn("10.0.0.2");
+
+        AccessGroup accessGroup = new AccessGroup();
+        accessGroup.setStoragePoolId(1L);
+        accessGroup.setHostsToConnect(List.of(host));
+        // default action is ADD
+
+        ExportPolicy existingPolicy = existingPolicyWithClients("10.0.0.1/32");
+        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(detailsWithExportPolicyId());
+        when(nasFeignClient.getExportPolicyById(anyString(), eq("policy-42"))).thenReturn(existingPolicy);
+
+        AccessGroup result = strategy.updateAccessGroup(accessGroup);
+
+        assertNotNull(result);
+        assertSame(existingPolicy, result.getPolicy());
+        // Existing client + new client = 2
+        assertEquals(2, existingPolicy.getRules().get(0).getClients().size());
+        verify(nasFeignClient).updateExportPolicy(anyString(), eq("policy-42"), any(ExportPolicy.class));
+    }
+
+    // updateAccessGroup - ADD: host uses private IP when storage IP is absent
+    @Test
+    public void testUpdateAccessGroup_Add_UsesPrivateIpWhenStorageIpAbsent() {
+        HostVO host = mock(HostVO.class);
+        when(host.getStorageIpAddress()).thenReturn(null);
+        when(host.getPrivateIpAddress()).thenReturn("192.168.1.50");
+
+        AccessGroup accessGroup = new AccessGroup();
+        accessGroup.setStoragePoolId(1L);
+        accessGroup.setHostsToConnect(List.of(host));
+
+        ExportPolicy existingPolicy = existingPolicyWithClients();
+        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(detailsWithExportPolicyId());
+        when(nasFeignClient.getExportPolicyById(anyString(), eq("policy-42"))).thenReturn(existingPolicy);
+
+        AccessGroup result = strategy.updateAccessGroup(accessGroup);
+
+        assertNotNull(result);
+        List<ExportRule.ExportClient> clients = existingPolicy.getRules().get(0).getClients();
+        assertEquals(1, clients.size());
+        assertEquals("192.168.1.50/32", clients.get(0).getMatch());
+        verify(nasFeignClient).updateExportPolicy(anyString(), eq("policy-42"), any(ExportPolicy.class));
+    }
+
+    // updateAccessGroup - ADD: host IP already present in policy (no-op)
+    @Test
+    public void testUpdateAccessGroup_Add_DuplicateHost_NoUpdate() {
+        HostVO host = mock(HostVO.class);
+        when(host.getStorageIpAddress()).thenReturn("10.0.0.1");
+
+        AccessGroup accessGroup = new AccessGroup();
+        accessGroup.setStoragePoolId(1L);
+        accessGroup.setHostsToConnect(List.of(host));
+
+        ExportPolicy existingPolicy = existingPolicyWithClients("10.0.0.1/32");
+        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(detailsWithExportPolicyId());
+        when(nasFeignClient.getExportPolicyById(anyString(), eq("policy-42"))).thenReturn(existingPolicy);
+
+        AccessGroup result = strategy.updateAccessGroup(accessGroup);
+
+        assertNotNull(result);
+        assertSame(existingPolicy, result.getPolicy());
+        // Client count must remain 1 (no duplicate inserted)
+        assertEquals(1, existingPolicy.getRules().get(0).getClients().size());
+        verify(nasFeignClient, never()).updateExportPolicy(anyString(), anyString(), any());
+    }
+
+    // updateAccessGroup - ADD: existing rule has null clients list
+    @Test
+    public void testUpdateAccessGroup_Add_NullClientsInRule() {
+        HostVO host = mock(HostVO.class);
+        when(host.getStorageIpAddress()).thenReturn("10.0.0.5");
+
+        AccessGroup accessGroup = new AccessGroup();
+        accessGroup.setStoragePoolId(1L);
+        accessGroup.setHostsToConnect(List.of(host));
+
+        ExportRule rule = new ExportRule();
+        rule.setClients(null); // null clients list
+        ExportPolicy policy = new ExportPolicy();
+        policy.setName("test-policy");
+        policy.setRules(new ArrayList<>(List.of(rule)));
+
+        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(detailsWithExportPolicyId());
+        when(nasFeignClient.getExportPolicyById(anyString(), eq("policy-42"))).thenReturn(policy);
+
+        AccessGroup result = strategy.updateAccessGroup(accessGroup);
+
+        assertNotNull(result);
+        assertEquals(1, rule.getClients().size());
+        assertEquals("10.0.0.5/32", rule.getClients().get(0).getMatch());
+        verify(nasFeignClient).updateExportPolicy(anyString(), eq("policy-42"), any(ExportPolicy.class));
+    }
+
+    // updateAccessGroup - REMOVE: matching host IP removed from policy
+    @Test
+    public void testUpdateAccessGroup_Remove_MatchingHost_Success() {
+        HostVO host = mock(HostVO.class);
+        when(host.getStorageIpAddress()).thenReturn("10.0.0.1");
+
+        AccessGroup accessGroup = new AccessGroup();
+        accessGroup.setStoragePoolId(1L);
+        accessGroup.setHostsToConnect(List.of(host));
+        accessGroup.setHostRuleAction(AccessGroup.HostRuleAction.REMOVE);
+
+        ExportPolicy existingPolicy = existingPolicyWithClients("10.0.0.1/32", "10.0.0.2/32");
+        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(detailsWithExportPolicyId());
+        when(nasFeignClient.getExportPolicyById(anyString(), eq("policy-42"))).thenReturn(existingPolicy);
+
+        AccessGroup result = strategy.updateAccessGroup(accessGroup);
+
+        assertNotNull(result);
+        assertSame(existingPolicy, result.getPolicy());
+        // Only 10.0.0.2/32 should remain
+        List<ExportRule.ExportClient> clients = existingPolicy.getRules().get(0).getClients();
+        assertEquals(1, clients.size());
+        assertEquals("10.0.0.2/32", clients.get(0).getMatch());
+        verify(nasFeignClient).updateExportPolicy(anyString(), eq("policy-42"), any(ExportPolicy.class));
+    }
+
+    // updateAccessGroup - REMOVE: IP not in policy (no-op)
+    @Test
+    public void testUpdateAccessGroup_Remove_IpNotPresent_NoUpdate() {
+        HostVO host = mock(HostVO.class);
+        when(host.getStorageIpAddress()).thenReturn("10.0.0.99");
+
+        AccessGroup accessGroup = new AccessGroup();
+        accessGroup.setStoragePoolId(1L);
+        accessGroup.setHostsToConnect(List.of(host));
+        accessGroup.setHostRuleAction(AccessGroup.HostRuleAction.REMOVE);
+
+        ExportPolicy existingPolicy = existingPolicyWithClients("10.0.0.1/32");
+        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(detailsWithExportPolicyId());
+        when(nasFeignClient.getExportPolicyById(anyString(), eq("policy-42"))).thenReturn(existingPolicy);
+
+        AccessGroup result = strategy.updateAccessGroup(accessGroup);
+
+        assertNotNull(result);
+        assertSame(existingPolicy, result.getPolicy());
+        assertEquals(1, existingPolicy.getRules().get(0).getClients().size());
+        verify(nasFeignClient, never()).updateExportPolicy(anyString(), anyString(), any());
+    }
+
+    // updateAccessGroup - FeignException from ONTAP wrapped in CloudRuntimeException
+    @Test
+    public void testUpdateAccessGroup_FeignExceptionWrapped() {
+        HostVO host = mock(HostVO.class);
+        when(host.getStorageIpAddress()).thenReturn("10.0.0.1");
+
+        AccessGroup accessGroup = new AccessGroup();
+        accessGroup.setStoragePoolId(1L);
+        accessGroup.setHostsToConnect(List.of(host));
+
+        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(detailsWithExportPolicyId());
+        when(nasFeignClient.getExportPolicyById(anyString(), eq("policy-42")))
+                .thenThrow(new RuntimeException("ONTAP unreachable"));
+
+        assertThrows(CloudRuntimeException.class, () -> strategy.updateAccessGroup(accessGroup));
+    }
+    // updateAccessGroup - whitespace in storage IP is trimmed before building match
+    @Test
+    public void testUpdateAccessGroup_TrimsWhitespaceFromStorageIp() {
+        HostVO host = mock(HostVO.class);
+        when(host.getStorageIpAddress()).thenReturn("  10.0.0.2  ");
+
+        AccessGroup accessGroup = new AccessGroup();
+        accessGroup.setStoragePoolId(1L);
+        accessGroup.setHostsToConnect(List.of(host));
+
+        ExportPolicy existingPolicy = existingPolicyWithClients();
+        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(detailsWithExportPolicyId());
+        when(nasFeignClient.getExportPolicyById(anyString(), eq("policy-42"))).thenReturn(existingPolicy);
+
+        strategy.updateAccessGroup(accessGroup);
+
+        List<ExportRule.ExportClient> clients = existingPolicy.getRules().get(0).getClients();
+        assertEquals(1, clients.size());
+        assertEquals("10.0.0.2/32", clients.get(0).getMatch());
+    }
+
+    // updateAccessGroup - whitespace in private IP is trimmed when storage IP absent
+    @Test
+    public void testUpdateAccessGroup_TrimsWhitespaceFromPrivateIp() {
+        HostVO host = mock(HostVO.class);
+        when(host.getStorageIpAddress()).thenReturn(null);
+        when(host.getPrivateIpAddress()).thenReturn("  192.168.1.10  ");
+
+        AccessGroup accessGroup = new AccessGroup();
+        accessGroup.setStoragePoolId(1L);
+        accessGroup.setHostsToConnect(List.of(host));
+
+        ExportPolicy existingPolicy = existingPolicyWithClients();
+        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(detailsWithExportPolicyId());
+        when(nasFeignClient.getExportPolicyById(anyString(), eq("policy-42"))).thenReturn(existingPolicy);
+
+        strategy.updateAccessGroup(accessGroup);
+
+        List<ExportRule.ExportClient> clients = existingPolicy.getRules().get(0).getClients();
+        assertEquals(1, clients.size());
+        assertEquals("192.168.1.10/32", clients.get(0).getMatch());
+    }}
