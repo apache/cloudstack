@@ -20,6 +20,7 @@ import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.event.ActionEventUtils;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -609,5 +610,34 @@ public class SnapshotManagerImplTest {
         Mockito.when(cmd.getIds()).thenReturn(null);
 
         snapshotManager.deleteSnapshotPolicies(cmd);
+    }
+
+    @Test
+    public void testIsIncrementalChainRefNonKvmHypervisor() {
+        SnapshotDataStoreVO ref = Mockito.mock(SnapshotDataStoreVO.class);
+        Assert.assertFalse(snapshotManager.isIncrementalChainRef(ref, Hypervisor.HypervisorType.XenServer));
+    }
+
+    @Test
+    public void testIsIncrementalChainRefKvmWithCheckpointPath() {
+        SnapshotDataStoreVO ref = Mockito.mock(SnapshotDataStoreVO.class);
+        Mockito.when(ref.getKvmCheckpointPath()).thenReturn("checkpoints/2/5/uuid");
+        Assert.assertTrue(snapshotManager.isIncrementalChainRef(ref, Hypervisor.HypervisorType.KVM));
+    }
+
+    @Test
+    public void testIsIncrementalChainRefKvmWithParentLinkOnly() {
+        SnapshotDataStoreVO ref = Mockito.mock(SnapshotDataStoreVO.class);
+        Mockito.when(ref.getKvmCheckpointPath()).thenReturn(null);
+        Mockito.when(ref.getParentSnapshotId()).thenReturn(2L);
+        Assert.assertTrue(snapshotManager.isIncrementalChainRef(ref, Hypervisor.HypervisorType.KVM));
+    }
+
+    @Test
+    public void testIsIncrementalChainRefKvmStandalone() {
+        SnapshotDataStoreVO ref = Mockito.mock(SnapshotDataStoreVO.class);
+        Mockito.when(ref.getKvmCheckpointPath()).thenReturn(null);
+        Mockito.when(ref.getParentSnapshotId()).thenReturn(0L);
+        Assert.assertFalse(snapshotManager.isIncrementalChainRef(ref, Hypervisor.HypervisorType.KVM));
     }
 }

@@ -19,8 +19,11 @@ package org.apache.cloudstack.storage.datastore.db;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
@@ -87,6 +90,12 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
 
     @Inject
     protected ImageStoreDao imageStoreDao;
+
+    @Inject
+    protected VolumeDao volumeDao;
+
+    @Inject
+    protected PrimaryDataStoreDao storagePoolDao;
 
     private static final String FIND_OLDEST_OR_LATEST_SNAPSHOT = "select store_id, store_role, snapshot_id from cloud.snapshot_store_ref where " +
             " store_role = ? and volume_id = ? and state = 'Ready'" +
@@ -352,8 +361,15 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
             return null;
         }
 
+        boolean contentBasedChain = kvmIncrementalSnapshot && Hypervisor.HypervisorType.KVM.equals(hypervisorType) && usesContentBasedChain(volumeId);
+        if (contentBasedChain && (role == null || !role.isImageStore())) {
+            logger.trace("Content-based snapshot chains only exist on the image store. Returning null as parent for volume [{}] and role [{}].", volumeId, role);
+            return null;
+        }
+        boolean checkpointBasedChain = kvmIncrementalSnapshot && Hypervisor.HypervisorType.KVM.equals(hypervisorType) && !contentBasedChain;
+
         SearchCriteria<SnapshotDataStoreVO> sc;
-        if (kvmIncrementalSnapshot && Hypervisor.HypervisorType.KVM.equals(hypervisorType)) {
+        if (checkpointBasedChain) {
             sc = searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEqKVMCheckpointNotNull.create();
         } else {
             sc = searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEq.create();
@@ -379,11 +395,27 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
 
         SnapshotDataStoreVO parent = snapshotList.get(0);
 
-        if (kvmIncrementalSnapshot && parent.getKvmCheckpointPath() == null && Hypervisor.HypervisorType.KVM.equals(hypervisorType)) {
+        if (checkpointBasedChain && parent.getKvmCheckpointPath() == null) {
             return null;
         }
 
         return parent;
+    }
+
+    /**
+     * Volumes on Linstor primary storage chain incremental snapshots on secondary storage through a
+     * content diff (qemu-img rebase) against the parent snapshot file instead of qemu checkpoints, so
+     * parent selection must not require a checkpoint path. Encrypted volumes are excluded as they are
+     * always backed up as full copies (a rebase would need the LUKS secret for delta and backing file).
+     */
+    @Override
+    public boolean usesContentBasedChain(long volumeId) {
+        VolumeVO volume = volumeDao.findByIdIncludingRemoved(volumeId);
+        if (volume == null || volume.getPoolId() == null || volume.getPassphraseId() != null) {
+            return false;
+        }
+        StoragePoolVO pool = storagePoolDao.findById(volume.getPoolId());
+        return pool != null && Storage.StoragePoolType.Linstor.equals(pool.getPoolType());
     }
 
     @Override

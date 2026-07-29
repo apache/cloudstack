@@ -597,7 +597,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
         SnapshotInfo snapshotObject = snapshotFactory.getSnapshot(snapshotId, chosenStore);
 
-        if (snapshotDataStoreReference.getKvmCheckpointPath() != null) {
+        if (isIncrementalChainRef(snapshotDataStoreReference, snapshot.getHypervisorType())) {
             snapshotSrv.convertSnapshot(snapshotObject);
         }
 
@@ -814,7 +814,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         SnapshotDataStoreVO snapshotDataStoreVO;
         for (int i = 1; i < volumeSnapshots.size(); i++) {
             snapshotDataStoreVO = volumeSnapshots.get(i);
-            if (snapshotDataStoreVO.getKvmCheckpointPath() != null) {
+            if (isIncrementalChainRef(snapshotDataStoreVO, HypervisorType.KVM)) {
                 if (!snapshotDataStoreVO.isEndOfChain()) {
                     logger.debug("Found snapshot reference [{}] that used to belong to a now dead snapshot chain. Will mark it as end of chain.", snapshotDataStoreVO);
                     snapshotDataStoreVO.setEndOfChain(true);
@@ -823,6 +823,16 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                 return;
             }
         }
+    }
+
+    /**
+     * Whether this snapshot store reference is part of a KVM incremental snapshot chain on secondary
+     * storage. File-based storage chains carry a qemu checkpoint path; Linstor chains only link deltas
+     * through the parent snapshot id (content-diff qcow2 chain). Members of either chain kind must be
+     * flattened (converted) before being used standalone.
+     */
+    protected boolean isIncrementalChainRef(SnapshotDataStoreVO ref, HypervisorType hypervisorType) {
+        return HypervisorType.KVM.equals(hypervisorType) && (ref.getKvmCheckpointPath() != null || ref.getParentSnapshotId() > 0);
     }
 
     private void postCreateRecurringSnapshotForPolicy(long userId, long volumeId, long snapshotId, long policyId) {
@@ -2182,7 +2192,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         List<SnapshotDataStoreVO> snapshotChain = new ArrayList<>();
         long size = 0L;
         DataStore dstSecStore = null;
-        boolean kvmIncrementalSnapshot = currentSnap.getKvmCheckpointPath() != null;
+        boolean kvmIncrementalSnapshot = isIncrementalChainRef(currentSnap, snapshotVO.getHypervisorType());
         do {
             dstSecStore = getSnapshotZoneImageStore(currentSnap.getSnapshotId(), destZone.getId());
             if (dstSecStore != null) {
