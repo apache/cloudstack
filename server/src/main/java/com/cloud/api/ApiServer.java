@@ -718,7 +718,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             logger.info(ex.getDescription());
             throw ex;
         } catch (final Exception ex) {
-            logger.error("unhandled exception executing api command: " + ((command == null) ? "null" : command), ex);
+            logger.error("unhandled exception executing api command: " + ((command == null || command.length == 0) ? "null" : command[0]), ex);
             String errorMsg = ex.getMessage();
             if (!accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())) {
                 // hide internal details to non-admin user for security reason

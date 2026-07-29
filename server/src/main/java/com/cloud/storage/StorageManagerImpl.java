@@ -2887,7 +2887,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         if (ArrayUtils.isNotEmpty(hostStorageAccessGroups)) {
-            logger.debug(String.format("Storage access groups on the host %s are %s", host, hostStorageAccessGroups));
+            logger.debug(String.format("Storage access groups on the host %s are %s", host, Arrays.toString(hostStorageAccessGroups)));
         }
 
         if (CollectionUtils.isNotEmpty(storagePoolAccessGroups)) {

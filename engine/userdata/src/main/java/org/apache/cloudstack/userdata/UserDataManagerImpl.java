@@ -154,7 +154,7 @@ public class UserDataManagerImpl extends ManagerBase implements UserDataManager 
             throw new InvalidParameterValueException("User data is too short.");
         }
 
-        logger.trace(String.format("Decoded user data: [%s].", decodedUserData));
+        logger.trace(String.format("Decoded user data: [%s].", new String(decodedUserData)));
         int userDataLength = userData.length();
         int decodedUserDataLength = decodedUserData.length;
         logger.info(String.format("Configured base64 encoded user data size: %d bytes, actual user data size: %d bytes", userDataLength, decodedUserDataLength));

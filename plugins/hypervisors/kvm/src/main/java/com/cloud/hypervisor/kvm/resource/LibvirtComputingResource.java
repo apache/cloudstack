@@ -5788,7 +5788,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
         for (String snapshotName: snapshotNames) {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(String.format("Cleaning snapshot [%s] of VM [%s] metadata.", snapshotNames, dm.getName()));
+                LOGGER.debug(String.format("Cleaning snapshot [%s] of VM [%s] metadata.", snapshotName, dm.getName()));
             }
             DomainSnapshot snapshot = dm.snapshotLookupByName(snapshotName);
             snapshot.delete(flags); // clean metadata of vm snapshot
