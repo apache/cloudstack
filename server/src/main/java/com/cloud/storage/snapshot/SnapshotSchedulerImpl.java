@@ -30,6 +30,7 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotCmd;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
@@ -43,11 +44,14 @@ import com.cloud.api.ApiDispatcher;
 import com.cloud.api.ApiGsonHelper;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
+import com.cloud.event.EventVO;
+import com.cloud.event.dao.EventDao;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.TaggedResourceService;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotScheduleVO;
+import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotPolicyDao;
@@ -63,8 +67,12 @@ import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.TestClock;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
@@ -98,6 +106,10 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
     protected VMSnapshotManager _vmSnaphostManager;
     @Inject
     public TaggedResourceService taggedResourceService;
+    @Inject
+    protected EventDao _eventDao;
+    @Inject
+    protected VMInstanceDao _vmInstanceDao;
 
     protected AsyncJobDispatcher _asyncDispatcher;
 
@@ -196,14 +208,50 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
 
         if (JobInfo.Status.SUCCEEDED.equals(status)) {
             logger.debug("Last job of schedule [{}] succeeded; scheduling the next snapshot job.", snapshotSchedule);
+            recordSnapshotAttemptOutcome(snapshotSchedule, true, null);
         } else if (JobInfo.Status.FAILED.equals(status)) {
             logger.debug("Last job of schedule [{}] failed with [{}]; scheduling a new snapshot job.", snapshotSchedule, asyncJob.getResult());
+            recordSnapshotAttemptOutcome(snapshotSchedule, false, asyncJob.getResult());
         } else {
             logger.debug("Schedule [{}] is still in progress, skipping next job scheduling.", snapshotSchedule);
             return;
         }
 
         scheduleNextSnapshotJob(snapshotSchedule);
+    }
+
+    /**
+     * Logs an event for the outcome of a recurring snapshot job (keyed by the volume, since a fresh snapshot entity
+     * ID is minted on every attempt) so that consecutive failures can be counted from event history, and raises a
+     * WARN notification once {@link SnapshotManager#SnapshotRecurringMaxFailures} consecutive failures are reached.
+     */
+    protected void recordSnapshotAttemptOutcome(final SnapshotScheduleVO snapshotSchedule, final boolean succeeded, final String failureResult) {
+        final VolumeVO volume = _volsDao.findByIdIncludingRemoved(snapshotSchedule.getVolumeId());
+        if (volume == null) {
+            return;
+        }
+
+        if (succeeded) {
+            ActionEventUtils.onCreatedActionEvent(User.UID_SYSTEM, volume.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_SNAPSHOT_CREATE, true,
+                    String.format("Scheduled snapshot creation job for volume [%s] succeeded.", volume),
+                    volume.getId(), ApiCommandResourceType.Volume.toString());
+            return;
+        }
+
+        final Account account = _acctDao.findById(volume.getAccountId());
+        final int maxFailures = getScopedConfigValue(SnapshotManager.SnapshotRecurringMaxFailures, volume, account);
+        final int totalFailures = countConsecutiveFailedAttempts(volume.getId(), maxFailures) + 1;
+
+        ActionEventUtils.onCreatedActionEvent(User.UID_SYSTEM, volume.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_SNAPSHOT_CREATE, true,
+                String.format("Scheduled snapshot creation job for volume [%s] failed: %s", volume, failureResult),
+                volume.getId(), ApiCommandResourceType.Volume.toString());
+
+        if (maxFailures > 0 && totalFailures >= maxFailures) {
+            logger.warn("Snapshot schedule [{}] for volume [{}] has failed [{}] consecutive times.", snapshotSchedule, volume, totalFailures);
+            ActionEventUtils.onCreatedActionEvent(User.UID_SYSTEM, volume.getAccountId(), EventVO.LEVEL_WARN, EventTypes.EVENT_SNAPSHOT_CREATE, true,
+                    String.format("Recurring snapshot for volume [%s] has failed %d consecutive times.", volume, totalFailures),
+                    volume.getId(), ApiCommandResourceType.Volume.toString());
+        }
     }
 
     @DB
@@ -237,6 +285,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
 
         for (final SnapshotScheduleVO snapshotToBeExecuted : snapshotsToBeExecuted) {
             SnapshotScheduleVO tmpSnapshotScheduleVO = null;
+            Long eventId = null;
             final long snapshotScheId = snapshotToBeExecuted.getId();
             final long policyId = snapshotToBeExecuted.getPolicyId();
             final long volumeId = snapshotToBeExecuted.getVolumeId();
@@ -246,8 +295,13 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
                     continue;
                 }
 
+                if (shouldSkipUnchangedVolumeSnapshot(volume)) {
+                    skipAndRescheduleSnapshot(snapshotToBeExecuted, volume);
+                    continue;
+                }
+
                 tmpSnapshotScheduleVO = _snapshotScheduleDao.acquireInLockTable(snapshotScheId);
-                final Long eventId =
+                eventId =
                     ActionEventUtils.onScheduledActionEvent(User.UID_SYSTEM, volume.getAccountId(), EventTypes.EVENT_SNAPSHOT_CREATE, "creating snapshot for volume Id:" +
                         volume.getUuid(), volumeId, ApiCommandResourceType.Volume.toString(), true, 0);
 
@@ -289,10 +343,162 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
                 _snapshotScheduleDao.update(snapshotScheId, tmpSnapshotScheduleVO);
             } catch (final Exception e) {
                 logger.error("The scheduling of snapshot [{}] for volume [{}] failed due to [{}].", snapshotToBeExecuted, volume, e.toString(), e);
+                if (tmpSnapshotScheduleVO != null) {
+                    handleFailedSnapshotDispatch(snapshotToBeExecuted, volume, tmpSnapshotScheduleVO, eventId, e);
+                }
             } finally {
                 if (tmpSnapshotScheduleVO != null) {
                     _snapshotScheduleDao.releaseFromLockTable(snapshotScheId);
                 }
+            }
+        }
+    }
+
+    /**
+     * Handles a synchronous failure to dispatch the CreateSnapshotCmd (e.g. an allocation error) for a recurring
+     * snapshot. Without this, the schedule's {@code scheduledTimestamp} is never advanced, so it gets retried on
+     * every poll (every {@code snapshot.poll.interval} seconds) forever. Instead: log a failure event keyed by the
+     * volume (so consecutive failures can be counted from event history), and either back off by the configured
+     * retry interval, or - once the configured maximum consecutive failures is reached - give up until the next
+     * regularly scheduled run and raise a WARN notification event.
+     */
+    protected void handleFailedSnapshotDispatch(final SnapshotScheduleVO snapshotToBeExecuted, final VolumeVO volume,
+            final SnapshotScheduleVO lockedSchedule, final Long eventId, final Exception cause) {
+        final long volumeId = volume.getId();
+        final Account account = _acctDao.findById(volume.getAccountId());
+        final int maxFailures = getScopedConfigValue(SnapshotManager.SnapshotRecurringMaxFailures, volume, account);
+        final int retryInterval = getScopedConfigValue(SnapshotManager.SnapshotRecurringRetryInterval, volume, account);
+        final int totalFailures = countConsecutiveFailedAttempts(volumeId, maxFailures) + 1;
+
+        final String failureMessage = String.format("Failed to create scheduled snapshot for volume [%s]: %s", volume, cause.getMessage());
+        if (eventId != null) {
+            ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, volume.getAccountId(), EventVO.LEVEL_ERROR,
+                    EventTypes.EVENT_SNAPSHOT_CREATE, failureMessage, volumeId, ApiCommandResourceType.Volume.toString(), eventId);
+        } else {
+            ActionEventUtils.onCreatedActionEvent(User.UID_SYSTEM, volume.getAccountId(), EventVO.LEVEL_ERROR,
+                    EventTypes.EVENT_SNAPSHOT_CREATE, true, failureMessage, volumeId, ApiCommandResourceType.Volume.toString());
+        }
+
+        if (maxFailures > 0 && totalFailures >= maxFailures) {
+            final Date nextRegularRun = getNextScheduledTime(snapshotToBeExecuted.getPolicyId(), _currentTimestamp);
+            lockedSchedule.setScheduledTimestamp(nextRegularRun);
+            logger.warn("Snapshot schedule [{}] for volume [{}] has failed [{}] consecutive times; it will not be retried until its next regularly scheduled run at [{}].",
+                    snapshotToBeExecuted, volume, totalFailures, nextRegularRun);
+            ActionEventUtils.onCreatedActionEvent(User.UID_SYSTEM, volume.getAccountId(), EventVO.LEVEL_WARN, EventTypes.EVENT_SNAPSHOT_CREATE, true,
+                    String.format("Recurring snapshot for volume [%s] has failed %d consecutive times and will not be retried until its next regularly scheduled run.", volume, totalFailures),
+                    volumeId, ApiCommandResourceType.Volume.toString());
+        } else {
+            final Date nextRetry = new Date(_currentTimestamp.getTime() + retryInterval * 1000L);
+            lockedSchedule.setScheduledTimestamp(nextRetry);
+            logger.debug("Snapshot schedule [{}] for volume [{}] failed [{}] time(s); retrying at [{}].",
+                    snapshotToBeExecuted, volume, totalFailures, nextRetry);
+        }
+        _snapshotScheduleDao.update(lockedSchedule.getId(), lockedSchedule);
+    }
+
+    /**
+     * Counts how many of the most recent {@code EVENT_SNAPSHOT_CREATE} events logged for this volume are
+     * consecutive failures (level ERROR), starting from the most recent event and stopping at the first
+     * non-failure (or absent) event. This derives the "number of failed attempts" from event history instead of a
+     * dedicated counter column.
+     */
+    protected int countConsecutiveFailedAttempts(final long volumeId, final int limit) {
+        if (limit <= 0) {
+            return 0;
+        }
+        final List<EventVO> recentEvents = _eventDao.listLatestEventsByResource(volumeId, ApiCommandResourceType.Volume.toString(),
+                EventTypes.EVENT_SNAPSHOT_CREATE, limit);
+        int count = 0;
+        for (final EventVO event : recentEvents) {
+            if (!EventVO.LEVEL_ERROR.equals(event.getLevel())) {
+                break;
+            }
+            count++;
+        }
+        return count;
+    }
+
+    /**
+     * Resolves a config value in order of most to least specific scope: account, domain, zone, then global. A
+     * {@link ConfigKey} can only walk a single scope-parent chain automatically (Account-&gt;Domain-&gt;Global, or
+     * Zone-&gt;Global), so the four scopes are resolved manually here.
+     */
+    protected <T> T getScopedConfigValue(final ConfigKey<T> key, final VolumeVO volume, final Account account) {
+        T value = key.valueInScope(ConfigKey.Scope.Account, volume.getAccountId(), true);
+        if (value == null && account != null) {
+            value = key.valueInScope(ConfigKey.Scope.Domain, account.getDomainId(), true);
+        }
+        if (value == null) {
+            value = key.valueInScope(ConfigKey.Scope.Zone, volume.getDataCenterId(), true);
+        }
+        if (value == null) {
+            value = key.value();
+        }
+        return value;
+    }
+
+    /**
+     * Implements https://github.com/apache/cloudstack/issues/6827: a recurring snapshot is redundant when nothing
+     * could have changed on the volume since the last one was taken, i.e. when the attached VM has not been running
+     * at any point since then. Volumes with no snapshot yet, or that are not attached to a VM, are never skipped.
+     */
+    protected boolean shouldSkipUnchangedVolumeSnapshot(final VolumeVO volume) {
+        final Account account = _acctDao.findById(volume.getAccountId());
+        if (!getScopedConfigValue(SnapshotManager.SnapshotSkipIfVmNotRunning, volume, account)) {
+            return false;
+        }
+
+        final Long instanceId = volume.getInstanceId();
+        if (instanceId == null) {
+            return false;
+        }
+
+        final SnapshotVO lastSnapshot = findLastSnapshot(volume.getId());
+        if (lastSnapshot == null) {
+            return false;
+        }
+
+        final VMInstanceVO vm = _vmInstanceDao.findById(instanceId);
+        if (vm == null || vm.getPowerState() == VirtualMachine.PowerState.PowerOn) {
+            return false;
+        }
+
+        final Date poweredOffSince = vm.getPowerStateUpdateTime();
+        // If the VM's power state changed at or after the last snapshot, it may have been running (and the volume
+        // may have changed) at some point since; only skip when it has been off since strictly before that snapshot.
+        return poweredOffSince != null && poweredOffSince.before(lastSnapshot.getCreated());
+    }
+
+    protected SnapshotVO findLastSnapshot(final long volumeId) {
+        final Filter filter = new Filter(SnapshotVO.class, "created", false, 0L, 1L);
+        final List<SnapshotVO> snapshots = _snapshotDao.listByVolumeId(filter, volumeId);
+        return (snapshots == null || snapshots.isEmpty()) ? null : snapshots.get(0);
+    }
+
+    /**
+     * Advances a schedule that was skipped (see {@link #shouldSkipUnchangedVolumeSnapshot}) to its next regularly
+     * scheduled run, and logs an informational event so the skip is visible and not mistaken for a missed snapshot.
+     */
+    @DB
+    protected void skipAndRescheduleSnapshot(final SnapshotScheduleVO snapshotToBeExecuted, final VolumeVO volume) {
+        SnapshotScheduleVO lockedSchedule = null;
+        final long snapshotScheId = snapshotToBeExecuted.getId();
+        try {
+            lockedSchedule = _snapshotScheduleDao.acquireInLockTable(snapshotScheId);
+            if (lockedSchedule == null) {
+                return;
+            }
+            final Date nextRegularRun = getNextScheduledTime(snapshotToBeExecuted.getPolicyId(), _currentTimestamp);
+            lockedSchedule.setScheduledTimestamp(nextRegularRun);
+            _snapshotScheduleDao.update(snapshotScheId, lockedSchedule);
+            logger.info("Skipped scheduled snapshot [{}] for volume [{}] because its instance has not been running since the last snapshot; next run at [{}].",
+                    snapshotToBeExecuted, volume, nextRegularRun);
+            ActionEventUtils.onCreatedActionEvent(User.UID_SYSTEM, volume.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_SNAPSHOT_SKIPPED, true,
+                    String.format("Skipped scheduled snapshot for volume [%s] because its instance has not been running since the last snapshot.", volume),
+                    volume.getId(), ApiCommandResourceType.Volume.toString());
+        } finally {
+            if (lockedSchedule != null) {
+                _snapshotScheduleDao.releaseFromLockTable(snapshotScheId);
             }
         }
     }
