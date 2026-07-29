@@ -808,7 +808,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
 
         if (mapCapabilities != null) {
             String value = mapCapabilities.get(DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString());
-            boolean supportsStorageSystemSnapshots = Boolean.getBoolean(value);
+            boolean supportsStorageSystemSnapshots = Boolean.parseBoolean(value);
 
             if (supportsStorageSystemSnapshots) {
                 return DataStoreRole.Primary;
