@@ -316,7 +316,7 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
             commandResult.setSuccess(true);
             commandResult.setResult(null);
         } catch (Exception e) {
-            if (isSnapshotNotFoundError(e)) {
+            if (OntapStorageUtils.isOntapObjectNotFoundError(e)) {
                 logger.warn("deleteCloudStackVolumeSnapshot: ONTAP snapshot for CloudStack snapshot [{}] "
                         + "already absent (idempotent success): {}", snapshotId, e.getMessage());
                 commandResult.setSuccess(true);
@@ -328,25 +328,6 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
             commandResult.setSuccess(false);
             commandResult.setResult(e.getMessage());
         }
-    }
-
-    /**
-     * Returns true when the exception indicates the ONTAP snapshot was already removed.
-     * Delete is idempotent: a missing backend snapshot is treated as success.
-     */
-    private boolean isSnapshotNotFoundError(Throwable error) {
-        if (error == null) {
-            return false;
-        }
-        String message = error.getMessage();
-        if (message != null) {
-            String lower = message.toLowerCase();
-            if (lower.contains("404") || lower.contains("not found") || lower.contains("does not exist")
-                    || lower.contains("entry doesn't exist")) {
-                return true;
-            }
-        }
-        return isSnapshotNotFoundError(error.getCause());
     }
 
     private long resolveSnapshotPoolId(String poolIdStr, long snapshotId) {

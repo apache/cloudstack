@@ -248,4 +248,32 @@ public class OntapStorageUtils {
         return remainder.isEmpty() ? null : remainder;
     }
 
+    /**
+     * Returns true when the exception indicates the ONTAP Object was already removed.
+     * Delete workflows treat a missing backend object as idempotent success.
+     */
+    public static boolean isOntapObjectNotFoundError(Throwable error) {
+        if (error == null) {
+            return false;
+        }
+        if(error instanceof FeignException) {
+            FeignException feignException = (FeignException) error;
+            if (feignException.status() == 404) {
+                return true;
+            }
+        }
+        String message = error.getMessage();
+        if (message != null) {
+            String lower = message.toLowerCase();
+            if (lower.contains("404") || lower.contains("not found") || lower.contains("does not exist")
+                    || lower.contains("entry doesn't exist")) {
+                return true;
+            }
+        } else {
+            logger.warn("Error message is null for exception: {}", error.getClass().getName());
+            return false;
+        }
+        return false;
+    }
+
 }
