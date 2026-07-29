@@ -19,13 +19,16 @@
 
 package org.apache.cloudstack.storage.service;
 
-import com.cloud.utils.exception.CloudRuntimeException;
-import feign.FeignException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
 import org.apache.cloudstack.storage.feign.FeignClientFactory;
 import org.apache.cloudstack.storage.feign.client.AggregateFeignClient;
 import org.apache.cloudstack.storage.feign.client.JobFeignClient;
-import org.apache.cloudstack.storage.feign.client.NetworkFeignClient;
 import org.apache.cloudstack.storage.feign.client.NASFeignClient;
+import org.apache.cloudstack.storage.feign.client.NetworkFeignClient;
 import org.apache.cloudstack.storage.feign.client.SANFeignClient;
 import org.apache.cloudstack.storage.feign.client.SnapshotFeignClient;
 import org.apache.cloudstack.storage.feign.client.SvmFeignClient;
@@ -53,6 +56,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import com.cloud.utils.exception.CloudRuntimeException;
+
+import feign.FeignException;
 
 /**
  * Storage Strategy represents the communication path for all the ONTAP storage options
@@ -590,7 +596,7 @@ public abstract class StorageStrategy {
      * @param accessGroup the access group to update
      * @return the updated AccessGroup object
      */
-    abstract AccessGroup updateAccessGroup(AccessGroup accessGroup);
+    public abstract AccessGroup updateAccessGroup(AccessGroup accessGroup);
 
     /**
      * Method encapsulates the behavior based on the opted protocol in subclasses
