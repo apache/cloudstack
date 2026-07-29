@@ -533,6 +533,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         POWER_STATES_TABLE.put(DomainState.VIR_DOMAIN_BLOCKED, PowerState.PowerOn);
         POWER_STATES_TABLE.put(DomainState.VIR_DOMAIN_NOSTATE, PowerState.PowerUnknown);
         POWER_STATES_TABLE.put(DomainState.VIR_DOMAIN_SHUTDOWN, PowerState.PowerOff);
+        // Report crashed domains as PowerOff immediately instead of omitting them
+        // from the report (which delays detection via the "missing VM" threshold).
+        POWER_STATES_TABLE.put(DomainState.VIR_DOMAIN_CRASHED, PowerState.PowerOff);
     }
 
     public VirtualRoutingResource virtRouterResource;
