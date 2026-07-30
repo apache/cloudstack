@@ -288,6 +288,6 @@ public class SSHCmdHelper {
         if (maskedCmd != null) {
             return maskedCmd;
         }
-        return cmd.split(KeyStoreUtils.KS_FILENAME)[0];
+        return cmd.split(java.util.regex.Pattern.quote(KeyStoreUtils.KS_FILENAME))[0];
     }
 }
