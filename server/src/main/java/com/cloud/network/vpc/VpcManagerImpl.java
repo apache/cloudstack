@@ -3937,7 +3937,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     // Select the PRIMARY router's NIC, or the NIC of the router with the lower DB id if redundant state isn't known yet.
     private NicVO getActiveVpcVrNic(long networkId) {
-        List<NicVO> nics = nicDao.listByNetworkIdAndType(networkId, VirtualMachine.Type.DomainRouter);
+        List<NicVO> nics = nicDao.listNonPlaceholderNicsByNetworkIdAndType(networkId, VirtualMachine.Type.DomainRouter);
         NicVO fallback = null;
         for (NicVO nic : nics) {
             if (fallback == null || nic.getInstanceId() < fallback.getInstanceId()) {
