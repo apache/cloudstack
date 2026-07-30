@@ -1410,4 +1410,79 @@ public class ConfigurationManagerImplTest {
         mapWithEmptySet.put(Network.Service.Firewall, Collections.emptySet());
         Assert.assertNull(ConfigurationManagerImpl.getExternalNetworkProvider(null, mapWithEmptySet));
     }
+
+    private Map<Network.Service, Set<Network.Provider>> validL3ServiceProviderMap() {
+        Map<Network.Service, Set<Network.Provider>> map = new HashMap<>();
+        map.put(Network.Service.UserData, Collections.singleton(Network.Provider.ConfigDrive));
+        map.put(Network.Service.Dns, Collections.singleton(Network.Provider.ConfigDrive));
+        map.put(Network.Service.SecurityGroup, Collections.singleton(Network.Provider.SecurityGroupProvider));
+        return map;
+    }
+
+    @Test
+    public void validateL3NetworkOfferingAcceptsUserDataDnsAndSecurityGroup() {
+        configurationManagerImplSpy.validateL3NetworkOffering(validL3ServiceProviderMap(), null, false, true, false);
+    }
+
+    @Test
+    public void validateL3NetworkOfferingAcceptsOfferingWithoutDns() {
+        Map<Network.Service, Set<Network.Provider>> map = validL3ServiceProviderMap();
+        map.remove(Network.Service.Dns);
+        configurationManagerImplSpy.validateL3NetworkOffering(map, null, false, true, false);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateL3NetworkOfferingRejectsDhcp() {
+        Map<Network.Service, Set<Network.Provider>> map = validL3ServiceProviderMap();
+        map.put(Network.Service.Dhcp, Collections.singleton(Network.Provider.ConfigDrive));
+        configurationManagerImplSpy.validateL3NetworkOffering(map, null, false, true, false);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateL3NetworkOfferingRejectsMissingUserData() {
+        Map<Network.Service, Set<Network.Provider>> map = validL3ServiceProviderMap();
+        map.remove(Network.Service.UserData);
+        configurationManagerImplSpy.validateL3NetworkOffering(map, null, false, true, false);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateL3NetworkOfferingRejectsUserDataWithoutProvider() {
+        Map<Network.Service, Set<Network.Provider>> map = validL3ServiceProviderMap();
+        map.put(Network.Service.UserData, Collections.emptySet());
+        configurationManagerImplSpy.validateL3NetworkOffering(map, null, false, true, false);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateL3NetworkOfferingRejectsNonConfigDriveDns() {
+        Map<Network.Service, Set<Network.Provider>> map = validL3ServiceProviderMap();
+        map.put(Network.Service.Dns, Collections.singleton(Network.Provider.VirtualRouter));
+        configurationManagerImplSpy.validateL3NetworkOffering(map, null, false, true, false);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateL3NetworkOfferingRejectsUnsupportedService() {
+        Map<Network.Service, Set<Network.Provider>> map = validL3ServiceProviderMap();
+        map.put(Network.Service.SourceNat, Collections.singleton(Network.Provider.VirtualRouter));
+        configurationManagerImplSpy.validateL3NetworkOffering(map, null, false, true, false);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateL3NetworkOfferingRejectsNetworkMode() {
+        configurationManagerImplSpy.validateL3NetworkOffering(validL3ServiceProviderMap(), NetworkOffering.NetworkMode.ROUTED, false, true, false);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateL3NetworkOfferingRejectsSpecifyVlan() {
+        configurationManagerImplSpy.validateL3NetworkOffering(validL3ServiceProviderMap(), null, true, true, false);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateL3NetworkOfferingRejectsWithoutSpecifyIpRanges() {
+        configurationManagerImplSpy.validateL3NetworkOffering(validL3ServiceProviderMap(), null, false, false, false);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateL3NetworkOfferingRejectsVpc() {
+        configurationManagerImplSpy.validateL3NetworkOffering(validL3ServiceProviderMap(), null, false, true, true);
+    }
 }

@@ -48,6 +48,7 @@ import org.joda.time.Duration;
 
 import com.cloud.network.NetworkModel;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -249,8 +250,15 @@ public class ConfigDriveBuilder {
      */
     static void writeNetworkData(List<NicProfile> nics, Map<Long, List<Network.Service>> supportedServices, File openStackFolder) {
         JsonObject finalNetworkData = new JsonObject();
-        if (needForGeneratingNetworkData(supportedServices)) {
+        // A direct routed NIC always needs its network data written: ConfigDrive is the only
+        // channel that carries its addressing, whatever services the offering does or does not
+        // have. For every other NIC the historical gate (Dhcp or Dns supported) is unchanged.
+        boolean generateForAllNics = needForGeneratingNetworkData(supportedServices);
+        if (generateForAllNics || nics.stream().anyMatch(ConfigDriveBuilder::isDirectRoutedNic)) {
             for (NicProfile nic : nics) {
+                if (!generateForAllNics && !isDirectRoutedNic(nic)) {
+                    continue;
+                }
                 List<Network.Service> supportedService = supportedServices.get(nic.getId());
                 JsonObject networkData = getNetworkDataJsonObjectForNic(nic, supportedService);
 
@@ -265,6 +273,24 @@ public class ConfigDriveBuilder {
 
     static boolean needForGeneratingNetworkData(Map<Long, List<Network.Service>> supportedServices) {
         return supportedServices.values().stream().anyMatch(services -> services.contains(Network.Service.Dhcp) || services.contains(Network.Service.Dns));
+    }
+
+    /**
+     * A NIC on a Direct Routed (L3) network is recognised by the form of its addressing, not by a
+     * flag: an IPv4 host netmask with a link-local gateway, or an IPv6 /128 with the fixed
+     * link-local gateway. No other network type produces this combination. ConfigDrive is the
+     * only channel that carries such a NIC's network configuration (there is no DHCP and no RA),
+     * so network data must always be generated for it, whatever services the offering carries.
+     */
+    static boolean isDirectRoutedNic(NicProfile nic) {
+        if (nic == null) {
+            return false;
+        }
+        boolean directRoutedIpv4 = StringUtils.isNotBlank(nic.getIPv4Address()) && NetUtils.IPV4_HOST_NETMASK.equals(nic.getIPv4Netmask())
+                && StringUtils.isNotBlank(nic.getIPv4Gateway()) && NetUtils.isIpWithInCidrRange(nic.getIPv4Gateway(), NetUtils.getLinkLocalCIDR());
+        boolean directRoutedIpv6 = StringUtils.isNotBlank(nic.getIPv6Address()) && StringUtils.isNotBlank(nic.getIPv6Cidr())
+                && nic.getIPv6Cidr().endsWith("/" + NetUtils.IPV6_HOST_PREFIX_LENGTH) && NetUtils.getIpv6LinkLocalGateway().equals(nic.getIPv6Gateway());
+        return directRoutedIpv4 || directRoutedIpv6;
     }
 
     /**
