@@ -971,9 +971,9 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         long vmAccountId = vm.getAccountId();
         long vmDomainId = vm.getDomainId();
 
-        List<Long> allPodsFromDedicatedID = new ArrayList<>();
-        List<Long> allClustersFromDedicatedID = new ArrayList<>();
-        List<Long> allHostsFromDedicatedID = new ArrayList<>();
+        List<Long> allowedDedicatedPodIds = new ArrayList<>();
+        List<Long> allowedDedicatedClusterIds = new ArrayList<>();
+        List<Long> allowedDedicatedHostIds = new ArrayList<>();
 
         // If the VM owner's domain has an ExplicitDedication domain-level affinity group,
         // resources dedicated to that domain are accessible to the VM owner (fixes issue #5803).
@@ -985,31 +985,31 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
         // Always allow resources dedicated to the VM owner's account.
         for (DedicatedResourceVO vo : _dedicatedDao.searchDedicatedPods(null, vmDomainId, vmAccountId, null, filter).first()) {
-            allPodsFromDedicatedID.add(vo.getPodId());
+            allowedDedicatedPodIds.add(vo.getPodId());
         }
         for (DedicatedResourceVO vo : _dedicatedDao.searchDedicatedClusters(null, vmDomainId, vmAccountId, null, filter).first()) {
-            allClustersFromDedicatedID.add(vo.getClusterId());
+            allowedDedicatedClusterIds.add(vo.getClusterId());
         }
         for (DedicatedResourceVO vo : _dedicatedDao.searchDedicatedHosts(null, vmDomainId, vmAccountId, null, filter).first()) {
-            allHostsFromDedicatedID.add(vo.getHostId());
+            allowedDedicatedHostIds.add(vo.getHostId());
         }
 
         if (hasDomainExplicitDedicationGroup) {
             // Domain has explicit dedication affinity groups: also allow resources dedicated to this domain
             for (DedicatedResourceVO vo : _dedicatedDao.searchDedicatedPods(null, vmDomainId, null, null, filter).first()) {
-                allPodsFromDedicatedID.add(vo.getPodId());
+                allowedDedicatedPodIds.add(vo.getPodId());
             }
             for (DedicatedResourceVO vo : _dedicatedDao.searchDedicatedClusters(null, vmDomainId, null, null, filter).first()) {
-                allClustersFromDedicatedID.add(vo.getClusterId());
+                allowedDedicatedClusterIds.add(vo.getClusterId());
             }
             for (DedicatedResourceVO vo : _dedicatedDao.searchDedicatedHosts(null, vmDomainId, null, null, filter).first()) {
-                allHostsFromDedicatedID.add(vo.getHostId());
+                allowedDedicatedHostIds.add(vo.getHostId());
             }
         }
 
-        allPodsInDc.removeAll(allPodsFromDedicatedID);
-        allClustersInDc.removeAll(allClustersFromDedicatedID);
-        allHostsInDc.removeAll(allHostsFromDedicatedID);
+        allPodsInDc.removeAll(allowedDedicatedPodIds);
+        allClustersInDc.removeAll(allowedDedicatedClusterIds);
+        allHostsInDc.removeAll(allowedDedicatedHostIds);
 
         logger.debug(() -> LogUtils.logGsonWithoutException("Adding pods [%s], clusters [%s] and hosts [%s] to the avoid list in the deploy process of user VM [%s], "
                         + "because this VM is not dedicated to these components.", allPodsInDc, allClustersInDc, allHostsInDc, vm));
