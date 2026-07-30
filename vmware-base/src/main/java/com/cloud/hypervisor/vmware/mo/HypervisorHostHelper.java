@@ -649,7 +649,8 @@ public class HypervisorHostHelper {
                 bWaitPortGroupReady = false;
             } else if (BroadcastDomainType.NSX == broadcastDomainType && Objects.nonNull(netName)){
                 networkName = netName;
-                bWaitPortGroupReady = false;
+                // NSX creates the segment outside vCenter, where its backing DV port group may not be immediately visible.
+                bWaitPortGroupReady = true;
             } else {
                 boolean dvSwitchSupportNewPolicies = (isFeatureSupportedInVcenterApiVersion(vcApiVersion, MINIMUM_VCENTER_API_VERSION_WITH_DVS_NEW_POLICIES_SUPPORT)
                         && isVersionEqualOrHigher(dvSwitchVersion, MINIMUM_DVS_VERSION_WITH_NEW_POLICIES_SUPPORT));
