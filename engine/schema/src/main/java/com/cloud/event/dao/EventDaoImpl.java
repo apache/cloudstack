@@ -51,6 +51,7 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
         LatestEventsByResourceSearch.and("resourceId", LatestEventsByResourceSearch.entity().getResourceId(), Op.EQ);
         LatestEventsByResourceSearch.and("resourceType", LatestEventsByResourceSearch.entity().getResourceType(), Op.EQ);
         LatestEventsByResourceSearch.and("type", LatestEventsByResourceSearch.entity().getType(), Op.EQ);
+        LatestEventsByResourceSearch.and("archived", LatestEventsByResourceSearch.entity().getArchived(), Op.EQ);
         LatestEventsByResourceSearch.done();
 
         ToArchiveOrDeleteEventSearch = createSearchBuilder();
@@ -118,6 +119,7 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
         sc.setParameters("resourceId", resourceId);
         sc.setParameters("resourceType", resourceType);
         sc.setParameters("type", type);
+        sc.setParameters("archived", false);
         Filter filter = new Filter(EventVO.class, "createDate", false, 0L, (long) limit);
         return listBy(sc, filter);
     }
