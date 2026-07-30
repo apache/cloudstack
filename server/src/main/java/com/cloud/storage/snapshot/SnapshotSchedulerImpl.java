@@ -384,7 +384,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
             lockedSchedule.setScheduledTimestamp(nextRegularRun);
             logger.warn("Snapshot schedule [{}] for volume [{}] has failed [{}] consecutive times; it will not be retried until its next regularly scheduled run at [{}].",
                     snapshotToBeExecuted, volume, totalFailures, nextRegularRun);
-            ActionEventUtils.onCreatedActionEvent(User.UID_SYSTEM, volume.getAccountId(), EventVO.LEVEL_WARN, EventTypes.EVENT_SNAPSHOT_CREATE, true,
+            ActionEventUtils.onCreatedActionEvent(User.UID_SYSTEM, volume.getAccountId(), EventVO.LEVEL_WARN, EventTypes.EVENT_SNAPSHOT_RECURRING_FAILURE_LIMIT_REACHED, true,
                     String.format("Recurring snapshot for volume [%s] has failed %d consecutive times and will not be retried until its next regularly scheduled run.", volume, totalFailures),
                     volumeId, ApiCommandResourceType.Volume.toString());
         } else {
