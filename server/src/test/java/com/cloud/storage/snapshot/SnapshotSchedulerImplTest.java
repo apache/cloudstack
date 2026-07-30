@@ -17,6 +17,7 @@
 package com.cloud.storage.snapshot;
 
 import com.cloud.event.ActionEventUtils;
+import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.storage.Snapshot;
@@ -390,9 +391,11 @@ public class SnapshotSchedulerImplTest {
             snapshotSchedulerImplSpy.handleFailedSnapshotDispatch(snapshotScheduleVoMock, volumeVoMock, snapshotScheduleVoMock, null, new Exception("boom"));
 
             actionEventUtilsMocked.verify(() -> ActionEventUtils.onCreatedActionEvent(
-                    Mockito.anyLong(), Mockito.anyLong(), Mockito.eq(EventVO.LEVEL_ERROR), Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyString()));
+                    Mockito.anyLong(), Mockito.anyLong(), Mockito.eq(EventVO.LEVEL_ERROR), Mockito.eq(EventTypes.EVENT_SNAPSHOT_CREATE), Mockito.anyBoolean(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyString()));
+            // Must use a distinct event type from EVENT_SNAPSHOT_CREATE, otherwise it becomes the "latest event" scanned
+            // by countConsecutiveFailedAttempts and silently resets the consecutive-failure count on the next attempt.
             actionEventUtilsMocked.verify(() -> ActionEventUtils.onCreatedActionEvent(
-                    Mockito.anyLong(), Mockito.anyLong(), Mockito.eq(EventVO.LEVEL_WARN), Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyString()));
+                    Mockito.anyLong(), Mockito.anyLong(), Mockito.eq(EventVO.LEVEL_WARN), Mockito.eq(EventTypes.EVENT_SNAPSHOT_RECURRING_FAILURE_LIMIT_REACHED), Mockito.anyBoolean(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyString()));
         }
 
         Mockito.verify(snapshotScheduleDaoMock).update(Mockito.anyLong(), Mockito.eq(snapshotScheduleVoMock));
