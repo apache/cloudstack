@@ -351,7 +351,8 @@ class TestHostMaintenance(TestHostMaintenanceBase):
             if (no_vm_req > 0):
                 self.logger.debug("Creating vms = {}".format(no_vm_req))
                 self.vmlist = self.createVMs(listHost[0].id, no_vm_req)
-                time.sleep(10)
+
+        time.sleep(10)
 
         try:
             migrations_finished = self.hostPrepareAndCancelMaintenance(listHost[0].id, listHost[1].id)
@@ -416,7 +417,8 @@ class TestHostMaintenance(TestHostMaintenanceBase):
                 if (no_vm_req > 0):
                     self.logger.debug("Creating vms = {}".format(no_vm_req))
                     self.vmlist = self.createVMs(listHost[0].id, no_vm_req, "taggedsmall")
-                    time.sleep(10)
+
+            time.sleep(10)
 
             # Attempt putting host in maintenance and check if ErrorInMaintenance state is reached
             self.prepare_host_for_maintenance(target_host_id)
