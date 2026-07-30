@@ -150,6 +150,7 @@ import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.VpcProvider;
 import com.cloud.network.router.CommandSetupHelper;
 import com.cloud.network.router.NetworkHelper;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.vpn.RemoteAccessVpnService;
@@ -3859,7 +3860,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         String newRouterIp = null;
         List<NetworkVO> networks = _ntwkDao.listByVpc(vpc.getId());
         for (NetworkVO network : networks) {
-            NicVO newNic = nicDao.findNonPlaceHolderByNetworkIdAndType(network.getId(), VirtualMachine.Type.DomainRouter);
+            NicVO newNic = getActiveVpcVrNic(network.getId());
             if (newNic != null) {
                 logger.debug("Got VPC VR NIC for network {}: {}", network.getId(), newNic);
                 newNetworkId = network.getId();
@@ -3902,10 +3903,25 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 }
             }
         } else if (currentRouterId == null || !currentRouterId.equals(newRouterId)) {
-            // (5) otherwise, If VPC VR ID does not exist or is changed, update the VM ID.
+            // (5) active VR changed on the same network (e.g. redundant VR failover)
+            logger.debug("Active VPC VR changed for network {}: router {} -> {}", currentNetworkId, currentRouterId, newRouterId);
+            boolean isNetris = isProviderSupportServiceInVpc(vpc.getId(), Service.SourceNat, Provider.Netris);
+            CallContext ctx = CallContext.current();
+            if (isNetris && currentRouterId != null) {
+                // Netris rule names are keyed by vmId, so revoke the old router's rule before
+                // creating the new one, or it's left behind as an orphan
+                if (!rulesManager.applyStaticNatForIp(ipAddress.getId(), false, ctx.getCallingAccount(), true)) {
+                    throw new CloudRuntimeException("Failed to revoke static nat for VPC VR before router change");
+                }
+            }
             ipAddress.setAssociatedWithVmId(newRouterId);
             ipAddress.setVmIp(newRouterIp);
             _ipAddressDao.update(ipAddress.getId(), ipAddress);
+            if (isNetris) {
+                if (!rulesManager.applyStaticNatForIp(ipAddress.getId(), false, ctx.getCallingAccount(), false)) {
+                    throw new CloudRuntimeException("Failed to reapply static nat for VPC VR after router change");
+                }
+            }
         }
         return true;
     }
@@ -3919,11 +3935,27 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
     }
 
+    // Select the PRIMARY router's NIC, or the NIC of the router with the lower DB id if redundant state isn't known yet.
+    private NicVO getActiveVpcVrNic(long networkId) {
+        List<NicVO> nics = nicDao.listByNetworkIdAndType(networkId, VirtualMachine.Type.DomainRouter);
+        NicVO fallback = null;
+        for (NicVO nic : nics) {
+            if (fallback == null || nic.getInstanceId() < fallback.getInstanceId()) {
+                fallback = nic;
+            }
+            DomainRouterVO router = routerDao.findById(nic.getInstanceId());
+            if (router != null && router.getIsRedundantRouter() && router.getRedundantState() == VirtualRouter.RedundantState.PRIMARY) {
+                return nic;
+            }
+        }
+        return fallback;
+    }
+
     private String getFirstGuestIpAddressForVpcVr(Long vpcId) {
         String nextHop = null;
         List<NetworkVO> networks = _ntwkDao.listByVpc(vpcId);
         for (NetworkVO network : networks) {
-            NicVO nic = nicDao.findNonPlaceHolderByNetworkIdAndType(network.getId(), VirtualMachine.Type.DomainRouter);
+            NicVO nic = getActiveVpcVrNic(network.getId());
             if (nic != null) {
                 nextHop = nic.getIPv4Address();
                 break;
