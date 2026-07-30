@@ -113,7 +113,7 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
     private static final ConfigKey<Long> MaximumFileAgeforGarbageCollection = new ConfigKey<>("Advanced", Long.class,
             "diagnostics.data.max.file.age", "86400",
             "Sets the maximum time in seconds a file can stay in secondary storage before it is deleted.", true, EnableGarbageCollector.key());
-    private static final ConfigKey<Double> DiskQuotaPercentageThreshold = new ConfigKey<>("Advanced", Double.class,
+    public static final ConfigKey<Double> DiskQuotaPercentageThreshold = new ConfigKey<>("Advanced", Double.class,
             "diagnostics.data.disable.threshold", "0.9",
             "Sets the secondary storage disk utilisation percentage for file retrieval. " +
                     "Used to look for suitable secondary storage with enough space, otherwise an exception is " +
