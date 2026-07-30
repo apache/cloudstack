@@ -92,6 +92,18 @@ public class NetUtils {
     public final static int PORT_RANGE_MIN = 0;
     public final static int PORT_RANGE_MAX = 65535;
 
+    // The IPv4 link-local block and its first address, which KVM hosts carry on cloud0 for the
+    // control network and which Direct Routed (L3) guest networks use as the shared,
+    // host-independent gateway on every network's bridge. Defined here and nowhere else; use the
+    // getLinkLocal*() / getIpv6LinkLocalGateway() getters rather than these constants. The guru
+    // stamps the gateways on the NIC at allocation, and the agent passes the NIC's values down to
+    // modifybrdr.sh.
+    private final static String IPV4_LINK_LOCAL_CIDR = "169.254.0.0/16";
+    private final static String IPV4_LINK_LOCAL_GATEWAY = "169.254.0.1";
+    private final static String IPV6_LINK_LOCAL_GATEWAY = "fe80::1";
+    public final static String IPV4_HOST_NETMASK = "255.255.255.255";
+    public final static int IPV6_HOST_PREFIX_LENGTH = 128;
+
     public final static int DEFAULT_AUTOSCALE_EXPUNGE_VM_GRACE_PERIOD = 2 * 60; // Grace period before Vm is expunged
     public final static int DEFAULT_AUTOSCALE_POLICY_INTERVAL_TIME = 30;
     public final static int DEFAULT_AUTOSCALE_POLICY_QUIET_TIME = 5 * 60;
@@ -1032,11 +1044,15 @@ public class NetUtils {
     }
 
     public static String getLinkLocalGateway() {
-        return getLinkLocalGateway(getLinkLocalCIDR());
+        return IPV4_LINK_LOCAL_GATEWAY;
+    }
+
+    public static String getIpv6LinkLocalGateway() {
+        return IPV6_LINK_LOCAL_GATEWAY;
     }
 
     public static String getLinkLocalCIDR() {
-        return "169.254.0.0/16";
+        return IPV4_LINK_LOCAL_CIDR;
     }
 
     public static String getLinkLocalFirstAddressFromCIDR(final String cidr) {

@@ -49,8 +49,27 @@ public class BridgeVifDriver extends VifDriverBase {
     private String _modifyVlanPath;
     private String _modifyVxlanPath;
     private String _macIpScriptPath;
+    private boolean _macIpStaticEnabled;
+    private String _modifyBrdrPath;
     private String _controlCidr = NetUtils.getLinkLocalCIDR();
     private Long libvirtVersion;
+
+    /**
+     * A NIC on a Direct Routed (L3) network is recognised by the form of its addressing, never by
+     * a flag: an IPv4 host netmask with a link-local gateway, or an IPv6 /128 with the fixed
+     * link-local gateway. No other network type hands an Instance this combination. The same
+     * signature drives ConfigDrive's on-link emission, so the two stay consistent by construction.
+     */
+    public static boolean isDirectRoutedNic(NicTO nic) {
+        if (nic == null) {
+            return false;
+        }
+        boolean directRoutedIpv4 = nic.getIp() != null && NetUtils.IPV4_HOST_NETMASK.equals(nic.getNetmask())
+                && nic.getGateway() != null && NetUtils.isIpWithInCidrRange(nic.getGateway(), NetUtils.getLinkLocalCIDR());
+        boolean directRoutedIpv6 = nic.getIp6Address() != null && nic.getIp6Cidr() != null
+                && nic.getIp6Cidr().endsWith("/" + NetUtils.IPV6_HOST_PREFIX_LENGTH) && NetUtils.getIpv6LinkLocalGateway().equals(nic.getIp6Gateway());
+        return directRoutedIpv4 || directRoutedIpv6;
+    }
 
     private static boolean isVxlanOrNetris(String protocol) {
         return protocol.equals(Networks.BroadcastDomainType.Vxlan.scheme()) || protocol.equals(Networks.BroadcastDomainType.Netris.scheme());
@@ -84,13 +103,18 @@ public class BridgeVifDriver extends VifDriverBase {
             throw new ConfigurationException("Unable to find " + vxlanScript);
         }
 
-        if (Boolean.TRUE.equals(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_NETWORK_MACIP_STATIC))) {
-            _macIpScriptPath = Script.findScript(networkScriptsDir, "modifymacip.sh");
+        // Resolved unconditionally: Direct Routed (L3) NICs need the MAC/IP script regardless of
+        // the host-wide property, which remains the opt-in for running it on every NIC (EVPN).
+        _macIpScriptPath = Script.findScript(networkScriptsDir, "modifymacip.sh");
+        _macIpStaticEnabled = Boolean.TRUE.equals(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_NETWORK_MACIP_STATIC));
+        if (_macIpStaticEnabled) {
             if (_macIpScriptPath == null) {
                 throw new ConfigurationException("Unable to find modifymacip.sh");
             }
             logger.info("VM network MAC/IP static script configured: {}", _macIpScriptPath);
         }
+
+        _modifyBrdrPath = Script.findScript(networkScriptsDir, "modifybrdr.sh");
 
         libvirtVersion = (Long) params.get("libvirtVersion");
         if (libvirtVersion == null) {
@@ -248,7 +272,10 @@ public class BridgeVifDriver extends VifDriverBase {
         }
 
         if (nic.getType() == Networks.TrafficType.Guest) {
-            if (isBroadcastTypeVlanOrVxlan(nic) && isValidProtocolAndVnetId(vNetId, protocol)) {
+            if (isDirectRoutedNic(nic)) {
+                String brName = createDirectRoutedBridge(nic);
+                intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), networkRateKBps);
+            } else if (isBroadcastTypeVlanOrVxlan(nic) && isValidProtocolAndVnetId(vNetId, protocol)) {
                     if (trafficLabel != null && !trafficLabel.isEmpty()) {
                         logger.debug("creating a vNet dev and bridge for guest traffic per traffic label " + trafficLabel);
                         String brName = createVnetBr(vNetId, trafficLabel, protocol);
@@ -295,15 +322,90 @@ public class BridgeVifDriver extends VifDriverBase {
         }
         intf.setLinkStateUp(nic.isEnabled());
 
-        executeMacIpScript(intf.getBrName(), nic.getMac(), nic.getIp(), nic.getIp6Address(), nic.getNicSecIps());
+        // Host-wide property (EVPN use case) runs the MAC/IP script for every NIC; a Direct
+        // Routed NIC needs it regardless, since the host route and static neighbour entry are
+        // what deliver its traffic.
+        if (_macIpStaticEnabled || isDirectRoutedNic(nic)) {
+            executeMacIpScript(intf.getBrName(), nic.getMac(), nic.getIp(), nic.getIp6Address(), nic.getNicSecIps());
+        }
 
         return intf;
     }
 
     @Override
     public void unplug(LibvirtVMDef.InterfaceDef iface, boolean deleteBr) {
-        executeMacIpScript(iface.getBrName(), iface.getMacAddress());
+        // How the bridges of Direct Routed (L3) networks are named is known only to
+        // modifybrdr.sh; the agent classifies an interface at unplug by asking it. "notmine"
+        // means this is not such a bridge and the regular unplug handling applies.
+        boolean directRouted = deleteDirectRoutedBridge(iface.getBrName());
+        if (_macIpStaticEnabled || directRouted) {
+            executeMacIpScript(iface.getBrName(), iface.getMacAddress());
+        }
+        if (directRouted) {
+            return;
+        }
         deleteVnetBr(iface.getBrName(), deleteBr);
+    }
+
+    /**
+     * Ensures the per-network bridge for a Direct Routed NIC exists, with the shared gateway
+     * addresses and sysctls applied. Idempotent and flock'd in the script itself. A failure here
+     * is fatal to the NIC plug: without the bridge the domain XML would reference a nonexistent
+     * device and the Instance would fail to start with a far less useful error.
+     */
+    private String createDirectRoutedBridge(NicTO nic) throws InternalErrorException {
+        if (_modifyBrdrPath == null) {
+            throw new InternalErrorException("Unable to find modifybrdr.sh: this host cannot run Instances on Direct Routed (L3) networks");
+        }
+        Script command = new Script(_modifyBrdrPath, _timeout, logger);
+        command.add("-o", "add");
+        command.add("-n", String.valueOf(nic.getNetworkId()));
+        // The gateway addresses come from the NIC, whose values the management server stamped at
+        // allocation (NetUtils.getLinkLocalGateway() / getIpv6LinkLocalGateway()) — the script has
+        // no defaults of its own, so the addresses are defined in exactly one place.
+        if (StringUtils.isNotBlank(nic.getGateway())) {
+            command.add("-4", nic.getGateway());
+        }
+        if (StringUtils.isNotBlank(nic.getIp6Gateway())) {
+            command.add("-6", nic.getIp6Gateway());
+        }
+        // The script prints the bridge name it created: how these bridges are named is known
+        // only to modifybrdr.sh, never to the agent.
+        OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
+        String result = command.execute(parser);
+        if (result != null || StringUtils.isBlank(parser.getLine())) {
+            throw new InternalErrorException("Failed to create bridge for network " + nic.getNetworkId() + ": " + result);
+        }
+        return parser.getLine().trim();
+    }
+
+    /**
+     * Asks modifybrdr.sh to remove the bridge if it is one of its own and nothing is attached to
+     * it any more. Returns whether the bridge belongs to a Direct Routed network at all —
+     * "notmine" means it does not, and the caller falls back to the regular unplug handling.
+     * Best-effort beyond that: the script keeps the bridge while other Instances of the network
+     * still use it, and a leftover empty bridge is harmless and re-used on the next plug.
+     */
+    private boolean deleteDirectRoutedBridge(String brName) {
+        if (_modifyBrdrPath == null || brName == null) {
+            return false;
+        }
+        try {
+            Script command = new Script(_modifyBrdrPath, _timeout, logger);
+            command.add("-o", "delete");
+            command.add("-b", brName);
+            OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
+            String result = command.execute(parser);
+            String verdict = parser.getLine() != null ? parser.getLine().trim() : "";
+            if (result != null) {
+                logger.warn("Failed to delete bridge {}: {}", brName, result);
+                return false;
+            }
+            return !"notmine".equals(verdict);
+        } catch (Exception e) {
+            logger.warn("Failed to delete bridge {}", brName, e);
+            return false;
+        }
     }
 
     @Override
