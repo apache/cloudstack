@@ -7411,5 +7411,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return false;
     }
 
+    /**
+     * Mounts the given secondary storage urls. Returning a reference to the secondary storage "secondaryStorageUrl" and putting the references to the "parentSecondaryStorageUrls"
+     * into "secondaryStorageUuids"
+     * */
+    public KVMStoragePool mountSecondaryStorages(Set<String> parentSecondaryStorageUrls, String secondaryStorageUrl, KVMStoragePoolManager storagePoolManager,
+            Set<String> secondaryStorageUuids) {
 
+        for (String url : parentSecondaryStorageUrls) {
+            KVMStoragePool pool = storagePoolManager.getStoragePoolByURI(url);
+            secondaryStorageUuids.add(pool.getUuid());
+        }
+        KVMStoragePool pool = storagePoolManager.getStoragePoolByURI(secondaryStorageUrl);
+        secondaryStorageUuids.add(pool.getUuid());
+        return pool;
+    }
 }

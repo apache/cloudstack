@@ -109,7 +109,7 @@ public class LibvirtRestoreKbossBackupCommandWrapperTest {
     public void executeTestException() throws LibvirtException, QemuImgException {
         doReturn(primaryDataStoreToMock).when(backupDeltaTOMock).getDataStore();
         doReturn(Set.of(new Pair<>(backupDeltaTOMock, volumeObjectToMock1))).when(cmdMock).getBackupAndVolumePairs();
-        doReturn(null).when(libvirtRestoreKbossBackupCommandWrapperSpy).mountSecondaryStorages(any(), any(), any(), any());
+        doReturn(null).when(libvirtComputingResourceMock).mountSecondaryStorages(any(), any(), any(), any());
         doThrow(new QemuImgException("asd")).when(libvirtRestoreKbossBackupCommandWrapperSpy).restoreVolumes(any(), any(), any(), anyBoolean(), anyInt());
 
         RestoreKbossBackupAnswer answer = (RestoreKbossBackupAnswer)libvirtRestoreKbossBackupCommandWrapperSpy.execute(cmdMock, libvirtComputingResourceMock);

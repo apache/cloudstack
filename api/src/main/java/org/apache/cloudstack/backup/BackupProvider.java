@@ -18,8 +18,10 @@ package org.apache.cloudstack.backup;
 
 import java.util.List;
 
+import com.cloud.agent.api.to.FilesystemInfoTO;
 import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine;
+import org.apache.cloudstack.storage.browser.DataStoreObjectResponse;
 
 public interface BackupProvider {
 
@@ -157,4 +159,19 @@ public interface BackupProvider {
      * @param zoneId the zone for which to return metrics
      */
     void syncBackupStorageStats(Long zoneId);
+
+    /**
+     * Returns a list of file system infos for the given backup. If the volume is not null, it should return a list of file systems specific to the volume.
+     * */
+    default List<FilesystemInfoTO> listBackupFilesystems(Backup backup, Backup.VolumeInfo volumeInfo) {
+        return List.of();
+    }
+
+    default List<DataStoreObjectResponse> listBackupFiles(Backup backup, Backup.VolumeInfo volumeInfo, String filesystem, String directory, Boolean isSymlink) {
+        return List.of();
+    }
+
+    default String downloadBackupFile(Backup backup, Backup.VolumeInfo volumeInfo, String filesystem, String file) {
+        return "";
+    }
 }

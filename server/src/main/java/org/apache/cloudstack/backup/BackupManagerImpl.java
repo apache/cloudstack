@@ -35,7 +35,9 @@ import java.util.TimerTask;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.cloud.agent.api.to.FilesystemInfoTO;
 import com.cloud.host.Host;
+import com.cloud.storage.Upload;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.utils.exception.BackupProviderException;
 import com.cloud.utils.fsm.NoTransitionException;
@@ -63,8 +65,11 @@ import org.apache.cloudstack.api.command.user.backup.CreateBackupCmd;
 import org.apache.cloudstack.api.command.user.backup.CreateBackupScheduleCmd;
 import org.apache.cloudstack.api.command.user.backup.DeleteBackupCmd;
 import org.apache.cloudstack.api.command.user.backup.DeleteBackupScheduleCmd;
+import org.apache.cloudstack.api.command.user.backup.DownloadBackupFileCmd;
 import org.apache.cloudstack.api.command.user.backup.DownloadValidationScreenshotCmd;
 import org.apache.cloudstack.api.command.user.backup.FinishBackupChainCmd;
+import org.apache.cloudstack.api.command.user.backup.ListBackupFilesCmd;
+import org.apache.cloudstack.api.command.user.backup.ListBackupFilesystemsCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupServiceJobsCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupOfferingsCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupScheduleCmd;
@@ -80,6 +85,7 @@ import org.apache.cloudstack.api.command.user.backup.repository.ListBackupReposi
 import org.apache.cloudstack.api.command.user.backup.repository.UpdateBackupRepositoryCmd;
 import org.apache.cloudstack.api.command.user.vm.CreateVMFromBackupCmd;
 import org.apache.cloudstack.api.response.BackupResponse;
+import org.apache.cloudstack.api.response.ExtractResponse;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupDetailsDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
@@ -95,6 +101,7 @@ import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.cloudstack.poll.BackgroundPollManager;
 import org.apache.cloudstack.poll.BackgroundPollTask;
 import org.apache.cloudstack.reservation.dao.ReservationDao;
+import org.apache.cloudstack.storage.browser.DataStoreObjectResponse;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
@@ -1900,6 +1907,107 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
     }
 
+    @Override
+    public List<DataStoreObjectResponse> listBackupFilesystems(long backupId, Long volumeId) {
+        BackupVO backupVO = backupDao.findById(backupId);
+        Backup.VolumeInfo backupVolumeInfo = validateBackupAndGetVolumeInfo(backupId, volumeId, backupVO);
+
+        BackupOfferingVO backupOfferingVO = backupOfferingDao.findById(backupVO.getBackupOfferingId());
+        BackupProvider backupProvider = getBackupProvider(backupOfferingVO.getProvider());
+        if (!KBOSS_BACKUP_PROVIDER.equals(backupProvider.getName())) {
+            throw new CloudRuntimeException(String.format("This feature is only supported for the %s provider currently", KBOSS_BACKUP_PROVIDER));
+        }
+
+        List<FilesystemInfoTO> filesystems = backupProvider.listBackupFilesystems(backupVO, backupVolumeInfo);
+
+        List<DataStoreObjectResponse> dataStoreObjectResponseList = new ArrayList<>();
+        for (FilesystemInfoTO fsInfoTO : filesystems) {
+            DataStoreObjectResponse dataStoreObjectResponse = new DataStoreObjectResponse(fsInfoTO.getName(), false, fsInfoTO.getSize(), null);
+            dataStoreObjectResponse.setIsFilesystem(true);
+            dataStoreObjectResponse.setFormat(fsInfoTO.getFilesystem());
+
+            VolumeVO volume = volumeDao.findByIdIncludingRemoved(fsInfoTO.getVolumeId());
+            dataStoreObjectResponse.setVolumeId(volume.getUuid());
+            dataStoreObjectResponse.setVolumeName(volume.getName());
+            dataStoreObjectResponseList.add(dataStoreObjectResponse);
+        }
+
+        return dataStoreObjectResponseList;
+    }
+
+    @Override
+    public List<DataStoreObjectResponse> listBackupFiles(long backupId, Long volumeId, String filesystem, String directory, Boolean isSymlink) {
+        BackupVO backupVO = backupDao.findById(backupId);
+        Backup.VolumeInfo backupVolumeInfo = validateBackupAndGetVolumeInfo(backupId, volumeId, backupVO);
+
+        BackupOfferingVO backupOfferingVO = backupOfferingDao.findById(backupVO.getBackupOfferingId());
+        BackupProvider backupProvider = getBackupProvider(backupOfferingVO.getProvider());
+        if (!KBOSS_BACKUP_PROVIDER.equals(backupProvider.getName())) {
+            throw new CloudRuntimeException(String.format("This feature is only supported for the %s provider currently", KBOSS_BACKUP_PROVIDER));
+        }
+
+        return backupProvider.listBackupFiles(backupVO, backupVolumeInfo, filesystem, directory, isSymlink);
+    }
+
+    @Override
+    public ExtractResponse downloadBackupFile(long backupId, Long volumeId, String filesystem, String file) {
+        BackupVO backupVO = backupDao.findById(backupId);
+        Backup.VolumeInfo backupVolumeInfo = validateBackupAndGetVolumeInfo(backupId, volumeId, backupVO);
+
+        BackupOfferingVO backupOfferingVO = backupOfferingDao.findById(backupVO.getBackupOfferingId());
+        BackupProvider backupProvider = getBackupProvider(backupOfferingVO.getProvider());
+        if (!KBOSS_BACKUP_PROVIDER.equals(backupProvider.getName())) {
+            throw new CloudRuntimeException(String.format("This feature is only supported for the %s provider currently", KBOSS_BACKUP_PROVIDER));
+        }
+
+        String url = backupProvider.downloadBackupFile(backupVO, backupVolumeInfo, filesystem, file);
+
+        ExtractResponse response = new ExtractResponse();
+        if (url == null) {
+            response.setState(Upload.Status.DOWNLOAD_URL_NOT_CREATED.toString());
+            return response;
+        }
+
+        response.setUrl(url);
+        response.setName(file.substring(file.lastIndexOf("/") + 1));
+        response.setState(Upload.Status.DOWNLOAD_URL_CREATED.toString());
+        return response;
+    }
+
+    private Backup.VolumeInfo validateBackupAndGetVolumeInfo(long backupId, Long volumeId, BackupVO backupVO) {
+        if (backupVO == null) {
+            logger.warn("Unable to find backup with ID [{}].", backupId);
+            throw new InvalidParameterValueException("Unable to find backup with given ID.");
+        }
+
+        if (backupVO.getStatus() != Backup.Status.BackedUp) {
+            throw new InvalidParameterValueException(String.format("Backup [%s] is not in the right state to list its filesystems. It should be in [%s] state, but it is in [%s] " +
+                    "state.", backupVO.getUuid(), Backup.Status.BackedUp.name(), backupVO.getStatus().name()));
+        }
+
+        Long vmId = backupVO.getVmId();
+        VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(vmId);
+        if (vm == null) {
+            throw new CloudRuntimeException(String.format("Unable to find VM for backup [%s].", backupVO.getUuid()));
+        }
+        validateBackupForZone(vm.getDataCenterId());
+
+        List<Backup.VolumeInfo> volumeInfos = backupVO.getBackedUpVolumes();
+        if (CollectionUtils.isEmpty(volumeInfos)) {
+            throw new CloudRuntimeException(String.format("Backup [%s] has no volume info metadata. Unable to list filesystems.", backupVO.getUuid()));
+        }
+
+        Backup.VolumeInfo backupVolumeInfo = null;
+        if (volumeId != null) {
+            VolumeVO volumeVO = volumeDao.findByIdIncludingRemoved(volumeId);
+            backupVolumeInfo = getVolumeInfo(volumeInfos, volumeVO.getUuid());
+            if (backupVolumeInfo == null) {
+                throw new CloudRuntimeException(String.format("Failed to find volume [%s] in the backed-up volumes metadata.", volumeVO.getUuid()));
+            }
+        }
+        return backupVolumeInfo;
+    }
+
     /**
      * Get the pair: hostIp, datastoreUuid in which to restore the volume, based on the VM to be attached information
      */
@@ -2069,6 +2177,9 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         cmdList.add(DownloadValidationScreenshotCmd.class);
         cmdList.add(ListBackupServiceJobsCmd.class);
         cmdList.add(FinishBackupChainCmd.class);
+        cmdList.add(ListBackupFilesystemsCmd.class);
+        cmdList.add(ListBackupFilesCmd.class);
+        cmdList.add(DownloadBackupFileCmd.class);
         return cmdList;
     }
 
@@ -2675,6 +2786,9 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
         if (backup.getToCheckpointId() != null) {
             response.setToCheckpointId(backup.getToCheckpointId());
+        }
+        if (KBOSS_BACKUP_PROVIDER.equals(offering.getProvider())) {
+            response.setBrowsable(true);
         }
 
         response.setObjectName("backup");
