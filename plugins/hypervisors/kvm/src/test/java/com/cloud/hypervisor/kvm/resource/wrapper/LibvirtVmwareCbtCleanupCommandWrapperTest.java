@@ -35,6 +35,7 @@ import com.cloud.agent.api.VmwareCbtCleanupCommand;
 import com.cloud.agent.api.to.VmwareCbtDiskTO;
 import com.cloud.agent.api.to.VmwareCbtTargetStorageType;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.storage.Storage;
@@ -138,6 +139,11 @@ public class LibvirtVmwareCbtCleanupCommandWrapperTest {
         Mockito.when(rbdStoragePool.getType()).thenReturn(Storage.StoragePoolType.RBD);
         Mockito.when(rbdStoragePool.getUuid()).thenReturn("rbd-pool-uuid");
         Mockito.when(rbdStoragePool.deletePhysicalDisk(Mockito.eq("cloudstack-cbt-migration-uuid-disk-1"), Mockito.eq(Storage.ImageFormat.RAW))).thenReturn(false);
+        // The image is still listed on the pool, so the deletion genuinely failed and cleanup must say so
+        // rather than treating the target as already removed.
+        KVMPhysicalDisk stillPresent = Mockito.mock(KVMPhysicalDisk.class);
+        Mockito.when(stillPresent.getName()).thenReturn("cloudstack-cbt-migration-uuid-disk-1");
+        Mockito.when(rbdStoragePool.listPhysicalDisks()).thenReturn(List.of(stillPresent));
         VmwareCbtCleanupCommand command = new VmwareCbtCleanupCommand(MIGRATION_UUID,
                 List.of(new VmwareCbtDiskTO("disk-1", 2000, "[datastore] vm/disk.vmdk", "datastore",
                         "cloudstack-cbt-migration-uuid-disk-1", "raw", null, null, 8192)),
@@ -150,6 +156,60 @@ public class LibvirtVmwareCbtCleanupCommandWrapperTest {
 
         Assert.assertFalse(answer.getResult());
         Assert.assertTrue(answer.getDetails().contains("Unable to clean up VMware CBT migration"));
+    }
+
+    /**
+     * A cancelled migration has already had its targets released, so the delete that follows (whose
+     * cleanup parameter defaults to true) runs cleanup a second time. Cleanup has to be idempotent: a
+     * target the pool no longer lists is the intended end state, not a failure.
+     */
+    @Test
+    public void testExecuteSucceedsWhenRbdTargetImageIsAlreadyGone() {
+        Mockito.when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolManager);
+        Mockito.when(storagePoolManager.getStoragePool(Storage.StoragePoolType.RBD, "rbd-pool-uuid")).thenReturn(rbdStoragePool);
+        Mockito.when(rbdStoragePool.getType()).thenReturn(Storage.StoragePoolType.RBD);
+        Mockito.when(rbdStoragePool.getUuid()).thenReturn("rbd-pool-uuid");
+        Mockito.when(rbdStoragePool.deletePhysicalDisk(Mockito.eq("cloudstack-cbt-migration-uuid-disk-1"), Mockito.eq(Storage.ImageFormat.RAW))).thenReturn(false);
+        // The pool is reachable and simply no longer holds the image.
+        KVMPhysicalDisk unrelated = Mockito.mock(KVMPhysicalDisk.class);
+        Mockito.when(unrelated.getName()).thenReturn("some-other-image");
+        Mockito.when(rbdStoragePool.listPhysicalDisks()).thenReturn(List.of(unrelated));
+        VmwareCbtCleanupCommand command = new VmwareCbtCleanupCommand(MIGRATION_UUID,
+                List.of(new VmwareCbtDiskTO("disk-1", 2000, "[datastore] vm/disk.vmdk", "datastore",
+                        "cloudstack-cbt-migration-uuid-disk-1", "raw", null, null, 8192)),
+                true, true, true);
+        command.setTargetStorageType(VmwareCbtTargetStorageType.RBD_RAW);
+        command.setDestinationStoragePoolType(Storage.StoragePoolType.RBD);
+        command.setDestinationStoragePoolUuid("rbd-pool-uuid");
+
+        Answer answer = wrapper.execute(command, libvirtComputingResource);
+
+        Assert.assertTrue(answer.getDetails(), answer.getResult());
+    }
+
+    /**
+     * If the pool cannot be inspected, absence cannot be proven, so a failed deletion must still be
+     * reported as a failure rather than masked.
+     */
+    @Test
+    public void testExecuteFailsWhenPoolCannotBeInspected() {
+        Mockito.when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolManager);
+        Mockito.when(storagePoolManager.getStoragePool(Storage.StoragePoolType.RBD, "rbd-pool-uuid")).thenReturn(rbdStoragePool);
+        Mockito.when(rbdStoragePool.getType()).thenReturn(Storage.StoragePoolType.RBD);
+        Mockito.when(rbdStoragePool.getUuid()).thenReturn("rbd-pool-uuid");
+        Mockito.when(rbdStoragePool.deletePhysicalDisk(Mockito.eq("cloudstack-cbt-migration-uuid-disk-1"), Mockito.eq(Storage.ImageFormat.RAW))).thenReturn(false);
+        Mockito.when(rbdStoragePool.listPhysicalDisks()).thenThrow(new RuntimeException("pool unreachable"));
+        VmwareCbtCleanupCommand command = new VmwareCbtCleanupCommand(MIGRATION_UUID,
+                List.of(new VmwareCbtDiskTO("disk-1", 2000, "[datastore] vm/disk.vmdk", "datastore",
+                        "cloudstack-cbt-migration-uuid-disk-1", "raw", null, null, 8192)),
+                true, true, true);
+        command.setTargetStorageType(VmwareCbtTargetStorageType.RBD_RAW);
+        command.setDestinationStoragePoolType(Storage.StoragePoolType.RBD);
+        command.setDestinationStoragePoolUuid("rbd-pool-uuid");
+
+        Answer answer = wrapper.execute(command, libvirtComputingResource);
+
+        Assert.assertFalse(answer.getResult());
     }
 
     private VmwareCbtCleanupCommand createCommand(String targetPath) {
