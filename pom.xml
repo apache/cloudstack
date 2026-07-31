@@ -198,6 +198,7 @@
         <cs.minio.version>8.6.0</cs.minio.version>
         <cs.opentelemetry.version>1.51.0</cs.opentelemetry.version>
         <cs.opentelemetry-instrumentation.version>2.16.0</cs.opentelemetry-instrumentation.version>
+        <cs.freemaker.version>2.3.34</cs.freemaker.version>
     </properties>
 
     <distributionManagement>

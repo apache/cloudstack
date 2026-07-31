@@ -651,3 +651,24 @@ WHERE `name`='user.vm.readonly.details' AND `value` IS NOT NULL;
 -- usage records introduced in 4.22.1 (cumulative and per-VM) can coexist. See #13399.
 CALL `cloud_usage`.`IDEMPOTENT_DROP_INDEX`('id', 'cloud_usage.usage_volume');
 CALL `cloud_usage`.`IDEMPOTENT_ADD_UNIQUE_INDEX`('cloud_usage.usage_volume', 'id', '(volume_id ASC, created ASC, vm_id ASC)');
+
+-- Backup report
+-- CHANGE FILE LATER
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'failure_reason', 'varchar(255)');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'logid', 'varchar(14)');
+
+CREATE TABLE IF NOT EXISTS `cloud`.`backup_report` (
+   `id` bigint NOT NULL UNIQUE AUTO_INCREMENT,
+   `created` DATETIME NOT NULL,
+   `removed` DATETIME,
+   `task_enabled` tinyint(1) DEFAULT 0,
+    PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `cloud`.`email_template` (
+    `id` bigint NOT NULL UNIQUE AUTO_INCREMENT,
+    `name` VARCHAR(55) NOT NULL,
+    `template` TEXT,
+    PRIMARY KEY (`id`)
+);

@@ -47,10 +47,14 @@ import javax.inject.Inject;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
+import org.apache.cloudstack.api.response.BackupReportCompressionResponse;
+import org.apache.cloudstack.api.response.BackupReportValidationResponse;
+import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupDetailsDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDetailsDao;
+import org.apache.cloudstack.backup.dao.BackupReportKbossJoinDao;
 import org.apache.cloudstack.backup.dao.InternalBackupDataStoreDao;
 import org.apache.cloudstack.backup.dao.InternalBackupJoinDao;
 import org.apache.cloudstack.backup.dao.InternalBackupServiceJobDao;
@@ -115,6 +119,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruManager;
+import com.cloud.projects.dao.ProjectDao;
 import com.cloud.resource.ResourceState;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
@@ -162,6 +167,7 @@ import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
+import org.apache.logging.log4j.ThreadContext;
 
 public class KbossBackupProvider extends AdapterBase implements InternalBackupProvider, Configurable {
     protected ConfigKey<Integer> backupChainSize = new ConfigKey<>("Advanced", Integer.class, "backup.chain.size", "8", "Determines the max size of a backup chain." +
@@ -271,6 +277,12 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
 
     @Inject
     private AlertManager alertManager;
+
+    @Inject
+    private BackupReportKbossJoinDao backupReportKbossJoinDao;
+
+    @Inject
+    private ProjectDao projectDao;
 
     protected final List<Backup.Status> validChildStatesToRemoveBackup = List.of(Backup.Status.Expunged, Backup.Status.Error, Backup.Status.Failed);
 
@@ -382,12 +394,16 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         VirtualMachine userVm = virtualMachineManager.findById(vmId);
         Long hostId = vmSnapshotHelper.pickRunningHost(vmId);
         HostVO hostVO = hostDao.findById(hostId);
+        backupVO.setDate(new Date());
 
         if (hostVO.getStatus() != Status.Up || hostVO.getResourceState() != ResourceState.Enabled) {
+            String failureReason = String.format("There is no host available to create the backup [%s] of VM [%s]. Setting the backup as \"Failed\".", backupVO.getUuid(),
+                    userVm.getUuid());
             backupVO.setStatus(Backup.Status.Failed);
+            backupVO.setFailureReason(failureReason);
             backupDao.update(backupVO.getId(), backupVO);
 
-            logger.error("No available host found to create backup [{}] of VM [{}]. Setting the backup as Failed.", backupVO.getUuid(), userVm.getUuid());
+            logger.error(failureReason);
             return new Pair<>(Boolean.FALSE,  backup.getId());
         }
 
@@ -397,6 +413,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
             volumeTOs = vmSnapshotHelper.getVolumeTOList(userVm.getId());
             validateStorages(volumeTOs, userVm.getUuid());
         } catch (Exception e) {
+            backupVO.setFailureReason(e.getMessage());
             backupVO.setStatus(Backup.Status.Failed);
             backupDao.update(backupVO.getId(), backupVO);
             throw e;
@@ -406,7 +423,6 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
 
         BackupOfferingVO backupOfferingVO = backupOfferingDao.findByIdIncludingRemoved(backup.getBackupOfferingId());
 
-        backupVO.setDate(new Date());
         List<InternalBackupJoinVO> backupChain = getBackupJoinParents(backupVO, true);
         InternalBackupJoinVO parentBackup = null;
         if (isolated) {
@@ -1034,6 +1050,58 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
                 backupCompressionCoroutines};
     }
 
+    @Override
+    public List<Object> getBackupReport(Date startDate, Date endDate, long zoneId, Long domainId, Long accountId) {
+        List<BackupReportKbossJoinVO> kbossReports = backupReportKbossJoinDao.listByZoneAndDomainAndAccountAndBetweenDates(zoneId, domainId, accountId, startDate, endDate);
+
+        BackupReportCompressionResponse compressionResponse = new BackupReportCompressionResponse();
+        BackupReportValidationResponse validationResponse = new BackupReportValidationResponse();
+        for (BackupReportKbossJoinVO kbossReport : kbossReports) {
+            if (kbossReport.getValidationStatus() == Backup.ValidationStatus.NotValidated && kbossReport.getCompressionStatus() == Backup.CompressionStatus.Uncompressed) {
+                logger.trace("Not adding backup [{}] to KBOSS report as it is neither validated nor compressed.", kbossReport.getBackupUuid());
+                continue;
+            }
+            logger.trace("Adding backup [{}] to KBOSS provider backup report.", kbossReport.getBackupUuid());
+            BackupResponse backupResponse = createBaseResponse(kbossReport);
+
+            if (kbossReport.getValidationStatus() != Backup.ValidationStatus.NotValidated) {
+                backupResponse.setValidationStatus(kbossReport.getValidationStatus());
+                validationResponse.addBackupResponse(backupResponse);
+            }
+            if (kbossReport.getCompressionStatus() != Backup.CompressionStatus.Uncompressed) {
+                backupResponse.setSize(kbossReport.getSize());
+                backupResponse.setUncompressedSize(kbossReport.getUncompressedSize());
+                backupResponse.setCompressionStatus(kbossReport.getCompressionStatus());
+                compressionResponse.addBackupResponse(backupResponse);
+            }
+        }
+        return List.of(compressionResponse, validationResponse);
+    }
+
+    private BackupResponse createBaseResponse(BackupReportKbossJoinVO kbossReport) {
+        BackupResponse backupResponse = new BackupResponse();
+        backupResponse.setBackupOffering(kbossReport.getOfferingName());
+        backupResponse.setId(kbossReport.getBackupUuid());
+        backupResponse.setName(kbossReport.getBackupName());
+        backupResponse.setVmId(kbossReport.getVmUuid());
+        backupResponse.setVmName(kbossReport.getVmName());
+        backupResponse.setDate(kbossReport.getBackupDate());
+        backupResponse.setRemoved(kbossReport.getBackupRemoved());
+        backupResponse.setZone(kbossReport.getZoneName());
+        backupResponse.setZoneId(kbossReport.getZoneUuid());
+        backupResponse.setJobId(kbossReport.getJobId() != null ? kbossReport.getJobId().toString() : null);
+        backupResponse.setJobType(kbossReport.getType().name());
+        backupResponse.setStartDate(kbossReport.getStartTime());
+        backupResponse.setEndDate(kbossReport.getRemoved());
+        backupResponse.setDomainId(kbossReport.getDomainUuid());
+
+        backupResponse.setAccountId(kbossReport.getAccountUuid());
+        backupResponse.setAccount(kbossReport.getAccountName());
+        backupResponse.setProjectId(kbossReport.getProjectUuid());
+        backupResponse.setProjectName(kbossReport.getProjectName());
+        return backupResponse;
+    }
+
     protected Outcome<?> createBackupThroughJobQueue(VirtualMachine vm, boolean quiesceVm, boolean isolated) {
         final CallContext context = CallContext.current();
         long userId = context.getCallingUser().getId();
@@ -1042,7 +1110,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
 
         BackupVO backup = new BackupVO(String.format("%s-%s", vm.getHostName(), DateUtil.getDateInSystemTimeZone()), vmId, vm.getBackupOfferingId(), accountId,
                 vm.getDomainId(), vm.getDataCenterId(), 0, Backup.Status.Queued, null,
-                Backup.CompressionStatus.Uncompressed, Backup.ValidationStatus.NotValidated);
+                Backup.CompressionStatus.Uncompressed, Backup.ValidationStatus.NotValidated, ThreadContext.get("logcontextid"));
 
         VmWorkJobVO workJob = new VmWorkJobVO(AsyncJobExecutionContext.getOriginJobId(), userId, accountId, VmWorkTakeBackup.class.getName(), vmId, VirtualMachine.Type.Instance,
                 VmWorkJobVO.Step.Starting);
@@ -2118,6 +2186,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
             backupVO.setStatus(Backup.Status.Error);
         }
 
+        backupVO.setFailureReason(answer == null ? "No answer from host" : answer.getDetails());
         backupDao.update(backupVO.getId(), backupVO);
     }
 
