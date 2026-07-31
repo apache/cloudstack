@@ -20,6 +20,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiException;
 import com.linbit.linstor.api.DevelopersApi;
 import com.linbit.linstor.api.model.AutoSelectFilter;
+import com.linbit.linstor.api.model.ControllerVersion;
 import com.linbit.linstor.api.model.Node;
 import com.linbit.linstor.api.model.Properties;
 import com.linbit.linstor.api.model.ProviderKind;
@@ -188,6 +189,44 @@ public class LinstorUtilTest {
 
         Assert.assertTrue(LinstorUtil.getDiskfulStoragePoolsByPreference(api, "cs-test").isEmpty());
         Assert.assertNull(LinstorUtil.getDiskfulStoragePool(api, "cs-test"));
+    }
+
+    @Test
+    public void testIsVersionAtLeast() {
+        Assert.assertTrue(LinstorUtil.isVersionAtLeast("1.29.1", 1, 29, 1));
+        Assert.assertTrue(LinstorUtil.isVersionAtLeast("1.29.2", 1, 29, 1));
+        Assert.assertTrue(LinstorUtil.isVersionAtLeast("1.30.0", 1, 29, 1));
+        Assert.assertTrue(LinstorUtil.isVersionAtLeast("2.0.0", 1, 29, 1));
+        Assert.assertTrue(LinstorUtil.isVersionAtLeast("1.30", 1, 29, 1));
+
+        Assert.assertFalse(LinstorUtil.isVersionAtLeast("1.29.0", 1, 29, 1));
+        Assert.assertFalse(LinstorUtil.isVersionAtLeast("1.29", 1, 29, 1));
+        Assert.assertFalse(LinstorUtil.isVersionAtLeast("1.28.5", 1, 29, 1));
+        Assert.assertFalse(LinstorUtil.isVersionAtLeast("0.99.9", 1, 29, 1));
+        Assert.assertFalse(LinstorUtil.isVersionAtLeast(null, 1, 29, 1));
+        Assert.assertFalse(LinstorUtil.isVersionAtLeast("", 1, 29, 1));
+        Assert.assertFalse(LinstorUtil.isVersionAtLeast("garbage", 1, 29, 1));
+    }
+
+    private ControllerVersion controllerVersion(String restApiVersion) {
+        ControllerVersion version = new ControllerVersion();
+        version.setRestApiVersion(restApiVersion);
+        return version;
+    }
+
+    @Test
+    public void testSupportsLiveMigrateApi() throws ApiException {
+        DevelopersApi newCtrl = mock(DevelopersApi.class);
+        when(newCtrl.controllerVersion()).thenReturn(controllerVersion("1.29.0"));
+        Assert.assertTrue(LinstorUtil.supportsLiveMigrateApi(newCtrl));
+
+        DevelopersApi oldCtrl = mock(DevelopersApi.class);
+        when(oldCtrl.controllerVersion()).thenReturn(controllerVersion("1.28.3"));
+        Assert.assertFalse(LinstorUtil.supportsLiveMigrateApi(oldCtrl));
+
+        DevelopersApi unreachable = mock(DevelopersApi.class);
+        when(unreachable.controllerVersion()).thenThrow(new ApiException(503, "unavailable"));
+        Assert.assertFalse(LinstorUtil.supportsLiveMigrateApi(unreachable));
     }
 
     @Test
