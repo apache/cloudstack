@@ -21,6 +21,7 @@ on:
   push:
     branches:
       - main
+      - 4.22.1.0-backport-docker-fix
     tags:
       - 4.*
       - 5.*
