@@ -101,6 +101,49 @@ public class LinstorUtil {
         return new DevelopersApi(client);
     }
 
+    /**
+     * The REST API version of the connected controller, e.g. "1.29.1", or null if it could not be queried.
+     */
+    @Nullable
+    public static String getRestApiVersion(DevelopersApi api) {
+        try {
+            return api.controllerVersion().getRestApiVersion();
+        } catch (ApiException apiExc) {
+            LOGGER.warn("Unable to query controller API version: {}", apiExc.getBestMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Check if the connected controller supports the live-migration attach/detach API:
+     * make-available with auto_manage_dual_primary and unmake-available, added with REST API 1.29.0.
+     */
+    public static boolean supportsLiveMigrateApi(DevelopersApi api) {
+        return isVersionAtLeast(getRestApiVersion(api), 1, 29, 0);
+    }
+
+    static boolean isVersionAtLeast(String version, int major, int minor, int patch) {
+        if (version == null || version.isEmpty()) {
+            return false;
+        }
+        String[] parts = version.split("\\.");
+        try {
+            int maj = Integer.parseInt(parts[0]);
+            int min = parts.length > 1 ? Integer.parseInt(parts[1]) : 0;
+            int pat = parts.length > 2 ? Integer.parseInt(parts[2]) : 0;
+            if (maj != major) {
+                return maj > major;
+            }
+            if (min != minor) {
+                return min > minor;
+            }
+            return pat >= patch;
+        } catch (NumberFormatException nfExc) {
+            LOGGER.warn("Unable to parse controller API version '{}'", version);
+            return false;
+        }
+    }
+
     public static String getBestErrorMessage(ApiCallRcList answers) {
         return answers != null && !answers.isEmpty() ?
             answers.stream()
