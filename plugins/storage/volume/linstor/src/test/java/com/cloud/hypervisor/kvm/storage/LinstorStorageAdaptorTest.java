@@ -51,6 +51,7 @@ import com.linbit.linstor.api.DevelopersApi;
 import com.linbit.linstor.api.model.ApiCallRc;
 import com.linbit.linstor.api.model.ApiCallRcList;
 import com.linbit.linstor.api.model.AutoPlaceRequest;
+import com.linbit.linstor.api.model.ControllerVersion;
 import com.linbit.linstor.api.model.DrbdResource;
 import com.linbit.linstor.api.model.LayerType;
 import com.linbit.linstor.api.model.Properties;
@@ -104,6 +105,12 @@ public class LinstorStorageAdaptorTest {
     private void mockDefinitionsCreated() throws ApiException {
         when(api.resourceDefinitionCreate(any())).thenReturn(success());
         when(api.volumeDefinitionCreate(anyString(), any())).thenReturn(success());
+    }
+
+    private void mockControllerVersion(String restApiVersion) throws ApiException {
+        ControllerVersion version = new ControllerVersion();
+        version.setRestApiVersion(restApiVersion);
+        when(api.controllerVersion()).thenReturn(version);
     }
 
     private static ResourceWithVolumes drbdResource() {
@@ -239,6 +246,7 @@ public class LinstorStorageAdaptorTest {
 
     @Test
     public void connectPhysicalDiskWaitsForTheLocalDevice() throws ApiException {
+        mockControllerVersion("1.29.0");
         when(api.resourceMakeAvailableOnNode(eq("cs-vol-1"), eq(localNode), any())).thenReturn(success());
         when(api.viewResources(Collections.singletonList(localNode), Collections.singletonList("cs-vol-1"),
                 Collections.emptyList(), null, null, null)).thenReturn(Collections.singletonList(drbdResource()));
@@ -269,6 +277,7 @@ public class LinstorStorageAdaptorTest {
 
     @Test(expected = CloudRuntimeException.class)
     public void connectPhysicalDiskFailsWithoutLocalVolume() throws ApiException {
+        mockControllerVersion("1.29.0");
         when(api.resourceMakeAvailableOnNode(eq("cs-vol-1"), eq(localNode), any())).thenReturn(success());
         when(api.viewResources(Collections.singletonList(localNode), Collections.singletonList("cs-vol-1"),
                 Collections.emptyList(), null, null, null)).thenReturn(Collections.emptyList());
