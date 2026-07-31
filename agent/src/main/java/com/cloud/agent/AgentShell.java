@@ -496,6 +496,9 @@ public class AgentShell implements IAgentShell, Daemon {
      * @return the hostname or IP address of the last successfully setup host, or null if none exists
      */
     private String getLastSetupCompletedHost() {
+        if (_storage != null) {
+            return getPersistentProperty(null, AgentProperties.LAST_SETUP_COMPLETED_HOST.getName());
+        }
         return AgentPropertiesFileHandler.getPropertyValue(AgentProperties.LAST_SETUP_COMPLETED_HOST);
     }
 
