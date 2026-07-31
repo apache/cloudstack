@@ -55,7 +55,6 @@ import org.libvirt.StorageVol;
 
 import com.ceph.rados.IoCTX;
 import com.ceph.rados.Rados;
-import com.ceph.rados.exceptions.ErrorCode;
 import com.ceph.rados.exceptions.RadosException;
 import com.ceph.rbd.Rbd;
 import com.ceph.rbd.RbdException;
@@ -95,6 +94,8 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     private static final int RBD_FEATURE_DEEP_FLATTEN = 32;
     public static final int RBD_FEATURES = RBD_FEATURE_LAYERING + RBD_FEATURE_EXCLUSIVE_LOCK + RBD_FEATURE_OBJECT_MAP + RBD_FEATURE_FAST_DIFF + RBD_FEATURE_DEEP_FLATTEN;
     private int rbdOrder = 0; /* Order 0 means 4MB blocks (the default) */
+    /* libvirt's VIR_STORAGE_VOL_DELETE_WITH_SNAPSHOTS, not exposed as a constant by libvirt-java */
+    private static final int VIR_STORAGE_VOL_DELETE_WITH_SNAPSHOTS = 2;
 
     private static final Set<StoragePoolType> QEMU_IMG_MANAGED_POOL_TYPES = Set.of(StoragePoolType.NetworkFilesystem, StoragePoolType.Filesystem, StoragePoolType.SharedMountPoint);
 
@@ -1150,61 +1151,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
         logger.info("Attempting to remove volume " + uuid + " from pool " + pool.getUuid());
 
-        /**
-         * RBD volume can have snapshots and while they exist libvirt
-         * can't remove the RBD volume
-         *
-         * We have to remove those snapshots first
-         */
-        if (pool.getType() == StoragePoolType.RBD) {
-            try {
-                logger.info("Unprotecting and Removing RBD snapshots of image " + pool.getSourceDir() + "/" + uuid + " prior to removing the image");
-
-                Rados r = new Rados(pool.getAuthUserName());
-                r.confSet("mon_host", pool.getSourceHost() + ":" + pool.getSourcePort());
-                r.confSet("key", pool.getAuthSecret());
-                r.confSet("client_mount_timeout", "30");
-                r.connect();
-                logger.debug("Successfully connected to Ceph cluster at " + r.confGet("mon_host"));
-
-                IoCTX io = r.ioCtxCreate(pool.getSourceDir());
-                Rbd rbd = new Rbd(io);
-                RbdImage image = rbd.open(uuid);
-                logger.debug("Fetching list of snapshots of RBD image " + pool.getSourceDir() + "/" + uuid);
-                List<RbdSnapInfo> snaps = image.snapList();
-                try {
-                    for (RbdSnapInfo snap : snaps) {
-                        if (image.snapIsProtected(snap.name)) {
-                            logger.debug("Unprotecting snapshot " + pool.getSourceDir() + "/" + uuid + "@" + snap.name);
-                            image.snapUnprotect(snap.name);
-                        } else {
-                            logger.debug("Snapshot " + pool.getSourceDir() + "/" + uuid + "@" + snap.name + " is not protected.");
-                        }
-                        logger.debug("Removing snapshot " + pool.getSourceDir() + "/" + uuid + "@" + snap.name);
-                        image.snapRemove(snap.name);
-                    }
-                    logger.info("Successfully unprotected and removed any remaining snapshots (" + snaps.size() + ") of "
-                        + pool.getSourceDir() + "/" + uuid + " Continuing to remove the RBD image");
-                } catch (RbdException e) {
-                    logger.error("Failed to remove snapshot with exception: " + e.toString() +
-                        ", RBD error: " + ErrorCode.getErrorMessage(e.getReturnValue()));
-                    throw new CloudRuntimeException(e.toString() + " - " + ErrorCode.getErrorMessage(e.getReturnValue()));
-                } finally {
-                    logger.debug("Closing image and destroying context");
-                    rbd.close(image);
-                    r.ioCtxDestroy(io);
-                }
-            } catch (RadosException e) {
-                logger.error("Failed to remove snapshot with exception: " + e.toString() +
-                    ", RBD error: " + ErrorCode.getErrorMessage(e.getReturnValue()));
-                throw new CloudRuntimeException(e.toString() + " - " + ErrorCode.getErrorMessage(e.getReturnValue()));
-            } catch (RbdException e) {
-                logger.error("Failed to remove snapshot with exception: " + e.toString() +
-                    ", RBD error: " + ErrorCode.getErrorMessage(e.getReturnValue()));
-                throw new CloudRuntimeException(e.toString() + " - " + ErrorCode.getErrorMessage(e.getReturnValue()));
-            }
-        }
-
         LibvirtStoragePool libvirtPool = (LibvirtStoragePool)pool;
         try {
             StorageVol vol = getVolume(libvirtPool.getPool(), uuid);
@@ -1721,7 +1667,19 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     }
 
     private void deleteVol(LibvirtStoragePool pool, StorageVol vol) throws LibvirtException {
-        vol.delete(0);
+        /**
+         * RBD volumes can have snapshots, and libvirt refuses to remove a volume while
+         * they exist. VIR_STORAGE_VOL_DELETE_WITH_SNAPSHOTS tells the RBD storage backend
+         * to unprotect and remove any snapshots before removing the volume itself.
+         *
+         * libvirt-java has no named constant for this flag (added upstream in libvirt 1.2.20,
+         * commit 3c7590e0a4), so it's passed as a raw flag value here.
+         */
+        int flags = 0;
+        if (pool.getType() == StoragePoolType.RBD) {
+            flags |= VIR_STORAGE_VOL_DELETE_WITH_SNAPSHOTS;
+        }
+        vol.delete(flags);
     }
 
 
