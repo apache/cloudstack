@@ -204,15 +204,28 @@ public class LinstorUtil {
 
         String nodeName = null;
         String storagePoolName = null;
+        int bestScore = -1;
         for (ResourceWithVolumes rwv : resources) {
             if (rwv.getVolumes().isEmpty()) {
                 continue;
             }
             Volume vol = rwv.getVolumes().get(0);
-            if (vol.getProviderKind() != ProviderKind.DISKLESS) {
+            if (vol.getProviderKind() == ProviderKind.DISKLESS) {
+                continue;
+            }
+            // Prefer the in-use node, then nodes with an active (not INACTIVE) resource:
+            // thick LVM snapshots on shared storage pools (dm-snapshot) are not cluster aware
+            // and must be read on the node the origin volume is active on.
+            boolean inUse = rwv.getState() != null && Boolean.TRUE.equals(rwv.getState().isInUse());
+            boolean active = rwv.getFlags() == null || !rwv.getFlags().contains(ApiConsts.FLAG_RSC_INACTIVE);
+            int score = inUse ? 2 : (active ? 1 : 0);
+            if (score > bestScore) {
+                bestScore = score;
                 nodeName = rwv.getNodeName();
                 storagePoolName = vol.getStoragePoolName();
-                break;
+                if (inUse) {
+                    break;
+                }
             }
         }
 
@@ -246,6 +259,7 @@ public class LinstorUtil {
         final String backingPool = sp.getProps().get("StorDriver/StorPoolName");
         final String path;
         switch (sp.getProviderKind()) {
+            case LVM:  // thick LVM snapshot LVs use the same naming scheme as thin
             case LVM_THIN:
                 path = String.format("/dev/mapper/%s-%s_%s_%s",
                     backingPool.split("/")[0], rscName.replace("-", "--"), suffix, snapshotName.replace("-", "--"));

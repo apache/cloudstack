@@ -105,6 +105,17 @@ public class LinstorUtilTest {
         }
 
         {
+            StoragePool spLVM = new StoragePool();
+            Properties lvmProps = new Properties();
+            lvmProps.put("StorDriver/StorPoolName", "shared");
+            spLVM.setProps(lvmProps);
+            spLVM.setProviderKind(ProviderKind.LVM);
+            String snapPath = LinstorUtil.getSnapshotPath(spLVM, "cs-cb32532a-dd8f-47e0-a81c-8a75573d3545", "cs-6c6b4e95");
+            Assert.assertEquals(
+                "/dev/mapper/shared-cs--cb32532a--dd8f--47e0--a81c--8a75573d3545_00000_cs--6c6b4e95", snapPath);
+        }
+
+        {
             StoragePool spZFS = new StoragePool();
             Properties zfsProps = new Properties();
             zfsProps.put("StorDriver/StorPoolName", "linstorPool");

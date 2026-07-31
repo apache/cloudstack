@@ -66,6 +66,19 @@ public final class LinstorBackupSnapshotCommandWrapper
         return script.execute();
     }
 
+    private String lvmSetActive(boolean activate, String devMapperPath) {
+        // lvm resolves /dev/mapper/vg-lv names textually, works also for inactive LVs
+        Script script = new Script("lvchange", Duration.millis(5000));
+        if (activate) {
+            script.add("-ay");
+            script.add("-K"); // snapshot LVs carry the skip-activation flag
+        } else {
+            script.add("-an");
+        }
+        script.add(devMapperPath);
+        return script.execute();
+    }
+
     private String qemuShrink(String path, long sizeByte, long timeout) {
         Script qemuImg = new Script("qemu-img", Duration.millis(timeout));
         qemuImg.add("resize");
@@ -146,6 +159,7 @@ public final class LinstorBackupSnapshotCommandWrapper
         final KVMStoragePoolManager storagePoolMgr = serverResource.getStoragePoolMgr();
         KVMStoragePool linstorPool = storagePoolMgr.getStoragePool(Storage.StoragePoolType.Linstor, src.getDataStore().getUuid());
         boolean zfsHidden = false;
+        String lvmSnapDev = null;  // vg/lv we activated for the copy, deactivated on cleanup
         String srcPath = src.getPath();
 
         if (linstorPool == null) {
@@ -169,6 +183,12 @@ public final class LinstorBackupSnapshotCommandWrapper
                     return new CopyCmdAnswer("Unable to unhide zfs snapshot device.");
                 }
                 srcPath = "/dev/zvol/" + srcPath.substring(6);
+            } else if (srcPath.startsWith("/dev/mapper/") && !new File(srcPath).exists()) {
+                // thick LVM snapshot LVs are created inactive with the skip-activation flag
+                if (lvmSetActive(true, srcPath) != null) {
+                    return new CopyCmdAnswer("Unable to activate LVM snapshot device " + srcPath);
+                }
+                lvmSnapDev = srcPath;
             }
 
             secondaryPool = storagePoolMgr.getStoragePoolByURI(dstDataStore.getUrl());
@@ -204,6 +224,9 @@ public final class LinstorBackupSnapshotCommandWrapper
             cleanupSecondaryPool(secondaryPool);
             if (zfsHidden) {
                 zfsSnapdev(true, src.getPath());
+            }
+            if (lvmSnapDev != null) {
+                lvmSetActive(false, lvmSnapDev);
             }
         }
     }
