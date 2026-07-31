@@ -365,29 +365,40 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         }
 
         final DevelopersApi api = getLinstorAPI(pool);
+        final boolean liveMigrateApi = LinstorUtil.supportsLiveMigrateApi(api);
         String rscName;
-        boolean usesDrbd;
+        boolean usesDrbd = false;
         try
         {
             rscName = findCorrectTemplateName(api, getLinstorRscName(volumePath), pool);
-            usesDrbd = usesDrbd(api, rscName);
 
-            if (isVMMigration && !usesDrbd) {
-                // create the resource on the new node, noop if already exists
-                ResourceCreate rc = new ResourceCreate();
-                Resource rsc = new Resource();
-                rsc.setNodeName(localNodeName);
-                rc.setResource(rsc);
-                ApiCallRcList answers = api.resourceCreateOnNode(rscName, localNodeName, rc);
-                checkLinstorAnswersThrow(answers);
-                // activate resource if there already was an inactive resource here
-                answers = api.activateRsc(rscName, localNodeName);
-                checkLinstorAnswersThrow(answers);
-            } else {
-                // DRBD resources just work with a diskless and don't have the activate/deactivate concept
+            if (liveMigrateApi) {
+                // controller >= 1.29 prepares the live migration itself:
+                // dual-primary for DRBD, activation on both nodes for shared storage pools
                 ResourceMakeAvailable rma = new ResourceMakeAvailable();
+                rma.autoManageDualPrimary(isVMMigration);
                 ApiCallRcList answers = api.resourceMakeAvailableOnNode(rscName, localNodeName, rma);
                 checkLinstorAnswersThrow(answers);
+            } else {
+                usesDrbd = usesDrbd(api, rscName);
+
+                if (isVMMigration && !usesDrbd) {
+                    // create the resource on the new node, noop if already exists
+                    ResourceCreate rc = new ResourceCreate();
+                    Resource rsc = new Resource();
+                    rsc.setNodeName(localNodeName);
+                    rc.setResource(rsc);
+                    ApiCallRcList answers = api.resourceCreateOnNode(rscName, localNodeName, rc);
+                    checkLinstorAnswersThrow(answers);
+                    // activate resource if there already was an inactive resource here
+                    answers = api.activateRsc(rscName, localNodeName);
+                    checkLinstorAnswersThrow(answers);
+                } else {
+                    // DRBD resources just work with a diskless and don't have the activate/deactivate concept
+                    ResourceMakeAvailable rma = new ResourceMakeAvailable();
+                    ApiCallRcList answers = api.resourceMakeAvailableOnNode(rscName, localNodeName, rma);
+                    checkLinstorAnswersThrow(answers);
+                }
             }
 
         } catch (ApiException apiEx) {
@@ -395,7 +406,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
             throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
         }
 
-        if (isVMMigration && usesDrbd) {
+        if (!liveMigrateApi && isVMMigration && usesDrbd) {
             try {
                 allow2PrimariesIfInUse(api, rscName);
             } catch (ApiException apiEx) {
@@ -442,6 +453,28 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         removeTwoPrimariesRcProps(api, rscName, inUseNode, deleteProps);
     }
 
+    /**
+     * Revert a make-available after e.g. a live migration: removes dual-primary settings and
+     * deletes the resource on this node if that is possible without losing data
+     * (diskless or a redundant shared storage pool copy; tiebreaker and diskful resources are kept).
+     * No-op if the resource isn't deployed here, so it is safe to call on every disconnect.
+     */
+    private void unmakeAvailable(DevelopersApi api, String rscName) {
+        try {
+            ApiCallRcList answers = api.resourceUnmakeAvailableOnNode(rscName, localNodeName);
+            if (answers.hasError()) {
+                // e.g. FAIL_IN_USE: the resource is still in use on this node and is kept
+                logger.warn("Linstor: unmake-available {} on {}: {}",
+                        rscName, localNodeName, LinstorUtil.getBestErrorMessage(answers));
+            } else {
+                logLinstorAnswers(answers);
+            }
+        } catch (ApiException apiEx) {
+            logger.error(apiEx.getBestMessage());
+            // do not fail here, cleaning up after a disconnect isn't fatal
+        }
+    }
+
     private void deleteUnusedSharedResources(DevelopersApi api, Resource nodeRsc) {
         try {
             List<Resource> rscs = api.resourceList(nodeRsc.getName(), null, null);
@@ -486,9 +519,11 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         if (optRsc.isPresent()) {
             Resource rsc = optRsc.get();
 
+            if (LinstorUtil.supportsLiveMigrateApi(api)) {
+                unmakeAvailable(api, rsc.getName());
             // if it is a non DRBD resource(shared) we need to check if we are the last active one
             // on live migrate, we can have 2 active resources at the same time
-            if (rsc.getLayerObject().getDrbd() == null) {
+            } else if (rsc.getLayerObject().getDrbd() == null) {
                 deleteUnusedSharedResources(api, rsc);
             } else {
                 try {

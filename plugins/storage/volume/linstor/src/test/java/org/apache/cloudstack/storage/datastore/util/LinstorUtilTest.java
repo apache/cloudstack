@@ -116,6 +116,20 @@ public class LinstorUtilTest {
     }
 
     @Test
+    public void testIsVersionAtLeast() {
+        Assert.assertTrue(LinstorUtil.isVersionAtLeast("1.29.0", 1, 29));
+        Assert.assertTrue(LinstorUtil.isVersionAtLeast("1.29", 1, 29));
+        Assert.assertTrue(LinstorUtil.isVersionAtLeast("1.30.1", 1, 29));
+        Assert.assertTrue(LinstorUtil.isVersionAtLeast("2.0.0", 1, 29));
+        Assert.assertFalse(LinstorUtil.isVersionAtLeast("1.28.0", 1, 29));
+        Assert.assertFalse(LinstorUtil.isVersionAtLeast("1", 1, 29));
+        Assert.assertFalse(LinstorUtil.isVersionAtLeast("0.29.5", 1, 29));
+        Assert.assertFalse(LinstorUtil.isVersionAtLeast(null, 1, 29));
+        Assert.assertFalse(LinstorUtil.isVersionAtLeast("", 1, 29));
+        Assert.assertFalse(LinstorUtil.isVersionAtLeast("garbage", 1, 29));
+    }
+
+    @Test
     public void testGetRscGroupStoragePools() throws ApiException {
         List<StoragePool> storagePools = LinstorUtil.getRscGroupStoragePools(api, "cloudstack");
 

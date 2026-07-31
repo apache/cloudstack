@@ -48,6 +48,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
@@ -99,6 +100,45 @@ public class LinstorUtil {
         }
         client.discoverHttps();
         return new DevelopersApi(client);
+    }
+
+    private static final Map<String, Boolean> LIVE_MIGRATE_API_SUPPORT = new ConcurrentHashMap<>();
+
+    /**
+     * Check if the connected controller supports the live-migration attach/detach API:
+     * make-available with auto_manage_dual_primary and unmake-available, added with REST API 1.29.0.
+     * The result is cached per controller URL; probe failures are not cached and retried on the next call.
+     */
+    public static boolean supportsLiveMigrateApi(DevelopersApi api) {
+        Boolean supported = LIVE_MIGRATE_API_SUPPORT.computeIfAbsent(
+                api.getApiClient().getBasePath(), key -> queryLiveMigrateApiSupport(api));
+        return Boolean.TRUE.equals(supported);
+    }
+
+    private static Boolean queryLiveMigrateApiSupport(DevelopersApi api) {
+        try {
+            String restApiVersion = api.controllerVersion().getRestApiVersion();
+            return isVersionAtLeast(restApiVersion, 1, 29);
+        } catch (ApiException apiExc) {
+            LOGGER.warn("Unable to query controller API version, assuming no live-migrate API support: {}",
+                    apiExc.getBestMessage());
+            return null; // computeIfAbsent doesn't record null mappings
+        }
+    }
+
+    static boolean isVersionAtLeast(String version, int major, int minor) {
+        if (version == null || version.isEmpty()) {
+            return false;
+        }
+        String[] parts = version.split("\\.");
+        try {
+            int maj = Integer.parseInt(parts[0]);
+            int min = parts.length > 1 ? Integer.parseInt(parts[1]) : 0;
+            return maj > major || (maj == major && min >= minor);
+        } catch (NumberFormatException nfExc) {
+            LOGGER.warn("Unable to parse controller API version '{}'", version);
+            return false;
+        }
     }
 
     public static String getBestErrorMessage(ApiCallRcList answers) {
