@@ -357,6 +357,20 @@ public class LinstorUtil {
     }
 
     /**
+     * Check if the resource is deployed but inactive on the given node (e.g. a shared
+     * storage pool resource of a stopped VM).
+     */
+    public static boolean isResourceInactiveOnNode(DevelopersApi api, String rscName, String nodeName)
+            throws ApiException {
+        List<Resource> rscs = api.resourceList(rscName, null, null);
+        if (rscs == null) {
+            return false;
+        }
+        return rscs.stream().anyMatch(rsc -> nodeName.equalsIgnoreCase(rsc.getNodeName()) &&
+                rsc.getFlags() != null && rsc.getFlags().contains(ApiConsts.FLAG_RSC_INACTIVE));
+    }
+
+    /**
      * Check if the given resources are diskless.
      *
      * @param api developer api object to use
