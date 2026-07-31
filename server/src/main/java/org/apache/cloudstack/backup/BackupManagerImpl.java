@@ -65,6 +65,7 @@ import org.apache.cloudstack.api.command.user.backup.DeleteBackupCmd;
 import org.apache.cloudstack.api.command.user.backup.DeleteBackupScheduleCmd;
 import org.apache.cloudstack.api.command.user.backup.DownloadValidationScreenshotCmd;
 import org.apache.cloudstack.api.command.user.backup.FinishBackupChainCmd;
+import org.apache.cloudstack.api.command.user.backup.GetBackupReportCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupServiceJobsCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupOfferingsCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupScheduleCmd;
@@ -2069,6 +2070,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         cmdList.add(DownloadValidationScreenshotCmd.class);
         cmdList.add(ListBackupServiceJobsCmd.class);
         cmdList.add(FinishBackupChainCmd.class);
+        cmdList.add(GetBackupReportCmd.class);
         return cmdList;
     }
 

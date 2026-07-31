@@ -14,23 +14,12 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 package org.apache.cloudstack.backup.dao;
 
-import java.util.Date;
-import java.util.List;
-
-import com.cloud.utils.DateUtil;
-import org.apache.cloudstack.backup.BackupScheduleVO;
-
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.backup.BackupReportVO;
 
-public interface BackupScheduleDao extends GenericDao<BackupScheduleVO, Long> {
-    List<BackupScheduleVO> listByVM(Long vmId);
+public interface BackupReportDao extends GenericDao<BackupReportVO, Long> {
 
-    BackupScheduleVO findByVMAndIntervalType(Long vmId, DateUtil.IntervalType intervalType);
-
-    List<BackupScheduleVO> getSchedulesToExecute(Date currentTimestamp);
-
-    List<BackupScheduleVO> getSchedulesToExecuteForDomainAndAccount(Date currentTimestamp, Long zoneId, Long domainId, Long accountId);
+    BackupReportVO findLatest();
 }
