@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -159,10 +160,14 @@ public class AgentShell implements IAgentShell, Daemon {
         // Add the last successful setup host as a fallback option at the end of the host list.
         // This host is tried only after all configured hosts have failed, providing a
         // last-resort connection option since this host previously completed setup successfully.
-        if (StringUtils.isNotBlank(lastSetupCompletedHost)
-                && StringUtils.isNotBlank(_host)
-                && !_host.contains(lastSetupCompletedHost)) {
-            host = _host + "," + lastSetupCompletedHost;
+        if (StringUtils.isNotBlank(lastSetupCompletedHost) && StringUtils.isNotBlank(_host)) {
+            final String candidate = lastSetupCompletedHost.trim();
+            // Match against the exact comma-separated entries so a substring (e.g. 10.0.0.1 in
+            // 10.0.0.10) does not wrongly suppress the fallback.
+            final boolean alreadyPresent = Arrays.stream(_host.split(","))
+                    .map(String::trim)
+                    .anyMatch(candidate::equalsIgnoreCase);
+            host = alreadyPresent ? _host : _host + "," + candidate;
         } else {
             host = _host;
         }
@@ -479,7 +484,9 @@ public class AgentShell implements IAgentShell, Daemon {
 
     @Override
     public void setLastSetupCompletedHost(String host) {
-        setPersistentProperty(null, AgentProperties.LAST_SETUP_COMPLETED_HOST.getName(), host);
+        if (StringUtils.isNotBlank(host)) {
+            setPersistentProperty(null, AgentProperties.LAST_SETUP_COMPLETED_HOST.getName(), host);
+        }
     }
 
     /**
