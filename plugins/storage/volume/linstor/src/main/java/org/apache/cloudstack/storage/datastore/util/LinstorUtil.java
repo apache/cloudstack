@@ -428,6 +428,17 @@ public class LinstorUtil {
             }
         }
 
+        // Shared storage pool resources of stopped VMs are INACTIVE and report no device path.
+        // Callers like createVbd build the domain XML before connectPhysicalDisk activates the
+        // resource, so return the deterministic storage layer path here.
+        com.linbit.linstor.api.model.StoragePool sp = getDiskfulStoragePool(api, rscName);
+        if (sp != null && (sp.getProviderKind() == ProviderKind.LVM || sp.getProviderKind() == ProviderKind.LVM_THIN)) {
+            final String vg = sp.getProps().get("StorDriver/StorPoolName").split("/")[0];
+            final String path = String.format("/dev/%s/%s_00000", vg, rscName);
+            LOGGER.info("Linstor: no active device path for {}, using expected LVM path {}", rscName, path);
+            return path;
+        }
+
         final String errMsg = "viewResources didn't return resources or volumes for " + rscName + " with a device path";
         LOGGER.error(errMsg);
         throw new CloudRuntimeException("Linstor: " + errMsg);
