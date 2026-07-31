@@ -24,6 +24,20 @@ All notable changes to Linstor CloudStack plugin will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2026-07-31]
+
+### Added
+
+- Support for shared (thick LVM) storage pools: resources on a shared LUN are
+  activated on at most one node; live migration uses the LINSTOR 1.29
+  make-available/unmake-available API (with fallback to the previous handling
+  for older controllers), snapshots work on thick LVM pools, and resources of
+  stopped VMs are activated on demand for start, snapshot backup and revert
+
+### Changed
+
+- java-linstor client updated to 0.8.0 (LINSTOR REST API 1.29.0)
+
 ## [2026-06-24]
 
 ### Fixed
