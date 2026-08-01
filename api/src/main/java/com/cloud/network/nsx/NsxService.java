@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.network.nsx;
 
+import java.util.List;
+
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.network.IpAddress;
@@ -35,4 +37,14 @@ public interface NsxService {
     boolean createVpcNetwork(Long zoneId, long accountId, long domainId, Long vpcId, String vpcName, boolean sourceNatEnabled);
     boolean updateVpcSourceNatIp(Vpc vpc, IpAddress address);
     String getSegmentId(long domainId, long accountId, long zoneId, Long vpcId, long networkId);
+
+    NsxVpnGatewayResult createVpnGateway(Vpc vpc, String localEndpointIp);
+    boolean deleteVpnGateway(Vpc vpc);
+    boolean createVpnConnection(Vpc vpc, String connectionUuid, String peerAddress, String psk,
+                                String ikePolicy, String espPolicy, Long ikeLifetime, Long espLifetime,
+                                boolean dpdEnabled, String ikeVersion, boolean passive, List<String> peerCidrs,
+                                String vtiLocalIp, String vtiPeerIp, int vtiPrefixLength, String localEndpointIp);
+    boolean deleteVpnConnection(Vpc vpc, String connectionUuid);
+    boolean updateVpnConnectionState(Vpc vpc, String connectionUuid, boolean enabled);
+    String getVpnConnectionStatus(Vpc vpc, String connectionUuid);
 }

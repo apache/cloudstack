@@ -84,6 +84,31 @@ public class NsxControllerUtilsTest {
         Assert.assertNotNull(nsxAnswer);
     }
 
+    @Test(expected = InvalidParameterValueException.class)
+    public void testSendCommandRejectsFailedNsxAnswer() {
+        NsxCommand cmd = Mockito.mock(NsxCommand.class);
+        NsxAnswer answer = Mockito.mock(NsxAnswer.class);
+        Mockito.when(answer.getResult()).thenReturn(false);
+        Mockito.when(agentMgr.easySend(nsxProviderHostId, cmd)).thenReturn(answer);
+
+        nsxControllerUtils.sendNsxCommand(cmd, zoneId);
+    }
+
+    @Test
+    public void testSendCommandForResultPreservesFailedNsxAnswer() {
+        NsxCommand cmd = Mockito.mock(NsxCommand.class);
+        NsxAnswer answer = Mockito.mock(NsxAnswer.class);
+        Mockito.when(answer.getResult()).thenReturn(false);
+        Mockito.when(answer.isEndpointMayBeInUse()).thenReturn(true);
+        Mockito.when(agentMgr.easySend(nsxProviderHostId, cmd)).thenReturn(answer);
+
+        NsxAnswer nsxAnswer = nsxControllerUtils.sendNsxCommandForResult(cmd, zoneId);
+
+        Assert.assertSame(answer, nsxAnswer);
+        Assert.assertFalse(nsxAnswer.getResult());
+        Assert.assertTrue(nsxAnswer.isEndpointMayBeInUse());
+    }
+
     @Test
     public void testGetNsxNatRuleIdForVpc() {
         long vpcId = 5L;

@@ -51,6 +51,15 @@ public class NsxControllerUtils {
     }
 
     public NsxAnswer sendNsxCommand(NsxCommand cmd, long zoneId) throws IllegalArgumentException {
+        NsxAnswer answer = sendNsxCommandForResult(cmd, zoneId);
+        if (!answer.getResult()) {
+            logger.error("NSX API Command failed");
+            throw new InvalidParameterValueException("Failed API call to NSX controller");
+        }
+        return answer;
+    }
+
+    public NsxAnswer sendNsxCommandForResult(NsxCommand cmd, long zoneId) throws IllegalArgumentException {
         NsxProviderVO nsxProviderVO = nsxProviderDao.findByZoneId(zoneId);
         if (nsxProviderVO == null) {
             logger.error("No NSX controller was found!");
@@ -58,7 +67,7 @@ public class NsxControllerUtils {
         }
         Answer answer = agentMgr.easySend(nsxProviderVO.getHostId(), cmd);
 
-        if (answer == null || !answer.getResult()) {
+        if (answer == null) {
             logger.error("NSX API Command failed");
             throw new InvalidParameterValueException("Failed API call to NSX controller");
         }
@@ -136,6 +145,50 @@ public class NsxControllerUtils {
 
     public static String getServerPoolMemberName(String tier1GatewayName, long vmId) {
         return tier1GatewayName + "-VM" + vmId;
+    }
+
+    public static String getVpnServiceName(String tier1GatewayName) {
+        return tier1GatewayName + "-vpn";
+    }
+
+    public static String getVpnLocalEndpointName(String vpnServiceName) {
+        return vpnServiceName + "-le";
+    }
+
+    public static String getVpnLocalEndpointNoSnatRuleName(String vpnServiceName) {
+        return vpnServiceName + "-le-nosnat";
+    }
+
+    public static String getVpnSessionName(String connectionUuid) {
+        return "cs-conn-" + connectionUuid;
+    }
+
+    public static String getVpnIkeProfileName(String connectionUuid) {
+        return getVpnSessionName(connectionUuid) + "-ike";
+    }
+
+    public static String getVpnEspProfileName(String connectionUuid) {
+        return getVpnSessionName(connectionUuid) + "-esp";
+    }
+
+    public static String getVpnDpdProfileName(String connectionUuid) {
+        return getVpnSessionName(connectionUuid) + "-dpd";
+    }
+
+    public static String getVpnStaticRouteNamePrefix(String connectionUuid) {
+        return getVpnSessionName(connectionUuid) + "-route";
+    }
+
+    public static String getVpnStaticRouteName(String connectionUuid, int peerCidrIndex) {
+        return getVpnStaticRouteNamePrefix(connectionUuid) + peerCidrIndex;
+    }
+
+    public static String getVpnNoSnatRuleNamePrefix(String connectionUuid) {
+        return getVpnSessionName(connectionUuid) + "-nosnat";
+    }
+
+    public static String getVpnNoSnatRuleName(String connectionUuid, int peerCidrIndex) {
+        return getVpnNoSnatRuleNamePrefix(connectionUuid) + peerCidrIndex;
     }
 
     public static String getLoadBalancerAlgorithm(String algorithm) {

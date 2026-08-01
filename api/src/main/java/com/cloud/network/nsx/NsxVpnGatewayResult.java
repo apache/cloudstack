@@ -14,37 +14,23 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack;
+package com.cloud.network.nsx;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
+public class NsxVpnGatewayResult {
 
-public class NsxAnswer extends Answer {
+    private final boolean successful;
+    private final boolean endpointMayBeInUse;
 
-    private boolean objectExists;
-    private boolean endpointMayBeInUse;
-
-    public NsxAnswer(final Command command, final boolean success, final String details) {
-        super(command, success, details);
+    public NsxVpnGatewayResult(boolean successful, boolean endpointMayBeInUse) {
+        this.successful = successful;
+        this.endpointMayBeInUse = endpointMayBeInUse;
     }
 
-    public NsxAnswer(final Command command, final Exception e) {
-        super(command, e);
-    }
-
-    public boolean isObjectExistent() {
-        return objectExists;
-    }
-
-    public void setObjectExists(boolean objectExisted) {
-        this.objectExists = objectExisted;
+    public boolean isSuccessful() {
+        return successful;
     }
 
     public boolean isEndpointMayBeInUse() {
         return endpointMayBeInUse;
-    }
-
-    public void setEndpointMayBeInUse(boolean endpointMayBeInUse) {
-        this.endpointMayBeInUse = endpointMayBeInUse;
     }
 }

@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.resource;
 
+import com.cloud.agent.api.Command;
+import com.cloud.serializer.GsonHelper;
 import com.cloud.network.Network;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -32,11 +34,17 @@ import org.apache.cloudstack.agent.api.CreateNsxSegmentCommand;
 import org.apache.cloudstack.agent.api.CreateNsxStaticNatCommand;
 import org.apache.cloudstack.agent.api.CreateNsxTier1GatewayCommand;
 import org.apache.cloudstack.agent.api.CreateOrUpdateNsxTier1NatRuleCommand;
+import org.apache.cloudstack.agent.api.CreateNsxVpnConnectionCommand;
+import org.apache.cloudstack.agent.api.CreateNsxVpnGatewayCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxDistributedFirewallRulesCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxNatRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxSegmentCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxTier1GatewayCommand;
+import org.apache.cloudstack.agent.api.DeleteNsxVpnConnectionCommand;
+import org.apache.cloudstack.agent.api.DeleteNsxVpnGatewayCommand;
+import org.apache.cloudstack.agent.api.GetNsxVpnSessionStatusCommand;
 import org.apache.cloudstack.agent.api.NsxCommand;
+import org.apache.cloudstack.agent.api.UpdateNsxVpnConnectionStateCommand;
 import org.apache.cloudstack.service.NsxApiClient;
 import org.apache.cloudstack.utils.NsxControllerUtils;
 import org.junit.After;
@@ -53,15 +61,20 @@ import javax.naming.ConfigurationException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -295,5 +308,126 @@ public class NsxResourceTest {
                 tier1GatewayName, "SNAT", "10.1.10.10", "natRuleId");
         NsxAnswer answer = (NsxAnswer) nsxResource.executeRequest(command);
         assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void testCreateNsxVpnGatewayRollsBackAfterFailure() {
+        CreateNsxVpnGatewayCommand command = new CreateNsxVpnGatewayCommand(domainId, accountId, zoneId,
+                3L, "VPC01", "203.0.113.20");
+        doThrow(new CloudRuntimeException("ERROR")).when(nsxApi).createVpnService(anyString(), anyString());
+
+        NsxAnswer answer = (NsxAnswer) nsxResource.executeRequest(command);
+
+        assertFalse(answer.getResult());
+        assertFalse(answer.isObjectExistent());
+        assertFalse(answer.isEndpointMayBeInUse());
+        verify(nsxApi).deleteVpnService("D1-A2-Z1-V3");
+    }
+
+    @Test
+    public void testCreateNsxVpnGatewayRefusesToAdoptExistingService() {
+        CreateNsxVpnGatewayCommand command = new CreateNsxVpnGatewayCommand(domainId, accountId, zoneId,
+                3L, "VPC01", "203.0.113.20");
+        when(nsxApi.isVpnServicePresent("D1-A2-Z1-V3")).thenReturn(true);
+
+        NsxAnswer answer = (NsxAnswer) nsxResource.executeRequest(command);
+
+        assertFalse(answer.getResult());
+        assertTrue(answer.isObjectExistent());
+        assertFalse(answer.isEndpointMayBeInUse());
+        verify(nsxApi, never()).createVpnService(anyString(), anyString());
+        verify(nsxApi, never()).deleteVpnService("D1-A2-Z1-V3");
+    }
+
+    @Test
+    public void testCreateNsxVpnGatewayReportsPossibleResourceWhenRollbackFails() {
+        CreateNsxVpnGatewayCommand command = new CreateNsxVpnGatewayCommand(domainId, accountId, zoneId,
+                3L, "VPC01", "203.0.113.20");
+        doThrow(new CloudRuntimeException("create failed")).when(nsxApi).createVpnService(anyString(), anyString());
+        doThrow(new CloudRuntimeException("rollback failed")).when(nsxApi).deleteVpnService("D1-A2-Z1-V3");
+
+        NsxAnswer answer = (NsxAnswer) nsxResource.executeRequest(command);
+
+        assertFalse(answer.getResult());
+        assertTrue(answer.isEndpointMayBeInUse());
+    }
+
+    @Test
+    public void testCreateNsxVpnConnectionRollsBackAfterRouteFailure() {
+        CreateNsxVpnConnectionCommand command = new CreateNsxVpnConnectionCommand(domainId, accountId, zoneId,
+                3L, "VPC01", "connection-uuid", "203.0.113.10", "psk", "aes256-sha256;modp2048",
+                "aes256-sha256;modp2048", 86400L, 3600L, true, "ikev2", false,
+                List.of("192.168.100.0/24"), "169.254.64.21", "169.254.64.22", 30,
+                "10.1.0.0/16", "203.0.113.20");
+        when(nsxApi.getRouteBasedVpnSessionLocalVtiIps(anyString(), anyString())).thenReturn(Set.of());
+        doThrow(new CloudRuntimeException("ERROR")).when(nsxApi).addVpnConnectionRoutes(anyString(), anyString(), anyList(), anyString(), anyString());
+
+        NsxAnswer answer = (NsxAnswer) nsxResource.executeRequest(command);
+
+        assertFalse(answer.getResult());
+        verify(nsxApi).rollbackVpnConnection("D1-A2-Z1-V3", "connection-uuid");
+    }
+
+    @Test
+    public void testCreateNsxVpnConnectionRejectsVtiCollisionBeforeCreate() {
+        CreateNsxVpnConnectionCommand command = new CreateNsxVpnConnectionCommand(domainId, accountId, zoneId,
+                3L, "VPC01", "connection-uuid", "203.0.113.10", "psk", "aes256-sha256;modp2048",
+                "aes256-sha256;modp2048", 86400L, 3600L, true, "ikev2", false,
+                List.of("192.168.100.0/24"), "169.254.64.21", "169.254.64.22", 30,
+                "10.1.0.0/16", "203.0.113.20");
+        when(nsxApi.getRouteBasedVpnSessionLocalVtiIps(anyString(), anyString())).thenReturn(Set.of("169.254.64.21"));
+
+        NsxAnswer answer = (NsxAnswer) nsxResource.executeRequest(command);
+
+        assertFalse(answer.getResult());
+        verify(nsxApi, Mockito.never()).createRouteBasedVpnSession(anyString(), anyString(), anyString(), anyString(),
+                anyString(), anyString(), anyLong(), anyLong(), anyBoolean(), anyString(), anyBoolean(), anyString(), anyInt());
+    }
+
+    @Test
+    public void testNsxVpnLifecycleCommandsDispatch() {
+        DeleteNsxVpnGatewayCommand deleteGateway = new DeleteNsxVpnGatewayCommand(domainId, accountId, zoneId, 3L, "VPC01");
+        DeleteNsxVpnConnectionCommand deleteConnection = new DeleteNsxVpnConnectionCommand(domainId, accountId, zoneId,
+                3L, "VPC01", "connection-uuid");
+        UpdateNsxVpnConnectionStateCommand update = new UpdateNsxVpnConnectionStateCommand(domainId, accountId, zoneId,
+                3L, "VPC01", "connection-uuid", false);
+        GetNsxVpnSessionStatusCommand status = new GetNsxVpnSessionStatusCommand(domainId, accountId, zoneId,
+                3L, "VPC01", "connection-uuid");
+        when(nsxApi.getVpnSessionStatus("D1-A2-Z1-V3", "connection-uuid")).thenReturn("UP");
+
+        assertTrue(((NsxAnswer) nsxResource.executeRequest(deleteGateway)).getResult());
+        assertTrue(((NsxAnswer) nsxResource.executeRequest(deleteConnection)).getResult());
+        assertTrue(((NsxAnswer) nsxResource.executeRequest(update)).getResult());
+        NsxAnswer statusAnswer = (NsxAnswer) nsxResource.executeRequest(status);
+        assertTrue(statusAnswer.getResult());
+        assertTrue(statusAnswer.getDetails().contains("UP"));
+        verify(nsxApi).deleteVpnService("D1-A2-Z1-V3");
+        verify(nsxApi).deleteVpnConnection("D1-A2-Z1-V3", "connection-uuid");
+        verify(nsxApi).updateVpnConnectionState("D1-A2-Z1-V3", "connection-uuid", false);
+    }
+
+    @Test
+    public void testNsxVpnConnectionCommandRoundTripsThroughCloudStackWireAdaptor() {
+        CreateNsxVpnConnectionCommand command = new CreateNsxVpnConnectionCommand(domainId, accountId, zoneId,
+                3L, "VPC01", "connection-uuid", "203.0.113.10", "secret-psk", "aes256-sha256;modp2048",
+                "aes256-sha256;modp2048", 86400L, 3600L, true, "ikev2", true,
+                List.of("192.168.100.0/24", "192.168.101.0/24"), "169.254.64.21", "169.254.64.22", 30,
+                "10.1.0.0/16", "203.0.113.20");
+
+        String wire = GsonHelper.getGson().toJson(new Command[]{command}, Command[].class);
+        String logPayload = GsonHelper.getGsonLogger().toJson(new Command[]{command}, Command[].class);
+        Command[] decoded = GsonHelper.getGson().fromJson(wire, Command[].class);
+
+        assertTrue(wire.contains("secret-psk"));
+        assertFalse(logPayload.contains("secret-psk"));
+        assertFalse(logPayload.contains("\"psk\""));
+        assertTrue(decoded[0] instanceof CreateNsxVpnConnectionCommand);
+        CreateNsxVpnConnectionCommand decodedCommand = (CreateNsxVpnConnectionCommand) decoded[0];
+        assertEquals("secret-psk", decodedCommand.getPsk());
+        assertEquals(command.getPeerCidrs(), decodedCommand.getPeerCidrs());
+        assertEquals(command.getVtiLocalIp(), decodedCommand.getVtiLocalIp());
+        assertEquals(command.getVtiPeerIp(), decodedCommand.getVtiPeerIp());
+        assertEquals(command.getIkeLifetime(), decodedCommand.getIkeLifetime());
+        assertEquals(command.getEspLifetime(), decodedCommand.getEspLifetime());
     }
 }

@@ -18,12 +18,18 @@ package org.apache.cloudstack.service;
 
 import com.cloud.network.IpAddress;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.Site2SiteVpnConnection;
+import com.cloud.network.dao.Site2SiteVpnConnectionVO;
+import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.network.nsx.NsxVpnGatewayResult;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import org.apache.cloudstack.NsxAnswer;
 import org.apache.cloudstack.agent.api.CreateNsxStaticNatCommand;
 import org.apache.cloudstack.agent.api.CreateNsxTier1GatewayCommand;
+import org.apache.cloudstack.agent.api.CreateNsxVpnGatewayCommand;
 import org.apache.cloudstack.agent.api.CreateOrUpdateNsxTier1NatRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxNatRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxSegmentCommand;
@@ -38,6 +44,11 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -79,6 +90,25 @@ public class NsxServiceImplTest {
         when(createNsxTier1GatewayAnswer.getResult()).thenReturn(true);
 
         assertTrue(nsxService.createVpcNetwork(1L, 3L, 2L, 5L, "VPC01", false));
+    }
+
+    @Test
+    public void testCreateVpnGatewayPreservesStructuredFailureResult() {
+        Vpc vpc = mock(Vpc.class);
+        when(vpc.getDomainId()).thenReturn(domainId);
+        when(vpc.getAccountId()).thenReturn(accountId);
+        when(vpc.getZoneId()).thenReturn(zoneId);
+        when(vpc.getId()).thenReturn(3L);
+        NsxAnswer answer = mock(NsxAnswer.class);
+        when(answer.getResult()).thenReturn(false);
+        when(answer.isEndpointMayBeInUse()).thenReturn(true);
+        when(nsxControllerUtils.sendNsxCommandForResult(any(CreateNsxVpnGatewayCommand.class), eq(zoneId)))
+                .thenReturn(answer);
+
+        NsxVpnGatewayResult result = nsxService.createVpnGateway(vpc, "203.0.113.20");
+
+        assertFalse(result.isSuccessful());
+        assertTrue(result.isEndpointMayBeInUse());
     }
 
     @Test
@@ -158,5 +188,55 @@ public class NsxServiceImplTest {
         when(nsxControllerUtils.sendNsxCommand(any(DeleteNsxNatRuleCommand.class), eq(zoneId))).thenReturn(answer);
         nsxService.deleteStaticNatRule(zoneId, domainId, accountId, networkId, networkName, true);
         Mockito.verify(nsxControllerUtils).sendNsxCommand(any(DeleteNsxNatRuleCommand.class), eq(zoneId));
+    }
+
+    @Test
+    public void testPollVpnConnectionStatusTransitionsUp() {
+        Site2SiteVpnConnectionVO connection = mock(Site2SiteVpnConnectionVO.class);
+        VpcVO vpc = mock(VpcVO.class);
+        AtomicReference<Site2SiteVpnConnection.State> transitionedState = new AtomicReference<>();
+
+        NsxServiceImpl service = new NsxServiceImpl() {
+            @Override
+            public String getVpnConnectionStatus(Vpc vpc, String connectionUuid) {
+                return "UP";
+            }
+
+            @Override
+            protected void transitionVpnConnectionState(Site2SiteVpnConnectionVO connection, VpcVO vpc,
+                                                        Site2SiteVpnConnection.State newState) {
+                transitionedState.set(newState);
+            }
+        };
+
+        service.pollVpnConnectionStatus(connection, vpc);
+
+        assertEquals(Site2SiteVpnConnection.State.Connected, transitionedState.get());
+    }
+
+    @Test
+    public void testPollVpnConnectionStatusDoesNotTransitionOnQueryFailure() {
+        Site2SiteVpnConnectionVO connection = mock(Site2SiteVpnConnectionVO.class);
+        VpcVO vpc = mock(VpcVO.class);
+        when(connection.getId()).thenReturn(11L);
+        AtomicBoolean transitioned = new AtomicBoolean();
+
+        NsxServiceImpl service = new NsxServiceImpl() {
+            @Override
+            public String getVpnConnectionStatus(Vpc vpc, String connectionUuid) {
+                throw new CloudRuntimeException("NSX unavailable");
+            }
+
+            @Override
+            protected void transitionVpnConnectionState(Site2SiteVpnConnectionVO connection, VpcVO vpc,
+                                                        Site2SiteVpnConnection.State newState) {
+                transitioned.set(true);
+            }
+        };
+
+        service.pollVpnConnectionStatus(connection, vpc);
+
+        // A transient management-plane error must not turn a valid connection into Error.
+        assertTrue(!transitioned.get());
     }
 }
