@@ -98,6 +98,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -255,6 +256,23 @@ public class VpcManagerImplTest {
 
         assertNotNull(map);
         assertEquals(map.size(), 1);
+    }
+
+    @Test
+    public void testDefaultVpcNatNsxServiceProviderMapDoesNotAdvertiseUnsupportedVpn() {
+        Map<Service, Set<Provider>> serviceProviderMap = manager.getDefaultVpcNatNsxServiceProviderMap();
+
+        assertEquals(manager.getSupportedServices().size() - 1, serviceProviderMap.size());
+        assertFalse(serviceProviderMap.containsKey(Service.Vpn));
+        for (Service service : manager.getSupportedServices()) {
+            if (service == Service.Vpn) {
+                continue;
+            }
+            Set<Provider> expectedProviders = List.of(Service.UserData, Service.Dhcp, Service.Dns).contains(service)
+                    ? Set.of(Provider.VPCVirtualRouter)
+                    : Set.of(Provider.Nsx);
+            assertEquals(expectedProviders, serviceProviderMap.get(service));
+        }
     }
 
     protected Map<String, String> createFakeCapabilityInputMap() {

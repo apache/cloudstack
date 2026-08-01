@@ -434,16 +434,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 // configure default vpc offering with NSX as network service provider in NAT mode
                 if (_vpcOffDao.findByUniqueName(VpcOffering.DEFAULT_VPC_NAT_NSX_OFFERING_NAME) == null) {
                     logger.debug("Creating default VPC offering with NSX as network service provider" + VpcOffering.DEFAULT_VPC_NAT_NSX_OFFERING_NAME);
-                    final Map<Service, Set<Provider>> svcProviderMap = new HashMap<Service, Set<Provider>>();
-                    final Set<Provider> defaultProviders = Set.of(Provider.Nsx);
-                    for (final Service svc : getSupportedServices()) {
-                        if (List.of(Service.UserData, Service.Dhcp, Service.Dns).contains(svc)) {
-                            final Set<Provider> userDataProvider = Set.of(Provider.VPCVirtualRouter);
-                            svcProviderMap.put(svc, userDataProvider);
-                        } else {
-                            svcProviderMap.put(svc, defaultProviders);
-                        }
-                    }
+                    final Map<Service, Set<Provider>> svcProviderMap = getDefaultVpcNatNsxServiceProviderMap();
                     createVpcOffering(VpcOffering.DEFAULT_VPC_NAT_NSX_OFFERING_NAME, VpcOffering.DEFAULT_VPC_NAT_NSX_OFFERING_NAME, svcProviderMap, false,
                             State.Enabled, null, false, false, false, NetworkOffering.NetworkMode.NATTED, null, false);
 
@@ -1972,6 +1963,20 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         services.add(Network.Service.Gateway);
         services.add(Network.Service.Vpn);
         return services;
+    }
+
+    Map<Service, Set<Provider>> getDefaultVpcNatNsxServiceProviderMap() {
+        final Map<Service, Set<Provider>> serviceProviderMap = new HashMap<>();
+        final Set<Provider> nsxProvider = Set.of(Provider.Nsx);
+        final Set<Provider> virtualRouterProvider = Set.of(Provider.VPCVirtualRouter);
+        for (final Service service : getSupportedServices()) {
+            if (List.of(Service.UserData, Service.Dhcp, Service.Dns).contains(service)) {
+                serviceProviderMap.put(service, virtualRouterProvider);
+            } else if (service != Service.Vpn) {
+                serviceProviderMap.put(service, nsxProvider);
+            }
+        }
+        return serviceProviderMap;
     }
 
     @Override

@@ -149,6 +149,10 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
             throw new InvalidParameterValueException(String.format("The VPN gateway of VPC %s already existed!", vpc));
         }
 
+        if (!vpcManager.isProviderSupportServiceInVpc(vpcId, Network.Service.Vpn, Network.Provider.VPCVirtualRouter)) {
+            throw new InvalidParameterValueException(String.format("VPC %s does not support Site-to-Site VPN through the VPC virtual router", vpc));
+        }
+
         IPAddressVO requestedIp = _ipAddressDao.findById(cmd.getIpAddressId());
         IPAddressVO ipAddress = getIpAddressIdForVpn(vpcId, vpc.getVpcOfferingId(), requestedIp);
         Site2SiteVpnGatewayVO gw = new Site2SiteVpnGatewayVO(owner.getAccountId(), owner.getDomainId(), ipAddress.getId(), vpcId);
