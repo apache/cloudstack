@@ -951,7 +951,7 @@ public class NsxApiClientTest {
         client.addVpnConnectionRoutes(TIER_1_GATEWAY_NAME, "connection-uuid",
                 List.of("192.168.100.0/24"), "169.254.64.22", "10.1.0.0/16");
 
-        verify(staticRoutes, times(2)).patch(eq(TIER_1_GATEWAY_NAME),
+        verify(staticRoutes, Mockito.times(2)).patch(eq(TIER_1_GATEWAY_NAME),
                 eq("cs-conn-connection-uuid-route0"), any(com.vmware.nsx_policy.model.StaticRoutes.class));
         verify(natRules).patch(eq(TIER_1_GATEWAY_NAME), anyString(),
                 eq("cs-conn-connection-uuid-nosnat0"), any(PolicyNatRule.class));
