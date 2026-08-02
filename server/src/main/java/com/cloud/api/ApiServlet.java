@@ -100,6 +100,7 @@ public class ApiServlet extends HttpServlet {
             "updaterolepermission",
             "updateprojectrolepermission",
             "createstoragepool",
+            "addobjectstoragepool",
             "addhost",
             "updatehostpassword",
             "addcluster",
@@ -241,7 +242,7 @@ public class ApiServlet extends HttpServlet {
         if (LOGGER.isDebugEnabled()) {
             reqStr = auditTrailSb.toString() + " " + cleanQueryString;
             if (req.getMethod().equalsIgnoreCase("POST") && org.apache.commons.lang3.StringUtils.isNotBlank(command)) {
-                if (!POST_REQUESTS_TO_DISABLE_LOGGING.contains(command.toLowerCase()) && !reqParams.containsKey(ApiConstants.USER_DATA)) {
+                if (shouldLogPostRequestParameters(command, reqParams)) {
                     String cleanParamsString = getCleanParamsString(reqParams);
                     if (org.apache.commons.lang3.StringUtils.isNotBlank(cleanParamsString)) {
                         reqStr += "\n" + cleanParamsString;
@@ -770,5 +771,9 @@ public class ApiServlet extends HttpServlet {
         }
 
         return cleanParamsString.toString();
+    }
+
+    protected boolean shouldLogPostRequestParameters(String command, Map<String, String[]> reqParams) {
+        return !POST_REQUESTS_TO_DISABLE_LOGGING.contains(command.toLowerCase()) && !reqParams.containsKey(ApiConstants.USER_DATA);
     }
 }
