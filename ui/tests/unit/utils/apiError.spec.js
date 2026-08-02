@@ -109,4 +109,19 @@ describe('API error logging', () => {
     expect(serializedDetails).not.toContain(secretKey)
     expect(serializedDetails).not.toContain(sessionKey)
   })
+
+  it('does not serialize unexpected objects from the error or request metadata', () => {
+    const secret = 'SYNTHETIC_NESTED_SECRET'
+    const error = createAxiosError()
+    error.name = { secret }
+    error.code = { secret }
+    error.response.status = { secret }
+    error.response.statusText = { secret }
+    error.response.config.method = { secret }
+    error.response.config.params = { command: { secret } }
+
+    const serializedDetails = JSON.stringify(getSafeApiErrorDetails(error))
+
+    expect(serializedDetails).not.toContain(secret)
+  })
 })

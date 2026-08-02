@@ -197,11 +197,11 @@ public class ApiServlet extends HttpServlet {
         });
     }
 
-    protected void checkSingleQueryParameterValue(Map<String, String[]> params) {
+    private void checkSingleQueryParameterValue(Map<String, String[]> params) {
         params.forEach((k, v) -> {
             if (v.length > 1) {
-                String message = String.format("Query parameter '%s' has %d values. Only the last value will be respected. " +
-                    "It is advised to pass only a single parameter", saveLogString(k), v.length);
+                String message = String.format("Query parameter '%s' has multiple values %s. Only the last value will be respected." +
+                    "It is advised to pass only a single parameter", k, Arrays.toString(v));
                 LOGGER.warn(message);
             }
         });

@@ -17,7 +17,7 @@
 
 function cleanLogValue (value) {
   if (typeof value !== 'string') {
-    return value
+    return undefined
   }
   return value.replace(/[\n\r\t]/g, '_').slice(0, 256)
 }
@@ -44,7 +44,7 @@ export function getSafeApiErrorDetails (error) {
   return {
     name: cleanLogValue(error?.name),
     code: cleanLogValue(error?.code),
-    status: response?.status,
+    status: Number.isInteger(response?.status) ? response.status : undefined,
     statusText: cleanLogValue(response?.statusText),
     method: typeof method === 'string' ? method.toUpperCase() : method,
     command: cleanLogValue(getCommand(config))

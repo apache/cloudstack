@@ -43,7 +43,7 @@ describe('Views > infra > AddObjectStorage.vue', () => {
       'details[0].key': 'accesskey',
       'details[0].value': 'test-access-key',
       'details[1].key': 'secretkey',
-      'details[1].value': 'test-secret-key'
+      'details[1].value': 'test-secret+key&with=symbols'
     }
 
     await AddObjectStorage.methods.addObjectStore(params)

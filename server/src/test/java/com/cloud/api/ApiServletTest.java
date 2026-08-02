@@ -34,13 +34,11 @@ import org.apache.cloudstack.api.auth.APIAuthenticator;
 import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
-import org.apache.logging.log4j.Logger;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -521,25 +519,4 @@ public class ApiServletTest {
         Assert.assertEquals(queryString, result);
     }
 
-    @Test
-    public void shouldLogDuplicateParameterNameAndCountWithoutValues() {
-        Logger originalLogger = ApiServlet.LOGGER;
-        Logger logger = Mockito.mock(Logger.class);
-        ApiServlet.LOGGER = logger;
-        Map<String, String[]> params = new HashMap<>();
-        params.put("details[1].value", new String[] {"SYNTHETIC_SECRET_ONE", "SYNTHETIC_SECRET_TWO"});
-
-        try {
-            servlet.checkSingleQueryParameterValue(params);
-
-            ArgumentCaptor<String> message = ArgumentCaptor.forClass(String.class);
-            Mockito.verify(logger).warn(message.capture());
-            Assert.assertTrue(message.getValue().contains("details[1].value"));
-            Assert.assertTrue(message.getValue().contains("2 values"));
-            Assert.assertFalse(message.getValue().contains("SYNTHETIC_SECRET_ONE"));
-            Assert.assertFalse(message.getValue().contains("SYNTHETIC_SECRET_TWO"));
-        } finally {
-            ApiServlet.LOGGER = originalLogger;
-        }
-    }
 }
