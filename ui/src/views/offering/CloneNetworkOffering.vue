@@ -150,6 +150,38 @@
             </a-form-item>
           </a-col>
         </a-row>
+        <a-row :gutter="12" v-if="form.provider === 'NSX'">
+          <a-col :md="8" :lg="8">
+            <a-form-item name="nsxipdiscoveryprofileid" ref="nsxipdiscoveryprofileid">
+              <template #label>
+                <tooltip-label
+                  :title="$t('label.nsx.ip.discovery.profile.id')"
+                  :tooltip="$t('message.network.offering.nsx.ip.discovery.profile.id')"/>
+              </template>
+              <a-input v-model:value="form.nsxipdiscoveryprofileid" :maxlength="255" />
+            </a-form-item>
+          </a-col>
+          <a-col :md="8" :lg="8">
+            <a-form-item name="nsxmacdiscoveryprofileid" ref="nsxmacdiscoveryprofileid">
+              <template #label>
+                <tooltip-label
+                  :title="$t('label.nsx.mac.discovery.profile.id')"
+                  :tooltip="$t('message.network.offering.nsx.mac.discovery.profile.id')"/>
+              </template>
+              <a-input v-model:value="form.nsxmacdiscoveryprofileid" :maxlength="255" />
+            </a-form-item>
+          </a-col>
+          <a-col :md="8" :lg="8">
+            <a-form-item name="nsxsegmentsecurityprofileid" ref="nsxsegmentsecurityprofileid">
+              <template #label>
+                <tooltip-label
+                  :title="$t('label.nsx.segment.security.profile.id')"
+                  :tooltip="$t('message.network.offering.nsx.segment.security.profile.id')"/>
+              </template>
+              <a-input v-model:value="form.nsxsegmentsecurityprofileid" :maxlength="255" />
+            </a-form-item>
+          </a-col>
+        </a-row>
         <a-form-item name="networkmode" ref="networkmode" v-if="guestType === 'isolated' && form.provider">
           <template #label>
             <tooltip-label :title="$t('label.networkmode')" :tooltip="apiParams.networkmode.description"/>
@@ -732,7 +764,10 @@ export default {
         netscalerservicepackages: null,
         netscalerservicepackagesdescription: '',
         nsxsupportlb: true,
-        nsxsupportsinternallb: false
+        nsxsupportsinternallb: false,
+        nsxipdiscoveryprofileid: '',
+        nsxmacdiscoveryprofileid: '',
+        nsxsegmentsecurityprofileid: ''
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.required.input') }],
@@ -943,6 +978,9 @@ export default {
         if (r.details.macaddresschanges) this.form.macaddresschanges = r.details.macaddresschanges
         if (r.details.forgedtransmits) this.form.forgedtransmits = r.details.forgedtransmits
         if (r.details.maclearning) this.form.maclearning = r.details.maclearning
+        if (r.details.nsxipdiscoveryprofileid) this.form.nsxipdiscoveryprofileid = r.details.nsxipdiscoveryprofileid
+        if (r.details.nsxmacdiscoveryprofileid) this.form.nsxmacdiscoveryprofileid = r.details.nsxmacdiscoveryprofileid
+        if (r.details.nsxsegmentsecurityprofileid) this.form.nsxsegmentsecurityprofileid = r.details.nsxsegmentsecurityprofileid
       }
 
       this.forVpc = r.forvpc || false
@@ -1391,6 +1429,20 @@ export default {
           params['details[' + detailsIndex + '].key'] = 'maclearning'
           params['details[' + detailsIndex + '].value'] = values.maclearning
           detailsIndex++
+        }
+        if (values.nsxipdiscoveryprofileid) {
+          params['details[' + detailsIndex + '].key'] = 'nsxipdiscoveryprofileid'
+          params['details[' + detailsIndex + '].value'] = values.nsxipdiscoveryprofileid
+          detailsIndex++
+        }
+        if (values.nsxmacdiscoveryprofileid) {
+          params['details[' + detailsIndex + '].key'] = 'nsxmacdiscoveryprofileid'
+          params['details[' + detailsIndex + '].value'] = values.nsxmacdiscoveryprofileid
+          detailsIndex++
+        }
+        if (values.nsxsegmentsecurityprofileid) {
+          params['details[' + detailsIndex + '].key'] = 'nsxsegmentsecurityprofileid'
+          params['details[' + detailsIndex + '].value'] = values.nsxsegmentsecurityprofileid
         }
 
         this.loading = true

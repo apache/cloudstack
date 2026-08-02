@@ -572,6 +572,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     private static final String DefaultVlanForPodIpRange = Vlan.UNTAGGED;
 
     private static final Set<Provider> VPC_ONLY_PROVIDERS = Sets.newHashSet(Provider.VPCVirtualRouter, Provider.JuniperContrailVpcRouter, Provider.InternalLbVm);
+    private static final Set<Detail> NSX_SEGMENT_PROFILE_DETAILS = Set.of(Detail.NsxIpDiscoveryProfileId,
+            Detail.NsxMacDiscoveryProfileId, Detail.NsxSegmentSecurityProfileId);
+    private static final int MAX_NSX_PROFILE_ID_LENGTH = 255;
 
     private static final List<String> SUPPORTED_ROUTING_MODE_STRS = Arrays.asList(Static.toString().toLowerCase(), Dynamic.toString().toLowerCase());
     private static final long GiB_TO_BYTES = 1024 * 1024 * 1024;
@@ -7987,7 +7990,24 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     protected void validateNtwkOffDetails(final Map<Detail, String> details, final Map<Service, Set<Provider>> serviceProviderMap) {
+        boolean nsxProviderConfigured = serviceProviderMap != null && serviceProviderMap.values().stream()
+                .filter(Objects::nonNull)
+                .anyMatch(providers -> providers.contains(Provider.Nsx));
         for (final Detail detail : details.keySet()) {
+
+            if (NSX_SEGMENT_PROFILE_DETAILS.contains(detail)) {
+                String profileId = details.get(detail);
+                if (!nsxProviderConfigured) {
+                    throw new InvalidParameterValueException(String.format("Detail %s is supported only by NSX network offerings", detail));
+                }
+                if (StringUtils.isBlank(profileId)) {
+                    throw new InvalidParameterValueException(String.format("A non-empty NSX profile ID is required for detail %s", detail));
+                }
+                if (profileId.length() > MAX_NSX_PROFILE_ID_LENGTH) {
+                    throw new InvalidParameterValueException(String.format("NSX profile ID for detail %s cannot exceed %d characters",
+                            detail, MAX_NSX_PROFILE_ID_LENGTH));
+                }
+            }
 
             Provider lbProvider = null;
             if (detail == NetworkOffering.Detail.InternalLbProvider || detail == NetworkOffering.Detail.PublicLbProvider) {

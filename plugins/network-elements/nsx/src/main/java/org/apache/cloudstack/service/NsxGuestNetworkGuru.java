@@ -59,6 +59,7 @@ import org.apache.logging.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigrationResponder  {
@@ -324,10 +325,19 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
                 throw new CloudRuntimeException(msg);
             }
         }
-        CreateNsxSegmentCommand command = NsxHelper.createNsxSegmentCommand(domain, account, zone, vpcName, networkVO);
+        Map<NetworkOffering.Detail, String> offeringDetails = _networkModel.getNtwkOffDetails(networkVO.getNetworkOfferingId());
+        String ipDiscoveryProfile = getOfferingDetail(offeringDetails, NetworkOffering.Detail.NsxIpDiscoveryProfileId);
+        String macDiscoveryProfile = getOfferingDetail(offeringDetails, NetworkOffering.Detail.NsxMacDiscoveryProfileId);
+        String segmentSecurityProfile = getOfferingDetail(offeringDetails, NetworkOffering.Detail.NsxSegmentSecurityProfileId);
+        CreateNsxSegmentCommand command = NsxHelper.createNsxSegmentCommand(domain, account, zone, vpcName, networkVO,
+                ipDiscoveryProfile, macDiscoveryProfile, segmentSecurityProfile);
         NsxAnswer answer = nsxControllerUtils.sendNsxCommand(command, zone.getId());
         if (!answer.getResult()) {
             throw new CloudRuntimeException("can not create NSX network");
         }
+    }
+
+    protected String getOfferingDetail(Map<NetworkOffering.Detail, String> offeringDetails, NetworkOffering.Detail detail) {
+        return offeringDetails == null ? null : offeringDetails.get(detail);
     }
 }

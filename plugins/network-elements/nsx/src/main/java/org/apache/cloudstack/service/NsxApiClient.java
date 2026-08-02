@@ -26,11 +26,14 @@ import com.vmware.nsx.model.ControllerClusterStatus;
 import com.vmware.nsx.model.TransportZone;
 import com.vmware.nsx.model.TransportZoneListResult;
 import com.vmware.nsx_policy.infra.DhcpRelayConfigs;
+import com.vmware.nsx_policy.infra.IpDiscoveryProfiles;
 import com.vmware.nsx_policy.infra.LbAppProfiles;
 import com.vmware.nsx_policy.infra.LbMonitorProfiles;
 import com.vmware.nsx_policy.infra.LbPools;
 import com.vmware.nsx_policy.infra.LbServices;
 import com.vmware.nsx_policy.infra.LbVirtualServers;
+import com.vmware.nsx_policy.infra.MacDiscoveryProfiles;
+import com.vmware.nsx_policy.infra.SegmentSecurityProfiles;
 import com.vmware.nsx_policy.infra.Segments;
 import com.vmware.nsx_policy.infra.Services;
 import com.vmware.nsx_policy.infra.Sites;
@@ -39,6 +42,8 @@ import com.vmware.nsx_policy.infra.domains.Groups;
 import com.vmware.nsx_policy.infra.domains.SecurityPolicies;
 import com.vmware.nsx_policy.infra.domains.groups.members.SegmentPorts;
 import com.vmware.nsx_policy.infra.domains.security_policies.Rules;
+import com.vmware.nsx_policy.infra.segments.SegmentDiscoveryProfileBindingMaps;
+import com.vmware.nsx_policy.infra.segments.SegmentSecurityProfileBindingMaps;
 import com.vmware.nsx_policy.infra.sites.EnforcementPoints;
 import com.vmware.nsx_policy.infra.tier_0s.LocaleServices;
 import com.vmware.nsx_policy.infra.tier_1s.nat.NatRules;
@@ -49,6 +54,7 @@ import com.vmware.nsx_policy.model.EnforcementPointListResult;
 import com.vmware.nsx_policy.model.Group;
 import com.vmware.nsx_policy.model.GroupListResult;
 import com.vmware.nsx_policy.model.ICMPTypeServiceEntry;
+import com.vmware.nsx_policy.model.IPDiscoveryProfile;
 import com.vmware.nsx_policy.model.L4PortSetServiceEntry;
 import com.vmware.nsx_policy.model.LBAppProfileListResult;
 import com.vmware.nsx_policy.model.LBIcmpMonitorProfile;
@@ -61,6 +67,7 @@ import com.vmware.nsx_policy.model.LBTcpMonitorProfile;
 import com.vmware.nsx_policy.model.LBVirtualServer;
 import com.vmware.nsx_policy.model.LBVirtualServerListResult;
 import com.vmware.nsx_policy.model.LocaleServicesListResult;
+import com.vmware.nsx_policy.model.MacDiscoveryProfile;
 import com.vmware.nsx_policy.model.PathExpression;
 import com.vmware.nsx_policy.model.PolicyGroupMembersListResult;
 import com.vmware.nsx_policy.model.PolicyNatRule;
@@ -69,6 +76,9 @@ import com.vmware.nsx_policy.model.PolicyGroupMemberDetails;
 import com.vmware.nsx_policy.model.Rule;
 import com.vmware.nsx_policy.model.SecurityPolicy;
 import com.vmware.nsx_policy.model.Segment;
+import com.vmware.nsx_policy.model.SegmentDiscoveryProfileBindingMap;
+import com.vmware.nsx_policy.model.SegmentSecurityProfile;
+import com.vmware.nsx_policy.model.SegmentSecurityProfileBindingMap;
 import com.vmware.nsx_policy.model.SegmentSubnet;
 import com.vmware.nsx_policy.model.ServiceListResult;
 import com.vmware.nsx_policy.model.Site;
@@ -90,9 +100,10 @@ import org.apache.cloudstack.resource.NsxLoadBalancerMember;
 import org.apache.cloudstack.resource.NsxNetworkRule;
 import org.apache.cloudstack.utils.NsxControllerUtils;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.commons.lang3.BooleanUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -128,6 +139,8 @@ public class NsxApiClient {
     private static final String TIER_1_RESOURCE_TYPE = "Tier1";
     private static final String TIER_1_LOCALE_SERVICE_ID = "default";
     private static final String SEGMENT_RESOURCE_TYPE = "Segment";
+    private static final String SEGMENT_DISCOVERY_PROFILE_BINDING_ID = "cloudstack-discovery-profile-binding";
+    private static final String SEGMENT_SECURITY_PROFILE_BINDING_ID = "cloudstack-security-profile-binding";
     private static final String TIER_0_GATEWAY_PATH_PREFIX = "/infra/tier-0s/";
     private static final String TIER_1_GATEWAY_PATH_PREFIX = "/infra/tier-1s/";
     protected static final String SEGMENTS_PATH = "/infra/segments";
@@ -466,7 +479,16 @@ public class NsxApiClient {
 
     public void createSegment(String segmentName, String tier1GatewayName, String gatewayAddress, String enforcementPointPath,
                               List<TransportZone> transportZones) {
+        createSegment(segmentName, tier1GatewayName, gatewayAddress, enforcementPointPath, transportZones, null, null, null);
+    }
+
+    public void createSegment(String segmentName, String tier1GatewayName, String gatewayAddress, String enforcementPointPath,
+                              List<TransportZone> transportZones, String ipDiscoveryProfileId, String macDiscoveryProfileId,
+                              String segmentSecurityProfileId) {
         try {
+            String ipDiscoveryProfilePath = getIpDiscoveryProfilePath(ipDiscoveryProfileId);
+            String macDiscoveryProfilePath = getMacDiscoveryProfilePath(macDiscoveryProfileId);
+            String segmentSecurityProfilePath = getSegmentSecurityProfilePath(segmentSecurityProfileId);
             Segments segmentService = (Segments) nsxService.apply(Segments.class);
             SegmentSubnet subnet = new SegmentSubnet.Builder()
                     .setGatewayAddress(gatewayAddress)
@@ -481,11 +503,69 @@ public class NsxApiClient {
                     .setTransportZonePath(enforcementPointPath + "/transport-zones/" + transportZones.get(0).getId())
                     .build();
             segmentService.patch(segmentName, segment);
+            bindSegmentProfiles(segmentName, ipDiscoveryProfilePath, macDiscoveryProfilePath, segmentSecurityProfilePath);
         } catch (Error error) {
             ApiError ae = error.getData()._convertTo(ApiError.class);
             String msg = String.format("Error creating segment %s: %s", segmentName, ae.getErrorMessage());
             logger.error(msg);
             throw new CloudRuntimeException(msg);
+        }
+    }
+
+    protected String getIpDiscoveryProfilePath(String profileId) {
+        if (StringUtils.isBlank(profileId)) {
+            return null;
+        }
+        IpDiscoveryProfiles profiles = (IpDiscoveryProfiles) nsxService.apply(IpDiscoveryProfiles.class);
+        IPDiscoveryProfile profile = profiles.get(profileId);
+        return validateProfilePath(profileId, profile.getPath());
+    }
+
+    protected String getMacDiscoveryProfilePath(String profileId) {
+        if (StringUtils.isBlank(profileId)) {
+            return null;
+        }
+        MacDiscoveryProfiles profiles = (MacDiscoveryProfiles) nsxService.apply(MacDiscoveryProfiles.class);
+        MacDiscoveryProfile profile = profiles.get(profileId);
+        return validateProfilePath(profileId, profile.getPath());
+    }
+
+    protected String getSegmentSecurityProfilePath(String profileId) {
+        if (StringUtils.isBlank(profileId)) {
+            return null;
+        }
+        SegmentSecurityProfiles profiles = (SegmentSecurityProfiles) nsxService.apply(SegmentSecurityProfiles.class);
+        SegmentSecurityProfile profile = profiles.get(profileId);
+        return validateProfilePath(profileId, profile.getPath());
+    }
+
+    protected String validateProfilePath(String profileId, String profilePath) {
+        if (StringUtils.isBlank(profilePath)) {
+            throw new CloudRuntimeException(String.format("NSX profile %s did not return a canonical resource path", profileId));
+        }
+        return profilePath;
+    }
+
+    protected void bindSegmentProfiles(String segmentName, String ipDiscoveryProfilePath, String macDiscoveryProfilePath,
+                                       String segmentSecurityProfilePath) {
+        if (StringUtils.isNotBlank(ipDiscoveryProfilePath) || StringUtils.isNotBlank(macDiscoveryProfilePath)) {
+            SegmentDiscoveryProfileBindingMaps discoveryBindings =
+                    (SegmentDiscoveryProfileBindingMaps) nsxService.apply(SegmentDiscoveryProfileBindingMaps.class);
+            SegmentDiscoveryProfileBindingMap binding = new SegmentDiscoveryProfileBindingMap.Builder()
+                    .setId(SEGMENT_DISCOVERY_PROFILE_BINDING_ID)
+                    .setIpDiscoveryProfilePath(ipDiscoveryProfilePath)
+                    .setMacDiscoveryProfilePath(macDiscoveryProfilePath)
+                    .build();
+            discoveryBindings.patch(segmentName, SEGMENT_DISCOVERY_PROFILE_BINDING_ID, binding);
+        }
+        if (StringUtils.isNotBlank(segmentSecurityProfilePath)) {
+            SegmentSecurityProfileBindingMaps securityBindings =
+                    (SegmentSecurityProfileBindingMaps) nsxService.apply(SegmentSecurityProfileBindingMaps.class);
+            SegmentSecurityProfileBindingMap binding = new SegmentSecurityProfileBindingMap.Builder()
+                    .setId(SEGMENT_SECURITY_PROFILE_BINDING_ID)
+                    .setSegmentSecurityProfilePath(segmentSecurityProfilePath)
+                    .build();
+            securityBindings.patch(segmentName, SEGMENT_SECURITY_PROFILE_BINDING_ID, binding);
         }
     }
 

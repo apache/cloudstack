@@ -1410,4 +1410,48 @@ public class ConfigurationManagerImplTest {
         mapWithEmptySet.put(Network.Service.Firewall, Collections.emptySet());
         Assert.assertNull(ConfigurationManagerImpl.getExternalNetworkProvider(null, mapWithEmptySet));
     }
+
+    @Test
+    public void testValidateNetworkOfferingDetailsAcceptsNsxSegmentProfilesForNsxOffering() {
+        Map<NetworkOffering.Detail, String> details = Map.of(
+                NetworkOffering.Detail.NsxIpDiscoveryProfileId, "cloudstack-ip-discovery",
+                NetworkOffering.Detail.NsxMacDiscoveryProfileId, "cloudstack-mac-discovery",
+                NetworkOffering.Detail.NsxSegmentSecurityProfileId, "cloudstack-segment-security");
+        Map<Network.Service, Set<Network.Provider>> serviceProviderMap = Map.of(
+                Network.Service.Connectivity, Set.of(Network.Provider.Nsx));
+
+        configurationManagerImplSpy.validateNtwkOffDetails(details, serviceProviderMap);
+    }
+
+    @Test
+    public void testValidateNetworkOfferingDetailsRejectsNsxSegmentProfileForNonNsxOffering() {
+        Map<NetworkOffering.Detail, String> details = Map.of(
+                NetworkOffering.Detail.NsxIpDiscoveryProfileId, "cloudstack-ip-discovery");
+        Map<Network.Service, Set<Network.Provider>> serviceProviderMap = Map.of(
+                Network.Service.Connectivity, Set.of(Network.Provider.VPCVirtualRouter));
+
+        Assert.assertThrows(InvalidParameterValueException.class,
+                () -> configurationManagerImplSpy.validateNtwkOffDetails(details, serviceProviderMap));
+    }
+
+    @Test
+    public void testValidateNetworkOfferingDetailsRejectsBlankNsxSegmentProfile() {
+        Map<NetworkOffering.Detail, String> details = Map.of(NetworkOffering.Detail.NsxMacDiscoveryProfileId, " ");
+        Map<Network.Service, Set<Network.Provider>> serviceProviderMap = Map.of(
+                Network.Service.Connectivity, Set.of(Network.Provider.Nsx));
+
+        Assert.assertThrows(InvalidParameterValueException.class,
+                () -> configurationManagerImplSpy.validateNtwkOffDetails(details, serviceProviderMap));
+    }
+
+    @Test
+    public void testValidateNetworkOfferingDetailsRejectsOversizedNsxSegmentProfile() {
+        Map<NetworkOffering.Detail, String> details = Map.of(
+                NetworkOffering.Detail.NsxSegmentSecurityProfileId, "x".repeat(256));
+        Map<Network.Service, Set<Network.Provider>> serviceProviderMap = Map.of(
+                Network.Service.Connectivity, Set.of(Network.Provider.Nsx));
+
+        Assert.assertThrows(InvalidParameterValueException.class,
+                () -> configurationManagerImplSpy.validateNtwkOffDetails(details, serviceProviderMap));
+    }
 }
