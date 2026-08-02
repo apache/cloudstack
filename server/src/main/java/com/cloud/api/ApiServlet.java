@@ -88,7 +88,7 @@ public class ApiServlet extends HttpServlet {
     private static final Pattern GET_REQUEST_COMMANDS = Pattern.compile("^(get|list|query|find)(\\w+)+$");
     private static final HashSet<String> GET_REQUEST_COMMANDS_LIST = new HashSet<>(Set.of("isaccountallowedtocreateofferingswithtags",
             "readyforshutdown", "cloudianisenabled", "quotabalance", "quotasummary", "quotatarifflist", "quotaisenabled", "quotastatement", "verifyoauthcodeandgetuser"));
-    private static final HashSet<String> POST_REQUESTS_TO_DISABLE_LOGGING = new HashSet<>(Set.of(
+    private static final HashSet<String> REQUESTS_TO_DISABLE_PARAMETER_LOGGING = new HashSet<>(Set.of(
             "login",
             "oauthlogin",
             "createaccount",
@@ -197,11 +197,11 @@ public class ApiServlet extends HttpServlet {
         });
     }
 
-    private void checkSingleQueryParameterValue(Map<String, String[]> params) {
+    protected void checkSingleQueryParameterValue(Map<String, String[]> params) {
         params.forEach((k, v) -> {
             if (v.length > 1) {
-                String message = String.format("Query parameter '%s' has multiple values %s. Only the last value will be respected." +
-                    "It is advised to pass only a single parameter", k, Arrays.toString(v));
+                String message = String.format("Query parameter '%s' has %d values. Only the last value will be respected. " +
+                    "It is advised to pass only a single parameter", saveLogString(k), v.length);
                 LOGGER.warn(message);
             }
         });
@@ -238,17 +238,15 @@ public class ApiServlet extends HttpServlet {
 
         // logging the request start and end in management log for easy debugging
         String reqStr = "";
-        String cleanQueryString = StringUtils.cleanString(req.getQueryString());
+        String cleanQueryString = getCleanQueryString(command, req.getQueryString(), reqParams);
         if (LOGGER.isDebugEnabled()) {
             reqStr = auditTrailSb.toString() + " " + cleanQueryString;
             if (req.getMethod().equalsIgnoreCase("POST") && org.apache.commons.lang3.StringUtils.isNotBlank(command)) {
-                if (shouldLogPostRequestParameters(command, reqParams)) {
+                if (shouldLogRequestParameters(command, reqParams)) {
                     String cleanParamsString = getCleanParamsString(reqParams);
                     if (org.apache.commons.lang3.StringUtils.isNotBlank(cleanParamsString)) {
                         reqStr += "\n" + cleanParamsString;
                     }
-                } else {
-                    reqStr += " " + command;
                 }
             }
             LOGGER.debug("===START=== " + reqStr);
@@ -773,7 +771,16 @@ public class ApiServlet extends HttpServlet {
         return cleanParamsString.toString();
     }
 
-    protected boolean shouldLogPostRequestParameters(String command, Map<String, String[]> reqParams) {
-        return !POST_REQUESTS_TO_DISABLE_LOGGING.contains(command.toLowerCase()) && !reqParams.containsKey(ApiConstants.USER_DATA);
+    protected boolean shouldLogRequestParameters(String command, Map<String, String[]> reqParams) {
+        return (org.apache.commons.lang3.StringUtils.isBlank(command)
+                || !REQUESTS_TO_DISABLE_PARAMETER_LOGGING.contains(command.toLowerCase(java.util.Locale.ROOT)))
+                && !reqParams.containsKey(ApiConstants.USER_DATA);
+    }
+
+    protected String getCleanQueryString(String command, String queryString, Map<String, String[]> reqParams) {
+        if (!shouldLogRequestParameters(command, reqParams)) {
+            return org.apache.commons.lang3.StringUtils.isBlank(command) ? "" : "command=" + saveLogString(command);
+        }
+        return StringUtils.cleanString(queryString);
     }
 }

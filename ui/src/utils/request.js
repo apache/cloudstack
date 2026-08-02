@@ -24,6 +24,7 @@ import notification from 'ant-design-vue/es/notification'
 import { CURRENT_PROJECT } from '@/store/mutation-types'
 import { i18n } from '@/locales'
 import store from '@/store'
+import { logApiError } from '@/utils/apiError'
 
 let source
 const service = axios.create({
@@ -33,8 +34,8 @@ const service = axios.create({
 const err = (error) => {
   const response = error.response
   let countNotify = store.getters.countNotify
+  logApiError(error)
   if (response) {
-    console.log(response)
     if (response.status === 403) {
       const data = response.data
       countNotify++

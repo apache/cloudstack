@@ -17,6 +17,7 @@
 
 import mockAxios from '../../../mock/mockAxios'
 import AddObjectStorage from '@/views/infra/AddObjectStorage'
+import { mount } from '@vue/test-utils'
 
 jest.mock('axios', () => mockAxios)
 jest.mock('@/vue-app', () => ({
@@ -67,5 +68,32 @@ describe('Views > infra > AddObjectStorage.vue', () => {
     mockAxios.mockRejectedValue(error)
 
     await expect(AddObjectStorage.methods.addObjectStore({})).rejects.toBe(error)
+  })
+
+  it('masks the object storage secret key', () => {
+    const wrapper = mount(AddObjectStorage, {
+      props: {
+        resource: {}
+      },
+      global: {
+        mocks: {
+          $getApiParams: jest.fn(() => ({
+            name: {},
+            provider: {},
+            url: {},
+            size: {}
+          })),
+          $t: key => key
+        },
+        provide: {
+          parentFetchData: jest.fn()
+        }
+      }
+    })
+
+    const secretKeyInput = wrapper.find('input[type="password"]')
+
+    expect(secretKeyInput.exists()).toBe(true)
+    expect(secretKeyInput.attributes('autocomplete')).toBe('off')
   })
 })

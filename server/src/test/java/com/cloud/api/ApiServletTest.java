@@ -34,11 +34,13 @@ import org.apache.cloudstack.api.auth.APIAuthenticator;
 import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
+import org.apache.logging.log4j.Logger;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -463,26 +465,81 @@ public class ApiServletTest {
     }
 
     @Test
-    public void shouldNotLogPostRequestParametersForAddObjectStoragePool() {
-        boolean result = servlet.shouldLogPostRequestParameters("addObjectStoragePool", new HashMap<>());
+    public void shouldNotLogRequestParametersForAddObjectStoragePool() {
+        boolean result = servlet.shouldLogRequestParameters("addObjectStoragePool", new HashMap<>());
 
         Assert.assertFalse(result);
     }
 
     @Test
-    public void shouldLogPostRequestParametersForCommandWithoutSensitiveParameters() {
-        boolean result = servlet.shouldLogPostRequestParameters("listZones", new HashMap<>());
+    public void shouldLogRequestParametersForCommandWithoutSensitiveParameters() {
+        boolean result = servlet.shouldLogRequestParameters("listZones", new HashMap<>());
 
         Assert.assertTrue(result);
     }
 
     @Test
-    public void shouldNotLogPostRequestParametersContainingUserData() {
+    public void shouldNotLogRequestParametersContainingUserData() {
         Map<String, String[]> params = new HashMap<>();
         params.put(ApiConstants.USER_DATA, new String[] {"sensitive-user-data"});
 
-        boolean result = servlet.shouldLogPostRequestParameters("deployVirtualMachine", params);
+        boolean result = servlet.shouldLogRequestParameters("deployVirtualMachine", params);
 
         Assert.assertFalse(result);
+    }
+
+    @Test
+    public void shouldReplaceQueryStringContainingUserDataWithCommandName() {
+        Map<String, String[]> params = new HashMap<>();
+        params.put(ApiConstants.USER_DATA, new String[] {"SYNTHETIC_USER_DATA"});
+        String queryString = "command=deployVirtualMachine&userdata=SYNTHETIC_USER_DATA";
+
+        String result = servlet.getCleanQueryString("deployVirtualMachine", queryString, params);
+
+        Assert.assertEquals("command=deployVirtualMachine", result);
+        Assert.assertFalse(result.contains("SYNTHETIC_USER_DATA"));
+    }
+
+    @Test
+    public void shouldReplaceSensitiveQueryStringWithCommandName() {
+        Map<String, String[]> params = new HashMap<>();
+        String queryString = "command=addObjectStoragePool&details%5B1%5D.value=SYNTHETIC_SECRET_KEY";
+
+        String result = servlet.getCleanQueryString("addObjectStoragePool", queryString, params);
+
+        Assert.assertEquals("command=addObjectStoragePool", result);
+        Assert.assertFalse(result.contains("SYNTHETIC_SECRET_KEY"));
+    }
+
+    @Test
+    public void shouldKeepOrdinaryQueryString() {
+        Map<String, String[]> params = new HashMap<>();
+        String queryString = "command=listZones&response=json";
+
+        String result = servlet.getCleanQueryString("listZones", queryString, params);
+
+        Assert.assertEquals(queryString, result);
+    }
+
+    @Test
+    public void shouldLogDuplicateParameterNameAndCountWithoutValues() {
+        Logger originalLogger = ApiServlet.LOGGER;
+        Logger logger = Mockito.mock(Logger.class);
+        ApiServlet.LOGGER = logger;
+        Map<String, String[]> params = new HashMap<>();
+        params.put("details[1].value", new String[] {"SYNTHETIC_SECRET_ONE", "SYNTHETIC_SECRET_TWO"});
+
+        try {
+            servlet.checkSingleQueryParameterValue(params);
+
+            ArgumentCaptor<String> message = ArgumentCaptor.forClass(String.class);
+            Mockito.verify(logger).warn(message.capture());
+            Assert.assertTrue(message.getValue().contains("details[1].value"));
+            Assert.assertTrue(message.getValue().contains("2 values"));
+            Assert.assertFalse(message.getValue().contains("SYNTHETIC_SECRET_ONE"));
+            Assert.assertFalse(message.getValue().contains("SYNTHETIC_SECRET_TWO"));
+        } finally {
+            ApiServlet.LOGGER = originalLogger;
+        }
     }
 }
