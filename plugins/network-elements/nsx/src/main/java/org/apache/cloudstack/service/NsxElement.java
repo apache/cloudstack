@@ -1000,7 +1000,7 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
     }
 
     protected boolean isVpnProvidedByNsx(Vpc vpc, Site2SiteVpnGateway gateway) {
-        return vpc != null && (isVpnProvidedByNsx(vpc) || ownsVpnGateway(gateway));
+        return vpc != null && ownsVpnGateway(gateway);
     }
 
     @Override

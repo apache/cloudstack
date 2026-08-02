@@ -95,6 +95,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -768,13 +769,25 @@ public class NsxElementTest {
     }
 
     @Test
-    public void testNsxVpnGatewayOwnershipIsRecordedForOperatorSpecifiedIp() {
+    public void testNsxVpnGatewayOwnershipDoesNotDependOnMarkerValue() {
         Site2SiteVpnGateway vpnGateway = Mockito.mock(Site2SiteVpnGateway.class);
         when(vpnGateway.getAddrId()).thenReturn(30L);
+        UserIpAddressDetailVO operatorSpecified = new UserIpAddressDetailVO(30L, "nsxVpnGatewayIp", "false", false);
+        UserIpAddressDetailVO autoAcquired = new UserIpAddressDetailVO(30L, "nsxVpnGatewayIp", "true", false);
         when(userIpAddressDetailsDao.findDetail(30L, "nsxVpnGatewayIp"))
-                .thenReturn(Mockito.mock(UserIpAddressDetailVO.class));
+                .thenReturn(operatorSpecified, autoAcquired);
 
         assertTrue(nsxElement.ownsVpnGateway(vpnGateway));
+        assertTrue(nsxElement.ownsVpnGateway(vpnGateway));
+    }
+
+    @Test
+    public void testNsxVpnGatewayOwnershipRequiresMarker() {
+        Site2SiteVpnGateway vpnGateway = Mockito.mock(Site2SiteVpnGateway.class);
+        when(vpnGateway.getAddrId()).thenReturn(30L);
+        when(userIpAddressDetailsDao.findDetail(30L, "nsxVpnGatewayIp")).thenReturn(null);
+
+        assertFalse(nsxElement.ownsVpnGateway(vpnGateway));
     }
 
     @Test
@@ -871,12 +884,21 @@ public class NsxElementTest {
     }
 
     private Site2SiteVpnConnection mockVpnConnection(VpcVO vpcVO) {
+        return mockVpnConnection(vpcVO, true);
+    }
+
+    private Site2SiteVpnConnection mockVpnConnection(VpcVO vpcVO, boolean nsxOwned) {
         Site2SiteVpnConnection connection = Mockito.mock(Site2SiteVpnConnection.class);
         when(connection.getVpnGatewayId()).thenReturn(7L);
         Mockito.lenient().when(connection.getCustomerGatewayId()).thenReturn(3L);
         Site2SiteVpnGatewayVO vpnGateway = Mockito.mock(Site2SiteVpnGatewayVO.class);
         when(vpnGatewayDao.findById(7L)).thenReturn(vpnGateway);
         when(vpnGateway.getVpcId()).thenReturn(9L);
+        when(vpnGateway.getAddrId()).thenReturn(30L);
+        if (nsxOwned) {
+            when(userIpAddressDetailsDao.findDetail(30L, "nsxVpnGatewayIp"))
+                    .thenReturn(Mockito.mock(UserIpAddressDetailVO.class));
+        }
         when(vpcDao.findById(9L)).thenReturn(vpcVO);
         return connection;
     }
@@ -922,8 +944,7 @@ public class NsxElementTest {
     @Test
     public void testStartSite2SiteVpnIsNoOpWhenVpnIsNotProvidedByNsx() throws ResourceUnavailableException {
         VpcVO vpcVO = Mockito.mock(VpcVO.class);
-        when(vpcVO.getVpcOfferingId()).thenReturn(11L);
-        Site2SiteVpnConnection connection = mockVpnConnection(vpcVO);
+        Site2SiteVpnConnection connection = mockVpnConnection(vpcVO, false);
 
         assertTrue(nsxElement.startSite2SiteVpn(connection));
         verify(nsxService, Mockito.never()).createVpnConnection(any(Vpc.class), any(), anyString(), anyString(),

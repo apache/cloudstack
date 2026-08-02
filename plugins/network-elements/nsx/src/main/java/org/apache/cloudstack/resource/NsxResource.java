@@ -586,7 +586,7 @@ public class NsxResource implements ServerResource {
                 cmd.getZoneId(), cmd.getVpcId(), true);
         Object lock = getVpnTier1Lock(tier1GatewayName);
         synchronized (lock) {
-            boolean sessionCreated = false;
+            NsxApiClient.VpnSessionProvisioningResult provisioningResult = null;
             try {
                 // The requested VTI /30 is derived from the connection id. Fail closed when another
                 // session already owns its local address; silently choosing a different pair would make
@@ -598,22 +598,29 @@ public class NsxResource implements ServerResource {
                             cmd.getVtiLocalIp(), cmd.getConnectionUuid(), tier1GatewayName));
                 }
                 Pair<String, String> vtiAddresses = new Pair<>(cmd.getVtiLocalIp(), cmd.getVtiPeerIp());
-                nsxApiClient.createRouteBasedVpnSession(tier1GatewayName, cmd.getConnectionUuid(), cmd.getPeerAddress(),
+                provisioningResult = nsxApiClient.createRouteBasedVpnSession(tier1GatewayName, cmd.getConnectionUuid(), cmd.getPeerAddress(),
                         cmd.getPsk(), cmd.getIkePolicy(), cmd.getEspPolicy(), cmd.getIkeLifetime(), cmd.getEspLifetime(),
                         cmd.isDpdEnabled(), cmd.getIkeVersion(), cmd.isPassive(), vtiAddresses.first(), cmd.getVtiPrefixLength());
-                sessionCreated = true;
                 nsxApiClient.addVpnConnectionRoutes(tier1GatewayName, cmd.getConnectionUuid(), cmd.getPeerCidrs(),
                         vtiAddresses.second(), cmd.getVpcCidr());
                 // Applied here as well so that VPN gateways created before the exemptions existed, or whose
                 // tier-1 gained a source NAT rule afterwards, are corrected without recreating the gateway
                 nsxApiClient.ensureVpnNatExemptions(tier1GatewayName, cmd.getLocalEndpointIp());
+                nsxApiClient.updateVpnConnectionState(tier1GatewayName, cmd.getConnectionUuid(), true);
             } catch (Exception e) {
-                if (sessionCreated) {
+                if (provisioningResult == NsxApiClient.VpnSessionProvisioningResult.CREATED) {
                     try {
                         nsxApiClient.rollbackVpnConnection(tier1GatewayName, cmd.getConnectionUuid());
                     } catch (Exception rollbackException) {
                         logger.warn("Failed to roll back the partially created NSX VPN connection {}: {}",
                                 cmd.getConnectionUuid(), rollbackException.getMessage());
+                    }
+                } else if (provisioningResult == NsxApiClient.VpnSessionProvisioningResult.PREEXISTING) {
+                    try {
+                        nsxApiClient.updateVpnConnectionState(tier1GatewayName, cmd.getConnectionUuid(), false);
+                    } catch (Exception compensationException) {
+                        logger.warn("Failed to disable the pre-existing NSX VPN connection {} after provisioning failed: {}",
+                                cmd.getConnectionUuid(), compensationException.getMessage());
                     }
                 }
                 logger.error(String.format("Failed to create the NSX VPN connection %s on tier-1 gateway %s for VPC %s: %s",

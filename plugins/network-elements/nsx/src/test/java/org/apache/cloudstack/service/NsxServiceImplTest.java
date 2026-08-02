@@ -20,6 +20,9 @@ import com.cloud.network.IpAddress;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.dao.Site2SiteVpnConnectionVO;
+import com.cloud.network.dao.Site2SiteVpnConnectionDao;
+import com.cloud.network.dao.Site2SiteVpnGatewayDao;
+import com.cloud.network.dao.Site2SiteVpnGatewayVO;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
@@ -35,6 +38,8 @@ import org.apache.cloudstack.agent.api.DeleteNsxNatRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxSegmentCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxTier1GatewayCommand;
 import org.apache.cloudstack.utils.NsxControllerUtils;
+import org.apache.cloudstack.resourcedetail.UserIpAddressDetailVO;
+import org.apache.cloudstack.resourcedetail.dao.UserIpAddressDetailsDao;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,6 +49,7 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -54,6 +60,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -62,6 +71,12 @@ public class NsxServiceImplTest {
     private NsxControllerUtils nsxControllerUtils;
     @Mock
     private VpcDao vpcDao;
+    @Mock
+    private Site2SiteVpnConnectionDao site2SiteVpnConnectionDao;
+    @Mock
+    private Site2SiteVpnGatewayDao site2SiteVpnGatewayDao;
+    @Mock
+    private UserIpAddressDetailsDao userIpAddressDetailsDao;
     NsxServiceImpl nsxService;
 
     AutoCloseable closeable;
@@ -76,6 +91,9 @@ public class NsxServiceImplTest {
         nsxService = new NsxServiceImpl();
         nsxService.nsxControllerUtils = nsxControllerUtils;
         nsxService.vpcDao = vpcDao;
+        nsxService.site2SiteVpnConnectionDao = site2SiteVpnConnectionDao;
+        nsxService.site2SiteVpnGatewayDao = site2SiteVpnGatewayDao;
+        nsxService.userIpAddressDetailsDao = userIpAddressDetailsDao;
     }
 
     @After
@@ -204,6 +222,7 @@ public class NsxServiceImplTest {
 
             @Override
             protected void transitionVpnConnectionState(Site2SiteVpnConnectionVO connection, VpcVO vpc,
+                                                        Site2SiteVpnConnection.State observedState,
                                                         Site2SiteVpnConnection.State newState) {
                 transitionedState.set(newState);
             }
@@ -229,6 +248,7 @@ public class NsxServiceImplTest {
 
             @Override
             protected void transitionVpnConnectionState(Site2SiteVpnConnectionVO connection, VpcVO vpc,
+                                                        Site2SiteVpnConnection.State observedState,
                                                         Site2SiteVpnConnection.State newState) {
                 transitioned.set(true);
             }
@@ -238,5 +258,70 @@ public class NsxServiceImplTest {
 
         // A transient management-plane error must not turn a valid connection into Error.
         assertTrue(!transitioned.get());
+    }
+
+    @Test
+    public void testTransitionVpnConnectionStateIgnoresStaleStatusObservation() {
+        Site2SiteVpnConnectionVO connection = mock(Site2SiteVpnConnectionVO.class);
+        Site2SiteVpnConnectionVO lock = mock(Site2SiteVpnConnectionVO.class);
+        Site2SiteVpnConnectionVO current = mock(Site2SiteVpnConnectionVO.class);
+        VpcVO vpc = mock(VpcVO.class);
+        when(connection.getId()).thenReturn(11L);
+        when(lock.getId()).thenReturn(11L);
+        when(current.getState()).thenReturn(Site2SiteVpnConnection.State.Disconnected);
+        when(site2SiteVpnConnectionDao.acquireInLockTable(11L)).thenReturn(lock);
+        when(site2SiteVpnConnectionDao.findById(11L)).thenReturn(current);
+
+        nsxService.transitionVpnConnectionState(connection, vpc, Site2SiteVpnConnection.State.Connecting,
+                Site2SiteVpnConnection.State.Connected);
+
+        verify(site2SiteVpnConnectionDao, never()).persist(current);
+        verify(site2SiteVpnConnectionDao).releaseFromLockTable(11L);
+    }
+
+    @Test
+    public void testVpnStatusPollerSkipsUnmarkedGatewayRegardlessOfCurrentOffering() {
+        Site2SiteVpnConnectionVO connection = mockPollableVpnConnection();
+        Site2SiteVpnGatewayVO gateway = mockVpnGatewayForPoller(connection);
+        VpcVO vpc = mock(VpcVO.class);
+        when(vpcDao.findById(gateway.getVpcId())).thenReturn(vpc);
+        NsxServiceImpl service = Mockito.spy(nsxService);
+
+        service.new VpnStatusPollTask().runInContext();
+
+        verify(service, never()).pollVpnConnectionStatus(connection, vpc);
+    }
+
+    @Test
+    public void testVpnStatusPollerUsesPersistedOwnershipAfterOfferingChanges() {
+        Site2SiteVpnConnectionVO connection = mockPollableVpnConnection();
+        Site2SiteVpnGatewayVO gateway = mockVpnGatewayForPoller(connection);
+        VpcVO vpc = mock(VpcVO.class);
+        when(vpcDao.findById(gateway.getVpcId())).thenReturn(vpc);
+        when(userIpAddressDetailsDao.findDetail(gateway.getAddrId(), NsxElement.NSX_VPN_GATEWAY_IP_DETAIL))
+                .thenReturn(mock(UserIpAddressDetailVO.class));
+        NsxServiceImpl service = Mockito.spy(nsxService);
+        doNothing().when(service).pollVpnConnectionStatus(connection, vpc);
+
+        service.new VpnStatusPollTask().runInContext();
+
+        verify(service).pollVpnConnectionStatus(connection, vpc);
+    }
+
+    private Site2SiteVpnConnectionVO mockPollableVpnConnection() {
+        Site2SiteVpnConnectionVO connection = mock(Site2SiteVpnConnectionVO.class);
+        when(connection.getId()).thenReturn(11L);
+        when(connection.getVpnGatewayId()).thenReturn(7L);
+        when(connection.getState()).thenReturn(Site2SiteVpnConnection.State.Connected);
+        when(site2SiteVpnConnectionDao.listAll()).thenReturn(List.of(connection));
+        return connection;
+    }
+
+    private Site2SiteVpnGatewayVO mockVpnGatewayForPoller(Site2SiteVpnConnectionVO connection) {
+        Site2SiteVpnGatewayVO gateway = mock(Site2SiteVpnGatewayVO.class);
+        when(gateway.getVpcId()).thenReturn(9L);
+        when(gateway.getAddrId()).thenReturn(30L);
+        when(site2SiteVpnGatewayDao.findById(connection.getVpnGatewayId())).thenReturn(gateway);
+        return gateway;
     }
 }

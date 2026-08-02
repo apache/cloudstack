@@ -70,10 +70,8 @@ import com.cloud.network.dao.Site2SiteVpnGatewayVO;
 import com.cloud.network.nsx.NsxService;
 import com.cloud.network.nsx.NsxVpnGatewayResult;
 import com.cloud.network.vpc.Vpc;
-import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
-import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -101,10 +99,6 @@ public class NsxServiceImpl extends ManagerBase implements NsxService, Configura
     NsxControllerUtils nsxControllerUtils;
     @Inject
     VpcDao vpcDao;
-    @Inject
-    VpcOfferingServiceMapDao vpcOfferingServiceMapDao;
-    @Inject
-    VpcManager vpcManager;
     @Inject
     Site2SiteVpnConnectionDao site2SiteVpnConnectionDao;
     @Inject
@@ -336,9 +330,9 @@ public class NsxServiceImpl extends ManagerBase implements NsxService, Configura
     }
 
     /**
-     * Every management server runs this poller over all NSX-provided VPN connections; the
-     * duplicate polling in a multi-server setup is tolerated, as state transitions are
-     * serialized by the row lock in transitionVpnConnectionState
+     * Every management server runs this poller over VPN connections whose gateway has persisted
+     * NSX ownership; duplicate polling in a multi-server setup is tolerated, as state transitions
+     * are serialized by the row lock in transitionVpnConnectionState
      */
     protected class VpnStatusPollTask extends ManagedContextRunnable {
         @Override
@@ -369,24 +363,15 @@ public class NsxServiceImpl extends ManagerBase implements NsxService, Configura
         }
     }
 
-    private boolean isVpnProvidedByNsx(Vpc vpc) {
-        if (vpcManager != null) {
-            return vpcManager.isProviderSupportServiceInVpc(vpc.getId(), Network.Service.Vpn, Network.Provider.Nsx);
-        }
-        return vpcOfferingServiceMapDao.findByServiceProviderAndOfferingId(
-                Network.Service.Vpn.getName(), Network.Provider.Nsx.getName(), vpc.getVpcOfferingId()) != null;
-    }
-
     private boolean isVpnProvidedByNsx(Vpc vpc, Site2SiteVpnGatewayVO vpnGateway) {
-        if (isVpnProvidedByNsx(vpc)) {
-            return true;
-        }
-        return userIpAddressDetailsDao != null
+        return vpc != null
+                && userIpAddressDetailsDao != null
                 && vpnGateway != null
                 && userIpAddressDetailsDao.findDetail(vpnGateway.getAddrId(), NsxElement.NSX_VPN_GATEWAY_IP_DETAIL) != null;
     }
 
     protected void pollVpnConnectionStatus(Site2SiteVpnConnectionVO connection, VpcVO vpc) {
+        Site2SiteVpnConnection.State observedState = connection.getState();
         String status;
         try {
             status = getVpnConnectionStatus(vpc, connection.getUuid());
@@ -401,7 +386,7 @@ public class NsxServiceImpl extends ManagerBase implements NsxService, Configura
                 String title = String.format("Unable to poll the status of Site-to-site Vpn Connection %s", connection.getUuid());
                 String context = String.format(
                         "The status of Site-to-site Vpn Connection %s on the NSX tier-1 gateway of VPC %s could not be polled %d consecutive times; its state %s is left unchanged",
-                        connection.getUuid(), vpc.getName(), failures, connection.getState());
+                        connection.getUuid(), vpc.getName(), failures, observedState);
                 logger.warn(context);
                 alertManager.sendAlert(AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER, vpc.getZoneId(), null, title, context);
                 vpnStatusPollFailures.remove(connection.getId());
@@ -414,12 +399,12 @@ public class NsxServiceImpl extends ManagerBase implements NsxService, Configura
         } else if (VPN_SESSION_STATUS_DOWN.equals(status) || VPN_SESSION_STATUS_DEGRADED.equals(status)) {
             newState = Site2SiteVpnConnection.State.Disconnected;
         } else if (VPN_SESSION_STATUS_NOT_FOUND.equals(status)) {
-            if (connection.getState() == Site2SiteVpnConnection.State.Pending
-                    || connection.getState() == Site2SiteVpnConnection.State.Connecting) {
+            if (observedState == Site2SiteVpnConnection.State.Pending
+                    || observedState == Site2SiteVpnConnection.State.Connecting) {
                 // the async connection job may still be creating the session on NSX
                 return;
             }
-            if (connection.getState() == Site2SiteVpnConnection.State.Disconnected) {
+            if (observedState == Site2SiteVpnConnection.State.Disconnected) {
                 // stop intentionally disables the session; a subsequent status lookup may report it
                 // as absent while the connection remains a valid, stopped CloudStack resource
                 return;
@@ -430,11 +415,13 @@ public class NsxServiceImpl extends ManagerBase implements NsxService, Configura
             logger.debug("NSX VPN connection {} of VPC {} reported the status {}, not transitioning the state", connection, vpc, status);
             return;
         }
-        transitionVpnConnectionState(connection, vpc, newState);
+        transitionVpnConnectionState(connection, vpc, observedState, newState);
     }
 
-    protected void transitionVpnConnectionState(Site2SiteVpnConnectionVO connection, VpcVO vpc, Site2SiteVpnConnection.State newState) {
-        if (connection.getState() == newState) {
+    protected void transitionVpnConnectionState(Site2SiteVpnConnectionVO connection, VpcVO vpc,
+                                                Site2SiteVpnConnection.State observedState,
+                                                Site2SiteVpnConnection.State newState) {
+        if (observedState == newState) {
             return;
         }
         Site2SiteVpnConnectionVO lock = site2SiteVpnConnectionDao.acquireInLockTable(connection.getId());
@@ -445,7 +432,7 @@ public class NsxServiceImpl extends ManagerBase implements NsxService, Configura
         try {
             Site2SiteVpnConnectionVO lockedConnection = site2SiteVpnConnectionDao.findById(connection.getId());
             if (lockedConnection == null || !VPN_POLLED_STATES.contains(lockedConnection.getState())
-                    || lockedConnection.getState() == newState) {
+                    || lockedConnection.getState() != observedState) {
                 return;
             }
             Site2SiteVpnConnection.State oldState = lockedConnection.getState();

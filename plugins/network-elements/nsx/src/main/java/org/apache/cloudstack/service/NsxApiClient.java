@@ -128,6 +128,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toSet;
@@ -196,6 +197,11 @@ public class NsxApiClient {
     protected static final int NSX_MAX_TAGS = 30;
     protected static final String VPN_SESSION_STATUS_UNKNOWN = "UNKNOWN";
     protected static final String VPN_SESSION_STATUS_NOT_FOUND = "NOT_FOUND";
+
+    public enum VpnSessionProvisioningResult {
+        CREATED,
+        PREEXISTING
+    }
 
     private enum PoolAllocation { ROUTING, LB_SMALL, LB_MEDIUM, LB_LARGE, LB_XLARGE }
 
@@ -1522,23 +1528,29 @@ public class NsxApiClient {
         restoreSourceNatRuleSequence(tier1GatewayName);
     }
 
-    public void createRouteBasedVpnSession(String tier1GatewayName, String connectionUuid, String peerAddress,
-                                           String psk, String ikePolicy, String espPolicy, Long ikeLifetime,
-                                           Long espLifetime, boolean dpdEnabled, String ikeVersion, boolean passive,
-                                           String vtiLocalIp, int vtiPrefixLength) {
-        // NSX reaps deleted objects asynchronously and rejects a create under a path that is still
-        // marked for deletion, which happens when a connection is recreated shortly after teardown
+    public VpnSessionProvisioningResult createRouteBasedVpnSession(String tier1GatewayName, String connectionUuid,
+                                                                   String peerAddress, String psk, String ikePolicy,
+                                                                   String espPolicy, Long ikeLifetime, Long espLifetime,
+                                                                   boolean dpdEnabled, String ikeVersion, boolean passive,
+                                                                   String vtiLocalIp, int vtiPrefixLength) {
+        return retryWhileMarkedForDeletion(connectionUuid, () -> doCreateRouteBasedVpnSession(tier1GatewayName,
+                connectionUuid, peerAddress, psk, ikePolicy, espPolicy, ikeLifetime, espLifetime, dpdEnabled,
+                ikeVersion, passive, vtiLocalIp, vtiPrefixLength));
+    }
+
+    /**
+     * NSX reaps deleted policy objects asynchronously and rejects a create under a path that is still
+     * marked for deletion. All VPN objects use deterministic IDs and PATCH/upsert semantics, so a
+     * retry of the complete idempotent operation is safe and preserves already-existing objects.
+     */
+    private <T> T retryWhileMarkedForDeletion(String connectionUuid, Supplier<T> operation) {
+        CloudRuntimeException lastFailure = null;
         for (int attempt = 1; attempt <= VPN_MARKED_FOR_DELETION_RETRIES; attempt++) {
             try {
-                doCreateRouteBasedVpnSession(tier1GatewayName, connectionUuid, peerAddress, psk, ikePolicy, espPolicy,
-                        ikeLifetime, espLifetime, dpdEnabled, ikeVersion, passive, vtiLocalIp, vtiPrefixLength);
-                return;
+                return operation.get();
             } catch (CloudRuntimeException e) {
+                lastFailure = e;
                 if (attempt == VPN_MARKED_FOR_DELETION_RETRIES || !isMarkedForDeletionError(e)) {
-                    // All VPN objects use deterministic IDs and PATCH/upsert semantics. Do not
-                    // delete profiles here: an ambiguous timeout may have followed a successful
-                    // patch for an existing connection, and deleting those objects would destroy
-                    // a live tunnel. The normal connection-delete path is the authoritative cleanup.
                     throw e;
                 }
                 logger.info("A VPN object for connection {} is still being purged by NSX, retrying in {}s (attempt {}/{})",
@@ -1551,16 +1563,18 @@ public class NsxApiClient {
                 }
             }
         }
+        throw lastFailure;
     }
 
     private boolean isMarkedForDeletionError(CloudRuntimeException e) {
         return e.getMessage() != null && e.getMessage().contains("marked for deletion");
     }
 
-    private void doCreateRouteBasedVpnSession(String tier1GatewayName, String connectionUuid, String peerAddress,
-                                              String psk, String ikePolicy, String espPolicy, Long ikeLifetime,
-                                              Long espLifetime, boolean dpdEnabled, String ikeVersion, boolean passive,
-                                              String vtiLocalIp, int vtiPrefixLength) {
+    private VpnSessionProvisioningResult doCreateRouteBasedVpnSession(String tier1GatewayName, String connectionUuid,
+                                                                      String peerAddress, String psk, String ikePolicy,
+                                                                      String espPolicy, Long ikeLifetime, Long espLifetime,
+                                                                      boolean dpdEnabled, String ikeVersion, boolean passive,
+                                                                      String vtiLocalIp, int vtiPrefixLength) {
         String vpnServiceName = getVpnServiceName(tier1GatewayName);
         String localEndpointName = getVpnLocalEndpointName(vpnServiceName);
         String sessionName = getVpnSessionName(connectionUuid);
@@ -1573,6 +1587,11 @@ public class NsxApiClient {
             IpsecVpnDpdProfiles dpdProfiles = (IpsecVpnDpdProfiles) nsxService.apply(IpsecVpnDpdProfiles.class);
             Sessions sessions = (Sessions) nsxService.apply(Sessions.class);
             boolean sessionExisted = isVpnSessionPresent(sessions, tier1GatewayName, vpnServiceName, sessionName);
+            if (sessionExisted) {
+                // Disable the existing session before replacing any referenced profiles so a failed
+                // reconciliation cannot leave an active tunnel using a partially updated policy.
+                updateVpnConnectionState(tier1GatewayName, connectionUuid, false);
+            }
             boolean ikeProfileExisted = isVpnIkeProfilePresent(ikeProfiles, ikeProfileName);
             boolean espProfileExisted = isVpnTunnelProfilePresent(espProfiles, espProfileName);
             boolean dpdProfileExisted = isVpnDpdProfilePresent(dpdProfiles, dpdProfileName);
@@ -1626,7 +1645,7 @@ public class NsxApiClient {
             RouteBasedIPSecVpnSession session = new RouteBasedIPSecVpnSession.Builder()
                     .setId(sessionName)
                     .setDisplayName(sessionName)
-                    .setEnabled(true)
+                    .setEnabled(false)
                     .setAuthenticationMode(IPSecVpnSession.AUTHENTICATION_MODE_PSK)
                     .setPsk(psk)
                     .setPeerAddress(peerAddress)
@@ -1640,6 +1659,8 @@ public class NsxApiClient {
                     .setTunnelInterfaces(List.of(tunnelInterface))
                     .build();
                 sessions.patch(tier1GatewayName, vpnServiceName, sessionName, session);
+                return sessionExisted ? VpnSessionProvisioningResult.PREEXISTING
+                        : VpnSessionProvisioningResult.CREATED;
             } catch (RuntimeException e) {
                 if (!sessionExisted) {
                     boolean sessionRemoved = deleteVpnSessionAfterCreateFailure(sessions, tier1GatewayName,
@@ -1749,15 +1770,24 @@ public class NsxApiClient {
 
     public void addVpnConnectionRoutes(String tier1GatewayName, String connectionUuid, List<String> peerCidrs,
                                        String vtiPeerIp, String vpcCidr) {
+        retryWhileMarkedForDeletion(connectionUuid, () -> {
+            doAddVpnConnectionRoutes(tier1GatewayName, connectionUuid, peerCidrs, vtiPeerIp, vpcCidr);
+            return null;
+        });
+    }
+
+    private void doAddVpnConnectionRoutes(String tier1GatewayName, String connectionUuid, List<String> peerCidrs,
+                                          String vtiPeerIp, String vpcCidr) {
         try {
-            deleteVpnStaticRoutesByPrefix(tier1GatewayName, getVpnStaticRouteNamePrefix(connectionUuid));
-            deleteVpnNoSnatRulesByPrefix(tier1GatewayName, getVpnNoSnatRuleNamePrefix(connectionUuid));
             com.vmware.nsx_policy.infra.tier_1s.StaticRoutes staticRoutesService =
                     (com.vmware.nsx_policy.infra.tier_1s.StaticRoutes) nsxService.apply(com.vmware.nsx_policy.infra.tier_1s.StaticRoutes.class);
             NatRules natService = (NatRules) nsxService.apply(NatRules.class);
+            Set<String> desiredRouteIds = new HashSet<>();
+            Set<String> desiredNoSnatRuleIds = new HashSet<>();
             for (int i = 0; i < peerCidrs.size(); i++) {
                 String peerCidr = peerCidrs.get(i);
                 String routeName = getVpnStaticRouteName(connectionUuid, i);
+                desiredRouteIds.add(routeName);
                 com.vmware.nsx_policy.model.StaticRoutes staticRoute = new com.vmware.nsx_policy.model.StaticRoutes.Builder()
                         .setId(routeName)
                         .setDisplayName(routeName)
@@ -1769,6 +1799,7 @@ public class NsxApiClient {
                 // Route-based VPN does not bypass NAT: without a NO_SNAT rule the tier-1 match-any
                 // SNAT would rewrite VPC-to-remote traffic before it enters the tunnel
                 String noSnatRuleName = getVpnNoSnatRuleName(connectionUuid, i);
+                desiredNoSnatRuleIds.add(noSnatRuleName);
                 PolicyNatRule noSnatRule = new PolicyNatRule.Builder()
                         .setId(noSnatRuleName)
                         .setDisplayName(noSnatRuleName)
@@ -1780,6 +1811,12 @@ public class NsxApiClient {
                         .build();
                 natService.patch(tier1GatewayName, NatId.USER.name(), noSnatRuleName, noSnatRule);
             }
+            // Keep existing routes and exemptions in place until every desired object has been
+            // accepted. This makes an idempotent retry non-destructive if an NSX PATCH fails.
+            deleteVpnStaticRoutesByPrefix(tier1GatewayName, getVpnStaticRouteNamePrefix(connectionUuid),
+                    desiredRouteIds);
+            deleteVpnNoSnatRulesByPrefix(tier1GatewayName, getVpnNoSnatRuleNamePrefix(connectionUuid),
+                    desiredNoSnatRuleIds);
         } catch (Error error) {
             ApiError ae = error.getData()._convertTo(ApiError.class);
             String msg = String.format("Failed to add the routes for NSX IPSec VPN connection %s on tier-1 gateway %s, due to: %s",
@@ -1827,16 +1864,37 @@ public class NsxApiClient {
         String sessionName = getVpnSessionName(connectionUuid);
         try {
             Sessions sessions = (Sessions) nsxService.apply(Sessions.class);
-            RouteBasedIPSecVpnSession update = new RouteBasedIPSecVpnSession.Builder()
-                    .setId(sessionName)
-                    .setEnabled(enabled)
-                    .build();
-            sessions.patch(tier1GatewayName, vpnServiceName, sessionName, update);
-            if (!enabled) {
-                deleteVpnStaticRoutesByPrefix(tier1GatewayName, getVpnStaticRouteNamePrefix(connectionUuid));
-                deleteVpnNoSnatRulesByPrefix(tier1GatewayName, getVpnNoSnatRuleNamePrefix(connectionUuid));
+            Structure current = sessions.showsensitivedata(tier1GatewayName, vpnServiceName, sessionName);
+            if (current == null) {
+                throw new CloudRuntimeException(String.format(
+                        "NSX returned no data for IPSec VPN session %s on tier-1 gateway %s",
+                        sessionName, tier1GatewayName));
             }
+            if (!current._hasTypeNameOf(RouteBasedIPSecVpnSession.class)) {
+                throw new CloudRuntimeException(String.format(
+                        "IPSec VPN session %s on tier-1 gateway %s is not route-based",
+                        sessionName, tier1GatewayName));
+            }
+            RouteBasedIPSecVpnSession update = current._convertTo(RouteBasedIPSecVpnSession.class);
+            if (update.getRevision() == null) {
+                throw new CloudRuntimeException(String.format(
+                        "NSX returned no revision for IPSec VPN session %s on tier-1 gateway %s",
+                        sessionName, tier1GatewayName));
+            }
+            if (IPSecVpnSession.AUTHENTICATION_MODE_PSK.equals(update.getAuthenticationMode())
+                    && update.getPsk() == null) {
+                throw new CloudRuntimeException(String.format(
+                        "NSX did not return sensitive authentication data for IPSec VPN session %s on tier-1 gateway %s",
+                        sessionName, tier1GatewayName));
+            }
+            update.setEnabled(enabled);
+            sessions.update(tier1GatewayName, vpnServiceName, sessionName, update);
         } catch (NotFound e) {
+            if (enabled) {
+                throw new CloudRuntimeException(String.format(
+                        "Cannot enable NSX IPSec VPN session %s on tier-1 gateway %s because it does not exist",
+                        sessionName, tier1GatewayName), e);
+            }
             logger.debug("The VPN session {} no longer exists on tier-1 gateway {}, skipping state update",
                     sessionName, tier1GatewayName);
         } catch (Error error) {
@@ -1844,6 +1902,10 @@ public class NsxApiClient {
             throw new CloudRuntimeException(String.format(
                     "Failed to update the state of NSX IPSec VPN session %s on tier-1 gateway %s, due to: %s",
                     sessionName, tier1GatewayName, ae.getErrorMessage()), error);
+        }
+        if (!enabled) {
+            deleteVpnStaticRoutesByPrefix(tier1GatewayName, getVpnStaticRouteNamePrefix(connectionUuid));
+            deleteVpnNoSnatRulesByPrefix(tier1GatewayName, getVpnNoSnatRuleNamePrefix(connectionUuid));
         }
     }
 
@@ -1856,6 +1918,11 @@ public class NsxApiClient {
     }
 
     private void deleteVpnStaticRoutesByPrefix(String tier1GatewayName, String routeNamePrefix) {
+        deleteVpnStaticRoutesByPrefix(tier1GatewayName, routeNamePrefix, Set.of());
+    }
+
+    private void deleteVpnStaticRoutesByPrefix(String tier1GatewayName, String routeNamePrefix,
+                                               Set<String> retainedRouteIds) {
         com.vmware.nsx_policy.infra.tier_1s.StaticRoutes staticRoutesService =
                 (com.vmware.nsx_policy.infra.tier_1s.StaticRoutes) nsxService.apply(com.vmware.nsx_policy.infra.tier_1s.StaticRoutes.class);
         try {
@@ -1873,12 +1940,17 @@ public class NsxApiClient {
             if (CollectionUtils.isEmpty(staticRoutes)) {
                 return;
             }
+            RuntimeException failure = null;
             for (com.vmware.nsx_policy.model.StaticRoutes staticRoute : staticRoutes) {
-                if (staticRoute.getId() != null && staticRoute.getId().startsWith(routeNamePrefix)) {
+                if (staticRoute.getId() != null && staticRoute.getId().startsWith(routeNamePrefix)
+                        && !retainedRouteIds.contains(staticRoute.getId())) {
                     logger.debug("Removing the VPN static route {} from tier-1 gateway {}", staticRoute.getId(), tier1GatewayName);
-                    staticRoutesService.delete(tier1GatewayName, staticRoute.getId());
+                    String routeId = staticRoute.getId();
+                    failure = runVpnCleanupStep(failure, String.format("static route %s", routeId), routeNamePrefix,
+                            () -> deleteVpnStaticRoute(staticRoutesService, tier1GatewayName, routeId));
                 }
             }
+            throwVpnPrefixCleanupFailure(failure, "static routes", routeNamePrefix, tier1GatewayName);
         } catch (NotFound e) {
             logger.debug("No static routes matching the prefix {} are left on tier-1 gateway {}, skipping deletion",
                     routeNamePrefix, tier1GatewayName);
@@ -1891,7 +1963,27 @@ public class NsxApiClient {
         }
     }
 
+    private void deleteVpnStaticRoute(com.vmware.nsx_policy.infra.tier_1s.StaticRoutes staticRoutesService,
+                                      String tier1GatewayName, String routeId) {
+        try {
+            staticRoutesService.delete(tier1GatewayName, routeId);
+        } catch (NotFound e) {
+            logger.debug("The VPN static route {} on tier-1 gateway {} no longer exists, skipping deletion",
+                    routeId, tier1GatewayName);
+        } catch (Error error) {
+            ApiError ae = error.getData()._convertTo(ApiError.class);
+            throw new CloudRuntimeException(String.format(
+                    "Failed to delete the VPN static route %s on tier-1 gateway %s, due to: %s",
+                    routeId, tier1GatewayName, ae.getErrorMessage()), error);
+        }
+    }
+
     private void deleteVpnNoSnatRulesByPrefix(String tier1GatewayName, String ruleNamePrefix) {
+        deleteVpnNoSnatRulesByPrefix(tier1GatewayName, ruleNamePrefix, Set.of());
+    }
+
+    private void deleteVpnNoSnatRulesByPrefix(String tier1GatewayName, String ruleNamePrefix,
+                                              Set<String> retainedRuleIds) {
         NatRules natService = (NatRules) nsxService.apply(NatRules.class);
         try {
             List<PolicyNatRule> natRules = PagedFetcher.<PolicyNatRuleListResult, PolicyNatRule>withPageFetcher(
@@ -1907,12 +1999,17 @@ public class NsxApiClient {
             if (CollectionUtils.isEmpty(natRules)) {
                 return;
             }
+            RuntimeException failure = null;
             for (PolicyNatRule natRule : natRules) {
-                if (natRule.getId() != null && natRule.getId().startsWith(ruleNamePrefix)) {
+                if (natRule.getId() != null && natRule.getId().startsWith(ruleNamePrefix)
+                        && !retainedRuleIds.contains(natRule.getId())) {
                     logger.debug("Removing the VPN NO_SNAT rule {} from tier-1 gateway {}", natRule.getId(), tier1GatewayName);
-                    natService.delete(tier1GatewayName, NatId.USER.name(), natRule.getId());
+                    String ruleId = natRule.getId();
+                    failure = runVpnCleanupStep(failure, String.format("NO_SNAT rule %s", ruleId), ruleNamePrefix,
+                            () -> deleteVpnNoSnatRule(natService, tier1GatewayName, ruleId));
                 }
             }
+            throwVpnPrefixCleanupFailure(failure, "NO_SNAT rules", ruleNamePrefix, tier1GatewayName);
         } catch (NotFound e) {
             logger.debug("No NO_SNAT rules matching the prefix {} are left on tier-1 gateway {}, skipping deletion",
                     ruleNamePrefix, tier1GatewayName);
@@ -1922,6 +2019,29 @@ public class NsxApiClient {
                     ruleNamePrefix, tier1GatewayName, ae.getErrorMessage());
             logger.error(msg);
             throw new CloudRuntimeException(msg);
+        }
+    }
+
+    private void deleteVpnNoSnatRule(NatRules natService, String tier1GatewayName, String ruleId) {
+        try {
+            natService.delete(tier1GatewayName, NatId.USER.name(), ruleId);
+        } catch (NotFound e) {
+            logger.debug("The VPN NO_SNAT rule {} on tier-1 gateway {} no longer exists, skipping deletion",
+                    ruleId, tier1GatewayName);
+        } catch (Error error) {
+            ApiError ae = error.getData()._convertTo(ApiError.class);
+            throw new CloudRuntimeException(String.format(
+                    "Failed to delete the VPN NO_SNAT rule %s on tier-1 gateway %s, due to: %s",
+                    ruleId, tier1GatewayName, ae.getErrorMessage()), error);
+        }
+    }
+
+    private void throwVpnPrefixCleanupFailure(RuntimeException failure, String resource, String prefix,
+                                              String tier1GatewayName) {
+        if (failure != null) {
+            throw new CloudRuntimeException(String.format(
+                    "Failed to remove all NSX VPN %s matching prefix %s on tier-1 gateway %s",
+                    resource, prefix, tier1GatewayName), failure);
         }
     }
 
