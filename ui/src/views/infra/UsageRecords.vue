@@ -598,7 +598,7 @@ export default {
       if (values.dateRange) {
         if (this.$store.getters.usebrowsertimezone) {
           params.startdate = dayjs.utc(dayjs(values.dateRange[0]).startOf('day')).format('YYYY-MM-DD HH:mm:ss')
-          params.enddate = dayjs.utc(dayjs(values.dateRange[0]).endOf('day')).format('YYYY-MM-DD HH:mm:ss')
+          params.enddate = dayjs.utc(dayjs(values.dateRange[1]).endOf('day')).format('YYYY-MM-DD HH:mm:ss')
         } else {
           params.startdate = dayjs(values.dateRange[0]).startOf('day').format('YYYY-MM-DD HH:mm:ss')
           params.enddate = dayjs(values.dateRange[1]).endOf('day').format('YYYY-MM-DD HH:mm:ss')
