@@ -19,6 +19,8 @@
 package org.apache.cloudstack.api.filter;
 
 import org.apache.cloudstack.context.LogContext;
+import org.apache.commons.lang3.StringUtils;
+
 import java.io.IOException;
 import java.util.UUID;
 import javax.servlet.FilterConfig;
@@ -29,9 +31,6 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 
-import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.SpanContext;
-
 public class ApiTraceFilter implements Filter {
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
@@ -40,30 +39,17 @@ public class ApiTraceFilter implements Filter {
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
-        // Also record the active OpenTelemetry span so log lines can be joined to the
-        // distributed trace. Sourced from the span, not a header, so no id is invented;
-        // when there is no valid span the keys are left unset and render empty.
-        SpanContext spanContext = Span.current().getSpanContext();
-        boolean spanApplied = spanContext.isValid();
         try {
             HttpServletRequest httpReq = (HttpServletRequest) request;
             String traceId = httpReq.getHeader(LogContext.X_B3_TRACEID_KEY);
-            if (traceId == null || traceId.isEmpty()) {
+            if (StringUtils.isBlank(traceId)) {
                 traceId = UUID.randomUUID().toString();
             }
 
             LogContext.current().putContextParameter(LogContext.X_B3_TRACEID_KEY, traceId);
-            if (spanApplied) {
-                LogContext.current().putContextParameter(LogContext.MOSAIC_TRACE_ID_KEY, spanContext.getTraceId());
-                LogContext.current().putContextParameter(LogContext.MOSAIC_SPAN_ID_KEY, spanContext.getSpanId());
-            }
             chain.doFilter(request, response);
         } finally {
             LogContext.current().removeContextParameter(LogContext.X_B3_TRACEID_KEY);
-            if (spanApplied) {
-                LogContext.current().removeContextParameter(LogContext.MOSAIC_TRACE_ID_KEY);
-                LogContext.current().removeContextParameter(LogContext.MOSAIC_SPAN_ID_KEY);
-            }
         }
     }
 
