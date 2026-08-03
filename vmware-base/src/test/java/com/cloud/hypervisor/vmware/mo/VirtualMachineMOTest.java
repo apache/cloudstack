@@ -21,6 +21,7 @@ import com.cloud.hypervisor.vmware.util.VmwareClient;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.vmware.vim25.ManagedObjectReference;
+import com.vmware.vim25.VimPortType;
 import com.vmware.vim25.VirtualDevice;
 import com.vmware.vim25.VirtualLsiLogicController;
 import com.vmware.vim25.VirtualLsiLogicSASController;
@@ -42,6 +43,14 @@ import java.util.List;
 
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -134,5 +143,27 @@ public class VirtualMachineMOTest {
     @Test(expected = CloudRuntimeException.class)
     public void testGetVmxFormattedVirtualHardwareVersionInvalid() {
         VirtualMachineMO.getVmxFormattedVirtualHardwareVersion(-1);
+    }
+
+    @Test
+    public void testAttachDiskSucceedsWhenAdapterTypeUpdateFails() throws Exception {
+        VirtualMachineMO spyVmMo = spy(vmMo);
+        ManagedObjectReference morDs = mock(ManagedObjectReference.class);
+        ManagedObjectReference morTask = mock(ManagedObjectReference.class);
+        VimPortType service = mock(VimPortType.class);
+
+        doReturn(1).when(spyVmMo).getScsiDiskControllerKey(anyString());
+        doReturn(200).when(spyVmMo).getIDEDeviceControllerKey();
+        doReturn(0).when(spyVmMo).getNextDeviceNumber(anyInt());
+        doThrow(new Exception("HTTP 500 from vCenter datastore browser")).when(spyVmMo).updateVmdkAdapter(anyString(), anyString());
+
+        when(mor.getValue()).thenReturn("vm-1");
+        when(context.getService()).thenReturn(service);
+        when(service.reconfigVMTask(eq(mor), any())).thenReturn(morTask);
+        when(client.waitForTask(morTask)).thenReturn(true);
+
+        spyVmMo.attachDisk(new String[]{"[ds] i-2-3-VM/data.vmdk"}, morDs, "pvscsi", null, null);
+
+        verify(spyVmMo).updateVmdkAdapter(eq("[ds] i-2-3-VM/data.vmdk"), eq("pvscsi"));
     }
 }

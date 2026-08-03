@@ -1466,7 +1466,11 @@ public class VirtualMachineMO extends BaseMO {
             VirtualDevice newDisk = VmwareHelper.prepareDiskDevice(this, null, controllerKey, vmdkDatastorePathChain, morDs, unitNumber, 1, maxIops);
             if (StringUtils.isNotBlank(diskController)) {
                 String vmdkFileName = vmdkDatastorePathChain[0];
-                updateVmdkAdapter(vmdkFileName, diskController);
+                try {
+                    updateVmdkAdapter(vmdkFileName, diskController);
+                } catch (Exception e) {
+                    logger.warn("Unable to verify/update adapter type for VMDK file " + vmdkFileName + ", proceeding with disk attach: " + e.getMessage(), e);
+                }
             }
             VirtualMachineConfigSpec reConfigSpec = new VirtualMachineConfigSpec();
             VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
