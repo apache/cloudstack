@@ -297,7 +297,8 @@ public class DateraHostListener implements HypervisorHostListener {
         }
 
         if (!answer.getResult()) {
-            String msg = String.format("Unable to attach storage pool %s to host %d", storagePool, hostId);
+            HostVO host = _hostDao.findById(hostId);
+            String msg = String.format("Unable to attach storage pool %s to host %s", storagePool, host);
 
             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, storagePool.getDataCenterId(), storagePool.getPodId(), msg, msg);
 
