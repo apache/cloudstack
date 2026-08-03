@@ -360,6 +360,32 @@ public class LinstorUtil {
     }
 
     /**
+     * If the resource has no active diskful deployment, return a node with an inactive
+     * diskful resource that could be activated (e.g. an unused template on a shared
+     * storage pool). Returns null if an active diskful resource exists or none is deployed.
+     */
+    public static String getDiskfulNodeToActivate(DevelopersApi api, String rscName) throws ApiException {
+        List<Resource> rscs = api.resourceList(rscName, null, null);
+        if (rscs == null) {
+            return null;
+        }
+        String inactiveDiskfulNode = null;
+        for (Resource rsc : rscs) {
+            List<String> flags = rsc.getFlags();
+            boolean diskless = flags != null &&
+                    (flags.contains(ApiConsts.FLAG_DISKLESS) || flags.contains(ApiConsts.FLAG_DRBD_DISKLESS));
+            if (diskless) {
+                continue;
+            }
+            if (flags == null || !flags.contains(ApiConsts.FLAG_RSC_INACTIVE)) {
+                return null; // active diskful resource exists
+            }
+            inactiveDiskfulNode = rsc.getNodeName();
+        }
+        return inactiveDiskfulNode;
+    }
+
+    /**
      * Check if the resource is deployed but inactive on the given node (e.g. a shared
      * storage pool resource of a stopped VM).
      */
