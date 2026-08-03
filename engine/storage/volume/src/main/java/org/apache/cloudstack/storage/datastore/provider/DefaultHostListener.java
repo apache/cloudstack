@@ -163,7 +163,7 @@ public class DefaultHostListener implements HypervisorHostListener {
         }
 
         if (!answer.getResult()) {
-            String msg = String.format("Unable to attach storage pool %s to the host %d", pool, hostId);
+            String msg = String.format("Unable to attach storage pool %s to the host %s", pool, host);
             alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, pool.getDataCenterId(), pool.getPodId(), msg, msg);
             throw new CloudRuntimeException(String.format("Unable to establish connection from storage head to storage pool %s due to %s %s",
                     pool, answer.getDetails(), pool.getUuid()));
