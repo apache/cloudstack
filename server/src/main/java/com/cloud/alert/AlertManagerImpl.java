@@ -815,7 +815,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         Long clusterId = cluster == null ? null : cluster.getId();
         Long podId = pod == null ? null : pod.getId();
         long dcId = dataCenter == null ? 0L : dataCenter.getId();
-        logger.warn("alertType=[{}] dataCenter=[{}] pod=[{}] cluster=[{}] message=[{}].", alertType, dataCenter, pod, cluster, subject);
+        logger.warn(String.format("alertType=[%s] dataCenterId=[%s] podId=[%s] clusterId=[%s] message=[%s].", alertType, dcId, podId, clusterId, subject));
         AlertVO alert = getAlertForTrivialAlertType(alertType, dcId, podId, clusterId);
 
         if (alert == null) {
