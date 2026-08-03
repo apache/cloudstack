@@ -38,6 +38,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -155,7 +156,7 @@ public class VirtualMachineMOTest {
         doReturn(1).when(spyVmMo).getScsiDiskControllerKey(anyString());
         doReturn(200).when(spyVmMo).getIDEDeviceControllerKey();
         doReturn(0).when(spyVmMo).getNextDeviceNumber(anyInt());
-        doThrow(new Exception("HTTP 500 from vCenter datastore browser")).when(spyVmMo).updateVmdkAdapter(anyString(), anyString());
+        doThrow(new IOException("HTTP 500 from vCenter datastore browser")).when(spyVmMo).updateVmdkAdapter(anyString(), anyString());
 
         when(mor.getValue()).thenReturn("vm-1");
         when(context.getService()).thenReturn(service);
@@ -165,5 +166,7 @@ public class VirtualMachineMOTest {
         spyVmMo.attachDisk(new String[]{"[ds] i-2-3-VM/data.vmdk"}, morDs, "pvscsi", null, null);
 
         verify(spyVmMo).updateVmdkAdapter(eq("[ds] i-2-3-VM/data.vmdk"), eq("pvscsi"));
+        verify(service).reconfigVMTask(eq(mor), any());
+        verify(client).waitForTask(morTask);
     }
 }
