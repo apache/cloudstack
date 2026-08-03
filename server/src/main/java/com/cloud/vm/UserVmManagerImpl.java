@@ -2873,7 +2873,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 String subject = String.format("Failed to deploy Instance [%s]", vm);
                 String body = String.format("Failed to deploy [%s]%s. To troubleshoot, please check the logs with [logid:%s].",
                         vm,
-                        hostId != null ? String.format(" on host [%s]", host) : "",
+                        host != null ? String.format(" on host [%s]", host) : (hostId != null ? String.format(" on host [id: %s]", hostId) : ""),
                         ThreadContext.get("logcontextid"));
 
                 _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_USERVM, vm.getDataCenterId(), vm.getPodIdToDeployIn(), subject, body);
@@ -7784,9 +7784,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             Long destAccountId = accountOfDedicatedHost(destHost);
             if (!((srcAccountId == null) || (srcAccountId.equals(destAccountId)))) {
                 Account srcAccount = _accountDao.findById(srcAccountId);
-                Account destAccount = _accountDao.findById(destAccountId);
-                String msg = String.format("VM is being migrated from host %s explicitly dedicated to account %s to host %s explicitly dedicated to account %s",
-                        srcHost, srcAccount, destHost, destAccount);
+                Account destAccount = destAccountId != null ? _accountDao.findById(destAccountId) : null;
+                String msg = String.format("VM is being migrated from host %s explicitly dedicated to account %s to host %s %s",
+                        srcHost, srcAccount, destHost, destAccount != null ? "explicitly dedicated to account " + destAccount : "not dedicated to a specific account");
                 _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_USERVM, vm.getDataCenterId(), vm.getPodIdToDeployIn(), msg, msg);
                 logger.warn(msg);
             }
@@ -7794,9 +7794,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             Long destDomainId = domainOfDedicatedHost(destHost);
             if (!((srcDomainId == null) || (srcDomainId.equals(destDomainId)))) {
                 Domain srcDomain = _domainDao.findById(srcDomainId);
-                Domain destDomain = _domainDao.findById(destDomainId);
-                String msg = String.format("VM is being migrated from host %s explicitly dedicated to domain %s to host %s explicitly dedicated to domain %s",
-                        srcHost, srcDomain, destHost, destDomain);
+                Domain destDomain = destDomainId != null ? _domainDao.findById(destDomainId) : null;
+                String msg = String.format("VM is being migrated from host %s explicitly dedicated to domain %s to host %s %s",
+                        srcHost, srcDomain, destHost, destDomain != null ? "explicitly dedicated to domain " + destDomain : "not dedicated to a specific domain");
                 _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_USERVM, vm.getDataCenterId(), vm.getPodIdToDeployIn(), msg, msg);
                 logger.warn(msg);
             }
