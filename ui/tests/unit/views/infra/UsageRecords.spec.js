@@ -15,9 +15,13 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc'
 import UsageRecords from '@/views/infra/UsageRecords'
 
-const originalTimezone = process.env.TZ
+dayjs.extend(utc)
+
+const dateWithOffset = (date, offsetMinutes) => dayjs(date).utcOffset(offsetMinutes, true)
 
 const getParams = (dateRange, useBrowserTimezone) => {
   return UsageRecords.methods.getParams.call({
@@ -32,28 +36,22 @@ const getParams = (dateRange, useBrowserTimezone) => {
 }
 
 describe('Views > infra > UsageRecords.vue', () => {
-  beforeAll(() => {
-    process.env.TZ = 'Europe/London'
-  })
-
-  afterAll(() => {
-    if (originalTimezone === undefined) {
-      delete process.env.TZ
-    } else {
-      process.env.TZ = originalTimezone
-    }
-  })
-
   describe('getParams()', () => {
     it('uses both selected dates when converting a local-timezone range to UTC', () => {
-      const params = getParams(['2026-07-26', '2026-08-02'], true)
+      const params = getParams([
+        dateWithOffset('2026-07-26', 60),
+        dateWithOffset('2026-08-02', 60)
+      ], true)
 
       expect(params.startdate).toBe('2026-07-25 23:00:00')
       expect(params.enddate).toBe('2026-08-02 22:59:59')
     })
 
     it('uses the selected end date when the range crosses daylight-saving time', () => {
-      const params = getParams(['2026-03-28', '2026-03-30'], true)
+      const params = getParams([
+        dateWithOffset('2026-03-28', 0),
+        dateWithOffset('2026-03-30', 60)
+      ], true)
 
       expect(params.startdate).toBe('2026-03-28 00:00:00')
       expect(params.enddate).toBe('2026-03-30 22:59:59')
