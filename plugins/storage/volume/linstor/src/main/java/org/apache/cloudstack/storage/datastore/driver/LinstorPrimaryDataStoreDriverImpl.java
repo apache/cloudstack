@@ -436,6 +436,16 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                         cloneRequest.setVolumePassphrases(Collections.singletonList(utf8Passphrase));
                     }
                 }
+                // Shared storage pool templates are INACTIVE while unused (e.g. after a node
+                // reboot) and the clone source selection skips inactive resources. Activate one
+                // diskful resource and leave it active: concurrent clones share the source, so
+                // deactivating after a clone would race with other clones still using it.
+                final String activateNode = LinstorUtil.getDiskfulNodeToActivate(linstorApi, cloneRes);
+                if (activateNode != null) {
+                    logger.info("Linstor: activating template resource {} on {} for cloning",
+                            cloneRes, activateNode);
+                    LinstorUtil.checkLinstorAnswersThrow(linstorApi.activateRsc(cloneRes, activateNode));
+                }
                 ResourceDefinitionCloneStarted cloneStarted = linstorApi.resourceDefinitionClone(
                     cloneRes, cloneRequest);
 
