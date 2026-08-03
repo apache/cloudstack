@@ -49,6 +49,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -168,5 +169,27 @@ public class VirtualMachineMOTest {
         verify(spyVmMo).updateVmdkAdapter(eq("[ds] i-2-3-VM/data.vmdk"), eq("pvscsi"));
         verify(service).reconfigVMTask(eq(mor), any());
         verify(client).waitForTask(morTask);
+    }
+
+    @Test(expected = Exception.class)
+    public void testAttachDiskFailsWhenAdapterTypeIsInvalid() throws Exception {
+        VirtualMachineMO spyVmMo = spy(vmMo);
+        ManagedObjectReference morDs = mock(ManagedObjectReference.class);
+        ManagedObjectReference morTask = mock(ManagedObjectReference.class);
+        VimPortType service = mock(VimPortType.class);
+
+        doReturn(1).when(spyVmMo).getScsiDiskControllerKey(anyString());
+        doReturn(200).when(spyVmMo).getIDEDeviceControllerKey();
+        doReturn(0).when(spyVmMo).getNextDeviceNumber(anyInt());
+        doThrow(new Exception("Failed to attach disk due to invalid vmdk adapter type")).when(spyVmMo).updateVmdkAdapter(anyString(), anyString());
+
+        when(mor.getValue()).thenReturn("vm-1");
+        // Lenient: these mirror the success path and are only reached if the
+        // invalid-adapter-type exception is (incorrectly) swallowed by attachDisk.
+        lenient().when(context.getService()).thenReturn(service);
+        lenient().when(service.reconfigVMTask(eq(mor), any())).thenReturn(morTask);
+        lenient().when(client.waitForTask(morTask)).thenReturn(true);
+
+        spyVmMo.attachDisk(new String[]{"[ds] i-2-3-VM/data.vmdk"}, morDs, "pvscsi", null, null);
     }
 }
