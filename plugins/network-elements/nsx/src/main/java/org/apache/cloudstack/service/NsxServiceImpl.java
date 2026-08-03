@@ -116,15 +116,14 @@ public class NsxServiceImpl extends ManagerBase implements NsxService, Configura
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
-        vpnStatusPollExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("Nsx-Vpn-Status-Poll"));
         return true;
     }
 
     @Override
-    public boolean start() {
+    public synchronized boolean start() {
         super.start();
-        if (vpnStatusPollExecutor == null) {
-            throw new IllegalStateException("NSX VPN status poller was not configured");
+        if (vpnStatusPollExecutor != null && !vpnStatusPollExecutor.isShutdown()) {
+            return true;
         }
         Integer configuredInterval = NSX_VPN_STATUS_POLL_INTERVAL.value();
         int pollInterval = Objects.isNull(configuredInterval) ? VPN_STATUS_POLL_DEFAULT_INTERVAL : configuredInterval;
@@ -133,14 +132,27 @@ public class NsxServiceImpl extends ManagerBase implements NsxService, Configura
                     configuredInterval, NSX_VPN_STATUS_POLL_INTERVAL.key(), VPN_STATUS_POLL_MIN_INTERVAL, VPN_STATUS_POLL_DEFAULT_INTERVAL);
             pollInterval = VPN_STATUS_POLL_DEFAULT_INTERVAL;
         }
-        vpnStatusPollExecutor.scheduleWithFixedDelay(new VpnStatusPollTask(), pollInterval, pollInterval, TimeUnit.SECONDS);
+        ScheduledExecutorService executor = createVpnStatusPollExecutor();
+        try {
+            executor.scheduleWithFixedDelay(new VpnStatusPollTask(), pollInterval, pollInterval, TimeUnit.SECONDS);
+            vpnStatusPollExecutor = executor;
+        } catch (RuntimeException e) {
+            executor.shutdownNow();
+            throw e;
+        }
         return true;
     }
 
+    protected ScheduledExecutorService createVpnStatusPollExecutor() {
+        return Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("Nsx-Vpn-Status-Poll"));
+    }
+
     @Override
-    public boolean stop() {
-        if (Objects.nonNull(vpnStatusPollExecutor)) {
-            vpnStatusPollExecutor.shutdownNow();
+    public synchronized boolean stop() {
+        ScheduledExecutorService executor = vpnStatusPollExecutor;
+        vpnStatusPollExecutor = null;
+        if (Objects.nonNull(executor)) {
+            executor.shutdownNow();
         }
         return super.stop();
     }
@@ -339,11 +351,9 @@ public class NsxServiceImpl extends ManagerBase implements NsxService, Configura
         protected void runInContext() {
             try {
                 Set<Long> polledConnectionIds = new HashSet<>();
-                List<Site2SiteVpnConnectionVO> connections = site2SiteVpnConnectionDao.listAll();
+                List<Site2SiteVpnConnectionVO> connections = site2SiteVpnConnectionDao.listByStates(
+                        VPN_POLLED_STATES.toArray(new Site2SiteVpnConnection.State[0]));
                 for (Site2SiteVpnConnectionVO connection : connections) {
-                    if (!VPN_POLLED_STATES.contains(connection.getState())) {
-                        continue;
-                    }
                     Site2SiteVpnGatewayVO vpnGateway = site2SiteVpnGatewayDao.findById(connection.getVpnGatewayId());
                     if (vpnGateway == null) {
                         continue;

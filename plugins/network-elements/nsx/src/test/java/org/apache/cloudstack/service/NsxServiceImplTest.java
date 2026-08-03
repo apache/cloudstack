@@ -50,7 +50,10 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertEquals;
@@ -62,6 +65,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -234,6 +238,84 @@ public class NsxServiceImplTest {
     }
 
     @Test
+    public void testPollVpnConnectionStatusTransitionsDown() {
+        Site2SiteVpnConnectionVO connection = mock(Site2SiteVpnConnectionVO.class);
+        VpcVO vpc = mock(VpcVO.class);
+        when(connection.getState()).thenReturn(Site2SiteVpnConnection.State.Connected);
+        AtomicReference<Site2SiteVpnConnection.State> transitionedState = new AtomicReference<>();
+
+        NsxServiceImpl service = new NsxServiceImpl() {
+            @Override
+            public String getVpnConnectionStatus(Vpc vpc, String connectionUuid) {
+                return VPN_SESSION_STATUS_DOWN;
+            }
+
+            @Override
+            protected void transitionVpnConnectionState(Site2SiteVpnConnectionVO connection, VpcVO vpc,
+                                                        Site2SiteVpnConnection.State observedState,
+                                                        Site2SiteVpnConnection.State newState) {
+                transitionedState.set(newState);
+            }
+        };
+
+        service.pollVpnConnectionStatus(connection, vpc);
+
+        assertEquals(Site2SiteVpnConnection.State.Disconnected, transitionedState.get());
+    }
+
+    @Test
+    public void testPollVpnConnectionStatusKeepsPendingConnectionWhenSessionIsNotFound() {
+        Site2SiteVpnConnectionVO connection = mock(Site2SiteVpnConnectionVO.class);
+        VpcVO vpc = mock(VpcVO.class);
+        when(connection.getState()).thenReturn(Site2SiteVpnConnection.State.Pending);
+        AtomicBoolean transitioned = new AtomicBoolean();
+
+        NsxServiceImpl service = new NsxServiceImpl() {
+            @Override
+            public String getVpnConnectionStatus(Vpc vpc, String connectionUuid) {
+                return VPN_SESSION_STATUS_NOT_FOUND;
+            }
+
+            @Override
+            protected void transitionVpnConnectionState(Site2SiteVpnConnectionVO connection, VpcVO vpc,
+                                                        Site2SiteVpnConnection.State observedState,
+                                                        Site2SiteVpnConnection.State newState) {
+                transitioned.set(true);
+            }
+        };
+
+        service.pollVpnConnectionStatus(connection, vpc);
+
+        assertFalse(transitioned.get());
+    }
+
+    @Test
+    public void testPollVpnConnectionStatusMarksMissingConnectedSessionAsError() {
+        Site2SiteVpnConnectionVO connection = mock(Site2SiteVpnConnectionVO.class);
+        VpcVO vpc = mock(VpcVO.class);
+        when(connection.getState()).thenReturn(Site2SiteVpnConnection.State.Connected);
+        AtomicReference<Site2SiteVpnConnection.State> transitionedState = new AtomicReference<>();
+
+        NsxServiceImpl service = new NsxServiceImpl() {
+            @Override
+            public String getVpnConnectionStatus(Vpc vpc, String connectionUuid) {
+                return VPN_SESSION_STATUS_NOT_FOUND;
+            }
+
+            @Override
+            protected void transitionVpnConnectionState(Site2SiteVpnConnectionVO connection, VpcVO vpc,
+                                                        Site2SiteVpnConnection.State observedState,
+                                                        Site2SiteVpnConnection.State newState) {
+                transitionedState.set(newState);
+            }
+        };
+
+        service.pollVpnConnectionStatus(connection, vpc);
+
+        assertEquals(Site2SiteVpnConnection.State.Error, transitionedState.get());
+    }
+
+    @Test
     public void testPollVpnConnectionStatusDoesNotTransitionOnQueryFailure() {
         Site2SiteVpnConnectionVO connection = mock(Site2SiteVpnConnectionVO.class);
         VpcVO vpc = mock(VpcVO.class);
@@ -308,12 +390,56 @@ public class NsxServiceImplTest {
         verify(service).pollVpnConnectionStatus(connection, vpc);
     }
 
+    @Test
+    public void testVpnStatusPollerQueriesOnlyPollableStates() {
+        nsxService.new VpnStatusPollTask().runInContext();
+
+        verify(site2SiteVpnConnectionDao).listByStates(
+                Site2SiteVpnConnection.State.Pending,
+                Site2SiteVpnConnection.State.Connecting,
+                Site2SiteVpnConnection.State.Connected,
+                Site2SiteVpnConnection.State.Disconnected);
+        verify(site2SiteVpnConnectionDao, never()).listAll();
+    }
+
+    @Test
+    public void testVpnStatusPollerCanRestartInSameJvm() throws Exception {
+        ScheduledExecutorService firstExecutor = mock(ScheduledExecutorService.class);
+        ScheduledExecutorService secondExecutor = mock(ScheduledExecutorService.class);
+        AtomicInteger executorIndex = new AtomicInteger();
+        NsxServiceImpl service = new NsxServiceImpl() {
+            @Override
+            protected ScheduledExecutorService createVpnStatusPollExecutor() {
+                return executorIndex.getAndIncrement() == 0 ? firstExecutor : secondExecutor;
+            }
+        };
+        service.configure("NsxService", Map.of());
+        try {
+            assertTrue(service.start());
+            verify(firstExecutor).scheduleWithFixedDelay(any(Runnable.class), eq(60L), eq(60L), eq(java.util.concurrent.TimeUnit.SECONDS));
+
+            assertTrue(service.stop());
+            verify(firstExecutor).shutdownNow();
+
+            assertTrue(service.start());
+            verify(secondExecutor).scheduleWithFixedDelay(any(Runnable.class), eq(60L), eq(60L), eq(java.util.concurrent.TimeUnit.SECONDS));
+            assertEquals(2, executorIndex.get());
+        } finally {
+            service.stop();
+        }
+        verify(secondExecutor).shutdownNow();
+        verify(firstExecutor, times(1)).shutdownNow();
+    }
+
     private Site2SiteVpnConnectionVO mockPollableVpnConnection() {
         Site2SiteVpnConnectionVO connection = mock(Site2SiteVpnConnectionVO.class);
         when(connection.getId()).thenReturn(11L);
         when(connection.getVpnGatewayId()).thenReturn(7L);
-        when(connection.getState()).thenReturn(Site2SiteVpnConnection.State.Connected);
-        when(site2SiteVpnConnectionDao.listAll()).thenReturn(List.of(connection));
+        when(site2SiteVpnConnectionDao.listByStates(
+                Site2SiteVpnConnection.State.Pending,
+                Site2SiteVpnConnection.State.Connecting,
+                Site2SiteVpnConnection.State.Connected,
+                Site2SiteVpnConnection.State.Disconnected)).thenReturn(List.of(connection));
         return connection;
     }
 
