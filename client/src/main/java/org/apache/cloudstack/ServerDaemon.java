@@ -55,6 +55,8 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.server.ServerProperties;
 
+import org.apache.cloudstack.context.TraceContextMdcWrapper;
+
 /***
  * The ServerDaemon class implements the embedded server, it can be started either
  * using JSVC or directly from the JAR along with additional jars not shaded in the uber-jar.
@@ -108,6 +110,9 @@ public class ServerDaemon implements Daemon {
     //////////////////////////////////////////////////
 
     public static void main(final String... anArgs) throws Exception {
+        // Install the trace-context to MDC hook before the server starts, so every
+        // thread with an active OpenTelemetry span carries mosaic_trace_id in its logs.
+        TraceContextMdcWrapper.register();
         final ServerDaemon daemon = new ServerDaemon();
         daemon.init(null);
         daemon.start();

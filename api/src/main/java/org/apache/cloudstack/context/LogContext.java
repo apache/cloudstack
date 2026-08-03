@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.context;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -91,8 +92,10 @@ public class LogContext {
     }
 
     public void removeContextParameters() {
-        for (Map.Entry<String, String> entry : context.entrySet()) {
-            removeContextParameter(entry.getKey());
+        // Iterate over a copy of the keys: removeContextParameter mutates the context
+        // map, so iterating the live keySet/entrySet would throw ConcurrentModificationException.
+        for (String key : new ArrayList<>(context.keySet())) {
+            removeContextParameter(key);
         }
     }
 
