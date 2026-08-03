@@ -68,13 +68,18 @@ public final class LinstorBackupSnapshotCommandWrapper
 
     private String lvmSetActive(boolean activate, String devMapperPath) {
         // lvm resolves /dev/mapper/vg-lv names textually, works also for inactive LVs
-        Script script = new Script("lvchange", Duration.millis(5000));
+        Script script = new Script("lvchange", Duration.millis(30000));
         if (activate) {
             script.add("-ay");
             script.add("-K"); // snapshot LVs carry the skip-activation flag
         } else {
             script.add("-an");
         }
+        // never talk to dmeventd: registering the snapshot for monitoring can block lvchange
+        // indefinitely (and with it the whole LVM lock on the node); a full-size thick COW
+        // snapshot cannot overflow, so monitoring is not needed for the backup window
+        script.add("--monitor");
+        script.add("n");
         script.add(devMapperPath);
         return script.execute();
     }
