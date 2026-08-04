@@ -26,6 +26,7 @@ import junit.framework.TestCase;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.Assert;
 import org.mockito.Mockito;
 
@@ -84,10 +85,10 @@ public class RequestTest extends TestCase {
         Request sreq = new Request(2, 3, new Command[] {cmd1, cmd2, cmd3}, true, true);
         sreq.setSequence(892403717);
 
-        Logger logger = LogManager.getLogger(GsonHelper.class);
-        Level level = logger.getLevel();
+        Logger gsonLogger = LogManager.getLogger(GsonHelper.class);
+        Level level = gsonLogger.getLevel();
 
-        logger.setLevel(Level.DEBUG);
+        Configurator.setLevel(gsonLogger.getName(), Level.DEBUG);
         String log = sreq.log("Debug", true, Level.DEBUG);
         assert (log.contains(UpdateHostPasswordCommand.class.getSimpleName()));
         assert (log.contains(SecStorageFirewallCfgCommand.class.getSimpleName()));
@@ -95,19 +96,20 @@ public class RequestTest extends TestCase {
         assert (!log.contains("username"));
         assert (!log.contains("password"));
 
-        logger.setLevel(Level.TRACE);
+        Configurator.setLevel(gsonLogger.getName(), Level.TRACE);
         log = sreq.log("Trace", true, Level.TRACE);
+        System.out.println(log);
         assert (log.contains(UpdateHostPasswordCommand.class.getSimpleName()));
         assert (log.contains(SecStorageFirewallCfgCommand.class.getSimpleName()));
         assert (log.contains(GetHostStatsCommand.class.getSimpleName()));
         assert (!log.contains("username"));
         assert (!log.contains("password"));
 
-        logger.setLevel(Level.INFO);
+        Configurator.setLevel(gsonLogger.getName(), Level.INFO);
         log = sreq.log("Info", true, Level.INFO);
         assert (log == null);
 
-        logger.setLevel(level);
+        Configurator.setLevel(GsonHelper.class.getName(), level);
 
         byte[] bytes = sreq.getBytes();
 
@@ -227,22 +229,24 @@ public class RequestTest extends TestCase {
         GetHostStatsCommand cmd3 = new GetHostStatsCommand("hostguid", "hostname", 101);
         Request sreq = new Request(2, 3, new Command[] {cmd3}, true, true);
         sreq.setSequence(1);
-        Logger logger = LogManager.getLogger(GsonHelper.class);
-        Level level = logger.getLevel();
+        Logger gsonLogger = LogManager.getLogger(GsonHelper.class);
+        Level level = gsonLogger.getLevel();
 
-        logger.setLevel(Level.DEBUG);
+        Configurator.setLevel(GsonHelper.class.getName(), Level.DEBUG);
         String log = sreq.log("Debug", true, Level.DEBUG);
         assert (log == null);
 
         log = sreq.log("Debug", false, Level.DEBUG);
         assert (log != null);
 
-        logger.setLevel(Level.TRACE);
+        Configurator.setLevel(GsonHelper.class.getName(), Level.TRACE);
         log = sreq.log("Trace", true, Level.TRACE);
+        assert (log != null);
+
         assert (log.contains(GetHostStatsCommand.class.getSimpleName()));
         logger.debug(log);
 
-        logger.setLevel(level);
+        Configurator.setLevel(GsonHelper.class.getName(), level);
     }
 
     public void testCompatFieldRenamingNestedTOs() {
@@ -273,12 +277,12 @@ public class RequestTest extends TestCase {
 
         Logger gsonLogger = LogManager.getLogger(GsonHelper.class);
         Level gsonLoggerLevel = gsonLogger.getLevel();
-        gsonLogger.setLevel(Level.TRACE);
+        Configurator.setLevel(GsonHelper.class.getName(), Level.TRACE);
         String startLogJson;
         try {
             startLogJson = startReq.log("Trace", true, Level.TRACE);
         } finally {
-            gsonLogger.setLevel(gsonLoggerLevel);
+            Configurator.setLevel(GsonHelper.class.getName(), gsonLoggerLevel);
         }
         assert startLogJson.contains("\"isSecurityGroupEnabled\"") : "renamed fields should still show up in the logging serialization";
         assert !startLogJson.contains("vncpassword123") : "logging serialization should never contain the plaintext vncPassword value";
