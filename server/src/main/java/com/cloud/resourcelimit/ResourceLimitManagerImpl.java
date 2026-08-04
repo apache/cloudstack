@@ -262,8 +262,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
      *
      * @param accountId       the account whose count is being incremented; system accounts are skipped
      * @param type            the {@link ResourceType} whose count is being incremented
-     * @param tags            the list of resource-limit tags to update; the empty string sentinel
-     *                        denotes the untagged row, non-empty entries denote tagged rows
+     * @param tags            the list of resource-limit tags to update; {@code null} denotes the untagged row,
+     *                        non-empty entries denote tagged rows
      * @param numToIncrement  positive delta to add; non-positive values are logged and ignored
      */
     @SuppressWarnings("unchecked")
@@ -315,8 +315,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
      *
      * @param accountId       the account whose count is being decremented; system accounts are skipped
      * @param type            the {@link ResourceType} whose count is being decremented
-     * @param tags            the list of resource-limit tags to update; the empty string sentinel
-     *                        denotes the untagged row
+     * @param tags            the list of resource-limit tags to update; {@code null} denotes the untagged row
      * @param numToDecrement  positive delta to subtract; non-positive values are logged and ignored
      */
     protected void decrementResourceCountForTags(final long accountId, final ResourceType type,
@@ -352,13 +351,13 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
      * across a list of tags, deduplicated. Logs the per-tag debug line that the legacy per-tag
      * path emitted from {@link #updateResourceCountForAccount}, preserving log parity for operators.
      *
-     * <p>The empty string in {@code tags} is a sentinel for the untagged row. Each tag is resolved
+     * <p>{@code null} in {@code tags} is a sentinel for the untagged row. Each tag is resolved
      * via {@link ResourceCountDao#listAllRowsToUpdate} which returns the account's own row plus the
      * row for every parent domain in the chain.
      *
      * @param accountId  account owner of the resource counts
      * @param type       resource type
-     * @param tags       tag list ({@code ""} sentinel for untagged, plus any tagged entries)
+     * @param tags       tag list ({@code null} sentinel for untagged, plus any tagged entries)
      * @param delta      delta value, used only for the human-readable debug log
      * @param increment  {@code true} for an upcoming increment, {@code false} for decrement; affects
      *                   the debug log wording only

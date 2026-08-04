@@ -993,7 +993,7 @@ public class ResourceLimitManagerImplTest {
     public void testIncrementVolumeResourceCountBatchesAcrossAllTags() {
         long accountId = 1L;
         long delta = 32L * 1024 * 1024 * 1024;
-        List<String> tags = List.of("", "ed1", "ed2");
+        List<String> tags = Arrays.asList("", "ed1", "ed2");
         Mockito.doReturn(tags).when(resourceLimitManager)
                 .getResourceLimitStorageTagsForResourceCountOperation(Mockito.anyBoolean(), Mockito.any(DiskOffering.class));
         Mockito.doNothing().when(resourceLimitManager).removeResourceReservationIfNeededAndIncrementResourceCountForTags(
@@ -1059,7 +1059,7 @@ public class ResourceLimitManagerImplTest {
     public void testIncrementVolumePrimaryStorageResourceCountBatchesAcrossAllTags() {
         long accountId = 1L;
         long delta = 16L * 1024 * 1024 * 1024;
-        List<String> tags = List.of("", "ed1", "ed2");
+        List<String> tags = Arrays.asList("", "ed1", "ed2");
         Mockito.doReturn(tags).when(resourceLimitManager)
                 .getResourceLimitStorageTagsForResourceCountOperation(Mockito.anyBoolean(), Mockito.any(DiskOffering.class));
         Mockito.doNothing().when(resourceLimitManager).removeResourceReservationIfNeededAndIncrementResourceCountForTags(
