@@ -694,19 +694,24 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
                 continue;
             }
 
-            // get the list of hosts on which VPC spans (i.e hosts that need to be aware of VPC topology change update)
-            List<Long> vpcSpannedHostIds = _ovsNetworkToplogyGuru.getVpcSpannedHosts(vpcId);
-            String bridgeName=generateBridgeNameForVpc(vpcId);
+            try {
+                // get the list of hosts on which VPC spans (i.e hosts that need to be aware of VPC topology change update)
+                List<Long> vpcSpannedHostIds = _ovsNetworkToplogyGuru.getVpcSpannedHosts(vpcId);
+                String bridgeName=generateBridgeNameForVpc(vpcId);
 
-            OvsVpcPhysicalTopologyConfigCommand topologyConfigCommand = prepareVpcTopologyUpdate(vpcId);
-            topologyConfigCommand.setSequenceNumber(getNextTopologyUpdateSequenceNumber(vpcId));
+                OvsVpcPhysicalTopologyConfigCommand topologyConfigCommand = prepareVpcTopologyUpdate(vpcId);
+                topologyConfigCommand.setSequenceNumber(getNextTopologyUpdateSequenceNumber(vpcId));
 
-            // send topology change update to VPC spanned hosts
-            for (Long id: vpcSpannedHostIds) {
-                if (!sendVpcTopologyChangeUpdate(topologyConfigCommand, id, bridgeName)) {
-                    logger.debug("Failed to send VPC topology change update to host : " + id + ". Moving on " +
-                            "with rest of the host update.");
+                // send topology change update to VPC spanned hosts
+                for (Long id: vpcSpannedHostIds) {
+                    if (!sendVpcTopologyChangeUpdate(topologyConfigCommand, id, bridgeName)) {
+                        logger.debug("Failed to send VPC topology change update to host : " + id + ". Moving on " +
+                                "with rest of the host update.");
+                    }
                 }
+            } catch (RuntimeException e) {
+                logger.error("Failed to update OVS distributed-router topology for VPC {} after VM {} changed state",
+                        vpcId, vm.getId(), e);
             }
         }
     }
@@ -764,19 +769,19 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
                         vpc.getUuid(), network.getUuid()));
             }
             String key = network.getBroadcastUri().getAuthority();
-            String[] parts = StringUtils.split(key, '.');
-            if (parts == null || parts.length != 2 || !String.valueOf(vpcId).equals(parts[0])) {
+            String expectedPrefix = vpcId + ".";
+            if (key == null || !key.startsWith(expectedPrefix) || key.indexOf('.', expectedPrefix.length()) >= 0) {
                 throw new CloudRuntimeException(String.format(
                         "OVS distributed-router network %s has invalid broadcast key %s for VPC %s",
                         network.getUuid(), key, vpc.getUuid()));
             }
-            long greKey;
+            int greKey;
             try {
-                greKey = Long.parseLong(parts[1]);
+                greKey = Integer.parseInt(key.substring(expectedPrefix.length()));
             } catch (NumberFormatException e) {
                 throw new CloudRuntimeException(String.format(
                         "OVS distributed-router network %s has non-numeric GRE key %s",
-                        network.getUuid(), parts[1]), e);
+                        network.getUuid(), key.substring(expectedPrefix.length())), e);
             }
             NicVO nic = _nicDao.findByIp4AddressAndNetworkId(network.getGateway(), network.getId());
             if (nic == null) {

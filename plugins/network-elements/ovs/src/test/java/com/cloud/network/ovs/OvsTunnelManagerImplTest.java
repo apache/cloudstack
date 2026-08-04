@@ -41,6 +41,7 @@ import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.ovs.dao.VpcDistributedRouterSeqNoDao;
+import com.cloud.network.ovs.dao.VpcDistributedRouterSeqNoVO;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
@@ -61,6 +62,7 @@ public class OvsTunnelManagerImplTest {
     private VpcManager vpcManager;
     private OvsNetworkTopologyGuru topologyGuru;
     private NicDao nicDao;
+    private VpcDistributedRouterSeqNoVO sequenceNumber;
 
     @Before
     public void setUp() {
@@ -168,6 +170,68 @@ public class OvsTunnelManagerImplTest {
     }
 
     @Test
+    public void testPostStateTransitionEventContainsMalformedOvsTopologyAndContinues() {
+        VpcVO firstVpc = mock(VpcVO.class);
+        VpcVO secondVpc = mock(VpcVO.class);
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        @SuppressWarnings("unchecked")
+        StateMachine2.Transition<VirtualMachine.State, VirtualMachine.Event> transition = mock(StateMachine2.Transition.class);
+        when(vm.getId()).thenReturn(11L);
+        when(topologyGuru.getVpcIdsVmIsPartOf(11L)).thenReturn(List.of(VPC_ID, SECOND_VPC_ID));
+        when(vpcDao.findById(VPC_ID)).thenReturn(firstVpc);
+        when(vpcDao.findById(SECOND_VPC_ID)).thenReturn(secondVpc);
+        when(firstVpc.usesDistributedRouter()).thenReturn(true);
+        when(secondVpc.usesDistributedRouter()).thenReturn(true);
+        when(vpcManager.isProviderSupportServiceInVpc(VPC_ID, Network.Service.Connectivity, Network.Provider.Ovs))
+                .thenReturn(true);
+        when(vpcManager.isProviderSupportServiceInVpc(SECOND_VPC_ID, Network.Service.Connectivity, Network.Provider.Ovs))
+                .thenReturn(false);
+        when(transition.getCurrentState()).thenReturn(VirtualMachine.State.Starting);
+        when(transition.getEvent()).thenReturn(VirtualMachine.Event.OperationSucceeded);
+        when(transition.getToState()).thenReturn(VirtualMachine.State.Running);
+        Network malformedNetwork = mock(Network.class);
+        when(topologyGuru.getVpcSpannedHosts(VPC_ID)).thenReturn(Collections.emptyList());
+        when(topologyGuru.getAllActiveVmsInVpc(VPC_ID)).thenReturn(Collections.emptyList());
+        doReturn(List.of(malformedNetwork)).when(vpcManager).getVpcNetworks(VPC_ID);
+        when(firstVpc.getUuid()).thenReturn("vpc-uuid");
+        when(firstVpc.getCidr()).thenReturn("10.0.0.0/16");
+        when(malformedNetwork.getUuid()).thenReturn("network-uuid");
+        when(malformedNetwork.getBroadcastDomainType()).thenReturn(BroadcastDomainType.NSX);
+
+        assertTrue(manager.postStateTransitionEvent(transition, vm, true, null));
+
+        verify(vpcDao).findById(SECOND_VPC_ID);
+    }
+
+    @Test
+    public void testPostStateTransitionEventBuildsTopologyForOvsVpc() {
+        VpcVO vpc = mock(VpcVO.class);
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        @SuppressWarnings("unchecked")
+        StateMachine2.Transition<VirtualMachine.State, VirtualMachine.Event> transition = mock(StateMachine2.Transition.class);
+        when(vm.getId()).thenReturn(11L);
+        when(topologyGuru.getVpcIdsVmIsPartOf(11L)).thenReturn(List.of(VPC_ID));
+        when(vpcDao.findById(VPC_ID)).thenReturn(vpc);
+        when(vpc.usesDistributedRouter()).thenReturn(true);
+        when(vpc.getUuid()).thenReturn("vpc-uuid");
+        when(vpc.getCidr()).thenReturn("10.0.0.0/16");
+        when(vpcManager.isProviderSupportServiceInVpc(VPC_ID, Network.Service.Connectivity, Network.Provider.Ovs))
+                .thenReturn(true);
+        when(transition.getCurrentState()).thenReturn(VirtualMachine.State.Starting);
+        when(transition.getEvent()).thenReturn(VirtualMachine.Event.OperationSucceeded);
+        when(transition.getToState()).thenReturn(VirtualMachine.State.Running);
+        when(topologyGuru.getVpcSpannedHosts(VPC_ID)).thenReturn(Collections.emptyList());
+        when(topologyGuru.getAllActiveVmsInVpc(VPC_ID)).thenReturn(Collections.emptyList());
+        doReturn(Collections.emptyList()).when(vpcManager).getVpcNetworks(VPC_ID);
+        prepareSequenceNumber(VPC_ID);
+
+        assertTrue(manager.postStateTransitionEvent(transition, vm, true, null));
+
+        verify(vpcManager).getVpcNetworks(VPC_ID);
+        verify(manager._vpcDrSeqNoDao).update(1L, sequenceNumber);
+    }
+
+    @Test
     public void testNetworkAclSubscriberIgnoresNsxDistributedVpc() {
         VpcVO vpc = mock(VpcVO.class);
         NetworkVO network = mock(NetworkVO.class);
@@ -181,6 +245,28 @@ public class OvsTunnelManagerImplTest {
 
         verify(topologyGuru, never()).getVpcSpannedHosts(anyLong());
         verify(vpcManager, never()).getVpcNetworks(anyLong());
+    }
+
+    @Test
+    public void testNetworkAclSubscriberBuildsPolicyForOvsVpc() {
+        VpcVO vpc = mock(VpcVO.class);
+        NetworkVO network = mock(NetworkVO.class);
+        when(network.getVpcId()).thenReturn(VPC_ID);
+        when(vpcDao.findById(VPC_ID)).thenReturn(vpc);
+        when(vpc.usesDistributedRouter()).thenReturn(true);
+        when(vpc.getUuid()).thenReturn("vpc-uuid");
+        when(vpc.getCidr()).thenReturn("10.0.0.0/16");
+        when(vpcManager.isProviderSupportServiceInVpc(VPC_ID, Network.Service.Connectivity, Network.Provider.Ovs))
+                .thenReturn(true);
+        doReturn(List.of(network)).when(vpcManager).getVpcNetworks(VPC_ID);
+        when(network.getNetworkACLId()).thenReturn(null);
+        when(topologyGuru.getVpcSpannedHosts(VPC_ID)).thenReturn(Collections.emptyList());
+        prepareSequenceNumber(VPC_ID);
+
+        manager.new NetworkAclEventsSubscriber().onPublishMessage("sender", "Network_ACL_Replaced", network);
+
+        verify(vpcManager).getVpcNetworks(VPC_ID);
+        verify(manager._vpcDrSeqNoDao).update(1L, sequenceNumber);
     }
 
     @Test
@@ -210,6 +296,34 @@ public class OvsTunnelManagerImplTest {
     @Test
     public void testPrepareVpcTopologyUpdateRejectsNonNumericGreKey() {
         prepareVswitchNetwork("7.invalid");
+
+        assertThrows(CloudRuntimeException.class, () -> manager.prepareVpcTopologyUpdate(VPC_ID));
+    }
+
+    @Test
+    public void testPrepareVpcTopologyUpdateRejectsRepeatedDelimiterInBroadcastKey() {
+        prepareVswitchNetwork("7..123");
+
+        assertThrows(CloudRuntimeException.class, () -> manager.prepareVpcTopologyUpdate(VPC_ID));
+    }
+
+    @Test
+    public void testPrepareVpcTopologyUpdateRejectsLeadingDelimiterInBroadcastKey() {
+        prepareVswitchNetwork(".7.123");
+
+        assertThrows(CloudRuntimeException.class, () -> manager.prepareVpcTopologyUpdate(VPC_ID));
+    }
+
+    @Test
+    public void testPrepareVpcTopologyUpdateRejectsTrailingDelimiterInBroadcastKey() {
+        prepareVswitchNetwork("7.123.");
+
+        assertThrows(CloudRuntimeException.class, () -> manager.prepareVpcTopologyUpdate(VPC_ID));
+    }
+
+    @Test
+    public void testPrepareVpcTopologyUpdateRejectsGreKeyOutsideIntegerRange() {
+        prepareVswitchNetwork("7.2147483648");
 
         assertThrows(CloudRuntimeException.class, () -> manager.prepareVpcTopologyUpdate(VPC_ID));
     }
@@ -252,5 +366,14 @@ public class OvsTunnelManagerImplTest {
         when(network.getBroadcastDomainType()).thenReturn(BroadcastDomainType.Vswitch);
         when(network.getBroadcastUri()).thenReturn(BroadcastDomainType.Vswitch.toUri(broadcastKey));
         return network;
+    }
+
+    private void prepareSequenceNumber(long vpcId) {
+        sequenceNumber = mock(VpcDistributedRouterSeqNoVO.class);
+        when(sequenceNumber.getId()).thenReturn(1L);
+        when(sequenceNumber.getTopologyUpdateSequenceNo()).thenReturn(1L);
+        when(sequenceNumber.getPolicyUpdateSequenceNo()).thenReturn(1L);
+        when(manager._vpcDrSeqNoDao.findByVpcId(vpcId)).thenReturn(sequenceNumber);
+        when(manager._vpcDrSeqNoDao.lockRow(1L, true)).thenReturn(sequenceNumber);
     }
 }
