@@ -964,7 +964,14 @@ export default {
           params['details[0].api_password'] = values.flashArrayPassword
           url = values.flashArrayURL
           if (values.protocol === 'NVMeTCP') {
-            url = url + (url.indexOf('?') === -1 ? '?' : '&') + 'transport=nvme-tcp'
+            // Set (or replace) the transport= query parameter rather than blindly appending,
+            // so a URL already carrying transport= from a hand-crafted operator entry is not
+            // left with two conflicting values.
+            if (/[?&]transport=/.test(url)) {
+              url = url.replace(/([?&])transport=[^&]*/, '$1transport=nvme-tcp')
+            } else {
+              url = url + (url.indexOf('?') === -1 ? '?' : '&') + 'transport=nvme-tcp'
+            }
           }
         } else if (values.provider === 'NetApp ONTAP') {
           params['details[0].storageIP'] = values.ontapIP
