@@ -23,7 +23,6 @@ import eventBus from '@/config/eventBus'
 import store from '@/store'
 import { sourceToken } from '@/utils/request'
 import { toLocalDate, toLocaleDate } from '@/utils/date'
-import { logApiError } from '@/utils/apiError'
 
 export const pollJobPlugin = {
   install (app) {
@@ -218,7 +217,6 @@ export const pollJobPlugin = {
 export const notifierPlugin = {
   install (app) {
     app.config.globalProperties.$notifyError = function (error) {
-      logApiError(error)
       var msg = i18n.global.t('message.request.failed')
       var desc = ''
       if (error && error.response) {
