@@ -366,7 +366,11 @@ public abstract class StorageStrategy {
                 throw new CloudRuntimeException("Volume deletion job failed for volume: " + volume.getName());
             }
             logger.info("Volume deleted successfully: " + volume.getName());
-        } catch (FeignException.FeignClientException e) {
+        } catch (FeignException e) {
+            if (OntapStorageUtils.isOntapObjectNotFoundError(e)) {
+                logger.warn("deleteStorageVolume: Volume '{}' not found in ONTAP, treating as no-op", volume.getName());
+                return;
+            }
             logger.error("Exception while deleting volume: ", e);
             throw new CloudRuntimeException("Failed to delete volume: " + e.getMessage());
         }

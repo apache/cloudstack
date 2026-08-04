@@ -181,12 +181,15 @@ public class UnifiedNASStrategy extends NASStrategy {
             String exportPolicyId = details.get(OntapStorageConstants.EXPORT_POLICY_ID);
 
             try {
-                nasFeignClient.deleteExportPolicyById(authHeader,exportPolicyId);
+                nasFeignClient.deleteExportPolicyById(authHeader, exportPolicyId);
                 logger.info("deleteAccessGroup: Successfully deleted export policy '{}'", exportPolicyName);
-            } catch (Exception e) {
+            } catch (FeignException e) {
+                if (OntapStorageUtils.isOntapObjectNotFoundError(e)) {
+                    logger.warn("deleteAccessGroup: Export policy '{}' not found in ONTAP, treating as no-op", exportPolicyName);
+                    return;
+                }
                 logger.error("deleteAccessGroup: Failed to delete export policy. Exception: {}", e.getMessage(), e);
                 throw new CloudRuntimeException("Failed to delete export policy: " + e.getMessage(), e);
-
             }
         } catch (Exception e) {
             logger.error("deleteAccessGroup: Failed to delete export policy. Exception: {}", e.getMessage(), e);

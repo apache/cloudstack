@@ -677,6 +677,25 @@ public class StorageStrategyTest {
         assertTrue(ex.getMessage().contains("Failed to delete volume"));
     }
 
+    @Test
+    public void testDeleteStorageVolume_notFound_404_returnsWithoutThrowing() {
+        // Setup
+        Volume volume = new Volume();
+        volume.setName("test-volume");
+        volume.setUuid("vol-uuid-1");
+
+        FeignException feignEx = mock(FeignException.class);
+        when(feignEx.status()).thenReturn(404);
+        when(volumeFeignClient.deleteVolume(anyString(), eq("vol-uuid-1")))
+                .thenThrow(feignEx);
+
+        // Execute - 404 means volume already gone on ONTAP, treated as no-op
+        storageStrategy.deleteStorageVolume(volume);
+
+        // Verify the delete was attempted
+        verify(volumeFeignClient).deleteVolume(anyString(), eq("vol-uuid-1"));
+    }
+
     // ========== getStoragePath() Tests ==========
 
     @Test
@@ -901,4 +920,99 @@ public class StorageStrategyTest {
         when(volumeFeignClient.getVolume(anyString(), anyMap()))
                 .thenReturn(volumeResponse);
     }
+
+    // ========== pollJobIfPresent / executeCliSfsrRestore Tests ==========
+
+    @Test
+    void testPollJobIfPresent_NoJob_DoesNotPoll() {
+        storageStrategy.pollJobIfPresent(null, "test operation");
+        storageStrategy.pollJobIfPresent(new JobResponse(), "test operation");
+        verify(jobFeignClient, times(0)).getJobByUUID(anyString(), anyString());
+    }
+
+    @Test
+    void testPollJobIfPresent_WithJob_PollsUntilSuccess() {
+        Job job = new Job();
+        job.setUuid("sfsr-job-1");
+        JobResponse response = new JobResponse();
+        response.setJob(job);
+
+        Job completedJob = new Job();
+        completedJob.setUuid("sfsr-job-1");
+        completedJob.setState(OntapStorageConstants.JOB_SUCCESS);
+        when(jobFeignClient.getJobByUUID(anyString(), eq("sfsr-job-1"))).thenReturn(completedJob);
+
+        storageStrategy.executeCliSfsrRestore(response, "CLI SFSR restore");
+
+        verify(jobFeignClient, atLeastOnce()).getJobByUUID(anyString(), eq("sfsr-job-1"));
+    }
+
+    @Test
+    void testPollJobIfPresent_JobFailure_ThrowsCloudRuntimeException() {
+        Job job = new Job();
+        job.setUuid("sfsr-job-fail");
+        JobResponse response = new JobResponse();
+        response.setJob(job);
+
+        Job failedJob = new Job();
+        failedJob.setUuid("sfsr-job-fail");
+        failedJob.setState(OntapStorageConstants.JOB_FAILURE);
+        failedJob.setMessage("restore failed");
+        when(jobFeignClient.getJobByUUID(anyString(), eq("sfsr-job-fail"))).thenReturn(failedJob);
+
+        assertThrows(CloudRuntimeException.class,
+                () -> storageStrategy.executeCliSfsrRestore(response, "CLI SFSR restore"));
+    }
+
+    @Test
+    void testDeleteFlexVolSnapshotForCloudStackVolume_PollsJobAndSucceeds() {
+        Job job = new Job();
+        job.setUuid("delete-job-1");
+        JobResponse response = new JobResponse();
+        response.setJob(job);
+        when(snapshotFeignClient.deleteSnapshot(anyString(), eq("fv-uuid-1"), eq("snap-uuid-1")))
+                .thenReturn(response);
+
+        Job completedJob = new Job();
+        completedJob.setUuid("delete-job-1");
+        completedJob.setState(OntapStorageConstants.JOB_SUCCESS);
+        when(jobFeignClient.getJobByUUID(anyString(), eq("delete-job-1"))).thenReturn(completedJob);
+
+        storageStrategy.deleteFlexVolSnapshotForCloudStackVolume("fv-uuid-1", "snap-uuid-1", "snap-name-1");
+
+        verify(snapshotFeignClient).deleteSnapshot(anyString(), eq("fv-uuid-1"), eq("snap-uuid-1"));
+    }
+
+    @Test
+    void testDeleteFlexVolSnapshotForCloudStackVolume_AlreadyAbsentOnOntap() {
+        Job job = new Job();
+        job.setUuid("delete-job-missing");
+        JobResponse response = new JobResponse();
+        response.setJob(job);
+        when(snapshotFeignClient.deleteSnapshot(anyString(), eq("fv-uuid-1"), eq("snap-uuid-1")))
+                .thenReturn(response);
+
+        Job failedJob = new Job();
+        failedJob.setUuid("delete-job-missing");
+        failedJob.setState(OntapStorageConstants.JOB_FAILURE);
+        failedJob.setMessage("entry doesn't exist");
+        when(jobFeignClient.getJobByUUID(anyString(), eq("delete-job-missing"))).thenReturn(failedJob);
+
+        storageStrategy.deleteFlexVolSnapshotForCloudStackVolume("fv-uuid-1", "snap-uuid-1", "snap-name-1");
+
+        verify(snapshotFeignClient).deleteSnapshot(anyString(), eq("fv-uuid-1"), eq("snap-uuid-1"));
+    }
+
+        @Test
+        void testDeleteFlexVolSnapshotForCloudStackVolume_Feign404_TreatedAsSuccess() {
+                FeignException notFoundException = mock(FeignException.class);
+                when(notFoundException.status()).thenReturn(404);
+                when(snapshotFeignClient.deleteSnapshot(anyString(), eq("fv-uuid-1"), eq("snap-uuid-1")))
+                                .thenThrow(notFoundException);
+
+                storageStrategy.deleteFlexVolSnapshotForCloudStackVolume("fv-uuid-1", "snap-uuid-1", "snap-name-1");
+
+                verify(snapshotFeignClient).deleteSnapshot(anyString(), eq("fv-uuid-1"), eq("snap-uuid-1"));
+                verify(jobFeignClient, never()).getJobByUUID(anyString(), anyString());
+        }
 }
