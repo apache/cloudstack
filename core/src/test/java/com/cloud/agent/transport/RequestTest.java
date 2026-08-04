@@ -19,8 +19,10 @@
 
 package com.cloud.agent.transport;
 
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
+import java.util.Map;
 import junit.framework.TestCase;
 
 import org.apache.logging.log4j.Level;
@@ -29,6 +31,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.Assert;
 import org.mockito.Mockito;
+
+import com.google.gson.Gson;
 
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
@@ -71,6 +75,27 @@ import com.cloud.vm.VirtualMachine;
 public class RequestTest extends TestCase {
     private static final Logger logger = LogManager.getLogger(RequestTest.class);
 
+    /**
+     * Changes GsonHelper's logging Gson level AND clears its cached TypeAdapters.
+     *
+     * Gson bakes each Command class's shouldSkipClass/shouldSkipField decision into a TypeAdapter
+     * the first time that class is serialized, then caches it (Gson#typeTokenCache) for the life
+     * of the Gson instance. Since GsonHelper.getGsonLogger() is a static singleton shared for the
+     * whole test JVM, just calling Configurator.setLevel() again has no effect on classes already
+     * cached - they'd keep reflecting whichever level was active the first time they were logged.
+     * Clearing the cache after every level change forces a fresh (correct) evaluation.
+     */
+    private static void setGsonLoggerLevel(String loggerName, Level level) {
+        Configurator.setLevel(loggerName, level);
+        try {
+            Field field = Gson.class.getDeclaredField("typeTokenCache");
+            field.setAccessible(true);
+            ((Map<?, ?>)field.get(GsonHelper.getGsonLogger())).clear();
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public void testSerDeser() {
         logger.info("Testing serializing and deserializing works as expected");
 
@@ -88,7 +113,7 @@ public class RequestTest extends TestCase {
         Logger gsonLogger = LogManager.getLogger(GsonHelper.class);
         Level level = gsonLogger.getLevel();
 
-        Configurator.setLevel(gsonLogger.getName(), Level.DEBUG);
+        setGsonLoggerLevel(gsonLogger.getName(), Level.DEBUG);
         String log = sreq.log("Debug", true, Level.DEBUG);
         assert (log.contains(UpdateHostPasswordCommand.class.getSimpleName()));
         assert (log.contains(SecStorageFirewallCfgCommand.class.getSimpleName()));
@@ -96,7 +121,7 @@ public class RequestTest extends TestCase {
         assert (!log.contains("username"));
         assert (!log.contains("password"));
 
-        Configurator.setLevel(gsonLogger.getName(), Level.TRACE);
+        setGsonLoggerLevel(gsonLogger.getName(), Level.TRACE);
         log = sreq.log("Trace", true, Level.TRACE);
         System.out.println(log);
         assert (log.contains(UpdateHostPasswordCommand.class.getSimpleName()));
@@ -105,11 +130,11 @@ public class RequestTest extends TestCase {
         assert (!log.contains("username"));
         assert (!log.contains("password"));
 
-        Configurator.setLevel(gsonLogger.getName(), Level.INFO);
+        setGsonLoggerLevel(gsonLogger.getName(), Level.INFO);
         log = sreq.log("Info", true, Level.INFO);
         assert (log == null);
 
-        Configurator.setLevel(GsonHelper.class.getName(), level);
+        setGsonLoggerLevel(GsonHelper.class.getName(), level);
 
         byte[] bytes = sreq.getBytes();
 
@@ -232,21 +257,21 @@ public class RequestTest extends TestCase {
         Logger gsonLogger = LogManager.getLogger(GsonHelper.class);
         Level level = gsonLogger.getLevel();
 
-        Configurator.setLevel(GsonHelper.class.getName(), Level.DEBUG);
+        setGsonLoggerLevel(GsonHelper.class.getName(), Level.DEBUG);
         String log = sreq.log("Debug", true, Level.DEBUG);
         assert (log == null);
 
         log = sreq.log("Debug", false, Level.DEBUG);
         assert (log != null);
 
-        Configurator.setLevel(GsonHelper.class.getName(), Level.TRACE);
+        setGsonLoggerLevel(GsonHelper.class.getName(), Level.TRACE);
         log = sreq.log("Trace", true, Level.TRACE);
         assert (log != null);
 
         assert (log.contains(GetHostStatsCommand.class.getSimpleName()));
         logger.debug(log);
 
-        Configurator.setLevel(GsonHelper.class.getName(), level);
+        setGsonLoggerLevel(GsonHelper.class.getName(), level);
     }
 
     public void testCompatFieldRenamingNestedTOs() {
@@ -277,12 +302,12 @@ public class RequestTest extends TestCase {
 
         Logger gsonLogger = LogManager.getLogger(GsonHelper.class);
         Level gsonLoggerLevel = gsonLogger.getLevel();
-        Configurator.setLevel(GsonHelper.class.getName(), Level.TRACE);
+        setGsonLoggerLevel(GsonHelper.class.getName(), Level.TRACE);
         String startLogJson;
         try {
             startLogJson = startReq.log("Trace", true, Level.TRACE);
         } finally {
-            Configurator.setLevel(GsonHelper.class.getName(), gsonLoggerLevel);
+            setGsonLoggerLevel(GsonHelper.class.getName(), gsonLoggerLevel);
         }
         assert startLogJson.contains("\"isSecurityGroupEnabled\"") : "renamed fields should still show up in the logging serialization";
         assert !startLogJson.contains("vncpassword123") : "logging serialization should never contain the plaintext vncPassword value";
