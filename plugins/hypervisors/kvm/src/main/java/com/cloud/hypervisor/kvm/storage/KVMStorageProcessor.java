@@ -658,10 +658,16 @@ public class KVMStorageProcessor implements StorageProcessor {
         final String secondaryStorageUrl = nfsStore.getUrl();
         KVMStoragePool secondaryStoragePool = null;
 
+        boolean srcConnected = false;
         try {
             final String volumeName = UUID.randomUUID().toString();
 
             final String destVolumeName = volumeName + "." + ImageFormat.QCOW2.getFileExtension();
+            // the source volume may not be attached anywhere (e.g. a detached volume being
+            // migrated between pools); connect it so storage drivers that expose devices on
+            // demand (e.g. Linstor shared storage pools) provide the device for the copy
+            srcConnected = storagePoolMgr.connectPhysicalDisk(
+                    primaryStore.getPoolType(), primaryStore.getUuid(), srcVolumePath, null);
             final KVMPhysicalDisk volume = storagePoolMgr.getPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), srcVolumePath);
             volume.setFormat(PhysicalDiskFormat.valueOf(srcFormat.toString()));
 
@@ -680,6 +686,9 @@ public class KVMStorageProcessor implements StorageProcessor {
         } finally {
             srcVol.clearPassphrase();
             destVol.clearPassphrase();
+            if (srcConnected) {
+                storagePoolMgr.disconnectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), srcVolumePath);
+            }
             if (secondaryStoragePool != null) {
                 storagePoolMgr.deleteStoragePool(secondaryStoragePool.getType(), secondaryStoragePool.getUuid());
             }
