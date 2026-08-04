@@ -4821,4 +4821,67 @@ public class UserVmManagerImplTest {
         assertTrue(messages.stream().anyMatch(m -> m.contains("account-a") && m.contains("account-b")));
         assertTrue(messages.stream().anyMatch(m -> m.contains("domain-a") && m.contains("domain-b")));
     }
+
+    private UserVmVO mockStoppedVmForFailedCreation(Long vmId) {
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        when(vm.getState()).thenReturn(VirtualMachine.State.Stopped);
+        when(vm.getId()).thenReturn(vmId);
+        when(vm.getDataCenterId()).thenReturn(1L);
+        when(vm.getPodIdToDeployIn()).thenReturn(2L);
+        when(vm.getAccountId()).thenReturn(10L);
+        when(vm.isDisplayVm()).thenReturn(true);
+        when(vm.getServiceOfferingId()).thenReturn(20L);
+        when(vm.getTemplateId()).thenReturn(30L);
+        when(vm.toString()).thenReturn("VM {id=" + vmId + ", name=i-2-3-VM}");
+        when(userVmDao.findById(vmId)).thenReturn(vm);
+        when(volumeDaoMock.findUsableVolumesForInstance(vmId)).thenReturn(new ArrayList<>());
+        return vm;
+    }
+
+    @Test
+    public void updateVmStateForFailedVmCreationIncludesResolvedHostInAlert() {
+        Long vmId = 3L;
+        Long hostId = 5L;
+        mockStoppedVmForFailedCreation(vmId);
+
+        HostVO host = Mockito.mock(HostVO.class);
+        when(host.toString()).thenReturn("Host {id=5, name=cs-kvm06}");
+        when(hostDao.findById(hostId)).thenReturn(host);
+
+        ReflectionTestUtils.invokeMethod(userVmManagerImpl, "updateVmStateForFailedVmCreation", vmId, hostId);
+
+        ArgumentCaptor<String> bodyCaptor = ArgumentCaptor.forClass(String.class);
+        Mockito.verify(alertManager).sendAlert(Mockito.eq(AlertManager.AlertType.ALERT_TYPE_USERVM),
+                Mockito.eq(1L), Mockito.eq(2L), Mockito.anyString(), bodyCaptor.capture());
+        assertTrue(bodyCaptor.getValue().contains("on host [Host {id=5, name=cs-kvm06}]"));
+    }
+
+    @Test
+    public void updateVmStateForFailedVmCreationFallsBackToHostIdWhenHostNotFound() {
+        Long vmId = 3L;
+        Long hostId = 5L;
+        mockStoppedVmForFailedCreation(vmId);
+
+        when(hostDao.findById(hostId)).thenReturn(null);
+
+        ReflectionTestUtils.invokeMethod(userVmManagerImpl, "updateVmStateForFailedVmCreation", vmId, hostId);
+
+        ArgumentCaptor<String> bodyCaptor = ArgumentCaptor.forClass(String.class);
+        Mockito.verify(alertManager).sendAlert(Mockito.eq(AlertManager.AlertType.ALERT_TYPE_USERVM),
+                Mockito.eq(1L), Mockito.eq(2L), Mockito.anyString(), bodyCaptor.capture());
+        assertTrue(bodyCaptor.getValue().contains("on host [id: 5]"));
+    }
+
+    @Test
+    public void updateVmStateForFailedVmCreationOmitsHostSegmentWhenHostIdIsNull() {
+        Long vmId = 3L;
+        mockStoppedVmForFailedCreation(vmId);
+
+        ReflectionTestUtils.invokeMethod(userVmManagerImpl, "updateVmStateForFailedVmCreation", vmId, (Long) null);
+
+        ArgumentCaptor<String> bodyCaptor = ArgumentCaptor.forClass(String.class);
+        Mockito.verify(alertManager).sendAlert(Mockito.eq(AlertManager.AlertType.ALERT_TYPE_USERVM),
+                Mockito.eq(1L), Mockito.eq(2L), Mockito.anyString(), bodyCaptor.capture());
+        assertFalse(bodyCaptor.getValue().contains("on host"));
+    }
 }
