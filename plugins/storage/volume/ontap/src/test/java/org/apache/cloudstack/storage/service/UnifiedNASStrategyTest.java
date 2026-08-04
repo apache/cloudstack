@@ -79,6 +79,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import feign.FeignException;
+
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 public class UnifiedNASStrategyTest {
@@ -514,6 +516,26 @@ public class UnifiedNASStrategyTest {
         assertThrows(CloudRuntimeException.class, () -> {
             strategy.deleteAccessGroup(accessGroup);
         });
+    }
+
+    // Test deleteAccessGroup - Export policy not found should be treated as no-op
+    @Test
+    public void testDeleteAccessGroup_NotFound404_NoThrow() {
+        AccessGroup accessGroup = mock(AccessGroup.class);
+        Map<String, String> details = new HashMap<>();
+        details.put(OntapStorageConstants.EXPORT_POLICY_NAME, "export-policy-1");
+        details.put(OntapStorageConstants.EXPORT_POLICY_ID, "1");
+
+        when(accessGroup.getStoragePoolId()).thenReturn(1L);
+        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);
+
+        FeignException feignException = mock(FeignException.class);
+        when(feignException.status()).thenReturn(404);
+        doThrow(feignException).when(nasFeignClient).deleteExportPolicyById(anyString(), eq("1"));
+
+        strategy.deleteAccessGroup(accessGroup);
+
+        verify(nasFeignClient).deleteExportPolicyById(anyString(), eq("1"));
     }
 
     // Test deleteCloudStackVolume - Success
