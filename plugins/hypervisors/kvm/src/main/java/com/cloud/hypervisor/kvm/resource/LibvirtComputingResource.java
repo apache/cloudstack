@@ -610,7 +610,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public static final String CGROUP_V2 = "cgroup2fs";
 
-    public static final String AGENT_IS_NOT_CONNECTED = "QEMU guest agent is not connected";
+    public static final Integer AGENT_UNRESPONSIVE_ERROR_ORDINAL = 86;
 
     /**
      * Virsh command to merge (blockcommit) snapshot into the base file.<br><br>
@@ -7185,7 +7185,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         } catch (LibvirtException e) {
             String errorMsg = String.format("Creation of disk-only VM snapshot for VM [%s] failed due to %s.", vmName, e.getMessage());
             boolean isVmConsistent = false;
-            if (e.getMessage().contains(AGENT_IS_NOT_CONNECTED)) {
+            if (AGENT_UNRESPONSIVE_ERROR_ORDINAL.equals(e.getError().getCode().ordinal())) {
                 errorMsg = "QEMU guest agent is not connected. If the VM has been recently started, it might connect soon. Otherwise the VM does not have the" +
                         " guest agent installed; thus the QuiesceVM parameter is not supported.";
                 isVmConsistent = true;

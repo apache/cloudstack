@@ -92,7 +92,7 @@ public class LibvirtValidateKbossVmCommandWrapper extends CommandWrapper<Validat
                     return true;
                 }
             } catch (LibvirtException ex) {
-                if (!ex.getMessage().contains(LibvirtComputingResource.AGENT_IS_NOT_CONNECTED)) {
+                if (!LibvirtComputingResource.AGENT_UNRESPONSIVE_ERROR_ORDINAL.equals(ex.getError().getCode().ordinal())) {
                     logger.error("Got an unexpected Libvirt Exception, giving up on validating VM [{}].", vm.getName(), ex);
                     throw ex;
                 }
