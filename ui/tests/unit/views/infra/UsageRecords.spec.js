@@ -63,5 +63,19 @@ describe('Views > infra > UsageRecords.vue', () => {
       expect(params.startdate).toBe('2026-07-26 00:00:00')
       expect(params.enddate).toBe('2026-08-02 23:59:59')
     })
+
+    it('omits date parameters when no range is selected', () => {
+      const params = getParams([], true)
+
+      expect(params).not.toHaveProperty('startdate')
+      expect(params).not.toHaveProperty('enddate')
+    })
+
+    it('omits date parameters when the selected range is incomplete', () => {
+      const params = getParams([dateWithOffset('2026-07-26', 60)], true)
+
+      expect(params).not.toHaveProperty('startdate')
+      expect(params).not.toHaveProperty('enddate')
+    })
   })
 })
