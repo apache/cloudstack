@@ -714,6 +714,30 @@ public class LinstorUtil {
      * @param resourceGroup Resource group to get the encryption layer list
      * @return layer list with LUKS added
      */
+    /**
+     * The layer stack configured on the resource group, empty if none is set.
+     */
+    public static List<LayerType> getRscGrpLayerList(DevelopersApi api, String resourceGroup) {
+        try {
+            List<ResourceGroup> rscGrps = api.resourceGroupList(
+                    Collections.singletonList(resourceGroup), Collections.emptyList(), null, null);
+
+            if (CollectionUtils.isEmpty(rscGrps)) {
+                throw new CloudRuntimeException(
+                        String.format("Resource Group %s not found on Linstor cluster.", resourceGroup));
+            }
+
+            List<String> layerStack = rscGrps.get(0).getSelectFilter() != null ?
+                    rscGrps.get(0).getSelectFilter().getLayerStack() : Collections.emptyList();
+            return CollectionUtils.isNotEmpty(layerStack) ?
+                    layerStack.stream().map(LayerType::valueOf).collect(Collectors.toList()) :
+                    Collections.emptyList();
+        } catch (ApiException apiEx) {
+            LOGGER.error(apiEx.getBestMessage());
+            throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
+        }
+    }
+
     public static List<LayerType> getEncryptedLayerList(DevelopersApi api, String resourceGroup) {
         try {
             List<ResourceGroup> rscGrps = api.resourceGroupList(
