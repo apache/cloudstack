@@ -31,6 +31,12 @@ public final class AlertFormatUtils {
     }
 
     public static String describeHostLocation(Host host, DataCenter zone, Pod pod) {
+        if (host == null) {
+            // we should never get here, but if we do, at least we won't get an NPE
+            return String.format("No host to describe for availability zone: %s, pod: %s",
+                    zone != null ? zone.getName() : "unknown",
+                    pod != null ? pod.getName() : "unknown");
+        }
         return String.format("name: %s (id: %d, uuid: %s), availability zone: %s, pod: %s",
                 host.getName(), host.getId(), host.getUuid(),
                 zone != null ? zone.getName() : "unknown",
