@@ -17,7 +17,10 @@
 package com.cloud.alert;
 
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Field;
 import java.util.List;
+import java.util.Timer;
+import java.util.concurrent.ExecutorService;
 
 import javax.mail.MessagingException;
 
@@ -218,5 +221,115 @@ public class AlertManagerImplTest {
         alertManagerImplMock.recalculateStorageCapacities();
         Mockito.verify(storageManager, Mockito.times(2)).createCapacityEntry(sharedPool, Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED, 10L);
         Mockito.verify(storageManager, Mockito.times(1)).createCapacityEntry(nonSharedPool, Capacity.CAPACITY_TYPE_LOCAL_STORAGE, 20L);
+    }
+
+    @Test
+    public void testRecalculateHostCapacitiesWithEmptyHostList() throws Exception {
+        Mockito.when(hostDao.listIdsByType(Host.Type.Routing)).thenReturn(List.of());
+        alertManagerImplMock.recalculateHostCapacities();
+        Mockito.verify(hostDao, Mockito.never()).findById(Mockito.anyLong());
+        Mockito.verify(capacityManager, Mockito.never()).updateCapacityForHost(Mockito.any());
+        assertNull("executor should never be created when there is nothing to submit", getCapacityExecutorService());
+    }
+
+    @Test
+    public void testRecalculateStorageCapacitiesWithEmptyPoolList() throws Exception {
+        Mockito.when(primaryDataStoreDao.listAllIds()).thenReturn(List.of());
+        alertManagerImplMock.recalculateStorageCapacities();
+        Mockito.verify(primaryDataStoreDao, Mockito.never()).findById(Mockito.anyLong());
+        Mockito.verify(storageManager, Mockito.never()).createCapacityEntry(Mockito.any(), Mockito.anyShort(), Mockito.anyLong());
+        assertNull("executor should never be created when there is nothing to submit", getCapacityExecutorService());
+    }
+
+    @Test
+    public void testRecalculateHostCapacitiesLogsAndContinuesOnTaskFailure() {
+        Mockito.when(hostDao.listIdsByType(Host.Type.Routing)).thenReturn(List.of(1L, 2L, 3L));
+        HostVO host1 = Mockito.mock(HostVO.class);
+        HostVO host2 = Mockito.mock(HostVO.class);
+        HostVO host3 = Mockito.mock(HostVO.class);
+        Mockito.when(hostDao.findById(1L)).thenReturn(host1);
+        Mockito.when(hostDao.findById(2L)).thenReturn(host2);
+        Mockito.when(hostDao.findById(3L)).thenReturn(host3);
+        Mockito.doThrow(new RuntimeException("boom")).when(capacityManager).updateCapacityForHost(host2);
+
+        alertManagerImplMock.recalculateHostCapacities();
+
+        Mockito.verify(capacityManager).updateCapacityForHost(host1);
+        Mockito.verify(capacityManager).updateCapacityForHost(host2);
+        Mockito.verify(capacityManager).updateCapacityForHost(host3);
+        Mockito.verify(alertManagerImplMock.logger).error(Mockito.anyString(), Mockito.any(Throwable.class));
+    }
+
+    @Test
+    public void testRecalculateHostCapacitiesReusesExecutorAcrossCalls() throws Exception {
+        Mockito.when(hostDao.listIdsByType(Host.Type.Routing)).thenReturn(List.of(1L));
+        Mockito.when(hostDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(HostVO.class));
+
+        alertManagerImplMock.recalculateHostCapacities();
+        ExecutorService firstExecutor = getCapacityExecutorService();
+        assertNotNull(firstExecutor);
+
+        Mockito.when(primaryDataStoreDao.listAllIds()).thenReturn(List.of(101L));
+        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+        Mockito.when(primaryDataStoreDao.findById(101L)).thenReturn(pool);
+        alertManagerImplMock.recalculateStorageCapacities();
+
+        assertEquals("host and storage recalculation should share the same long-lived pool",
+                firstExecutor, getCapacityExecutorService());
+    }
+
+    @Test
+    public void testRecalculateHostCapacitiesRecreatesExecutorAfterShutdown() throws Exception {
+        Mockito.when(hostDao.listIdsByType(Host.Type.Routing)).thenReturn(List.of(1L));
+        Mockito.when(hostDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(HostVO.class));
+
+        alertManagerImplMock.recalculateHostCapacities();
+        ExecutorService firstExecutor = getCapacityExecutorService();
+        firstExecutor.shutdown();
+
+        alertManagerImplMock.recalculateHostCapacities();
+        ExecutorService secondExecutor = getCapacityExecutorService();
+
+        Assert.assertNotEquals("a shut down executor should be replaced rather than reused", firstExecutor, secondExecutor);
+        Assert.assertFalse(secondExecutor.isShutdown());
+    }
+
+    @Test
+    public void testStopShutsDownCapacityExecutorServiceWhenPresent() throws Exception {
+        Timer timerMock = Mockito.mock(Timer.class);
+        setTimer(timerMock);
+        Mockito.when(hostDao.listIdsByType(Host.Type.Routing)).thenReturn(List.of(1L));
+        Mockito.when(hostDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(HostVO.class));
+        alertManagerImplMock.recalculateHostCapacities();
+
+        boolean result = alertManagerImplMock.stop();
+
+        Assert.assertTrue(result);
+        Mockito.verify(timerMock).cancel();
+        Assert.assertTrue(getCapacityExecutorService().isShutdown());
+    }
+
+    @Test
+    public void testStopDoesNotThrowWhenCapacityExecutorServiceNeverCreated() throws Exception {
+        Timer timerMock = Mockito.mock(Timer.class);
+        setTimer(timerMock);
+
+        boolean result = alertManagerImplMock.stop();
+
+        Assert.assertTrue(result);
+        Mockito.verify(timerMock).cancel();
+        assertNull(getCapacityExecutorService());
+    }
+
+    private ExecutorService getCapacityExecutorService() throws Exception {
+        Field field = AlertManagerImpl.class.getDeclaredField("capacityExecutorService");
+        field.setAccessible(true);
+        return (ExecutorService) field.get(alertManagerImplMock);
+    }
+
+    private void setTimer(Timer timer) throws Exception {
+        Field field = AlertManagerImpl.class.getDeclaredField("_timer");
+        field.setAccessible(true);
+        field.set(alertManagerImplMock, timer);
     }
 }
