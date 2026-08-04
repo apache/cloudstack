@@ -66,7 +66,7 @@ import com.cloud.utils.exception.ExecutionException;
 public interface UserVmService {
 
     ConfigKey<Boolean> AllowExposingVmAssignFailureDetails = new ConfigKey<>("Advanced", Boolean.class,
-            "vm.assign.failure.detailed.message.enabled", "true",
+            "vm.assign.failure.detailed.message.enabled", "false",
             "If true, the reason a VM ownership change (assignVirtualMachine) fails, e.g. remaining port forwarding rules or volume snapshots, is returned to the API caller. " +
             "If false, only a generic error message referencing the Instance ID is returned, and the detailed reason is only available in the management server logs.",
             true, ConfigKey.Scope.Global);
