@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -101,6 +102,7 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
     }
 
     private static List<Item> metricsItems = new ArrayList<>();
+    private volatile long lastMetricsUpdateTime = 0L;
 
     @Inject
     private DataCenterDao dcDao;
@@ -488,7 +490,15 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
     }
 
     @Override
-    public void updateMetrics() {
+    public synchronized void updateMetrics() {
+        final long minIntervalMs = TimeUnit.SECONDS.toMillis(PrometheusExporterServer.PrometheusExporterMinRefreshInterval.value());
+        final long now = System.currentTimeMillis();
+        if (now - lastMetricsUpdateTime < minIntervalMs) {
+            logger.debug("Skipping metrics recomputation, last update was " + (now - lastMetricsUpdateTime) + "ms ago (min interval: " + minIntervalMs + "ms)");
+            return;
+        }
+
+        final long startNanos = System.nanoTime();
         final List<Item> latestMetricsItems = new ArrayList<Item>();
         try {
             for (final DataCenterVO dc : dcDao.listAll()) {
@@ -508,8 +518,12 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
             addDomainResourceCount(latestMetricsItems);
         } catch (Exception e) {
             logger.warn("Getting metrics failed ", e);
+        } finally {
+            final long elapsedMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos);
+            logger.info("Prometheus metrics update completed in " + elapsedMs + " ms");
         }
         metricsItems = latestMetricsItems;
+        lastMetricsUpdateTime = System.currentTimeMillis();
     }
 
     @Override

@@ -33,4 +33,7 @@ public interface PrometheusExporterServer extends Manager {
 
     ConfigKey<Integer> PrometheusExporterOfferingCountLimit = new ConfigKey<>("Advanced", Integer.class, "prometheus.exporter.offering.output.limit", "-1",
             "Limit the number of output for cloudstack_vms_total_by_size to the provided value. -1 for unlimited output.", true);
+
+    ConfigKey<Integer> PrometheusExporterMinRefreshInterval = new ConfigKey<>("Advanced", Integer.class, "prometheus.exporter.metrics.min.refresh.interval", "5",
+            "Minimum interval in seconds between metrics recomputations. Scrapes arriving faster than this interval reuse the previously computed metrics.", true, EnablePrometheusExporter.key());
 }
