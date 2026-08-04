@@ -18,6 +18,7 @@
 package org.apache.cloudstack.dns;
 
 public enum DnsProviderType {
-    PowerDNS;
+    PowerDNS,
+    BunnyDNS;
 //    Cloudflare
 }

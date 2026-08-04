@@ -212,6 +212,14 @@ export default {
     }
     this.fetchProviders()
   },
+  watch: {
+    'form.provider' (provider) {
+      if (provider === 'BunnyDNS') {
+        this.form.port = 443
+        this.form.url = this.form.url || 'https://api.bunny.net'
+      }
+    }
+  },
   methods: {
     async handleSubmit () {
       if (this.loading) return
