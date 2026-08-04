@@ -214,9 +214,12 @@ public class FlashArrayAdapter implements ProviderAdapter {
                                                 .equals(hostname.substring(0, hostname.indexOf('.')))))) {
                                 return conn.getNsid() != null ? "" + conn.getNsid() : "1";
                             }
-                        } else if (conn.getHost() != null && conn.getHost().getName() != null &&
-                            (conn.getHost().getName().equals(hostname) || conn.getHost().getName().equals(hostname.substring(0, hostname.indexOf('.')))) &&
-                            conn.getLun() != null) {
+                        } else if (conn.getHost() != null && conn.getHost().getName() != null
+                                && (conn.getHost().getName().equals(hostname)
+                                    || (hostname.indexOf('.') > 0
+                                        && conn.getHost().getName()
+                                            .equals(hostname.substring(0, hostname.indexOf('.')))))
+                                && conn.getLun() != null) {
                             return "" + conn.getLun();
                         }
                     }

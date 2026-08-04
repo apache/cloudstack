@@ -18,9 +18,9 @@
 package com.cloud.hypervisor.kvm.storage;
 
 import java.io.File;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.cloudstack.utils.qemu.QemuImg;
@@ -50,22 +50,19 @@ import org.apache.logging.log4j.Logger;
  */
 public abstract class MultipathNVMeOFAdapterBase implements StorageAdaptor {
     protected static Logger LOGGER = LogManager.getLogger(MultipathNVMeOFAdapterBase.class);
-    static final Map<String, KVMStoragePool> MapStorageUuidToStoragePool = new HashMap<>();
+    static final Map<String, KVMStoragePool> MapStorageUuidToStoragePool = new ConcurrentHashMap<>();
 
     static final int DEFAULT_DISK_WAIT_SECS = 240;
     static final long NS_RESCAN_TIMEOUT_SECS = 5;
     private static final long POLL_INTERVAL_MS = 2000;
+    private static final long RESCAN_INTERVAL_MS = 10_000;
 
     @Override
     public KVMStoragePool getStoragePool(String uuid) {
-        KVMStoragePool pool = MapStorageUuidToStoragePool.get(uuid);
-        if (pool == null) {
-            // Dummy pool - adapters that dispatch per-volume don't need
-            // connectivity information on the pool itself.
-            pool = new MultipathNVMeOFPool(uuid, this);
-            MapStorageUuidToStoragePool.put(uuid, pool);
-        }
-        return pool;
+        // Dummy pool - adapters that dispatch per-volume don't need
+        // connectivity information on the pool itself. Use computeIfAbsent
+        // so concurrent callers do not race to create duplicate pool objects.
+        return MapStorageUuidToStoragePool.computeIfAbsent(uuid, u -> new MultipathNVMeOFPool(u, this));
     }
 
     @Override
@@ -97,7 +94,8 @@ public abstract class MultipathNVMeOFAdapterBase implements StorageAdaptor {
         String hostnameFq = resolveHostnameFq();
         String[] parts = inPath.split(";");
         for (String part : parts) {
-            String[] pair = part.split("=");
+            // Cap the split at 2 so values containing '=' (e.g. base64) are not silently discarded.
+            String[] pair = part.split("=", 2);
             if (pair.length != 2) {
                 continue;
             }
@@ -213,6 +211,7 @@ public abstract class MultipathNVMeOFAdapterBase implements StorageAdaptor {
         }
         long deadline = System.currentTimeMillis() + (waitSecs * 1000);
         File dev = new File(address.getPath());
+        long lastRescan = 0;
         while (System.currentTimeMillis() < deadline) {
             if (dev.exists() && isConnected(address.getPath())) {
                 long size = getPhysicalDiskSize(address.getPath());
@@ -221,7 +220,14 @@ public abstract class MultipathNVMeOFAdapterBase implements StorageAdaptor {
                     return true;
                 }
             }
-            rescanAllControllers();
+            // Throttle rescanAllControllers(): spawning one nvme ns-rescan per controller every
+            // 2s can be expensive on hosts with many controllers. RESCAN_INTERVAL_MS caps the
+            // rate; the first iteration still rescans immediately because lastRescan starts at 0.
+            long now = System.currentTimeMillis();
+            if (now - lastRescan >= RESCAN_INTERVAL_MS) {
+                rescanAllControllers();
+                lastRescan = now;
+            }
             try {
                 Thread.sleep(POLL_INTERVAL_MS);
             } catch (InterruptedException ie) {

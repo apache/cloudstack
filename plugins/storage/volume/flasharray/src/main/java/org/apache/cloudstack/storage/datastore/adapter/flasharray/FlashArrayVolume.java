@@ -119,10 +119,13 @@ public class FlashArrayVolume implements ProviderSnapshot {
             if (serial.length() < 24) {
                 throw new RuntimeException("FlashArray serial [" + serial
                         + "] is too short to build an NVMe EUI-128 address "
-                        + "(expected at least 24 hex characters, got "
+                        + "(expected 24 hex characters, got "
                         + serial.length() + ")");
             }
-            return ("00" + serial.substring(0, 14) + PURE_OUI_EUI + serial.substring(14)).toLowerCase();
+            // Slice exact ranges rather than substring(14) so a serial with unexpected trailing
+            // characters cannot produce an EUI longer than 32 hex chars (which would not match
+            // /dev/disk/by-id/nvme-eui.<eui> on Linux).
+            return ("00" + serial.substring(0, 14) + PURE_OUI_EUI + serial.substring(14, 24)).toLowerCase();
         }
         return ("6" + PURE_OUI + serial).toLowerCase();
     }
