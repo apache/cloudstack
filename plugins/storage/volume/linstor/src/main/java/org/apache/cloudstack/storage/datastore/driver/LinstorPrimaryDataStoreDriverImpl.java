@@ -435,6 +435,15 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                         String utf8Passphrase = new String(volumeInfo.getPassphrase(), StandardCharsets.UTF_8);
                         cloneRequest.setVolumePassphrases(Collections.singletonList(utf8Passphrase));
                     }
+                } else {
+                    // pin the clone target to the resource group's layer stack (e.g. STORAGE on
+                    // shared pools); otherwise the target can end up with a default DRBD stack
+                    // that has no common clone strategy with the source
+                    List<LayerType> rgLayers = LinstorUtil.getRscGrpLayerList(
+                            linstorApi, LinstorUtil.getRscGrp(storagePoolVO));
+                    if (!rgLayers.isEmpty()) {
+                        cloneRequest.setLayerList(rgLayers);
+                    }
                 }
                 // Shared storage pool templates are INACTIVE while unused (e.g. after a node
                 // reboot) and the clone source selection skips inactive resources. Activate one
