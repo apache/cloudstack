@@ -66,6 +66,7 @@ import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
@@ -1329,6 +1330,46 @@ public class ResourceLimitManagerImplTest {
                     "Resource limit updated. Resource Type: " + Resource.ResourceType.backup_storage.toString() + ", New Value: " + maxBytes,
                     domainId, ApiCommandResourceType.Domain.toString()));
         }
+    }
+
+    @Test
+    public void testUpdateResourceLimitForRootDomainThrowsPermissionDenied() {
+        Long domainId = Domain.ROOT_DOMAIN;
+
+        Domain domain = mock(Domain.class);
+        when(domain.toString()).thenReturn("Domain {name=ROOT}");
+        when(entityManager.findById(Domain.class, domainId)).thenReturn(domain);
+
+        PermissionDeniedException ex = Assert.assertThrows(PermissionDeniedException.class,
+                () -> resourceLimitManager.updateResourceLimit(null, domainId, 8, 20L, null));
+
+        Assert.assertTrue(ex.getMessage().contains("Domain {name=ROOT}"));
+        Mockito.verify(resourceLimitDao, Mockito.never()).update(Mockito.anyLong(), Mockito.anyLong());
+    }
+
+    @Test
+    public void testUpdateResourceLimitForOwnDomainByDomainAdminThrowsPermissionDenied() {
+        Long domainId = 2L;
+
+        Domain domain = mock(Domain.class);
+        when(domain.toString()).thenReturn("Domain {name=domain-a}");
+        when(entityManager.findById(Domain.class, domainId)).thenReturn(domain);
+
+        Account domainAdminAccount = mock(Account.class);
+        when(domainAdminAccount.getType()).thenReturn(Account.Type.DOMAIN_ADMIN);
+        when(domainAdminAccount.getDomainId()).thenReturn(domainId);
+        User user = mock(User.class);
+        CallContext.unregister();
+        CallContext.register(user, domainAdminAccount);
+
+        try {
+            PermissionDeniedException ex = Assert.assertThrows(PermissionDeniedException.class,
+                    () -> resourceLimitManager.updateResourceLimit(null, domainId, 8, 20L, null));
+            Assert.assertTrue(ex.getMessage().contains("Domain {name=domain-a}"));
+        } finally {
+            CallContext.unregister();
+        }
+        Mockito.verify(resourceLimitDao, Mockito.never()).update(Mockito.anyLong(), Mockito.anyLong());
     }
 
     @Test

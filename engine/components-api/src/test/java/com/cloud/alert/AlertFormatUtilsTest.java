@@ -78,6 +78,23 @@ public class AlertFormatUtilsTest {
         assertEquals("name: cs-kvm06 (id: 37, uuid: host-uuid), availability zone: unknown, pod: unknown", result);
     }
 
+    @Test
+    public void describeHostLocationDescribesZoneAndPodForNullHost() {
+        setUpZone();
+        setUpPod();
+
+        String result = AlertFormatUtils.describeHostLocation(null, zone, pod);
+
+        assertEquals("No host to describe for availability zone: Milton1, pod: Milton1-Pod1", result);
+    }
+
+    @Test
+    public void describeHostLocationFallsBackToUnknownForNullHostAndNullZoneAndPod() {
+        String result = AlertFormatUtils.describeHostLocation(null, null, null);
+
+        assertEquals("No host to describe for availability zone: unknown, pod: unknown", result);
+    }
+
     private void setUpHost() {
         when(host.getName()).thenReturn("cs-kvm06");
         when(host.getId()).thenReturn(37L);
