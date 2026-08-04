@@ -2556,6 +2556,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         boolean stopped = false;
         Answer answer = null;
+        String agentExceptionDetail = null;
         try {
             answer = _agentMgr.send(vm.getHostId(), stop);
             if (answer != null) {
@@ -2583,6 +2584,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
 
         } catch (AgentUnavailableException | OperationTimedoutException e) {
+            agentExceptionDetail = e.getMessage();
             logger.warn("Unable to stop {} due to [{}].", profile.toString(), e.toString(), e);
         } finally {
             if (!stopped) {
@@ -2593,7 +2595,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     } catch (final NoTransitionException e) {
                         logger.warn("Unable to transition the state " + vm, e);
                     }
-                    String errorDetails = (answer != null && answer.getDetails() != null) ? " due to " + answer.getDetails() : "";
+                    String errorDetail = (answer != null && answer.getDetails() != null) ? answer.getDetails() : agentExceptionDetail;
+                    String errorDetails = errorDetail != null ? " due to " + errorDetail : "";
                     throw new CloudRuntimeException("Unable to stop " + vm + errorDetails);
                 } else {
                     logger.warn("Unable to actually stop {} but continue with release because it's a force stop", vm);
