@@ -161,7 +161,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
 
     private final ExecutorService _executor;
 
-    private ExecutorService _capacityExecutorService;
+    private ExecutorService capacityExecutorService;
 
     protected SMTPMailSender mailSender;
     protected String[] recipients = null;
@@ -251,8 +251,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     @Override
     public boolean stop() {
         _timer.cancel();
-        if (_capacityExecutorService != null) {
-            _capacityExecutorService.shutdown();
+        if (capacityExecutorService != null) {
+            capacityExecutorService.shutdown();
         }
         return true;
     }
@@ -296,12 +296,12 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
      * without going through configure()/start() (e.g. unit tests).
      */
     private synchronized ExecutorService getCapacityExecutorService() {
-        if (_capacityExecutorService == null || _capacityExecutorService.isShutdown()) {
-            _capacityExecutorService = Executors.newFixedThreadPool(
+        if (capacityExecutorService == null || capacityExecutorService.isShutdown()) {
+            capacityExecutorService = Executors.newFixedThreadPool(
                     Math.max(1, CapacityManager.CapacityCalculateWorkers.value()),
                     new NamedThreadFactory("Capacity-Calculator"));
         }
-        return _capacityExecutorService;
+        return capacityExecutorService;
     }
 
     /**
