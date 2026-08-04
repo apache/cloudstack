@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
@@ -92,6 +93,9 @@ public class FlashArrayAdapter implements ProviderAdapter {
     private static final long POST_COPY_WAIT_MS_DEFAULT = 5000;
     private static final String API_LOGIN_VERSION_DEFAULT = "1.19";
     private static final String API_VERSION_DEFAULT = "2.23";
+
+    /** A FlashArray NVMe namespace EUI-128 is exactly 32 hexadecimal characters. */
+    private static final Pattern EUI128_PATTERN = Pattern.compile("[0-9a-fA-F]{32}");
 
     // URLs for which the legacy-auth deprecation WARN has already been emitted,
     // so we don't spam the logs once per refresh per pool while it's still configured.
@@ -353,10 +357,23 @@ public class FlashArrayAdapter implements ProviderAdapter {
             // Reverse the EUI-128 layout: serial = eui[2:16] + eui[22:32], after
             // stripping the optional "eui." prefix that appears in udev paths.
             String eui = address.startsWith("eui.") ? address.substring(4) : address;
-            if (eui == null || eui.length() != 32) {
+            if (eui == null || !EUI128_PATTERN.matcher(eui).matches()) {
                 throw new RuntimeException("Invalid NVMe-TCP EUI-128 address ["
-                        + address + "]: expected 32 hex characters, got "
+                        + address + "]: expected 32 hexadecimal characters, got "
                         + (eui == null ? "null" : String.valueOf(eui.length())));
+            }
+            // Validate the FlashArray EUI-128 layout before deriving a serial from it, so a
+            // malformed or tampered address cannot be mapped onto an unintended volume:
+            //   00 + serial[0:14] + <Pure OUI> + serial[14:24]
+            if (!eui.startsWith("00")) {
+                throw new RuntimeException("Invalid NVMe-TCP EUI-128 address [" + address
+                        + "]: expected a \"00\" prefix for a FlashArray namespace");
+            }
+            if (!eui.regionMatches(true, 16, FlashArrayVolume.PURE_OUI_EUI, 0,
+                    FlashArrayVolume.PURE_OUI_EUI.length())) {
+                throw new RuntimeException("Invalid NVMe-TCP EUI-128 address [" + address
+                        + "]: expected the Pure Storage OUI [" + FlashArrayVolume.PURE_OUI_EUI
+                        + "] at offset 16");
             }
             serial = (eui.substring(2, 16) + eui.substring(22)).toUpperCase();
         } else {
