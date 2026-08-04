@@ -671,6 +671,42 @@ public class NetworkServiceImplTest {
     }
 
     @Test
+    public void testMatchingNsxSegmentProfilesAllowOfferingUpgrade() {
+        long oldOfferingId = 1L;
+        long newOfferingId = 2L;
+        Map<NetworkOffering.Detail, String> profiles = Map.of(
+                NetworkOffering.Detail.NsxIpDiscoveryProfileId, "ip-profile",
+                NetworkOffering.Detail.NsxMacDiscoveryProfileId, "mac-profile",
+                NetworkOffering.Detail.NsxSegmentSecurityProfileId, "security-profile");
+        Mockito.when(networkModel.getNtwkOffDetails(oldOfferingId)).thenReturn(profiles);
+        Mockito.when(networkModel.getNtwkOffDetails(newOfferingId)).thenReturn(profiles);
+
+        Assert.assertTrue(service.haveMatchingNsxSegmentProfiles(oldOfferingId, newOfferingId));
+    }
+
+    @Test
+    public void testDifferentNsxSegmentProfilesRejectOfferingUpgrade() {
+        long oldOfferingId = 1L;
+        long newOfferingId = 2L;
+        Mockito.when(networkModel.getNtwkOffDetails(oldOfferingId)).thenReturn(Map.of(
+                NetworkOffering.Detail.NsxMacDiscoveryProfileId, "old-mac-profile"));
+        Mockito.when(networkModel.getNtwkOffDetails(newOfferingId)).thenReturn(Map.of(
+                NetworkOffering.Detail.NsxMacDiscoveryProfileId, "new-mac-profile"));
+
+        Assert.assertFalse(service.haveMatchingNsxSegmentProfiles(oldOfferingId, newOfferingId));
+    }
+
+    @Test
+    public void testAbsentNsxSegmentProfilesAllowOfferingUpgrade() {
+        long oldOfferingId = 1L;
+        long newOfferingId = 2L;
+        Mockito.when(networkModel.getNtwkOffDetails(oldOfferingId)).thenReturn(null);
+        Mockito.when(networkModel.getNtwkOffDetails(newOfferingId)).thenReturn(Map.of());
+
+        Assert.assertTrue(service.haveMatchingNsxSegmentProfiles(oldOfferingId, newOfferingId));
+    }
+
+    @Test
     public void testCheckAndUpdateNetworkOfferingChangeReset() {
         NetworkVO networkVO = new NetworkVO();
         networkVO.setDns1(ip4Dns[0]);

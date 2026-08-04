@@ -1424,6 +1424,17 @@ public class ConfigurationManagerImplTest {
     }
 
     @Test
+    public void testValidateNetworkOfferingDetailsRejectsWhitespaceInNsxProfileId() {
+        Map<NetworkOffering.Detail, String> details = Map.of(
+                NetworkOffering.Detail.NsxMacDiscoveryProfileId, " mac-profile ");
+        Map<Network.Service, Set<Network.Provider>> serviceProviderMap = Map.of(
+                Network.Service.Connectivity, Set.of(Network.Provider.Nsx));
+
+        Assert.assertThrows(InvalidParameterValueException.class,
+                () -> configurationManagerImplSpy.validateNtwkOffDetails(details, serviceProviderMap));
+    }
+
+    @Test
     public void testValidateNetworkOfferingDetailsRejectsNsxSegmentProfileForNonNsxOffering() {
         Map<NetworkOffering.Detail, String> details = Map.of(
                 NetworkOffering.Detail.NsxIpDiscoveryProfileId, "cloudstack-ip-discovery");

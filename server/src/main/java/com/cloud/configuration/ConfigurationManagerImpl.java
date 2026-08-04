@@ -8003,6 +8003,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (StringUtils.isBlank(profileId)) {
                     throw new InvalidParameterValueException(String.format("A non-empty NSX profile ID is required for detail %s", detail));
                 }
+                if (!profileId.equals(profileId.trim())) {
+                    throw new InvalidParameterValueException(String.format("NSX profile ID for detail %s must not contain surrounding whitespace", detail));
+                }
                 if (profileId.length() > MAX_NSX_PROFILE_ID_LENGTH) {
                     throw new InvalidParameterValueException(String.format("NSX profile ID for detail %s cannot exceed %d characters",
                             detail, MAX_NSX_PROFILE_ID_LENGTH));
