@@ -29,4 +29,19 @@ public interface VmwareCbtMigrationDao extends GenericDao<VmwareCbtMigrationVO, 
                                                              Long startIndex, Long pageSizeVal);
 
     List<VmwareCbtMigrationVO> listByConvertHostId(Long convertHostId);
+
+    /**
+     * Persists the given migration only while the stored record has not reached a terminal
+     * state (Completed, Failed or Cancelled), as a single conditional statement.
+     *
+     * Long-running replication and cutover jobs use this instead of a plain update so a
+     * migration that an operator cancelled mid-flight is not resurrected by a job that started
+     * before the cancellation: cancelling removes the target disks, so a later blind write of a
+     * non-terminal state would leave a record claiming to replicate onto disks that no longer
+     * exist, and which can no longer be deleted because it is not terminal.
+     *
+     * @return true if the record was still non-terminal and was updated, false if it had
+     *         already reached a terminal state and was therefore left untouched.
+     */
+    boolean updateIfNotTerminal(VmwareCbtMigrationVO migration);
 }

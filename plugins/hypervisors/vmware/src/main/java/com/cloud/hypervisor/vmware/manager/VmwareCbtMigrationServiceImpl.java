@@ -30,6 +30,7 @@ import org.apache.cloudstack.vm.VmwareCbtDiskInfo;
 import org.apache.cloudstack.vm.VmwareCbtMigrationService;
 import org.apache.cloudstack.vm.VmwareCbtPreflightDiskInfo;
 import org.apache.cloudstack.vm.VmwareCbtPreflightInfo;
+import org.apache.cloudstack.vm.VmwareCbtPreflightNicInfo;
 import org.apache.cloudstack.vm.VmwareCbtSnapshotInfo;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
@@ -82,6 +83,7 @@ public class VmwareCbtMigrationServiceImpl implements VmwareCbtMigrationService 
                     runtimeInfo == null ? null : runtimeInfo.isConsolidationNeeded(),
                     countSnapshots(snapshotInfo),
                     toVmwareCbtPreflightDiskInfo(unmanagedInstance, collectDiskDeviceInfo(lookup.vmMO)),
+                    toVmwareCbtPreflightNicInfo(unmanagedInstance),
                     configSummary == null ? null : configSummary.getNumCpu(),
                     configSummary == null ? null : configSummary.getCpuReservation(),
                     configSummary == null ? null : configSummary.getMemorySizeMB(),
@@ -315,6 +317,18 @@ public class VmwareCbtMigrationServiceImpl implements VmwareCbtMigrationService 
                     deviceInfo != null && deviceInfo.physicalRdm));
         }
         return disks;
+    }
+
+    private List<VmwareCbtPreflightNicInfo> toVmwareCbtPreflightNicInfo(UnmanagedInstanceTO unmanagedInstance) {
+        List<VmwareCbtPreflightNicInfo> nics = new ArrayList<>();
+        if (unmanagedInstance == null || CollectionUtils.isEmpty(unmanagedInstance.getNics())) {
+            return nics;
+        }
+        for (UnmanagedInstanceTO.Nic nic : unmanagedInstance.getNics()) {
+            nics.add(new VmwareCbtPreflightNicInfo(nic.getNicId(), nic.getAdapterType(), nic.getMacAddress(),
+                    nic.getVlan()));
+        }
+        return nics;
     }
 
     private Map<String, DiskDeviceInfo> collectDiskDeviceInfo(VirtualMachineMO vmMO) throws Exception {

@@ -31,8 +31,15 @@ import java.util.List;
 @Component
 public class VmwareCbtMigrationDaoImpl extends GenericDaoBase<VmwareCbtMigrationVO, Long> implements VmwareCbtMigrationDao {
 
+    private static final VmwareCbtMigration.State[] TERMINAL_STATES = {
+            VmwareCbtMigration.State.Completed,
+            VmwareCbtMigration.State.Failed,
+            VmwareCbtMigration.State.Cancelled
+    };
+
     private final SearchBuilder<VmwareCbtMigrationVO> migrationSearch;
     private final SearchBuilder<VmwareCbtMigrationVO> convertHostSearch;
+    private final SearchBuilder<VmwareCbtMigrationVO> nonTerminalSearch;
 
     public VmwareCbtMigrationDaoImpl() {
         migrationSearch = createSearchBuilder();
@@ -47,6 +54,19 @@ public class VmwareCbtMigrationDaoImpl extends GenericDaoBase<VmwareCbtMigration
         convertHostSearch = createSearchBuilder();
         convertHostSearch.and("convertHostId", convertHostSearch.entity().getConvertHostId(), SearchCriteria.Op.EQ);
         convertHostSearch.done();
+
+        nonTerminalSearch = createSearchBuilder();
+        nonTerminalSearch.and("id", nonTerminalSearch.entity().getId(), SearchCriteria.Op.EQ);
+        nonTerminalSearch.and("state", nonTerminalSearch.entity().getState(), SearchCriteria.Op.NOTIN);
+        nonTerminalSearch.done();
+    }
+
+    @Override
+    public boolean updateIfNotTerminal(VmwareCbtMigrationVO migration) {
+        SearchCriteria<VmwareCbtMigrationVO> sc = nonTerminalSearch.create();
+        sc.setParameters("id", migration.getId());
+        sc.setParameters("state", (Object[]) TERMINAL_STATES);
+        return update(migration, sc) > 0;
     }
 
     @Override

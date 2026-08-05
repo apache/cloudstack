@@ -28,6 +28,7 @@ public class VmwareCbtPreflightInfo {
     private final Boolean consolidationNeeded;
     private final Integer existingSnapshotCount;
     private final List<VmwareCbtPreflightDiskInfo> disks;
+    private final List<VmwareCbtPreflightNicInfo> nics;
     private final Integer cpuCores;
     private final Integer cpuSpeed;
     private final Integer memoryMb;
@@ -40,13 +41,14 @@ public class VmwareCbtPreflightInfo {
                                   List<VmwareCbtPreflightDiskInfo> disks,
                                   Integer cpuCores, Integer cpuSpeed, Integer memoryMb) {
         this(sourceVmName, sourceVmMor, changeTrackingSupported, changeTrackingEnabled, consolidationNeeded,
-                existingSnapshotCount, disks, cpuCores, cpuSpeed, memoryMb, null, null);
+                existingSnapshotCount, disks, null, cpuCores, cpuSpeed, memoryMb, null, null);
     }
 
     public VmwareCbtPreflightInfo(String sourceVmName, String sourceVmMor,
                                   Boolean changeTrackingSupported, Boolean changeTrackingEnabled,
                                   Boolean consolidationNeeded, Integer existingSnapshotCount,
                                   List<VmwareCbtPreflightDiskInfo> disks,
+                                  List<VmwareCbtPreflightNicInfo> nics,
                                   Integer cpuCores, Integer cpuSpeed, Integer memoryMb,
                                   String operatingSystemId, String operatingSystem) {
         this.sourceVmName = sourceVmName;
@@ -56,6 +58,7 @@ public class VmwareCbtPreflightInfo {
         this.consolidationNeeded = consolidationNeeded;
         this.existingSnapshotCount = existingSnapshotCount;
         this.disks = disks == null ? Collections.emptyList() : Collections.unmodifiableList(disks);
+        this.nics = nics == null ? Collections.emptyList() : Collections.unmodifiableList(nics);
         this.cpuCores = cpuCores;
         this.cpuSpeed = cpuSpeed;
         this.memoryMb = memoryMb;
@@ -85,6 +88,10 @@ public class VmwareCbtPreflightInfo {
 
     public Integer getExistingSnapshotCount() {
         return existingSnapshotCount;
+    }
+
+    public List<VmwareCbtPreflightNicInfo> getNics() {
+        return nics;
     }
 
     public List<VmwareCbtPreflightDiskInfo> getDisks() {

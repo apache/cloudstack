@@ -18,11 +18,13 @@ package org.apache.cloudstack.vm;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -80,6 +82,8 @@ import com.cloud.dc.VmwareDatacenterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VmwareDatacenterDao;
+import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
@@ -214,6 +218,8 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
     private UserDao userDao;
     @Inject
     private ServiceOfferingDao serviceOfferingDao;
+    @Inject
+    private DiskOfferingDao diskOfferingDao;
     @Inject
     private UserVmDao userVmDao;
     @Inject
@@ -477,7 +483,8 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
         validateWindowsGuestConversionSupportForStart(convertHost, sourceVmName, preflightInfo, cmd.getDetails());
         ensureSourceVmChangeTrackingEnabledForStart(source, sourceVmName, preflightInfo);
         List<VmwareCbtDiskInfo> sourceDisks = discoverSourceDisks(source, sourceVmName);
-        validateDataDiskOfferingMappingsForStart(sourceVmName, sourceDisks, cmd.getDataDiskToDiskOfferingList());
+        validateDataDiskOfferingMappingsForStart(sourceVmName, sourceDisks, cmd.getDataDiskToDiskOfferingList(), owner, zone);
+        validateNicMappingsForStart(sourceVmName, preflightInfo.getNics(), cmd.getNicNetworkList(), cmd.getNicIpAddressList());
         String displayName = StringUtils.defaultIfBlank(cmd.getDisplayName(), sourceVmName);
 
         VmwareCbtMigrationVO migration = new VmwareCbtMigrationVO(zone.getId(), owner.getId(), getUserIdForOwner(owner),
@@ -543,7 +550,7 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
         migration.setCurrentStep(String.format("Running CBT delta synchronization cycle %s", cycleNumber));
         migration.setLastError(null);
         migration.setUpdated(new Date());
-        vmwareCbtMigrationDao.update(migration.getId(), migration);
+        migration = persistMigrationProgress(migration, String.format("start of CBT delta cycle %s", cycleNumber));
 
         VmwareCbtSnapshotInfo snapshot = null;
         try {
@@ -607,7 +614,7 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
                     VmwareCbtMigration.State.Replicating : VmwareCbtMigration.State.ReadyForCutover);
             migration.setCurrentStep(getCutoverDecisionStep(cutoverDecision));
             migration.setUpdated(new Date());
-            vmwareCbtMigrationDao.update(migration.getId(), migration);
+            migration = persistMigrationProgress(migration, "CBT delta synchronization progress");
             return createVmwareCbtMigrationResponse(migration);
         } catch (RuntimeException e) {
             String error = sanitizeSensitiveMessage(StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()), source);
@@ -639,7 +646,14 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
         migration.setCurrentStep("Running final CBT delta synchronization before cutover");
         migration.setLastError(null);
         migration.setUpdated(new Date());
-        vmwareCbtMigrationDao.update(migration.getId(), migration);
+        if (!vmwareCbtMigrationDao.updateIfNotTerminal(migration)) {
+            // Cancelled between the state check above and here: refuse rather than cut over a
+            // migration whose target disks the cancellation has already removed.
+            VmwareCbtMigrationVO current = vmwareCbtMigrationDao.findById(migration.getId());
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+                    String.format("Cannot cut over VMware CBT migration %s: it reached state %s while the cutover was starting.",
+                            migration.getUuid(), current == null ? "unknown" : current.getState()));
+        }
 
         int finalCycleNumber = migration.getCompletedCycles() + 1;
         if (!runFinalDeltaSync(source, migration, cbtHost, finalCycleNumber)) {
@@ -652,7 +666,7 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
         migration.setCurrentStep(String.format("Final CBT delta synchronization completed; running %s",
                 finalizationDescription));
         migration.setUpdated(new Date());
-        vmwareCbtMigrationDao.update(migration.getId(), migration);
+        migration = persistMigrationProgress(migration, "final delta synchronization progress");
 
         VmwareCbtCutoverCommand cutoverCommand = new VmwareCbtCutoverCommand(migration.getUuid(), createRemoteInstance(source, migration),
                 getDiskTransferObjects(migration), finalCycleNumber, true);
@@ -673,11 +687,25 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
         migration.setCurrentStep(String.format("Final %s completed; importing VM into CloudStack",
                 finalizationDescription));
         migration.setUpdated(new Date());
-        vmwareCbtMigrationDao.update(migration.getId(), migration);
+        if (!vmwareCbtMigrationDao.updateIfNotTerminal(migration)) {
+            // Cancelled while the final conversion ran: do not import disks the cancellation
+            // has already scheduled for removal.
+            LOGGER.info("Not importing VMware CBT migration {}: it reached a terminal state while the final conversion was running.",
+                    migration.getUuid());
+            return createVmwareCbtMigrationResponse(vmwareCbtMigrationDao.findById(migration.getId()));
+        }
         return importCutoverMigration(source, migration);
     }
 
     private VmwareCbtMigrationResponse importCutoverMigration(VmwareSource source, VmwareCbtMigrationVO migration) {
+        VmwareCbtMigrationVO stored = vmwareCbtMigrationDao.findById(migration.getId());
+        if (stored != null && stored.getState() != null && stored.getState().isTerminal()) {
+            // Importing is expensive and creates a real VM, so re-check right before starting it:
+            // a cancel may have landed while the preceding conversion was running.
+            LOGGER.info("Not importing VMware CBT migration {}: it is already in terminal state {}.",
+                    migration.getUuid(), stored.getState());
+            return createVmwareCbtMigrationResponse(stored);
+        }
         if (migration.getServiceOfferingId() == null) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
                     "Cannot import VMware CBT migration because serviceofferingid was not recorded when the migration was started");
@@ -705,7 +733,13 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
             migration.setLastError(null);
             clearStoredSourceCredentials(migration);
             migration.setUpdated(new Date());
-            vmwareCbtMigrationDao.update(migration.getId(), migration);
+            if (!vmwareCbtMigrationDao.updateIfNotTerminal(migration)) {
+                // The VM does exist, so surface it rather than losing the reference: the operator
+                // cancelled during the import and now has to reconcile the imported VM by hand.
+                LOGGER.warn("VMware CBT migration {} was cancelled while its import was running, but the import completed and created VM {}. "
+                                + "The migration record keeps its cancelled state; the imported VM must be reviewed manually.",
+                        migration.getUuid(), userVm.getUuid());
+            }
         } catch (RuntimeException e) {
             String error = sanitizeSensitiveMessage(StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()), source);
             migration = vmwareCbtMigrationDao.findById(migration.getId());
@@ -713,7 +747,7 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
             migration.setCurrentStep("CloudStack VM import failed; retry cutover to import the converted disks");
             migration.setLastError(error);
             migration.setUpdated(new Date());
-            vmwareCbtMigrationDao.update(migration.getId(), migration);
+            migration = persistMigrationProgress(migration, "failed CloudStack VM import");
         }
         return createVmwareCbtMigrationResponse(vmwareCbtMigrationDao.findById(migration.getId()));
     }
@@ -869,7 +903,7 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
             migration.setLastDirtyRate(dirtyRate);
             migration.setCurrentStep("Final CBT delta synchronization completed");
             migration.setUpdated(new Date());
-            vmwareCbtMigrationDao.update(migration.getId(), migration);
+            persistMigrationProgress(migration, "final CBT delta synchronization result");
             return true;
         } catch (RuntimeException e) {
             String error = sanitizeSensitiveMessage(StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()), source);
@@ -896,11 +930,20 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
     public VmwareCbtMigrationResponse cancelVmwareCbtMigration(CancelVmwareCbtMigrationCmd cmd) {
         VmwareCbtMigrationVO migration = getMigration(cmd.getId());
         if (!migration.getState().isTerminal()) {
-            sendCleanupCommandIfPossible(migration);
+            // Mark the migration cancelled before removing the target disks, not after: an
+            // in-flight replication or cutover job only persists its progress while the record is
+            // non-terminal, so winning this conditional update is what stops it from writing a
+            // replicating state back over the cancellation once its disks are already gone.
             migration.setState(VmwareCbtMigration.State.Cancelled);
             migration.setCurrentStep("Cancelled");
             migration.setUpdated(new Date());
-            vmwareCbtMigrationDao.update(migration.getId(), migration);
+            if (vmwareCbtMigrationDao.updateIfNotTerminal(migration)) {
+                sendCleanupCommandIfPossible(migration);
+            } else {
+                LOGGER.info("VMware CBT migration {} reached a terminal state concurrently; leaving it as is and skipping target cleanup.",
+                        migration.getUuid());
+            }
+            migration = vmwareCbtMigrationDao.findById(migration.getId());
         }
         clearStoredSourceCredentials(migration);
         return createVmwareCbtMigrationResponse(migration);
@@ -1942,7 +1985,7 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
         try {
             migration.setCurrentStep("Creating VMware CBT baseline snapshot");
             migration.setUpdated(new Date());
-            vmwareCbtMigrationDao.update(migration.getId(), migration);
+            migration = persistMigrationProgress(migration, "baseline snapshot progress");
 
             baselineSnapshot = createBaselineSnapshot(source, migration);
             prepareInitialSyncDiskTargets(migration, storageTarget);
@@ -1950,7 +1993,7 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
             migration.setCurrentStep("Initial VDDK full sync is running on KVM agent");
             migration.setLastError(null);
             migration.setUpdated(new Date());
-            vmwareCbtMigrationDao.update(migration.getId(), migration);
+            migration = persistMigrationProgress(migration, "initial full sync progress");
 
             HostVO cbtHost = getCbtHostForMigration(migration);
             StoragePoolVO storagePool = storageTarget == null ? null : storageTarget.getPool();
@@ -1974,7 +2017,7 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
             applyDiskResults(migration, answer.getDiskResults());
             migration.setCurrentStep("Recording VMware CBT baseline metadata");
             migration.setUpdated(new Date());
-            vmwareCbtMigrationDao.update(migration.getId(), migration);
+            migration = persistMigrationProgress(migration, "baseline metadata progress");
 
             refreshBaselineDiskChangeIds(source, migration, baselineSnapshot.getSnapshotMor());
             validateInitialSyncTargetDisks(migration);
@@ -1983,7 +2026,7 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
             migration.setCurrentStep("Initial VDDK full sync completed; ready for CBT delta synchronization");
             migration.setLastError(null);
             migration.setUpdated(new Date());
-            vmwareCbtMigrationDao.update(migration.getId(), migration);
+            migration = persistMigrationProgress(migration, "initial full sync result");
             return createVmwareCbtMigrationResponse(migration);
         } catch (RuntimeException e) {
             String error = sanitizeSensitiveMessage(StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()), source);
@@ -2326,7 +2369,8 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
      * paid for. Fail at start instead, while nothing has been copied yet.
      */
     protected void validateDataDiskOfferingMappingsForStart(String sourceVmName, List<VmwareCbtDiskInfo> sourceDisks,
-                                                            Map<String, Long> dataDiskOfferingMap) {
+                                                            Map<String, Long> dataDiskOfferingMap,
+                                                            Account owner, DataCenterVO zone) {
         int dataDiskCount = sourceDisks == null ? 0 : Math.max(0, sourceDisks.size() - 1);
         int mappedCount = dataDiskOfferingMap == null ? 0 : dataDiskOfferingMap.size();
         if (dataDiskCount > mappedCount) {
@@ -2334,6 +2378,117 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
                     "Source VM %s has %d data disk(s) but %d disk offering mapping(s) were provided. " +
                     "Provide one datadiskofferinglist entry per data disk so the cutover import can place every disk.",
                     sourceVmName, dataDiskCount, mappedCount));
+        }
+        if (mappedCount > dataDiskCount) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format(
+                    "Source VM %s has %d data disk(s) but %d disk offering mapping(s) were provided. " +
+                    "Remove the extra datadiskofferinglist entries.",
+                    sourceVmName, dataDiskCount, mappedCount));
+        }
+        if (mappedCount == 0) {
+            return;
+        }
+
+        // A matching count is not enough: the import resolves the ROOT disk by elimination, as the
+        // single source disk that carries no mapping. So a mapping naming a disk that does not exist
+        // (a typo, or a stale id) still passes a count check, and worse, mapping the real root while
+        // omitting a genuine data disk leaves that data disk as the "unmapped" one and it silently
+        // becomes ROOT. Validate the identities, not just how many there are.
+        Set<String> sourceDiskIds = sourceDisks.stream()
+                .map(VmwareCbtDiskInfo::getSourceDiskId)
+                .filter(StringUtils::isNotBlank)
+                .collect(Collectors.toSet());
+        List<String> unknownDiskIds = dataDiskOfferingMap.keySet().stream()
+                .filter(diskId -> !sourceDiskIds.contains(diskId))
+                .sorted()
+                .collect(Collectors.toList());
+        if (!unknownDiskIds.isEmpty()) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format(
+                    "Source VM %s has no disk(s) with id %s. Each datadiskofferinglist entry must name a disk of " +
+                    "the source VM; valid ids are %s.",
+                    sourceVmName, StringUtils.join(unknownDiskIds, ", "), StringUtils.join(sourceDiskIds, ", ")));
+        }
+
+        // Resolve every offering now, and check the owner may actually use it, rather than
+        // discovering an unusable or inaccessible offering at cutover after the whole copy is done.
+        for (Map.Entry<String, Long> entry : dataDiskOfferingMap.entrySet()) {
+            DiskOfferingVO diskOffering = diskOfferingDao.findById(entry.getValue());
+            if (diskOffering == null) {
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format(
+                        "Disk offering %s mapped to disk %s of source VM %s does not exist.",
+                        entry.getValue(), entry.getKey(), sourceVmName));
+            }
+            accountService.checkAccess(owner, diskOffering, zone);
+        }
+    }
+
+    /**
+     * Validates the caller's NIC-to-network mappings against the NICs the preflight discovered on
+     * the source VM, so a wrong or missing mapping fails at start instead of at cutover import,
+     * after the whole replication has already run. Mirrors the import-side rules in
+     * {@code UnmanagedVMsManagerImpl#getUnmanagedNicNetworkMap}: a source NIC without an explicit
+     * mapping is acceptable only when it carries a VLAN id the import can auto-match a network by,
+     * mappings must name NICs that exist, and mixed adapter types are rejected.
+     */
+    protected void validateNicMappingsForStart(String sourceVmName, List<VmwareCbtPreflightNicInfo> sourceNics,
+                                               Map<String, Long> nicNetworkMap,
+                                               Map<String, Network.IpAddresses> nicIpAddressMap) {
+        if (CollectionUtils.isEmpty(sourceNics)) {
+            return;
+        }
+        Set<String> sourceNicIds = sourceNics.stream()
+                .map(VmwareCbtPreflightNicInfo::getSourceNicId)
+                .filter(StringUtils::isNotBlank)
+                .collect(Collectors.toSet());
+
+        String adapterType = null;
+        for (VmwareCbtPreflightNicInfo nic : sourceNics) {
+            if (StringUtils.isBlank(nic.getAdapterType())) {
+                continue;
+            }
+            if (adapterType == null) {
+                adapterType = nic.getAdapterType();
+            } else if (!adapterType.equals(nic.getAdapterType())) {
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format(
+                        "Source VM %s has network adapters of different types (%s, %s), which the cutover import " +
+                        "does not support. Make all source network adapters the same type before starting the migration.",
+                        sourceVmName, adapterType, nic.getAdapterType()));
+            }
+        }
+
+        List<String> unmappedNicIds = new ArrayList<>();
+        for (VmwareCbtPreflightNicInfo nic : sourceNics) {
+            String nicId = nic.getSourceNicId();
+            if (StringUtils.isBlank(nicId) || (nicNetworkMap != null && nicNetworkMap.containsKey(nicId))) {
+                continue;
+            }
+            // The import can still auto-match a network by VLAN id for an unmapped NIC.
+            if (nic.getVlan() == null || nic.getVlan() == 0) {
+                unmappedNicIds.add(nicId);
+            }
+        }
+        if (!unmappedNicIds.isEmpty()) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format(
+                    "Source VM %s has %d NIC(s) but NIC(s) %s have no network mapping and no VLAN to auto-match a " +
+                    "network by. Provide a nicnetworklist entry per source NIC so the cutover import can connect every NIC.",
+                    sourceVmName, sourceNics.size(), StringUtils.join(unmappedNicIds, ", ")));
+        }
+
+        List<String> unknownMappedNicIds = new ArrayList<>();
+        if (nicNetworkMap != null) {
+            nicNetworkMap.keySet().stream().filter(nicId -> !sourceNicIds.contains(nicId)).forEach(unknownMappedNicIds::add);
+        }
+        if (nicIpAddressMap != null) {
+            nicIpAddressMap.keySet().stream()
+                    .filter(nicId -> !sourceNicIds.contains(nicId) && !unknownMappedNicIds.contains(nicId))
+                    .forEach(unknownMappedNicIds::add);
+        }
+        if (!unknownMappedNicIds.isEmpty()) {
+            Collections.sort(unknownMappedNicIds);
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format(
+                    "Source VM %s has no NIC(s) with id %s. Each nicnetworklist and nicipaddresslist entry must name " +
+                    "a NIC of the source VM; valid ids are %s.",
+                    sourceVmName, StringUtils.join(unknownMappedNicIds, ", "), StringUtils.join(sourceNicIds, ", ")));
         }
     }
 
@@ -2345,20 +2500,37 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
     }
 
     private void markMigrationFailed(VmwareCbtMigrationVO migration, String currentStep, String details) {
-        VmwareCbtMigrationVO current = vmwareCbtMigrationDao.findById(migration.getId());
-        if (current != null && current.getState() != null && current.getState().isTerminal()) {
-            // e.g. a cancel raced with an in-flight sync: keep the operator-driven
-            // terminal state (Cancelled) instead of overwriting it when the aborted
-            // sync's failure lands afterwards.
-            LOGGER.debug("Not marking VMware CBT migration {} as Failed: it is already in terminal state {}",
-                    migration.getUuid(), current.getState());
-            return;
-        }
         migration.setState(VmwareCbtMigration.State.Failed);
         migration.setCurrentStep(currentStep);
         migration.setLastError(details);
         migration.setUpdated(new Date());
-        vmwareCbtMigrationDao.update(migration.getId(), migration);
+        if (!vmwareCbtMigrationDao.updateIfNotTerminal(migration)) {
+            // e.g. a cancel raced with an in-flight sync: keep the operator-driven
+            // terminal state (Cancelled) instead of overwriting it when the aborted
+            // sync's failure lands afterwards.
+            LOGGER.debug("Not marking VMware CBT migration {} as Failed: it already reached a terminal state",
+                    migration.getUuid());
+        }
+    }
+
+    /**
+     * Persists a progress update from a long-running job, unless the migration reached a terminal
+     * state meanwhile - typically an operator cancelling it while this job was still in flight.
+     * Cancelling removes the target disks, so writing a non-terminal state back afterwards would
+     * leave a record that claims to be replicating onto disks that no longer exist and that can no
+     * longer be deleted.
+     *
+     * @return the record as it now stands: the caller's update when it was applied, otherwise the
+     *         stored terminal record, so responses reflect what is actually persisted.
+     */
+    private VmwareCbtMigrationVO persistMigrationProgress(VmwareCbtMigrationVO migration, String progressDescription) {
+        if (vmwareCbtMigrationDao.updateIfNotTerminal(migration)) {
+            return migration;
+        }
+        VmwareCbtMigrationVO current = vmwareCbtMigrationDao.findById(migration.getId());
+        LOGGER.info("Not recording {} for VMware CBT migration {}: it already reached terminal state {}.",
+                progressDescription, migration.getUuid(), current == null ? "unknown" : current.getState());
+        return current == null ? migration : current;
     }
 
     private void markInitialSyncDisksFailed(VmwareCbtMigrationVO migration) {

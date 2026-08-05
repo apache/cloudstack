@@ -119,7 +119,7 @@ public class VmwareCbtMigrationOfferingValidationTest {
 
     private VmwareCbtPreflightInfo createPreflightInfo(String operatingSystemId, String operatingSystem) {
         return new VmwareCbtPreflightInfo("source-vm", "vm-1", true, true, false, 0,
-                Collections.emptyList(), 2, 1000, 2048, operatingSystemId, operatingSystem);
+                Collections.emptyList(), Collections.emptyList(), 2, 1000, 2048, operatingSystemId, operatingSystem);
     }
 
     private ServiceOfferingVO createServiceOffering(Integer cpu, Integer cpuSpeed, Integer memory,
