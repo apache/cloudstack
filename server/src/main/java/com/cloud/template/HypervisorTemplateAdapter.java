@@ -338,7 +338,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             return false;
         }
 
-        if (_imgStoreDao.findById(imageStore.getId()).isReadonly()) {
+        if (storeMgr.isRemovedOrReadonly(imageStore)) {
             logger.info("Image store [{}] is marked as read-only. Skip downloading template to this image store.", imageStore);
             return false;
         }
