@@ -374,7 +374,10 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
                 // controller >= 1.29 prepares the live migration itself:
                 // dual-primary for DRBD, activation on both nodes for shared storage pools
                 ResourceMakeAvailable rma = new ResourceMakeAvailable();
-                rma.autoManageDualPrimary(isVMMigration);
+                if (isVMMigration) {
+                    // only set when needed: older controllers reject the unknown property
+                    rma.autoManageDualPrimary(true);
+                }
                 ApiCallRcList answers = api.resourceMakeAvailableOnNode(rscName, localNodeName, rma);
                 checkLinstorAnswersThrow(answers);
             } else {
