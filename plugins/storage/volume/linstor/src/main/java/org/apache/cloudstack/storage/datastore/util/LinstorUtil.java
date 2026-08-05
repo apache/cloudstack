@@ -325,6 +325,33 @@ public class LinstorUtil {
         return distinct;
     }
 
+    /**
+     * Storage provider kinds that allocate the full volume size up front. Such pools cannot be
+     * over-provisioned: their capacity is the real limit.
+     */
+    private static final Collection<ProviderKind> THICK_PROVIDER_KINDS = Arrays.asList(
+            ProviderKind.LVM, ProviderKind.ZFS, ProviderKind.FILE);
+
+    /**
+     * Check if all storage pools backing the resource group are thickly provisioned.
+     * Unknown/mixed setups are reported as thin, keeping the over-provisioning default.
+     */
+    public static boolean isThicklyProvisioned(String linstorUrl, String rscGroupName, String apiToken,
+                                               boolean insecureSsl) {
+        DevelopersApi api = getLinstorAPI(linstorUrl, apiToken, insecureSsl);
+        try {
+            return isThicklyProvisionedPools(getCapacityStoragePools(api, rscGroupName));
+        } catch (ApiException apiEx) {
+            LOGGER.warn("Unable to query storage pool provider kinds: {}", apiEx.getBestMessage());
+            return false;
+        }
+    }
+
+    static boolean isThicklyProvisionedPools(List<StoragePool> storagePools) {
+        return !storagePools.isEmpty() && storagePools.stream()
+                .allMatch(sp -> THICK_PROVIDER_KINDS.contains(sp.getProviderKind()));
+    }
+
     private static long sumTotalCapacity(List<StoragePool> storagePools) {
         return storagePools.stream()
                 .mapToLong(sp -> sp.getTotalCapacity() != null ? sp.getTotalCapacity() : 0L)

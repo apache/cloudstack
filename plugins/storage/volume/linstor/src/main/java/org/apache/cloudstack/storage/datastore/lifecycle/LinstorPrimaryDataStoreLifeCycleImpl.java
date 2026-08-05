@@ -207,6 +207,16 @@ public class LinstorPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStoreLi
                     LinstorConfigurationManager.ApiToken.key(), DBEncryptionUtil.encrypt(apiToken), false);
         }
 
+        // Thickly provisioned storage (e.g. thick LVM, also used for shared storage pools) allocates
+        // the full volume size, so the pool capacity is a hard limit. The Linstor storage pool type
+        // allows over-provisioning for thin backends, so disable it per pool here instead.
+        if (dataStore != null && LinstorUtil.isThicklyProvisioned(url, resourceGroup, apiToken, insecureSsl)) {
+            logger.info("Linstor: {} is thickly provisioned, setting {} to 1.0",
+                    storagePoolName, CapacityManager.StorageOverprovisioningFactor.key());
+            storagePoolDetailsDao.addDetail(dataStore.getId(),
+                    CapacityManager.StorageOverprovisioningFactor.key(), "1.0", true);
+        }
+
         return dataStore;
     }
 
