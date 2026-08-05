@@ -157,7 +157,11 @@ public final class LibvirtCheckVolumeCommandWrapper extends CommandWrapper<Check
             // authoritative: a volume can be attached to a running VM on another node. Consult
             // the backend's cluster-wide in-use state so such a volume is not adopted.
             String inUseNode = pool.getVolumeInUseNode(disk.getName());
-            if (inUseNode != null) {
+            if (KVMStoragePool.IN_USE_NODE_UNKNOWN.equals(inUseNode)) {
+                logger.warn("Could not determine cluster-wide in-use state of volume {}; marking as locked",
+                        disk.getName());
+                isLocked = true;
+            } else if (inUseNode != null) {
                 logger.info("Volume {} is in use on node {}; marking as locked", disk.getName(), inUseNode);
                 isLocked = true;
             }
