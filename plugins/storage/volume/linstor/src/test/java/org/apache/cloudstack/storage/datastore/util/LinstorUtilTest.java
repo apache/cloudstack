@@ -65,6 +65,15 @@ public class LinstorUtilTest {
         return sp;
     }
 
+    private StoragePool mockStoragePool(
+            String name, String node, ProviderKind kind, String freeSpaceMgrName, long totalKib, long freeKib) {
+        StoragePool sp = mockStoragePool(name, node, kind);
+        sp.setFreeSpaceMgrName(freeSpaceMgrName);
+        sp.setTotalCapacity(totalKib);
+        sp.setFreeCapacity(freeKib);
+        return sp;
+    }
+
     @Before
     public void setUp() throws ApiException {
         api = mock(DevelopersApi.class);
@@ -200,6 +209,36 @@ public class LinstorUtilTest {
 
         Assert.assertTrue(LinstorUtil.getDiskfulStoragePoolsByPreference(api, "cs-test").isEmpty());
         Assert.assertNull(LinstorUtil.getDiskfulStoragePool(api, "cs-test"));
+    }
+
+    @Test
+    public void testGetCapacityStoragePoolsCountsSharedSpaceOnce() throws ApiException {
+        ResourceGroup sharedGroup = new ResourceGroup();
+        sharedGroup.setName("shared");
+        AutoSelectFilter asf = new AutoSelectFilter();
+        asf.setPlaceCount(1);
+        sharedGroup.setSelectFilter(asf);
+        when(api.resourceGroupList(Collections.singletonList("shared"), null, null, null))
+                .thenReturn(Collections.singletonList(sharedGroup));
+
+        // 3 nodes accessing the same shared space, each reporting the full 100 GiB, plus one
+        // node-local pool and a diskless pool which must be ignored
+        when(api.viewStoragePools(Collections.emptyList(), null, null, null, null, true))
+                .thenReturn(Arrays.asList(
+                        mockStoragePool("sharedpool", "nodeA", ProviderKind.LVM, "cs-shared", 104857600L, 52428800L),
+                        mockStoragePool("sharedpool", "nodeB", ProviderKind.LVM, "cs-shared", 104857600L, 52428800L),
+                        mockStoragePool("sharedpool", "nodeC", ProviderKind.LVM, "cs-shared", 104857600L, 52428800L),
+                        mockStoragePool("local", "nodeA", ProviderKind.LVM_THIN, "nodeA;local", 10485760L, 10485760L),
+                        mockStoragePool("diskless", "nodeB", ProviderKind.DISKLESS, "nodeB;diskless", 0L, 0L)
+                ));
+
+        List<StoragePool> pools = LinstorUtil.getCapacityStoragePools(api, "shared");
+        Assert.assertEquals(2, pools.size());
+        // 100 GiB shared (once) + 10 GiB local
+        Assert.assertEquals((104857600L + 10485760L) * 1024, LinstorUtil.getFreeCapacityBytes(api, "shared")
+                + LinstorUtil.getUsedCapacityBytes(api, "shared"));
+        // half of the shared space is used, the local pool is empty
+        Assert.assertEquals(52428800L * 1024, LinstorUtil.getUsedCapacityBytes(api, "shared"));
     }
 
     @Test
