@@ -66,6 +66,55 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
     private static final List<Hypervisor.HypervisorType> supportedInstanceConvertSourceHypervisors =
             List.of(Hypervisor.HypervisorType.VMware);
     private static final Pattern SHA1_FINGERPRINT_PATTERN = Pattern.compile("(?i)(?:SHA1\\s+)?Fingerprint\\s*=\\s*([0-9A-F:]+)");
+    // virt-v2v's exact wording when the host's virtio-win driver set has no match for the guest.
+    private static final String NO_VIRTIO_DRIVERS_MARKER = "there are no virtio drivers available";
+
+    /**
+     * Logs virt-v2v output like {@link OutputInterpreter.LineByLineOutputLogger} while watching for
+     * the "no virtio drivers available" warning. virt-v2v treats it as non-fatal and finishes the
+     * conversion, but a Windows guest converted without a virtio storage driver cannot boot from
+     * the virtio disk the import gives it - the failure only shows up later as an unbootable VM,
+     * so the conversion itself must refuse instead.
+     */
+    private static class VirtioDriverOutputWatcher extends OutputInterpreter {
+        private final org.apache.logging.log4j.Logger watcherLogger;
+        private final String logPrefix;
+        private boolean noVirtioDriversReported;
+
+        VirtioDriverOutputWatcher(org.apache.logging.log4j.Logger logger, String logPrefix) {
+            this.watcherLogger = logger;
+            this.logPrefix = logPrefix;
+        }
+
+        @Override
+        public boolean drain() {
+            return true;
+        }
+
+        @Override
+        public String interpret(java.io.BufferedReader reader) throws java.io.IOException {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                watcherLogger.info("({}) {}", logPrefix, line);
+                if (line.toLowerCase().contains(NO_VIRTIO_DRIVERS_MARKER)) {
+                    noVirtioDriversReported = true;
+                }
+            }
+            return null;
+        }
+
+        boolean isNoVirtioDriversReported() {
+            return noVirtioDriversReported;
+        }
+    }
+
+    private void failWindowsConversionWithoutVirtioDrivers(String originalVMName) {
+        throw new CloudRuntimeException(String.format(
+                "Conversion of Windows VM %s finished without virtio drivers: the conversion host's virtio-win driver set " +
+                "(/usr/share/virtio-win/virtio-win.iso) has no drivers for this Windows version, and the imported VM would not " +
+                "boot from its virtio disk. Update virtio-win on the conversion host to the upstream latest-virtio ISO and retry.",
+                originalVMName));
+    }
 
     @Override
     public Answer execute(ConvertInstanceCommand cmd, LibvirtComputingResource serverResource) {
@@ -315,12 +364,15 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
 
         try {
             String logPrefix = String.format("(%s) virt-v2v ovf source: %s progress", originalVMName, sourceOVFDirPath);
-            OutputInterpreter.LineByLineOutputLogger outputLogger = new OutputInterpreter.LineByLineOutputLogger(logger, logPrefix);
+            VirtioDriverOutputWatcher outputLogger = new VirtioDriverOutputWatcher(logger, logPrefix);
             Map<String, String> convertInstanceEnv = serverResource.getConvertInstanceEnv();
             if (MapUtils.isEmpty(convertInstanceEnv)) {
                 script.execute(outputLogger);
             } else {
                 script.execute(outputLogger, convertInstanceEnv);
+            }
+            if (windowsGuest && outputLogger.isNoVirtioDriversReported()) {
+                failWindowsConversionWithoutVirtioDrivers(originalVMName);
             }
             int exitValue = script.getExitValue();
             return exitValue == 0;
@@ -726,9 +778,12 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
             Script script = new Script("/bin/bash", timeout, logger);
             script.add("-c");
             script.add(inPlaceCommand);
-            OutputInterpreter.LineByLineOutputLogger outputLogger = new OutputInterpreter.LineByLineOutputLogger(logger,
+            VirtioDriverOutputWatcher outputLogger = new VirtioDriverOutputWatcher(logger,
                     String.format("(%s) virt-v2v in-place", originalVMName));
             script.execute(outputLogger);
+            if (windowsGuest && outputLogger.isNoVirtioDriversReported()) {
+                failWindowsConversionWithoutVirtioDrivers(originalVMName);
+            }
             return script.getExitValue() == 0;
         } finally {
             deleteFirstbootScriptQuietly(firstbootScript, originalVMName);
@@ -842,10 +897,15 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
 
             Script runner = new Script("/bin/bash", timeout, logger);
             runner.add(scriptPath.toString());
-            OutputInterpreter.LineByLineOutputLogger outputLogger = new OutputInterpreter.LineByLineOutputLogger(logger,
+            VirtioDriverOutputWatcher outputLogger = new VirtioDriverOutputWatcher(logger,
                     String.format("(%s) virt-v2v rbd in-place", originalVMName));
             runner.execute(outputLogger);
+            if (windowsGuest && outputLogger.isNoVirtioDriversReported()) {
+                failWindowsConversionWithoutVirtioDrivers(originalVMName);
+            }
             return runner.getExitValue() == 0;
+        } catch (CloudRuntimeException e) {
+            throw e;
         } catch (Exception e) {
             logger.error("({}) RBD in-place finalization over NBD bridges failed: {}", originalVMName, e.getMessage(), e);
             return false;
