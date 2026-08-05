@@ -263,7 +263,8 @@ public class AlertManagerImplTest {
     @Test
     public void testRecalculateHostCapacitiesReusesExecutorAcrossCalls() throws Exception {
         Mockito.when(hostDao.listIdsByType(Host.Type.Routing)).thenReturn(List.of(1L));
-        Mockito.when(hostDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(HostVO.class));
+        HostVO hostMock = Mockito.mock(HostVO.class);
+        Mockito.when(hostDao.findById(Mockito.anyLong())).thenReturn(hostMock);
 
         alertManagerImplMock.recalculateHostCapacities();
         ExecutorService firstExecutor = getCapacityExecutorService();
@@ -281,7 +282,8 @@ public class AlertManagerImplTest {
     @Test
     public void testRecalculateHostCapacitiesRecreatesExecutorAfterShutdown() throws Exception {
         Mockito.when(hostDao.listIdsByType(Host.Type.Routing)).thenReturn(List.of(1L));
-        Mockito.when(hostDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(HostVO.class));
+        HostVO hostMock = Mockito.mock(HostVO.class);
+        Mockito.when(hostDao.findById(Mockito.anyLong())).thenReturn(hostMock);
 
         alertManagerImplMock.recalculateHostCapacities();
         ExecutorService firstExecutor = getCapacityExecutorService();
@@ -299,7 +301,8 @@ public class AlertManagerImplTest {
         Timer timerMock = Mockito.mock(Timer.class);
         setTimer(timerMock);
         Mockito.when(hostDao.listIdsByType(Host.Type.Routing)).thenReturn(List.of(1L));
-        Mockito.when(hostDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(HostVO.class));
+        HostVO hostMock = Mockito.mock(HostVO.class);
+        Mockito.when(hostDao.findById(Mockito.anyLong())).thenReturn(hostMock);
         alertManagerImplMock.recalculateHostCapacities();
 
         boolean result = alertManagerImplMock.stop();
