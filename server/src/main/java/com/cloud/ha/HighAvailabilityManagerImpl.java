@@ -462,11 +462,11 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         final HaWorkVO work = new HaWorkVO(vm.getId(), vm.getType(), WorkType.Migration, Step.Scheduled, hostId, vm.getState(), 0, vm.getUpdated(), reasonType);
         _haDao.persist(work);
 
-        HostVO host = _hostDao.findById(vm.getHostId());
+        HostVO host = _hostDao.findById(hostId);
         logger.info(String.format("Scheduled migration work of VM %s from host %s with HAWork %s", vm, host, work));
         String hostName = Optional.ofNullable(host).map(HostVO::getName).orElse("N/A");
         String msg = String.format("Scheduled migration work of VM %s from host %s (%s) with HAWork %s (attempt %s of %s)",
-                vm.getHostName(), vm.getHostId(), hostName, work.getId(), work.getTimesTried() + 1, _maxRetries);
+                vm.getHostName(), hostId, hostName, work.getId(), work.getTimesTried() + 1, _maxRetries);
         createEvent(vm.getId(), ApiCommandResourceType.VirtualMachine, EventTypes.EVENT_VM_MIGRATE, msg,
                 State.Scheduled, EventVO.LEVEL_INFO);
         wakeupWorkers();
@@ -940,7 +940,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         }
         if (checkAndCancelWorkIfNeeded(work)) {
             String msg = String.format("Cancelled migration for vm %s as it is not needed anymore. HA Work %s (attempt %s of %s)",
-                    vm.getHostName(), work.getId(), work.getTimesTried() +1, _maxRetries);
+                    vm.getHostName(), work.getId(), attemptNumber, _maxRetries);
             createEvent(vmId, resourceType, eventType, msg, State.Completed, EventVO.LEVEL_ERROR);
             return null;
         }
@@ -952,7 +952,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         }
         if (VirtualMachine.State.Running.equals(vm.getState()) && srcHostId != vm.getHostId()) {
             String vmHostName = Optional.ofNullable(_hostDao.findById(vm.getHostId())).map(HostVO::getName)
-                    .orElse(null);
+                    .orElse("N/A");
             String msg = String.format("VM %s is running on a different host (%s), skipping migration. HA Work %s (attempt %s of %s)",
                     vm.getHostName(), vmHostName, work.getId(), attemptNumber, _maxRetries);
             logger.info(msg);
@@ -963,7 +963,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
                 vm, srcHost, attemptNumber, _maxRetries));
         try {
             String vmHostName = Optional.ofNullable(_hostDao.findById(vm.getHostId())).map(HostVO::getName)
-                    .orElse(null);
+                    .orElse("N/A");
             String msg = String.format("Starting migration from host %s. HA Work %s (attempt %s of %s)",
                     vmHostName, work.getId(), attemptNumber, _maxRetries);
             createEvent(vmId, resourceType, eventType, msg, State.Started, EventVO.LEVEL_INFO);
