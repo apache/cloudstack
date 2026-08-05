@@ -41,13 +41,16 @@ import com.linbit.linstor.api.model.VolumeDefinitionModify;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -59,6 +62,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -296,15 +300,62 @@ public class LinstorUtil {
         );
     }
 
+    /**
+     * Diskful storage pools that contribute capacity, counting storage shared by multiple
+     * nodes only once. Nodes accessing the same shared space (e.g. a LUN with a shared LVM
+     * volume group) all report the full capacity of that space, so summing them as-is
+     * multiplies the real capacity by the number of nodes.
+     *
+     * Deduplication uses the free space manager name: node local storage pools get a
+     * per-node name ("node;pool"), pools sharing a space all report the shared space name.
+     */
+    public static List<StoragePool> getCapacityStoragePools(
+            @Nonnull DevelopersApi api, String rscGroupName) throws ApiException {
+        List<StoragePool> storagePools = getRscGroupStoragePools(api, rscGroupName);
+        List<StoragePool> distinct = new ArrayList<>();
+        Set<String> seenSpaces = new HashSet<>();
+        for (StoragePool sp : storagePools) {
+            if (sp.getProviderKind() == ProviderKind.DISKLESS) {
+                continue;
+            }
+            if (StringUtils.isEmpty(sp.getFreeSpaceMgrName()) || seenSpaces.add(sp.getFreeSpaceMgrName())) {
+                distinct.add(sp);
+            }
+        }
+        return distinct;
+    }
+
+    private static long sumTotalCapacity(List<StoragePool> storagePools) {
+        return storagePools.stream()
+                .mapToLong(sp -> sp.getTotalCapacity() != null ? sp.getTotalCapacity() : 0L)
+                .sum() * 1024;  // linstor uses KiB
+    }
+
+    private static long sumUsedCapacity(List<StoragePool> storagePools) {
+        return storagePools.stream()
+                .mapToLong(sp -> sp.getTotalCapacity() != null && sp.getFreeCapacity() != null ?
+                        sp.getTotalCapacity() - sp.getFreeCapacity() : 0L)
+                .sum() * 1024;  // linstor uses KiB
+    }
+
+    private static long sumFreeCapacity(List<StoragePool> storagePools) {
+        return storagePools.stream()
+                .mapToLong(sp -> sp.getFreeCapacity() != null ? sp.getFreeCapacity() : 0L)
+                .sum() * 1024;  // linstor uses KiB
+    }
+
+    public static long getFreeCapacityBytes(@Nonnull DevelopersApi api, String rscGroupName) throws ApiException {
+        return sumFreeCapacity(getCapacityStoragePools(api, rscGroupName));
+    }
+
+    public static long getUsedCapacityBytes(@Nonnull DevelopersApi api, String rscGroupName) throws ApiException {
+        return sumUsedCapacity(getCapacityStoragePools(api, rscGroupName));
+    }
+
     public static long getCapacityBytes(String linstorUrl, String rscGroupName, String apiToken, boolean insecureSsl) {
         DevelopersApi linstorApi = getLinstorAPI(linstorUrl, apiToken, insecureSsl);
         try {
-            List<StoragePool> storagePools = getRscGroupStoragePools(linstorApi, rscGroupName);
-
-            return storagePools.stream()
-                .filter(sp -> sp.getProviderKind() != ProviderKind.DISKLESS)
-                .mapToLong(sp -> sp.getTotalCapacity() != null ? sp.getTotalCapacity() : 0L)
-                .sum() * 1024;  // linstor uses kiB
+            return sumTotalCapacity(getCapacityStoragePools(linstorApi, rscGroupName));
         } catch (ApiException apiEx) {
             LOGGER.error(apiEx.getMessage());
             throw new CloudRuntimeException(apiEx);
@@ -314,18 +365,10 @@ public class LinstorUtil {
     public static Pair<Long, Long> getStorageStats(String linstorUrl, String rscGroupName, String apiToken, boolean insecureSsl) {
         DevelopersApi linstorApi = getLinstorAPI(linstorUrl, apiToken, insecureSsl);
         try {
-            List<StoragePool> storagePools = LinstorUtil.getRscGroupStoragePools(linstorApi, rscGroupName);
+            List<StoragePool> storagePools = getCapacityStoragePools(linstorApi, rscGroupName);
 
-            long capacity = storagePools.stream()
-                    .filter(sp -> sp.getProviderKind() != ProviderKind.DISKLESS)
-                    .mapToLong(sp -> sp.getTotalCapacity() != null ? sp.getTotalCapacity() : 0L)
-                    .sum() * 1024;  // linstor uses kiB
-
-            long used = storagePools.stream()
-                    .filter(sp -> sp.getProviderKind() != ProviderKind.DISKLESS)
-                    .mapToLong(sp -> sp.getTotalCapacity() != null && sp.getFreeCapacity() != null ?
-                            sp.getTotalCapacity() - sp.getFreeCapacity() : 0L)
-                    .sum() * 1024; // linstor uses Kib
+            long capacity = sumTotalCapacity(storagePools);
+            long used = sumUsedCapacity(storagePools);
             LOGGER.debug(
                     String.format("Linstor(%s;%s): storageStats -> %d/%d", linstorUrl, rscGroupName, capacity, used));
             return new Pair<>(capacity, used);
