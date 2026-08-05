@@ -45,6 +45,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -195,8 +196,26 @@ public class LinstorUtil {
         return nodes.stream().map(Node::getName).collect(Collectors.toList());
     }
 
+    /**
+     * How suitable a diskful resource is for reading its data (snapshots, volume copies):
+     * the node it is in use on is best, then nodes with an active resource, then inactive ones.
+     * Thick LVM snapshots on shared storage pools (dm-snapshot) are not cluster aware, so they
+     * must be read on the node the origin volume is active on - callers must honor this order.
+     */
+    private static int diskfulPreference(ResourceWithVolumes rwv) {
+        if (rwv.getState() != null && Boolean.TRUE.equals(rwv.getState().isInUse())) {
+            return 2;
+        }
+        return rwv.getFlags() == null || !rwv.getFlags().contains(ApiConsts.FLAG_RSC_INACTIVE) ? 1 : 0;
+    }
+
+    /**
+     * All storage pools holding a diskful copy of the resource, best suited first
+     * (see {@link #diskfulPreference}). Callers that need a single pool should take the first
+     * one, callers picking a host should walk the list in order and use the first usable one.
+     */
     public static List<com.linbit.linstor.api.model.StoragePool>
-    getDiskfulStoragePools(@Nonnull DevelopersApi api, @Nonnull String rscName) throws ApiException
+    getDiskfulStoragePoolsByPreference(@Nonnull DevelopersApi api, @Nonnull String rscName) throws ApiException
     {
         List<ResourceWithVolumes> resources = api.viewResources(
                 Collections.emptyList(),
@@ -206,56 +225,50 @@ public class LinstorUtil {
                 null,
                 null);
 
-        String nodeName = null;
-        String storagePoolName = null;
-        int bestScore = -1;
-        for (ResourceWithVolumes rwv : resources) {
-            if (rwv.getVolumes().isEmpty()) {
-                continue;
-            }
-            Volume vol = rwv.getVolumes().get(0);
-            if (vol.getProviderKind() == ProviderKind.DISKLESS) {
-                continue;
-            }
-            // Prefer the in-use node, then nodes with an active (not INACTIVE) resource:
-            // thick LVM snapshots on shared storage pools (dm-snapshot) are not cluster aware
-            // and must be read on the node the origin volume is active on.
-            boolean inUse = rwv.getState() != null && Boolean.TRUE.equals(rwv.getState().isInUse());
-            boolean active = rwv.getFlags() == null || !rwv.getFlags().contains(ApiConsts.FLAG_RSC_INACTIVE);
-            int score = inUse ? 2 : (active ? 1 : 0);
-            if (score > bestScore) {
-                bestScore = score;
-                nodeName = rwv.getNodeName();
-                storagePoolName = vol.getStoragePoolName();
-                if (inUse) {
-                    break;
-                }
-            }
-        }
+        // node name -> storage pool name, ordered by how suited the copy is
+        List<Pair<String, String>> candidates = resources.stream()
+                .filter(rwv -> !rwv.getVolumes().isEmpty()
+                        && rwv.getVolumes().get(0).getProviderKind() != ProviderKind.DISKLESS)
+                .sorted(Comparator.comparingInt(LinstorUtil::diskfulPreference).reversed())
+                .map(rwv -> new Pair<>(rwv.getNodeName(), rwv.getVolumes().get(0).getStoragePoolName()))
+                .collect(Collectors.toList());
 
-        if (nodeName == null) {
-            return null;
+        if (candidates.isEmpty()) {
+            return Collections.emptyList();
         }
 
         List<com.linbit.linstor.api.model.StoragePool> sps = api.viewStoragePools(
-                Collections.singletonList(nodeName),
-                Collections.singletonList(storagePoolName),
+                candidates.stream().map(Pair::first).distinct().collect(Collectors.toList()),
+                candidates.stream().map(Pair::second).distinct().collect(Collectors.toList()),
                 Collections.emptyList(),
                 null,
                 null,
                 true
         );
-        return sps != null ? sps : Collections.emptyList();
+        if (sps == null) {
+            return Collections.emptyList();
+        }
+
+        // viewStoragePools does not keep our ordering, so re-apply it
+        List<com.linbit.linstor.api.model.StoragePool> ordered = new ArrayList<>();
+        for (Pair<String, String> candidate : candidates) {
+            sps.stream()
+                    .filter(sp -> candidate.first().equals(sp.getNodeName())
+                            && candidate.second().equals(sp.getStoragePoolName()))
+                    .findFirst()
+                    .ifPresent(ordered::add);
+        }
+        return ordered;
     }
 
+    /**
+     * The storage pool of the best suited diskful copy, null if the resource has none.
+     */
     public static com.linbit.linstor.api.model.StoragePool
     getDiskfulStoragePool(@Nonnull DevelopersApi api, @Nonnull String rscName) throws ApiException
     {
-        List<com.linbit.linstor.api.model.StoragePool> sps = getDiskfulStoragePools(api, rscName);
-        if (sps != null) {
-            return !sps.isEmpty() ? sps.get(0) : null;
-        }
-        return null;
+        List<com.linbit.linstor.api.model.StoragePool> sps = getDiskfulStoragePoolsByPreference(api, rscName);
+        return !sps.isEmpty() ? sps.get(0) : null;
     }
 
     public static String getSnapshotPath(com.linbit.linstor.api.model.StoragePool sp, String rscName, String snapshotName) {
