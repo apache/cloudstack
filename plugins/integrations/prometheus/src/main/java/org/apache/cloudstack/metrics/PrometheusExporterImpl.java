@@ -494,7 +494,7 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         final long minIntervalMs = TimeUnit.SECONDS.toMillis(PrometheusExporterServer.PrometheusExporterMinRefreshInterval.value());
         final long now = System.currentTimeMillis();
         if (now - lastMetricsUpdateTime < minIntervalMs) {
-            logger.debug("Skipping metrics recomputation, last update was " + (now - lastMetricsUpdateTime) + "ms ago (min interval: " + minIntervalMs + "ms)");
+            logger.debug("Skipping metrics recomputation, last update was {}ms ago (min interval: {}ms)", now - lastMetricsUpdateTime, minIntervalMs);
             return;
         }
 
@@ -520,7 +520,7 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
             logger.warn("Getting metrics failed ", e);
         } finally {
             final long elapsedMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos);
-            logger.info("Prometheus metrics update completed in " + elapsedMs + " ms");
+            logger.info("Prometheus metrics update completed in {} ms", elapsedMs);
         }
         metricsItems = latestMetricsItems;
         lastMetricsUpdateTime = System.currentTimeMillis();
