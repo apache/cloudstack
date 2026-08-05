@@ -48,7 +48,6 @@ import com.linbit.linstor.api.model.ApiCallRc;
 import com.linbit.linstor.api.model.ApiCallRcList;
 import com.linbit.linstor.api.model.Node;
 import com.linbit.linstor.api.model.Properties;
-import com.linbit.linstor.api.model.ProviderKind;
 import com.linbit.linstor.api.model.Resource;
 import com.linbit.linstor.api.model.ResourceConnectionModify;
 import com.linbit.linstor.api.model.ResourceCreate;
@@ -57,7 +56,6 @@ import com.linbit.linstor.api.model.ResourceDefinitionModify;
 import com.linbit.linstor.api.model.ResourceGroupSpawn;
 import com.linbit.linstor.api.model.ResourceMakeAvailable;
 import com.linbit.linstor.api.model.ResourceWithVolumes;
-import com.linbit.linstor.api.model.StoragePool;
 import com.linbit.linstor.api.model.VolumeDefinition;
 
 import java.io.File;
@@ -872,12 +870,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         DevelopersApi linstorApi = getLinstorAPI(pool);
         final String rscGroupName = pool.getResourceGroup();
         try {
-            List<StoragePool> storagePools = LinstorUtil.getRscGroupStoragePools(linstorApi, rscGroupName);
-
-            final long free = storagePools.stream()
-                .filter(sp -> sp.getProviderKind() != ProviderKind.DISKLESS)
-                .mapToLong(sp -> sp.getFreeCapacity() != null ? sp.getFreeCapacity() : 0L).sum() * 1024;  // linstor uses KiB
-
+            final long free = LinstorUtil.getFreeCapacityBytes(linstorApi, rscGroupName);
             logger.debug("Linstor: getAvailable() -> " + free);
             return free;
         } catch (ApiException apiEx) {
@@ -890,13 +883,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         DevelopersApi linstorApi = getLinstorAPI(pool);
         final String rscGroupName = pool.getResourceGroup();
         try {
-            List<StoragePool> storagePools = LinstorUtil.getRscGroupStoragePools(linstorApi, rscGroupName);
-
-            final long used = storagePools.stream()
-                .filter(sp -> sp.getProviderKind() != ProviderKind.DISKLESS)
-                .mapToLong(sp -> sp.getTotalCapacity() != null && sp.getFreeCapacity() != null ?
-                        sp.getTotalCapacity() - sp.getFreeCapacity() : 0L)
-                    .sum() * 1024; // linstor uses Kib
+            final long used = LinstorUtil.getUsedCapacityBytes(linstorApi, rscGroupName);
             logger.debug("Linstor: getUsed() -> " + used);
             return used;
         } catch (ApiException apiEx) {
