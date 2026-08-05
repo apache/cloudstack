@@ -167,6 +167,20 @@ public class LinstorUtilTest {
     }
 
     @Test
+    public void testThickProviderKindDetection() {
+        Assert.assertTrue(LinstorUtil.isThicklyProvisionedPools(Arrays.asList(
+                mockStoragePool("sharedpool", "nodeA", ProviderKind.LVM, "cs-shared", 1L, 1L),
+                mockStoragePool("sharedpool", "nodeB", ProviderKind.LVM, "cs-shared", 1L, 1L))));
+        Assert.assertFalse(LinstorUtil.isThicklyProvisionedPools(Arrays.asList(
+                mockStoragePool("thinpool", "nodeA", ProviderKind.LVM_THIN, "nodeA;thinpool", 1L, 1L))));
+        // mixed setups keep the over-provisioning default
+        Assert.assertFalse(LinstorUtil.isThicklyProvisionedPools(Arrays.asList(
+                mockStoragePool("sharedpool", "nodeA", ProviderKind.LVM, "cs-shared", 1L, 1L),
+                mockStoragePool("thinpool", "nodeB", ProviderKind.LVM_THIN, "nodeB;thinpool", 1L, 1L))));
+        Assert.assertFalse(LinstorUtil.isThicklyProvisionedPools(Collections.emptyList()));
+    }
+
+    @Test
     public void testIsVersionAtLeast() {
         Assert.assertTrue(LinstorUtil.isVersionAtLeast("1.29.1", 1, 29, 1));
         Assert.assertTrue(LinstorUtil.isVersionAtLeast("1.29.2", 1, 29, 1));
