@@ -893,7 +893,12 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
             String resourceTypeStr = resourceType.toString();
             Long userId = User.UID_SYSTEM;
             Long accountId = Account.ACCOUNT_ID_SYSTEM;
-
+            if (ApiCommandResourceType.VirtualMachine.equals(resourceType) && resourceId != null) {
+                VMInstanceVO vm = _instanceDao.findById(resourceId);
+                if (vm != null) {
+                    accountId = vm.getAccountId();
+                }
+            }
             long startEventId = state == State.Scheduled ? 0L
                     : Optional.ofNullable(ActionEventUtils.getLastEvent(type, State.Scheduled, resourceId,
                             resourceTypeStr))
