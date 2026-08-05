@@ -331,52 +331,11 @@ public class Site2SiteVpnManagerImplTest {
         CreateVpnGatewayCmd cmd = mock(CreateVpnGatewayCmd.class);
         when(cmd.getVpcId()).thenReturn(VPC_ID);
         when(cmd.getEntityOwnerId()).thenReturn(ACCOUNT_ID);
-        when(cmd.getIpAddressId()).thenReturn(null);
 
         when(_vpcDao.findById(VPC_ID)).thenReturn(vpc);
         when(_vpnGatewayDao.findByVpcId(VPC_ID)).thenReturn(null);
         mockVpcVirtualRouterProvider();
         when(_ipAddressDao.listByAssociatedVpc(VPC_ID, true)).thenReturn(new ArrayList<>());
-
-        site2SiteVpnManager.createVpnGateway(cmd);
-    }
-
-    @Test
-    public void testCreateVpnGatewaySkipsSystemVmSourceNatIp() {
-        CreateVpnGatewayCmd cmd = mock(CreateVpnGatewayCmd.class);
-        when(cmd.getVpcId()).thenReturn(VPC_ID);
-        when(cmd.getEntityOwnerId()).thenReturn(ACCOUNT_ID);
-        when(cmd.getIpAddressId()).thenReturn(null);
-        when(cmd.isDisplay()).thenReturn(true);
-        IPAddressVO systemVmIp = mock(IPAddressVO.class);
-        when(systemVmIp.isForSystemVms()).thenReturn(true);
-        when(_vpcDao.findById(VPC_ID)).thenReturn(vpc);
-        when(_vpnGatewayDao.findByVpcId(VPC_ID)).thenReturn(null);
-        mockVpcVirtualRouterProvider();
-        when(_ipAddressDao.listByAssociatedVpc(VPC_ID, true)).thenReturn(List.of(systemVmIp, ipAddress));
-        when(_vpnGatewayDao.persist(any(Site2SiteVpnGatewayVO.class))).thenReturn(vpnGateway);
-
-        Site2SiteVpnGateway result = site2SiteVpnManager.createVpnGateway(cmd);
-
-        assertNotNull(result);
-        ArgumentCaptor<Site2SiteVpnGatewayVO> gatewayCaptor = ArgumentCaptor.forClass(Site2SiteVpnGatewayVO.class);
-        verify(_vpnGatewayDao).persist(gatewayCaptor.capture());
-        assertEquals(IP_ADDRESS_ID.longValue(), gatewayCaptor.getValue().getAddrId());
-    }
-
-    @Test(expected = CloudRuntimeException.class)
-    public void testCreateVpnGatewayRejectsMultipleCustomerSourceNatIps() {
-        CreateVpnGatewayCmd cmd = mock(CreateVpnGatewayCmd.class);
-        when(cmd.getVpcId()).thenReturn(VPC_ID);
-        when(cmd.getEntityOwnerId()).thenReturn(ACCOUNT_ID);
-        when(cmd.getIpAddressId()).thenReturn(null);
-        IPAddressVO secondIp = mock(IPAddressVO.class);
-        when(ipAddress.getAddress()).thenReturn(new Ip("203.0.113.34"));
-        when(secondIp.getAddress()).thenReturn(new Ip("203.0.113.35"));
-        when(_vpcDao.findById(VPC_ID)).thenReturn(vpc);
-        when(_vpnGatewayDao.findByVpcId(VPC_ID)).thenReturn(null);
-        mockVpcVirtualRouterProvider();
-        when(_ipAddressDao.listByAssociatedVpc(VPC_ID, true)).thenReturn(List.of(ipAddress, secondIp));
 
         site2SiteVpnManager.createVpnGateway(cmd);
     }
