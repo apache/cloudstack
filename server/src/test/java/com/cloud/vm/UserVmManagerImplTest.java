@@ -4622,6 +4622,106 @@ public class UserVmManagerImplTest {
         assertTrue(messages.stream().anyMatch(m -> m.contains("domain-a") && m.contains("domain-b")));
     }
 
+    @Test
+    public void checkHostsDedicationAlertNotesDestinationNotDedicatedToSpecificAccount() {
+        long srcHostId = 10L;
+        long destHostId = 20L;
+        long vmId = 1L;
+        long serviceOfferingId = 2L;
+
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        when(vm.getId()).thenReturn(vmId);
+        when(vm.getDataCenterId()).thenReturn(1L);
+        when(vm.getPodIdToDeployIn()).thenReturn(2L);
+        when(vm.getServiceOfferingId()).thenReturn(serviceOfferingId);
+
+        HostVO srcHost = Mockito.mock(HostVO.class);
+        when(srcHost.getId()).thenReturn(srcHostId);
+        HostVO destHost = Mockito.mock(HostVO.class);
+        when(destHost.getId()).thenReturn(destHostId);
+        when(hostDao.findById(srcHostId)).thenReturn(srcHost);
+        when(hostDao.findById(destHostId)).thenReturn(destHost);
+
+        // src host is dedicated to an account; dest host is dedicated to a whole domain (no account), so
+        // destAccountId resolves to null even though destHost is explicitly dedicated.
+        DedicatedResourceVO srcDedication = Mockito.mock(DedicatedResourceVO.class);
+        when(srcDedication.getAccountId()).thenReturn(100L);
+        when(srcDedication.getDomainId()).thenReturn((Long) null);
+        DedicatedResourceVO destDedication = Mockito.mock(DedicatedResourceVO.class);
+        when(destDedication.getAccountId()).thenReturn((Long) null);
+        when(destDedication.getDomainId()).thenReturn(400L);
+        when(dedicatedResourceDao.findByHostId(srcHostId)).thenReturn(srcDedication);
+        when(dedicatedResourceDao.findByHostId(destHostId)).thenReturn(destDedication);
+
+        AccountVO srcAccount = Mockito.mock(AccountVO.class);
+        when(srcAccount.toString()).thenReturn("Account {accountName=account-a}");
+        when(accountDao.findById(100L)).thenReturn(srcAccount);
+
+        ServiceOfferingVO serviceOffering = Mockito.mock(ServiceOfferingVO.class);
+        when(serviceOffering.getDeploymentPlanner()).thenReturn(null);
+        when(_serviceOfferingDao.findById(vmId, serviceOfferingId)).thenReturn(serviceOffering);
+
+        when(plannerHostReservationDao.listAllDedicatedHosts()).thenReturn(new ArrayList<>());
+
+        userVmManagerImpl.checkHostsDedication(vm, srcHostId, destHostId);
+
+        ArgumentCaptor<String> bodyCaptor = ArgumentCaptor.forClass(String.class);
+        Mockito.verify(alertManager, Mockito.times(1)).sendAlert(Mockito.eq(AlertManager.AlertType.ALERT_TYPE_USERVM),
+                Mockito.eq(1L), Mockito.eq(2L), Mockito.anyString(), bodyCaptor.capture());
+        assertTrue(bodyCaptor.getValue().contains("account-a"));
+        assertTrue(bodyCaptor.getValue().contains("not dedicated to a specific account"));
+    }
+
+    @Test
+    public void checkHostsDedicationAlertNotesDestinationNotDedicatedToSpecificDomain() {
+        long srcHostId = 10L;
+        long destHostId = 20L;
+        long vmId = 1L;
+        long serviceOfferingId = 2L;
+
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        when(vm.getId()).thenReturn(vmId);
+        when(vm.getDataCenterId()).thenReturn(1L);
+        when(vm.getPodIdToDeployIn()).thenReturn(2L);
+        when(vm.getServiceOfferingId()).thenReturn(serviceOfferingId);
+
+        HostVO srcHost = Mockito.mock(HostVO.class);
+        when(srcHost.getId()).thenReturn(srcHostId);
+        HostVO destHost = Mockito.mock(HostVO.class);
+        when(destHost.getId()).thenReturn(destHostId);
+        when(hostDao.findById(srcHostId)).thenReturn(srcHost);
+        when(hostDao.findById(destHostId)).thenReturn(destHost);
+
+        // src host is dedicated to a whole domain (no account); dest host is dedicated to an account, so
+        // destDomainId resolves to null even though destHost is explicitly dedicated.
+        DedicatedResourceVO srcDedication = Mockito.mock(DedicatedResourceVO.class);
+        when(srcDedication.getAccountId()).thenReturn((Long) null);
+        when(srcDedication.getDomainId()).thenReturn(200L);
+        DedicatedResourceVO destDedication = Mockito.mock(DedicatedResourceVO.class);
+        when(destDedication.getAccountId()).thenReturn(300L);
+        when(destDedication.getDomainId()).thenReturn((Long) null);
+        when(dedicatedResourceDao.findByHostId(srcHostId)).thenReturn(srcDedication);
+        when(dedicatedResourceDao.findByHostId(destHostId)).thenReturn(destDedication);
+
+        DomainVO srcDomain = Mockito.mock(DomainVO.class);
+        when(srcDomain.toString()).thenReturn("Domain {name=domain-a}");
+        when(domainDaoMock.findById(200L)).thenReturn(srcDomain);
+
+        ServiceOfferingVO serviceOffering = Mockito.mock(ServiceOfferingVO.class);
+        when(serviceOffering.getDeploymentPlanner()).thenReturn(null);
+        when(_serviceOfferingDao.findById(vmId, serviceOfferingId)).thenReturn(serviceOffering);
+
+        when(plannerHostReservationDao.listAllDedicatedHosts()).thenReturn(new ArrayList<>());
+
+        userVmManagerImpl.checkHostsDedication(vm, srcHostId, destHostId);
+
+        ArgumentCaptor<String> bodyCaptor = ArgumentCaptor.forClass(String.class);
+        Mockito.verify(alertManager, Mockito.times(1)).sendAlert(Mockito.eq(AlertManager.AlertType.ALERT_TYPE_USERVM),
+                Mockito.eq(1L), Mockito.eq(2L), Mockito.anyString(), bodyCaptor.capture());
+        assertTrue(bodyCaptor.getValue().contains("domain-a"));
+        assertTrue(bodyCaptor.getValue().contains("not dedicated to a specific domain"));
+    }
+
     private UserVmVO mockStoppedVmForFailedCreation(Long vmId) {
         UserVmVO vm = Mockito.mock(UserVmVO.class);
         when(vm.getState()).thenReturn(VirtualMachine.State.Stopped);
