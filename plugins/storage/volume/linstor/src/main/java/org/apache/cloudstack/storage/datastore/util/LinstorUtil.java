@@ -793,6 +793,16 @@ public class LinstorUtil {
                 String utf8Passphrase = new String(passPhrase, StandardCharsets.UTF_8);
                 rscGrpSpawn.setVolumePassphrases(Collections.singletonList(utf8Passphrase));
             }
+        } else {
+            // spell out the resource group's layer stack instead of relying on the implicit
+            // default: a template spawned with a DRBD stack cannot be cloned into a
+            // STORAGE/LUKS resource of a shared storage pool later on
+            List<LayerType> rgLayers = getRscGrpLayerList(api, rscGrpName);
+            if (!rgLayers.isEmpty()) {
+                AutoSelectFilter asf = new AutoSelectFilter();
+                asf.setLayerStack(rgLayers.stream().map(LayerType::toString).collect(Collectors.toList()));
+                rscGrpSpawn.setSelectFilter(asf);
+            }
         }
 
         Properties props = new Properties();
