@@ -19,6 +19,7 @@ package com.cloud.network.ovs;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -92,6 +93,11 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
 public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManager, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualMachine> {
+
+    private static final long MIN_GRE_KEY = 0L;
+    private static final long MAX_GRE_KEY = 4294967295L;
+    private static final Set<Network.State> VPC_TOPOLOGY_NETWORK_STATES = Set.of(
+            Network.State.Setup, Network.State.Implementing, Network.State.Implemented);
 
     // boolean _isEnabled;
     ScheduledExecutorService _executorPool;
@@ -690,11 +696,11 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
         }
 
         for (Long vpcId: vpcIds) {
-            if (!isOvsDistributedRouterVpc(vpcId)) {
-                continue;
-            }
-
             try {
+                if (!isOvsDistributedRouterVpc(vpcId)) {
+                    continue;
+                }
+
                 // get the list of hosts on which VPC spans (i.e hosts that need to be aware of VPC topology change update)
                 List<Long> vpcSpannedHostIds = _ovsNetworkToplogyGuru.getVpcSpannedHosts(vpcId);
                 String bridgeName=generateBridgeNameForVpc(vpcId);
@@ -740,6 +746,12 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
         assert (vpc != null): "invalid vpc id";
 
         List<? extends Network> vpcNetworks =  _vpcMgr.getVpcNetworks(vpcId);
+        List<Network> topologyNetworks = new ArrayList<>();
+        for (Network network : vpcNetworks) {
+            if (VPC_TOPOLOGY_NETWORK_STATES.contains(network.getState())) {
+                topologyNetworks.add(network);
+            }
+        }
         List<Long> hostIds = _ovsNetworkToplogyGuru.getVpcSpannedHosts(vpcId);
         List<Long> vmIds = _ovsNetworkToplogyGuru.getAllActiveVmsInVpc(vpcId);
 
@@ -750,7 +762,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
         for (Long hostId : hostIds) {
             HostVO hostDetails = _hostDao.findById(hostId);
             String remoteIp = null;
-            for (Network network: vpcNetworks) {
+            for (Network network: topologyNetworks) {
                 try {
                     remoteIp = getGreEndpointIP(hostDetails, network);
                 } catch (Exception e) {
@@ -762,7 +774,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
             hosts.add(host);
         }
 
-        for (Network network: vpcNetworks) {
+        for (Network network: topologyNetworks) {
             if (network.getBroadcastDomainType() != BroadcastDomainType.Vswitch || network.getBroadcastUri() == null) {
                 throw new CloudRuntimeException(String.format(
                         "OVS distributed-router VPC %s contains network %s without a Vswitch broadcast URI",
@@ -775,13 +787,19 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
                         "OVS distributed-router network %s has invalid broadcast key %s for VPC %s",
                         network.getUuid(), key, vpc.getUuid()));
             }
-            int greKey;
+            String greKeyValue = key.substring(expectedPrefix.length());
+            long greKey;
             try {
-                greKey = Integer.parseInt(key.substring(expectedPrefix.length()));
+                greKey = Long.parseLong(greKeyValue);
             } catch (NumberFormatException e) {
                 throw new CloudRuntimeException(String.format(
                         "OVS distributed-router network %s has non-numeric GRE key %s",
-                        network.getUuid(), key.substring(expectedPrefix.length())), e);
+                        network.getUuid(), greKeyValue), e);
+            }
+            if (greKey < MIN_GRE_KEY || greKey > MAX_GRE_KEY) {
+                throw new CloudRuntimeException(String.format(
+                        "OVS distributed-router network %s has GRE key %s outside the supported range %s-%s",
+                        network.getUuid(), greKeyValue, MIN_GRE_KEY, MAX_GRE_KEY));
             }
             NicVO nic = _nicDao.findByIp4AddressAndNetworkId(network.getGateway(), network.getId());
             if (nic == null) {

@@ -159,14 +159,21 @@ public class OvsTunnelManagerImplTest {
         when(vpcManager.isProviderSupportServiceInVpc(VPC_ID, Network.Service.Connectivity, Network.Provider.Ovs))
                 .thenReturn(false);
         when(vpcManager.isProviderSupportServiceInVpc(SECOND_VPC_ID, Network.Service.Connectivity, Network.Provider.Ovs))
-                .thenReturn(false);
+                .thenReturn(true);
+        when(secondVpc.getUuid()).thenReturn("second-vpc-uuid");
+        when(secondVpc.getCidr()).thenReturn("10.1.0.0/16");
         when(transition.getCurrentState()).thenReturn(VirtualMachine.State.Starting);
         when(transition.getEvent()).thenReturn(VirtualMachine.Event.OperationSucceeded);
         when(transition.getToState()).thenReturn(VirtualMachine.State.Running);
+        when(topologyGuru.getVpcSpannedHosts(SECOND_VPC_ID)).thenReturn(Collections.emptyList());
+        when(topologyGuru.getAllActiveVmsInVpc(SECOND_VPC_ID)).thenReturn(Collections.emptyList());
+        doReturn(Collections.emptyList()).when(vpcManager).getVpcNetworks(SECOND_VPC_ID);
+        prepareSequenceNumber(SECOND_VPC_ID);
 
         assertTrue(manager.postStateTransitionEvent(transition, vm, true, null));
 
-        verify(vpcDao).findById(SECOND_VPC_ID);
+        verify(vpcManager).getVpcNetworks(SECOND_VPC_ID);
+        verify(manager._vpcDrSeqNoDao).update(1L, sequenceNumber);
     }
 
     @Test
@@ -185,7 +192,9 @@ public class OvsTunnelManagerImplTest {
         when(vpcManager.isProviderSupportServiceInVpc(VPC_ID, Network.Service.Connectivity, Network.Provider.Ovs))
                 .thenReturn(true);
         when(vpcManager.isProviderSupportServiceInVpc(SECOND_VPC_ID, Network.Service.Connectivity, Network.Provider.Ovs))
-                .thenReturn(false);
+                .thenReturn(true);
+        when(secondVpc.getUuid()).thenReturn("second-vpc-uuid");
+        when(secondVpc.getCidr()).thenReturn("10.1.0.0/16");
         when(transition.getCurrentState()).thenReturn(VirtualMachine.State.Starting);
         when(transition.getEvent()).thenReturn(VirtualMachine.Event.OperationSucceeded);
         when(transition.getToState()).thenReturn(VirtualMachine.State.Running);
@@ -195,12 +204,51 @@ public class OvsTunnelManagerImplTest {
         doReturn(List.of(malformedNetwork)).when(vpcManager).getVpcNetworks(VPC_ID);
         when(firstVpc.getUuid()).thenReturn("vpc-uuid");
         when(firstVpc.getCidr()).thenReturn("10.0.0.0/16");
+        when(malformedNetwork.getState()).thenReturn(Network.State.Implemented);
         when(malformedNetwork.getUuid()).thenReturn("network-uuid");
         when(malformedNetwork.getBroadcastDomainType()).thenReturn(BroadcastDomainType.NSX);
+        when(topologyGuru.getVpcSpannedHosts(SECOND_VPC_ID)).thenReturn(Collections.emptyList());
+        when(topologyGuru.getAllActiveVmsInVpc(SECOND_VPC_ID)).thenReturn(Collections.emptyList());
+        doReturn(Collections.emptyList()).when(vpcManager).getVpcNetworks(SECOND_VPC_ID);
+        prepareSequenceNumber(SECOND_VPC_ID);
 
         assertTrue(manager.postStateTransitionEvent(transition, vm, true, null));
 
-        verify(vpcDao).findById(SECOND_VPC_ID);
+        verify(vpcManager).getVpcNetworks(SECOND_VPC_ID);
+        verify(manager._vpcDrSeqNoDao).update(1L, sequenceNumber);
+    }
+
+    @Test
+    public void testPostStateTransitionEventContainsProviderLookupFailureAndProcessesLaterOvsVpc() {
+        VpcVO firstVpc = mock(VpcVO.class);
+        VpcVO secondVpc = mock(VpcVO.class);
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        @SuppressWarnings("unchecked")
+        StateMachine2.Transition<VirtualMachine.State, VirtualMachine.Event> transition = mock(StateMachine2.Transition.class);
+        when(vm.getId()).thenReturn(11L);
+        when(topologyGuru.getVpcIdsVmIsPartOf(11L)).thenReturn(List.of(VPC_ID, SECOND_VPC_ID));
+        when(vpcDao.findById(VPC_ID)).thenReturn(firstVpc);
+        when(vpcDao.findById(SECOND_VPC_ID)).thenReturn(secondVpc);
+        when(firstVpc.usesDistributedRouter()).thenReturn(true);
+        when(secondVpc.usesDistributedRouter()).thenReturn(true);
+        when(vpcManager.isProviderSupportServiceInVpc(VPC_ID, Network.Service.Connectivity, Network.Provider.Ovs))
+                .thenThrow(new CloudRuntimeException("provider lookup failed"));
+        when(vpcManager.isProviderSupportServiceInVpc(SECOND_VPC_ID, Network.Service.Connectivity, Network.Provider.Ovs))
+                .thenReturn(true);
+        when(secondVpc.getUuid()).thenReturn("second-vpc-uuid");
+        when(secondVpc.getCidr()).thenReturn("10.1.0.0/16");
+        when(transition.getCurrentState()).thenReturn(VirtualMachine.State.Starting);
+        when(transition.getEvent()).thenReturn(VirtualMachine.Event.OperationSucceeded);
+        when(transition.getToState()).thenReturn(VirtualMachine.State.Running);
+        when(topologyGuru.getVpcSpannedHosts(SECOND_VPC_ID)).thenReturn(Collections.emptyList());
+        when(topologyGuru.getAllActiveVmsInVpc(SECOND_VPC_ID)).thenReturn(Collections.emptyList());
+        doReturn(Collections.emptyList()).when(vpcManager).getVpcNetworks(SECOND_VPC_ID);
+        prepareSequenceNumber(SECOND_VPC_ID);
+
+        assertTrue(manager.postStateTransitionEvent(transition, vm, true, null));
+
+        verify(vpcManager).getVpcNetworks(SECOND_VPC_ID);
+        verify(manager._vpcDrSeqNoDao).update(1L, sequenceNumber);
     }
 
     @Test
@@ -278,8 +326,44 @@ public class OvsTunnelManagerImplTest {
         doReturn(List.of(network)).when(vpcManager).getVpcNetworks(VPC_ID);
         when(topologyGuru.getVpcSpannedHosts(VPC_ID)).thenReturn(Collections.emptyList());
         when(topologyGuru.getAllActiveVmsInVpc(VPC_ID)).thenReturn(Collections.emptyList());
+        when(network.getState()).thenReturn(Network.State.Implemented);
         when(network.getUuid()).thenReturn("network-uuid");
         when(network.getBroadcastDomainType()).thenReturn(BroadcastDomainType.NSX);
+
+        assertThrows(CloudRuntimeException.class, () -> manager.prepareVpcTopologyUpdate(VPC_ID));
+    }
+
+    @Test
+    public void testPrepareVpcTopologyUpdateSkipsAllocatedTierWithoutBroadcastUri() {
+        VpcVO vpc = mock(VpcVO.class);
+        Network network = mock(Network.class);
+        when(vpcDao.findById(VPC_ID)).thenReturn(vpc);
+        when(vpc.getCidr()).thenReturn("10.0.0.0/16");
+        doReturn(List.of(network)).when(vpcManager).getVpcNetworks(VPC_ID);
+        when(topologyGuru.getVpcSpannedHosts(VPC_ID)).thenReturn(Collections.emptyList());
+        when(topologyGuru.getAllActiveVmsInVpc(VPC_ID)).thenReturn(Collections.emptyList());
+        when(network.getState()).thenReturn(Network.State.Allocated);
+
+        OvsVpcPhysicalTopologyConfigCommand command = manager.prepareVpcTopologyUpdate(VPC_ID);
+
+        assertTrue(command.getVpcConfigInJson().contains("\"tiers\":[]"));
+        verify(network, never()).getBroadcastDomainType();
+        verify(nicDao, never()).findByIp4AddressAndNetworkId(
+                org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyLong());
+    }
+
+    @Test
+    public void testPrepareVpcTopologyUpdateRejectsImplementedTierWithoutBroadcastUri() {
+        VpcVO vpc = mock(VpcVO.class);
+        Network network = mock(Network.class);
+        when(vpcDao.findById(VPC_ID)).thenReturn(vpc);
+        when(vpc.getUuid()).thenReturn("vpc-uuid");
+        doReturn(List.of(network)).when(vpcManager).getVpcNetworks(VPC_ID);
+        when(topologyGuru.getVpcSpannedHosts(VPC_ID)).thenReturn(Collections.emptyList());
+        when(topologyGuru.getAllActiveVmsInVpc(VPC_ID)).thenReturn(Collections.emptyList());
+        when(network.getState()).thenReturn(Network.State.Implemented);
+        when(network.getUuid()).thenReturn("network-uuid");
+        when(network.getBroadcastDomainType()).thenReturn(BroadcastDomainType.Vswitch);
 
         assertThrows(CloudRuntimeException.class, () -> manager.prepareVpcTopologyUpdate(VPC_ID));
     }
@@ -322,10 +406,52 @@ public class OvsTunnelManagerImplTest {
     }
 
     @Test
-    public void testPrepareVpcTopologyUpdateRejectsGreKeyOutsideIntegerRange() {
+    public void testPrepareVpcTopologyUpdateAcceptsGreKeyAboveSignedIntegerRange() {
         prepareVswitchNetwork("7.2147483648");
+        NicVO gatewayNic = prepareGatewayNic();
+
+        OvsVpcPhysicalTopologyConfigCommand command = manager.prepareVpcTopologyUpdate(VPC_ID);
+
+        assertTrue(command.getVpcConfigInJson().contains("\"grekey\":2147483648"));
+        verify(gatewayNic).getMacAddress();
+    }
+
+    @Test
+    public void testPrepareVpcTopologyUpdateAcceptsMaximumUnsignedGreKey() {
+        prepareVswitchNetwork("7.4294967295");
+        NicVO gatewayNic = prepareGatewayNic();
+
+        OvsVpcPhysicalTopologyConfigCommand command = manager.prepareVpcTopologyUpdate(VPC_ID);
+
+        assertTrue(command.getVpcConfigInJson().contains("\"grekey\":4294967295"));
+        verify(gatewayNic).getMacAddress();
+    }
+
+    @Test
+    public void testPrepareVpcTopologyUpdateAcceptsZeroGreKey() {
+        prepareVswitchNetwork("7.0");
+        NicVO gatewayNic = prepareGatewayNic();
+
+        OvsVpcPhysicalTopologyConfigCommand command = manager.prepareVpcTopologyUpdate(VPC_ID);
+
+        assertTrue(command.getVpcConfigInJson().contains("\"grekey\":0"));
+        verify(gatewayNic).getMacAddress();
+    }
+
+    @Test
+    public void testPrepareVpcTopologyUpdateRejectsGreKeyAboveUnsignedRange() {
+        prepareVswitchNetwork("7.4294967296");
 
         assertThrows(CloudRuntimeException.class, () -> manager.prepareVpcTopologyUpdate(VPC_ID));
+        verify(nicDao, never()).findByIp4AddressAndNetworkId("10.0.1.1", 13L);
+    }
+
+    @Test
+    public void testPrepareVpcTopologyUpdateRejectsNegativeGreKey() {
+        prepareVswitchNetwork("7.-1");
+
+        assertThrows(CloudRuntimeException.class, () -> manager.prepareVpcTopologyUpdate(VPC_ID));
+        verify(nicDao, never()).findByIp4AddressAndNetworkId("10.0.1.1", 13L);
     }
 
     @Test
@@ -363,9 +489,17 @@ public class OvsTunnelManagerImplTest {
         when(network.getUuid()).thenReturn("network-uuid");
         when(network.getGateway()).thenReturn("10.0.1.1");
         when(network.getCidr()).thenReturn("10.0.1.0/24");
+        when(network.getState()).thenReturn(Network.State.Implemented);
         when(network.getBroadcastDomainType()).thenReturn(BroadcastDomainType.Vswitch);
         when(network.getBroadcastUri()).thenReturn(BroadcastDomainType.Vswitch.toUri(broadcastKey));
         return network;
+    }
+
+    private NicVO prepareGatewayNic() {
+        NicVO gatewayNic = mock(NicVO.class);
+        when(nicDao.findByIp4AddressAndNetworkId("10.0.1.1", 13L)).thenReturn(gatewayNic);
+        when(gatewayNic.getMacAddress()).thenReturn("02:00:00:00:00:01");
+        return gatewayNic;
     }
 
     private void prepareSequenceNumber(long vpcId) {
