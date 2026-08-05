@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import java.io.IOException;
 import java.net.ServerSocket;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -301,22 +302,33 @@ public class LibvirtVmwareCbtCutoverCommandWrapper extends CommandWrapper<Vmware
 
     private List<RbdNbdBridge> createRbdNbdBridges(VmwareCbtCutoverCommand cmd, KVMStoragePool targetPool) throws Exception {
         List<RbdNbdBridge> bridges = new ArrayList<>();
-        for (VmwareCbtDiskTO disk : cmd.getDisks()) {
-            int port = allocateLocalhostPort();
-            Path pidFile = Files.createTempFile(String.format("vmware-cbt-%s-qemu-nbd-",
-                    sanitizeFileName(cmd.getMigrationUuid())), ".pid");
-            Files.deleteIfExists(pidFile);
-            String qemuRbdPath = KVMPhysicalDisk.RBDStringBuilder(targetPool, getRbdImagePath(targetPool, disk.getTargetPath()));
-            bridges.add(new RbdNbdBridge(port, pidFile, qemuRbdPath));
+        // Every probe socket is held open until all ports have been chosen. Probing and closing
+        // one port at a time lets the kernel hand the same ephemeral port to the next probe,
+        // which would point two disks' bridges at a single port and silently corrupt one of them.
+        List<ServerSocket> portProbes = new ArrayList<>();
+        try {
+            for (VmwareCbtDiskTO disk : cmd.getDisks()) {
+                ServerSocket probe = new ServerSocket(0);
+                portProbes.add(probe);
+                int port = probe.getLocalPort();
+                Path pidFile = Files.createTempFile(String.format("vmware-cbt-%s-qemu-nbd-",
+                        sanitizeFileName(cmd.getMigrationUuid())), ".pid");
+                Files.deleteIfExists(pidFile);
+                String qemuRbdPath = KVMPhysicalDisk.RBDStringBuilder(targetPool, getRbdImagePath(targetPool, disk.getTargetPath()));
+                bridges.add(new RbdNbdBridge(port, pidFile, qemuRbdPath));
+            }
+        } finally {
+            // Released only now, right before the ports are written into the bridge script:
+            // qemu-nbd cannot bind a port this process still holds.
+            for (ServerSocket probe : portProbes) {
+                try {
+                    probe.close();
+                } catch (IOException e) {
+                    logger.debug("Failed to release probe socket for port {}: {}", probe.getLocalPort(), e.getMessage());
+                }
+            }
         }
         return bridges;
-    }
-
-    private int allocateLocalhostPort() throws Exception {
-        try (ServerSocket socket = new ServerSocket(0)) {
-            socket.setReuseAddress(false);
-            return socket.getLocalPort();
-        }
     }
 
     private Path writeRbdNbdBridgeScript(VmwareCbtCutoverCommand cmd, List<RbdNbdBridge> rbdNbdBridges,
