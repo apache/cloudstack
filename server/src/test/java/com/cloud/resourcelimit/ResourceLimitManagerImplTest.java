@@ -1404,6 +1404,42 @@ public class ResourceLimitManagerImplTest {
     }
 
     @Test
+    public void testUpdateResourceLimitForRootDomainFallsBackToIdWhenDomainNotFound() {
+        Long domainId = Domain.ROOT_DOMAIN;
+
+        when(entityManager.findById(Domain.class, domainId)).thenReturn(null);
+
+        PermissionDeniedException ex = Assert.assertThrows(PermissionDeniedException.class,
+                () -> resourceLimitManager.updateResourceLimit(null, domainId, 8, 20L, null));
+
+        Assert.assertTrue(ex.getMessage().contains("id " + domainId));
+        Mockito.verify(resourceLimitDao, Mockito.never()).update(Mockito.anyLong(), Mockito.anyLong());
+    }
+
+    @Test
+    public void testUpdateResourceLimitForOwnDomainByDomainAdminFallsBackToIdWhenDomainNotFound() {
+        Long domainId = 2L;
+
+        when(entityManager.findById(Domain.class, domainId)).thenReturn(null);
+
+        Account domainAdminAccount = mock(Account.class);
+        when(domainAdminAccount.getType()).thenReturn(Account.Type.DOMAIN_ADMIN);
+        when(domainAdminAccount.getDomainId()).thenReturn(domainId);
+        User user = mock(User.class);
+        CallContext.unregister();
+        CallContext.register(user, domainAdminAccount);
+
+        try {
+            PermissionDeniedException ex = Assert.assertThrows(PermissionDeniedException.class,
+                    () -> resourceLimitManager.updateResourceLimit(null, domainId, 8, 20L, null));
+            Assert.assertTrue(ex.getMessage().contains("id " + domainId));
+        } finally {
+            CallContext.unregister();
+        }
+        Mockito.verify(resourceLimitDao, Mockito.never()).update(Mockito.anyLong(), Mockito.anyLong());
+    }
+
+    @Test
     public void consolidatedResourceLimitsForAllResourceTypesWithAccountId() {
         Long accountId = 1L;
         Long domainId = null;
