@@ -95,4 +95,20 @@ public interface UnmanagedVMsManager extends VmImportService, UnmanageVMService,
                                                  Map<String, Network.IpAddresses> nicIpAddressMap,
                                                  Long guestOsId, Map<String, String> details, boolean forced,
                                                  Long storagePoolId);
+
+    /**
+     * Maps a VMware guest identity (config.guestFullName / config.guestId, available regardless of
+     * the source VM's power state) to a CloudStack guest OS id, so an imported VM does not inherit
+     * the import dummy template's generic OS type. Returns null when no reasonable match exists;
+     * callers then keep their previous behaviour.
+     */
+    Long resolveGuestOsIdForVmwareImport(String osName, String osId);
+
+    /**
+     * Fills in the imported VM's hardware details from the VMware source: UEFI boot (with SECURE
+     * when the source has secure boot enabled) plus the q35 machine type when the source firmware
+     * is UEFI, and a vga console for Windows guests. Only keys the caller did not provide are
+     * added, so explicit user choices always win.
+     */
+    Map<String, String> applyVmwareImportHardwareDetails(Map<String, String> details, String bootType, String bootMode, String osName);
 }

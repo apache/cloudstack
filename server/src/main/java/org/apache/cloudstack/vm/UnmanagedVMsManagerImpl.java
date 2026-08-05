@@ -109,6 +109,8 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.GuestOSVO;
+import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.GuestOSHypervisorDao;
 import com.cloud.storage.dao.SnapshotDao;
@@ -1851,11 +1853,14 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
             sanitizeConvertedInstance(convertedInstance, sourceVMwareInstance);
             importVmTasksManager.updateImportVMTaskStep(importVMTask, zone, owner, convertHost, importHost, null, Importing);
+            if (guestOsId == null) {
+                guestOsId = resolveGuestOsIdForVmwareImport(sourceVMwareInstance.getOperatingSystem(), sourceVMwareInstance.getOperatingSystemId());
+            }
             UserVm userVm = importVirtualMachineInternal(convertedInstance, null, zone, destinationCluster, null,
                     template, displayName, hostName, caller, owner, userId,
                     serviceOffering, dataDiskOfferingMap,
                     nicNetworkMap, nicIpAddressMap, guestOsId,
-                    details, false, forced, false);
+                    applyVmwareSourceHardwareDetails(details, sourceVMwareInstance), false, forced, false);
             long timeElapsedInSecs = (System.currentTimeMillis() - importStartTime) / 1000;
             logger.debug(String.format("VMware VM %s imported successfully to CloudStack instance %s (%s), Time taken: %d secs, OVF files imported from %s, Source VMware VM details - OS: %s, PowerState: %s, Disks: %s, NICs: %s",
                     sourceVMName, displayName, displayName, timeElapsedInSecs, (ovfTemplateOnConvertLocation != null)? "MS" : "KVM Host", sourceVMwareInstance.getOperatingSystem(), sourceVMwareInstance.getPowerState(), sourceVMwareInstance.getDisks(), sourceVMwareInstance.getNics()));
@@ -1912,9 +1917,13 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                     sourceVMwareInstance, nicNetworkMap, nicIpAddressMap, forced);
 
             sanitizeConvertedInstance(convertedInstance, sourceVMwareInstance);
+            if (guestOsId == null) {
+                guestOsId = resolveGuestOsIdForVmwareImport(sourceVMwareInstance.getOperatingSystem(), sourceVMwareInstance.getOperatingSystemId());
+            }
             return importVirtualMachineInternal(convertedInstance, null, zone, destinationCluster, null, template,
                     resolvedDisplayName, resolvedHostName, caller, owner, userId, serviceOffering, dataDiskOfferingMap,
-                    nicNetworkMap, nicIpAddressMap, guestOsId, details, false, forced, false, storagePoolId);
+                    nicNetworkMap, nicIpAddressMap, guestOsId,
+                    applyVmwareSourceHardwareDetails(details, sourceVMwareInstance), false, forced, false, storagePoolId);
         } catch (CloudRuntimeException e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         } catch (ResourceAllocationException e) {
@@ -2062,6 +2071,99 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return sourceVMwareInstance != null
                 && StringUtils.isNotBlank(sourceVMwareInstance.getOperatingSystem())
                 && sourceVMwareInstance.getOperatingSystem().toLowerCase().contains("windows");
+    }
+
+    private static final Pattern OS_RELEASE_YEAR_PATTERN = Pattern.compile("(19|20)\\d{2}");
+
+    @Override
+    public Long resolveGuestOsIdForVmwareImport(String osName, String osId) {
+        if (StringUtils.isNotBlank(osName)) {
+            // VMware reports e.g. "Microsoft Windows Server 2022 (64-bit)" while the CloudStack
+            // guest OS catalog names it "Windows Server 2022 (64-bit)" - try both forms.
+            for (String candidate : new String[] {osName, osName.replaceFirst("(?i)^Microsoft\\s+", "")}) {
+                GuestOSVO guestOS = guestOSDao.findOneByDisplayName(candidate);
+                if (guestOS != null) {
+                    return guestOS.getId();
+                }
+            }
+        }
+        if (StringUtils.isNotBlank(osId)) {
+            GuestOSHypervisorVO mapping = guestOSHypervisorDao.findByOsNameAndHypervisorOrderByCreatedDesc(osId,
+                    Hypervisor.HypervisorType.VMware.toString(), null);
+            if (mapping != null) {
+                return mapping.getGuestOsId();
+            }
+        }
+        return resolveWindowsGuestOsIdByYear(osName, osId);
+    }
+
+    /**
+     * Last-resort match for Windows guests whose exact release is newer than the guest OS catalog
+     * (e.g. "Microsoft Windows Server 2025 ..." on a catalog that ends at 2022): pick the newest
+     * catalog entry of the same family not newer than the source. The returned display name must
+     * start with "Windows" - the KVM agent keys Windows guest behaviour (localtime clock, hyperv
+     * enlightenments) off that prefix, and a generic non-Windows type would break the guest clock.
+     */
+    private Long resolveWindowsGuestOsIdByYear(String osName, String osId) {
+        String reference = StringUtils.isNotBlank(osName) ? osName : StringUtils.defaultString(osId);
+        if (!reference.toLowerCase().contains("win")) {
+            return null;
+        }
+        boolean server = reference.toLowerCase().contains("server") || reference.toLowerCase().contains("srv");
+        Matcher yearMatcher = OS_RELEASE_YEAR_PATTERN.matcher(reference);
+        int sourceYear = yearMatcher.find() ? Integer.parseInt(yearMatcher.group()) : Integer.MAX_VALUE;
+        List<GuestOSVO> candidates = guestOSDao.listLikeDisplayName(server ? "Windows Server" : "Windows");
+        GuestOSVO best = null;
+        int bestYear = -1;
+        for (GuestOSVO candidate : candidates) {
+            String name = candidate.getDisplayName();
+            if (name == null || !name.startsWith("Windows") || !name.contains("64-bit")) {
+                continue;
+            }
+            Matcher candidateYear = OS_RELEASE_YEAR_PATTERN.matcher(name);
+            if (!candidateYear.find()) {
+                continue;
+            }
+            int year = Integer.parseInt(candidateYear.group());
+            if (year <= sourceYear && year > bestYear) {
+                bestYear = year;
+                best = candidate;
+            }
+        }
+        if (best != null) {
+            logger.info("Mapped VMware guest OS [{} / {}] to nearest catalog entry [{}] for import", osName, osId, best.getDisplayName());
+            return best.getId();
+        }
+        return null;
+    }
+
+    /**
+     * Copies the source VM's firmware and (for Windows) console-hardware requirements into the
+     * imported VM's details, so the guest boots the way it booted on VMware. Without this every
+     * import lands on the KVM defaults - BIOS firmware and libvirt's legacy cirrus video - which
+     * leaves a UEFI source unbootable and a Windows Server Core console blank. Caller-provided
+     * details always win; only absent keys are filled in.
+     */
+    @Override
+    public Map<String, String> applyVmwareImportHardwareDetails(Map<String, String> details, String bootType, String bootMode, String osName) {
+        Map<String, String> merged = details == null ? new HashMap<>() : new HashMap<>(details);
+        if ("UEFI".equalsIgnoreCase(bootType)) {
+            merged.putIfAbsent("UEFI", "SECURE".equalsIgnoreCase(bootMode) ? "SECURE" : "LEGACY");
+            merged.putIfAbsent(VmDetailConstants.KVM_GUEST_OS_MACHINE_TYPE, "q35");
+        }
+        if (StringUtils.isNotBlank(osName) && osName.toLowerCase().contains("windows")) {
+            merged.putIfAbsent(VmDetailConstants.VIDEO_HARDWARE, "vga");
+            merged.putIfAbsent(VmDetailConstants.VIDEO_RAM, "32768");
+        }
+        return merged;
+    }
+
+    protected Map<String, String> applyVmwareSourceHardwareDetails(Map<String, String> details, UnmanagedInstanceTO sourceVMwareInstance) {
+        if (sourceVMwareInstance == null) {
+            return details == null ? new HashMap<>() : new HashMap<>(details);
+        }
+        return applyVmwareImportHardwareDetails(details, sourceVMwareInstance.getBootType(),
+                sourceVMwareInstance.getBootMode(), sourceVMwareInstance.getOperatingSystem());
     }
 
     // Matches the creation position embedded in a direct-to-pool converted disk image name:
@@ -3036,6 +3138,13 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         if (ImportSource.SHARED == importSource || ImportSource.LOCAL == importSource) {
             if (diskPath == null) {
                 throw new InvalidParameterValueException("Disk Path is required for Import from shared/local storage");
+            }
+
+            if (MapUtils.isNotEmpty(dataDiskOfferingMap)) {
+                // The shared/local path only ever adopts the single root disk; silently accepting
+                // the parameter would let callers believe their data disks were imported.
+                throw new InvalidParameterValueException("datadiskofferinglist is not supported for Import from shared/local storage. " +
+                        "Import the root disk first, then adopt each data disk with importVolume and attach it to the imported instance.");
             }
 
             if (networkId == null) {

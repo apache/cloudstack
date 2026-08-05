@@ -34,6 +34,8 @@ public class VmwareCbtPreflightInfo {
     private final Integer memoryMb;
     private final String operatingSystemId;
     private final String operatingSystem;
+    private String bootType;
+    private String bootMode;
 
     public VmwareCbtPreflightInfo(String sourceVmName, String sourceVmMor,
                                   Boolean changeTrackingSupported, Boolean changeTrackingEnabled,
@@ -116,5 +118,21 @@ public class VmwareCbtPreflightInfo {
 
     public String getOperatingSystem() {
         return operatingSystem;
+    }
+
+    public String getBootType() {
+        return bootType;
+    }
+
+    public void setBootType(String bootType) {
+        this.bootType = bootType;
+    }
+
+    public String getBootMode() {
+        return bootMode;
+    }
+
+    public void setBootMode(String bootMode) {
+        this.bootMode = bootMode;
     }
 }

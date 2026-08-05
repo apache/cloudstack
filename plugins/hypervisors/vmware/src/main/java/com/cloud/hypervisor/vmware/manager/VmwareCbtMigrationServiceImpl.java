@@ -77,7 +77,7 @@ public class VmwareCbtMigrationServiceImpl implements VmwareCbtMigrationService 
             VirtualMachineSnapshotInfo snapshotInfo = lookup.vmMO.getSnapshotInfo();
             UnmanagedInstanceTO unmanagedInstance = VmwareHelper.getUnmanagedInstance(lookup.hyperHost, lookup.vmMO);
 
-            return new VmwareCbtPreflightInfo(sourceVmName, getManagedObjectReferenceValue(lookup.vmMO.getMor()),
+            VmwareCbtPreflightInfo preflightInfo = new VmwareCbtPreflightInfo(sourceVmName, getManagedObjectReferenceValue(lookup.vmMO.getMor()),
                     capability == null ? null : capability.isChangeTrackingSupported(),
                     configInfo == null ? null : configInfo.isChangeTrackingEnabled(),
                     runtimeInfo == null ? null : runtimeInfo.isConsolidationNeeded(),
@@ -89,6 +89,11 @@ public class VmwareCbtMigrationServiceImpl implements VmwareCbtMigrationService 
                     configSummary == null ? null : configSummary.getMemorySizeMB(),
                     unmanagedInstance == null ? null : unmanagedInstance.getOperatingSystemId(),
                     unmanagedInstance == null ? null : unmanagedInstance.getOperatingSystem());
+            if (unmanagedInstance != null) {
+                preflightInfo.setBootType(unmanagedInstance.getBootType());
+                preflightInfo.setBootMode(unmanagedInstance.getBootMode());
+            }
+            return preflightInfo;
         } catch (Exception e) {
             String message = String.format("Unable to check VMware CBT prerequisites for VM %s in vCenter %s: %s",
                     sourceVmName, vcenter, e.getMessage());

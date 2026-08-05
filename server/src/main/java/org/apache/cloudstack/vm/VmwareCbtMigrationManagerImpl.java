@@ -500,11 +500,17 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
         migration.setHostName(StringUtils.trimToNull(cmd.getHostName()));
         migration.setTemplateId(cmd.getTemplateId());
         migration.setServiceOfferingId(cmd.getServiceOfferingId());
-        migration.setGuestOsId(cmd.getGuestOsId());
+        // Derive the guest OS and hardware details from the source VM's configuration when the
+        // caller did not choose them: without this the cutover import inherits the dummy import
+        // template's generic OS type and the KVM defaults (BIOS firmware, cirrus video), which
+        // leaves a UEFI source unbootable and gives Windows guests Linux clock semantics.
+        migration.setGuestOsId(cmd.getGuestOsId() != null ? cmd.getGuestOsId()
+                : unmanagedVMsManager.resolveGuestOsIdForVmwareImport(preflightInfo.getOperatingSystem(), preflightInfo.getOperatingSystemId()));
         migration.setDataDiskOfferingMap(serializeMap(cmd.getDataDiskToDiskOfferingList()));
         migration.setNicNetworkMap(serializeMap(cmd.getNicNetworkList()));
         migration.setNicIpAddressMap(serializeNicIpAddressMap(cmd.getNicIpAddressList()));
-        migration.setImportDetails(serializeMap(cmd.getDetails()));
+        migration.setImportDetails(serializeMap(unmanagedVMsManager.applyVmwareImportHardwareDetails(cmd.getDetails(),
+                preflightInfo.getBootType(), preflightInfo.getBootMode(), preflightInfo.getOperatingSystem())));
         migration.setForced(cmd.isForced());
         applyVddkDetails(migration, cmd.getDetails());
         migration.setState(VmwareCbtMigration.State.InitialSync);

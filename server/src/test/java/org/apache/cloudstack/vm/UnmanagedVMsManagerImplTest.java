@@ -188,6 +188,10 @@ public class UnmanagedVMsManagerImplTest {
     @Mock
     private UserVmManager userVmManager;
     @Mock
+    private com.cloud.storage.dao.GuestOSDao guestOSDao;
+    @Mock
+    private com.cloud.storage.dao.GuestOSHypervisorDao guestOSHypervisorDao;
+    @Mock
     private ClusterDao clusterDao;
     @Mock
     private ResourceManager resourceManager;
@@ -1849,5 +1853,75 @@ public class UnmanagedVMsManagerImplTest {
                 diskWithImagePath("pr13656/uuid-disk-001"));
         int[] idx = unmanagedVMsManager.resolveConvertedToSourceDiskIndexes(converted, 2);
         Assert.assertArrayEquals(new int[]{0, 1}, idx);
+    }
+
+    private com.cloud.storage.GuestOSVO guestOsVO(long id, String displayName) {
+        com.cloud.storage.GuestOSVO vo = new com.cloud.storage.GuestOSVO();
+        try {
+            java.lang.reflect.Field idField = com.cloud.storage.GuestOSVO.class.getDeclaredField("id");
+            idField.setAccessible(true);
+            idField.setLong(vo, id);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+        vo.setDisplayName(displayName);
+        return vo;
+    }
+
+    @Test
+    public void testResolveGuestOsIdMatchesDisplayNameWithoutVendorPrefix() {
+        Mockito.when(guestOSDao.findOneByDisplayName("Microsoft Windows Server 2022 (64-bit)")).thenReturn(null);
+        Mockito.when(guestOSDao.findOneByDisplayName("Windows Server 2022 (64-bit)")).thenReturn(guestOsVO(77L, "Windows Server 2022 (64-bit)"));
+        Assert.assertEquals(Long.valueOf(77L),
+                unmanagedVMsManager.resolveGuestOsIdForVmwareImport("Microsoft Windows Server 2022 (64-bit)", "windows2019srv_64Guest"));
+    }
+
+    @Test
+    public void testResolveGuestOsIdFallsBackToNearestWindowsServerYear() {
+        Mockito.when(guestOSDao.findOneByDisplayName(Mockito.anyString())).thenReturn(null);
+        Mockito.when(guestOSHypervisorDao.findByOsNameAndHypervisorOrderByCreatedDesc(Mockito.anyString(), Mockito.anyString(), Mockito.any())).thenReturn(null);
+        Mockito.when(guestOSDao.listLikeDisplayName("Windows Server")).thenReturn(java.util.List.of(
+                guestOsVO(70L, "Windows Server 2019 (64-bit)"),
+                guestOsVO(71L, "Windows Server 2022 (64-bit)"),
+                guestOsVO(60L, "Windows Server 2016 (64-bit)")));
+        Assert.assertEquals(Long.valueOf(71L),
+                unmanagedVMsManager.resolveGuestOsIdForVmwareImport("Microsoft Windows Server 2025 Standard Evaluation", "windows2025srv_64Guest"));
+    }
+
+    @Test
+    public void testResolveGuestOsIdReturnsNullForUnknownNonWindows() {
+        Mockito.when(guestOSDao.findOneByDisplayName(Mockito.anyString())).thenReturn(null);
+        Mockito.when(guestOSHypervisorDao.findByOsNameAndHypervisorOrderByCreatedDesc(Mockito.anyString(), Mockito.anyString(), Mockito.any())).thenReturn(null);
+        Assert.assertNull(unmanagedVMsManager.resolveGuestOsIdForVmwareImport("SomeExotic OS 9", "exotic9_64Guest"));
+    }
+
+    @Test
+    public void testApplyVmwareImportHardwareDetailsForUefiWindows() {
+        Map<String, String> details = unmanagedVMsManager.applyVmwareImportHardwareDetails(new HashMap<>(),
+                "UEFI", "SECURE", "Microsoft Windows Server 2025 Standard Evaluation");
+        Assert.assertEquals("SECURE", details.get("UEFI"));
+        Assert.assertEquals("q35", details.get(VmDetailConstants.KVM_GUEST_OS_MACHINE_TYPE));
+        Assert.assertEquals("vga", details.get(VmDetailConstants.VIDEO_HARDWARE));
+        Assert.assertEquals("32768", details.get(VmDetailConstants.VIDEO_RAM));
+    }
+
+    @Test
+    public void testApplyVmwareImportHardwareDetailsKeepsCallerChoices() {
+        Map<String, String> callerDetails = new HashMap<>();
+        callerDetails.put("UEFI", "LEGACY");
+        callerDetails.put(VmDetailConstants.VIDEO_HARDWARE, "virtio");
+        Map<String, String> details = unmanagedVMsManager.applyVmwareImportHardwareDetails(callerDetails,
+                "UEFI", "SECURE", "Microsoft Windows Server 2022 (64-bit)");
+        Assert.assertEquals("LEGACY", details.get("UEFI"));
+        Assert.assertEquals("virtio", details.get(VmDetailConstants.VIDEO_HARDWARE));
+    }
+
+    @Test
+    public void testApplyVmwareImportHardwareDetailsNoopForBiosLinux() {
+        Map<String, String> details = unmanagedVMsManager.applyVmwareImportHardwareDetails(null,
+                "BIOS", "LEGACY", "Ubuntu Linux (64-bit)");
+        Assert.assertFalse(details.containsKey("UEFI"));
+        Assert.assertFalse(details.containsKey(VmDetailConstants.KVM_GUEST_OS_MACHINE_TYPE));
+        Assert.assertFalse(details.containsKey(VmDetailConstants.VIDEO_HARDWARE));
     }
 }
