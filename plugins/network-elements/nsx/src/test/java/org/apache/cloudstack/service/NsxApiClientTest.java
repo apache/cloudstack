@@ -33,9 +33,6 @@ import com.vmware.nsx_policy.infra.MacDiscoveryProfiles;
 import com.vmware.nsx_policy.infra.SegmentSecurityProfiles;
 import com.vmware.nsx_policy.infra.Segments;
 import com.vmware.nsx_policy.infra.domains.Groups;
-import com.vmware.nsx_policy.infra.tier_1s.ipsec_vpn_services.Sessions;
-import com.vmware.nsx_policy.infra.segments.SegmentDiscoveryProfileBindingMaps;
-import com.vmware.nsx_policy.infra.segments.SegmentSecurityProfileBindingMaps;
 import com.vmware.nsx_policy.model.ApiError;
 import com.vmware.nsx_policy.model.ChildSegment;
 import com.vmware.nsx_policy.model.ChildSegmentDiscoveryProfileBindingMap;
@@ -54,11 +51,6 @@ import com.vmware.nsx_policy.model.PathExpression;
 import com.vmware.nsx_policy.model.Segment;
 import com.vmware.nsx_policy.model.SegmentDiscoveryProfileBindingMap;
 import com.vmware.nsx_policy.model.SegmentSecurityProfile;
-import com.vmware.nsx_policy.model.StaticRoutesListResult;
-import com.vmware.nsx_policy.model.Tag;
-import com.vmware.nsx_policy.model.Tier1;
-import com.vmware.nsx_policy.model.TunnelInterfaceIPSubnet;
-import com.vmware.nsx_policy.model.SegmentSecurityProfileBindingMap;
 import com.vmware.vapi.bindings.Service;
 import com.vmware.vapi.bindings.Structure;
 import com.vmware.vapi.std.errors.Error;
@@ -239,6 +231,31 @@ public class NsxApiClientTest {
         verify(nsxService, never()).apply(MacDiscoveryProfiles.class);
         verify(nsxService, never()).apply(SegmentSecurityProfiles.class);
         verify(nsxService, never()).apply(Infra.class);
+    }
+
+    @Test
+    public void testCreateSegmentRejectsMissingProfileBeforeCreatingSegment() {
+        Segments segmentService = Mockito.mock(Segments.class);
+        Infra infraService = Mockito.mock(Infra.class);
+        IpDiscoveryProfiles ipProfiles = Mockito.mock(IpDiscoveryProfiles.class);
+        Structure errorData = Mockito.mock(Structure.class);
+        ApiError apiError = new ApiError();
+        apiError.setErrorMessage("profile not found");
+        when(nsxService.apply(Segments.class)).thenReturn(segmentService);
+        when(nsxService.apply(Infra.class)).thenReturn(infraService);
+        when(nsxService.apply(IpDiscoveryProfiles.class)).thenReturn(ipProfiles);
+        when(errorData._convertTo(ApiError.class)).thenReturn(apiError);
+        when(ipProfiles.get("missing-profile")).thenThrow(new NotFound(List.of(), errorData));
+
+        CloudRuntimeException exception = Assert.assertThrows(CloudRuntimeException.class,
+                () -> client.createSegment("segment", "tier1", "10.10.10.1/24",
+                        "/infra/sites/default/enforcement-points/default",
+                        List.of(new com.vmware.nsx.model.TransportZone.Builder().setId("tz").build()),
+                        "missing-profile", null, null));
+
+        Assert.assertEquals("Error creating segment segment: profile not found", exception.getMessage());
+        verify(segmentService, never()).patch(anyString(), any(Segment.class));
+        verify(infraService, never()).patch(any(com.vmware.nsx_policy.model.Infra.class), eq(false));
     }
 
     @Test
