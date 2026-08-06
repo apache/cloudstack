@@ -243,6 +243,28 @@ For Windows guests, install a `virtio-win` package or otherwise make the
 VirtIO drivers available to virt-v2v. Some EL8 environments provide this from
 an additional repository rather than the base distribution repositories.
 
+Distribution `virtio-win` packages can lag the upstream project far enough to
+contain no drivers at all for recent Windows releases (the EL9 package 1.9.40
+has none for Windows Server 2025). virt-v2v treats missing drivers as a
+non-fatal warning and would deliver a guest that cannot boot from its virtio
+disk, so both the cold import and the CBT cutover conversion **fail fast
+instead**: when virt-v2v reports that no virtio drivers are available for a
+Windows guest, the operation is aborted with an error that names the
+conversion host's `/usr/share/virtio-win/virtio-win.iso` as the thing to
+update. Install the upstream `latest-virtio` ISO on every conversion host:
+
+```bash
+curl -L -o /usr/share/virtio-win/virtio-win.iso \
+    https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/latest-virtio/virtio-win.iso
+```
+
+Windows Server 2025 additionally rejects the optional `smbus` driver's
+signature at first boot, which loops the virt-v2v firstboot driver
+installation forever; rebuild the ISO without `smbus.inf`/`smbus.cat` before
+converting Windows Server 2025 guests (the admin guide page "Importing VMware
+VMs into KVM" carries the exact commands). Older Windows releases work with
+the unmodified ISO.
+
 If the nbdkit VDDK plugin package conflicts with the installed nbdkit module
 stream, align the enabled AppStream or vendor repository so `nbdkit` and the
 VDDK plugin come from compatible builds.
@@ -295,6 +317,35 @@ consolidation, or storage operations that change disk backing identity.
 
 Avoid or explicitly handle VMware disk types that do not participate cleanly in
 CBT, such as independent disks and unsupported raw device mappings.
+
+## Guest identity, firmware and network defaults derived from the source
+
+Both the cold import and the CBT warm migration derive sensible defaults from
+the source VM instead of falling back to generic import defaults. Everything
+below applies only when the caller did not specify the value explicitly -
+operator-provided parameters always win.
+
+* **Guest OS type** is resolved from the source's configured identity
+  (`config.guestFullName` / `config.guestId`, available regardless of power
+  state). Windows releases newer than the guest OS catalog map to the nearest
+  older entry of the same family (for example Windows Server 2025 maps to the
+  Windows Server 2022 type until the catalog catches up); the mapped type
+  keeps Windows clock and Hyper-V enlightenment semantics correct on KVM.
+* **Firmware** follows the source: a UEFI source gets the `UEFI` setting
+  (`SECURE` when the source has secure boot enabled) and the `q35` machine
+  type. Previously every import defaulted to BIOS, which leaves a UEFI
+  source's GPT/EFI disk unbootable.
+* **Console video** for Windows guests is set to `vga`; the libvirt default
+  (legacy cirrus) renders a blank console on Windows Server 2025 Server Core.
+* **Static IPv4 preservation**: while the source runs, per-NIC addresses,
+  the subnet's default gateway and the DNS servers are captured from VMware
+  Tools. A NIC that is mapped to a CloudStack network without an explicit
+  `nicipaddresslist` entry keeps its guest-configured address when that
+  address fits the target network's CIDR, is not the gateway and is free;
+  otherwise the NIC falls back to normal allocation. DHCP NICs are untouched
+  and pick up the virtual router's lease after migration. Capture requires
+  VMware Tools running in the source, which the warm flow guarantees (the
+  source is live when the migration starts).
 
 ## Validation checklist
 
