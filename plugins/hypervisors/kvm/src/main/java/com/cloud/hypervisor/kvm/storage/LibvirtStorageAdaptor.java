@@ -677,7 +677,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             try {
                 current = getVolume(pool, backingName);
             } catch (CloudRuntimeException e) {
-                logger.debug("Unable to resolve backing volume {} in pool {}: {}", backingName, pool.getName(), e.getMessage());
+                logger.error("Unable to resolve backing volume {} in pool {}: {}", backingName, pool.getName(), e.getMessage());
                 break;
             }
         }
