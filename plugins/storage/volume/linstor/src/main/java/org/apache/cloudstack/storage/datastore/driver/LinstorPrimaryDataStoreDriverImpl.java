@@ -860,15 +860,17 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
 
     private Optional<RemoteHostEndPoint> getDiskfullEP(DevelopersApi api, StoragePool storagePool, String rscName)
             throws ApiException {
-        List<com.linbit.linstor.api.model.StoragePool> linSPs = LinstorUtil.getDiskfulStoragePools(api, rscName);
-        if (linSPs != null) {
-            List<String> linstorNodeNames = linSPs.stream()
-                    .map(com.linbit.linstor.api.model.StoragePool::getNodeName)
-                    .collect(Collectors.toList());
-            Host host = getEnabledClusterHost(storagePool, linstorNodeNames);
+        // Take the first diskful copy whose host can be used: the copies are ordered by how
+        // suited they are (in use, then active, then inactive), and for shared storage pools
+        // only the active node may be read, so the order must not be broken here.
+        for (com.linbit.linstor.api.model.StoragePool linSP
+                : LinstorUtil.getDiskfulStoragePoolsByPreference(api, rscName)) {
+            Host host = getEnabledClusterHost(storagePool, Collections.singletonList(linSP.getNodeName()));
             if (host != null) {
                 return Optional.of(RemoteHostEndPoint.getHypervisorHostEndPoint(host));
             }
+            logger.debug("Linstor: no usable cloudstack host for diskful node {}, trying next copy",
+                    linSP.getNodeName());
         }
         logger.error("Linstor: No diskfull host found.");
         return Optional.empty();
