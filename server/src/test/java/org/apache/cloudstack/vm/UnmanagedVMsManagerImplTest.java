@@ -1976,4 +1976,15 @@ public class UnmanagedVMsManagerImplTest {
         Assert.assertFalse(result.containsKey("Network adapter 2"));
         Mockito.verify(network, Mockito.atLeastOnce()).getCidr();
     }
+
+    @Test
+    public void testAutoFillAcceptsBareAddressWithoutPrefix() {
+        // Older or limited VMware Tools report addresses without ipConfig, so the captured
+        // entry has no prefix - preservation must still work from the bare address.
+        staticIpTestNetwork(200L, "10.1.1.0/24", "10.1.1.1");
+        Map<String, com.cloud.network.Network.IpAddresses> result = unmanagedVMsManager.autoFillStaticNicIpAddresses(
+                Map.of("Network adapter 1", 200L), null,
+                Map.of("Network adapter 1", java.util.List.of("10.1.1.151")));
+        Assert.assertEquals("10.1.1.151", result.get("Network adapter 1").getIp4Address());
+    }
 }
