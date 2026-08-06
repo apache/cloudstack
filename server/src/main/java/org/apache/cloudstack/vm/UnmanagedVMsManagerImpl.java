@@ -2175,8 +2175,16 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             return nicIdToCidrs;
         }
         for (UnmanagedInstanceTO.Nic nic : sourceVMwareInstance.getNics()) {
-            if (StringUtils.isNotBlank(nic.getNicId()) && CollectionUtils.isNotEmpty(nic.getIpv4Cidrs())) {
+            if (StringUtils.isBlank(nic.getNicId())) {
+                continue;
+            }
+            if (CollectionUtils.isNotEmpty(nic.getIpv4Cidrs())) {
                 nicIdToCidrs.put(nic.getNicId(), nic.getIpv4Cidrs());
+            } else if (CollectionUtils.isNotEmpty(nic.getIpAddress())) {
+                // Older or limited VMware Tools report only the bare address list without
+                // ipConfig; there is no prefix, but IP preservation only needs the address
+                // itself (the fit test runs against the target network's CIDR).
+                nicIdToCidrs.put(nic.getNicId(), nic.getIpAddress());
             }
         }
         return nicIdToCidrs;

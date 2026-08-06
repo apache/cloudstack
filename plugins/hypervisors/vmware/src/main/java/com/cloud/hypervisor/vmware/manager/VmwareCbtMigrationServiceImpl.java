@@ -332,7 +332,10 @@ public class VmwareCbtMigrationServiceImpl implements VmwareCbtMigrationService 
         for (UnmanagedInstanceTO.Nic nic : unmanagedInstance.getNics()) {
             VmwareCbtPreflightNicInfo nicInfo = new VmwareCbtPreflightNicInfo(nic.getNicId(), nic.getAdapterType(),
                     nic.getMacAddress(), nic.getVlan());
-            nicInfo.setIpv4Cidrs(nic.getIpv4Cidrs());
+            // Older or limited Tools versions report only the bare address list without
+            // ipConfig - carry those addresses too (without prefix), IP preservation only
+            // needs the address itself.
+            nicInfo.setIpv4Cidrs(CollectionUtils.isNotEmpty(nic.getIpv4Cidrs()) ? nic.getIpv4Cidrs() : nic.getIpAddress());
             nicInfo.setIpv4Gateway(nic.getIpv4Gateway());
             nicInfo.setDnsServers(nic.getDnsServers());
             nics.add(nicInfo);
