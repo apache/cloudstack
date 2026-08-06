@@ -28,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Support for incremental snapshots on secondary storage backuped snapshots
+- Support for incremental snapshot backups on secondary storage
 
 ## [2026-06-24]
 

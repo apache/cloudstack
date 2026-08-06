@@ -128,35 +128,22 @@ public final class LinstorBackupSnapshotCommandWrapper
      * parent then copies every cluster in which the two backing files differ into the overlay. The
      * explicit virtual size clips the DRBD metadata trailing the storage snapshot device.
      */
-    private String createIncrementalQCow2(
-        final String srcPath,
-        final SnapshotObjectTO dst,
-        final KVMStoragePool secondaryPool,
-        final File parentFile,
-        final long netSize,
-        int waitMilliSeconds)
-        throws LibvirtException, QemuImgException, IOException
-    {
-        final String dstDir = secondaryPool.getLocalPath() + File.separator + dst.getPath();
+    private String createIncrementalQCow2(final String srcPath, final SnapshotObjectTO dst, final KVMStoragePool secondaryPool,
+        final File parentFile, final long netSize, int waitMilliSeconds) throws LibvirtException, QemuImgException, IOException {
+        final String dstDir = secondaryPool.getLocalPathFor(dst.getPath());
         FileUtils.forceMkdir(new File(dstDir));
         final String dstPath = dstDir + File.separator + dst.getName();
 
-        final Script createOverlay = new Script("qemu-img", Duration.millis(waitMilliSeconds));
-        createOverlay.add("create", "-f", "qcow2", "-F", "raw", "-b", srcPath, dstPath, String.valueOf(netSize));
-        final String createResult = createOverlay.execute();
-        if (createResult != null) {
-            throw new QemuImgException("Unable to create qcow2 overlay of " + srcPath + ": " + createResult);
-        }
-
+        final QemuImg qemu = new QemuImg(waitMilliSeconds);
+        final QemuImgFile dstFile = new QemuImgFile(dstPath, netSize, QemuImg.PhysicalDiskFormat.QCOW2);
         try {
-            final QemuImg qemu = new QemuImg(waitMilliSeconds);
-            final QemuImgFile dstFile = new QemuImgFile(dstPath, QemuImg.PhysicalDiskFormat.QCOW2);
+            qemu.create(dstFile, new QemuImgFile(srcPath, QemuImg.PhysicalDiskFormat.RAW));
             qemu.rebase(dstFile, new QemuImgFile(parentFile.getAbsolutePath(), QemuImg.PhysicalDiskFormat.QCOW2),
                 QemuImg.PhysicalDiskFormat.QCOW2.toString(), true);
             // metadata-only rewrite to a relative backing name, so the chain stays valid on any mount point
             qemu.rebase(dstFile, new QemuImgFile(parentFile.getName(), QemuImg.PhysicalDiskFormat.QCOW2),
                 QemuImg.PhysicalDiskFormat.QCOW2.toString(), false);
-        } catch (final QemuImgException | LibvirtException e) {
+        } catch (final QemuImgException e) {
             FileUtils.deleteQuietly(new File(dstPath));
             throw e;
         }
@@ -226,7 +213,7 @@ public final class LinstorBackupSnapshotCommandWrapper
             boolean incremental = false;
             String dstPath = null;
             if (!encrypted && parentInstallPath != null && src.getVolume() != null) {
-                final File parentFile = new File(secondaryPool.getLocalPath() + File.separator + parentInstallPath);
+                final File parentFile = new File(secondaryPool.getLocalPathFor(parentInstallPath));
                 if (parentFile.isFile()) {
                     dstPath = createIncrementalQCow2(
                         srcPath, dst, secondaryPool, parentFile, src.getVolume().getSize(), cmd.getWaitInMillSeconds());
