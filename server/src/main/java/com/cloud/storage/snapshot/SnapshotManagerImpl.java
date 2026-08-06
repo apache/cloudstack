@@ -779,10 +779,10 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     /**
      * Will mark this snapshot as the end of the chain if it has reached the value of snapshot.delta.max.
      * */
-    private void endCurrentChainIfNeeded(Long snapshotId, Long zoneId) {
+    protected void endCurrentChainIfNeeded(Long snapshotId, Long zoneId) {
         SnapshotDataStoreVO snapshotDataStoreVo = _snapshotStoreDao.findOneBySnapshotId(snapshotId, zoneId);
         int chainSize = 1;
-        while (snapshotDataStoreVo.getParentSnapshotId() > 0) {
+        while (snapshotDataStoreVo != null && snapshotDataStoreVo.getParentSnapshotId() > 0) {
             snapshotDataStoreVo = _snapshotStoreDao.findOneBySnapshotId(snapshotDataStoreVo.getParentSnapshotId(), zoneId);
             chainSize++;
         }
