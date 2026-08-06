@@ -2521,9 +2521,16 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         checkAccountAndAccess(user, account);
         verifyCallerPrivilegeForUserOrAccountOperations(user);
 
-        removeUserApiKeys(id);
+        return Transaction.execute((TransactionCallback<Boolean>) status -> deleteAndCleanupUser(user));
+    }
 
-        return _userDao.remove(id);
+    protected boolean deleteAndCleanupUser(User user) {
+        long userId = user.getId();
+
+        removeUserApiKeys(userId);
+        _projectAccountDao.removeUserFromProjects(userId);
+
+        return _userDao.remove(userId);
     }
 
     @Override
