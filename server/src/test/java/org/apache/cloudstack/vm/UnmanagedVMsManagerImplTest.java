@@ -1924,4 +1924,56 @@ public class UnmanagedVMsManagerImplTest {
         Assert.assertFalse(details.containsKey(VmDetailConstants.KVM_GUEST_OS_MACHINE_TYPE));
         Assert.assertFalse(details.containsKey(VmDetailConstants.VIDEO_HARDWARE));
     }
+
+    private NetworkVO staticIpTestNetwork(long id, String cidr, String gateway) {
+        NetworkVO network = Mockito.mock(NetworkVO.class);
+        Mockito.lenient().when(network.getId()).thenReturn(id);
+        Mockito.lenient().when(network.getCidr()).thenReturn(cidr);
+        Mockito.lenient().when(network.getGateway()).thenReturn(gateway);
+        Mockito.lenient().when(network.getUuid()).thenReturn("net-" + id);
+        Mockito.lenient().when(networkDao.findById(id)).thenReturn(network);
+        return network;
+    }
+
+    @Test
+    public void testAutoFillPreservesStaticIpThatFitsTargetCidr() {
+        staticIpTestNetwork(200L, "10.1.1.0/24", "10.1.1.1");
+        Map<String, com.cloud.network.Network.IpAddresses> result = unmanagedVMsManager.autoFillStaticNicIpAddresses(
+                Map.of("Network adapter 1", 200L), null,
+                Map.of("Network adapter 1", java.util.List.of("10.1.1.150/24")));
+        Assert.assertEquals("10.1.1.150", result.get("Network adapter 1").getIp4Address());
+    }
+
+    @Test
+    public void testAutoFillKeepsCallerProvidedIp() {
+        staticIpTestNetwork(200L, "10.1.1.0/24", "10.1.1.1");
+        Map<String, com.cloud.network.Network.IpAddresses> caller = new HashMap<>();
+        caller.put("Network adapter 1", new com.cloud.network.Network.IpAddresses("10.1.1.99", null));
+        Map<String, com.cloud.network.Network.IpAddresses> result = unmanagedVMsManager.autoFillStaticNicIpAddresses(
+                Map.of("Network adapter 1", 200L), caller,
+                Map.of("Network adapter 1", java.util.List.of("10.1.1.150/24")));
+        Assert.assertEquals("10.1.1.99", result.get("Network adapter 1").getIp4Address());
+    }
+
+    @Test
+    public void testAutoFillSkipsIpOutsideTargetCidr() {
+        staticIpTestNetwork(200L, "10.1.1.0/24", "10.1.1.1");
+        Map<String, com.cloud.network.Network.IpAddresses> result = unmanagedVMsManager.autoFillStaticNicIpAddresses(
+                Map.of("Network adapter 2", 200L), null,
+                Map.of("Network adapter 2", java.util.List.of("192.168.77.5/24")));
+        Assert.assertFalse(result.containsKey("Network adapter 2"));
+    }
+
+    @Test
+    public void testAutoFillSkipsGatewayAndInUseIps() {
+        NetworkVO network = staticIpTestNetwork(200L, "10.1.1.0/24", "10.1.1.1");
+        Mockito.when(nicDao.findByIp4AddressAndNetworkId("10.1.1.151", 200L)).thenReturn(Mockito.mock(com.cloud.vm.NicVO.class));
+        Map<String, com.cloud.network.Network.IpAddresses> result = unmanagedVMsManager.autoFillStaticNicIpAddresses(
+                Map.of("Network adapter 1", 200L, "Network adapter 2", 200L), null,
+                Map.of("Network adapter 1", java.util.List.of("10.1.1.1/24"),
+                       "Network adapter 2", java.util.List.of("10.1.1.151/24")));
+        Assert.assertFalse(result.containsKey("Network adapter 1"));
+        Assert.assertFalse(result.containsKey("Network adapter 2"));
+        Mockito.verify(network, Mockito.atLeastOnce()).getCidr();
+    }
 }

@@ -1829,6 +1829,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 checkConversionSupportOnHost(convertHost, sourceVMName, true, useVddk, details, directRbdVddkImport, directLinstorVddkImport);
             }
 
+            nicIpAddressMap = autoFillStaticNicIpAddresses(nicNetworkMap, nicIpAddressMap, buildSourceNicCidrMap(sourceVMwareInstance));
             checkNetworkingBeforeConvertingVmwareInstance(zone, owner, displayName, hostName, sourceVMwareInstance, nicNetworkMap, nicIpAddressMap, forced);
             UnmanagedInstanceTO convertedInstance;
             if (!useVddk && (forceMsToImportVmFiles || !isOvfExportSupported)) {
@@ -1913,8 +1914,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             isClonedInstance = sourceInstanceDetails.second();
 
             checkVmResourceLimitsForUnmanagedInstanceImport(owner, sourceVMwareInstance, serviceOffering, template, reservations);
+            Map<String, Network.IpAddresses> effectiveNicIpAddressMap = autoFillStaticNicIpAddresses(nicNetworkMap,
+                    nicIpAddressMap, buildSourceNicCidrMap(sourceVMwareInstance));
             checkNetworkingBeforeConvertingVmwareInstance(zone, owner, resolvedDisplayName, resolvedHostName,
-                    sourceVMwareInstance, nicNetworkMap, nicIpAddressMap, forced);
+                    sourceVMwareInstance, nicNetworkMap, effectiveNicIpAddressMap, forced);
 
             sanitizeConvertedInstance(convertedInstance, sourceVMwareInstance);
             if (guestOsId == null) {
@@ -1922,7 +1925,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             }
             return importVirtualMachineInternal(convertedInstance, null, zone, destinationCluster, null, template,
                     resolvedDisplayName, resolvedHostName, caller, owner, userId, serviceOffering, dataDiskOfferingMap,
-                    nicNetworkMap, nicIpAddressMap, guestOsId,
+                    nicNetworkMap, effectiveNicIpAddressMap, guestOsId,
                     applyVmwareSourceHardwareDetails(details, sourceVMwareInstance), false, forced, false, storagePoolId);
         } catch (CloudRuntimeException e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
@@ -2164,6 +2167,61 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
         return applyVmwareImportHardwareDetails(details, sourceVMwareInstance.getBootType(),
                 sourceVMwareInstance.getBootMode(), sourceVMwareInstance.getOperatingSystem());
+    }
+
+    protected Map<String, List<String>> buildSourceNicCidrMap(UnmanagedInstanceTO sourceVMwareInstance) {
+        Map<String, List<String>> nicIdToCidrs = new HashMap<>();
+        if (sourceVMwareInstance == null || CollectionUtils.isEmpty(sourceVMwareInstance.getNics())) {
+            return nicIdToCidrs;
+        }
+        for (UnmanagedInstanceTO.Nic nic : sourceVMwareInstance.getNics()) {
+            if (StringUtils.isNotBlank(nic.getNicId()) && CollectionUtils.isNotEmpty(nic.getIpv4Cidrs())) {
+                nicIdToCidrs.put(nic.getNicId(), nic.getIpv4Cidrs());
+            }
+        }
+        return nicIdToCidrs;
+    }
+
+    @Override
+    public Map<String, Network.IpAddresses> autoFillStaticNicIpAddresses(Map<String, Long> nicNetworkMap,
+            Map<String, Network.IpAddresses> nicIpAddressMap, Map<String, List<String>> nicIdToIpv4Cidrs) {
+        Map<String, Network.IpAddresses> effective = nicIpAddressMap == null ? new HashMap<>() : new HashMap<>(nicIpAddressMap);
+        if (MapUtils.isEmpty(nicNetworkMap) || MapUtils.isEmpty(nicIdToIpv4Cidrs)) {
+            return effective;
+        }
+        for (Map.Entry<String, Long> mapping : nicNetworkMap.entrySet()) {
+            String nicId = mapping.getKey();
+            if (effective.containsKey(nicId)) {
+                continue;
+            }
+            List<String> sourceCidrs = nicIdToIpv4Cidrs.get(nicId);
+            if (CollectionUtils.isEmpty(sourceCidrs)) {
+                continue;
+            }
+            NetworkVO network = networkDao.findById(mapping.getValue());
+            if (network == null || StringUtils.isBlank(network.getCidr())) {
+                continue;
+            }
+            for (String sourceCidr : sourceCidrs) {
+                String sourceIp = sourceCidr.contains("/") ? sourceCidr.substring(0, sourceCidr.indexOf('/')) : sourceCidr;
+                if (!NetUtils.isValidIp4(sourceIp) || !NetUtils.isIpWithInCidrRange(sourceIp, network.getCidr())) {
+                    continue;
+                }
+                if (sourceIp.equals(network.getGateway())) {
+                    logger.warn("Not preserving source IP {} for NIC {}: it is the gateway of network {}", sourceIp, nicId, network.getUuid());
+                    continue;
+                }
+                if (nicDao.findByIp4AddressAndNetworkId(sourceIp, network.getId()) != null) {
+                    logger.warn("Not preserving source IP {} for NIC {}: it is already in use in network {}; the NIC falls back to automatic allocation",
+                            sourceIp, nicId, network.getUuid());
+                    continue;
+                }
+                logger.info("Preserving static source IP {} for NIC {} in network {}", sourceIp, nicId, network.getUuid());
+                effective.put(nicId, new Network.IpAddresses(sourceIp, null));
+                break;
+            }
+        }
+        return effective;
     }
 
     // Matches the creation position embedded in a direct-to-pool converted disk image name:

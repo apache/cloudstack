@@ -330,8 +330,12 @@ public class VmwareCbtMigrationServiceImpl implements VmwareCbtMigrationService 
             return nics;
         }
         for (UnmanagedInstanceTO.Nic nic : unmanagedInstance.getNics()) {
-            nics.add(new VmwareCbtPreflightNicInfo(nic.getNicId(), nic.getAdapterType(), nic.getMacAddress(),
-                    nic.getVlan()));
+            VmwareCbtPreflightNicInfo nicInfo = new VmwareCbtPreflightNicInfo(nic.getNicId(), nic.getAdapterType(),
+                    nic.getMacAddress(), nic.getVlan());
+            nicInfo.setIpv4Cidrs(nic.getIpv4Cidrs());
+            nicInfo.setIpv4Gateway(nic.getIpv4Gateway());
+            nicInfo.setDnsServers(nic.getDnsServers());
+            nics.add(nicInfo);
         }
         return nics;
     }

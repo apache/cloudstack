@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.vm;
 
+import java.util.List;
 import java.util.Map;
 
 import com.cloud.dc.DataCenter;
@@ -111,4 +112,17 @@ public interface UnmanagedVMsManager extends VmImportService, UnmanageVMService,
      * added, so explicit user choices always win.
      */
     Map<String, String> applyVmwareImportHardwareDetails(Map<String, String> details, String bootType, String bootMode, String osName);
+
+    /**
+     * Preserves static source IPs across the migration: for every NIC that is mapped to a
+     * CloudStack network but has no caller-provided IP, requests the guest's own IPv4 address
+     * (captured from VMware Tools while the source runs) when that address fits the target
+     * network's CIDR, is not the network's gateway and is not already in use. Caller-provided
+     * entries always win; NICs whose source address does not fit fall back to normal allocation.
+     *
+     * @param nicIdToIpv4Cidrs source NIC id to its captured IPv4 addresses in CIDR form
+     * @return the effective NIC-to-IP map to use for the import
+     */
+    Map<String, Network.IpAddresses> autoFillStaticNicIpAddresses(Map<String, Long> nicNetworkMap,
+            Map<String, Network.IpAddresses> nicIpAddressMap, Map<String, List<String>> nicIdToIpv4Cidrs);
 }

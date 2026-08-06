@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.vm;
 
+import java.util.List;
+
 /**
  * A source VM NIC discovered during VMware CBT preflight, so NIC-to-network
  * mappings can be validated when the migration is started instead of failing
@@ -27,6 +29,14 @@ public class VmwareCbtPreflightNicInfo {
     private final String adapterType;
     private final String macAddress;
     private final Integer vlan;
+
+    // Guest network facts from VMware Tools (available while the source runs): the IPv4
+    // addresses in CIDR form, the default gateway of this NIC's subnet, and the guest's DNS
+    // servers. Null when Tools is not running or reports nothing for this NIC. Used to
+    // preserve a static source IP across the migration when it fits the target network.
+    private List<String> ipv4Cidrs;
+    private String ipv4Gateway;
+    private List<String> dnsServers;
 
     public VmwareCbtPreflightNicInfo(String sourceNicId, String adapterType, String macAddress, Integer vlan) {
         this.sourceNicId = sourceNicId;
@@ -49,5 +59,29 @@ public class VmwareCbtPreflightNicInfo {
 
     public Integer getVlan() {
         return vlan;
+    }
+
+    public List<String> getIpv4Cidrs() {
+        return ipv4Cidrs;
+    }
+
+    public void setIpv4Cidrs(List<String> ipv4Cidrs) {
+        this.ipv4Cidrs = ipv4Cidrs;
+    }
+
+    public String getIpv4Gateway() {
+        return ipv4Gateway;
+    }
+
+    public void setIpv4Gateway(String ipv4Gateway) {
+        this.ipv4Gateway = ipv4Gateway;
+    }
+
+    public List<String> getDnsServers() {
+        return dnsServers;
+    }
+
+    public void setDnsServers(List<String> dnsServers) {
+        this.dnsServers = dnsServers;
     }
 }

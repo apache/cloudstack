@@ -508,7 +508,17 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
                 : unmanagedVMsManager.resolveGuestOsIdForVmwareImport(preflightInfo.getOperatingSystem(), preflightInfo.getOperatingSystemId()));
         migration.setDataDiskOfferingMap(serializeMap(cmd.getDataDiskToDiskOfferingList()));
         migration.setNicNetworkMap(serializeMap(cmd.getNicNetworkList()));
-        migration.setNicIpAddressMap(serializeNicIpAddressMap(cmd.getNicIpAddressList()));
+        // Preserve static source IPs captured during preflight: NICs mapped to a network but
+        // given no explicit IP keep their guest-configured address when it fits the target
+        // network. The source is running at this point, so Tools data is available.
+        Map<String, List<String>> sourceNicCidrs = new HashMap<>();
+        for (VmwareCbtPreflightNicInfo nic : preflightInfo.getNics()) {
+            if (StringUtils.isNotBlank(nic.getSourceNicId()) && CollectionUtils.isNotEmpty(nic.getIpv4Cidrs())) {
+                sourceNicCidrs.put(nic.getSourceNicId(), nic.getIpv4Cidrs());
+            }
+        }
+        migration.setNicIpAddressMap(serializeNicIpAddressMap(unmanagedVMsManager.autoFillStaticNicIpAddresses(
+                cmd.getNicNetworkList(), cmd.getNicIpAddressList(), sourceNicCidrs)));
         migration.setImportDetails(serializeMap(unmanagedVMsManager.applyVmwareImportHardwareDetails(cmd.getDetails(),
                 preflightInfo.getBootType(), preflightInfo.getBootMode(), preflightInfo.getOperatingSystem())));
         migration.setForced(cmd.isForced());
