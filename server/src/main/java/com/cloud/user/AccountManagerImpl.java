@@ -2528,7 +2528,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         long userId = user.getId();
 
         removeUserApiKeys(userId);
-        _projectAccountDao.removeUserFromProjects(userId);
+        _projectMgr.cleanupProjectsForUser(null, user);
 
         return _userDao.remove(userId);
     }

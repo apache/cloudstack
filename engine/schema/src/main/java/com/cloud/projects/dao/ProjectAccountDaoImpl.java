@@ -222,4 +222,13 @@ public class ProjectAccountDaoImpl extends GenericDaoBase<ProjectAccountVO, Long
         sc.setParameters("projectRoleId", id);
         return listBy(sc);
     }
+
+    @Override
+    public List<ProjectAccountVO> listBy(Long projectId, Long accountId, Long userId) {
+        SearchCriteria<ProjectAccountVO> sc = AllFieldsSearch.create();
+        sc.setParametersIfNotNull("projectId", projectId);
+        sc.setParametersIfNotNull("userId", userId);
+        sc.setParametersIfNotNull("accountId", accountId);
+        return listBy(sc);
+    }
 }

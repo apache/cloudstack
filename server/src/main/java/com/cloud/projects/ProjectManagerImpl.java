@@ -1033,16 +1033,42 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
         //verify permissions
         _accountMgr.checkAccess(caller, AccessType.ModifyProject, true, _accountMgr.getAccount(project.getProjectAccountId()));
 
-        //Check if the user exists in the project
-        ProjectAccount projectUser =  _projectAccountDao.findByProjectIdUserId(projectId, user.getAccountId(), user.getId());
-        if (projectUser == null) {
-            deletePendingInvite(projectId, user);
+        boolean success = cleanupProjectsForUser(project, user);
+        if (!success) {
             InvalidParameterValueException ex = new InvalidParameterValueException("User " + user.getUsername() + " is not assigned to the project with specified id");
-            // Use the projectVO object and not the projectAccount object to inject the projectId.
             ex.addProxyObject(project.getUuid(), "projectId");
             throw ex;
         }
-        return deleteUserFromProject(projectId, user);
+        return true;
+    }
+
+    /**
+     * Cleans up project associations and invitations for a specified user in a given project.
+     *
+     * @param project the project from which the user is being cleaned up; if null, cleanup applies to all projects associated with the user
+     * @param user the user whose project associations and invitations are being cleaned up
+     * @return true if any project accounts associated with the user were removed, false otherwise
+     */
+    @Override
+    public boolean cleanupProjectsForUser(Project project, User user) {
+        return Transaction.execute((TransactionCallback<Boolean>) status -> {
+            Long projectId = project != null ? project.getId() : null;
+            long userId = user.getId();
+            long accountId = user.getAccountId();
+
+            _projectInvitationDao.removeBy(projectId, userId, accountId);
+
+            List<ProjectAccountVO> projectAccounts = _projectAccountDao.listBy(projectId, accountId, userId);
+            for (ProjectAccountVO projectAccount : projectAccounts) {
+                _projectAccountDao.remove(projectAccount.getId());
+                if (projectAccount.getAccountRole() == Role.Admin) {
+                    _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.project);
+                }
+                logger.debug("Removed user [{}] from project [{}].", user, project);
+            }
+
+            return !projectAccounts.isEmpty();
+        });
     }
 
     private void deletePendingInvite(Long projectId, User user) {
@@ -1055,29 +1081,6 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
                 logger.info("Failed to delete project invite for user: {}", user);
             }
         }
-    }
-
-    @DB
-    private boolean deleteUserFromProject(Long projectId, User user) {
-        return Transaction.execute(new TransactionCallback<Boolean>() {
-            @Override
-            public Boolean doInTransaction(TransactionStatus status) {
-                boolean success = true;
-                ProjectAccountVO projectAccount = _projectAccountDao.findByProjectIdUserId(projectId, user.getAccountId(), user.getId());
-                success = _projectAccountDao.remove(projectAccount.getId());
-                if (projectAccount.getAccountRole() == Role.Admin) {
-                    _resourceLimitMgr.decrementResourceCount(user.getAccountId(), ResourceType.project);
-                }
-                if (success) {
-                    logger.debug("Removed user {} from project. Removing any invite sent to the user", user);
-                    ProjectInvitation invite = _projectInvitationDao.findByUserIdProjectId(user.getId(), user.getAccountId(),  projectId);
-                    if (invite != null) {
-                        success = success && _projectInvitationDao.remove(invite.getId());
-                    }
-                }
-                return success;
-            }
-        });
     }
 
     public ProjectInvitation createAccountInvitation(Project project, Long accountId, Long userId, Role role, Long projectRoleId) {

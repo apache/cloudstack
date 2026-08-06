@@ -125,6 +125,19 @@ public class ProjectInvitationDaoImpl extends GenericDaoBase<ProjectInvitationVO
     }
 
     @Override
+    public int removeBy(Long userId, Long accountId, Long projectId) {
+        SearchCriteria<ProjectInvitationVO> sc = AllFieldsSearch.create();
+
+        sc.setParametersIfNotNull("userId", userId);
+        sc.setParametersIfNotNull("accountId", accountId);
+        if (projectId != null && projectId != -1) {
+            sc.setParameters("projectId", projectId);
+        }
+
+        return remove(sc);
+    }
+
+    @Override
     public boolean isActive(long id, long timeout) {
         SearchCriteria<ProjectInvitationVO> sc = InactiveSearch.create();
 
