@@ -131,7 +131,7 @@ public abstract class ServerResourceBase implements ServerResource {
                     logger.info(String.format("Unable to found private NIC with defined ip [%s]", ifAddr));
                 }
             } catch (Throwable e) {
-                 // Logging only, if this method was unnable to find a valid interface, iteration will be tested
+                 // Logging only, if this method was unable to find a valid interface, iteration will be tested
                 logger.info(String.format("Unable to use private address to get the management interface: [%s]", e.getMessage()));
             }
         }
@@ -177,7 +177,7 @@ public abstract class ServerResourceBase implements ServerResource {
                     }
                 }
             } catch (Throwable e) {
-                // Logging only, if this method was unnable to find a valid interface, iteration will be tested
+                // Logging only, if this method was unable to find a valid interface, iteration will be tested
                 logger.debug(String.format("Unable to use routing table to determine private management interface: [%s]", e.getMessage()));
             }
         }
