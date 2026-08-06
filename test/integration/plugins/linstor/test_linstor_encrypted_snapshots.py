@@ -19,8 +19,6 @@ import json
 import logging
 import os
 import random
-import socket
-import time
 
 # All tests inherit from cloudstackTestCase
 from marvin.cloudstackTestCase import cloudstackTestCase
@@ -34,6 +32,8 @@ from marvin.lib.common import get_domain, get_template, get_zone, list_hosts, li
 from marvin.lib.utils import cleanup_resources
 from marvin.sshClient import SshClient
 from nose.plugins.attrib import attr
+
+from linstor_test_utils import ServiceReady
 
 # Prerequisites:
 #  Only one zone / pod / cluster
@@ -117,30 +117,6 @@ class TestData:
             TestData.zoneId: 1,
             TestData.domainId: 1,
         }
-
-
-class ServiceReady:
-    @classmethod
-    def ready(cls, hostname, port):
-        try:
-            s = socket.create_connection((hostname, port), timeout=1)
-            s.close()
-            return True
-        except (ConnectionRefusedError, socket.timeout, OSError):
-            return False
-
-    @classmethod
-    def wait(cls, hostname, port, wait_interval=5, timeout=120, service_name='ssh'):
-        starttime = int(round(time.time() * 1000))
-        while not cls.ready(hostname, port):
-            if starttime + timeout * 1000 < int(round(time.time() * 1000)):
-                raise RuntimeError("{s} {h} cannot be reached.".format(s=service_name, h=hostname))
-            time.sleep(wait_interval)
-        return True
-
-    @classmethod
-    def wait_ssh_ready(cls, hostname, wait_interval=2, timeout=120):
-        return cls.wait(hostname, 22, wait_interval, timeout, "ssh")
 
 
 class TestLinstorEncryptedSnapshots(cloudstackTestCase):

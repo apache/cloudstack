@@ -19,7 +19,6 @@ import logging
 import os
 import random
 import time
-import socket
 
 # All tests inherit from cloudstackTestCase
 from marvin.cloudstackTestCase import cloudstackTestCase
@@ -37,6 +36,8 @@ from marvin.lib.common import get_domain, get_template, get_zone, list_clusters,
 from marvin.lib.utils import cleanup_resources, validateList
 from marvin.codes import PASS
 from nose.plugins.attrib import attr
+
+from linstor_test_utils import ServiceReady
 
 # Prerequisites:
 #  Only one zone
@@ -225,45 +226,6 @@ class TestData:
                 "storagetype": "shared"
             },
         }
-
-class ServiceReady:
-    @classmethod
-    def ready(cls, hostname: str, port: int) -> bool:
-        try:
-            s = socket.create_connection((hostname, port), timeout=1)
-            s.close()
-            return True
-        except (ConnectionRefusedError, socket.timeout, OSError):
-            return False
-
-    @classmethod
-    def wait(
-            cls,
-            hostname,
-            port,
-            wait_interval = 5,
-            timeout = 90,
-            service_name = 'ssh') -> bool:
-        """
-        Wait until the controller can be reached.
-        :param hostname:
-        :param port: port of the application
-        :param wait_interval:
-        :param timeout: time to wait until exit with False
-        :param service_name: name of the service to wait
-        :return:
-        """
-        starttime = int(round(time.time() * 1000))
-        while not cls.ready(hostname, port):
-            if starttime + timeout * 1000 < int(round(time.time() * 1000)):
-                raise RuntimeError("{s} {h} cannot be reached.".format(s=service_name, h=hostname))
-            time.sleep(wait_interval)
-        return True
-
-    @classmethod
-    def wait_ssh_ready(cls, hostname, wait_interval = 1, timeout = 90):
-        return cls.wait(hostname, 22, wait_interval, timeout, "ssh")
-
 
 class TestLinstorVolumes(cloudstackTestCase):
     _volume_vm_id_and_vm_id_do_not_match_err_msg = "The volume's VM ID and the VM's ID do not match."
