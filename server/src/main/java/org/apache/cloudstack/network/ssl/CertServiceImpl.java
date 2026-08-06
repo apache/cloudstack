@@ -488,12 +488,7 @@ public class CertServiceImpl implements CertService {
         } catch (final CertificateException | IOException e) {
             throw new InvalidParameterValueException("Invalid Certificate format. Expected X509 certificate. Failed due to " + e.getMessage());
         } finally {
-            // Try to close quietly
-            try {
-                IOUtils.close(certPem);
-            } catch (IOException e) {
-                logger.debug("Failed to close pem reader", e);
-            }
+            IOUtils.closeQuietly(certPem);
         }
     }
 
