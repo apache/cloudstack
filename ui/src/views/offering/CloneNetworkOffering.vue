@@ -1443,6 +1443,7 @@ export default {
         if (values.nsxsegmentsecurityprofileid) {
           params['details[' + detailsIndex + '].key'] = 'nsxsegmentsecurityprofileid'
           params['details[' + detailsIndex + '].value'] = values.nsxsegmentsecurityprofileid
+          detailsIndex++
         }
 
         this.loading = true
