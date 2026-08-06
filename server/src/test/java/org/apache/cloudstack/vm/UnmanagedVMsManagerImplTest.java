@@ -1956,25 +1956,35 @@ public class UnmanagedVMsManagerImplTest {
     }
 
     @Test
-    public void testAutoFillSkipsIpOutsideTargetCidr() {
+    public void testAutoFillFallsBackToAutoForIpOutsideTargetCidr() {
         staticIpTestNetwork(200L, "10.1.1.0/24", "10.1.1.1");
         Map<String, com.cloud.network.Network.IpAddresses> result = unmanagedVMsManager.autoFillStaticNicIpAddresses(
                 Map.of("Network adapter 2", 200L), null,
                 Map.of("Network adapter 2", java.util.List.of("192.168.77.5/24")));
-        Assert.assertFalse(result.containsKey("Network adapter 2"));
+        Assert.assertEquals("auto", result.get("Network adapter 2").getIp4Address());
     }
 
     @Test
-    public void testAutoFillSkipsGatewayAndInUseIps() {
+    public void testAutoFillFallsBackToAutoForGatewayAndInUseIps() {
         NetworkVO network = staticIpTestNetwork(200L, "10.1.1.0/24", "10.1.1.1");
         Mockito.when(nicDao.findByIp4AddressAndNetworkId("10.1.1.151", 200L)).thenReturn(Mockito.mock(com.cloud.vm.NicVO.class));
         Map<String, com.cloud.network.Network.IpAddresses> result = unmanagedVMsManager.autoFillStaticNicIpAddresses(
                 Map.of("Network adapter 1", 200L, "Network adapter 2", 200L), null,
                 Map.of("Network adapter 1", java.util.List.of("10.1.1.1/24"),
                        "Network adapter 2", java.util.List.of("10.1.1.151/24")));
-        Assert.assertFalse(result.containsKey("Network adapter 1"));
-        Assert.assertFalse(result.containsKey("Network adapter 2"));
+        Assert.assertEquals("auto", result.get("Network adapter 1").getIp4Address());
+        Assert.assertEquals("auto", result.get("Network adapter 2").getIp4Address());
         Mockito.verify(network, Mockito.atLeastOnce()).getCidr();
+    }
+
+    @Test
+    public void testAutoFillFallsBackToAutoWhenSourceReportsNoAddresses() {
+        // A NIC with no Tools-reported address at all (DHCP guest before lease, Tools down)
+        // must still be importable into an isolated network - via automatic allocation.
+        staticIpTestNetwork(200L, "10.1.1.0/24", "10.1.1.1");
+        Map<String, com.cloud.network.Network.IpAddresses> result = unmanagedVMsManager.autoFillStaticNicIpAddresses(
+                Map.of("Network adapter 1", 200L), null, new HashMap<>());
+        Assert.assertEquals("auto", result.get("Network adapter 1").getIp4Address());
     }
 
     @Test

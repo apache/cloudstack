@@ -2194,7 +2194,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     public Map<String, Network.IpAddresses> autoFillStaticNicIpAddresses(Map<String, Long> nicNetworkMap,
             Map<String, Network.IpAddresses> nicIpAddressMap, Map<String, List<String>> nicIdToIpv4Cidrs) {
         Map<String, Network.IpAddresses> effective = nicIpAddressMap == null ? new HashMap<>() : new HashMap<>(nicIpAddressMap);
-        if (MapUtils.isEmpty(nicNetworkMap) || MapUtils.isEmpty(nicIdToIpv4Cidrs)) {
+        if (MapUtils.isEmpty(nicNetworkMap)) {
             return effective;
         }
         for (Map.Entry<String, Long> mapping : nicNetworkMap.entrySet()) {
@@ -2202,31 +2202,39 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             if (effective.containsKey(nicId)) {
                 continue;
             }
-            List<String> sourceCidrs = nicIdToIpv4Cidrs.get(nicId);
-            if (CollectionUtils.isEmpty(sourceCidrs)) {
-                continue;
-            }
             NetworkVO network = networkDao.findById(mapping.getValue());
-            if (network == null || StringUtils.isBlank(network.getCidr())) {
+            if (network == null || network.getGuestType() == Network.GuestType.L2 || StringUtils.isBlank(network.getCidr())) {
                 continue;
             }
-            for (String sourceCidr : sourceCidrs) {
-                String sourceIp = sourceCidr.contains("/") ? sourceCidr.substring(0, sourceCidr.indexOf('/')) : sourceCidr;
-                if (!NetUtils.isValidIp4(sourceIp) || !NetUtils.isIpWithInCidrRange(sourceIp, network.getCidr())) {
-                    continue;
+            String preservedIp = null;
+            List<String> sourceCidrs = nicIdToIpv4Cidrs == null ? null : nicIdToIpv4Cidrs.get(nicId);
+            if (CollectionUtils.isNotEmpty(sourceCidrs)) {
+                for (String sourceCidr : sourceCidrs) {
+                    String sourceIp = sourceCidr.contains("/") ? sourceCidr.substring(0, sourceCidr.indexOf('/')) : sourceCidr;
+                    if (!NetUtils.isValidIp4(sourceIp) || !NetUtils.isIpWithInCidrRange(sourceIp, network.getCidr())) {
+                        continue;
+                    }
+                    if (sourceIp.equals(network.getGateway())) {
+                        logger.warn("Not preserving source IP {} for NIC {}: it is the gateway of network {}", sourceIp, nicId, network.getUuid());
+                        continue;
+                    }
+                    if (nicDao.findByIp4AddressAndNetworkId(sourceIp, network.getId()) != null) {
+                        logger.warn("Not preserving source IP {} for NIC {}: it is already in use in network {}; the NIC falls back to automatic allocation",
+                                sourceIp, nicId, network.getUuid());
+                        continue;
+                    }
+                    preservedIp = sourceIp;
+                    break;
                 }
-                if (sourceIp.equals(network.getGateway())) {
-                    logger.warn("Not preserving source IP {} for NIC {}: it is the gateway of network {}", sourceIp, nicId, network.getUuid());
-                    continue;
-                }
-                if (nicDao.findByIp4AddressAndNetworkId(sourceIp, network.getId()) != null) {
-                    logger.warn("Not preserving source IP {} for NIC {}: it is already in use in network {}; the NIC falls back to automatic allocation",
-                            sourceIp, nicId, network.getUuid());
-                    continue;
-                }
-                logger.info("Preserving static source IP {} for NIC {} in network {}", sourceIp, nicId, network.getUuid());
-                effective.put(nicId, new Network.IpAddresses(sourceIp, null));
-                break;
+            }
+            if (preservedIp != null) {
+                logger.info("Preserving static source IP {} for NIC {} in network {}", preservedIp, nicId, network.getUuid());
+                effective.put(nicId, new Network.IpAddresses(preservedIp, null));
+            } else {
+                // Isolated/shared networks reject import NICs without an IP; "auto" makes the
+                // network orchestrator pick a free address instead (see allocateNic import path).
+                logger.info("No preservable source IP for NIC {}; falling back to automatic allocation in network {}", nicId, network.getUuid());
+                effective.put(nicId, new Network.IpAddresses("auto", null));
             }
         }
         return effective;
