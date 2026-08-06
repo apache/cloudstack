@@ -17,10 +17,8 @@
 package com.cloud.configuration.dao;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 
 import org.apache.commons.collections.CollectionUtils;
@@ -41,8 +39,8 @@ public class ResourceLimitDaoImpl extends GenericDaoBase<ResourceLimitVO, Long> 
     private SearchBuilder<ResourceLimitVO> IdTypeTagSearch;
     private SearchBuilder<ResourceLimitVO> IdTypeNullTagSearch;
     private SearchBuilder<ResourceLimitVO> NonMatchingTagsSearch;
-    private SearchBuilder<ResourceLimitVO> DomainsFiniteLimitTagSearch;
-    private SearchBuilder<ResourceLimitVO> DomainsFiniteLimitNullTagSearch;
+    private SearchBuilder<ResourceLimitVO> DomainsLimitTagSearch;
+    private SearchBuilder<ResourceLimitVO> DomainsLimitNullTagSearch;
 
     public ResourceLimitDaoImpl() {
         IdTypeTagSearch = createSearchBuilder();
@@ -66,19 +64,17 @@ public class ResourceLimitDaoImpl extends GenericDaoBase<ResourceLimitVO, Long> 
         NonMatchingTagsSearch.and("tags", NonMatchingTagsSearch.entity().getTag(), SearchCriteria.Op.NIN);
         NonMatchingTagsSearch.done();
 
-        DomainsFiniteLimitTagSearch = createSearchBuilder();
-        DomainsFiniteLimitTagSearch.and("type", DomainsFiniteLimitTagSearch.entity().getType(), SearchCriteria.Op.EQ);
-        DomainsFiniteLimitTagSearch.and("domainIds", DomainsFiniteLimitTagSearch.entity().getDomainId(), SearchCriteria.Op.IN);
-        DomainsFiniteLimitTagSearch.and("tag", DomainsFiniteLimitTagSearch.entity().getTag(), SearchCriteria.Op.EQ);
-        DomainsFiniteLimitTagSearch.and("max", DomainsFiniteLimitTagSearch.entity().getMax(), SearchCriteria.Op.NEQ);
-        DomainsFiniteLimitTagSearch.done();
+        DomainsLimitTagSearch = createSearchBuilder();
+        DomainsLimitTagSearch.and("type", DomainsLimitTagSearch.entity().getType(), SearchCriteria.Op.EQ);
+        DomainsLimitTagSearch.and("domainIds", DomainsLimitTagSearch.entity().getDomainId(), SearchCriteria.Op.IN);
+        DomainsLimitTagSearch.and("tag", DomainsLimitTagSearch.entity().getTag(), SearchCriteria.Op.EQ);
+        DomainsLimitTagSearch.done();
 
-        DomainsFiniteLimitNullTagSearch = createSearchBuilder();
-        DomainsFiniteLimitNullTagSearch.and("type", DomainsFiniteLimitNullTagSearch.entity().getType(), SearchCriteria.Op.EQ);
-        DomainsFiniteLimitNullTagSearch.and("domainIds", DomainsFiniteLimitNullTagSearch.entity().getDomainId(), SearchCriteria.Op.IN);
-        DomainsFiniteLimitNullTagSearch.and("tag", DomainsFiniteLimitNullTagSearch.entity().getTag(), SearchCriteria.Op.NULL);
-        DomainsFiniteLimitNullTagSearch.and("max", DomainsFiniteLimitNullTagSearch.entity().getMax(), SearchCriteria.Op.NEQ);
-        DomainsFiniteLimitNullTagSearch.done();
+        DomainsLimitNullTagSearch = createSearchBuilder();
+        DomainsLimitNullTagSearch.and("type", DomainsLimitNullTagSearch.entity().getType(), SearchCriteria.Op.EQ);
+        DomainsLimitNullTagSearch.and("domainIds", DomainsLimitNullTagSearch.entity().getDomainId(), SearchCriteria.Op.IN);
+        DomainsLimitNullTagSearch.and("tag", DomainsLimitNullTagSearch.entity().getTag(), SearchCriteria.Op.NULL);
+        DomainsLimitNullTagSearch.done();
     }
 
     @Override
@@ -171,21 +167,18 @@ public class ResourceLimitDaoImpl extends GenericDaoBase<ResourceLimitVO, Long> 
     }
 
     @Override
-    public Set<Long> listDomainIdsWithFiniteLimit(Set<Long> domainIds, ResourceType type, String tag) {
+    public List<ResourceLimitVO> listByDomainIdsAndTypeAndTag(Set<Long> domainIds, ResourceType type, String tag) {
         if (CollectionUtils.isEmpty(domainIds)) {
-            return Collections.emptySet();
+            return new ArrayList<>();
         }
         SearchCriteria<ResourceLimitVO> sc = (tag != null)
-                ? DomainsFiniteLimitTagSearch.create()
-                : DomainsFiniteLimitNullTagSearch.create();
+                ? DomainsLimitTagSearch.create()
+                : DomainsLimitNullTagSearch.create();
         sc.setParameters("type", type);
         sc.setParameters("domainIds", domainIds.toArray());
         if (tag != null) {
             sc.setParameters("tag", tag);
         }
-        sc.setParameters("max", (long) Resource.RESOURCE_UNLIMITED);
-        return listBy(sc).stream()
-                .map(ResourceLimitVO::getDomainId)
-                .collect(Collectors.toSet());
+        return listBy(sc);
     }
 }

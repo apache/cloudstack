@@ -39,12 +39,12 @@ public interface ResourceLimitDao extends GenericDao<ResourceLimitVO, Long> {
     void removeResourceLimitsForNonMatchingTags(Long ownerId, ResourceOwnerType ownerType, List<Resource.ResourceType> types, List<String> tags);
 
     /**
-     * Returns the subset of {@code domainIds} that have an explicit
-     * {@code resource_limit} row whose {@code max} is not
-     * {@link Resource#RESOURCE_UNLIMITED} for the supplied
-     * ({@code type}, {@code tag}). Domains that rely on the global default
-     * are NOT returned — the caller checks
-     * {@code findDefaultResourceLimitForDomain} separately.
+     * Returns the explicit {@code resource_limit} rows owned by any of
+     * {@code domainIds} for the supplied ({@code type}, {@code tag}),
+     * regardless of their {@code max} value. Domains with no matching row
+     * are simply absent from the result — the caller resolves inheritance
+     * (nearest-ancestor lookup) and the tag -&gt; untagged fallback itself,
+     * mirroring {@code ResourceLimitManagerImpl#findCorrectResourceLimitForDomain}.
      */
-    Set<Long> listDomainIdsWithFiniteLimit(Set<Long> domainIds, Resource.ResourceType type, String tag);
+    List<ResourceLimitVO> listByDomainIdsAndTypeAndTag(Set<Long> domainIds, Resource.ResourceType type, String tag);
 }

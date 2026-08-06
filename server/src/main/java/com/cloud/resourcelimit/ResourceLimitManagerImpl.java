@@ -591,7 +591,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
      * Returns the {@code resource_count} row IDs that need {@code FOR UPDATE}
      * locks for a limit check: always the account row, plus ancestor-domain
      * rows ONLY when their effective limit for ({@code type}, {@code tag})
-     * is finite. Ancestors with an UNLIMITED (or absent) explicit limit are
+     * is finite. Ancestors with an UNLIMITED (or absent) effective limit are
      * excluded — locking them would only create cross-tenant InnoDB row-lock
      * contention with no effect on the check outcome (see
      * {@link #checkDomainResourceLimit} which short-circuits when the
@@ -600,6 +600,25 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
      *
      * <p>The account row is always included so two concurrent reservations
      * against the same account still serialize at the InnoDB level.
+     *
+     * <p>"Effective limit" is resolved exactly like
+     * {@link #findCorrectResourceLimitForDomain}: a bulk query fetches every
+     * explicit tag-specific {@code resource_limit} row owned by any domain
+     * in the chain (a second bulk query for untagged rows only runs if some
+     * domain in the chain turns out to have no tag-specific row of its own
+     * or an ancestor's), then the chain is walked in memory from the
+     * account's domain up to (but excluding) ROOT, taking the nearest
+     * tag-specific row and falling back to the nearest untagged row only
+     * when no tag-specific row exists anywhere in the domain's own upward
+     * path. This correctly locks domains that inherit a finite limit from
+     * an ancestor's row (not just domains that own one), and domains that
+     * fall back to a finite untagged limit because no tag-specific limit is
+     * configured.
+     *
+     * <p>The final domain-row lookup is a single bulk
+     * {@link ResourceCountDao#findByOwnersAndTypeAndTag} call over exactly
+     * the domains found to have a finite effective limit — no more, no
+     * fewer, and no per-domain round trips.
      *
      * <p>If the global default for this type is itself finite (only possible
      * for {@code primary_storage}/{@code secondary_storage} via
@@ -634,16 +653,85 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         if (account == null) {
             return rowIds;
         }
-        Set<Long> ancestorDomainIds = _domainDao.getDomainParentIds(account.getDomainId());
-        Set<Long> finiteLimitDomainIds = _resourceLimitDao.listDomainIdsWithFiniteLimit(ancestorDomainIds, type, tag);
 
-        for (Long ancestorDomainId : finiteLimitDomainIds) {
-            ResourceCountVO row = _resourceCountDao.findByOwnerAndTypeAndTag(ancestorDomainId, ResourceOwnerType.Domain, type, tag);
-            if (row != null) {
+        List<Long> ancestorChain = getOrderedAncestorDomainIds(account.getDomainId());
+        Set<Long> finiteLimitDomainIds = findAncestorDomainsWithFiniteLimit(ancestorChain, type, tag);
+        if (!finiteLimitDomainIds.isEmpty()) {
+            List<ResourceCountVO> domainRows = _resourceCountDao.findByOwnersAndTypeAndTag(
+                    new ArrayList<>(finiteLimitDomainIds), ResourceOwnerType.Domain, type, tag);
+            for (ResourceCountVO row : domainRows) {
                 rowIds.add(row.getId());
             }
         }
+
         return rowIds;
+    }
+
+    /**
+     * Returns the account's domain plus every ancestor up to (but excluding)
+     * ROOT, ordered from the account's own domain outward — the same order
+     * {@link #findCorrectResourceLimitForDomain} and
+     * {@link #checkDomainResourceLimit} walk.
+     */
+    private List<Long> getOrderedAncestorDomainIds(long domainId) {
+        List<Long> chain = new ArrayList<>();
+        Long currentId = domainId;
+        while (currentId != null && currentId != Domain.ROOT_DOMAIN) {
+            chain.add(currentId);
+            DomainVO domain = _domainDao.findById(currentId);
+            currentId = (domain != null) ? domain.getParent() : null;
+        }
+        return chain;
+    }
+
+    /**
+     * Returns the subset of {@code ancestorChain} whose effective limit for
+     * ({@code type}, {@code tag}) is finite, per
+     * {@link #findCorrectResourceLimitForDomain}'s nearest-row-with-fallback
+     * semantics. The untagged fallback query only runs if at least one
+     * domain in the chain actually lacks a tag-specific row.
+     */
+    private Set<Long> findAncestorDomainsWithFiniteLimit(List<Long> ancestorChain, ResourceType type, String tag) {
+        if (ancestorChain.isEmpty()) {
+            return Collections.emptySet();
+        }
+
+        Set<Long> chainSet = new HashSet<>(ancestorChain);
+        Map<Long, ResourceLimitVO> tagRowsByDomain = indexByDomainId(_resourceLimitDao.listByDomainIdsAndTypeAndTag(chainSet, type, tag));
+        Map<Long, ResourceLimitVO> untaggedRowsByDomain = null;
+
+        Set<Long> finiteLimitDomainIds = new HashSet<>();
+        for (int i = 0; i < ancestorChain.size(); i++) {
+            ResourceLimitVO nearestRow = findNearestRowFrom(ancestorChain, i, tagRowsByDomain);
+            if (nearestRow == null && StringUtils.isNotEmpty(tag)) {
+                if (untaggedRowsByDomain == null) {
+                    untaggedRowsByDomain = indexByDomainId(_resourceLimitDao.listByDomainIdsAndTypeAndTag(chainSet, type, null));
+                }
+                nearestRow = findNearestRowFrom(ancestorChain, i, untaggedRowsByDomain);
+            }
+            if (nearestRow != null && nearestRow.getMax().longValue() != Resource.RESOURCE_UNLIMITED) {
+                finiteLimitDomainIds.add(ancestorChain.get(i));
+            }
+        }
+        return finiteLimitDomainIds;
+    }
+
+    private static ResourceLimitVO findNearestRowFrom(List<Long> chain, int startIndex, Map<Long, ResourceLimitVO> rowsByDomain) {
+        for (int i = startIndex; i < chain.size(); i++) {
+            ResourceLimitVO row = rowsByDomain.get(chain.get(i));
+            if (row != null) {
+                return row;
+            }
+        }
+        return null;
+    }
+
+    private static Map<Long, ResourceLimitVO> indexByDomainId(List<ResourceLimitVO> rows) {
+        Map<Long, ResourceLimitVO> map = new HashMap<>();
+        for (ResourceLimitVO row : rows) {
+            map.put(row.getDomainId(), row);
+        }
+        return map;
     }
 
     @Override
