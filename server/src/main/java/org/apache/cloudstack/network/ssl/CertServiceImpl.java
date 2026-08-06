@@ -199,15 +199,11 @@ public class CertServiceImpl implements CertService {
         final Account caller = ctx.getCallingAccount();
 
         final Long certId = listSslCertCmd.getCertId();
-        final Long accountId = listSslCertCmd.getAccountId();
+        final Long accountId = listSslCertCmd.getAccountId() != null ? listSslCertCmd.getAccountId() : caller.getAccountId();
         final Long lbRuleId = listSslCertCmd.getLbId();
         final Long projectId = listSslCertCmd.getProjectId();
 
         final List<SslCertResponse> certResponseList = new ArrayList<SslCertResponse>();
-
-        if (certId == null && accountId == null && lbRuleId == null && projectId == null) {
-            throw new InvalidParameterValueException("Invalid parameters either certificate ID or Account ID or Loadbalancer ID or Project ID required");
-        }
 
         List<LoadBalancerCertMapVO> certLbMap = null;
         SslCertVO certVO = null;
@@ -241,7 +237,7 @@ public class CertServiceImpl implements CertService {
             lbCertMapRule = _lbCertDao.findByLbRuleId(lbRuleId);
 
             if (lbCertMapRule == null) {
-                logger.debug("No certificate bound to loadbalancer id: " + lbRuleId);
+                logger.debug("No certificate bound to loadbalancer id: {}", lbRuleId);
                 return certResponseList;
             }
 
@@ -273,7 +269,7 @@ public class CertServiceImpl implements CertService {
             return certResponseList;
         }
 
-        //reached here look by accountId
+        // Reached here: list by explicit accountId or the caller account if accountId was not provided.
         final List<SslCertVO> certVOList = _sslCertDao.listByAccountId(accountId);
         if (certVOList == null || certVOList.isEmpty()) {
             return certResponseList;
@@ -374,7 +370,7 @@ public class CertServiceImpl implements CertService {
         }
 
         // No encryption for DSA
-        if (pubKey.getAlgorithm() != "RSA") {
+        if (!pubKey.getAlgorithm().equals("RSA")) {
             return;
         }
 
@@ -492,7 +488,12 @@ public class CertServiceImpl implements CertService {
         } catch (final CertificateException | IOException e) {
             throw new InvalidParameterValueException("Invalid Certificate format. Expected X509 certificate. Failed due to " + e.getMessage());
         } finally {
-            IOUtils.closeQuietly(certPem);
+            // Try to close quietly
+            try {
+                IOUtils.close(certPem);
+            } catch (IOException e) {
+                logger.debug("Failed to close pem reader", e);
+            }
         }
     }
 
