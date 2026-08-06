@@ -1016,10 +1016,17 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
             ip = allocateVpnGatewayIp(vpc);
             autoAcquired = true;
         }
+        boolean requestedIpOwnershipMarkerAdded = false;
         if (!autoAcquired) {
             try {
-                // Mark ownership first so ambiguous NSX responses remain recoverable.
-                userIpAddressDetailsDao.addDetail(ip.getId(), NSX_VPN_GATEWAY_IP_DETAIL, "false", false);
+                // Preserve an earlier ownership marker: it may represent an ambiguous create that
+                // still requires provider-side cleanup and must not be downgraded on a retry.
+                UserIpAddressDetailVO existingOwnershipMarker = userIpAddressDetailsDao.findDetail(
+                        ip.getId(), NSX_VPN_GATEWAY_IP_DETAIL);
+                if (existingOwnershipMarker == null) {
+                    userIpAddressDetailsDao.addDetail(ip.getId(), NSX_VPN_GATEWAY_IP_DETAIL, "false", false);
+                    requestedIpOwnershipMarkerAdded = true;
+                }
             } catch (Exception e) {
                 throw new CloudRuntimeException(String.format(
                         "Failed to record NSX VPN ownership for requested IP %s of VPC %s",
@@ -1045,7 +1052,7 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
             } else if (autoAcquired) {
                 logger.warn("Retaining auto-acquired VPN gateway IP {} for VPC {} because the NSX endpoint may still be using it",
                         ip.getAddress(), vpc.getName());
-            } else if (!endpointMayBeInUse) {
+            } else if (!endpointMayBeInUse && requestedIpOwnershipMarkerAdded) {
                 try {
                     userIpAddressDetailsDao.removeDetail(ip.getId(), NSX_VPN_GATEWAY_IP_DETAIL);
                 } catch (Exception cleanupException) {
