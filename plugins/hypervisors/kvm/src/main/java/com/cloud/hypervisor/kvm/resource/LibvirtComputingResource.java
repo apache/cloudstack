@@ -6656,8 +6656,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             vm.addBlockJobListener(blockCommitListener);
 
             logger.info("Starting block commit of QCOW2 delta [{}] of VM [{}]. Using parameters: diskLabel [{}]; baseFilePath [{}]; topFilePath [{}]; commitFlags [{}]",
-                    snapshotName,
-                    vmName, diskLabel, baseFilePath, topFilePath, commitFlags);
+                    snapshotName, vmName, diskLabel, baseFilePath, topFilePath, commitFlags);
 
             vm.blockCommit(diskLabel, baseFilePath, topFilePath, 0, commitFlags);
 

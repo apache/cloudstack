@@ -37,7 +37,8 @@ public class BlockCommitListener implements BlockJobListener {
     protected BlockCommitListener(String vmName, String logid) {
         this.vmName = vmName;
         this.logid = logid;
-        logger = LogManager.getLogger(getClass());
+        this.logger = LogManager.getLogger(getClass());
+        this.result = String.format("Failed to block commit disk of VM [%s]. Libvirt did not launch an event for it.", vmName);
     }
 
     protected String getResult() {

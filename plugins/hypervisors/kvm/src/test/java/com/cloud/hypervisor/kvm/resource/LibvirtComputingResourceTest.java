@@ -6696,9 +6696,11 @@ public class LibvirtComputingResourceTest {
 
             threadContextMockedStatic.when(() ->
                     ThreadContext.get(Mockito.anyString())).thenReturn("logid");
-            Mockito.doNothing().when(domainMock).addBlockJobListener(Mockito.any());
+            Mockito.doReturn(blockCommitListenerMock).when(libvirtComputingResourceSpy).getBlockCommitListener(Mockito.any());
+            Mockito.doReturn(null).when(blockCommitListenerMock).getResult();
+            Mockito.doNothing().when(domainMock).addBlockJobListener(blockCommitListenerMock);
             Mockito.doReturn(null).when(domainMock).getBlockJobInfo(Mockito.anyString(), Mockito.anyInt());
-            Mockito.doNothing().when(domainMock).removeBlockJobListener(Mockito.any());
+            Mockito.doNothing().when(domainMock).removeBlockJobListener(blockCommitListenerMock);
 
             String diskLabel = "vda";
             String baseFilePath = "/file";
@@ -6723,8 +6725,10 @@ public class LibvirtComputingResourceTest {
 
             threadContextMockedStatic.when(() ->
                     ThreadContext.get(Mockito.anyString())).thenReturn("logid");
-            Mockito.doNothing().when(domainMock).addBlockJobListener(Mockito.any());
-            Mockito.doNothing().when(domainMock).removeBlockJobListener(Mockito.any());
+            Mockito.doReturn(blockCommitListenerMock).when(libvirtComputingResourceSpy).getBlockCommitListener(Mockito.any());
+            Mockito.doReturn(null).when(blockCommitListenerMock).getResult();
+            Mockito.doNothing().when(domainMock).addBlockJobListener(blockCommitListenerMock);
+            Mockito.doNothing().when(domainMock).removeBlockJobListener(blockCommitListenerMock);
             Mockito.doNothing().when(libvirtComputingResourceSpy).manuallyDeleteUnusedSnapshotFile(Mockito.anyBoolean(), Mockito.anyString());
 
             String diskLabel = "vda";
@@ -6748,9 +6752,11 @@ public class LibvirtComputingResourceTest {
             libvirtComputingResourceSpy.qcow2DeltaMergeTimeout = 10;
             libvirtUtilitiesHelperMockedStatic.when(() -> LibvirtUtilitiesHelper.isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit(Mockito.any())).thenReturn(true);
             threadContextMockedStatic.when(() -> ThreadContext.get(Mockito.anyString())).thenReturn("logid");
-            Mockito.doNothing().when(domainMock).addBlockJobListener(Mockito.any());
+            Mockito.doReturn(blockCommitListenerMock).when(libvirtComputingResourceSpy).getBlockCommitListener(Mockito.any());
+            Mockito.doReturn(null).when(blockCommitListenerMock).getResult();
+            Mockito.doNothing().when(domainMock).addBlockJobListener(blockCommitListenerMock);
             Mockito.doReturn(null).when(domainMock).getBlockJobInfo(Mockito.anyString(), Mockito.anyInt());
-            Mockito.doNothing().when(domainMock).removeBlockJobListener(Mockito.any());
+            Mockito.doNothing().when(domainMock).removeBlockJobListener(blockCommitListenerMock);
             Mockito.doNothing().when(libvirtComputingResourceSpy).manuallyDeleteUnusedSnapshotFile(Mockito.anyBoolean(), Mockito.anyString());
 
             String diskLabel = "vda";
@@ -6774,9 +6780,11 @@ public class LibvirtComputingResourceTest {
             libvirtComputingResourceSpy.qcow2DeltaMergeTimeout = 10;
             libvirtUtilitiesHelperMockedStatic.when(() -> LibvirtUtilitiesHelper.isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit(Mockito.any())).thenReturn(false);
             threadContextMockedStatic.when(() -> ThreadContext.get(Mockito.anyString())).thenReturn("logid");
-            Mockito.doNothing().when(domainMock).addBlockJobListener(Mockito.any());
+            Mockito.doReturn(blockCommitListenerMock).when(libvirtComputingResourceSpy).getBlockCommitListener(Mockito.any());
+            Mockito.doReturn(null).when(blockCommitListenerMock).getResult();
+            Mockito.doNothing().when(domainMock).addBlockJobListener(blockCommitListenerMock);
             Mockito.doReturn(null).when(domainMock).getBlockJobInfo(Mockito.anyString(), Mockito.anyInt());
-            Mockito.doNothing().when(domainMock).removeBlockJobListener(Mockito.any());
+            Mockito.doNothing().when(domainMock).removeBlockJobListener(blockCommitListenerMock);
             Mockito.doNothing().when(libvirtComputingResourceSpy).manuallyDeleteUnusedSnapshotFile(Mockito.anyBoolean(), Mockito.anyString());
 
             String diskLabel = "vda";
