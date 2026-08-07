@@ -105,9 +105,9 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     // prefer the reference carrying the incremental chain link: content-based (Linstor) chains only
     // link their image store reference, the primary one stays unlinked, and chain walks (e.g.
     // snapshot.delta.max enforcement) must not end up on the unlinked copy
-    private static final String FIND_SNAPSHOT_IN_ZONE = "SELECT ssr.* FROM " +
-            "snapshot_store_ref ssr, snapshots s " +
-            "WHERE ssr.snapshot_id=? AND ssr.snapshot_id = s.id AND s.data_center_id=? " +
+    private static final String FIND_SNAPSHOT_IN_ZONE = "SELECT ssr.* FROM snapshot_store_ref ssr " +
+            "JOIN snapshots s ON ssr.snapshot_id = s.id " +
+            "WHERE ssr.snapshot_id = ? AND s.data_center_id = ? " +
             "ORDER BY (ssr.parent_snapshot_id > 0) DESC, (ssr.kvm_checkpoint_path IS NOT NULL) DESC LIMIT 1;";
 
     private static final String GET_PHYSICAL_SIZE_OF_SNAPSHOTS_ON_PRIMARY_BY_ACCOUNT = "SELECT SUM(s.physical_size) " +
