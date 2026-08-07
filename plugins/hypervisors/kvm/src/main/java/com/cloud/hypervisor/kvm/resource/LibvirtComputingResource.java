@@ -6652,6 +6652,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         BlockCommitListener blockCommitListener = getBlockCommitListener(vmName);
+        int remainingTimeout = 0;
+        String mergeResult = "Got an exception during block commit wait. Check earlier logs for more info.";
         try {
             vm.addBlockJobListener(blockCommitListener);
 
@@ -6660,12 +6662,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
             vm.blockCommit(diskLabel, baseFilePath, topFilePath, 0, commitFlags);
 
-            checkBlockCommitProgress(vm, diskLabel, vmName, snapshotName, topFilePath, baseFilePath);
+            remainingTimeout = checkBlockCommitProgress(vm, diskLabel, vmName, snapshotName, topFilePath, baseFilePath);
+            mergeResult = blockCommitListener.getResult(remainingTimeout);
         } finally {
             vm.removeBlockJobListener(blockCommitListener);
         }
 
-        String mergeResult = blockCommitListener.getResult();
         if (mergeResult != null) {
             String commitError = String.format("Failed the block commit of top file [%s] into base file [%s] for snapshot [%s] of VM [%s]. The job will be left running to avoid" +
                     " data corruption, but ACS will return an error and volume [%s] will need to be normalized manually. If the commit involved the active image, the pivot will" +
@@ -6730,7 +6732,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return new BlockCommitListener(vmName, ThreadContext.get("logcontextid"));
     }
 
-    protected void checkBlockCommitProgress(Domain vm, String diskLabel, String vmName, String snapshotName, String topFilePath, String baseFilePath) {
+    protected int checkBlockCommitProgress(Domain vm, String diskLabel, String vmName, String snapshotName, String topFilePath, String baseFilePath) {
         int timeout = qcow2DeltaMergeTimeout;
         DomainBlockJobInfo result;
         long lastCommittedBytes = 0;
@@ -6751,12 +6753,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 result = vm.getBlockJobInfo(diskLabel, 0);
             } catch (LibvirtException ex) {
                 logger.warn("Exception while getting block job info {}: [{}].", partialLog, ex.getMessage(), ex);
-                return;
+                return timeout;
             }
 
             if (result == null || result.type == 0 && result.end == 0 && result.cur == 0) {
                 logger.debug("Block commit job {} has already finished.", partialLog);
-                return;
+                return timeout;
             }
 
             long currentCommittedBytes = result.cur;
@@ -6766,7 +6768,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             lastCommittedBytes = currentCommittedBytes;
             endBytes = result.end;
         }
-        logger.warn("Block commit {} has timed out after waiting at least {} seconds. The progress of the operation was [{}] of [{}].", partialLog, qcow2DeltaMergeTimeout, lastCommittedBytes, endBytes);
+        logger.warn("Block commit {} has timed out after waiting at least {} seconds. The progress of the operation was [{}] of [{}].", partialLog,
+                qcow2DeltaMergeTimeout, lastCommittedBytes, endBytes);
+        return 0;
     }
 
     /**
