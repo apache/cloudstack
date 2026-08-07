@@ -9271,7 +9271,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                 // host row may have been hard-deleted from DB, treat like removed
                 if (host == null) {
-                    s_logger.warn(String.format("Host with id %s not found in DB for VM %s (%s)",
+                    logger.warn(String.format("Host with id {} not found in DB for VM %s ({})",
                             hostId, vm.getUuid(), vm.getName()));
                     return;
                 }
