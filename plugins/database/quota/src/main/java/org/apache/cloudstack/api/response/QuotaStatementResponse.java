@@ -31,11 +31,11 @@ public class QuotaStatementResponse  extends BaseResponse {
     @Param(description = "ID of the Account.")
     private String accountId;
 
-    @SerializedName(ApiConstants.ACCOUNT)
+    @SerializedName(ApiConstants.ACCOUNT_NAME)
     @Param(description = "Name of the Account.")
     private String accountName;
 
-    @SerializedName(ApiConstants.DOMAIN)
+    @SerializedName(ApiConstants.DOMAIN_ID)
     @Param(description = "ID of the Domain.")
     private String domainId;
 

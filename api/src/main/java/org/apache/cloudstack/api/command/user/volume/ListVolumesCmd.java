@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.KMSKeyResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
@@ -90,6 +91,9 @@ public class ListVolumesCmd extends BaseListRetrieveOnlyResourceCountCmd impleme
     @Parameter(name = ApiConstants.DISK_OFFERING_ID, type = CommandType.UUID, entityType = DiskOfferingResponse.class, description = "List volumes by disk offering", since = "4.4")
     private Long diskOfferingId;
 
+    @Parameter(name = ApiConstants.KMS_KEY_ID, type = CommandType.UUID, entityType = KMSKeyResponse.class, description = "List volumes by KMS Key", since = "4.23")
+    private Long kmsKeyId;
+
     @Parameter(name = ApiConstants.DISPLAY_VOLUME, type = CommandType.BOOLEAN, description = "List resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {
             RoleType.Admin})
     private Boolean display;
@@ -134,6 +138,10 @@ public class ListVolumesCmd extends BaseListRetrieveOnlyResourceCountCmd impleme
 
     public Long getDiskOfferingId() {
         return diskOfferingId;
+    }
+
+    public Long getKmsKeyId() {
+        return kmsKeyId;
     }
 
     public String getType() {

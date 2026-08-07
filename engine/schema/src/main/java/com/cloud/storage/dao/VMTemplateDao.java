@@ -106,4 +106,6 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long>, StateDao<
 
     VMTemplateVO findActiveSystemTemplateByHypervisorArchAndUrlPath(HypervisorType hypervisorType,
                 CPU.CPUArch arch, String urlPathSuffix);
+
+    VMTemplateVO findByAccountAndName(Long accountId, String templateName);
 }

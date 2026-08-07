@@ -96,11 +96,14 @@ import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
 import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.dns.DnsServer;
+import org.apache.cloudstack.dns.DnsZone;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
+import org.apache.cloudstack.kms.KMSManager;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
@@ -349,6 +352,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private NetworkPermissionDao networkPermissionDao;
     @Inject
     private SslCertDao sslCertDao;
+    @Inject
+    private KMSManager kmsManager;
 
     private List<QuerySelector> _querySelectors;
 
@@ -775,7 +780,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
             if (entity.getAccountId() != -1 && domainId != -1 && !(entity instanceof VirtualMachineTemplate)
                     && !(entity instanceof Network && (accessType == AccessType.UseEntry || accessType == AccessType.OperateEntry))
-                    && !(entity instanceof AffinityGroup) && !(entity instanceof VirtualRouter)) {
+                    && !(entity instanceof AffinityGroup) && !(entity instanceof VirtualRouter)
+                    && !(entity instanceof DnsServer) && !(entity instanceof DnsZone)) {
                 List<ControlledEntity> toBeChecked = domains.get(entity.getDomainId());
                 // for templates, we don't have to do cross domains check
                 if (toBeChecked == null) {
@@ -1249,6 +1255,17 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             // Delete Webhooks
             deleteWebhooksForAccount(accountId);
 
+            // Delete KMS keys
+            try {
+                if (!kmsManager.deleteKMSKeysByAccountId(accountId)) {
+                    logger.warn("Failed to delete all KMS keys for account {}", account);
+                    accountCleanupNeeded = true;
+                }
+            } catch (Exception e) {
+                logger.error("Error deleting KMS keys for account {}: {}", account, e.getMessage(), e);
+                accountCleanupNeeded = true;
+            }
+
             return true;
         } catch (Exception ex) {
             logger.warn("Failed to cleanup account " + account + " due to ", ex);
@@ -1532,6 +1549,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         checkApiAccess(apiCheckers, caller, command, keyPairPermissions.toArray(new ApiKeyPairPermission[0]));
+    }
+
+    @Override
+    public void checkApiAccess(Account caller, String command) {
+        List<APIChecker> apiCheckers = getEnabledApiCheckers();
+        checkApiAccess(apiCheckers, caller, command);
     }
 
     @NotNull
@@ -2773,8 +2796,18 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
+    public Account getActiveAccountByUuid(String accountUuid) {
+        return _accountDao.findByUuid(accountUuid);
+    }
+
+    @Override
     public Account getAccount(long accountId) {
         return _accountDao.findByIdIncludingRemoved(accountId);
+    }
+
+    @Override
+    public Account getAccountByUuid(String accountUuid) {
+        return _accountDao.findByUuidIncludingRemoved(accountUuid);
     }
 
     @Override
@@ -2788,6 +2821,15 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     public User getActiveUser(long userId) {
         return _userDao.findById(userId);
+    }
+
+    @Override
+    public User getOneActiveUserForAccount(Account account) {
+        List<UserVO> users = _userDao.listByAccount(account.getId());
+        if (CollectionUtils.isEmpty(users)) {
+            return null;
+        }
+        return users.get(0);
     }
 
     @Override
@@ -3922,7 +3964,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             if (getActiveAccountById(accountId) != null) {
                 return accountId;
             }
-            throw new InvalidParameterValueException(String.format("Unable to find account with the specified ID."));
+            throw new InvalidParameterValueException("Unable to find account with the specified ID.");
         }
 
         if (accountName == null && domainId == null) {

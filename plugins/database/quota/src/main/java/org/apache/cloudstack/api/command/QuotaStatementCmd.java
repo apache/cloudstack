@@ -20,7 +20,6 @@ import java.util.Date;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
@@ -32,18 +31,17 @@ import org.apache.cloudstack.api.response.QuotaResponseBuilder;
 import org.apache.cloudstack.api.response.QuotaStatementItemResponse;
 import org.apache.cloudstack.api.response.QuotaStatementResponse;
 
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
 
 @APICommand(name = "quotaStatement", responseObject = QuotaStatementItemResponse.class, description = "Create a Quota statement for the provided Account, Project, or Domain.",
         since = "4.7.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, httpMethod = "GET")
 public class QuotaStatementCmd extends BaseCmd {
 
-    @ACL
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING,
             description = "Name of the Account for which the Quota statement will be generated. Deprecated, please use accountid instead.")
     private String accountName;
 
-    @ACL
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class,
             description = "ID of the Domain for which the Quota statement will be generated. May be used individually or with account.")
     private Long domainId;
@@ -60,15 +58,17 @@ public class QuotaStatementCmd extends BaseCmd {
             description = "Consider only Quota usage records for the specified usage type in the statement.")
     private Integer usageType;
 
-    @ACL
     @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class,
             description = "ID of the Account for which the Quota statement will be generated. Can not be specified with projectid.")
     private Long accountId;
 
-    @ACL
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class,
             description = "ID of the Project for which the Quota statement will be generated. Can not be specified with accountid.", since = "4.23.0")
     private Long projectId;
+
+    @Parameter(name = ApiConstants.IS_RECURSIVE, type = CommandType.BOOLEAN, description = "Whether to include usage records from children of the filtered domain. "
+            + " Defaults to false.")
+    private Boolean recursive;
 
     @Parameter(name = ApiConstants.SHOW_RESOURCES, type = CommandType.BOOLEAN, description = "List the resources of each Quota type in the period.", since = "4.23.0")
     private boolean showResources;
@@ -152,4 +152,9 @@ public class QuotaStatementCmd extends BaseCmd {
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }
+
+    public boolean isRecursive() {
+        return BooleanUtils.isTrue(recursive);
+    }
+
 }
