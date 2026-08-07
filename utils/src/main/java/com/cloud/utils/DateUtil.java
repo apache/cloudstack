@@ -19,17 +19,16 @@
 
 package com.cloud.utils;
 
-import java.text.DateFormat;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.YearMonth;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
+import java.util.concurrent.ConcurrentHashMap;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.OffsetDateTime;
@@ -49,7 +48,11 @@ public class DateUtil {
     public static final TimeZone GMT_TIMEZONE = TimeZone.getTimeZone("GMT");
     public static final String YYYYMMDD_FORMAT = "yyyyMMddHHmmss";
     public static final String ZONED_DATETIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ssZ";
-    private static final DateFormat ZONED_DATETIME_SIMPLE_FORMATTER = new SimpleDateFormat(ZONED_DATETIME_FORMAT);
+
+    private static final DateTimeFormatter OUTPUT_FORMATTER =
+            DateTimeFormatter.ofPattern(ZONED_DATETIME_FORMAT).withZone(ZoneId.systemDefault());
+
+    private static final ConcurrentHashMap<String, DateTimeFormatter> s_formatterCache = new ConcurrentHashMap<>();
 
     private static final DateTimeFormatter[] parseFormats = new DateTimeFormatter[]{
         DateTimeFormatter.ISO_OFFSET_DATE_TIME,
@@ -66,6 +69,19 @@ public class DateUtil {
     public static Date currentGMTTime() {
         // Date object always stores milliseconds offset based on GMT internally
         return new Date();
+    }
+
+    private static DateTimeFormatter getFormatter(String pattern, ZoneId zone) {
+        String key = pattern + "|" + zone.getId();
+        DateTimeFormatter formatter = s_formatterCache.get(key);
+        if (formatter == null) {
+            formatter = DateTimeFormatter.ofPattern(pattern).withZone(zone);
+            DateTimeFormatter existing = s_formatterCache.putIfAbsent(key, formatter);
+            if (existing != null) {
+                return existing;
+            }
+        }
+        return formatter;
     }
 
     public static Date parseTZDateString(String str) throws ParseException {
@@ -85,13 +101,12 @@ public class DateUtil {
     }
 
     public static Date parseDateString(TimeZone tz, String dateString, String formatString) {
-        DateFormat df = new SimpleDateFormat(formatString);
-        df.setTimeZone(tz);
-
+        ZoneId zoneId = tz.toZoneId();
+        DateTimeFormatter formatter = getFormatter(formatString, zoneId);
         try {
-            return df.parse(dateString);
-        } catch (ParseException e) {
-            throw new CloudRuntimeException("why why ", e);
+            return Date.from(LocalDateTime.parse(dateString, formatter).atZone(zoneId).toInstant());
+        } catch (DateTimeParseException e) {
+            throw new CloudRuntimeException("Failed to parse date string: " + dateString, e);
         }
     }
 
@@ -108,21 +123,14 @@ public class DateUtil {
             return null;
         }
 
-        DateFormat df = new SimpleDateFormat(formatString);
-        df.setTimeZone(tz);
-
-        return df.format(time);
+        return getFormatter(formatString, tz.toZoneId()).format(time.toInstant());
     }
 
     public static String getOutputString(Date date) {
         if (date == null) {
             return "";
         }
-        String formattedString;
-        synchronized (ZONED_DATETIME_SIMPLE_FORMATTER) {
-            formattedString = ZONED_DATETIME_SIMPLE_FORMATTER.format(date);
-        }
-        return formattedString;
+        return OUTPUT_FORMATTER.format(date.toInstant());
     }
 
     public static Date now() {
@@ -155,7 +163,7 @@ public class DateUtil {
 
     /**
      * Return next run time
-     * @param intervalType  hourly/daily/weekly/monthly
+     * @param type  hourly/daily/weekly/monthly
      * @param schedule MM[:HH][:DD] format. DD is day of week for weekly and day of month for monthly
      * @param timezone The timezone in which the schedule string is specified
      * @param startDate if specified, returns next run time after the specified startDate
@@ -177,7 +185,8 @@ public class DateUtil {
         int minutes = 0;
         int hour = 0;
         int day = 0;
-        Date execDate = null;
+        Date execDate;
+        Date now = new Date();
 
         switch (type) {
             case HOURLY:
@@ -199,7 +208,7 @@ public class DateUtil {
                 // During testing we use a test clock which runs much faster than the real clock
                 // So startDate and execDate will always be ahead in the future
                 // and we will never increase the time here
-                if (execDate.before(new Date()) || !execDate.after(startDate)) {
+                if (execDate.before(now) || !execDate.after(startDate)) {
                     scheduleTime.add(Calendar.HOUR_OF_DAY, 1);
                 }
                 break;
@@ -225,7 +234,7 @@ public class DateUtil {
                 // During testing we use a test clock which runs much faster than the real clock
                 // So startDate and execDate will always be ahead in the future
                 // and we will never increase the time here
-                if (execDate.before(new Date()) || !execDate.after(startDate)) {
+                if (execDate.before(now) || !execDate.after(startDate)) {
                     scheduleTime.add(Calendar.DAY_OF_YEAR, 1);
                 }
                 break;
@@ -252,10 +261,9 @@ public class DateUtil {
                 // During testing we use a test clock which runs much faster than the real clock
                 // So startDate and execDate will always be ahead in the future
                 // and we will never increase the time here
-                if (execDate.before(new Date()) || !execDate.after(startDate)) {
+                if (execDate.before(now) || !execDate.after(startDate)) {
                     scheduleTime.add(Calendar.DAY_OF_WEEK, 7);
                 }
-                ;
                 break;
             case MONTHLY:
                 if (scheduleParts.length < 3) {
@@ -283,7 +291,7 @@ public class DateUtil {
                 // During testing we use a test clock which runs much faster than the real clock
                 // So startDate and execDate will always be ahead in the future
                 // and we will never increase the time here
-                if (execDate.before(new Date()) || !execDate.after(startDate)) {
+                if (execDate.before(now) || !execDate.after(startDate)) {
                     scheduleTime.add(Calendar.MONTH, 1);
                 }
                 break;
@@ -302,14 +310,7 @@ public class DateUtil {
     }
 
     public static long getTimeDifference(Date date1, Date date2){
-
-        Calendar dateCalendar1 = Calendar.getInstance();
-        dateCalendar1.setTime(date1);
-        Calendar dateCalendar2 = Calendar.getInstance();
-        dateCalendar2.setTime(date2);
-
-        return (dateCalendar1.getTimeInMillis() - dateCalendar2.getTimeInMillis() )/1000;
-
+        return (date1.getTime() - date2.getTime()) / 1000;
     }
 
     public static CronExpression parseSchedule(String schedule) {
