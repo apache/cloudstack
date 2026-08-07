@@ -51,10 +51,7 @@ import org.apache.cloudstack.storage.utils.OntapStorageUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 import feign.FeignException;
@@ -79,6 +76,12 @@ public abstract class StorageStrategy {
     protected SnapshotFeignClient snapshotFeignClient;
 
     protected OntapStorage storage;
+
+    /**
+     * Holds the node name of the aggregate chosen during createStorageVolume().
+     * Used by getNetworkInterface() to prefer a LIF homed on the same node.
+     */
+    private String chosenAggregateNode;
 
     /**
      * Presents aggregate object for the unified storage, not eligible for disaggregated
@@ -189,7 +192,10 @@ public abstract class StorageStrategy {
         }
         for (Aggregate aggr : aggrs) {
             logger.debug("Found aggregate: " + aggr.getName() + " with UUID: " + aggr.getUuid());
-            Aggregate aggrResp = aggregateFeignClient.getAggregateByUUID(authHeader, aggr.getUuid());
+            Aggregate aggrResp = aggregateFeignClient.getAggregateByUUID(authHeader, aggr.getUuid(),
+                        Map.of(OntapStorageConstants.FIELDS, OntapStorageConstants.AGGREGATE_NODE
+                                + OntapStorageConstants.COMMA + OntapStorageConstants.AGGREGATE_SPACE
+                                + OntapStorageConstants.COMMA + OntapStorageConstants.STATE));
             if (aggrResp == null) {
                 logger.warn("Aggregate details response is null for aggregate " + aggr.getName() + ". Skipping.");
                 continue;
@@ -204,7 +210,6 @@ public abstract class StorageStrategy {
             }
             logger.info("Selected aggregate: " + aggr.getName() + " for volume operations.");
             this.aggregates = List.of(aggr);
-            break;
         }
         if (this.aggregates == null || this.aggregates.isEmpty()) {
             logger.error("No suitable aggregates found on SVM " + svmName + " for volume creation.");
@@ -225,6 +230,8 @@ public abstract class StorageStrategy {
      */
     public Volume createStorageVolume(String volumeName, Long size) {
         logger.info("Creating volume: " + volumeName + " of size: " + size + " bytes");
+
+        this.chosenAggregateNode = null;
 
         String svmName = storage.getSvmName();
         if (aggregates == null || aggregates.isEmpty()) {
@@ -252,7 +259,10 @@ public abstract class StorageStrategy {
         Aggregate aggrChosen = null;
         for (Aggregate aggr : aggregates) {
             logger.debug("Found aggregate: " + aggr.getName() + " with UUID: " + aggr.getUuid());
-            Aggregate aggrResp = aggregateFeignClient.getAggregateByUUID(authHeader, aggr.getUuid());
+            Aggregate aggrResp = aggregateFeignClient.getAggregateByUUID(authHeader, aggr.getUuid(),
+                    Map.of(OntapStorageConstants.FIELDS, OntapStorageConstants.AGGREGATE_NODE
+                            + OntapStorageConstants.COMMA + OntapStorageConstants.AGGREGATE_SPACE
+                            + OntapStorageConstants.COMMA + OntapStorageConstants.STATE));
 
             if (aggrResp == null) {
                 logger.warn("Aggregate details response is null for aggregate " + aggr.getName() + ". Skipping.");
@@ -280,7 +290,7 @@ public abstract class StorageStrategy {
 
             if (availableBytes > maxAvailableAggregateSpaceBytes) {
                 maxAvailableAggregateSpaceBytes = availableBytes;
-                aggrChosen = aggr;
+                aggrChosen = aggrResp;
             }
         }
 
@@ -289,6 +299,8 @@ public abstract class StorageStrategy {
             throw new CloudRuntimeException("No suitable aggregates found on SVM " + svmName + " for volume operations.");
         }
         logger.info("Selected aggregate: " + aggrChosen.getName() + " for volume operations.");
+
+        this.chosenAggregateNode = aggrChosen.getNode() != null ? aggrChosen.getNode().getName() : null;
 
         Aggregate aggr = new Aggregate();
         aggr.setName(aggrChosen.getName());
@@ -467,12 +479,20 @@ public abstract class StorageStrategy {
 
 
     /**
-     * Get the network ip interface
+     * Selects the best available data LIF for storage I/O, preferring one homed on the same node
+     * as the chosen aggregate to avoid inter-node traffic.
      *
-     * @return the network interface ip as a String
+     * <p>Selection order:</p>
+     * <ol>
+     *   <li>LIF whose {@code location.home_node} matches the chosen aggregate's node — no warning</li>
+     *   <li>LIF currently running on that node (e.g. after failover) — returned with a warning</li>
+     *   <li>Any UP and enabled LIF — returned with a warning when aggregate node is known</li>
+     * </ol>
+     *
+     * @return {@link Pair} where {@code first()} is the LIF's IP address and {@code second()} is
+     *         a warning message (null when no warning)
      */
-
-    public String getNetworkInterface() {
+    public Pair<String, String> getNetworkInterface() {
         String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
         try {
             Map<String, Object> queryParams = new HashMap<>();
@@ -490,34 +510,88 @@ public abstract class StorageStrategy {
                         throw new CloudRuntimeException("Unsupported protocol: " + storage.getProtocol());
                 }
             }
-            queryParams.put(OntapStorageConstants.FIELDS, OntapStorageConstants.IP_ADDRESS);
+            queryParams.put(OntapStorageConstants.FIELDS,
+                    OntapStorageConstants.IP_ADDRESS + OntapStorageConstants.COMMA
+                    + OntapStorageConstants.STATE + OntapStorageConstants.COMMA
+                    + OntapStorageConstants.LIF_ENABLED + OntapStorageConstants.COMMA
+                    + OntapStorageConstants.LIF_LOCATION_HOME_NODE + OntapStorageConstants.COMMA
+                    + OntapStorageConstants.LIF_LOCATION_NODE);
             queryParams.put(OntapStorageConstants.RETURN_RECORDS, OntapStorageConstants.TRUE);
             OntapResponse<IpInterface> response =
                     networkFeignClient.getNetworkIpInterfaces(authHeader, queryParams);
-            if (response != null && response.getRecords() != null && !response.getRecords().isEmpty()) {
-                IpInterface ipInterface = null;
-                // For simplicity, return the first interface's name (Of IPv4 type for NFS3)
-                if (storage.getProtocol() == ProtocolType.ISCSI) {
-                    ipInterface = response.getRecords().get(0);
-                } else if (storage.getProtocol() == ProtocolType.NFS3) {
-                    for (IpInterface iface : response.getRecords()) {
-                        if (iface.getIp().getAddress().contains(".")) {
-                            ipInterface = iface;
-                            break;
-                        }
-                    }
-                }
-
-                logger.info("Retrieved network interface: " + ipInterface.getIp().getAddress());
-                return ipInterface.getIp().getAddress();
-            } else {
+            if (response == null || response.getRecords() == null || response.getRecords().isEmpty()) {
                 throw new CloudRuntimeException("No network interfaces found for SVM " + storage.getSvmName() +
                         " for protocol " + storage.getProtocol());
             }
-        } catch (FeignException.FeignClientException e) {
+
+            IpInterface currentNodeInterface = null;
+            IpInterface fallbackInterface = null;
+
+            for (IpInterface iface : response.getRecords()) {
+                if (!Boolean.TRUE.equals(iface.getEnabled()) || !OntapStorageConstants.LIF_STATE_UP.equals(iface.getState())) {
+                    continue;
+                }
+                if (!isIPv4Address(iface.getIp().getAddress())) {
+                    continue;
+                }
+                if (chosenAggregateNode != null) {
+                    // LIF is homed on the aggregate's node
+                    String homeNode = iface.getLocation() != null && iface.getLocation().getHomeNode() != null
+                            ? iface.getLocation().getHomeNode().getName() : null;
+                    if (chosenAggregateNode.equals(homeNode)) {
+                        return new Pair<>(iface.getIp().getAddress(), null);
+                    }
+                    // LIF has failed over and is currently running on the aggregate's node
+                    // (home_node differs). Keep as a candidate; returned with a warning if no match is found earlier.
+                    if (currentNodeInterface == null) {
+                        String currentNode = iface.getLocation() != null && iface.getLocation().getNode() != null
+                                ? iface.getLocation().getNode().getName() : null;
+                        if (chosenAggregateNode.equals(currentNode)) {
+                            currentNodeInterface = iface;
+                        }
+                    }
+                }
+                if (fallbackInterface == null) {
+                    fallbackInterface = iface;
+                }
+            }
+
+            if (currentNodeInterface == null && fallbackInterface == null) {
+                throw new CloudRuntimeException("No operationally UP and enabled LIF found for SVM '"
+                        + storage.getSvmName() + "' with protocol " + storage.getProtocol()
+                        + " — all " + response.getRecords().size() + " LIF(s) are either administratively disabled or operationally down");
+            }
+
+            if (currentNodeInterface != null) {
+                String ip = currentNodeInterface.getIp().getAddress();
+                String warning = "No home-node LIF found for aggregate node '" + chosenAggregateNode
+                        + "'; using LIF '" + ip + "' currently running on that node (home node LIF may be down).";
+                logger.warn(warning);
+                return new Pair<>(ip, warning);
+            }
+
+            String ip = fallbackInterface.getIp().getAddress();
+            if (chosenAggregateNode == null) {
+                return new Pair<>(ip, null);
+            }
+            String warning = "No operational LIF found on aggregate's home node '" + chosenAggregateNode
+                    + "'; using fallback LIF '" + ip + "' on a different node."
+                    + " I/O will traverse an inter-node path, increasing latency.";
+            logger.warn(warning);
+            return new Pair<>(ip, warning);
+        } catch (Exception e) {
             logger.error("Exception while retrieving network interfaces: ", e);
             throw new CloudRuntimeException("Failed to retrieve network interfaces: " + e.getMessage());
         }
+    }
+
+    /**
+     * Returns true if the given IP address string is an IPv4 address.
+     * IPv6 addresses contain colons; IPv4 addresses do not.
+     * To extend LIF selection to support IPv6, update this method and its call site in getNetworkInterface().
+     */
+    private boolean isIPv4Address(String address) {
+        return address != null && !address.contains(":");
     }
 
     /**

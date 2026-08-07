@@ -177,10 +177,6 @@ public class OntapHostListener implements HypervisorHostListener {
             return;
         }
 
-        if (host == null) {
-            throw new CloudRuntimeException("Host was not found with id: " + hostId);
-        }
-
         if (!isNfs3EnabledOnHost(host)) {
             throw new CloudRuntimeException("NFS protocol is not enabled on host with id: " + hostId);
         }

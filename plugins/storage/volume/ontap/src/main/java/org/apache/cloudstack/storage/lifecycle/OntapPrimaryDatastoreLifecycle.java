@@ -19,20 +19,15 @@
 
 package org.apache.cloudstack.storage.lifecycle;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
-import com.cloud.agent.api.StoragePoolInfo;
-import com.cloud.dc.ClusterVO;
-import com.cloud.dc.dao.ClusterDao;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.host.HostVO;
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.resource.ResourceManager;
-import com.cloud.storage.Storage;
-import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.StoragePoolAutomation;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.google.common.base.Preconditions;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -40,10 +35,11 @@ import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreParameters;
+import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.lifecycle.BasePrimaryDataStoreLifeCycleImpl;
 import org.apache.cloudstack.storage.feign.model.OntapStorage;
@@ -59,13 +55,21 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import com.cloud.agent.api.StoragePoolInfo;
+import com.cloud.alert.AlertManager;
+import com.cloud.dc.ClusterVO;
+import com.cloud.dc.dao.ClusterDao;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.host.HostVO;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.resource.ResourceManager;
+import com.cloud.storage.Storage;
+import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolAutomation;
+import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.google.common.base.Preconditions;
 
 public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
     @Inject private ClusterDao _clusterDao;
@@ -76,6 +80,7 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
     @Inject private StoragePoolAutomation _storagePoolAutomation;
     @Inject private PrimaryDataStoreDao storagePoolDao;
     @Inject private StoragePoolDetailsDao storagePoolDetailsDao;
+    @Inject private AlertManager _alertMgr;
     private static final Logger logger = LogManager.getLogger(OntapPrimaryDatastoreLifecycle.class);
 
     private static final long ONTAP_MIN_VOLUME_SIZE_IN_BYTES = 1677721600L;
@@ -135,13 +140,6 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
         StorageStrategy storageStrategy = StorageProviderFactory.getStrategy(ontapStorage);
         boolean isValid = storageStrategy.connect();
         if (isValid) {
-            // Get the DataLIF for data access
-            String dataLIF = storageStrategy.getNetworkInterface();
-            if (dataLIF == null || dataLIF.isEmpty()) {
-                throw new CloudRuntimeException("Failed to retrieve Data LIF from ONTAP, cannot create primary storage");
-            }
-            logger.info("Using Data LIF for storage access: " + dataLIF);
-            details.put(OntapStorageConstants.DATA_LIF, dataLIF);
             if (storageStrategy.getResolvedSvmUuid() != null && !storageStrategy.getResolvedSvmUuid().isEmpty()) {
                 details.put(OntapStorageConstants.SVM_UUID, storageStrategy.getResolvedSvmUuid());
             }
@@ -160,6 +158,15 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
                 logger.error("Exception occurred while creating ONTAP volume: " + storagePoolName, e);
                 throw new CloudRuntimeException("Failed to create ONTAP volume: " + storagePoolName + ". Error: " + e.getMessage(), e);
             }
+
+            Pair<String, String> lifResult;
+            try {
+                lifResult = storageStrategy.getNetworkInterface();
+            } catch (Exception e) {
+                logger.error("Exception occurred while retrieving network interface for pool: " + storagePoolName, e);
+                throw new CloudRuntimeException("Failed to retrieve Data LIF from ONTAP: " + e.getMessage(), e);
+            }
+            processDataLifSelection(lifResult, details, storagePoolName, zoneId, podId);
         } else {
             throw new CloudRuntimeException("ONTAP details validation failed, cannot create primary storage");
         }
@@ -273,6 +280,26 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
         }
 
         return capacityBytes;
+    }
+
+    private void processDataLifSelection(Pair<String, String> lifResult, Map<String, String> details,
+                                         String storagePoolName, Long zoneId, Long podId) {
+        String dataLIF = lifResult.first();
+        if (dataLIF == null || dataLIF.isEmpty()) {
+            throw new CloudRuntimeException("Failed to retrieve Data LIF from ONTAP, cannot create primary storage");
+        }
+        logger.info("Using Data LIF for storage access: " + dataLIF);
+        details.put(OntapStorageConstants.DATA_LIF, dataLIF);
+
+        // Persist LIF warning as a pool detail and fire a storage alert so the user is informed
+        if (lifResult.second() != null) {
+            String lifWarning = lifResult.second();
+            details.put(OntapStorageConstants.LIF_WARNING, lifWarning);
+            logger.warn("LIF selection warning for pool '" + storagePoolName + "': " + lifWarning);
+            String alertSubject = "ONTAP Storage Pool '" + storagePoolName + "': "
+                    + lifWarning.split(OntapStorageConstants.SEMICOLON)[0].trim();
+            OntapStorageUtils.sendStorageAlert(_alertMgr, zoneId, podId, alertSubject, lifWarning);
+        }
     }
 
     @Override

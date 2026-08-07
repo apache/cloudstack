@@ -67,9 +67,16 @@ public class OntapStorageConstants {
     public  static final String INITIATORS = "initiators";
     public static final String AGGREGATES = "aggregates";
     public static final String STATE = "state";
+    public static final String AGGREGATE_NODE = "node";
+    public static final String AGGREGATE_SPACE = "space";
     public static final String DATA_NFS = "data_nfs";
     public static final String DATA_ISCSI = "data_iscsi";
     public static final String IP_ADDRESS = "ip.address";
+    public static final String LIF_ENABLED = "enabled";
+    public static final String LIF_STATE_UP = "up";
+    public static final String LIF_LOCATION_HOME_NODE = "location.home_node.name";
+    public static final String LIF_LOCATION_NODE = "location.node.name";
+    public static final String LIF_WARNING = "ONTAP_LIF_WARNING";
     public static final String SERVICES = "services";
     public static final String RETURN_RECORDS = "return_records";
     public static final String SVM = "svm";

@@ -19,9 +19,10 @@
 
 package org.apache.cloudstack.storage.utils;
 
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.utils.StringUtils;
-import com.cloud.utils.exception.CloudRuntimeException;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
+
+import feign.FeignException;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.feign.model.Lun;
@@ -36,8 +37,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.util.Base64Utils;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Map;
+import com.cloud.alert.AlertManager;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.utils.StringUtils;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class OntapStorageUtils {
 
@@ -116,6 +119,12 @@ public class OntapStorageUtils {
                 String errMsg = "getOSTypeFromHypervisor : Unsupported hypervisor type " + hypervisorType + " for ONTAP storage";
                 logger.error(errMsg);
                 throw new CloudRuntimeException(errMsg);
+        }
+    }
+
+    public static void sendStorageAlert(AlertManager alertMgr, Long zoneId, Long podId, String subject, String body) {
+        if (alertMgr != null) {
+            alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_STORAGE_MISC, zoneId != null ? zoneId : 0L, podId, subject, body);
         }
     }
 
