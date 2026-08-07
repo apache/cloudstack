@@ -198,8 +198,15 @@ public class CertServiceImpl implements CertService {
         final CallContext ctx = CallContext.current();
         final Account caller = ctx.getCallingAccount();
 
+        Account owner = null;
+        if (StringUtils.isNotEmpty(listSslCertCmd.getAccountName()) && listSslCertCmd.getDomainId() != null || listSslCertCmd.getProjectId() != null) {
+            owner = _accountMgr.finalizeOwner(caller, listSslCertCmd.getAccountName(), listSslCertCmd.getDomainId(), listSslCertCmd.getProjectId());
+        } else {
+            owner = caller;
+        }
+
         final Long certId = listSslCertCmd.getCertId();
-        final Long accountId = listSslCertCmd.getAccountId() != null ? listSslCertCmd.getAccountId() : caller.getAccountId();
+        final Long accountId = listSslCertCmd.getAccountId() != null ? listSslCertCmd.getAccountId() : owner.getId();
         final Long lbRuleId = listSslCertCmd.getLbId();
         final Long projectId = listSslCertCmd.getProjectId();
 
