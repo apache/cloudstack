@@ -1153,7 +1153,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     final List<AsyncJobVO> jobs = _jobDao.getResetJobs(msid);
                     for (final AsyncJobVO job : jobs) {
                         if (logger.isDebugEnabled()) {
-                            logger.debug("Cancel left-over job-" + job.getId());
+                            logger.debug("Cancel left-over job-{} for msid {}", job.getId(), msid);
                         }
                         cleanupResources(job);
                         job.setStatus(JobInfo.Status.FAILED);
