@@ -19,10 +19,14 @@
 
 package org.apache.cloudstack.storage.feign.client;
 
+import java.util.Map;
+
 import org.apache.cloudstack.storage.feign.model.Aggregate;
 import org.apache.cloudstack.storage.feign.model.response.OntapResponse;
+
 import feign.Headers;
 import feign.Param;
+import feign.QueryMap;
 import feign.RequestLine;
 
 public interface AggregateFeignClient {
@@ -33,5 +37,6 @@ public interface AggregateFeignClient {
 
     @RequestLine("GET /api/storage/aggregates/{uuid}")
     @Headers({"Authorization: {authHeader}"})
-    Aggregate getAggregateByUUID(@Param("authHeader") String authHeader, @Param("uuid") String uuid);
+    Aggregate getAggregateByUUID(@Param("authHeader") String authHeader, @Param("uuid") String uuid,
+            @QueryMap Map<String, Object> queryParams);
 }
