@@ -96,6 +96,7 @@ import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.db.Filter;
@@ -162,9 +163,28 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         throw new CloudRuntimeException("No plugin found for DNS provider type: " + type);
     }
 
+    /**
+     * Rejects DNS provider URLs that resolve to an illegal address (per {@link UriUtils#validateUrl(String)},
+     * currently any-local/link-local/loopback/multicast; RFC1918 site-local coverage follows once #271/#277
+     * lands) before any provider client is given the chance to connect to it. A scheme is assumed to be
+     * `http` when the caller omits one, matching how DNS provider clients (e.g. PowerDnsClient) already
+     * tolerate bare host/IP values.
+     */
+    private void validateDnsServerUrl(String url) {
+        if (StringUtils.isBlank(url)) {
+            return;
+        }
+        String urlToValidate = url.trim();
+        if (!urlToValidate.startsWith("http://") && !urlToValidate.startsWith("https://")) {
+            urlToValidate = "http://" + urlToValidate;
+        }
+        UriUtils.validateUrl(urlToValidate);
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_DNS_SERVER_ADD, eventDescription = "Adding a DNS Server")
     public DnsServer addDnsServer(AddDnsServerCmd cmd) {
+        validateDnsServerUrl(cmd.getUrl());
         Account caller = CallContext.current().getCallingAccount();
         DnsServer existing = dnsServerDao.findByUrlAndAccount(cmd.getUrl(), caller.getId());
         if (existing != null) {
@@ -252,6 +272,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
 
         if (cmd.getUrl() != null) {
             if (!cmd.getUrl().equals(originalUrl)) {
+                validateDnsServerUrl(cmd.getUrl());
                 DnsServer duplicate = dnsServerDao.findByUrlAndAccount(cmd.getUrl(), dnsServer.getAccountId());
                 if (duplicate != null && duplicate.getId() != dnsServer.getId()) {
                     throw new InvalidParameterValueException("Another DNS server with this URL already exists.");
