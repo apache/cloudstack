@@ -73,15 +73,7 @@ public class DateUtil {
 
     private static DateTimeFormatter getFormatter(String pattern, ZoneId zone) {
         String key = pattern + "|" + zone.getId();
-        DateTimeFormatter formatter = s_formatterCache.get(key);
-        if (formatter == null) {
-            formatter = DateTimeFormatter.ofPattern(pattern).withZone(zone);
-            DateTimeFormatter existing = s_formatterCache.putIfAbsent(key, formatter);
-            if (existing != null) {
-                return existing;
-            }
-        }
-        return formatter;
+        return s_formatterCache.computeIfAbsent(key, k -> DateTimeFormatter.ofPattern(pattern).withZone(zone));
     }
 
     public static Date parseTZDateString(String str) throws ParseException {
