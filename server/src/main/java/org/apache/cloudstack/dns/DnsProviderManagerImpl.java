@@ -164,32 +164,28 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     }
 
     /**
-     * Rejects DNS provider URLs that resolve to an illegal address (per {@link UriUtils#validateUrl(String)},
-     * currently any-local/link-local/loopback/multicast; RFC1918 site-local coverage follows once #271/#277
-     * lands) before any provider client is given the chance to connect to it. A scheme is assumed to be
-     * `http` when the caller omits one, matching how DNS provider clients (e.g. PowerDnsClient) already
-     * tolerate bare host/IP values.
+     * Rejects a DNS provider URL that resolves to an illegal address before any provider client is given
+     * the chance to connect to it. See {@link UriUtils#validateUrl(String)} for the exact rules enforced
+     * (including the requirement that the URL declares an {@code http}/{@code https} scheme).
+     * Expects {@code url} to already be trimmed.
      */
     private void validateDnsServerUrl(String url) {
         if (StringUtils.isBlank(url)) {
             return;
         }
-        String urlToValidate = url.trim();
-        if (!urlToValidate.startsWith("http://") && !urlToValidate.startsWith("https://")) {
-            urlToValidate = "http://" + urlToValidate;
-        }
-        UriUtils.validateUrl(urlToValidate);
+        UriUtils.validateUrl(url);
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_DNS_SERVER_ADD, eventDescription = "Adding a DNS Server")
     public DnsServer addDnsServer(AddDnsServerCmd cmd) {
-        validateDnsServerUrl(cmd.getUrl());
+        String url = StringUtils.trim(cmd.getUrl());
+        validateDnsServerUrl(url);
         Account caller = CallContext.current().getCallingAccount();
-        DnsServer existing = dnsServerDao.findByUrlAndAccount(cmd.getUrl(), caller.getId());
+        DnsServer existing = dnsServerDao.findByUrlAndAccount(url, caller.getId());
         if (existing != null) {
             throw new InvalidParameterValueException(
-                    "This Account already has a DNS server integration for URL: " + cmd.getUrl());
+                    "This Account already has a DNS server integration for URL: " + url);
         }
 
         boolean isDnsPublic = cmd.isPublic();
@@ -205,7 +201,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         }
 
         DnsProviderType type = cmd.getProvider();
-        DnsServerVO server = new DnsServerVO(cmd.getName(), cmd.getUrl(), cmd.getPort(), type,
+        DnsServerVO server = new DnsServerVO(cmd.getName(), url, cmd.getPort(), type,
                 cmd.getDnsUserName(), cmd.getDnsApiKey(), isDnsPublic, publicDomainSuffix, cmd.getNameServers(),
                 caller.getAccountId(), caller.getDomainId());
 
@@ -271,13 +267,14 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         }
 
         if (cmd.getUrl() != null) {
-            if (!cmd.getUrl().equals(originalUrl)) {
-                validateDnsServerUrl(cmd.getUrl());
-                DnsServer duplicate = dnsServerDao.findByUrlAndAccount(cmd.getUrl(), dnsServer.getAccountId());
+            String url = StringUtils.trim(cmd.getUrl());
+            if (!url.equals(originalUrl)) {
+                validateDnsServerUrl(url);
+                DnsServer duplicate = dnsServerDao.findByUrlAndAccount(url, dnsServer.getAccountId());
                 if (duplicate != null && duplicate.getId() != dnsServer.getId()) {
                     throw new InvalidParameterValueException("Another DNS server with this URL already exists.");
                 }
-                dnsServer.setUrl(cmd.getUrl());
+                dnsServer.setUrl(url);
                 validationRequired = true;
             }
         }

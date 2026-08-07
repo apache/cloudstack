@@ -718,7 +718,7 @@ public class DnsProviderManagerImplTest {
         org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd cmd = mock(
                 org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd.class);
         when(accountMgr.isRootAdmin(callerMock.getId())).thenReturn(true);
-        when(cmd.getUrl()).thenReturn("http://93.184.216.34:8081");
+        when(cmd.getUrl()).thenReturn("http://192.0.2.1:8081");
         when(cmd.getProvider()).thenReturn(DnsProviderType.PowerDNS);
         when(dnsServerDao.findByUrlAndAccount(anyString(), anyLong())).thenReturn(null);
         when(dnsProviderMock.validateAndResolveServer(any())).thenReturn("resolved-id");
@@ -781,9 +781,26 @@ public class DnsProviderManagerImplTest {
     public void testAddDnsServerAlreadyExists() {
         org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd cmd = mock(
                 org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd.class);
-        when(cmd.getUrl()).thenReturn("http://93.184.216.34:8081");
+        when(cmd.getUrl()).thenReturn("http://192.0.2.1:8081");
         when(dnsServerDao.findByUrlAndAccount(anyString(), anyLong())).thenReturn(serverVO);
         manager.addDnsServer(cmd);
+    }
+
+    @Test
+    public void testAddDnsServerTrimsUrlBeforeDuplicateCheckAndPersistence() throws Exception {
+        org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd cmd = mock(
+                org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd.class);
+        when(accountMgr.isRootAdmin(callerMock.getId())).thenReturn(true);
+        when(cmd.getUrl()).thenReturn("  http://192.0.2.1:8081  ");
+        when(cmd.getProvider()).thenReturn(DnsProviderType.PowerDNS);
+        when(dnsServerDao.findByUrlAndAccount(anyString(), anyLong())).thenReturn(null);
+        when(dnsProviderMock.validateAndResolveServer(any())).thenReturn("resolved-id");
+        when(dnsServerDao.persist(any())).thenReturn(serverVO);
+
+        manager.addDnsServer(cmd);
+
+        verify(dnsServerDao).findByUrlAndAccount(eq("http://192.0.2.1:8081"), anyLong());
+        verify(dnsServerDao).persist(Mockito.argThat(s -> "http://192.0.2.1:8081".equals(((DnsServerVO) s).getUrl())));
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -794,13 +811,21 @@ public class DnsProviderManagerImplTest {
         manager.addDnsServer(cmd);
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testAddDnsServerRejectsUrlWithoutScheme() {
+        org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd cmd = mock(
+                org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd.class);
+        when(cmd.getUrl()).thenReturn("192.0.2.1:8081");
+        manager.addDnsServer(cmd);
+    }
+
     @Test
     public void testAddDnsServerNormalUser() throws Exception {
         org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd cmd = mock(
                 org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd.class);
         when(accountMgr.isRootAdmin(callerMock.getId())).thenReturn(false);
         when(accountMgr.isDomainAdmin(callerMock.getId())).thenReturn(false);
-        when(cmd.getUrl()).thenReturn("http://93.184.216.34:8081");
+        when(cmd.getUrl()).thenReturn("http://192.0.2.1:8081");
         when(cmd.getProvider()).thenReturn(DnsProviderType.PowerDNS);
         when(cmd.getNameServers()).thenReturn(Collections.emptyList());
         when(cmd.isPublic()).thenReturn(true);
@@ -819,7 +844,7 @@ public class DnsProviderManagerImplTest {
         org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd cmd = mock(
                 org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd.class);
         when(accountMgr.isRootAdmin(callerMock.getId())).thenReturn(true);
-        when(cmd.getUrl()).thenReturn("http://93.184.216.34:8081");
+        when(cmd.getUrl()).thenReturn("http://192.0.2.1:8081");
         when(cmd.getProvider()).thenReturn(DnsProviderType.PowerDNS);
         when(cmd.getNameServers()).thenReturn(Collections.emptyList());
         when(dnsServerDao.findByUrlAndAccount(anyString(), anyLong())).thenReturn(null);
@@ -832,7 +857,7 @@ public class DnsProviderManagerImplTest {
         org.apache.cloudstack.api.command.user.dns.UpdateDnsServerCmd cmd = mock(
                 org.apache.cloudstack.api.command.user.dns.UpdateDnsServerCmd.class);
         when(cmd.getId()).thenReturn(SERVER_ID);
-        when(cmd.getUrl()).thenReturn("http://93.184.216.34:8081");
+        when(cmd.getUrl()).thenReturn("http://192.0.2.1:8081");
         DnsServerVO existingServer = mock(DnsServerVO.class);
         when(existingServer.getId()).thenReturn(SERVER_ID + 1); // Different ID implies duplicate
 
@@ -856,11 +881,29 @@ public class DnsProviderManagerImplTest {
     }
 
     @Test
+    public void testUpdateDnsServerTreatsWhitespaceOnlyUrlChangeAsUnchanged() throws Exception {
+        org.apache.cloudstack.api.command.user.dns.UpdateDnsServerCmd cmd = mock(
+                org.apache.cloudstack.api.command.user.dns.UpdateDnsServerCmd.class);
+        Integer unchangedPort = serverVO.getPort();
+        when(cmd.getId()).thenReturn(SERVER_ID);
+        when(cmd.getUrl()).thenReturn("  http://192.0.2.1:8081  ");
+        when(cmd.getPort()).thenReturn(unchangedPort);
+        when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
+        Mockito.doReturn("http://192.0.2.1:8081").when(serverVO).getUrl();
+        when(dnsServerDao.update(anyLong(), any())).thenReturn(true);
+
+        DnsServer result = manager.updateDnsServer(cmd);
+        assertNotNull(result);
+        verify(dnsProviderMock, never()).validate(any());
+        verify(serverVO, never()).setUrl(anyString());
+    }
+
+    @Test
     public void testUpdateDnsServerUrlValid() throws Exception {
         org.apache.cloudstack.api.command.user.dns.UpdateDnsServerCmd cmd = mock(
                 org.apache.cloudstack.api.command.user.dns.UpdateDnsServerCmd.class);
         when(cmd.getId()).thenReturn(SERVER_ID);
-        when(cmd.getUrl()).thenReturn("http://93.184.216.34:8081");
+        when(cmd.getUrl()).thenReturn("http://192.0.2.1:8081");
         when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
 
         Mockito.doReturn("http://original:8081").when(serverVO).getUrl();
