@@ -23,6 +23,7 @@ import com.vmware.nsx.cluster.Status;
 import com.vmware.nsx.model.ClusterStatus;
 import com.vmware.nsx.model.ControllerClusterStatus;
 import com.vmware.nsx_policy.Infra;
+import com.vmware.nsx_policy.InfraStub;
 import com.vmware.nsx_policy.infra.IpDiscoveryProfiles;
 import com.vmware.nsx_policy.infra.LbAppProfiles;
 import com.vmware.nsx_policy.infra.LbMonitorProfiles;
@@ -52,7 +53,12 @@ import com.vmware.nsx_policy.model.Segment;
 import com.vmware.nsx_policy.model.SegmentDiscoveryProfileBindingMap;
 import com.vmware.nsx_policy.model.SegmentSecurityProfile;
 import com.vmware.vapi.bindings.Service;
+import com.vmware.vapi.bindings.StubConfiguration;
 import com.vmware.vapi.bindings.Structure;
+import com.vmware.vapi.core.ApiProvider;
+import com.vmware.vapi.core.AsyncHandle;
+import com.vmware.vapi.core.MethodResult;
+import com.vmware.vapi.data.DataValue;
 import com.vmware.vapi.std.errors.Error;
 import com.vmware.vapi.std.errors.NotFound;
 import org.apache.cloudstack.resource.NsxLoadBalancerMember;
@@ -118,7 +124,8 @@ public class NsxApiClientTest {
 
     @Test
     public void testCreateSegmentBindsConfiguredProfiles() {
-        Infra infraService = Mockito.mock(Infra.class);
+        ApiProvider apiProvider = Mockito.mock(ApiProvider.class);
+        Infra infraService = Mockito.spy(new InfraStub(apiProvider, new StubConfiguration()));
         IpDiscoveryProfiles ipProfiles = Mockito.mock(IpDiscoveryProfiles.class);
         MacDiscoveryProfiles macProfiles = Mockito.mock(MacDiscoveryProfiles.class);
         SegmentSecurityProfiles securityProfiles = Mockito.mock(SegmentSecurityProfiles.class);
@@ -138,6 +145,11 @@ public class NsxApiClientTest {
         when(ipProfile.getPath()).thenReturn("/infra/ip-discovery-profiles/ip-profile");
         when(macProfile.getPath()).thenReturn("/infra/mac-discovery-profiles/mac-profile");
         when(securityProfile.getPath()).thenReturn("/infra/segment-security-profiles/security-profile");
+        Mockito.doAnswer(invocation -> {
+            AsyncHandle<MethodResult> asyncHandle = invocation.getArgument(4);
+            asyncHandle.setResult(MethodResult.EMPTY);
+            return null;
+        }).when(apiProvider).invoke(anyString(), eq("patch"), any(DataValue.class), any(), any());
         ArgumentCaptor<com.vmware.nsx_policy.model.Infra> infraCaptor =
                 ArgumentCaptor.forClass(com.vmware.nsx_policy.model.Infra.class);
 
@@ -146,6 +158,7 @@ public class NsxApiClientTest {
                 "ip-profile", "mac-profile", "security-profile");
 
         verify(infraService).patch(infraCaptor.capture(), eq(false));
+        verify(apiProvider).invoke(anyString(), eq("patch"), any(DataValue.class), any(), any());
         verify(nsxService, never()).apply(Segments.class);
         Assert.assertEquals("Infra", infraCaptor.getValue().getResourceType());
         Assert.assertEquals(1, infraCaptor.getValue().getChildren().size());

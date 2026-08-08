@@ -978,9 +978,9 @@ export default {
         if (r.details.macaddresschanges) this.form.macaddresschanges = r.details.macaddresschanges
         if (r.details.forgedtransmits) this.form.forgedtransmits = r.details.forgedtransmits
         if (r.details.maclearning) this.form.maclearning = r.details.maclearning
-        if (r.details.nsxipdiscoveryprofileid) this.form.nsxipdiscoveryprofileid = r.details.nsxipdiscoveryprofileid
-        if (r.details.nsxmacdiscoveryprofileid) this.form.nsxmacdiscoveryprofileid = r.details.nsxmacdiscoveryprofileid
-        if (r.details.nsxsegmentsecurityprofileid) this.form.nsxsegmentsecurityprofileid = r.details.nsxsegmentsecurityprofileid
+        if (r.details.NsxIpDiscoveryProfileId) this.form.nsxipdiscoveryprofileid = r.details.NsxIpDiscoveryProfileId
+        if (r.details.NsxMacDiscoveryProfileId) this.form.nsxmacdiscoveryprofileid = r.details.NsxMacDiscoveryProfileId
+        if (r.details.NsxSegmentSecurityProfileId) this.form.nsxsegmentsecurityprofileid = r.details.NsxSegmentSecurityProfileId
       }
 
       this.forVpc = r.forvpc || false

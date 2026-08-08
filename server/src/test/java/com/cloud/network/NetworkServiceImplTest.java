@@ -688,12 +688,30 @@ public class NetworkServiceImplTest {
     public void testDifferentNsxSegmentProfilesRejectOfferingUpgrade() {
         long oldOfferingId = 1L;
         long newOfferingId = 2L;
+        long networkId = 3L;
+        Network network = Mockito.mock(Network.class);
+        NetworkOfferingVO oldOffering = Mockito.mock(NetworkOfferingVO.class);
+        NetworkOfferingVO newOffering = Mockito.mock(NetworkOfferingVO.class);
+        Mockito.when(network.getId()).thenReturn(networkId);
+        Mockito.when(networkOfferingDao.findByIdIncludingRemoved(oldOfferingId)).thenReturn(oldOffering);
+        Mockito.when(networkOfferingDao.findById(newOfferingId)).thenReturn(newOffering);
+        Mockito.when(oldOffering.getGuestType()).thenReturn(Network.GuestType.Isolated);
+        Mockito.when(newOffering.getGuestType()).thenReturn(Network.GuestType.Isolated);
+        Mockito.when(oldOffering.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+        Mockito.when(newOffering.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+        Mockito.when(ipAddressDao.listByAssociatedNetwork(networkId, null)).thenReturn(List.of());
+        Mockito.when(networkModel.getNetworkOfferingServiceProvidersMap(newOfferingId)).thenReturn(new HashMap<>());
         Mockito.when(networkModel.getNtwkOffDetails(oldOfferingId)).thenReturn(Map.of(
                 NetworkOffering.Detail.NsxMacDiscoveryProfileId, "old-mac-profile"));
         Mockito.when(networkModel.getNtwkOffDetails(newOfferingId)).thenReturn(Map.of(
+                NetworkOffering.Detail.NsxMacDiscoveryProfileId, "old-mac-profile"));
+
+        Assert.assertTrue(service.canUpgrade(network, oldOfferingId, newOfferingId));
+
+        Mockito.when(networkModel.getNtwkOffDetails(newOfferingId)).thenReturn(Map.of(
                 NetworkOffering.Detail.NsxMacDiscoveryProfileId, "new-mac-profile"));
 
-        Assert.assertFalse(service.haveMatchingNsxSegmentProfiles(oldOfferingId, newOfferingId));
+        Assert.assertFalse(service.canUpgrade(network, oldOfferingId, newOfferingId));
     }
 
     @Test
