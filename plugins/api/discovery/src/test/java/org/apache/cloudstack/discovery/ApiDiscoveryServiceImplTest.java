@@ -107,7 +107,7 @@ public class ApiDiscoveryServiceImplTest {
         Mockito.when(parameterMock.name()).thenReturn("paramName");
         Mockito.when(parameterMock.since()).thenReturn("");
         Mockito.when(parameterMock.entityType()).thenReturn(new Class[]{Object.class});
-        Mockito.when(parameterMock.allowedValues()).thenReturn(new String[]{});
+        Mockito.when(parameterMock.allowedValues()).thenReturn(new String[]{"VALUE1", "VALUE2"});
         Mockito.when(parameterMock.description()).thenReturn("paramDescription");
         Mockito.when(parameterMock.type()).thenReturn(BaseCmd.CommandType.STRING);
         Mockito.when(fieldMock.getAnnotation(Parameter.class)).thenReturn(parameterMock);
@@ -119,6 +119,44 @@ public class ApiDiscoveryServiceImplTest {
             Assert.assertEquals(1, params.size());
             ApiParameterResponse paramResponse = params.iterator().next();
             Assert.assertEquals("paramName", ReflectionTestUtils.getField(paramResponse, "name"));
+            Assert.assertEquals(
+                    Set.of("VALUE1", "VALUE2"),
+                    Set.copyOf(paramResponse.getAllowedValues())
+            );
+        }
+    }
+
+    @Test
+    public void getCmdRequestMapDoesNotSetAllowedValuesWhenNoneAreProvided() {
+        Field fieldMock = Mockito.mock(Field.class);
+        Parameter parameterMock = Mockito.mock(Parameter.class);
+        Mockito.when(parameterMock.expose()).thenReturn(true);
+        Mockito.when(parameterMock.includeInApiDoc()).thenReturn(true);
+        Mockito.when(parameterMock.name()).thenReturn("paramName");
+        Mockito.when(parameterMock.since()).thenReturn("");
+        Mockito.when(parameterMock.entityType()).thenReturn(new Class[]{Object.class});
+        Mockito.when(parameterMock.allowedValues()).thenReturn(new String[]{});
+        Mockito.when(parameterMock.description()).thenReturn("paramDescription");
+        Mockito.when(parameterMock.type()).thenReturn(BaseCmd.CommandType.STRING);
+        Mockito.when(fieldMock.getAnnotation(Parameter.class)).thenReturn(parameterMock);
+
+        try (MockedStatic<ReflectUtil> reflectUtilMockedStatic = Mockito.mockStatic(ReflectUtil.class)) {
+            reflectUtilMockedStatic.when(() ->
+                    ReflectUtil.getAllFieldsForClass(any(Class.class), any(Class[].class)))
+                    .thenReturn(Set.of(fieldMock));
+
+            ApiDiscoveryResponse response =
+                    discoveryServiceSpy.getCmdRequestMap(ListApisCmd.class, apiCommandMock);
+
+            Set<ApiParameterResponse> params = response.getParams();
+            Assert.assertEquals(1, params.size());
+
+            ApiParameterResponse paramResponse = params.iterator().next();
+
+            Assert.assertTrue(
+                    paramResponse.getAllowedValues() == null
+                            || paramResponse.getAllowedValues().isEmpty()
+            );
         }
     }
 }

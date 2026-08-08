@@ -239,7 +239,7 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
                 paramResponse.setRelated(parameterAnnotation.entityType()[0].getName());
 
                     String[] allowedValues = parameterAnnotation.allowedValues();
-                    if (allowedValues.length > 0) {
+                    if (allowedValues != null && allowedValues.length > 0) {
                         paramResponse.setAllowedValues(
                                 Collections.unmodifiableList(Arrays.asList(allowedValues))
                         );
