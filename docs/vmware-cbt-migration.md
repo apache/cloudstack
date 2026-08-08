@@ -265,6 +265,44 @@ converting Windows Server 2025 guests (the admin guide page "Importing VMware
 VMs into KVM" carries the exact commands). Older Windows releases work with
 the unmodified ISO.
 
+### Guest CPU model for Windows 11 and Windows Server 2025
+
+Those releases require CPU features that the KVM agent's default guest CPU
+model (`qemu64`) does not expose. The conversion itself is unaffected — the
+disks convert, the drivers install, the imported instance starts and reaches
+its UEFI firmware — but the guest then drops into *Preparing Automatic Repair*
+instead of the login screen, on every boot. Nothing in the migration output
+indicates a problem, so it reads like a corrupt image.
+
+Set a modern named model on every KVM host that will run such guests, in
+`/etc/cloudstack/agent/agent.properties`, and restart the agent:
+
+```
+guest.cpu.mode=custom
+guest.cpu.model=<a model your hosts support>
+```
+
+The model has to be one the host can actually provide, and that differs by
+processor vendor and generation — `Broadwell-noTSX-IBRS` or newer on Intel,
+`EPYC-IBPB` or newer on AMD. Check before setting it:
+
+```bash
+virsh domcapabilities | grep "usable='yes'"
+```
+
+A model reported as `usable='no'` is refused at domain start with *"the CPU is
+incompatible with host CPU: Host CPU does not provide required features"*, and
+the instance never launches — including system VMs, if the host is the one
+running them. In a cluster, pick a model every host reports as usable so live
+migration stays possible.
+
+`guest.cpu.mode=host-model` and `host-passthrough` also work and need no such
+check, but they tie the instance to the host's CPU and prevent live migration
+between hosts with different processors.
+
+This applies equally to instances deployed natively on KVM — it is a host
+prerequisite for the guest OS, not a property of the migration.
+
 If the nbdkit VDDK plugin package conflicts with the installed nbdkit module
 stream, align the enabled AppStream or vendor repository so `nbdkit` and the
 VDDK plugin come from compatible builds.
@@ -296,7 +334,8 @@ nbdkit vddk --version
 For Windows guests, ensure a `virtio-win` package or equivalent VirtIO driver
 bundle is available. The current KVM agent check looks for a package named
 `virtio-win` on Debian-based hosts, so an internal package with that name is
-the easiest way to satisfy the current check.
+the easiest way to satisfy the current check. The upstream-ISO, `smbus` and
+guest CPU model notes above apply here as well.
 
 ## Network and VMware requirements
 
