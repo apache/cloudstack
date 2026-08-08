@@ -1104,7 +1104,7 @@ export default {
       icon: 'sync-outlined',
       permission: ['listVpnConnections'],
       columns: ['publicip', 'state', 'gateway', 'ipsecpsk', 'ikepolicy', 'esppolicy'],
-      details: ['publicip', 'gateway', 'passive', 'cidrlist', 'ipsecpsk', 'ikepolicy', 'esppolicy', 'ikelifetime', 'ikeversion', 'esplifetime', 'dpd', 'splitconnections', 'forceencap', 'created'],
+      details: ['publicip', 'gateway', 'localvtiip', 'peervtiip', 'vtiprefixlength', 'passive', 'cidrlist', 'ipsecpsk', 'ikepolicy', 'esppolicy', 'ikelifetime', 'ikeversion', 'esplifetime', 'dpd', 'splitconnections', 'forceencap', 'created'],
       actions: [
         {
           api: 'createVpnConnection',

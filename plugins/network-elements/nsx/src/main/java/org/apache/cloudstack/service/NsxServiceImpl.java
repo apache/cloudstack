@@ -74,6 +74,8 @@ import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class NsxServiceImpl extends ManagerBase implements NsxService, Configurable {
@@ -90,6 +92,8 @@ public class NsxServiceImpl extends ManagerBase implements NsxService, Configura
     protected static final int VPN_STATUS_POLL_FAILURE_THRESHOLD = 3;
     protected static final int VPN_STATUS_POLL_MIN_INTERVAL = 10;
     protected static final int VPN_STATUS_POLL_DEFAULT_INTERVAL = 60;
+    protected static final String VPN_STATUS_POLL_LOCK_NAME = "nsx.vpn.status.poll";
+    protected static final int VPN_STATUS_POLL_LOCK_TIMEOUT = 1;
 
     private static final List<Site2SiteVpnConnection.State> VPN_POLLED_STATES = List.of(
             Site2SiteVpnConnection.State.Pending, Site2SiteVpnConnection.State.Connecting, Site2SiteVpnConnection.State.Connected,
@@ -294,9 +298,16 @@ public class NsxServiceImpl extends ManagerBase implements NsxService, Configura
         return result.getResult();
     }
 
+    @Override
     public NsxVpnGatewayResult createVpnGateway(Vpc vpc, String localEndpointIp) {
+        return createVpnGateway(vpc, localEndpointIp, false);
+    }
+
+    @Override
+    public NsxVpnGatewayResult createVpnGateway(Vpc vpc, String localEndpointIp, boolean reconcileExistingService) {
         CreateNsxVpnGatewayCommand createNsxVpnGatewayCommand = new CreateNsxVpnGatewayCommand(vpc.getDomainId(),
-                vpc.getAccountId(), vpc.getZoneId(), vpc.getId(), vpc.getName(), localEndpointIp);
+                vpc.getAccountId(), vpc.getZoneId(), vpc.getId(), vpc.getName(), localEndpointIp,
+                reconcileExistingService);
         NsxAnswer result = nsxControllerUtils.sendNsxCommandForResult(createNsxVpnGatewayCommand, vpc.getZoneId());
         return new NsxVpnGatewayResult(result.getResult(), result.isEndpointMayBeInUse());
     }
@@ -308,69 +319,82 @@ public class NsxServiceImpl extends ManagerBase implements NsxService, Configura
         return result.getResult();
     }
 
-    public boolean createVpnConnection(Vpc vpc, String connectionUuid, String peerAddress, String psk,
+    public boolean createVpnConnection(Vpc vpc, long connectionId, String peerAddress, String psk,
                                        String ikePolicy, String espPolicy, Long ikeLifetime, Long espLifetime,
                                        boolean dpdEnabled, String ikeVersion, boolean passive, List<String> peerCidrs,
                                        String vtiLocalIp, String vtiPeerIp, int vtiPrefixLength, String localEndpointIp) {
         CreateNsxVpnConnectionCommand createNsxVpnConnectionCommand = new CreateNsxVpnConnectionCommand(vpc.getDomainId(),
-                vpc.getAccountId(), vpc.getZoneId(), vpc.getId(), vpc.getName(), connectionUuid, peerAddress, psk,
+                vpc.getAccountId(), vpc.getZoneId(), vpc.getId(), vpc.getName(), connectionId, peerAddress, psk,
                 ikePolicy, espPolicy, ikeLifetime, espLifetime, dpdEnabled, ikeVersion, passive, peerCidrs,
                 vtiLocalIp, vtiPeerIp, vtiPrefixLength, vpc.getCidr(), localEndpointIp);
         NsxAnswer result = nsxControllerUtils.sendNsxCommand(createNsxVpnConnectionCommand, vpc.getZoneId());
         return result.getResult();
     }
 
-    public boolean deleteVpnConnection(Vpc vpc, String connectionUuid) {
+    public boolean deleteVpnConnection(Vpc vpc, long connectionId) {
         DeleteNsxVpnConnectionCommand deleteNsxVpnConnectionCommand = new DeleteNsxVpnConnectionCommand(vpc.getDomainId(),
-                vpc.getAccountId(), vpc.getZoneId(), vpc.getId(), vpc.getName(), connectionUuid);
+                vpc.getAccountId(), vpc.getZoneId(), vpc.getId(), vpc.getName(), connectionId);
         NsxAnswer result = nsxControllerUtils.sendNsxCommand(deleteNsxVpnConnectionCommand, vpc.getZoneId());
         return result.getResult();
     }
 
-    public boolean updateVpnConnectionState(Vpc vpc, String connectionUuid, boolean enabled) {
+    public boolean updateVpnConnectionState(Vpc vpc, long connectionId, boolean enabled) {
         UpdateNsxVpnConnectionStateCommand command = new UpdateNsxVpnConnectionStateCommand(vpc.getDomainId(),
-                vpc.getAccountId(), vpc.getZoneId(), vpc.getId(), vpc.getName(), connectionUuid, enabled);
+                vpc.getAccountId(), vpc.getZoneId(), vpc.getId(), vpc.getName(), connectionId, enabled);
         NsxAnswer result = nsxControllerUtils.sendNsxCommand(command, vpc.getZoneId());
         return result.getResult();
     }
 
-    public String getVpnConnectionStatus(Vpc vpc, String connectionUuid) {
+    public String getVpnConnectionStatus(Vpc vpc, long connectionId) {
         GetNsxVpnSessionStatusCommand getNsxVpnSessionStatusCommand = new GetNsxVpnSessionStatusCommand(vpc.getDomainId(),
-                vpc.getAccountId(), vpc.getZoneId(), vpc.getId(), vpc.getName(), connectionUuid);
+                vpc.getAccountId(), vpc.getZoneId(), vpc.getId(), vpc.getName(), connectionId);
         NsxAnswer result = nsxControllerUtils.sendNsxCommand(getNsxVpnSessionStatusCommand, vpc.getZoneId());
         return result.getDetails();
     }
 
     /**
-     * Every management server runs this poller over VPN connections whose gateway has persisted
-     * NSX ownership; duplicate polling in a multi-server setup is tolerated, as state transitions
-     * are serialized by the row lock in transitionVpnConnectionState
+     * The global lock makes the scan a cluster-wide singleton. The connection row lock in
+     * transitionVpnConnectionState separately protects each state transition from a concurrent
+     * user operation that starts, stops, resets, or deletes the connection.
      */
     protected class VpnStatusPollTask extends ManagedContextRunnable {
         @Override
         protected void runInContext() {
+            GlobalLock scanLock = GlobalLock.getInternLock(VPN_STATUS_POLL_LOCK_NAME);
             try {
-                Set<Long> polledConnectionIds = new HashSet<>();
-                List<Site2SiteVpnConnectionVO> connections = site2SiteVpnConnectionDao.listByStates(
-                        VPN_POLLED_STATES.toArray(new Site2SiteVpnConnection.State[0]));
-                for (Site2SiteVpnConnectionVO connection : connections) {
-                    Site2SiteVpnGatewayVO vpnGateway = site2SiteVpnGatewayDao.findById(connection.getVpnGatewayId());
-                    if (vpnGateway == null) {
-                        continue;
+                if (scanLock.lock(VPN_STATUS_POLL_LOCK_TIMEOUT)) {
+                    try {
+                        pollVpnConnectionStatuses();
+                    } finally {
+                        scanLock.unlock();
                     }
-                    VpcVO vpc = vpcDao.findById(vpnGateway.getVpcId());
-                    if (vpc == null || !isVpnProvidedByNsx(vpc, vpnGateway)) {
-                        continue;
-                    }
-                    polledConnectionIds.add(connection.getId());
-                    pollVpnConnectionStatus(connection, vpc);
                 }
-                // Drop the failure counters of connections that were deleted or left the polled states
-                vpnStatusPollFailures.keySet().retainAll(polledConnectionIds);
             } catch (Exception e) {
                 logger.warn("Failed to poll the status of the NSX Site-to-Site VPN connections: {}", e.getMessage(), e);
+            } finally {
+                scanLock.releaseRef();
             }
         }
+    }
+
+    private void pollVpnConnectionStatuses() {
+        Set<Long> polledConnectionIds = new HashSet<>();
+        List<Site2SiteVpnConnectionVO> connections = site2SiteVpnConnectionDao.listByStates(
+                VPN_POLLED_STATES.toArray(new Site2SiteVpnConnection.State[0]));
+        for (Site2SiteVpnConnectionVO connection : connections) {
+            Site2SiteVpnGatewayVO vpnGateway = site2SiteVpnGatewayDao.findById(connection.getVpnGatewayId());
+            if (vpnGateway == null) {
+                continue;
+            }
+            VpcVO vpc = vpcDao.findById(vpnGateway.getVpcId());
+            if (vpc == null || !isVpnProvidedByNsx(vpc, vpnGateway)) {
+                continue;
+            }
+            polledConnectionIds.add(connection.getId());
+            pollVpnConnectionStatus(connection, vpc);
+        }
+        // Drop the failure counters of connections that were deleted or left the polled states.
+        vpnStatusPollFailures.keySet().retainAll(polledConnectionIds);
     }
 
     private boolean isVpnProvidedByNsx(Vpc vpc, Site2SiteVpnGatewayVO vpnGateway) {
@@ -384,7 +408,7 @@ public class NsxServiceImpl extends ManagerBase implements NsxService, Configura
         Site2SiteVpnConnection.State observedState = connection.getState();
         String status;
         try {
-            status = getVpnConnectionStatus(vpc, connection.getUuid());
+            status = getVpnConnectionStatus(vpc, connection.getId());
             vpnStatusPollFailures.remove(connection.getId());
         } catch (Exception e) {
             int failures = vpnStatusPollFailures.merge(connection.getId(), 1, Integer::sum);
@@ -428,6 +452,7 @@ public class NsxServiceImpl extends ManagerBase implements NsxService, Configura
         transitionVpnConnectionState(connection, vpc, observedState, newState);
     }
 
+    @DB
     protected void transitionVpnConnectionState(Site2SiteVpnConnectionVO connection, VpcVO vpc,
                                                 Site2SiteVpnConnection.State observedState,
                                                 Site2SiteVpnConnection.State newState) {

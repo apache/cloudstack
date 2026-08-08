@@ -25,7 +25,7 @@ public class CreateNsxVpnConnectionCommand extends NsxCommand {
 
     private Long vpcId;
     private String vpcName;
-    private String connectionUuid;
+    private long connectionId;
     private String peerAddress;
     @LogLevel(LogLevel.Log4jLevel.Off)
     private String psk;
@@ -44,7 +44,7 @@ public class CreateNsxVpnConnectionCommand extends NsxCommand {
     private String localEndpointIp;
 
     public CreateNsxVpnConnectionCommand(long domainId, long accountId, long zoneId,
-                                         Long vpcId, String vpcName, String connectionUuid, String peerAddress,
+                                         Long vpcId, String vpcName, long connectionId, String peerAddress,
                                          String psk, String ikePolicy, String espPolicy, Long ikeLifetime,
                                          Long espLifetime, boolean dpdEnabled, String ikeVersion, boolean passive,
                                          List<String> peerCidrs, String vtiLocalIp, String vtiPeerIp,
@@ -52,7 +52,7 @@ public class CreateNsxVpnConnectionCommand extends NsxCommand {
         super(domainId, accountId, zoneId);
         this.vpcId = vpcId;
         this.vpcName = vpcName;
-        this.connectionUuid = connectionUuid;
+        this.connectionId = connectionId;
         this.peerAddress = peerAddress;
         this.psk = psk;
         this.ikePolicy = ikePolicy;
@@ -78,8 +78,8 @@ public class CreateNsxVpnConnectionCommand extends NsxCommand {
         return vpcName;
     }
 
-    public String getConnectionUuid() {
-        return connectionUuid;
+    public long getConnectionId() {
+        return connectionId;
     }
 
     public String getPeerAddress() {
@@ -151,9 +151,10 @@ public class CreateNsxVpnConnectionCommand extends NsxCommand {
             return false;
         }
         CreateNsxVpnConnectionCommand that = (CreateNsxVpnConnectionCommand) o;
-        return dpdEnabled == that.dpdEnabled && passive == that.passive && vtiPrefixLength == that.vtiPrefixLength
+        return connectionId == that.connectionId && dpdEnabled == that.dpdEnabled && passive == that.passive
+                && vtiPrefixLength == that.vtiPrefixLength
                 && Objects.equals(vpcId, that.vpcId) && Objects.equals(vpcName, that.vpcName)
-                && Objects.equals(connectionUuid, that.connectionUuid) && Objects.equals(peerAddress, that.peerAddress)
+                && Objects.equals(peerAddress, that.peerAddress)
                 && Objects.equals(psk, that.psk) && Objects.equals(ikePolicy, that.ikePolicy)
                 && Objects.equals(espPolicy, that.espPolicy) && Objects.equals(ikeLifetime, that.ikeLifetime)
                 && Objects.equals(espLifetime, that.espLifetime) && Objects.equals(ikeVersion, that.ikeVersion)
@@ -164,7 +165,7 @@ public class CreateNsxVpnConnectionCommand extends NsxCommand {
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), vpcId, vpcName, connectionUuid, peerAddress, psk, ikePolicy, espPolicy,
+        return Objects.hash(super.hashCode(), vpcId, vpcName, connectionId, peerAddress, psk, ikePolicy, espPolicy,
                 ikeLifetime, espLifetime, dpdEnabled, ikeVersion, passive, peerCidrs, vtiLocalIp, vtiPeerIp,
                 vtiPrefixLength, vpcCidr, localEndpointIp);
     }

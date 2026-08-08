@@ -21,6 +21,7 @@ import com.cloud.network.IpAddress;
 import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.Site2SiteVpnGateway;
+import com.cloud.network.Site2SiteVpnTunnelInterface;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.utils.component.Adapter;
 
@@ -67,5 +68,13 @@ public interface Site2SiteVpnServiceProvider extends Adapter {
      */
     default boolean ownsVpnGateway(Site2SiteVpnGateway gateway) {
         return false;
+    }
+
+    /**
+     * Returns provider-specific route-based tunnel addressing that the peer must configure.
+     * Policy-based providers return no tunnel-interface details.
+     */
+    default Site2SiteVpnTunnelInterface getSite2SiteVpnTunnelInterface(Site2SiteVpnConnection connection) {
+        return null;
     }
 }

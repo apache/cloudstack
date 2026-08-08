@@ -341,6 +341,19 @@ public class NsxResourceTest {
     }
 
     @Test
+    public void testCreateNsxVpnGatewayReconcilesPreviouslyOwnedExistingService() {
+        CreateNsxVpnGatewayCommand command = new CreateNsxVpnGatewayCommand(domainId, accountId, zoneId,
+                3L, "VPC01", "203.0.113.20", true);
+        when(nsxApi.isVpnServicePresent("D1-A2-Z1-V3")).thenReturn(true);
+
+        NsxAnswer answer = (NsxAnswer) nsxResource.executeRequest(command);
+
+        assertTrue(answer.getResult());
+        verify(nsxApi).createVpnService("D1-A2-Z1-V3", "203.0.113.20");
+        verify(nsxApi, never()).deleteVpnService("D1-A2-Z1-V3");
+    }
+
+    @Test
     public void testCreateNsxVpnGatewayReportsPossibleResourceWhenRollbackFails() {
         CreateNsxVpnGatewayCommand command = new CreateNsxVpnGatewayCommand(domainId, accountId, zoneId,
                 3L, "VPC01", "203.0.113.20");
@@ -356,52 +369,52 @@ public class NsxResourceTest {
     @Test
     public void testCreateNsxVpnConnectionRollsBackNewSessionAfterRouteFailure() {
         CreateNsxVpnConnectionCommand command = new CreateNsxVpnConnectionCommand(domainId, accountId, zoneId,
-                3L, "VPC01", "connection-uuid", "203.0.113.10", "psk", "aes256-sha256;modp2048",
+                3L, "VPC01", 5L, "203.0.113.10", "psk", "aes256-sha256;modp2048",
                 "aes256-sha256;modp2048", 86400L, 3600L, true, "ikev2", false,
                 List.of("192.168.100.0/24"), "169.254.64.21", "169.254.64.22", 30,
                 "10.1.0.0/16", "203.0.113.20");
-        when(nsxApi.getRouteBasedVpnSessionLocalVtiIps(anyString(), anyString())).thenReturn(Set.of());
-        when(nsxApi.createRouteBasedVpnSession(anyString(), anyString(), anyString(), anyString(), anyString(),
+        when(nsxApi.getRouteBasedVpnSessionLocalVtiIps(anyString(), anyLong())).thenReturn(Set.of());
+        when(nsxApi.createRouteBasedVpnSession(anyString(), anyLong(), anyString(), anyString(), anyString(),
                 anyString(), anyLong(), anyLong(), anyBoolean(), anyString(), anyBoolean(), anyString(), anyInt()))
                 .thenReturn(NsxApiClient.VpnSessionProvisioningResult.CREATED);
-        doThrow(new CloudRuntimeException("ERROR")).when(nsxApi).addVpnConnectionRoutes(anyString(), anyString(), anyList(), anyString(), anyString());
+        doThrow(new CloudRuntimeException("ERROR")).when(nsxApi).addVpnConnectionRoutes(anyString(), anyLong(), anyList(), anyString(), anyString());
 
         NsxAnswer answer = (NsxAnswer) nsxResource.executeRequest(command);
 
         assertFalse(answer.getResult());
-        verify(nsxApi).rollbackVpnConnection("D1-A2-Z1-V3", "connection-uuid");
+        verify(nsxApi).rollbackVpnConnection("D1-A2-Z1-V3", 5L);
     }
 
     @Test
     public void testCreateNsxVpnConnectionDisablesPreexistingSessionAfterRouteFailure() {
         CreateNsxVpnConnectionCommand command = new CreateNsxVpnConnectionCommand(domainId, accountId, zoneId,
-                3L, "VPC01", "connection-uuid", "203.0.113.10", "psk", "aes256-sha256;modp2048",
+                3L, "VPC01", 5L, "203.0.113.10", "psk", "aes256-sha256;modp2048",
                 "aes256-sha256;modp2048", 86400L, 3600L, true, "ikev2", false,
                 List.of("192.168.100.0/24"), "169.254.64.21", "169.254.64.22", 30,
                 "10.1.0.0/16", "203.0.113.20");
-        when(nsxApi.getRouteBasedVpnSessionLocalVtiIps(anyString(), anyString())).thenReturn(Set.of());
-        when(nsxApi.createRouteBasedVpnSession(anyString(), anyString(), anyString(), anyString(), anyString(),
+        when(nsxApi.getRouteBasedVpnSessionLocalVtiIps(anyString(), anyLong())).thenReturn(Set.of());
+        when(nsxApi.createRouteBasedVpnSession(anyString(), anyLong(), anyString(), anyString(), anyString(),
                 anyString(), anyLong(), anyLong(), anyBoolean(), anyString(), anyBoolean(), anyString(), anyInt()))
                 .thenReturn(NsxApiClient.VpnSessionProvisioningResult.PREEXISTING);
-        doThrow(new CloudRuntimeException("ERROR")).when(nsxApi).addVpnConnectionRoutes(anyString(), anyString(),
+        doThrow(new CloudRuntimeException("ERROR")).when(nsxApi).addVpnConnectionRoutes(anyString(), anyLong(),
                 anyList(), anyString(), anyString());
 
         NsxAnswer answer = (NsxAnswer) nsxResource.executeRequest(command);
 
         assertFalse(answer.getResult());
-        verify(nsxApi, never()).rollbackVpnConnection(anyString(), anyString());
-        verify(nsxApi).updateVpnConnectionState("D1-A2-Z1-V3", "connection-uuid", false);
+        verify(nsxApi, never()).rollbackVpnConnection(anyString(), anyLong());
+        verify(nsxApi).updateVpnConnectionState("D1-A2-Z1-V3", 5L, false);
     }
 
     @Test
     public void testCreateNsxVpnConnectionEnablesSessionAfterRoutesAndNatExemptions() {
         CreateNsxVpnConnectionCommand command = new CreateNsxVpnConnectionCommand(domainId, accountId, zoneId,
-                3L, "VPC01", "connection-uuid", "203.0.113.10", "psk", "aes256-sha256;modp2048",
+                3L, "VPC01", 5L, "203.0.113.10", "psk", "aes256-sha256;modp2048",
                 "aes256-sha256;modp2048", 86400L, 3600L, true, "ikev2", false,
                 List.of("192.168.100.0/24"), "169.254.64.21", "169.254.64.22", 30,
                 "10.1.0.0/16", "203.0.113.20");
-        when(nsxApi.getRouteBasedVpnSessionLocalVtiIps(anyString(), anyString())).thenReturn(Set.of());
-        when(nsxApi.createRouteBasedVpnSession(anyString(), anyString(), anyString(), anyString(), anyString(),
+        when(nsxApi.getRouteBasedVpnSessionLocalVtiIps(anyString(), anyLong())).thenReturn(Set.of());
+        when(nsxApi.createRouteBasedVpnSession(anyString(), anyLong(), anyString(), anyString(), anyString(),
                 anyString(), anyLong(), anyLong(), anyBoolean(), anyString(), anyBoolean(), anyString(), anyInt()))
                 .thenReturn(NsxApiClient.VpnSessionProvisioningResult.CREATED);
 
@@ -409,27 +422,27 @@ public class NsxResourceTest {
 
         assertTrue(answer.getResult());
         InOrder inOrder = Mockito.inOrder(nsxApi);
-        inOrder.verify(nsxApi).createRouteBasedVpnSession(anyString(), anyString(), anyString(), anyString(), anyString(),
+        inOrder.verify(nsxApi).createRouteBasedVpnSession(anyString(), anyLong(), anyString(), anyString(), anyString(),
                 anyString(), anyLong(), anyLong(), anyBoolean(), anyString(), anyBoolean(), anyString(), anyInt());
-        inOrder.verify(nsxApi).addVpnConnectionRoutes("D1-A2-Z1-V3", "connection-uuid",
+        inOrder.verify(nsxApi).addVpnConnectionRoutes("D1-A2-Z1-V3", 5L,
                 List.of("192.168.100.0/24"), "169.254.64.22", "10.1.0.0/16");
         inOrder.verify(nsxApi).ensureVpnNatExemptions("D1-A2-Z1-V3", "203.0.113.20");
-        inOrder.verify(nsxApi).updateVpnConnectionState("D1-A2-Z1-V3", "connection-uuid", true);
+        inOrder.verify(nsxApi).updateVpnConnectionState("D1-A2-Z1-V3", 5L, true);
     }
 
     @Test
     public void testCreateNsxVpnConnectionRejectsVtiCollisionBeforeCreate() {
         CreateNsxVpnConnectionCommand command = new CreateNsxVpnConnectionCommand(domainId, accountId, zoneId,
-                3L, "VPC01", "connection-uuid", "203.0.113.10", "psk", "aes256-sha256;modp2048",
+                3L, "VPC01", 5L, "203.0.113.10", "psk", "aes256-sha256;modp2048",
                 "aes256-sha256;modp2048", 86400L, 3600L, true, "ikev2", false,
                 List.of("192.168.100.0/24"), "169.254.64.21", "169.254.64.22", 30,
                 "10.1.0.0/16", "203.0.113.20");
-        when(nsxApi.getRouteBasedVpnSessionLocalVtiIps(anyString(), anyString())).thenReturn(Set.of("169.254.64.21"));
+        when(nsxApi.getRouteBasedVpnSessionLocalVtiIps(anyString(), anyLong())).thenReturn(Set.of("169.254.64.21"));
 
         NsxAnswer answer = (NsxAnswer) nsxResource.executeRequest(command);
 
         assertFalse(answer.getResult());
-        verify(nsxApi, Mockito.never()).createRouteBasedVpnSession(anyString(), anyString(), anyString(), anyString(),
+        verify(nsxApi, Mockito.never()).createRouteBasedVpnSession(anyString(), anyLong(), anyString(), anyString(),
                 anyString(), anyString(), anyLong(), anyLong(), anyBoolean(), anyString(), anyBoolean(), anyString(), anyInt());
     }
 
@@ -437,12 +450,12 @@ public class NsxResourceTest {
     public void testNsxVpnLifecycleCommandsDispatch() {
         DeleteNsxVpnGatewayCommand deleteGateway = new DeleteNsxVpnGatewayCommand(domainId, accountId, zoneId, 3L, "VPC01");
         DeleteNsxVpnConnectionCommand deleteConnection = new DeleteNsxVpnConnectionCommand(domainId, accountId, zoneId,
-                3L, "VPC01", "connection-uuid");
+                3L, "VPC01", 5L);
         UpdateNsxVpnConnectionStateCommand update = new UpdateNsxVpnConnectionStateCommand(domainId, accountId, zoneId,
-                3L, "VPC01", "connection-uuid", false);
+                3L, "VPC01", 5L, false);
         GetNsxVpnSessionStatusCommand status = new GetNsxVpnSessionStatusCommand(domainId, accountId, zoneId,
-                3L, "VPC01", "connection-uuid");
-        when(nsxApi.getVpnSessionStatus("D1-A2-Z1-V3", "connection-uuid")).thenReturn("UP");
+                3L, "VPC01", 5L);
+        when(nsxApi.getVpnSessionStatus("D1-A2-Z1-V3", 5L)).thenReturn("UP");
 
         assertTrue(((NsxAnswer) nsxResource.executeRequest(deleteGateway)).getResult());
         assertTrue(((NsxAnswer) nsxResource.executeRequest(deleteConnection)).getResult());
@@ -451,14 +464,14 @@ public class NsxResourceTest {
         assertTrue(statusAnswer.getResult());
         assertTrue(statusAnswer.getDetails().contains("UP"));
         verify(nsxApi).deleteVpnService("D1-A2-Z1-V3");
-        verify(nsxApi).deleteVpnConnection("D1-A2-Z1-V3", "connection-uuid");
-        verify(nsxApi).updateVpnConnectionState("D1-A2-Z1-V3", "connection-uuid", false);
+        verify(nsxApi).deleteVpnConnection("D1-A2-Z1-V3", 5L);
+        verify(nsxApi).updateVpnConnectionState("D1-A2-Z1-V3", 5L, false);
     }
 
     @Test
     public void testNsxVpnConnectionCommandRoundTripsThroughCloudStackWireAdaptor() {
         CreateNsxVpnConnectionCommand command = new CreateNsxVpnConnectionCommand(domainId, accountId, zoneId,
-                3L, "VPC01", "connection-uuid", "203.0.113.10", "secret-psk", "aes256-sha256;modp2048",
+                3L, "VPC01", 5L, "203.0.113.10", "secret-psk", "aes256-sha256;modp2048",
                 "aes256-sha256;modp2048", 86400L, 3600L, true, "ikev2", true,
                 List.of("192.168.100.0/24", "192.168.101.0/24"), "169.254.64.21", "169.254.64.22", 30,
                 "10.1.0.0/16", "203.0.113.20");

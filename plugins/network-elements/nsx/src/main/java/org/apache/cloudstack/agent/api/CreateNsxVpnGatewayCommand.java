@@ -23,13 +23,21 @@ public class CreateNsxVpnGatewayCommand extends NsxCommand {
     private Long vpcId;
     private String vpcName;
     private String localEndpointIp;
+    private boolean reconcileExistingService;
 
     public CreateNsxVpnGatewayCommand(long domainId, long accountId, long zoneId,
                                       Long vpcId, String vpcName, String localEndpointIp) {
+        this(domainId, accountId, zoneId, vpcId, vpcName, localEndpointIp, false);
+    }
+
+    public CreateNsxVpnGatewayCommand(long domainId, long accountId, long zoneId,
+                                      Long vpcId, String vpcName, String localEndpointIp,
+                                      boolean reconcileExistingService) {
         super(domainId, accountId, zoneId);
         this.vpcId = vpcId;
         this.vpcName = vpcName;
         this.localEndpointIp = localEndpointIp;
+        this.reconcileExistingService = reconcileExistingService;
     }
 
     public Long getVpcId() {
@@ -44,6 +52,10 @@ public class CreateNsxVpnGatewayCommand extends NsxCommand {
         return localEndpointIp;
     }
 
+    public boolean isReconcileExistingService() {
+        return reconcileExistingService;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -53,11 +65,12 @@ public class CreateNsxVpnGatewayCommand extends NsxCommand {
             return false;
         }
         CreateNsxVpnGatewayCommand that = (CreateNsxVpnGatewayCommand) o;
-        return Objects.equals(vpcId, that.vpcId) && Objects.equals(vpcName, that.vpcName) && Objects.equals(localEndpointIp, that.localEndpointIp);
+        return reconcileExistingService == that.reconcileExistingService && Objects.equals(vpcId, that.vpcId)
+                && Objects.equals(vpcName, that.vpcName) && Objects.equals(localEndpointIp, that.localEndpointIp);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), vpcId, vpcName, localEndpointIp);
+        return Objects.hash(super.hashCode(), vpcId, vpcName, localEndpointIp, reconcileExistingService);
     }
 }

@@ -53,7 +53,7 @@ public class NsxControllerUtils {
     public NsxAnswer sendNsxCommand(NsxCommand cmd, long zoneId) throws IllegalArgumentException {
         NsxAnswer answer = sendNsxCommandForResult(cmd, zoneId);
         if (!answer.getResult()) {
-            logger.error("NSX API Command failed");
+            logger.error("NSX command {} failed in zone {}", cmd.getClass().getSimpleName(), zoneId);
             throw new InvalidParameterValueException("Failed API call to NSX controller");
         }
         return answer;
@@ -68,7 +68,13 @@ public class NsxControllerUtils {
         Answer answer = agentMgr.easySend(nsxProviderVO.getHostId(), cmd);
 
         if (answer == null) {
-            logger.error("NSX API Command failed");
+            logger.error("NSX command {} returned no answer in zone {}", cmd.getClass().getSimpleName(), zoneId);
+            throw new InvalidParameterValueException("Failed API call to NSX controller");
+        }
+
+        if (!(answer instanceof NsxAnswer)) {
+            logger.error("NSX command {} returned unexpected answer type {} in zone {}",
+                    cmd.getClass().getSimpleName(), answer.getClass().getName(), zoneId);
             throw new InvalidParameterValueException("Failed API call to NSX controller");
         }
 
@@ -159,36 +165,40 @@ public class NsxControllerUtils {
         return vpnServiceName + "-le-nosnat";
     }
 
-    public static String getVpnSessionName(String connectionUuid) {
-        return "cs-conn-" + connectionUuid;
+    public static String getVpnSessionNamePrefix() {
+        return "cs-conn-";
     }
 
-    public static String getVpnIkeProfileName(String connectionUuid) {
-        return getVpnSessionName(connectionUuid) + "-ike";
+    public static String getVpnSessionName(long connectionId) {
+        return getVpnSessionNamePrefix() + connectionId;
     }
 
-    public static String getVpnEspProfileName(String connectionUuid) {
-        return getVpnSessionName(connectionUuid) + "-esp";
+    public static String getVpnIkeProfileName(long connectionId) {
+        return getVpnSessionName(connectionId) + "-ike";
     }
 
-    public static String getVpnDpdProfileName(String connectionUuid) {
-        return getVpnSessionName(connectionUuid) + "-dpd";
+    public static String getVpnEspProfileName(long connectionId) {
+        return getVpnSessionName(connectionId) + "-esp";
     }
 
-    public static String getVpnStaticRouteNamePrefix(String connectionUuid) {
-        return getVpnSessionName(connectionUuid) + "-route";
+    public static String getVpnDpdProfileName(long connectionId) {
+        return getVpnSessionName(connectionId) + "-dpd";
     }
 
-    public static String getVpnStaticRouteName(String connectionUuid, int peerCidrIndex) {
-        return getVpnStaticRouteNamePrefix(connectionUuid) + peerCidrIndex;
+    public static String getVpnStaticRouteNamePrefix(long connectionId) {
+        return getVpnSessionName(connectionId) + "-route";
     }
 
-    public static String getVpnNoSnatRuleNamePrefix(String connectionUuid) {
-        return getVpnSessionName(connectionUuid) + "-nosnat";
+    public static String getVpnStaticRouteName(long connectionId, int peerCidrIndex) {
+        return getVpnStaticRouteNamePrefix(connectionId) + peerCidrIndex;
     }
 
-    public static String getVpnNoSnatRuleName(String connectionUuid, int peerCidrIndex) {
-        return getVpnNoSnatRuleNamePrefix(connectionUuid) + peerCidrIndex;
+    public static String getVpnNoSnatRuleNamePrefix(long connectionId) {
+        return getVpnSessionName(connectionId) + "-nosnat";
+    }
+
+    public static String getVpnNoSnatRuleName(long connectionId, int peerCidrIndex) {
+        return getVpnNoSnatRuleNamePrefix(connectionId) + peerCidrIndex;
     }
 
     public static String getLoadBalancerAlgorithm(String algorithm) {

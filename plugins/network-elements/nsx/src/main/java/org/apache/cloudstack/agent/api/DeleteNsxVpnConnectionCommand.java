@@ -22,14 +22,14 @@ public class DeleteNsxVpnConnectionCommand extends NsxCommand {
 
     private Long vpcId;
     private String vpcName;
-    private String connectionUuid;
+    private long connectionId;
 
     public DeleteNsxVpnConnectionCommand(long domainId, long accountId, long zoneId,
-                                         Long vpcId, String vpcName, String connectionUuid) {
+                                         Long vpcId, String vpcName, long connectionId) {
         super(domainId, accountId, zoneId);
         this.vpcId = vpcId;
         this.vpcName = vpcName;
-        this.connectionUuid = connectionUuid;
+        this.connectionId = connectionId;
     }
 
     public Long getVpcId() {
@@ -40,8 +40,8 @@ public class DeleteNsxVpnConnectionCommand extends NsxCommand {
         return vpcName;
     }
 
-    public String getConnectionUuid() {
-        return connectionUuid;
+    public long getConnectionId() {
+        return connectionId;
     }
 
     @Override
@@ -53,12 +53,12 @@ public class DeleteNsxVpnConnectionCommand extends NsxCommand {
             return false;
         }
         DeleteNsxVpnConnectionCommand that = (DeleteNsxVpnConnectionCommand) o;
-        return Objects.equals(vpcId, that.vpcId) && Objects.equals(vpcName, that.vpcName)
-                && Objects.equals(connectionUuid, that.connectionUuid);
+        return connectionId == that.connectionId && Objects.equals(vpcId, that.vpcId)
+                && Objects.equals(vpcName, that.vpcName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), vpcId, vpcName, connectionUuid);
+        return Objects.hash(super.hashCode(), vpcId, vpcName, connectionId);
     }
 }

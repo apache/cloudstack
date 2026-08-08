@@ -69,6 +69,7 @@ import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.Site2SiteVpnConnection.State;
 import com.cloud.network.Site2SiteVpnGateway;
+import com.cloud.network.Site2SiteVpnTunnelInterface;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
@@ -295,6 +296,19 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
             }
         }
         return null;
+    }
+
+    @Override
+    public Site2SiteVpnTunnelInterface getSite2SiteVpnTunnelInterface(Site2SiteVpnConnection connection) {
+        if (connection == null) {
+            return null;
+        }
+        Site2SiteVpnGateway gateway = _vpnGatewayDao.findById(connection.getVpnGatewayId());
+        if (gateway == null) {
+            return null;
+        }
+        Site2SiteVpnServiceProvider provider = getVpnServiceProviderForGateway(gateway);
+        return provider == null ? null : provider.getSite2SiteVpnTunnelInterface(connection);
     }
 
     private IPAddressVO getIpAddressIdForVpn(Vpc vpc, Site2SiteVpnServiceProvider provider, IPAddressVO requestedIp) {

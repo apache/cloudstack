@@ -17,6 +17,7 @@
 package org.apache.cloudstack.utils;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.element.NsxProviderVO;
@@ -92,6 +93,18 @@ public class NsxControllerUtilsTest {
         Mockito.when(agentMgr.easySend(nsxProviderHostId, cmd)).thenReturn(answer);
 
         nsxControllerUtils.sendNsxCommand(cmd, zoneId);
+    }
+
+    @Test
+    public void testSendCommandRejectsGenericFailedAnswer() {
+        NsxCommand cmd = Mockito.mock(NsxCommand.class);
+        Answer answer = new Answer(cmd, false, "transport failure");
+        Mockito.when(agentMgr.easySend(nsxProviderHostId, cmd)).thenReturn(answer);
+
+        InvalidParameterValueException exception = Assert.assertThrows(InvalidParameterValueException.class,
+                () -> nsxControllerUtils.sendNsxCommand(cmd, zoneId));
+
+        Assert.assertEquals("Failed API call to NSX controller", exception.getMessage());
     }
 
     @Test

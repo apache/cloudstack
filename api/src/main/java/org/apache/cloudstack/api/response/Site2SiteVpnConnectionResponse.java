@@ -144,6 +144,18 @@ public class Site2SiteVpnConnectionResponse extends BaseResponse implements Cont
     @Param(description = "Which IKE Version to use, one of ike (autoselect), IKEv1, or IKEv2. Defaults to ike")
     private String ikeVersion;
 
+    @SerializedName(ApiConstants.LOCAL_VTI_IP)
+    @Param(description = "The provider-side virtual tunnel interface IP address", since = "4.23.0.0")
+    private String localVtiIp;
+
+    @SerializedName(ApiConstants.PEER_VTI_IP)
+    @Param(description = "The peer-side virtual tunnel interface IP address", since = "4.23.0.0")
+    private String peerVtiIp;
+
+    @SerializedName(ApiConstants.VTI_PREFIX_LENGTH)
+    @Param(description = "The virtual tunnel interface network prefix length", since = "4.23.0.0")
+    private Integer vtiPrefixLength;
+
     public void setId(String id) {
         this.id = id;
     }
@@ -218,6 +230,30 @@ public class Site2SiteVpnConnectionResponse extends BaseResponse implements Cont
 
     public void setIkeVersion(String ikeVersion) {
         this.ikeVersion = ikeVersion;
+    }
+
+    public String getLocalVtiIp() {
+        return localVtiIp;
+    }
+
+    public void setLocalVtiIp(String localVtiIp) {
+        this.localVtiIp = localVtiIp;
+    }
+
+    public String getPeerVtiIp() {
+        return peerVtiIp;
+    }
+
+    public void setPeerVtiIp(String peerVtiIp) {
+        this.peerVtiIp = peerVtiIp;
+    }
+
+    public Integer getVtiPrefixLength() {
+        return vtiPrefixLength;
+    }
+
+    public void setVtiPrefixLength(Integer vtiPrefixLength) {
+        this.vtiPrefixLength = vtiPrefixLength;
     }
 
     @Override

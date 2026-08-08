@@ -730,6 +730,23 @@ public class Site2SiteVpnManagerImplTest {
         verify(_vpnGatewayDao).remove(VPN_GATEWAY_ID);
     }
 
+    @Test
+    public void testDeleteVpnGatewayProviderFailureKeepsGatewayRow() {
+        DeleteVpnGatewayCmd cmd = mock(DeleteVpnGatewayCmd.class);
+        when(cmd.getId()).thenReturn(VPN_GATEWAY_ID);
+        when(_vpnGatewayDao.findById(VPN_GATEWAY_ID)).thenReturn(vpnGateway);
+        when(_vpnConnectionDao.listByVpnGatewayId(VPN_GATEWAY_ID)).thenReturn(new ArrayList<>());
+        Site2SiteVpnServiceProvider provider = mockNsxProvider();
+        when(provider.ownsVpnGateway(vpnGateway)).thenReturn(true);
+        Mockito.doThrow(new CloudRuntimeException("NSX Tier-1 lookup failed"))
+                .when(provider).releaseVpnGatewayIp(vpnGateway);
+
+        assertThrows(CloudRuntimeException.class, () -> site2SiteVpnManager.deleteVpnGateway(cmd));
+
+        verify(provider).releaseVpnGatewayIp(vpnGateway);
+        verify(_vpnGatewayDao, never()).remove(VPN_GATEWAY_ID);
+    }
+
     @Test(expected = InvalidParameterValueException.class)
     public void testDeleteVpnGatewayWithConnections() {
         DeleteVpnGatewayCmd cmd = mock(DeleteVpnGatewayCmd.class);

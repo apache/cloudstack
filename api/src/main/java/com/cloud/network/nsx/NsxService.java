@@ -39,12 +39,13 @@ public interface NsxService {
     String getSegmentId(long domainId, long accountId, long zoneId, Long vpcId, long networkId);
 
     NsxVpnGatewayResult createVpnGateway(Vpc vpc, String localEndpointIp);
+    NsxVpnGatewayResult createVpnGateway(Vpc vpc, String localEndpointIp, boolean reconcileExistingService);
     boolean deleteVpnGateway(Vpc vpc);
-    boolean createVpnConnection(Vpc vpc, String connectionUuid, String peerAddress, String psk,
+    boolean createVpnConnection(Vpc vpc, long connectionId, String peerAddress, String psk,
                                 String ikePolicy, String espPolicy, Long ikeLifetime, Long espLifetime,
                                 boolean dpdEnabled, String ikeVersion, boolean passive, List<String> peerCidrs,
                                 String vtiLocalIp, String vtiPeerIp, int vtiPrefixLength, String localEndpointIp);
-    boolean deleteVpnConnection(Vpc vpc, String connectionUuid);
-    boolean updateVpnConnectionState(Vpc vpc, String connectionUuid, boolean enabled);
-    String getVpnConnectionStatus(Vpc vpc, String connectionUuid);
+    boolean deleteVpnConnection(Vpc vpc, long connectionId);
+    boolean updateVpnConnectionState(Vpc vpc, long connectionId, boolean enabled);
+    String getVpnConnectionStatus(Vpc vpc, long connectionId);
 }

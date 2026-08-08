@@ -315,7 +315,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         return provider;
     }
 
-    void validateIpAddressForVpnServiceOnNetwork(Network network, IPAddressVO ipAddress) {
+    private void validateIpAddressForVpnServiceOnNetwork(Network network, IPAddressVO ipAddress) {
         Long networkId = network.getId();
         requireRemoteAccessVpnServiceProvider(networkId, null);
         if (_networkMgr.isProviderSupportServiceInNetwork(networkId, Service.Vpn, Network.Provider.VirtualRouter)) {
@@ -335,7 +335,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         }
     }
 
-    void validateIpAddressForVpnServiceOnVpc(Vpc vpc, IPAddressVO ipAddress) {
+    private void validateIpAddressForVpnServiceOnVpc(Vpc vpc, IPAddressVO ipAddress) {
         Long vpcId = vpc.getId();
         requireRemoteAccessVpnServiceProvider(null, vpcId);
         if (vpcManager.isProviderSupportServiceInVpc(vpcId, Service.Vpn, Network.Provider.VPCVirtualRouter)) {

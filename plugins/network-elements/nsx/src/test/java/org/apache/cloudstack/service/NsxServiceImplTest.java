@@ -16,17 +16,20 @@
 // under the License.
 package org.apache.cloudstack.service;
 
+import com.cloud.alert.AlertManager;
 import com.cloud.network.IpAddress;
-import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.Site2SiteVpnConnection;
-import com.cloud.network.dao.Site2SiteVpnConnectionVO;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.Site2SiteVpnConnectionDao;
+import com.cloud.network.dao.Site2SiteVpnConnectionVO;
 import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.dao.Site2SiteVpnGatewayVO;
+import com.cloud.network.nsx.NsxVpnGatewayResult;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
-import com.cloud.network.nsx.NsxVpnGatewayResult;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import org.apache.cloudstack.NsxAnswer;
@@ -37,14 +40,15 @@ import org.apache.cloudstack.agent.api.CreateOrUpdateNsxTier1NatRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxNatRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxSegmentCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxTier1GatewayCommand;
-import org.apache.cloudstack.utils.NsxControllerUtils;
 import org.apache.cloudstack.resourcedetail.UserIpAddressDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.UserIpAddressDetailsDao;
+import org.apache.cloudstack.utils.NsxControllerUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -62,8 +66,8 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -81,6 +85,8 @@ public class NsxServiceImplTest {
     private Site2SiteVpnGatewayDao site2SiteVpnGatewayDao;
     @Mock
     private UserIpAddressDetailsDao userIpAddressDetailsDao;
+    @Mock
+    private AlertManager alertManager;
     NsxServiceImpl nsxService;
 
     AutoCloseable closeable;
@@ -98,6 +104,7 @@ public class NsxServiceImplTest {
         nsxService.site2SiteVpnConnectionDao = site2SiteVpnConnectionDao;
         nsxService.site2SiteVpnGatewayDao = site2SiteVpnGatewayDao;
         nsxService.userIpAddressDetailsDao = userIpAddressDetailsDao;
+        nsxService.alertManager = alertManager;
     }
 
     @After
@@ -220,7 +227,7 @@ public class NsxServiceImplTest {
 
         NsxServiceImpl service = new NsxServiceImpl() {
             @Override
-            public String getVpnConnectionStatus(Vpc vpc, String connectionUuid) {
+            public String getVpnConnectionStatus(Vpc vpc, long connectionId) {
                 return "UP";
             }
 
@@ -246,7 +253,7 @@ public class NsxServiceImplTest {
 
         NsxServiceImpl service = new NsxServiceImpl() {
             @Override
-            public String getVpnConnectionStatus(Vpc vpc, String connectionUuid) {
+            public String getVpnConnectionStatus(Vpc vpc, long connectionId) {
                 return VPN_SESSION_STATUS_DOWN;
             }
 
@@ -272,7 +279,7 @@ public class NsxServiceImplTest {
 
         NsxServiceImpl service = new NsxServiceImpl() {
             @Override
-            public String getVpnConnectionStatus(Vpc vpc, String connectionUuid) {
+            public String getVpnConnectionStatus(Vpc vpc, long connectionId) {
                 return VPN_SESSION_STATUS_NOT_FOUND;
             }
 
@@ -298,7 +305,7 @@ public class NsxServiceImplTest {
 
         NsxServiceImpl service = new NsxServiceImpl() {
             @Override
-            public String getVpnConnectionStatus(Vpc vpc, String connectionUuid) {
+            public String getVpnConnectionStatus(Vpc vpc, long connectionId) {
                 return VPN_SESSION_STATUS_NOT_FOUND;
             }
 
@@ -324,7 +331,7 @@ public class NsxServiceImplTest {
 
         NsxServiceImpl service = new NsxServiceImpl() {
             @Override
-            public String getVpnConnectionStatus(Vpc vpc, String connectionUuid) {
+            public String getVpnConnectionStatus(Vpc vpc, long connectionId) {
                 throw new CloudRuntimeException("NSX unavailable");
             }
 
@@ -340,6 +347,37 @@ public class NsxServiceImplTest {
 
         // A transient management-plane error must not turn a valid connection into Error.
         assertTrue(!transitioned.get());
+    }
+
+    @Test
+    public void testPollVpnConnectionStatusAlertsAfterThreeConsecutiveQueryFailures() {
+        Site2SiteVpnConnectionVO connection = mock(Site2SiteVpnConnectionVO.class);
+        VpcVO vpc = mock(VpcVO.class);
+        when(connection.getId()).thenReturn(11L);
+        when(connection.getUuid()).thenReturn("vpn-connection-uuid");
+        when(connection.getState()).thenReturn(Site2SiteVpnConnection.State.Connected);
+        when(vpc.getName()).thenReturn("production-vpc");
+        when(vpc.getZoneId()).thenReturn(7L);
+
+        NsxServiceImpl service = new NsxServiceImpl() {
+            @Override
+            public String getVpnConnectionStatus(Vpc vpc, long connectionId) {
+                throw new CloudRuntimeException("NSX unavailable");
+            }
+        };
+        service.alertManager = alertManager;
+
+        service.pollVpnConnectionStatus(connection, vpc);
+        service.pollVpnConnectionStatus(connection, vpc);
+        verify(alertManager, never()).sendAlert(any(), anyLong(), any(), any(), any());
+
+        service.pollVpnConnectionStatus(connection, vpc);
+        verify(alertManager).sendAlert(eq(AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER), eq(7L),
+                eq(null), any(String.class), any(String.class));
+
+        // The counter resets after the alert, so the next failure starts a new sequence.
+        service.pollVpnConnectionStatus(connection, vpc);
+        verify(alertManager, times(1)).sendAlert(any(), anyLong(), any(), any(), any());
     }
 
     @Test
@@ -362,6 +400,13 @@ public class NsxServiceImplTest {
     }
 
     @Test
+    public void testVpnStatusTransitionDefinesDatabaseContextForConnectionLock() throws NoSuchMethodException {
+        assertTrue(NsxServiceImpl.class.getDeclaredMethod("transitionVpnConnectionState",
+                Site2SiteVpnConnectionVO.class, VpcVO.class, Site2SiteVpnConnection.State.class,
+                Site2SiteVpnConnection.State.class).isAnnotationPresent(DB.class));
+    }
+
+    @Test
     public void testVpnStatusPollerSkipsUnmarkedGatewayRegardlessOfCurrentOffering() {
         Site2SiteVpnConnectionVO connection = mockPollableVpnConnection();
         Site2SiteVpnGatewayVO gateway = mockVpnGatewayForPoller(connection);
@@ -369,7 +414,7 @@ public class NsxServiceImplTest {
         when(vpcDao.findById(gateway.getVpcId())).thenReturn(vpc);
         NsxServiceImpl service = Mockito.spy(nsxService);
 
-        service.new VpnStatusPollTask().runInContext();
+        runVpnStatusPollTaskWithLockAcquired(service);
 
         verify(service, never()).pollVpnConnectionStatus(connection, vpc);
     }
@@ -385,14 +430,14 @@ public class NsxServiceImplTest {
         NsxServiceImpl service = Mockito.spy(nsxService);
         doNothing().when(service).pollVpnConnectionStatus(connection, vpc);
 
-        service.new VpnStatusPollTask().runInContext();
+        runVpnStatusPollTaskWithLockAcquired(service);
 
         verify(service).pollVpnConnectionStatus(connection, vpc);
     }
 
     @Test
     public void testVpnStatusPollerQueriesOnlyPollableStates() {
-        nsxService.new VpnStatusPollTask().runInContext();
+        runVpnStatusPollTaskWithLockAcquired(nsxService);
 
         verify(site2SiteVpnConnectionDao).listByStates(
                 Site2SiteVpnConnection.State.Pending,
@@ -400,6 +445,21 @@ public class NsxServiceImplTest {
                 Site2SiteVpnConnection.State.Connected,
                 Site2SiteVpnConnection.State.Disconnected);
         verify(site2SiteVpnConnectionDao, never()).listAll();
+    }
+
+    @Test
+    public void testVpnStatusPollerSkipsScanWhenAnotherManagementServerOwnsGlobalLock() {
+        GlobalLock scanLock = mock(GlobalLock.class);
+        try (MockedStatic<GlobalLock> globalLocks = Mockito.mockStatic(GlobalLock.class)) {
+            globalLocks.when(() -> GlobalLock.getInternLock(NsxServiceImpl.VPN_STATUS_POLL_LOCK_NAME)).thenReturn(scanLock);
+            when(scanLock.lock(NsxServiceImpl.VPN_STATUS_POLL_LOCK_TIMEOUT)).thenReturn(false);
+
+            nsxService.new VpnStatusPollTask().runInContext();
+
+            verify(site2SiteVpnConnectionDao, never()).listByStates(any(Site2SiteVpnConnection.State[].class));
+            verify(scanLock, never()).unlock();
+            verify(scanLock).releaseRef();
+        }
     }
 
     @Test
@@ -449,5 +509,18 @@ public class NsxServiceImplTest {
         when(gateway.getAddrId()).thenReturn(30L);
         when(site2SiteVpnGatewayDao.findById(connection.getVpnGatewayId())).thenReturn(gateway);
         return gateway;
+    }
+
+    private void runVpnStatusPollTaskWithLockAcquired(NsxServiceImpl service) {
+        GlobalLock scanLock = mock(GlobalLock.class);
+        try (MockedStatic<GlobalLock> globalLocks = Mockito.mockStatic(GlobalLock.class)) {
+            globalLocks.when(() -> GlobalLock.getInternLock(NsxServiceImpl.VPN_STATUS_POLL_LOCK_NAME)).thenReturn(scanLock);
+            when(scanLock.lock(NsxServiceImpl.VPN_STATUS_POLL_LOCK_TIMEOUT)).thenReturn(true);
+
+            service.new VpnStatusPollTask().runInContext();
+
+            verify(scanLock).unlock();
+            verify(scanLock).releaseRef();
+        }
     }
 }

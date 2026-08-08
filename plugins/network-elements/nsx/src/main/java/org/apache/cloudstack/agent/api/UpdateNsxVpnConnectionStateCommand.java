@@ -22,16 +22,16 @@ public class UpdateNsxVpnConnectionStateCommand extends NsxCommand {
 
     private Long vpcId;
     private String vpcName;
-    private String connectionUuid;
+    private long connectionId;
     private boolean enabled;
 
     public UpdateNsxVpnConnectionStateCommand(long domainId, long accountId, long zoneId,
-                                              Long vpcId, String vpcName, String connectionUuid,
+                                              Long vpcId, String vpcName, long connectionId,
                                               boolean enabled) {
         super(domainId, accountId, zoneId);
         this.vpcId = vpcId;
         this.vpcName = vpcName;
-        this.connectionUuid = connectionUuid;
+        this.connectionId = connectionId;
         this.enabled = enabled;
     }
 
@@ -43,8 +43,8 @@ public class UpdateNsxVpnConnectionStateCommand extends NsxCommand {
         return vpcName;
     }
 
-    public String getConnectionUuid() {
-        return connectionUuid;
+    public long getConnectionId() {
+        return connectionId;
     }
 
     public boolean isEnabled() {
@@ -60,13 +60,12 @@ public class UpdateNsxVpnConnectionStateCommand extends NsxCommand {
             return false;
         }
         UpdateNsxVpnConnectionStateCommand that = (UpdateNsxVpnConnectionStateCommand) o;
-        return enabled == that.enabled && Objects.equals(vpcId, that.vpcId)
-                && Objects.equals(vpcName, that.vpcName)
-                && Objects.equals(connectionUuid, that.connectionUuid);
+        return connectionId == that.connectionId && enabled == that.enabled && Objects.equals(vpcId, that.vpcId)
+                && Objects.equals(vpcName, that.vpcName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), vpcId, vpcName, connectionUuid, enabled);
+        return Objects.hash(super.hashCode(), vpcId, vpcName, connectionId, enabled);
     }
 }

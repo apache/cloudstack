@@ -35,13 +35,21 @@ import com.vmware.nsx_policy.infra.tier_1s.IpsecVpnServices;
 import com.vmware.nsx_policy.infra.tier_1s.LocaleServices;
 import com.vmware.nsx_policy.infra.tier_1s.StaticRoutes;
 import com.vmware.nsx_policy.infra.tier_1s.nat.NatRules;
+import com.vmware.nsx_policy.infra.tier_1s.ipsec_vpn_services.LocalEndpoints;
 import com.vmware.nsx_policy.infra.domains.Groups;
 import com.vmware.nsx_policy.infra.tier_1s.ipsec_vpn_services.Sessions;
+import com.vmware.nsx_policy.infra.tier_1s.ipsec_vpn_services.sessions.DetailedStatus;
+import com.vmware.nsx_policy.model.AggregateIPSecVpnSessionStatus;
 import com.vmware.nsx_policy.model.ApiError;
 import com.vmware.nsx_policy.model.Group;
 import com.vmware.nsx_policy.model.IPSecVpnDpdProfile;
 import com.vmware.nsx_policy.model.IPSecVpnIkeProfile;
+import com.vmware.nsx_policy.model.IPSecVpnLocalEndpoint;
+import com.vmware.nsx_policy.model.IPSecVpnLocalEndpointListResult;
 import com.vmware.nsx_policy.model.IPSecVpnSession;
+import com.vmware.nsx_policy.model.IPSecVpnSessionListResult;
+import com.vmware.nsx_policy.model.IPSecVpnSessionStatusNsxt;
+import com.vmware.nsx_policy.model.IPSecVpnService;
 import com.vmware.nsx_policy.model.IPSecVpnServiceListResult;
 import com.vmware.nsx_policy.model.IPSecVpnTunnelInterface;
 import com.vmware.nsx_policy.model.IPSecVpnTunnelProfile;
@@ -77,6 +85,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 
 import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
 
 import static org.junit.Assert.assertThrows;
@@ -97,6 +106,8 @@ import static org.mockito.Mockito.when;
 public class NsxApiClientTest {
 
     private static final String TIER_1_GATEWAY_NAME = "t1";
+    private static final long CONNECTION_ID = 5L;
+    private static final long EXISTING_CONNECTION_ID = 6L;
 
     @Mock
     private Function<Class<? extends Service>, Service> nsxService;
@@ -490,13 +501,13 @@ public class NsxApiClientTest {
         when(staticRoutes.list(eq(TIER_1_GATEWAY_NAME), nullable(String.class), eq(false),
                 nullable(String.class), nullable(Long.class), nullable(Boolean.class), nullable(String.class)))
                 .thenReturn(staticRoutesResult);
-        when(vpnStaticRoute.getId()).thenReturn("cs-conn-connection-uuid-route0");
+        when(vpnStaticRoute.getId()).thenReturn("cs-conn-5-route0");
         when(operatorStaticRoute.getId()).thenReturn("operator-route");
         when(staticRoutesResult.getResults()).thenReturn(List.of(vpnStaticRoute, operatorStaticRoute));
         when(natRules.list(eq(TIER_1_GATEWAY_NAME), anyString(), nullable(String.class), eq(false),
                 nullable(String.class), nullable(Long.class), nullable(Boolean.class), nullable(String.class)))
                 .thenReturn(natRulesResult, remainingNatRulesResult);
-        when(vpnNoSnatRule.getId()).thenReturn("cs-conn-connection-uuid-nosnat0");
+        when(vpnNoSnatRule.getId()).thenReturn("cs-conn-5-nosnat0");
         when(operatorNatRule.getId()).thenReturn("operator-nat-rule");
         when(natRulesResult.getResults()).thenReturn(List.of(vpnNoSnatRule, operatorNatRule));
         when(remainingNatRulesResult.getResults()).thenReturn(List.of(operatorNatRule));
@@ -510,10 +521,10 @@ public class NsxApiClientTest {
         InOrder inOrder = Mockito.inOrder(staticRoutes, natRules, vpnServices, localeServices, tier1s);
         inOrder.verify(staticRoutes).list(eq(TIER_1_GATEWAY_NAME), nullable(String.class), eq(false),
                 nullable(String.class), nullable(Long.class), nullable(Boolean.class), nullable(String.class));
-        inOrder.verify(staticRoutes).delete(TIER_1_GATEWAY_NAME, "cs-conn-connection-uuid-route0");
+        inOrder.verify(staticRoutes).delete(TIER_1_GATEWAY_NAME, "cs-conn-5-route0");
         inOrder.verify(natRules).list(eq(TIER_1_GATEWAY_NAME), anyString(), nullable(String.class), eq(false),
                 nullable(String.class), nullable(Long.class), nullable(Boolean.class), nullable(String.class));
-        inOrder.verify(natRules).delete(TIER_1_GATEWAY_NAME, "USER", "cs-conn-connection-uuid-nosnat0");
+        inOrder.verify(natRules).delete(TIER_1_GATEWAY_NAME, "USER", "cs-conn-5-nosnat0");
         inOrder.verify(natRules).delete(TIER_1_GATEWAY_NAME, "USER", "t1-vpn-le-nosnat");
         inOrder.verify(vpnServices).list(eq(TIER_1_GATEWAY_NAME), nullable(String.class), eq(false),
                 nullable(String.class), nullable(Long.class), eq(false), nullable(String.class));
@@ -523,6 +534,100 @@ public class NsxApiClientTest {
         inOrder.verify(localeServices).delete(TIER_1_GATEWAY_NAME, "default");
         inOrder.verify(tier1s).delete(TIER_1_GATEWAY_NAME);
         verify(staticRoutes, never()).delete(TIER_1_GATEWAY_NAME, "operator-route");
+    }
+
+    @Test
+    public void testDeleteVpnServiceTreatsMissingTier1AsAlreadyDeleted() {
+        Tier1s tier1s = Mockito.mock(Tier1s.class);
+        when(nsxService.apply(Tier1s.class)).thenReturn(tier1s);
+        when(tier1s.get(TIER_1_GATEWAY_NAME)).thenThrow(new NotFound(null, null));
+
+        client.deleteVpnService(TIER_1_GATEWAY_NAME);
+
+        verify(tier1s).get(TIER_1_GATEWAY_NAME);
+        verify(nsxService, never()).apply(StaticRoutes.class);
+        verify(nsxService, never()).apply(NatRules.class);
+        verify(nsxService, never()).apply(IpsecVpnServices.class);
+    }
+
+    @Test
+    public void testDeleteVpnServicePropagatesTier1TransportFailureBeforeCleanup() {
+        Tier1s tier1s = Mockito.mock(Tier1s.class);
+        RuntimeException transportFailure = new RuntimeException("transport failed");
+        when(nsxService.apply(Tier1s.class)).thenReturn(tier1s);
+        when(tier1s.get(TIER_1_GATEWAY_NAME)).thenThrow(transportFailure);
+
+        CloudRuntimeException exception = assertThrows(CloudRuntimeException.class,
+                () -> client.deleteVpnService(TIER_1_GATEWAY_NAME));
+
+        assertTrue(exception.getMessage().contains(TIER_1_GATEWAY_NAME));
+        Assert.assertSame(transportFailure, exception.getCause());
+        verify(nsxService, never()).apply(StaticRoutes.class);
+        verify(nsxService, never()).apply(NatRules.class);
+        verify(nsxService, never()).apply(IpsecVpnServices.class);
+    }
+
+    @Test
+    public void testDeleteVpnServiceContinuesAfterOneSessionIsAlreadyMissing() {
+        Tier1s tier1s = Mockito.mock(Tier1s.class);
+        StaticRoutes staticRoutes = Mockito.mock(StaticRoutes.class);
+        NatRules natRules = Mockito.mock(NatRules.class);
+        IpsecVpnServices vpnServices = Mockito.mock(IpsecVpnServices.class);
+        Sessions sessions = Mockito.mock(Sessions.class);
+        LocalEndpoints localEndpoints = Mockito.mock(LocalEndpoints.class);
+        StaticRoutesListResult staticRoutesResult = Mockito.mock(StaticRoutesListResult.class);
+        PolicyNatRuleListResult natRulesResult = Mockito.mock(PolicyNatRuleListResult.class);
+        IPSecVpnServiceListResult vpnServicesResult = Mockito.mock(IPSecVpnServiceListResult.class);
+        IPSecVpnSessionListResult sessionsResult = Mockito.mock(IPSecVpnSessionListResult.class);
+        IPSecVpnLocalEndpointListResult localEndpointsResult = Mockito.mock(IPSecVpnLocalEndpointListResult.class);
+        IPSecVpnService vpnService = Mockito.mock(IPSecVpnService.class);
+        IPSecVpnSession missingSession = Mockito.mock(IPSecVpnSession.class);
+        IPSecVpnSession remainingSession = Mockito.mock(IPSecVpnSession.class);
+        IPSecVpnLocalEndpoint localEndpoint = Mockito.mock(IPSecVpnLocalEndpoint.class);
+
+        when(nsxService.apply(Tier1s.class)).thenReturn(tier1s);
+        when(nsxService.apply(StaticRoutes.class)).thenReturn(staticRoutes);
+        when(nsxService.apply(NatRules.class)).thenReturn(natRules);
+        when(nsxService.apply(IpsecVpnServices.class)).thenReturn(vpnServices);
+        when(nsxService.apply(Sessions.class)).thenReturn(sessions);
+        when(nsxService.apply(LocalEndpoints.class)).thenReturn(localEndpoints);
+        when(tier1s.get(TIER_1_GATEWAY_NAME)).thenReturn(Mockito.mock(Tier1.class));
+        when(staticRoutes.list(eq(TIER_1_GATEWAY_NAME), nullable(String.class), eq(false),
+                nullable(String.class), nullable(Long.class), nullable(Boolean.class), nullable(String.class)))
+                .thenReturn(staticRoutesResult);
+        when(staticRoutesResult.getResults()).thenReturn(List.of());
+        when(natRules.list(eq(TIER_1_GATEWAY_NAME), anyString(), nullable(String.class), eq(false),
+                nullable(String.class), nullable(Long.class), nullable(Boolean.class), nullable(String.class)))
+                .thenReturn(natRulesResult);
+        when(natRulesResult.getResults()).thenReturn(List.of());
+        when(natRules.get(TIER_1_GATEWAY_NAME, "USER", "t1-NAT"))
+                .thenThrow(new NotFound(null, null));
+        when(vpnServices.list(eq(TIER_1_GATEWAY_NAME), nullable(String.class), eq(false),
+                nullable(String.class), nullable(Long.class), eq(false), nullable(String.class)))
+                .thenReturn(vpnServicesResult);
+        when(vpnService.getId()).thenReturn("t1-vpn");
+        when(vpnServicesResult.getResults()).thenReturn(List.of(vpnService));
+        when(sessions.list(eq(TIER_1_GATEWAY_NAME), eq("t1-vpn"), nullable(String.class), eq(false),
+                nullable(String.class), nullable(Long.class), eq(false), nullable(String.class)))
+                .thenReturn(sessionsResult);
+        when(missingSession.getId()).thenReturn("operator-missing-session");
+        when(remainingSession.getId()).thenReturn("operator-remaining-session");
+        when(missingSession._convertTo(IPSecVpnSession.class)).thenReturn(missingSession);
+        when(remainingSession._convertTo(IPSecVpnSession.class)).thenReturn(remainingSession);
+        when(sessionsResult.getResults()).thenReturn(List.of(missingSession, remainingSession));
+        doThrow(new NotFound(null, null)).when(sessions)
+                .delete(TIER_1_GATEWAY_NAME, "t1-vpn", "operator-missing-session");
+        when(localEndpoints.list(eq(TIER_1_GATEWAY_NAME), eq("t1-vpn"), nullable(String.class), eq(false),
+                nullable(String.class), nullable(Long.class), eq(false), nullable(String.class)))
+                .thenReturn(localEndpointsResult);
+        when(localEndpoint.getId()).thenReturn("t1-vpn-local-endpoint");
+        when(localEndpointsResult.getResults()).thenReturn(List.of(localEndpoint));
+
+        client.deleteVpnService(TIER_1_GATEWAY_NAME);
+
+        verify(sessions).delete(TIER_1_GATEWAY_NAME, "t1-vpn", "operator-remaining-session");
+        verify(localEndpoints).delete(TIER_1_GATEWAY_NAME, "t1-vpn", "t1-vpn-local-endpoint");
+        verify(vpnServices).delete(TIER_1_GATEWAY_NAME, "t1-vpn");
     }
 
     @Test
@@ -543,14 +648,14 @@ public class NsxApiClientTest {
         doThrow(new Error(List.of(), errorData)).when(sessions).patch(anyString(), anyString(), anyString(), any(RouteBasedIPSecVpnSession.class));
 
         assertThrows(CloudRuntimeException.class, () -> client.createRouteBasedVpnSession(
-                TIER_1_GATEWAY_NAME, "connection-uuid", "203.0.113.10", "psk",
+                TIER_1_GATEWAY_NAME, CONNECTION_ID, "203.0.113.10", "psk",
                 "aes256-sha256;modp2048", "aes256-sha256;modp2048", 86400L, 3600L,
                 true, "ikev2", false, "169.254.64.21", 30));
 
-        verify(sessions).delete(eq(TIER_1_GATEWAY_NAME), eq("t1-vpn"), eq("cs-conn-connection-uuid"));
-        verify(ikeProfiles).delete("cs-conn-connection-uuid-ike");
-        verify(tunnelProfiles).delete("cs-conn-connection-uuid-esp");
-        verify(dpdProfiles).delete("cs-conn-connection-uuid-dpd");
+        verify(sessions).delete(eq(TIER_1_GATEWAY_NAME), eq("t1-vpn"), eq("cs-conn-5"));
+        verify(ikeProfiles).delete("cs-conn-5-ike");
+        verify(tunnelProfiles).delete("cs-conn-5-esp");
+        verify(dpdProfiles).delete("cs-conn-5-dpd");
     }
 
     @Test
@@ -570,16 +675,16 @@ public class NsxApiClientTest {
         Mockito.when(nsxService.apply(IpsecVpnTunnelProfiles.class)).thenReturn(tunnelProfiles);
         Mockito.when(nsxService.apply(IpsecVpnDpdProfiles.class)).thenReturn(dpdProfiles);
         Mockito.when(nsxService.apply(Sessions.class)).thenReturn(sessions);
-        Mockito.when(sessions.get(TIER_1_GATEWAY_NAME, "t1-vpn", "cs-conn-connection-uuid"))
+        Mockito.when(sessions.get(TIER_1_GATEWAY_NAME, "t1-vpn", "cs-conn-5"))
                 .thenReturn(existingSession);
-        Mockito.when(sessions.showsensitivedata(TIER_1_GATEWAY_NAME, "t1-vpn", "cs-conn-connection-uuid"))
+        Mockito.when(sessions.showsensitivedata(TIER_1_GATEWAY_NAME, "t1-vpn", "cs-conn-5"))
                 .thenReturn(existingSession);
         mockEmptyVpnConnectionRouteLists(staticRoutes, natRules);
         Mockito.when(errorData._convertTo(ApiError.class)).thenReturn(apiError);
         doThrow(new Error(List.of(), errorData)).when(sessions).patch(anyString(), anyString(), anyString(), any(RouteBasedIPSecVpnSession.class));
 
         assertThrows(CloudRuntimeException.class, () -> client.createRouteBasedVpnSession(
-                TIER_1_GATEWAY_NAME, "connection-uuid", "203.0.113.10", "psk",
+                TIER_1_GATEWAY_NAME, CONNECTION_ID, "203.0.113.10", "psk",
                 "aes256-sha256;modp2048", "aes256-sha256;modp2048", 86400L, 3600L,
                 true, "ikev2", false, "169.254.64.21", 30));
 
@@ -590,8 +695,8 @@ public class NsxApiClientTest {
         ArgumentCaptor<Structure> updateCaptor = ArgumentCaptor.forClass(Structure.class);
         InOrder inOrder = Mockito.inOrder(sessions, ikeProfiles);
         inOrder.verify(sessions).update(eq(TIER_1_GATEWAY_NAME), eq("t1-vpn"),
-                eq("cs-conn-connection-uuid"), updateCaptor.capture());
-        inOrder.verify(ikeProfiles).patch(eq("cs-conn-connection-uuid-ike"), any(IPSecVpnIkeProfile.class));
+                eq("cs-conn-5"), updateCaptor.capture());
+        inOrder.verify(ikeProfiles).patch(eq("cs-conn-5-ike"), any(IPSecVpnIkeProfile.class));
         RouteBasedIPSecVpnSession update = updateCaptor.getValue()._convertTo(RouteBasedIPSecVpnSession.class);
         assertFalse(update.getEnabled());
     }
@@ -615,14 +720,14 @@ public class NsxApiClientTest {
                 .patch(anyString(), any(IPSecVpnTunnelProfile.class));
 
         assertThrows(CloudRuntimeException.class, () -> client.createRouteBasedVpnSession(
-                TIER_1_GATEWAY_NAME, "connection-uuid", "203.0.113.10", "psk",
+                TIER_1_GATEWAY_NAME, CONNECTION_ID, "203.0.113.10", "psk",
                 "aes256-sha256;modp2048", "aes256-sha256;modp2048", 86400L, 3600L,
                 true, "ikev2", false, "169.254.64.21", 30));
 
-        verify(sessions).delete(TIER_1_GATEWAY_NAME, "t1-vpn", "cs-conn-connection-uuid");
-        verify(ikeProfiles).delete("cs-conn-connection-uuid-ike");
-        verify(tunnelProfiles).delete("cs-conn-connection-uuid-esp");
-        verify(dpdProfiles).delete("cs-conn-connection-uuid-dpd");
+        verify(sessions).delete(TIER_1_GATEWAY_NAME, "t1-vpn", "cs-conn-5");
+        verify(ikeProfiles).delete("cs-conn-5-ike");
+        verify(tunnelProfiles).delete("cs-conn-5-esp");
+        verify(dpdProfiles).delete("cs-conn-5-dpd");
     }
 
     @Test
@@ -639,15 +744,15 @@ public class NsxApiClientTest {
         Mockito.when(nsxService.apply(IpsecVpnTunnelProfiles.class)).thenReturn(tunnelProfiles);
         Mockito.when(nsxService.apply(IpsecVpnDpdProfiles.class)).thenReturn(dpdProfiles);
         Mockito.when(nsxService.apply(Sessions.class)).thenReturn(sessions);
-        Mockito.when(ikeProfiles.get("cs-conn-connection-uuid-ike")).thenReturn(Mockito.mock(IPSecVpnIkeProfile.class));
-        Mockito.when(tunnelProfiles.get("cs-conn-connection-uuid-esp")).thenReturn(Mockito.mock(IPSecVpnTunnelProfile.class));
-        Mockito.when(dpdProfiles.get("cs-conn-connection-uuid-dpd")).thenReturn(Mockito.mock(IPSecVpnDpdProfile.class));
+        Mockito.when(ikeProfiles.get("cs-conn-5-ike")).thenReturn(Mockito.mock(IPSecVpnIkeProfile.class));
+        Mockito.when(tunnelProfiles.get("cs-conn-5-esp")).thenReturn(Mockito.mock(IPSecVpnTunnelProfile.class));
+        Mockito.when(dpdProfiles.get("cs-conn-5-dpd")).thenReturn(Mockito.mock(IPSecVpnDpdProfile.class));
         Mockito.when(errorData._convertTo(ApiError.class)).thenReturn(apiError);
         doThrow(new Error(List.of(), errorData)).when(sessions)
                 .patch(anyString(), anyString(), anyString(), any(RouteBasedIPSecVpnSession.class));
 
         assertThrows(CloudRuntimeException.class, () -> client.createRouteBasedVpnSession(
-                TIER_1_GATEWAY_NAME, "connection-uuid", "203.0.113.10", "psk",
+                TIER_1_GATEWAY_NAME, CONNECTION_ID, "203.0.113.10", "psk",
                 "aes256-sha256;modp2048", "aes256-sha256;modp2048", 86400L, 3600L,
                 true, "ikev2", false, "169.254.64.21", 30));
 
@@ -668,21 +773,21 @@ public class NsxApiClientTest {
         Mockito.when(nsxService.apply(Sessions.class)).thenReturn(sessions);
 
         assertEquals(NsxApiClient.VpnSessionProvisioningResult.CREATED, client.createRouteBasedVpnSession(
-                TIER_1_GATEWAY_NAME, "new-connection", "203.0.113.10", "psk",
+                TIER_1_GATEWAY_NAME, CONNECTION_ID, "203.0.113.10", "psk",
                 "aes256-sha256;modp2048", "aes256-sha256;modp2048", 86400L, 3600L,
                 true, "ikev2", false, "169.254.64.21", 30));
 
-        Mockito.when(sessions.get(TIER_1_GATEWAY_NAME, "t1-vpn", "cs-conn-existing-connection"))
+        Mockito.when(sessions.get(TIER_1_GATEWAY_NAME, "t1-vpn", "cs-conn-6"))
                 .thenReturn(Mockito.mock(Structure.class));
         RouteBasedIPSecVpnSession existingSession = createCompleteVpnSession("secret-psk");
-        existingSession.setId("cs-conn-existing-connection");
-        Mockito.when(sessions.showsensitivedata(TIER_1_GATEWAY_NAME, "t1-vpn", "cs-conn-existing-connection"))
+        existingSession.setId("cs-conn-6");
+        Mockito.when(sessions.showsensitivedata(TIER_1_GATEWAY_NAME, "t1-vpn", "cs-conn-6"))
                 .thenReturn(existingSession);
         StaticRoutes staticRoutes = Mockito.mock(StaticRoutes.class);
         NatRules natRules = Mockito.mock(NatRules.class);
         mockEmptyVpnConnectionRouteLists(staticRoutes, natRules);
         assertEquals(NsxApiClient.VpnSessionProvisioningResult.PREEXISTING, client.createRouteBasedVpnSession(
-                TIER_1_GATEWAY_NAME, "existing-connection", "203.0.113.10", "psk",
+                TIER_1_GATEWAY_NAME, EXISTING_CONNECTION_ID, "203.0.113.10", "psk",
                 "aes256-sha256;modp2048", "aes256-sha256;modp2048", 86400L, 3600L,
                 true, "ikev2", false, "169.254.64.25", 30));
 
@@ -704,17 +809,17 @@ public class NsxApiClientTest {
         NatRules natRules = Mockito.mock(NatRules.class);
         RouteBasedIPSecVpnSession session = createCompleteVpnSession("secret-psk");
         Mockito.when(nsxService.apply(Sessions.class)).thenReturn(sessions);
-        Mockito.when(sessions.showsensitivedata(TIER_1_GATEWAY_NAME, "t1-vpn", "cs-conn-connection-uuid"))
+        Mockito.when(sessions.showsensitivedata(TIER_1_GATEWAY_NAME, "t1-vpn", "cs-conn-5"))
                 .thenReturn(session);
         mockEmptyVpnConnectionRouteLists(staticRoutes, natRules);
 
-        client.updateVpnConnectionState(TIER_1_GATEWAY_NAME, "connection-uuid", false);
+        client.updateVpnConnectionState(TIER_1_GATEWAY_NAME, CONNECTION_ID, false);
 
         ArgumentCaptor<Structure> updateCaptor = ArgumentCaptor.forClass(Structure.class);
         InOrder inOrder = Mockito.inOrder(sessions, staticRoutes, natRules);
-        inOrder.verify(sessions).showsensitivedata(TIER_1_GATEWAY_NAME, "t1-vpn", "cs-conn-connection-uuid");
+        inOrder.verify(sessions).showsensitivedata(TIER_1_GATEWAY_NAME, "t1-vpn", "cs-conn-5");
         inOrder.verify(sessions).update(eq(TIER_1_GATEWAY_NAME), eq("t1-vpn"),
-                eq("cs-conn-connection-uuid"), updateCaptor.capture());
+                eq("cs-conn-5"), updateCaptor.capture());
         inOrder.verify(staticRoutes).list(eq(TIER_1_GATEWAY_NAME), nullable(String.class), eq(false),
                 nullable(String.class), nullable(Long.class), nullable(Boolean.class), nullable(String.class));
         inOrder.verify(natRules).list(eq(TIER_1_GATEWAY_NAME), anyString(), nullable(String.class), eq(false),
@@ -739,14 +844,14 @@ public class NsxApiClientTest {
         ApiError apiError = new ApiError();
         apiError.setErrorMessage("update failed");
         Mockito.when(nsxService.apply(Sessions.class)).thenReturn(sessions);
-        Mockito.when(sessions.showsensitivedata(TIER_1_GATEWAY_NAME, "t1-vpn", "cs-conn-connection-uuid"))
+        Mockito.when(sessions.showsensitivedata(TIER_1_GATEWAY_NAME, "t1-vpn", "cs-conn-5"))
                 .thenReturn(createCompleteVpnSession("secret-psk"));
         Mockito.when(errorData._convertTo(ApiError.class)).thenReturn(apiError);
         doThrow(new Error(List.of(), errorData)).when(sessions)
                 .update(anyString(), anyString(), anyString(), any(Structure.class));
 
         CloudRuntimeException exception = assertThrows(CloudRuntimeException.class,
-                () -> client.updateVpnConnectionState(TIER_1_GATEWAY_NAME, "connection-uuid", false));
+                () -> client.updateVpnConnectionState(TIER_1_GATEWAY_NAME, CONNECTION_ID, false));
 
         assertFalse(exception.getMessage().contains("secret-psk"));
         verify(nsxService, never()).apply(StaticRoutes.class);
@@ -757,11 +862,11 @@ public class NsxApiClientTest {
     public void testUpdateVpnConnectionStateRejectsMissingSensitivePsk() {
         Sessions sessions = Mockito.mock(Sessions.class);
         Mockito.when(nsxService.apply(Sessions.class)).thenReturn(sessions);
-        Mockito.when(sessions.showsensitivedata(TIER_1_GATEWAY_NAME, "t1-vpn", "cs-conn-connection-uuid"))
+        Mockito.when(sessions.showsensitivedata(TIER_1_GATEWAY_NAME, "t1-vpn", "cs-conn-5"))
                 .thenReturn(createCompleteVpnSession(null));
 
         CloudRuntimeException exception = assertThrows(CloudRuntimeException.class,
-                () -> client.updateVpnConnectionState(TIER_1_GATEWAY_NAME, "connection-uuid", false));
+                () -> client.updateVpnConnectionState(TIER_1_GATEWAY_NAME, CONNECTION_ID, false));
 
         assertTrue(exception.getMessage().contains("did not return sensitive authentication data"));
         verify(sessions, never()).update(anyString(), anyString(), anyString(), any(Structure.class));
@@ -774,11 +879,11 @@ public class NsxApiClientTest {
         Sessions sessions = Mockito.mock(Sessions.class);
         Structure session = Mockito.mock(Structure.class);
         Mockito.when(nsxService.apply(Sessions.class)).thenReturn(sessions);
-        Mockito.when(sessions.showsensitivedata(TIER_1_GATEWAY_NAME, "t1-vpn", "cs-conn-connection-uuid"))
+        Mockito.when(sessions.showsensitivedata(TIER_1_GATEWAY_NAME, "t1-vpn", "cs-conn-5"))
                 .thenReturn(session);
 
         CloudRuntimeException exception = assertThrows(CloudRuntimeException.class,
-                () -> client.updateVpnConnectionState(TIER_1_GATEWAY_NAME, "connection-uuid", false));
+                () -> client.updateVpnConnectionState(TIER_1_GATEWAY_NAME, CONNECTION_ID, false));
 
         assertTrue(exception.getMessage().contains("is not route-based"));
         verify(sessions, never()).update(anyString(), anyString(), anyString(), any(Structure.class));
@@ -792,11 +897,11 @@ public class NsxApiClientTest {
         RouteBasedIPSecVpnSession session = createCompleteVpnSession("secret-psk");
         session.setRevision(null);
         Mockito.when(nsxService.apply(Sessions.class)).thenReturn(sessions);
-        Mockito.when(sessions.showsensitivedata(TIER_1_GATEWAY_NAME, "t1-vpn", "cs-conn-connection-uuid"))
+        Mockito.when(sessions.showsensitivedata(TIER_1_GATEWAY_NAME, "t1-vpn", "cs-conn-5"))
                 .thenReturn(session);
 
         CloudRuntimeException exception = assertThrows(CloudRuntimeException.class,
-                () -> client.updateVpnConnectionState(TIER_1_GATEWAY_NAME, "connection-uuid", false));
+                () -> client.updateVpnConnectionState(TIER_1_GATEWAY_NAME, CONNECTION_ID, false));
 
         assertTrue(exception.getMessage().contains("returned no revision"));
         verify(sessions, never()).update(anyString(), anyString(), anyString(), any(Structure.class));
@@ -805,16 +910,64 @@ public class NsxApiClientTest {
     }
 
     @Test
+    public void testGetRouteBasedVpnSessionLocalVtiIpsParsesLiveSessionResultsAndExcludesCurrentConnection() {
+        Sessions sessions = Mockito.mock(Sessions.class);
+        IPSecVpnSessionListResult listResult = new IPSecVpnSessionListResult();
+        RouteBasedIPSecVpnSession currentSession = createCompleteVpnSession("current-psk");
+        RouteBasedIPSecVpnSession otherSession = createCompleteVpnSession("other-psk");
+        otherSession.setId("cs-conn-6");
+        otherSession.setDisplayName("cs-conn-6");
+        otherSession.getTunnelInterfaces().get(0).getIpSubnets().get(0)
+                .setIpAddresses(List.of("169.254.64.25"));
+        Structure nonRouteBasedSession = Mockito.mock(Structure.class);
+        listResult.setResults(List.of(currentSession, otherSession, nonRouteBasedSession));
+        listResult.setResultCount(3L);
+        Mockito.when(nsxService.apply(Sessions.class)).thenReturn(sessions);
+        Mockito.when(sessions.list(eq(TIER_1_GATEWAY_NAME), eq("t1-vpn"), nullable(String.class), eq(false),
+                nullable(String.class), nullable(Long.class), eq(false), nullable(String.class)))
+                .thenReturn(listResult);
+
+        Set<String> vtiIps = client.getRouteBasedVpnSessionLocalVtiIps(TIER_1_GATEWAY_NAME, CONNECTION_ID);
+
+        assertEquals(Set.of("169.254.64.25"), vtiIps);
+        verify(sessions).list(eq(TIER_1_GATEWAY_NAME), eq("t1-vpn"), nullable(String.class), eq(false),
+                nullable(String.class), nullable(Long.class), eq(false), nullable(String.class));
+        verify(nonRouteBasedSession)._hasTypeNameOf(RouteBasedIPSecVpnSession.class);
+        verify(nonRouteBasedSession, never())._convertTo(RouteBasedIPSecVpnSession.class);
+    }
+
+    @Test
+    public void testGetVpnSessionStatusReportsDegradedRegardlessOfResultOrder() {
+        DetailedStatus detailedStatus = Mockito.mock(DetailedStatus.class);
+        AggregateIPSecVpnSessionStatus aggregateStatus = new AggregateIPSecVpnSessionStatus();
+        IPSecVpnSessionStatusNsxt up = new IPSecVpnSessionStatusNsxt();
+        up.setRuntimeStatus(IPSecVpnSessionStatusNsxt.RUNTIME_STATUS_UP);
+        IPSecVpnSessionStatusNsxt degraded = new IPSecVpnSessionStatusNsxt();
+        degraded.setRuntimeStatus(IPSecVpnSessionStatusNsxt.RUNTIME_STATUS_DEGRADED);
+        aggregateStatus.setResults(List.of(up, degraded));
+        Mockito.when(nsxService.apply(DetailedStatus.class)).thenReturn(detailedStatus);
+        Mockito.when(detailedStatus.get(TIER_1_GATEWAY_NAME, "t1-vpn", "cs-conn-5", null, null))
+                .thenReturn(aggregateStatus);
+
+        assertEquals(IPSecVpnSessionStatusNsxt.RUNTIME_STATUS_DEGRADED,
+                client.getVpnSessionStatus(TIER_1_GATEWAY_NAME, CONNECTION_ID));
+
+        aggregateStatus.setResults(List.of(degraded, up));
+        assertEquals(IPSecVpnSessionStatusNsxt.RUNTIME_STATUS_DEGRADED,
+                client.getVpnSessionStatus(TIER_1_GATEWAY_NAME, CONNECTION_ID));
+    }
+
+    @Test
     public void testDisableMissingVpnSessionStillCleansStaleRoutesAndNat() {
         Sessions sessions = Mockito.mock(Sessions.class);
         StaticRoutes staticRoutes = Mockito.mock(StaticRoutes.class);
         NatRules natRules = Mockito.mock(NatRules.class);
         Mockito.when(nsxService.apply(Sessions.class)).thenReturn(sessions);
-        Mockito.when(sessions.showsensitivedata(TIER_1_GATEWAY_NAME, "t1-vpn", "cs-conn-connection-uuid"))
+        Mockito.when(sessions.showsensitivedata(TIER_1_GATEWAY_NAME, "t1-vpn", "cs-conn-5"))
                 .thenThrow(new NotFound(null, null));
         mockEmptyVpnConnectionRouteLists(staticRoutes, natRules);
 
-        client.updateVpnConnectionState(TIER_1_GATEWAY_NAME, "connection-uuid", false);
+        client.updateVpnConnectionState(TIER_1_GATEWAY_NAME, CONNECTION_ID, false);
 
         verify(sessions, never()).update(anyString(), anyString(), anyString(), any(Structure.class));
         verify(staticRoutes).list(eq(TIER_1_GATEWAY_NAME), nullable(String.class), eq(false),
@@ -827,11 +980,11 @@ public class NsxApiClientTest {
     public void testEnableMissingVpnSessionFailsWithoutRouteCleanup() {
         Sessions sessions = Mockito.mock(Sessions.class);
         Mockito.when(nsxService.apply(Sessions.class)).thenReturn(sessions);
-        Mockito.when(sessions.showsensitivedata(TIER_1_GATEWAY_NAME, "t1-vpn", "cs-conn-connection-uuid"))
+        Mockito.when(sessions.showsensitivedata(TIER_1_GATEWAY_NAME, "t1-vpn", "cs-conn-5"))
                 .thenThrow(new NotFound(null, null));
 
         CloudRuntimeException exception = assertThrows(CloudRuntimeException.class,
-                () -> client.updateVpnConnectionState(TIER_1_GATEWAY_NAME, "connection-uuid", true));
+                () -> client.updateVpnConnectionState(TIER_1_GATEWAY_NAME, CONNECTION_ID, true));
 
         assertTrue(exception.getMessage().contains("because it does not exist"));
         verify(sessions, never()).update(anyString(), anyString(), anyString(), any(Structure.class));
@@ -850,12 +1003,12 @@ public class NsxApiClientTest {
         com.vmware.nsx_policy.model.StaticRoutes secondRoute = Mockito.mock(com.vmware.nsx_policy.model.StaticRoutes.class);
         PolicyNatRule firstRule = Mockito.mock(PolicyNatRule.class);
         PolicyNatRule secondRule = Mockito.mock(PolicyNatRule.class);
-        Mockito.when(firstRoute.getId()).thenReturn("cs-conn-connection-uuid-route0");
-        Mockito.when(secondRoute.getId()).thenReturn("cs-conn-connection-uuid-route1");
-        Mockito.when(firstRule.getId()).thenReturn("cs-conn-connection-uuid-nosnat0");
-        Mockito.when(secondRule.getId()).thenReturn("cs-conn-connection-uuid-nosnat1");
+        Mockito.when(firstRoute.getId()).thenReturn("cs-conn-5-route0");
+        Mockito.when(secondRoute.getId()).thenReturn("cs-conn-5-route1");
+        Mockito.when(firstRule.getId()).thenReturn("cs-conn-5-nosnat0");
+        Mockito.when(secondRule.getId()).thenReturn("cs-conn-5-nosnat1");
         Mockito.when(nsxService.apply(Sessions.class)).thenReturn(sessions);
-        Mockito.when(sessions.showsensitivedata(TIER_1_GATEWAY_NAME, "t1-vpn", "cs-conn-connection-uuid"))
+        Mockito.when(sessions.showsensitivedata(TIER_1_GATEWAY_NAME, "t1-vpn", "cs-conn-5"))
                 .thenThrow(new NotFound(null, null));
         Mockito.when(nsxService.apply(StaticRoutes.class)).thenReturn(staticRoutes);
         Mockito.when(staticRoutes.list(eq(TIER_1_GATEWAY_NAME), nullable(String.class), eq(false),
@@ -868,16 +1021,16 @@ public class NsxApiClientTest {
                 .thenReturn(ruleList);
         Mockito.when(ruleList.getResults()).thenReturn(List.of(firstRule, secondRule));
         doThrow(new NotFound(null, null)).when(staticRoutes)
-                .delete(TIER_1_GATEWAY_NAME, "cs-conn-connection-uuid-route0");
+                .delete(TIER_1_GATEWAY_NAME, "cs-conn-5-route0");
         doThrow(new NotFound(null, null)).when(natRules)
-                .delete(TIER_1_GATEWAY_NAME, "USER", "cs-conn-connection-uuid-nosnat0");
+                .delete(TIER_1_GATEWAY_NAME, "USER", "cs-conn-5-nosnat0");
 
-        client.updateVpnConnectionState(TIER_1_GATEWAY_NAME, "connection-uuid", false);
+        client.updateVpnConnectionState(TIER_1_GATEWAY_NAME, CONNECTION_ID, false);
 
-        verify(staticRoutes).delete(TIER_1_GATEWAY_NAME, "cs-conn-connection-uuid-route0");
-        verify(staticRoutes).delete(TIER_1_GATEWAY_NAME, "cs-conn-connection-uuid-route1");
-        verify(natRules).delete(TIER_1_GATEWAY_NAME, "USER", "cs-conn-connection-uuid-nosnat0");
-        verify(natRules).delete(TIER_1_GATEWAY_NAME, "USER", "cs-conn-connection-uuid-nosnat1");
+        verify(staticRoutes).delete(TIER_1_GATEWAY_NAME, "cs-conn-5-route0");
+        verify(staticRoutes).delete(TIER_1_GATEWAY_NAME, "cs-conn-5-route1");
+        verify(natRules).delete(TIER_1_GATEWAY_NAME, "USER", "cs-conn-5-nosnat0");
+        verify(natRules).delete(TIER_1_GATEWAY_NAME, "USER", "cs-conn-5-nosnat1");
     }
 
     @Test
@@ -890,10 +1043,10 @@ public class NsxApiClientTest {
         com.vmware.nsx_policy.model.StaticRoutes staleRoute = Mockito.mock(com.vmware.nsx_policy.model.StaticRoutes.class);
         PolicyNatRule desiredRule = Mockito.mock(PolicyNatRule.class);
         PolicyNatRule staleRule = Mockito.mock(PolicyNatRule.class);
-        Mockito.when(desiredRoute.getId()).thenReturn("cs-conn-connection-uuid-route0");
-        Mockito.when(staleRoute.getId()).thenReturn("cs-conn-connection-uuid-route1");
-        Mockito.when(desiredRule.getId()).thenReturn("cs-conn-connection-uuid-nosnat0");
-        Mockito.when(staleRule.getId()).thenReturn("cs-conn-connection-uuid-nosnat1");
+        Mockito.when(desiredRoute.getId()).thenReturn("cs-conn-5-route0");
+        Mockito.when(staleRoute.getId()).thenReturn("cs-conn-5-route1");
+        Mockito.when(desiredRule.getId()).thenReturn("cs-conn-5-nosnat0");
+        Mockito.when(staleRule.getId()).thenReturn("cs-conn-5-nosnat1");
         Mockito.when(nsxService.apply(StaticRoutes.class)).thenReturn(staticRoutes);
         Mockito.when(nsxService.apply(NatRules.class)).thenReturn(natRules);
         Mockito.when(staticRoutes.list(eq(TIER_1_GATEWAY_NAME), nullable(String.class), eq(false),
@@ -905,18 +1058,18 @@ public class NsxApiClientTest {
                 .thenReturn(ruleList);
         Mockito.when(ruleList.getResults()).thenReturn(List.of(desiredRule, staleRule));
 
-        client.addVpnConnectionRoutes(TIER_1_GATEWAY_NAME, "connection-uuid",
+        client.addVpnConnectionRoutes(TIER_1_GATEWAY_NAME, CONNECTION_ID,
                 List.of("192.168.100.0/24"), "169.254.64.22", "10.1.0.0/16");
 
         InOrder inOrder = Mockito.inOrder(staticRoutes, natRules);
-        inOrder.verify(staticRoutes).patch(eq(TIER_1_GATEWAY_NAME), eq("cs-conn-connection-uuid-route0"),
+        inOrder.verify(staticRoutes).patch(eq(TIER_1_GATEWAY_NAME), eq("cs-conn-5-route0"),
                 any(com.vmware.nsx_policy.model.StaticRoutes.class));
         inOrder.verify(natRules).patch(eq(TIER_1_GATEWAY_NAME), anyString(),
-                eq("cs-conn-connection-uuid-nosnat0"), any(PolicyNatRule.class));
-        inOrder.verify(staticRoutes).delete(TIER_1_GATEWAY_NAME, "cs-conn-connection-uuid-route1");
-        inOrder.verify(natRules).delete(TIER_1_GATEWAY_NAME, "USER", "cs-conn-connection-uuid-nosnat1");
-        verify(staticRoutes, never()).delete(TIER_1_GATEWAY_NAME, "cs-conn-connection-uuid-route0");
-        verify(natRules, never()).delete(TIER_1_GATEWAY_NAME, "USER", "cs-conn-connection-uuid-nosnat0");
+                eq("cs-conn-5-nosnat0"), any(PolicyNatRule.class));
+        inOrder.verify(staticRoutes).delete(TIER_1_GATEWAY_NAME, "cs-conn-5-route1");
+        inOrder.verify(natRules).delete(TIER_1_GATEWAY_NAME, "USER", "cs-conn-5-nosnat1");
+        verify(staticRoutes, never()).delete(TIER_1_GATEWAY_NAME, "cs-conn-5-route0");
+        verify(natRules, never()).delete(TIER_1_GATEWAY_NAME, "USER", "cs-conn-5-nosnat0");
     }
 
     @Test
@@ -929,7 +1082,7 @@ public class NsxApiClientTest {
                 .patch(anyString(), anyString(), any(com.vmware.nsx_policy.model.StaticRoutes.class));
 
         assertThrows(CloudRuntimeException.class, () -> client.addVpnConnectionRoutes(TIER_1_GATEWAY_NAME,
-                "connection-uuid", List.of("192.168.100.0/24"), "169.254.64.22", "10.1.0.0/16"));
+                CONNECTION_ID, List.of("192.168.100.0/24"), "169.254.64.22", "10.1.0.0/16"));
 
         verify(staticRoutes, never()).list(anyString(), any(), anyBoolean(), any(), any(), any(), any());
         verify(natRules, never()).list(anyString(), anyString(), any(), anyBoolean(), any(), any(), any(), any());
@@ -948,13 +1101,13 @@ public class NsxApiClientTest {
                 .doNothing()
                 .when(staticRoutes).patch(anyString(), anyString(), any(com.vmware.nsx_policy.model.StaticRoutes.class));
 
-        client.addVpnConnectionRoutes(TIER_1_GATEWAY_NAME, "connection-uuid",
+        client.addVpnConnectionRoutes(TIER_1_GATEWAY_NAME, CONNECTION_ID,
                 List.of("192.168.100.0/24"), "169.254.64.22", "10.1.0.0/16");
 
         verify(staticRoutes, Mockito.times(2)).patch(eq(TIER_1_GATEWAY_NAME),
-                eq("cs-conn-connection-uuid-route0"), any(com.vmware.nsx_policy.model.StaticRoutes.class));
+                eq("cs-conn-5-route0"), any(com.vmware.nsx_policy.model.StaticRoutes.class));
         verify(natRules).patch(eq(TIER_1_GATEWAY_NAME), anyString(),
-                eq("cs-conn-connection-uuid-nosnat0"), any(PolicyNatRule.class));
+                eq("cs-conn-5-nosnat0"), any(PolicyNatRule.class));
     }
 
     @Test
@@ -972,12 +1125,12 @@ public class NsxApiClientTest {
         Mockito.when(nsxService.apply(IpsecVpnDpdProfiles.class)).thenReturn(dpdProfiles);
 
         assertThrows(CloudRuntimeException.class,
-                () -> client.deleteVpnConnection(TIER_1_GATEWAY_NAME, "connection-uuid"));
+                () -> client.deleteVpnConnection(TIER_1_GATEWAY_NAME, CONNECTION_ID));
 
-        verify(sessions).delete(TIER_1_GATEWAY_NAME, "t1-vpn", "cs-conn-connection-uuid");
-        verify(ikeProfiles).delete("cs-conn-connection-uuid-ike");
-        verify(tunnelProfiles).delete("cs-conn-connection-uuid-esp");
-        verify(dpdProfiles).delete("cs-conn-connection-uuid-dpd");
+        verify(sessions).delete(TIER_1_GATEWAY_NAME, "t1-vpn", "cs-conn-5");
+        verify(ikeProfiles).delete("cs-conn-5-ike");
+        verify(tunnelProfiles).delete("cs-conn-5-esp");
+        verify(dpdProfiles).delete("cs-conn-5-dpd");
     }
 
     private LbMonitorProfiles mockLbMonitorProfiles() {
@@ -1000,8 +1153,8 @@ public class NsxApiClientTest {
                         .build()))
                 .build();
         RouteBasedIPSecVpnSession session = new RouteBasedIPSecVpnSession.Builder()
-                .setId("cs-conn-connection-uuid")
-                .setDisplayName("cs-conn-connection-uuid")
+                .setId("cs-conn-5")
+                .setDisplayName("cs-conn-5")
                 .setEnabled(true)
                 .setAuthenticationMode(IPSecVpnSession.AUTHENTICATION_MODE_PSK)
                 .setPsk(psk)
