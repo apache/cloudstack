@@ -3295,17 +3295,17 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         List<ApiKeyPairResponse> responses = new ArrayList<>();
 
         if (cmd.getKeyId() != null || cmd.getApiKeyFilter() != null) {
-            fetchOnlyOneKeyPair(responses, cmd);
+            populateSingleKeyPairResponse(responses, cmd);
             finalResponse.setResponses(responses);
             return finalResponse;
         }
 
-        Integer total = fetchMultipleKeyPairs(responses, cmd);
-        finalResponse.setResponses(responses, total);
+        populateMultipleKeyPairsResponse(responses, cmd);
+        finalResponse.setResponses(responses);
         return finalResponse;
     }
 
-    private void fetchOnlyOneKeyPair(List<ApiKeyPairResponse> responses, ListUserKeysCmd cmd) {
+    private void populateSingleKeyPairResponse(List<ApiKeyPairResponse> responses, ListUserKeysCmd cmd) {
         ApiKeyPair keyPair;
         if (cmd.getKeyId() != null) {
             keyPair = _accountService.getKeyPairById(cmd.getKeyId());
@@ -3329,7 +3329,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         _accountService.validateCallingUserHasAccessToDesiredUser(keyPair.getUserId());
     }
 
-    private Integer fetchMultipleKeyPairs(List<ApiKeyPairResponse> responses, ListUserKeysCmd cmd) {
+    private void populateMultipleKeyPairsResponse(List<ApiKeyPairResponse> responses, ListUserKeysCmd cmd) {
         List<Long> users;
         if (cmd.getUserId() != null) {
             _accountService.validateCallingUserHasAccessToDesiredUser(cmd.getUserId());
@@ -3346,8 +3346,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     addKeypairResponse(keyPair, responses, cmd);
                     removeApiKeyPairIfExpired(keyPair);
                 });
-
-        return keyPairs.second();
     }
 
     @Override
