@@ -72,6 +72,8 @@ public class LibvirtVmwareCbtCleanupCommandWrapper extends CommandWrapper<Vmware
                 return new VmwareCbtMigrationAnswer(cmd, true, msg, cmd.getMigrationUuid());
             }
 
+            killInFlightCopyProcesses(String.format("/cloudstack-cbt/%s/", cmd.getMigrationUuid()),
+                    cmd.getMigrationUuid());
             Set<Path> migrationDirectories = getMigrationDirectories(cmd);
             int removedDirectories = 0;
             for (Path migrationDirectory : migrationDirectories) {
@@ -187,7 +189,11 @@ public class LibvirtVmwareCbtCleanupCommandWrapper extends CommandWrapper<Vmware
         if (StringUtils.isBlank(marker)) {
             return;
         }
-        int exitValue = Script.runSimpleBashScriptForExitValue(String.format("pkill -f -- %s", quoteShellArgument(marker)));
+        // Make the first character a bracket expression. The regex still matches the literal
+        // target marker, but it does not match the bash command line running pkill itself.
+        String processMatchPattern = String.format("[%s]%s", marker.charAt(0), marker.substring(1));
+        int exitValue = Script.runSimpleBashScriptForExitValue(String.format("pkill -f -- %s",
+                quoteShellArgument(processMatchPattern)));
         if (exitValue == 0) {
             logger.info("Killed in-flight copy process(es) matching marker {} for VMware CBT migration {}", marker, migrationUuid);
             try {

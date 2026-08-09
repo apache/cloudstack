@@ -91,6 +91,10 @@ public class VmwareCbtCleanupCommand extends Command {
 
     @Override
     public boolean executeInSequence() {
-        return true;
+        // Cancellation must be able to interrupt a long-running prepare/sync command on the
+        // same host. If cleanup is queued behind that command, the VDDK reader keeps the source
+        // snapshot open until the entire copy finishes and the cleanup request can time out
+        // before it ever reaches the agent.
+        return false;
     }
 }

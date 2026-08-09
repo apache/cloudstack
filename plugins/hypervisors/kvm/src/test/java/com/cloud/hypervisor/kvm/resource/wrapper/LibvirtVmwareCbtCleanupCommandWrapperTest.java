@@ -19,6 +19,7 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.Assert;
@@ -45,7 +46,7 @@ public class LibvirtVmwareCbtCleanupCommandWrapperTest {
 
     private static final String MIGRATION_UUID = "migration-uuid";
 
-    private final LibvirtVmwareCbtCleanupCommandWrapper wrapper = new LibvirtVmwareCbtCleanupCommandWrapper();
+    private final TestLibvirtVmwareCbtCleanupCommandWrapper wrapper = new TestLibvirtVmwareCbtCleanupCommandWrapper();
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -73,6 +74,14 @@ public class LibvirtVmwareCbtCleanupCommandWrapperTest {
         Assert.assertTrue(answer.getResult());
         Assert.assertFalse(Files.exists(migrationDirectory));
         Assert.assertTrue(Files.exists(siblingDisk));
+        Assert.assertEquals(List.of("/cloudstack-cbt/migration-uuid/"), wrapper.killedProcessMarkers);
+    }
+
+    @Test
+    public void testCleanupDoesNotWaitBehindInFlightCopyCommand() throws IOException {
+        Path targetDisk = temporaryFolder.newFile("sequential-copy.qcow2").toPath();
+
+        Assert.assertFalse(createCommand(targetDisk.toString()).executeInSequence());
     }
 
     @Test
@@ -217,5 +226,14 @@ public class LibvirtVmwareCbtCleanupCommandWrapperTest {
                 List.of(new VmwareCbtDiskTO("disk-1", 2000, "[datastore] vm/disk.vmdk", "datastore",
                         targetPath, "qcow2", null, null, 8192)),
                 true, true, true);
+    }
+
+    private static class TestLibvirtVmwareCbtCleanupCommandWrapper extends LibvirtVmwareCbtCleanupCommandWrapper {
+        private final List<String> killedProcessMarkers = new ArrayList<>();
+
+        @Override
+        protected void killInFlightCopyProcesses(String marker, String migrationUuid) {
+            killedProcessMarkers.add(marker);
+        }
     }
 }
