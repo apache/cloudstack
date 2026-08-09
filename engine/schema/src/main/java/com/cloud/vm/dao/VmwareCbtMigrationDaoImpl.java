@@ -26,6 +26,7 @@ import org.apache.cloudstack.vm.VmwareCbtMigration;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
+import java.util.Date;
 import java.util.List;
 
 @Component
@@ -67,6 +68,29 @@ public class VmwareCbtMigrationDaoImpl extends GenericDaoBase<VmwareCbtMigration
         sc.setParameters("id", migration.getId());
         sc.setParameters("state", (Object[]) TERMINAL_STATES);
         return update(migration, sc) > 0;
+    }
+
+    @Override
+    public boolean completeImportIfNotTerminal(long migrationId, long vmId, Date updated) {
+        VmwareCbtMigrationVO migration = createImportedVmUpdate(migrationId, vmId, updated);
+        migration.setState(VmwareCbtMigration.State.Completed);
+        migration.setCurrentStep("CloudStack VM import completed");
+        migration.setLastError(null);
+        return updateIfNotTerminal(migration);
+    }
+
+    @Override
+    public boolean recordImportedVmAndClearCredentials(long migrationId, long vmId, Date updated) {
+        return update(migrationId, createImportedVmUpdate(migrationId, vmId, updated));
+    }
+
+    private VmwareCbtMigrationVO createImportedVmUpdate(long migrationId, long vmId, Date updated) {
+        VmwareCbtMigrationVO migration = createForUpdate(migrationId);
+        migration.setVmId(vmId);
+        migration.setSourceUsername(null);
+        migration.setSourcePassword(null);
+        migration.setUpdated(updated);
+        return migration;
     }
 
     @Override

@@ -26,8 +26,10 @@ import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.storage.Storage;
+import com.cloud.uservm.UserVm;
 import com.cloud.vm.VmwareCbtMigrationDiskVO;
 import com.cloud.vm.VmwareCbtMigrationVO;
+import com.cloud.vm.dao.VmwareCbtMigrationDao;
 import com.cloud.vm.dao.VmwareCbtMigrationDiskDao;
 
 public class VmwareCbtMigrationImportTest {
@@ -84,5 +86,41 @@ public class VmwareCbtMigrationImportTest {
         Assert.assertEquals(disk.getTargetPath(), convertedInstance.getDisks().get(0).getFileBaseName());
         Assert.assertEquals("RBD", convertedInstance.getDisks().get(0).getDatastoreType());
         Assert.assertEquals("rbd-pool-uuid", convertedInstance.getDisks().get(0).getDatastoreName());
+    }
+
+    @Test
+    public void testSuccessfulImportIsCompletedWithOneConditionalUpdate() {
+        VmwareCbtMigrationManagerImpl manager = new VmwareCbtMigrationManagerImpl();
+        VmwareCbtMigrationVO migration = Mockito.mock(VmwareCbtMigrationVO.class);
+        Mockito.when(migration.getId()).thenReturn(41L);
+        UserVm userVm = Mockito.mock(UserVm.class);
+        Mockito.when(userVm.getId()).thenReturn(73L);
+        VmwareCbtMigrationDao migrationDao = Mockito.mock(VmwareCbtMigrationDao.class);
+        Mockito.when(migrationDao.completeImportIfNotTerminal(Mockito.eq(41L), Mockito.eq(73L), Mockito.any()))
+                .thenReturn(true);
+        ReflectionTestUtils.setField(manager, "vmwareCbtMigrationDao", migrationDao);
+
+        Assert.assertTrue(manager.persistImportedVmResult(migration, userVm));
+
+        Mockito.verify(migrationDao).completeImportIfNotTerminal(Mockito.eq(41L), Mockito.eq(73L), Mockito.any());
+        Mockito.verify(migrationDao, Mockito.never()).recordImportedVmAndClearCredentials(
+                Mockito.anyLong(), Mockito.anyLong(), Mockito.any());
+    }
+
+    @Test
+    public void testImportThatRacesWithCancellationPreservesTerminalStateAndRecordsVm() {
+        VmwareCbtMigrationManagerImpl manager = new VmwareCbtMigrationManagerImpl();
+        VmwareCbtMigrationVO migration = Mockito.mock(VmwareCbtMigrationVO.class);
+        Mockito.when(migration.getId()).thenReturn(41L);
+        UserVm userVm = Mockito.mock(UserVm.class);
+        Mockito.when(userVm.getId()).thenReturn(73L);
+        VmwareCbtMigrationDao migrationDao = Mockito.mock(VmwareCbtMigrationDao.class);
+        Mockito.when(migrationDao.completeImportIfNotTerminal(Mockito.eq(41L), Mockito.eq(73L), Mockito.any()))
+                .thenReturn(false);
+        ReflectionTestUtils.setField(manager, "vmwareCbtMigrationDao", migrationDao);
+
+        Assert.assertFalse(manager.persistImportedVmResult(migration, userVm));
+
+        Mockito.verify(migrationDao).recordImportedVmAndClearCredentials(Mockito.eq(41L), Mockito.eq(73L), Mockito.any());
     }
 }

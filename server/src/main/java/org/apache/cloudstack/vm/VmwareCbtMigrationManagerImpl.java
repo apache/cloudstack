@@ -748,14 +748,7 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
                     migration.getGuestOsId(), deserializeStringMap(migration.getImportDetails()), migration.isForced(),
                     migration.getStoragePoolId());
 
-            migration = vmwareCbtMigrationDao.findById(migration.getId());
-            migration.setVmId(userVm.getId());
-            migration.setState(VmwareCbtMigration.State.Completed);
-            migration.setCurrentStep("CloudStack VM import completed");
-            migration.setLastError(null);
-            clearStoredSourceCredentials(migration);
-            migration.setUpdated(new Date());
-            if (!vmwareCbtMigrationDao.updateIfNotTerminal(migration)) {
+            if (!persistImportedVmResult(migration, userVm)) {
                 // The VM does exist, so surface it rather than losing the reference: the operator
                 // cancelled during the import and now has to reconcile the imported VM by hand.
                 LOGGER.warn("VMware CBT migration {} was cancelled while its import was running, but the import completed and created VM {}. "
@@ -772,6 +765,15 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
             migration = persistMigrationProgress(migration, "failed CloudStack VM import");
         }
         return createVmwareCbtMigrationResponse(vmwareCbtMigrationDao.findById(migration.getId()));
+    }
+
+    boolean persistImportedVmResult(VmwareCbtMigrationVO migration, UserVm userVm) {
+        Date updated = new Date();
+        if (vmwareCbtMigrationDao.completeImportIfNotTerminal(migration.getId(), userVm.getId(), updated)) {
+            return true;
+        }
+        vmwareCbtMigrationDao.recordImportedVmAndClearCredentials(migration.getId(), userVm.getId(), updated);
+        return false;
     }
 
     private UnmanagedInstanceTO createConvertedInstanceForImport(VmwareCbtMigrationVO migration) {
