@@ -460,6 +460,7 @@ import MultiNetworkSelection from '@views/compute/wizard/MultiNetworkSelection'
 import OsLogo from '@/components/widgets/OsLogo'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import CheckBoxSelectPair from '@/components/CheckBoxSelectPair'
+import { formatKvmConversionHostName } from '@/utils/vmware'
 
 export default {
   name: 'ImportUnmanagedInstances',
@@ -1111,47 +1112,13 @@ export default {
         this.kvmHostsForConversion = this.kvmHostsForConversion.filter(host => ['Enabled', 'Disabled'].includes(host.resourcestate))
         // Check if any host has VDDK support
         let hasVddkSupport = false
-        this.kvmHostsForConversion.map(host => {
-          host.name = host.name + ' [Pod=' + host.podname + '] [Cluster=' + host.clustername + ']'
-          if (host.instanceconversionsupported !== null && host.instanceconversionsupported !== undefined && host.instanceconversionsupported) {
-            host.name = host.name + ' (' + this.$t('label.supported') + ')'
-          } else {
-            host.name = host.name + ' (' + this.$t('label.not.supported') + ')'
-          }
-          if (host.details['host.virtv2v.version']) {
-            host.name = host.name + ' (virt-v2v=' + host.details['host.virtv2v.version'] + ')'
-          }
-          if (host.details['host.ovftool.version']) {
-            host.name = host.name + ' (ovftool=' + host.details['host.ovftool.version'] + ')'
-          }
+        this.kvmHostsForConversion.forEach(host => {
+          const details = host.details || {}
           // Check for VDDK support
-          if (host.details['host.vddk.support'] === 'true' || host.details['host.vddk.support'] === true) {
+          if (details['host.vddk.support'] === 'true' || details['host.vddk.support'] === true) {
             hasVddkSupport = true
           }
-
-          if (this.form.usevddk) {
-            if (host.details['host.vddk.support'] === 'true' || host.details['host.vddk.support'] === true) {
-              host.name = host.name + ' (VDDK=' + this.$t('label.supported') + ')'
-            } else {
-              host.name = host.name + ' (VDDK=' + this.$t('label.not.supported') + ')'
-            }
-            if (host.details['host.vddk.version']) {
-              host.name = host.name + ' (vddk=' + host.details['host.vddk.version'] + ')'
-            }
-          }
-          if (this.form.vmwaremigrationmode === 'cbt') {
-            if (host.details['host.vddk.blockcopy.support'] === 'true' || host.details['host.vddk.blockcopy.support'] === true) {
-              host.name = host.name + ' (' + this.$t('label.host.vmware.cbt.data.copy.support') + '=' + this.$t('label.supported') + ')'
-            } else {
-              host.name = host.name + ' (' + this.$t('label.host.vmware.cbt.data.copy.support') + '=' + this.$t('label.not.supported') + ')'
-            }
-            if (host.details['host.qemu.img.version']) {
-              host.name = host.name + ' (qemu-img=' + host.details['host.qemu.img.version'] + ')'
-            }
-            if (host.details['host.qemu.nbd.version']) {
-              host.name = host.name + ' (qemu-nbd=' + host.details['host.qemu.nbd.version'] + ')'
-            }
-          }
+          host.name = this.formatKvmConversionHostName(host)
         })
 
         // Enable usevddk by default if at least one host has VDDK support
@@ -1160,6 +1127,13 @@ export default {
           this.setVmwareMigrationMode('vddk', false)
         }
       })
+    },
+    formatKvmConversionHostName (host) {
+      return formatKvmConversionHostName(
+        host,
+        this.form.vmwaremigrationmode,
+        this.$t('label.yes'),
+        this.$t('label.no'))
     },
     fetchKvmHostsForImporting () {
       getAPI('listHosts', {
