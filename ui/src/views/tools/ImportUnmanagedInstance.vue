@@ -1140,10 +1140,10 @@ export default {
             }
           }
           if (this.form.vmwaremigrationmode === 'cbt') {
-            if (host.details['host.vmware.cbt.support'] === 'true' || host.details['host.vmware.cbt.support'] === true) {
-              host.name = host.name + ' (CBT=' + this.$t('label.supported') + ')'
+            if (host.details['host.vddk.blockcopy.support'] === 'true' || host.details['host.vddk.blockcopy.support'] === true) {
+              host.name = host.name + ' (' + this.$t('label.host.vmware.cbt.data.copy.support') + '=' + this.$t('label.supported') + ')'
             } else {
-              host.name = host.name + ' (CBT=' + this.$t('label.not.supported') + ')'
+              host.name = host.name + ' (' + this.$t('label.host.vmware.cbt.data.copy.support') + '=' + this.$t('label.not.supported') + ')'
             }
             if (host.details['host.qemu.img.version']) {
               host.name = host.name + ' (qemu-img=' + host.details['host.qemu.img.version'] + ')'
