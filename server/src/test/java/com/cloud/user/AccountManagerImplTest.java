@@ -2136,11 +2136,11 @@ public class AccountManagerImplTest extends AccountManagentImplTestBase {
     public void deleteAndCleanupUserTestUserCleanup() {
         long userId = userVoMock.getId();
         Mockito.doNothing().when(accountManagerImpl).removeUserApiKeys(userId);
-        Mockito.doNothing().when(_projectAccountDao).removeUserFromProjects(userId);
+        Mockito.doNothing().when(_projectMgr).cleanupProjectsForUser(null, userVoMock);
 
         accountManagerImpl.deleteAndCleanupUser(userVoMock);
 
         Mockito.verify(accountManagerImpl).removeUserApiKeys(userId);
-        Mockito.verify(_projectAccountDao).removeUserFromProjects(userId);
+        Mockito.verify(_projectMgr).cleanupProjectsForUser(null, userVoMock);
     }
 }

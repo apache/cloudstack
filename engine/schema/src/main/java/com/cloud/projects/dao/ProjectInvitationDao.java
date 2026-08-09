@@ -44,7 +44,7 @@ public interface ProjectInvitationDao extends GenericDao<ProjectInvitationVO, Lo
 
     List<ProjectInvitationVO> listInvitationsToExpire(long timeOut);
 
-    int removeBy(Long userId, Long accountId, Long projectId);
+    int removeBy(Long projectId, Long accountId, Long userId);
 
     List<ProjectInvitationVO> listBy(Long projectId, Long accountId, Long userId);
 

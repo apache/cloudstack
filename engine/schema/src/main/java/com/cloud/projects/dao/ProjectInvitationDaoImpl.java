@@ -126,7 +126,7 @@ public class ProjectInvitationDaoImpl extends GenericDaoBase<ProjectInvitationVO
     }
 
     @Override
-    public int removeBy(Long userId, Long accountId, Long projectId) {
+    public int removeBy(Long projectId, Long accountId, Long userId) {
         SearchCriteria<ProjectInvitationVO> sc = prepareAllFieldsSearchCriteria(projectId, accountId, userId);
         return remove(sc);
     }

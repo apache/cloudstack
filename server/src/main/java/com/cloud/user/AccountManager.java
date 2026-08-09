@@ -20,6 +20,7 @@ import java.net.InetAddress;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.exception.ResourceAllocationException;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.apikeypair.ApiKeyPair;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
@@ -148,7 +149,7 @@ public interface AccountManager extends AccountService, Configurable {
      * moves a user to another account within the same domain
      * @return true if the user was successfully moved
      */
-    boolean moveUser(MoveUserCmd moveUserCmd);
+    boolean moveUser(MoveUserCmd moveUserCmd) throws ResourceAllocationException;
 
     @Override
     UserAccount updateUser(UpdateUserCmd cmd);
@@ -190,7 +191,7 @@ public interface AccountManager extends AccountService, Configurable {
     ConfigKey<Boolean> UseSecretKeyInResponse = new ConfigKey<Boolean>("Advanced", Boolean.class, "use.secret.key.in.response", "false",
             "This parameter allows the users to enable or disable of showing secret key as a part of response for various APIs. By default it is set to false.", true);
 
-    boolean moveUser(long id, Long domainId, Account newAccount);
+    boolean moveUser(long id, Long domainId, Account newAccount) throws ResourceAllocationException;
 
     UserTwoFactorAuthenticator getUserTwoFactorAuthenticator(final Long domainId, final Long userAccountId);
 

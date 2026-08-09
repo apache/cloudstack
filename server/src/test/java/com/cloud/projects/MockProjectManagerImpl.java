@@ -222,6 +222,11 @@ public class MockProjectManagerImpl extends ManagerBase implements ProjectManage
     }
 
     @Override
+    public void moveProjectAssociationsToUser(User oldUser, User newUser) throws ResourceAllocationException {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
     public Project findByProjectAccountIdIncludingRemoved(long projectAccountId) {
         return null;
     }
