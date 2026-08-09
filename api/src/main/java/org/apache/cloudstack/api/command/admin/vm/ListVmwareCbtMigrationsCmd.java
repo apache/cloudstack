@@ -44,7 +44,7 @@ import com.cloud.exception.ResourceUnavailableException;
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin},
-        since = "4.22.1")
+        since = "4.24.0")
 public class ListVmwareCbtMigrationsCmd extends BaseListCmd {
 
     @Inject

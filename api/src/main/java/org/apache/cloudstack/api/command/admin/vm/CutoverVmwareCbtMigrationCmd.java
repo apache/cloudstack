@@ -44,7 +44,7 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = true,
         responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin},
-        since = "4.22.1")
+        since = "4.24.0")
 public class CutoverVmwareCbtMigrationCmd extends BaseAsyncCmd {
 
     @Inject
