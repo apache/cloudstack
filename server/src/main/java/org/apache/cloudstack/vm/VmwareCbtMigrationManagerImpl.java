@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -117,6 +118,11 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager, Configurable {
+
+    /** vCenter refuses snapshot removal while the source is still busy right after a cancel;
+     *  retry rather than orphaning the snapshot on the customer's VM. */
+    private static final int SNAPSHOT_REMOVAL_ATTEMPTS = 4;
+    private static final long SNAPSHOT_REMOVAL_RETRY_INTERVAL_MS = 15000L;
 
     private static final String OBJECT_NAME = "vmwarecbtmigration";
     private static final String DETAIL_VDDK_TRANSPORTS = "vddk.transports";
@@ -955,6 +961,11 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
             migration.setUpdated(new Date());
             if (vmwareCbtMigrationDao.updateIfNotTerminal(migration)) {
                 sendCleanupCommandIfPossible(migration);
+                // Only after the cleanup command has returned: it is what stops the nbdkit/VDDK
+                // readers still streaming from the snapshot. While one of those holds the disk open
+                // vCenter answers "The operation is not allowed in the current state" and the
+                // snapshot would be orphaned on the source VM.
+                removeLingeringSourceSnapshots(migration);
             } else {
                 LOGGER.info("VMware CBT migration {} reached a terminal state concurrently; leaving it as is and skipping target cleanup.",
                         migration.getUuid());
@@ -973,13 +984,18 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
                     String.format("Only failed, cancelled or completed VMware CBT migrations can be deleted. Migration %s is in state %s.",
                             migration.getUuid(), migration.getState()));
         }
-        clearStoredSourceCredentials(migration);
         if (shouldCleanupDeletedMigration(migration.getState(), cmd.getCleanup())) {
             sendCleanupCommandForDelete(migration);
+            // Last chance to drop a snapshot vCenter refused earlier, and it has to happen here:
+            // the source credentials are cleared immediately below, and the disk rows carrying the
+            // snapshot MORs are deleted at the end of this method - after either, the snapshot can
+            // no longer be found or authenticated for.
+            removeLingeringSourceSnapshots(migration);
         } else if (migration.getState() == VmwareCbtMigration.State.Completed && cmd.getCleanup()) {
             LOGGER.debug("Skipping target disk cleanup for completed VMware CBT migration {}. Completed migration deletion is record-only.",
                     migration.getUuid());
         }
+        clearStoredSourceCredentials(migration);
         for (VmwareCbtMigrationCycleVO cycle : vmwareCbtMigrationCycleDao.listByMigrationId(migration.getId())) {
             vmwareCbtMigrationCycleDao.remove(cycle.getId());
         }
@@ -2240,18 +2256,80 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
 
     private void removeDeltaSnapshotIfPossible(VmwareSource source, VmwareCbtMigrationVO migration,
                                                VmwareCbtSnapshotInfo snapshot) {
-        if (source == null || snapshot == null || StringUtils.isBlank(snapshot.getSnapshotMor())) {
+        if (snapshot == null) {
+            return;
+        }
+        removeSnapshotByMorIfPossible(source, migration, snapshot.getSnapshotMor());
+    }
+
+    /**
+     * Remove a snapshot we created on the source VM, retrying while vCenter reports the source is
+     * busy. A single attempt is not enough: right after a cancellation the source is still finishing
+     * the transfer it was serving, vCenter answers "The operation is not allowed in the current
+     * state", and a snapshot dropped at that moment is never retried - it stays on the customer's
+     * production VM growing a delta disk, with nothing in CloudStack showing it exists.
+     */
+    private void removeSnapshotByMorIfPossible(VmwareSource source, VmwareCbtMigrationVO migration, String snapshotMor) {
+        if (source == null || StringUtils.isBlank(snapshotMor)) {
             return;
         }
 
+        String lastMessage = null;
+        for (int attempt = 1; attempt <= SNAPSHOT_REMOVAL_ATTEMPTS; attempt++) {
+            try {
+                getVmwareCbtMigrationService().removeSnapshot(source.vcenter, source.datacenterName, source.username,
+                        source.password, source.sourceHost, migration.getSourceVmName(), snapshotMor);
+                clearDiskSnapshotMor(migration, snapshotMor);
+                if (attempt > 1) {
+                    LOGGER.info("Removed VMware CBT snapshot {} for migration {} on attempt {}.",
+                            snapshotMor, migration.getUuid(), attempt);
+                }
+                return;
+            } catch (RuntimeException e) {
+                lastMessage = sanitizeSensitiveMessage(StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()), source);
+                if (attempt == SNAPSHOT_REMOVAL_ATTEMPTS) {
+                    break;
+                }
+                LOGGER.debug("Snapshot {} for migration {} could not be removed yet (attempt {}/{}): {}",
+                        snapshotMor, migration.getUuid(), attempt, SNAPSHOT_REMOVAL_ATTEMPTS, lastMessage);
+                try {
+                    Thread.sleep(SNAPSHOT_REMOVAL_RETRY_INTERVAL_MS);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+        }
+        LOGGER.warn(String.format("Unable to remove VMware CBT snapshot %s for migration %s after %d attempt(s): %s. "
+                        + "It is still present on source VM %s and must be removed manually.",
+                snapshotMor, migration.getUuid(), SNAPSHOT_REMOVAL_ATTEMPTS, lastMessage, migration.getSourceVmName()));
+    }
+
+    /**
+     * Best-effort removal of every snapshot still recorded against a migration's disks. Called when a
+     * migration is cancelled or deleted, after the target-side cleanup has been requested, so that a
+     * snapshot vCenter refused to drop mid-flight does not outlive the migration record.
+     */
+    void removeLingeringSourceSnapshots(VmwareCbtMigrationVO migration) {
+        VmwareSource source;
         try {
-            getVmwareCbtMigrationService().removeSnapshot(source.vcenter, source.datacenterName, source.username,
-                    source.password, source.sourceHost, migration.getSourceVmName(), snapshot.getSnapshotMor());
-            clearDiskSnapshotMor(migration, snapshot.getSnapshotMor());
+            source = resolveVmwareSource(migration, null, null);
         } catch (RuntimeException e) {
-            String message = sanitizeSensitiveMessage(StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()), source);
-            LOGGER.warn(String.format("Unable to remove VMware CBT snapshot %s for migration %s: %s",
-                    snapshot.getSnapshotMor(), migration.getUuid(), message));
+            LOGGER.debug("Cannot resolve the VMware source for migration {}; skipping source snapshot cleanup.",
+                    migration.getUuid());
+            return;
+        }
+        if (source == null) {
+            return;
+        }
+        Set<String> mors = new LinkedHashSet<>();
+        for (VmwareCbtMigrationDiskVO disk : vmwareCbtMigrationDiskDao.listByMigrationId(migration.getId())) {
+            if (StringUtils.isNotBlank(disk.getSnapshotMor())) {
+                mors.add(disk.getSnapshotMor());
+            }
+        }
+        for (String mor : mors) {
+            removeSnapshotByMorIfPossible(source, migration, mor);
         }
     }
 
