@@ -19,6 +19,7 @@ package com.cloud.projects.dao;
 import java.sql.Date;
 import java.util.List;
 
+import com.cloud.user.User;
 import org.springframework.stereotype.Component;
 
 import com.cloud.projects.ProjectInvitation.State;
@@ -126,6 +127,27 @@ public class ProjectInvitationDaoImpl extends GenericDaoBase<ProjectInvitationVO
 
     @Override
     public int removeBy(Long userId, Long accountId, Long projectId) {
+        SearchCriteria<ProjectInvitationVO> sc = prepareAllFieldsSearchCriteria(projectId, accountId, userId);
+        return remove(sc);
+    }
+
+    @Override
+    public List<ProjectInvitationVO> listBy(Long projectId, Long accountId, Long userId) {
+        SearchCriteria<ProjectInvitationVO> sc = prepareAllFieldsSearchCriteria(projectId, accountId, userId);
+        return listBy(sc);
+    }
+
+    @Override
+    public void move(User oldUser, User newUser) {
+        List<ProjectInvitationVO> projectInvitations = listBy(null, oldUser.getAccountId(), oldUser.getId());
+        for (ProjectInvitationVO projectInvitation : projectInvitations) {
+            projectInvitation.setForAccountId(newUser.getAccountId());
+            projectInvitation.setForUserId(newUser.getId());
+            update(projectInvitation.getId(), projectInvitation);
+        }
+    }
+
+    private SearchCriteria<ProjectInvitationVO> prepareAllFieldsSearchCriteria(Long projectId, Long accountId, Long userId) {
         SearchCriteria<ProjectInvitationVO> sc = AllFieldsSearch.create();
 
         sc.setParametersIfNotNull("userId", userId);
@@ -134,7 +156,7 @@ public class ProjectInvitationDaoImpl extends GenericDaoBase<ProjectInvitationVO
             sc.setParameters("projectId", projectId);
         }
 
-        return remove(sc);
+        return sc;
     }
 
     @Override

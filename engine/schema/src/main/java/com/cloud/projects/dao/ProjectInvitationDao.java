@@ -20,6 +20,7 @@ import java.util.List;
 
 import com.cloud.projects.ProjectInvitation.State;
 import com.cloud.projects.ProjectInvitationVO;
+import com.cloud.user.User;
 import com.cloud.utils.db.GenericDao;
 
 public interface ProjectInvitationDao extends GenericDao<ProjectInvitationVO, Long> {
@@ -45,4 +46,7 @@ public interface ProjectInvitationDao extends GenericDao<ProjectInvitationVO, Lo
 
     int removeBy(Long userId, Long accountId, Long projectId);
 
+    List<ProjectInvitationVO> listBy(Long projectId, Long accountId, Long userId);
+
+    void move(User oldUser, User newUser);
 }

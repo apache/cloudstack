@@ -18,6 +18,7 @@ package com.cloud.projects.dao;
 
 import java.util.List;
 
+import com.cloud.user.User;
 import org.springframework.stereotype.Component;
 
 import com.cloud.projects.ProjectAccount;
@@ -230,5 +231,15 @@ public class ProjectAccountDaoImpl extends GenericDaoBase<ProjectAccountVO, Long
         sc.setParametersIfNotNull("userId", userId);
         sc.setParametersIfNotNull("accountId", accountId);
         return listBy(sc);
+    }
+
+    @Override
+    public void move(User oldUser, User newUser) {
+        List<ProjectAccountVO> projectAccounts = listBy(null, oldUser.getAccountId(), oldUser.getId());
+        for (ProjectAccountVO projectAccount : projectAccounts) {
+            projectAccount.setAccountId(newUser.getAccountId());
+            projectAccount.setUserId(newUser.getId());
+            update(projectAccount.getId(), projectAccount);
+        }
     }
 }

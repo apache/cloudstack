@@ -45,6 +45,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.projects.dao.ProjectInvitationDao;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserAccountDao;
@@ -314,6 +315,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private DomainDao _domainDao;
     @Inject
     private ProjectAccountDao _projectAccountDao;
+    @Inject
+    private ProjectInvitationDao projectInvitationDao;
     @Inject
     private IPAddressDao _ipAddressDao;
     @Inject
@@ -2521,16 +2524,18 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         checkAccountAndAccess(user, account);
         verifyCallerPrivilegeForUserOrAccountOperations(user);
 
-        return Transaction.execute((TransactionCallback<Boolean>) status -> deleteAndCleanupUser(user));
+        return deleteAndCleanupUser(user);
     }
 
     protected boolean deleteAndCleanupUser(User user) {
-        long userId = user.getId();
+        return Transaction.execute((TransactionCallback<Boolean>) status -> {
+            long userId = user.getId();
 
-        removeUserApiKeys(userId);
-        _projectMgr.cleanupProjectsForUser(null, user);
+            removeUserApiKeys(userId);
+            _projectMgr.cleanupProjectsForUser(null, user);
 
-        return _userDao.remove(userId);
+            return _userDao.remove(userId);
+        });
     }
 
     @Override
@@ -2573,6 +2578,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 newUser.setAccountId(newAccountId);
                 boolean success = _userDao.remove(user.getId());
                 UserVO persisted = _userDao.persist(newUser);
+                projectInvitationDao.move(user, persisted);
+                _projectAccountDao.move(user, persisted);
                 return success && persisted.getUuid().equals(user.getExternalEntity());
             }
         });
