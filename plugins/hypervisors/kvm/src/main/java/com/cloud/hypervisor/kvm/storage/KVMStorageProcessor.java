@@ -2341,26 +2341,44 @@ public class KVMStorageProcessor implements StorageProcessor {
      */
     private Long takeRbdVolumeSnapshotOfStoppedVm(KVMStoragePool primaryPool, KVMPhysicalDisk disk, String snapshotName) {
         Long snapshotSize = null;
+        Rados r = null;
+        IoCTX io = null;
+        Rbd rbd = null;
+        RbdImage image = null;
         try {
-            Rados r = radosConnect(primaryPool);
+            r = radosConnect(primaryPool);
 
-            final IoCTX io = r.ioCtxCreate(primaryPool.getSourceDir());
-            final Rbd rbd = new Rbd(io);
-            final RbdImage image = rbd.open(disk.getName());
+            io = r.ioCtxCreate(primaryPool.getSourceDir());
+            rbd = new Rbd(io);
+            image = rbd.open(disk.getName());
 
             logger.debug("Attempting to create RBD snapshot {}@{}", disk.getName(), snapshotName);
             image.snapCreate(snapshotName);
 
-            image.snapCreate(snapshotName);
             long rbdSnapshotSize = getRbdSnapshotSize(primaryPool.getSourceDir(), disk.getName(), snapshotName, primaryPool.getSourceHost(), primaryPool.getAuthUserName(), primaryPool.getAuthSecret());
             if (rbdSnapshotSize > 0) {
                 snapshotSize = rbdSnapshotSize;
             }
-
-            rbd.close(image);
-            r.ioCtxDestroy(io);
         } catch (final Exception e) {
             logger.error("A RBD snapshot operation on [{}] failed. The error was: {}", disk.getName(), e.getMessage(), e);
+        } finally {
+            // The image MUST be closed on every path. While it stays open this client holds the RBD
+            // exclusive-lock, and a later 'rbd snap rollback' (revertSnapshot) issued from any other host
+            // cannot take a live peer's lock - librbd then fails it with EROFS.
+            if (image != null) {
+                try {
+                    rbd.close(image);
+                } catch (final Exception e) {
+                    logger.warn("Failed to close RBD image [{}] after a snapshot operation. The error was: {}", disk.getName(), e.getMessage(), e);
+                }
+            }
+            if (io != null) {
+                try {
+                    r.ioCtxDestroy(io);
+                } catch (final Exception e) {
+                    logger.warn("Failed to destroy the RADOS IO context used to snapshot [{}]. The error was: {}", disk.getName(), e.getMessage(), e);
+                }
+            }
         }
         return snapshotSize;
     }
