@@ -171,7 +171,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
      */
     private void validateDnsServerUrl(String url) {
         if (StringUtils.isBlank(url)) {
-            return;
+            throw new IllegalArgumentException("URL cannot be blank.");
         }
         UriUtils.validateUrl(url);
     }
