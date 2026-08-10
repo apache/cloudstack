@@ -2362,23 +2362,8 @@ public class KVMStorageProcessor implements StorageProcessor {
         } catch (final Exception e) {
             logger.error("A RBD snapshot operation on [{}] failed. The error was: {}", disk.getName(), e.getMessage(), e);
         } finally {
-            // The image MUST be closed on every path. While it stays open this client holds the RBD
-            // exclusive-lock, and a later 'rbd snap rollback' (revertSnapshot) issued from any other host
-            // cannot take a live peer's lock - librbd then fails it with EROFS.
-            if (image != null) {
-                try {
-                    rbd.close(image);
-                } catch (final Exception e) {
-                    logger.warn("Failed to close RBD image [{}] after a snapshot operation. The error was: {}", disk.getName(), e.getMessage(), e);
-                }
-            }
-            if (io != null) {
-                try {
-                    r.ioCtxDestroy(io);
-                } catch (final Exception e) {
-                    logger.warn("Failed to destroy the RADOS IO context used to snapshot [{}]. The error was: {}", disk.getName(), e.getMessage(), e);
-                }
-            }
+            closeRbdImage(rbd, image, disk.getName());
+            destroyRadosIoCtx(r, io, disk.getName());
         }
         return snapshotSize;
     }
@@ -2680,6 +2665,34 @@ public class KVMStorageProcessor implements StorageProcessor {
         return r;
     }
 
+    /**
+     * Closes an RBD image if it was opened; never throws. An image left open keeps this client's RBD
+     * exclusive-lock, which later makes 'rbd snap rollback' (revertSnapshot) fail with EROFS and keeps
+     * the image busy so it cannot be removed.
+     */
+    protected void closeRbdImage(Rbd rbd, RbdImage image, String imageName) {
+        if (image == null) {
+            return;
+        }
+        try {
+            rbd.close(image);
+        } catch (final Exception e) {
+            logger.warn("Failed to close RBD image [{}]. The error was: {}", imageName, e.getMessage(), e);
+        }
+    }
+
+    /** Destroys a RADOS IO context if it was created; never throws. */
+    protected void destroyRadosIoCtx(Rados r, IoCTX io, String contextDescription) {
+        if (io == null) {
+            return;
+        }
+        try {
+            r.ioCtxDestroy(io);
+        } catch (final Exception e) {
+            logger.warn("Failed to destroy the RADOS IO context used for [{}]. The error was: {}", contextDescription, e.getMessage(), e);
+        }
+    }
+
     @Override
     public Answer deleteVolume(final DeleteCommand cmd) {
         final VolumeObjectTO vol = (VolumeObjectTO)cmd.getData();
@@ -2877,16 +2890,8 @@ public class KVMStorageProcessor implements StorageProcessor {
             disk = null;
         } finally {
             // Every handle has to be released on all paths, including the "snapshot not found" return and
-            // any failure of clone/resize/flatten. An image left open keeps this client's RBD
-            // exclusive-lock, which later makes 'rbd snap rollback' (revertSnapshot) fail with EROFS and
-            // keeps the image busy so it cannot be removed.
-            if (diskImage != null) {
-                try {
-                    rbd.close(diskImage);
-                } catch (final Exception e) {
-                    logger.warn(String.format("Failed to close the cloned RBD image %s. The error was: %s", newUuid, e.getMessage()), e);
-                }
-            }
+            // any failure of clone/resize/flatten.
+            closeRbdImage(rbd, diskImage, newUuid);
             // A snapshot left protected cannot be deleted, and neither can its volume.
             if (snapProtected) {
                 try {
@@ -2896,20 +2901,8 @@ public class KVMStorageProcessor implements StorageProcessor {
                             "resolved manually. The error was: %s", snapshotName, e.getMessage()), e);
                 }
             }
-            if (srcImage != null) {
-                try {
-                    rbd.close(srcImage);
-                } catch (final Exception e) {
-                    logger.warn(String.format("Failed to close the source RBD image %s. The error was: %s", volume.getName(), e.getMessage()), e);
-                }
-            }
-            if (io != null) {
-                try {
-                    r.ioCtxDestroy(io);
-                } catch (final Exception e) {
-                    logger.warn(String.format("Failed to destroy the RADOS IO context used to clone %s. The error was: %s", snapshotName, e.getMessage()), e);
-                }
-            }
+            closeRbdImage(rbd, srcImage, volume.getName());
+            destroyRadosIoCtx(r, io, snapshotName);
         }
 
         return disk;
