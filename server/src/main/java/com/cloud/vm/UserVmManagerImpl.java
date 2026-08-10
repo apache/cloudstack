@@ -5845,7 +5845,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         vmEntity.deploy(reservationId, Long.toString(callerUser.getId()), params, deployOnGivenHost);
 
         Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> vmParamPair = new Pair(vm, params);
-        if (vm.isUpdateParameters()) {
+        if (shouldClearUpdateParametersFlag(vm, additionalParams)) {
             // this value is not being sent to the backend; need only for api
             // display purposes
             if (template.isEnablePassword()) {
@@ -5907,6 +5907,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         } else {
             return startVirtualMachineUnchecked(vm, template, podId, clusterId, hostId, additionalParams, deploymentPlannerToUse, isExplicitHost, isRootAdmin);
         }
+    }
+
+    /**
+     * False for a volume-prepare-only start that should still reset the password (isUpdateParameters must stay
+     * set for the real start that follows).
+     */
+    boolean shouldClearUpdateParametersFlag(UserVmVO vm, Map<VirtualMachineProfile.Param, Object> additionalParams) {
+        boolean isVolumePrepareOnly = Boolean.TRUE.equals(additionalParams.get(VirtualMachineProfile.Param.ReturnAfterVolumePrepare));
+        boolean resetPasswordOnRestore = Boolean.TRUE.equals(additionalParams.get(VirtualMachineProfile.Param.ResetPasswordOnRestore));
+        return vm.isUpdateParameters() && !(isVolumePrepareOnly && resetPasswordOnRestore);
     }
 
     /**
@@ -9420,7 +9430,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 VmIpFetchThreadPoolMax, VmIpFetchTaskWorkers, AllowDeployVmIfGivenHostFails, EnableAdditionalVmConfig, DisplayVMOVFProperties,
                 KvmAdditionalConfigAllowList, XenServerAdditionalConfigAllowList, VmwareAdditionalConfigAllowList, DestroyRootVolumeOnVmDestruction,
                 EnforceStrictResourceLimitHostTagCheck, StrictHostTags, AllowUserForceStopVm, VmDistinctHostNameScope,
-                VmwareAdditionalDetailsFromOvaEnabled, VmwareAllowedAdditionalDetailsFromOva, AllowDifferentHostTagsOfferingsForVmScale};
+                VmwareAdditionalDetailsFromOvaEnabled, VmwareAllowedAdditionalDetailsFromOva, AllowDifferentHostTagsOfferingsForVmScale,
+                ResetPasswordOnRestoreFromBackup};
     }
 
     @Override
@@ -9805,6 +9816,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return vm;
     }
 
+    /**
+     * The cmd's resetpassword parameter, if set; otherwise the zone's ResetPasswordOnRestoreFromBackup setting.
+     */
+    boolean isResetPasswordOnRestoreFromBackup(CreateVMFromBackupCmd cmd) {
+        if (cmd.getResetPassword() != null) {
+            return cmd.getResetPassword();
+        }
+        UserVmVO vm = _vmDao.findById(cmd.getEntityId());
+        return ResetPasswordOnRestoreFromBackup.valueIn(vm.getDataCenterId());
+    }
+
     @Override
     public UserVm restoreVMFromBackup(CreateVMFromBackupCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         long vmId = cmd.getEntityId();
@@ -9812,6 +9834,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Map<Long, DiskOffering> diskOfferingMap = cmd.getDataDiskTemplateToDiskOfferingMap();
         Map<VirtualMachineProfile.Param, Object> additonalParams = new HashMap<>();
         additonalParams.put(VirtualMachineProfile.Param.ReturnAfterVolumePrepare, true);
+        additonalParams.put(VirtualMachineProfile.Param.ResetPasswordOnRestore, isResetPasswordOnRestoreFromBackup(cmd));
 
         try {
             Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> vmParamPair = null;
