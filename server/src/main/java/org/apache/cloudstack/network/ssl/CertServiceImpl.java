@@ -198,17 +198,25 @@ public class CertServiceImpl implements CertService {
         final CallContext ctx = CallContext.current();
         final Account caller = ctx.getCallingAccount();
 
+        final Long certId = listSslCertCmd.getCertId();
+        final Long lbRuleId = listSslCertCmd.getLbId();
+        final Long projectId = listSslCertCmd.getProjectId();
+        final Long accountId = listSslCertCmd.getAccountId();
+        final String accountName = listSslCertCmd.getAccountName();
+        final Long domainId = listSslCertCmd.getDomainId();
+
+        if (accountId != null && (accountName != null || domainId != null)) {
+            throw new InvalidParameterValueException("The accountid and account/domainid are mutually exclusive");
+        }
+
         Account owner = null;
         if (StringUtils.isNotEmpty(listSslCertCmd.getAccountName()) && listSslCertCmd.getDomainId() != null || listSslCertCmd.getProjectId() != null) {
             owner = _accountMgr.finalizeOwner(caller, listSslCertCmd.getAccountName(), listSslCertCmd.getDomainId(), listSslCertCmd.getProjectId());
+        } else if (accountId != null) {
+            owner = _accountMgr.getAccount(accountId);
         } else {
             owner = caller;
         }
-
-        final Long certId = listSslCertCmd.getCertId();
-        final Long accountId = listSslCertCmd.getAccountId() != null ? listSslCertCmd.getAccountId() : owner.getId();
-        final Long lbRuleId = listSslCertCmd.getLbId();
-        final Long projectId = listSslCertCmd.getProjectId();
 
         final List<SslCertResponse> certResponseList = new ArrayList<SslCertResponse>();
 
@@ -276,8 +284,7 @@ public class CertServiceImpl implements CertService {
             return certResponseList;
         }
 
-        // Reached here: list by explicit accountId or the caller account if accountId was not provided.
-        final List<SslCertVO> certVOList = _sslCertDao.listByAccountId(accountId);
+        final List<SslCertVO> certVOList = _sslCertDao.listByAccountId(owner.getId());
         if (certVOList == null || certVOList.isEmpty()) {
             return certResponseList;
         }
