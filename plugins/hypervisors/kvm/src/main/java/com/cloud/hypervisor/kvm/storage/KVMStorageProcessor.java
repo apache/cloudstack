@@ -2829,17 +2829,24 @@ public class KVMStorageProcessor implements StorageProcessor {
         disk.setSize(size > volume.getVirtualSize() ? size : volume.getVirtualSize());
         disk.setVirtualSize(size > volume.getVirtualSize() ? size : disk.getSize());
 
+        Rados r = null;
+        IoCTX io = null;
+        Rbd rbd = null;
+        RbdImage srcImage = null;
+        RbdImage diskImage = null;
+        boolean snapProtected = false;
+
         try {
 
-            Rados r = new Rados(srcPool.getAuthUserName());
+            r = new Rados(srcPool.getAuthUserName());
             r.confSet("mon_host", srcPool.getSourceHost() + ":" + srcPool.getSourcePort());
             r.confSet("key", srcPool.getAuthSecret());
             r.confSet("client_mount_timeout", "30");
             r.connect();
 
-            IoCTX io = r.ioCtxCreate(srcPool.getSourceDir());
-            Rbd rbd = new Rbd(io);
-            RbdImage srcImage = rbd.open(volume.getName());
+            io = r.ioCtxCreate(srcPool.getSourceDir());
+            rbd = new Rbd(io);
+            srcImage = rbd.open(volume.getName());
 
             List<RbdSnapInfo> snaps = srcImage.snapList();
             boolean snapFound = false;
@@ -2855,23 +2862,54 @@ public class KVMStorageProcessor implements StorageProcessor {
                 return null;
             }
             srcImage.snapProtect(snapshotName);
+            snapProtected = true;
 
             logger.debug(String.format("Try to clone snapshot %s on RBD", snapshotName));
             rbd.clone(volume.getName(), snapshotName, io, disk.getName(), LibvirtStorageAdaptor.RBD_FEATURES, 0);
-            RbdImage diskImage = rbd.open(disk.getName());
+            diskImage = rbd.open(disk.getName());
             if (disk.getVirtualSize() > volume.getVirtualSize()) {
                 diskImage.resize(disk.getVirtualSize());
             }
 
             diskImage.flatten();
-            rbd.close(diskImage);
-
-            srcImage.snapUnprotect(snapshotName);
-            rbd.close(srcImage);
-            r.ioCtxDestroy(io);
         } catch (RadosException | RbdException e) {
             logger.error(String.format("Failed due to %s", e.getMessage()), e);
             disk = null;
+        } finally {
+            // Every handle has to be released on all paths, including the "snapshot not found" return and
+            // any failure of clone/resize/flatten. An image left open keeps this client's RBD
+            // exclusive-lock, which later makes 'rbd snap rollback' (revertSnapshot) fail with EROFS and
+            // keeps the image busy so it cannot be removed.
+            if (diskImage != null) {
+                try {
+                    rbd.close(diskImage);
+                } catch (final Exception e) {
+                    logger.warn(String.format("Failed to close the cloned RBD image %s. The error was: %s", newUuid, e.getMessage()), e);
+                }
+            }
+            // A snapshot left protected cannot be deleted, and neither can its volume.
+            if (snapProtected) {
+                try {
+                    srcImage.snapUnprotect(snapshotName);
+                } catch (final Exception e) {
+                    logger.error(String.format("Failed to unprotect RBD snapshot %s; it and its volume cannot be deleted until this is " +
+                            "resolved manually. The error was: %s", snapshotName, e.getMessage()), e);
+                }
+            }
+            if (srcImage != null) {
+                try {
+                    rbd.close(srcImage);
+                } catch (final Exception e) {
+                    logger.warn(String.format("Failed to close the source RBD image %s. The error was: %s", volume.getName(), e.getMessage()), e);
+                }
+            }
+            if (io != null) {
+                try {
+                    r.ioCtxDestroy(io);
+                } catch (final Exception e) {
+                    logger.warn(String.format("Failed to destroy the RADOS IO context used to clone %s. The error was: %s", snapshotName, e.getMessage()), e);
+                }
+            }
         }
 
         return disk;
