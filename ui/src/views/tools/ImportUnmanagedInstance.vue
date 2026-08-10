@@ -71,7 +71,7 @@
                   }"
                   :loading="optionsLoading.domains"
                   :placeholder="apiParams.domainid.description"
-                  @change="val => { this.selectedDomainId = val }">
+                  @change="handleDomainChange">
                   <a-select-option v-for="dom in domainSelectOptions" :key="dom.value" :label="dom.label">
                     <span>
                       <resource-icon v-if="dom.icon" :image="dom.icon" size="1x" style="margin-right: 5px"/>
@@ -101,7 +101,8 @@
                     return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
                   :loading="optionsLoading.projects"
-                  :placeholder="apiParams.projectid.description">
+                  :placeholder="apiParams.projectid.description"
+                  @change="handleProjectChange">
                   <a-select-option v-for="proj in projectSelectOptions" :key="proj.value" :label="proj.label">
                     <span>
                       <resource-icon v-if="proj.icon" :image="proj.icon" size="1x" style="margin-right: 5px"/>
@@ -369,6 +370,7 @@
                   :zoneId="cluster.zoneid"
                   :domainid="form.domainid"
                   :account="form.account"
+                  :projectid="form.projectid"
                   :selectionEnabled="false"
                   :filterUnimplementedNetworks="true"
                   :hypervisor="this.cluster.hypervisortype"
@@ -963,6 +965,20 @@ export default {
     updateMultiNetworkOffering (data) {
       this.nicsNetworksMapping = data
     },
+    handleDomainChange (domainId) {
+      this.selectedDomainId = domainId
+      this.updateFieldValue('account', undefined)
+      this.updateFieldValue('projectid', undefined)
+      this.nicsNetworksMapping = {}
+    },
+    handleProjectChange (projectId) {
+      if (projectId) {
+        this.selectedDomainId = null
+        this.updateFieldValue('domainid', undefined)
+        this.updateFieldValue('account', undefined)
+      }
+      this.nicsNetworksMapping = {}
+    },
     defaultTemplateType () {
       if (this.cluster.hypervisortype === 'VMware') {
         return 'auto'
@@ -1435,6 +1451,8 @@ export default {
       this.form.forceconverttopool = false
       this.form.forcemstoimportvmfiles = false
       this.userModifiedVddkSetting = false
+      this.selectedDomainId = null
+      this.nicsNetworksMapping = {}
       this.resetStorageOptionsForConversion()
     },
     closeAction () {

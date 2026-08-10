@@ -107,6 +107,10 @@ export default {
       type: String,
       default: ''
     },
+    projectid: {
+      type: String,
+      default: ''
+    },
     selectionEnabled: {
       type: Boolean,
       default: true
@@ -153,7 +157,8 @@ export default {
       ipAddresses: {},
       indexNum: 1,
       sendValuesTimer: null,
-      accountNetworkUpdateTimer: null
+      networkUpdateTimer: null,
+      networkFetchSequence: 0
     }
   },
   computed: {
@@ -181,6 +186,14 @@ export default {
         }
       }
       return null
+    },
+    networkScope () {
+      return {
+        zoneId: this.zoneId,
+        domainid: this.domainid,
+        account: this.account,
+        projectid: this.projectid
+      }
     }
   },
   watch: {
@@ -191,25 +204,51 @@ export default {
         this.fetchNetworks()
       }
     },
-    zoneId () {
-      this.fetchNetworks()
-    },
-    account () {
-      clearTimeout(this.accountNetworkUpdateTimer)
-      this.accountNetworkUpdateTimer = setTimeout(() => {
-        if (this.account) {
-          this.fetchNetworks()
-        }
-      }, 750)
+    networkScope (newScope, oldScope) {
+      const accountChanged = oldScope && newScope.account !== oldScope.account
+      this.queueNetworkFetch(accountChanged && !newScope.projectid ? 750 : 0)
     }
   },
   created () {
     this.fetchNetworks()
   },
+  beforeUnmount () {
+    clearTimeout(this.sendValuesTimer)
+    clearTimeout(this.networkUpdateTimer)
+    this.networkFetchSequence++
+  },
   methods: {
-    fetchNetworks () {
+    clearNetworkSelection () {
       this.networks = []
+      this.validNetworks = {}
+      this.unableToMatch = false
+      this.values = {}
+      this.ipAddresses = {}
+      this.ipAddressesEnabled = {}
+      this.selectedRowKeys = []
+      clearTimeout(this.sendValuesTimer)
+      this.sendValues()
+    },
+    queueNetworkFetch (delay) {
+      clearTimeout(this.networkUpdateTimer)
+      this.networkFetchSequence++
+      this.clearNetworkSelection()
       if (!this.zoneId || this.zoneId.length === 0) {
+        this.loading = false
+        return
+      }
+      this.loading = true
+      if (delay > 0) {
+        this.networkUpdateTimer = setTimeout(() => this.fetchNetworks(), delay)
+        return
+      }
+      this.fetchNetworks()
+    },
+    fetchNetworks () {
+      const fetchSequence = ++this.networkFetchSequence
+      this.clearNetworkSelection()
+      if (!this.zoneId || this.zoneId.length === 0) {
+        this.loading = false
         return
       }
       this.loading = true
@@ -217,15 +256,26 @@ export default {
         zoneid: this.zoneId,
         listall: true
       }
-      if (this.domainid && this.account) {
+      if (this.projectid) {
+        params.projectid = this.projectid
+      } else if (this.domainid && this.account) {
         params.domainid = this.domainid
         params.account = this.account
       }
       getAPI('listNetworks', params).then(response => {
+        if (fetchSequence !== this.networkFetchSequence) {
+          return
+        }
         this.networks = response.listnetworksresponse.network || []
       }).catch(() => {
+        if (fetchSequence !== this.networkFetchSequence) {
+          return
+        }
         this.networks = []
       }).finally(() => {
+        if (fetchSequence !== this.networkFetchSequence) {
+          return
+        }
         this.orderNetworks()
         this.loading = false
       })
