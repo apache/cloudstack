@@ -18,6 +18,7 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermission;
@@ -75,6 +76,7 @@ public class LibvirtVmwareCbtCutoverCommandWrapper extends CommandWrapper<Vmware
         Path fallbackStagingDir = null;
         Path rbdNbdBridgeScriptPath = null;
         boolean keepFallbackOutputDir = false;
+        boolean cutoverFinalizationCompleted = false;
         try {
             validateCutoverCommand(cmd);
             KVMStoragePool targetPool = getTargetStoragePool(cmd, serverResource.getStoragePoolMgr());
@@ -137,6 +139,7 @@ public class LibvirtVmwareCbtCutoverCommandWrapper extends CommandWrapper<Vmware
                 deleteFallbackSourceDisks(cmd);
                 keepFallbackOutputDir = containsDiskResultUnderDirectory(diskResults, fallbackOutputDir);
             }
+            cutoverFinalizationCompleted = true;
             String msg = String.format("Final %s conversion completed for VMware CBT migration %s.",
                     finalizationMode.getDisplayName(), cmd.getMigrationUuid());
             logger.info(msg);
@@ -160,6 +163,9 @@ public class LibvirtVmwareCbtCutoverCommandWrapper extends CommandWrapper<Vmware
             deleteTempTree(fallbackStagingDir);
             if (!keepFallbackOutputDir) {
                 deleteTempTree(fallbackOutputDir);
+            }
+            if (cutoverFinalizationCompleted) {
+                deleteEmptyCbtMigrationDirectories(cmd);
             }
         }
     }
@@ -662,6 +668,36 @@ public class LibvirtVmwareCbtCutoverCommandWrapper extends CommandWrapper<Vmware
     private void deleteFallbackSourceDisks(VmwareCbtCutoverCommand cmd) {
         for (VmwareCbtDiskTO disk : cmd.getDisks()) {
             deleteTempFile(Path.of(disk.getTargetPath()));
+        }
+    }
+
+    private void deleteEmptyCbtMigrationDirectories(VmwareCbtCutoverCommand cmd) {
+        Set<Path> migrationDirectories = new HashSet<>();
+        for (VmwareCbtDiskTO disk : cmd.getDisks()) {
+            Path sourcePath = Path.of(disk.getTargetPath()).normalize();
+            Path storageRoot = getStorageRootForCbtPath(cmd.getMigrationUuid(), sourcePath);
+            if (storageRoot == null) {
+                continue;
+            }
+            Path migrationDirectory = storageRoot.resolve("cloudstack-cbt").resolve(cmd.getMigrationUuid()).normalize();
+            if (sourcePath.startsWith(migrationDirectory)) {
+                migrationDirectories.add(migrationDirectory);
+            }
+        }
+
+        for (Path migrationDirectory : migrationDirectories) {
+            if (!Files.isDirectory(migrationDirectory) || Files.isSymbolicLink(migrationDirectory)) {
+                continue;
+            }
+            try {
+                Files.deleteIfExists(migrationDirectory);
+            } catch (DirectoryNotEmptyException e) {
+                logger.warn("Preserving non-empty VMware CBT migration directory {} after successful cutover",
+                        migrationDirectory);
+            } catch (Exception e) {
+                logger.warn("Unable to remove VMware CBT migration directory {} after successful cutover: {}",
+                        migrationDirectory, e.getMessage());
+            }
         }
     }
 

@@ -107,6 +107,27 @@ public class LibvirtVmwareCbtCutoverCommandWrapperTest {
         Assert.assertEquals(poolRoot, relocatedPath.getParent());
         Assert.assertTrue(Files.exists(relocatedPath));
         Assert.assertFalse(Files.exists(sourceDisk));
+        Assert.assertFalse(Files.exists(migrationDir));
+    }
+
+    @Test
+    public void testExecutePreservesNonEmptyMigrationDirectoryAfterRelocation() throws IOException {
+        Path poolRoot = temporaryFolder.newFolder("pool-root-with-marker").toPath();
+        Path migrationDir = poolRoot.resolve("cloudstack-cbt").resolve("migration-uuid");
+        Files.createDirectories(migrationDir);
+        Path sourceDisk = migrationDir.resolve("disk-1.qcow2");
+        Path marker = migrationDir.resolve("keep.marker");
+        Files.writeString(sourceDisk, "synced disk");
+        Files.writeString(marker, "keep");
+        VmwareCbtCutoverCommand command = createCommand(List.of(createDisk("disk-1", sourceDisk.toString())));
+        command.setWait(1);
+
+        Answer answer = wrapper.execute(command, libvirtComputingResource);
+
+        Assert.assertTrue(answer.getResult());
+        Assert.assertTrue(Files.isDirectory(migrationDir));
+        Assert.assertTrue(Files.exists(marker));
+        Assert.assertFalse(Files.exists(sourceDisk));
     }
 
     @Test
@@ -261,6 +282,7 @@ public class LibvirtVmwareCbtCutoverCommandWrapperTest {
         Assert.assertTrue(Files.exists(relocatedPath));
         Assert.assertFalse(relocatedPath.toString().contains("virt-v2v-output"));
         Assert.assertFalse(Files.exists(sourceDisk));
+        Assert.assertFalse(Files.exists(migrationDir));
     }
 
     @Test
