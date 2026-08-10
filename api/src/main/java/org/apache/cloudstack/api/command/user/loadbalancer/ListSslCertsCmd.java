@@ -51,7 +51,7 @@ public class ListSslCertsCmd extends BaseCmd {
     @Parameter(name = ApiConstants.CERTIFICATE_ID, type = CommandType.UUID, entityType = SslCertResponse.class, required = false, description = "ID of SSL certificate")
     private Long certId;
 
-    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, required = false, description = "Account ID, deprecated: use " + ApiConstants.ACCOUNT + " and " + ApiConstants.DOMAIN_ID + " instead")
+    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, required = false, description = "Account ID and " + ApiConstants.ACCOUNT + " are mutually exclusive.")
     private Long accountId;
 
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, since = "4.24", description = "Account owning the SSL certificate")
@@ -74,7 +74,6 @@ public class ListSslCertsCmd extends BaseCmd {
         return certId;
     }
 
-    @Deprecated
     public Long getAccountId() {
         return accountId;
     }
