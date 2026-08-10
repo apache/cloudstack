@@ -128,6 +128,9 @@ public class CertServiceImpl implements CertService {
     public SslCertResponse uploadSslCert(final UploadSslCertCmd certCmd) {
         Preconditions.checkNotNull(certCmd);
 
+        final Account caller = CallContext.current().getCallingAccount();
+        final Account owner = _accountMgr.finalizeOwner(caller, certCmd.getAccountName(), certCmd.getDomainId(), certCmd.getProjectId());
+
         final String cert = certCmd.getCert();
         final String key = certCmd.getKey();
         final String password = certCmd.getPassword();
@@ -138,17 +141,6 @@ public class CertServiceImpl implements CertService {
         logger.debug("Certificate Validation succeeded");
 
         final String fingerPrint = CertificateHelper.generateFingerPrint(parseCertificate(cert));
-
-        final CallContext ctx = CallContext.current();
-        final Account caller = ctx.getCallingAccount();
-
-        Account owner = null;
-        if (StringUtils.isNotEmpty(certCmd.getAccountName()) && certCmd.getDomainId() != null || certCmd.getProjectId() != null) {
-            owner = _accountMgr.finalizeOwner(caller, certCmd.getAccountName(), certCmd.getDomainId(), certCmd.getProjectId());
-        } else {
-            owner = caller;
-        }
-
         final Long accountId = owner.getId();
         final Long domainId = owner.getDomainId();
 
