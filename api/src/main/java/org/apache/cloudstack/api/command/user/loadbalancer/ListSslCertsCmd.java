@@ -86,7 +86,7 @@ public class ListSslCertsCmd extends BaseCmd {
         return projectId;
     }
 
-    public  String getAccountName() {
+    public String getAccountName() {
         return accountName;
     }
 

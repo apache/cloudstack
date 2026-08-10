@@ -205,7 +205,7 @@ public class CertServiceImpl implements CertService {
         final String accountName = listSslCertCmd.getAccountName();
         final Long domainId = listSslCertCmd.getDomainId();
 
-        if (accountId != null && (accountName != null || domainId != null)) {
+        if (accountId != null && (StringUtils.isNotBlank(accountName) || domainId != null)) {
             throw new InvalidParameterValueException("The accountid and account/domainid are mutually exclusive");
         }
 
@@ -229,8 +229,6 @@ public class CertServiceImpl implements CertService {
         Account owner = null;
         if (StringUtils.isNotEmpty(accountName)) {
             owner = _accountMgr.finalizeOwner(caller, accountName, domainId, projectId);
-        } else if (accountId != null) {
-            owner = _accountMgr.getAccount(accountId);
         } else {
             owner = caller;
         }
@@ -301,7 +299,7 @@ public class CertServiceImpl implements CertService {
             return certResponseList;
         }
 
-        final List<SslCertVO> certVOList = _sslCertDao.listByAccountId(owner.getId());
+        final List<SslCertVO> certVOList = _sslCertDao.listByAccountId(accountId != null ? accountId : owner.getId());
         if (certVOList == null || certVOList.isEmpty()) {
             return certResponseList;
         }
