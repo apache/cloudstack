@@ -1447,13 +1447,22 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         List<String> allApis = new ArrayList<>(apiNameList);
         List<String> requestedAllowed = allApis;
-        for (final APIAclChecker apiChecker : aclCheckers) {
-            requestedAllowed = apiChecker.getApisAllowedToAccount(requested, requestedAllowed);
+        List<String> callerAllowed = new ArrayList<>();
+        try {
+            for (final APIAclChecker apiChecker : aclCheckers) {
+                requestedAllowed = apiChecker.getApisAllowedToAccount(requested, requestedAllowed);
+            }
+            callerAllowed = requestedAllowed;
+            for (final APIAclChecker apiChecker : aclCheckers) {
+                callerAllowed = apiChecker.getApisAllowedToAccount(caller, callerAllowed);
+            }
+        } catch (PermissionDeniedException e) {
+            String msg = String.format("User of account: %s cannot assign this role on the requested account: %s", caller.getAccountName(), requested.getAccountName());
+            String logMsg = String.format("%s: %s", msg, e.getMessage());
+            logger.error(logMsg, e);
+            throw new PermissionDeniedException(msg);
         }
-        List<String> callerAllowed = requestedAllowed;
-        for (final APIAclChecker apiChecker : aclCheckers) {
-            callerAllowed = apiChecker.getApisAllowedToAccount(caller, callerAllowed);
-        }
+
         if (callerAllowed.size() < requestedAllowed.size()) {
             List<String> escalatedApis = new ArrayList<>(requestedAllowed);
             escalatedApis.removeAll(callerAllowed);
