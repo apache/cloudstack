@@ -210,8 +210,8 @@ public class CertServiceImpl implements CertService {
         }
 
         Account owner = null;
-        if (StringUtils.isNotEmpty(listSslCertCmd.getAccountName()) && listSslCertCmd.getDomainId() != null || listSslCertCmd.getProjectId() != null) {
-            owner = _accountMgr.finalizeOwner(caller, listSslCertCmd.getAccountName(), listSslCertCmd.getDomainId(), listSslCertCmd.getProjectId());
+        if (StringUtils.isNotEmpty(accountName)) {
+            owner = _accountMgr.finalizeOwner(caller, accountName, domainId, projectId);
         } else if (accountId != null) {
             owner = _accountMgr.getAccount(accountId);
         } else {
