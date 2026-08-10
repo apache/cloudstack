@@ -209,6 +209,23 @@ public class CertServiceImpl implements CertService {
             throw new InvalidParameterValueException("The accountid and account/domainid are mutually exclusive");
         }
 
+        // Validate that only one of certid, lbid, projectid, or accountid/account can be specified
+        ArrayList<Object> params = new ArrayList<>();
+        params.add(certId);
+        params.add(accountId != null ? accountId : accountName);
+        params.add(lbRuleId);
+        params.add(projectId);
+
+        int nonNullIds = 0;
+        for (Object param : params) {
+            if (param != null) {
+                nonNullIds++;
+            }
+        }
+        if (nonNullIds > 1) {
+            throw new InvalidParameterValueException("Only one of certid, lbid, projectid, or accountid/account can be specified");
+        }
+
         Account owner = null;
         if (StringUtils.isNotEmpty(accountName)) {
             owner = _accountMgr.finalizeOwner(caller, accountName, domainId, projectId);
