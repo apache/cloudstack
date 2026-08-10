@@ -339,8 +339,8 @@ ln -sf /etc/%{name}/ui/config.json ${RPM_BUILD_ROOT}%{_datadir}/%{name}-ui/confi
 # Package mysql-connector-python (bundled to avoid dependency on external community repo)
 # Version 8.0.31 is the last version supporting Python 3.6 (EL8)
 wget -P ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup/wheel https://files.pythonhosted.org/packages/08/1f/42d74bae9dd6dcfec67c9ed0f3fa482b1ae5ac5f117ca82ab589ecb3ca19/mysql_connector_python-8.0.31-py2.py3-none-any.whl
-# Version 8.3.0 supports Python 3.8 to 3.12 (EL9, EL10)
-wget -P ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup/wheel https://files.pythonhosted.org/packages/53/ed/26a4b8cacb8852c6fd97d2d58a7f2591c41989807ea82bd8d9725a4e6937/mysql_connector_python-8.3.0-py2.py3-none-any.whl
+# Version 8.4.0 supports Python 3.8 to 3.12 (EL9, EL10)
+wget -P ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup/wheel https://files.pythonhosted.org/packages/d3/fb/c28d1cd952da61f8f27173ce5172f89a65d55b430961a0104b7b294a9bfa/mysql_connector_python-8.4.0-py2.py3-none-any.whl
 
 chmod 440 ${RPM_BUILD_ROOT}%{_sysconfdir}/sudoers.d/%{name}-management
 chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/%{name}/mnt
@@ -459,8 +459,8 @@ fi
 %post management
 # Install mysql-connector-python wheel
 # Detect Python version to install compatible wheel
-if python3 -c 'import sys; sys.exit(0 if sys.version_info >= (3, 7) else 1)'; then
-    pip3 install %{_datadir}/%{name}-management/setup/wheel/mysql_connector_python-8.3.0-py2.py3-none-any.whl
+if python3 -c 'import sys; sys.exit(0 if sys.version_info >= (3, 8) else 1)'; then
+    pip3 install %{_datadir}/%{name}-management/setup/wheel/mysql_connector_python-8.4.0-py2.py3-none-any.whl
 else
     pip3 install %{_datadir}/%{name}-management/setup/wheel/mysql_connector_python-8.0.31-py2.py3-none-any.whl
 fi
@@ -598,7 +598,7 @@ if [ -f "/usr/share/cloudstack-common/scripts/installer/cloudstack-help-text" ];
 fi
 
 %post marvin
-pip3 install --upgrade https://files.pythonhosted.org/packages/08/1f/42d74bae9dd6dcfec67c9ed0f3fa482b1ae5ac5f117ca82ab589ecb3ca19/mysql_connector_python-8.0.31-py2.py3-none-any.whl
+pip3 install --upgrade https://files.pythonhosted.org/packages/d3/fb/c28d1cd952da61f8f27173ce5172f89a65d55b430961a0104b7b294a9bfa/mysql_connector_python-8.4.0-py2.py3-none-any.whl
 pip3 install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 
 #No default permission as the permission setup is complex
