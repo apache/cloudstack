@@ -51,6 +51,8 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
 
     SnapshotDataStoreVO findBySnapshotIdAndDataStoreRoleAndState(long snapshotId, DataStoreRole role, ObjectInDataStoreStateMachine.State state);
 
+    List<SnapshotDataStoreVO> listBySnapshotIdAndDataStoreRoleAndStateIn(long snapshotId, DataStoreRole role, ObjectInDataStoreStateMachine.State... state);
+
     List<SnapshotDataStoreVO> listReadyByVolumeIdAndCheckpointPathNotNull(long volumeId);
 
     SnapshotDataStoreVO findOneBySnapshotId(long snapshotId, long zoneId);
@@ -96,6 +98,8 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
     void updateVolumeIds(long oldVolId, long newVolId);
 
     List<SnapshotDataStoreVO> findByVolume(long snapshotId, long volumeId, DataStoreRole role);
+
+    void expungeBySnapshotIdAndStoreRole(long snapshotId, DataStoreRole role);
 
     /**
      * List all snapshots in 'snapshot_store_ref' by volume and data store role. Therefore, it is possible to list all snapshots that are in the primary storage or in the secondary storage.

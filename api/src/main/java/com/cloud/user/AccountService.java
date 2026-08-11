@@ -88,9 +88,15 @@ public interface AccountService {
 
     Account getActiveAccountById(long accountId);
 
+    Account getActiveAccountByUuid(String accountUuid);
+
     Account getAccount(long accountId);
 
+    Account getAccountByUuid(String accountUuid);
+
     User getActiveUser(long userId);
+
+    User getOneActiveUserForAccount(Account account);
 
     User getUserIncludingRemoved(long userId);
 

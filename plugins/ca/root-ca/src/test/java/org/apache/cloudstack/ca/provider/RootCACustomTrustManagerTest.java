@@ -23,9 +23,11 @@ import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 
 import org.apache.cloudstack.utils.security.CertUtils;
 import org.junit.Assert;
@@ -63,14 +65,14 @@ public class RootCACustomTrustManagerTest {
 
     @Test
     public void testAuthNotStrictWithInvalidCert() throws Exception {
-        final RootCACustomTrustManager trustManager = new RootCACustomTrustManager(clientIp, false, true, certMap, caCertificate, crlDao);
+        final RootCACustomTrustManager trustManager = new RootCACustomTrustManager(clientIp, false, true, certMap, Collections.singletonList(caCertificate), crlDao);
         trustManager.checkClientTrusted(null, null);
     }
 
     @Test
     public void testAuthNotStrictWithRevokedCert() throws Exception {
         Mockito.when(crlDao.findBySerial(Mockito.any(BigInteger.class))).thenReturn(new CrlVO());
-        final RootCACustomTrustManager trustManager = new RootCACustomTrustManager(clientIp, false, true, certMap, caCertificate, crlDao);
+        final RootCACustomTrustManager trustManager = new RootCACustomTrustManager(clientIp, false, true, certMap, Collections.singletonList(caCertificate), crlDao);
         trustManager.checkClientTrusted(new X509Certificate[]{caCertificate}, "RSA");
         Assert.assertTrue(certMap.containsKey(clientIp));
         Assert.assertEquals(certMap.get(clientIp), caCertificate);
@@ -79,7 +81,7 @@ public class RootCACustomTrustManagerTest {
     @Test
     public void testAuthNotStrictWithInvalidCertOwnership() throws Exception {
         Mockito.when(crlDao.findBySerial(Mockito.any(BigInteger.class))).thenReturn(null);
-        final RootCACustomTrustManager trustManager = new RootCACustomTrustManager(clientIp, false, true, certMap, caCertificate, crlDao);
+        final RootCACustomTrustManager trustManager = new RootCACustomTrustManager(clientIp, false, true, certMap, Collections.singletonList(caCertificate), crlDao);
         trustManager.checkClientTrusted(new X509Certificate[]{caCertificate}, "RSA");
         Assert.assertTrue(certMap.containsKey(clientIp));
         Assert.assertEquals(certMap.get(clientIp), caCertificate);
@@ -88,14 +90,14 @@ public class RootCACustomTrustManagerTest {
     @Test(expected = CertificateException.class)
     public void testAuthNotStrictWithDenyExpiredCertAndOwnership() throws Exception {
         Mockito.when(crlDao.findBySerial(Mockito.any(BigInteger.class))).thenReturn(null);
-        final RootCACustomTrustManager trustManager = new RootCACustomTrustManager(clientIp, false, false, certMap, caCertificate, crlDao);
+        final RootCACustomTrustManager trustManager = new RootCACustomTrustManager(clientIp, false, false, certMap, Collections.singletonList(caCertificate), crlDao);
         trustManager.checkClientTrusted(new X509Certificate[]{expiredClientCertificate}, "RSA");
     }
 
     @Test
     public void testAuthNotStrictWithAllowExpiredCertAndOwnership() throws Exception {
         Mockito.when(crlDao.findBySerial(Mockito.any(BigInteger.class))).thenReturn(null);
-        final RootCACustomTrustManager trustManager = new RootCACustomTrustManager(clientIp, false, true, certMap, caCertificate, crlDao);
+        final RootCACustomTrustManager trustManager = new RootCACustomTrustManager(clientIp, false, true, certMap, Collections.singletonList(caCertificate), crlDao);
         trustManager.checkClientTrusted(new X509Certificate[]{expiredClientCertificate}, "RSA");
         Assert.assertTrue(certMap.containsKey(clientIp));
         Assert.assertEquals(certMap.get(clientIp), expiredClientCertificate);
@@ -103,35 +105,50 @@ public class RootCACustomTrustManagerTest {
 
     @Test(expected = CertificateException.class)
     public void testAuthStrictWithInvalidCert() throws Exception {
-        final RootCACustomTrustManager trustManager = new RootCACustomTrustManager(clientIp, true, true, certMap, caCertificate, crlDao);
+        final RootCACustomTrustManager trustManager = new RootCACustomTrustManager(clientIp, true, true, certMap, Collections.singletonList(caCertificate), crlDao);
         trustManager.checkClientTrusted(null, null);
     }
 
     @Test(expected = CertificateException.class)
     public void testAuthStrictWithRevokedCert() throws Exception {
         Mockito.when(crlDao.findBySerial(Mockito.any(BigInteger.class))).thenReturn(new CrlVO());
-        final RootCACustomTrustManager trustManager = new RootCACustomTrustManager(clientIp, true, true, certMap, caCertificate, crlDao);
+        final RootCACustomTrustManager trustManager = new RootCACustomTrustManager(clientIp, true, true, certMap, Collections.singletonList(caCertificate), crlDao);
         trustManager.checkClientTrusted(new X509Certificate[]{caCertificate}, "RSA");
     }
 
     @Test(expected = CertificateException.class)
     public void testAuthStrictWithInvalidCertOwnership() throws Exception {
         Mockito.when(crlDao.findBySerial(Mockito.any(BigInteger.class))).thenReturn(null);
-        final RootCACustomTrustManager trustManager = new RootCACustomTrustManager(clientIp, true, true, certMap, caCertificate, crlDao);
+        final RootCACustomTrustManager trustManager = new RootCACustomTrustManager(clientIp, true, true, certMap, Collections.singletonList(caCertificate), crlDao);
         trustManager.checkClientTrusted(new X509Certificate[]{caCertificate}, "RSA");
     }
 
     @Test(expected = CertificateException.class)
     public void testAuthStrictWithDenyExpiredCertAndOwnership() throws Exception {
         Mockito.when(crlDao.findBySerial(Mockito.any(BigInteger.class))).thenReturn(null);
-        final RootCACustomTrustManager trustManager = new RootCACustomTrustManager(clientIp, true, false, certMap, caCertificate, crlDao);
+        final RootCACustomTrustManager trustManager = new RootCACustomTrustManager(clientIp, true, false, certMap, Collections.singletonList(caCertificate), crlDao);
         trustManager.checkClientTrusted(new X509Certificate[]{expiredClientCertificate}, "RSA");
+    }
+
+    @Test
+    public void testGetAcceptedIssuersWithChain() throws Exception {
+        final KeyPair rootKeyPair = CertUtils.generateRandomKeyPair(1024);
+        final X509Certificate rootCert = CertUtils.generateV3Certificate(null, rootKeyPair, rootKeyPair.getPublic(),
+                "CN=root", "SHA256withRSA", 365, null, null);
+        final List<X509Certificate> chain = Arrays.asList(caCertificate, rootCert);
+        final RootCACustomTrustManager trustManager = new RootCACustomTrustManager(
+                clientIp, false, true, certMap, chain, crlDao);
+
+        final X509Certificate[] issuers = trustManager.getAcceptedIssuers();
+        Assert.assertEquals(2, issuers.length);
+        Assert.assertEquals(caCertificate, issuers[0]);
+        Assert.assertEquals(rootCert, issuers[1]);
     }
 
     @Test
     public void testAuthStrictWithAllowExpiredCertAndOwnership() throws Exception {
         Mockito.when(crlDao.findBySerial(Mockito.any(BigInteger.class))).thenReturn(null);
-        final RootCACustomTrustManager trustManager = new RootCACustomTrustManager(clientIp, true, true, certMap, caCertificate, crlDao);
+        final RootCACustomTrustManager trustManager = new RootCACustomTrustManager(clientIp, true, true, certMap, Collections.singletonList(caCertificate), crlDao);
         Assert.assertTrue(trustManager.getAcceptedIssuers() != null);
         Assert.assertTrue(trustManager.getAcceptedIssuers().length == 1);
         Assert.assertEquals(trustManager.getAcceptedIssuers()[0], caCertificate);

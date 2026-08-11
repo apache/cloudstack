@@ -91,6 +91,10 @@ public interface NetworkOrchestrationService {
     ConfigKey<Integer> NetworkThrottlingRate = new ConfigKey<>("Network", Integer.class, NetworkThrottlingRateCK, "200",
             "Default data transfer rate in megabits per second allowed in network.", true, ConfigKey.Scope.Zone);
 
+    ConfigKey<Integer> DhcpLeaseTimeout = new ConfigKey<>("Network", Integer.class, "dhcp.lease.timeout", "0",
+            "DHCP lease time in seconds for VMs. Use 0 for infinite lease time (default). A non-zero value sets the lease duration in seconds.",
+            true, ConfigKey.Scope.Zone);
+
     ConfigKey<Boolean> PromiscuousMode = new ConfigKey<>("Advanced", Boolean.class, "network.promiscuous.mode", "false",
             "Whether to allow or deny promiscuous mode on NICs for applicable network elements such as for vswitch/dvswitch portgroups.", true);
 
@@ -122,6 +126,17 @@ public interface NetworkOrchestrationService {
                     "Load Balancer(haproxy) maximum number of concurrent connections(global max)",
                     true,
                     Scope.Global);
+    ConfigKey<Long> NETWORK_LB_HAPROXY_IDLE_TIMEOUT = new ConfigKey<>(
+                    "Network",
+                    Long.class,
+                    "network.loadbalancer.haproxy.idle.timeout",
+                    "50000",
+                    "Load Balancer(haproxy) idle timeout in milliseconds. Use 0 for infinite.",
+                    true,
+                    Scope.Global);
+
+    ConfigKey<Integer> VmNetworkThrottlingRate = new ConfigKey<Integer>("Network", Integer.class, "vm.network.throttling.rate", "200",
+            "Default data transfer rate in megabits per second allowed in User vm's default network.", true, ConfigKey.Scope.Zone);
 
     List<? extends Network> setupNetwork(Account owner, NetworkOffering offering, DeploymentPlan plan, String name, String displayText, boolean isDefault)
         throws ConcurrentOperationException;
@@ -129,6 +144,8 @@ public interface NetworkOrchestrationService {
     List<? extends Network> setupNetwork(Account owner, NetworkOffering offering, Network predefined, DeploymentPlan plan, String name, String displayText,
         boolean errorIfAlreadySetup, Long domainId, ACLType aclType, Boolean subdomainAccess, Long vpcId, Boolean isDisplayNetworkEnabled)
         throws ConcurrentOperationException;
+
+    boolean isIsolationMethodNetworkExtension(Long networkOfferingId);
 
     void allocate(VirtualMachineProfile vm, LinkedHashMap<? extends Network, List<? extends NicProfile>> networks, Map<String, Map<Integer, String>> extraDhcpOptions) throws InsufficientCapacityException,
         ConcurrentOperationException;
@@ -211,6 +228,11 @@ public interface NetworkOrchestrationService {
                                Long domainId, PhysicalNetwork physicalNetwork, long zoneId, ACLType aclType, Boolean subdomainAccess, Long vpcId, String ip6Gateway, String ip6Cidr,
                                Boolean displayNetworkEnabled, String isolatedPvlan, Network.PVlanType isolatedPvlanType, String externalId, String routerIp, String routerIpv6,
                                String ip4Dns1, String ip4Dns2, String ip6Dns1, String ip6Dns2, Pair<Integer, Integer> vrIfaceMTUs, Integer networkCidrSize) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
+
+    Network createGuestNetwork(long networkOfferingId, String name, String displayText, String gateway, String cidr, String vlanId, boolean bypassVlanOverlapCheck, String networkDomain, Account owner,
+                               Long domainId, PhysicalNetwork physicalNetwork, long zoneId, ACLType aclType, Boolean subdomainAccess, Long vpcId, String ip6Gateway, String ip6Cidr,
+                               Boolean displayNetworkEnabled, String isolatedPvlan, Network.PVlanType isolatedPvlanType, String externalId, String routerIp, String routerIpv6,
+                               String ip4Dns1, String ip4Dns2, String ip6Dns1, String ip6Dns2, Pair<Integer, Integer> vrIfaceMTUs, Integer networkCidrSize, boolean keepMacAddressOnPublicNic) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
 
     UserDataServiceProvider getPasswordResetProvider(Network network);
 
@@ -310,7 +332,7 @@ public interface NetworkOrchestrationService {
 
     void removeDhcpServiceInSubnet(Nic nic);
 
-    boolean resourceCountNeedsUpdate(NetworkOffering ntwkOff, ACLType aclType);
+    boolean isResourceCountUpdateNeeded(NetworkOffering networkOffering);
 
     void prepareAllNicsForMigration(VirtualMachineProfile vm, DeployDestination dest);
 

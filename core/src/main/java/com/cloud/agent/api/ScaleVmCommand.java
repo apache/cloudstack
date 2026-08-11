@@ -30,6 +30,7 @@ public class ScaleVmCommand extends Command {
     Integer maxSpeed;
     long minRam;
     long maxRam;
+    private boolean limitCpuUseChange;
 
     public VirtualMachineTO getVm() {
         return vm;
@@ -43,7 +44,7 @@ public class ScaleVmCommand extends Command {
         return cpus;
     }
 
-    public ScaleVmCommand(String vmName, int cpus, Integer minSpeed, Integer maxSpeed, long minRam, long maxRam, boolean limitCpuUse) {
+    public ScaleVmCommand(String vmName, int cpus, Integer minSpeed, Integer maxSpeed, long minRam, long maxRam, boolean limitCpuUse, Double cpuQuotaPercentage, boolean limitCpuUseChange) {
         super();
         this.vmName = vmName;
         this.cpus = cpus;
@@ -52,6 +53,8 @@ public class ScaleVmCommand extends Command {
         this.minRam = minRam;
         this.maxRam = maxRam;
         this.vm = new VirtualMachineTO(1L, vmName, null, cpus, minSpeed, maxSpeed, minRam, maxRam, null, null, false, limitCpuUse, null);
+        this.vm.setCpuQuotaPercentage(cpuQuotaPercentage);
+        this.limitCpuUseChange = limitCpuUseChange;
     }
 
     public void setCpus(int cpus) {
@@ -100,6 +103,10 @@ public class ScaleVmCommand extends Command {
 
     public VirtualMachineTO getVirtualMachine() {
         return vm;
+    }
+
+    public boolean getLimitCpuUseChange() {
+        return limitCpuUseChange;
     }
 
     @Override

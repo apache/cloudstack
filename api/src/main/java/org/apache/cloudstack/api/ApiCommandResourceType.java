@@ -89,7 +89,9 @@ public enum ApiCommandResourceType {
     KubernetesSupportedVersion(null),
     SharedFS(org.apache.cloudstack.storage.sharedfs.SharedFS.class),
     Extension(org.apache.cloudstack.extension.Extension.class),
-    ExtensionCustomAction(org.apache.cloudstack.extension.ExtensionCustomAction.class);
+    ExtensionCustomAction(org.apache.cloudstack.extension.ExtensionCustomAction.class),
+    KmsKey(org.apache.cloudstack.kms.KMSKey.class),
+    HsmProfile(org.apache.cloudstack.kms.HSMProfile.class);
 
     private final Class<?> clazz;
 
@@ -127,8 +129,8 @@ public enum ApiCommandResourceType {
     }
 
     public static ApiCommandResourceType fromString(String value) {
-        if (StringUtils.isNotEmpty(value) && EnumUtils.isValidEnum(ApiCommandResourceType.class, value)) {
-            return valueOf(value);
+        if (StringUtils.isNotBlank(value) && EnumUtils.isValidEnumIgnoreCase(ApiCommandResourceType.class, value)) {
+            return EnumUtils.getEnumIgnoreCase(ApiCommandResourceType.class, value);
         }
         return null;
     }
