@@ -132,7 +132,7 @@ public class CertServiceImpl implements CertService {
         final Account caller = ctx.getCallingAccount();
 
         Account owner;
-        if (StringUtils.isNotBlank(certCmd.getAccountName()) || certCmd.getProjectId() != null) {
+        if ((StringUtils.isNotBlank(certCmd.getAccountName()) && certCmd.getDomainId() != null) || certCmd.getProjectId() != null) {
             owner = _accountMgr.finalizeOwner(caller, certCmd.getAccountName(), certCmd.getDomainId(), certCmd.getProjectId());
         } else {
             owner = caller;
@@ -228,7 +228,7 @@ public class CertServiceImpl implements CertService {
         }
 
         Account owner;
-        if (StringUtils.isNotBlank(accountName) || projectId != null) {
+        if ((StringUtils.isNotBlank(accountName) && domainId != null) || projectId != null) {
             owner = _accountMgr.finalizeOwner(caller, accountName, domainId, projectId);
         } else {
             owner = caller;
