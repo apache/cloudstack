@@ -2693,6 +2693,22 @@ public class KVMStorageProcessor implements StorageProcessor {
         }
     }
 
+    /**
+     * Unprotects an RBD snapshot if it was protected; never throws. A snapshot left protected cannot
+     * be deleted, and neither can its volume.
+     */
+    protected void unprotectRbdSnapshot(RbdImage image, String snapshotName, boolean snapProtected) {
+        if (!snapProtected) {
+            return;
+        }
+        try {
+            image.snapUnprotect(snapshotName);
+        } catch (final Exception e) {
+            logger.error("Failed to unprotect RBD snapshot [{}]; it and its volume cannot be deleted until this is resolved manually. The error was: {}",
+                    snapshotName, e.getMessage(), e);
+        }
+    }
+
     @Override
     public Answer deleteVolume(final DeleteCommand cmd) {
         final VolumeObjectTO vol = (VolumeObjectTO)cmd.getData();
@@ -2892,15 +2908,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             // Every handle has to be released on all paths, including the "snapshot not found" return and
             // any failure of clone/resize/flatten.
             closeRbdImage(rbd, diskImage, newUuid);
-            // A snapshot left protected cannot be deleted, and neither can its volume.
-            if (snapProtected) {
-                try {
-                    srcImage.snapUnprotect(snapshotName);
-                } catch (final Exception e) {
-                    logger.error(String.format("Failed to unprotect RBD snapshot %s; it and its volume cannot be deleted until this is " +
-                            "resolved manually. The error was: %s", snapshotName, e.getMessage()), e);
-                }
-            }
+            unprotectRbdSnapshot(srcImage, snapshotName, snapProtected);
             closeRbdImage(rbd, srcImage, volume.getName());
             destroyRadosIoCtx(r, io, snapshotName);
         }
