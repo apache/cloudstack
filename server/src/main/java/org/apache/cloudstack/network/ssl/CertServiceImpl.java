@@ -131,8 +131,8 @@ public class CertServiceImpl implements CertService {
         final CallContext ctx = CallContext.current();
         final Account caller = ctx.getCallingAccount();
 
-        Account owner = null;
-        if (StringUtils.isNotBlank(certCmd.getAccountName())) {
+        Account owner;
+        if (StringUtils.isNotBlank(certCmd.getAccountName()) || certCmd.getProjectId() != null) {
             owner = _accountMgr.finalizeOwner(caller, certCmd.getAccountName(), certCmd.getDomainId(), certCmd.getProjectId());
         } else {
             owner = caller;
@@ -227,8 +227,8 @@ public class CertServiceImpl implements CertService {
             throw new InvalidParameterValueException("Only one of certid, lbid, projectid, or accountid/account can be specified");
         }
 
-        Account owner = null;
-        if (StringUtils.isNotBlank(accountName)) {
+        Account owner;
+        if (StringUtils.isNotBlank(accountName) || projectId != null) {
             owner = _accountMgr.finalizeOwner(caller, accountName, domainId, projectId);
         } else {
             owner = caller;
