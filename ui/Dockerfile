@@ -17,7 +17,7 @@
 
 # Build example: docker build -t <name> .
 
-FROM node:14-bullseye AS build
+FROM node:24-bullseye AS build
 
 LABEL Description="Apache CloudStack UI; Modern role-base progressive UI for Apache CloudStack"
 LABEL Vendor="Apache.org"
