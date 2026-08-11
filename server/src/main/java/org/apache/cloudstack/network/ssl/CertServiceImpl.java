@@ -128,8 +128,15 @@ public class CertServiceImpl implements CertService {
     public SslCertResponse uploadSslCert(final UploadSslCertCmd certCmd) {
         Preconditions.checkNotNull(certCmd);
 
-        final Account caller = CallContext.current().getCallingAccount();
-        final Account owner = _accountMgr.finalizeOwner(caller, certCmd.getAccountName(), certCmd.getDomainId(), certCmd.getProjectId());
+        final CallContext ctx = CallContext.current();
+        final Account caller = ctx.getCallingAccount();
+
+        Account owner = null;
+        if (StringUtils.isNotBlank(certCmd.getAccountName())) {
+            owner = _accountMgr.finalizeOwner(caller, certCmd.getAccountName(), certCmd.getDomainId(), certCmd.getProjectId());
+        } else {
+            owner = caller;
+        }
 
         final String cert = certCmd.getCert();
         final String key = certCmd.getKey();
