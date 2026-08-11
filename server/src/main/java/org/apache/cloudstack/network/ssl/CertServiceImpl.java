@@ -138,6 +138,8 @@ public class CertServiceImpl implements CertService {
             owner = caller;
         }
 
+        Preconditions.checkNotNull(owner);
+
         final String cert = certCmd.getCert();
         final String key = certCmd.getKey();
         final String password = certCmd.getPassword();
@@ -226,11 +228,13 @@ public class CertServiceImpl implements CertService {
         }
 
         Account owner = null;
-        if (StringUtils.isNotEmpty(accountName)) {
+        if (StringUtils.isNotBlank(accountName)) {
             owner = _accountMgr.finalizeOwner(caller, accountName, domainId, projectId);
         } else {
             owner = caller;
         }
+
+        Preconditions.checkNotNull(owner);
 
         final List<SslCertResponse> certResponseList = new ArrayList<SslCertResponse>();
 
