@@ -69,6 +69,11 @@ public class UpdateVPCCmd extends BaseAsyncCustomIdCmd implements UserCmd {
             since = "4.19")
     private String sourceNatIP;
 
+    @Parameter(name = ApiConstants.KEEP_MAC_ADDRESS_ON_PUBLIC_NIC,
+            description = ApiConstants.PARAMETER_DESCRIPTION_KEEP_MAC_ADDRESS_ON_PUBLIC_NIC,
+            type = CommandType.BOOLEAN, since = "4.23.0", authorized = {RoleType.Admin})
+    private Boolean keepMacAddressOnPublicNic;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -95,6 +100,10 @@ public class UpdateVPCCmd extends BaseAsyncCustomIdCmd implements UserCmd {
 
     public String getSourceNatIP() {
         return sourceNatIP;
+    }
+
+    public Boolean getKeepMacAddressOnPublicNic() {
+        return keepMacAddressOnPublicNic;
     }
 
     /////////////////////////////////////////////////////

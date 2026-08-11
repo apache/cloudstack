@@ -18,6 +18,7 @@
 //
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import java.nio.file.Files;
 import java.util.List;
 import java.util.UUID;
 
@@ -188,5 +189,128 @@ public class LibvirtConvertInstanceCommandWrapperTest {
         Mockito.verify(script).add("--mac", "00:0c:29:e6:3d:9d:ip:192.168.0.89,192.168.0.1,24,192.168.0.254");
         Mockito.verify(script).add("-x");
         Mockito.verify(script).add("-v");
+    }
+
+    @Test
+    public void testPerformInstanceConversionUsingVddkUsesConfiguredLibguestfsBackend() {
+        RemoteInstanceTO remoteInstanceTO = Mockito.mock(RemoteInstanceTO.class);
+        Mockito.when(remoteInstanceTO.getVcenterHost()).thenReturn("vcenter.local");
+        Mockito.when(remoteInstanceTO.getVcenterUsername()).thenReturn("administrator@vsphere.local");
+        Mockito.when(remoteInstanceTO.getVcenterPassword()).thenReturn("secret");
+        Mockito.when(remoteInstanceTO.getDatacenterName()).thenReturn("dc1");
+        Mockito.when(remoteInstanceTO.getClusterName()).thenReturn("cluster1");
+        Mockito.when(remoteInstanceTO.getHostName()).thenReturn("host1");
+        Mockito.doReturn("28:19:A6:1C:90:ED:46:D7:1C:86:BC:F6:13:52:F0:B9:19:81:0D:81")
+                .when(convertInstanceCommandWrapper).getVcenterThumbprint(Mockito.anyString(), Mockito.anyLong(), Mockito.anyString());
+
+        try (MockedStatic<Files> filesMock = Mockito.mockStatic(Files.class);
+             MockedConstruction<Script> ignored = Mockito.mockConstruction(Script.class, (mock, context) -> {
+                 Mockito.when(mock.execute(Mockito.any())).thenReturn("");
+                 Mockito.when(mock.getExitValue()).thenReturn(0);
+             })) {
+            filesMock.when(() -> Files.writeString(Mockito.argThat(path -> path.toString().contains("/tmp/v2v.pass.cloud.vcenter.local.")), Mockito.eq("secret")))
+                    .thenAnswer(invocation -> invocation.getArgument(0));
+            filesMock.when(() -> Files.deleteIfExists(Mockito.argThat(path -> path.toString().contains("/tmp/v2v.pass.cloud.vcenter.local."))))
+                    .thenReturn(true);
+
+            boolean result = convertInstanceCommandWrapper.performInstanceConversionUsingVddk(
+                    remoteInstanceTO, vmName, "/tmp/convert", "/opt/vddk", "libvirt", null, null, 1000L, false, null, "tmp-uuid", "-ip");
+
+            Assert.assertTrue(result);
+            Script scriptMock = ignored.constructed().get(0);
+            Mockito.verify(scriptMock).add("-c");
+            Mockito.verify(scriptMock).add(Mockito.contains("export LIBGUESTFS_BACKEND=libvirt &&"));
+            Mockito.verify(scriptMock).add(Mockito.contains("-ip /tmp/v2v.pass.cloud.vcenter.local."));
+            Mockito.verify(scriptMock).add(Mockito.contains(" -on tmp-uuid "));
+            Mockito.verify(scriptMock).add(Mockito.contains("-io vddk-thumbprint=28:19:A6:1C:90:ED:46:D7:1C:86:BC:F6:13:52:F0:B9:19:81:0D:81 "));
+        }
+    }
+
+    @Test
+    public void testPerformInstanceConversionUsingVddkUsesConfiguredTransportsOrder() {
+        RemoteInstanceTO remoteInstanceTO = Mockito.mock(RemoteInstanceTO.class);
+        Mockito.when(remoteInstanceTO.getVcenterHost()).thenReturn("vcenter.local");
+        Mockito.when(remoteInstanceTO.getVcenterUsername()).thenReturn("administrator@vsphere.local");
+        Mockito.when(remoteInstanceTO.getVcenterPassword()).thenReturn("secret");
+        Mockito.when(remoteInstanceTO.getDatacenterName()).thenReturn("dc1");
+        Mockito.when(remoteInstanceTO.getClusterName()).thenReturn("cluster1");
+        Mockito.when(remoteInstanceTO.getHostName()).thenReturn("host1");
+        Mockito.doReturn("28:19:A6:1C:90:ED:46:D7:1C:86:BC:F6:13:52:F0:B9:19:81:0D:81")
+                .when(convertInstanceCommandWrapper).getVcenterThumbprint(Mockito.anyString(), Mockito.anyLong(), Mockito.anyString());
+
+        try (MockedStatic<Files> filesMock = Mockito.mockStatic(Files.class);
+             MockedConstruction<Script> ignored = Mockito.mockConstruction(Script.class, (mock, context) -> {
+                 Mockito.when(mock.execute(Mockito.any())).thenReturn("");
+                 Mockito.when(mock.getExitValue()).thenReturn(0);
+             })) {
+            filesMock.when(() -> Files.writeString(Mockito.argThat(path -> path.toString().contains("/tmp/v2v.pass.cloud.vcenter.local.")), Mockito.eq("secret")))
+                    .thenAnswer(invocation -> invocation.getArgument(0));
+            filesMock.when(() -> Files.deleteIfExists(Mockito.argThat(path -> path.toString().contains("/tmp/v2v.pass.cloud.vcenter.local."))))
+                    .thenReturn(true);
+
+            boolean result = convertInstanceCommandWrapper.performInstanceConversionUsingVddk(
+                    remoteInstanceTO, vmName, "/tmp/convert", "/opt/vddk", "direct", "nbd:nbdssl", null, 1000L, false, null, "tmp-uuid", "-ip");
+
+            Assert.assertTrue(result);
+            Script scriptMock = ignored.constructed().get(0);
+            Mockito.verify(scriptMock).add(Mockito.contains("-io vddk-transports=nbd:nbdssl "));
+        }
+    }
+
+    @Test
+    public void testPerformInstanceConversionUsingVddkFailsWhenThumbprintUnavailable() {
+        RemoteInstanceTO remoteInstanceTO = Mockito.mock(RemoteInstanceTO.class);
+        Mockito.when(remoteInstanceTO.getVcenterHost()).thenReturn("vcenter.local");
+        Mockito.when(remoteInstanceTO.getVcenterUsername()).thenReturn("administrator@vsphere.local");
+        Mockito.when(remoteInstanceTO.getVcenterPassword()).thenReturn("secret");
+        Mockito.when(remoteInstanceTO.getDatacenterName()).thenReturn("dc1");
+        Mockito.when(remoteInstanceTO.getClusterName()).thenReturn("cluster1");
+        Mockito.when(remoteInstanceTO.getHostName()).thenReturn("host1");
+        Mockito.doReturn(null)
+                .when(convertInstanceCommandWrapper).getVcenterThumbprint(Mockito.anyString(), Mockito.anyLong(), Mockito.anyString());
+
+        try (MockedStatic<Files> filesMock = Mockito.mockStatic(Files.class)) {
+            filesMock.when(() -> Files.writeString(Mockito.argThat(path -> path.toString().contains("/tmp/v2v.pass.cloud.vcenter.local.")), Mockito.eq("secret")))
+                    .thenAnswer(invocation -> invocation.getArgument(0));
+            filesMock.when(() -> Files.deleteIfExists(Mockito.argThat(path -> path.toString().contains("/tmp/v2v.pass.cloud.vcenter.local."))))
+                    .thenReturn(true);
+
+            boolean result = convertInstanceCommandWrapper.performInstanceConversionUsingVddk(
+                    remoteInstanceTO, vmName, "/tmp/convert", "/opt/vddk", "direct", null, null, 1000L, false, null, "tmp-uuid", "-ip");
+
+            Assert.assertFalse(result);
+        }
+    }
+
+    @Test
+    public void testPerformInstanceConversionUsingVddkUsesConfiguredThumbprintFromAgentProperty() {
+        RemoteInstanceTO remoteInstanceTO = Mockito.mock(RemoteInstanceTO.class);
+        Mockito.when(remoteInstanceTO.getVcenterHost()).thenReturn("vcenter.local");
+        Mockito.when(remoteInstanceTO.getVcenterUsername()).thenReturn("administrator@vsphere.local");
+        Mockito.when(remoteInstanceTO.getVcenterPassword()).thenReturn("secret");
+        Mockito.when(remoteInstanceTO.getDatacenterName()).thenReturn("dc1");
+        Mockito.when(remoteInstanceTO.getClusterName()).thenReturn("cluster1");
+        Mockito.when(remoteInstanceTO.getHostName()).thenReturn("host1");
+
+        try (MockedStatic<Files> filesMock = Mockito.mockStatic(Files.class);
+             MockedConstruction<Script> ignored = Mockito.mockConstruction(Script.class, (mock, context) -> {
+                 Mockito.when(mock.execute(Mockito.any())).thenReturn("");
+                 Mockito.when(mock.getExitValue()).thenReturn(0);
+             })) {
+            filesMock.when(() -> Files.writeString(Mockito.argThat(path -> path.toString().contains("/tmp/v2v.pass.cloud.vcenter.local.")), Mockito.eq("secret")))
+                    .thenAnswer(invocation -> invocation.getArgument(0));
+            filesMock.when(() -> Files.deleteIfExists(Mockito.argThat(path -> path.toString().contains("/tmp/v2v.pass.cloud.vcenter.local."))))
+                    .thenReturn(true);
+
+            boolean result = convertInstanceCommandWrapper.performInstanceConversionUsingVddk(
+                    remoteInstanceTO, vmName, "/tmp/convert", "/opt/vddk", "direct", null,
+                    "AA:BB:CC:DD:EE", 1000L, false, null, "tmp-uuid", "-ip");
+
+            Assert.assertTrue(result);
+            Script scriptMock = ignored.constructed().get(0);
+            Mockito.verify(scriptMock).add(Mockito.contains("-io vddk-thumbprint=AA:BB:CC:DD:EE "));
+            Mockito.verify(convertInstanceCommandWrapper, Mockito.never())
+                    .getVcenterThumbprint(Mockito.anyString(), Mockito.anyLong(), Mockito.anyString());
+        }
     }
 }

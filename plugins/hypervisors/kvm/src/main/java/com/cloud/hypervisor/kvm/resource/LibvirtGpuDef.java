@@ -79,28 +79,47 @@ public class LibvirtGpuDef {
         gpuBuilder.append("  <driver name='vfio'/>\n");
         gpuBuilder.append("  <source>\n");
 
-        // Parse the bus address (e.g., 00:02.0) into domain, bus, slot, function
-        String domain = "0x0000";
-        String bus = "0x00";
-        String slot = "0x00";
-        String function = "0x0";
+        // Parse the bus address into domain, bus, slot, function. Two input formats are accepted:
+        //   - "dddd:bb:ss.f"  full PCI address with domain (e.g. 0000:00:02.0)
+        //   - "bb:ss.f"       legacy short BDF; domain defaults to 0000
+        // Each segment is parsed as a hex integer and formatted with fixed widths
+        // (domain: 4 hex digits, bus/slot: 2 hex digits, function: 1 hex digit) to
+        // produce canonical libvirt XML values regardless of input casing or padding.
+        int domainVal = 0, busVal = 0, slotVal = 0, funcVal = 0;
 
         if (busAddress != null && !busAddress.isEmpty()) {
             String[] parts = busAddress.split(":");
-            if (parts.length > 1) {
-                bus = "0x" + parts[0];
-                String[] slotFunctionParts = parts[1].split("\\.");
-                if (slotFunctionParts.length > 0) {
-                    slot = "0x" + slotFunctionParts[0];
-                    if (slotFunctionParts.length > 1) {
-                        function = "0x" + slotFunctionParts[1].trim();
-                    }
+            try {
+                String slotFunction;
+                if (parts.length == 3) {
+                    domainVal = Integer.parseInt(parts[0], 16);
+                    busVal = Integer.parseInt(parts[1], 16);
+                    slotFunction = parts[2];
+                } else if (parts.length == 2) {
+                    busVal = Integer.parseInt(parts[0], 16);
+                    slotFunction = parts[1];
+                } else {
+                    throw new IllegalArgumentException("Invalid PCI bus address format: '" + busAddress + "'");
                 }
+                String[] sf = slotFunction.split("\\.");
+                if (sf.length == 2) {
+                    slotVal = Integer.parseInt(sf[0], 16);
+                    funcVal = Integer.parseInt(sf[1].trim(), 16);
+                } else {
+                    throw new IllegalArgumentException("Invalid PCI bus address format: '" + busAddress + "'");
+                }
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("Invalid PCI bus address format: '" + busAddress + "'", e);
             }
         }
 
+        String domain = String.format("0x%04x", domainVal);
+        String bus = String.format("0x%02x", busVal);
+        String slot = String.format("0x%02x", slotVal);
+        String function = String.format("0x%x", funcVal);
+
         gpuBuilder.append("    <address domain='").append(domain).append("' bus='").append(bus).append("' slot='")
-                .append(slot).append("' function='").append(function.trim()).append("'/>\n");
+                .append(slot).append("' function='").append(function).append("'/>\n");
         gpuBuilder.append("  </source>\n");
         gpuBuilder.append("</hostdev>\n");
     }

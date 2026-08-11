@@ -251,7 +251,7 @@ export default {
       this.parentToggleSetting(false)
     },
     downloadSetting () {
-      this.downloadObjectAsJson(this.uiSettings)
+      this.downloadObjectAsJson(this.$config.theme)
     },
     resetSetting () {
       this.uiSettings = {}

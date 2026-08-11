@@ -32,6 +32,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.function.Consumer;
@@ -39,10 +40,6 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.cloud.domain.dao.DomainDao;
-import com.cloud.user.AccountVO;
-import com.cloud.user.ApiKeyPairState;
-import com.cloud.user.dao.AccountDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.RoleVO;
@@ -53,6 +50,7 @@ import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.DomainDetails;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
@@ -217,6 +215,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
 import org.apache.cloudstack.gui.theme.GuiThemeJoin;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.network.BgpPeerVO;
@@ -264,6 +263,7 @@ import com.cloud.api.query.vo.NetworkOfferingJoinVO;
 import com.cloud.api.query.vo.ProjectAccountJoinVO;
 import com.cloud.api.query.vo.ProjectInvitationJoinVO;
 import com.cloud.api.query.vo.ProjectJoinVO;
+import com.cloud.api.query.ResourceIdSupport;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.SecurityGroupJoinVO;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
@@ -304,6 +304,7 @@ import com.cloud.dc.dao.ASNumberRangeDao;
 import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.Event;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
@@ -421,11 +422,14 @@ import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
+import com.cloud.user.ApiKeyPairState;
 import com.cloud.user.SSHKeyPair;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserData;
 import com.cloud.user.UserStatisticsVO;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDataDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
@@ -458,7 +462,7 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 import sun.security.x509.X509CertImpl;
 
-public class ApiResponseHelper implements ResponseGenerator {
+public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
 
     protected Logger logger = LogManager.getLogger(ApiResponseHelper.class);
     private static final DecimalFormat s_percentFormat = new DecimalFormat("##.##");
@@ -542,6 +546,11 @@ public class ApiResponseHelper implements ResponseGenerator {
     Site2SiteVpnManager site2SiteVpnManager;
     @Inject
     ResourceIconManager resourceIconManager;
+    @Inject
+    AsyncJobDao asyncJobDao;
+    @Inject
+    NetworkModel networkModel;
+
 
     public static String getPrettyDomainPath(String path) {
         if (path == null) {
@@ -814,7 +823,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         if (mapCapabilities != null) {
             String value = mapCapabilities.get(DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString());
-            Boolean supportsStorageSystemSnapshots = new Boolean(value);
+            boolean supportsStorageSystemSnapshots = Boolean.getBoolean(value);
 
             if (supportsStorageSystemSnapshots) {
                 return DataStoreRole.Primary;
@@ -2335,16 +2344,26 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public AsyncJobResponse queryJobResult(final QueryAsyncJobResultCmd cmd) {
-        final Account caller = CallContext.current().getCallingAccount();
+        ApiCommandResourceType resourceType = getResourceType(cmd.getResourceType());
+        String resourceTypeName = Optional.ofNullable(resourceType).map(ApiCommandResourceType::name).orElse(null);
 
-        final AsyncJob job = _entityMgr.findByIdIncludingRemoved(AsyncJob.class, cmd.getId());
-        if (job == null) {
-            throw new InvalidParameterValueException("Unable to find a job by id " + cmd.getId());
+        Long resourceId = getResourceId(resourceType, cmd.getResourceId());
+        Long jobId = cmd.getId();
+        if (jobId == null && resourceId == null) {
+            throw new InvalidParameterValueException("Expected parameter job id or parameters resource type and resource id");
         }
+
+        final AsyncJob job = asyncJobDao.findJob(jobId, resourceId, resourceTypeName);
+        if (job == null) {
+            throw new InvalidParameterValueException("Unable to find a job by id " + jobId + " resource type "
+                    + cmd.getResourceType() + " resource id " + cmd.getResourceId());
+        }
+        jobId = job.getId();
 
         final User userJobOwner = _accountMgr.getUserIncludingRemoved(job.getUserId());
         final Account jobOwner = _accountMgr.getAccount(userJobOwner.getAccountId());
 
+        final Account caller = CallContext.current().getCallingAccount();
         //check permissions
         if (_accountMgr.isNormalUser(caller.getId())) {
             //regular users can see only jobs they own
@@ -2355,7 +2374,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             _accountMgr.checkAccess(caller, null, true, jobOwner);
         }
 
-        return createAsyncJobResponse(_jobMgr.queryJob(cmd.getId(), true));
+        return createAsyncJobResponse(_jobMgr.queryJob(jobId, true));
     }
 
     public AsyncJobResponse createAsyncJobResponse(AsyncJob job) {
@@ -2641,6 +2660,14 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setDetails(details);
         }
 
+        Pair<String, String> dnsZoneAndSubDomain = ApiDBUtils.findDnsZoneByNetworkId(network.getId());
+        if (StringUtils.isNotBlank(dnsZoneAndSubDomain.first())) {
+            response.setDnsZone(dnsZoneAndSubDomain.first());
+        }
+        if (StringUtils.isNotBlank(dnsZoneAndSubDomain.second())) {
+            response.setDnsSubdomain(dnsZoneAndSubDomain.second());
+        }
+
         DataCenter zone = ApiDBUtils.findZoneById(network.getDataCenterId());
         if (zone != null) {
             response.setZoneId(zone.getUuid());
@@ -2874,6 +2901,11 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         }
 
+        if (CallContext.current().getCallingAccount().getType() == Account.Type.ADMIN &&
+                network.getVpcId() == null && network.getGuestType() == Network.GuestType.Isolated) {
+            response.setKeepMacAddressOnPublicNic(network.getKeepMacAddressOnPublicNic());
+        }
+
         response.setObjectName("network");
         return response;
     }
@@ -2936,8 +2968,21 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         }
 
-        Network network = ApiDBUtils.findNetworkById(fwRule.getNetworkId());
-        response.setNetworkId(network.getUuid());
+        Long networkId = fwRule.getNetworkId();
+        if (networkId != null) {
+            Network network = ApiDBUtils.findNetworkById(networkId);
+            if (network != null) {
+                response.setNetworkId(network.getUuid());
+            }
+        }
+
+        Long vpcId = fwRule.getVpcId();
+        if (vpcId != null) {
+            Vpc vpc = ApiDBUtils.findVpcById(vpcId);
+            if (vpc != null) {
+                response.setVpcId(vpc.getUuid());
+            }
+        }
 
         FirewallRule.State state = fwRule.getState();
         String stateToSet = state.toString();
@@ -3286,9 +3331,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         response.setServices(services);
 
-        Provider serviceProvider = Provider.getProvider(result.getProviderName());
-        boolean canEnableIndividualServices = ApiDBUtils.canElementEnableIndividualServices(serviceProvider);
-        response.setCanEnableIndividualServices(canEnableIndividualServices);
+        Provider serviceProvider = networkModel.resolveProvider(result.getProviderName());
+        if (serviceProvider != null) {
+            boolean canEnableIndividualServices = ApiDBUtils.canElementEnableIndividualServices(serviceProvider);
+            response.setCanEnableIndividualServices(canEnableIndividualServices);
+        }
 
         response.setObjectName("networkserviceprovider");
         return response;
@@ -3637,6 +3684,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         }
 
+        if (CallContext.current().getCallingAccount().getType() == Account.Type.ADMIN) {
+            response.setKeepMacAddressOnPublicNic(vpc.getKeepMacAddressOnPublicNic());
+        }
         response.setObjectName("vpc");
         return response;
     }
@@ -4735,6 +4785,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         setResponseIpAddress(result, response);
         response.setNicId(nic.getUuid());
         response.setNwId(network.getUuid());
+        response.setDescription(result.getDescription());
         response.setObjectName("nicsecondaryip");
         return response;
     }
@@ -4821,6 +4872,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 for (NicSecondaryIpVO ip : secondaryIps) {
                     NicSecondaryIpResponse ipRes = new NicSecondaryIpResponse();
                     ipRes.setId(ip.getUuid());
+                    ipRes.setDescription(ip.getDescription());
                     setResponseIpAddress(ip, ipRes);
                     ipList.add(ipRes);
                 }
@@ -5104,7 +5156,26 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public BackupScheduleResponse createBackupScheduleResponse(BackupSchedule schedule) {
-        return ApiDBUtils.newBackupScheduleResponse(schedule);
+        BackupScheduleResponse response = new BackupScheduleResponse();
+        response.setId(schedule.getUuid());
+        response.setIntervalType(schedule.getScheduleType());
+        response.setSchedule(schedule.getSchedule());
+        response.setTimezone(schedule.getTimezone());
+        response.setMaxBackups(schedule.getMaxBackups());
+        response.setIsolated(schedule.isIsolated());
+
+        if (schedule.getQuiesceVM() != null) {
+            response.setQuiesceVM(schedule.getQuiesceVM());
+        }
+
+        VMInstanceVO vm = ApiDBUtils.findVMInstanceById(schedule.getVmId());
+        if (vm != null) {
+            response.setVmId(vm.getUuid());
+            response.setVmName(vm.getHostName());
+        }
+
+        response.setObjectName("backupschedule");
+        return response;
     }
 
     @Override
@@ -5363,8 +5434,21 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setIcmpCode(fwRule.getIcmpCode());
         response.setIcmpType(fwRule.getIcmpType());
 
-        Network network = ApiDBUtils.findNetworkById(fwRule.getNetworkId());
-        response.setNetworkId(network.getUuid());
+        Long networkId = fwRule.getNetworkId();
+        if (networkId != null) {
+            Network network = ApiDBUtils.findNetworkById(networkId);
+            if (network != null) {
+                response.setNetworkId(network.getUuid());
+            }
+        }
+
+        Long vpcId = fwRule.getVpcId();
+        if (vpcId != null) {
+            Vpc vpc = ApiDBUtils.findVpcById(vpcId);
+            if (vpc != null) {
+                response.setVpcId(vpc.getUuid());
+            }
+        }
 
         FirewallRule.State state = fwRule.getState();
         String stateToSet = state.toString();
@@ -5677,6 +5761,7 @@ protected Map<String, ResourceIcon> getResourceIconsUsingOsCategory(List<Templat
 
         guiThemeResponse.setJsonConfiguration(guiThemeJoin.getJsonConfiguration());
         guiThemeResponse.setCss(guiThemeJoin.getCss());
+        guiThemeResponse.setLoginBaseDomain(guiThemeJoin.getLoginBaseDomain());
         guiThemeResponse.setResponseName("guithemes");
 
         return guiThemeResponse;
@@ -5822,5 +5907,15 @@ protected Map<String, ResourceIcon> getResourceIconsUsingOsCategory(List<Templat
         }
         response.setResponses(permissionResponses);
         return response;
+    }
+
+    @Override
+    public EntityManager getEntityManager() {
+        return _entityMgr;
+    }
+
+    @Override
+    public AccountManager getAccountManager() {
+        return _accountMgr;
     }
 }

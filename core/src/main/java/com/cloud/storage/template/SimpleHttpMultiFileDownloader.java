@@ -44,6 +44,7 @@ import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.storage.StorageLayer;
+import com.cloud.utils.net.HttpClientCloudStackUserAgent;
 
 public class SimpleHttpMultiFileDownloader extends ManagedContextRunnable implements TemplateDownloader {
     private static final MultiThreadedHttpConnectionManager s_httpClientManager = new MultiThreadedHttpConnectionManager();
@@ -95,6 +96,7 @@ public class SimpleHttpMultiFileDownloader extends ManagedContextRunnable implem
         GetMethod request = new GetMethod(downloadUrl);
         request.getParams().setParameter(HttpMethodParams.RETRY_HANDLER, retryHandler);
         request.setFollowRedirects(followRedirects);
+        request.getParams().setParameter(HttpMethodParams.USER_AGENT, HttpClientCloudStackUserAgent.CLOUDSTACK_USER_AGENT);
         return request;
     }
 
@@ -141,6 +143,7 @@ public class SimpleHttpMultiFileDownloader extends ManagedContextRunnable implem
                 continue;
             }
             HeadMethod headMethod = new HeadMethod(downloadUrl);
+            headMethod.getParams().setParameter(HttpMethodParams.USER_AGENT, HttpClientCloudStackUserAgent.CLOUDSTACK_USER_AGENT);
             try {
                 if (client.executeMethod(headMethod) != HttpStatus.SC_OK) {
                     continue;

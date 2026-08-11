@@ -30,8 +30,7 @@ import org.apache.cloudstack.auth.UserOAuth2Authenticator;
 
 import javax.inject.Inject;
 import java.util.Map;
-
-import static org.apache.cloudstack.oauth2.OAuth2AuthManager.OAuth2IsPluginEnabled;
+import java.util.Objects;
 
 public class OAuth2UserAuthenticator extends AdapterBase implements UserAuthenticator {
 
@@ -49,7 +48,7 @@ public class OAuth2UserAuthenticator extends AdapterBase implements UserAuthenti
             logger.debug("Trying OAuth2 auth for user: " + username);
         }
 
-        if (!isOAuthPluginEnabled()) {
+        if (!isOAuthPluginEnabled(domainId)) {
             logger.debug("OAuth2 plugin is disabled");
             return new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
         } else if (requestParameters == null) {
@@ -76,7 +75,7 @@ public class OAuth2UserAuthenticator extends AdapterBase implements UserAuthenti
             String secretCode = ((secretCodeArray == null) ? null : secretCodeArray[0]);
 
             UserOAuth2Authenticator authenticator = userOAuth2mgr.getUserOAuth2AuthenticationProvider(oauthProvider);
-            if (user != null && authenticator.verifyUser(email, secretCode)) {
+            if (Objects.nonNull(user) && authenticator.verifyUser(email, secretCode, domainId)) {
                 return new Pair<Boolean, ActionOnFailedAuthentication>(true, null);
             }
         }
@@ -89,7 +88,7 @@ public class OAuth2UserAuthenticator extends AdapterBase implements UserAuthenti
         return null;
     }
 
-    protected boolean isOAuthPluginEnabled() {
-        return OAuth2IsPluginEnabled.value();
+    protected boolean isOAuthPluginEnabled(Long domainId) {
+        return OAuth2AuthManager.isPluginEnabledForDomain(domainId);
     }
 }

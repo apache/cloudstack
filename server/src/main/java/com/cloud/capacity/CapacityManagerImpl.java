@@ -1214,6 +1214,6 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {CpuOverprovisioningFactor, MemOverprovisioningFactor, StorageCapacityDisableThreshold, StorageOverprovisioningFactor,
                 StorageAllocatedCapacityDisableThreshold, StorageOperationsExcludeCluster, ImageStoreNFSVersion, SecondaryStorageCapacityThreshold,
-                StorageAllocatedCapacityDisableThresholdForVolumeSize, CapacityCalculateWorkers };
+                StorageAllocatedCapacityDisableThresholdForVolumeSize, CapacityCalculateWorkers, KvmMemoryDynamicScalingCapacity, KvmCpuDynamicScalingCapacity };
     }
 }

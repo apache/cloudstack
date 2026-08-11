@@ -298,7 +298,7 @@ public class StorPoolDataMotionStrategy implements DataMotionStrategy {
 
             for (Map.Entry<VolumeInfo, DataStore> entry : volumeDataStoreMap.entrySet()) {
                 VolumeInfo srcVolumeInfo = entry.getKey();
-                if (srcVolumeInfo.getPassphraseId() != null) {
+                if (srcVolumeInfo.getPassphraseId() != null || srcVolumeInfo.getKmsKeyId() != null) {
                     throw new CloudRuntimeException(String.format("Cannot live migrate encrypted volume [%s] to StorPool", srcVolumeInfo.getVolume()));
                 }
                 DataStore destDataStore = entry.getValue();

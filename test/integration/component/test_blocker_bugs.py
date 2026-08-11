@@ -542,7 +542,7 @@ class TestRouters(cloudstackTestCase):
 
 
         # Validate the following
-        # 1. PreReq: have rounters that are owned by other account
+        # 1. PreReq: have routers that are owned by other account
         # 2. Create domain and create accounts in that domain
         # 3. Create one VM for each account
         # 4. Using Admin , run listRouters. It should return all the routers
