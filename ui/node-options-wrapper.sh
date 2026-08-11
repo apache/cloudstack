@@ -22,6 +22,6 @@
 # even start with it set in NODE_OPTIONS, so only add it when needed.
 NODE_MAJOR=$(node -p "process.versions.node.split('.')[0]")
 if [ "$NODE_MAJOR" -ge 17 ]; then
-  export NODE_OPTIONS="--openssl-legacy-provider ${NODE_OPTIONS}"
+  export NODE_OPTIONS="--openssl-legacy-provider${NODE_OPTIONS:+ ${NODE_OPTIONS}}"
 fi
 exec "$@"

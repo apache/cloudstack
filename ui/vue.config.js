@@ -123,6 +123,14 @@ const vueConfig = {
 
   css: {
     loaderOptions: {
+      scss: {
+        sassOptions: {
+          // webpack 4's sass-loader 8 only speaks the legacy JS API, and the
+          // styles rely on @import; sass >= 1.79/1.80 deprecation-warns on
+          // both. Neither is actionable until the webpack 5 migration.
+          silenceDeprecations: ['legacy-js-api', 'import']
+        }
+      },
       less: {
         modifyVars: {
           // https://ant.design/docs/spec/colors

@@ -27,7 +27,7 @@
     "prebuild": "./prebuild.sh",
     "start": "./node-options-wrapper.sh vue-cli-service lint --no-fix && ./node-options-wrapper.sh vue-cli-service serve",
     "serve": "./node-options-wrapper.sh vue-cli-service lint --no-fix && ./node-options-wrapper.sh vue-cli-service serve",
-    "build": "NODE_OPTIONS='--max-old-space-size=4096' ./node-options-wrapper.sh vue-cli-service build",
+    "build": "NODE_OPTIONS=\"--max-old-space-size=4096${NODE_OPTIONS:+ $NODE_OPTIONS}\" ./node-options-wrapper.sh vue-cli-service build",
     "postbuild": "./postbuild.sh",
     "lint": "vue-cli-service lint",
     "i18n:report": "vue-cli-service i18n:report --src './src/**/*.?(js|vue)' --locales './src/locales/**/*.json'",
@@ -113,6 +113,9 @@
   },
   "resolutions": {
     "nan": "2.18.0"
+  },
+  "overrides": {
+    "@achrinza/node-ipc": "9.2.10"
   },
   "eslintConfig": {
     "root": true,
