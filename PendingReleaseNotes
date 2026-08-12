@@ -91,3 +91,8 @@ example.ver.1 > example.ver.2:
     no device-mapper multipath configuration is required. A new
     Storage.StoragePoolType.NVMeTCP + MultipathNVMeOFAdapterBase /
     NVMeTCPAdapter on the KVM side back the new pool type.
+KVM console:
+  * Added the global setting `consoleproxy.kvm.multiple.viewers.enabled` to allow
+    multiple users to simultaneously access the console of the same KVM user VM.
+    The setting defaults to false to preserve the existing single-viewer behavior.
+
