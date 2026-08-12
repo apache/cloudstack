@@ -45,9 +45,11 @@ import com.cloud.vm.VirtualMachineProfile;
 public interface TemplateManager {
     static final String AllowPublicUserTemplatesCK = "allow.public.user.templates";
     static final String TemplatePreloaderPoolSizeCK = "template.preloader.pool.size";
+    static final String PublicTemplateSecStorageCopyCK = "secstorage.public.template.copy.max";
+    static final String PrivateTemplateSecStorageCopyCK = "secstorage.private.template.copy.max";
 
     static final ConfigKey<Boolean> AllowPublicUserTemplates = new ConfigKey<Boolean>("Advanced", Boolean.class, AllowPublicUserTemplatesCK, "true",
-        "If false, users will not be able to create public templates.", true, ConfigKey.Scope.Account);
+        "If false, users will not be able to create public Templates.", true, ConfigKey.Scope.Account);
 
     static final ConfigKey<Integer> TemplatePreloaderPoolSize = new ConfigKey<Integer>("Advanced", Integer.class, TemplatePreloaderPoolSizeCK, "8",
             "Size of the TemplateManager threadpool", false, ConfigKey.Scope.Global);
@@ -63,6 +65,33 @@ public interface TemplateManager {
             "Template when deleted will be instantly deleted from the Primary Storage",
             true,
             ConfigKey.Scope.Global);
+
+    ConfigKey<Integer> PublicTemplateSecStorageCopy = new ConfigKey<Integer>("Advanced", Integer.class,
+            PublicTemplateSecStorageCopyCK, "0",
+            "Maximum number of secondary storage pools to which a public template is copied. " +
+            "0 means copy to all secondary storage pools (default behavior).",
+            true, ConfigKey.Scope.Zone);
+
+    ConfigKey<Integer> PrivateTemplateSecStorageCopy = new ConfigKey<Integer>("Advanced", Integer.class,
+            PrivateTemplateSecStorageCopyCK, "1",
+            "Maximum number of secondary storage pools to which a private template is copied. " +
+            "Default is 1 to preserve existing behavior.",
+            true, ConfigKey.Scope.Zone);
+
+    ConfigKey<Integer> VmIsoMaxCount = new ConfigKey<Integer>("Advanced",
+            Integer.class,
+            "vm.iso.max.count", "1",
+            "Maximum number of ISOs that may be attached to a VM.",
+            true,
+            ConfigKey.Scope.Cluster);
+
+    // KVM/libvirt maps deviceSeq=3 to hdc (hda/hdb are taken by the root volume on i440fx/IDE).
+    // user_vm.iso_id has always pointed at this slot; additional cdroms live in vm_iso_map.
+    int CDROM_PRIMARY_DEVICE_SEQ = 3;
+
+    // Fallback per-VM cdrom cap when the placement host hasn't advertised host.cdrom.max.count
+    // (older agent, never-deployed VM, etc.).
+    int DEFAULT_CDROM_MAX_PER_VM = 1;
 
     static final String VMWARE_TOOLS_ISO = "vmware-tools.iso";
     static final String XS_TOOLS_ISO = "xs-tools.iso";
@@ -138,6 +167,12 @@ public interface TemplateManager {
 
     List<DataStore> getImageStoreByTemplate(long templateId, Long zoneId);
 
+    /**
+     * Max number of secondary storage copies for the template in this zone; {@code 0} means no limit.
+     * SYSTEM/ROUTING/BUILTIN templates are always exempt (returns {@code 0}).
+     */
+    int getSecStorageCopyLimit(VMTemplateVO template, long zoneId);
+
     TemplateInfo prepareIso(long isoId, long dcId, Long hostId, Long poolId);
 
 
@@ -152,6 +187,8 @@ public interface TemplateManager {
     public static final String MESSAGE_RESET_TEMPLATE_PERMISSION_EVENT = "Message.ResetTemplatePermission.Event";
 
     TemplateType validateTemplateType(BaseCmd cmd, boolean isAdmin, boolean isCrossZones, Hypervisor.HypervisorType hypervisorType);
+
+    DataStore verifyHeuristicRulesForZone(VMTemplateVO template, Long zoneId);
 
     List<DatadiskTO> getTemplateDisksOnImageStore(VirtualMachineTemplate template, DataStoreRole role, String configurationId);
 

@@ -58,15 +58,15 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
     protected LdapUser createUser(final SearchResult result, Long domainId) throws NamingException {
         final Attributes attributes = result.getAttributes();
 
-        final String username = LdapUtils.getAttributeValue(attributes, _ldapConfiguration.getUsernameAttribute(domainId));
-        final String email = LdapUtils.getAttributeValue(attributes, _ldapConfiguration.getEmailAttribute(domainId));
-        final String firstname = LdapUtils.getAttributeValue(attributes, _ldapConfiguration.getFirstnameAttribute(domainId));
-        final String lastname = LdapUtils.getAttributeValue(attributes, _ldapConfiguration.getLastnameAttribute(domainId));
+        final String username = LdapUtils.getAttributeValue(attributes, LdapConfiguration.getUsernameAttribute(domainId));
+        final String email = LdapUtils.getAttributeValue(attributes, LdapConfiguration.getEmailAttribute(domainId));
+        final String firstname = LdapUtils.getAttributeValue(attributes, LdapConfiguration.getFirstnameAttribute(domainId));
+        final String lastname = LdapUtils.getAttributeValue(attributes, LdapConfiguration.getLastnameAttribute(domainId));
         final String principal = result.getNameInNamespace();
         final List<String> memberships = LdapUtils.getAttributeValues(attributes, getMemberOfAttribute(domainId));
 
-        String domain = principal.replace("cn=" + LdapUtils.getAttributeValue(attributes, _ldapConfiguration.getCommonNameAttribute()) + ",", "");
-        domain = domain.replace("," + _ldapConfiguration.getBaseDn(domainId), "");
+        String domain = principal.replace("cn=" + LdapUtils.getAttributeValue(attributes, LdapConfiguration.getCommonNameAttribute()) + ",", "");
+        domain = domain.replace("," + LdapConfiguration.getBaseDn(domainId), "");
         domain = domain.replace("ou=", "");
 
         boolean disabled = isUserDisabled(result);
@@ -83,7 +83,7 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
         StringBuilder ldapGroupsFilter = new StringBuilder();
         // this should get the trustmaps for this domain
         List<String> ldapGroups = getMappedLdapGroups(domainId);
-        if (!ldapGroups.isEmpty()) {
+        if (CollectionUtils.isNotEmpty(ldapGroups)) {
             ldapGroupsFilter.append("(|");
             for (String ldapGroup : ldapGroups) {
                 ldapGroupsFilter.append(getMemberOfGroupString(ldapGroup, memberOfAttribute));
@@ -110,7 +110,7 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
     private StringBuilder getUsernameFilter(String username, Long domainId) {
         final StringBuilder usernameFilter = new StringBuilder();
         usernameFilter.append("(");
-        usernameFilter.append(_ldapConfiguration.getUsernameAttribute(domainId));
+        usernameFilter.append(LdapConfiguration.getUsernameAttribute(domainId));
         usernameFilter.append("=");
         usernameFilter.append((username == null ? "*" : LdapUtils.escapeLDAPSearchFilter(username)));
         usernameFilter.append(")");
@@ -120,7 +120,7 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
     StringBuilder getUserObjectFilter(Long domainId) {
         final StringBuilder userObjectFilter = new StringBuilder();
         userObjectFilter.append("(objectClass=");
-        userObjectFilter.append(_ldapConfiguration.getUserObject(domainId));
+        userObjectFilter.append(LdapConfiguration.getUserObject(domainId));
         userObjectFilter.append(")");
         return userObjectFilter;
     }
@@ -152,11 +152,11 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
 
     private String generateGroupSearchFilter(final String groupName, Long domainId) {
         String groupObjectFilter = "(objectClass=" +
-                _ldapConfiguration.getGroupObject(domainId) +
+                LdapConfiguration.getGroupObject(domainId) +
                 ")";
 
         String groupNameFilter = "(" +
-                _ldapConfiguration.getCommonNameAttribute() +
+                LdapConfiguration.getCommonNameAttribute() +
                 "=" +
                 (groupName == null ? "*" : LdapUtils.escapeLDAPSearchFilter(groupName)) +
                 ")";
@@ -183,7 +183,7 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
         if("OU".equals(type)) {
             basedn = name;
         } else {
-            basedn = _ldapConfiguration.getBaseDn(domainId);
+            basedn = LdapConfiguration.getBaseDn(domainId);
         }
 
         final StringBuilder userObjectFilter = getUserObjectFilter(domainId);
@@ -227,12 +227,12 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
 
     @Override
     public List<LdapUser> getUsersInGroup(String groupName, LdapContext context, Long domainId) throws NamingException {
-        String attributeName = _ldapConfiguration.getGroupUniqueMemberAttribute(domainId);
+        String attributeName = LdapConfiguration.getGroupUniqueMemberAttribute(domainId);
         final SearchControls controls = new SearchControls();
         controls.setSearchScope(_ldapConfiguration.getScope());
         controls.setReturningAttributes(new String[] {attributeName});
 
-        NamingEnumeration<SearchResult> result = context.search(_ldapConfiguration.getBaseDn(domainId), generateGroupSearchFilter(groupName, domainId), controls);
+        NamingEnumeration<SearchResult> result = context.search(LdapConfiguration.getBaseDn(domainId), generateGroupSearchFilter(groupName, domainId), controls);
 
         final List<LdapUser> users = new ArrayList<>();
         //Expecting only one result which has all the users
@@ -260,7 +260,7 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
         controls.setSearchScope(_ldapConfiguration.getScope());
         controls.setReturningAttributes(_ldapConfiguration.getReturnAttributes(domainId));
 
-        NamingEnumeration<SearchResult> result = context.search(userdn, "(objectClass=" + _ldapConfiguration.getUserObject(domainId) + ")", controls);
+        NamingEnumeration<SearchResult> result = context.search(userdn, "(objectClass=" + LdapConfiguration.getUserObject(domainId) + ")", controls);
         if (result.hasMoreElements()) {
             return createUser(result.nextElement(), domainId);
         } else {
@@ -306,12 +306,12 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
         searchControls.setSearchScope(_ldapConfiguration.getScope());
         searchControls.setReturningAttributes(_ldapConfiguration.getReturnAttributes(domainId));
 
-        String basedn = _ldapConfiguration.getBaseDn(domainId);
+        String basedn = LdapConfiguration.getBaseDn(domainId);
         if (StringUtils.isBlank(basedn)) {
             throw new IllegalArgumentException(String.format("ldap basedn is not configured (for domain: %s)", domainId));
         }
         byte[] cookie = null;
-        int pageSize = _ldapConfiguration.getLdapPageSize(domainId);
+        int pageSize = LdapConfiguration.getLdapPageSize(domainId);
         context.setRequestControls(new Control[]{new PagedResultsControl(pageSize, Control.NONCRITICAL)});
         final List<LdapUser> users = new ArrayList<>();
         NamingEnumeration<SearchResult> results;

@@ -17,7 +17,10 @@
 
 <template>
   <div>
-    <a-affix :offsetTop="this.$store.getters.maintenanceInitiated || this.$store.getters.shutdownTriggered ? 103 : 78">
+    <a-affix
+      :key="'affix-' + showSearchFilters"
+      :offsetTop="this.$store.getters.maintenanceInitiated || this.$store.getters.shutdownTriggered ? 103 : 78"
+    >
       <a-card
         class="breadcrumb-card"
         style="z-index: 10"
@@ -128,6 +131,16 @@
             />
           </a-col>
         </a-row>
+        <a-row
+          v-if="showSearchFilters"
+          style="min-height: 36px; padding-top: 12px; padding-left: 12px;"
+        >
+          <search-filter
+            :filters="activeFiltersList"
+            :apiName="apiName"
+            @removeFilter="removeFilter"
+          />
+        </a-row>
       </a-card>
     </a-affix>
 
@@ -184,8 +197,6 @@
         :footer="null"
         style="top: 20px;"
         :width="modalWidth"
-        :ok-button-props="getOkProps()"
-        :cancel-button-props="getCancelProps()"
         :confirmLoading="actionLoading"
         @cancel="cancelAction"
         centered
@@ -205,7 +216,7 @@
           :spinning="actionLoading"
           v-ctrl-enter="handleSubmit"
         >
-          <span v-if="currentAction.message">
+          <span v-if="currentAction.messageString">
             <div v-if="selectedRowKeys.length > 0">
               <a-alert
                 v-if="['delete-outlined', 'DeleteOutlined', 'poweroff-outlined', 'PoweroffOutlined'].includes(currentAction.icon)"
@@ -217,7 +228,7 @@
                     style="padding-left: 5px"
                     v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`"
                   />
-                  <span v-html="currentAction.message" />
+                  <span v-html="currentAction.messageString" />
                 </template>
               </a-alert>
               <a-alert
@@ -229,14 +240,14 @@
                     v-if="selectedRowKeys.length > 0"
                     v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`"
                   />
-                  <span v-html="currentAction.message" />
+                  <span v-html="currentAction.messageString" />
                 </template>
               </a-alert>
             </div>
             <div v-else>
               <a-alert type="warning">
                 <template #message>
-                  <span v-html="currentAction.message" />
+                  <span v-html="currentAction.messageString" />
                 </template>
               </a-alert>
             </div>
@@ -259,8 +270,18 @@
               </a-table>
             </div>
             <br v-if="currentAction.paramFields.length > 0" />
-          </span>
-          <a-form
+             </span>
+           <div v-if="currentAction.requireNameConfirmation && !(currentAction.groupAction && selectedRowKeys.length > 0)" style="margin-bottom: 5px">
+            <a-form-item>
+                <a-input v-model:value="actionConfirmText" :placeholder="resource.name" />
+            </a-form-item>
+            <a-alert type="info">
+              <template #message>
+                <div v-html="$t('label.delete.confirmation')"></div>
+              </template>
+            </a-alert>
+           </div>
+           <a-form
             :ref="formRef"
             :model="form"
             :rules="rules"
@@ -281,6 +302,11 @@
                   <tooltip-label
                     v-if="['domain', 'guestcidraddress'].includes(field.name) && ['createZone', 'updateZone'].includes(currentAction.api)"
                     :title="$t('label.default.network.' + field.name + '.isolated.network')"
+                    :tooltip="field.description"
+                  />
+                  <tooltip-label
+                    v-else-if="field.name === 'keepmacaddressonpublicnic' && currentAction.api === 'updateVPC'"
+                    :title="$t('label.keep.mac.address.on.public.nic')"
                     :tooltip="field.description"
                   />
                   <tooltip-label
@@ -326,6 +352,7 @@
                   showSearch
                   optionFilterProp="label"
                   v-model:value="form[field.name]"
+                  @change="val => handleSelectChange(field.name, val)"
                   :loading="field.loading"
                   :placeholder="field.description"
                   :filterOption="(input, option) => {
@@ -350,6 +377,7 @@
                   showSearch
                   optionFilterProp="label"
                   v-model:value="form[field.name]"
+                  @change="val => handleSelectChange(field.name, val)"
                   :loading="field.loading"
                   :placeholder="field.description"
                   :filterOption="(input, option) => {
@@ -457,6 +485,7 @@
                   :loading="field.loading"
                   mode="multiple"
                   v-model:value="form[field.name]"
+                  @change="val => handleSelectChange(field.name, val)"
                   :placeholder="field.description"
                   v-focus="fieldIndex === firstIndex"
                   showSearch
@@ -475,7 +504,8 @@
                 </a-select>
                 <details-input
                   v-else-if="field.type==='map'"
-                  v-model:value="form[field.name]" />
+                  v-model:value="form[field.name]"
+                  :optionalKeys="currentAction.mapping?.[field.name]?.optionalKeys || []" />
                 <a-input-number
                   v-else-if="field.type==='long'"
                   v-focus="fieldIndex === firstIndex"
@@ -484,7 +514,7 @@
                   :placeholder="field.description"
                 />
                 <a-input-password
-                  v-else-if="field.name==='password' || field.name==='currentpassword' || field.name==='confirmpassword'"
+                  v-else-if="field.name==='password' || field.name==='currentpassword' || field.name==='confirmpassword' || field.name==='secretkey'"
                   v-model:value="form[field.name]"
                   :placeholder="field.description"
                   @blur="($event) => handleConfirmBlur($event, field.name)"
@@ -515,6 +545,7 @@
                 type="primary"
                 @click="handleSubmit"
                 ref="submit"
+                :disabled="isSubmitDisabled"
               >{{ $t('label.ok') }}</a-button>
             </div>
           </a-form>
@@ -529,7 +560,7 @@
       <div v-if="dataView">
         <slot
           name="resource"
-          v-if="$route.path.startsWith('/quotasummary') || $route.path.startsWith('/publicip')"
+          v-if="$route.path.startsWith('/publicip')"
         ></slot>
         <resource-view
           v-else
@@ -542,6 +573,9 @@
         class="row-element"
         v-else
       >
+        <advisories-view
+          v-if="$route.meta.advisories && !loading"
+        />
         <list-view
           :loading="loading"
           :columns="columns"
@@ -601,11 +635,13 @@ import ListView from '@/components/view/ListView'
 import ResourceView from '@/components/view/ResourceView'
 import ActionButton from '@/components/view/ActionButton'
 import SearchView from '@/components/view/SearchView'
+import SearchFilter from '@/components/view/SearchFilter'
 import OsLogo from '@/components/widgets/OsLogo'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import BulkActionProgress from '@/components/view/BulkActionProgress'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import DetailsInput from '@/components/widgets/DetailsInput'
+import AdvisoriesView from '@/components/view/AdvisoriesView'
 
 export default {
   name: 'Resource',
@@ -615,11 +651,13 @@ export default {
     ListView,
     ActionButton,
     SearchView,
+    SearchFilter,
     BulkActionProgress,
     TooltipLabel,
     OsLogo,
     ResourceIcon,
-    DetailsInput
+    DetailsInput,
+    AdvisoriesView
   },
   mixins: [mixinDevice],
   provide: function () {
@@ -668,6 +706,7 @@ export default {
       confirmDirty: false,
       firstIndex: 0,
       modalWidth: '30vw',
+      actionConfirmText: '',
       promises: []
     }
   },
@@ -814,6 +853,37 @@ export default {
     }
   },
   computed: {
+    activeFiltersList () {
+      const queryParams = Object.assign({}, this.$route.query)
+      const activeFilters = []
+      for (const filter in queryParams) {
+        if (this.$route.name === 'host' && filter === 'type') {
+          continue
+        }
+        if (!filter.startsWith('tags[')) {
+          activeFilters.push({
+            key: filter,
+            value: queryParams[filter],
+            isTag: false
+          })
+        } else if (filter.endsWith('].key')) {
+          const tagIdx = filter.split('[')[1].split(']')[0]
+          const tagKey = queryParams[`tags[${tagIdx}].key`]
+          const tagValue = queryParams[`tags[${tagIdx}].value`]
+          activeFilters.push({
+            key: tagKey,
+            value: tagValue,
+            isTag: true,
+            tagIdx: tagIdx
+          })
+        }
+      }
+      return activeFilters
+    },
+    showSearchFilters () {
+      const excludedKeys = ['page', 'pagesize', 'q', 'keyword', 'tags', 'projectid']
+      return !this.dataView && this.$config.showSearchFilters && this.activeFiltersList.some(f => !excludedKeys.includes(f.key))
+    },
     hasSelected () {
       return this.selectedRowKeys.length > 0
     },
@@ -844,6 +914,12 @@ export default {
         return 'active'
       }
       return 'self'
+    },
+    isSubmitDisabled () {
+      if (this.currentAction?.requireNameConfirmation && !(this.currentAction.groupAction && this.selectedRowKeys.length > 0)) {
+        return this.actionConfirmText.trim() !== this.resource?.name?.trim()
+      }
+      return false
     }
   },
   methods: {
@@ -852,19 +928,6 @@ export default {
         return 'table-cell'
       }
       return 'inline-flex'
-    },
-    getOkProps () {
-      if (this.selectedRowKeys.length > 0 && this.currentAction?.groupAction) {
-      } else {
-        return { props: { type: 'primary' } }
-      }
-    },
-    getCancelProps () {
-      if (this.selectedRowKeys.length > 0 && this.currentAction?.groupAction) {
-        return { props: { type: 'primary' } }
-      } else {
-        return { props: { type: 'default' } }
-      }
     },
     switchProject (projectId) {
       if (!projectId || !projectId.length || projectId.length !== 36) {
@@ -950,7 +1013,7 @@ export default {
       this.projectView = Boolean(store.getters.project && store.getters.project.id)
       this.hasProjectId = ['vm', 'vmgroup', 'ssh', 'affinitygroup', 'userdata', 'volume', 'snapshot', 'buckets', 'vmsnapshot', 'guestnetwork',
         'vpc', 'securitygroups', 'publicip', 'vpncustomergateway', 'template', 'iso', 'event', 'kubernetes', 'sharedfs',
-        'autoscalevmgroup', 'vnfapp', 'webhook'].includes(this.$route.name)
+        'autoscalevmgroup', 'vnfapp', 'webhook', 'kmskey', 'hsmprofile'].includes(this.$route.name)
 
       if (this.dataView && !refreshed) {
         this.resource = {}
@@ -1006,7 +1069,7 @@ export default {
       const customRender = {}
       for (var columnKey of this.columnKeys) {
         let key = columnKey
-        let title = columnKey === 'cidr' && this.columnKeys.includes('ip6cidr') ? 'ipv4.cidr' : columnKey
+        let title = columnKey === 'cidr' && this.columnKeys.includes('ip6cidr') ? 'ipv4.cidr' : key
         if (typeof columnKey === 'object') {
           if ('customTitle' in columnKey && 'field' in columnKey) {
             key = columnKey.field
@@ -1014,7 +1077,7 @@ export default {
             customRender[key] = columnKey[key]
           } else {
             key = Object.keys(columnKey)[0]
-            title = Object.keys(columnKey)[0]
+            title = (typeof title === 'object') ? key : title
             customRender[key] = columnKey[key]
           }
         }
@@ -1059,10 +1122,16 @@ export default {
         params.details = 'group,nics,secgrp,tmpl,servoff,diskoff,iso,volume,affgrp,backoff'
       }
 
+      if (this.apiName === 'quotaTariffList' && !('quotaTariffCreate' in store.getters.apis || 'quotaTariffUpdate' in store.getters.apis)) {
+        const index = this.columns.findIndex(col => col.dataIndex === 'hasActivationRule')
+        if (index >= 0) {
+          this.columns.splice(index, 1)
+        }
+      }
+
       this.loading = true
       if (this.$route.path.startsWith('/cniconfiguration')) {
         params.forcks = true
-        console.log('here')
       }
       if (this.$route.params && this.$route.params.id) {
         params.id = this.$route.params.id
@@ -1074,6 +1143,10 @@ export default {
             delete params.id
             params.name = this.$route.params.id
           }
+        }
+        if (['listUserKeys'].includes(this.apiName)) {
+          delete params.listall
+          params.keypairid = this.$route.params.id
         }
         if (['listPublicIpAddresses'].includes(this.apiName)) {
           params.allocatedonly = false
@@ -1095,6 +1168,14 @@ export default {
         }
         if (this.$route.path.startsWith('/tungstenfirewallpolicy/')) {
           params.firewallpolicyuuid = this.$route.params.id
+        }
+        if (this.apiName === 'quotaSummary' && params.id) {
+          params.accountid = params.id
+          delete params.id
+        }
+        if (this.apiName === 'quotaEmailTemplateList' && params.id) {
+          params.templatetype = params.id
+          delete params.id
         }
       }
 
@@ -1142,7 +1223,11 @@ export default {
           break
         }
 
-        if ('id' in this.$route.params && this.$route.params.id !== params.id) {
+        const idFromRouteMatchesApiParameter = this.$route.params.id === params.id ||
+          this.apiName === 'quotaSummary' && this.$route.params.id === params.accountid ||
+          this.apiName === 'quotaEmailTemplateList' && this.$route.params.id === params.templatetype
+
+        if ('id' in this.$route.params && !idFromRouteMatchesApiParameter) {
           console.log('DEBUG - Discarding API response as its `id` does not match the uuid on the browser path')
           return
         }
@@ -1184,6 +1269,16 @@ export default {
           })
         }
 
+        if (this.apiName === 'listBackups') {
+          const kbossFields = ['compressionstatus', 'validationstatus']
+          const hasKbossData = this.items.some(backup => kbossFields.some(field => backup[field]))
+          if (!hasKbossData) {
+            this.columns = this.columns.filter(col => !kbossFields.includes(col.dataIndex))
+            this.allColumns = this.allColumns.filter(col => !kbossFields.includes(col.dataIndex))
+            this.selectedColumns = this.selectedColumns.filter(key => !kbossFields.includes(key))
+          }
+        }
+
         for (let idx = 0; idx < this.items.length; idx++) {
           this.items[idx].key = idx
           for (const key in customRender) {
@@ -1193,15 +1288,12 @@ export default {
             }
           }
         }
-        if (this.items.length > 0) {
-          if (!this.showAction || this.dataView) {
-            this.resource = this.items[0]
-            this.$emit('change-resource', this.resource)
-          }
-        } else {
-          if (this.dataView) {
-            this.$router.push({ path: '/exception/404' })
-          }
+        if (this.items.length <= 0 && this.dataView) {
+          this.$router.push({ path: '/exception/404' })
+        }
+        if (!this.showAction || this.dataView || (this.items.length === 1 && this.apiName === 'getUserKeys')) {
+          this.resource = this.items?.[0] || {}
+          this.$emit('change-resource', this.resource)
         }
       }).catch(error => {
         if (!error || !error.message) {
@@ -1257,10 +1349,23 @@ export default {
       this.actionLoading = false
       this.showAction = false
       this.currentAction = {}
+      this.actionConfirmText = ''
     },
     cancelAction () {
       eventBus.emit('action-closing', { action: this.currentAction })
       this.closeAction()
+    },
+    removeFilter (filter) {
+      const queryParams = Object.assign({}, this.$route.query)
+      if (filter.isTag) {
+        delete queryParams[`tags[${filter.tagIdx}].key`]
+        delete queryParams[`tags[${filter.tagIdx}].value`]
+      } else {
+        delete queryParams[filter.key]
+      }
+      queryParams.page = '1'
+      queryParams.pagesize = String(this.pageSize)
+      this.$router.push({ query: queryParams })
     },
     onRowSelectionChange (selection) {
       this.selectedRowKeys = selection
@@ -1302,6 +1407,7 @@ export default {
       this.currentAction = action
       this.currentAction.params = store.getters.apis[this.currentAction.api].params
       this.resource = action.resource
+      this.actionConfirmText = ''
       this.$emit('change-resource', this.resource)
       var paramFields = this.currentAction.params
       paramFields.sort(function (a, b) {
@@ -1316,9 +1422,11 @@ export default {
       this.currentAction.paramFilters = []
       if ('message' in action) {
         if (typeof action.message === 'function') {
-          action.message = action.message(action.resource)
+          action.messageString = action.message(action.resource)
+        } else {
+          action.messageString = action.message
         }
-        action.message = Array.isArray(action.message) ? this.$t(...action.message) : this.$t(action.message)
+        action.messageString = Array.isArray(action.messageString) ? this.$t(...action.messageString) : this.$t(action.messageString)
       }
       this.getArgs(action, isGroupAction, paramFields)
       this.getFilters(action, isGroupAction, paramFields)
@@ -1391,6 +1499,21 @@ export default {
         }
       }
     },
+    handleSelectChange (name, val) {
+      if (name === 'domainid') {
+        const accountField = this.currentAction.paramFields.find(f => f.name === 'account')
+        if (accountField) {
+          this.form.account = null
+          this.listUuidOpts(accountField, { domainid: val })
+        }
+      } else if (name === 'account') {
+        const volumeField = this.currentAction.paramFields.find(f => f.name === 'volumeids')
+        if (volumeField) {
+          this.form.volumeids = null
+          this.listUuidOpts(volumeField, { domainid: this.form.domainid, account: val })
+        }
+      }
+    },
     listUuidOpts (param, filters) {
       if (this.currentAction.mapping && param.name in this.currentAction.mapping && !this.currentAction.mapping[param.name].api) {
         return
@@ -1442,6 +1565,10 @@ export default {
         params.isofilter = 'executable'
       } else if (possibleApi === 'listHosts') {
         params.type = 'routing'
+        if (this.currentAction?.api === 'restoreBackup') {
+          params.resourcestate = 'enabled'
+          params.state = 'up'
+        }
       } else if (possibleApi === 'listNetworkOfferings' && this.resource) {
         if (this.resource.type) {
           params.guestiptype = this.resource.type
@@ -1584,6 +1711,12 @@ export default {
     },
     handleSubmit (e) {
       if (this.actionLoading) return
+
+      if (this.currentAction?.requireNameConfirmation && !(this.currentAction.groupAction && this.selectedRowKeys.length > 0)) {
+        if (this.actionConfirmText.trim() !== this.resource?.name?.trim()) {
+          return
+        }
+      }
       this.promises = []
       if (!this.dataView && this.currentAction.groupAction && this.selectedRowKeys.length > 0) {
         if (this.selectedRowKeys.length > 0) {

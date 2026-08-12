@@ -48,18 +48,18 @@ public class ArchiveEventsCmd extends BaseCmd {
                type = CommandType.LIST,
                collectionType = CommandType.UUID,
                entityType = EventResponse.class,
-               description = "the IDs of the events")
+               description = "The IDs of the events")
     private List<Long> ids;
 
-    @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, description = "end date range to archive events"
+    @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, description = "End date range to archive events"
         + " (including) this date (use format \"yyyy-MM-dd\" or the new format \"yyyy-MM-ddThh:mm:ss\")")
     private Date endDate;
 
-    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, description = "start date range to archive events"
+    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, description = "Start date range to archive events"
         + " (including) this date (use format \"yyyy-MM-dd\" or the new format \"yyyy-MM-ddThh:mm:ss\")")
     private Date startDate;
 
-    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "archive by event type")
+    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "Archive by event type")
     private String type;
 
     /////////////////////////////////////////////////////

@@ -54,6 +54,7 @@
         <module>extensions</module>
         <module>ipc</module>
         <module>jobs</module>
+        <module>kms</module>
         <module>managed-context</module>
         <module>quota</module>
         <module>rest</module>

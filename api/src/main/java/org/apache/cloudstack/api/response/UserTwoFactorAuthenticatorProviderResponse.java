@@ -27,11 +27,11 @@ import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
 public class UserTwoFactorAuthenticatorProviderResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the user two factor authenticator provider name")
+    @Param(description = "The user two factor authenticator provider name")
     private String name;
 
     @SerializedName(ApiConstants.DESCRIPTION)
-    @Param(description = "the description of the user two factor authenticator provider")
+    @Param(description = "The description of the user two factor authenticator provider")
     private String description;
 
     public String getName() {

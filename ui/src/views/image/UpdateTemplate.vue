@@ -260,7 +260,9 @@ export default {
       userdatapolicy: null,
       userdatapolicylist: {},
       architectureTypes: {},
-      originalOstypeid: null
+      originalOstypeid: null,
+      detailsFields: [],
+      details: {}
     }
   },
   beforeCreate () {
@@ -315,17 +317,10 @@ export default {
           }
         }
       }
-      const resourceDetailsFields = []
       if (this.resource.hypervisor === 'KVM') {
-        resourceDetailsFields.push('rootDiskController')
+        this.detailsFields.push('rootDiskController')
       } else if (this.resource.hypervisor === 'VMware' && !this.resource.deployasis) {
-        resourceDetailsFields.push(...['rootDiskController', 'nicAdapter', 'keyboard'])
-      }
-      for (var detailsField of resourceDetailsFields) {
-        var detailValue = this.resource?.details?.[detailsField] || null
-        if (detailValue) {
-          this.form[detailValue] = fieldValue
-        }
+        this.detailsFields.push(...['rootDiskController', 'nicAdapter', 'keyboard'])
       }
     },
     fetchData () {
@@ -336,6 +331,7 @@ export default {
       this.fetchKeyboardTypes()
       this.fetchUserdata()
       this.fetchUserdataPolicy()
+      this.fetchDetails()
     },
     isValidValueForKey (obj, key) {
       if (this.emptyAllowedFields.includes(key) && obj[key] === '') {
@@ -379,6 +375,10 @@ export default {
         controller.push({
           id: 'virtio',
           description: 'virtio'
+        })
+        controller.push({
+          id: 'virtio-blk',
+          description: 'virtio-blk'
         })
       } else if (hyperVisor === 'VMware') {
         controller.push({
@@ -506,6 +506,25 @@ export default {
         this.userdata.loading = false
       })
     },
+    fetchDetails () {
+      const params = {}
+      params.id = this.resource.id
+      params.templatefilter = 'all'
+
+      getAPI('listTemplates', params).then(response => {
+        if (response?.listtemplatesresponse?.template?.length > 0) {
+          this.details = response.listtemplatesresponse.template[0].details
+          if (this.details) {
+            for (var detailsField of this.detailsFields) {
+              var detailValue = this.details?.[detailsField] || null
+              if (detailValue) {
+                this.form[detailsField] = detailValue
+              }
+            }
+          }
+        }
+      })
+    },
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
@@ -515,10 +534,14 @@ export default {
         const params = {
           id: this.resource.id
         }
-        const detailsField = ['rootDiskController', 'nicAdapter', 'keyboard']
+        if (this.details) {
+          Object.keys(this.details).forEach((detail, index) => {
+            params['details[0].' + detail] = this.details[detail]
+          })
+        }
         for (const key in values) {
           if (!this.isValidValueForKey(values, key)) continue
-          if (detailsField.includes(key)) {
+          if (this.detailsFields.includes(key)) {
             params['details[0].' + key] = values[key]
             continue
           }

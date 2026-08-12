@@ -110,7 +110,7 @@ class TestNFSMountOptsKVM(cloudstackTestCase):
     def getNFSMountOptionForPool(self, option, poolId):
         nfsstat_cmd = "nfsstat -m | sed -n '/%s/{ n; p }'" % poolId
         nfsstat = self.sshClient.execute(nfsstat_cmd)
-        if (nfsstat == None):
+        if nfsstat == None or len(nfsstat) == 0:
             return None
         stat = nfsstat[0]
         vers = stat[stat.find(option):].split("=")[1].split(",")[0]

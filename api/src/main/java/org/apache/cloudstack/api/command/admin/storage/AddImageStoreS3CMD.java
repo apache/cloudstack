@@ -27,7 +27,7 @@ import static org.apache.cloudstack.api.ApiConstants.S3_END_POINT;
 import static org.apache.cloudstack.api.ApiConstants.S3_HTTPS_FLAG;
 import static org.apache.cloudstack.api.ApiConstants.S3_MAX_ERROR_RETRY;
 import static org.apache.cloudstack.api.ApiConstants.S3_SIGNER;
-import static org.apache.cloudstack.api.ApiConstants.S3_SECRET_KEY;
+import static org.apache.cloudstack.api.ApiConstants.SECRET_KEY;
 import static org.apache.cloudstack.api.ApiConstants.S3_SOCKET_TIMEOUT;
 import static org.apache.cloudstack.api.ApiConstants.S3_USE_TCP_KEEPALIVE;
 import static org.apache.cloudstack.api.BaseCmd.CommandType.BOOLEAN;
@@ -64,7 +64,7 @@ public final class AddImageStoreS3CMD extends BaseCmd implements ClientOptions {
     @Parameter(name = S3_ACCESS_KEY, type = STRING, required = true, description = "S3 access key")
     private String accessKey;
 
-    @Parameter(name = S3_SECRET_KEY, type = STRING, required = true, description = "S3 secret key")
+    @Parameter(name = SECRET_KEY, type = STRING, required = true, description = "S3 secret key")
     private String secretKey;
 
     @Parameter(name = S3_END_POINT, type = STRING, required = true, description = "S3 endpoint")
@@ -101,7 +101,7 @@ public final class AddImageStoreS3CMD extends BaseCmd implements ClientOptions {
         Map<String, String> dm = new HashMap();
 
         dm.put(ApiConstants.S3_ACCESS_KEY, getAccessKey());
-        dm.put(ApiConstants.S3_SECRET_KEY, getSecretKey());
+        dm.put(ApiConstants.SECRET_KEY, getSecretKey());
         dm.put(ApiConstants.S3_END_POINT, getEndPoint());
         dm.put(ApiConstants.S3_BUCKET_NAME, getBucketName());
 

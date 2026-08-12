@@ -325,11 +325,11 @@ public class ContrailElementImpl extends AdapterBase
             }
             if (isFloatingIpCreate(ip)) {
                 if (_manager.createFloatingIp(ip)) {
-                    logger.debug("Successfully created floating ip: " + ip.getAddress().addr());
+                    logger.debug("Successfully created floating IP: " + ip.getAddress().addr());
                 }
             } else {
                 if (_manager.deleteFloatingIp(ip)) {
-                    logger.debug("Successfully deleted floating ip: " + ip.getAddress().addr());
+                    logger.debug("Successfully deleted floating IP: " + ip.getAddress().addr());
                 }
             }
         }

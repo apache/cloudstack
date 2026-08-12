@@ -32,43 +32,43 @@ import com.cloud.serializer.Param;
 public class PortableIpResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.REGION_ID)
-    @Param(description = "Region Id in which global load balancer is created")
+    @Param(description = "Region ID in which global Load balancer is created")
     private Integer regionId;
 
     @SerializedName(ApiConstants.IP_ADDRESS)
-    @Param(description = "public IP address")
+    @Param(description = "Public IP address")
     private String ipAddress;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "the ID of the zone the public IP address belongs to")
+    @Param(description = "The ID of the zone the public IP address belongs to")
     private String zoneId;
 
     @SerializedName(ApiConstants.NETWORK_ID)
-    @Param(description = "the ID of the Network where ip belongs to")
+    @Param(description = "The ID of the Network where IP belongs to")
     private String networkId;
 
     @SerializedName(ApiConstants.VPC_ID)
-    @Param(description = "VPC the ip belongs to")
+    @Param(description = "VPC the IP belongs to")
     private String vpcId;
 
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID)
-    @Param(description = "the physical network this belongs to")
+    @Param(description = "The physical Network this belongs to")
     private String physicalNetworkId;
 
     @SerializedName(ApiConstants.ACCOUNT_ID)
-    @Param(description = "the account ID the portable IP address is associated with")
+    @Param(description = "The Account ID the portable IP address is associated with")
     private String accountId;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain ID the portable IP address is associated with")
+    @Param(description = "The domain ID the portable IP address is associated with")
     private String domainId;
 
     @SerializedName("allocated")
-    @Param(description = "date the portal IP address was acquired")
+    @Param(description = "Date the portal IP address was acquired")
     private Date allocated;
 
     @SerializedName(ApiConstants.STATE)
-    @Param(description = "State of the ip address. Can be: Allocating, Allocated, Releasing and Free")
+    @Param(description = "State of the IP address. Can be: Allocating, Allocated, Releasing and Free")
     private String state;
 
     public void setRegionId(Integer regionId) {

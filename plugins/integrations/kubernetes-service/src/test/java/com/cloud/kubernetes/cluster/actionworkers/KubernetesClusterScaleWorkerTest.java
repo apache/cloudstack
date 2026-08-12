@@ -17,8 +17,8 @@
 package com.cloud.kubernetes.cluster.actionworkers;
 
 import com.cloud.kubernetes.cluster.KubernetesCluster;
-import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
 import com.cloud.kubernetes.cluster.KubernetesClusterVmMapVO;
+import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
@@ -29,15 +29,17 @@ import com.cloud.vm.dao.UserVmDao;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.util.Arrays;
 import java.util.List;
 
-import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.DEFAULT;
 import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.CONTROL;
+import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.DEFAULT;
 
 @RunWith(MockitoJUnitRunner.class)
 public class KubernetesClusterScaleWorkerTest {
@@ -124,5 +126,65 @@ public class KubernetesClusterScaleWorkerTest {
         long expectedMemory = remainingClusterMemory + (controlNodes * newMemory);
         Assert.assertEquals(expectedCores, newClusterCapacity.first().longValue());
         Assert.assertEquals(expectedMemory, newClusterCapacity.second().longValue());
+    }
+
+
+    @Test
+    public void testGetWorkerNodesToRemoveForDownsize_singleRemoval() {
+        KubernetesCluster kubernetesCluster = Mockito.mock(KubernetesCluster.class);
+        KubernetesClusterManagerImpl clusterManager = Mockito.mock(KubernetesClusterManagerImpl.class);
+        KubernetesClusterScaleWorker worker = new KubernetesClusterScaleWorker(kubernetesCluster, new java.util.HashMap<>(), 2L, null, false, null, null, clusterManager);
+        KubernetesClusterScaleWorker spyWorker = Mockito.spy(worker);
+
+        KubernetesClusterVmMapVO vm1 = Mockito.mock(KubernetesClusterVmMapVO.class);
+        Mockito.when(vm1.isExternalNode()).thenReturn(false);
+        Mockito.when(vm1.isControlNode()).thenReturn(false);
+        Mockito.when(vm1.isEtcdNode()).thenReturn(false);
+
+        KubernetesClusterVmMapVO vm2 = Mockito.mock(KubernetesClusterVmMapVO.class);
+        Mockito.when(vm2.isExternalNode()).thenReturn(false);
+        Mockito.when(vm2.isControlNode()).thenReturn(false);
+        Mockito.when(vm2.isEtcdNode()).thenReturn(false);
+
+        KubernetesClusterVmMapVO vm3 = Mockito.mock(KubernetesClusterVmMapVO.class);
+        Mockito.when(vm3.isExternalNode()).thenReturn(false);
+        Mockito.when(vm3.isControlNode()).thenReturn(false);
+        Mockito.when(vm3.isEtcdNode()).thenReturn(false);
+
+        Mockito.doReturn(Arrays.asList(vm1, vm2, vm3)).when(spyWorker).getKubernetesClusterVMMaps();
+
+        List<KubernetesClusterVmMapVO> toRemove = spyWorker.getWorkerNodesToRemove();
+
+        Assert.assertEquals(1, toRemove.size());
+        Assert.assertSame(vm3, toRemove.get(0));
+    }
+
+    @Test
+    public void testGetWorkerNodesToRemoveForDownsize_noRemoval() {
+        KubernetesCluster kubernetesCluster = Mockito.mock(KubernetesCluster.class);
+
+        KubernetesClusterScaleWorker worker = new KubernetesClusterScaleWorker(kubernetesCluster, new java.util.HashMap<>(), 3L, null, false, null, null, clusterManager);
+        KubernetesClusterScaleWorker spyWorker = Mockito.spy(worker);
+
+        KubernetesClusterVmMapVO vm1 = Mockito.mock(KubernetesClusterVmMapVO.class);
+        Mockito.when(vm1.isExternalNode()).thenReturn(false);
+        Mockito.when(vm1.isControlNode()).thenReturn(false);
+        Mockito.when(vm1.isEtcdNode()).thenReturn(false);
+
+        KubernetesClusterVmMapVO vm2 = Mockito.mock(KubernetesClusterVmMapVO.class);
+        Mockito.when(vm2.isExternalNode()).thenReturn(false);
+        Mockito.when(vm2.isControlNode()).thenReturn(false);
+        Mockito.when(vm2.isEtcdNode()).thenReturn(false);
+
+        KubernetesClusterVmMapVO vm3 = Mockito.mock(KubernetesClusterVmMapVO.class);
+        Mockito.when(vm3.isExternalNode()).thenReturn(false);
+        Mockito.when(vm3.isControlNode()).thenReturn(false);
+        Mockito.when(vm3.isEtcdNode()).thenReturn(false);
+
+        Mockito.doReturn(Arrays.asList(vm1, vm2, vm3)).when(spyWorker).getKubernetesClusterVMMaps();
+
+        List<KubernetesClusterVmMapVO> toRemove = spyWorker.getWorkerNodesToRemove();
+
+        Assert.assertTrue(toRemove.isEmpty());
     }
 }

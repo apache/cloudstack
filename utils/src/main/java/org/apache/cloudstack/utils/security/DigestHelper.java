@@ -37,9 +37,9 @@ public class DigestHelper {
     protected static Logger LOGGER = LogManager.getLogger(DigestHelper.class);
     public static ChecksumValue digest(String algorithm, InputStream is) throws NoSuchAlgorithmException, IOException {
         MessageDigest digest = MessageDigest.getInstance(algorithm);
-        ChecksumValue checksum = null;
+        ChecksumValue checksum;
         byte[] buffer = new byte[8192];
-        int read = 0;
+        int read;
         while ((read = is.read(buffer)) > 0) {
             digest.update(buffer, 0, read);
         }
@@ -59,7 +59,6 @@ public class DigestHelper {
 
     public static String getPaddedDigest(String algorithm, String inputString) throws NoSuchAlgorithmException {
         MessageDigest digest = MessageDigest.getInstance(algorithm);
-        String checksum;
         digest.reset();
         BigInteger pwInt = new BigInteger(1, digest.digest(inputString.getBytes()));
         return getPaddedDigestString(digest, pwInt);
@@ -70,18 +69,13 @@ public class DigestHelper {
         String pwStr = pwInt.toString(16);
         // we have half byte string representation, so
         int padding = 2*digest.getDigestLength() - pwStr.length();
-        StringBuffer sb = new StringBuffer();
-        for (int i = 0; i < padding; i++) {
-            sb.append('0'); // make sure the MD5 password is 32 digits long
-        }
-        sb.append(pwStr);
-        checksum = sb.toString();
+        // make sure the MD5 password is 32 digits long
+        checksum = "0".repeat(Math.max(0, padding)) +
+                pwStr;
         return checksum;
     }
 
-    static final Map<String, Integer> paddingLengths = getChecksumLengthsMap();
-
-    private static final Map<String, Integer> getChecksumLengthsMap() {
+    private static Map<String, Integer> getChecksumLengthsMap() {
         Map<String, Integer> map = new HashMap<>();
         map.put("MD5", 32);
         map.put("SHA-1", 40);
@@ -143,9 +137,24 @@ public class DigestHelper {
         try (InputStream is = Files.newInputStream(Paths.get(file.getPath()))) {
             return DigestUtils.sha512Hex(is);
         } catch (IOException e) {
-            String errMsg = "Failed to calculate sha512 checksum of template";
+            String errMsg = "Failed to calculate sha512 checksum of Template";
             LOGGER.error(errMsg);
             throw new CloudRuntimeException(errMsg, e);
         }
+    }
+
+    public static String prependAlgorithm(String checksum) {
+        if (StringUtils.isEmpty(checksum)) {
+            return checksum;
+        }
+        int checksumLength = checksum.length();
+        Map<String, Integer> paddingLengths = getChecksumLengthsMap();
+        for (Map.Entry<String, Integer> entry : paddingLengths.entrySet()) {
+            if (entry.getValue().equals(checksumLength)) {
+                String algorithm = entry.getKey();
+                return String.format("{%s}%s", algorithm, checksum);
+            }
+        }
+        return checksum;
     }
 }

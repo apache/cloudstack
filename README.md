@@ -203,14 +203,14 @@ Unrestricted (TSU) exception (see the BIS Export Administration Regulations, Sec
 The following provides more details on the included cryptographic software:
 
 * CloudStack makes use of JaSypt cryptographic libraries.
-* CloudStack has a system requirement of MySQL, and uses native database encryption functionality.
+* CloudStack requires a MySQL-compatible database (MariaDB or MySQL), and uses native database encryption functionality.
 * CloudStack makes use of the Bouncy Castle general-purpose encryption library.
 * CloudStack can optionally interact with and control OpenSwan-based VPNs.
 * CloudStack has a dependency on and makes use of JSch - a java SSH2 implementation.
 
 ## Star History
 
-[![Apache CloudStack Star History](https://api.star-history.com/svg?repos=apache/cloudstack&type=Date)](https://www.star-history.com/#apache/cloudstack&Date)
+[![Apache CloudStack Star History](https://star-history.dera.page/svg?repos=apache/cloudstack&type=Date)](https://star-history.dera.page/#apache/cloudstack&Date)
 
 ## Contributors
 

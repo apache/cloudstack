@@ -18,6 +18,7 @@
 import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
 import { isZoneCreated } from '@/utils/zone'
+import { isAdmin } from '@/role'
 
 export default {
   name: 'storage',
@@ -63,7 +64,7 @@ export default {
 
         return fields
       },
-      details: ['name', 'id', 'type', 'storagetype', 'diskofferingdisplaytext', 'deviceid', 'sizegb', 'physicalsize', 'provisioningtype', 'utilization', 'diskkbsread', 'diskkbswrite', 'diskioread', 'diskiowrite', 'diskiopstotal', 'miniops', 'maxiops', 'path', 'deleteprotection'],
+      details: ['name', 'id', 'type', 'storagetype', 'diskofferingdisplaytext', 'kmskey', 'deviceid', 'sizegb', 'physicalsize', 'provisioningtype', 'utilization', 'diskkbsread', 'diskkbswrite', 'diskioread', 'diskiowrite', 'diskiopstotal', 'miniops', 'maxiops', 'path', 'deleteprotection'],
       related: [{
         name: 'snapshot',
         title: 'label.snapshots',
@@ -92,7 +93,7 @@ export default {
         }
       ],
       searchFilters: () => {
-        var filters = ['name', 'zoneid', 'domainid', 'account', 'state', 'tags', 'serviceofferingid', 'diskofferingid', 'isencrypted']
+        const filters = ['name', 'zoneid', 'domainid', 'account', 'state', 'tags', 'serviceofferingid', 'diskofferingid', 'kmskeyid', 'isencrypted']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           filters.push('storageid')
         }
@@ -222,6 +223,25 @@ export default {
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/MigrateVolume.vue')))
         },
         {
+          api: 'migrateVolumesToKMS',
+          icon: 'lock-outlined',
+          docHelp: 'adminguide/kms.html#migrating-existing-volumes-to-kms',
+          label: 'label.migrate.volume.to.kms',
+          message: 'message.action.migrate.volume.to.kms',
+          dataView: true,
+          popup: true,
+          show: (record, store) => {
+            return record.encryptformat && !record.kmskeyid &&
+              ['Ready', 'Allocated'].includes(record.state)
+          },
+          args: ['kmskeyid'],
+          mapping: {
+            volumeids: {
+              value: (record) => { return record.id }
+            }
+          }
+        },
+        {
           api: 'changeOfferingForVolume',
           icon: 'swap-outlined',
           docHelp: 'adminguide/storage.html#id2',
@@ -311,7 +331,10 @@ export default {
       permission: ['listSnapshots'],
       resourceType: 'Snapshot',
       columns: () => {
-        var fields = ['name', 'state', 'volumename', 'intervaltype', 'physicalsize', 'created']
+        const fields = ['name', 'state', 'volumename', 'intervaltype', 'physicalsize', 'created']
+        if (store.getters.features.snapshotshowchainsize) {
+          fields.splice(fields.indexOf('created'), 0, 'chainsize', 'parentname')
+        }
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           fields.push('account')
           if (store.getters.listAllProjects) {
@@ -324,7 +347,13 @@ export default {
         fields.push('zonename')
         return fields
       },
-      details: ['name', 'id', 'volumename', 'volumetype', 'snapshottype', 'intervaltype', 'physicalsize', 'virtualsize', 'chainsize', 'account', 'domain', 'created'],
+      details: () => {
+        const fields = ['name', 'id', 'volumename', 'volumetype', 'snapshottype', 'intervaltype', 'physicalsize', 'virtualsize', 'account', 'domain', 'created']
+        if (store.getters.features.snapshotshowchainsize) {
+          fields.splice(fields.indexOf('account'), 0, 'chainsize', 'parentname')
+        }
+        return fields
+      },
       tabs: [
         {
           name: 'details',
@@ -346,7 +375,7 @@ export default {
         }
       ],
       searchFilters: () => {
-        var filters = ['name', 'domainid', 'account', 'tags', 'zoneid']
+        const filters = ['name', 'domainid', 'account', 'tags', 'zoneid']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           filters.push('storageid')
           filters.push('imagestoreid')
@@ -464,10 +493,10 @@ export default {
       icon: 'cloud-upload-outlined',
       permission: ['listBackups'],
       params: { listvmdetails: 'true' },
-      columns: ['name', 'status', 'size', 'virtualsize', 'virtualmachinename', 'backupofferingname', 'intervaltype', 'type', 'created', 'account', 'domain', 'zone'],
+      columns: ['name', 'status', 'compressionstatus', 'validationstatus', 'size', 'virtualsize', 'virtualmachinename', 'backupofferingname', 'intervaltype', 'type', 'created', 'account', 'domain', 'zone'],
       details: ['name', 'description', 'virtualmachinename', 'id', 'intervaltype', 'type', 'externalid', 'size', 'virtualsize', 'volumes', 'backupofferingname', 'zone', 'account', 'domain', 'created'],
       searchFilters: () => {
-        var filters = ['name', 'zoneid', 'domainid', 'account', 'backupofferingid']
+        var filters = ['name', 'zoneid', 'domainid', 'account', 'backupofferingid', 'status']
         return filters
       },
       tabs: [
@@ -488,7 +517,14 @@ export default {
           label: 'label.backup.restore',
           message: 'message.backup.restore',
           dataView: true,
-          show: (record) => { return record.status === 'BackedUp' }
+          show: (record) => { return record.status === 'BackedUp' },
+          args: () => {
+            const fields = ['quickrestore']
+            if (isAdmin()) {
+              fields.push('hostid')
+            }
+            return fields
+          }
         },
         {
           api: 'restoreVolumeFromBackupAndAttachToVM',

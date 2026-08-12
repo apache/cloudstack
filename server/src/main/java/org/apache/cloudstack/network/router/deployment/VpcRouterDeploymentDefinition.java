@@ -117,7 +117,7 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
     }
 
     @Override
-    protected void findSourceNatIP() throws InsufficientAddressCapacityException, ConcurrentOperationException {
+    public void findSourceNatIP() throws InsufficientAddressCapacityException, ConcurrentOperationException {
         sourceNatIp = null;
         DataCenter zone = dest.getDataCenter();
         Long zoneId = null;
@@ -218,5 +218,10 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
     @Override
     public boolean isRollingRestart() {
         return vpc.isRollingRestart();
+    }
+
+    @Override
+    public boolean getKeepMacAddressOnPublicNic() {
+        return vpc == null || vpc.getKeepMacAddressOnPublicNic();
     }
 }

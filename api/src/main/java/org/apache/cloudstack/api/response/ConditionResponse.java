@@ -30,7 +30,7 @@ import com.cloud.serializer.Param;
 @SuppressWarnings("unused")
 public class ConditionResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName("id")
-    @Param(description = "the id of the Condition")
+    @Param(description = "The ID of the Condition")
     private String id;
 
     @SerializedName(value = ApiConstants.THRESHOLD)
@@ -42,11 +42,11 @@ public class ConditionResponse extends BaseResponse implements ControlledEntityR
     private String relationalOperator;
 
     @SerializedName("counterid")
-    @Param(description = "the Id of the Counter.")
+    @Param(description = "The ID of the Counter.")
     private String counterId;
 
     @SerializedName("countername")
-    @Param(description = "the Name of the Counter.")
+    @Param(description = "The Name of the Counter.")
     private String counterName;
 
     @SerializedName("counter")
@@ -54,11 +54,11 @@ public class ConditionResponse extends BaseResponse implements ControlledEntityR
     private CounterResponse counterResponse;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain id of the Condition owner")
+    @Param(description = "The domain ID of the Condition owner")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain name of the owner.")
+    @Param(description = "The domain name of the owner.")
     private String domain;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
@@ -66,19 +66,19 @@ public class ConditionResponse extends BaseResponse implements ControlledEntityR
     private String domainPath;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "zone id of counter")
+    @Param(description = "Zone ID of counter")
     private String zoneId;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project id of the Condition.")
+    @Param(description = "The project ID of the Condition.")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project name of the Condition")
+    @Param(description = "The project name of the Condition")
     private String projectName;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the owner of the Condition.")
+    @Param(description = "The owner of the Condition.")
     private String accountName;
 
     // /////////////////////////////////////////////////

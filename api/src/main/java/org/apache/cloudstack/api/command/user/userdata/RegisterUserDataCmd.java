@@ -46,8 +46,19 @@ public class RegisterUserDataCmd extends BaseRegisterUserDataCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.USER_DATA, type = CommandType.STRING, required = true, description = "User data content", length = 1048576)
+    @Parameter(name = ApiConstants.USER_DATA,
+            type = CommandType.STRING,
+            required = true,
+            description = "Base64 encoded User Data content. " +
+                    "Using HTTP GET (via querystring), you can send up to 4KB of data after base64 encoding. " +
+                    "Using HTTP POST (via POST body), you can send up to 32KB of data after base64 encoding, " +
+                    "which can be increased upto 1MB using the vm.userdata.max.length setting",
+            length = 1048576)
     protected String userData;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
 
     public String getUserData() {
         return userData;
@@ -59,7 +70,7 @@ public class RegisterUserDataCmd extends BaseRegisterUserDataCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = _accountService.finalyzeAccountId(getAccountName(), getDomainId(), getProjectId(), true);
+        Long accountId = _accountService.finalizeAccountId(getAccountName(), getDomainId(), getProjectId(), true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }

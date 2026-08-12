@@ -36,7 +36,7 @@ public abstract class BaseMSMaintenanceActionCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.MANAGEMENT_SERVER_ID, type = CommandType.UUID, entityType = ManagementServerResponse.class, description = "the id of the management server", required = true)
+    @Parameter(name = ApiConstants.MANAGEMENT_SERVER_ID, type = CommandType.UUID, entityType = ManagementServerResponse.class, description = "The UUID of the management server", required = true)
     private Long managementServerId;
 
     /////////////////////////////////////////////////////

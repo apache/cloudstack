@@ -340,7 +340,7 @@ public class RoutedIpv4ManagerImplTest {
 
         when(dataCenterIpv4GuestSubnetDao.findById(zoneSubnetId)).thenReturn(subnetVO);
 
-        when(accountManager.finalyzeAccountId(accountName, domainId, null, false)).thenReturn(accountId);
+        when(accountManager.finalizeAccountId(accountName, domainId, null, false)).thenReturn(accountId);
         when(accountManager.getAccount(accountId)).thenReturn(account);
         when(account.getDomainId()).thenReturn(domainId);
         when(dataCenterIpv4GuestSubnetDao.findById(zoneSubnetId)).thenReturn(subnetVO);
@@ -911,7 +911,7 @@ public class RoutedIpv4ManagerImplTest {
         ReflectionTestUtils.setField(cmd,"projectId", null);
 
         when(bgpPeerDao.findById(bgpPeerId)).thenReturn(bgpPeer);
-        when(accountManager.finalyzeAccountId(accountName, domainId, null, false)).thenReturn(accountId);
+        when(accountManager.finalizeAccountId(accountName, domainId, null, false)).thenReturn(accountId);
         when(accountManager.getAccount(accountId)).thenReturn(account);
         when(account.getDomainId()).thenReturn(domainId);
 

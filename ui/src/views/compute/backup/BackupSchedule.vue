@@ -67,6 +67,9 @@
         <template v-if="column.key === 'timezone'" :name="text">
           <label>{{ getTimeZone(record.timezone) }}</label>
         </template>
+        <template v-if="column.key === 'isolated'" :name="text">
+          <label>{{ record.isolated ? $t('label.yes') : $t('label.no') }}</label>
+        </template>
         <template v-if="column.key === 'actions'" class="account-button-action" :name="text">
           <tooltip-button
             tooltipPlacement="top"
@@ -99,7 +102,7 @@ export default {
       default: false
     },
     dataSource: {
-      type: Object,
+      type: Array,
       required: true
     },
     deleteFn: {
@@ -128,6 +131,7 @@ export default {
           dataIndex: 'intervaltype'
         },
         {
+          key: 'time',
           title: this.$t('label.time'),
           dataIndex: 'schedule'
         },
@@ -155,6 +159,11 @@ export default {
           key: 'timezone',
           title: this.$t('label.timezone'),
           dataIndex: 'timezone'
+        },
+        {
+          key: 'isolated',
+          title: this.$t('label.backup.isolated'),
+          dataIndex: 'isolated'
         },
         {
           key: 'actions',

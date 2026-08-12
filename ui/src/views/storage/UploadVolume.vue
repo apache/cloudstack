@@ -47,21 +47,16 @@
           <template #label>
             <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
           </template>
-          <a-select
+          <infinite-scroll-select
             v-model:value="form.zoneId"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }" >
-            <a-select-option :value="zone.id" v-for="zone in zones" :key="zone.id" :label="zone.name || zone.description">
-              <span>
-                <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
-                <global-outlined v-else style="margin-right: 5px"/>
-                {{ zone.name || zone.description }}
-              </span>
-            </a-select-option>
-          </a-select>
+            api="listZones"
+            :apiParams="zonesApiParams"
+            resourceType="zone"
+            optionValueKey="id"
+            optionLabelKey="name"
+            defaultIcon="global-outlined"
+            selectFirstOption="true"
+            @change-option-value="handleZoneChange" />
         </a-form-item>
         <a-form-item name="format" ref="format">
           <template #label>
@@ -83,23 +78,17 @@
           <template #label>
             <tooltip-label :title="$t('label.diskofferingid')" :tooltip="apiParams.diskofferingid.description || $t('label.diskoffering')"/>
           </template>
-          <a-select
+          <infinite-scroll-select
             v-model:value="form.diskofferingid"
-            :loading="loading"
-            @change="id => onChangeDiskOffering(id)"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }" >
-            <a-select-option
-              v-for="(offering, index) in offerings"
-              :value="offering.id"
-              :key="index"
-              :label="offering.displaytext || offering.name">
-              {{ offering.displaytext || offering.name }}
-            </a-select-option>
-          </a-select>
+            api="listDiskOfferings"
+            :apiParams="diskOfferingsApiParams"
+            resourceType="diskoffering"
+            optionValueKey="id"
+            optionLabelKey="displaytext"
+            defaultIcon="hdd-outlined"
+            :defaultOption="{ id: null, displaytext: ''}"
+            allowClear="true"
+            @change-option="onChangeDiskOffering" />
         </a-form-item>
         <a-form-item name="checksum" ref="checksum">
           <template #label>
@@ -114,38 +103,33 @@
           <template #label>
             <tooltip-label :title="$t('label.domain')" :tooltip="apiParams.domainid.description"/>
           </template>
-          <a-select
+          <infinite-scroll-select
             v-model:value="form.domainid"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            :loading="domainLoading"
+            api="listDomains"
+            :apiParams="domainsApiParams"
+            resourceType="domain"
+            optionValueKey="id"
+            optionLabelKey="path"
+            defaultIcon="block-outlined"
+            allowClear="true"
             :placeholder="$t('label.domainid')"
-            @change="val => { handleDomainChange(domainList[val].id) }">
-            <a-select-option v-for="(opt, optIndex) in domainList" :key="optIndex" :label="opt.path || opt.name || opt.description">
-              {{ opt.path || opt.name || opt.description }}
-            </a-select-option>
-          </a-select>
+            @change-option-value="handleDomainChange" />
         </a-form-item>
         <a-form-item name="account" ref="account" v-if="'listDomains' in $store.getters.apis">
           <template #label>
             <tooltip-label :title="$t('label.account')" :tooltip="apiParams.account.description"/>
           </template>
-          <a-select
+          <infinite-scroll-select
             v-model:value="form.account"
-            showSearch
-            optionFilterProp="value"
-            :filterOption="(input, option) => {
-              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
+            api="listAccounts"
+            :apiParams="accountsApiParams"
+            resourceType="account"
+            optionValueKey="name"
+            optionLabelKey="name"
+            defaultIcon="team-outlined"
             :placeholder="$t('label.account')"
-            @change="val => { handleAccountChange(val) }">
-            <a-select-option v-for="(acc, index) in accountList" :value="acc.name" :key="index">
-              {{ acc.name }}
-            </a-select-option>
-          </a-select>
+            allowClear="true"
+            @change-option-value="handleAccountChange" />
         </a-form-item>
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
@@ -158,31 +142,30 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { getAPI, postAPI } from '@/api'
+import { postAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import InfiniteScrollSelect from '@/components/widgets/InfiniteScrollSelect.vue'
 
 export default {
   name: 'UploadVolume',
   mixins: [mixinForm],
   components: {
     ResourceIcon,
-    TooltipLabel
+    TooltipLabel,
+    InfiniteScrollSelect
   },
   data () {
     return {
-      zones: [],
-      domainList: [],
-      accountList: [],
       formats: ['RAW', 'VHD', 'VHDX', 'OVA', 'QCOW2'],
-      offerings: [],
       zoneSelected: '',
       selectedDiskOfferingId: null,
       domainId: null,
       account: null,
       uploadParams: null,
-      domainLoading: false,
+      customDiskOffering: false,
+      isCustomizedDiskIOps: false,
       loading: false,
       uploadPercentage: 0
     }
@@ -190,9 +173,36 @@ export default {
   beforeCreate () {
     this.apiParams = this.$getApiParams('uploadVolume')
   },
+  computed: {
+    zonesApiParams () {
+      return {
+        showicon: true
+      }
+    },
+    diskOfferingsApiParams () {
+      if (!this.form.zoneId) {
+        return null
+      }
+      return {
+        zoneid: this.form.zoneId,
+        listall: true
+      }
+    },
+    domainsApiParams () {
+      return {
+        listall: true,
+        details: 'min'
+      }
+    },
+    accountsApiParams () {
+      return {
+        domainid: this.form?.domainid || null,
+        showicon: true
+      }
+    }
+  },
   created () {
     this.initForm()
-    this.fetchData()
   },
   methods: {
     initForm () {
@@ -207,77 +217,27 @@ export default {
         format: [{ required: true, message: this.$t('message.error.select') }]
       })
     },
-    fetchData () {
-      this.loading = true
-      getAPI('listZones', { showicon: true }).then(json => {
-        this.zones = json.listzonesresponse.zone || []
-        this.zones = this.zones.filter(zone => zone.type !== 'Edge')
-        this.form.zoneId = this.zones[0].id || ''
-        this.fetchDiskOfferings(this.form.zoneId)
-      }).finally(() => {
-        this.loading = false
-      })
-      if ('listDomains' in this.$store.getters.apis) {
-        this.fetchDomains()
-      }
+    handleZoneChange (zoneId) {
+      this.form.zoneId = zoneId
+      // InfiniteScrollSelect will auto-reload disk offerings when apiParams changes
     },
-    fetchDiskOfferings (zoneId) {
-      this.loading = true
-      getAPI('listDiskOfferings', {
-        zoneid: zoneId,
-        listall: true
-      }).then(json => {
-        this.offerings = json.listdiskofferingsresponse.diskoffering || []
-      }).finally(() => {
-        this.loading = false
-      })
-    },
-    fetchDomains () {
-      this.domainLoading = true
-      getAPI('listDomains', {
-        listAll: true,
-        details: 'min'
-      }).then(response => {
-        this.domainList = response.listdomainsresponse.domain
-
-        if (this.domainList[0]) {
-          this.handleDomainChange(null)
-        }
-      }).catch(error => {
-        this.$notifyError(error)
-      }).finally(() => {
-        this.domainLoading = false
-      })
-    },
-    fetchAccounts () {
-      getAPI('listAccounts', {
-        domainid: this.domainId
-      }).then(response => {
-        this.accountList = response.listaccountsresponse.account || []
-        if (this.accountList && this.accountList.length === 0) {
-          this.handleAccountChange(null)
-        }
-      }).catch(error => {
-        this.$notifyError(error)
-      })
-    },
-    onChangeDiskOffering (id) {
-      const offering = this.offerings.filter(x => x.id === id)
-      this.customDiskOffering = offering[0]?.iscustomized || false
-      this.isCustomizedDiskIOps = offering[0]?.iscustomizediops || false
-    },
-    handleDomainChange (domain) {
-      this.domainId = domain
-      if ('listAccounts' in this.$store.getters.apis) {
-        this.fetchAccounts()
-      }
-    },
-    handleAccountChange (acc) {
-      if (acc) {
-        this.account = acc.name
+    onChangeDiskOffering (offering) {
+      if (offering) {
+        this.customDiskOffering = offering.iscustomized || false
+        this.isCustomizedDiskIOps = offering.iscustomizediops || false
       } else {
-        this.account = acc
+        this.customDiskOffering = false
+        this.isCustomizedDiskIOps = false
       }
+    },
+    handleDomainChange (domainId) {
+      this.form.domainid = domainId
+      this.domainId = domainId
+      this.form.account = null
+    },
+    handleAccountChange (accountName) {
+      this.form.account = accountName
+      this.account = accountName
     },
     handleSubmit (e) {
       e.preventDefault()

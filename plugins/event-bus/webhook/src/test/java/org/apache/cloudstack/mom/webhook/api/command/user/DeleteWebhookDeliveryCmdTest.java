@@ -19,6 +19,7 @@ package org.apache.cloudstack.mom.webhook.api.command.user;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Date;
 import java.util.UUID;
 
 import org.apache.cloudstack.api.ServerApiException;
@@ -104,5 +105,39 @@ public class DeleteWebhookDeliveryCmdTest {
         Mockito.when(webhookApiService.deleteWebhookDelivery(cmd)).thenReturn(10);
         cmd.execute();
         Assert.assertNotNull(cmd.getResponseObject());
+    }
+
+    @Test
+    public void getStartDateReturnsCorrectValue() {
+        DeleteWebhookDeliveryCmd cmd = new DeleteWebhookDeliveryCmd();
+        Date date = new Date();
+        ReflectionTestUtils.setField(cmd, "startDate", date);
+
+        Assert.assertEquals(date, cmd.getStartDate());
+    }
+
+    @Test
+    public void getStartDateReturnsNullWhenNotSet() {
+        DeleteWebhookDeliveryCmd cmd = new DeleteWebhookDeliveryCmd();
+        ReflectionTestUtils.setField(cmd, "startDate", null);
+
+        Assert.assertNull(cmd.getStartDate());
+    }
+
+    @Test
+    public void getEndDateReturnsCorrectValue() {
+        DeleteWebhookDeliveryCmd cmd = new DeleteWebhookDeliveryCmd();
+        Date date = new Date();
+        ReflectionTestUtils.setField(cmd, "endDate", date);
+
+        Assert.assertEquals(date, cmd.getEndDate());
+    }
+
+    @Test
+    public void getEndDateReturnsNullWhenNotSet() {
+        DeleteWebhookDeliveryCmd cmd = new DeleteWebhookDeliveryCmd();
+        ReflectionTestUtils.setField(cmd, "endDate", null);
+
+        Assert.assertNull(cmd.getEndDate());
     }
 }

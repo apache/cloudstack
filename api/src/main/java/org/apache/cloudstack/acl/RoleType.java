@@ -132,10 +132,10 @@ public enum RoleType {
      * */
     public static Account.Type getAccountTypeByRole(final Role role, final Account.Type defautAccountType) {
         if (role != null) {
-            LOGGER.debug(String.format("Role [%s] is not null; therefore, we use its account type [%s].", role, defautAccountType));
+            LOGGER.debug("Role [{}] is not null; therefore, we use its Account type [{}].", role, defautAccountType);
             return role.getRoleType().getAccountType();
         }
-        LOGGER.debug(String.format("Role is null; therefore, we use the default account type [%s] value.", defautAccountType));
+        LOGGER.debug("Role is null; therefore, we use the default Account type [{}] value.", defautAccountType);
         return defautAccountType;
     }
 }

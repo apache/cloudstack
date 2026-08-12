@@ -16,13 +16,11 @@
 // under the License.
 package org.apache.cloudstack.storage.heuristics.presetvariables;
 
-import com.cloud.hypervisor.Hypervisor;
-
 public class Snapshot extends GenericHeuristicPresetVariable {
 
     private Long size;
 
-    private Hypervisor.HypervisorType hypervisorType;
+    private String hypervisorType;
 
     public Long getSize() {
         return size;
@@ -30,15 +28,13 @@ public class Snapshot extends GenericHeuristicPresetVariable {
 
     public void setSize(Long size) {
         this.size = size;
-        fieldNamesToIncludeInToString.add("size");
     }
 
-    public Hypervisor.HypervisorType getHypervisorType() {
+    public String getHypervisorType() {
         return hypervisorType;
     }
 
-    public void setHypervisorType(Hypervisor.HypervisorType hypervisorType) {
+    public void setHypervisorType(String hypervisorType) {
         this.hypervisorType = hypervisorType;
-        fieldNamesToIncludeInToString.add("hypervisorType");
     }
 }

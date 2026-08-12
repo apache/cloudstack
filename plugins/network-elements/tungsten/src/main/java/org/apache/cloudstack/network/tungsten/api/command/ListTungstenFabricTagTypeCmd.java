@@ -51,10 +51,10 @@ public class ListTungstenFabricTagTypeCmd extends BaseListCmd {
     @Inject
     TungstenService tungstenService;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the ID of zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The ID of zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.TAG_TYPE_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric tag type")
+    @Parameter(name = ApiConstants.TAG_TYPE_UUID, type = CommandType.STRING, description = "The uuid of Tungsten-Fabric tag type")
     private String tagTypeUuid;
 
     @Override

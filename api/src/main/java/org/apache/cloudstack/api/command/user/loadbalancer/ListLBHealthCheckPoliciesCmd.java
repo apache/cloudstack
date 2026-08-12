@@ -44,13 +44,13 @@ public class ListLBHealthCheckPoliciesCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.LBID,
                type = CommandType.UUID,
                entityType = FirewallRuleResponse.class,
-               description = "the ID of the load balancer rule")
+               description = "The ID of the load balancer rule")
     private Long lbRuleId;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "List resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = LBHealthCheckResponse.class, description = "the ID of the health check policy", since = "4.4")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = LBHealthCheckResponse.class, description = "The ID of the health check policy", since = "4.4")
     private Long id;
 
     // ///////////////////////////////////////////////////

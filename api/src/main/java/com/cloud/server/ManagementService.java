@@ -71,12 +71,13 @@ import org.apache.cloudstack.api.command.user.vm.GetVMPasswordCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.UpdateVMGroupCmd;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.config.ConfigurationGroup;
-import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.alert.Alert;
 import com.cloud.capacity.Capacity;
 import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan;
+import com.cloud.deploy.DeploymentPlan;
+import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -97,6 +98,7 @@ import com.cloud.utils.Ternary;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
+import com.cloud.vm.VirtualMachineProfile;
 
 /**
  * Hopefully this is temporary.
@@ -104,14 +106,6 @@ import com.cloud.vm.VirtualMachine.Type;
  */
 public interface ManagementService {
     static final String Name = "management-server";
-
-    ConfigKey<Boolean> JsInterpretationEnabled = new ConfigKey<>("Hidden"
-            , Boolean.class
-            , "js.interpretation.enabled"
-            , "false"
-            , "Enable/Disable all JavaScript interpretation related functionalities to create or update Javascript rules."
-            , false
-            , ConfigKey.Scope.Global);
 
     /**
      * returns the a map of the names/values in the configuration table
@@ -479,6 +473,19 @@ public interface ManagementService {
     Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> listHostsForMigrationOfVM(VirtualMachine vm, Long startIndex, Long pageSize, String keyword, List<VirtualMachine> vmList);
 
     /**
+     * Apply affinity group constraints and other exclusion rules for VM migration.
+     * This is a helper method that can be used independently for per-iteration affinity checks in DRS.
+     *
+     * @param vm The virtual machine to migrate
+     * @param vmProfile The VM profile
+     * @param plan The deployment plan
+     * @param vmList List of VMs with current/simulated placements for affinity processing
+     * @return ExcludeList containing hosts to avoid
+     */
+    ExcludeList applyAffinityConstraints(VirtualMachine vm, VirtualMachineProfile vmProfile,
+            DeploymentPlan plan, List<VirtualMachine> vmList);
+
+    /**
      * List storage pools for live migrating of a volume. The API returns list of all pools in the cluster to which the
      * volume can be migrated. Current pool is not included in the list. In case of vSphere datastore cluster storage pools,
      * this method removes the child storage pools and adds the corresponding parent datastore cluster for API response listing
@@ -517,7 +524,5 @@ public interface ManagementService {
     Pair<Boolean, String> patchSystemVM(PatchSystemVMCmd cmd);
 
     boolean removeManagementServer(RemoveManagementServerCmd cmd);
-
-    void checkJsInterpretationAllowedIfNeededForParameterValue(String paramName, boolean paramValue);
 
 }

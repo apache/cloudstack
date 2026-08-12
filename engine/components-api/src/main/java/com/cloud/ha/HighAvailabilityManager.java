@@ -21,6 +21,7 @@ import static org.apache.cloudstack.framework.config.ConfigKey.Scope.Cluster;
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.VMInstanceVO;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -31,6 +32,8 @@ import java.util.List;
  * HighAvailabilityManager checks to make sure the VMs are running fine.
  */
 public interface HighAvailabilityManager extends Manager {
+
+    List<StoragePoolType> LIBVIRT_STORAGE_POOL_TYPES_WITH_HA_SUPPORT = List.of(StoragePoolType.NetworkFilesystem, StoragePoolType.SharedMountPoint);
 
     ConfigKey<Boolean> ForceHA = new ConfigKey<>("Advanced", Boolean.class, "force.ha", "false",
         "Force High-Availability to happen even if the VM says no.", true, Cluster);
@@ -72,10 +75,10 @@ public interface HighAvailabilityManager extends Manager {
         + " which are registered for the HA event that were successful and are now ready to be purged.",
         true, Cluster);
 
-    public static final ConfigKey<Boolean> KvmHAFenceHostIfHeartbeatFailsOnStorage = new ConfigKey<>("Advanced", Boolean.class, "kvm.ha.fence.on.storage.heartbeat.failure", "false",
+    ConfigKey<Boolean> KvmHAFenceHostIfHeartbeatFailsOnStorage = new ConfigKey<>("Advanced", Boolean.class, "kvm.ha.fence.on.storage.heartbeat.failure", "false",
             "Proceed fencing the host even the heartbeat failed for only one storage pool", false, ConfigKey.Scope.Zone);
 
-    public enum WorkType {
+    enum WorkType {
         Migration,  // Migrating VMs off of a host.
         Stop,       // Stops a VM for storage pool migration purposes.  This should be obsolete now.
         CheckStop,  // Checks if a VM has been stopped.

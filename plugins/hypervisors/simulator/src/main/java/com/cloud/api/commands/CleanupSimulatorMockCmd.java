@@ -34,13 +34,13 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import javax.inject.Inject;
 
 
-@APICommand(name = "cleanupSimulatorMock", description="cleanup simulator mock", responseObject=SuccessResponse.class)
+@APICommand(name = "cleanupSimulatorMock", description = "Cleanup simulator mock", responseObject=SuccessResponse.class)
 public class CleanupSimulatorMockCmd extends BaseCmd {
     private static final String s_name = "cleanupsimulatormockresponse";
 
     @Inject SimulatorManager _simMgr;
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="id of the configured mock")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description = "ID of the configured mock")
     private Long id;
 
     @Override

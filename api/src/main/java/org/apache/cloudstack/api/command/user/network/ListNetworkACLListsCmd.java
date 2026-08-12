@@ -43,16 +43,16 @@ public class ListNetworkACLListsCmd extends BaseListProjectAndAccountResourcesCm
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = NetworkACLResponse.class, description = "Lists network ACL with the specified ID.")
     private Long id;
 
-    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "list network ACLs by network ID")
+    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "List network ACLs by network ID")
     private Long networkId;
 
-    @Parameter(name = ApiConstants.VPC_ID, type = CommandType.UUID, entityType = VpcResponse.class, description = "list network ACLs by VPC ID")
+    @Parameter(name = ApiConstants.VPC_ID, type = CommandType.UUID, entityType = VpcResponse.class, description = "List network ACLs by VPC ID")
     private Long vpcId;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "list network ACLs by specified name")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "List network ACLs by specified name")
     private String name;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "List resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
     /////////////////////////////////////////////////////

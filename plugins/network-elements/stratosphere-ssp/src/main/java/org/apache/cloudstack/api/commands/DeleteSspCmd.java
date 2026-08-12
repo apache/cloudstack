@@ -40,7 +40,7 @@ public class DeleteSspCmd extends BaseCmd {
     @Inject
     SspService _service;
 
-    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, required = true, description = "the host ID of ssp server")
+    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, required = true, description = "The host ID of ssp server")
     private Long hostId;
 
     @Override

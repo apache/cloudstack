@@ -163,7 +163,7 @@ public class ExternalTemplateAdapter extends TemplateAdapterBase implements Temp
             }
             // Set Event Details for Template/ISO Upload
             String eventResourceId = template.getUuid();
-            CallContext.current().setEventDetails(String.format("Template Id: %s", eventResourceId));
+            CallContext.current().setEventDetails(String.format("Template ID: %s", eventResourceId));
             CallContext.current().putContextParameter(VirtualMachineTemplate.class, eventResourceId);
             Long zoneId = zoneIdList.get(0);
             DataStore imageStore = verifyHeuristicRulesForZone(template, zoneId);

@@ -119,10 +119,10 @@ public class UserDataManagerImpl extends ManagerBase implements UserDataManager 
         byte[] decodedUserData = null;
 
         // If GET, use 4K. If POST, support up to 1M.
-        if (httpmethod.equals(BaseCmd.HTTPMethod.GET)) {
-            decodedUserData = validateAndDecodeByHTTPMethod(userData, MAX_HTTP_GET_LENGTH, BaseCmd.HTTPMethod.GET);
-        } else if (httpmethod.equals(BaseCmd.HTTPMethod.POST)) {
+        if (BaseCmd.HTTPMethod.POST.equals(httpmethod)) {
             decodedUserData = validateAndDecodeByHTTPMethod(userData, MAX_HTTP_POST_LENGTH, BaseCmd.HTTPMethod.POST);
+        } else {
+            decodedUserData = validateAndDecodeByHTTPMethod(userData, MAX_HTTP_GET_LENGTH, BaseCmd.HTTPMethod.GET);
         }
 
         // Re-encode so that the '=' paddings are added if necessary since 'isBase64' does not require it, but python does on the VR.

@@ -186,7 +186,7 @@ export default {
         params.payloadUrl = this.payloadUrl
       }
       if (this.sslVerification) {
-        params.payload = this.sslVerification
+        params.sslVerification = this.sslVerification
       }
       if (this.secretKey) {
         params.secretKey = this.secretKey

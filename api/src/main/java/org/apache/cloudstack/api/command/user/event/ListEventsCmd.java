@@ -36,41 +36,41 @@ public class ListEventsCmd extends BaseListProjectAndAccountResourcesCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = EventResponse.class, description = "the ID of the event")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = EventResponse.class, description = "The ID of the event")
     private Long id;
 
-    @Parameter(name = ApiConstants.DURATION, type = CommandType.INTEGER, description = "the duration of the event")
+    @Parameter(name = ApiConstants.DURATION, type = CommandType.INTEGER, description = "The duration of the event")
     private Integer duration;
 
     @Parameter(name = ApiConstants.END_DATE,
                type = CommandType.DATE,
-               description = "the end date range of the list you want to retrieve (use format \"yyyy-MM-dd\" or the new format \"yyyy-MM-dd HH:mm:ss\")")
+               description = "The end date range of the list you want to retrieve (use format \"yyyy-MM-dd\" or the new format \"yyyy-MM-dd HH:mm:ss\")")
     private Date endDate;
 
-    @Parameter(name = ApiConstants.ENTRY_TIME, type = CommandType.INTEGER, description = "the time the event was entered")
+    @Parameter(name = ApiConstants.ENTRY_TIME, type = CommandType.INTEGER, description = "The time the event was entered")
     private Integer entryTime;
 
-    @Parameter(name = ApiConstants.LEVEL, type = CommandType.STRING, description = "the event level (INFO, WARN, ERROR)")
+    @Parameter(name = ApiConstants.LEVEL, type = CommandType.STRING, description = "The event level (INFO, WARN, ERROR)")
     private String level;
 
     @Parameter(name = ApiConstants.START_DATE,
                type = CommandType.DATE,
-               description = "the start date range of the list you want to retrieve (use format \"yyyy-MM-dd\" or the new format \"yyyy-MM-dd HH:mm:ss\")")
+               description = "The start date range of the list you want to retrieve (use format \"yyyy-MM-dd\" or the new format \"yyyy-MM-dd HH:mm:ss\")")
     private Date startDate;
 
-    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "the event type (see event types)")
+    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "The event type (see event types)")
     private String type;
 
-    @Parameter(name = ApiConstants.START_ID, type = CommandType.UUID, entityType = EventResponse.class, description = "the parent/start ID of the event, when provided this will list all the events with the start/parent ID including the parent event")
+    @Parameter(name = ApiConstants.START_ID, type = CommandType.UUID, entityType = EventResponse.class, description = "The parent/start ID of the event, when provided this will list all the events with the start/parent ID including the parent event")
     private Long startId;
 
-    @Parameter(name = ApiConstants.RESOURCE_ID, type = CommandType.STRING, description = "the ID of the resource associated with the event", since="4.17.0")
+    @Parameter(name = ApiConstants.RESOURCE_ID, type = CommandType.STRING, description = "The ID of the resource associated with the event", since="4.17.0")
     private String resourceId;
 
-    @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.STRING, description = "the type of the resource associated with the event", since="4.17.0")
+    @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.STRING, description = "The type of the resource associated with the event", since="4.17.0")
     private String resourceType;
 
-    @Parameter(name = ApiConstants.ARCHIVED, type = CommandType.BOOLEAN, description = "true to list archived events otherwise false", since="4.19.0")
+    @Parameter(name = ApiConstants.ARCHIVED, type = CommandType.BOOLEAN, description = "True to list archived events otherwise false", since="4.19.0")
     private Boolean archived;
 
     @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "The state of the events", since="4.21.0")
