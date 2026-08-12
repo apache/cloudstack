@@ -1,0 +1,115 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
+package org.apache.cloudstack.api.command.user.dns;
+
+import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.api.ACL;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.DnsServerResponse;
+import org.apache.cloudstack.api.response.DnsZoneResponse;
+import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.dns.DnsServer;
+
+import com.cloud.event.EventTypes;
+import com.cloud.user.Account;
+
+@APICommand(name = "deleteDnsServer",
+        description = "Removes a DNS server integration",
+        responseObject = SuccessResponse.class,
+        entityType = {DnsServer.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+        since = "4.23.0",
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
+public class DeleteDnsServerCmd extends BaseAsyncCmd {
+
+    /////////////////////////////////////////////////////
+    //////////////// API Parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @ACL(accessType = SecurityChecker.AccessType.OperateEntry)
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DnsServerResponse.class,
+            required = true, description = "the ID of the DNS server")
+    private Long id;
+
+    @Parameter(name = ApiConstants.CLEANUP, type = CommandType.BOOLEAN,
+            entityType = DnsZoneResponse.class, description = "If true, all associated DNS zones will be cleaned up " +
+            "when the server is removed. Default: true")
+    private Boolean cleanup = true;
+
+    @Parameter(name = ApiConstants.UNMANAGE, type = CommandType.BOOLEAN, entityType = DnsZoneResponse.class,
+            description = "If true, the DNS zone is only removed from CloudStack (unmanaged); if false, it is removed " +
+                    "from both CloudStack and the DNS provider. Default: false")
+    private Boolean unmanage = false;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Long getId() {
+        return id;
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////// Implementation //////////////////////
+    /////////////////////////////////////////////////////
+
+    @Override
+    public void execute() {
+        try {
+            boolean result = dnsProviderManager.deleteDnsServer(this);
+            if (result) {
+                SuccessResponse response = new SuccessResponse(getCommandName());
+                setResponseObject(response);
+            } else {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete DNS server");
+            }
+        } catch (Exception e) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete DNS server: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public long getEntityOwnerId() {
+        DnsServer server = _entityMgr.findById(DnsServer.class, id);
+        if (server != null) {
+            return server.getAccountId();
+        }
+        // If server not found, return System to fail safely (or let manager handle 404)
+        return Account.ACCOUNT_ID_SYSTEM;
+    }
+
+    @Override
+    public String getEventType() { return EventTypes.EVENT_DNS_SERVER_DELETE; }
+
+    @Override
+    public String getEventDescription() { return "Deleting DNS server ID: " + getId(); }
+
+    public Boolean getCleanup() {
+        return Boolean.TRUE.equals(cleanup);
+    }
+
+    public Boolean isUnmanage() {
+        return Boolean.TRUE.equals(unmanage);
+    }
+}

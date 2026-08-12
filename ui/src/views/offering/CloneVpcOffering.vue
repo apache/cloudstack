@@ -523,6 +523,7 @@ export default {
       return [
         { name: 'Dhcp', provider: [{ name: 'VpcVirtualRouter' }, { name: 'ConfigDrive' }] },
         { name: 'Dns', provider: [{ name: 'VpcVirtualRouter' }, { name: 'ConfigDrive' }] },
+        { name: 'Firewall', provider: [{ name: 'VpcVirtualRouter' }] },
         { name: 'Lb', provider: [{ name: 'VpcVirtualRouter' }, { name: 'InternalLbVm' }] },
         { name: 'Gateway', provider: [{ name: 'VpcVirtualRouter' }, { name: 'BigSwitchBcf' }] },
         { name: 'StaticNat', provider: [{ name: 'VpcVirtualRouter' }, { name: 'BigSwitchBcf' }] },

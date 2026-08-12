@@ -51,6 +51,8 @@ public interface VlanDao extends GenericDao<VlanVO, Long> {
 
     List<VlanVO> listVlansByNetworkId(long networkId);
 
+    List<VlanVO> listVlansByNetworkIds(List<Long> networkIds);
+
     List<VlanVO> listVlansByNetworkIdIncludingRemoved(long networkId);
 
     List<VlanVO> listVlansByPhysicalNetworkId(long physicalNetworkId);

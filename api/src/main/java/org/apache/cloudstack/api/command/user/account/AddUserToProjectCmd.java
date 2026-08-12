@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.api.command.user.account;
 
+import com.cloud.exception.ResourceAllocationException;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiArgValidator;
@@ -111,7 +112,7 @@ public class AddUserToProjectCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute()  {
+    public void execute() throws ResourceAllocationException {
         validateInput();
         boolean result = _projectService.addUserToProject(getProjectId(),  getUsername(), getEmail(), getProjectRoleId(), getRoleType());
         if (result) {

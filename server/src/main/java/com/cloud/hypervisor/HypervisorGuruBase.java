@@ -54,6 +54,7 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.UserVmDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.backup.BackupProvider;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -449,13 +450,13 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
 
     @Override
     public VirtualMachine importVirtualMachineFromBackup(long zoneId, long domainId, long accountId, long userId,
-                                                         String vmInternalName, Backup backup) throws Exception {
+                                                         String vmInternalName, Backup backup, BackupProvider backupProvider) throws Exception {
         return null;
     }
 
     @Override
     public boolean attachRestoredVolumeToVirtualMachine(long zoneId, String location, Backup.VolumeInfo volumeInfo,
-                                                        VirtualMachine vm, long poolId, Backup backup) throws Exception {
+                                                        VirtualMachine vm, long poolId, Backup backup, BackupProvider backupProvider) throws Exception {
         return false;
     }
 

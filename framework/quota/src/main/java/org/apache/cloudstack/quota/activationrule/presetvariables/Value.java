@@ -84,6 +84,9 @@ public class Value extends GenericPresetVariable {
     @PresetVariableDefinition(description = "Backup offering of the backup.", supportedTypes = {QuotaTypes.BACKUP})
     private BackupOffering backupOffering;
 
+    @PresetVariableDefinition(description = "The amount of resources of the usage type.")
+    private ResourceCounting resourceCounting;
+
     @PresetVariableDefinition(description = "The hypervisor where the resource was deployed. Values can be: XenServer, KVM, VMware, Hyperv, BareMetal, Ovm, Ovm3 and LXC.",
             supportedTypes = {QuotaTypes.RUNNING_VM, QuotaTypes.ALLOCATED_VM, QuotaTypes.VM_SNAPSHOT, QuotaTypes.SNAPSHOT})
     private String hypervisorType;
@@ -95,6 +98,12 @@ public class Value extends GenericPresetVariable {
     private String volumeType;
 
     private String state;
+
+    @PresetVariableDefinition(description = "Network offering of the network.", supportedTypes = {QuotaTypes.NETWORK})
+    private GenericPresetVariable networkOffering;
+
+    @PresetVariableDefinition(description = "VPC offering of the VPC.", supportedTypes = {QuotaTypes.VPC})
+    private GenericPresetVariable vpcOffering;
 
     public Host getHost() {
         return host;
@@ -254,5 +263,29 @@ public class Value extends GenericPresetVariable {
 
     public void setState(String state) {
         this.state = state;
+    }
+
+    public ResourceCounting getResourceCounting() {
+        return resourceCounting;
+    }
+
+    public void setResourceCounting(ResourceCounting resourceCounting) {
+        this.resourceCounting = resourceCounting;
+    }
+
+    public GenericPresetVariable getNetworkOffering() {
+        return networkOffering;
+    }
+
+    public void setNetworkOffering(GenericPresetVariable networkOffering) {
+        this.networkOffering = networkOffering;
+    }
+
+    public GenericPresetVariable getVpcOffering() {
+        return vpcOffering;
+    }
+
+    public void setVpcOffering(GenericPresetVariable vpcOffering) {
+        this.vpcOffering = vpcOffering;
     }
 }
