@@ -29,7 +29,6 @@ from typing import Any
 from urllib import error, parse, request
 
 DEFAULT_WAIT_SECONDS = 600
-PROXMOX_API_PORT = 8006
 PROXMOX_API_PREFIX = "/api2/json"
 VM_NAME_PATTERN = re.compile(r"^[a-zA-Z0-9-]+$")
 
@@ -239,7 +238,7 @@ class ProxmoxManager:
     def call_api(
         self, method: str, path: str, data: dict[str, Any] | str | None = None
     ) -> dict[str, Any]:
-        url = f"{self.data.url}:{PROXMOX_API_PORT}{PROXMOX_API_PREFIX}{path}"
+        url = f"{self.data.url}{PROXMOX_API_PREFIX}{path}"
         headers = {"Authorization": self._auth_header()}
         body: bytes | None
         if data is None:
