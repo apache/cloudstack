@@ -95,7 +95,6 @@ public class ConsoleProxyGCThread extends Thread {
                  keys = new ArrayList<>(connMap.keySet());
              }
              for (String key : keys) {
-                String key;
                 ConsoleProxyClient client;
 
 
