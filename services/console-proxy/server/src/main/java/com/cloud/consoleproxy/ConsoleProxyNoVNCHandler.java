@@ -74,7 +74,6 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
 
     @OnWebSocketConnect
     public void onConnect(final Session session) throws IOException, InterruptedException {
-    public void onConnect(final Session session) throws IOException, InterruptedException {
         session.setIdleTimeout(ConsoleProxy.sessionTimeoutMillis);
         logger.debug("Set WebSocket idle timeout to {} ms for session from {}.",
                 ConsoleProxy.sessionTimeoutMillis, session.getRemoteAddress());
