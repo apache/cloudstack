@@ -16,4 +16,5 @@
 # specific language governing permissions and limitations
 # under the License.
 
-./proxmox.py "$@"
+SCRIPT_PATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
+"$SCRIPT_PATH/proxmox.py" "$@"
