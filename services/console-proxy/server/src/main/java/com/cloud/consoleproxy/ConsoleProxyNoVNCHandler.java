@@ -98,7 +98,6 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
         String websocketUrl = queryMap.get("websocketUrl");
         String sessionUuid = queryMap.get("sessionUuid");
         String clientIp = session.getRemoteAddress().getAddress().getHostAddress();
-        boolean sessionRequiresNewViewer = Boolean.parseBoolean(queryMap.get("sessionRequiresNewViewer"));
 
         if (tag == null) {
             tag = "";
@@ -195,6 +194,7 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
             return;
         }
         logger.trace("Sending client [ID: {}] frame of {} bytes.", viewer.getClientId(), f.getPayloadLength());
+        viewer.updateFrontEndActivityTime();
         viewer.sendClientFrame(f);
     }
 

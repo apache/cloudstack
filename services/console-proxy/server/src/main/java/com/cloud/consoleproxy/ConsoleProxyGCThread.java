@@ -19,7 +19,7 @@ package com.cloud.consoleproxy;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -90,15 +90,16 @@ public class ConsoleProxyGCThread extends Thread {
             if (logger.isDebugEnabled()) {
                 logger.debug(String.format("ConsoleProxyGCThread loop: connMap=%s, removedSessions=%s", connMap, removedSessionsSet));
             }
-            Set<String> keys = connMap.keySet();
-            Iterator<String> iterator = keys.iterator();
-            while (iterator.hasNext()) {
+            List<String> keys;
+            synchronized (connMap) {
+                 keys = new ArrayList<>(connMap.keySet());
+             }
+             for (String key : keys) {
                 String key;
                 ConsoleProxyClient client;
 
 
                 synchronized (connMap) {
-                    key = iterator.next();
                     client = connMap.get(key);
                 }
 
