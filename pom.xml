@@ -591,12 +591,12 @@
             <dependency>
                 <groupId>org.aspectj</groupId>
                 <artifactId>aspectjtools</artifactId>
-                <version>1.8.13</version>
+                <version>${cs.aspectjrt.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.aspectj</groupId>
                 <artifactId>aspectjweaver</artifactId>
-                <version>1.8.13</version>
+                <version>${cs.aspectjrt.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
