@@ -40,7 +40,8 @@ public interface OAuth2AuthManager extends PluggableAPIAuthenticator, PluggableS
     public static final ConfigKey<String> OAuth2Plugins = new ConfigKey<String>("Advanced", String.class, "oauth2.plugins", "google,github",
             "List of OAuth plugins", true);
     public static final ConfigKey<String> OAuth2PluginsExclude = new ConfigKey<String>("Advanced", String.class, "oauth2.plugins.exclude", "",
-            "List of OAuth plugins which are excluded", true);
+            "List of OAuth plugins which are excluded. Can also be set at the domain level to exclude further providers on top of whatever the global list already excludes.",
+            true, ConfigKey.Scope.Domain).withStrictScope();
 
     /**
      * Lists user OAuth2 provider plugins
@@ -49,11 +50,20 @@ public interface OAuth2AuthManager extends PluggableAPIAuthenticator, PluggableS
     List<UserOAuth2Authenticator> listUserOAuth2AuthenticationProviders();
 
     /**
-     * Finds user OAuth2 provider by name
+     * Finds user OAuth2 provider by name. Equivalent to {@link #getUserOAuth2AuthenticationProvider(String, Long)}
+     * with a null domainId, so only the global oauth2.plugins.exclude list applies.
      * @param providerName name of the provider
      * @return OAuth2 provider
      */
     UserOAuth2Authenticator getUserOAuth2AuthenticationProvider(final String providerName);
+
+    /**
+     * Finds user OAuth2 provider by name, rejecting it if it's excluded either globally or for the given domain.
+     * @param providerName name of the provider
+     * @param domainId domain the login attempt is scoped to, or null for the global scope
+     * @return OAuth2 provider
+     */
+    UserOAuth2Authenticator getUserOAuth2AuthenticationProvider(final String providerName, final Long domainId);
 
     String verifySecretCodeAndFetchEmail(String code, String provider, Long domainId);
 

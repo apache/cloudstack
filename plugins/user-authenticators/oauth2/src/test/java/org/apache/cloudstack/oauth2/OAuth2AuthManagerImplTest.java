@@ -24,6 +24,7 @@ import com.cloud.domain.DomainVO;
 import com.cloud.user.DomainService;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.auth.UserOAuth2Authenticator;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.cloudstack.oauth2.api.command.DeleteOAuthProviderCmd;
@@ -49,8 +50,12 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -523,6 +528,90 @@ public class OAuth2AuthManagerImplTest {
         } catch (CloudRuntimeException e) {
             assertTrue(e.getMessage().contains("nonexistent"));
         }
+    }
+
+    @Test
+    public void testGetUserOAuth2AuthenticationProviderRejectsExcludedProvider() {
+        UserOAuth2Authenticator googleAuthenticator = Mockito.mock(UserOAuth2Authenticator.class);
+        OAuth2AuthManagerImpl.userOAuth2AuthenticationProvidersMap.put("google", googleAuthenticator);
+        try {
+            Mockito.doReturn(true).when(_authManager).isProviderExcluded("google", 5L);
+
+            try {
+                _authManager.getUserOAuth2AuthenticationProvider("google", 5L);
+                Assert.fail("Expected CloudRuntimeException was not thrown");
+            } catch (CloudRuntimeException e) {
+                assertTrue(e.getMessage().contains("google"));
+            }
+        } finally {
+            OAuth2AuthManagerImpl.userOAuth2AuthenticationProvidersMap.remove("google");
+        }
+    }
+
+    @Test
+    public void testGetUserOAuth2AuthenticationProviderSingleArgOverloadUsesGlobalScope() {
+        UserOAuth2Authenticator githubAuthenticator = Mockito.mock(UserOAuth2Authenticator.class);
+        OAuth2AuthManagerImpl.userOAuth2AuthenticationProvidersMap.put("github", githubAuthenticator);
+        try {
+            Mockito.doReturn(false).when(_authManager).isProviderExcluded("github", null);
+
+            UserOAuth2Authenticator result = _authManager.getUserOAuth2AuthenticationProvider("github");
+
+            assertEquals(githubAuthenticator, result);
+            verify(_authManager).isProviderExcluded("github", null);
+        } finally {
+            OAuth2AuthManagerImpl.userOAuth2AuthenticationProvidersMap.remove("github");
+        }
+    }
+
+    @Test
+    public void testListUserOAuth2AuthenticationProvidersFiltersOutExcludedPlugins() {
+        UserOAuth2Authenticator googleAuthenticator = Mockito.mock(UserOAuth2Authenticator.class);
+        when(googleAuthenticator.getName()).thenReturn("google");
+        UserOAuth2Authenticator keycloakAuthenticator = Mockito.mock(UserOAuth2Authenticator.class);
+        when(keycloakAuthenticator.getName()).thenReturn("keycloak");
+        _authManager.setUserOAuth2AuthenticationProviders(Arrays.asList(googleAuthenticator, keycloakAuthenticator));
+
+        Mockito.doReturn(false).when(_authManager).isProviderExcluded("google", null);
+        Mockito.doReturn(true).when(_authManager).isProviderExcluded("keycloak", null);
+
+        List<UserOAuth2Authenticator> result = _authManager.listUserOAuth2AuthenticationProviders();
+
+        assertEquals(1, result.size());
+        assertEquals("google", result.get(0).getName());
+    }
+
+    @Test
+    public void testIsExcludedByListMatchesCaseInsensitivelyAndTreatsEmptyAsNoExclusions() {
+        assertFalse(_authManager.isExcludedByList("google", null));
+        assertFalse(_authManager.isExcludedByList("google", ""));
+        assertTrue(_authManager.isExcludedByList("google", "google,github"));
+        assertTrue(_authManager.isExcludedByList("google", "Google"));
+        assertFalse(_authManager.isExcludedByList("keycloak", "google,github"));
+    }
+
+    @Test
+    public void testIsProviderExcludedShortCircuitsOnGlobalExclusion() {
+        // isProviderExcluded's first check is always against the global list (OAuth2PluginsExclude.value(),
+        // which is "" by default with no ConfigDepot wired) — stub that call regardless of exact value
+        Mockito.doReturn(true).when(_authManager).isExcludedByList(eq("google"), any());
+        assertTrue(_authManager.isProviderExcluded("google", 5L));
+    }
+
+    @Test
+    public void testIsProviderExcludedFallsBackToDomainScopeWhenNotGloballyExcluded() {
+        // no ConfigDepot is wired, so the global value is "" and the domain-scope lookup returns null;
+        // stub isExcludedByList for exactly those inputs so only the union logic itself is under test
+        Mockito.doReturn(false).when(_authManager).isExcludedByList(eq("google"), eq(""));
+        Mockito.doReturn(true).when(_authManager).isExcludedByList(eq("google"), isNull());
+        assertTrue(_authManager.isProviderExcluded("google", 5L));
+    }
+
+    @Test
+    public void testIsProviderExcludedSkipsDomainCheckWhenDomainIdIsNull() {
+        Mockito.doReturn(false).when(_authManager).isExcludedByList(eq("google"), eq(""));
+        assertFalse(_authManager.isProviderExcluded("google", null));
+        Mockito.verify(_authManager, Mockito.never()).isExcludedByList(eq("google"), isNull());
     }
 
     //  Multiple-domain OAuth tests
