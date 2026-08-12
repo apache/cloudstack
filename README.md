@@ -210,7 +210,7 @@ The following provides more details on the included cryptographic software:
 
 ## Star History
 
-[![Apache CloudStack Star History](https://api.star-history.com/svg?repos=apache/cloudstack&type=Date)](https://www.star-history.com/#apache/cloudstack&Date)
+[![Apache CloudStack Star History](https://star-history.dera.page/svg?repos=apache/cloudstack&type=Date)](https://star-history.dera.page/#apache/cloudstack&Date)
 
 ## Contributors
 
