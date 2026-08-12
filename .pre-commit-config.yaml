@@ -26,26 +26,26 @@ repos:
       - id: identity
       - id: check-hooks-apply
   - repo: https://github.com/thlorenz/doctoc.git
-    rev: v2.3.0
+    rev: facaad890e72966c88a6a5592f5b6a01c422deb2 # frozen: v2.5.0
     hooks:
       - id: doctoc
         name: Add TOC for Markdown files
         files: ^CONTRIBUTING\.md$|^INSTALL\.md$|^README\.md$
   - repo: https://github.com/oxipng/oxipng
-    rev: v10.1.0
+    rev: 340cd9878d8d8289f09fa101b48a8f5f0b7783f4 # frozen: v10.2.0
     hooks:
       - id: oxipng
         name: run oxipng
         description: optimize PNG images with lossless compression
         args: ['-o', '4', '--strip', 'safe', '--alpha']
   - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.30.0
+    rev: 2ca41cc1372d1e939a6a879f18cdc19fc1cac1ce  # frozen: v8.30.0
     hooks:
       - id: gitleaks
         name: run gitleaks
         description: detect hardcoded secrets
   - repo: https://github.com/Lucas-C/pre-commit-hooks
-    rev: v1.5.6
+    rev: ad1b27d73581aa16cca06fc4a0761fc563ffe8e8 # frozen: v1.5.6
     hooks:
       - id: chmod
         name: set file permissions
@@ -122,7 +122,7 @@ repos:
           - --fuzzy-match-generates-todo
         exclude: ^\.github/workflows/.*\.lock\.yml$
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v6.0.0
+    rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c # frozen: v6.0.0
     hooks:
       #- id: check-added-large-files
       - id: check-case-conflict
@@ -166,18 +166,18 @@ repos:
         args: [--markdown-linebreak-ext=md]
         exclude: ^services/console-proxy/rdpconsole/src/test/doc/freerdp-debug-log\.txt$
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.4.2
+    rev: 57b21406f092110c18776e39b0bda50d37c945c8 # frozen: v2.4.3
     hooks:
       - id: codespell
         name: run codespell
         description: Check spelling with codespell
   - repo: https://github.com/pycqa/flake8
-    rev: 7.3.0
+    rev: d93590f5be797aabb60e3b09f2f52dddb02f349f  # frozen: 7.3.0
     hooks:
-    - id: flake8
-      args: [--config, .github/linters/.flake8]
+      - id: flake8
+        args: [--config, .github/linters/.flake8]
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.48.0
+    rev: 5b5dddc4fb0f83c3ea1fc5616fa63e115dce83e0 # frozen: v0.49.1
     hooks:
       - id: markdownlint
         name: run markdownlint
@@ -186,7 +186,7 @@ repos:
         types: [markdown]
         files: \.md$
   - repo: https://github.com/adrienverge/yamllint
-    rev: v1.38.0
+    rev: cba56bcde1fdd01c1deb3f945e69764c291a6530 # frozen: v1.38.0
     hooks:
       - id: yamllint
         name: run yamllint
