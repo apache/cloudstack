@@ -24,6 +24,7 @@ import com.cloud.domain.DomainVO;
 import com.cloud.user.DomainService;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.auth.UserOAuth2Authenticator;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.cloudstack.oauth2.api.command.DeleteOAuthProviderCmd;
@@ -49,6 +50,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.doNothing;
@@ -523,6 +525,50 @@ public class OAuth2AuthManagerImplTest {
         } catch (CloudRuntimeException e) {
             assertTrue(e.getMessage().contains("nonexistent"));
         }
+    }
+
+    @Test
+    public void testGetUserOAuth2AuthenticationProviderRejectsProviderNotInPluginsList() {
+        UserOAuth2Authenticator googleAuthenticator = Mockito.mock(UserOAuth2Authenticator.class);
+        OAuth2AuthManagerImpl.userOAuth2AuthenticationProvidersMap.put("google", googleAuthenticator);
+        try {
+            Mockito.doReturn(false).when(_authManager).isProviderAllowed("google");
+
+            try {
+                _authManager.getUserOAuth2AuthenticationProvider("google");
+                Assert.fail("Expected CloudRuntimeException was not thrown");
+            } catch (CloudRuntimeException e) {
+                assertTrue(e.getMessage().contains("google"));
+            }
+        } finally {
+            OAuth2AuthManagerImpl.userOAuth2AuthenticationProvidersMap.remove("google");
+        }
+    }
+
+    @Test
+    public void testListUserOAuth2AuthenticationProvidersFiltersOutDisallowedPlugins() {
+        UserOAuth2Authenticator googleAuthenticator = Mockito.mock(UserOAuth2Authenticator.class);
+        when(googleAuthenticator.getName()).thenReturn("google");
+        UserOAuth2Authenticator keycloakAuthenticator = Mockito.mock(UserOAuth2Authenticator.class);
+        when(keycloakAuthenticator.getName()).thenReturn("keycloak");
+        _authManager.setUserOAuth2AuthenticationProviders(Arrays.asList(googleAuthenticator, keycloakAuthenticator));
+
+        Mockito.doReturn(true).when(_authManager).isProviderAllowed("google");
+        Mockito.doReturn(false).when(_authManager).isProviderAllowed("keycloak");
+
+        List<UserOAuth2Authenticator> result = _authManager.listUserOAuth2AuthenticationProviders();
+
+        assertEquals(1, result.size());
+        assertEquals("google", result.get(0).getName());
+    }
+
+    @Test
+    public void testIsProviderAllowedMatchesConfiguredPluginsListCaseInsensitively() {
+        // no ConfigDepot is wired in this unit test, so OAuth2Plugins.value() falls back to
+        // its default of "google,github"
+        assertTrue(_authManager.isProviderAllowed("google"));
+        assertTrue(_authManager.isProviderAllowed("Google"));
+        assertFalse(_authManager.isProviderAllowed("keycloak"));
     }
 
     //  Multiple-domain OAuth tests
