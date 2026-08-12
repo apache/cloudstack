@@ -31,6 +31,7 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import com.cloud.cpu.CPU;
+import com.cloud.storage.GuestOSVO;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -45,7 +46,6 @@ import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.BackupOfferingResponse;
-import org.apache.cloudstack.api.response.BackupScheduleResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
@@ -76,12 +76,15 @@ import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.backup.BackupRepository;
-import org.apache.cloudstack.backup.BackupSchedule;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.backup.dao.BackupRepositoryDao;
 import org.apache.cloudstack.backup.dao.BackupScheduleDao;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.dns.dao.DnsZoneDao;
+import org.apache.cloudstack.dns.dao.DnsZoneNetworkMapDao;
+import org.apache.cloudstack.dns.vo.DnsZoneNetworkMapVO;
+import org.apache.cloudstack.dns.vo.DnsZoneVO;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -365,6 +368,7 @@ import org.apache.cloudstack.acl.dao.ApiKeyPairDao;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.util.Strings;
 
 public class ApiDBUtils {
     private static final Logger log = LogManager.getLogger(ApiDBUtils.class);
@@ -506,6 +510,8 @@ public class ApiDBUtils {
     static SharedFSJoinDao s_sharedFSJoinDao;
 
     static BucketDao s_bucketDao;
+    static DnsZoneDao s_dnsZoneDao;
+    static DnsZoneNetworkMapDao s_dnsZoneNetworkMapDao;
     static VirtualMachineManager s_virtualMachineManager;
 
     @Inject
@@ -778,6 +784,10 @@ public class ApiDBUtils {
     private VirtualMachineManager virtualMachineManager;
     @Inject
     private SharedFSJoinDao sharedFSJoinDao;
+    @Inject
+    private DnsZoneDao dnsZoneDao;
+    @Inject
+    private DnsZoneNetworkMapDao dnsZoneNetworkMapDao;
 
     @PostConstruct
     void init() {
@@ -916,6 +926,8 @@ public class ApiDBUtils {
         s_bucketDao = bucketDao;
         s_virtualMachineManager = virtualMachineManager;
         s_sharedFSJoinDao = sharedFSJoinDao;
+        s_dnsZoneDao = dnsZoneDao;
+        s_dnsZoneNetworkMapDao = dnsZoneNetworkMapDao;
     }
 
     // ///////////////////////////////////////////////////////////
@@ -1559,6 +1571,10 @@ public class ApiDBUtils {
 
     public static boolean canElementEnableIndividualServices(Provider serviceProvider) {
         return s_networkModel.canElementEnableIndividualServices(serviceProvider);
+    }
+
+    public static boolean canElementEnableIndividualServicesByName(String providerName) {
+        return s_networkModel.canElementEnableIndividualServicesByName(providerName);
     }
 
     public static Pair<Long, Boolean> getDomainNetworkDetails(long networkId) {
@@ -2298,8 +2314,23 @@ public class ApiDBUtils {
         return details.isEmpty() ? null : details;
     }
 
+    public static Pair<String, String> findDnsZoneByNetworkId(long networkId) {
+        DnsZoneNetworkMapVO dnsNetworkMapVO = s_dnsZoneNetworkMapDao.findByNetworkId(networkId);
+        if (dnsNetworkMapVO != null) {
+            DnsZoneVO dnsZoneVO = s_dnsZoneDao.findById(dnsNetworkMapVO.getDnsZoneId());
+            if (dnsZoneVO != null && Strings.isNotBlank(dnsZoneVO.getName())) {
+                return new Pair<> (dnsZoneVO.getName(), dnsNetworkMapVO.getSubDomain());
+            }
+        }
+        return new Pair<>(null, null);
+    }
+
     public static boolean isAdmin(Account account) {
         return s_accountService.isAdmin(account.getId());
+    }
+
+    public static Account getSystemAccount() {
+        return s_accountService.getSystemAccount();
     }
 
     public static List<ResourceTagJoinVO> listResourceTagViewByResourceUUID(String resourceUUID, ResourceObjectType resourceType) {
@@ -2308,10 +2339,6 @@ public class ApiDBUtils {
 
     public static ResourceIconVO getResourceIconByResourceUUID(String resourceUUID, ResourceObjectType resourceType) {
         return s_resourceIconDao.findByResourceUuid(resourceUUID, resourceType);
-    }
-
-    public static BackupScheduleResponse newBackupScheduleResponse(BackupSchedule schedule) {
-        return s_backupScheduleDao.newBackupScheduleResponse(schedule);
     }
 
     public static BackupOfferingResponse newBackupOfferingResponse(BackupOffering offering) {
@@ -2346,5 +2373,16 @@ public class ApiDBUtils {
 
     public static List<CPU.CPUArch> listZoneClustersArchs(long zoneId) {
         return s_clusterDao.getClustersArchsByZone(zoneId);
+    }
+
+    public static String getTemplateGuestOSName(VMTemplateVO template) {
+        long guestOSId = template.getGuestOSId();
+        GuestOSVO guestOS = s_guestOSDao.findById(guestOSId);
+
+        if (guestOS == null) {
+            return null;
+        }
+
+        return guestOS.getDisplayName();
     }
 }

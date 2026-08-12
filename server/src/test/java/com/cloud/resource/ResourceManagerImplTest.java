@@ -1184,4 +1184,123 @@ public class ResourceManagerImplTest {
         Mockito.verify(host).setStorageAccessGroups("group1,group2");
         Mockito.verify(hostDao).update(hostId, host);
     }
+
+    @Test
+    public void executeUserRequestDeleteHostPassesForcedFlags() throws Exception {
+        Mockito.doReturn(true).when(resourceManager).doDeleteHost(anyLong(), anyBoolean(), anyBoolean());
+
+        resourceManager.executeUserRequest(hostId, ResourceState.Event.DeleteHost, true, true);
+
+        Mockito.verify(resourceManager).doDeleteHost(hostId, true, true);
+    }
+
+    @Test
+    public void executeUserRequestDeleteHostPassesNonForcedFlags() throws Exception {
+        Mockito.doReturn(true).when(resourceManager).doDeleteHost(anyLong(), anyBoolean(), anyBoolean());
+
+        resourceManager.executeUserRequest(hostId, ResourceState.Event.DeleteHost, false, false);
+
+        Mockito.verify(resourceManager).doDeleteHost(hostId, false, false);
+    }
+
+    @Test
+    public void executeUserRequestDefaultOverloadPassesFalseForDeleteHost() throws Exception {
+        Mockito.doReturn(true).when(resourceManager).doDeleteHost(anyLong(), anyBoolean(), anyBoolean());
+
+        resourceManager.executeUserRequest(hostId, ResourceState.Event.DeleteHost);
+
+        Mockito.verify(resourceManager).doDeleteHost(hostId, false, false);
+    }
+
+    @Test
+    public void testUpdateClusterStorageAccessGroupsWithEmptyHostsInCluster() {
+        Long clusterId = 1L;
+        List<String> newStorageAccessGroups = Arrays.asList("sag1", "sag2");
+
+        ClusterVO cluster = Mockito.mock(ClusterVO.class);
+        Mockito.when(cluster.getId()).thenReturn(clusterId);
+        Mockito.when(cluster.getStorageAccessGroups()).thenReturn("sag3,sag4"); // existing SAGs
+        Mockito.when(resourceManager.getCluster(clusterId)).thenReturn(cluster);
+        List<HostVO> emptyHostsList = new ArrayList<>();
+        Mockito.when(hostDao.findHypervisorHostInCluster(clusterId)).thenReturn(emptyHostsList);
+        Mockito.when(hostDao.findByClusterId(clusterId, Host.Type.Routing)).thenReturn(emptyHostsList);
+        List<Long> emptyHostIdsList = new ArrayList<>();
+        Mockito.doReturn(emptyHostIdsList).when(resourceManager)
+                .listOfHostIdsUsingTheStorageAccessGroups(Mockito.anyList(), eq(clusterId), eq(null), eq(null));
+        try {
+            resourceManager.updateClusterStorageAccessGroups(clusterId, newStorageAccessGroups);
+        } catch (CloudRuntimeException e) {
+            Assert.fail("updateClusterStorageAccessGroups should not throw CloudRuntimeException when cluster has no hosts. Error: " + e.getMessage());
+        }
+        Mockito.verify(resourceManager).checkIfAllHostsInUse(Mockito.anyList(), eq(clusterId), eq(null), eq(null));
+    }
+
+    @Test
+    public void testUpdateClusterStorageAccessGroupsWithEmptyHostsInZone() {
+        List<String> sagsToDelete = Arrays.asList("tag1", "tag2");
+        Long clusterId = null;
+        Long podId = null;
+        Long zoneId = 3L;
+
+        List<Long> emptyHostIdsList = new ArrayList<>();
+        Mockito.doReturn(emptyHostIdsList).when(resourceManager)
+                .listOfHostIdsUsingTheStorageAccessGroups(sagsToDelete, clusterId, podId, zoneId);
+        List<HostVO> emptyHostsInZone = new ArrayList<>();
+        Mockito.doReturn(emptyHostsInZone).when(hostDao).findByDataCenterId(zoneId);
+
+        try {
+            resourceManager.checkIfAllHostsInUse(sagsToDelete, clusterId, podId, zoneId);
+        } catch (CloudRuntimeException e) {
+            Assert.fail("checkIfAllHostsInUse should not throw CloudRuntimeException when zone has no hosts. Error: " + e.getMessage());
+        }
+        Mockito.verify(resourceManager).checkIfAllHostsInUse(Mockito.anyList(), eq(null), eq(null), eq(zoneId));
+    }
+
+    @Test
+    public void testUpdateClusterStorageAccessGroupsWithEmptyHostsInPod() {
+        List<String> sagsToDelete = Arrays.asList("tag1", "tag2");
+        Long clusterId = null;
+        Long podId = 2L;
+        Long zoneId = null;
+
+        List<Long> emptyHostIdsList = new ArrayList<>();
+        Mockito.doReturn(emptyHostIdsList).when(resourceManager)
+                .listOfHostIdsUsingTheStorageAccessGroups(sagsToDelete, clusterId, podId, zoneId);
+        List<HostVO> emptyHostsInPod = new ArrayList<>();
+        Mockito.doReturn(emptyHostsInPod).when(hostDao).findByPodId(podId, Host.Type.Routing);
+
+        try {
+            resourceManager.checkIfAllHostsInUse(sagsToDelete, clusterId, podId, zoneId);
+        } catch (CloudRuntimeException e) {
+            Assert.fail("checkIfAllHostsInUse should not throw CloudRuntimeException when pod has no hosts. Error: " + e.getMessage());
+        }
+        Mockito.verify(resourceManager).checkIfAllHostsInUse(Mockito.anyList(), eq(null), eq(podId), eq(null));
+    }
+
+    @Test
+    public void testCheckIfAllHostsInUseWithEmptyHostsInMultipleLevels() {
+        List<String> sagsToDelete = Arrays.asList("tag1", "tag2");
+        Long clusterId = 1L;
+        Long podId = 2L;
+        Long zoneId = 3L;
+
+        List<Long> emptyHostIdsList = new ArrayList<>();
+        Mockito.doReturn(emptyHostIdsList).when(resourceManager)
+                .listOfHostIdsUsingTheStorageAccessGroups(sagsToDelete, clusterId, podId, zoneId);
+        List<HostVO> emptyHostsInZone = new ArrayList<>();
+        List<HostVO> emptyHostsInCluster = new ArrayList<>();
+        List<HostVO> emptyHostsInPod = new ArrayList<>();
+        Mockito.doReturn(emptyHostsInZone).when(hostDao).findByDataCenterId(zoneId);
+        Mockito.doReturn(emptyHostsInCluster).when(hostDao).findByClusterId(clusterId, Host.Type.Routing);
+        Mockito.doReturn(emptyHostsInPod).when(hostDao).findByPodId(podId, Host.Type.Routing);
+
+        try {
+            resourceManager.checkIfAllHostsInUse(sagsToDelete, clusterId, podId, zoneId);
+        } catch (CloudRuntimeException e) {
+            Assert.fail("checkIfAllHostsInUse should not throw CloudRuntimeException when all levels have no hosts. Error: " + e.getMessage());
+        }
+        Mockito.verify(hostDao).findByDataCenterId(zoneId);
+        Mockito.verify(hostDao).findByClusterId(clusterId, Host.Type.Routing);
+        Mockito.verify(hostDao).findByPodId(podId, Host.Type.Routing);
+    }
 }

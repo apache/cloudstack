@@ -34,6 +34,7 @@ public class RestoreBackupCommand extends Command  {
     private List<String> backupVolumesUUIDs;
     private List<PrimaryDataStoreTO> restoreVolumePools;
     private List<String> restoreVolumePaths;
+    private List<Long> restoreVolumeSizes;
     private List<String> backupFiles;
     private String diskType;
     private Boolean vmExists;
@@ -90,6 +91,14 @@ public class RestoreBackupCommand extends Command  {
 
     public void setRestoreVolumePaths(List<String> restoreVolumePaths) {
         this.restoreVolumePaths = restoreVolumePaths;
+    }
+
+    public List<Long> getRestoreVolumeSizes() {
+        return restoreVolumeSizes;
+    }
+
+    public void setRestoreVolumeSizes(List<Long> restoreVolumeSizes) {
+        this.restoreVolumeSizes = restoreVolumeSizes;
     }
 
     public List<String> getBackupFiles() {

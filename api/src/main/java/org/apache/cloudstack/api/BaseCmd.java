@@ -27,7 +27,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.regex.Pattern;
 
 import javax.inject.Inject;
@@ -41,6 +40,7 @@ import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.dns.DnsProviderManager;
 import org.apache.cloudstack.gpu.GpuService;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerService;
@@ -232,6 +232,9 @@ public abstract class BaseCmd {
 
     @Inject
     public RoutedIpv4Manager routedIpv4Manager;
+
+    @Inject
+    public DnsProviderManager dnsProviderManager;
 
     public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
         ResourceAllocationException, NetworkRuleConflictException;
@@ -504,12 +507,6 @@ public abstract class BaseCmd {
     }
 
     public String getResourceUuid(String parameterName) {
-        UUID resourceUuid = CallContext.current().getApiResourceUuid(parameterName);
-
-        if (resourceUuid != null) {
-            return resourceUuid.toString();
-        }
-
-        return null;
+        return CallContext.current().getApiResourceUuid(parameterName);
     }
 }

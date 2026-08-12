@@ -103,6 +103,7 @@ import { ref, reactive, toRaw, h } from 'vue'
 import { getAPI, postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import DetailsInput from '@/components/widgets/DetailsInput'
+import JsonViewer from '@/views/extension/JsonViewer.vue'
 
 export default {
   name: 'RunCustomAction',
@@ -277,75 +278,88 @@ export default {
               } catch (_) {}
               const modalType = success ? this.$success : this.$error
               const contentElements = [h('p', `${message}`)]
-              if (extensionMessage && !Array.isArray(extensionMessage) && typeof extensionMessage === 'object' && Object.keys(extensionMessage).length > 0) {
-                extensionMessage = [extensionMessage]
-              }
-              if (Array.isArray(extensionMessage) && extensionMessage.length > 0 && printExtensionMessage) {
-                contentElements.push(
-                  h('div', {
-                    style: {
-                      marginTop: '1em',
-                      maxHeight: '50vh',
-                      maxWidth: '100%',
-                      overflow: 'auto',
-                      backgroundColor: '#f6f6f6',
-                      border: '1px solid #ddd',
-                      borderRadius: '4px',
-                      display: 'block'
-                    }
-                  }, [
-                    h('table', {
+              if (printExtensionMessage && extensionMessage !== null && extensionMessage !== undefined) {
+                const isArray = Array.isArray(extensionMessage)
+                // A "flat" array has only primitive values — safe to render as a table.
+                const isFlatArray = isArray && extensionMessage.length > 0 &&
+                  extensionMessage.every(row =>
+                    typeof row === 'object' && row !== null &&
+                    Object.values(row).every(v => v === null || typeof v !== 'object')
+                  )
+                if (isFlatArray) {
+                  contentElements.push(
+                    h('div', {
                       style: {
-                        width: '100%',
-                        minWidth: 'max-content',
-                        borderCollapse: 'collapse',
-                        whiteSpace: 'pre-wrap'
+                        marginTop: '1em',
+                        maxHeight: '50vh',
+                        maxWidth: '100%',
+                        overflow: 'auto',
+                        backgroundColor: '#f6f6f6',
+                        border: '1px solid #ddd',
+                        borderRadius: '4px',
+                        display: 'block'
                       }
                     }, [
-                      h('thead', [
-                        h('tr', Object.keys(extensionMessage[0]).map(key =>
-                          h('th', {
-                            style: {
-                              padding: '8px',
-                              border: '1px solid #ddd',
-                              textAlign: 'left',
-                              fontWeight: 'bold',
-                              backgroundColor: '#fafafa'
-                            }
-                          }, key)
+                      h('table', {
+                        style: {
+                          width: '100%',
+                          minWidth: 'max-content',
+                          borderCollapse: 'collapse',
+                          whiteSpace: 'pre-wrap'
+                        }
+                      }, [
+                        h('thead', [
+                          h('tr', Object.keys(extensionMessage[0]).map(key =>
+                            h('th', {
+                              style: {
+                                padding: '8px',
+                                border: '1px solid #ddd',
+                                textAlign: 'left',
+                                fontWeight: 'bold',
+                                backgroundColor: '#fafafa'
+                              }
+                            }, key)
+                          ))
+                        ]),
+                        h('tbody', extensionMessage.map(row =>
+                          h('tr', Object.values(row).map(value =>
+                            h('td', {
+                              style: {
+                                padding: '8px',
+                                border: '1px solid #ddd',
+                                fontFamily: 'monospace'
+                              }
+                            }, String(value))
+                          ))
                         ))
-                      ]),
-                      h('tbody', extensionMessage.map(row =>
-                        h('tr', Object.values(row).map(value =>
-                          h('td', {
-                            style: {
-                              padding: '8px',
-                              border: '1px solid #ddd',
-                              fontFamily: 'monospace'
-                            }
-                          }, String(value))
-                        ))
-                      ))
+                      ])
                     ])
-                  ])
-                )
-              } else if (printExtensionMessage === 'true') {
-                contentElements.push(
-                  h('div', {
-                    style: {
-                      marginTop: '1em',
-                      maxHeight: '50vh',
-                      padding: '10px',
-                      overflowY: 'auto',
-                      backgroundColor: '#f6f6f6',
-                      border: '1px solid #ddd',
-                      borderRadius: '4px',
-                      fontFamily: 'monospace',
-                      whiteSpace: 'pre-wrap',
-                      wordBreak: 'break-word'
-                    }
-                  }, String(extensionMessage))
-                )
+                  )
+                } else if (typeof extensionMessage === 'string') {
+                  contentElements.push(
+                    h('div', {
+                      style: {
+                        marginTop: '1em',
+                        maxHeight: '50vh',
+                        padding: '10px',
+                        overflowY: 'auto',
+                        backgroundColor: '#f6f6f6',
+                        border: '1px solid #ddd',
+                        borderRadius: '4px',
+                        fontFamily: 'monospace',
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-word'
+                      }
+                    }, extensionMessage)
+                  )
+                } else {
+                  // Complex object or non-flat array — render as interactive JSON tree.
+                  contentElements.push(
+                    h('div', { style: { marginTop: '1em' } }, [
+                      h(JsonViewer, { data: extensionMessage })
+                    ])
+                  )
+                }
               }
 
               modalType({
