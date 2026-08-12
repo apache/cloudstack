@@ -66,6 +66,7 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.engine.service.api.OrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.kms.KMSManager;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.network.dao.NetworkPermissionDao;
 import org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleDao;
@@ -212,6 +213,8 @@ public class AccountManagentImplTestBase {
     AccountService _accountService;
     @Mock
     RoutedIpv4Manager routedIpv4Manager;
+    @Mock
+    KMSManager kmsManager;
 
     @Before
     public void setup() {

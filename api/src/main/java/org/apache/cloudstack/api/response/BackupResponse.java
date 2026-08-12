@@ -71,9 +71,21 @@ public class BackupResponse extends BaseResponse {
     @Param(description = "Backup protected (virtual) size in bytes")
     private Long protectedSize;
 
+    @SerializedName(ApiConstants.UNCOMPRESSED_SIZE)
+    @Param(description = "Backup uncompressed size in bytes. Only defined if backup is compressed.")
+    private Long uncompressedSize;
+
     @SerializedName(ApiConstants.STATUS)
     @Param(description = "Backup status")
     private Backup.Status status;
+
+    @SerializedName(ApiConstants.COMPRESSION_STATUS)
+    @Param(description = "Backup compression status.")
+    private Backup.CompressionStatus compressionStatus;
+
+    @SerializedName(ApiConstants.VALIDATION_STATUS)
+    @Param(description = "Backup validation status.")
+    private Backup.ValidationStatus validationStatus;
 
     @SerializedName(ApiConstants.VOLUMES)
     @Param(description = "Backed up volumes")
@@ -126,6 +138,18 @@ public class BackupResponse extends BaseResponse {
     @SerializedName(ApiConstants.IS_BACKUP_VM_EXPUNGED)
     @Param(description = "Indicates whether the VM from which the backup was taken is expunged or not", since = "4.22.0")
     private Boolean isVmExpunged;
+
+    @SerializedName(ApiConstants.FROM_CHECKPOINT_ID)
+    @Param(description = "Previous active checkpoint ID for incremental backups", since = "4.23.0")
+    private String fromCheckpointId;
+
+    @SerializedName(ApiConstants.TO_CHECKPOINT_ID)
+    @Param(description = "Next checkpoint ID for incremental backups", since = "4.23.0")
+    private String toCheckpointId;
+
+    @SerializedName(ApiConstants.HOST_ID)
+    @Param(description = "Host ID where the backup is running", since = "4.23.0")
+    private String hostId;
 
     public String getId() {
         return id;
@@ -207,12 +231,36 @@ public class BackupResponse extends BaseResponse {
         this.protectedSize = protectedSize;
     }
 
+    public Long getUncompressedSize() {
+        return uncompressedSize;
+    }
+
+    public void setUncompressedSize(Long uncompressedSize) {
+        this.uncompressedSize = uncompressedSize;
+    }
+
     public Backup.Status getStatus() {
         return status;
     }
 
     public void setStatus(Backup.Status status) {
         this.status = status;
+    }
+
+    public Backup.CompressionStatus getCompressionStatus() {
+        return compressionStatus;
+    }
+
+    public void setCompressionStatus(Backup.CompressionStatus compressionStatus) {
+        this.compressionStatus = compressionStatus;
+    }
+
+    public Backup.ValidationStatus getValidationStatus() {
+        return validationStatus;
+    }
+
+    public void setValidationStatus(Backup.ValidationStatus validationStatus) {
+        this.validationStatus = validationStatus;
     }
 
     public String getVolumes() {
@@ -313,5 +361,29 @@ public class BackupResponse extends BaseResponse {
 
     public void setVmExpunged(Boolean isVmExpunged) {
         this.isVmExpunged = isVmExpunged;
+    }
+
+    public void setFromCheckpointId(String fromCheckpointId) {
+        this.fromCheckpointId = fromCheckpointId;
+    }
+
+    public String getFromCheckpointId() {
+        return this.fromCheckpointId;
+    }
+
+    public void setToCheckpointId(String toCheckpointId) {
+        this.toCheckpointId = toCheckpointId;
+    }
+
+    public String getToCheckpointId() {
+        return this.toCheckpointId;
+    }
+
+    public void setHostId(String hostId) {
+        this.hostId = hostId;
+    }
+
+    public String getHostId() {
+        return this.hostId;
     }
 }

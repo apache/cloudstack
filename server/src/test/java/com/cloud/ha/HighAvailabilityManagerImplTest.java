@@ -35,6 +35,7 @@ import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationSer
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.ha.dao.HAConfigDao;
 import org.apache.cloudstack.managed.context.ManagedContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -117,6 +118,8 @@ public class HighAvailabilityManagerImplTest {
     ManagementServer _msServer;
     @Mock
     ConfigurationDao _configDao;
+    @Mock
+    HAConfigDao _haConfigDao;
     @Mock
     VolumeOrchestrationService volumeMgr;
     @Mock
@@ -362,7 +365,7 @@ public class HighAvailabilityManagerImplTest {
         investigators.add(investigator);
         highAvailabilityManager.setInvestigators(investigators);
         // Mock isAgentAlive to return host status as Down
-        Mockito.when(investigator.isAgentAlive(hostVO)).thenReturn(Status.Down);
+        Mockito.when(investigator.getHostAgentStatus(hostVO)).thenReturn(Status.Down);
 
         ConfigKey<Boolean> haEnabled = Mockito.mock(ConfigKey.class);
         highAvailabilityManager.VmHaEnabled = haEnabled;

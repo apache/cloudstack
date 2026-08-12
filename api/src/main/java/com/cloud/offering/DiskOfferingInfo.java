@@ -23,6 +23,7 @@ public class DiskOfferingInfo {
     private Long _size;
     private Long _minIops;
     private Long _maxIops;
+    private Long _kmsKeyId;
 
     public DiskOfferingInfo() {
     }
@@ -36,6 +37,14 @@ public class DiskOfferingInfo {
         _size = size;
         _minIops = minIops;
         _maxIops = maxIops;
+    }
+
+    public DiskOfferingInfo(DiskOffering diskOffering, Long size, Long minIops, Long maxIops, Long kmsKeyId) {
+        _diskOffering = diskOffering;
+        _size = size;
+        _minIops = minIops;
+        _maxIops = maxIops;
+        _kmsKeyId = kmsKeyId;
     }
 
     public void setDiskOffering(DiskOffering diskOffering) {
@@ -68,5 +77,13 @@ public class DiskOfferingInfo {
 
     public Long getMaxIops() {
         return _maxIops;
+    }
+
+    public void setKmsKeyId(Long kmsKeyId) {
+        _kmsKeyId = kmsKeyId;
+    }
+
+    public Long getKmsKeyId() {
+        return _kmsKeyId;
     }
 }

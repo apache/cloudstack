@@ -779,7 +779,7 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
         final LoadBalancerTO[] arrayLbs = new LoadBalancerTO[lbs.size()];
         lbs.toArray(arrayLbs);
         final NicTO nic = new NicTO();
-        final LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(arrayLbs, "64.10.2.10", "10.1.10.2", "192.168.1.2", nic, null, "1000", false);
+        final LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(arrayLbs, "64.10.2.10", "10.1.10.2", "192.168.1.2", nic, null, "1000", false, 50000L);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, "10.1.10.2");
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, ROUTERNAME);
         return cmd;
@@ -795,7 +795,7 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
         lbs.toArray(arrayLbs);
         final NicTO nic = new NicTO();
         nic.setIp("10.1.10.2");
-        final LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(arrayLbs, "64.10.2.10", "10.1.10.2", "192.168.1.2", nic, Long.valueOf(1), "1000", false);
+        final LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(arrayLbs, "64.10.2.10", "10.1.10.2", "192.168.1.2", nic, Long.valueOf(1), "1000", false, 50000L);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, "10.1.10.2");
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, ROUTERNAME);
         return cmd;

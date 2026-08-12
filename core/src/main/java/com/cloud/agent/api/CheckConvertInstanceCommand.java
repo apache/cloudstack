@@ -18,12 +18,19 @@ package com.cloud.agent.api;
 
 public class CheckConvertInstanceCommand extends Command {
     boolean checkWindowsGuestConversionSupport = false;
+    boolean useVddk = false;
+    String vddkLibDir;
 
     public CheckConvertInstanceCommand() {
     }
 
     public CheckConvertInstanceCommand(boolean checkWindowsGuestConversionSupport) {
         this.checkWindowsGuestConversionSupport = checkWindowsGuestConversionSupport;
+    }
+
+    public CheckConvertInstanceCommand(boolean checkWindowsGuestConversionSupport, boolean useVddk) {
+        this.checkWindowsGuestConversionSupport = checkWindowsGuestConversionSupport;
+        this.useVddk = useVddk;
     }
 
     @Override
@@ -33,5 +40,21 @@ public class CheckConvertInstanceCommand extends Command {
 
     public boolean getCheckWindowsGuestConversionSupport() {
         return checkWindowsGuestConversionSupport;
+    }
+
+    public boolean isUseVddk() {
+        return useVddk;
+    }
+
+    public void setUseVddk(boolean useVddk) {
+        this.useVddk = useVddk;
+    }
+
+    public String getVddkLibDir() {
+        return vddkLibDir;
+    }
+
+    public void setVddkLibDir(String vddkLibDir) {
+        this.vddkLibDir = vddkLibDir;
     }
 }

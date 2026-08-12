@@ -94,4 +94,18 @@ public class CreateExtensionCmdTest {
         setField(cmd, "details", details);
         assertTrue(MapUtils.isNotEmpty(cmd.getDetails()));
     }
+
+    @Test
+    public void getReservedResourceDetailsReturnsValueWhenSet() {
+        setField(cmd, "reservedResourceDetails", "detail1,detail2,detail3");
+        String result = cmd.getReservedResourceDetails();
+        assertEquals("detail1,detail2,detail3", result);
+    }
+
+    @Test
+    public void getReservedResourceDetailsReturnsNullWhenNotSet() {
+        setField(cmd, "reservedResourceDetails", null);
+        String result = cmd.getReservedResourceDetails();
+        assertNull(result);
+    }
 }

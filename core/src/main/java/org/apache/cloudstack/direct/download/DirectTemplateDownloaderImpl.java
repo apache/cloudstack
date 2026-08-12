@@ -21,6 +21,7 @@ package org.apache.cloudstack.direct.download;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.utils.security.DigestHelper;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -33,6 +34,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 public abstract class DirectTemplateDownloaderImpl implements DirectTemplateDownloader {
 
@@ -128,15 +130,14 @@ public abstract class DirectTemplateDownloaderImpl implements DirectTemplateDown
      */
     protected File createTemporaryDirectoryAndFile(String downloadDir) {
         createFolder(downloadDir);
-        return new File(downloadDir + File.separator + getFileNameFromUrl());
+        return new File(downloadDir + File.separator + getTemporaryFileName());
     }
 
     /**
-     * Return filename from url
+     * Return filename from the temporary download file
      */
-    public String getFileNameFromUrl() {
-        String[] urlParts = url.split("/");
-        return urlParts[urlParts.length - 1];
+    public String getTemporaryFileName() {
+        return String.format("%s.%s", UUID.randomUUID(), FilenameUtils.getExtension(url));
     }
 
     @Override

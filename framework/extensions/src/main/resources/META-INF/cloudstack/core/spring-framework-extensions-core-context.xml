@@ -33,4 +33,7 @@
     <bean id="ExtensionsManager" class="org.apache.cloudstack.framework.extensions.manager.ExtensionsManagerImpl" />
     <bean id="ExtensionCustomActionDaoImpl" class="org.apache.cloudstack.framework.extensions.dao.ExtensionCustomActionDaoImpl" />
     <bean id="ExtensionCustomActionDetailsDaoImpl" class="org.apache.cloudstack.framework.extensions.dao.ExtensionCustomActionDetailsDaoImpl" />
+    <bean id="networkExtension" class="org.apache.cloudstack.framework.extensions.network.NetworkExtensionElement">
+        <property name="name" value="NetworkExtension" />
+    </bean>
 </beans>
