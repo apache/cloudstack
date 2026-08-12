@@ -64,8 +64,8 @@ public class ConsoleProxy {
     public static final int VIEWER_LINGER_SECONDS = 180;
 
     // New: default and effective session timeout (milliseconds) honoured from consoleproxy.session.timeout
-    public static final int DEFAULT_SESSION_TIMEOUT_MILLIS = 300000;
-    public static volatile int sessionTimeoutMillis = DEFAULT_SESSION_TIMEOUT_MILLIS;
+    public static final long DEFAULT_SESSION_TIMEOUT_MILLIS = 300000;
+    public static volatile long sessionTimeoutMillis = DEFAULT_SESSION_TIMEOUT_MILLIS;
 
 
     public static Object context;
@@ -202,7 +202,7 @@ public class ConsoleProxy {
         s = conf != null ? conf.getProperty("consoleproxy.session.timeout") : null;
         if (s != null) {
             try {
-                int value = Integer.parseInt(s);
+                long value = Long.parseLong(s);
                 if (value <= 0) {
                     LOGGER.warn("consoleproxy.session.timeout={} is <= 0, using default {} ms",
                             value, DEFAULT_SESSION_TIMEOUT_MILLIS);
