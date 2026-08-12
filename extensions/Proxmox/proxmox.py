@@ -139,17 +139,21 @@ class ProxmoxManager:
             else ssl._create_unverified_context()  # noqa: SLF001 - intentional for admin-controlled TLS bypass
         )
 
-    def parse_json(self) -> ProxmoxSettings:
+    def load_json(self) -> dict[str, Any]:
         try:
             payload = json.loads(Path(self.config_path).read_text(encoding="utf-8"))
+            if not isinstance(payload, dict):
+                fail("Invalid JSON input")
+            return payload
         except FileNotFoundError:
             fail(f"JSON file not found: {self.config_path}")
         except json.JSONDecodeError:
             fail("Invalid JSON in file")
         except OSError as exc:
             fail(f"Unable to read JSON file: {exc}")
-        if not isinstance(payload, dict):
-            fail("Invalid JSON input")
+
+    def parse_json(self) -> ProxmoxSettings:
+        payload = self.load_json()
         externaldetails = _mapping(payload.get("externaldetails"))
         extension = _mapping(externaldetails.get("extension"))
         host = _mapping(externaldetails.get("host"))
