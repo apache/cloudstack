@@ -103,6 +103,22 @@ class TestCsBgpPeers(unittest.TestCase):
         local_v4 = [line for line in config if line.startswith("ip prefix-list local-v4")]
         self.assertEqual(local_v4, ["ip prefix-list local-v4 seq 1 permit 10.1.1.0/24"])
 
+    def test_access_list_set_multiple_as_numbers(self):
+        # Sequence numbers may not collide when there are peers for multiple AS numbers,
+        # otherwise entries overwrite each other in the shared local-v4/local-v6 prefix-lists
+        self.csbgppeers._process_dbag_item(self._peer(ip4_address='100.64.0.1',
+                                                      guest_ip4_cidr='10.1.1.0/24'))
+        self.csbgppeers._process_dbag_item(self._peer(peer_id=2,
+                                                      network_as_number=64513,
+                                                      ip4_address='100.64.1.1',
+                                                      guest_ip4_cidr='10.2.1.0/24'))
+        self.csbgppeers._access_list_set()
+
+        config = self._frr_conf()
+        local_v4 = [line for line in config if line.startswith("ip prefix-list local-v4")]
+        self.assertEqual(local_v4, ["ip prefix-list local-v4 seq 1 permit 10.1.1.0/24",
+                                    "ip prefix-list local-v4 seq 2 permit 10.2.1.0/24"])
+
     def test_process_peers_ip4(self):
         self.csbgppeers._process_dbag_item(self._peer(ip4_address='100.64.0.1',
                                                       guest_ip4_cidr='10.1.1.0/24'))

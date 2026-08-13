@@ -89,20 +89,17 @@ class CsBgpPeers(CsDataBag):
         self.frr_conf.add("ipv6 prefix-list all-v6 seq 1 permit any")
         self.frr_conf.add("ipv6 prefix-list default-v6 seq 1 permit ::/0")
 
+        ip4_cidrs = set()
+        ip6_cidrs = set()
         for as_number in self.peers.keys():
-            if self.peers[as_number]['ip4_peers']:
-                seq = 1
-                ip4_cidrs = set({ip4_peer['guest_ip4_cidr'] for ip4_peer in self.peers[as_number]['ip4_peers']})
-                for ip4_cidr in ip4_cidrs:
-                    self.frr_conf.add("ip prefix-list local-v4 seq {} permit {}".format(seq, ip4_cidr))
-                    seq += 1
+            ip4_cidrs.update(ip4_peer['guest_ip4_cidr'] for ip4_peer in self.peers[as_number]['ip4_peers'])
+            ip6_cidrs.update(ip6_peer['guest_ip6_cidr'] for ip6_peer in self.peers[as_number]['ip6_peers'])
 
-            if self.peers[as_number]['ip6_peers']:
-                seq = 1
-                ip6_cidrs = set({ip6_peer['guest_ip6_cidr'] for ip6_peer in self.peers[as_number]['ip6_peers']})
-                for ip6_cidr in ip6_cidrs:
-                    self.frr_conf.add("ipv6 prefix-list local-v6 seq {} permit {}".format(seq, ip6_cidr))
-                    seq += 1
+        for seq, ip4_cidr in enumerate(sorted(ip4_cidrs), start=1):
+            self.frr_conf.add("ip prefix-list local-v4 seq {} permit {}".format(seq, ip4_cidr))
+
+        for seq, ip6_cidr in enumerate(sorted(ip6_cidrs), start=1):
+            self.frr_conf.add("ipv6 prefix-list local-v6 seq {} permit {}".format(seq, ip6_cidr))
 
         return
 
