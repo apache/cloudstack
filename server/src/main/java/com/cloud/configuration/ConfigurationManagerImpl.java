@@ -637,12 +637,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         weightBasedParametersForValidation.add(AlertManager.StorageAllocatedCapacityThreshold.key());
         weightBasedParametersForValidation.add(AlertManager.StorageCapacityThreshold.key());
         weightBasedParametersForValidation.add(AlertManager.MemoryCapacityThreshold.key());
-        weightBasedParametersForValidation.add(Config.PublicIpCapacityThreshold.key());
-        weightBasedParametersForValidation.add(Config.PrivateIpCapacityThreshold.key());
-        weightBasedParametersForValidation.add(Config.SecondaryStorageCapacityThreshold.key());
-        weightBasedParametersForValidation.add(Config.VlanCapacityThreshold.key());
-        weightBasedParametersForValidation.add(Config.DirectNetworkPublicIpCapacityThreshold.key());
-        weightBasedParametersForValidation.add(Config.LocalStorageCapacityThreshold.key());
+        weightBasedParametersForValidation.add(AlertManager.PublicIpCapacityThreshold.key());
+        weightBasedParametersForValidation.add(AlertManager.PrivateIpCapacityThreshold.key());
+        weightBasedParametersForValidation.add(AlertManager.SecondaryStorageCapacityThreshold.key());
+        weightBasedParametersForValidation.add(AlertManager.VlanCapacityThreshold.key());
+        weightBasedParametersForValidation.add(AlertManager.DirectNetworkPublicIpCapacityThreshold.key());
+        weightBasedParametersForValidation.add(AlertManager.LocalStorageCapacityThreshold.key());
         weightBasedParametersForValidation.add(CapacityManager.StorageAllocatedCapacityDisableThreshold.key());
         weightBasedParametersForValidation.add(CapacityManager.StorageCapacityDisableThreshold.key());
         weightBasedParametersForValidation.add(CapacityManager.StorageAllocatedCapacityDisableThresholdForVolumeSize.key());
