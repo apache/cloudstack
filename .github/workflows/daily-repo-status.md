@@ -16,9 +16,11 @@ permissions:
 
 network: defaults
 
+# gpt-5.6-luna: cheapest lightweight model ($0.20/$1.20 per 1M tokens) — plenty
+# for this formulaic daily report (see GitHub Copilot models-and-pricing docs)
 engine:
   id: copilot
-  model: claude-haiku-4.5
+  model: gpt-5.6-luna
 
 # Rotates the Copilot token across volunteer PATs, see .github/COPILOT_TOKENS.md.
 # Strict mode forbids reading secrets in the agent job, so this job picks today's
@@ -100,6 +102,12 @@ tools:
 safe-outputs:
   mentions: false
   allowed-github-references: []
+  # Don't open tracking issues when the agentic run itself fails or is unhealthy
+  report-failure-as-issue: false
+  missing-tool:
+    create-issue: false
+  report-incomplete:
+    create-issue: false
   create-issue:
     title-prefix: "[repo-status] "
     labels: [report, daily-status]

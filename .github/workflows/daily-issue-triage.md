@@ -14,6 +14,13 @@ permissions: read-all
 
 network: defaults
 
+# claude-sonnet-5: frontier agentic model at promotional $2/$10 per 1M tokens —
+# better and cheaper than the claude-sonnet-4.6 engine default this workflow
+# previously fell back to. Triage needs real judgment (duplicates, severity).
+engine:
+  id: copilot
+  model: claude-sonnet-5
+
 # Rotates the Copilot token across volunteer PATs, see .github/COPILOT_TOKENS.md.
 # Strict mode forbids reading secrets in the agent job, so this job picks today's
 # token and outputs its alias only; the agent job resolves the secret itself.
@@ -86,6 +93,12 @@ jobs:
             echo "WARNING: no live Copilot token (rotated or base)" >&2; fi
 
 safe-outputs:
+  # Don't open tracking issues when the agentic run itself fails or is unhealthy
+  report-failure-as-issue: false
+  missing-tool:
+    create-issue: false
+  report-incomplete:
+    create-issue: false
   add-labels:
     target: "*"
     max: 10
