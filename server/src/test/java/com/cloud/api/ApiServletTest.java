@@ -334,6 +334,23 @@ public class ApiServletTest {
     }
 
     @Test
+    public void testSkip2FAcheckForUserWhenVerifiedAttributeIsAbsent() {
+        servlet.accountMgr = accountMgr;
+        Mockito.when(session.getAttribute("userid")).thenReturn(1L);
+        Mockito.when(session.getAttribute(ApiConstants.IS_2FA_VERIFIED)).thenReturn(null);
+        Mockito.when(accountMgr.getUserAccountById(1L)).thenReturn(userAccount);
+        Mockito.when(userAccount.getDomainId()).thenReturn(1L);
+        Mockito.when(userAccount.isUser2faEnabled()).thenReturn(false);
+
+        ConfigKey<Boolean> enableUserTwoFactorAuthentication = Mockito.mock(ConfigKey.class);
+        AccountManagerImpl.enableUserTwoFactorAuthentication = enableUserTwoFactorAuthentication;
+        Mockito.when(enableUserTwoFactorAuthentication.valueIn(1L)).thenReturn(false);
+
+        boolean result = servlet.skip2FAcheckForUser(session);
+        Assert.assertEquals(true, result);
+    }
+
+    @Test
     public void testDoNotSkip2FAcheckForUserWhen2FAEnabled() {
         servlet.accountMgr = accountMgr;
         HttpSession cuurentSession = Mockito.mock(HttpSession.class);
