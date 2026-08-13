@@ -25,7 +25,7 @@ engine:
 # Strict mode forbids reading secrets in the agent job, so this job picks today's
 # token and outputs its alias only; the agent job resolves the secret itself.
 # ROTATION_SLOT 1 staggers this workflow half the pool away from
-# daily-repo-status so the two pick different tokens (pool of 2 or more).
+# weekly-repo-status so the two pick different tokens (pool of 2 or more).
 # After `gh aw compile`, run `bash .github/scripts/post-compile.sh` to re-wire the
 # agent job to this output.
 jobs:

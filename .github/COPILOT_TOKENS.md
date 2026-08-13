@@ -58,7 +58,7 @@ expiration; when it lapses the health check (below) will flag it and you can re-
 
 ## How rotation works (for maintainers)
 
-Each agent workflow (`daily-repo-status`, `daily-issue-triage`) defines a `pick_copilot_token`
+Each agent workflow (`weekly-repo-status`, `daily-issue-triage`) defines a `pick_copilot_token`
 job in its `.md` source. The job has to run outside the agent job because strict mode forbids
 reading secrets there. It picks today's alias by day-of-year mod N, checks the token is live
 (`GET /user` returns 200, otherwise it moves on to the next candidate) and outputs the chosen

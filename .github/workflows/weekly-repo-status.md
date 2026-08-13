@@ -1,12 +1,14 @@
 ---
 description: |
-  This workflow creates daily repo status reports. It gathers recent repository
+  This workflow creates weekly repo status reports. It gathers recent repository
   activity (issues, PRs, discussions, releases, code changes) and generates
   engaging GitHub issues with productivity insights, community highlights,
   and project recommendations.
 
 on:
-  schedule: daily
+  # 12:00 UTC every Sunday. Fixed cron (not the "weekly" fuzzy shorthand)
+  # because that scatters the run time to spread load.
+  schedule: "0 12 * * 0"
   workflow_dispatch:
 
 permissions:
@@ -17,7 +19,7 @@ permissions:
 network: defaults
 
 # gpt-5.6-luna: cheapest lightweight model ($0.20/$1.20 per 1M tokens) — plenty
-# for this formulaic daily report (see GitHub Copilot models-and-pricing docs)
+# for this formulaic weekly report (see GitHub Copilot models-and-pricing docs)
 engine:
   id: copilot
   model: gpt-5.6-luna
@@ -110,14 +112,14 @@ safe-outputs:
     create-issue: false
   create-issue:
     title-prefix: "[repo-status] "
-    labels: [report, daily-status]
+    labels: [report, weekly-status]
     close-older-issues: true
 source: githubnext/agentics/workflows/repo-status.md@main
 ---
 
-# Repo Status
+# Weekly Repo Status
 
-Create an upbeat daily status report for the repo as a GitHub issue.
+Create an upbeat weekly status report for the repo as a GitHub issue.
 
 ## What to include
 

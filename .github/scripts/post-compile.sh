@@ -39,7 +39,7 @@ cd "$(git rev-parse --show-toplevel)"
 export NEWVAL='${{ needs.pick_copilot_token.outputs.name != '"'"''"'"' && secrets[format('"'"'COPILOT_GITHUB_TOKEN_{0}'"'"', needs.pick_copilot_token.outputs.name)] || secrets.COPILOT_GITHUB_TOKEN }}'
 
 FILES=(
-  ".github/workflows/daily-repo-status.lock.yml"
+  ".github/workflows/weekly-repo-status.lock.yml"
   ".github/workflows/daily-issue-triage.lock.yml"
 )
 
