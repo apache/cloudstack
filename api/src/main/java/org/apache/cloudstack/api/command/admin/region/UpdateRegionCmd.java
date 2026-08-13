@@ -42,10 +42,10 @@ public class UpdateRegionCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.INTEGER, required = true, description = "Id of region to update")
     private Integer id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "updates region with this name")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "Updates region with this name")
     private String regionName;
 
-    @Parameter(name = ApiConstants.END_POINT, type = CommandType.STRING, description = "updates region with this end point")
+    @Parameter(name = ApiConstants.END_POINT, type = CommandType.STRING, description = "Updates region with this end point")
     private String endPoint;
 
     @Inject

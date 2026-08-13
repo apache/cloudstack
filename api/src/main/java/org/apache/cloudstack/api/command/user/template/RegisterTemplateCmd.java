@@ -47,7 +47,7 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.template.VirtualMachineTemplate;
 
-@APICommand(name = "registerTemplate", description = "Registers an existing template into the CloudStack cloud. ", responseObject = TemplateResponse.class, responseView = ResponseView.Restricted,
+@APICommand(name = "registerTemplate", description = "Registers an existing Template into the CloudStack cloud. ", responseObject = TemplateResponse.class, responseView = ResponseView.Restricted,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
 
@@ -62,76 +62,76 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.DISPLAY_TEXT,
                type = CommandType.STRING,
-               description = "The display text of the template, defaults to 'name'.",
+               description = "The display text of the Template, defaults to 'name'.",
                length = 4096)
     private String displayText;
 
     @Parameter(name = ApiConstants.FORMAT,
                type = CommandType.STRING,
                required = true,
-               description = "the format for the template. Possible values include QCOW2, RAW, VHD and OVA.")
+               description = "The format for the Template. Possible values include QCOW2, RAW, VHD and OVA.")
     private String format;
 
-    @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, required = true, description = "the target hypervisor for the template")
+    @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, required = true, description = "The target hypervisor for the Template")
     protected String hypervisor;
 
-    @Parameter(name = ApiConstants.IS_FEATURED, type = CommandType.BOOLEAN, description = "true if this template is a featured template, false otherwise")
+    @Parameter(name = ApiConstants.IS_FEATURED, type = CommandType.BOOLEAN, description = "True if this Template is a featured Template, false otherwise")
     private Boolean featured;
 
-    @Parameter(name = ApiConstants.IS_PUBLIC, type = CommandType.BOOLEAN, description = "true if the template is available to all accounts; default is true")
+    @Parameter(name = ApiConstants.IS_PUBLIC, type = CommandType.BOOLEAN, description = "True if the Template is available to all accounts; default is true")
     private Boolean publicTemplate;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the template")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "The name of the Template")
     private String templateName;
 
     @Parameter(name = ApiConstants.OS_TYPE_ID,
                type = CommandType.UUID,
                entityType = GuestOSResponse.class,
                required = false,
-               description = "the ID of the OS Type that best represents the OS of this template. Not applicable with VMware, as we honour what is defined in the template")
+               description = "The ID of the OS Type that best represents the OS of this Template. Not applicable with VMware, as we honour what is defined in the Template")
     private Long osTypeId;
 
     @Parameter(name = ApiConstants.PASSWORD_ENABLED,
                type = CommandType.BOOLEAN,
-               description = "true if the template supports the password reset feature; default is false")
+               description = "True if the Template supports the password reset feature; default is false")
     private Boolean passwordEnabled;
 
-    @Parameter(name = ApiConstants.SSHKEY_ENABLED, type = CommandType.BOOLEAN, description = "true if the template supports the sshkey upload feature; default is false")
+    @Parameter(name = ApiConstants.SSHKEY_ENABLED, type = CommandType.BOOLEAN, description = "True if the Template supports the sshkey upload feature; default is false")
     private Boolean sshKeyEnabled;
 
-    @Parameter(name = ApiConstants.IS_EXTRACTABLE, type = CommandType.BOOLEAN, description = "true if the template or its derivatives are extractable; default is false")
+    @Parameter(name = ApiConstants.IS_EXTRACTABLE, type = CommandType.BOOLEAN, description = "True if the Template or its derivatives are extractable; default is false")
     private Boolean extractable;
 
-    @Parameter(name = ApiConstants.REQUIRES_HVM, type = CommandType.BOOLEAN, description = "true if this template requires HVM")
+    @Parameter(name = ApiConstants.REQUIRES_HVM, type = CommandType.BOOLEAN, description = "True if this Template requires HVM")
     private Boolean requiresHvm;
 
     @Parameter(name = ApiConstants.URL,
                type = CommandType.STRING,
                required = true,
                length = 2048,
-               description = "the URL of where the template is hosted. Possible URL include http:// and https://")
+               description = "The URL of where the Template is hosted. Possible URL include http:// and https://")
     private String url;
 
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
-            required=false, description="the ID of the zone the template is to be hosted on")
+            required=false, description = "The ID of the zone the Template is to be hosted on")
     protected Long zoneId;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
                type = CommandType.UUID,
                entityType = DomainResponse.class,
-               description = "an optional domainId. If the account parameter is used, domainId must also be used.")
+               description = "An optional domainId. If the account parameter is used, domainId must also be used.")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional accountName. Must be used with domainId.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "An optional accountName. Must be used with domainId.")
     private String accountName;
 
-    @Parameter(name = ApiConstants.CHECKSUM, type = CommandType.STRING, description = "the checksum value of this template. " + ApiConstants.CHECKSUM_PARAMETER_PREFIX_DESCRIPTION)
+    @Parameter(name = ApiConstants.CHECKSUM, type = CommandType.STRING, description = "The checksum value of this Template. " + ApiConstants.CHECKSUM_PARAMETER_PREFIX_DESCRIPTION)
     private String checksum;
 
-    @Parameter(name = ApiConstants.TEMPLATE_TAG, type = CommandType.STRING, description = "the tag for this template.")
+    @Parameter(name = ApiConstants.TEMPLATE_TAG, type = CommandType.STRING, description = "The tag for this Template.")
     private String templateTag;
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "Register template for the project")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "Register Template for the project")
     private Long projectId;
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP,
@@ -140,11 +140,11 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.IS_DYNAMICALLY_SCALABLE,
                type = CommandType.BOOLEAN,
-               description = "true if template contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory")
+               description = "True if Template contains XS/VMWare tools in order to support dynamic scaling of Instance cpu/memory")
     protected Boolean isDynamicallyScalable;
 
     @Deprecated
-    @Parameter(name = ApiConstants.ROUTING, type = CommandType.BOOLEAN, description = "true if the template type is routing i.e., if template is used to deploy router")
+    @Parameter(name = ApiConstants.ROUTING, type = CommandType.BOOLEAN, description = "True if the Template type is routing i.e., if Template is used to deploy router")
     protected Boolean isRoutingType;
 
     @Parameter(name=ApiConstants.ZONE_ID_LIST,
@@ -152,21 +152,21 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
             collectionType = CommandType.UUID,
             entityType = ZoneResponse.class,
             required=false,
-            description="A list of zone ids where the template will be hosted. Use this parameter if the template needs " +
-                    "to be registered to multiple zones in one go. Use zoneid if the template " +
+            description = "A list of zone IDs where the Template will be hosted. Use this parameter if the Template needs " +
+                    "to be registered to multiple zones in one go. Use zoneid if the Template " +
                     "needs to be registered to only one zone." +
-                    "Passing only -1 to this will cause the template to be registered as a cross " +
-                    "zone template and will be copied to all zones. ")
+                    "Passing only -1 to this will cause the Template to be registered as a cross " +
+                    "zone Template and will be copied to all zones. ")
     protected List<Long> zoneIds;
 
     @Parameter(name=ApiConstants.DIRECT_DOWNLOAD,
                 type = CommandType.BOOLEAN,
-                description = "true if template should bypass Secondary Storage and be downloaded to Primary Storage on deployment")
+                description = "True if Template should bypass Secondary Storage and be downloaded to Primary Storage on deployment")
     private Boolean directDownload;
 
     @Parameter(name=ApiConstants.DEPLOY_AS_IS,
             type = CommandType.BOOLEAN,
-            description = "(VMware only) true if VM deployments should preserve all the configurations defined for this template", since = "4.15.1")
+            description = "(VMware only) true if Instance deployments should preserve all the configurations defined for this Template", since = "4.15.1")
     protected Boolean deployAsIs;
 
     @Parameter(name=ApiConstants.FOR_CKS,
@@ -180,7 +180,7 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
     private String templateType;
 
     @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
-            description = "the CPU arch of the template. Valid options are: x86_64, aarch64",
+            description = "the CPU arch of the template. Valid options are: x86_64, aarch64, s390x",
             since = "4.20")
     private String arch;
 
@@ -279,7 +279,7 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
     }
 
     public String getTemplateTag() {
-        return templateTag;
+        return StringUtils.isBlank(templateTag) ? null : templateTag;
     }
 
     public Map getDetails() {
@@ -344,7 +344,7 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
+        Long accountId = _accountService.finalizeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }
@@ -366,7 +366,7 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to register template");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to register Template");
             }
         } catch (URISyntaxException ex1) {
             logger.info(ex1);
@@ -393,7 +393,7 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
                         .isFunctionalitySupported(Hypervisor.HypervisorType.Functionality.DirectDownloadTemplate)
                 || getHypervisor().equalsIgnoreCase(customHypervisor))) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Parameter directdownload " +
-                    "is only allowed for KVM or %s templates", customHypervisor));
+                    "is only allowed for KVM or %s Templates", customHypervisor));
         }
 
         if (!isDeployAsIs() && osTypeId == null) {

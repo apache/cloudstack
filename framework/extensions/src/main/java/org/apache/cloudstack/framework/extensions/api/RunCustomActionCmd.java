@@ -116,6 +116,6 @@ public class RunCustomActionCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Running custom action";
+        return "Running custom action with ID: " + getResourceUuid(ApiConstants.CUSTOM_ACTION_ID);
     }
 }

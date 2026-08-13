@@ -38,7 +38,7 @@
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'zonename'">
           <span v-if="record.datastoreid">
-            <router-link :to="{ path: (record.datastoretype === 'Primary' ? '/storagepool/' : '/imagestore/') + record.datastoreid }">
+            <router-link :to="{ path: (record.datastoretype === 'Primary' ? '/storagepool/' : '/imagestore/') + encodeURIComponent(record.datastoreid) }">
               <span v-if="fetchZoneIcon(record.zoneid)">
                 <resource-icon :image="zoneIcon" size="1x" style="margin-right: 5px"/>
               </span>
@@ -137,7 +137,10 @@
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item :label="$t('label.usestoragereplication')" name="useStorageReplication" ref="useStorageReplication">
+          <a-form-item name="useStorageReplication" ref="useStorageReplication">
+            <template #label>
+              <tooltip-label :title="$t('label.usestoragereplication')" :tooltip="apiParams.usestoragereplication.description" />
+            </template>
             <a-switch v-model:checked="form.useStorageReplication" />
           </a-form-item>
           <a-form-item v-if="isAdmin && form.useStorageReplication" ref="storageid" name="storageid" :label="$t('label.storagepools')">
@@ -236,6 +239,7 @@ import { isAdmin } from '@/role'
 import OsLogo from '@/components/widgets/OsLogo'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipButton from '@/components/widgets/TooltipButton'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 import BulkActionProgress from '@/components/view/BulkActionProgress'
 import Status from '@/components/widgets/Status'
 import eventBus from '@/config/eventBus'
@@ -244,6 +248,7 @@ export default {
   name: 'SnapshotZones',
   components: {
     TooltipButton,
+    TooltipLabel,
     OsLogo,
     ResourceIcon,
     BulkActionProgress,

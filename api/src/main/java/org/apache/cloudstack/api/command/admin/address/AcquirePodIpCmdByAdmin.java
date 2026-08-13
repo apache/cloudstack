@@ -40,7 +40,7 @@ public class AcquirePodIpCmdByAdmin extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.STRING, entityType = ZoneResponse.class, required = true, description = "the ID of the zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.STRING, entityType = ZoneResponse.class, required = true, description = "The ID of the zone")
     private String zoneId;
 
     @Parameter(name = ApiConstants.POD_ID, type = CommandType.STRING, entityType = ZoneResponse.class, required = false, description = "Pod ID")

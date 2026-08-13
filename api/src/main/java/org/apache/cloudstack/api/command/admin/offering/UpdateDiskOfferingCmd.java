@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.offering;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import com.cloud.offering.DiskOffering.State;
@@ -27,19 +26,18 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.offering.DomainAndZoneIdResolver;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import com.cloud.dc.DataCenter;
-import com.cloud.domain.Domain;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.offering.DiskOffering;
 import com.cloud.user.Account;
 
 @APICommand(name = "updateDiskOffering", description = "Updates a disk offering.", responseObject = DiskOfferingResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class UpdateDiskOfferingCmd extends BaseCmd {
+public class UpdateDiskOfferingCmd extends BaseCmd implements DomainAndZoneIdResolver {
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -47,80 +45,81 @@ public class UpdateDiskOfferingCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.DISPLAY_TEXT,
             type = CommandType.STRING,
-            description = "updates alternate display text of the disk offering with this value",
+            description = "Updates alternate display text of the disk offering with this value",
             length = 4096)
     private String displayText;
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DiskOfferingResponse.class, required = true, description = "ID of the disk offering")
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "updates name of the disk offering with this value")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "Updates name of the disk offering with this value")
     private String diskOfferingName;
 
-    @Parameter(name = ApiConstants.SORT_KEY, type = CommandType.INTEGER, description = "sort key of the disk offering, integer")
+    @Parameter(name = ApiConstants.SORT_KEY, type = CommandType.INTEGER, description = "Sort key of the disk offering, integer")
     private Integer sortKey;
 
     @Parameter(name = ApiConstants.DISPLAY_OFFERING,
             type = CommandType.BOOLEAN,
-            description = "an optional field, whether to display the offering to the end user or not.")
+            description = "An optional field, whether to display the offering to the end user or not.")
     private Boolean displayOffering;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
             type = CommandType.STRING,
-            description = "the ID of the containing domain(s) as comma separated string, public for public offerings",
+            description = "The ID of the containing domain(s) as comma separated string, public for public offerings",
             since = "4.13",
             length = 4096)
     private String domainIds;
 
     @Parameter(name = ApiConstants.ZONE_ID,
             type = CommandType.STRING,
-            description = "the ID of the containing zone(s) as comma separated string, all for all zones offerings",
+            description = "The ID of the containing zone(s) as comma separated string, all for all zones offerings",
+            length = 4096,
             since = "4.13")
     private String zoneIds;
 
     @Parameter(name = ApiConstants.TAGS,
             type = CommandType.STRING,
-            description = "comma-separated list of tags for the disk offering, tags should match with existing storage pool tags",
+            description = "Comma-separated list of tags for the disk offering, tags should match with existing storage pool tags",
             since = "4.15")
     private String tags;
 
-    @Parameter(name = ApiConstants.BYTES_READ_RATE, type = CommandType.LONG, description = "bytes read rate of the disk offering", since = "4.15")
+    @Parameter(name = ApiConstants.BYTES_READ_RATE, type = CommandType.LONG, description = "Bytes read rate of the disk offering", since = "4.15")
     private Long bytesReadRate;
 
-    @Parameter(name = ApiConstants.BYTES_READ_RATE_MAX, type = CommandType.LONG, description = "burst bytes read rate of the disk offering", since = "4.15")
+    @Parameter(name = ApiConstants.BYTES_READ_RATE_MAX, type = CommandType.LONG, description = "Burst bytes read rate of the disk offering", since = "4.15")
     private Long bytesReadRateMax;
 
-    @Parameter(name = ApiConstants.BYTES_READ_RATE_MAX_LENGTH, type = CommandType.LONG, description = "length (in seconds) of the burst", since = "4.15")
+    @Parameter(name = ApiConstants.BYTES_READ_RATE_MAX_LENGTH, type = CommandType.LONG, description = "Length (in seconds) of the burst", since = "4.15")
     private Long bytesReadRateMaxLength;
 
-    @Parameter(name = ApiConstants.BYTES_WRITE_RATE, type = CommandType.LONG, description = "bytes write rate of the disk offering", since = "4.15")
+    @Parameter(name = ApiConstants.BYTES_WRITE_RATE, type = CommandType.LONG, description = "Bytes write rate of the disk offering", since = "4.15")
     private Long bytesWriteRate;
 
-    @Parameter(name = ApiConstants.BYTES_WRITE_RATE_MAX, type = CommandType.LONG, description = "burst bytes write rate of the disk offering", since = "4.15")
+    @Parameter(name = ApiConstants.BYTES_WRITE_RATE_MAX, type = CommandType.LONG, description = "Burst bytes write rate of the disk offering", since = "4.15")
     private Long bytesWriteRateMax;
 
-    @Parameter(name = ApiConstants.BYTES_WRITE_RATE_MAX_LENGTH,  type = CommandType.LONG, description = "length (in seconds) of the burst", since = "4.15")
+    @Parameter(name = ApiConstants.BYTES_WRITE_RATE_MAX_LENGTH,  type = CommandType.LONG, description = "Length (in seconds) of the burst", since = "4.15")
     private Long bytesWriteRateMaxLength;
 
-    @Parameter(name = ApiConstants.IOPS_READ_RATE, type = CommandType.LONG, description = "io requests read rate of the disk offering", since = "4.15")
+    @Parameter(name = ApiConstants.IOPS_READ_RATE, type = CommandType.LONG, description = "I/O requests read rate of the disk offering", since = "4.15")
     private Long iopsReadRate;
 
-    @Parameter(name = ApiConstants.IOPS_READ_RATE_MAX, type = CommandType.LONG, description = "burst requests read rate of the disk offering", since = "4.15")
+    @Parameter(name = ApiConstants.IOPS_READ_RATE_MAX, type = CommandType.LONG, description = "Burst requests read rate of the disk offering", since = "4.15")
     private Long iopsReadRateMax;
 
-    @Parameter(name = ApiConstants.IOPS_READ_RATE_MAX_LENGTH, type = CommandType.LONG, description = "length (in seconds) of the burst", since = "4.15")
+    @Parameter(name = ApiConstants.IOPS_READ_RATE_MAX_LENGTH, type = CommandType.LONG, description = "Length (in seconds) of the burst", since = "4.15")
     private Long iopsReadRateMaxLength;
 
-    @Parameter(name = ApiConstants.IOPS_WRITE_RATE, type = CommandType.LONG, description = "io requests write rate of the disk offering", since = "4.15")
+    @Parameter(name = ApiConstants.IOPS_WRITE_RATE, type = CommandType.LONG, description = "I/O requests write rate of the disk offering", since = "4.15")
     private Long iopsWriteRate;
 
-    @Parameter(name = ApiConstants.IOPS_WRITE_RATE_MAX, type = CommandType.LONG, description = "burst io requests write rate of the disk offering", since = "4.15")
+    @Parameter(name = ApiConstants.IOPS_WRITE_RATE_MAX, type = CommandType.LONG, description = "Burst io requests write rate of the disk offering", since = "4.15")
     private Long iopsWriteRateMax;
 
-    @Parameter(name = ApiConstants.IOPS_WRITE_RATE_MAX_LENGTH, type = CommandType.LONG, description = "length (in seconds) of the burst", since = "4.15")
+    @Parameter(name = ApiConstants.IOPS_WRITE_RATE_MAX_LENGTH, type = CommandType.LONG, description = "Length (in seconds) of the burst", since = "4.15")
     private Long iopsWriteRateMaxLength;
 
-    @Parameter(name = ApiConstants.CACHE_MODE, type = CommandType.STRING, description = "the cache mode to use for this disk offering", since = "4.15")
+    @Parameter(name = ApiConstants.CACHE_MODE, type = CommandType.STRING, description = "The cache mode to use for this disk offering", since = "4.15")
     private String cacheMode;
 
     @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "state of the disk offering")
@@ -151,63 +150,11 @@ public class UpdateDiskOfferingCmd extends BaseCmd {
     }
 
     public List<Long> getDomainIds() {
-        List<Long> validDomainIds = new ArrayList<>();
-        if (StringUtils.isNotEmpty(domainIds)) {
-            if (domainIds.contains(",")) {
-                String[] domains = domainIds.split(",");
-                for (String domain : domains) {
-                    Domain validDomain = _entityMgr.findByUuid(Domain.class, domain.trim());
-                    if (validDomain != null) {
-                        validDomainIds.add(validDomain.getId());
-                    } else {
-                        throw new InvalidParameterValueException("Failed to create disk offering because invalid domain has been specified.");
-                    }
-                }
-            } else {
-                domainIds = domainIds.trim();
-                if (!domainIds.matches("public")) {
-                    Domain validDomain = _entityMgr.findByUuid(Domain.class, domainIds.trim());
-                    if (validDomain != null) {
-                        validDomainIds.add(validDomain.getId());
-                    } else {
-                        throw new InvalidParameterValueException("Failed to create disk offering because invalid domain has been specified.");
-                    }
-                }
-            }
-        } else {
-            validDomainIds.addAll(_configService.getDiskOfferingDomains(id));
-        }
-        return validDomainIds;
+        return resolveDomainIds(domainIds, id, _configService::getDiskOfferingDomains, "disk offering");
     }
 
     public List<Long> getZoneIds() {
-        List<Long> validZoneIds = new ArrayList<>();
-        if (StringUtils.isNotEmpty(zoneIds)) {
-            if (zoneIds.contains(",")) {
-                String[] zones = zoneIds.split(",");
-                for (String zone : zones) {
-                    DataCenter validZone = _entityMgr.findByUuid(DataCenter.class, zone.trim());
-                    if (validZone != null) {
-                        validZoneIds.add(validZone.getId());
-                    } else {
-                        throw new InvalidParameterValueException("Failed to create disk offering because invalid zone has been specified.");
-                    }
-                }
-            } else {
-                zoneIds = zoneIds.trim();
-                if (!zoneIds.matches("all")) {
-                    DataCenter validZone = _entityMgr.findByUuid(DataCenter.class, zoneIds.trim());
-                    if (validZone != null) {
-                        validZoneIds.add(validZone.getId());
-                    } else {
-                        throw new InvalidParameterValueException("Failed to create disk offering because invalid zone has been specified.");
-                    }
-                }
-            }
-        } else {
-            validZoneIds.addAll(_configService.getDiskOfferingZones(id));
-        }
-        return validZoneIds;
+        return resolveZoneIds(zoneIds, id, _configService::getDiskOfferingZones, "disk offering");
     }
 
     public String getTags() {

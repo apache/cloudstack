@@ -21,12 +21,12 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.BackupScheduleResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.backup.BackupManager;
@@ -37,8 +37,8 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "createBackupSchedule",
-        description = "Creates a user-defined VM backup schedule",
-        responseObject = BackupResponse.class, since = "4.14.0",
+        description = "Creates a User-defined Instance backup schedule",
+        responseObject = BackupScheduleResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class CreateBackupScheduleCmd extends BaseCmd {
 
@@ -53,19 +53,19 @@ public class CreateBackupScheduleCmd extends BaseCmd {
             type = CommandType.UUID,
             entityType = UserVmResponse.class,
             required = true,
-            description = "ID of the VM for which schedule is to be defined")
+            description = "ID of the Instance for which schedule is to be defined")
     private Long vmId;
 
     @Parameter(name = ApiConstants.INTERVAL_TYPE,
             type = CommandType.STRING,
             required = true,
-            description = "valid values are HOURLY, DAILY, WEEKLY, and MONTHLY")
+            description = "Valid values are HOURLY, DAILY, WEEKLY, and MONTHLY")
     private String intervalType;
 
     @Parameter(name = ApiConstants.SCHEDULE,
             type = CommandType.STRING,
             required = true,
-            description = "custom backup schedule, the format is:"
+            description = "Custom backup schedule, the format is:"
             + "for HOURLY MM*, for DAILY MM:HH*, for WEEKLY MM:HH:DD (1-7)*, for MONTHLY MM:HH:DD (1-28)")
     private String schedule;
 
@@ -82,11 +82,17 @@ public class CreateBackupScheduleCmd extends BaseCmd {
     @Parameter(name = ApiConstants.QUIESCE_VM,
             type = CommandType.BOOLEAN,
             required = false,
-            description = "Quiesce the instance before checkpointing the disks for backup. Applicable only to NAS backup provider. " +
+            description = "Quiesce the Instance before checkpointing the disks for backup. Applicable only to NAS and KBOSS backup providers. " +
                     "The filesystem is frozen before the backup starts and thawed immediately after. " +
                     "Requires the instance to have the QEMU Guest Agent installed and running.",
             since = "4.21.0")
     private Boolean quiesceVM;
+
+    @Parameter(name = ApiConstants.ISOLATED,
+            type = CommandType.BOOLEAN,
+            description = ApiConstants.PARAMETER_DESCRIPTION_ISOLATED_BACKUPS,
+            since = "4.23.0")
+    private boolean isolated;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -116,6 +122,10 @@ public class CreateBackupScheduleCmd extends BaseCmd {
         return quiesceVM;
     }
 
+    public boolean isIsolated() {
+        return isolated;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -129,7 +139,7 @@ public class CreateBackupScheduleCmd extends BaseCmd {
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
             } else {
-                throw new CloudRuntimeException("Error while creating backup schedule of VM");
+                throw new CloudRuntimeException("Error while creating backup schedule of Instance");
             }
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
@@ -139,5 +149,15 @@ public class CreateBackupScheduleCmd extends BaseCmd {
     @Override
     public long getEntityOwnerId() {
         return CallContext.current().getCallingAccount().getId();
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return vmId;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.VirtualMachine;
     }
 }

@@ -72,7 +72,7 @@ public class CreateProjectRolePermissionCmd extends BaseRolePermissionCmd {
         if (projectRole == null) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid project role ID provided");
         }
-        CallContext.current().setEventDetails("Project Role ID: " + projectRole.getId() + ", Rule:" + getRule() + ", Permission: " + getPermission() + ", Description: " + getDescription());
+        CallContext.current().setEventDetails("Project Role ID: " + projectRole.getUuid() + ", Rule:" + getRule() + ", Permission: " + getPermission() + ", Description: " + getDescription());
         final ProjectRolePermission projectRolePermission = projRoleService.createProjectRolePermission(this);
         if (projectRolePermission == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create project role permission");

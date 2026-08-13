@@ -1267,8 +1267,8 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
 
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description("The current VMQ offloading usage on this port. The usage is the amount of VMQ res" +
-            "ources in use on the port.")]
+        [Description("The current VMQ offloading usage on this port. The usage is the amount of VMQ " +
+            "resources in use on the port.")]
         [TypeConverter(typeof(WMIValueTypeConverter))]
         public uint VMQOffloadUsage {
             get {

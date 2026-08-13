@@ -29,7 +29,30 @@
 [![Simulator CI](https://github.com/apache/cloudstack/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/apache/cloudstack/actions/workflows/ci.yml)
 [![UI Build](https://github.com/apache/cloudstack/actions/workflows/ui.yml/badge.svg?branch=main)](https://github.com/apache/cloudstack/actions/workflows/ui.yml)
 
+[![Good First Issues](https://img.shields.io/badge/good%20first%20issues-94D5DA)](https://github.com/apache/cloudstack/issues?q=is%3Aissue%20state%3Aopen%20label%3Agood-first-issue)
+[![CloudStack Documentation Status](https://app.readthedocs.org/projects/cloudstack-documentation/badge/?version=latest)](https://app.readthedocs.org/projects/cloudstack-documentation/builds/)
+[![CloudStack Website Status](https://img.shields.io/website?url=https%3A%2F%2Fcloudstack.apache.org%2F
+)](https://cloudstack.apache.org/)
+
 [![Apache CloudStack](tools/logo/apache_cloudstack.png)](https://cloudstack.apache.org/)
+
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+- [Who Uses CloudStack?](#who-uses-cloudstack)
+- [Demo](#demo)
+- [Getting Started](#getting-started)
+- [Getting Source Repository](#getting-source-repository)
+- [Documentation](#documentation)
+- [News and Events](#news-and-events)
+- [Getting Involved and Contributing](#getting-involved-and-contributing)
+- [Reporting Security Vulnerabilities](#reporting-security-vulnerabilities)
+- [License](#license)
+- [Notice of Cryptographic Software](#notice-of-cryptographic-software)
+- [Star History](#star-history)
+- [Contributors](#contributors)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 Apache CloudStack is open source software designed to deploy and manage large
 networks of virtual machines, as a highly available, highly scalable
@@ -185,14 +208,14 @@ Unrestricted (TSU) exception (see the BIS Export Administration Regulations, Sec
 The following provides more details on the included cryptographic software:
 
 * CloudStack makes use of JaSypt cryptographic libraries.
-* CloudStack has a system requirement of MySQL, and uses native database encryption functionality.
+* CloudStack requires a MySQL-compatible database (MariaDB or MySQL), and uses native database encryption functionality.
 * CloudStack makes use of the Bouncy Castle general-purpose encryption library.
 * CloudStack can optionally interact with and control OpenSwan-based VPNs.
 * CloudStack has a dependency on and makes use of JSch - a java SSH2 implementation.
 
 ## Star History
 
-[![Apache CloudStack Star History](https://api.star-history.com/svg?repos=apache/cloudstack&type=Date)](https://www.star-history.com/#apache/cloudstack&Date)
+[![Apache CloudStack Star History](https://star-history.dera.page/svg?repos=apache/cloudstack&type=Date)](https://star-history.dera.page/#apache/cloudstack&Date)
 
 ## Contributors
 

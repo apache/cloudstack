@@ -111,7 +111,7 @@ public class AddVpnUserCmdTest extends TestCase {
         try {
             addVpnUserCmd.create();
         } catch (ServerApiException exception) {
-            Assert.assertEquals("Failed to add vpn user", exception.getDescription());
+            Assert.assertEquals("Failed to add VPN User", exception.getDescription());
         }
 
     }

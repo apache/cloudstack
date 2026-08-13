@@ -34,20 +34,20 @@ import com.cloud.server.ResourceTag;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListResourceDetailsCmd extends BaseListProjectAndAccountResourcesCmd {
 
-    @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.STRING, description = "list by resource type", required = true)
+    @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.STRING, description = "List by resource type", required = true)
     private String resourceType;
 
-    @Parameter(name = ApiConstants.RESOURCE_ID, type = CommandType.STRING, description = "list by resource id")
+    @Parameter(name = ApiConstants.RESOURCE_ID, type = CommandType.STRING, description = "List by resource ID")
     private String resourceId;
 
-    @Parameter(name = ApiConstants.KEY, type = CommandType.STRING, description = "list by key")
+    @Parameter(name = ApiConstants.KEY, type = CommandType.STRING, description = "List by key")
     private String key;
 
-    @Parameter(name = ApiConstants.VALUE, type = CommandType.STRING, description = "list by key, value. Needs to be passed only along with key" ,
+    @Parameter(name = ApiConstants.VALUE, type = CommandType.STRING, description = "List by key, value. Needs to be passed only along with key" ,
             since = "4.4", authorized = { RoleType.Admin })
     private String value;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "if set to true, only details marked with display=true, are returned."
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "If set to true, only details marked with display=true, are returned."
             + " False by default", since = "4.3", authorized = { RoleType.Admin })
     private Boolean forDisplay;
 

@@ -253,7 +253,7 @@ public class AffinityGroupServiceImplTest {
     @Test(expected = InvalidParameterValueException.class)
     public void deleteAffinityGroupInvalidIdName() throws ResourceInUseException {
         when(_acctMgr.finalizeOwner((Account)any(), anyString(), anyLong(), anyLong())).thenReturn(acct);
-        when(_acctMgr.finalyzeAccountId(ACCOUNT_NAME, DOMAIN_ID, null, true)).thenReturn(200L);
+        when(_acctMgr.finalizeAccountId(ACCOUNT_NAME, DOMAIN_ID, null, true)).thenReturn(200L);
         when(_groupDao.findByAccountAndName(200L, AFFINITY_GROUP_NAME)).thenReturn(null);
         _affinityService.deleteAffinityGroup(null, ACCOUNT_NAME, null, DOMAIN_ID, AFFINITY_GROUP_NAME);
     }

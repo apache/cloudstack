@@ -79,6 +79,7 @@ import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
@@ -762,6 +763,37 @@ public class ExternalPathPayloadProvisionerTest {
     }
 
     @Test
+    public void getVmPowerStatesReturnsValidStatesWhenResponseIsSuccessful() {
+        Host host = mock(Host.class);
+        when(host.getId()).thenReturn(1L);
+        when(host.getName()).thenReturn("test-host");
+
+        Map<String, Map<String, String>> accessDetails = new HashMap<>();
+        doReturn(new Pair<>(true, "{\"status\":\"success\",\"power_state\":{\"vm1\":\"PowerOn\",\"vm2\":\"PowerOff\"}}"))
+            .when(provisioner).getInstanceStatusesOnExternalSystem(anyString(), anyString(), anyString(), anyMap(), anyInt());
+
+        Map<String, HostVmStateReportEntry> result = provisioner.getVmPowerStates(host, accessDetails, "test-extension", "test-path");
+
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        assertEquals(VirtualMachine.PowerState.PowerOn, result.get("vm1").getState());
+        assertEquals(VirtualMachine.PowerState.PowerOff, result.get("vm2").getState());
+    }
+
+    @Test
+    public void getVmPowerStatesReturnsNullWhenResponseIsFailure() {
+        Host host = mock(Host.class);
+        when(host.getName()).thenReturn("test-host");
+
+        Map<String, Map<String, String>> accessDetails = new HashMap<>();
+        doReturn(new Pair<>(false, "Error")).when(provisioner)
+            .getInstanceStatusesOnExternalSystem(anyString(), anyString(), anyString(), anyMap(), anyInt());
+
+        Map<String, HostVmStateReportEntry> result = provisioner.getVmPowerStates(host, accessDetails, "test-extension", "test-path");
+        assertNull(result);
+    }
+
+    @Test
     public void getVirtualMachineTOReturnsValidTOWhenVmIsNotNull() {
         VirtualMachine vm = mock(VirtualMachine.class);
         VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
@@ -985,5 +1017,121 @@ public class ExternalPathPayloadProvisionerTest {
     public void getExtensionConfigureErrorReturnsMessageWhenHostNameIsNull() {
         String result = provisioner.getExtensionConfigureError("test-extension", null);
         assertEquals("Extension: test-extension not configured", result);
+    }
+
+    @Test
+    public void getVmPowerStatesReturnsNullWhenResponseIsEmpty() {
+        Host host = mock(Host.class);
+        when(host.getName()).thenReturn("test-host");
+
+        Map<String, Map<String, String>> accessDetails = new HashMap<>();
+        doReturn(new Pair<>(true, "")).when(provisioner)
+            .getInstanceStatusesOnExternalSystem(anyString(), anyString(), anyString(), anyMap(), anyInt());
+
+        Map<String, HostVmStateReportEntry> result = provisioner.getVmPowerStates(host, accessDetails, "test-extension", "test-path");
+
+        assertNull(result);
+    }
+
+    @Test
+    public void getVmPowerStatesReturnsNullWhenResponseHasInvalidStatus() {
+        Host host = mock(Host.class);
+        when(host.getName()).thenReturn("test-host");
+
+        Map<String, Map<String, String>> accessDetails = new HashMap<>();
+        doReturn(new Pair<>(true, "{\"status\":\"failure\"}")).when(provisioner)
+            .getInstanceStatusesOnExternalSystem(anyString(), anyString(), anyString(), anyMap(), anyInt());
+
+        Map<String, HostVmStateReportEntry> result = provisioner.getVmPowerStates(host, accessDetails, "test-extension", "test-path");
+
+        assertNull(result);
+    }
+
+    @Test
+    public void getVmPowerStatesReturnsNullWhenPowerStateIsMissing() {
+        Host host = mock(Host.class);
+        when(host.getName()).thenReturn("test-host");
+
+        Map<String, Map<String, String>> accessDetails = new HashMap<>();
+        doReturn(new Pair<>(true, "{\"status\":\"success\"}")).when(provisioner)
+            .getInstanceStatusesOnExternalSystem(anyString(), anyString(), anyString(), anyMap(), anyInt());
+
+        Map<String, HostVmStateReportEntry> result = provisioner.getVmPowerStates(host, accessDetails, "test-extension", "test-path");
+
+        assertNull(result);
+    }
+
+    @Test
+    public void getVmPowerStatesReturnsNullWhenResponseIsMalformed() {
+        Host host = mock(Host.class);
+        when(host.getName()).thenReturn("test-host");
+
+        Map<String, Map<String, String>> accessDetails = new HashMap<>();
+        doReturn(new Pair<>(true, "{status:success")).when(provisioner)
+            .getInstanceStatusesOnExternalSystem(anyString(), anyString(), anyString(), anyMap(), anyInt());
+
+        Map<String, HostVmStateReportEntry> result = provisioner.getVmPowerStates(host, accessDetails, "test-extension", "test-path");
+
+        assertNull(result);
+    }
+
+    @Test
+    public void getInstanceStatusesOnExternalSystemReturnsSuccessWhenCommandExecutesSuccessfully() {
+        doReturn(new Pair<>(true, "success")).when(provisioner)
+            .executeExternalCommand(eq("test-extension"), eq("statuses"), anyMap(), eq(30), anyString(), eq("test-file"));
+
+        Pair<Boolean, String> result = provisioner.getInstanceStatusesOnExternalSystem(
+            "test-extension", "test-file", "test-host", new HashMap<>(), 30);
+
+        assertTrue(result.first());
+        assertEquals("success", result.second());
+    }
+
+    @Test
+    public void getInstanceStatusesOnExternalSystemReturnsFailureWhenCommandFails() {
+        doReturn(new Pair<>(false, "error")).when(provisioner)
+            .executeExternalCommand(eq("test-extension"), eq("statuses"), anyMap(), eq(30), anyString(), eq("test-file"));
+
+        Pair<Boolean, String> result = provisioner.getInstanceStatusesOnExternalSystem(
+            "test-extension", "test-file", "test-host", new HashMap<>(), 30);
+
+        assertFalse(result.first());
+        assertEquals("error", result.second());
+    }
+
+    @Test
+    public void getInstanceStatusesOnExternalSystemHandlesEmptyResponse() {
+        doReturn(new Pair<>(true, "")).when(provisioner)
+            .executeExternalCommand(eq("test-extension"), eq("statuses"), anyMap(), eq(30), anyString(), eq("test-file"));
+
+        Pair<Boolean, String> result = provisioner.getInstanceStatusesOnExternalSystem(
+            "test-extension", "test-file", "test-host", new HashMap<>(), 30);
+
+        assertTrue(result.first());
+        assertEquals("", result.second());
+    }
+
+    @Test
+    public void getInstanceStatusesOnExternalSystemHandlesNullResponse() {
+        doReturn(new Pair<>(true, null)).when(provisioner)
+            .executeExternalCommand(eq("test-extension"), eq("statuses"), anyMap(), eq(30), anyString(), eq("test-file"));
+
+        Pair<Boolean, String> result = provisioner.getInstanceStatusesOnExternalSystem(
+            "test-extension", "test-file", "test-host", new HashMap<>(), 30);
+
+        assertTrue(result.first());
+        assertNull(result.second());
+    }
+
+    @Test
+    public void getInstanceStatusesOnExternalSystemHandlesInvalidFilePath() {
+        doReturn(new Pair<>(false, "File not found")).when(provisioner)
+            .executeExternalCommand(eq("test-extension"), eq("statuses"), anyMap(), eq(30), anyString(), eq("invalid-file"));
+
+        Pair<Boolean, String> result = provisioner.getInstanceStatusesOnExternalSystem(
+            "test-extension", "invalid-file", "test-host", new HashMap<>(), 30);
+
+        assertFalse(result.first());
+        assertEquals("File not found", result.second());
     }
 }

@@ -53,11 +53,11 @@ public class ListOpenDaylightControllersCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, required = false,
-            description = "the Physical Network ID")
+            description = "The Physical Network ID")
     private Long physicalNetworkId;
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = OpenDaylightControllerResponse.class, required = false,
-            description = "the ID of a OpenDaylight Controller")
+            description = "The ID of a OpenDaylight Controller")
     private Long Id;
 
     /////////////////////////////////////////////////////

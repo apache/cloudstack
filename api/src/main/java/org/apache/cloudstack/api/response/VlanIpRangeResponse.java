@@ -28,103 +28,103 @@ import com.google.gson.annotations.SerializedName;
 @SuppressWarnings("unused")
 public class VlanIpRangeResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the VLAN IP range")
+    @Param(description = "The ID of the VLAN IP range")
     private String id;
 
     @SerializedName("forvirtualnetwork")
-    @Param(description = "the virtual network for the VLAN IP range")
+    @Param(description = "The virtual Network for the VLAN IP range")
     private Boolean forVirtualNetwork;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "the Zone ID of the VLAN IP range")
+    @Param(description = "The Zone ID of the VLAN IP range")
     private String zoneId;
 
     @SerializedName(ApiConstants.VLAN)
-    @Param(description = "the ID or VID of the VLAN.")
+    @Param(description = "The ID or VID of the VLAN.")
     private String vlan;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the account of the VLAN IP range")
+    @Param(description = "The Account of the VLAN IP range")
     private String accountName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain ID of the VLAN IP range")
+    @Param(description = "The domain ID of the VLAN IP range")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain name of the VLAN IP range")
+    @Param(description = "The domain name of the VLAN IP range")
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the domain to which the VLAN IP range belongs", since = "4.19.2.0")
+    @Param(description = "Path of the domain to which the VLAN IP range belongs", since = "4.19.2.0")
     private String domainPath;
 
     @SerializedName(ApiConstants.POD_ID)
-    @Param(description = "the Pod ID for the VLAN IP range")
+    @Param(description = "The Pod ID for the VLAN IP range")
     private String podId;
 
     @SerializedName("podname")
-    @Param(description = "the Pod name for the VLAN IP range")
+    @Param(description = "The Pod name for the VLAN IP range")
     private String podName;
 
     @SerializedName(ApiConstants.DESCRIPTION)
-    @Param(description = "the description of the VLAN IP range")
+    @Param(description = "The description of the VLAN IP range")
     private String description;
 
     @SerializedName(ApiConstants.GATEWAY)
-    @Param(description = "the gateway of the VLAN IP range")
+    @Param(description = "The gateway of the VLAN IP range")
     private String gateway;
 
     @SerializedName(ApiConstants.NETMASK)
-    @Param(description = "the netmask of the VLAN IP range")
+    @Param(description = "The netmask of the VLAN IP range")
     private String netmask;
 
     @SerializedName(ApiConstants.CIDR)
-    @Param(description = "the cidr of the VLAN IP range")
+    @Param(description = "The CIDR of the VLAN IP range")
     private String cidr;
 
     @SerializedName(ApiConstants.START_IP)
-    @Param(description = "the start ip of the VLAN IP range")
+    @Param(description = "The start IP of the VLAN IP range")
     private String startIp;
 
     @SerializedName(ApiConstants.END_IP)
-    @Param(description = "the end ip of the VLAN IP range")
+    @Param(description = "The end IP of the VLAN IP range")
     private String endIp;
 
     @SerializedName(ApiConstants.NETWORK_ID)
-    @Param(description = "the network id of vlan range")
+    @Param(description = "The Network ID of VLAN range")
     private String networkId;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project id of the vlan range")
+    @Param(description = "The project ID of the VLAN range")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project name of the vlan range")
+    @Param(description = "The project name of the VLAN range")
     private String projectName;
 
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID)
-    @Param(description = "the physical network this belongs to")
+    @Param(description = "The physical Network this belongs to")
     private String physicalNetworkId;
 
     @SerializedName(ApiConstants.START_IPV6)
-    @Param(description = "the start ipv6 of the VLAN IP range")
+    @Param(description = "The start IPv6 of the VLAN IP range")
     private String startIpv6;
 
     @SerializedName(ApiConstants.END_IPV6)
-    @Param(description = "the end ipv6 of the VLAN IP range")
+    @Param(description = "The end IPv6 of the VLAN IP range")
     private String endIpv6;
 
     @SerializedName(ApiConstants.IP6_GATEWAY)
-    @Param(description = "the gateway of IPv6 network")
+    @Param(description = "The gateway of IPv6 Network")
     private String ip6Gateway;
 
     @SerializedName(ApiConstants.IP6_CIDR)
-    @Param(description = "the cidr of IPv6 network")
+    @Param(description = "The CIDR of IPv6 Network")
     private String ip6Cidr;
 
     @SerializedName(ApiConstants.FOR_SYSTEM_VMS)
-    @Param(description = "indicates whether VLAN IP range is dedicated to system vms or not")
+    @Param(description = "Indicates whether VLAN IP range is dedicated to System VMs or not")
     private Boolean forSystemVms;
 
     @SerializedName(ApiConstants.PROVIDER)

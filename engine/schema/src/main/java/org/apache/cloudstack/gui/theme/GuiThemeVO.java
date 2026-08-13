@@ -59,6 +59,9 @@ public class GuiThemeVO implements GuiTheme {
     @Column(name = "recursive_domains")
     private boolean recursiveDomains = false;
 
+    @Column(name = "login_base_domain", length = 65535)
+    private String loginBaseDomain;
+
     @Column(name = GenericDao.CREATED_COLUMN, nullable = false)
     @Temporal(value = TemporalType.TIMESTAMP)
     private Date created;
@@ -71,7 +74,8 @@ public class GuiThemeVO implements GuiTheme {
 
     }
 
-    public GuiThemeVO(String name, String description, String css, String jsonConfiguration, boolean recursiveDomains, boolean isPublic, Date created, Date removed) {
+    public GuiThemeVO(String name, String description, String css, String jsonConfiguration, boolean recursiveDomains,
+        boolean isPublic, Date created, String loginBaseDomain, Date removed) {
         this.name = name;
         this.description = description;
         this.css = css;
@@ -79,6 +83,7 @@ public class GuiThemeVO implements GuiTheme {
         this.recursiveDomains = recursiveDomains;
         this.isPublic = isPublic;
         this.created = created;
+        this.loginBaseDomain = loginBaseDomain;
         this.removed = removed;
     }
 
@@ -185,5 +190,9 @@ public class GuiThemeVO implements GuiTheme {
     @Override
     public String toString() {
         return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "uuid", "name", "description", "isPublic", "recursiveDomains");
+    }
+
+    public void setLoginBaseDomain(String loginBaseDomain) {
+        this.loginBaseDomain = loginBaseDomain;
     }
 }

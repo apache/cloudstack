@@ -24,15 +24,18 @@ import com.cloud.network.Network;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.config.ResetCfgCmd;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
+import org.apache.cloudstack.api.command.admin.network.CloneNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateGuestNetworkIpv6PrefixCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
-import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteGuestNetworkIpv6PrefixCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.ListGuestNetworkIpv6PrefixesCmd;
+import org.apache.cloudstack.api.command.admin.network.NetworkOfferingBaseCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdatePodManagementNetworkIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.offering.CloneDiskOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.CloneServiceOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.DeleteDiskOfferingCmd;
@@ -104,6 +107,33 @@ public interface ConfigurationService {
      * @return the newly created service offering if successful, null otherwise
      */
     ServiceOffering createServiceOffering(CreateServiceOfferingCmd cmd);
+
+    /**
+     * Clones a service offering with optional parameter overrides
+     *
+     * @param cmd
+     *            the command object that specifies the source offering ID and optional parameter overrides
+     * @return the newly created service offering cloned from source, null otherwise
+     */
+    ServiceOffering cloneServiceOffering(CloneServiceOfferingCmd cmd);
+
+    /**
+     * Clones a disk offering with optional parameter overrides
+     *
+     * @param cmd
+     *            the command object that specifies the source offering ID and optional parameter overrides
+     * @return the newly created disk offering cloned from source, null otherwise
+     */
+    DiskOffering cloneDiskOffering(CloneDiskOfferingCmd cmd);
+
+    /**
+     * Clones a network offering with optional parameter overrides
+     *
+     * @param cmd
+     *            the command object that specifies the source offering ID and optional parameter overrides
+     * @return the newly created network offering cloned from source, null otherwise
+     */
+    NetworkOffering cloneNetworkOffering(CloneNetworkOfferingCmd cmd);
 
     /**
      * Updates a service offering
@@ -282,7 +312,7 @@ public interface ConfigurationService {
 
     boolean releasePublicIpRange(ReleasePublicIpRangeCmd cmd);
 
-    NetworkOffering createNetworkOffering(CreateNetworkOfferingCmd cmd);
+    NetworkOffering createNetworkOffering(NetworkOfferingBaseCmd cmd);
 
     NetworkOffering updateNetworkOffering(UpdateNetworkOfferingCmd cmd);
 

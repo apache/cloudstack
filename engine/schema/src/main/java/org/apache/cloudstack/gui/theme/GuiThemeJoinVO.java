@@ -63,6 +63,9 @@ public class GuiThemeJoinVO implements GuiThemeJoin {
     @Column(name = "is_public")
     private boolean isPublic;
 
+    @Column(name = "login_base_domain")
+    private String loginBaseDomain;
+
     @Column(name = GenericDao.CREATED_COLUMN, nullable = false)
     @Temporal(value = TemporalType.TIMESTAMP)
     private Date created;
@@ -137,5 +140,10 @@ public class GuiThemeJoinVO implements GuiThemeJoin {
     @Override
     public Date getRemoved() {
         return removed;
+    }
+
+    @Override
+    public String getLoginBaseDomain() {
+        return loginBaseDomain;
     }
 }

@@ -25,47 +25,47 @@ import com.cloud.serializer.Param;
 public class ExternalFirewallResponse extends NetworkDeviceResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the external firewall")
+    @Param(description = "The ID of the external firewall")
     private String id;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "the zone ID of the external firewall")
+    @Param(description = "The zone ID of the external firewall")
     private String zoneId;
 
     @SerializedName(ApiConstants.IP_ADDRESS)
-    @Param(description = "the management IP address of the external firewall")
+    @Param(description = "The management IP address of the external firewall")
     private String ipAddress;
 
     @SerializedName(ApiConstants.USERNAME)
-    @Param(description = "the username that's used to log in to the external firewall")
+    @Param(description = "The username that's used to log in to the external firewall")
     private String username;
 
     @SerializedName(ApiConstants.PUBLIC_INTERFACE)
-    @Param(description = "the public interface of the external firewall")
+    @Param(description = "The public interface of the external firewall")
     private String publicInterface;
 
     @SerializedName(ApiConstants.USAGE_INTERFACE)
-    @Param(description = "the usage interface of the external firewall")
+    @Param(description = "The usage interface of the external firewall")
     private String usageInterface;
 
     @SerializedName(ApiConstants.PRIVATE_INTERFACE)
-    @Param(description = "the private interface of the external firewall")
+    @Param(description = "The private interface of the external firewall")
     private String privateInterface;
 
     @SerializedName(ApiConstants.PUBLIC_ZONE)
-    @Param(description = "the public security zone of the external firewall")
+    @Param(description = "The public security zone of the external firewall")
     private String publicZone;
 
     @SerializedName(ApiConstants.PRIVATE_ZONE)
-    @Param(description = "the private security zone of the external firewall")
+    @Param(description = "The private security zone of the external firewall")
     private String privateZone;
 
     @SerializedName(ApiConstants.NUM_RETRIES)
-    @Param(description = "the number of times to retry requests to the external firewall")
+    @Param(description = "The number of times to retry requests to the external firewall")
     private String numRetries;
 
     @SerializedName(ApiConstants.TIMEOUT)
-    @Param(description = "the timeout (in seconds) for requests to the external firewall")
+    @Param(description = "The timeout (in seconds) for requests to the external firewall")
     private String timeout;
 
     @Override

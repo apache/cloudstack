@@ -29,15 +29,15 @@ import com.cloud.serializer.Param;
 public class ServiceResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the service name")
+    @Param(description = "The service name")
     private String name;
 
     @SerializedName(ApiConstants.PROVIDER)
-    @Param(description = "the service provider name", responseObject = ProviderResponse.class)
+    @Param(description = "The service provider name", responseObject = ProviderResponse.class)
     private List<ProviderResponse> providers;
 
     @SerializedName("capability")
-    @Param(description = "the list of capabilities", responseObject = CapabilityResponse.class)
+    @Param(description = "The list of capabilities", responseObject = CapabilityResponse.class)
     private List<CapabilityResponse> capabilities;
 
     public void setName(String name) {

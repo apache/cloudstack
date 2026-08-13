@@ -74,10 +74,14 @@ public class BackupScheduleVO implements BackupSchedule {
     @Column(name = "domain_id")
     Long domainId;
 
+    @Column(name = "isolated")
+    private boolean isolated;
+
     public BackupScheduleVO() {
     }
 
-    public BackupScheduleVO(Long vmId, DateUtil.IntervalType scheduleType, String schedule, String timezone, Date scheduledTimestamp, int maxBackups, Boolean quiesceVM, Long accountId, Long domainId) {
+    public BackupScheduleVO(Long vmId, DateUtil.IntervalType scheduleType, String schedule, String timezone, Date scheduledTimestamp, int maxBackups, Boolean quiesceVM,
+            Long accountId, Long domainId, boolean isolated) {
         this.vmId = vmId;
         this.scheduleType = (short) scheduleType.ordinal();
         this.schedule = schedule;
@@ -87,6 +91,7 @@ public class BackupScheduleVO implements BackupSchedule {
         this.quiesceVM = quiesceVM;
         this.accountId = accountId;
         this.domainId = domainId;
+        this.isolated = isolated;
     }
 
     @Override
@@ -196,5 +201,14 @@ public class BackupScheduleVO implements BackupSchedule {
 
     public void setDomainId(Long domainId) {
         this.domainId = domainId;
+    }
+
+    @Override
+    public boolean isIsolated() {
+        return isolated;
+    }
+
+    public void setIsolated(boolean isolated) {
+        this.isolated = isolated;
     }
 }

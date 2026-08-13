@@ -17,6 +17,7 @@
 
 package com.cloud.network.router;
 
+import com.cloud.api.ApiDBUtils;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 import static com.cloud.vm.VirtualMachineManager.SystemVmEnableUserData;
 
@@ -51,6 +52,7 @@ import javax.naming.ConfigurationException;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 
+import org.apache.cloudstack.acl.ApiKeyPairVO;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.alert.AlertService.AlertType;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -1688,7 +1690,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 } else {
                     loadBalancingData.append("maxconn=").append(offering.getConcurrentConnections());
                 }
-
+                loadBalancingData.append(",idletimeout=").append(NetworkOrchestrationService.NETWORK_LB_HAPROXY_IDLE_TIMEOUT.value());
                 loadBalancingData.append(",sourcePortStart=").append(firewallRuleVO.getSourcePortStart())
                         .append(",sourcePortEnd=").append(firewallRuleVO.getSourcePortEnd());
                 if (firewallRuleVO instanceof LoadBalancerVO) {
@@ -1747,8 +1749,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             scvm.setParameters("networkId", routerJoinVO.getNetworkId());
             scvm.setParameters("state", VirtualMachine.State.Running);
             List<UserVmJoinVO> vms = userVmJoinDao.search(scvm, null);
-            boolean isDhcpSupported = _ntwkSrvcDao.areServicesSupportedInNetwork(routerJoinVO.getNetworkId(), Service.Dhcp);
-            boolean isDnsSupported = _ntwkSrvcDao.areServicesSupportedInNetwork(routerJoinVO.getNetworkId(), Service.Dns);
+            Provider provider = routerJoinVO.getVpcId() != 0 ? Provider.VPCVirtualRouter : Provider.VirtualRouter;
+            boolean isDhcpSupported = _ntwkSrvcDao.canProviderSupportServiceInNetwork(routerJoinVO.getNetworkId(), Service.Dhcp, provider);
+            boolean isDnsSupported = _ntwkSrvcDao.canProviderSupportServiceInNetwork(routerJoinVO.getNetworkId(), Service.Dns, provider);
             for (UserVmJoinVO vm : vms) {
                 vmsData.append("vmName=").append(vm.getName())
                         .append(",macAddress=").append(vm.getMacAddress())
@@ -2015,6 +2018,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             } else {
                 buf.append(" has_public_network=false");
             }
+            boolean isVpcFirewallEnabled = vpcManager.isProviderSupportServiceInVpc(vpc.getId(), Service.Firewall, Provider.VPCVirtualRouter);
+            buf.append(" vpc_firewall_enabled=").append(isVpcFirewallEnabled);
         } else if (!publicNetwork) {
             type = "dhcpsrvr";
         } else {
@@ -2082,8 +2087,14 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             if (user == null) {
                 logger.warn("global setting[baremetal.provision.done.notification] is enabled but user baremetal-system-account is not found. Baremetal provision done notification will not be enabled");
             } else {
-                buf.append(String.format(" baremetalnotificationsecuritykey=%s", user.getSecretKey()));
-                buf.append(String.format(" baremetalnotificationapikey=%s", user.getApiKey()));
+                ApiKeyPairVO latestKeypair = ApiDBUtils.searchForLatestUserKeyPair(user.getId());
+
+                if (latestKeypair == null) {
+                    throw new InvalidParameterValueException(String.format("No API keypair for user [%s]. Please generate it.", user.getUsername()));
+                }
+
+                buf.append(String.format(" baremetalnotificationsecuritykey=%s", latestKeypair.getSecretKey()));
+                buf.append(String.format(" baremetalnotificationapikey=%s", latestKeypair.getApiKey()));
                 buf.append(" host=").append(ApiServiceConfiguration.ManagementServerAddresses.value());
                 buf.append(" port=").append(_configDao.getValue(Config.BaremetalProvisionDoneNotificationPort.key()));
             }
@@ -2488,7 +2499,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         // Re-apply firewall Egress rules
         logger.debug("Found " + firewallRulesEgress.size() + " firewall Egress rule(s) to apply as a part of domR " + router + " start.");
         if (!firewallRulesEgress.isEmpty()) {
-            _commandSetupHelper.createFirewallRulesCommands(firewallRulesEgress, router, cmds, guestNetworkId);
+            _commandSetupHelper.createFirewallRulesCommands(firewallRulesEgress, router, cmds, guestNetworkId, router.getVpcId());
         }
 
         logger.debug(String.format("Found %d Ipv6 firewall rule(s) to apply as a part of domR %s start.", ipv6firewallRules.size(), router));
@@ -2563,7 +2574,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             // Re-apply firewall Ingress rules
             logger.debug("Found " + firewallRulesIngress.size() + " firewall Ingress rule(s) to apply as a part of domR " + router + " start.");
             if (!firewallRulesIngress.isEmpty()) {
-                _commandSetupHelper.createFirewallRulesCommands(firewallRulesIngress, router, cmds, guestNetworkId);
+                _commandSetupHelper.createFirewallRulesCommands(firewallRulesIngress, router, cmds, guestNetworkId, router.getVpcId());
             }
 
             // Re-apply port forwarding rules
@@ -3336,6 +3347,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 jobIds.add(jobId);
             } else {
                 logger.debug("Router: {} is already at the latest version. No upgrade required", router);
+                throw new CloudRuntimeException("Router is already at the latest version. No upgrade required");
             }
         }
         return jobIds;

@@ -26,11 +26,11 @@ import com.google.gson.annotations.SerializedName;
 public class Ipv6RouteResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.SUBNET)
-    @Param(description = "the guest IPv6 cidr for route")
+    @Param(description = "The guest IPv6 CIDR for route")
     private String subnet;
 
     @SerializedName(ApiConstants.GATEWAY)
-    @Param(description = "the outbound IPv6 gateway")
+    @Param(description = "The outbound IPv6 gateway")
     private String gateway;
 
     public Ipv6RouteResponse(String subnet, String gateway) {

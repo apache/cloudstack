@@ -28,6 +28,7 @@ public class CPUTest {
         assertEquals("i686", CPU.CPUArch.x86.getType());
         assertEquals("x86_64", CPU.CPUArch.amd64.getType());
         assertEquals("aarch64", CPU.CPUArch.arm64.getType());
+        assertEquals("s390x", CPU.CPUArch.s390x.getType());
     }
 
     @Test
@@ -35,6 +36,7 @@ public class CPUTest {
         assertEquals(32, CPU.CPUArch.x86.getBits());
         assertEquals(64, CPU.CPUArch.amd64.getBits());
         assertEquals(64, CPU.CPUArch.arm64.getBits());
+        assertEquals(64, CPU.CPUArch.s390x.getBits());
     }
 
     @Test
@@ -42,6 +44,7 @@ public class CPUTest {
         assertEquals(CPU.CPUArch.x86, CPU.CPUArch.fromType("i686"));
         assertEquals(CPU.CPUArch.amd64, CPU.CPUArch.fromType("x86_64"));
         assertEquals(CPU.CPUArch.arm64, CPU.CPUArch.fromType("aarch64"));
+        assertEquals(CPU.CPUArch.s390x, CPU.CPUArch.fromType("s390x"));
     }
 
     @Test
@@ -61,7 +64,7 @@ public class CPUTest {
 
     @Test
     public void testCPUArchGetTypesAsCSV() {
-        String expectedCSV = "i686,x86_64,aarch64";
+        String expectedCSV = "i686,x86_64,aarch64,s390x";
         assertEquals(expectedCSV, CPU.CPUArch.getTypesAsCSV());
     }
 }

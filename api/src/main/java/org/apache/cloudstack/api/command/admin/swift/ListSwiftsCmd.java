@@ -35,7 +35,7 @@ public class ListSwiftsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, description = "the id of the swift")
+    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, description = "The id of the swift")
     private Long id;
 
     /////////////////////////////////////////////////////

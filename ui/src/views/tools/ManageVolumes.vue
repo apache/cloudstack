@@ -372,22 +372,16 @@
               name="domain"
               ref="domain"
               :label="$t('label.domain')">
-              <a-select
-                @change="changeDomain"
+              <infinite-scroll-select
                 v-model:value="importForm.selectedDomain"
-                showSearch
-                optionFilterProp="label"
-                :filterOption="(input, option) => {
-                  return  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                }" >
-                <a-select-option v-for="domain in domains" :key="domain.name" :value="domain.id" :label="domain.path || domain.name || domain.description">
-                <span>
-                  <resource-icon v-if="domain && domain.icon" :image="domain.icon.base64image" size="1x" style="margin-right: 5px"/>
-                  <block-outlined v-else style="margin-right: 5px" />
-                  {{ domain.path || domain.name || domain.description }}
-                </span>
-                </a-select-option>
-              </a-select>
+                api="listDomains"
+                :apiParams="domainsApiParams"
+                resourceType="domain"
+                optionValueKey="id"
+                optionLabelKey="path"
+                defaultIcon="block-outlined"
+                allowClear="true"
+                @change-option-value="changeDomain" />
             </a-form-item>
 
             <a-form-item
@@ -395,22 +389,16 @@
               name="account"
               ref="account"
               :label="$t('label.account')">
-              <a-select
-                @change="changeAccount"
+              <infinite-scroll-select
                 v-model:value="importForm.selectedAccount"
-                showSearch
-                optionFilterProp="value"
-                :filterOption="(input, option) => {
-                    return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                  }" >
-                <a-select-option v-for="account in accounts" :key="account.name" :value="account.name">
-                  <span>
-                    <resource-icon v-if="account && account.icon" :image="account.icon.base64image" size="1x" style="margin-right: 5px"/>
-                    <team-outlined v-else style="margin-right: 5px" />
-                    {{ account.name }}
-                  </span>
-                </a-select-option>
-              </a-select>
+                api="listAccounts"
+                :apiParams="accountsApiParams"
+                resourceType="account"
+                optionValueKey="name"
+                optionLabelKey="name"
+                defaultIcon="team-outlined"
+                allowClear="true"
+                @change-option-value="changeAccount" />
               <span v-if="importForm.accountError" class="required">{{ $t('label.required') }}</span>
             </a-form-item>
 
@@ -419,22 +407,16 @@
               name="project"
               ref="project"
               :label="$t('label.project')">
-              <a-select
-                @change="changeProject"
+              <infinite-scroll-select
                 v-model:value="importForm.selectedProject"
-                showSearch
-                optionFilterProp="label"
-                :filterOption="(input, option) => {
-                  return  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                }" >
-                <a-select-option v-for="project in projects" :key="project.id" :value="project.id" :label="project.name">
-                <span>
-                  <resource-icon v-if="project && project.icon" :image="project.icon.base64image" size="1x" style="margin-right: 5px"/>
-                  <project-outlined v-else style="margin-right: 5px" />
-                  {{ project.name }}
-                </span>
-                </a-select-option>
-              </a-select>
+                api="listProjects"
+                :apiParams="projectsApiParams"
+                resourceType="project"
+                optionValueKey="id"
+                optionLabelKey="name"
+                defaultIcon="project-outlined"
+                allowClear="true"
+                @change-option-value="changeProject" />
               <span v-if="importForm.projectError" class="required">{{ $t('label.required') }}</span>
             </a-form-item>
 
@@ -480,6 +462,7 @@ import Status from '@/components/widgets/Status'
 import SearchView from '@/components/view/SearchView'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel.vue'
+import InfiniteScrollSelect from '@/components/widgets/InfiniteScrollSelect.vue'
 
 export default {
   components: {
@@ -487,7 +470,8 @@ export default {
     Breadcrumb,
     Status,
     SearchView,
-    ResourceIcon
+    ResourceIcon,
+    InfiniteScrollSelect
   },
   name: 'ManageVolumes',
   data () {
@@ -607,7 +591,6 @@ export default {
     this.page.managed = parseInt(this.$route.query.managedpage || 1)
     this.initForm()
     this.fetchData()
-    this.fetchDomains()
   },
   computed: {
     isPageAllowed () {
@@ -628,6 +611,36 @@ export default {
     },
     showCluster () {
       return this.poolscope !== 'zone'
+    },
+    domainsApiParams () {
+      return {
+        listall: true,
+        details: 'min',
+        showicon: true
+      }
+    },
+    accountsApiParams () {
+      if (!this.importForm.selectedDomain) {
+        return null
+      }
+      return {
+        domainid: this.importForm.selectedDomain,
+        showicon: true,
+        state: 'Enabled',
+        isrecursive: false
+      }
+    },
+    projectsApiParams () {
+      if (!this.importForm.selectedDomain) {
+        return null
+      }
+      return {
+        domainid: this.importForm.selectedDomain,
+        state: 'Active',
+        showicon: true,
+        details: 'min',
+        isrecursive: false
+      }
     },
     showHost () {
       return this.poolscope === 'host'
@@ -970,53 +983,6 @@ export default {
       this.updateQuery('scope', value)
       this.fetchOptions(this.params.zones, 'zones', value)
     },
-    fetchDomains () {
-      getAPI('listDomains', {
-        response: 'json',
-        listAll: true,
-        showicon: true,
-        details: 'min'
-      }).then(response => {
-        this.domains = response.listdomainsresponse.domain || []
-      }).catch(error => {
-        this.$notifyError(error)
-      }).finally(() => {
-        this.loading = false
-      })
-    },
-    fetchAccounts () {
-      this.loading = true
-      getAPI('listAccounts', {
-        response: 'json',
-        domainId: this.importForm.selectedDomain,
-        showicon: true,
-        state: 'Enabled',
-        isrecursive: false
-      }).then(response => {
-        this.accounts = response.listaccountsresponse.account || []
-      }).catch(error => {
-        this.$notifyError(error)
-      }).finally(() => {
-        this.loading = false
-      })
-    },
-    fetchProjects () {
-      this.loading = true
-      getAPI('listProjects', {
-        response: 'json',
-        domainId: this.importForm.selectedDomain,
-        state: 'Active',
-        showicon: true,
-        details: 'min',
-        isrecursive: false
-      }).then(response => {
-        this.projects = response.listprojectsresponse.project || []
-      }).catch(error => {
-        this.$notifyError(error)
-      }).finally(() => {
-        this.loading = false
-      })
-    },
     changeAccountType () {
       this.importForm.selectedDomain = null
       this.importForm.selectedAccount = null
@@ -1029,8 +995,7 @@ export default {
       this.importForm.selectedProject = null
       this.importForm.selectedDiskoffering = null
       this.diskOfferings = {}
-      this.fetchAccounts()
-      this.fetchProjects()
+      // InfiniteScrollSelect will auto-reload when apiParams changes
     },
     changeAccount () {
       this.importForm.selectedProject = null

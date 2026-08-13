@@ -39,8 +39,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
         description = "Executes a Webhook delivery",
         responseObject = WebhookDeliveryResponse.class,
         entityType = {WebhookDelivery.class},
-        requestHasSensitiveInfo = false,
-        responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
         since = "4.20.0")
 public class ExecuteWebhookDeliveryCmd extends BaseCmd {

@@ -44,48 +44,48 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
 public class AddClusterCmd extends BaseCmd {
 
-    @Parameter(name = ApiConstants.CLUSTER_NAME, type = CommandType.STRING, required = true, description = "the cluster name")
+    @Parameter(name = ApiConstants.CLUSTER_NAME, type = CommandType.STRING, required = true, description = "The cluster name")
     private String clusterName;
 
-    @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, required = false, description = "the password for the host")
+    @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, required = false, description = "The password for the host")
     private String password;
 
-    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, required = true, description = "the Pod ID for the host")
+    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, required = true, description = "The Pod ID for the host")
     private Long podId;
 
-    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = false, description = "the URL")
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = false, description = "The URL")
     private String url;
 
-    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = false, description = "the username for the cluster")
+    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = false, description = "The username for the cluster")
     private String username;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the Zone ID for the cluster")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "The Zone ID for the cluster")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.HYPERVISOR,
                type = CommandType.STRING,
                required = true,
-               description = "hypervisor type of the cluster: XenServer,KVM,VMware,Hyperv,BareMetal,Simulator,Ovm3,External")
+               description = "Hypervisor type of the cluster: XenServer,KVM,VMware,Hyperv,BareMetal,Simulator,Ovm3,External")
     private String hypervisor;
 
     @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
-            description = "the CPU arch of the cluster. Valid options are: x86_64, aarch64",
+            description = "The CPU arch of the cluster. Valid options are: x86_64, aarch64, s390x",
             since = "4.20")
     private String arch;
 
-    @Parameter(name = ApiConstants.CLUSTER_TYPE, type = CommandType.STRING, required = true, description = "type of the cluster: CloudManaged, ExternalManaged")
+    @Parameter(name = ApiConstants.CLUSTER_TYPE, type = CommandType.STRING, required = true, description = "Type of the cluster: CloudManaged, ExternalManaged")
     private String clusterType;
 
     @Parameter(name = ApiConstants.ALLOCATION_STATE, type = CommandType.STRING, description = "Allocation state of this cluster for allocation of new resources")
     private String allocationState;
 
-    @Parameter(name = ApiConstants.VSM_USERNAME, type = CommandType.STRING, required = false, description = "the username for the VSM associated with this cluster")
+    @Parameter(name = ApiConstants.VSM_USERNAME, type = CommandType.STRING, required = false, description = "The username for the VSM associated with this cluster")
     private String vsmusername;
 
-    @Parameter(name = ApiConstants.VSM_PASSWORD, type = CommandType.STRING, required = false, description = "the password for the VSM associated with this cluster")
+    @Parameter(name = ApiConstants.VSM_PASSWORD, type = CommandType.STRING, required = false, description = "The password for the VSM associated with this cluster")
     private String vsmpassword;
 
-    @Parameter(name = ApiConstants.VSM_IPADDRESS, type = CommandType.STRING, required = false, description = "the ipaddress of the VSM associated with this cluster")
+    @Parameter(name = ApiConstants.VSM_IPADDRESS, type = CommandType.STRING, required = false, description = "The IP address of the VSM associated with this cluster")
     private String vsmipaddress;
 
     @Parameter(name = ApiConstants.VSWITCH_TYPE_GUEST_TRAFFIC,
@@ -109,7 +109,7 @@ public class AddClusterCmd extends BaseCmd {
     @Parameter(name = ApiConstants.VSWITCH_NAME_PUBLIC_TRAFFIC,
                type = CommandType.STRING,
                required = false,
-               description = "Name of virtual switch used for public traffic in the cluster.  This would override zone wide traffic label setting.")
+               description = "Name of virtual switch used for public traffic in the cluster. This would override zone wide traffic label setting.")
     private String vSwitchNamePublicTraffic;
 
     @Parameter(name = ApiConstants.OVM3_POOL, type = CommandType.STRING, required = false, description = "Ovm3 native pooling enabled for cluster")

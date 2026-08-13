@@ -64,7 +64,7 @@ import com.cloud.storage.GuestOS;
 import com.cloud.vm.VirtualMachine;
 
 
-@APICommand(name = "listVirtualMachines", description = "List the virtual machines owned by the account.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
+@APICommand(name = "listVirtualMachines", description = "List the Instances owned by the Account.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements UserCmd {
 
@@ -73,90 +73,90 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.GROUP_ID, type = CommandType.UUID, entityType = InstanceGroupResponse.class, description = "the group ID")
+    @Parameter(name = ApiConstants.GROUP_ID, type = CommandType.UUID, entityType = InstanceGroupResponse.class, description = "The group ID")
     private Long groupId;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserVmResponse.class, description = "the ID of the virtual machine")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserVmResponse.class, description = "The ID of the Instance")
     private Long id;
 
-    @Parameter(name=ApiConstants.IDS, type=CommandType.LIST, collectionType=CommandType.UUID, entityType=UserVmResponse.class, description="the IDs of the virtual machines, mutually exclusive with id", since = "4.4")
+    @Parameter(name=ApiConstants.IDS, type=CommandType.LIST, collectionType=CommandType.UUID, entityType=UserVmResponse.class, description = "The IDs of the Instances, mutually exclusive with id", since = "4.4")
     private List<Long> ids;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "name of the virtual machine (a substring match is made against the parameter value, data for all matching VMs will be returned)")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "Name of the Instance (a substring match is made against the parameter value, data for all matching Instances will be returned)")
     private String name;
 
-    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "state of the virtual machine. Possible values are: Running, Stopped, Present, Destroyed, Expunged. Present is used for the state equal not destroyed.")
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "State of the Instance. Possible values are: Running, Stopped, Present, Destroyed, Expunged. Present is used for the state equal not destroyed.")
     private String state;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the availability zone ID")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The availability zone ID")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.FOR_VIRTUAL_NETWORK,
                type = CommandType.BOOLEAN,
-               description = "list by network type; true if need to list vms using Virtual Network, false otherwise")
+               description = "List by Network type; true if need to list Instances using Virtual Network, false otherwise")
     private Boolean forVirtualNetwork;
 
-    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "list by network id")
+    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "List by Network ID")
     private Long networkId;
 
-    @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, description = "the target hypervisor for the template")
+    @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, description = "The target hypervisor for the Template")
     private String hypervisor;
 
     @Parameter(name = ApiConstants.DETAILS,
                type = CommandType.LIST,
                collectionType = CommandType.STRING,
-               description = "comma separated list of vm details requested, "
+               description = "Comma separated list of Instance details requested, "
                    + "value can be a list of [all, group, nics, stats, secgrp, tmpl, servoff, diskoff, backoff, iso, volume, min, affgrp]."
                    + " When no parameters are passed, all the details are returned if list.vm.default.details.stats is true (default),"
                    + " otherwise when list.vm.default.details.stats is false the API response will exclude the stats details.")
     private List<String> viewDetails;
 
-    @Parameter(name = ApiConstants.TEMPLATE_ID, type = CommandType.UUID, entityType = TemplateResponse.class, description = "list vms by template")
+    @Parameter(name = ApiConstants.TEMPLATE_ID, type = CommandType.UUID, entityType = TemplateResponse.class, description = "List Instances by Template")
     private Long templateId;
 
-    @Parameter(name = ApiConstants.ISO_ID, type = CommandType.UUID, entityType = IsoVmResponse.class, description = "list vms by iso")
+    @Parameter(name = ApiConstants.ISO_ID, type = CommandType.UUID, entityType = IsoVmResponse.class, description = "List Instances by ISO")
     private Long isoId;
 
-    @Parameter(name = ApiConstants.VPC_ID, type = CommandType.UUID, entityType = VpcResponse.class, description = "list vms by vpc")
+    @Parameter(name = ApiConstants.VPC_ID, type = CommandType.UUID, entityType = VpcResponse.class, description = "List Instances by VPC")
     private Long vpcId;
 
-    @Parameter(name = ApiConstants.AFFINITY_GROUP_ID, type = CommandType.UUID, entityType = AffinityGroupResponse.class, description = "list vms by affinity group")
+    @Parameter(name = ApiConstants.AFFINITY_GROUP_ID, type = CommandType.UUID, entityType = AffinityGroupResponse.class, description = "List Instances by affinity group")
     private Long affinityGroupId;
 
-    @Parameter(name = ApiConstants.SSH_KEYPAIR, type = CommandType.STRING, description = "list vms by ssh keypair name")
+    @Parameter(name = ApiConstants.SSH_KEYPAIR, type = CommandType.STRING, description = "List Instances by SSH keypair name")
     private String keypair;
 
-    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class, description = "list by the service offering", since = "4.4")
+    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class, description = "List by the service offering", since = "4.4")
     private Long serviceOffId;
 
-    @Parameter(name = ApiConstants.BACKUP_OFFERING_ID, type = CommandType.UUID, entityType = BackupOfferingResponse.class, description = "list by the backup offering", since = "4.17")
+    @Parameter(name = ApiConstants.BACKUP_OFFERING_ID, type = CommandType.UUID, entityType = BackupOfferingResponse.class, description = "List by the backup offering", since = "4.17")
     private Long backupOffId;
 
-    @Parameter(name = ApiConstants.DISPLAY_VM, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.DISPLAY_VM, type = CommandType.BOOLEAN, description = "List resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
-    @Parameter(name = ApiConstants.USER_ID, type = CommandType.UUID, entityType = UserResponse.class, required = false, description = "the user ID that created the VM and is under the account that owns the VM")
+    @Parameter(name = ApiConstants.USER_ID, type = CommandType.UUID, entityType = UserResponse.class, required = false, description = "The user ID that created the Instance and is under the Account that owns the Instance")
     private Long userId;
 
-    @Parameter(name = ApiConstants.SECURITY_GROUP_ID, type = CommandType.UUID, entityType = SecurityGroupResponse.class, description = "the security group ID", since = "4.15")
+    @Parameter(name = ApiConstants.SECURITY_GROUP_ID, type = CommandType.UUID, entityType = SecurityGroupResponse.class, description = "The security group ID", since = "4.15")
     private Long securityGroupId;
 
-    @Parameter(name = ApiConstants.HA_ENABLE, type = CommandType.BOOLEAN, description = "list by the High Availability offering; true if filtering VMs with HA enabled; false for VMs with HA disabled", since = "4.15")
+    @Parameter(name = ApiConstants.HA_ENABLE, type = CommandType.BOOLEAN, description = "List by the High Availability offering; true if filtering Instances with HA enabled; false for Instances with HA disabled", since = "4.15")
     private Boolean haEnabled;
 
-    @Parameter(name = ApiConstants.AUTOSCALE_VMGROUP_ID, type = CommandType.UUID, entityType = AutoScaleVmGroupResponse.class, description = "the ID of AutoScaling VM Group", since = "4.18.0")
+    @Parameter(name = ApiConstants.AUTOSCALE_VMGROUP_ID, type = CommandType.UUID, entityType = AutoScaleVmGroupResponse.class, description = "The ID of AutoScaling Instance Group", since = "4.18.0")
     private Long autoScaleVmGroupId;
 
     @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN,
-            description = "flag to display the resource icon for VMs", since = "4.16.0.0")
+            description = "Flag to display the resource icon for Instances", since = "4.16.0.0")
     private Boolean showIcon;
 
     @Parameter(name = ApiConstants.ACCUMULATE, type = CommandType.BOOLEAN,
-            description = "Accumulates the VM metrics data instead of returning only the most recent data collected. The default behavior is set by the global configuration vm.stats.increment.metrics.",
+            description = "Accumulates the Instance metrics data instead of returning only the most recent data collected. The default behavior is set by the global configuration vm.stats.increment.metrics.",
             since = "4.17.0")
     private Boolean accumulate;
 
-    @Parameter(name = ApiConstants.USER_DATA, type = CommandType.BOOLEAN, description = "Whether to return the VMs' user data or not. By default, user data will not be returned.", since = "4.18.0.0")
+    @Parameter(name = ApiConstants.USER_DATA, type = CommandType.BOOLEAN, description = "Whether to return the Instances' User data or not. By default, User data will not be returned.", since = "4.18.0.0")
     private Boolean showUserData;
 
     @Parameter(name = ApiConstants.USER_DATA_ID, type = CommandType.UUID, entityType = UserDataResponse.class, required = false, description = "the instances by userdata", since = "4.20.1")

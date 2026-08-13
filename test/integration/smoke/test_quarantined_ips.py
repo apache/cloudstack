@@ -85,7 +85,7 @@ class TestQuarantineIPs(cloudstackTestCase):
                                                                 self.services["root_admin"]["roletype"])
 
         """
-        Set public.ip.address.quarantine.duration to 60 minutes
+        Set public.ip.address.quarantine.duration to 1 minute
         """
         update_configuration_cmd = updateConfiguration.updateConfigurationCmd()
         update_configuration_cmd.name = "public.ip.address.quarantine.duration"
@@ -168,8 +168,7 @@ class TestQuarantineIPs(cloudstackTestCase):
                                    zoneid=self.zone.id,
                                    vpcid=root_vpc.id,
                                    ipaddress=ip_address)
-        self.assertIn(f"Failed to allocate public IP address [{ip_address}] as it is in quarantine.",
-                      exception.exception.errorMsg)
+        self.assertIn("errorCode: 533", exception.exception.errorMsg)
 
         # Owner should be able to allocate its IP in quarantine
         public_ip = PublicIPAddress.create(self.domain_admin_apiclient,
@@ -267,8 +266,7 @@ class TestQuarantineIPs(cloudstackTestCase):
                                    zoneid=self.zone.id,
                                    networkid=root_network.id,
                                    ipaddress=ip_address)
-        self.assertIn(f"Failed to allocate public IP address [{ip_address}] as it is in quarantine.",
-                      exception.exception.errorMsg)
+        self.assertIn("errorCode: 533", exception.exception.errorMsg)
 
         # Owner should be able to allocate its IP in quarantine
         public_ip = PublicIPAddress.create(self.domain_admin_apiclient,

@@ -30,6 +30,8 @@ public interface SnapshotDataFactory {
 
     SnapshotInfo getSnapshot(long snapshotId, long storeId, DataStoreRole role);
 
+    SnapshotInfo getSnapshotIncludingRemoved(long snapshotId, long storeId, DataStoreRole role);
+
     SnapshotInfo getSnapshotWithRoleAndZone(long snapshotId, DataStoreRole role, long zoneId);
 
     SnapshotInfo getSnapshotOnPrimaryStore(long snapshotId);

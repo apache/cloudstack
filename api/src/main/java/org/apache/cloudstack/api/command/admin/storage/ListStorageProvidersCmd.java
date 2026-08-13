@@ -40,7 +40,7 @@ import com.cloud.exception.ResourceUnavailableException;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListStorageProvidersCmd extends BaseListCmd {
 
-    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "the type of storage provider: either primary or image", required = true)
+    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "The type of storage provider: either primary or image", required = true)
     private String type;
 
     public String getType() {

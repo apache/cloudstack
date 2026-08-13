@@ -27,25 +27,25 @@ import org.apache.cloudstack.api.EntityReference;
 
 @EntityReference(value = MockConfigurationVO.class)
 public class MockResponse extends BaseResponse {
-    @SerializedName(ApiConstants.ID) @Param(description="the mock ID")
+    @SerializedName(ApiConstants.ID) @Param(description = "The mock ID")
     private Long id;
 
-    @SerializedName(ApiConstants.ZONE_ID) @Param(description="the Zone ID scope of the mock")
+    @SerializedName(ApiConstants.ZONE_ID) @Param(description = "The Zone ID scope of the mock")
     private Long zoneId;
 
-    @SerializedName(ApiConstants.POD_ID) @Param(description="the Pod ID scope of the mock")
+    @SerializedName(ApiConstants.POD_ID) @Param(description = "The Pod ID scope of the mock")
     private Long podId;
 
-    @SerializedName(ApiConstants.CLUSTER_ID) @Param(description="the Cluster ID scope of the mock")
+    @SerializedName(ApiConstants.CLUSTER_ID) @Param(description = "The Cluster ID scope of the mock")
     private Long clusterId;
 
-    @SerializedName(ApiConstants.HOST_ID) @Param(description="the Host ID scope of the mock")
+    @SerializedName(ApiConstants.HOST_ID) @Param(description = "The Host ID scope of the mock")
     private Long hostId;
 
-    @SerializedName(ApiConstants.NAME) @Param(description="the agent command to be mocked")
+    @SerializedName(ApiConstants.NAME) @Param(description = "The agent command to be mocked")
     private String name;
 
-    @SerializedName(ApiConstants.COUNT) @Param(description="number of times mock is executed, if not specified then mock remains active till cleaned up")
+    @SerializedName(ApiConstants.COUNT) @Param(description = "Number of times mock is executed, if not specified then mock remains active till cleaned up")
     private Integer count;
 
     public Long getId() {

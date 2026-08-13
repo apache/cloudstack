@@ -31,143 +31,147 @@ import com.google.gson.annotations.SerializedName;
 @EntityReference(value = VirtualMachine.class)
 public class SystemVmResponse extends BaseResponseWithAnnotations {
     @SerializedName("id")
-    @Param(description = "the ID of the system VM")
+    @Param(description = "The ID of the System VM")
     private String id;
 
     @SerializedName("systemvmtype")
-    @Param(description = "the system VM type")
+    @Param(description = "The System VM type")
     private String systemVmType;
 
     @SerializedName("zoneid")
-    @Param(description = "the Zone ID for the system VM")
+    @Param(description = "The Zone ID for the System VM")
     private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME)
-    @Param(description = "the Zone name for the system VM")
+    @Param(description = "The Zone name for the System VM")
     private String zoneName;
 
     @SerializedName("dns1")
-    @Param(description = "the first DNS for the system VM")
+    @Param(description = "The first DNS for the System VM")
     private String dns1;
 
     @SerializedName("dns2")
-    @Param(description = "the second DNS for the system VM")
+    @Param(description = "The second DNS for the System VM")
     private String dns2;
 
     @SerializedName("networkdomain")
-    @Param(description = "the network domain for the system VM")
+    @Param(description = "The Network domain for the System VM")
     private String networkDomain;
 
     @SerializedName("gateway")
-    @Param(description = "the gateway for the system VM")
+    @Param(description = "The gateway for the System VM")
     private String gateway;
 
     @SerializedName("name")
-    @Param(description = "the name of the system VM")
+    @Param(description = "The name of the System VM")
     private String name;
 
     @SerializedName("podid")
-    @Param(description = "the Pod ID for the system VM")
+    @Param(description = "The Pod ID for the System VM")
     private String podId;
 
     @SerializedName("podname")
-    @Param(description = "the Pod name for the system VM", since = "4.13.2")
+    @Param(description = "The Pod name for the System VM", since = "4.13.2")
     private String podName;
 
     @SerializedName("hostid")
-    @Param(description = "the host ID for the system VM")
+    @Param(description = "The host ID for the System VM")
     private String hostId;
 
     @SerializedName("hostname")
-    @Param(description = "the hostname for the system VM")
+    @Param(description = "The hostname for the System VM")
     private String hostName;
 
     @SerializedName(ApiConstants.HOST_CONTROL_STATE)
-    @Param(description = "the control state of the host for the system VM")
+    @Param(description = "The control state of the host for the System VM")
     private String hostControlState;
 
     @SerializedName("hypervisor")
-    @Param(description = "the hypervisor on which the template runs")
+    @Param(description = "The hypervisor on which the Template runs")
     private String hypervisor;
 
     @SerializedName(ApiConstants.PRIVATE_IP)
-    @Param(description = "the private IP address for the system VM")
+    @Param(description = "The private IP address for the System VM")
     private String privateIp;
 
     @SerializedName(ApiConstants.PRIVATE_MAC_ADDRESS)
-    @Param(description = "the private MAC address for the system VM")
+    @Param(description = "The private MAC address for the System VM")
     private String privateMacAddress;
 
     @SerializedName(ApiConstants.PRIVATE_NETMASK)
-    @Param(description = "the private netmask for the system VM")
+    @Param(description = "The private netmask for the System VM")
     private String privateNetmask;
 
     @SerializedName(ApiConstants.LINK_LOCAL_IP)
-    @Param(description = "the link local IP address for the system vm")
+    @Param(description = "The Control IP address for the System VM")
     private String linkLocalIp;
 
     @SerializedName(ApiConstants.LINK_LOCAL_MAC_ADDRESS)
-    @Param(description = "the link local MAC address for the system vm")
+    @Param(description = "The link local MAC address for the System VM")
     private String linkLocalMacAddress;
 
     @SerializedName(ApiConstants.LINK_LOCAL_MAC_NETMASK)
-    @Param(description = "the link local netmask for the system vm")
+    @Param(description = "The link local netmask for the System VM")
     private String linkLocalNetmask;
 
     @SerializedName("publicip")
-    @Param(description = "the public IP address for the system VM")
+    @Param(description = "The public IP address for the System VM")
     private String publicIp;
 
     @SerializedName("publicmacaddress")
-    @Param(description = "the public MAC address for the system VM")
+    @Param(description = "The public MAC address for the System VM")
     private String publicMacAddress;
 
     @SerializedName("publicnetmask")
-    @Param(description = "the public netmask for the system VM")
+    @Param(description = "The public netmask for the System VM")
     private String publicNetmask;
 
+    @SerializedName("storageip")
+    @Param(description = "the ip address for the system VM on the storage network")
+    private String storageIp;
+
     @SerializedName("templateid")
-    @Param(description = "the template ID for the system VM")
+    @Param(description = "The Template ID for the System VM")
     private String templateId;
 
     @SerializedName("templatename")
-    @Param(description = "the template name for the system VM", since = "4.13.2")
+    @Param(description = "The Template name for the System VM", since = "4.13.2")
     private String templateName;
 
     @SerializedName("created")
-    @Param(description = "the date and time the system VM was created")
+    @Param(description = "The date and time the System VM was created")
     private Date created;
 
     @SerializedName("state")
-    @Param(description = "the state of the system VM")
+    @Param(description = "The state of the System VM")
     private String state;
 
     @SerializedName("agentstate")
-    @Param(description = "the agent state of the system VM", since = "4.13.1")
+    @Param(description = "The agent state of the System VM", since = "4.13.1")
     private String agentState;
 
     @SerializedName("activeviewersessions")
-    @Param(description = "the number of active console sessions for the console proxy system vm")
+    @Param(description = "The number of active console sessions for the console proxy System VM")
     private Integer activeViewerSessions;
 
     @SerializedName("guestvlan")
-    @Param(description = "guest vlan range")
+    @Param(description = "Guest VLAN range")
     private String guestVlan;
 
     @SerializedName("publicvlan")
-    @Param(description = "public vlan range")
+    @Param(description = "Public VLAN range")
     private List<String> publicVlan;
 
     @SerializedName("disconnected")
-    @Param(description = "the last disconnected date of host", since = "4.13.1")
+    @Param(description = "The last disconnected date of host", since = "4.13.1")
     private Date disconnectedOn;
 
     @SerializedName("version")
-    @Param(description = "the systemvm agent version", since = "4.13.1")
+    @Param(description = "The systemvm agent version", since = "4.13.1")
     private String version;
 
     @SerializedName(ApiConstants.IS_DYNAMICALLY_SCALABLE)
-    @Param(description = "true if vm contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory.")
+    @Param(description = "True if the Instance contains XS/VMWare tools in order to support dynamic scaling of Instance CPU/memory.")
     private Boolean isDynamicallyScalable;
 
     @SerializedName(ApiConstants.SERVICE_OFFERING_ID)
@@ -353,6 +357,14 @@ public class SystemVmResponse extends BaseResponseWithAnnotations {
 
     public void setPublicNetmask(String publicNetmask) {
         this.publicNetmask = publicNetmask;
+    }
+
+    public String getStorageIp() {
+        return storageIp;
+    }
+
+    public void setStorageIp(String storageIp) {
+        this.storageIp = storageIp;
     }
 
     public String getTemplateId() {

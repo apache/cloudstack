@@ -54,7 +54,7 @@ const err = (error) => {
       if (response.config && response.config.params && ['forgotPassword', 'listIdps', 'cloudianIsEnabled'].includes(response.config.params.command)) {
         return
       }
-      const originalPath = router.currentRoute.value.fullPath
+      const originalPath = router.currentRoute.value.path
       for (const key in response.data) {
         if (key.includes('response')) {
           if (response.data[key].errortext.includes('not available for user')) {

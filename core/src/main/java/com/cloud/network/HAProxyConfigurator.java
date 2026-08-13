@@ -629,14 +629,24 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             }
         }
         result.addAll(gSection);
-        // TODO decide under what circumstances these options are needed
-        //        result.add("\tnokqueue");
-        //        result.add("\tnopoll");
 
         result.add(blankLine);
         final List<String> dSection = Arrays.asList(defaultsSection);
         if (lbCmd.keepAliveEnabled) {
             dSection.set(7, "\tno option httpclose");
+        }
+        if (lbCmd.idleTimeout > 0) {
+            dSection.set(9, "\ttimeout client     " + Long.toString(lbCmd.idleTimeout));
+            dSection.set(10, "\ttimeout server     " + Long.toString(lbCmd.idleTimeout));
+        } else if (lbCmd.idleTimeout == 0) {
+            // .remove() is not allowed, only .set() operations are allowed as the list
+            // is a fixed size.  So lets just mark the entry as blank.
+            dSection.set(9, "");
+            dSection.set(10, "");
+        } else {
+            // Negative idleTimeout values are considered invalid; retain the
+            // default HAProxy timeout values from defaultsSection for predictability.
+            logger.warn("Negative idleTimeout ({}) configured; retaining default HAProxy timeouts.", lbCmd.idleTimeout);
         }
 
         if (logger.isDebugEnabled()) {

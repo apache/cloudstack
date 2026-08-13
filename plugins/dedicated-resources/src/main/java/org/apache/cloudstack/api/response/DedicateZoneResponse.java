@@ -27,27 +27,27 @@ import com.cloud.serializer.Param;
 @EntityReference(value = DedicatedResources.class)
 public class DedicateZoneResponse extends BaseResponse {
     @SerializedName("id")
-    @Param(description = "the ID of the dedicated resource")
+    @Param(description = "The ID of the dedicated resource")
     private String id;
 
     @SerializedName("zoneid")
-    @Param(description = "the ID of the Zone")
+    @Param(description = "The ID of the Zone")
     private String zoneId;
 
     @SerializedName("zonename")
-    @Param(description = "the Name of the Zone")
+    @Param(description = "The Name of the Zone")
     private String zoneName;
 
     @SerializedName("domainid")
-    @Param(description = "the domain ID to which the Zone is dedicated")
+    @Param(description = "The domain ID to which the Zone is dedicated")
     private String domainId;
 
     @SerializedName("accountid")
-    @Param(description = "the Account Id to which the Zone is dedicated")
+    @Param(description = "The Account ID to which the Zone is dedicated")
     private String accountId;
 
     @SerializedName("affinitygroupid")
-    @Param(description = "the Dedication Affinity Group ID of the zone")
+    @Param(description = "The Dedication Affinity Group ID of the zone")
     private String affinityGroupId;
 
     public String getId() {

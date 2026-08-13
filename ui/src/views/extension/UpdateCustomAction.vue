@@ -138,7 +138,7 @@ export default {
     this.roleTypes = this.$fetchCustomActionRoleTypes()
   },
   methods: {
-    fixParamatersOptions (params) {
+    fixParametersOptions (params) {
       if (!params) {
         return
       }
@@ -153,7 +153,7 @@ export default {
     initForm () {
       this.formRef = ref()
       const formData = {
-        parameters: this.fixParamatersOptions(this.resource.parameters)
+        parameters: this.fixParametersOptions(this.resource.parameters)
       }
       const keys = ['description', 'allowedroletypes', 'successmessage', 'errormessage', 'details', 'timeout']
       for (const key of keys) {

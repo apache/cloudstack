@@ -458,7 +458,7 @@ public class ApiResponseHelperTest {
         }
     }
 
-    private UnmanagedInstanceTO getUnmanagedInstaceForTests() {
+    private UnmanagedInstanceTO getUnmanagedInstanceForTests() {
         UnmanagedInstanceTO instance = Mockito.mock(UnmanagedInstanceTO.class);
         Mockito.when(instance.getPowerState()).thenReturn(UnmanagedInstanceTO.PowerState.PowerOff);
         Mockito.when(instance.getClusterName()).thenReturn("CL1");
@@ -477,7 +477,7 @@ public class ApiResponseHelperTest {
 
     @Test
     public void testCreateUnmanagedInstanceResponseVmwareDcVms() {
-        UnmanagedInstanceTO instance = getUnmanagedInstaceForTests();
+        UnmanagedInstanceTO instance = getUnmanagedInstanceForTests();
         UnmanagedInstanceResponse response = apiResponseHelper.createUnmanagedInstanceResponse(instance, null, null);
         Assert.assertEquals(1, response.getDisks().size());
         Assert.assertEquals(1, response.getNics().size());

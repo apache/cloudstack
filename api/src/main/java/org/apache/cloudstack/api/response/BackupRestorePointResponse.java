@@ -31,15 +31,15 @@ import java.util.Date;
 public class BackupRestorePointResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "external id of the restore point")
+    @Param(description = "External ID of the restore point")
     private String id;
 
     @SerializedName(ApiConstants.CREATED)
-    @Param(description = "created time")
+    @Param(description = "Created time")
     private Date created;
 
     @SerializedName(ApiConstants.TYPE)
-    @Param(description = "restore point type")
+    @Param(description = "Restore point type")
     private String type;
 
     public String getId() {

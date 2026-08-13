@@ -77,7 +77,7 @@ public class ImageStoreDetailsDaoImpl extends ResourceDetailsDaoBase<ImageStoreD
         for (ImageStoreDetailVO detail : details) {
             String name = detail.getName();
             String value = detail.getValue();
-            if (name.equals(ApiConstants.KEY) || name.equals(ApiConstants.S3_SECRET_KEY)) {
+            if (name.equals(ApiConstants.KEY) || name.equals(ApiConstants.SECRET_KEY)) {
                 value = DBEncryptionUtil.decrypt(value);
             }
             detailsMap.put(name, value);

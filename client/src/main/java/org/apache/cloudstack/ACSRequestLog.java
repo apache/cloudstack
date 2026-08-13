@@ -18,6 +18,7 @@
 //
 package org.apache.cloudstack;
 
+import com.cloud.api.ApiServlet;
 import com.cloud.utils.StringUtils;
 import org.eclipse.jetty.server.NCSARequestLog;
 import org.eclipse.jetty.server.Request;
@@ -25,6 +26,7 @@ import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.util.DateCache;
 import org.eclipse.jetty.util.component.LifeCycle;
 
+import java.net.InetAddress;
 import java.util.Locale;
 import java.util.TimeZone;
 
@@ -51,9 +53,8 @@ public class ACSRequestLog extends NCSARequestLog {
             StringBuilder sb = buffers.get();
             sb.setLength(0);
 
-            sb.append(request.getHttpChannel().getEndPoint()
-                            .getRemoteAddress().getAddress()
-                            .getHostAddress())
+            InetAddress remoteAddress = ApiServlet.getClientAddress(request);
+            sb.append(remoteAddress.getHostAddress())
                     .append(" - - [")
                     .append(dateCache.format(request.getTimeStamp()))
                     .append("] \"")

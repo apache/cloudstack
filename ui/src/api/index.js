@@ -33,6 +33,7 @@ const additionalGetAPICommandsList = [
   'quotatarifflist',
   'quotaisenabled',
   'quotastatement',
+  'quotaemailtemplatelist',
   'verifyoauthcodeandgetuser'
 ]
 
@@ -139,4 +140,8 @@ export function oauthlogin (arg) {
       'content-type': 'application/x-www-form-urlencoded'
     }
   })
+}
+
+export function getBaseUrl () {
+  return vueProps.axios.defaults.baseURL
 }

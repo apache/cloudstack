@@ -24,6 +24,6 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "stopVirtualMachine", responseObject = UserVmResponse.class, description = "Stops a virtual machine.", responseView = ResponseView.Full, entityType = {VirtualMachine.class},
+@APICommand(name = "stopVirtualMachine", responseObject = UserVmResponse.class, description = "Stops  an Instance.", responseView = ResponseView.Full, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class StopVMCmdByAdmin extends StopVMCmd implements AdminCmd {}

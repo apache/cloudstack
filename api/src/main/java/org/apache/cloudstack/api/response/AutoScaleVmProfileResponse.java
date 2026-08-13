@@ -36,29 +36,29 @@ import com.google.gson.annotations.SerializedName;
 public class AutoScaleVmProfileResponse extends BaseResponse implements ControlledEntityResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the autoscale vm profile ID")
+    @Param(description = "The autoscale Instance profile ID")
     private String id;
 
     /* Parameters related to deploy virtual machine */
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "the availability zone to be used while deploying a virtual machine")
+    @Param(description = "The availability zone to be used while deploying an Instance")
     private String zoneId;
 
     @SerializedName(ApiConstants.SERVICE_OFFERING_ID)
-    @Param(description = "the service offering to be used while deploying a virtual machine")
+    @Param(description = "The service offering to be used while deploying an Instance")
     private String serviceOfferingId;
 
     @SerializedName(ApiConstants.TEMPLATE_ID)
-    @Param(description = "the template to be used while deploying a virtual machine")
+    @Param(description = "The Template to be used while deploying an Instance")
     private String templateId;
 
     @SerializedName(ApiConstants.OTHER_DEPLOY_PARAMS)
-    @Param(description = "parameters other than zoneId/serviceOfferringId/templateId to be used while deploying a virtual machine")
+    @Param(description = "Parameters other than zoneId/serviceOfferringId/templateId to be used while deploying an Instance")
     private Map<String, String> otherDeployParams;
 
     /* Parameters related to destroying a virtual machine */
     @SerializedName(ApiConstants.AUTOSCALE_EXPUNGE_VM_GRACE_PERIOD)
-    @Param(description = "the time allowed for existing connections to get closed before a vm is destroyed")
+    @Param(description = "The time allowed for existing connections to get closed before an Instance is destroyed")
     private Integer expungeVmGracePeriod;
 
     /* Parameters related to a running virtual machine - monitoring aspects */
@@ -69,7 +69,7 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
     private Map<String, String> counterParams;
 
     @SerializedName(ApiConstants.USER_DATA)
-    @Param(description = "Base64 encoded VM user data")
+    @Param(description = "Base64 encoded Instance user data")
     private String userData;
 
     @SerializedName(ApiConstants.USER_DATA_ID) @Param(description="the id of userdata used for the VM", since = "4.18.1")
@@ -85,33 +85,33 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
     private String userDataDetails;
 
     @SerializedName(ApiConstants.AUTOSCALE_USER_ID)
-    @Param(description = "the ID of the user used to launch and destroy the VMs")
+    @Param(description = "The ID of the User used to launch and destroy the Instances")
     private String autoscaleUserId;
 
     @Parameter(name = ApiConstants.CS_URL,
                type = CommandType.STRING,
-               description = "the API URL including port of the CloudStack Management Server example: http://server.cloud.com:8080/client/api?")
+               description = "The API URL including port of the CloudStack Management Server example: http://server.cloud.com:8080/client/api?")
     // leaving cloud.com reference above as it serves only as an example
     private String csUrl;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the account owning the instance group")
+    @Param(description = "The Account owning the Instance group")
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project id vm profile")
+    @Param(description = "The project id Instance profile")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project name of the vm profile")
+    @Param(description = "The project name of the Instance profile")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain ID of the vm profile")
+    @Param(description = "The domain ID of the Instance profile")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain name of the vm profile")
+    @Param(description = "The domain name of the Instance profile")
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
@@ -119,7 +119,7 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
     private String domainPath;
 
     @SerializedName(ApiConstants.FOR_DISPLAY)
-    @Param(description = "is profile for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
+    @Param(description = "Is profile for display to the regular User", since = "4.4", authorized = {RoleType.Admin})
     private Boolean forDisplay;
 
     public AutoScaleVmProfileResponse() {

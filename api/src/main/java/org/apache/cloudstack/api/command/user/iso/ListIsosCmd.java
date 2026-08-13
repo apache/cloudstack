@@ -45,49 +45,49 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd implements UserCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.BOOTABLE, type = CommandType.BOOLEAN, description = "true if the ISO is bootable, false otherwise")
+    @Parameter(name = ApiConstants.BOOTABLE, type = CommandType.BOOLEAN, description = "True if the ISO is bootable, false otherwise")
     private Boolean bootable;
 
-    @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, description = "the hypervisor for which to restrict the search")
+    @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, description = "The hypervisor for which to restrict the search")
     private String hypervisor;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TemplateResponse.class, description = "list ISO by ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TemplateResponse.class, description = "List ISO by ID")
     private Long id;
 
-    @Parameter(name = ApiConstants.IS_PUBLIC, type = CommandType.BOOLEAN, description = "true if the ISO is publicly available to all users, false otherwise.")
+    @Parameter(name = ApiConstants.IS_PUBLIC, type = CommandType.BOOLEAN, description = "True if the ISO is publicly available to all Users, false otherwise.")
     private Boolean publicIso;
 
-    @Parameter(name = ApiConstants.IS_READY, type = CommandType.BOOLEAN, description = "list ISOs that are ready to be deployed")
+    @Parameter(name = ApiConstants.IS_READY, type = CommandType.BOOLEAN, description = "If True, list ISOs that are ready to be deployed.")
     private Boolean ready;
 
     @Parameter(name = ApiConstants.ISO_FILTER,
                type = CommandType.STRING,
-               description = "possible values are \"featured\", \"self\", \"selfexecutable\",\"sharedexecutable\",\"executable\", and \"community\". "
-                   + "* featured : templates that have been marked as featured and public. "
-                   + "* self : templates that have been registered or created by the calling user. "
-                   + "* selfexecutable : same as self, but only returns templates that can be used to deploy a new VM. "
-                   + "* sharedexecutable : templates ready to be deployed that have been granted to the calling user by another user. "
-                   + "* executable : templates that are owned by the calling user, or public templates, that can be used to deploy a VM. "
-                   + "* community : templates that have been marked as public but not featured. " + "* all : all templates (only usable by admins).")
+               description = "Possible values are \"featured\", \"self\", \"selfexecutable\",\"sharedexecutable\",\"executable\", and \"community\". "
+                   + "* featured : Templates that have been marked as featured and public. "
+                   + "* self : Templates that have been registered or created by the calling User. "
+                   + "* selfexecutable : same as self, but only returns Templates that can be used to deploy a new Instance. "
+                   + "* sharedexecutable : Templates ready to be deployed that have been granted to the calling User by another User. "
+                   + "* executable : Templates that are owned by the calling User, or public Templates, that can be used to deploy an Instance. "
+                   + "* community : Templates that have been marked as public but not featured. " + "* all : all Templates (only usable by admins).")
     private String isoFilter = TemplateFilter.selfexecutable.toString();
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "list all ISOs by name")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "List all ISOs by name")
     private String isoName;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the ID of the zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The ID of the zone")
     private Long zoneId;
 
-    @Parameter(name=ApiConstants.SHOW_REMOVED, type=CommandType.BOOLEAN, description="show removed ISOs as well")
+    @Parameter(name=ApiConstants.SHOW_REMOVED, type=CommandType.BOOLEAN, description = "Show removed ISOs as well")
     private Boolean showRemoved;
 
-    @Parameter(name = ApiConstants.SHOW_UNIQUE, type = CommandType.BOOLEAN, description = "If set to true, list only unique isos across zones", since = "4.13.2")
+    @Parameter(name = ApiConstants.SHOW_UNIQUE, type = CommandType.BOOLEAN, description = "If set to true, list only unique ISOs across zones", since = "4.13.2")
     private Boolean showUnique;
 
-    @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN, description = "flag to display the resource image for the isos")
+    @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN, description = "Flag to display the resource image for the ISOs")
     private Boolean showIcon;
 
     @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
-            description = "the CPU arch of the ISO. Valid options are: x86_64, aarch64",
+            description = "the CPU arch of the ISO. Valid options are: x86_64, aarch64, s390x",
             since = "4.20")
     private String arch;
 

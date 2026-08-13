@@ -268,9 +268,6 @@ public class VolumeImportUnmanageManagerImplTest {
         doNothing().when(volumeImportUnmanageManager).checkIfVolumeIsEncrypted(volumeOnStorageTO);
         doNothing().when(volumeImportUnmanageManager).checkIfVolumeHasBackingFile(volumeOnStorageTO);
 
-        doNothing().when(resourceLimitService).checkResourceLimit(account, Resource.ResourceType.volume);
-        doNothing().when(resourceLimitService).checkResourceLimit(account, Resource.ResourceType.primary_storage, virtualSize);
-
         DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
         when(diskOffering.isCustomized()).thenReturn(true);
         doReturn(diskOffering).when(volumeImportUnmanageManager).getOrCreateDiskOffering(account, diskOfferingId, zoneId, isLocal);
