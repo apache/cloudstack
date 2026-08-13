@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.consoleproxy;
 
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -35,14 +34,12 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 
-
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.eclipse.jetty.websocket.api.Session;
-
 
 import com.cloud.utils.PropertiesUtil;
 import com.google.gson.Gson;
@@ -56,10 +53,8 @@ import com.sun.net.httpserver.HttpServer;
 public class ConsoleProxy {
     protected static Logger LOGGER = LogManager.getLogger(ConsoleProxy.class);
 
-
     public static final int KEYBOARD_RAW = 0;
     public static final int KEYBOARD_COOKED = 1;
-
 
     public static final int VIEWER_LINGER_SECONDS = 180;
 
@@ -70,18 +65,15 @@ public class ConsoleProxy {
 
     public static Object context;
 
-
     // this has become more ugly, to store keystore info passed from management server (we now use management server managed keystore to support
     // dynamically changing to customer supplied certificate)
     public static byte[] ksBits;
     public static String ksPassword;
     public static Boolean isSourceIpCheckEnabled;
 
-
     public static Method authMethod;
     public static Method reportMethod;
     public static Method ensureRouteMethod;
-
 
     static Hashtable<String, ConsoleProxyClient> connectionMap = new Hashtable<String, ConsoleProxyClient>();
     static Set<String> removedSessionsSet = ConcurrentHashMap.newKeySet();
@@ -94,18 +86,15 @@ public class ConsoleProxy {
     static String factoryClzName;
     static boolean standaloneStart = false;
 
-
     static String encryptorPassword = "Dummy";
     static final String[] skipProperties = new String[] {"certificate", "cacertificate", "keystore_password", "privatekey"};
 
 
     static Set<String> allowedSessions = new HashSet<>();
 
-
     public static void addAllowedSession(String sessionUuid) {
         allowedSessions.add(sessionUuid);
     }
-
 
     private static void configLog4j() {
         final ClassLoader loader = Thread.currentThread().getContextClassLoader();
@@ -114,11 +103,9 @@ public class ConsoleProxy {
             configUrl = ClassLoader.getSystemResource("log4j-cloud.xml");
         }
 
-
         if (configUrl == null) {
             configUrl = ClassLoader.getSystemResource("conf/log4j-cloud.xml");
         }
-
 
         if (configUrl != null) {
             try {
@@ -126,7 +113,6 @@ public class ConsoleProxy {
             } catch (URISyntaxException e1) {
                 e1.printStackTrace();
             }
-
 
             try {
                 File file = new File(configUrl.toURI());
@@ -142,7 +128,6 @@ public class ConsoleProxy {
         }
     }
 
-
     private static void configProxy(Properties conf) {
         LOGGER.info("Configure console proxy...");
         if (conf != null) {
@@ -153,13 +138,11 @@ public class ConsoleProxy {
             }
         }
 
-
         String s = conf != null ? conf.getProperty("consoleproxy.httpListenPort") : null;
         if (s != null) {
             httpListenPort = Integer.parseInt(s);
             LOGGER.info("Setting httpListenPort=" + s);
         }
-
 
         s = conf != null ? conf.getProperty("premium") : null;
         if (s != null && s.equalsIgnoreCase("true")) {
@@ -170,13 +153,11 @@ public class ConsoleProxy {
             factoryClzName = ConsoleProxyBaseServerFactoryImpl.class.getName();
         }
 
-
         s = conf != null ? conf.getProperty("consoleproxy.httpCmdListenPort") : null;
         if (s != null) {
             httpCmdListenPort = Integer.parseInt(s);
             LOGGER.info("Setting httpCmdListenPort=" + s);
         }
-
 
         s = conf != null ? conf.getProperty("consoleproxy.reconnectMaxRetry") : null;
         if (s != null) {
@@ -184,13 +165,11 @@ public class ConsoleProxy {
             LOGGER.info("Setting reconnectMaxRetry=" + reconnectMaxRetry);
         }
 
-
         s = conf != null ? conf.getProperty("consoleproxy.readTimeoutSeconds") : null;
         if (s != null) {
             readTimeoutSeconds = Integer.parseInt(s);
             LOGGER.info("Setting readTimeoutSeconds=" + readTimeoutSeconds);
         }
-
 
         s = conf != null ? conf.getProperty("consoleproxy.defaultBufferSize") : null;
         if (s != null) {
@@ -198,7 +177,6 @@ public class ConsoleProxy {
             LOGGER.info("Setting defaultBufferSize=" + defaultBufferSize);
         }
 
-        // New: read consoleproxy.session.timeout (milliseconds)
         s = conf != null ? conf.getProperty("consoleproxy.session.timeout") : null;
         if (s != null) {
             try {
@@ -218,7 +196,6 @@ public class ConsoleProxy {
         }
         LOGGER.info("Effective consoleproxy.session.timeout={} ms", sessionTimeoutMillis);
     }
-
 
     public static ConsoleProxyServerFactory getHttpServerFactory() {
         try {
@@ -240,9 +217,7 @@ public class ConsoleProxy {
         }
     }
 
-
     public static ConsoleProxyAuthenticationResult authenticateConsoleAccess(ConsoleProxyClientParam param, boolean reauthentication) {
-
 
         ConsoleProxyAuthenticationResult authResult = new ConsoleProxyAuthenticationResult();
         authResult.setSuccess(true);
@@ -250,13 +225,11 @@ public class ConsoleProxy {
         authResult.setHost(param.getClientHostAddress());
         authResult.setPort(param.getClientHostPort());
 
-
         if (StringUtils.isNotBlank(param.getExtraSecurityToken())) {
             String extraToken = param.getExtraSecurityToken();
             String clientProvidedToken = param.getClientProvidedExtraSecurityToken();
             LOGGER.debug(String.format("Extra security validation for the console access, provided %s to validate against %s",
                     clientProvidedToken, extraToken));
-
 
             if (!extraToken.equals(clientProvidedToken)) {
                 LOGGER.error("The provided extra token does not match the expected value for this console endpoint");
@@ -264,7 +237,6 @@ public class ConsoleProxy {
                 return authResult;
             }
         }
-
 
         String sessionUuid = param.getSessionUuid();
         if (allowedSessions.contains(sessionUuid)) {
@@ -276,22 +248,18 @@ public class ConsoleProxy {
             return authResult;
         }
 
-
         String websocketUrl = param.getWebsocketUrl();
         if (StringUtils.isNotBlank(websocketUrl)) {
             return authResult;
         }
 
-
         if (standaloneStart) {
             return authResult;
         }
 
-
         if (authMethod != null) {
             Object result;
             try {
-                // 4.20: authenticateConsoleAccess(host, port, vmId, sid, ticket, isReauthentication, sessionToken)
                 result =
                         authMethod.invoke(ConsoleProxy.context, param.getClientHostAddress(), String.valueOf(param.getClientHostPort()),
                                 param.getClientTag(), param.getClientHostPassword(), param.getTicket(), reauthentication,
@@ -306,7 +274,6 @@ public class ConsoleProxy {
                 return authResult;
             }
 
-
             if (result != null && result instanceof String) {
                 authResult = new Gson().fromJson((String) result, ConsoleProxyAuthenticationResult.class);
             } else {
@@ -317,10 +284,8 @@ public class ConsoleProxy {
             LOGGER.warn("Private channel towards management server is not setup. Switch to offline mode and allow access to vm: " + param.getClientTag());
         }
 
-
         return authResult;
     }
-
 
     public static void reportLoadInfo(String gsonLoadInfo) {
         if (reportMethod != null) {
@@ -336,7 +301,6 @@ public class ConsoleProxy {
         }
     }
 
-
     public static void ensureRoute(String address) {
         if (ensureRouteMethod != null) {
             try {
@@ -351,13 +315,11 @@ public class ConsoleProxy {
         }
     }
 
-
     public static void startWithContext(Properties conf, Object context, byte[] ksBits, String ksPassword,
                                         String password, Boolean isSourceIpCheckEnabled) {
         setEncryptorPassword(password);
         configLog4j();
         LOGGER.info("Start console proxy with context");
-
 
         if (conf != null) {
             for (Object key : conf.keySet()) {
@@ -367,7 +329,6 @@ public class ConsoleProxy {
             }
         }
 
-
         // Using reflection to setup private/secure communication channel towards management server
         ConsoleProxy.context = context;
         ConsoleProxy.ksBits = ksBits;
@@ -376,7 +337,6 @@ public class ConsoleProxy {
         try {
             final ClassLoader loader = Thread.currentThread().getContextClassLoader();
             Class<?> contextClazz = loader.loadClass("com.cloud.agent.resource.consoleproxy.ConsoleProxyResource");
-            // 4.20 signature: 7 parameters
             authMethod = contextClazz.getDeclaredMethod("authenticateConsoleAccess", String.class, String.class,
                     String.class, String.class, String.class, Boolean.class, String.class);
             reportMethod = contextClazz.getDeclaredMethod("reportLoadInfo", String.class);
@@ -390,7 +350,6 @@ public class ConsoleProxy {
         } catch (ClassNotFoundException e) {
             LOGGER.error("Unable to setup private channel due to ClassNotFoundException", e);
         }
-
 
         // merge properties from conf file
         InputStream confs = ConsoleProxy.class.getResourceAsStream("/conf/consoleproxy.properties");
@@ -410,7 +369,6 @@ public class ConsoleProxy {
         if (confs != null) {
             try {
                 props.load(confs);
-
 
                 if (conf == null) {
                     conf = new Properties();
@@ -433,24 +391,19 @@ public class ConsoleProxy {
             }
         }
 
-
         start(conf);
     }
-
 
     public static void start(Properties conf) {
         System.setProperty("java.awt.headless", "true");
 
-
         configProxy(conf);
-
 
         ConsoleProxyServerFactory factory = getHttpServerFactory();
         if (factory == null) {
             LOGGER.error("Unable to load console proxy server factory");
             System.exit(1);
         }
-
 
         if (httpListenPort != 0) {
             startupHttpMain();
@@ -459,19 +412,16 @@ public class ConsoleProxy {
             System.exit(1);
         }
 
-
         if (httpCmdListenPort > 0) {
             startupHttpCmdPort();
         } else {
             LOGGER.info("HTTP command port is disabled");
         }
 
-
         ConsoleProxyGCThread cthread = new ConsoleProxyGCThread(connectionMap, removedSessionsSet);
         cthread.setName("Console Proxy GC Thread");
         cthread.start();
     }
-
 
     private static void startupHttpMain() {
         try {
