@@ -153,7 +153,6 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
             if (queryMap.containsKey("extra")) {
                 param.setClientProvidedExtraSecurityToken(queryMap.get("extra"));
             }
-
             viewer = ConsoleProxy.getNoVncViewer(param, ajaxSessionIdStr, session);
             logger.info("Viewer has been created successfully [session UUID: {}, client IP: {}].", sessionUuid, clientIp);
         } catch (Exception e) {

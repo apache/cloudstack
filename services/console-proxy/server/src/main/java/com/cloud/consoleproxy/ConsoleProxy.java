@@ -459,7 +459,6 @@ public class ConsoleProxy {
                 new ConsoleProxyNoVNCServer();
     }
 
-
     private static void startupHttpCmdPort() {
         try {
             LOGGER.info("Listening for HTTP CMDs on port " + httpCmdListenPort);
@@ -473,11 +472,9 @@ public class ConsoleProxy {
         }
     }
 
-
     public static void main(String[] argv) {
         standaloneStart = true;
         configLog4j();
-
 
         InputStream confs = ConsoleProxy.class.getResourceAsStream("/conf/consoleproxy.properties");
         Properties conf = new Properties();
@@ -499,10 +496,8 @@ public class ConsoleProxy {
         start(conf);
     }
 
-
     public static ConsoleProxyClient getVncViewer(ConsoleProxyClientParam param) throws Exception {
         ConsoleProxyClient viewer = null;
-
 
         boolean reportLoadChange = false;
         String clientKey = param.getClientMapKey();
@@ -513,7 +508,6 @@ public class ConsoleProxy {
                 viewer.initClient(param);
                 connectionMap.put(clientKey, viewer);
                 LOGGER.info("Added viewer object " + viewer);
-
 
                 reportLoadChange = true;
             } else if (!viewer.isFrontEndAlive()) {
@@ -526,7 +520,6 @@ public class ConsoleProxy {
             }
         }
 
-
         if (reportLoadChange) {
             ConsoleProxyClientStatsCollector statsCollector = getStatsCollector();
             String loadInfo = statsCollector.getStatsReport();
@@ -536,13 +529,10 @@ public class ConsoleProxy {
             }
         }
 
-
         return viewer;
     }
 
-
     public static ConsoleProxyClient getAjaxVncViewer(ConsoleProxyClientParam param, String ajaxSession) throws Exception {
-
 
         boolean reportLoadChange = false;
         String clientKey = param.getClientMapKey();
@@ -552,7 +542,6 @@ public class ConsoleProxy {
                 authenticationExternally(param);
                 viewer = getClient(param);
                 viewer.initClient(param);
-
 
                 connectionMap.put(clientKey, viewer);
                 LOGGER.info("Added viewer object " + viewer);
@@ -566,22 +555,18 @@ public class ConsoleProxy {
                     }
                 }
 
-
                 if (param.getClientHostPassword() == null || param.getClientHostPassword().isEmpty()
                         || !param.getClientHostPassword().equals(viewer.getClientHostPassword())) {
                     throw new AuthenticationException("Cannot use the existing viewer " + viewer + ": bad sid");
                 }
 
-
                 if (!viewer.isFrontEndAlive()) {
-
 
                     authenticationExternally(param);
                     viewer.initClient(param);
                     reportLoadChange = true;
                 }
             }
-
 
             if (reportLoadChange) {
                 ConsoleProxyClientStatsCollector statsCollector = getStatsCollector();
@@ -595,7 +580,6 @@ public class ConsoleProxy {
         }
     }
 
-
     private static ConsoleProxyClient getClient(ConsoleProxyClientParam param) {
         if (param.getHypervHost() != null) {
             return new ConsoleProxyRdpClient();
@@ -603,7 +587,6 @@ public class ConsoleProxy {
             return new ConsoleProxyVncClient();
         }
     }
-
 
     public static void removeViewer(ConsoleProxyClient viewer) {
         synchronized (connectionMap) {
@@ -617,48 +600,39 @@ public class ConsoleProxy {
         }
     }
 
-
     public static ConsoleProxyClientStatsCollector getStatsCollector() {
         synchronized (connectionMap) {
             return new ConsoleProxyClientStatsCollector(connectionMap);
         }
     }
 
-
     public static void authenticationExternally(ConsoleProxyClientParam param) throws AuthenticationException {
         ConsoleProxyAuthenticationResult authResult = authenticateConsoleAccess(param, false);
-
 
         if (authResult == null || !authResult.isSuccess()) {
             LOGGER.warn("External authenticator failed authentication request for vm " + param.getClientTag()
                     + " with sid " + param.getClientHostPassword());
-
 
             throw new AuthenticationException("External authenticator failed request for vm " + param.getClientTag()
                     + " with sid " + param.getClientHostPassword());
         }
     }
 
-
     public static ConsoleProxyAuthenticationResult reAuthenticationExternally(ConsoleProxyClientParam param) {
         return authenticateConsoleAccess(param, true);
     }
-
 
     public static String getEncryptorPassword() {
         return encryptorPassword;
     }
 
-
     public static void setEncryptorPassword(String password) {
         encryptorPassword = password;
     }
 
-
     public static void setIsSourceIpCheckEnabled(Boolean isEnabled) {
         isSourceIpCheckEnabled = isEnabled;
     }
-
 
     static class ThreadExecutor implements Executor {
         @Override
@@ -666,7 +640,6 @@ public class ConsoleProxy {
             new Thread(r).start();
         }
     }
-
 
     public static ConsoleProxyNoVncClient getNoVncViewer(ConsoleProxyClientParam param, String ajaxSession,
                                                          Session session) throws AuthenticationException {
@@ -681,7 +654,6 @@ public class ConsoleProxy {
                 viewer = new ConsoleProxyNoVncClient(session);
                 viewer.initClient(param);
 
-
                 connectionMap.put(clientKey, viewer);
                 reportLoadChange = true;
             } else {
@@ -689,7 +661,6 @@ public class ConsoleProxy {
                         || !param.getClientHostPassword().equals(viewer.getClientHostPassword())) {
                     throw new AuthenticationException("Cannot use the existing viewer " + viewer + ": bad sid");
                 }
-
 
                 try {
                     authenticationExternally(param);
@@ -709,7 +680,6 @@ public class ConsoleProxy {
                 connectionMap.put(clientKey, viewer);
                 reportLoadChange = true;
             }
-
 
             if (reportLoadChange) {
                 ConsoleProxyClientStatsCollector statsCollector = getStatsCollector();

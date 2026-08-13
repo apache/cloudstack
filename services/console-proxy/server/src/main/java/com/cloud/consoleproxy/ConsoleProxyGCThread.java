@@ -16,17 +16,14 @@
 // under the License.
 package com.cloud.consoleproxy;
 
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
-
 
 /**
  *
@@ -42,21 +39,17 @@ public class ConsoleProxyGCThread extends Thread {
     private final Set<String> removedSessionsSet;
     private long lastLogScan = 0;
 
-
     public ConsoleProxyGCThread(Map<String, ConsoleProxyClient> connMap, Set<String> removedSet) {
         this.connMap = connMap;
         this.removedSessionsSet = removedSet;
     }
-
 
     private void cleanupLogging() {
         if (lastLogScan != 0 && System.currentTimeMillis() - lastLogScan < 3600000) {
             return;
         }
 
-
         lastLogScan = System.currentTimeMillis();
-
 
         File logDir = new File("./logs");
         File[] files = logDir.listFiles();
@@ -73,19 +66,15 @@ public class ConsoleProxyGCThread extends Thread {
         }
     }
 
-
     @Override
     public void run() {
-
 
         boolean bReportLoad = false;
         long lastReportTick = System.currentTimeMillis();
 
-
         while (true) {
             cleanupLogging();
             bReportLoad = false;
-
 
             if (logger.isDebugEnabled()) {
                 logger.debug(String.format("ConsoleProxyGCThread loop: connMap=%s, removedSessions=%s", connMap, removedSessionsSet));
@@ -97,35 +86,29 @@ public class ConsoleProxyGCThread extends Thread {
              for (String key : keys) {
                 ConsoleProxyClient client;
 
-
                 synchronized (connMap) {
                     client = connMap.get(key);
                 }
 
-
                 if (client == null) {
                     continue;
                 }
-
 
                 long millisecondsUnused = System.currentTimeMillis() - client.getClientLastFrontEndActivityTime();
                 if (millisecondsUnused < ConsoleProxy.sessionTimeoutMillis) {
                     continue;
                 }
 
-
                 synchronized (connMap) {
                     connMap.remove(key);
                     bReportLoad = true;
                 }
-
 
                 // close the server connection
                 logger.info("Dropping " + client + " which has not been used for " + millisecondsUnused
                         + " ms (configured timeout: " + ConsoleProxy.sessionTimeoutMillis + " ms)");
                 client.closeClient();
             }
-
 
             if (bReportLoad || System.currentTimeMillis() - lastReportTick > 5000) {
                 // report load changes, including removed sessions since last report
@@ -138,12 +121,10 @@ public class ConsoleProxyGCThread extends Thread {
                     removedSessionsSet.clear();
                 }
 
-
                 if (logger.isDebugEnabled()) {
                     logger.debug("Report load change : " + loadInfo);
                 }
             }
-
 
             try {
                 Thread.sleep(5000);
