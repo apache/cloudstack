@@ -64,7 +64,6 @@ import com.cloud.capacity.CapacityState;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
@@ -174,12 +173,12 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         Map<String, String> configs = _configDao.getConfiguration("management-server", params);
 
         // set up the email system for alerts
-        String emailAddressList = configs.get("alert.email.addresses");
+        String emailAddressList = AlertEmailAddresses.value();
         if (emailAddressList != null) {
             recipients = emailAddressList.split(",");
         }
 
-        senderAddress = configs.get("alert.email.sender");
+        senderAddress = AlertEmailSender.value();
 
         String namespace = "alert.smtp";
         String timeoutConfig = String.format("%s.timeout", namespace);
@@ -193,33 +192,15 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
 
         mailSender = new SMTPMailSender(configs, namespace);
 
-        String publicIPCapacityThreshold = _configDao.getValue(Config.PublicIpCapacityThreshold.key());
-        String privateIPCapacityThreshold = _configDao.getValue(Config.PrivateIpCapacityThreshold.key());
-        String secondaryStorageCapacityThreshold = _configDao.getValue(Config.SecondaryStorageCapacityThreshold.key());
-        String vlanCapacityThreshold = _configDao.getValue(Config.VlanCapacityThreshold.key());
-        String directNetworkPublicIpCapacityThreshold = _configDao.getValue(Config.DirectNetworkPublicIpCapacityThreshold.key());
-        String localStorageCapacityThreshold = _configDao.getValue(Config.LocalStorageCapacityThreshold.key());
+        _publicIPCapacityThreshold = PublicIpCapacityThreshold.value();
+        _privateIPCapacityThreshold = PrivateIpCapacityThreshold.value();
+        _secondaryStorageCapacityThreshold = SecondaryStorageCapacityThreshold.value();
+        _vlanCapacityThreshold = VlanCapacityThreshold.value();
+        _directNetworkPublicIpCapacityThreshold = DirectNetworkPublicIpCapacityThreshold.value();
+        _localStorageCapacityThreshold = LocalStorageCapacityThreshold.value();
         String backupStorageCapacityThreshold = _configDao.getValue(BackupManager.BackupStorageCapacityThreshold.key());
         String objectStorageCapacityThreshold = _configDao.getValue(_storageMgr.ObjectStorageCapacityThreshold.key());
 
-        if (publicIPCapacityThreshold != null) {
-            _publicIPCapacityThreshold = Double.parseDouble(publicIPCapacityThreshold);
-        }
-        if (privateIPCapacityThreshold != null) {
-            _privateIPCapacityThreshold = Double.parseDouble(privateIPCapacityThreshold);
-        }
-        if (secondaryStorageCapacityThreshold != null) {
-            _secondaryStorageCapacityThreshold = Double.parseDouble(secondaryStorageCapacityThreshold);
-        }
-        if (vlanCapacityThreshold != null) {
-            _vlanCapacityThreshold = Double.parseDouble(vlanCapacityThreshold);
-        }
-        if (directNetworkPublicIpCapacityThreshold != null) {
-            _directNetworkPublicIpCapacityThreshold = Double.parseDouble(directNetworkPublicIpCapacityThreshold);
-        }
-        if (localStorageCapacityThreshold != null) {
-            _localStorageCapacityThreshold = Double.parseDouble(localStorageCapacityThreshold);
-        }
         if (backupStorageCapacityThreshold != null) {
             _backupStorageCapacityThreshold = Double.parseDouble(backupStorageCapacityThreshold);
         }
@@ -237,12 +218,9 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_BACKUP_STORAGE, _backupStorageCapacityThreshold);
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_OBJECT_STORAGE, _objectStorageCapacityThreshold);
 
-        String capacityCheckPeriodStr = configs.get("capacity.check.period");
-        if (capacityCheckPeriodStr != null) {
-            _capacityCheckPeriod = Long.parseLong(capacityCheckPeriodStr);
-            if (_capacityCheckPeriod <= 0) {
-                _capacityCheckPeriod = Long.parseLong(Config.CapacityCheckPeriod.getDefaultValue());
-            }
+        _capacityCheckPeriod = CapacityCheckPeriod.value();
+        if (_capacityCheckPeriod <= 0) {
+            _capacityCheckPeriod = Long.parseLong(CapacityCheckPeriod.defaultValue());
         }
         initMessageBusListener();
         setupRepetitiveAlertTypes();
@@ -893,7 +871,10 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {CPUCapacityThreshold, MemoryCapacityThreshold, StorageAllocatedCapacityThreshold, StorageCapacityThreshold, AlertSmtpEnabledSecurityProtocols,
-            AlertSmtpUseStartTLS, Ipv6SubnetCapacityThreshold, AlertSmtpUseAuth, AllowedRepetitiveAlertTypes};
+            AlertSmtpUseStartTLS, Ipv6SubnetCapacityThreshold, AlertSmtpUseAuth, AllowedRepetitiveAlertTypes,
+            AlertEmailAddresses, AlertEmailSender, AlertSMTPHost, AlertSMTPPort, AlertSMTPUsername, AlertSMTPPassword, CapacityCheckPeriod,
+            PublicIpCapacityThreshold, PrivateIpCapacityThreshold, SecondaryStorageCapacityThreshold, VlanCapacityThreshold,
+            DirectNetworkPublicIpCapacityThreshold, LocalStorageCapacityThreshold};
     }
 
     @Override
