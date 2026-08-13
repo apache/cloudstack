@@ -596,7 +596,7 @@ public class ConsoleAccessManagerImplTest {
     }
 
     @Test
-    public void getConsoleConnectionDetailsDoesNotRequireNewViewerForKVMSystemVmWhenMultipleViewersEnabled() {
+    public void getConsoleConnectionDetailsDoesNotRequireNewViewerForKVMSystemVm() {
         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
         HostVO host = Mockito.mock(HostVO.class);
         String hostAddress = "192.168.1.100";
@@ -612,11 +612,11 @@ public class ConsoleAccessManagerImplTest {
         Mockito.when(managementServer.getVncPort(vm)).thenReturn(hostPortInfo);
         Mockito.doReturn(new Ternary<>(hostAddress, null, null))
                 .when(consoleAccessManager).parseHostInfo(Mockito.anyString());
-
         ConsoleConnectionDetails result = consoleAccessManager.getConsoleConnectionDetails(vm, host);
 
         Assert.assertNotNull(result);
         Assert.assertFalse(result.isSessionRequiresNewViewer());
+        Mockito.verify(consoleAccessManager, Mockito.never()).isKvmMultipleConsoleViewersEnabled();
     }
 
     @Test
