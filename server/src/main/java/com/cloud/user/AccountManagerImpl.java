@@ -43,7 +43,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.APIChecker;
-import org.apache.cloudstack.acl.APIAclChecker;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.InfrastructureEntity;
 import org.apache.cloudstack.acl.QuerySelector;
@@ -1434,34 +1433,35 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     requested.getUuid(),
                     requested.getRoleId()));
         }
-
-        List<APIAclChecker> aclCheckers = getApiACLCheckers();
-
-        List<String> allApis = new ArrayList<>(apiNameList);
-        List<String> requestedAllowed = allApis;
-        List<String> callerAllowed = new ArrayList<>();
-        try {
-            for (final APIAclChecker apiChecker : aclCheckers) {
-                requestedAllowed = apiChecker.getApisAllowedToAccount(requested, requestedAllowed);
+        List<APIChecker> apiCheckers = getEnabledApiCheckers();
+        for (String command : apiNameList) {
+            try {
+                checkApiAccess(apiCheckers, requested, command);
+            } catch (PermissionDeniedException pde) {
+                if (logger.isTraceEnabled()) {
+                    logger.trace(String.format(
+                            "Checking for permission to \"%s\" is irrelevant as it is not requested for %s [%s]",
+                            command,
+                            requested.getAccountName(),
+                            requested.getUuid()
+                        )
+                    );
+                }
+                continue;
             }
-            callerAllowed = requestedAllowed;
-            for (final APIAclChecker apiChecker : aclCheckers) {
-                callerAllowed = apiChecker.getApisAllowedToAccount(caller, callerAllowed);
+            // so requested can, now make sure caller can as well
+            try {
+                if (logger.isTraceEnabled()) {
+                    logger.trace(String.format("permission to \"%s\" is requested",
+                            command));
+                }
+                checkApiAccess(apiCheckers, caller, command);
+            } catch (PermissionDeniedException pde) {
+                String msg = String.format("User of Account %s and domain %s can not create an account with access to more privileges they have themself.",
+                        caller, _domainMgr.getDomain(caller.getDomainId()));
+                logger.warn(msg);
+                throw new PermissionDeniedException(msg,pde);
             }
-        } catch (PermissionDeniedException e) {
-            String msg = String.format("User of account: %s cannot assign this role on the requested account: %s", caller.getAccountName(), requested.getAccountName());
-            String logMsg = String.format("%s: %s", msg, e.getMessage());
-            logger.error(logMsg, e);
-            throw new PermissionDeniedException(msg);
-        }
-
-        if (callerAllowed.size() < requestedAllowed.size()) {
-            List<String> escalatedApis = new ArrayList<>(requestedAllowed);
-            escalatedApis.removeAll(callerAllowed);
-            String msg = String.format("User of Account %s and domain %s cannot create an account with access to more privileges than they have. Escalated APIs: %s",
-                    caller, _domainMgr.getDomain(caller.getDomainId()), CollectionUtils.isNotEmpty(escalatedApis) ? escalatedApis.size() : "None");
-            logger.warn(msg);
-            throw new PermissionDeniedException(msg);
         }
     }
 
@@ -1475,19 +1475,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public void checkApiAccess(Account caller, String command) {
         List<APIChecker> apiCheckers = getEnabledApiCheckers();
         checkApiAccess(apiCheckers, caller, command);
-    }
-
-    protected List<APIAclChecker> getApiACLCheckers() {
-        List<APIChecker> apiCheckers = getEnabledApiCheckers();
-
-        // Only ACL checkers should influence the set of APIs allowed to an account.
-        List<APIAclChecker> aclCheckers = new ArrayList<>();
-        for (APIChecker apiChecker : apiCheckers) {
-            if (apiChecker instanceof APIAclChecker) {
-                aclCheckers.add((APIAclChecker) apiChecker);
-            }
-        }
-        return aclCheckers;
     }
 
     @NotNull
@@ -1597,14 +1584,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (!Account.Type.PROJECT.equals(userAccount.getType())) {
             checkCallerRoleTypeAllowedForUserOrAccountOperations(userAccount, null);
             checkCallerApiPermissionsForUserOrAccountOperations(userAccount);
-        }
-    }
-
-    @Override
-    public void refreshRoleCheckersCacheOnPermissionsChange(Role role) {
-        List<APIAclChecker> aclCheckers = getApiACLCheckers();
-        for (final APIAclChecker aclChecker : aclCheckers) {
-            aclChecker.refreshRoleCacheOnPermissionsChange(role);
         }
     }
 
