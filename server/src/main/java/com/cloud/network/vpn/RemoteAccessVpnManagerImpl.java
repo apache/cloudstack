@@ -810,11 +810,9 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        Map<String, String> configs = _configDao.getConfiguration(params);
+        _userLimit = RemoteAccessVpnUserLimit.value();
 
-        _userLimit = NumbersUtil.parseInt(configs.get(Config.RemoteAccessVpnUserLimit.key()), 8);
-
-        _pskLength = NumbersUtil.parseInt(configs.get(Config.RemoteAccessVpnPskLength.key()), 24);
+        _pskLength = RemoteAccessVpnPskLength.value();
 
         validateRemoteAccessVpnConfiguration();
 
@@ -859,7 +857,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {RemoteAccessVpnClientIpRange};
+        return new ConfigKey<?>[] {RemoteAccessVpnClientIpRange, RemoteAccessVpnPskLength, RemoteAccessVpnUserLimit};
     }
 
     public List<RemoteAccessVPNServiceProvider> getVpnServiceProviders() {

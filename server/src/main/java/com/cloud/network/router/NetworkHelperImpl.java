@@ -48,7 +48,6 @@ import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.capacity.CapacityManager;
-import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
@@ -950,7 +949,7 @@ public class NetworkHelperImpl implements NetworkHelper {
     @Override
     public boolean validateHAProxyLBRule(final LoadBalancingRule rule) {
         final String timeEndChar = "dhms";
-        int haproxy_stats_port = Integer.parseInt(_configDao.getValue(Config.NetworkLBHaproxyStatsPort.key()));
+        int haproxy_stats_port = Integer.parseInt(NetworkOrchestrationService.NetworkLBHaproxyStatsPort.value());
         if (rule.getSourcePortStart() == haproxy_stats_port) {
             if (logger.isDebugEnabled()) {
                 logger.debug("Can't create LB on port "+ haproxy_stats_port +", haproxy is listening for LB stats on this port");

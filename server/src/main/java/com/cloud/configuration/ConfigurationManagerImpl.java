@@ -261,6 +261,7 @@ import com.cloud.network.element.NsxProviderVO;
 import com.cloud.network.netris.NetrisService;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
@@ -620,7 +621,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         configValuesForValidation.add("externaldhcp.vmip.retrieval.interval");
         configValuesForValidation.add("externaldhcp.vmip.max.retry");
         configValuesForValidation.add("externaldhcp.vmipFetch.threadPool.max");
-        configValuesForValidation.add("remote.access.vpn.psk.length");
+        configValuesForValidation.add(RemoteAccessVpnService.RemoteAccessVpnPskLength.key());
         configValuesForValidation.add(StorageManager.STORAGE_POOL_DISK_WAIT.key());
         configValuesForValidation.add(StorageManager.STORAGE_POOL_CLIENT_TIMEOUT.key());
         configValuesForValidation.add(StorageManager.STORAGE_POOL_CLIENT_MAX_CONNECTIONS.key());
@@ -1541,7 +1542,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if ("vm.password.length".equalsIgnoreCase(name) && val < 6) {
                     return String.format("Please enter a value greater than 5 for the configuration parameter: [%s].",  name);
                 }
-                if ("remote.access.vpn.psk.length".equalsIgnoreCase(name) && (val < 8 || val > 256)) {
+                if (RemoteAccessVpnService.RemoteAccessVpnPskLength.key().equalsIgnoreCase(name) && (val < 8 || val > 256)) {
                     return String.format("Please enter a value greater than 7 and less than 257 for the configuration parameter: [%s].", name);
                 }
                 if (UserDataManager.VM_USERDATA_MAX_LENGTH_STRING.equalsIgnoreCase(name) && val > 1048576) {

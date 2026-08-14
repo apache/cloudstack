@@ -97,6 +97,9 @@ public interface NetworkModel {
     static final ConfigKey<Boolean> AdminIsAllowedToDeployAnywhere = new ConfigKey<>("Advanced",Boolean.class, "admin.is.allowed.to.deploy.anywhere", "false",
             "This will determine if the root admin is allowed to deploy in networks in subdomains.", true, ConfigKey.Scope.Global);
 
+    ConfigKey<Boolean> SecurityGroupDefaultAdding = new ConfigKey<>("Network", Boolean.class, "network.securitygroups.defaultadding", "true",
+            "If true, the user VM would be added to the default security group by default", true);
+
     /**
      * Lists IP addresses that belong to VirtualNetwork VLANs
      *

@@ -73,6 +73,12 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
     ConfigKey<Boolean> SetServiceMonitor = new ConfigKey<>(Boolean.class, SetServiceMonitorCK, "Advanced", "true",
             "service monitoring in router enable/disable option, default true", true, ConfigKey.Scope.Zone, null);
 
+    ConfigKey<Boolean> NetworkRouterRpFilter = new ConfigKey<>("Network", Boolean.class, "network.disable.rpfilter", "true",
+            "disable rp_filter on Domain Router VM public interfaces.", true);
+
+    ConfigKey<Boolean> EnableServiceMonitoring = new ConfigKey<>("Network", Boolean.class, "network.router.enableserviceMonitoring", "false",
+            "service monitoring in router enable/disable option, default false", true);
+
     ConfigKey<Integer> RouterAlertsCheckInterval = new ConfigKey<>(Integer.class, RouterAlertsCheckIntervalCK, "Advanced", "1800",
             "Interval (in seconds) to check for alerts in Virtual Router.", false, ConfigKey.Scope.Global, null);
     ConfigKey<Boolean> RouterVersionCheckEnabled = new ConfigKey<>("Advanced", Boolean.class, "router.version.check", "true",
