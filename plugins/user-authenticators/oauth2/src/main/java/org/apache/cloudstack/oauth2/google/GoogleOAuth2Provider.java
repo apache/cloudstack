@@ -17,6 +17,7 @@
 package org.apache.cloudstack.oauth2.google;
 
 import com.cloud.exception.CloudAuthenticationException;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
@@ -28,6 +29,9 @@ import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.services.oauth2.Oauth2;
 import com.google.api.services.oauth2.model.Userinfo;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import org.apache.cloudstack.auth.UserOAuth2Authenticator;
 import org.apache.cloudstack.oauth2.dao.OauthProviderDao;
 import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
@@ -37,11 +41,15 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 public class GoogleOAuth2Provider extends AdapterBase implements UserOAuth2Authenticator {
 
-    protected String accessToken = null;
-    protected String refreshToken = null;
+    protected final Cache<String, Pair<String, String>> tokensByCode = CacheBuilder.newBuilder()
+            .maximumSize(1000)
+            .expireAfterWrite(10, TimeUnit.MINUTES)
+            .build();
 
     @Inject
     OauthProviderDao _oauthProviderDao;
@@ -71,17 +79,16 @@ public class GoogleOAuth2Provider extends AdapterBase implements UserOAuth2Authe
         if (verifiedEmail == null || !email.equals(verifiedEmail)) {
             throw new CloudRuntimeException("Unable to verify the email address with the provided secret");
         }
-        clearAccessAndRefreshTokens();
 
         return true;
     }
 
     @Override
     public String verifyCodeAndFetchEmail(String secretCode) {
-        OauthProviderVO githubProvider = _oauthProviderDao.findByProvider(getName());
-        String clientId = githubProvider.getClientId();
-        String secret = githubProvider.getSecretKey();
-        String redirectURI = githubProvider.getRedirectUri();
+        OauthProviderVO googleProvider = _oauthProviderDao.findByProvider(getName());
+        String clientId = googleProvider.getClientId();
+        String secret = googleProvider.getSecretKey();
+        String redirectURI = googleProvider.getRedirectUri();
         GoogleClientSecrets clientSecrets = new GoogleClientSecrets()
                 .setWeb(new GoogleClientSecrets.Details()
                         .setClientId(clientId)
@@ -96,18 +103,20 @@ public class GoogleOAuth2Provider extends AdapterBase implements UserOAuth2Authe
                 httpTransport, jsonFactory, clientSecrets, scopes)
                 .build();
 
-        if (StringUtils.isAnyEmpty(accessToken, refreshToken)) {
-            GoogleTokenResponse tokenResponse = null;
-            try {
-                tokenResponse = flow.newTokenRequest(secretCode)
+        Pair<String, String> tokens;
+        try {
+            tokens = tokensByCode.get(secretCode, () -> {
+                GoogleTokenResponse tokenResponse = flow.newTokenRequest(secretCode)
                         .setRedirectUri(redirectURI)
                         .execute();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            accessToken = tokenResponse.getAccessToken();
-            refreshToken = tokenResponse.getRefreshToken();
+                return new Pair<>(tokenResponse.getAccessToken(), tokenResponse.getRefreshToken());
+            });
+        } catch (ExecutionException | UncheckedExecutionException e) {
+            Throwable cause = e.getCause() != null ? e.getCause() : e;
+            throw new CloudRuntimeException(String.format("Failed to exchange the OAuth2 authorization code for tokens: %s", cause.getMessage()), cause);
         }
+        String accessToken = tokens.first();
+        String refreshToken = tokens.second();
 
         GoogleCredential credential = new GoogleCredential.Builder()
                 .setTransport(httpTransport)
@@ -122,14 +131,9 @@ public class GoogleOAuth2Provider extends AdapterBase implements UserOAuth2Authe
         try {
             userinfo = oauth2.userinfo().get().execute();
         } catch (IOException e) {
-            throw new CloudRuntimeException(String.format("Failed to fetch the email address with the provided secret: %s" + e.getMessage()));
+            throw new CloudRuntimeException(String.format("Failed to fetch the email address with the provided secret: %s", e.getMessage()), e);
         }
         return userinfo.getEmail();
-    }
-
-    protected void clearAccessAndRefreshTokens() {
-        accessToken = null;
-        refreshToken = null;
     }
 
     @Override
