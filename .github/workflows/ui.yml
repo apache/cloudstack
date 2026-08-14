@@ -32,9 +32,6 @@ concurrency:
 permissions:
   contents: read
 
-env:
-  DEVELOCITY_ACCESS_KEY: ${{ secrets.GE_ACCESS_TOKEN }}
-
 jobs:
   build:
     runs-on: ubuntu-24.04
