@@ -1460,7 +1460,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             List<String> escalatedApis = new ArrayList<>(requestedAllowed);
             escalatedApis.removeAll(callerAllowed);
             String msg = String.format("User of Account %s and domain %s cannot create an account with access to more privileges than they have. Escalated APIs: %s",
-                    caller, _domainMgr.getDomain(caller.getDomainId()), escalatedApis);
+                    caller, _domainMgr.getDomain(caller.getDomainId()), CollectionUtils.isNotEmpty(escalatedApis) ? escalatedApis.size() : "None");
             logger.warn(msg);
             throw new PermissionDeniedException(msg);
         }
