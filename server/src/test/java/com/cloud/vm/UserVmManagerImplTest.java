@@ -4766,14 +4766,13 @@ public class UserVmManagerImplTest {
     public void checkHostsDedicationAlertsIncludeResolvedAccountAndDomainNames() {
         long srcHostId = 10L;
         long destHostId = 20L;
-        long vmId = 1L;
-        long serviceOfferingId = 2L;
+        long testServiceOfferingId = 2L;
 
         VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
         when(vm.getId()).thenReturn(vmId);
         when(vm.getDataCenterId()).thenReturn(1L);
         when(vm.getPodIdToDeployIn()).thenReturn(2L);
-        when(vm.getServiceOfferingId()).thenReturn(serviceOfferingId);
+        when(vm.getServiceOfferingId()).thenReturn(testServiceOfferingId);
 
         HostVO srcHost = Mockito.mock(HostVO.class);
         when(srcHost.getId()).thenReturn(srcHostId);
@@ -4805,9 +4804,8 @@ public class UserVmManagerImplTest {
         when(domainDaoMock.findById(200L)).thenReturn(srcDomain);
         when(domainDaoMock.findById(400L)).thenReturn(destDomain);
 
-        ServiceOfferingVO serviceOffering = Mockito.mock(ServiceOfferingVO.class);
         when(serviceOffering.getDeploymentPlanner()).thenReturn(null);
-        when(_serviceOfferingDao.findById(vmId, serviceOfferingId)).thenReturn(serviceOffering);
+        when(_serviceOfferingDao.findById(vmId, testServiceOfferingId)).thenReturn(serviceOffering);
 
         when(plannerHostReservationDao.listAllDedicatedHosts()).thenReturn(new ArrayList<>());
 
@@ -4826,14 +4824,13 @@ public class UserVmManagerImplTest {
     public void checkHostsDedicationAlertNotesDestinationNotDedicatedToSpecificAccount() {
         long srcHostId = 10L;
         long destHostId = 20L;
-        long vmId = 1L;
-        long serviceOfferingId = 2L;
+        long testServiceOfferingId = 2L;
 
         VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
         when(vm.getId()).thenReturn(vmId);
         when(vm.getDataCenterId()).thenReturn(1L);
         when(vm.getPodIdToDeployIn()).thenReturn(2L);
-        when(vm.getServiceOfferingId()).thenReturn(serviceOfferingId);
+        when(vm.getServiceOfferingId()).thenReturn(testServiceOfferingId);
 
         HostVO srcHost = Mockito.mock(HostVO.class);
         when(srcHost.getId()).thenReturn(srcHostId);
@@ -4857,9 +4854,8 @@ public class UserVmManagerImplTest {
         when(srcAccount.toString()).thenReturn("Account {accountName=account-a}");
         when(accountDao.findById(100L)).thenReturn(srcAccount);
 
-        ServiceOfferingVO serviceOffering = Mockito.mock(ServiceOfferingVO.class);
         when(serviceOffering.getDeploymentPlanner()).thenReturn(null);
-        when(_serviceOfferingDao.findById(vmId, serviceOfferingId)).thenReturn(serviceOffering);
+        when(_serviceOfferingDao.findById(vmId, testServiceOfferingId)).thenReturn(serviceOffering);
 
         when(plannerHostReservationDao.listAllDedicatedHosts()).thenReturn(new ArrayList<>());
 
@@ -4876,14 +4872,13 @@ public class UserVmManagerImplTest {
     public void checkHostsDedicationAlertNotesDestinationNotDedicatedToSpecificDomain() {
         long srcHostId = 10L;
         long destHostId = 20L;
-        long vmId = 1L;
-        long serviceOfferingId = 2L;
+        long testServiceOfferingId = 2L;
 
         VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
         when(vm.getId()).thenReturn(vmId);
         when(vm.getDataCenterId()).thenReturn(1L);
         when(vm.getPodIdToDeployIn()).thenReturn(2L);
-        when(vm.getServiceOfferingId()).thenReturn(serviceOfferingId);
+        when(vm.getServiceOfferingId()).thenReturn(testServiceOfferingId);
 
         HostVO srcHost = Mockito.mock(HostVO.class);
         when(srcHost.getId()).thenReturn(srcHostId);
@@ -4907,9 +4902,8 @@ public class UserVmManagerImplTest {
         when(srcDomain.toString()).thenReturn("Domain {name=domain-a}");
         when(domainDaoMock.findById(200L)).thenReturn(srcDomain);
 
-        ServiceOfferingVO serviceOffering = Mockito.mock(ServiceOfferingVO.class);
         when(serviceOffering.getDeploymentPlanner()).thenReturn(null);
-        when(_serviceOfferingDao.findById(vmId, serviceOfferingId)).thenReturn(serviceOffering);
+        when(_serviceOfferingDao.findById(vmId, testServiceOfferingId)).thenReturn(serviceOffering);
 
         when(plannerHostReservationDao.listAllDedicatedHosts()).thenReturn(new ArrayList<>());
 
@@ -4940,15 +4934,15 @@ public class UserVmManagerImplTest {
 
     @Test
     public void updateVmStateForFailedVmCreationIncludesResolvedHostInAlert() {
-        Long vmId = 3L;
+        Long testVmId = 3L;
         Long hostId = 5L;
-        mockStoppedVmForFailedCreation(vmId);
+        mockStoppedVmForFailedCreation(testVmId);
 
         HostVO host = Mockito.mock(HostVO.class);
         when(host.toString()).thenReturn("Host {id=5, name=cs-kvm06}");
         when(hostDao.findById(hostId)).thenReturn(host);
 
-        ReflectionTestUtils.invokeMethod(userVmManagerImpl, "updateVmStateForFailedVmCreation", vmId, hostId);
+        ReflectionTestUtils.invokeMethod(userVmManagerImpl, "updateVmStateForFailedVmCreation", testVmId, hostId);
 
         ArgumentCaptor<String> bodyCaptor = ArgumentCaptor.forClass(String.class);
         Mockito.verify(alertManager).sendAlert(Mockito.eq(AlertManager.AlertType.ALERT_TYPE_USERVM),
@@ -4958,13 +4952,13 @@ public class UserVmManagerImplTest {
 
     @Test
     public void updateVmStateForFailedVmCreationFallsBackToHostIdWhenHostNotFound() {
-        Long vmId = 3L;
+        Long testVmId = 3L;
         Long hostId = 5L;
-        mockStoppedVmForFailedCreation(vmId);
+        mockStoppedVmForFailedCreation(testVmId);
 
         when(hostDao.findById(hostId)).thenReturn(null);
 
-        ReflectionTestUtils.invokeMethod(userVmManagerImpl, "updateVmStateForFailedVmCreation", vmId, hostId);
+        ReflectionTestUtils.invokeMethod(userVmManagerImpl, "updateVmStateForFailedVmCreation", testVmId, hostId);
 
         ArgumentCaptor<String> bodyCaptor = ArgumentCaptor.forClass(String.class);
         Mockito.verify(alertManager).sendAlert(Mockito.eq(AlertManager.AlertType.ALERT_TYPE_USERVM),
@@ -4974,10 +4968,10 @@ public class UserVmManagerImplTest {
 
     @Test
     public void updateVmStateForFailedVmCreationOmitsHostSegmentWhenHostIdIsNull() {
-        Long vmId = 3L;
-        mockStoppedVmForFailedCreation(vmId);
+        Long testVmId = 3L;
+        mockStoppedVmForFailedCreation(testVmId);
 
-        ReflectionTestUtils.invokeMethod(userVmManagerImpl, "updateVmStateForFailedVmCreation", vmId, (Long) null);
+        ReflectionTestUtils.invokeMethod(userVmManagerImpl, "updateVmStateForFailedVmCreation", testVmId, (Long) null);
 
         ArgumentCaptor<String> bodyCaptor = ArgumentCaptor.forClass(String.class);
         Mockito.verify(alertManager).sendAlert(Mockito.eq(AlertManager.AlertType.ALERT_TYPE_USERVM),
