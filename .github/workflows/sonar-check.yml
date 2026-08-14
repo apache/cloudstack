@@ -113,7 +113,7 @@ jobs:
               repo:         context.repo.repo,
               issue_number: context.issue.number,
             });
-           const existing = comments.find(c => c.user.type === 'Bot' && c.body.includes(marker));
+           const existing = comments.find(c => c.user.login === 'github-actions[bot]' && c.body.includes(marker));
            if (existing) {
              await github.rest.issues.updateComment({
                owner:      context.repo.owner,
