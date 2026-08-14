@@ -20,6 +20,7 @@ import java.util.List;
 
 import org.apache.cloudstack.api.command.user.vpn.ListRemoteAccessVpnsCmd;
 import org.apache.cloudstack.api.command.user.vpn.ListVpnUsersCmd;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -30,6 +31,12 @@ import com.cloud.utils.Pair;
 
 public interface RemoteAccessVpnService {
     static final String RemoteAccessVpnClientIpRangeCK = "remote.access.vpn.client.iprange";
+
+    ConfigKey<Integer> RemoteAccessVpnPskLength = new ConfigKey<>("Network", Integer.class, "remote.access.vpn.psk.length", "24",
+            "The length of the ipsec preshared key (minimum 8, maximum 256)", true);
+
+    ConfigKey<Integer> RemoteAccessVpnUserLimit = new ConfigKey<>("Network", Integer.class, "remote.access.vpn.user.limit", "8",
+            "The maximum number of VPN users that can be created per account", true);
 
     RemoteAccessVpn createRemoteAccessVpn(long vpnServerAddressId, String ipRange, boolean openFirewall, Boolean forDisplay) throws NetworkRuleConflictException;
 
