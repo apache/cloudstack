@@ -97,7 +97,6 @@ public class ScaleIOHostListener implements HypervisorHostListener {
 
     private String getSdcIdOfHost(HostVO host, DataStore dataStore) {
         StoragePool storagePool = (StoragePool) dataStore;
-        long hostId = host.getId();
         long poolId = storagePool.getId();
         String systemId = null;
         StoragePoolDetailVO systemIdDetail = _storagePoolDetailsDao.findDetail(poolId, ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID);
