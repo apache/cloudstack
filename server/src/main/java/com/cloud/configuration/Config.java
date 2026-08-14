@@ -76,57 +76,6 @@ public enum Config {
             null),
 
     // Network
-    NetworkLBHaproxyStatsVisbility(
-            "Network",
-            ManagementServer.class,
-            String.class,
-            "network.loadbalancer.haproxy.stats.visibility",
-            "global",
-            "Load Balancer(haproxy) stats visibility, the value can be one of the following six parameters : global,guest-network,link-local,disabled,all,default",
-            null,
-            ConfigKey.Kind.Select,
-            "global,guest-network,link-local,disabled,all,default"),
-    NetworkLBHaproxyStatsUri(
-            "Network",
-            ManagementServer.class,
-            String.class,
-            "network.loadbalancer.haproxy.stats.uri",
-            "/admin?stats",
-            "Load Balancer(haproxy) uri.",
-            null),
-    NetworkLBHaproxyStatsAuth(
-            "Secure",
-            ManagementServer.class,
-            String.class,
-            "network.loadbalancer.haproxy.stats.auth",
-            "admin1:AdMiN123",
-            "Load Balancer(haproxy) authentication string in the format username:password",
-            null),
-    NetworkLBHaproxyStatsPort(
-            "Network",
-            ManagementServer.class,
-            String.class,
-            "network.loadbalancer.haproxy.stats.port",
-            "8081",
-            "Load Balancer(haproxy) stats port number.",
-            null),
-    NetworkRouterRpFilter(
-            "Network",
-            ManagementServer.class,
-            Boolean.class,
-            "network.disable.rpfilter",
-            "true",
-            "disable rp_filter on Domain Router VM public interfaces.",
-            null),
-
-    GuestVlanBits(
-            "Network",
-            ManagementServer.class,
-            Integer.class,
-            "guest.vlan.bits",
-            "12",
-            "The number of bits to reserve for the VLAN identifier in the guest subnet.",
-            null),
     //MulticastThrottlingRate("Network", ManagementServer.class, Integer.class, "multicast.throttling.rate", "10", "Default multicast rate in megabits per second allowed.", null),
     DirectNetworkNoDefaultRoute(
             "Network",
@@ -136,55 +85,6 @@ public enum Config {
             "false",
             "Direct Network Dhcp Server should not send a default route",
             "true/false"),
-    OvsTunnelNetworkDefaultLabel(
-            "Network",
-            ManagementServer.class,
-            String.class,
-            "sdn.ovs.controller.default.label",
-            "cloud-public",
-            "Default network label to be used when fetching interface for GRE endpoints",
-            null),
-    SecurityGroupWorkCleanupInterval(
-            "Network",
-            ManagementServer.class,
-            Integer.class,
-            "network.securitygroups.work.cleanup.interval",
-            "120",
-            "Time interval (seconds) in which finished work is cleaned up from the work table",
-            null),
-    SecurityGroupWorkerThreads(
-            "Network",
-            ManagementServer.class,
-            Integer.class,
-            "network.securitygroups.workers.pool.size",
-            "50",
-            "Number of worker threads processing the security group update work queue",
-            null),
-    SecurityGroupWorkGlobalLockTimeout(
-            "Network",
-            ManagementServer.class,
-            Integer.class,
-            "network.securitygroups.work.lock.timeout",
-            "300",
-            "Lock wait timeout (seconds) while updating the security group work queue",
-            null),
-    SecurityGroupWorkPerAgentMaxQueueSize(
-            "Network",
-            ManagementServer.class,
-            Integer.class,
-            "network.securitygroups.work.per.agent.queue.size",
-            "100",
-            "The number of outstanding security group work items that can be queued to a host. If exceeded, work items will get dropped to conserve memory. Security Group Sync will take care of ensuring that the host gets updated eventually",
-            null),
-
-    SecurityGroupDefaultAdding(
-            "Network",
-            ManagementServer.class,
-            Boolean.class,
-            "network.securitygroups.defaultadding",
-            "true",
-            "If true, the user VM would be added to the default security group by default",
-            null),
 
     GuestOSNeedGatewayOnNonDefaultNetwork(
             "Network",
@@ -196,50 +96,6 @@ public enum Config {
             null,
             ConfigKey.Kind.CSV,
             null),
-
-    //VPN
-    RemoteAccessVpnPskLength(
-            "Network",
-            AgentManager.class,
-            Integer.class,
-            "remote.access.vpn.psk.length",
-            "24",
-            "The length of the ipsec preshared key (minimum 8, maximum 256)",
-            null),
-    RemoteAccessVpnUserLimit(
-            "Network",
-            AgentManager.class,
-            String.class,
-            "remote.access.vpn.user.limit",
-            "8",
-            "The maximum number of VPN users that can be created per account",
-            null),
-    Site2SiteVpnConnectionPerVpnGatewayLimit(
-            "Network",
-            ManagementServer.class,
-            Integer.class,
-            "site2site.vpn.vpngateway.connection.limit",
-            "4",
-            "The maximum number of VPN connection per VPN gateway",
-            null),
-    Site2SiteVpnSubnetsPerCustomerGatewayLimit(
-            "Network",
-            ManagementServer.class,
-            Integer.class,
-            "site2site.vpn.customergateway.subnets.limit",
-            "10",
-            "The maximum number of subnets per customer gateway",
-            null),
-    MaxNumberOfSecondaryIPsPerNIC(
-            "Network", ManagementServer.class, Integer.class,
-            "vm.network.nic.max.secondary.ipaddresses", "10",
-            "Specify the number of secondary ip addresses per nic per vm. Default value 10 is used, if not specified.", null),
-
-    EnableServiceMonitoring(
-            "Network", ManagementServer.class, Boolean.class,
-            "network.router.enableserviceMonitoring", "false",
-            "service monitoring in router enable/disable option, default false", null),
-
 
     // Advanced
     EventPurgeInterval(
