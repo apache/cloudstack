@@ -632,4 +632,9 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     public Account getAccountByUuid(String accountUuid) {
         return null;
     }
+
+    @Override
+    public List<? extends ApiKeyPairPermission> getAllExplicitKeyPairPermissions(Long keyPairId) {
+        return null;
+    }
 }
