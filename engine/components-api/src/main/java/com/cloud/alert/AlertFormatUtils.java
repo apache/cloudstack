@@ -27,6 +27,8 @@ import com.cloud.host.Host;
  */
 public final class AlertFormatUtils {
 
+    private static final String UNKNOWN = "unknown";
+
     private AlertFormatUtils() {
     }
 
@@ -34,12 +36,12 @@ public final class AlertFormatUtils {
         if (host == null) {
             // we should never get here, but if we do, at least we won't get an NPE
             return String.format("No host to describe for availability zone: %s, pod: %s",
-                    zone != null ? zone.getName() : "unknown",
-                    pod != null ? pod.getName() : "unknown");
+                    zone != null ? zone.getName() : UNKNOWN,
+                    pod != null ? pod.getName() : UNKNOWN);
         }
         return String.format("name: %s (id: %d, uuid: %s), availability zone: %s, pod: %s",
                 host.getName(), host.getId(), host.getUuid(),
-                zone != null ? zone.getName() : "unknown",
-                pod != null ? pod.getName() : "unknown");
+                zone != null ? zone.getName() : UNKNOWN,
+                pod != null ? pod.getName() : UNKNOWN);
     }
 }
