@@ -1837,8 +1837,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
 
     @Override
     public boolean canAddDefaultSecurityGroup() {
-        String defaultAdding = _configDao.getValue(Config.SecurityGroupDefaultAdding.key());
-        return (defaultAdding != null && defaultAdding.equalsIgnoreCase("true"));
+        return SecurityGroupDefaultAdding.value();
     }
 
     @Override
@@ -3012,7 +3011,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {MACIdentifier, AdminIsAllowedToDeployAnywhere};
+        return new ConfigKey<?>[] {MACIdentifier, AdminIsAllowedToDeployAnywhere, SecurityGroupDefaultAdding};
     }
 
     @Override

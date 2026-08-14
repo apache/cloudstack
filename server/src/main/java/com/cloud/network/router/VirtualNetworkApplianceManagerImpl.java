@@ -577,10 +577,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
         NetworkHelperImpl.setVMInstanceName(instance);
 
-        final String rpValue = configs.get("network.disable.rpfilter");
-        if (rpValue != null && rpValue.equalsIgnoreCase("true")) {
-            _disableRpFilter = true;
-        }
+        _disableRpFilter = NetworkRouterRpFilter.value();
 
         _dnsBasicZoneUpdates = String.valueOf(_configDao.getValue(Config.DnsBasicZoneUpdates.key()));
 
@@ -2011,8 +2008,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             throw new CloudRuntimeException("Didn't start a control port");
         }
 
-        final String rpValue = _configDao.getValue(Config.NetworkRouterRpFilter.key());
-        _disableRpFilter = rpValue != null && rpValue.equalsIgnoreCase("true");
+        _disableRpFilter = NetworkRouterRpFilter.value();
 
         String rpFilter = " ";
         String type;
@@ -2368,8 +2364,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             return;
         }
 
-        final String serviceMonitoringSet = _configDao.getValue(Config.EnableServiceMonitoring.key());
-        final boolean isMonitoringServicesEnabled = serviceMonitoringSet != null && serviceMonitoringSet.equalsIgnoreCase("true");
+        final boolean isMonitoringServicesEnabled = EnableServiceMonitoring.value();
         final NetworkVO network = _networkDao.findById(networkId);
 
         logger.debug("Creating  monitoring services on " + router + " start...");
@@ -3393,7 +3388,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 ExposeDnsAndBootpServer,
                 RouterLogrotateFrequency,
                 RemoveControlIpOnStop,
-                VirtualRouterUserData
+                VirtualRouterUserData,
+                NetworkRouterRpFilter,
+                EnableServiceMonitoring
         };
     }
 
