@@ -1177,7 +1177,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                         final HostPodVO podVO = _podDao.findById(host.getPodId());
                         final String hostDesc = AlertFormatUtils.describeHostLocation(host, dcVO, podVO);
                         if (host.getType() != Host.Type.SecondaryStorage && host.getType() != Host.Type.ConsoleProxy) {
-                            _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Host disconnected, " + hostDesc,
+                            _alertMgr.sendAlert(AlertService.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Host disconnected, " + hostDesc,
                                     "If the agent for host [" + hostDesc + "] is not restarted within " + AlertWait + " seconds, host will go to Alert state");
                         }
                         event = Status.Event.AgentDisconnected;
@@ -1187,7 +1187,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     final DataCenterVO dcVO = _dcDao.findById(host.getDataCenterId());
                     final HostPodVO podVO = _podDao.findById(host.getPodId());
                     final String hostDesc = AlertFormatUtils.describeHostLocation(host, dcVO, podVO);
-                    _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST,
+                    _alertMgr.sendAlert(AlertService.AlertType.ALERT_TYPE_HOST,
                             host.getDataCenterId(), host.getPodId(),
                             String.format("Host in ALERT state, %s", hostDesc),
                             String.format("Host is in alert state: %s", hostDesc));
@@ -1705,10 +1705,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                                         final HostPodVO podVO = _podDao.findById(host.getPodId());
                                         final String hostDesc = String.format("%s, availability zone: %s, pod: %s", host, dcVO, podVO);
 
-                                        _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_ROUTING, host.getDataCenterId(), host.getPodId(), "Host lost connection to gateway, " + hostDesc,
+                                        _alertMgr.sendAlert(AlertService.AlertType.ALERT_TYPE_ROUTING, host.getDataCenterId(), host.getPodId(), "Host lost connection to gateway, " + hostDesc,
                                                 "Host [" + hostDesc + "] lost connection to gateway (default route) and is possibly having network connection issues.");
                                     } else {
-                                        _alertMgr.clearAlert(AlertManager.AlertType.ALERT_TYPE_ROUTING, host.getDataCenterId(), host.getPodId());
+                                        _alertMgr.clearAlert(AlertService.AlertType.ALERT_TYPE_ROUTING, host.getDataCenterId(), host.getPodId());
                                     }
                                 } else {
                                     logger.debug("Not processing {} for agent id={}; can't find the host in the DB", PingRoutingCommand.class.getSimpleName(), cmdHostId);
@@ -2007,7 +2007,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                         final DataCenterVO dcVO = _dcDao.findById(host.getDataCenterId());
                         final HostPodVO podVO = _podDao.findById(host.getPodId());
                         final String hostDesc = "name: " + host.getName() + " (id:" + host.getId() + "), availability zone: " + dcVO.getName() + ", pod: " + podVO.getName();
-                        _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Migration Complete for host " + hostDesc,
+                        _alertMgr.sendAlert(AlertService.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Migration Complete for host " + hostDesc,
                                 "Host [" + hostDesc + "] is ready for maintenance");
                     }
                 }
