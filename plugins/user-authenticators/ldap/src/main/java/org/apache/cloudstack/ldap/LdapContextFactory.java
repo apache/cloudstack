@@ -49,8 +49,8 @@ public class LdapContextFactory {
     }
 
     public LdapContext createBindContext(final String providerUrl, Long domainId) throws NamingException, IOException {
-        final String bindPrincipal = _ldapConfiguration.getBindPrincipal(domainId);
-        final String bindPassword = _ldapConfiguration.getBindPassword(domainId);
+        final String bindPrincipal = LdapConfiguration.getBindPrincipal(domainId);
+        final String bindPassword = LdapConfiguration.getBindPassword(domainId);
         return createInitialDirContext(bindPrincipal, bindPassword, providerUrl, true, domainId);
     }
 
@@ -70,13 +70,13 @@ public class LdapContextFactory {
     }
 
     private void enableSSL(final Hashtable<String, String> environment, Long domainId) {
-        final boolean sslStatus = _ldapConfiguration.getSSLStatus(domainId);
+        final boolean sslStatus = LdapConfiguration.getSSLStatus(domainId);
 
         if (sslStatus) {
             logger.info("LDAP SSL enabled.");
             environment.put(Context.SECURITY_PROTOCOL, "ssl");
-            String trustStore = _ldapConfiguration.getTrustStore(domainId);
-            String trustStorePassword = _ldapConfiguration.getTrustStorePassword(domainId);
+            String trustStore = LdapConfiguration.getTrustStore(domainId);
+            String trustStorePassword = LdapConfiguration.getTrustStorePassword(domainId);
 
             if (!validateTrustStore(trustStore, trustStorePassword)) {
                 throw new RuntimeException("Invalid truststore or truststore password");
@@ -109,7 +109,7 @@ public class LdapContextFactory {
     }
 
     private Hashtable<String, String> getEnvironment(final String principal, final String password, final String providerUrl, final boolean isSystemContext, Long domainId) {
-        final String factory = _ldapConfiguration.getFactory();
+        final String factory = LdapConfiguration.getFactory();
         String url = providerUrl == null ? _ldapConfiguration.getProviderUrl(domainId) : providerUrl;
         if (StringUtils.isEmpty(url) && domainId != null) {
             //try a default ldap implementation
@@ -120,7 +120,7 @@ public class LdapContextFactory {
 
         environment.put(Context.INITIAL_CONTEXT_FACTORY, factory);
         environment.put(Context.PROVIDER_URL, url);
-        environment.put("com.sun.jndi.ldap.read.timeout", _ldapConfiguration.getReadTimeout(domainId).toString());
+        environment.put("com.sun.jndi.ldap.read.timeout", LdapConfiguration.getReadTimeout(domainId).toString());
         environment.put("com.sun.jndi.ldap.connect.pool", "true");
 
         enableSSL(environment, domainId);

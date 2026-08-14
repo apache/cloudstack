@@ -56,32 +56,32 @@ public class AddKubernetesSupportedVersionCmd extends BaseCmd implements AdminCm
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING,
-            description = "the name of the Kubernetes supported version")
+            description = "The name of the Kubernetes supported version")
     private String name;
 
     @Parameter(name = ApiConstants.SEMANTIC_VERSION, type = CommandType.STRING, required = true,
-            description = "the semantic version of the Kubernetes version. It needs to be specified in MAJOR.MINOR.PATCH format")
+            description = "The semantic version of the Kubernetes version. It needs to be specified in MAJOR.MINOR.PATCH format")
     private String semanticVersion;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID,
             entityType = ZoneResponse.class,
-            description = "the ID of the zone in which Kubernetes supported version will be available")
+            description = "The ID of the zone in which Kubernetes supported version will be available")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.URL, type = CommandType.STRING,
-            description = "the URL of the binaries ISO for Kubernetes supported version")
+            description = "The URL of the binaries ISO for Kubernetes supported version")
     private String url;
 
     @Parameter(name = ApiConstants.CHECKSUM, type = CommandType.STRING,
-            description = "the checksum value of the binaries ISO. " + ApiConstants.CHECKSUM_PARAMETER_PREFIX_DESCRIPTION)
+            description = "The checksum value of the binaries ISO. " + ApiConstants.CHECKSUM_PARAMETER_PREFIX_DESCRIPTION)
     private String checksum;
 
     @Parameter(name = ApiConstants.MIN_CPU_NUMBER, type = CommandType.INTEGER, required = true,
-            description = "the minimum number of CPUs to be set with the Kubernetes version")
+            description = "The minimum number of CPUs to be set with the Kubernetes version")
     private Integer minimumCpu;
 
     @Parameter(name = ApiConstants.MIN_MEMORY, type = CommandType.INTEGER, required = true,
-            description = "the minimum RAM size in MB to be set with the Kubernetes version")
+            description = "The minimum RAM size in MB to be set with the Kubernetes version")
     private Integer minimumRamSize;
 
     @Parameter(name=ApiConstants.DIRECT_DOWNLOAD, type = CommandType.BOOLEAN, since="4.18.2",
@@ -89,7 +89,7 @@ public class AddKubernetesSupportedVersionCmd extends BaseCmd implements AdminCm
     private Boolean directDownload;
 
     @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
-            description = "the CPU arch of the Kubernetes ISO. Valid options are: x86_64, aarch64",
+            description = "the CPU arch of the Kubernetes ISO. Valid options are: x86_64, aarch64, s390x",
             since = "4.20")
     private String arch;
 

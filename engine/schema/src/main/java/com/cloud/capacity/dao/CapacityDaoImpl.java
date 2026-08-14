@@ -213,6 +213,8 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 
     private static final String LEFT_JOIN_VM_TEMPLATE = "LEFT JOIN vm_template ON vm_template.id = vi.vm_template_id ";
 
+    private static final String STORAGE_POOLS_WITH_CHILDREN = "SELECT DISTINCT parent FROM storage_pool WHERE parent != 0 AND removed IS NULL";
+
     public CapacityDaoImpl() {
         _hostIdTypeSearch = createSearchBuilder();
         _hostIdTypeSearch.and("hostId", _hostIdTypeSearch.entity().getHostOrPoolId(), SearchCriteria.Op.EQ);
@@ -379,6 +381,11 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
             finalQuery.append(" AND capacity_type = ?");
             resourceIdList.add(capacityType.longValue());
         }
+
+        // Exclude storage pools with children from capacity calculations to avoid double counting
+        finalQuery.append(" AND NOT (capacity.capacity_type = ").append(Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED)
+                .append(" AND capacity.host_id IN (").append(STORAGE_POOLS_WITH_CHILDREN).append("))");
+
         if (CollectionUtils.isNotEmpty(hostIds)) {
             finalQuery.append(String.format(" AND capacity.host_id IN (%s)", StringUtils.join(hostIds, ",")));
             if (capacityType == null) {
@@ -540,6 +547,10 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 
         StringBuilder sql = new StringBuilder(LIST_CAPACITY_GROUP_BY_CAPACITY_PART1);
         List<Long> resourceIdList = new ArrayList<Long>();
+
+        // Exclude storage pools with children from capacity calculations to avoid double counting
+        sql.append(" AND NOT (capacity.capacity_type = ").append(Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED)
+                .append(" AND capacity.host_id IN (").append(STORAGE_POOLS_WITH_CHILDREN).append("))");
 
         if (zoneId != null) {
             sql.append(" AND capacity.data_center_id = ?");

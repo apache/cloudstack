@@ -96,7 +96,7 @@ public class ChangeSharedFSServiceOfferingCmd extends BaseAsyncCmd implements Us
 
     @Override
     public String getEventDescription() {
-        return "Changing service offering for the Shared FileSystem " + id;
+        return "Changing service offering for the Shared FileSystem with ID:" + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

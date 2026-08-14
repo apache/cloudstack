@@ -1,0 +1,648 @@
+-- Licensed to the Apache Software Foundation (ASF) under one
+-- or more contributor license agreements.  See the NOTICE file
+-- distributed with this work for additional information
+-- regarding copyright ownership.  The ASF licenses this file
+-- to you under the Apache License, Version 2.0 (the
+-- "License"); you may not use this file except in compliance
+-- with the License.  You may obtain a copy of the License at
+--
+--   http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing,
+-- software distributed under the License is distributed on an
+-- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-- KIND, either express or implied.  See the License for the
+-- specific language governing permissions and limitations
+-- under the License.
+
+--;
+-- Schema upgrade from 4.22.1.0 to 4.23.0.0
+--;
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.oauth_provider', 'domain_id', 'bigint unsigned DEFAULT NULL COMMENT "NULL for global provider, domain ID for domain-specific" AFTER `redirect_uri`');
+CALL `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY`('cloud.oauth_provider', 'fk_oauth_provider__domain_id', '(`domain_id`)', '`domain`(`id`)');
+CALL `cloud`.`IDEMPOTENT_ADD_KEY`('i_oauth_provider__domain_id', 'cloud.oauth_provider', '(`domain_id`)');
+
+CALL `cloud`.`IDEMPOTENT_ADD_UNIQUE_KEY`('cloud.oauth_provider', 'uk_oauth_provider__provider_domain', '(`provider`, `domain_id`)');
+
+CREATE TABLE `cloud`.`backup_offering_details` (
+    `id` bigint unsigned NOT NULL auto_increment,
+    `backup_offering_id` bigint unsigned NOT NULL COMMENT 'Backup offering id',
+    `name` varchar(255) NOT NULL,
+    `value` varchar(1024) NOT NULL,
+    `display` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Should detail be displayed to the end user',
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_offering_details__backup_offering_id` FOREIGN KEY `fk_offering_details__backup_offering_id`(`backup_offering_id`) REFERENCES `backup_offering`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Update value to random for the config 'vm.allocation.algorithm' or 'volume.allocation.algorithm' if configured as userconcentratedpod_random
+-- Update value to firstfit for the config 'vm.allocation.algorithm' or 'volume.allocation.algorithm' if configured as userconcentratedpod_firstfit
+UPDATE `cloud`.`configuration` SET value='random' WHERE name IN ('vm.allocation.algorithm', 'volume.allocation.algorithm') AND value='userconcentratedpod_random';
+UPDATE `cloud`.`configuration` SET value='firstfit' WHERE name IN ('vm.allocation.algorithm', 'volume.allocation.algorithm') AND value='userconcentratedpod_firstfit';
+
+-- Add Windows Server 2025 guest OS and mappings
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (6, 'Windows Server 2025 (64-bit)', 'VMware', '7.0', 'windows2022srvNext_64Guest');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (6, 'Windows Server 2025 (64-bit)', 'VMware', '7.0.1.0', 'windows2022srvNext_64Guest');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (6, 'Windows Server 2025 (64-bit)', 'VMware', '7.0.2.0', 'windows2022srvNext_64Guest');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (6, 'Windows Server 2025 (64-bit)', 'VMware', '7.0.3.0', 'windows2022srvNext_64Guest');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (6, 'Windows Server 2025 (64-bit)', 'VMware', '8.0', 'windows2022srvNext_64Guest');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (6, 'Windows Server 2025 (64-bit)', 'VMware', '8.0.0.1', 'windows2022srvNext_64Guest');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (6, 'Windows Server 2025 (64-bit)', 'VMware', '8.0.0.2', 'windows2022srvNext_64Guest');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (6, 'Windows Server 2025 (64-bit)', 'VMware', '8.0.0.3', 'windows2022srvNext_64Guest');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (6, 'Windows Server 2025 (64-bit)', 'VMware', '8.0.1', 'windows2022srvNext_64Guest');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (6, 'Windows Server 2025 (64-bit)', 'VMware', '8.0.2', 'windows2022srvNext_64Guest');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (6, 'Windows Server 2025 (64-bit)', 'VMware', '8.0.3', 'windows2022srvNext_64Guest');
+
+-- Create kubernetes_cluster_affinity_group_map table for CKS per-node-type affinity groups
+CREATE TABLE IF NOT EXISTS `cloud`.`kubernetes_cluster_affinity_group_map` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+    `cluster_id` bigint unsigned NOT NULL COMMENT 'kubernetes cluster id',
+    `node_type` varchar(32) NOT NULL COMMENT 'CONTROL, WORKER, or ETCD',
+    `affinity_group_id` bigint unsigned NOT NULL COMMENT 'affinity group id',
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_kubernetes_cluster_ag_map__cluster_id` FOREIGN KEY (`cluster_id`) REFERENCES `kubernetes_cluster`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_kubernetes_cluster_ag_map__ag_id` FOREIGN KEY (`affinity_group_id`) REFERENCES `affinity_group`(`id`) ON DELETE CASCADE,
+    INDEX `i_kubernetes_cluster_ag_map__cluster_id`(`cluster_id`),
+    INDEX `i_kubernetes_cluster_ag_map__ag_id`(`affinity_group_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Create webhook_filter table
+DROP TABLE IF EXISTS `cloud`.`webhook_filter`;
+CREATE TABLE IF NOT EXISTS `cloud`.`webhook_filter` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id of the webhook filter',
+    `uuid` varchar(255) COMMENT 'uuid of the webhook filter',
+    `webhook_id` bigint unsigned  NOT NULL COMMENT 'id of the webhook',
+    `type` varchar(20) COMMENT 'type of the filter',
+    `mode` varchar(20) COMMENT 'mode of the filter',
+    `match_type` varchar(20) COMMENT 'match type of the filter',
+    `value` varchar(256) NOT NULL COMMENT 'value of the filter used for matching',
+    `created` datetime NOT NULL COMMENT 'date created',
+    PRIMARY KEY (`id`),
+    INDEX `i_webhook_filter__webhook_id`(`webhook_id`),
+    CONSTRAINT `fk_webhook_filter__webhook_id` FOREIGN KEY(`webhook_id`) REFERENCES `webhook`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- "api_keypair" table for API and secret keys
+CREATE TABLE IF NOT EXISTS `cloud`.`api_keypair` (
+    `id` bigint(20) unsigned NOT NULL auto_increment,
+    `uuid` varchar(40) UNIQUE NOT NULL,
+    `name` varchar(255) NOT NULL,
+    `domain_id` bigint(20) unsigned NOT NULL,
+    `account_id` bigint(20) unsigned NOT NULL,
+    `user_id` bigint(20) unsigned NOT NULL,
+    `start_date` datetime,
+    `end_date` datetime,
+    `description` varchar(1024),
+    `api_key` varchar(255) NOT NULL,
+    `secret_key` varchar(255) NOT NULL,
+    `created` datetime NOT NULL,
+    `removed` datetime,
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_api_keypair__user_id` FOREIGN KEY(`user_id`) REFERENCES `cloud`.`user`(`id`),
+    CONSTRAINT `fk_api_keypair__account_id` FOREIGN KEY(`account_id`) REFERENCES `cloud`.`account`(`id`),
+    CONSTRAINT `fk_api_keypair__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `cloud`.`domain`(`id`)
+);
+
+-- "api_keypair_permissions" table for API key pairs permissions
+CREATE TABLE IF NOT EXISTS `cloud`.`api_keypair_permissions` (
+    `id` bigint(20) unsigned NOT NULL auto_increment,
+    `uuid` varchar(40) UNIQUE,
+    `sort_order` bigint(20) unsigned NOT NULL DEFAULT 0,
+    `rule` varchar(255) NOT NULL,
+    `api_keypair_id` bigint(20) unsigned NOT NULL,
+    `permission` varchar(255) NOT NULL,
+    `description` varchar(255),
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_keypair_permissions__api_keypair_id` FOREIGN KEY(`api_keypair_id`) REFERENCES `cloud`.`api_keypair`(`id`)
+);
+
+-- Populate "api_keypair" table with existing user API keys
+INSERT INTO `cloud`.`api_keypair` (uuid, user_id, domain_id, account_id, api_key, secret_key, created, name)
+SELECT UUID(), user.id, account.domain_id, account.id, user.api_key, user.secret_key, NOW(), 'Active key pair'
+FROM `cloud`.`user` AS user
+JOIN `cloud`.`account` AS account ON user.account_id = account.id
+WHERE user.api_key IS NOT NULL AND user.secret_key IS NOT NULL;
+
+-- Drop API keys from user table
+ALTER TABLE `cloud`.`user` DROP COLUMN api_key, DROP COLUMN secret_key;
+
+-- Grant access to the "deleteUserKeys" and "listUserKeyRules" APIs to the "User", "Domain Admin" and "Resource Admin" roles, similarly to the "registerUserKeys" API
+CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('User', 'deleteUserKeys', 'ALLOW');
+CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('Domain Admin', 'deleteUserKeys', 'ALLOW');
+CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('Resource Admin', 'deleteUserKeys', 'ALLOW');
+
+CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('User', 'listUserKeyRules', 'ALLOW');
+CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('Domain Admin', 'listUserKeyRules', 'ALLOW');
+CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('Resource Admin', 'listUserKeyRules', 'ALLOW');
+
+-- Add conserve mode for VPC offerings
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vpc_offerings','conserve_mode', 'tinyint(1) unsigned NULL DEFAULT 0 COMMENT ''True if the VPC offering is IP conserve mode enabled, allowing public IP services to be used across multiple VPC tiers'' ');
+
+-- KMS HSM Profiles (Generic table for PKCS#11, KMIP, etc.)
+-- Scoped to account (user-provided) or global/zone (admin-provided)
+CREATE TABLE IF NOT EXISTS `cloud`.`kms_hsm_profiles` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `uuid` VARCHAR(40) NOT NULL,
+    `name` VARCHAR(255) NOT NULL,
+    `protocol` VARCHAR(32) NOT NULL COMMENT 'Protocol for the HSM Profile',
+
+    -- Scoping
+    `account_id` BIGINT UNSIGNED COMMENT 'null = admin-provided (available to all accounts)',
+    `domain_id` BIGINT UNSIGNED COMMENT 'null = zone/global scope',
+    `zone_id` BIGINT UNSIGNED COMMENT 'null = global scope',
+
+    -- Metadata
+    `vendor_name` VARCHAR(64) COMMENT 'HSM vendor',
+    `enabled` BOOLEAN NOT NULL DEFAULT TRUE,
+    `is_public` BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'Public profile. Available to all accounts',
+    `created` DATETIME NOT NULL,
+    `removed` DATETIME,
+
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_uuid` (`uuid`),
+    UNIQUE KEY `uk_account_name` (`account_id`, `name`, `removed`),
+    INDEX `idx_protocol_enabled` (`protocol`, `enabled`, `removed`),
+    INDEX `idx_scoping` (`account_id`, `domain_id`, `zone_id`, `removed`),
+    CONSTRAINT `fk_kms_hsm_profiles__account_id` FOREIGN KEY (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_kms_hsm_profiles__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_kms_hsm_profiles__zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='HSM profiles for KMS providers';
+
+-- KMS HSM Profile Details (Protocol-specific configuration)
+CREATE TABLE IF NOT EXISTS `cloud`.`kms_hsm_profile_details` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `profile_id` BIGINT UNSIGNED NOT NULL COMMENT 'HSM profile ID',
+    `name` VARCHAR(255) NOT NULL COMMENT 'Config key (e.g. library_path, endpoint, pin, cert_content)',
+    `value` TEXT NOT NULL COMMENT 'Config value (encrypted if sensitive)',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_profile_name` (`profile_id`, `name`),
+    CONSTRAINT `fk_kms_hsm_profile_details__profile_id` FOREIGN KEY (`profile_id`) REFERENCES `kms_hsm_profiles`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Details for HSM profiles (key-value configuration)';
+
+-- KMS Keys (Key Encryption Key Metadata)
+-- Account-scoped KEKs for envelope encryption
+CREATE TABLE IF NOT EXISTS `cloud`.`kms_keys` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `uuid` VARCHAR(40) NOT NULL COMMENT 'UUID - user-facing identifier',
+    `name` VARCHAR(255) NOT NULL COMMENT 'User-friendly name',
+    `description` VARCHAR(1024) COMMENT 'User description',
+    `kek_label` VARCHAR(255) NOT NULL COMMENT 'Provider-specific KEK label/ID',
+    `purpose` VARCHAR(32) NOT NULL COMMENT 'Key purpose (VOLUME_ENCRYPTION, TLS_CERT)',
+    `account_id` BIGINT UNSIGNED NOT NULL COMMENT 'Owning account',
+    `domain_id` BIGINT UNSIGNED NOT NULL COMMENT 'Owning domain',
+    `zone_id` BIGINT UNSIGNED NOT NULL COMMENT 'Zone where key is valid',
+    `algorithm` VARCHAR(64) NOT NULL DEFAULT 'AES/GCM/NoPadding' COMMENT 'Encryption algorithm',
+    `key_bits` INT NOT NULL DEFAULT 256 COMMENT 'Key size in bits',
+    `enabled` TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'Whether the key is enabled for new cryptographic operations',
+    `hsm_profile_id` BIGINT UNSIGNED NOT NULL COMMENT 'Current HSM profile ID for this key',
+    `created` DATETIME NOT NULL COMMENT 'Creation timestamp',
+    `removed` DATETIME COMMENT 'Removal timestamp for soft delete',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_uuid` (`uuid`),
+    INDEX `idx_account_purpose` (`account_id`, `purpose`, `enabled`),
+    INDEX `idx_domain_purpose` (`domain_id`, `purpose`, `enabled`),
+    INDEX `idx_zone_enabled` (`zone_id`, `enabled`),
+    CONSTRAINT `fk_kms_keys__account_id` FOREIGN KEY (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_kms_keys__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_kms_keys__zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_kms_keys__hsm_profile_id` FOREIGN KEY (`hsm_profile_id`) REFERENCES `kms_hsm_profiles`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='KMS Key (KEK) metadata - account-scoped keys for envelope encryption';
+
+-- KMS KEK Versions (multiple KEKs per KMS key for gradual rotation)
+-- Supports multiple KEK versions per logical KMS key during rotation
+CREATE TABLE IF NOT EXISTS `cloud`.`kms_kek_versions` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `uuid` VARCHAR(40) NOT NULL COMMENT 'UUID',
+    `kms_key_id` BIGINT UNSIGNED NOT NULL COMMENT 'Reference to kms_keys table',
+    `version_number` INT NOT NULL COMMENT 'Version number (1, 2, 3, ...)',
+    `kek_label` VARCHAR(255) NOT NULL COMMENT 'Provider-specific KEK label/ID for this version',
+    `status` VARCHAR(32) NOT NULL DEFAULT 'Active' COMMENT 'Active, Previous, Archived',
+    `hsm_profile_id` BIGINT UNSIGNED COMMENT 'HSM profile where this KEK version is stored',
+    `created` DATETIME NOT NULL COMMENT 'Creation timestamp',
+    `removed` DATETIME COMMENT 'Removal timestamp for soft delete',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_uuid` (`uuid`),
+    UNIQUE KEY `uk_kms_key_version` (`kms_key_id`, `version_number`, `removed`),
+    INDEX `idx_kms_key_status` (`kms_key_id`, `status`, `removed`),
+    INDEX `idx_kek_label` (`kek_label`),
+    CONSTRAINT `fk_kms_kek_versions__kms_key_id` FOREIGN KEY (`kms_key_id`) REFERENCES `kms_keys`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_kms_kek_versions__hsm_profile_id` FOREIGN KEY (`hsm_profile_id`) REFERENCES `kms_hsm_profiles`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='KEK versions for a KMS key - supports gradual rotation';
+
+-- KMS Wrapped Keys (Data Encryption Keys)
+-- Generic table for wrapped DEKs - references kms_keys for metadata and kek_versions for specific KEK version
+CREATE TABLE IF NOT EXISTS `cloud`.`kms_wrapped_key` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `uuid` VARCHAR(40) NOT NULL COMMENT 'UUID',
+    `kms_key_id` BIGINT UNSIGNED COMMENT 'Reference to kms_keys table',
+    `kek_version_id` BIGINT UNSIGNED COMMENT 'Reference to kms_kek_versions table',
+    `zone_id` BIGINT UNSIGNED NOT NULL COMMENT 'Zone ID for zone-scoped keys',
+    `wrapped_blob` VARBINARY(4096) NOT NULL COMMENT 'Encrypted DEK material',
+    `created` DATETIME NOT NULL COMMENT 'Creation timestamp',
+    `removed` DATETIME COMMENT 'Removal timestamp for soft delete',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_uuid` (`uuid`),
+    INDEX `idx_kms_key_id` (`kms_key_id`, `removed`),
+    INDEX `idx_kek_version_id` (`kek_version_id`, `removed`),
+    INDEX `idx_zone_id` (`zone_id`, `removed`),
+    CONSTRAINT `fk_kms_wrapped_key__kms_key_id` FOREIGN KEY (`kms_key_id`) REFERENCES `kms_keys`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_kms_wrapped_key__kek_version_id` FOREIGN KEY (`kek_version_id`) REFERENCES `kms_kek_versions`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_kms_wrapped_key__zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='KMS wrapped encryption keys (DEKs) - references kms_keys for KEK metadata and kek_versions for specific version';
+
+-- Add KMS key reference to volumes table (which KMS key was used)
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.volumes', 'kms_key_id', 'BIGINT UNSIGNED COMMENT ''KMS key ID used for volume encryption''');
+CALL `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY`('cloud.volumes', 'fk_volumes__kms_key_id', '(kms_key_id)', '`kms_keys`(`id`)');
+
+-- Add KMS wrapped key reference to volumes table
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.volumes', 'kms_wrapped_key_id', 'BIGINT UNSIGNED COMMENT ''KMS wrapped key ID for volume encryption''');
+CALL `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY`('cloud.volumes', 'fk_volumes__kms_wrapped_key_id', '(kms_wrapped_key_id)', '`kms_wrapped_key`(`id`)');
+
+-- KMS Database Provider KEK Objects (PKCS#11-like object storage)
+-- Stores KEKs for the database KMS provider in a PKCS#11-compatible format
+CREATE TABLE IF NOT EXISTS `cloud`.`kms_database_kek_objects` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Object handle (PKCS#11 CKA_HANDLE)',
+    `uuid` VARCHAR(40) NOT NULL COMMENT 'UUID',
+    -- PKCS#11 Object Class (CKA_CLASS)
+    `object_class` VARCHAR(32) NOT NULL DEFAULT 'CKO_SECRET_KEY' COMMENT 'PKCS#11 object class (CKO_SECRET_KEY, CKO_PRIVATE_KEY, etc.)',
+    -- PKCS#11 Label (CKA_LABEL) - human-readable identifier
+    `label` VARCHAR(255) NOT NULL COMMENT 'PKCS#11 label (CKA_LABEL) - human-readable identifier',
+    -- PKCS#11 ID (CKA_ID) - application-defined identifier
+    `object_id` VARBINARY(64) COMMENT 'PKCS#11 object ID (CKA_ID) - application-defined identifier',
+    -- Key Type (CKA_KEY_TYPE)
+    `key_type` VARCHAR(32) NOT NULL DEFAULT 'CKK_AES' COMMENT 'PKCS#11 key type (CKK_AES, CKK_RSA, etc.)',
+    -- Key Material (CKA_VALUE) - encrypted KEK material
+    `key_material` VARBINARY(512) NOT NULL COMMENT 'PKCS#11 key value (CKA_VALUE) - encrypted KEK material',
+    -- Key Attributes (PKCS#11 boolean attributes)
+    `is_sensitive` BOOLEAN NOT NULL DEFAULT TRUE COMMENT 'PKCS#11 CKA_SENSITIVE - key material is sensitive',
+    `is_extractable` BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'PKCS#11 CKA_EXTRACTABLE - key can be extracted',
+    `is_token` BOOLEAN NOT NULL DEFAULT TRUE COMMENT 'PKCS#11 CKA_TOKEN - object is on token (persistent)',
+    `is_private` BOOLEAN NOT NULL DEFAULT TRUE COMMENT 'PKCS#11 CKA_PRIVATE - object is private',
+    `is_modifiable` BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'PKCS#11 CKA_MODIFIABLE - object can be modified',
+    `is_copyable` BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'PKCS#11 CKA_COPYABLE - object can be copied',
+    `is_destroyable` BOOLEAN NOT NULL DEFAULT TRUE COMMENT 'PKCS#11 CKA_DESTROYABLE - object can be destroyed',
+    `always_sensitive` BOOLEAN NOT NULL DEFAULT TRUE COMMENT 'PKCS#11 CKA_ALWAYS_SENSITIVE - key was always sensitive',
+    `never_extractable` BOOLEAN NOT NULL DEFAULT TRUE COMMENT 'PKCS#11 CKA_NEVER_EXTRACTABLE - key was never extractable',
+    -- Key Metadata
+    `purpose` VARCHAR(32) NOT NULL COMMENT 'Key purpose (VOLUME_ENCRYPTION, TLS_CERT)',
+    `key_bits` INT NOT NULL COMMENT 'Key size in bits (128, 192, 256)',
+    `algorithm` VARCHAR(64) NOT NULL DEFAULT 'AES/GCM/NoPadding' COMMENT 'Encryption algorithm',
+    -- Validity Dates (PKCS#11 CKA_START_DATE, CKA_END_DATE)
+    `start_date` DATETIME COMMENT 'PKCS#11 CKA_START_DATE - key validity start',
+    `end_date` DATETIME COMMENT 'PKCS#11 CKA_END_DATE - key validity end',
+    -- Lifecycle
+    `created` DATETIME NOT NULL COMMENT 'Creation timestamp',
+    `last_used` DATETIME COMMENT 'Last usage timestamp',
+    `removed` DATETIME COMMENT 'Removal timestamp for soft delete',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_uuid` (`uuid`),
+    UNIQUE KEY `uk_label_removed` (`label`, `removed`),
+    INDEX `idx_purpose_removed` (`purpose`, `removed`),
+    INDEX `idx_key_type` (`key_type`, `removed`),
+    INDEX `idx_object_class` (`object_class`, `removed`),
+    INDEX `idx_created` (`created`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='KMS Database Provider KEK Objects - PKCS#11-like object storage for KEKs';
+
+--- Disable/enable NICs
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.nics','enabled', 'TINYINT(1) NOT NULL DEFAULT 1 COMMENT ''Indicates whether the NIC is enabled or not'' ');
+
+--- Add URLs for OAuth provider
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.oauth_provider','authorize_url', 'VARCHAR(255) DEFAULT NULL COMMENT ''Authorize URL for OAuth initialization'' ');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.oauth_provider','token_url', 'VARCHAR(255) DEFAULT NULL COMMENT ''Token URL for OAuth finalization'' ');
+
+--- Quota tariff/usage mapping
+CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_tariff_usage` (
+    `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+    `tariff_id` bigint(20) unsigned NOT NULL COMMENT 'ID of the tariff of the Quota usage detail calculated, foreign key to quota_tariff table',
+    `quota_usage_id` bigint(20) unsigned NOT NULL COMMENT 'ID of the aggregation of Quota usage details, foreign key to quota_usage table',
+    `quota_used` decimal(20,8) NOT NULL COMMENT 'Amount of quota used',
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_quota_tariff_usage__tariff_id` FOREIGN KEY (`tariff_id`) REFERENCES `cloud_usage`.`quota_tariff` (`id`),
+    CONSTRAINT `fk_quota_tariff_usage__quota_usage_id` FOREIGN KEY (`quota_usage_id`) REFERENCES `cloud_usage`.`quota_usage` (`id`));
+
+--- Per-VM ISO attachments. user_vm.iso_id remains as the primary/bootable ISO pointer.
+CREATE TABLE IF NOT EXISTS `cloud`.`vm_iso_map` (
+    `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+    `vm_id` bigint(20) unsigned NOT NULL COMMENT 'foreign key to user_vm',
+    `iso_id` bigint(20) unsigned NOT NULL COMMENT 'foreign key to vm_template (ISOs are templates of format ISO)',
+    `device_seq` int(10) unsigned NOT NULL COMMENT 'cdrom slot index used to derive the libvirt device label (3=hdc, 4=hdd)',
+    `created` datetime NOT NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uc_vm_iso_map__vm_iso` (`vm_id`, `iso_id`),
+    UNIQUE KEY `uc_vm_iso_map__vm_seq` (`vm_id`, `device_seq`),
+    CONSTRAINT `fk_vm_iso_map__vm_id` FOREIGN KEY (`vm_id`) REFERENCES `cloud`.`user_vm` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_vm_iso_map__iso_id` FOREIGN KEY (`iso_id`) REFERENCES `cloud`.`vm_template` (`id`)
+);
+
+-- Add the 'keep_mac_address_on_public_nic' column to the 'cloud.networks' and 'cloud.vpc' tables
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.networks', 'keep_mac_address_on_public_nic', 'TINYINT(1) NOT NULL DEFAULT 1');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vpc', 'keep_mac_address_on_public_nic', 'TINYINT(1) NOT NULL DEFAULT 1');
+
+-- Creates the 'kvm.memory.dynamic.scaling.capacity' and, for already active ACS environments,
+-- initializes it with the value of the setting 'vm.serviceoffering.ram.size.max'
+INSERT INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `default_value`, `updated`, `scope`, `is_dynamic`, `group_id`, `subgroup_id`, `display_text`, `description`)
+SELECT 'Advanced', 'DEFAULT', 'CapacityManager', 'kvm.memory.dynamic.scaling.capacity', `cfg`.`value`, 0, NULL, 4, 1, 6, 27,
+       'KVM memory dynamic scaling capacity', 'Defines the maximum memory capacity in MiB for which VMs can be dynamically scaled to with KVM. The ''kvm.memory.dynamic.scaling.capacity'' setting''s value will be used to define the value of the ''<maxMemory />'' element of domain XMLs. If it is set to a value less than or equal to ''0'', then the host''s memory capacity will be considered.'
+FROM `cloud`.`configuration` `cfg`
+WHERE NOT EXISTS (SELECT 1 FROM `cloud`.`configuration` WHERE `name` = 'kvm.memory.dynamic.scaling.capacity')
+  AND `cfg`.`name` = 'vm.serviceoffering.ram.size.max';
+
+-- Creates the 'kvm.cpu.dynamic.scaling.capacity' and, for already active ACS environments,
+-- initializes it with the value of the setting 'vm.serviceoffering.cpu.cores.max'
+INSERT INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `default_value`, `updated`, `scope`, `is_dynamic`, `group_id`, `subgroup_id`, `display_text`, `description`)
+SELECT 'Advanced', 'DEFAULT', 'CapacityManager', 'kvm.cpu.dynamic.scaling.capacity', `cfg`.`value`, 0, NULL, 4, 1, 6, 27,
+       'KVM CPU dynamic scaling capacity', 'Defines the maximum vCPU capacity for which VMs can be dynamically scaled to with KVM. The ''kvm.cpu.dynamic.scaling.capacity'' setting''s value will be used to define the value of the ''<vcpu />'' element of domain XMLs. If it is set to a value less than or equal to ''0'', then the host''s CPU cores capacity will be considered.'
+FROM `cloud`.`configuration` `cfg`
+WHERE NOT EXISTS (SELECT 1 FROM `cloud`.`configuration` WHERE `name` = 'kvm.cpu.dynamic.scaling.capacity')
+  AND `cfg`.`name` = 'vm.serviceoffering.cpu.cores.max';
+
+-- Generalise VM schedule tables into resource-agnostic resource_schedule / resource_scheduled_job.
+-- Step 1: rename vm_schedule → resource_schedule, rename vm_id → resource_id, add resource_type column.
+ALTER TABLE `cloud`.`vm_schedule`
+    DROP FOREIGN KEY `fk_vm_schedule__vm_id`,
+    DROP INDEX `i_vm_schedule__vm_id`,
+    DROP INDEX `i_vm_schedule__enabled_end_date`,
+    CHANGE COLUMN `vm_id` `resource_id` bigint unsigned NOT NULL COMMENT 'id of the scheduled resource',
+    ADD COLUMN `resource_type` varchar(64) NOT NULL DEFAULT 'VirtualMachine' COMMENT 'type of the scheduled resource' AFTER `uuid`;
+
+RENAME TABLE `cloud`.`vm_schedule` TO `cloud`.`resource_schedule`;
+
+ALTER TABLE `cloud`.`resource_schedule`
+    ADD INDEX `i_resource_schedule__resource` (`resource_type`, `resource_id`),
+    ADD INDEX `i_resource_schedule__enabled_end_date` (`enabled`, `end_date`);
+
+-- Step 2: rename vm_scheduled_job → resource_scheduled_job, rename columns.
+ALTER TABLE `cloud`.`vm_scheduled_job`
+    DROP FOREIGN KEY `fk_vm_scheduled_job__vm_id`,
+    DROP FOREIGN KEY `fk_vm_scheduled_job__vm_schedule_id`,
+    DROP INDEX `i_vm_scheduled_job__vm_id`,
+    DROP INDEX `i_vm_scheduled_job__scheduled_timestamp`,
+    DROP INDEX `vm_schedule_id`,
+    CHANGE COLUMN `vm_id` `resource_id` bigint unsigned NOT NULL COMMENT 'id of the scheduled resource',
+    CHANGE COLUMN `vm_schedule_id` `schedule_id` bigint unsigned NOT NULL COMMENT 'id of the resource_schedule row',
+    ADD COLUMN `resource_type` varchar(64) NOT NULL DEFAULT 'VirtualMachine' COMMENT 'type of the scheduled resource' AFTER `uuid`;
+
+RENAME TABLE `cloud`.`vm_scheduled_job` TO `cloud`.`resource_scheduled_job`;
+
+ALTER TABLE `cloud`.`resource_scheduled_job`
+    ADD UNIQUE KEY `uc_resource_scheduled_job__schedule_timestamp` (`schedule_id`, `scheduled_timestamp`),
+    ADD INDEX `i_resource_scheduled_job__resource` (`resource_type`, `resource_id`),
+    ADD INDEX `i_resource_scheduled_job__scheduled_timestamp` (`scheduled_timestamp`),
+    ADD CONSTRAINT `fk_resource_scheduled_job__schedule_id` FOREIGN KEY (`schedule_id`) REFERENCES `resource_schedule`(`id`) ON DELETE CASCADE;
+
+-- Step 3: details table for action-specific parameters (used by the generic resource schedule API in Commit 2).
+CREATE TABLE IF NOT EXISTS `cloud`.`resource_schedule_details` (
+    `id` bigint unsigned NOT NULL auto_increment,
+    `schedule_id` bigint unsigned NOT NULL COMMENT 'id of the resource_schedule row',
+    `name` varchar(255) NOT NULL,
+    `value` varchar(1024) NOT NULL,
+    `display` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'should this detail be visible to the end user',
+    PRIMARY KEY (`id`),
+    INDEX `i_resource_schedule_details__schedule_id` (`schedule_id`),
+    CONSTRAINT `fk_resource_schedule_details__schedule_id` FOREIGN KEY (`schedule_id`) REFERENCES `resource_schedule`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Step 4: rename CRUD event types from VM.SCHEDULE.{CREATE,UPDATE,DELETE} to the new generic SCHEDULE.{CREATE,UPDATE,DELETE}.
+-- Action-execution events (VM.SCHEDULE.START, .STOP, .REBOOT, .FORCE_STOP, .FORCE_REBOOT) keep their existing names.
+UPDATE `cloud`.`event` SET `type` = 'SCHEDULE.CREATE' WHERE `type` = 'VM.SCHEDULE.CREATE';
+UPDATE `cloud`.`event` SET `type` = 'SCHEDULE.UPDATE' WHERE `type` = 'VM.SCHEDULE.UPDATE';
+UPDATE `cloud`.`event` SET `type` = 'SCHEDULE.DELETE' WHERE `type` = 'VM.SCHEDULE.DELETE';
+
+-- Step 5: Rename the global configuration key for the scheduler
+UPDATE `cloud`.`configuration` SET name='scheduler.jobs.expire.interval' WHERE name='vmscheduler.jobs.expire.interval';
+
+-- Remove stale realhostip.com default values; domain has been dead since ~2015.
+UPDATE `cloud`.`configuration`
+    SET value = NULL
+    WHERE name IN ('consoleproxy.url.domain', 'secstorage.ssl.cert.domain')
+      AND value IN ('realhostip.com', '*.realhostip.com');
+
+-- Add management_server_details table to allow ManagementServer scope configs
+CREATE TABLE IF NOT EXISTS `management_server_details` (
+                                                           `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+                                                           `management_server_id` bigint unsigned NOT NULL COMMENT 'management server the detail is related to',
+                                                           `name` varchar(255) NOT NULL COMMENT 'name of the detail',
+    `value` varchar(255) NOT NULL,
+    `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user',
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_management_server_details__management_server_id` FOREIGN KEY `fk_management_server_details__management_server_id`(`management_server_id`) REFERENCES `mshost`(`id`) ON DELETE CASCADE,
+    KEY `i_management_server_details__name__value` (`name`(128),`value`(128))
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Add checkpoint tracking fields to backups table for incremental backup support
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'from_checkpoint_id', 'VARCHAR(255) DEFAULT NULL COMMENT "Previous active checkpoint id for incremental backups"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'to_checkpoint_id', 'VARCHAR(255) DEFAULT NULL COMMENT "New checkpoint id created for the next incremental backup"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'checkpoint_create_time', 'BIGINT DEFAULT NULL COMMENT "Checkpoint creation timestamp from libvirt"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'host_id', 'BIGINT UNSIGNED DEFAULT NULL COMMENT "Host where backup is running"');
+
+-- Create image_transfer table for per-disk image transfers
+CREATE TABLE IF NOT EXISTS `cloud`.`image_transfer`(
+    `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+    `uuid` varchar(40) NOT NULL COMMENT 'uuid',
+    `account_id` bigint unsigned NOT NULL COMMENT 'Account ID',
+    `domain_id` bigint unsigned NOT NULL COMMENT 'Domain ID',
+    `data_center_id` bigint unsigned NOT NULL COMMENT 'Data Center ID',
+    `backup_id` bigint unsigned COMMENT 'Backup ID',
+    `volume_id` bigint unsigned NOT NULL COMMENT 'Volume ID',
+    `host_id` bigint unsigned NOT NULL COMMENT 'Host ID',
+    `transfer_url` varchar(255) COMMENT 'ImageIO transfer URL',
+    `file` varchar(255) COMMENT 'File for the file backend',
+    `phase` varchar(20) NOT NULL COMMENT 'Transfer phase: initializing, transferring, finished, failed',
+    `socket` varchar(255) COMMENT 'Unix socket for nbd backend',
+    `direction` varchar(20) NOT NULL COMMENT 'Direction: upload, download',
+    `backend` varchar(20) NOT NULL COMMENT 'Backend: nbd, file',
+    `progress` int COMMENT 'Transfer progress percentage (0-100)',
+    `signed_ticket_id` varchar(255) COMMENT 'Signed ticket ID from ImageIO',
+    `created` datetime NOT NULL COMMENT 'date created',
+    `updated` datetime COMMENT 'date updated if not null',
+    `removed` datetime COMMENT 'date removed if not null',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uuid` (`uuid`),
+    CONSTRAINT `fk_image_transfer__backup_id` FOREIGN KEY (`backup_id`) REFERENCES `backups`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_image_transfer__volume_id` FOREIGN KEY (`volume_id`) REFERENCES `volumes`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_image_transfer__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
+    INDEX `i_image_transfer__backup_id`(`backup_id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--- Quota resource statement
+INSERT INTO cloud.role_permissions (uuid, role_id, rule, permission, sort_order)
+SELECT uuid(), role_id, 'quotaResourceStatement', permission, sort_order
+FROM cloud.role_permissions rp
+WHERE rule = 'quotaStatement' AND NOT EXISTS(SELECT 1 FROM cloud.role_permissions rp_ WHERE rp.role_id = rp_.role_id AND rp_.rule = 'quotaResourceStatement');
+
+-- Increase length of value of extension details from 255 to 4096 to support longer details value
+CALL `cloud`.`IDEMPOTENT_CHANGE_COLUMN`('cloud.extension_details', 'value', 'value', 'VARCHAR(4096)');
+CALL `cloud`.`IDEMPOTENT_CHANGE_COLUMN`('cloud.extension_resource_map_details', 'value', 'value', 'VARCHAR(4096)');
+
+-- Add CustomAction service support to physical_network_service_providers
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.physical_network_service_providers', 'custom_action_service_provided', 'tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT "Is Custom Action service provided" AFTER `networkacl_service_provided`');
+
+--- Gui theme login base domain
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.gui_themes', 'login_base_domain', 'TEXT DEFAULT NULL');
+
+-- Add description for secondary IP addresses
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.nic_secondary_ips', 'description', 'VARCHAR(2048) DEFAULT NULL');
+
+--- Change nw_rate and mc_rate column types from smallint unsigned to int unsigned to support larger rate values
+ALTER TABLE `cloud`.`service_offering`
+    MODIFY COLUMN `nw_rate` int unsigned DEFAULT 200 COMMENT 'network rate throttle mbits/s',
+    MODIFY COLUMN `mc_rate` int unsigned DEFAULT 10 COMMENT 'mcast rate throttle mbits/s';
+
+ALTER TABLE `cloud`.`network_offerings`
+    MODIFY COLUMN `nw_rate` int unsigned COMMENT 'network rate throttle mbits/s',
+    MODIFY COLUMN `mc_rate` int unsigned COMMENT 'mcast rate throttle mbits/s';
+
+-- Soft delete port forwarding, load balancing and firewall rules
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.firewall_rules', 'removed', 'datetime DEFAULT NULL');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.load_balancer_vm_map', 'removed', 'datetime DEFAULT NULL');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.load_balancer_cert_map', 'removed', 'datetime DEFAULT NULL');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.load_balancer_healthcheck_policies', 'removed', 'datetime DEFAULT NULL');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.load_balancer_stickiness_policies', 'removed', 'datetime DEFAULT NULL');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.global_load_balancer_lb_rule_map', 'removed', 'datetime DEFAULT NULL');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.elastic_lb_vm_map', 'removed', 'datetime DEFAULT NULL');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.tungsten_lb_health_monitor', 'removed', 'datetime DEFAULT NULL');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.global_load_balancing_rules', 'removed', 'datetime DEFAULT NULL');
+
+ALTER TABLE `cloud`.`load_balancer_vm_map`
+DROP KEY `load_balancer_id`,
+ADD UNIQUE KEY `load_balancer_id` (`load_balancer_id`, `instance_id`, `instance_ip`, `removed`);
+
+ALTER TABLE `cloud`.`global_load_balancer_lb_rule_map`
+DROP KEY `gslb_rule_id`,
+ADD UNIQUE KEY `gslb_rule_id` (`gslb_rule_id`, `lb_rule_id`, `removed`);
+
+-- ======================================================================
+-- DNS Framework Schema
+-- ======================================================================
+
+-- DNS Server Table (Stores DNS Server Configurations)
+CREATE TABLE IF NOT EXISTS `cloud`.`dns_server` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id of the dns server',
+    `uuid` varchar(40) COMMENT 'uuid of the dns server',
+    `name` varchar(255) NOT NULL COMMENT 'display name of the dns server',
+    `provider_type` varchar(255) NOT NULL COMMENT 'Provider type such as PowerDns',
+    `url` varchar(1024) NOT NULL COMMENT 'dns server url',
+    `dns_username` varchar(255) COMMENT 'username or email for dns server credentials',
+    `dns_api_key` varchar(255) NOT NULL COMMENT 'api key or token for the dns server ',
+    `port` int(11) DEFAULT NULL COMMENT 'optional dns server port',
+    `name_servers` varchar(1024) DEFAULT NULL COMMENT 'Comma separated list of name servers',
+    `is_public` tinyint(1) NOT NULL DEFAULT '0',
+    `public_domain_suffix` VARCHAR(255),
+    `state` ENUM('Enabled', 'Disabled') NOT NULL DEFAULT 'Disabled',
+    `domain_id` bigint unsigned COMMENT 'for domain-specific ownership',
+    `account_id` bigint(20) unsigned NOT NULL,
+    `created` datetime NOT NULL COMMENT 'date created',
+    `removed` datetime DEFAULT NULL COMMENT 'Date removed (soft delete)',
+    PRIMARY KEY (`id`),
+    KEY `i_dns_server__account_id` (`account_id`),
+    CONSTRAINT `fk_dns_server__account_id` FOREIGN KEY (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- DNS Server Details Table
+CREATE TABLE IF NOT EXISTS `cloud`.`dns_server_details` (
+  `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `dns_server_id` bigint unsigned NOT NULL COMMENT 'dns_server the detail is related to',
+  `name` varchar(255) NOT NULL COMMENT 'name of the detail',
+  `value` varchar(255) NOT NULL COMMENT 'value of the detail',
+  `display` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Should detail be displayed to the end user',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_dns_server_details__dns_server_id` FOREIGN KEY (`dns_server_id`) REFERENCES `dns_server`(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- DNS Zone Table (Stores DNS Zone Metadata)
+CREATE TABLE IF NOT EXISTS `cloud`.`dns_zone` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id of the dns zone',
+    `uuid` varchar(40) COMMENT 'uuid of the dns zone',
+    `name` varchar(255) NOT NULL COMMENT 'dns zone name (e.g. example.com)',
+    `dns_server_id` bigint unsigned NOT NULL COMMENT 'fk to dns_server.id',
+    `external_reference` VARCHAR(255) COMMENT 'id of external provider resource',
+    `domain_id` bigint unsigned COMMENT 'for domain-specific ownership',
+    `account_id` bigint unsigned COMMENT 'account id. foreign key to account table',
+    `description` varchar(1024) DEFAULT NULL,
+    `type` ENUM('Private', 'Public') NOT NULL DEFAULT 'Public',
+    `state` ENUM('Active', 'Inactive') NOT NULL DEFAULT 'Inactive',
+    `created` datetime NOT NULL COMMENT 'date created',
+    `removed` datetime DEFAULT NULL COMMENT 'Date removed (soft delete)',
+    PRIMARY KEY (`id`),
+    CONSTRAINT `uc_dns_zone__uuid` UNIQUE (`uuid`),
+    KEY `i_dns_zone__dns_server` (`dns_server_id`),
+    KEY `i_dns_zone__account_id` (`account_id`),
+    CONSTRAINT `fk_dns_zone__dns_server_id` FOREIGN KEY (`dns_server_id`) REFERENCES `dns_server` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_dns_zone__account_id` FOREIGN KEY (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_dns_zone__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- DNS Zone Network Map (One-to-Many Link)
+CREATE TABLE IF NOT EXISTS `cloud`.`dns_zone_network_map` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id of the dns zone to network mapping',
+  `uuid` varchar(40),
+  `dns_zone_id` bigint(20) unsigned NOT NULL,
+  `network_id` bigint(20) unsigned NOT NULL COMMENT 'network to which dns zone is associated to',
+  `sub_domain` varchar(255) DEFAULT NULL COMMENT 'Subdomain for auto-registration',
+  `created` datetime NOT NULL COMMENT 'date created',
+  `removed` datetime DEFAULT NULL COMMENT 'Date removed (soft delete)',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `uc_dns_zone_network_map__uuid` UNIQUE (`uuid`),
+  KEY `fk_dns_map__zone_id` (`dns_zone_id`),
+  KEY `fk_dns_map__network_id` (`network_id`),
+  CONSTRAINT `fk_dns_map__zone_id` FOREIGN KEY (`dns_zone_id`) REFERENCES `dns_zone` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_dns_map__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- This is part of allowing firewall rules on public IP addresses in VPC network
+ALTER TABLE `cloud`.`firewall_rules` MODIFY COLUMN `network_id` BIGINT UNSIGNED NULL;
+
+-- KBOSS
+
+CREATE TABLE IF NOT EXISTS `cloud`.`internal_backup_pool_ref` (
+    `id` bigint NOT NULL UNIQUE AUTO_INCREMENT,
+    `backup_id` bigint unsigned NOT NULL COMMENT 'The backup ID. Foreign key that points to the backups table.',
+    `storage_pool_id` bigint unsigned NOT NULL COMMENT 'The storage ID. Foreign key that points to the storage_pool table.',
+    `volume_id` bigint unsigned NOT NULL COMMENT 'The volumes ID. Foreign key that points to the volumes table.',
+    `backup_delta_path` varchar(255) COMMENT 'Path of the created delta.',
+    `backup_parent_path` varchar(255) COMMENT 'Path of the created delta parent.',
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_internal_backup_pool_ref__backup_id` FOREIGN KEY (`backup_id`) REFERENCES `backups`(`id`),
+    CONSTRAINT `fk_internal_backup_pool_ref__storage_pool_id` FOREIGN KEY (`storage_pool_id`) REFERENCES `storage_pool`(`id`),
+    CONSTRAINT `fk_internal_backup_pool_ref__volume_id` FOREIGN KEY (`volume_id`) REFERENCES `volumes`(`id`)
+    );
+
+CREATE TABLE IF NOT EXISTS `cloud`.`internal_backup_store_ref` (
+     `id` bigint NOT NULL UNIQUE AUTO_INCREMENT,
+     `backup_id` bigint unsigned NOT NULL COMMENT 'The backup ID. Foreign key that points to the backups table.',
+     `volume_id` bigint unsigned NOT NULL COMMENT 'The volume ID. Foreign key that points to the volumes table.',
+     `device_id` bigint unsigned COMMENT 'device ID of the volume',
+     `path` varchar(255) COMMENT 'Path of the backup.',
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_internal_backup_store_ref__backup_id` FOREIGN KEY (`backup_id`) REFERENCES `backups`(`id`),
+    CONSTRAINT `fk_internal_backup_store_ref__volume_id` FOREIGN KEY (`volume_id`) REFERENCES `volumes`(`id`)
+    );
+
+CREATE TABLE IF NOT EXISTS `cloud`.`internal_backup_service_job` (
+    `id` bigint NOT NULL UNIQUE AUTO_INCREMENT,
+    `backup_id` bigint unsigned NOT NULL COMMENT 'The backup ID. Foreign key that points to the backups table.',
+    `instance_id` bigint unsigned NOT NULL COMMENT 'The instance ID. Foreign key that points to the vm_instance table.',
+    `account_id` bigint(20) unsigned COMMENT 'Account ID of the owner of the VM.',
+    `host_id` bigint unsigned COMMENT 'The host ID that is executing the compression. Foreign key that points to the host table.',
+    `zone_id` bigint unsigned NOT NULL COMMENT 'The zone ID of the where the VM is. Foreign key that points to the data_center table',
+    `attempts` int(32) unsigned NOT NULL DEFAULT 0,
+    `type` varchar(55) NOT NULL,
+    `created` datetime NOT NULL,
+    `scheduled_start_time` datetime NOT NULL,
+    `start_time` datetime,
+    `removed` datetime,
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_internal_backup_service_job__backup_id` FOREIGN KEY (`backup_id`) REFERENCES `backups`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_internal_backup_service_job__instance_id` FOREIGN KEY (`instance_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_internal_backup_service_job__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_internal_backup_service_job__zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_internal_backup_service_job__account_id` FOREIGN KEY (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE
+    );
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'uncompressed_size', 'bigint unsigned');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'compression_status', 'varchar(55)');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'validation_status', 'varchar(55)');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backup_schedule', 'isolated', 'TINYINT(1) NOT NULL DEFAULT 0 COMMENT "Whether the scheduled backups will be isolated or not."');
+
+UPDATE `cloud`.`configuration` SET `value`=CONCAT(`value`, ', backupValidationCommandTimeout, backupValidationScreenshotWait, backupValidationBootTimeout')
+WHERE `name`='user.vm.readonly.details' AND `value` IS NOT NULL;

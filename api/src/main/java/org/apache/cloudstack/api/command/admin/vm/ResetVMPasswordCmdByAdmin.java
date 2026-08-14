@@ -24,8 +24,8 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "resetPasswordForVirtualMachine", responseObject=UserVmResponse.class, description="Resets the password for virtual machine. " +
-                    "The virtual machine must be in a \"Stopped\" state and the template must already " +
+@APICommand(name = "resetPasswordForVirtualMachine", responseObject=UserVmResponse.class, description = "Resets the password for Instance. " +
+                    "The Instance must be in a \"Stopped\" state and the Template must already " +
         "support this feature for this command to take effect. [async]", responseView = ResponseView.Full, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class ResetVMPasswordCmdByAdmin extends ResetVMPasswordCmd implements AdminCmd {}

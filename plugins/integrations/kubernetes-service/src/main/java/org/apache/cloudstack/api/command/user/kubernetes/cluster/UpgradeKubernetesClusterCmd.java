@@ -55,12 +55,12 @@ public class UpgradeKubernetesClusterCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID,
             entityType = KubernetesClusterResponse.class, required = true,
-            description = "the ID of the Kubernetes cluster")
+            description = "The ID of the Kubernetes cluster")
     private Long id;
 
     @Parameter(name = ApiConstants.KUBERNETES_VERSION_ID, type = CommandType.UUID,
             entityType = KubernetesSupportedVersionResponse.class, required = true,
-            description = "the ID of the Kubernetes version for upgrade")
+            description = "The ID of the Kubernetes version for upgrade")
     private Long kubernetesVersionId;
 
     /////////////////////////////////////////////////////
@@ -82,14 +82,7 @@ public class UpgradeKubernetesClusterCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        String description = "Upgrading Kubernetes cluster";
-        KubernetesCluster cluster = _entityMgr.findById(KubernetesCluster.class, getId());
-        if (cluster != null) {
-            description += String.format(" ID: %s", cluster.getUuid());
-        } else {
-            description += String.format(" ID: %d", getId());
-        }
-        return description;
+        return "Upgrading Kubernetes cluster with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

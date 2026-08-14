@@ -25,23 +25,23 @@ import com.cloud.serializer.Param;
 
 public class ApiLimitResponse extends BaseResponse {
     @SerializedName(ApiConstants.ACCOUNT_ID)
-    @Param(description = "the account uuid of the api remaining count")
+    @Param(description = "The Account UUID of the api remaining count")
     private String accountId;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the account name of the api remaining count")
+    @Param(description = "The Account name of the api remaining count")
     private String accountName;
 
     @SerializedName("apiIssued")
-    @Param(description = "number of api already issued")
+    @Param(description = "Number of API already issued")
     private int apiIssued;
 
     @SerializedName("apiAllowed")
-    @Param(description = "currently allowed number of apis")
+    @Param(description = "Currently allowed number of APIs")
     private int apiAllowed;
 
     @SerializedName("expireAfter")
-    @Param(description = "seconds left to reset counters")
+    @Param(description = "Seconds left to reset counters")
     private long expireAfter;
 
     public void setAccountId(String accountId) {

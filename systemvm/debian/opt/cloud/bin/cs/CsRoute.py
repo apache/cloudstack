@@ -115,7 +115,7 @@ class CsRoute:
         """ Return True if a default route is present
         :return: bool
         """
-        logging.info("Checking if default ipv4 route is present")
+        logging.info("Checking if default IPv4 route is present")
         route_found = CsHelper.execute("ip -4 route list 0/0")
 
         if len(route_found) > 0:

@@ -105,7 +105,7 @@ public class StorPoolHelper {
         if (snapshotDetails != null) {
             return StorPoolStorageAdaptor.getVolumeNameFromPath(snapshotDetails.getValue(), true);
         } else {
-            List<SnapshotDataStoreVO> snapshots = snapshotStoreDao.findBySnapshotId(snapshotId);
+            List<SnapshotDataStoreVO> snapshots = snapshotStoreDao.findBySnapshotIdWithNonDestroyedState(snapshotId);
             if (!CollectionUtils.isEmpty(snapshots)) {
                 for (SnapshotDataStoreVO snapshotDataStoreVO : snapshots) {
                     String name = StorPoolStorageAdaptor.getVolumeNameFromPath(snapshotDataStoreVO.getInstallPath(), true);
@@ -177,32 +177,6 @@ public class StorPoolHelper {
         }
         return tags;
     }
-
-    // Initialize custom logger for updated volume and snapshots
-//    public static void appendLogger(Logger log, String filePath, String kindOfLog) {
-//        Appender appender = null;
-//        PatternLayout patternLayout = new PatternLayout();
-//        patternLayout.setConversionPattern("%d{YYYY-MM-dd HH:mm:ss.SSS}  %m%n");
-//        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
-//        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-//        String path = filePath + "-" + sdf.format(timestamp) + ".log";
-//        try {
-//            appender = new RollingFileAppender(patternLayout, path);
-//            log.setAdditivity(false);
-//            log.addAppender(appender);
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//        if (kindOfLog.equals("update")) {
-//            StorPoolUtil.spLog(
-//                    "You can find information about volumes and snapshots, which will be updated in Database with their globalIs in %s log file",
-//                    path);
-//        } else if (kindOfLog.equals("abandon")) {
-//            StorPoolUtil.spLog(
-//                    "You can find information about volumes and snapshots, for which CloudStack doesn't have information in %s log file",
-//                    path);
-//        }
-//    }
 
     public static void setSpClusterIdIfNeeded(long hostId, String clusterId, ClusterDao clusterDao, HostDao hostDao,
             ClusterDetailsDao clusterDetails) {

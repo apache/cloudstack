@@ -28,6 +28,8 @@ public interface UsageJobDao extends GenericDao<UsageJobVO, Long> {
 
     UsageJobVO getLastJob();
 
+    UsageJobVO getNextRecurringJob();
+
     UsageJobVO getNextImmediateJob();
 
     long getLastJobSuccessDateMillis();

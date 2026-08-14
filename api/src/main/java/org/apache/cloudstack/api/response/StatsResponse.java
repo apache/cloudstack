@@ -27,59 +27,59 @@ import com.google.gson.annotations.SerializedName;
 public class StatsResponse extends BaseResponse {
 
     @SerializedName("timestamp")
-    @Param(description = "the time when the VM stats were collected. The format is 'yyyy-MM-dd hh:mm:ss'")
+    @Param(description = "The time when the Instance stats were collected. The format is 'yyyy-MM-dd hh:mm:ss'")
     private Date timestamp;
 
     @SerializedName("cpuused")
-    @Param(description = "the amount (percentage) of the VM's CPU currently used")
+    @Param(description = "The amount (percentage) of the Instance's CPU currently used")
     private String cpuUsed;
 
     @SerializedName(ApiConstants.DISK_IO_READ)
-    @Param(description = "the VM's disk number of read requests (IO) made in the last collection cycle as defined by vm.stats.interval configuration")
+    @Param(description = "The Instance's disk number of read requests (IO) made in the last collection cycle as defined by vm.stats.interval configuration")
     protected Long diskIORead;
 
     @SerializedName(ApiConstants.DISK_IO_WRITE)
-    @Param(description = "the VM's disk number of write requests (IO) made in the last collection cycle as defined by vm.stats.interval configuration")
+    @Param(description = "The Instance's disk number of write requests (IO) made in the last collection cycle as defined by vm.stats.interval configuration")
     protected Long diskIOWrite;
 
     @SerializedName(ApiConstants.DISK_IO_PSTOTAL)
-    @Param(description = "the total disk iops since the last stats retrieval")
+    @Param(description = "The total disk IOPS since the last stats retrieval")
     protected Long diskIopsTotal = 0L;
 
     @SerializedName(ApiConstants.DISK_KBS_READ)
-    @Param(description = "the VM's disk read in KiB")
+    @Param(description = "The Instance's disk read in KiB")
     private Long diskKbsRead;
 
     @SerializedName(ApiConstants.DISK_KBS_WRITE)
-    @Param(description = "the VM's disk write in KiB")
+    @Param(description = "The Instance's disk write in KiB")
     private Long diskKbsWrite;
 
     @SerializedName("memoryintfreekbs")
-    @Param(description = "the VM's free memory in KB or -1 if it cannot be gathered")
+    @Param(description = "The Instance's free memory in KB or -1 if it cannot be gathered")
     private Long memoryIntFreeKBs;
 
     @SerializedName("memorykbs")
-    @Param(description = "the memory used by the VM in KB")
+    @Param(description = "The memory used by the Instance in KB")
     private Long memoryKBs;
 
     @SerializedName("memorytargetkbs")
-    @Param(description = "the target memory in VM (KB)")
+    @Param(description = "The target memory in Instance (KB)")
     private Long memoryTargetKBs;
 
     @SerializedName("networkkbsread")
-    @Param(description = "the incoming network traffic on the VM in KiB")
+    @Param(description = "The incoming Network traffic on the Instance in KiB")
     protected Long networkKbsRead;
 
     @SerializedName("networkkbswrite")
-    @Param(description = "the outgoing network traffic on the host in KiB")
+    @Param(description = "The outgoing Network traffic on the host in KiB")
     protected Long networkKbsWrite;
 
     @SerializedName("networkread")
-    @Param(description = "the amount of downloaded data by the VM in MiB")
+    @Param(description = "The amount of downloaded data by the Instance in MiB")
     protected String networkRead;
 
     @SerializedName("networkwrite")
-    @Param(description = "the amount of uploaded data by the VM in MiB")
+    @Param(description = "The amount of uploaded data by the Instance in MiB")
     protected String networkWrite;
 
     public void setTimestamp(Date timestamp) {

@@ -73,7 +73,7 @@ public class TotpUserTwoFactorAuthenticator extends AdapterBase implements UserT
     @Override
     public String setup2FAKey(UserAccount userAccount) {
         if (StringUtils.isNotEmpty(userAccount.getKeyFor2fa())) {
-            throw new CloudRuntimeException(String.format("2FA key is already setup for the user account %s", userAccount.getAccountName()));
+            throw new CloudRuntimeException(String.format("2FA key is already setup for the user Account %s", userAccount.getAccountName()));
         }
         SecureRandom random = new SecureRandom();
         byte[] bytes = new byte[20];

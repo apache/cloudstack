@@ -43,11 +43,11 @@ public class ListResourceLimitsCmd extends BaseListProjectAndAccountResourcesCmd
     private Long id;
 
     @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.INTEGER, description = "Type of resource. Values are 0, 1, 2, 3, 4, 6, 7, 8, 9, 10 and 11. "
-        + "0 - Instance. Number of instances a user can create. "
+        + "0 - Instance. Number of Instances a user can create. "
         + "1 - IP. Number of public IP addresses an account can own. "
         + "2 - Volume. Number of disk volumes an account can own. "
-        + "3 - Snapshot. Number of snapshots an account can own. "
-        + "4 - Template. Number of templates an account can register/create. "
+        + "3 - Snapshot. Number of Snapshots an account can own. "
+        + "4 - Template. Number of Templates an account can register/create. "
         + "5 - Project. Number of projects an account can own. "
         + "6 - Network. Number of networks an account can own. "
         + "7 - VPC. Number of VPC an account can own. "
@@ -58,11 +58,11 @@ public class ListResourceLimitsCmd extends BaseListProjectAndAccountResourcesCmd
     private Integer resourceType;
 
     @Parameter(name = ApiConstants.RESOURCE_TYPE_NAME, type = CommandType.STRING, description = "Type of resource (wins over resourceType if both are provided). Values are: "
-            + "user_vm - Instance. Number of instances a user can create. "
+            + "user_vm - Instance. Number of Instances a user can create. "
             + "public_ip - IP. Number of public IP addresses an account can own. "
             + "volume - Volume. Number of disk volumes an account can own. "
-            + "snapshot - Snapshot. Number of snapshots an account can own. "
-            + "template - Template. Number of templates an account can register/create. "
+            + "snapshot - Snapshot. Number of Snapshots an account can own. "
+            + "template - Template. Number of Templates an account can register/create. "
             + "project - Project. Number of projects an account can own. "
             + "network - Network. Number of networks an account can own. "
             + "vpc - VPC. Number of VPC an account can own. "
@@ -103,7 +103,7 @@ public class ListResourceLimitsCmd extends BaseListProjectAndAccountResourcesCmd
     @Override
     public void execute() {
         List<? extends ResourceLimit> result =
-                _resourceLimitService.searchForLimits(id, _accountService.finalyzeAccountId(this.getAccountName(), this.getDomainId(), this.getProjectId(), false), this.getDomainId(),
+                _resourceLimitService.searchForLimits(id, _accountService.finalizeAccountId(this.getAccountName(), this.getDomainId(), this.getProjectId(), false), this.getDomainId(),
                         getResourceTypeEnum(), getTag(), this.getStartIndex(), this.getPageSizeVal());
         ListResponse<ResourceLimitResponse> response = new ListResponse<ResourceLimitResponse>();
         List<ResourceLimitResponse> limitResponses = new ArrayList<ResourceLimitResponse>();

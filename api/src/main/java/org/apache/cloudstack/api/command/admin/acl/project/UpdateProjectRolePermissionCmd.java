@@ -57,7 +57,7 @@ public class UpdateProjectRolePermissionCmd extends BaseCmd {
     private Long projectId;
 
     @Parameter(name = ApiConstants.RULE_ORDER, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = ProjectRolePermissionResponse.class,
-            description = "The parent role permission uuid, use 0 to move this rule at the top of the list")
+            description = "ID of the parent role permission, use 0 to move this rule at the top of the list")
     private List<Long> projectRulePermissionOrder;
 
     @Parameter(name = ApiConstants.PROJECT_ROLE_PERMISSION_ID, type = CommandType.UUID, entityType = ProjectRolePermissionResponse.class,
@@ -115,7 +115,7 @@ public class UpdateProjectRolePermissionCmd extends BaseCmd {
             if (getProjectRuleId() != null || getProjectRolePermission() != null) {
                 throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Parameters permission and ruleid must be mutually exclusive with ruleorder");
             }
-            CallContext.current().setEventDetails("Reordering permissions for role id: " + projectRole.getId());
+            CallContext.current().setEventDetails("Reordering permissions for role with ID: " + projectRole.getUuid());
             result = updateProjectRolePermissionOrder(projectRole);
 
         } else if (getProjectRuleId() != null || getProjectRolePermission() != null ) {
@@ -123,7 +123,7 @@ public class UpdateProjectRolePermissionCmd extends BaseCmd {
                 throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Parameters permission and ruleid must be mutually exclusive with ruleorder");
             }
             ProjectRolePermission rolePermission = getValidProjectRolePermission();
-            CallContext.current().setEventDetails("Updating project role permission for rule id: " + getProjectRuleId() + " to: " + getProjectRolePermission().toString());
+            CallContext.current().setEventDetails("Updating project role permission for rule ID: " + getProjectRuleId() + " to: " + getProjectRolePermission().toString());
             result = projRoleService.updateProjectRolePermission(projectId, projectRole, rolePermission, getProjectRolePermission());
         }
         SuccessResponse response = new SuccessResponse(getCommandName());

@@ -24,23 +24,23 @@ import org.apache.cloudstack.api.BaseResponse;
 public class RollingMaintenanceHostUpdatedResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.HOST_ID)
-    @Param(description = "the ID of the updated host")
+    @Param(description = "The ID of the updated host")
     private String hostId;
 
     @SerializedName(ApiConstants.HOST_NAME)
-    @Param(description = "the name of the updated host")
+    @Param(description = "The name of the updated host")
     private String hostName;
 
     @SerializedName(ApiConstants.START_DATE)
-    @Param(description = "start date of the update on the host")
+    @Param(description = "Start date of the update on the host")
     private String startDate;
 
     @SerializedName(ApiConstants.END_DATE)
-    @Param(description = "end date of the update on the host")
+    @Param(description = "End date of the update on the host")
     private String endDate;
 
     @SerializedName(ApiConstants.OUTPUT)
-    @Param(description = "output of the maintenance script on the host")
+    @Param(description = "Output of the maintenance script on the host")
     private String output;
 
     public String getHostId() {

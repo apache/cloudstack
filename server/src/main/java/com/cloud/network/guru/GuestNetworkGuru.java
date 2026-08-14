@@ -311,7 +311,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     public void deallocate(final Network network, final NicProfile nic, final VirtualMachineProfile vm) {
         if (network.getSpecifyIpRanges()) {
             if (logger.isDebugEnabled()) {
-                logger.debug("Deallocate network: {}, nic: {}", network, nic);
+                logger.debug("Deallocate Network: {}, NIC: {}", network, nic);
             }
 
             final IPAddressVO ip = _ipAddressDao.findByIpAndSourceNetworkId(nic.getNetworkId(), nic.getIPv4Address());
@@ -370,7 +370,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
             }
             implemented.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vnet));
             ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), network.getAccountId(), EventVO.LEVEL_INFO,
-                    EventTypes.EVENT_ZONE_VLAN_ASSIGN, "Assigned Zone Vlan: " + vnet + " Network Id: " + network.getId(), network.getId(), ApiCommandResourceType.Network.toString(), 0);
+                    EventTypes.EVENT_ZONE_VLAN_ASSIGN, "Assigned Zone VLAN: " + vnet + " Network ID: " + network.getUuid(), network.getId(), ApiCommandResourceType.Network.toString(), 0);
         } else {
             implemented.setBroadcastUri(network.getBroadcastUri());
         }

@@ -28,47 +28,47 @@ import com.google.gson.annotations.SerializedName;
 @EntityReference(value = ImageStore.class)
 public class ImageStoreResponse extends BaseResponseWithAnnotations {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the image store")
+    @Param(description = "The ID of the image store")
     private String id;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "the Zone ID of the image store")
+    @Param(description = "The Zone ID of the image store")
     private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME)
-    @Param(description = "the Zone name of the image store")
+    @Param(description = "The Zone name of the image store")
     private String zoneName;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the image store")
+    @Param(description = "The name of the image store")
     private String name;
 
     @SerializedName(ApiConstants.URL)
-    @Param(description = "the url of the image store")
+    @Param(description = "The URL of the image store")
     private String url;
 
     @SerializedName(ApiConstants.PROTOCOL)
-    @Param(description = "the protocol of the image store")
+    @Param(description = "The protocol of the image store")
     private String protocol;
 
     @SerializedName("providername")
-    @Param(description = "the provider name of the image store")
+    @Param(description = "The provider name of the image store")
     private String providerName;
 
     @SerializedName(ApiConstants.SCOPE)
-    @Param(description = "the scope of the image store")
+    @Param(description = "The scope of the image store")
     private ScopeType scope;
 
     @SerializedName(ApiConstants.READ_ONLY)
-    @Param(description = "defines if store is read-only")
+    @Param(description = "Defines if store is read-only")
     private Boolean readonly;
 
     @SerializedName("disksizetotal")
-    @Param(description = "the total disk size of the host")
+    @Param(description = "The total disk size of the host")
     private Long diskSizeTotal;
 
     @SerializedName("disksizeused")
-    @Param(description = "the host's currently used disk size")
+    @Param(description = "The host's currently used disk size")
     private Long diskSizeUsed;
 
     public ImageStoreResponse() {

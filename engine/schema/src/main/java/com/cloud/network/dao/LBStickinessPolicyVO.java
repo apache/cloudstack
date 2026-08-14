@@ -17,6 +17,7 @@
 package com.cloud.network.dao;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -30,9 +31,12 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
 import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.utils.Pair;
+import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 @Entity
@@ -67,6 +71,10 @@ public class LBStickinessPolicyVO implements StickinessPolicy {
 
     @Column(name = "display", updatable = true, nullable = false)
     protected boolean display = true;
+
+    @Column(name = GenericDao.REMOVED_COLUMN)
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date removed;
 
     protected LBStickinessPolicyVO() {
         this.uuid = UUID.randomUUID().toString();

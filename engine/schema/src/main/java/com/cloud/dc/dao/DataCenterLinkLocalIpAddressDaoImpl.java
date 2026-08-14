@@ -104,7 +104,7 @@ public class DataCenterLinkLocalIpAddressDaoImpl extends GenericDaoBase<DataCent
     @Override
     public void releaseIpAddress(String ipAddress, long dcId, long instanceId) {
         if (logger.isDebugEnabled()) {
-            logger.debug("Releasing ip address: " + ipAddress + " data center " + dcId);
+            logger.debug("Releasing IP address: " + ipAddress + " data center " + dcId);
         }
         SearchCriteria<DataCenterLinkLocalIpAddressVO> sc = AllFieldsSearch.create();
         sc.setParameters("ip", ipAddress);

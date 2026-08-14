@@ -28,7 +28,7 @@ import org.apache.cloudstack.api.response.VMUserDataResponse;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@APICommand(name = "getVirtualMachineUserData", description = "Returns user data associated with the VM", responseObject = VMUserDataResponse.class, since = "4.4",
+@APICommand(name = "getVirtualMachineUserData", description = "Returns user data associated with the Instance", responseObject = VMUserDataResponse.class, since = "4.4",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class GetVMUserDataCmd extends BaseCmd {
 
@@ -36,7 +36,7 @@ public class GetVMUserDataCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class, required = true, description = "The ID of the virtual machine")
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class, required = true, description = "The ID of the Instance")
     private Long vmId;
 
     /////////////////////////////////////////////////////

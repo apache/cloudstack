@@ -19,7 +19,6 @@
 -- Schema upgrade from 4.21.0.0 to 4.22.0.0
 --;
 
-
 -- health check status as enum
 CALL `cloud`.`IDEMPOTENT_CHANGE_COLUMN`('router_health_check', 'check_result', 'check_result', 'varchar(16) NOT NULL COMMENT "check executions result: SUCCESS, FAILURE, WARNING, UNKNOWN"');
 
@@ -87,3 +86,8 @@ CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('MaaS', 'orchestratorrequir
 
 CALL `cloud`.`IDEMPOTENT_DROP_UNIQUE_KEY`('counter', 'uc_counter__provider__source__value');
 CALL `cloud`.`IDEMPOTENT_ADD_UNIQUE_KEY`('cloud.counter', 'uc_counter__provider__source__value__removed', '(provider, source, value, removed)');
+
+-- Change scope for configuration - 'use.https.to.upload from' from StoragePool to Zone
+UPDATE `cloud`.`configuration` SET `scope` = 2 WHERE `name` = 'use.https.to.upload';
+-- Delete the configuration for 'use.https.to.upload' from StoragePool
+DELETE FROM `cloud`.`storage_pool_details` WHERE `name` = 'use.https.to.upload';

@@ -81,7 +81,7 @@ public interface NetworkService {
             true, ConfigKey.Scope.Zone);
 
     public static final ConfigKey<Boolean> AllowUsersToSpecifyVRMtu = new ConfigKey<>("Advanced", Boolean.class,
-            "allow.end.users.to.specify.vr.mtu", "false", "Allow end users to specify VR MTU",
+            "allow.end.users.to.specify.vr.mtu", "false", "Allow end Users to specify VR MTU",
             true, ConfigKey.Scope.Zone);
 
     List<? extends Network> getIsolatedNetworksOwnedByAccountInZone(long zoneId, Account owner);
@@ -106,6 +106,10 @@ public interface NetworkService {
 
     Network createGuestNetwork(long networkOfferingId, String name, String displayText, Account owner,
            PhysicalNetwork physicalNetwork, long zoneId, ControlledEntity.ACLType aclType) throws
+            InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException;
+
+    Network createGuestNetwork(long networkOfferingId, String name, String displayText, Account owner,
+                               PhysicalNetwork physicalNetwork, long zoneId, ControlledEntity.ACLType aclType, Pair<Integer, Integer> vrIfaceMTUs) throws
             InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException;
 
     Pair<List<? extends Network>, Integer> searchForNetworks(ListNetworksCmd cmd);
@@ -228,7 +232,7 @@ public interface NetworkService {
     /**
      * Requests an IP address for the guest NIC
      */
-    NicSecondaryIp allocateSecondaryGuestIP(long nicId, IpAddresses requestedIpPair) throws InsufficientAddressCapacityException;
+    NicSecondaryIp allocateSecondaryGuestIP(long nicId, IpAddresses requestedIpPair, String description) throws InsufficientAddressCapacityException;
 
     boolean releaseSecondaryIpFromNic(long ipAddressId);
 
@@ -275,4 +279,6 @@ public interface NetworkService {
     IpAddresses getIpAddressesFromIps(String ipAddress, String ip6Address, String macAddress);
 
     String getNicVlanValueForExternalVm(NicTO nic);
+
+    Long getPreferredNetworkIdForPublicIpRuleAssignment(IpAddress ip, Long networkId);
 }

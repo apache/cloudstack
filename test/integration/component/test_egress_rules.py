@@ -1165,8 +1165,8 @@ class TestInvalidAccountAuthroize(cloudstackTestCase):
         return
 
     @attr(tags = ["sg", "eip", "advancedsg"])
-    def test_invalid_account_authroize(self):
-        """Test invalid account authroize
+    def test_invalid_account_authorize(self):
+        """Test invalid account authorize
         """
 
 

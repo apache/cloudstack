@@ -62,6 +62,8 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.collect.Maps;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.extension.ExtensionHelper;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -151,6 +153,7 @@ public class ConfigDriveNetworkElementTest {
     @Mock private CallContext callContextMock;
     @Mock private DomainVO domainVO;
     @Mock private NetworkOrchestrationService _networkOrchestrationService;
+    @Mock private ExtensionHelper extensionHelper;
 
     @Spy @InjectMocks
     private ConfigDriveNetworkElement _configDrivesNetworkElement = new ConfigDriveNetworkElement();
@@ -202,6 +205,8 @@ public class ConfigDriveNetworkElementTest {
         doReturn(_configDrivesNetworkElement.getProvider().getName()).when(_ntwkSrvcDao).getProviderForServiceInNetwork(NETWORK_ID, Network.Service.UserData);
 
         _networkModel.setNetworkElements(Arrays.asList(_configDrivesNetworkElement));
+        ReflectionTestUtils.setField(_networkModel, "extensionHelper", extensionHelper);
+        Mockito.lenient().when(extensionHelper.isNetworkExtensionProvider(Mockito.anyString())).thenReturn(false);
         _networkModel.start();
 
     }

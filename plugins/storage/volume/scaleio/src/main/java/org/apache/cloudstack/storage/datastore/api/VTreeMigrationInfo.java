@@ -59,7 +59,7 @@ public class VTreeMigrationInfo {
     }
 
     public void setMigrationStatus(String migrationStatus) {
-        this.migrationStatus = EnumUtils.fromString(MigrationStatus.class, migrationStatus, MigrationStatus.None);
+        this.migrationStatus = EnumUtils.getEnumIgnoreCase(MigrationStatus.class, migrationStatus, MigrationStatus.None);
     }
 
     public void setMigrationStatus(MigrationStatus migrationStatus) {

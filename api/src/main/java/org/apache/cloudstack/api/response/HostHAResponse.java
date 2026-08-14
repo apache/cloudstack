@@ -27,23 +27,23 @@ import org.apache.cloudstack.ha.HAConfig;
 @EntityReference(value = HAConfig.class)
 public final class HostHAResponse extends BaseResponse {
     @SerializedName(ApiConstants.HOST_ID)
-    @Param(description = "the ID of the host")
+    @Param(description = "The ID of the host")
     private String id;
 
     @SerializedName(ApiConstants.HA_ENABLE)
-    @Param(description = "if host HA is enabled for the host")
+    @Param(description = "If host HA is enabled for the host")
     private Boolean enabled;
 
     @SerializedName(ApiConstants.HA_STATE)
-    @Param(description = "the HA state of the host")
+    @Param(description = "The HA state of the host")
     private HAConfig.HAState haState;
 
     @SerializedName(ApiConstants.HA_PROVIDER)
-    @Param(description = "the host HA provider")
+    @Param(description = "The host HA provider")
     private String provider;
 
     @SerializedName(ApiConstants.STATUS)
-    @Param(description = "operation status")
+    @Param(description = "Operation status")
     private Boolean status;
 
     public HostHAResponse() {

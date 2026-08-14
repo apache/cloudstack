@@ -29,15 +29,15 @@ import org.apache.cloudstack.api.EntityReference;
 @EntityReference(value = VirtualMachine.class)
 public class RunDiagnosticsResponse extends BaseResponse {
     @SerializedName(ApiConstants.STDOUT)
-    @Param(description = "the standard output from the command execution")
+    @Param(description = "The standard output from the command execution")
     private String stdout;
 
     @SerializedName(ApiConstants.STDERR)
-    @Param(description = "the standard error output from the command execution")
+    @Param(description = "The standard error output from the command execution")
     private String stderr;
 
     @SerializedName(ApiConstants.EXITCODE)
-    @Param(description = "the command execution return code")
+    @Param(description = "The command execution return code")
     private String exitCode;
 
     public String getStdout() {

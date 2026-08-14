@@ -84,7 +84,7 @@ public class UpdateVmNicIpTest extends TestCase {
         try {
             updateVmNicIpCmd.execute();
         } catch (ServerApiException exception) {
-            Assert.assertEquals("Failed to update ip address on vm NIC. Refer to server logs for details.", exception.getDescription());
+            Assert.assertEquals("Failed to update IP address on Instance NIC. Refer to server logs for details.", exception.getDescription());
         }
     }
 

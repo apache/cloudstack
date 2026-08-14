@@ -201,7 +201,7 @@ export default {
       if (successful.length > 0) {
         this.$notification.success({
           message: this.$t('label.register.template'),
-          description: 'Succesfully registered templates: ' + successful.map(r => r.name).join(', ')
+          description: 'Successfully registered templates: ' + successful.map(r => r.name).join(', ')
         })
 
         successful.forEach(r => {

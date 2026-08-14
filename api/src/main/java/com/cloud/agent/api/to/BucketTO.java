@@ -26,10 +26,13 @@ public final class BucketTO {
 
     private String secretKey;
 
+    private long accountId;
+
     public BucketTO(Bucket bucket) {
         this.name = bucket.getName();
         this.accessKey = bucket.getAccessKey();
         this.secretKey = bucket.getSecretKey();
+        this.accountId = bucket.getAccountId();
     }
 
     public BucketTO(String name) {
@@ -46,5 +49,9 @@ public final class BucketTO {
 
     public String getSecretKey() {
         return this.secretKey;
+    }
+
+    public long getAccountId() {
+        return this.accountId;
     }
 }

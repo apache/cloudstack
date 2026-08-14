@@ -69,12 +69,6 @@ public class LdapConfigurationDaoImpl extends GenericDaoBase<LdapConfigurationVO
     }
 
     @Override
-    public LdapConfigurationVO find(String hostname, int port, Long domainId, boolean listAll) {
-        SearchCriteria<LdapConfigurationVO> sc = getSearchCriteria(null, hostname, port, domainId, listAll);
-        return findOneBy(sc);
-    }
-
-    @Override
     public Pair<List<LdapConfigurationVO>, Integer> searchConfigurations(final String hostname, final int port, final Long domainId) {
         SearchCriteria<LdapConfigurationVO> sc = getSearchCriteria(null, hostname, port, domainId, false);
         return searchAndCount(sc, null);

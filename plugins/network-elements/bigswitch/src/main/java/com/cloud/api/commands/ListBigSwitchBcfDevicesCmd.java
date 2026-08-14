@@ -55,13 +55,13 @@ public class ListBigSwitchBcfDevicesCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, description = "the Physical Network ID")
+    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, description = "The Physical Network ID")
     private Long physicalNetworkId;
 
     @Parameter(name = BcfConstants.BIGSWITCH_BCF_DEVICE_ID,
                type = CommandType.UUID,
                entityType = BigSwitchBcfDeviceResponse.class,
-               description = "bigswitch BCF controller device ID")
+               description = "Bigswitch BCF controller device ID")
     private Long bigswitchBcfDeviceId;
 
     /////////////////////////////////////////////////////
