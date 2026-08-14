@@ -16,11 +16,17 @@
 // under the License.
 package com.cloud.network.ovs;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
+
 import com.cloud.host.Host;
 import com.cloud.network.Network;
 import com.cloud.utils.component.Manager;
 
 public interface OvsTunnelManager extends Manager {
+
+    ConfigKey<String> OvsTunnelNetworkDefaultLabel = new ConfigKey<>("Network", String.class,
+            "sdn.ovs.controller.default.label", "cloud-public",
+            "Default network label to be used when fetching interface for GRE endpoints", true);
 
     boolean isOvsTunnelEnabled();
 
