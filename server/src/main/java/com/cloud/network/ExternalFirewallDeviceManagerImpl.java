@@ -776,8 +776,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
 
     public int getGloballyConfiguredCidrSize() {
         try {
-            String globalVlanBits = _configDao.getValue(Config.GuestVlanBits.key());
-            return 8 + Integer.parseInt(globalVlanBits);
+            return 8 + NetworkService.GuestVlanBits.value();
         } catch (Exception e) {
             throw new CloudRuntimeException("Failed to read the globally configured VLAN bits size.");
         }
