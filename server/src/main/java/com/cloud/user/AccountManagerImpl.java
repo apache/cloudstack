@@ -1509,7 +1509,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         List<APIChecker> apiCheckers = getEnabledApiCheckers();
         for (String command : apiNameList) {
             try {
-                checkApiAccess(apiCheckers, requested, command);
+                checkApiAccess(apiCheckers, requested, command, null);
             } catch (PermissionDeniedException pde) {
                 if (logger.isTraceEnabled()) {
                     logger.trace(String.format(
@@ -1528,7 +1528,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     logger.trace(String.format("permission to \"%s\" is requested",
                             command));
                 }
-                checkApiAccess(apiCheckers, caller, command);
+                checkApiAccess(apiCheckers, caller, command, null);
             } catch (PermissionDeniedException pde) {
                 String msg = String.format("User of Account %s and domain %s can not create an account with access to more privileges they have themself.",
                         caller, _domainMgr.getDomain(caller.getDomainId()));
@@ -1538,9 +1538,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
     }
 
-    private void checkApiAccess(List<APIChecker> apiCheckers, Account caller, String command, ApiKeyPairPermission... apiKeyPairPermissions) {
+    private void checkApiAccess(List<APIChecker> apiCheckers, Account caller, String command, ApiKeyPair keyPair, ApiKeyPairPermission... apiKeyPairPermissions) {
         for (final APIChecker apiChecker : apiCheckers) {
-            apiChecker.checkAccess(caller, command, apiKeyPairPermissions);
+            apiChecker.checkAccess(caller, command, keyPair, apiKeyPairPermissions);
         }
     }
 
@@ -1549,20 +1549,22 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         List<APIChecker> apiCheckers = getEnabledApiCheckers();
 
         List<ApiKeyPairPermission> keyPairPermissions = new ArrayList<>();
+        ApiKeyPair keyPair = null;
         if (apiKey != null) {
             Ternary<User, Account, ApiKeyPair> keyPairTernary = findUserByApiKey(apiKey);
             if (keyPairTernary != null) {
                 keyPairPermissions = keyPairManager.findAllPermissionsByKeyPairId(keyPairTernary.third().getId(), caller.getRoleId());
+                keyPair = keyPairTernary.third();
             }
         }
 
-        checkApiAccess(apiCheckers, caller, command, keyPairPermissions.toArray(new ApiKeyPairPermission[0]));
+        checkApiAccess(apiCheckers, caller, command, keyPair, keyPairPermissions.toArray(new ApiKeyPairPermission[0]));
     }
 
     @Override
     public void checkApiAccess(Account caller, String command) {
         List<APIChecker> apiCheckers = getEnabledApiCheckers();
-        checkApiAccess(apiCheckers, caller, command);
+        checkApiAccess(apiCheckers, caller, command, null);
     }
 
     @NotNull
@@ -3458,8 +3460,13 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         internalDeleteApiKey(keyPair);
     }
 
+    @Override
+    public List<? extends ApiKeyPairPermission> getAllExplicitKeyPairPermissions(Long keyPairId) {
+        return apiKeyPairPermissionsDao.findAllByApiKeyPairId(keyPairId);
+    }
+
     private void internalDeleteApiKey(ApiKeyPair keyPair) {
-        List<ApiKeyPairPermissionVO> permissions = apiKeyPairPermissionsDao.findAllByApiKeyPairId(keyPair.getId());
+        List<? extends ApiKeyPairPermission> permissions = getAllExplicitKeyPairPermissions(keyPair.getId());
         for (ApiKeyPairPermission permission : permissions) {
             apiKeyPairPermissionsDao.remove(permission.getId());
         }
@@ -3656,7 +3663,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             return false;
         }
 
-        return !apiKeyPairPermissionsDao.findAllByApiKeyPairId(apiKeyPair.getId()).isEmpty();
+        return !getAllExplicitKeyPairPermissions(apiKeyPair.getId()).isEmpty();
     }
 
     @Override
