@@ -145,15 +145,15 @@ public class Site2SiteVpnConnectionResponse extends BaseResponse implements Cont
     private String ikeVersion;
 
     @SerializedName(ApiConstants.LOCAL_VTI_IP)
-    @Param(description = "The provider-side virtual tunnel interface IP address", since = "4.23.0.0")
+    @Param(description = "The provider-side virtual tunnel interface IP address", since = "4.24.0.0")
     private String localVtiIp;
 
     @SerializedName(ApiConstants.PEER_VTI_IP)
-    @Param(description = "The peer-side virtual tunnel interface IP address", since = "4.23.0.0")
+    @Param(description = "The peer-side virtual tunnel interface IP address", since = "4.24.0.0")
     private String peerVtiIp;
 
     @SerializedName(ApiConstants.VTI_PREFIX_LENGTH)
-    @Param(description = "The virtual tunnel interface network prefix length", since = "4.23.0.0")
+    @Param(description = "The virtual tunnel interface network prefix length", since = "4.24.0.0")
     private Integer vtiPrefixLength;
 
     public void setId(String id) {
