@@ -46,14 +46,13 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.PrepareStorageClientAnswer;
 import com.cloud.agent.api.PrepareStorageClientCommand;
 import com.cloud.agent.api.UnprepareStorageClientCommand;
-import com.cloud.configuration.Config;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolHostVO;
+import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.dao.StoragePoolHostDao;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -134,7 +133,7 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
                 throw new CloudRuntimeException("Unable to prepare SDC, couldn't get global lock on " + hostIdStorageSystemIdLockString);
             }
 
-            int storagePoolMaxWaitSeconds = NumbersUtil.parseInt(configDao.getValue(Config.StoragePoolMaxWaitSeconds.key()), 3600);
+            int storagePoolMaxWaitSeconds = VolumeApiService.StoragePoolMaxWaitSeconds.value();
             if (!hostIdStorageSystemIdLock.lock(storagePoolMaxWaitSeconds)) {
                 logger.debug("Unable to prepare SDC, couldn't lock on " + hostIdStorageSystemIdLockString);
                 throw new CloudRuntimeException("Unable to prepare SDC, couldn't lock on " + hostIdStorageSystemIdLockString);
@@ -280,7 +279,7 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
                 throw new CloudRuntimeException("Unable to unprepare SDC, couldn't get global lock on " + hostIdStorageSystemIdLockString);
             }
 
-            int storagePoolMaxWaitSeconds = NumbersUtil.parseInt(configDao.getValue(Config.StoragePoolMaxWaitSeconds.key()), 3600);
+            int storagePoolMaxWaitSeconds = VolumeApiService.StoragePoolMaxWaitSeconds.value();
             if (!lock.lock(storagePoolMaxWaitSeconds)) {
                 logger.debug("Unable to unprepare SDC, couldn't lock on " + hostIdStorageSystemIdLockString);
                 throw new CloudRuntimeException("Unable to unprepare SDC, couldn't lock on " + hostIdStorageSystemIdLockString);

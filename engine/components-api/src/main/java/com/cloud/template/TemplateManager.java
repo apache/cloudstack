@@ -85,6 +85,10 @@ public interface TemplateManager {
             true,
             ConfigKey.Scope.Cluster);
 
+    ConfigKey<Integer> CreatePrivateTemplateFromSnapshotWait = new ConfigKey<>("Storage", Integer.class,
+            "create.private.template.from.snapshot.wait", "10800",
+            "In second, timeout for CreatePrivateTemplateFromSnapshotCommand", true);
+
     // KVM/libvirt maps deviceSeq=3 to hdc (hda/hdb are taken by the root volume on i440fx/IDE).
     // user_vm.iso_id has always pointed at this slot; additional cdroms live in vm_iso_map.
     int CDROM_PRIMARY_DEVICE_SEQ = 3;

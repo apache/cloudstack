@@ -310,7 +310,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {BackupRetryAttempts, BackupRetryInterval, SnapshotHourlyMax, SnapshotDailyMax, SnapshotMonthlyMax, SnapshotWeeklyMax, usageSnapshotSelection,
-                SnapshotInfo.BackupSnapshotAfterTakingSnapshot, VmStorageSnapshotKvm, kvmIncrementalSnapshot, snapshotDeltaMax, snapshotShowChainSize, UseStorageReplication, KVMSnapshotEnabled};
+                SnapshotInfo.BackupSnapshotAfterTakingSnapshot, VmStorageSnapshotKvm, kvmIncrementalSnapshot, snapshotDeltaMax, snapshotShowChainSize, UseStorageReplication, KVMSnapshotEnabled,
+                BackupSnapshotWait, TotalRetries};
     }
 
     @Override
@@ -1882,13 +1883,11 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
 
-        String value = _configDao.getValue(Config.BackupSnapshotWait.toString());
-
         Type.HOURLY.setMax(SnapshotHourlyMax.value());
         Type.DAILY.setMax(SnapshotDailyMax.value());
         Type.WEEKLY.setMax(SnapshotWeeklyMax.value());
         Type.MONTHLY.setMax(SnapshotMonthlyMax.value());
-        _totalRetries = NumbersUtil.parseInt(_configDao.getValue("total.retries"), 4);
+        _totalRetries = TotalRetries.value();
         _pauseInterval = 2 * NumbersUtil.parseInt(_configDao.getValue("ping.interval"), 60);
 
         snapshotBackupRetries = BackupRetryAttempts.value();
