@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.ha.provider.host;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import org.apache.cloudstack.alert.AlertService;
@@ -126,7 +127,7 @@ public class HAAbstractHostProviderTest {
         ArgumentCaptor<String> bodyCaptor = ArgumentCaptor.forClass(String.class);
         Mockito.verify(alertManager).sendAlert(Mockito.eq(AlertService.AlertType.ALERT_TYPE_HA_ACTION), Mockito.eq(1L), Mockito.eq(2L),
                 subjectCaptor.capture(), bodyCaptor.capture());
-        assertTrue(subjectCaptor.getValue().equals("HA operation performed for host"));
-        assertTrue(bodyCaptor.getValue().equals("HA operation performed for host"));
+        assertEquals("HA operation performed for host", subjectCaptor.getValue());
+        assertEquals("HA operation performed for host", bodyCaptor.getValue());
     }
 }
