@@ -2863,9 +2863,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     }
                 }
                 String subject = String.format("Failed to deploy Instance [%s]", vm);
+                String hostDesc;
+                if (host != null) {
+                    hostDesc = String.format(" on host [%s]", host);
+                } else if (hostId != null) {
+                    hostDesc = String.format(" on host [id: %s]", hostId);
+                } else {
+                    hostDesc = "";
+                }
                 String body = String.format("Failed to deploy [%s]%s. To troubleshoot, please check the logs with [logid:%s].",
                         vm,
-                        host != null ? String.format(" on host [%s]", host) : (hostId != null ? String.format(" on host [id: %s]", hostId) : ""),
+                        hostDesc,
                         ThreadContext.get("logcontextid"));
 
                 _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_USERVM, vm.getDataCenterId(), vm.getPodIdToDeployIn(), subject, body);
