@@ -20,6 +20,9 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
@@ -273,43 +276,43 @@ public class HighAvailabilityManagerImplTest {
 
     @Test
     public void scheduleRestartVmStoppedUnexpectedlyResolvesHostLocation() {
-        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
-        Mockito.when(vm.getDataCenterId()).thenReturn(1L);
-        Mockito.when(vm.getHostId()).thenReturn(5L);
-        Mockito.when(vm.getPodIdToDeployIn()).thenReturn(2L);
-        Mockito.when(vm.getHypervisorType()).thenReturn(HypervisorType.KVM);
-        Mockito.when(vm.getType()).thenReturn(VirtualMachine.Type.User);
-        Mockito.when(vm.isHaEnabled()).thenReturn(false);
-        Mockito.when(vm.getId()).thenReturn(3L);
-        Mockito.when(vm.getHostName()).thenReturn("i-2-3-VM");
-        Mockito.when(vm.getUuid()).thenReturn("vm-uuid");
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        when(vm.getDataCenterId()).thenReturn(1L);
+        when(vm.getHostId()).thenReturn(5L);
+        when(vm.getPodIdToDeployIn()).thenReturn(2L);
+        when(vm.getHypervisorType()).thenReturn(HypervisorType.KVM);
+        when(vm.getType()).thenReturn(VirtualMachine.Type.User);
+        when(vm.isHaEnabled()).thenReturn(false);
+        when(vm.getId()).thenReturn(3L);
+        when(vm.getHostName()).thenReturn("i-2-3-VM");
+        when(vm.getUuid()).thenReturn("vm-uuid");
 
-        ConfigKey<Boolean> haEnabled = Mockito.mock(ConfigKey.class);
+        ConfigKey<Boolean> haEnabled = mock(ConfigKey.class);
         highAvailabilityManager.VmHaEnabled = haEnabled;
-        Mockito.when(highAvailabilityManager.VmHaEnabled.valueIn(1L)).thenReturn(true);
+        when(highAvailabilityManager.VmHaEnabled.valueIn(1L)).thenReturn(true);
 
-        Mockito.when(hostVO.getId()).thenReturn(5L);
-        Mockito.when(hostVO.getName()).thenReturn("cs-kvm06");
-        Mockito.when(hostVO.getUuid()).thenReturn("host-uuid");
-        Mockito.when(hostVO.getDataCenterId()).thenReturn(1L);
-        Mockito.when(hostVO.getPodId()).thenReturn(2L);
-        Mockito.when(_hostDao.findById(5L)).thenReturn(hostVO);
+        when(hostVO.getId()).thenReturn(5L);
+        when(hostVO.getName()).thenReturn("cs-kvm06");
+        when(hostVO.getUuid()).thenReturn("host-uuid");
+        when(hostVO.getDataCenterId()).thenReturn(1L);
+        when(hostVO.getPodId()).thenReturn(2L);
+        when(_hostDao.findById(5L)).thenReturn(hostVO);
 
-        DataCenterVO dcVO = Mockito.mock(DataCenterVO.class);
-        Mockito.when(dcVO.getName()).thenReturn("Milton1");
-        Mockito.when(_dcDao.findById(1L)).thenReturn(dcVO);
+        DataCenterVO dcVO = mock(DataCenterVO.class);
+        when(dcVO.getName()).thenReturn("Milton1");
+        when(_dcDao.findById(1L)).thenReturn(dcVO);
 
-        HostPodVO podVO = Mockito.mock(HostPodVO.class);
-        Mockito.when(podVO.getName()).thenReturn("Milton1-Pod1");
-        Mockito.when(_podDao.findById(2L)).thenReturn(podVO);
+        HostPodVO podVO = mock(HostPodVO.class);
+        when(podVO.getName()).thenReturn("Milton1-Pod1");
+        when(_podDao.findById(2L)).thenReturn(podVO);
 
-        Mockito.when(_instanceDao.findByUuid("vm-uuid")).thenReturn(vm);
-        Mockito.when(_haDao.findPreviousHA(3L)).thenReturn(new ArrayList<>());
+        when(_instanceDao.findByUuid("vm-uuid")).thenReturn(vm);
+        when(_haDao.findPreviousHA(3L)).thenReturn(new ArrayList<>());
 
         highAvailabilityManager.scheduleRestart(vm, false);
 
         ArgumentCaptor<String> bodyCaptor = ArgumentCaptor.forClass(String.class);
-        Mockito.verify(_alertMgr).sendAlert(Mockito.eq(AlertManager.AlertType.ALERT_TYPE_USERVM), Mockito.eq(1L), Mockito.eq(2L),
+        verify(_alertMgr).sendAlert(Mockito.eq(AlertManager.AlertType.ALERT_TYPE_USERVM), Mockito.eq(1L), Mockito.eq(2L),
                 Mockito.anyString(), bodyCaptor.capture());
         assertTrue(bodyCaptor.getValue().contains("name: cs-kvm06"));
         assertTrue(bodyCaptor.getValue().contains("id: 5"));
@@ -320,30 +323,30 @@ public class HighAvailabilityManagerImplTest {
 
     @Test
     public void scheduleRestartVmStoppedUnexpectedlyFallsBackWhenHostGone() {
-        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
-        Mockito.when(vm.getDataCenterId()).thenReturn(1L);
-        Mockito.when(vm.getHostId()).thenReturn(5L);
-        Mockito.when(vm.getPodIdToDeployIn()).thenReturn(2L);
-        Mockito.when(vm.getHypervisorType()).thenReturn(HypervisorType.KVM);
-        Mockito.when(vm.getType()).thenReturn(VirtualMachine.Type.User);
-        Mockito.when(vm.isHaEnabled()).thenReturn(false);
-        Mockito.when(vm.getId()).thenReturn(3L);
-        Mockito.when(vm.getHostName()).thenReturn("i-2-3-VM");
-        Mockito.when(vm.getUuid()).thenReturn("vm-uuid");
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        when(vm.getDataCenterId()).thenReturn(1L);
+        when(vm.getHostId()).thenReturn(5L);
+        when(vm.getPodIdToDeployIn()).thenReturn(2L);
+        when(vm.getHypervisorType()).thenReturn(HypervisorType.KVM);
+        when(vm.getType()).thenReturn(VirtualMachine.Type.User);
+        when(vm.isHaEnabled()).thenReturn(false);
+        when(vm.getId()).thenReturn(3L);
+        when(vm.getHostName()).thenReturn("i-2-3-VM");
+        when(vm.getUuid()).thenReturn("vm-uuid");
 
-        ConfigKey<Boolean> haEnabled = Mockito.mock(ConfigKey.class);
+        ConfigKey<Boolean> haEnabled = mock(ConfigKey.class);
         highAvailabilityManager.VmHaEnabled = haEnabled;
-        Mockito.when(highAvailabilityManager.VmHaEnabled.valueIn(1L)).thenReturn(true);
+        when(highAvailabilityManager.VmHaEnabled.valueIn(1L)).thenReturn(true);
 
-        Mockito.when(_hostDao.findById(5L)).thenReturn(null);
+        when(_hostDao.findById(5L)).thenReturn(null);
 
-        Mockito.when(_instanceDao.findByUuid("vm-uuid")).thenReturn(vm);
-        Mockito.when(_haDao.findPreviousHA(3L)).thenReturn(new ArrayList<>());
+        when(_instanceDao.findByUuid("vm-uuid")).thenReturn(vm);
+        when(_haDao.findPreviousHA(3L)).thenReturn(new ArrayList<>());
 
         highAvailabilityManager.scheduleRestart(vm, false);
 
         ArgumentCaptor<String> bodyCaptor = ArgumentCaptor.forClass(String.class);
-        Mockito.verify(_alertMgr).sendAlert(Mockito.eq(AlertManager.AlertType.ALERT_TYPE_USERVM), Mockito.eq(1L), Mockito.eq(2L),
+        verify(_alertMgr).sendAlert(Mockito.eq(AlertManager.AlertType.ALERT_TYPE_USERVM), Mockito.eq(1L), Mockito.eq(2L),
                 Mockito.anyString(), bodyCaptor.capture());
         assertTrue(bodyCaptor.getValue().contains("host id: 5"));
     }

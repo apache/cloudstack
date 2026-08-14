@@ -17,6 +17,8 @@
 package com.cloud.resourcelimit;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
@@ -1344,7 +1346,7 @@ public class ResourceLimitManagerImplTest {
                 () -> resourceLimitManager.updateResourceLimit(null, domainId, 8, 20L, null));
 
         Assert.assertTrue(ex.getMessage().contains("Domain {name=ROOT}"));
-        Mockito.verify(resourceLimitDao, Mockito.never()).update(Mockito.anyLong(), Mockito.anyLong());
+        verify(resourceLimitDao, never()).update(Mockito.anyLong(), Mockito.anyLong());
     }
 
     @Test
@@ -1369,7 +1371,7 @@ public class ResourceLimitManagerImplTest {
         } finally {
             CallContext.unregister();
         }
-        Mockito.verify(resourceLimitDao, Mockito.never()).update(Mockito.anyLong(), Mockito.anyLong());
+        verify(resourceLimitDao, never()).update(Mockito.anyLong(), Mockito.anyLong());
     }
 
     @Test
@@ -1382,7 +1384,7 @@ public class ResourceLimitManagerImplTest {
                 () -> resourceLimitManager.updateResourceLimit(null, domainId, 8, 20L, null));
 
         Assert.assertTrue(ex.getMessage().contains("id " + domainId));
-        Mockito.verify(resourceLimitDao, Mockito.never()).update(Mockito.anyLong(), Mockito.anyLong());
+        verify(resourceLimitDao, never()).update(Mockito.anyLong(), Mockito.anyLong());
     }
 
     @Test
@@ -1405,7 +1407,7 @@ public class ResourceLimitManagerImplTest {
         } finally {
             CallContext.unregister();
         }
-        Mockito.verify(resourceLimitDao, Mockito.never()).update(Mockito.anyLong(), Mockito.anyLong());
+        verify(resourceLimitDao, never()).update(Mockito.anyLong(), Mockito.anyLong());
     }
 
     @Test
