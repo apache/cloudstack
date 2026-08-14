@@ -33,6 +33,8 @@ import org.springframework.stereotype.Component;
 import org.apache.cloudstack.api.command.admin.usage.AddTrafficMonitorCmd;
 import org.apache.cloudstack.api.command.admin.usage.DeleteTrafficMonitorCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficMonitorsCmd;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.agent.AgentManager;
@@ -47,7 +49,6 @@ import com.cloud.agent.api.RecurringNetworkUsageCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupTrafficMonitorCommand;
 import com.cloud.agent.manager.Commands;
-import com.cloud.configuration.Config;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.event.EventTypes;
@@ -76,7 +77,6 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.dao.UserStatisticsDao;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
@@ -91,7 +91,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.MacAddress;
 
 @Component
-public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsageService, NetworkUsageManager, ResourceStateAdapter {
+public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsageService, NetworkUsageManager, ResourceStateAdapter, Configurable {
     public enum NetworkUsageResourceName {
         TrafficSentinel;
     }
@@ -220,9 +220,9 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
         AllocatedIpSearch.join("network", networkJoin, AllocatedIpSearch.entity().getSourceNetworkId(), networkJoin.entity().getId(), JoinBuilder.JoinType.INNER);
         AllocatedIpSearch.done();
 
-        _networkStatsInterval = NumbersUtil.parseInt(_configDao.getValue(Config.DirectNetworkStatsInterval.key()), 86400);
-        _TSinclZones = _configDao.getValue(Config.TrafficSentinelIncludeZones.key());
-        _TSexclZones = _configDao.getValue(Config.TrafficSentinelExcludeZones.key());
+        _networkStatsInterval = DirectNetworkStatsInterval.value();
+        _TSinclZones = TrafficSentinelIncludeZones.value();
+        _TSexclZones = TrafficSentinelExcludeZones.value();
         _agentMgr.registerForHostEvents(new DirectNetworkStatsListener(_networkStatsInterval), true, false, false);
         _resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
         return true;
@@ -560,6 +560,16 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
         _hostDao.remove(hostId);
         return new DeleteHostAnswer(false);
 
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return NetworkUsageService.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {DirectNetworkStatsInterval, TrafficSentinelIncludeZones, TrafficSentinelExcludeZones};
     }
 
 }

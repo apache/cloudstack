@@ -311,7 +311,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {BackupRetryAttempts, BackupRetryInterval, SnapshotHourlyMax, SnapshotDailyMax, SnapshotMonthlyMax, SnapshotWeeklyMax, usageSnapshotSelection,
                 SnapshotInfo.BackupSnapshotAfterTakingSnapshot, VmStorageSnapshotKvm, kvmIncrementalSnapshot, snapshotDeltaMax, snapshotShowChainSize, UseStorageReplication, KVMSnapshotEnabled,
-                BackupSnapshotWait, TotalRetries};
+                BackupSnapshotWait, TotalRetries, SnapshotPollInterval};
     }
 
     @Override

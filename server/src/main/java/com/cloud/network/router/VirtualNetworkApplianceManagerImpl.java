@@ -74,6 +74,7 @@ import org.apache.cloudstack.network.BgpPeer;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.network.topology.NetworkTopology;
 import org.apache.cloudstack.network.topology.NetworkTopologyContext;
+import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.cloudstack.utils.CloudStackVersion;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
@@ -599,9 +600,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
         NetworkHelperImpl.setSystemAccount(_accountMgr.getSystemAccount());
 
-        final String aggregationRange = configs.get("usage.stats.job.aggregation.range");
-        _usageAggregationRange = NumbersUtil.parseInt(aggregationRange, 1440);
-        _usageTimeZone = configs.get("usage.aggregation.timezone");
+        _usageAggregationRange = UsageService.UsageStatsJobAggregationRange.value();
+        _usageTimeZone = UsageService.UsageAggregationTimezone.value();
         if (_usageTimeZone == null) {
             _usageTimeZone = "GMT";
         }
