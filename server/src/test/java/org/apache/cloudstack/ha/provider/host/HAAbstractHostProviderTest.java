@@ -18,6 +18,8 @@ package org.apache.cloudstack.ha.provider.host;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.ha.HAConfig;
@@ -86,9 +88,9 @@ public class HAAbstractHostProviderTest {
         provider = new TestHAHostProvider();
         ReflectionTestUtils.setField(provider, "alertManager", alertManager);
 
-        Mockito.when(host.getDataCenterId()).thenReturn(1L);
-        Mockito.when(host.getPodId()).thenReturn(2L);
-        Mockito.when(host.toString()).thenReturn("Host {id=5, name=cs-kvm06}");
+        when(host.getDataCenterId()).thenReturn(1L);
+        when(host.getPodId()).thenReturn(2L);
+        when(host.toString()).thenReturn("Host {id=5, name=cs-kvm06}");
     }
 
     @Test
@@ -97,7 +99,7 @@ public class HAAbstractHostProviderTest {
 
         ArgumentCaptor<String> subjectCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> bodyCaptor = ArgumentCaptor.forClass(String.class);
-        Mockito.verify(alertManager).sendAlert(Mockito.eq(AlertService.AlertType.ALERT_TYPE_HA_ACTION), Mockito.eq(1L), Mockito.eq(2L),
+        verify(alertManager).sendAlert(Mockito.eq(AlertService.AlertType.ALERT_TYPE_HA_ACTION), Mockito.eq(1L), Mockito.eq(2L),
                 subjectCaptor.capture(), bodyCaptor.capture());
         assertTrue(subjectCaptor.getValue().contains("HA Fencing"));
         assertTrue(subjectCaptor.getValue().contains("Host {id=5, name=cs-kvm06}"));
@@ -111,7 +113,7 @@ public class HAAbstractHostProviderTest {
 
         ArgumentCaptor<String> subjectCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> bodyCaptor = ArgumentCaptor.forClass(String.class);
-        Mockito.verify(alertManager).sendAlert(Mockito.eq(AlertService.AlertType.ALERT_TYPE_HA_ACTION), Mockito.eq(1L), Mockito.eq(2L),
+        verify(alertManager).sendAlert(Mockito.eq(AlertService.AlertType.ALERT_TYPE_HA_ACTION), Mockito.eq(1L), Mockito.eq(2L),
                 subjectCaptor.capture(), bodyCaptor.capture());
         assertTrue(subjectCaptor.getValue().contains("HA Recovery"));
         assertTrue(subjectCaptor.getValue().contains("Host {id=5, name=cs-kvm06}"));
@@ -125,7 +127,7 @@ public class HAAbstractHostProviderTest {
 
         ArgumentCaptor<String> subjectCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> bodyCaptor = ArgumentCaptor.forClass(String.class);
-        Mockito.verify(alertManager).sendAlert(Mockito.eq(AlertService.AlertType.ALERT_TYPE_HA_ACTION), Mockito.eq(1L), Mockito.eq(2L),
+        verify(alertManager).sendAlert(Mockito.eq(AlertService.AlertType.ALERT_TYPE_HA_ACTION), Mockito.eq(1L), Mockito.eq(2L),
                 subjectCaptor.capture(), bodyCaptor.capture());
         assertEquals("HA operation performed for host", subjectCaptor.getValue());
         assertEquals("HA operation performed for host", bodyCaptor.getValue());
