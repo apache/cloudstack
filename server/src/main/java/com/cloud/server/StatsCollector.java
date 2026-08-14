@@ -275,6 +275,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private static final ConfigKey<Integer> StatsTimeout = new ConfigKey<>("Advanced", Integer.class, "stats.timeout", "60000",
             "The timeout for stats call in milli seconds.", true,
             ConfigKey.Scope.Cluster);
+    public static final ConfigKey<Long> StorageStatsInterval = new ConfigKey<>("Storage", Long.class, "storage.stats.interval", "60000",
+            "The interval (in milliseconds) when storage stats (per host) are retrieved from agents.", true);
     private static final ConfigKey<String> statsOutputUri = new ConfigKey<>("Advanced", String.class, "stats.output.uri", "",
             "URI to send StatsCollector statistics to. The collector is defined on the URI scheme. Example: graphite://graphite-hostaddress:port or influxdb://influxdb-hostaddress/dbname. Note that the port is optional, if not added the default port for the respective collector (graphite or influxdb) will be used. Additionally, the database name '/dbname' is  also optional; default db name is 'cloudstack'. You must create and configure the database if using influxdb.",
             true);
@@ -445,7 +447,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
         hostStatsInterval = NumbersUtil.parseLong(configs.get("host.stats.interval"), ONE_MINUTE_IN_MILLISCONDS);
         vmStatsInterval = NumbersUtil.parseLong(configs.get("vm.stats.interval"), ONE_MINUTE_IN_MILLISCONDS);
-        storageStatsInterval = NumbersUtil.parseLong(configs.get("storage.stats.interval"), ONE_MINUTE_IN_MILLISCONDS);
+        storageStatsInterval = StorageStatsInterval.value();
         volumeStatsInterval = NumbersUtil.parseLong(configs.get("volume.stats.interval"), ONE_MINUTE_IN_MILLISCONDS);
         autoScaleStatsInterval = AutoScaleManager.AutoScaleStatsInterval.value();
         ManagementServerStatusAdministrator managementServerStatusAdministrator = new ManagementServerStatusAdministrator();
@@ -2208,7 +2210,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             vmStatsIncrementMetrics, vmStatsMaxRetentionTime, vmStatsCollectUserVMOnly, vmDiskStatsRetentionEnabled, vmDiskStatsMaxRetentionTime,
                 MANAGEMENT_SERVER_STATUS_COLLECTION_INTERVAL,
                 DATABASE_SERVER_STATUS_COLLECTION_INTERVAL,
-                DATABASE_SERVER_LOAD_HISTORY_RETENTION_NUMBER};
+                DATABASE_SERVER_LOAD_HISTORY_RETENTION_NUMBER,
+                StorageStatsInterval};
     }
 
     public double getImageStoreCapacityThreshold() {
