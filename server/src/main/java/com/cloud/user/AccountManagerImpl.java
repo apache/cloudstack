@@ -1435,15 +1435,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     requested.getUuid(),
                     requested.getRoleId()));
         }
-        List<APIChecker> apiCheckers = getEnabledApiCheckers();
 
-        // Only ACL checkers should influence the set of APIs allowed to an account.
-        List<APIAclChecker> aclCheckers = new ArrayList<>();
-        for (APIChecker apiChecker : apiCheckers) {
-            if (apiChecker instanceof APIAclChecker) {
-                aclCheckers.add((APIAclChecker) apiChecker);
-            }
-        }
+        List<APIAclChecker> aclCheckers = getApiACLCheckers();
 
         List<String> allApis = new ArrayList<>(apiNameList);
         List<String> requestedAllowed = allApis;
@@ -1483,6 +1476,19 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public void checkApiAccess(Account caller, String command) {
         List<APIChecker> apiCheckers = getEnabledApiCheckers();
         checkApiAccess(apiCheckers, caller, command);
+    }
+
+    protected List<APIAclChecker> getApiACLCheckers() {
+        List<APIChecker> apiCheckers = getEnabledApiCheckers();
+
+        // Only ACL checkers should influence the set of APIs allowed to an account.
+        List<APIAclChecker> aclCheckers = new ArrayList<>();
+        for (APIChecker apiChecker : apiCheckers) {
+            if (apiChecker instanceof APIAclChecker) {
+                aclCheckers.add((APIAclChecker) apiChecker);
+            }
+        }
+        return aclCheckers;
     }
 
     @NotNull
@@ -1592,6 +1598,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (!Account.Type.PROJECT.equals(userAccount.getType())) {
             checkCallerRoleTypeAllowedForUserOrAccountOperations(userAccount, null);
             checkCallerApiPermissionsForUserOrAccountOperations(userAccount);
+        }
+    }
+
+    @Override
+    public void refreshRoleCheckersCacheOnPermissionsChange(Role role) {
+        List<APIAclChecker> aclCheckers = getApiACLCheckers();
+        for (final APIAclChecker aclChecker : aclCheckers) {
+            aclChecker.refreshRoleCacheOnPermissionsChange(role);
         }
     }
 

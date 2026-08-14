@@ -67,4 +67,8 @@ public interface APIChecker extends Adapter {
     }
 
     boolean isEnabled();
+
+    default void refreshRoleCacheOnPermissionsChange(Role role) {
+        // Only applicable for dynamic role based checkers
+    }
 }

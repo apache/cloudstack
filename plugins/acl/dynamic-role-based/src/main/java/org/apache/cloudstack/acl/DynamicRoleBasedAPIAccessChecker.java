@@ -61,6 +61,11 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
     }
 
     @Override
+    public void refreshRoleCacheOnPermissionsChange(Role role) {
+        invalidateRolePermissionsCache(role.getId());
+    }
+
+    @Override
     public List<String> getApisAllowedToUser(Role role, User user, List<String> apiNames) throws PermissionDeniedException {
         if (!isEnabled()) {
             return apiNames;
@@ -141,6 +146,12 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
         }
 
         return new Pair<>(accountRole, roleService.findAllPermissionsBy(accountRole.getId()));
+    }
+
+    protected void invalidateRolePermissionsCache(long roleId) {
+        if (cachePeriod > 0) {
+            rolePermissionsCache.invalidate(roleId);
+        }
     }
 
     protected Pair<Role, List<RolePermission>> getRolePermissionsUsingCache(long roleId) {
