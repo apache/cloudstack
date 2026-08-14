@@ -512,8 +512,6 @@ public class ScaleIOPrimaryDataStoreDriverTest {
 
     @Test
     public void testCopyOfflineVolume() {
-        when(configDao.getValue(Config.CopyVolumeWait.key())).thenReturn("3600");
-
         DataObject srcData = Mockito.mock(DataObject.class);
         DataTO srcDataTO = Mockito.mock(DataTO.class);
         when(srcData.getTO()).thenReturn(srcDataTO);
@@ -535,8 +533,6 @@ public class ScaleIOPrimaryDataStoreDriverTest {
 
     @Test
     public void testCopyOfflineVolumeFailureWhenNoEndpointFound() {
-        when(configDao.getValue(Config.CopyVolumeWait.key())).thenReturn("3600");
-
         DataObject srcData = Mockito.mock(DataObject.class);
         DataTO srcDataTO = Mockito.mock(DataTO.class);
         when(srcData.getTO()).thenReturn(srcDataTO);
