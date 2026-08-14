@@ -20,11 +20,31 @@ import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.command.admin.usage.GenerateUsageRecordsCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListUsageRecordsCmd;
 import org.apache.cloudstack.api.command.admin.usage.RemoveRawUsageRecordsCmd;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 import java.util.List;
 import java.util.TimeZone;
 
 public interface UsageService {
+
+    ConfigKey<String> UsageAggregationTimezone = new ConfigKey<>("Usage", String.class, "usage.aggregation.timezone", "GMT",
+            "The timezone to use for usage stats aggregation", true);
+
+    ConfigKey<String> UsageExecutionTimezone = new ConfigKey<>("Usage", String.class, "usage.execution.timezone", null,
+            "The timezone to use for usage job execution time", true);
+
+    ConfigKey<Integer> UsageSanityCheckInterval = new ConfigKey<>("Usage", Integer.class, "usage.sanity.check.interval", null,
+            "Interval (in days) to check sanity of usage data. To disable set it to 0 or negative.", true);
+
+    ConfigKey<Integer> UsageStatsJobAggregationRange = new ConfigKey<>("Usage", Integer.class, "usage.stats.job.aggregation.range", "1440",
+            "The range of time for aggregating the user statistics specified in minutes (e.g. 1440 for daily, 60 for hourly.", true);
+
+    ConfigKey<String> UsageStatsJobExecTime = new ConfigKey<>("Usage", String.class, "usage.stats.job.exec.time", "00:15",
+            "The time at which the usage statistics aggregation job will run as an HH24:MM time, e.g. 00:30 to run at 12:30am.", true);
+
+    ConfigKey<Boolean> EnableUsageServer = new ConfigKey<>("Usage", Boolean.class, "enable.usage.server", "true",
+            "Flag for enabling usage", true);
+
     /**
      * Generate Billing Records from the last time it was generated to the
      * time specified.

@@ -59,6 +59,7 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.graphite.GraphiteClient;
 import org.apache.cloudstack.utils.graphite.GraphiteException;
@@ -548,9 +549,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         //Schedule disk stats update task
         _diskStatsUpdateExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("DiskStatsUpdater"));
 
-        String aggregationRange = configs.get("usage.stats.job.aggregation.range");
-        _usageAggregationRange = NumbersUtil.parseInt(aggregationRange, 1440);
-        _usageTimeZone = configs.get("usage.aggregation.timezone");
+        _usageAggregationRange = UsageService.UsageStatsJobAggregationRange.value();
+        _usageTimeZone = UsageService.UsageAggregationTimezone.value();
         if (_usageTimeZone == null) {
             _usageTimeZone = "GMT";
         }

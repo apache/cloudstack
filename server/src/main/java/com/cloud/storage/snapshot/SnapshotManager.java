@@ -78,6 +78,9 @@ public interface SnapshotManager extends Configurable {
     ConfigKey<Integer> TotalRetries = new ConfigKey<>("Storage", Integer.class, "total.retries", "4",
             "The number of times each command sent to a host should be retried in case of failure.", true);
 
+    ConfigKey<Integer> SnapshotPollInterval = new ConfigKey<>("Snapshots", Integer.class, "snapshot.poll.interval", "300",
+            "The time interval in seconds when the management server polls for snapshots to be scheduled.", true);
+
     void deletePoliciesForVolume(Long volumeId);
 
     /**
