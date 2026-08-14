@@ -44,6 +44,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
+import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.command.ReconcileCommandService;
 import org.apache.cloudstack.command.ReconcileCommandUtils;
@@ -1152,7 +1153,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                         logger.debug(String.format("Skipping sending alert for %s as it already in %s state",
                                 host, host.getStatus()));
                     } else if (!HOST_DOWN_ALERT_UNSUPPORTED_HOST_TYPES.contains(host.getType())) {
-                        _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Host down, " + host, message);
+                        _alertMgr.sendAlert(AlertService.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Host down, " + host, message);
                     }
                     event = Status.Event.HostDown;
                 } else if (determinedState == Status.Up) {
