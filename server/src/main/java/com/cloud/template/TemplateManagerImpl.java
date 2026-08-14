@@ -2851,7 +2851,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 TemplateDeleteFromPrimaryStorage,
                 PublicTemplateSecStorageCopy,
                 PrivateTemplateSecStorageCopy,
-                VmIsoMaxCount};
+                VmIsoMaxCount,
+                CreatePrivateTemplateFromSnapshotWait};
     }
 
     public List<TemplateAdapter> getTemplateAdapters() {
