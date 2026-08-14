@@ -47,6 +47,7 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.quota.QuotaAlertManager;
 import org.apache.cloudstack.quota.QuotaManager;
 import org.apache.cloudstack.quota.QuotaStatement;
+import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.usage.UsageTypes;
 import org.apache.cloudstack.utils.usage.UsageUtils;
 import org.apache.commons.collections.CollectionUtils;
@@ -229,16 +230,16 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             throw new CloudRuntimeException("Unhandled configuration exception", e);
         }
 
-        String execTime = configs.get("usage.stats.job.exec.time");
-        String aggregationRange = configs.get("usage.stats.job.aggregation.range");
-        String execTimeZone = configs.get("usage.execution.timezone");
-        String aggregationTimeZone = configs.get("usage.aggregation.timezone");
-        String sanityCheckInterval = configs.get("usage.sanity.check.interval");
+        String execTime = UsageService.UsageStatsJobExecTime.value();
+        Integer aggregationRange = UsageService.UsageStatsJobAggregationRange.value();
+        String execTimeZone = UsageService.UsageExecutionTimezone.value();
+        String aggregationTimeZone = UsageService.UsageAggregationTimezone.value();
+        Integer sanityCheckInterval = UsageService.UsageSanityCheckInterval.value();
         String quotaEnable = configs.get("quota.enable.service");
         _runQuota = Boolean.valueOf(quotaEnable == null ? "false" : quotaEnable );
         usageSnapshotSelection  = Boolean.valueOf(configs.get("usage.snapshot.virtualsize.select"));
         if (sanityCheckInterval != null) {
-            _sanityCheckInterval = Integer.parseInt(sanityCheckInterval);
+            _sanityCheckInterval = sanityCheckInterval;
         }
 
         if (aggregationTimeZone != null && !aggregationTimeZone.isEmpty()) {
@@ -268,7 +269,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                     usageExecutionTimeZone.getID(), execTime, aggregationRange, DateUtil.displayDateInTimezone(usageExecutionTimeZone, new Date()),
                     DateUtil.displayDateInTimezone(usageExecutionTimeZone, _jobExecTime.getTime()), usageAggregationTimeZone.getID());
 
-            _aggregationDuration = Integer.parseInt(aggregationRange);
+            _aggregationDuration = aggregationRange;
             if (_aggregationDuration < UsageUtils.USAGE_AGGREGATION_RANGE_MIN) {
                 logger.warn("Usage stats job aggregation range is to small, using the minimum value of " + UsageUtils.USAGE_AGGREGATION_RANGE_MIN);
                 _aggregationDuration = UsageUtils.USAGE_AGGREGATION_RANGE_MIN;

@@ -241,17 +241,6 @@ public enum Config {
             "service monitoring in router enable/disable option, default false", null),
 
 
-    // Snapshots
-
-    SnapshotPollInterval(
-            "Snapshots",
-            SnapshotManager.class,
-            Integer.class,
-            "snapshot.poll.interval",
-            "300",
-            "The time interval in seconds when the management server polls for snapshots to be scheduled.",
-            null),
-
     // Advanced
     EventPurgeInterval(
             "Advanced",
@@ -935,59 +924,6 @@ public enum Config {
             "hyperv.guest.network.device",
             null,
             "Specify the virtual switch on host for private network",
-            null),
-
-    // Usage
-    UsageExecutionTimezone("Usage", ManagementServer.class, String.class, "usage.execution.timezone", null, "The timezone to use for usage job execution time", null),
-    UsageStatsJobAggregationRange(
-            "Usage",
-            ManagementServer.class,
-            Integer.class,
-            "usage.stats.job.aggregation.range",
-            "1440",
-            "The range of time for aggregating the user statistics specified in minutes (e.g. 1440 for daily, 60 for hourly.",
-            null),
-    UsageStatsJobExecTime(
-            "Usage",
-            ManagementServer.class,
-            String.class,
-            "usage.stats.job.exec.time",
-            "00:15",
-            "The time at which the usage statistics aggregation job will run as an HH24:MM time, e.g. 00:30 to run at 12:30am.",
-            null),
-    EnableUsageServer("Usage", ManagementServer.class, Boolean.class, "enable.usage.server", "true", "Flag for enabling usage", null),
-    DirectNetworkStatsInterval(
-            "Usage",
-            ManagementServer.class,
-            Integer.class,
-            "direct.network.stats.interval",
-            "86400",
-            "Interval (in seconds) to collect stats from Traffic Monitor",
-            null),
-    UsageSanityCheckInterval(
-            "Usage",
-            ManagementServer.class,
-            Integer.class,
-            "usage.sanity.check.interval",
-            null,
-            "Interval (in days) to check sanity of usage data. To disable set it to 0 or negative.",
-            null),
-    UsageAggregationTimezone("Usage", ManagementServer.class, String.class, "usage.aggregation.timezone", "GMT", "The timezone to use for usage stats aggregation", null),
-    TrafficSentinelIncludeZones(
-            "Usage",
-            ManagementServer.class,
-            String.class,
-            "traffic.sentinel.include.zones",
-            "EXTERNAL",
-            "Traffic going into specified list of zones is metered. For metering all traffic leave this parameter empty",
-            null),
-    TrafficSentinelExcludeZones(
-            "Usage",
-            ManagementServer.class,
-            String.class,
-            "traffic.sentinel.exclude.zones",
-            "",
-            "Traffic going into specified list of zones is not metered.",
             null),
 
     // Hidden
