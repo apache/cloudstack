@@ -403,10 +403,10 @@ public class CommandSetupHelper {
                 router.getPrivateIpAddress(), _itMgr.toNicTO(nicProfile, router.getHypervisorType()), router.getVpcId(), maxconn, offering.isKeepAliveEnabled(),
                 NetworkOrchestrationService.NETWORK_LB_HAPROXY_IDLE_TIMEOUT.value());
 
-        cmd.lbStatsVisibility = _configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key());
-        cmd.lbStatsUri = _configDao.getValue(Config.NetworkLBHaproxyStatsUri.key());
-        cmd.lbStatsAuth = _configDao.getValue(Config.NetworkLBHaproxyStatsAuth.key());
-        cmd.lbStatsPort = _configDao.getValue(Config.NetworkLBHaproxyStatsPort.key());
+        cmd.lbStatsVisibility = NetworkOrchestrationService.NetworkLBHaproxyStatsVisbility.value();
+        cmd.lbStatsUri = NetworkOrchestrationService.NetworkLBHaproxyStatsUri.value();
+        cmd.lbStatsAuth = NetworkOrchestrationService.NetworkLBHaproxyStatsAuth.value();
+        cmd.lbStatsPort = NetworkOrchestrationService.NetworkLBHaproxyStatsPort.value();
 
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()));
