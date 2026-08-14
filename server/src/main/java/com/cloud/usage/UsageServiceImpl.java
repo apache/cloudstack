@@ -30,6 +30,8 @@ import org.apache.cloudstack.api.command.admin.usage.GenerateUsageRecordsCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListUsageRecordsCmd;
 import org.apache.cloudstack.api.command.admin.usage.RemoveRawUsageRecordsCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.usage.UsageService;
@@ -40,7 +42,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
-import com.cloud.configuration.Config;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -85,7 +86,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
-public class UsageServiceImpl extends ManagerBase implements UsageService, Manager {
+public class UsageServiceImpl extends ManagerBase implements UsageService, Manager, Configurable {
 
     //ToDo: Move implementation to ManagaerImpl
 
@@ -138,10 +139,10 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
 
-        String timeZoneStr = ObjectUtils.defaultIfNull(_configDao.getValue(Config.UsageAggregationTimezone.toString()), "GMT");
+        String timeZoneStr = ObjectUtils.defaultIfNull(UsageAggregationTimezone.value(), "GMT");
         _usageTimezone = TimeZone.getTimeZone(timeZoneStr);
 
-        String executionTimeZone = _configDao.getValue(Config.UsageExecutionTimezone.toString());
+        String executionTimeZone = UsageExecutionTimezone.value();
         if (executionTimeZone != null) {
             usageExecutionTimeZone = TimeZone.getTimeZone(executionTimeZone);
         }
@@ -480,7 +481,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
             throw new InvalidParameterValueException("Interval should be greater than 0.");
         }
 
-        String jobExecTime = _configDao.getValue(Config.UsageStatsJobExecTime.toString());
+        String jobExecTime = UsageStatsJobExecTime.value();
         Date previousJobExecTime = UsageUtils.getPreviousJobExecutionTime(usageExecutionTimeZone, jobExecTime);
         Date nextJobExecTime = UsageUtils.getNextJobExecutionTime(usageExecutionTimeZone, jobExecTime);
         if (ObjectUtils.allNotNull(previousJobExecTime, nextJobExecTime)) {
@@ -499,5 +500,16 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
         logger.info("Removing cloud_usage records older than {} day(s).", interval);
         _usageDao.expungeAllOlderThan(interval, ConfigurationManagerImpl.DELETE_QUERY_BATCH_SIZE.value());
         return true;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return UsageService.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {UsageAggregationTimezone, UsageExecutionTimezone, UsageSanityCheckInterval,
+                UsageStatsJobAggregationRange, UsageStatsJobExecTime, EnableUsageServer};
     }
 }

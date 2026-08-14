@@ -446,7 +446,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
 
-        _snapshotPollInterval = NumbersUtil.parseInt(_configDao.getValue("snapshot.poll.interval"), 300);
+        _snapshotPollInterval = SnapshotManager.SnapshotPollInterval.value();
         final boolean snapshotsRecurringTest = Boolean.parseBoolean(_configDao.getValue("snapshot.recurring.test"));
         if (snapshotsRecurringTest) {
             // look for some test values in the configuration table so that snapshots can be taken more frequently (QA test code)
