@@ -393,8 +393,6 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
             throw new PermissionDeniedException("Rule already exists for the role: " + role.getName());
         }
 
-        accountManager.refreshRoleCheckersCacheOnPermissionsChange(role);
-
         return Transaction.execute(new TransactionCallback<RolePermissionVO>() {
             @Override
             public RolePermissionVO doInTransaction(TransactionStatus status) {
@@ -430,7 +428,6 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
         if (role.isDefault()) {
             throw new PermissionDeniedException("Role permission cannot be deleted for Default roles");
         }
-        accountManager.refreshRoleCheckersCacheOnPermissionsChange(role);
         return rolePermission != null && rolePermissionsDao.remove(rolePermission.getId());
     }
 
