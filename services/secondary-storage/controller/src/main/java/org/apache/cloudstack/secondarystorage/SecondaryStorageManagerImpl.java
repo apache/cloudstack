@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.secondarystorage;
 
-import static com.cloud.configuration.Config.SecStorageAllowedInternalDownloadSites;
 import static com.cloud.vm.VirtualMachineManager.SystemVmEnableUserData;
 
 import java.net.URI;
@@ -943,7 +942,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
         _itMgr.registerGuru(VirtualMachine.Type.SecondaryStorageVm, this);
 
-        String configKey = Config.SecondaryStorageServiceOffering.key();
+        String configKey = SecondaryStorageServiceOffering.key();
         String ssvmSrvcOffIdStr = configs.get(configKey);
         if (ssvmSrvcOffIdStr != null) {
             _serviceOffering = _offeringDao.findByUuid(ssvmSrvcOffIdStr);
@@ -1550,7 +1549,10 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {NTPServerConfig, MaxNumberOfSsvmsForMigration, SecondaryStorageCapacityScanInterval,
-                                   SecondaryStorageVmUserData, UseSecondaryStorageVm};
+                                   SecondaryStorageVmUserData, UseSecondaryStorageVm, MountParent, SystemVMAutoReserveCapacity,
+                                   SystemVMRandomPassword, MaxTemplateAndIsoSize, SecStorageAllowedInternalDownloadSites,
+                                   SecStorageEncryptCopy, SecStorageSecureCopyCert, ExtractURLCleanUpInterval, DisableExtraction,
+                                   ExtractURLExpirationInterval, SecondaryStorageServiceOffering};
     }
 
 }

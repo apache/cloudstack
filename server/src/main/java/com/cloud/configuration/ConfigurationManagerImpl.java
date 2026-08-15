@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.configuration;
 
-import static com.cloud.configuration.Config.SecStorageAllowedInternalDownloadSites;
 import static com.cloud.offering.NetworkOffering.RoutingMode.Dynamic;
 import static com.cloud.offering.NetworkOffering.RoutingMode.Static;
 import static org.apache.cloudstack.framework.config.ConfigKey.CATEGORY_SYSTEM;
@@ -982,7 +981,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             } catch (final Throwable e) {
                 throw new CloudRuntimeException("Failed to update storage.network.device2 in host_details due to exception ", e);
             }
-        } else if (Config.SecStorageSecureCopyCert.key().equalsIgnoreCase(name)) {
+        } else if (SecondaryStorageVmManager.SecStorageSecureCopyCert.key().equalsIgnoreCase(name)) {
             //FIXME - Ideally there should be a listener model to listen to global config changes and be able to take action gracefully.
             //Expire the download urls
             final String sqlTemplate = "update template_store_ref set download_url_created=?";
@@ -1552,7 +1551,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         if (type.equals(String.class)) {
-            if (SecStorageAllowedInternalDownloadSites.key().equalsIgnoreCase(name) && StringUtils.isNotEmpty(value)) {
+            if (SecondaryStorageVmManager.SecStorageAllowedInternalDownloadSites.key().equalsIgnoreCase(name) && StringUtils.isNotEmpty(value)) {
                 final String[] cidrs = value.split(",");
                 for (final String cidr : cidrs) {
                     if (!NetUtils.isValidIp4(cidr) && !NetUtils.isValidIp6(cidr) && !NetUtils.getCleanIp4Cidr(cidr).equals(cidr)) {

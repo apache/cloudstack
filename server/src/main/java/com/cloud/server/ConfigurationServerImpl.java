@@ -230,7 +230,14 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             }
             logger.debug("ConfigurationServer made secondary storage vm required.");
 
-            _configDao.update(Config.SecStorageEncryptCopy.key(), Config.SecStorageEncryptCopy.getCategory(), "false");
+            ConfigurationVO secStorageEncryptCopyConfig = _configDao.findByName(SecondaryStorageVmManager.SecStorageEncryptCopy.key());
+            if (secStorageEncryptCopyConfig == null) {
+                ConfigurationVO configVO = new ConfigurationVO(SecondaryStorageVmManager.class.getSimpleName(), SecondaryStorageVmManager.SecStorageEncryptCopy);
+                configVO.setValue("false");
+                _configDao.persist(configVO);
+            } else {
+                _configDao.update(SecondaryStorageVmManager.SecStorageEncryptCopy.key(), SecondaryStorageVmManager.SecStorageEncryptCopy.category(), "false");
+            }
             logger.debug("ConfigurationServer made secondary storage copy encrypt set to false.");
 
             _configDao.update("user.password.encoders.exclude", "MD5,LDAP,PLAINTEXT");
@@ -252,7 +259,14 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             // Save the mount parent to the configuration table
             String mountParent = getMountParent();
             if (mountParent != null) {
-                _configDao.update(Config.MountParent.key(), Config.MountParent.getCategory(), mountParent);
+                ConfigurationVO mountParentConfig = _configDao.findByName(SecondaryStorageVmManager.MountParent.key());
+                if (mountParentConfig == null) {
+                    ConfigurationVO configVO = new ConfigurationVO(SecondaryStorageVmManager.class.getSimpleName(), SecondaryStorageVmManager.MountParent);
+                    configVO.setValue(mountParent);
+                    _configDao.persist(configVO);
+                } else {
+                    _configDao.update(SecondaryStorageVmManager.MountParent.key(), SecondaryStorageVmManager.MountParent.category(), mountParent);
+                }
                 logger.debug("ConfigurationServer saved \"" + mountParent + "\" as mount.parent.");
             } else {
                 logger.debug("ConfigurationServer could not detect mount.parent.");

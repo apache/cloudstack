@@ -150,6 +150,7 @@ import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.dao.VMTemplatePoolDao;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.template.TemplateManager;
 import com.cloud.utils.FileUtil;
 import com.cloud.utils.NumbersUtil;
@@ -318,7 +319,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
         logger.info("VmwareManagerImpl config - instance.name: " + _instance);
 
-        _mountParent = _configDao.getValue(Config.MountParent.key());
+        _mountParent = _configDao.getValue(SecondaryStorageVmManager.MountParent.key());
         if (_mountParent == null) {
             _mountParent = File.separator + "mnt";
         }

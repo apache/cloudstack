@@ -75,7 +75,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.api.Answer;
-import com.cloud.configuration.Config;
 import com.cloud.dc.DataCenter;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
@@ -86,6 +85,7 @@ import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotDetailsDao;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
@@ -189,7 +189,7 @@ public class SnapshotServiceImpl implements SnapshotService {
     private String generateCopyUrlBase(String hostname, String dir) {
         String scheme = "http";
         boolean _sslCopy = false;
-        String sslCfg = _configDao.getValue(Config.SecStorageEncryptCopy.toString());
+        String sslCfg = _configDao.getValue(SecondaryStorageVmManager.SecStorageEncryptCopy.toString());
         String _ssvmUrlDomain = _configDao.getValue("secstorage.ssl.cert.domain");
         if (sslCfg != null) {
             _sslCopy = Boolean.parseBoolean(sslCfg);

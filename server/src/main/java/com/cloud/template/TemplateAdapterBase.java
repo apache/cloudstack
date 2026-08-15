@@ -83,6 +83,7 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.GuestOSHypervisorDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.upload.params.IsoUploadParams;
 import com.cloud.storage.upload.params.TemplateUploadParams;
 import com.cloud.storage.upload.params.UploadParams;
@@ -238,7 +239,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                     template.getUniqueName(), template.getFormat().toString(), templateOnStore.getDataStore().getUri(),
                     templateOnStore.getDataStore().getRole().toString(), zoneId_is);
             //using the existing max template size configuration
-            payload.setMaxUploadSize(_configDao.getValue(Config.MaxTemplateAndIsoSize.key()));
+            payload.setMaxUploadSize(_configDao.getValue(SecondaryStorageVmManager.MaxTemplateAndIsoSize.key()));
 
             Long accountId = template.getAccountId();
             Account account = _accountDao.findById(accountId);

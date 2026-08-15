@@ -863,7 +863,7 @@ public class ConfigurationManagerImplTest {
 
     @Test
     public void validateValueRangeTestValidatesValueWhenConfigHasRange() {
-        Config config = Config.SecStorageEncryptCopy;
+        Config config = Config.CheckPodCIDRs;
         String name = config.name();
         String value = "value";
         String expectedResult = "expectedResult";

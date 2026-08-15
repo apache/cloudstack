@@ -136,7 +136,6 @@ import com.cloud.agent.api.ModifyTargetsCommand;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.api.ApiDBUtils;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.ClusterDetailsDao;
@@ -190,6 +189,7 @@ import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotApiService;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.template.TemplateManager;
@@ -530,7 +530,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                     GetUploadParamsResponse response = new GetUploadParamsResponse();
 
-                    String ssvmUrlDomain = _configDao.getValue(Config.SecStorageSecureCopyCert.key());
+                    String ssvmUrlDomain = _configDao.getValue(SecondaryStorageVmManager.SecStorageSecureCopyCert.key());
                     String protocol = UseHttpsToUpload.value() ? "https" : "http";
 
                     String url = ImageStoreUtil.generatePostUploadUrl(ssvmUrlDomain, ep.getPublicAddr(), vol.getUuid(),  protocol);
