@@ -48,7 +48,6 @@ public class ConsoleProxyGCThread extends Thread {
         if (lastLogScan != 0 && System.currentTimeMillis() - lastLogScan < 3600000) {
             return;
         }
-
         lastLogScan = System.currentTimeMillis();
 
         File logDir = new File("./logs");

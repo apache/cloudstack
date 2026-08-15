@@ -431,7 +431,6 @@ public class ConsoleProxy {
                 System.exit(1);
             }
 
-
             HttpServer server = factory.createHttpServerInstance(httpListenPort);
             server.createContext("/getscreen", new ConsoleProxyThumbnailHandler());
             server.createContext("/resource/", new ConsoleProxyResourceHandler());
@@ -440,17 +439,14 @@ public class ConsoleProxy {
             server.setExecutor(new ThreadExecutor()); // creates a default executor
             server.start();
 
-
             ConsoleProxyNoVNCServer noVNCServer = getNoVNCServer();
             noVNCServer.start();
-
 
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
             System.exit(1);
         }
     }
-
 
     private static ConsoleProxyNoVNCServer getNoVNCServer() {
         int vncPort = ConsoleProxyNoVNCServer.getVNCPort();
@@ -661,7 +657,6 @@ public class ConsoleProxy {
                         || !param.getClientHostPassword().equals(viewer.getClientHostPassword())) {
                     throw new AuthenticationException("Cannot use the existing viewer " + viewer + ": bad sid");
                 }
-
                 try {
                     authenticationExternally(param);
                 } catch (Exception e) {
