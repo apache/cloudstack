@@ -85,6 +85,9 @@ public interface TemplateManager {
             true,
             ConfigKey.Scope.Cluster);
 
+    ConfigKey<String> SSVMPSK = new ConfigKey<>("Hidden", String.class, "upload.post.secret.key", "",
+            "PSK with SSVM", true);
+
     ConfigKey<Integer> CreatePrivateTemplateFromSnapshotWait = new ConfigKey<>("Storage", Integer.class,
             "create.private.template.from.snapshot.wait", "10800",
             "In second, timeout for CreatePrivateTemplateFromSnapshotCommand", true);

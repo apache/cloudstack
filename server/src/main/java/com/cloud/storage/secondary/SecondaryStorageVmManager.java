@@ -50,6 +50,9 @@ public interface SecondaryStorageVmManager extends Manager {
             true, ConfigKey.Scope.Zone, null, "User Data for SSVMs",
             null, ConfigKey.GROUP_SYSTEM_VMS, ConfigKey.SUBGROUP_SEC_STORAGE_VM);
 
+    ConfigKey<Boolean> UseSecondaryStorageVm = new ConfigKey<>("Hidden", Boolean.class, "secondary.storage.vm", "false",
+            "Deploys a VM per zone to manage secondary storage if true, otherwise secondary storage is mounted on management server", true);
+
 
     public static final int DEFAULT_SS_VM_RAMSIZE = 512;            // 512M
     public static final int DEFAULT_SS_VM_CPUMHZ = 500;             // 500 MHz

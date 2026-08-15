@@ -337,7 +337,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                 String nfsVersion = imageStoreDetailsUtil.getNfsVersion(ssStore.getId());
                 setupCmd.setNfsVersion(nfsVersion);
 
-                String postUploadKey = _configDao.getValue(Config.SSVMPSK.key());
+                String postUploadKey = TemplateManager.SSVMPSK.value();
                 setupCmd.setPostUploadKey(postUploadKey);
 
                 Answer answer = _agentMgr.easySend(ssHostId, setupCmd);
@@ -918,7 +918,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         Map<String, String> configs = _configDao.getConfiguration("management-server", params);
 
         _secStorageVmMtuSize = NumbersUtil.parseInt(configs.get("secstorage.vm.mtu.size"), DEFAULT_SS_VM_MTUSIZE);
-        boolean _useServiceVM = BooleanUtils.toBoolean(_configDao.getValue("secondary.storage.vm"));
+        boolean _useServiceVM = UseSecondaryStorageVm.value();
         _useSSlCopy = BooleanUtils.toBoolean(_configDao.getValue("secstorage.encrypt.copy"));
 
         String ssvmUrlDomain = _configDao.getValue("secstorage.ssl.cert.domain");
@@ -1550,7 +1550,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {NTPServerConfig, MaxNumberOfSsvmsForMigration, SecondaryStorageCapacityScanInterval,
-                                   SecondaryStorageVmUserData};
+                                   SecondaryStorageVmUserData, UseSecondaryStorageVm};
     }
 
 }

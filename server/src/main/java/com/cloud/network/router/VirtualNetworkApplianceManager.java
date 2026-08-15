@@ -64,6 +64,9 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
     ConfigKey<String> RouterTemplateOvm3 = new ConfigKey<>(String.class, RouterTemplateOvm3CK, "Advanced", "SystemVM Template (Ovm3)",
             "Name of the default router template on Ovm3.", true, ConfigKey.Scope.Zone, null);
 
+    ConfigKey<Integer> RouterRamSize = new ConfigKey<>("Hidden", Integer.class, "router.ram.size", "512",
+            "Default RAM for router VM (in MB).", true);
+
     ConfigKey<String> VirtualRouterUserData = new ConfigKey<>(String.class, "virtual.router.userdata",
             ConfigKey.CATEGORY_ADVANCED, "",
             "UUID for user data of VR, VPC VR, internal LB, and elastic LB. This works only when systemvm.userdata.enabled is set to true",
