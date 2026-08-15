@@ -18,6 +18,8 @@ package com.cloud.network;
 
 import java.util.List;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
+
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -35,6 +37,9 @@ import com.cloud.utils.component.Manager;
 public interface ExternalLoadBalancerDeviceManager extends Manager {
 
     public static final int DEFAULT_LOAD_BALANCER_CAPACITY = 50;
+
+    ConfigKey<String> DefaultExternalLoadBalancerCapacity = new ConfigKey<>("Advanced", String.class, "external.lb.default.capacity", "50",
+            "default number of networks permitted per external load balancer device", true);
 
     /**
      * adds a load balancer device in to a physical network
