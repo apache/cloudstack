@@ -103,6 +103,19 @@ public interface NetworkModel {
     ConfigKey<String> CloudIdentifier = new ConfigKey<>("Hidden", String.class, "cloud.identifier", null,
             "A unique identifier for the cloud.", true);
 
+    ConfigKey<Boolean> SubDomainNetworkAccess = new ConfigKey<>("Advanced", Boolean.class, "allow.subdomain.network.access", "true",
+            "Allow subdomains to use networks dedicated to their parent domain(s)", true);
+
+    ConfigKey<Boolean> ExecuteInSequenceNetworkElementCommands = new ConfigKey<>("Advanced", Boolean.class, "execute.in.sequence.network.element.commands", "false",
+            "If set to true, DhcpEntryCommand, SavePasswordCommand, VmDataCommand will be synchronized on the agent side."
+                    + " If set to false, these commands become asynchronous. Default value is false.", true);
+
+    ConfigKey<Integer> ExternalNetworkStatsInterval = new ConfigKey<>("Advanced", Integer.class, "external.network.stats.interval", "300",
+            "Interval (in seconds) to report external network statistics.", true);
+
+    ConfigKey<Integer> NetworkIPv6SearchRetryMax = new ConfigKey<>("Network", Integer.class, "network.ipv6.search.retry.max", "10000",
+            "The maximum number of retrying times to search for an available IPv6 address in the table", true);
+
     /**
      * Lists IP addresses that belong to VirtualNetwork VLANs
      *

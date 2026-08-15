@@ -91,6 +91,9 @@ public interface NetworkService {
             "vm.network.nic.max.secondary.ipaddresses", "10",
             "Specify the number of secondary ip addresses per nic per vm. Default value 10 is used, if not specified.", true);
 
+    ConfigKey<Integer> NetworkGuestCidrLimit = new ConfigKey<>("Network", Integer.class, "network.guest.cidr.limit", "22",
+            "size limit for guest cidr; can't be less than this value", true);
+
     ConfigKey<String> XenServerPublicNetwork = new ConfigKey<>("Hidden", String.class,
             "xenserver.public.network.device", null,
             "[ONLY IF THE PUBLIC NETWORK IS ON A DEDICATED NIC]:The network name label of the physical device dedicated to the public network on a XenServer host", true);
