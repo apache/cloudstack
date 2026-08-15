@@ -106,25 +106,6 @@ public enum Config {
             null),
     EnableEC2API("Advanced", ManagementServer.class, Boolean.class, "enable.ec2.api", "false", "enable EC2 API on CloudStack", null),
     EnableS3API("Advanced", ManagementServer.class, Boolean.class, "enable.s3.api", "false", "enable Amazon S3 API on CloudStack", null),
-    // Ovm3
-    Ovm3HeartBeatTimeout(
-            "Advanced",
-            ManagementServer.class,
-            Integer.class,
-            "ovm3.heartbeat.timeout",
-            "120",
-            "timeout used for primary storage check, upon timeout a panic is triggered.",
-            null),
-    Ovm3HeartBeatInterval(
-            "Advanced",
-            ManagementServer.class,
-            Integer.class,
-            "ovm3.heartbeat.interval",
-            "1",
-            "interval used to check primary storage availability.",
-            null),
-
-
     // XenServer
     XenServerBondStorageNic("Advanced", ManagementServer.class, String.class, "xenserver.bond.storage.nics", null, "Attempt to bond the two networks if found", null),
     XenServerHotFix("Advanced",

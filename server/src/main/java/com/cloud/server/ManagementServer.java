@@ -181,6 +181,12 @@ public interface ManagementServer extends ManagementService, PluggableService {
             "default Xen PV driver version for registered template, valid value:xenserver56,xenserver61 ",
             true, ConfigKey.Kind.Select, "xenserver56,xenserver61");
 
+    ConfigKey<Integer> Ovm3HeartBeatTimeout = new ConfigKey<>("Advanced", Integer.class, "ovm3.heartbeat.timeout", "120",
+            "timeout used for primary storage check, upon timeout a panic is triggered.", true);
+
+    ConfigKey<Integer> Ovm3HeartBeatInterval = new ConfigKey<>("Advanced", Integer.class, "ovm3.heartbeat.interval", "1",
+            "interval used to check primary storage availability.", true);
+
     /**
      * returns the instance id of this management server.
      *
