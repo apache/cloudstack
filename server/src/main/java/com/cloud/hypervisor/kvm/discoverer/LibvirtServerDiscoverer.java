@@ -43,7 +43,6 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ShutdownCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
-import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterVO;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.DiscoveredWithErrorException;
@@ -312,7 +311,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             KvmDummyResourceBase kvmResource = new KvmDummyResourceBase();
             Map<String, Object> params = new HashMap<String, Object>();
 
-            params.put("router.aggregation.command.each.timeout", _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
+            params.put("router.aggregation.command.each.timeout", _configDao.getValue(ManagementServer.RouterAggregationCommandEachTimeout.key()));
 
             params.put("zone", Long.toString(dcId));
             params.put("pod", Long.toString(podId));
