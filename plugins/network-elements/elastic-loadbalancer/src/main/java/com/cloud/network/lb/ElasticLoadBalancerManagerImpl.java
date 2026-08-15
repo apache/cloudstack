@@ -50,7 +50,6 @@ import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.manager.Commands;
-import com.cloud.configuration.Config;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
@@ -295,7 +294,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
         if (_instance == null) {
             _instance = "VM";
         }
-        _mgmtCidr = _configDao.getValue(Config.ManagementNetwork.key());
+        _mgmtCidr = _configDao.getValue(ManagementServer.ManagementNetwork.key());
 
         _elasticLbVmRamSize = NumbersUtil.parseInt(configs.get(ElasticLoadBalancerVmMemory.key()), DEFAULT_ELB_VM_RAMSIZE);
         _elasticLbvmCpuMHz = NumbersUtil.parseInt(configs.get(ElasticLoadBalancerVmCpuMhz.key()), DEFAULT_ELB_VM_CPU_MHZ);

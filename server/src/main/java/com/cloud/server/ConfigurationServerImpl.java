@@ -941,7 +941,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                         throw new InvalidParameterValueException("The linkLocalIp.nums: " + nums + "is wrong, should be 1~16");
                     }
                     /* local link ip address starts from 169.254.0.2 - 169.254.(nums) */
-                    String[] linkLocalIpRanges = NetUtils.getLinkLocalIPRange(_configDao.getValue(Config.ControlCidr.key()));
+                    String[] linkLocalIpRanges = NetUtils.getLinkLocalIPRange(_configDao.getValue(ManagementServer.ControlCidr.key()));
                     _zoneDao.addLinkLocalIpAddress(zoneId, pod.getId(), linkLocalIpRanges[0], linkLocalIpRanges[1]);
                 }
             });

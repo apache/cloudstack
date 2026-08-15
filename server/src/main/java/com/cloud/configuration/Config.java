@@ -26,7 +26,6 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.ha.HighAvailabilityManager;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.StorageManager;
@@ -87,53 +86,8 @@ public enum Config {
             null),
 
     // Advanced
-    EventPurgeInterval(
-            "Advanced",
-            ManagementServer.class,
-            Integer.class,
-            "event.purge.interval",
-            "86400",
-            "The interval (in seconds) to wait before running the event purge thread",
-            null),
     HostRetry("Advanced", AgentManager.class, Integer.class, "host.retry", "2", "Number of times to retry hosts for creating a volume", null),
     UpdateWait("Advanced", AgentManager.class, Integer.class, "update.wait", "600", "Time to wait (in seconds) before alerting on a updating agent", null),
-    LinkLocalIpNums("Advanced", ManagementServer.class, Integer.class, "linkLocalIp.nums", "10", "The number of link local ip that needed by domR(in power of 2)", null),
-    HypervisorList(
-            "Advanced",
-            ManagementServer.class,
-            String.class,
-            "hypervisor.list",
-            HypervisorType.KVM + "," + HypervisorType.VMware + "," + HypervisorType.XenServer + "," + HypervisorType.Hyperv + "," +
-                    HypervisorType.BareMetal + "," + HypervisorType.Ovm + "," + HypervisorType.LXC + "," + HypervisorType.Ovm3 + "," + HypervisorType.External,
-                    "The list of hypervisors that this deployment will use.",
-            "hypervisorList",
-            ConfigKey.Kind.CSV,
-            null),
-    ManagementNetwork("Advanced", ManagementServer.class, String.class, "management.network.cidr", null, "The cidr of management server network", null),
-    EventPurgeDelay(
-            "Advanced",
-            ManagementServer.class,
-            Integer.class,
-            "event.purge.delay",
-            "15",
-            "Events older than specified number days will be purged. Set this value to 0 to never delete events",
-            null),
-    AlertPurgeInterval(
-            "Advanced",
-            ManagementServer.class,
-            Integer.class,
-            "alert.purge.interval",
-            "86400",
-            "The interval (in seconds) to wait before running the alert purge thread",
-            null),
-    AlertPurgeDelay(
-            "Advanced",
-            ManagementServer.class,
-            Integer.class,
-            "alert.purge.delay",
-            "0",
-            "Alerts older than specified number days will be purged. Set this value to 0 to never delete alerts",
-            null),
     CheckPodCIDRs(
             "Advanced",
             ManagementServer.class,
@@ -150,25 +104,8 @@ public enum Config {
             "3600",
             "Time (in seconds) to wait before taking over a VM in transition state",
             null),
-    ControlCidr(
-            "Advanced",
-            ManagementServer.class,
-            String.class,
-            "control.cidr",
-            "169.254.0.0/16",
-            "Changes the cidr for the control network traffic.  Defaults to using link local.  Must be unique within pods",
-            null),
-    ControlGateway("Advanced", ManagementServer.class, String.class, "control.gateway", "169.254.0.1", "gateway for the control network traffic", null),
     EnableEC2API("Advanced", ManagementServer.class, Boolean.class, "enable.ec2.api", "false", "enable EC2 API on CloudStack", null),
     EnableS3API("Advanced", ManagementServer.class, Boolean.class, "enable.s3.api", "false", "enable Amazon S3 API on CloudStack", null),
-    RecreateSystemVmEnabled(
-            "Advanced",
-            ManagementServer.class,
-            Boolean.class,
-            "recreate.systemvm.enabled",
-            "false",
-            "If true, will recreate system vm root disk whenever starting system vm",
-            "true,false"),
     // Ovm3
     Ovm3HeartBeatTimeout(
             "Advanced",
@@ -345,25 +282,6 @@ public enum Config {
 
     DefaultPageSize("Advanced", ManagementServer.class, Long.class, "default.page.size", "500", "Default page size for API list* commands", null),
 
-    ClusterMessageTimeOutSeconds(
-            "Advanced",
-            ManagementServer.class,
-            Integer.class,
-            "cluster.message.timeout.seconds",
-            "300",
-            "Time (in seconds) to wait before a inter-management server message post times out.",
-            null),
-    AgentLoadThreshold(
-            "Advanced",
-            ManagementServer.class,
-            Float.class,
-            "agent.load.threshold",
-            "0.7",
-            "Percentage (as a value between 0 and 1) of connected agents after which agent load balancing will start happening",
-            null),
-
-    DetailBatchQuerySize("Advanced", ManagementServer.class, Integer.class, "detail.batch.query.size", "2000", "Default entity detail batch query size for listing", null),
-
     BaremetalInternalStorageServer(
             "Advanced",
             ManagementServer.class,
@@ -452,36 +370,6 @@ public enum Config {
             "baremetal.ipmi.fail.retry",
             "5",
             "ipmi interface will be temporary out of order after power operations(e.g. cycle, on), it leads following commands fail immediately. The value specifies retry times before accounting it as real failure",
-            null),
-
-    // object store
-    S3EnableRRS("Advanced", ManagementServer.class, Boolean.class, "s3.rrs.enabled", "false", "enable s3 reduced redundancy storage", null),
-    S3MaxSingleUploadSize(
-            "Advanced",
-            ManagementServer.class,
-            Integer.class,
-            "s3.singleupload.max.size",
-            "5",
-            "The maximum size limit for S3 single part upload API(in GB). If it is set to 0, then it means always use multi-part upload to upload object to S3. "
-                    + "If it is set to -1, then it means always use single-part upload to upload object to S3. ",
-                    null),
-
-    CloudDnsName("Advanced", ManagementServer.class, String.class, "cloud.dns.name", null, "DNS name of the cloud for the GSLB service", null),
-    InternalLbVmServiceOfferingId(
-            "Advanced",
-            ManagementServer.class,
-            String.class,
-            "internallbvm.service.offering",
-            null,
-            "Uuid of the service offering used by internal lb vm; if NULL - default system internal lb offering will be used",
-            null),
-    RouterAggregationCommandEachTimeout(
-            "Advanced",
-            NetworkOrchestrationService.class,
-            Integer.class,
-            "router.aggregation.command.each.timeout",
-            "600",
-            "timeout in seconds for each Virtual Router command being aggregated. The final aggregation command timeout would be determined by this timeout * commands counts ",
             null),
 
     ManagementServerVendor("Advanced", ManagementServer.class, String.class, "mgt.server.vendor", "ACS", "the vendor of management server", null),

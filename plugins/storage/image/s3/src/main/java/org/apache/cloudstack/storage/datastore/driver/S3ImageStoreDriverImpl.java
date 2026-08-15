@@ -35,7 +35,7 @@ import org.apache.cloudstack.storage.image.store.ImageStoreImpl;
 
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.S3TO;
-import com.cloud.configuration.Config;
+import com.cloud.server.ManagementServer;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.utils.NumbersUtil;
@@ -65,7 +65,7 @@ public class S3ImageStoreDriverImpl extends BaseImageStoreDriverImpl {
                         details.get(ApiConstants.S3_MAX_ERROR_RETRY) == null ? null : Integer.valueOf(details.get(ApiConstants.S3_MAX_ERROR_RETRY)),
                         details.get(ApiConstants.S3_SOCKET_TIMEOUT) == null ? null : Integer.valueOf(details.get(ApiConstants.S3_SOCKET_TIMEOUT)),
                         imgStore.getCreated(),
-                        _configDao.getValue(Config.S3EnableRRS.toString()) == null ? false : Boolean.parseBoolean(_configDao.getValue(Config.S3EnableRRS.toString())),
+                        _configDao.getValue(ManagementServer.S3EnableRRS.key()) == null ? false : Boolean.parseBoolean(_configDao.getValue(ManagementServer.S3EnableRRS.key())),
                         getMaxSingleUploadSizeInBytes(),
                         details.get(ApiConstants.S3_CONNECTION_TTL) == null ? null : Integer.valueOf(details.get(ApiConstants.S3_CONNECTION_TTL)),
                         details.get(ApiConstants.S3_USE_TCP_KEEPALIVE) == null ? null : Boolean.parseBoolean(details.get(ApiConstants.S3_USE_TCP_KEEPALIVE)));
@@ -73,7 +73,7 @@ public class S3ImageStoreDriverImpl extends BaseImageStoreDriverImpl {
 
     private long getMaxSingleUploadSizeInBytes() {
         try {
-            return Long.parseLong(_configDao.getValue(Config.S3MaxSingleUploadSize.toString())) * 1024L * 1024L * 1024L;
+            return Long.parseLong(_configDao.getValue(ManagementServer.S3MaxSingleUploadSize.key())) * 1024L * 1024L * 1024L;
         } catch (NumberFormatException e) {
             // use default 1TB
             return 1024L * 1024L * 1024L * 1024L;
