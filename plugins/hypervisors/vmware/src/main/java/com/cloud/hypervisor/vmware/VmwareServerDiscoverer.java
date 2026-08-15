@@ -66,6 +66,7 @@ import com.cloud.resource.DiscovererBase;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
+import com.cloud.server.ManagementServer;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateVO;
@@ -381,7 +382,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
                 params.put("guestTrafficInfo", guestTrafficLabelObj);
                 params.put("publicTrafficInfo", publicTrafficLabelObj);
 
-                params.put("router.aggregation.command.each.timeout", _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
+                params.put("router.aggregation.command.each.timeout", _configDao.getValue(ManagementServer.RouterAggregationCommandEachTimeout.key()));
 
                 VmwareResource resource = new VmwareResource();
                 try {
