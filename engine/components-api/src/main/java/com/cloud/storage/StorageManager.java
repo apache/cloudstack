@@ -172,6 +172,24 @@ public interface StorageManager extends StorageService {
 
     ConfigKey<Integer> MaxDataMigrationWaitTime = new ConfigKey<>("Advanced", Integer.class, "max.data.migration.wait.time", "15",
             "Maximum wait time (in minutes) for a data migration task before spawning a new SSVM", false, ConfigKey.Scope.Global);
+
+    ConfigKey<Integer> VmDiskThrottlingIopsReadRate = new ConfigKey<>("Advanced", Integer.class, "vm.disk.throttling.iops_read_rate", "0",
+            "Default disk I/O read rate in requests per second allowed in User vm's disk.", true);
+
+    ConfigKey<Integer> VmDiskThrottlingIopsWriteRate = new ConfigKey<>("Advanced", Integer.class, "vm.disk.throttling.iops_write_rate", "0",
+            "Default disk I/O writerate in requests per second allowed in User vm's disk.", true);
+
+    ConfigKey<Integer> VmDiskThrottlingBytesReadRate = new ConfigKey<>("Advanced", Integer.class, "vm.disk.throttling.bytes_read_rate", "0",
+            "Default disk I/O read rate in bytes per second allowed in User vm's disk.", true);
+
+    ConfigKey<Integer> VmDiskThrottlingBytesWriteRate = new ConfigKey<>("Advanced", Integer.class, "vm.disk.throttling.bytes_write_rate", "0",
+            "Default disk I/O writerate in bytes per second allowed in User vm's disk.", true);
+
+    ConfigKey<Integer> ExpungeWorkers = new ConfigKey<>("Advanced", Integer.class, "expunge.workers", "1",
+            "Number of workers performing expunge ", true);
+
+    ConfigKey<Boolean> HAStorageMigration = new ConfigKey<>("Storage", Boolean.class, "enable.ha.storage.migration", "true",
+            "Enable/disable storage migration across primary storage during HA", true);
     ConfigKey<Boolean> DiskProvisioningStrictness = new ConfigKey<>("Storage", Boolean.class, "disk.provisioning.type.strictness", "false",
             "If set to true, the disk is created only when there is a suitable storage pool that supports the disk provisioning type specified by the service/disk offering. " +
                     "If set to false, the disk is created with a disk provisioning type supported by the pool. Default value is false, and this is currently supported for VMware only.",

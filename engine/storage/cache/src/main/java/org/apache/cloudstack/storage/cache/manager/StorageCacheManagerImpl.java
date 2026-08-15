@@ -56,8 +56,8 @@ import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 
 import com.cloud.agent.api.to.DataObjectType;
-import com.cloud.configuration.Config;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.StorageManager;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -164,7 +164,7 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager, Co
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         cacheReplacementEnabled = StorageCacheReplacementEnabled.value();
         cacheReplaceMentInterval = StorageCacheReplacementInterval.value();
-        workers = NumbersUtil.parseInt(configDao.getValue(Config.ExpungeWorkers.key()), 10);
+        workers = NumbersUtil.parseInt(configDao.getValue(StorageManager.ExpungeWorkers.key()), 10);
         executors = Executors.newScheduledThreadPool(workers, new NamedThreadFactory("StorageCacheManager-cache-replacement"));
         return true;
     }
