@@ -27,7 +27,6 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import com.cloud.agent.AgentManager;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.StorageManager;
@@ -139,22 +138,6 @@ public enum Config {
             "The interval (in milliseconds) when host stats are retrieved from agents.",
             null),
     HostRetry("Advanced", AgentManager.class, Integer.class, "host.retry", "2", "Number of times to retry hosts for creating a volume", null),
-    RouterCpuMHz(
-            "Advanced",
-            NetworkOrchestrationService.class,
-            Integer.class,
-            "router.cpu.mhz",
-            String.valueOf(VpcVirtualNetworkApplianceManager.DEFAULT_ROUTER_CPU_MHZ),
-            "Default CPU speed (MHz) for router VM.",
-            null),
-    RouterStatsInterval(
-            "Advanced",
-            NetworkOrchestrationService.class,
-            Integer.class,
-            "router.stats.interval",
-            "300",
-            "Interval (in seconds) to report router statistics.",
-            null),
     ExternalNetworkStatsInterval(
             "Advanced",
             NetworkOrchestrationService.class,
@@ -163,30 +146,6 @@ public enum Config {
             "300",
             "Interval (in seconds) to report external network statistics.",
             null),
-    RouterCheckInterval(
-            "Advanced",
-            NetworkOrchestrationService.class,
-            Integer.class,
-            "router.check.interval",
-            "30",
-            "Interval (in seconds) to report redundant router status.",
-            null),
-    RouterCheckPoolSize(
-            "Advanced",
-            NetworkOrchestrationService.class,
-            Integer.class,
-            "router.check.poolsize",
-            "10",
-            "Numbers of threads using to check redundant router status.",
-            null),
-    RouterExtraPublicNics(
-            "Advanced",
-            NetworkOrchestrationService.class,
-            Integer.class,
-            "router.extra.public.nics",
-            "2",
-            "specify extra public nics used for virtual router(up to 5)",
-            "0-5"),
     ScaleRetry("Advanced", ManagementServer.class, Integer.class, "scale.retry", "2", "Number of times to retry scaling up the vm", null),
     UpdateWait("Advanced", AgentManager.class, Integer.class, "update.wait", "600", "Time to wait (in seconds) before alerting on a updating agent", null),
     LinkLocalIpNums("Advanced", ManagementServer.class, Integer.class, "linkLocalIp.nums", "10", "The number of link local ip that needed by domR(in power of 2)", null),
@@ -250,22 +209,6 @@ public enum Config {
             "ncc.command.timeout",
             "600000", // 10 minutes
             "Command Timeout Interval (in millisec)",
-            null),
-    DirectAttachNetworkEnabled(
-            "Advanced",
-            ManagementServer.class,
-            Boolean.class,
-            "direct.attach.network.externalIpAllocator.enabled",
-            "false",
-            "Direct-attach VMs using external DHCP server",
-            "true,false"),
-    DirectAttachNetworkExternalAPIURL(
-            "Advanced",
-            ManagementServer.class,
-            String.class,
-            "direct.attach.network.externalIpAllocator.url",
-            null,
-            "Direct-attach VMs using external DHCP server (API url)",
             null),
     CheckPodCIDRs(
             "Advanced",
@@ -661,17 +604,6 @@ public enum Config {
             "true",
             "Allow subdomains to use networks dedicated to their parent domain(s)",
             null),
-    DnsBasicZoneUpdates(
-            "Advanced",
-            NetworkOrchestrationService.class,
-            String.class,
-            "network.dns.basiczone.updates",
-            "all",
-            "This parameter can take 2 values: all (default) and pod. It defines if DHCP/DNS requests have to be send to all dhcp servers in cloudstack, or only to the one in the same pod",
-            "all,pod",
-            ConfigKey.Kind.Select,
-            "all,pod"),
-
     ClusterMessageTimeOutSeconds(
             "Advanced",
             ManagementServer.class,
@@ -877,15 +809,6 @@ public enum Config {
             "ucs.sync.blade.interval",
             "3600",
             "the interval cloudstack sync with UCS manager for available blades in case user remove blades from chassis without notifying CloudStack",
-            null),
-
-    RedundantRouterVrrpInterval(
-            "Advanced",
-            NetworkOrchestrationService.class,
-            Integer.class,
-            "router.redundant.vrrp.interval",
-            "1",
-            "seconds between VRRP broadcast. It would 3 times broadcast fail to trigger fail-over mechanism of redundant router",
             null),
 
     RouterAggregationCommandEachTimeout(
