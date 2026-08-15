@@ -64,15 +64,6 @@ public enum Config {
             "10800",
             "In second, timeout for CreatePrivateTemplateFromVolumeCommand",
             null),
-    HAStorageMigration(
-            "Storage",
-            ManagementServer.class,
-            Boolean.class,
-            "enable.ha.storage.migration",
-            "true",
-            "Enable/disable storage migration across primary storage during HA",
-            null),
-
     // Network
     //MulticastThrottlingRate("Network", ManagementServer.class, Integer.class, "multicast.throttling.rate", "10", "Default multicast rate in megabits per second allowed.", null),
     DirectNetworkNoDefaultRoute(
@@ -128,7 +119,6 @@ public enum Config {
             "86400",
             "The interval (in seconds) to wait before running the expunge thread.",
             null),
-    ExpungeWorkers("Advanced", UserVmManager.class, Integer.class, "expunge.workers", "1", "Number of workers performing expunge ", null),
     HostRetry("Advanced", AgentManager.class, Integer.class, "host.retry", "2", "Number of times to retry hosts for creating a volume", null),
     ScaleRetry("Advanced", ManagementServer.class, Integer.class, "scale.retry", "2", "Number of times to retry scaling up the vm", null),
     UpdateWait("Advanced", AgentManager.class, Integer.class, "update.wait", "600", "Time to wait (in seconds) before alerting on a updating agent", null),
@@ -217,38 +207,6 @@ public enum Config {
             "vm.tranisition.wait.interval",
             "3600",
             "Time (in seconds) to wait before taking over a VM in transition state",
-            null),
-    VmDiskThrottlingIopsReadRate(
-            "Advanced",
-            ManagementServer.class,
-            Integer.class,
-            "vm.disk.throttling.iops_read_rate",
-            "0",
-            "Default disk I/O read rate in requests per second allowed in User vm's disk.",
-            null),
-    VmDiskThrottlingIopsWriteRate(
-            "Advanced",
-            ManagementServer.class,
-            Integer.class,
-            "vm.disk.throttling.iops_write_rate",
-            "0",
-            "Default disk I/O writerate in requests per second allowed in User vm's disk.",
-            null),
-    VmDiskThrottlingBytesReadRate(
-            "Advanced",
-            ManagementServer.class,
-            Integer.class,
-            "vm.disk.throttling.bytes_read_rate",
-            "0",
-            "Default disk I/O read rate in bytes per second allowed in User vm's disk.",
-            null),
-    VmDiskThrottlingBytesWriteRate(
-            "Advanced",
-            ManagementServer.class,
-            Integer.class,
-            "vm.disk.throttling.bytes_write_rate",
-            "0",
-            "Default disk I/O writerate in bytes per second allowed in User vm's disk.",
             null),
     ControlCidr(
             "Advanced",
