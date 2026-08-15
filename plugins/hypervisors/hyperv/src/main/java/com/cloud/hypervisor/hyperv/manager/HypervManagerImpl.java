@@ -37,7 +37,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.configuration.Config;
+import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
@@ -80,7 +80,7 @@ public class HypervManagerImpl implements HypervManager {
             _storage = new JavaStorageLayer();
             _storage.configure("StorageLayer", params);
         }
-        _routerExtraPublicNics = NumbersUtil.parseInt(_configDao.getValue(Config.RouterExtraPublicNics.key()), 2);
+        _routerExtraPublicNics = NumbersUtil.parseInt(_configDao.getValue(VirtualNetworkApplianceManager.RouterExtraPublicNics.key()), 2);
         return true;
     }
 
