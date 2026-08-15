@@ -100,6 +100,9 @@ public interface NetworkModel {
     ConfigKey<Boolean> SecurityGroupDefaultAdding = new ConfigKey<>("Network", Boolean.class, "network.securitygroups.defaultadding", "true",
             "If true, the user VM would be added to the default security group by default", true);
 
+    ConfigKey<String> CloudIdentifier = new ConfigKey<>("Hidden", String.class, "cloud.identifier", null,
+            "A unique identifier for the cloud.", true);
+
     /**
      * Lists IP addresses that belong to VirtualNetwork VLANs
      *

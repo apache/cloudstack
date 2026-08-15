@@ -5504,16 +5504,16 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         String xenLabel = null;
         switch (trafficType) {
         case Public:
-            xenLabel = _configDao.getValue(Config.XenServerPublicNetwork.key());
+            xenLabel = XenServerPublicNetwork.value();
             break;
         case Guest:
-            xenLabel = _configDao.getValue(Config.XenServerGuestNetwork.key());
+            xenLabel = XenServerGuestNetwork.value();
             break;
         case Storage:
-            xenLabel = _configDao.getValue(Config.XenServerStorageNetwork1.key());
+            xenLabel = XenServerStorageNetwork1.value();
             break;
         case Management:
-            xenLabel = _configDao.getValue(Config.XenServerPrivateNetwork.key());
+            xenLabel = XenServerPrivateNetwork.value();
             break;
         case Control:
             xenLabel = "cloud_link_local_network";
@@ -6313,7 +6313,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {AllowDuplicateNetworkName, AllowEmptyStartEndIpAddress, AllowUsersToMakeNetworksRedundant, VRPrivateInterfaceMtu, VRPublicInterfaceMtu, AllowUsersToSpecifyVRMtu,
-                GuestVlanBits, MaxNumberOfSecondaryIPsPerNIC};
+                GuestVlanBits, MaxNumberOfSecondaryIPsPerNIC, XenServerPublicNetwork, XenServerGuestNetwork, XenServerStorageNetwork1, XenServerStorageNetwork2, XenServerPrivateNetwork};
     }
 
     public boolean isDefaultAcl(Long aclId) {
