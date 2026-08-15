@@ -4447,7 +4447,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {exposeCloudStackVersionInApiXmlResponse, exposeCloudStackVersionInApiListCapabilities, vmPasswordLength, sshKeyLength, humanReadableSizes, customCsIdentifier,
                 OvmPublicNetwork, OvmPrivateNetwork, OvmGuestNetwork, Ovm3PublicNetwork, Ovm3PrivateNetwork, Ovm3GuestNetwork, Ovm3StorageNetwork,
-                KvmPublicNetwork, KvmPrivateNetwork, KvmGuestNetwork};
+                KvmPublicNetwork, KvmPrivateNetwork, KvmGuestNetwork, ElasticLoadBalancerEnabled, ElasticLoadBalancerNetwork};
     }
 
     protected class EventPurgeTask extends ManagedContextRunnable {
@@ -4859,10 +4859,10 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         final List<NetworkVO> networks = networkDao.listSecurityGroupEnabledNetworks();
         if (networks != null && !networks.isEmpty()) {
             securityGroupsEnabled = true;
-            final String elbEnabled = _configDao.getValue(Config.ElasticLoadBalancerEnabled.key());
+            final String elbEnabled = _configDao.getValue(ElasticLoadBalancerEnabled.key());
             elasticLoadBalancerEnabled = elbEnabled == null ? false : Boolean.parseBoolean(elbEnabled);
             if (elasticLoadBalancerEnabled) {
-                final String networkType = _configDao.getValue(Config.ElasticLoadBalancerNetwork.key());
+                final String networkType = _configDao.getValue(ElasticLoadBalancerNetwork.key());
                 if (networkType != null) {
                     supportELB = networkType;
                 }
