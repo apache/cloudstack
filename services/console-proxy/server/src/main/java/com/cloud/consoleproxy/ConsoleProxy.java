@@ -117,7 +117,6 @@ public class ConsoleProxy {
             try {
                 File file = new File(configUrl.toURI());
 
-
                 System.out.println("Log4j configuration from : " + file.getAbsolutePath());
                 Configurator.initialize(null, file.getAbsolutePath());
             } catch (URISyntaxException e) {
@@ -230,7 +229,6 @@ public class ConsoleProxy {
             String clientProvidedToken = param.getClientProvidedExtraSecurityToken();
             LOGGER.debug(String.format("Extra security validation for the console access, provided %s to validate against %s",
                     clientProvidedToken, extraToken));
-
             if (!extraToken.equals(clientProvidedToken)) {
                 LOGGER.error("The provided extra token does not match the expected value for this console endpoint");
                 authResult.setSuccess(false);
@@ -390,7 +388,6 @@ public class ConsoleProxy {
                 }
             }
         }
-
         start(conf);
     }
 
