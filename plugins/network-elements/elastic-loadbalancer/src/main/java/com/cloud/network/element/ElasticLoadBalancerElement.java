@@ -29,7 +29,6 @@ import org.springframework.stereotype.Component;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.agent.api.to.LoadBalancerTO;
-import com.cloud.configuration.Config;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -48,6 +47,7 @@ import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.rules.LoadBalancerContainer;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.server.ManagementServer;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -166,10 +166,10 @@ public class ElasticLoadBalancerElement extends AdapterBase implements LoadBalan
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
 
         super.configure(name, params);
-        String enabled = _configDao.getValue(Config.ElasticLoadBalancerEnabled.key());
+        String enabled = _configDao.getValue(ManagementServer.ElasticLoadBalancerEnabled.key());
         _enabled = (enabled == null) ? false : Boolean.parseBoolean(enabled);
         if (_enabled) {
-            String traffType = _configDao.getValue(Config.ElasticLoadBalancerNetwork.key());
+            String traffType = _configDao.getValue(ManagementServer.ElasticLoadBalancerNetwork.key());
             if ("guest".equalsIgnoreCase(traffType)) {
                 _frontEndTrafficType = TrafficType.Guest;
             } else if ("public".equalsIgnoreCase(traffType)) {
