@@ -496,11 +496,6 @@ public enum Config {
             "ipmi interface will be temporary out of order after power operations(e.g. cycle, on), it leads following commands fail immediately. The value specifies retry times before accounting it as real failure",
             null),
 
-    ApiLimitEnabled("Advanced", ManagementServer.class, Boolean.class, "api.throttling.enabled", "false", "Enable/disable Api rate limit", null),
-    ApiLimitInterval("Advanced", ManagementServer.class, Integer.class, "api.throttling.interval", "1", "Time interval (in seconds) to reset API count", null),
-    ApiLimitMax("Advanced", ManagementServer.class, Integer.class, "api.throttling.max", "25", "Max allowed number of APIs within fixed interval", null),
-    ApiLimitCacheSize("Advanced", ManagementServer.class, Integer.class, "api.throttling.cachesize", "50000", "Account based API count cache size", null),
-
     // object store
     S3EnableRRS("Advanced", ManagementServer.class, Boolean.class, "s3.rrs.enabled", "false", "enable s3 reduced redundancy storage", null),
     S3MaxSingleUploadSize(

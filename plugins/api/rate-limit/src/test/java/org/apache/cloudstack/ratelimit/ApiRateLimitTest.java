@@ -36,8 +36,8 @@ import org.junit.Test;
 import org.apache.cloudstack.api.response.ApiLimitResponse;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
-import com.cloud.configuration.Config;
 import com.cloud.exception.RequestLimitException;
+import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
@@ -55,10 +55,10 @@ public class ApiRateLimitTest {
     @BeforeClass
 public static void setUp() throws ConfigurationException {
 
-        when(s_configDao.getValue(Config.ApiLimitInterval.key())).thenReturn(null);
-        when(s_configDao.getValue(Config.ApiLimitMax.key())).thenReturn(null);
-        when(s_configDao.getValue(Config.ApiLimitCacheSize.key())).thenReturn(null);
-        when(s_configDao.getValue(Config.ApiLimitEnabled.key())).thenReturn("true"); // enable api rate limiting
+        when(s_configDao.getValue(ManagementServer.ApiLimitInterval.key())).thenReturn(null);
+        when(s_configDao.getValue(ManagementServer.ApiLimitMax.key())).thenReturn(null);
+        when(s_configDao.getValue(ApiRateLimitService.ApiLimitCacheSize.key())).thenReturn(null);
+        when(s_configDao.getValue(ManagementServer.ApiLimitEnabled.key())).thenReturn("true"); // enable api rate limiting
         s_limitService._configDao = s_configDao;
 
         s_limitService.configure("ApiRateLimitTest", Collections.<String, Object> emptyMap());
