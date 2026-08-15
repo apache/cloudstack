@@ -42,7 +42,6 @@ import org.apache.logging.log4j.LogManager;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.routing.GlobalLoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.SiteLoadBalancerConfig;
-import com.cloud.configuration.Config;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
@@ -58,6 +57,7 @@ import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.region.ha.GlobalLoadBalancerRule;
 import com.cloud.region.ha.GlobalLoadBalancingRulesService;
+import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.Pair;
@@ -143,7 +143,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
             throw new InvalidParameterValueException("Invalid region ID: " + regionId);
         }
 
-        String providerDnsName = _globalConfigDao.getValue(Config.CloudDnsName.key());
+        String providerDnsName = _globalConfigDao.getValue(ManagementServer.CloudDnsName.key());
         if (!region.checkIfServiceEnabled(Region.Service.Gslb) || (providerDnsName == null)) {
             throw new CloudRuntimeException("GSLB service is not enabled in region : " + region.getName());
         }
@@ -625,7 +625,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
         // each Gslb rule will have a FQDN, formed from the domain name associated with the gslb rule
         // and the deployment DNS name configured in global config parameter 'cloud.dns.name'
         String domainName = gslbRule.getGslbDomain();
-        String providerDnsName = _globalConfigDao.getValue(Config.CloudDnsName.key());
+        String providerDnsName = _globalConfigDao.getValue(ManagementServer.CloudDnsName.key());
         String gslbFqdn = domainName + "." + providerDnsName;
 
         GlobalLoadBalancerConfigCommand gslbConfigCmd = new GlobalLoadBalancerConfigCommand(gslbFqdn, lbMethod, persistenceMethod, serviceType, gslbRuleId, revoke);

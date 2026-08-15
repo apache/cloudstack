@@ -21,6 +21,7 @@ import java.util.UUID;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -104,6 +105,54 @@ public interface ManagementServer extends ManagementService, PluggableService {
 
     ConfigKey<Boolean> PublishUsageEvent = new ConfigKey<>("Advanced", Boolean.class, "publish.usage.events", "true",
             "enable or disable publishing of usage events on the event bus", true);
+
+    ConfigKey<Integer> EventPurgeInterval = new ConfigKey<>("Advanced", Integer.class, "event.purge.interval", "86400",
+            "The interval (in seconds) to wait before running the event purge thread", true);
+
+    ConfigKey<Integer> LinkLocalIpNums = new ConfigKey<>("Advanced", Integer.class, "linkLocalIp.nums", "10",
+            "The number of link local ip that needed by domR(in power of 2)", true);
+
+    ConfigKey<String> HypervisorList = new ConfigKey<>("Advanced", String.class, "hypervisor.list",
+            HypervisorType.KVM + "," + HypervisorType.VMware + "," + HypervisorType.XenServer + "," + HypervisorType.Hyperv + "," +
+                    HypervisorType.BareMetal + "," + HypervisorType.Ovm + "," + HypervisorType.LXC + "," + HypervisorType.Ovm3 + "," + HypervisorType.External,
+            "The list of hypervisors that this deployment will use.", true, ConfigKey.Kind.CSV, null);
+
+    ConfigKey<String> ManagementNetwork = new ConfigKey<>("Advanced", String.class, "management.network.cidr", null,
+            "The cidr of management server network", true);
+
+    ConfigKey<Integer> EventPurgeDelay = new ConfigKey<>("Advanced", Integer.class, "event.purge.delay", "15",
+            "Events older than specified number days will be purged. Set this value to 0 to never delete events", true);
+
+    ConfigKey<Integer> AlertPurgeInterval = new ConfigKey<>("Advanced", Integer.class, "alert.purge.interval", "86400",
+            "The interval (in seconds) to wait before running the alert purge thread", true);
+
+    ConfigKey<Integer> AlertPurgeDelay = new ConfigKey<>("Advanced", Integer.class, "alert.purge.delay", "0",
+            "Alerts older than specified number days will be purged. Set this value to 0 to never delete alerts", true);
+
+    ConfigKey<String> ControlCidr = new ConfigKey<>("Advanced", String.class, "control.cidr", "169.254.0.0/16",
+            "Changes the cidr for the control network traffic.  Defaults to using link local.  Must be unique within pods", true);
+
+    ConfigKey<String> ControlGateway = new ConfigKey<>("Advanced", String.class, "control.gateway", "169.254.0.1",
+            "gateway for the control network traffic", true);
+
+    ConfigKey<Integer> DetailBatchQuerySize = new ConfigKey<>("Advanced", Integer.class, "detail.batch.query.size", "2000",
+            "Default entity detail batch query size for listing", true);
+
+    ConfigKey<Boolean> S3EnableRRS = new ConfigKey<>("Advanced", Boolean.class, "s3.rrs.enabled", "false",
+            "enable s3 reduced redundancy storage", true);
+
+    ConfigKey<Integer> S3MaxSingleUploadSize = new ConfigKey<>("Advanced", Integer.class, "s3.singleupload.max.size", "5",
+            "The maximum size limit for S3 single part upload API(in GB). If it is set to 0, then it means always use multi-part upload to upload object to S3. "
+                    + "If it is set to -1, then it means always use single-part upload to upload object to S3. ", true);
+
+    ConfigKey<String> CloudDnsName = new ConfigKey<>("Advanced", String.class, "cloud.dns.name", null,
+            "DNS name of the cloud for the GSLB service", true);
+
+    ConfigKey<String> InternalLbVmServiceOfferingId = new ConfigKey<>("Advanced", String.class, "internallbvm.service.offering", null,
+            "Uuid of the service offering used by internal lb vm; if NULL - default system internal lb offering will be used", true);
+
+    ConfigKey<Integer> RouterAggregationCommandEachTimeout = new ConfigKey<>("Advanced", Integer.class, "router.aggregation.command.each.timeout", "600",
+            "timeout in seconds for each Virtual Router command being aggregated. The final aggregation command timeout would be determined by this timeout * commands counts ", true);
 
     /**
      * returns the instance id of this management server.

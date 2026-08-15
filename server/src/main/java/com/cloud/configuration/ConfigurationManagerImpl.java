@@ -277,6 +277,7 @@ import com.cloud.org.Grouping.AllocationState;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
 import com.cloud.resourcelimit.CheckedReservation;
+import com.cloud.server.ManagementServer;
 import com.cloud.server.ManagementService;
 import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.ServiceOfferingVO;
@@ -649,7 +650,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         weightBasedParametersForValidation.add(CapacityManager.StorageAllocatedCapacityDisableThresholdForVolumeSize.key());
         weightBasedParametersForValidation.add(DeploymentClusterPlanner.ClusterCPUCapacityDisableThreshold.key());
         weightBasedParametersForValidation.add(DeploymentClusterPlanner.ClusterMemoryCapacityDisableThreshold.key());
-        weightBasedParametersForValidation.add(Config.AgentLoadThreshold.key());
+        weightBasedParametersForValidation.add("agent.load.threshold");
         weightBasedParametersForValidation.add(DeploymentClusterPlanner.VmUserDispersionWeight.key());
         weightBasedParametersForValidation.add(CapacityManager.SecondaryStorageCapacityThreshold.key());
         weightBasedParametersForValidation.add(ClusterDrsService.ClusterDrsImbalanceThreshold.key());
@@ -684,10 +685,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (settingNameUpdated.equals(ApiServiceConfiguration.ManagementServerAddresses.key()) ||
                         settingNameUpdated.equals(IndirectAgentLBServiceImpl.IndirectAgentLBAlgorithm.key())) {
                     _indirectAgentLB.propagateMSListToAgents(false);
-                } else if (settingNameUpdated.equals(Config.RouterAggregationCommandEachTimeout.toString())
+                } else if (settingNameUpdated.equals(ManagementServer.RouterAggregationCommandEachTimeout.key())
                         ||  settingNameUpdated.equals(AgentManager.MigrateWait.toString())) {
                     Map<String, String> params = new HashMap<>();
-                    params.put(Config.RouterAggregationCommandEachTimeout.toString(), _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
+                    params.put(ManagementServer.RouterAggregationCommandEachTimeout.key(), _configDao.getValue(ManagementServer.RouterAggregationCommandEachTimeout.key()));
                     params.put(AgentManager.MigrateWait.toString(), _configDao.getValue(AgentManager.MigrateWait.toString()));
                     _agentManager.propagateChangeToAgents(params);
                 } else if (settingNameUpdated.equals(IndirectAgentLBServiceImpl.IndirectAgentLBCheckInterval.key())) {
@@ -752,7 +753,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // As it is so common for people to forget about configuring
         // management.network.cidr,
-        final String mgtCidr = _configDao.getValue(Config.ManagementNetwork.key());
+        final String mgtCidr = _configDao.getValue(ManagementServer.ManagementNetwork.key());
         if (mgtCidr == null || mgtCidr.trim().isEmpty()) {
             final String[] localCidrs = NetUtils.getLocalCidrs();
             if (localCidrs != null && localCidrs.length > 0) {
@@ -760,7 +761,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_MANAGEMENT_NODE, 0, 0L, "Management network CIDR is not configured originally. Set it default to "
                         + localCidrs[0], "");
-                _configDao.update(Config.ManagementNetwork.key(), Config.ManagementNetwork.getCategory(), localCidrs[0]);
+                _configDao.update(ManagementServer.ManagementNetwork.key(), ManagementServer.ManagementNetwork.category(), localCidrs[0]);
             } else {
                 logger.warn("Management network CIDR is not properly configured and we are not able to find a default setting");
                 _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_MANAGEMENT_NODE, 0, 0L,
@@ -1017,7 +1018,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
      * Updates the 'hypervisor.list' value to match the new custom hypervisor name set as newValue if the previous value was set
      */
     private void updateCustomDisplayNameOnHypervisorsList(String previousValue, String newValue) {
-        String hypervisorListConfigName = Config.HypervisorList.key();
+        String hypervisorListConfigName = ManagementServer.HypervisorList.key();
         String hypervisors = _configDao.getValue(hypervisorListConfigName);
         if (Arrays.asList(hypervisors.split(",")).contains(previousValue)) {
             hypervisors = hypervisors.replace(previousValue, newValue);
@@ -2703,7 +2704,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 _zoneDao.addPrivateIpAddress(zone.getId(), pod.getId(), startIpFinal, endIpFinal, false, null);
             }
 
-            final String[] linkLocalIpRanges = NetUtils.getLinkLocalIPRange(_configDao.getValue(Config.ControlCidr.key()));
+            final String[] linkLocalIpRanges = NetUtils.getLinkLocalIPRange(_configDao.getValue(ManagementServer.ControlCidr.key()));
             if (linkLocalIpRanges.length > 1) {
                 _zoneDao.addLinkLocalIpAddress(zone.getId(), pod.getId(), linkLocalIpRanges[0], linkLocalIpRanges[1]);
             }

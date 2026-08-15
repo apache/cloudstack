@@ -35,6 +35,7 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.NetworkModel;
+import com.cloud.server.ManagementServer;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.net.UrlUtil;
@@ -140,7 +141,7 @@ public abstract class DiscovererBase extends AdapterBase implements Discoverer {
         params.put(AgentManager.XenServerMaxNics.toString().toLowerCase(), _configDao.getValue(AgentManager.XenServerMaxNics.toString()));
         params.put(Config.XenServerHeartBeatInterval.toString().toLowerCase(), _configDao.getValue(Config.XenServerHeartBeatInterval.toString()));
         params.put(Config.XenServerHeartBeatTimeout.toString().toLowerCase(), _configDao.getValue(Config.XenServerHeartBeatTimeout.toString()));
-        params.put("router.aggregation.command.each.timeout", _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
+        params.put("router.aggregation.command.each.timeout", _configDao.getValue(ManagementServer.RouterAggregationCommandEachTimeout.key()));
 
         return params;
 
