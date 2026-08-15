@@ -193,6 +193,15 @@ public interface AccountManager extends AccountService, Configurable {
     ConfigKey<String> SSOKey = new ConfigKey<>("Secure", String.class, "security.singlesignon.key", null,
             "A Single Sign-On key used for logging into the cloud", true);
 
+    ConfigKey<Integer> AccountCleanupInterval = new ConfigKey<>("Advanced", Integer.class, "account.cleanup.interval", "86400",
+            "The interval (in seconds) between cleanup for removed accounts", true);
+
+    ConfigKey<Integer> IncorrectLoginAttemptsAllowed = new ConfigKey<>("Advanced", Integer.class, "incorrect.login.attempts.allowed", "5",
+            "Incorrect login attempts allowed before the user is disabled (when value > 0). If value <=0 users are not disabled after failed login attempts", true);
+
+    ConfigKey<Long> SSOAuthTolerance = new ConfigKey<>("Advanced", Long.class, "security.singlesignon.tolerance.millis", "300000",
+            "The allowable clock difference in milliseconds between when an SSO login request is made and when it is received.", true);
+
     boolean moveUser(long id, Long domainId, Account newAccount);
 
     UserTwoFactorAuthenticator getUserTwoFactorAuthenticator(final Long domainId, final Long userAccountId);

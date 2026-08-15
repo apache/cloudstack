@@ -554,10 +554,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         Map<String, String> configs = _configDao.getConfiguration(params);
 
-        String loginAttempts = configs.get(Config.IncorrectLoginAttemptsAllowed.key());
+        String loginAttempts = configs.get(IncorrectLoginAttemptsAllowed.key());
         _allowedLoginAttempts = NumbersUtil.parseInt(loginAttempts, 5);
 
-        String value = configs.get(Config.AccountCleanupInterval.key());
+        String value = configs.get(AccountCleanupInterval.key());
         _cleanupInterval = NumbersUtil.parseInt(value, 60 * 60 * 24); // 1 day.
 
         return true;
@@ -4101,7 +4101,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {UseSecretKeyInResponse, enableUserTwoFactorAuthentication,
                 userTwoFactorAuthenticationDefaultProvider, mandateUserTwoFactorAuthentication, userTwoFactorAuthenticationIssuer, apiKeyAccess,
-                userAllowMultipleAccounts, listOfRoleTypesAllowedForOperationsOfSameRoleType, allowOperationsOnUsersInSameAccount, SSOKey};
+                userAllowMultipleAccounts, listOfRoleTypesAllowedForOperationsOfSameRoleType, allowOperationsOnUsersInSameAccount, SSOKey,
+                AccountCleanupInterval, IncorrectLoginAttemptsAllowed, SSOAuthTolerance};
     }
 
     public List<UserTwoFactorAuthenticator> getUserTwoFactorAuthenticationProviders() {
