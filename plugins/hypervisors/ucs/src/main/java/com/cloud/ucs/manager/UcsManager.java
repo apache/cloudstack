@@ -26,11 +26,16 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UcsBladeResponse;
 import org.apache.cloudstack.api.response.UcsManagerResponse;
 import org.apache.cloudstack.api.response.UcsProfileResponse;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.PluggableService;
 
 public interface UcsManager extends Manager, PluggableService {
+
+    ConfigKey<Integer> UCSSyncBladeInterval = new ConfigKey<>("Advanced", Integer.class, "ucs.sync.blade.interval", "3600",
+            "the interval cloudstack sync with UCS manager for available blades in case user remove blades from chassis without notifying CloudStack", true);
+
     UcsManagerResponse addUcsManager(AddUcsManagerCmd cmd);
 
     ListResponse<UcsProfileResponse> listUcsProfiles(ListUcsProfileCmd cmd);

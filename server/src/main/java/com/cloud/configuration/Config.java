@@ -475,15 +475,6 @@ public enum Config {
             null,
             "Uuid of the service offering used by internal lb vm; if NULL - default system internal lb offering will be used",
             null),
-    UCSSyncBladeInterval(
-            "Advanced",
-            ManagementServer.class,
-            Integer.class,
-            "ucs.sync.blade.interval",
-            "3600",
-            "the interval cloudstack sync with UCS manager for available blades in case user remove blades from chassis without notifying CloudStack",
-            null),
-
     RouterAggregationCommandEachTimeout(
             "Advanced",
             NetworkOrchestrationService.class,
