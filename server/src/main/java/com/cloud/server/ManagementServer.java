@@ -168,6 +168,19 @@ public interface ManagementServer extends ManagementService, PluggableService {
     ConfigKey<Boolean> VmwareUseDVSwitch = new ConfigKey<>("Network", Boolean.class, "vmware.use.dvswitch", "false",
             "Enable/Disable Nexus/Vmware dvSwitch in VMware environment", true);
 
+    ConfigKey<String> XenServerSetupMultipath = new ConfigKey<>("Advanced", String.class, "xenserver.setup.multipath", "false",
+            "Setup the host to do multipath", true);
+
+    ConfigKey<Integer> XenServerHeartBeatTimeout = new ConfigKey<>("Advanced", Integer.class, "xenserver.heartbeat.timeout", "120",
+            "heartbeat timeout to use when implementing XenServer Self Fencing", true);
+
+    ConfigKey<Integer> XenServerHeartBeatInterval = new ConfigKey<>("Advanced", Integer.class, "xenserver.heartbeat.interval", "60",
+            "heartbeat interval to use when checking before XenServer Self Fencing", true);
+
+    ConfigKey<String> XenServerPVdriverVersion = new ConfigKey<>("Advanced", String.class, "xenserver.pvdriver.version", "xenserver61",
+            "default Xen PV driver version for registered template, valid value:xenserver56,xenserver61 ",
+            true, ConfigKey.Kind.Select, "xenserver56,xenserver61");
+
     /**
      * returns the instance id of this management server.
      *

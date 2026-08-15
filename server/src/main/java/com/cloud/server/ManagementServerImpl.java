@@ -4453,7 +4453,8 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
                 EventPurgeInterval, LinkLocalIpNums, HypervisorList, ManagementNetwork, EventPurgeDelay,
                 AlertPurgeInterval, AlertPurgeDelay, ControlCidr, ControlGateway, DetailBatchQuerySize,
                 S3EnableRRS, S3MaxSingleUploadSize, CloudDnsName, InternalLbVmServiceOfferingId, RouterAggregationCommandEachTimeout,
-                VmwareRootDiskControllerType, VmwareSystemVmNicDeviceType, VmwareUseNexusVSwitch, VmwareUseDVSwitch};
+                VmwareRootDiskControllerType, VmwareSystemVmNicDeviceType, VmwareUseNexusVSwitch, VmwareUseDVSwitch,
+                XenServerSetupMultipath, XenServerHeartBeatTimeout, XenServerHeartBeatInterval, XenServerPVdriverVersion};
     }
 
     protected class EventPurgeTask extends ManagedContextRunnable {
