@@ -28,7 +28,6 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Command;
-import com.cloud.configuration.Config;
 import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -240,7 +239,7 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
     }
 
     private boolean reserveStandbyCapacity() {
-        String value = _configDao.getValue(Config.SystemVMAutoReserveCapacity.key());
+        String value = _configDao.getValue(SystemVMAutoReserveCapacity.key());
         if (value != null && value.equalsIgnoreCase("true")) {
             return true;
         }

@@ -127,7 +127,6 @@ import com.cloud.agent.api.to.deployasis.OVFNetworkTO;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.vo.UserVmJoinVO;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.cpu.CPU;
 import com.cloud.dc.DataCenter;
@@ -190,6 +189,7 @@ import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.template.TemplateAdapter.TemplateAdapterType;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
@@ -454,7 +454,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
              */
             TemplateOrVolumePostUploadCommand firstCommand = payload.get(0);
 
-            String ssvmUrlDomain = _configDao.getValue(Config.SecStorageSecureCopyCert.key());
+            String ssvmUrlDomain = _configDao.getValue(SecondaryStorageVmManager.SecStorageSecureCopyCert.key());
             String protocol = VolumeApiService.UseHttpsToUpload.valueIn(firstCommand.getZoneId()) ? "https" : "http";
 
             String url = ImageStoreUtil.generatePostUploadUrl(ssvmUrlDomain, firstCommand.getRemoteEndPoint(), firstCommand.getEntityUUID(), protocol);

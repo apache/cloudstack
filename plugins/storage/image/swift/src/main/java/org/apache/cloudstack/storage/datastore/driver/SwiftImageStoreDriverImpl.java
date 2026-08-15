@@ -44,8 +44,8 @@ import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.SwiftTO;
-import com.cloud.configuration.Config;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.utils.SwiftUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -83,7 +83,7 @@ public class SwiftImageStoreDriverImpl extends BaseImageStoreDriverImpl {
         String containerName = SwiftUtil.getContainerName(dataObject.getType().toString(), dataObject.getId());
         String objectName = installPath.split("\\/")[1];
         // Get extract url expiration interval set in global configuration (in seconds)
-        int urlExpirationInterval = Integer.parseInt(_configDao.getValue(Config.ExtractURLExpirationInterval.toString()));
+        int urlExpirationInterval = Integer.parseInt(_configDao.getValue(SecondaryStorageVmManager.ExtractURLExpirationInterval.toString()));
 
         URL swiftUrl = SwiftUtil.generateTempUrl(swiftTO, containerName, objectName, tempKey, urlExpirationInterval);
         if (swiftUrl != null) {
