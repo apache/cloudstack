@@ -32,7 +32,6 @@ import org.apache.cloudstack.engine.cloud.entity.api.db.VMReservationVO;
 import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMReservationDao;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
-import com.cloud.configuration.Config;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
@@ -43,6 +42,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
@@ -125,7 +125,7 @@ public class HostAntiAffinityProcessor extends AffinityProcessorBase implements 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
-        _vmCapacityReleaseInterval = NumbersUtil.parseInt(_configDao.getValue(Config.CapacitySkipcountingHours.key()), 3600);
+        _vmCapacityReleaseInterval = NumbersUtil.parseInt(_configDao.getValue(UserVmManager.CapacitySkipcountingHours.key()), 3600);
         return true;
     }
 
