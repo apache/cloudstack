@@ -129,14 +129,6 @@ public enum Config {
             "The interval (in seconds) to wait before running the expunge thread.",
             null),
     ExpungeWorkers("Advanced", UserVmManager.class, Integer.class, "expunge.workers", "1", "Number of workers performing expunge ", null),
-    HostStatsInterval(
-            "Advanced",
-            ManagementServer.class,
-            Integer.class,
-            "host.stats.interval",
-            "60000",
-            "The interval (in milliseconds) when host stats are retrieved from agents.",
-            null),
     HostRetry("Advanced", AgentManager.class, Integer.class, "host.retry", "2", "Number of times to retry hosts for creating a volume", null),
     ScaleRetry("Advanced", ManagementServer.class, Integer.class, "scale.retry", "2", "Number of times to retry scaling up the vm", null),
     UpdateWait("Advanced", AgentManager.class, Integer.class, "update.wait", "600", "Time to wait (in seconds) before alerting on a updating agent", null),
@@ -218,16 +210,6 @@ public enum Config {
             "3600",
             "Time (in seconds) to wait before release VM's cpu and memory when VM in stopped state",
             null),
-    VmStatsInterval(
-            "Advanced",
-            ManagementServer.class,
-            Integer.class,
-            "vm.stats.interval",
-            "60000",
-            "The interval (in milliseconds) when vm stats are retrieved from agents.",
-            null),
-    VmDiskStatsInterval("Advanced", ManagementServer.class, Integer.class, "vm.disk.stats.interval", "0", "Interval (in seconds) to report vm disk statistics.", null),
-    VolumeStatsInterval("Advanced", ManagementServer.class, Integer.class, "volume.stats.interval", "60000", "Interval (in milliseconds) to report volume statistics.", null),
     VmTransitionWaitInterval(
             "Advanced",
             ManagementServer.class,
@@ -773,10 +755,7 @@ public enum Config {
     PublishAlertEvent("Advanced", ManagementServer.class, Boolean.class, "publish.alert.events", "true", "enable or disable publishing of alert events on the event bus", null),
     PublishResourceStateEvent("Advanced", ManagementServer.class, Boolean.class, "publish.resource.state.events", "true", "enable or disable publishing of alert events on the event bus", null),
     PublishUsageEvent("Advanced", ManagementServer.class, Boolean.class, "publish.usage.events", "true", "enable or disable publishing of usage events on the event bus", null),
-    PublishAsynJobEvent("Advanced", ManagementServer.class, Boolean.class, "publish.async.job.events", "true", "enable or disable publishing of usage events on the event bus", null),
-
-    // StatsCollector
-    StatsOutPutGraphiteHost("Advanced", ManagementServer.class, String.class, "stats.output.uri", "", "URI to additionally send StatsCollector statistics to", null);
+    PublishAsynJobEvent("Advanced", ManagementServer.class, Boolean.class, "publish.async.job.events", "true", "enable or disable publishing of usage events on the event bus", null);
 
 
     private final String _category;
