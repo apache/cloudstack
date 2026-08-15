@@ -2235,7 +2235,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         return new ConfigKey<?>[] { CheckTxnBeforeSending, Workers, Port, Wait, AlertWait, DirectAgentLoadSize,
                 DirectAgentPoolSize, DirectAgentThreadCap, EnableKVMAutoEnableDisable, ReadyCommandWait,
                 GranularWaitTimeForCommands, RemoteAgentSslHandshakeTimeout, RemoteAgentMaxConcurrentNewConnections,
-                RemoteAgentNewConnectionsMonitorInterval, KVMHostDiscoverySshPort };
+                RemoteAgentNewConnectionsMonitorInterval, KVMHostDiscoverySshPort, InstanceName, XapiWait, MigrateWait,
+                SecStorageVmMTUSize, SecStorageCapacityStandby, SecStorageSessionMax, SecStorageCmdExecutionTimeMax,
+                SecStorageProxy, XenServerMaxNics };
     }
 
     protected class SetHostParamsListener implements Listener {
@@ -2272,7 +2274,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             if (((StartupRoutingCommand)cmd).getHypervisorType() == HypervisorType.KVM || ((StartupRoutingCommand)cmd).getHypervisorType() == HypervisorType.LXC) {
                 Map<String, String> params = new HashMap<>();
                 params.put(Config.RouterAggregationCommandEachTimeout.toString(), _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
-                params.put(Config.MigrateWait.toString(), _configDao.getValue(Config.MigrateWait.toString()));
+                params.put(MigrateWait.toString(), _configDao.getValue(MigrateWait.toString()));
                 params.put(NetworkOrchestrationService.TUNGSTEN_ENABLED.key(), String.valueOf(NetworkOrchestrationService.TUNGSTEN_ENABLED.valueIn(host.getDataCenterId())));
                 params.put(ReconcileCommandService.ReconcileCommandsEnabled.key(), String.valueOf(_reconcileCommandsEnabled));
 

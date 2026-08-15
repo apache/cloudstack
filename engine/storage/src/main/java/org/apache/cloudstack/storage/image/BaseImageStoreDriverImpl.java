@@ -67,7 +67,6 @@ import com.cloud.agent.api.to.DatadiskTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.OVFInformationTO;
 import com.cloud.alert.AlertManager;
-import com.cloud.configuration.Config;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
@@ -398,7 +397,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
                 (srcdata.getType() == DataObjectType.SNAPSHOT && destData.getType() == DataObjectType.SNAPSHOT) ||
                 (srcdata.getType() == DataObjectType.VOLUME && destData.getType() == DataObjectType.VOLUME)) {
 
-            int nMaxExecutionMinutes = NumbersUtil.parseInt(configDao.getValue(Config.SecStorageCmdExecutionTimeMax.key()), 30);
+            int nMaxExecutionMinutes = NumbersUtil.parseInt(configDao.getValue(AgentManager.SecStorageCmdExecutionTimeMax.key()), 30);
             CopyCommand cmd = new CopyCommand(srcdata.getTO(), destData.getTO(), nMaxExecutionMinutes * 60 * 1000, VirtualMachineManager.ExecuteInSequence.value());
             Answer answer = null;
 

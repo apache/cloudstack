@@ -31,7 +31,6 @@ import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.StorageManager;
-import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.template.TemplateManager;
 import com.cloud.vm.UserVmManager;
@@ -114,7 +113,6 @@ public enum Config {
             "86400",
             "The interval (in seconds) between cleanup for removed accounts",
             null),
-    InstanceName("Advanced", AgentManager.class, String.class, "instance.name", "VM", "Name of the deployment instance.", "instanceName"),
     ExpungeDelay(
             "Advanced",
             UserVmManager.class,
@@ -215,8 +213,6 @@ public enum Config {
             "0-5"),
     ScaleRetry("Advanced", ManagementServer.class, Integer.class, "scale.retry", "2", "Number of times to retry scaling up the vm", null),
     UpdateWait("Advanced", AgentManager.class, Integer.class, "update.wait", "600", "Time to wait (in seconds) before alerting on a updating agent", null),
-    XapiWait("Advanced", AgentManager.class, Integer.class, "xapiwait", "60", "Time (in seconds) to wait for XAPI to return", null),
-    MigrateWait("Advanced", AgentManager.class, Integer.class, "migratewait", "3600", "Time (in seconds) to wait for VM migrate finish", null),
     MountParent(
             "Advanced",
             ManagementServer.class,
@@ -262,14 +258,6 @@ public enum Config {
             "15",
             "Events older than specified number days will be purged. Set this value to 0 to never delete events",
             null),
-    SecStorageVmMTUSize(
-            "Advanced",
-            AgentManager.class,
-            Integer.class,
-            "secstorage.vm.mtu.size",
-            String.valueOf(SecondaryStorageVmManager.DEFAULT_SS_VM_MTUSIZE),
-            "MTU size (in Byte) of storage network in secondary storage vms",
-            null),
     MaxTemplateAndIsoSize(
             "Advanced",
             ManagementServer.class,
@@ -302,38 +290,6 @@ public enum Config {
             "",
             "SSL certificate used to encrypt copy traffic between zones",
             "domainName"),
-    SecStorageCapacityStandby(
-            "Advanced",
-            AgentManager.class,
-            Integer.class,
-            "secstorage.capacity.standby",
-            "10",
-            "The minimal number of command execution sessions that system is able to serve immediately(standby capacity)",
-            null),
-    SecStorageSessionMax(
-            "Advanced",
-            AgentManager.class,
-            Integer.class,
-            "secstorage.session.max",
-            "50",
-            "The max number of command execution sessions that a SSVM can handle",
-            null),
-    SecStorageCmdExecutionTimeMax(
-            "Advanced",
-            AgentManager.class,
-            Integer.class,
-            "secstorage.cmd.execution.time.max",
-            "30",
-            "The max command execution time in minute",
-            null),
-    SecStorageProxy(
-            "Advanced",
-            AgentManager.class,
-            String.class,
-            "secstorage.proxy",
-            null,
-            "http proxy used by ssvm, in http://username:password@proxyserver:port format",
-            null),
     AlertPurgeInterval(
             "Advanced",
             ManagementServer.class,
@@ -630,7 +586,6 @@ public enum Config {
             "60",
             "heartbeat interval to use when checking before XenServer Self Fencing",
             null),
-    XenServerMaxNics("Advanced", AgentManager.class, Integer.class, "xenserver.nics.max", "7", "Maximum allowed nics for Vms created on XenServer", null),
     XenServerPVdriverVersion(
             "Advanced",
             ManagementServer.class,

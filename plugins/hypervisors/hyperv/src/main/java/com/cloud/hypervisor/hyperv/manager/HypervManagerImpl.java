@@ -36,6 +36,7 @@ import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
+import com.cloud.agent.AgentManager;
 import com.cloud.configuration.Config;
 import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.StorageLayer;
@@ -318,7 +319,7 @@ public class HypervManagerImpl implements HypervManager {
             mountParent = File.separator + "mnt";
         }
 
-        String instance = _configDao.getValue(Config.InstanceName.key());
+        String instance = _configDao.getValue(AgentManager.InstanceName.key());
         if (instance == null) {
             instance = "DEFAULT";
         }
