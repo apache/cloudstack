@@ -134,23 +134,6 @@ public enum Config {
             "0",
             "Alerts older than specified number days will be purged. Set this value to 0 to never delete alerts",
             null),
-    // LB HealthCheck Interval.
-    LBHealthCheck(
-            "Advanced",
-            ManagementServer.class,
-            String.class,
-            "healthcheck.update.interval",
-            "600",
-            "Time Interval to fetch the LB health check states (in sec)",
-            null),
-    NCCCmdTimeOut(
-            "Advanced",
-            ManagementServer.class,
-            Long.class,
-            "ncc.command.timeout",
-            "600000", // 10 minutes
-            "Command Timeout Interval (in millisec)",
-            null),
     CheckPodCIDRs(
             "Advanced",
             ManagementServer.class,
@@ -379,30 +362,6 @@ public enum Config {
             "Percentage (as a value between 0 and 1) of connected agents after which agent load balancing will start happening",
             null),
 
-    DefaultExternalLoadBalancerCapacity(
-            "Advanced",
-            ManagementServer.class,
-            String.class,
-            "external.lb.default.capacity",
-            "50",
-            "default number of networks permitted per external load balancer device",
-            null),
-    DefaultExternalFirewallCapacity(
-            "Advanced",
-            ManagementServer.class,
-            String.class,
-            "external.firewall.default.capacity",
-            "50",
-            "default number of networks permitted per external load firewall device",
-            null),
-    EIPWithMultipleNetScalersEnabled(
-            "Advanced",
-            ManagementServer.class,
-            Boolean.class,
-            "eip.use.multiple.netscalers",
-            "false",
-            "Should be set to true, if there will be multiple NetScaler devices providing EIP service in a zone",
-            null),
     HaTag("Advanced", ManagementServer.class, String.class, "ha.tag", null, "HA tag defining that the host marked with this tag can be used for HA purposes only", null),
     DetailBatchQuerySize("Advanced", ManagementServer.class, Integer.class, "detail.batch.query.size", "2000", "Default entity detail batch query size for listing", null),
 
