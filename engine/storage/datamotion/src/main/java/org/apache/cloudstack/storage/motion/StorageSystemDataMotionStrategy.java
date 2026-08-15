@@ -101,7 +101,6 @@ import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.configuration.Config;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
@@ -753,8 +752,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
         _volumeService.grantAccess(destVolumeInfo, hostVO, destVolumeInfo.getDataStore());
 
-        String value = _configDao.getValue(Config.MigrateWait.key());
-        int waitInterval = NumbersUtil.parseInt(value, Integer.parseInt(Config.MigrateWait.getDefaultValue()));
+        String value = _configDao.getValue(AgentManager.MigrateWait.key());
+        int waitInterval = NumbersUtil.parseInt(value, Integer.parseInt(AgentManager.MigrateWait.defaultValue()));
 
         StoragePool destPool = (StoragePool)dataStoreMgr.getDataStore(destVolumeInfo.getDataStore().getId(), DataStoreRole.Primary);
 

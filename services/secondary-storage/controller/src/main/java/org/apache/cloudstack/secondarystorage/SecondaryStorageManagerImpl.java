@@ -980,7 +980,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             _loadScanner.initScan(STARTUP_DELAY_IN_MILLISECONDS, SecondaryStorageCapacityScanInterval.value());
         }
 
-        _httpProxy = configs.get(Config.SecStorageProxy.key());
+        _httpProxy = configs.get(AgentManager.SecStorageProxy.key());
         if (_httpProxy != null) {
             boolean valid = true;
             String errMsg = null;

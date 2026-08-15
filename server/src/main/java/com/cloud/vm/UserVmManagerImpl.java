@@ -9846,7 +9846,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private String getInternalName(long accountId, long vmId) {
-        String instanceSuffix = _configDao.getValue(Config.InstanceName.key());
+        String instanceSuffix = _configDao.getValue(AgentManager.InstanceName.key());
         if (instanceSuffix == null) {
             instanceSuffix = "DEFAULT";
         }

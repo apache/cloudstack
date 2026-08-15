@@ -26,6 +26,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 
+import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Command;
 import com.cloud.configuration.Config;
 import com.cloud.consoleproxy.ConsoleProxyManager;
@@ -79,10 +80,10 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
 
-        _capacityPerSSVM = NumbersUtil.parseInt(_configDao.getValue(Config.SecStorageSessionMax.key()), DEFAULT_SS_VM_CAPACITY);
-        _standbyCapacity = NumbersUtil.parseInt(_configDao.getValue(Config.SecStorageCapacityStandby.key()), DEFAULT_STANDBY_CAPACITY);
+        _capacityPerSSVM = NumbersUtil.parseInt(_configDao.getValue(AgentManager.SecStorageSessionMax.key()), DEFAULT_SS_VM_CAPACITY);
+        _standbyCapacity = NumbersUtil.parseInt(_configDao.getValue(AgentManager.SecStorageCapacityStandby.key()), DEFAULT_STANDBY_CAPACITY);
 
-        int nMaxExecutionMinutes = NumbersUtil.parseInt(_configDao.getValue(Config.SecStorageCmdExecutionTimeMax.key()), 30);
+        int nMaxExecutionMinutes = NumbersUtil.parseInt(_configDao.getValue(AgentManager.SecStorageCmdExecutionTimeMax.key()), 30);
         _maxExecutionTimeMs = nMaxExecutionMinutes * 60 * 1000;
 
         migrateCapPerSSVM = StorageManager.SecStorageMaxMigrateSessions.value();

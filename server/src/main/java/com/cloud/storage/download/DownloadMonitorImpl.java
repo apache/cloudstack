@@ -49,7 +49,6 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.storage.DownloadAnswer;
-import com.cloud.configuration.Config;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.RegisterVolumePayload;
 import com.cloud.storage.Storage.ImageFormat;
@@ -86,7 +85,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
     @Override
     public boolean configure(String name, Map<String, Object> params) {
         final Map<String, String> configs = _configDao.getConfiguration("management-server", params);
-        _proxy = configs.get(Config.SecStorageProxy.key());
+        _proxy = configs.get(AgentManager.SecStorageProxy.key());
 
         _copyAuthPasswd = configs.get("secstorage.copy.password");
 
