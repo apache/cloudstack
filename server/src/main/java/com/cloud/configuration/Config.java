@@ -612,9 +612,6 @@ public enum Config {
                     + "If it is set to -1, then it means always use single-part upload to upload object to S3. ",
                     null),
 
-    // VMSnapshots
-    VMSnapshotCreateWait("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.create.wait", "1800", "In second, timeout for create vm snapshot", null),
-
     CloudDnsName("Advanced", ManagementServer.class, String.class, "cloud.dns.name", null, "DNS name of the cloud for the GSLB service", null),
     InternalLbVmServiceOfferingId(
             "Advanced",
