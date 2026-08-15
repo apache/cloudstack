@@ -164,23 +164,30 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     }
 
     /**
-     * Rejects a DNS provider URL that resolves to an illegal address before any provider client is given
-     * the chance to connect to it. See {@link UriUtils#validateUrl(String)} for the exact rules enforced
-     * (including the requirement that the URL declares an {@code http}/{@code https} scheme).
-     * Expects {@code url} to already be trimmed.
+     * Trims and rejects a DNS provider URL that resolves to an illegal address before any provider client
+     * is given the chance to connect to it. See {@link UriUtils#validateUrl(String)} for the exact rules
+     * enforced (including the requirement that the URL declares an {@code http}/{@code https} scheme).
+     *
+     * @return the trimmed URL.
+     * @throws InvalidParameterValueException if the URL is blank or fails validation.
      */
-    private void validateDnsServerUrl(String url) {
-        if (StringUtils.isBlank(url)) {
-            throw new IllegalArgumentException("URL cannot be blank.");
+    private String validateDnsServerUrl(String url) {
+        String trimmedUrl = StringUtils.trim(url);
+        if (StringUtils.isBlank(trimmedUrl)) {
+            throw new InvalidParameterValueException("URL cannot be blank.");
         }
-        UriUtils.validateUrl(url);
+        try {
+            UriUtils.validateUrl(trimmedUrl);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidParameterValueException(e.getMessage());
+        }
+        return trimmedUrl;
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_DNS_SERVER_ADD, eventDescription = "Adding a DNS Server")
     public DnsServer addDnsServer(AddDnsServerCmd cmd) {
-        String url = StringUtils.trim(cmd.getUrl());
-        validateDnsServerUrl(url);
+        String url = validateDnsServerUrl(cmd.getUrl());
         Account caller = CallContext.current().getCallingAccount();
         DnsServer existing = dnsServerDao.findByUrlAndAccount(url, caller.getId());
         if (existing != null) {
@@ -269,7 +276,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         if (cmd.getUrl() != null) {
             String url = StringUtils.trim(cmd.getUrl());
             if (!url.equals(originalUrl)) {
-                validateDnsServerUrl(url);
+                url = validateDnsServerUrl(url);
                 DnsServer duplicate = dnsServerDao.findByUrlAndAccount(url, dnsServer.getAccountId());
                 if (duplicate != null && duplicate.getId() != dnsServer.getId()) {
                     throw new InvalidParameterValueException("Another DNS server with this URL already exists.");

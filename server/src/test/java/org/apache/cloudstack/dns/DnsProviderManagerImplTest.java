@@ -803,7 +803,7 @@ public class DnsProviderManagerImplTest {
         verify(dnsServerDao).persist(Mockito.argThat(s -> "http://192.0.2.1:8081".equals(((DnsServerVO) s).getUrl())));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidParameterValueException.class)
     public void testAddDnsServerRejectsLoopbackUrl() {
         org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd cmd = mock(
                 org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd.class);
@@ -811,7 +811,7 @@ public class DnsProviderManagerImplTest {
         manager.addDnsServer(cmd);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidParameterValueException.class)
     public void testAddDnsServerRejectsUrlWithoutScheme() {
         org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd cmd = mock(
                 org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd.class);
@@ -868,7 +868,7 @@ public class DnsProviderManagerImplTest {
         manager.updateDnsServer(cmd);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidParameterValueException.class)
     public void testUpdateDnsServerRejectsLoopbackUrl() {
         org.apache.cloudstack.api.command.user.dns.UpdateDnsServerCmd cmd = mock(
                 org.apache.cloudstack.api.command.user.dns.UpdateDnsServerCmd.class);
