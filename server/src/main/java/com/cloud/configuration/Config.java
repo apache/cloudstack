@@ -138,14 +138,6 @@ public enum Config {
             "The interval (in milliseconds) when host stats are retrieved from agents.",
             null),
     HostRetry("Advanced", AgentManager.class, Integer.class, "host.retry", "2", "Number of times to retry hosts for creating a volume", null),
-    ExternalNetworkStatsInterval(
-            "Advanced",
-            NetworkOrchestrationService.class,
-            Integer.class,
-            "external.network.stats.interval",
-            "300",
-            "Interval (in seconds) to report external network statistics.",
-            null),
     ScaleRetry("Advanced", ManagementServer.class, Integer.class, "scale.retry", "2", "Number of times to retry scaling up the vm", null),
     UpdateWait("Advanced", AgentManager.class, Integer.class, "update.wait", "600", "Time to wait (in seconds) before alerting on a updating agent", null),
     LinkLocalIpNums("Advanced", ManagementServer.class, Integer.class, "linkLocalIp.nums", "10", "The number of link local ip that needed by domR(in power of 2)", null),
@@ -218,15 +210,6 @@ public enum Config {
             "true",
             "If true, different pods must belong to different CIDR subnets.",
             "true,false"),
-    NetworkGcWait(
-            "Advanced",
-            ManagementServer.class,
-            Integer.class,
-            "network.gc.wait",
-            "600",
-            "Time (in seconds) to wait before shutting down a network that's not in used",
-            null),
-    NetworkGcInterval("Advanced", ManagementServer.class, Integer.class, "network.gc.interval", "600", "Seconds to wait before checking for networks to shutdown", null),
     CapacitySkipcountingHours(
             "Advanced",
             ManagementServer.class,
@@ -423,14 +406,6 @@ public enum Config {
 
 
     // XenServer
-    NetworkGuestCidrLimit(
-            "Network",
-            NetworkOrchestrationService.class,
-            Integer.class,
-            "network.guest.cidr.limit",
-            "22",
-            "size limit for guest cidr; can't be less than this value",
-            null),
     XenServerSetupMultipath("Advanced", ManagementServer.class, String.class, "xenserver.setup.multipath", "false", "Setup the host to do multipath", null),
     XenServerBondStorageNic("Advanced", ManagementServer.class, String.class, "xenserver.bond.storage.nics", null, "Attempt to bond the two networks if found", null),
     XenServerHeartBeatTimeout(
@@ -595,15 +570,6 @@ public enum Config {
 
     DefaultPageSize("Advanced", ManagementServer.class, Long.class, "default.page.size", "500", "Default page size for API list* commands", null),
 
-    //disabling lb as cluster sync does not work with distributed cluster
-    SubDomainNetworkAccess(
-            "Advanced",
-            NetworkOrchestrationService.class,
-            Boolean.class,
-            "allow.subdomain.network.access",
-            "true",
-            "Allow subdomains to use networks dedicated to their parent domain(s)",
-            null),
     ClusterMessageTimeOutSeconds(
             "Advanced",
             ManagementServer.class,
@@ -664,14 +630,6 @@ public enum Config {
             null),
     VpcMaxNetworks("Advanced", ManagementServer.class, Integer.class, "vpc.max.networks", "3", "Maximum number of networks per vpc", null),
     DetailBatchQuerySize("Advanced", ManagementServer.class, Integer.class, "detail.batch.query.size", "2000", "Default entity detail batch query size for listing", null),
-    NetworkIPv6SearchRetryMax(
-            "Network",
-            ManagementServer.class,
-            Integer.class,
-            "network.ipv6.search.retry.max",
-            "10000",
-            "The maximum number of retrying times to search for an available IPv6 address in the table",
-            null),
 
     BaremetalInternalStorageServer(
             "Advanced",
@@ -792,16 +750,6 @@ public enum Config {
             null,
             "Uuid of the service offering used by internal lb vm; if NULL - default system internal lb offering will be used",
             null),
-    ExecuteInSequenceNetworkElementCommands(
-            "Advanced",
-            NetworkOrchestrationService.class,
-            Boolean.class,
-            "execute.in.sequence.network.element.commands",
-            "false",
-            "If set to true, DhcpEntryCommand, SavePasswordCommand, VmDataCommand will be synchronized on the agent side."
-                    + " If set to false, these commands become asynchronous. Default value is false.",
-                    null),
-
     UCSSyncBladeInterval(
             "Advanced",
             ManagementServer.class,
