@@ -114,6 +114,7 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.DateUtil;
@@ -1140,10 +1141,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             consoleProxyPort = NumbersUtil.parseInt(value, ConsoleProxyManager.DEFAULT_PROXY_VNC_PORT);
         }
 
-        value = configs.get("secondary.storage.vm");
-        if (value != null && value.equalsIgnoreCase("true")) {
-            useStorageVm = true;
-        }
+        useStorageVm = SecondaryStorageVmManager.UseSecondaryStorageVm.value();
 
         instance = configs.get("instance.name");
         if (instance == null) {

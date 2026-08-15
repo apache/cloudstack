@@ -91,6 +91,26 @@ public interface NetworkService {
             "vm.network.nic.max.secondary.ipaddresses", "10",
             "Specify the number of secondary ip addresses per nic per vm. Default value 10 is used, if not specified.", true);
 
+    ConfigKey<String> XenServerPublicNetwork = new ConfigKey<>("Hidden", String.class,
+            "xenserver.public.network.device", null,
+            "[ONLY IF THE PUBLIC NETWORK IS ON A DEDICATED NIC]:The network name label of the physical device dedicated to the public network on a XenServer host", true);
+
+    ConfigKey<String> XenServerGuestNetwork = new ConfigKey<>("Hidden", String.class,
+            "xenserver.guest.network.device", null,
+            "Specify for guest network name label", true);
+
+    ConfigKey<String> XenServerStorageNetwork1 = new ConfigKey<>("Hidden", String.class,
+            "xenserver.storage.network.device1", null,
+            "Specify when there are storage networks", true);
+
+    ConfigKey<String> XenServerStorageNetwork2 = new ConfigKey<>("Hidden", String.class,
+            "xenserver.storage.network.device2", null,
+            "Specify when there are storage networks", true);
+
+    ConfigKey<String> XenServerPrivateNetwork = new ConfigKey<>("Hidden", String.class,
+            "xenserver.private.network.device", null,
+            "Specify when the private network name is different", true);
+
     List<? extends Network> getIsolatedNetworksOwnedByAccountInZone(long zoneId, Account owner);
 
     IpAddress allocateIP(Account ipOwner, long zoneId, Long networkId, Boolean displayIp, String ipaddress) throws ResourceAllocationException, InsufficientAddressCapacityException,

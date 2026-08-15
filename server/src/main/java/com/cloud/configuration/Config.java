@@ -613,17 +613,6 @@ public enum Config {
 
 
     // XenServer
-    XenServerPublicNetwork(
-            "Hidden",
-            ManagementServer.class,
-            String.class,
-            "xenserver.public.network.device",
-            null,
-            "[ONLY IF THE PUBLIC NETWORK IS ON A DEDICATED NIC]:The network name label of the physical device dedicated to the public network on a XenServer host",
-            null),
-    XenServerStorageNetwork1("Hidden", ManagementServer.class, String.class, "xenserver.storage.network.device1", null, "Specify when there are storage networks", null),
-    XenServerStorageNetwork2("Hidden", ManagementServer.class, String.class, "xenserver.storage.network.device2", null, "Specify when there are storage networks", null),
-    XenServerPrivateNetwork("Hidden", ManagementServer.class, String.class, "xenserver.private.network.device", null, "Specify when the private network name is different", null),
     NetworkGuestCidrLimit(
             "Network",
             NetworkOrchestrationService.class,
@@ -650,7 +639,6 @@ public enum Config {
             "60",
             "heartbeat interval to use when checking before XenServer Self Fencing",
             null),
-    XenServerGuestNetwork("Hidden", ManagementServer.class, String.class, "xenserver.guest.network.device", null, "Specify for guest network name label", null),
     XenServerMaxNics("Advanced", AgentManager.class, Integer.class, "xenserver.nics.max", "7", "Maximum allowed nics for Vms created on XenServer", null),
     XenServerPVdriverVersion(
             "Advanced",
@@ -783,14 +771,6 @@ public enum Config {
             null),
 
     // Hidden
-    UseSecondaryStorageVm(
-            "Hidden",
-            ManagementServer.class,
-            Boolean.class,
-            "secondary.storage.vm",
-            "false",
-            "Deploys a VM per zone to manage secondary storage if true, otherwise secondary storage is mounted on management server",
-            null),
     CreatePoolsInPod(
             "Hidden",
             ManagementServer.class,
@@ -799,7 +779,6 @@ public enum Config {
             "false",
             "Should we automatically add XenServers into pools that are inside a Pod",
             null),
-    CloudIdentifier("Hidden", ManagementServer.class, String.class, "cloud.identifier", null, "A unique identifier for the cloud.", null),
     SSOAuthTolerance(
             "Advanced",
             ManagementServer.class,
@@ -809,7 +788,6 @@ public enum Config {
             "The allowable clock difference in milliseconds between when an SSO login request is made and when it is received.",
             null),
     //NetworkType("Hidden", ManagementServer.class, String.class, "network.type", "vlan", "The type of network that this deployment will use.", "vlan,direct"),
-    RouterRamSize("Hidden", NetworkOrchestrationService.class, Integer.class, "router.ram.size", "512", "Default RAM for router VM (in MB).", null),
 
     DefaultPageSize("Advanced", ManagementServer.class, Long.class, "default.page.size", "500", "Default page size for API list* commands", null),
 
@@ -1074,9 +1052,7 @@ public enum Config {
     PublishAsynJobEvent("Advanced", ManagementServer.class, Boolean.class, "publish.async.job.events", "true", "enable or disable publishing of usage events on the event bus", null),
 
     // StatsCollector
-    StatsOutPutGraphiteHost("Advanced", ManagementServer.class, String.class, "stats.output.uri", "", "URI to additionally send StatsCollector statistics to", null),
-
-    SSVMPSK("Hidden", ManagementServer.class, String.class, "upload.post.secret.key", "", "PSK with SSVM", null);
+    StatsOutPutGraphiteHost("Advanced", ManagementServer.class, String.class, "stats.output.uri", "", "URI to additionally send StatsCollector statistics to", null);
 
 
     private final String _category;

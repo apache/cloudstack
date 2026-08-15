@@ -4811,7 +4811,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         // check permissions
         _accountMgr.checkAccess(caller, null, true, _accountMgr.getAccount(user.getAccountId()));
 
-        String cloudIdentifier = _configDao.getValue("cloud.identifier");
+        String cloudIdentifier = NetworkModel.CloudIdentifier.value();
         if (cloudIdentifier == null) {
             cloudIdentifier = "";
         }

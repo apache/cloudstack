@@ -104,7 +104,6 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class ConfigDriveNetworkElementTest {
 
-    public static final String CLOUD_ID = "xx";
     public static final String PUBLIC_KEY = "publicKey";
     public static final String PASSWORD = "password";
     public static final long NETWORK_ID = 1L;
@@ -178,7 +177,6 @@ public class ConfigDriveNetworkElementTest {
         when(_serviceOfferingDao.findByIdIncludingRemoved(VMID, SOID)).thenReturn(serviceOfferingVO);
         when(_guestOSDao.findById(Mockito.anyLong())).thenReturn(guestOSVO);
         when(_guestOSCategoryDao.findById(Mockito.anyLong())).thenReturn(guestOSCategoryVo);
-        when(_configDao.getValue("cloud.identifier")).thenReturn(CLOUD_ID);
         when(guestOSCategoryVo.getName()).thenReturn("Linux");
         when(dataCenterVO.getName()).thenReturn(ZONENAME);
         when(serviceOfferingVO.getDisplayText()).thenReturn(VMOFFERING);

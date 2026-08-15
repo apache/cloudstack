@@ -546,7 +546,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
         final Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
 
-        int routerRamSize = NumbersUtil.parseInt(configs.get("router.ram.size"), DEFAULT_ROUTER_VM_RAMSIZE);
+        int routerRamSize = RouterRamSize.value();
         int routerCpuMHz = NumbersUtil.parseInt(configs.get("router.cpu.mhz"), DEFAULT_ROUTER_CPU_MHZ);
 
         _routerExtraPublicNics = NumbersUtil.parseInt(_configDao.getValue(Config.RouterExtraPublicNics.key()), 2);
@@ -3381,7 +3381,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 RemoveControlIpOnStop,
                 VirtualRouterUserData,
                 NetworkRouterRpFilter,
-                EnableServiceMonitoring
+                EnableServiceMonitoring,
+                RouterRamSize
         };
     }
 

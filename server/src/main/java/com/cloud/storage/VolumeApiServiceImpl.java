@@ -549,7 +549,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     String expires = currentDateTime.plusMinutes(timeout).toString();
                     response.setTimeout(expires);
 
-                    String key = _configDao.getValue(Config.SSVMPSK.key());
+                    String key = TemplateManager.SSVMPSK.value();
                     /*
                      * encoded metadata using the post upload config key
                      */
