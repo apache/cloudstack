@@ -32,7 +32,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.ratelimit.ApiRateLimitService;
 
-import com.cloud.configuration.Config;
+import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 
 @APICommand(name = "resetApiLimit", responseObject = SuccessResponse.class, description = "Reset api count",
@@ -82,7 +82,7 @@ public class ResetApiLimitCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        boolean apiLimitEnabled = Boolean.parseBoolean(_configDao.getValue(Config.ApiLimitEnabled.key()));
+        boolean apiLimitEnabled = Boolean.parseBoolean(_configDao.getValue(ManagementServer.ApiLimitEnabled.key()));
         if (!apiLimitEnabled) {
             throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "This api is only available when api.throttling.enabled = true.");
         }
