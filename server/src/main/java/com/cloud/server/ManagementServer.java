@@ -187,6 +187,15 @@ public interface ManagementServer extends ManagementService, PluggableService {
     ConfigKey<Integer> Ovm3HeartBeatInterval = new ConfigKey<>("Advanced", Integer.class, "ovm3.heartbeat.interval", "1",
             "interval used to check primary storage availability.", true);
 
+    ConfigKey<Boolean> BaremetalProvisionDoneNotificationEnabled = new ConfigKey<>("Advanced", Boolean.class, "baremetal.provision.done.notification.enabled", "true",
+            "whether to enable baremetal provison done notification", true);
+
+    ConfigKey<Integer> BaremetalProvisionDoneNotificationPort = new ConfigKey<>("Advanced", Integer.class, "baremetal.provision.done.notification.port", "8080",
+            "the port that listens baremetal provision done notification. Should be the same to port management server listening on for now. Please change it to management server port if it's not default 8080", true);
+
+    ConfigKey<String> ExternalBaremetalSystemUrl = new ConfigKey<>("Advanced", String.class, "external.baremetal.system.url", null,
+            "url of external baremetal system that CloudStack will talk to", true);
+
     /**
      * returns the instance id of this management server.
      *

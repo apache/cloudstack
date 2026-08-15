@@ -123,7 +123,6 @@ import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.bgp.BGPService;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.ZoneConfig;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -2076,7 +2075,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             buf.append(" exposedns=true");
         }
 
-        if (Boolean.parseBoolean(_configDao.getValue(Config.BaremetalProvisionDoneNotificationEnabled.key()))) {
+        if (Boolean.parseBoolean(_configDao.getValue(ManagementServer.BaremetalProvisionDoneNotificationEnabled.key()))) {
             final QueryBuilder<UserVO> acntq = QueryBuilder.create(UserVO.class);
             acntq.and(acntq.entity().getUsername(), SearchCriteria.Op.EQ, "baremetal-system-account");
             final UserVO user = acntq.find();
@@ -2092,7 +2091,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 buf.append(String.format(" baremetalnotificationsecuritykey=%s", latestKeypair.getSecretKey()));
                 buf.append(String.format(" baremetalnotificationapikey=%s", latestKeypair.getApiKey()));
                 buf.append(" host=").append(ApiServiceConfiguration.ManagementServerAddresses.value());
-                buf.append(" port=").append(_configDao.getValue(Config.BaremetalProvisionDoneNotificationPort.key()));
+                buf.append(" port=").append(_configDao.getValue(ManagementServer.BaremetalProvisionDoneNotificationPort.key()));
             }
         }
 
