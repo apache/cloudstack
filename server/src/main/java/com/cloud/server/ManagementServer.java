@@ -47,6 +47,12 @@ public interface ManagementServer extends ManagementService, PluggableService {
     ConfigKey<String> ElasticLoadBalancerNetwork = new ConfigKey<>("Advanced", String.class, "network.loadbalancer.basiczone.elb.network", "guest",
             "Whether the elastic load balancing service public ips are taken from the public or guest network", true);
 
+    ConfigKey<Boolean> ApiLimitEnabled = new ConfigKey<>("Advanced", Boolean.class, "api.throttling.enabled", "false", "Enable/disable Api rate limit", true);
+
+    ConfigKey<Integer> ApiLimitInterval = new ConfigKey<>("Advanced", Integer.class, "api.throttling.interval", "1", "Time interval (in seconds) to reset API count", true);
+
+    ConfigKey<Integer> ApiLimitMax = new ConfigKey<>("Advanced", Integer.class, "api.throttling.max", "25", "Max allowed number of APIs within fixed interval", true);
+
     ConfigKey<String> OvmPublicNetwork = new ConfigKey<>("Hidden", String.class,
             "ovm.public.network.device", null,
             "Specify the public bridge on host for public network", true);
