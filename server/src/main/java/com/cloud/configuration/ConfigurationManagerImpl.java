@@ -930,7 +930,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         _configDepot.invalidateConfigCache(name, ConfigKey.Scope.Global, null);
 
         PreparedStatement pstmt;
-        if (Config.XenServerGuestNetwork.key().equalsIgnoreCase(name)) {
+        if (NetworkService.XenServerGuestNetwork.key().equalsIgnoreCase(name)) {
             final String sql = "update host_details set value=? where name=?";
             try {
                 pstmt = txn.prepareAutoCloseStatement(sql);
@@ -941,7 +941,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             } catch (final Throwable e) {
                 throw new CloudRuntimeException("Failed to update guest.network.device in host_details due to exception ", e);
             }
-        } else if (Config.XenServerPrivateNetwork.key().equalsIgnoreCase(name)) {
+        } else if (NetworkService.XenServerPrivateNetwork.key().equalsIgnoreCase(name)) {
             final String sql = "update host_details set value=? where name=?";
             try {
                 pstmt = txn.prepareAutoCloseStatement(sql);
@@ -952,7 +952,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             } catch (final Throwable e) {
                 throw new CloudRuntimeException("Failed to update private.network.device in host_details due to exception ", e);
             }
-        } else if (Config.XenServerPublicNetwork.key().equalsIgnoreCase(name)) {
+        } else if (NetworkService.XenServerPublicNetwork.key().equalsIgnoreCase(name)) {
             final String sql = "update host_details set value=? where name=?";
             try {
                 pstmt = txn.prepareAutoCloseStatement(sql);
@@ -963,7 +963,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             } catch (final Throwable e) {
                 throw new CloudRuntimeException("Failed to update public.network.device in host_details due to exception ", e);
             }
-        } else if (Config.XenServerStorageNetwork1.key().equalsIgnoreCase(name)) {
+        } else if (NetworkService.XenServerStorageNetwork1.key().equalsIgnoreCase(name)) {
             final String sql = "update host_details set value=? where name=?";
             try {
                 pstmt = txn.prepareAutoCloseStatement(sql);
@@ -974,7 +974,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             } catch (final Throwable e) {
                 throw new CloudRuntimeException("Failed to update storage.network.device1 in host_details due to exception ", e);
             }
-        } else if (Config.XenServerStorageNetwork2.key().equals(name)) {
+        } else if (NetworkService.XenServerStorageNetwork2.key().equals(name)) {
             final String sql = "update host_details set value=? where name=?";
             try {
                 pstmt = txn.prepareAutoCloseStatement(sql);
