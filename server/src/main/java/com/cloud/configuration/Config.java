@@ -95,14 +95,6 @@ public enum Config {
             "86400",
             "The interval (in seconds) to wait before running the event purge thread",
             null),
-    AccountCleanupInterval(
-            "Advanced",
-            ManagementServer.class,
-            Integer.class,
-            "account.cleanup.interval",
-            "86400",
-            "The interval (in seconds) between cleanup for removed accounts",
-            null),
     HostRetry("Advanced", AgentManager.class, Integer.class, "host.retry", "2", "Number of times to retry hosts for creating a volume", null),
     UpdateWait("Advanced", AgentManager.class, Integer.class, "update.wait", "600", "Time to wait (in seconds) before alerting on a updating agent", null),
     LinkLocalIpNums("Advanced", ManagementServer.class, Integer.class, "linkLocalIp.nums", "10", "The number of link local ip that needed by domR(in power of 2)", null),
@@ -285,14 +277,6 @@ public enum Config {
             "false",
             "If true, will recreate system vm root disk whenever starting system vm",
             "true,false"),
-    IncorrectLoginAttemptsAllowed(
-            "Advanced",
-            ManagementServer.class,
-            Integer.class,
-            "incorrect.login.attempts.allowed",
-            "5",
-            "Incorrect login attempts allowed before the user is disabled (when value > 0). If value <=0 users are not disabled after failed login attempts",
-            null),
     // Ovm3
     Ovm3HeartBeatTimeout(
             "Advanced",
@@ -464,14 +448,6 @@ public enum Config {
             "xenserver.create.pools.in.pod",
             "false",
             "Should we automatically add XenServers into pools that are inside a Pod",
-            null),
-    SSOAuthTolerance(
-            "Advanced",
-            ManagementServer.class,
-            Long.class,
-            "security.singlesignon.tolerance.millis",
-            "300000",
-            "The allowable clock difference in milliseconds between when an SSO login request is made and when it is received.",
             null),
     //NetworkType("Hidden", ManagementServer.class, String.class, "network.type", "vlan", "The type of network that this deployment will use.", "vlan,direct"),
 
