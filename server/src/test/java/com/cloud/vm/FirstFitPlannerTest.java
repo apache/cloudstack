@@ -65,7 +65,6 @@ import org.springframework.test.context.support.AnnotationConfigContextLoader;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.dao.CapacityDao;
-import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
@@ -159,7 +158,7 @@ public class FirstFitPlannerTest {
 
         when(configDepot.global()).thenReturn(configDao);
         when(configDao.getValue(Mockito.anyString())).thenReturn(null);
-        when(configDao.getValue(Config.ImplicitHostTags.key())).thenReturn("GPU");
+        when(configDao.getValue(DeploymentClusterPlanner.ImplicitHostTags.key())).thenReturn("GPU");
 
         ComponentContext.initComponentsLifeCycle();
         acct.setType(Account.Type.ADMIN);
