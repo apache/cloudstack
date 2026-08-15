@@ -96,7 +96,6 @@ import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.commands.ListRecurringSnapshotScheduleCmd;
 import com.cloud.api.query.MutualExclusiveIdsManagerBase;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
@@ -151,6 +150,7 @@ import com.cloud.storage.dao.SnapshotScheduleDao;
 import com.cloud.storage.dao.SnapshotZoneDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
@@ -547,7 +547,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         Long zoneId = cmd.getZoneId();
 
         if (!_accountMgr.isRootAdmin(caller.getId()) && ApiDBUtils.isExtractionDisabled()) {
-            logger.error("Extraction is disabled through [{}].", Config.DisableExtraction);
+            logger.error("Extraction is disabled through [{}].", SecondaryStorageVmManager.DisableExtraction);
             throw new PermissionDeniedException("Extraction could not be completed.");
         }
 

@@ -42,8 +42,8 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.NfsTO;
-import com.cloud.configuration.Config;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class CloudStackImageStoreDriverImpl extends NfsImageStoreDriverImpl {
@@ -131,7 +131,7 @@ public class CloudStackImageStoreDriverImpl extends NfsImageStoreDriverImpl {
         String hostname = ipAddress;
         String scheme = "http";
         boolean _sslCopy = false;
-        String sslCfg = _configDao.getValue(Config.SecStorageEncryptCopy.toString());
+        String sslCfg = _configDao.getValue(SecondaryStorageVmManager.SecStorageEncryptCopy.toString());
         String _ssvmUrlDomain = _configDao.getValue("secstorage.ssl.cert.domain");
         if (sslCfg != null) {
             _sslCopy = Boolean.parseBoolean(sslCfg);
