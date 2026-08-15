@@ -58,6 +58,12 @@ public interface VpcManager {
             ConfigKey.Scope.Global,
             null);
 
+    ConfigKey<Integer> VpcCleanupInterval = new ConfigKey<>("Advanced", Integer.class, "vpc.cleanup.interval", "3600",
+            "The interval (in seconds) between cleanup for Inactive VPCs", true);
+
+    ConfigKey<Integer> VpcMaxNetworks = new ConfigKey<>("Advanced", Integer.class, "vpc.max.networks", "3",
+            "Maximum number of networks per vpc", true);
+
     /**
      * Returns all the Guest networks that are part of VPC
      *
