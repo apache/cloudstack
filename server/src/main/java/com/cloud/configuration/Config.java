@@ -800,7 +800,6 @@ public enum Config {
             "Should we automatically add XenServers into pools that are inside a Pod",
             null),
     CloudIdentifier("Hidden", ManagementServer.class, String.class, "cloud.identifier", null, "A unique identifier for the cloud.", null),
-    SSOKey("Secure", ManagementServer.class, String.class, "security.singlesignon.key", null, "A Single Sign-On key used for logging into the cloud", null),
     SSOAuthTolerance(
             "Advanced",
             ManagementServer.class,
