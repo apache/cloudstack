@@ -4447,7 +4447,8 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {exposeCloudStackVersionInApiXmlResponse, exposeCloudStackVersionInApiListCapabilities, vmPasswordLength, sshKeyLength, humanReadableSizes, customCsIdentifier,
                 OvmPublicNetwork, OvmPrivateNetwork, OvmGuestNetwork, Ovm3PublicNetwork, Ovm3PrivateNetwork, Ovm3GuestNetwork, Ovm3StorageNetwork,
-                KvmPublicNetwork, KvmPrivateNetwork, KvmGuestNetwork, ElasticLoadBalancerEnabled, ElasticLoadBalancerNetwork};
+                KvmPublicNetwork, KvmPrivateNetwork, KvmGuestNetwork, ElasticLoadBalancerEnabled, ElasticLoadBalancerNetwork,
+                ApiLimitEnabled, ApiLimitInterval, ApiLimitMax};
     }
 
     protected class EventPurgeTask extends ManagedContextRunnable {
@@ -4877,9 +4878,9 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         final boolean userPublicTemplateEnabled = TemplateManager.AllowPublicUserTemplates.valueIn(caller.getId());
 
         // add some parameters UI needs to handle API throttling
-        final boolean apiLimitEnabled = Boolean.parseBoolean(_configDao.getValue(Config.ApiLimitEnabled.key()));
-        final Integer apiLimitInterval = Integer.valueOf(_configDao.getValue(Config.ApiLimitInterval.key()));
-        final Integer apiLimitMax = Integer.valueOf(_configDao.getValue(Config.ApiLimitMax.key()));
+        final boolean apiLimitEnabled = Boolean.parseBoolean(_configDao.getValue(ApiLimitEnabled.key()));
+        final Integer apiLimitInterval = Integer.valueOf(_configDao.getValue(ApiLimitInterval.key()));
+        final Integer apiLimitMax = Integer.valueOf(_configDao.getValue(ApiLimitMax.key()));
 
         final boolean allowUserViewDestroyedVM = (QueryService.AllowUserViewDestroyedVM.valueIn(caller.getId()) | isCallerAdmin);
         final boolean allowUserExpungeRecoverVM = (UserVmManager.AllowUserExpungeRecoverVm.valueIn(caller.getId()) | isCallerAdmin);

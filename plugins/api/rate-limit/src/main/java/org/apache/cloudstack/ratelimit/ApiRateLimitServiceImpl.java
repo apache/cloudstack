@@ -37,18 +37,20 @@ import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.api.command.admin.ratelimit.ResetApiLimitCmd;
 import org.apache.cloudstack.api.command.user.ratelimit.GetApiLimitCmd;
 import org.apache.cloudstack.api.response.ApiLimitResponse;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
-import com.cloud.configuration.Config;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.RequestLimitException;
+import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
 import com.cloud.utils.component.AdapterBase;
 
 @Component
-public class ApiRateLimitServiceImpl extends AdapterBase implements APIChecker, ApiRateLimitService {
+public class ApiRateLimitServiceImpl extends AdapterBase implements APIChecker, ApiRateLimitService, Configurable {
 
     /**
      * True if api rate limiting is enabled
@@ -79,22 +81,22 @@ public class ApiRateLimitServiceImpl extends AdapterBase implements APIChecker, 
 
         if (_store == null) {
             // get global configured duration and max values
-            String isEnabled = _configDao.getValue(Config.ApiLimitEnabled.key());
+            String isEnabled = _configDao.getValue(ManagementServer.ApiLimitEnabled.key());
             if (isEnabled != null) {
                 enabled = Boolean.parseBoolean(isEnabled);
             }
-            String duration = _configDao.getValue(Config.ApiLimitInterval.key());
+            String duration = _configDao.getValue(ManagementServer.ApiLimitInterval.key());
             if (duration != null) {
                 timeToLive = Integer.parseInt(duration);
             }
-            String maxReqs = _configDao.getValue(Config.ApiLimitMax.key());
+            String maxReqs = _configDao.getValue(ManagementServer.ApiLimitMax.key());
             if (maxReqs != null) {
                 maxAllowed = Integer.parseInt(maxReqs);
             }
             // create limit store
             EhcacheLimitStore cacheStore = new EhcacheLimitStore();
             int maxElements = 10000;
-            String cachesize = _configDao.getValue(Config.ApiLimitCacheSize.key());
+            String cachesize = _configDao.getValue(ApiLimitCacheSize.key());
             if (cachesize != null) {
                 maxElements = Integer.parseInt(cachesize);
             }
@@ -263,5 +265,15 @@ public class ApiRateLimitServiceImpl extends AdapterBase implements APIChecker, 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
 
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return ApiRateLimitService.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {ApiLimitCacheSize};
     }
 }
