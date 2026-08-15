@@ -32,6 +32,38 @@ public interface ProjectManager extends ProjectService {
     public static final ConfigKey<Boolean> ProjectSmtpUseAuth = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class, "project.smtp.useAuth", "false",
             "If true, use SMTP authentication when sending emails", false, ConfigKey.Scope.ManagementServer);
 
+    ConfigKey<Boolean> ProjectInviteRequired = new ConfigKey<>("Project Defaults", Boolean.class,
+            "project.invite.required", "false",
+            "If invitation confirmation is required when add account to project. Default value is false", true);
+
+    ConfigKey<Long> ProjectInvitationExpirationTime = new ConfigKey<>("Project Defaults", Long.class,
+            "project.invite.timeout", "86400",
+            "Invitation expiration time (in seconds). Default is 1 day - 86400 seconds", true);
+
+    ConfigKey<Boolean> AllowUserToCreateProject = new ConfigKey<>("Project Defaults", Boolean.class,
+            "allow.user.create.projects", "true",
+            "If regular user can create a project; true by default", true);
+
+    ConfigKey<String> ProjectEmailSender = new ConfigKey<>("Project Defaults", String.class,
+            "project.email.sender", null,
+            "Sender of project invitation email (will be in the From header of the email)", true);
+
+    ConfigKey<String> ProjectSMTPHost = new ConfigKey<>("Project Defaults", String.class,
+            "project.smtp.host", null,
+            "SMTP hostname used for sending out email project invitations", true);
+
+    ConfigKey<Integer> ProjectSMTPPort = new ConfigKey<>("Project Defaults", Integer.class,
+            "project.smtp.port", "465",
+            "Port the SMTP server is listening on", true);
+
+    ConfigKey<String> ProjectSMTPUsername = new ConfigKey<>("Project Defaults", String.class,
+            "project.smtp.username", null,
+            "Username for SMTP authentication (applies only if project.smtp.useAuth is true)", true);
+
+    ConfigKey<String> ProjectSMTPPassword = new ConfigKey<>("Secure", String.class,
+            "project.smtp.password", null,
+            "Password for SMTP authentication (applies only if project.smtp.useAuth is true)", true);
+
     boolean canAccessProjectAccount(Account caller, long accountId);
 
     boolean canModifyProjectAccount(Account caller, long accountId);
