@@ -30,9 +30,12 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
+import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.storage.dao.StoragePoolTagsDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.storage.ChangeStoragePoolScopeCmd;
 import org.apache.cloudstack.api.command.admin.storage.ConfigureStorageAccessCmd;
+import org.apache.cloudstack.api.command.admin.storage.SyncStoragePoolCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -65,6 +68,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.ModifyStoragePoolAnswer;
+import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
@@ -156,6 +161,12 @@ public class StorageManagerImplTest {
 
     @Mock
     private StoragePoolAndAccessGroupMapDao storagePoolAccessGroupMapDao;
+
+    @Mock
+    private StoragePoolHostDao storagePoolHostDao;
+
+    @Mock
+    private StoragePoolTagsDao storagePoolTagsDao;
 
     @Mock
     private ResourceManager resourceMgr;
@@ -1715,5 +1726,74 @@ public class StorageManagerImplTest {
         Mockito.when(lifeCycle.initialize(Mockito.any())).thenThrow(new RuntimeException("Initialization failed"));
 
         storageManagerImpl.discoverObjectStore(name, url, size, providerName, details);
+    }
+
+    private StoragePoolVO mockDatastoreClusterPoolVO(long id) {
+        StoragePoolVO pool = new StoragePoolVO();
+        pool.setId(id);
+        pool.setUuid("11111111-1111-1111-1111-11111111111" + id);
+        pool.setPoolType(Storage.StoragePoolType.DatastoreCluster);
+        pool.setStatus(StoragePoolStatus.Up);
+        pool.setHostAddress("vcenter1");
+        pool.setPath("/dc1/datastore-cluster");
+        pool.setDataCenterId(1L);
+        return pool;
+    }
+
+    @Test
+    public void testSyncStoragePoolThrowsWhenHostReportsNoChildDatastores() {
+        long poolId = 1L;
+        long hostId = 5L;
+        StoragePoolVO pool = mockDatastoreClusterPoolVO(poolId);
+
+        Mockito.when(storagePoolDao.findById(poolId)).thenReturn(pool);
+        Mockito.when(storagePoolHostDao.findHostsConnectedToPools(Mockito.anyList())).thenReturn(Arrays.asList(hostId));
+
+        ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(true, pool);
+        ModifyStoragePoolAnswer answerWithNoChildren = new ModifyStoragePoolAnswer(cmd, 1000L, 500L, new HashMap<>());
+        Mockito.when(agentManager.easySend(Mockito.eq(hostId), Mockito.any(Command.class))).thenReturn(answerWithNoChildren);
+
+        SyncStoragePoolCmd syncCmd = new SyncStoragePoolCmd();
+        ReflectionTestUtils.setField(syncCmd, "poolId", poolId);
+
+        CloudRuntimeException exception = assertThrows(CloudRuntimeException.class, () -> storageManagerImpl.syncStoragePool(syncCmd));
+        assertTrue(exception.getMessage().contains("reported no child datastores"));
+    }
+
+    @Test
+    public void testSyncDatastoreClusterStoragePoolSkipsDetachWhenAnswerEmptyButChildrenKnown() {
+        long datastoreClusterPoolId = 1L;
+        long hostId = 5L;
+        StoragePoolVO datastoreClusterPool = mockDatastoreClusterPoolVO(datastoreClusterPoolId);
+
+        StoragePoolVO existingChild = new StoragePoolVO();
+        existingChild.setId(2L);
+        existingChild.setUuid("22222222-2222-2222-2222-222222222222");
+        existingChild.setParent(datastoreClusterPoolId);
+
+        Mockito.when(storagePoolDao.findById(datastoreClusterPoolId)).thenReturn(datastoreClusterPool);
+        Mockito.when(storagePoolTagsDao.findStoragePoolTags(datastoreClusterPoolId)).thenReturn(new ArrayList<>());
+        Mockito.when(storagePoolDao.listChildStoragePoolsInDatastoreCluster(datastoreClusterPoolId)).thenReturn(Arrays.asList(existingChild));
+
+        storageManagerImpl.syncDatastoreClusterStoragePool(datastoreClusterPoolId, new ArrayList<>(), hostId);
+
+        Mockito.verify(_volumeDao, Mockito.never()).findNonDestroyedVolumesByPoolId(Mockito.anyLong());
+        Mockito.verify(storagePoolDao, Mockito.never()).update(Mockito.eq(existingChild.getId()), Mockito.any());
+    }
+
+    @Test
+    public void testSyncDatastoreClusterStoragePoolNoOpWhenAnswerEmptyAndNoChildrenKnown() {
+        long datastoreClusterPoolId = 1L;
+        long hostId = 5L;
+        StoragePoolVO datastoreClusterPool = mockDatastoreClusterPoolVO(datastoreClusterPoolId);
+
+        Mockito.when(storagePoolDao.findById(datastoreClusterPoolId)).thenReturn(datastoreClusterPool);
+        Mockito.when(storagePoolTagsDao.findStoragePoolTags(datastoreClusterPoolId)).thenReturn(new ArrayList<>());
+        Mockito.when(storagePoolDao.listChildStoragePoolsInDatastoreCluster(datastoreClusterPoolId)).thenReturn(new ArrayList<>());
+
+        storageManagerImpl.syncDatastoreClusterStoragePool(datastoreClusterPoolId, new ArrayList<>(), hostId);
+
+        Mockito.verify(_volumeDao, Mockito.never()).findNonDestroyedVolumesByPoolId(Mockito.anyLong());
+        Mockito.verify(storagePoolDao, Mockito.never()).persist(Mockito.any(StoragePoolVO.class));
     }
 }
