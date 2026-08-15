@@ -17,9 +17,9 @@
 
 package com.cloud.event;
 
-import com.cloud.configuration.Config;
 import com.cloud.event.dao.EventDao;
 import com.cloud.projects.dao.ProjectDao;
+import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
@@ -150,7 +150,7 @@ public class ActionEventInterceptorTest {
      */
     public void setupCommonMocks() throws Exception {
         //Some basic mocks.
-        Mockito.when(configDao.getValue(Config.PublishActionEvent.key())).thenReturn("true");
+        Mockito.when(configDao.getValue(ManagementServer.PublishActionEvent.key())).thenReturn("true");
         componentContextMocked = Mockito.mockStatic(ComponentContext.class);
         Mockito.when(ComponentContext.getComponent(EventBus.class)).thenReturn(eventBus);
         persistedEvents = new ArrayList<>();
