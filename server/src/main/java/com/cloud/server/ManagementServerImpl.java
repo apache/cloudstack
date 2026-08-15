@@ -4448,7 +4448,8 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         return new ConfigKey<?>[] {exposeCloudStackVersionInApiXmlResponse, exposeCloudStackVersionInApiListCapabilities, vmPasswordLength, sshKeyLength, humanReadableSizes, customCsIdentifier,
                 OvmPublicNetwork, OvmPrivateNetwork, OvmGuestNetwork, Ovm3PublicNetwork, Ovm3PrivateNetwork, Ovm3GuestNetwork, Ovm3StorageNetwork,
                 KvmPublicNetwork, KvmPrivateNetwork, KvmGuestNetwork, ElasticLoadBalancerEnabled, ElasticLoadBalancerNetwork,
-                ApiLimitEnabled, ApiLimitInterval, ApiLimitMax};
+                ApiLimitEnabled, ApiLimitInterval, ApiLimitMax,
+                PublishActionEvent, PublishAlertEvent, PublishResourceStateEvent, PublishUsageEvent};
     }
 
     protected class EventPurgeTask extends ManagedContextRunnable {

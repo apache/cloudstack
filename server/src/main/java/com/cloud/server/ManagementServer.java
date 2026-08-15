@@ -93,6 +93,18 @@ public interface ManagementServer extends ManagementService, PluggableService {
             "kvm.guest.network.device", null,
             "Specify the private bridge on host for private network", true);
 
+    ConfigKey<Boolean> PublishActionEvent = new ConfigKey<>("Advanced", Boolean.class, "publish.action.events", "true",
+            "enable or disable publishing of action events on the event bus", true);
+
+    ConfigKey<Boolean> PublishAlertEvent = new ConfigKey<>("Advanced", Boolean.class, "publish.alert.events", "true",
+            "enable or disable publishing of alert events on the event bus", true);
+
+    ConfigKey<Boolean> PublishResourceStateEvent = new ConfigKey<>("Advanced", Boolean.class, "publish.resource.state.events", "true",
+            "enable or disable publishing of alert events on the event bus", true);
+
+    ConfigKey<Boolean> PublishUsageEvent = new ConfigKey<>("Advanced", Boolean.class, "publish.usage.events", "true",
+            "enable or disable publishing of usage events on the event bus", true);
+
     /**
      * returns the instance id of this management server.
      *
