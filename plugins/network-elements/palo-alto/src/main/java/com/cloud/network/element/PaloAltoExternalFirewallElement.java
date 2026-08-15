@@ -35,7 +35,6 @@ import com.cloud.api.commands.DeletePaloAltoFirewallCmd;
 import com.cloud.api.commands.ListPaloAltoFirewallNetworksCmd;
 import com.cloud.api.commands.ListPaloAltoFirewallsCmd;
 import com.cloud.api.response.PaloAltoFirewallResponse;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -406,7 +405,7 @@ public class PaloAltoExternalFirewallElement extends ExternalFirewallDeviceManag
         }
         response.setDeviceName(fwDeviceVO.getDeviceName());
         if (fwDeviceVO.getCapacity() == 0) {
-            long defaultFwCapacity = NumbersUtil.parseLong(_configDao.getValue(Config.DefaultExternalFirewallCapacity.key()), 50);
+            long defaultFwCapacity = NumbersUtil.parseLong(DefaultExternalFirewallCapacity.value(), 50);
             response.setDeviceCapacity(defaultFwCapacity);
         } else {
             response.setDeviceCapacity(fwDeviceVO.getCapacity());
