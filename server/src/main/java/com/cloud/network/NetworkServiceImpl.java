@@ -100,7 +100,6 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.dao.DomainRouterJoinDao;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.bgp.BGPService;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource;
 import com.cloud.dc.AccountVlanMapVO;
@@ -836,9 +835,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         _configs = _configDao.getConfiguration("Network", params);
 
-        _cidrLimit = NumbersUtil.parseInt(_configs.get(Config.NetworkGuestCidrLimit.key()), 22);
+        _cidrLimit = NumbersUtil.parseInt(_configs.get(NetworkGuestCidrLimit.key()), 22);
 
-        _allowSubdomainNetworkAccess = Boolean.valueOf(_configs.get(Config.SubDomainNetworkAccess.key()));
+        _allowSubdomainNetworkAccess = Boolean.valueOf(_configs.get(NetworkModel.SubDomainNetworkAccess.key()));
 
         logger.info("Network Service is configured.");
 
@@ -6313,7 +6312,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {AllowDuplicateNetworkName, AllowEmptyStartEndIpAddress, AllowUsersToMakeNetworksRedundant, VRPrivateInterfaceMtu, VRPublicInterfaceMtu, AllowUsersToSpecifyVRMtu,
-                GuestVlanBits, MaxNumberOfSecondaryIPsPerNIC, XenServerPublicNetwork, XenServerGuestNetwork, XenServerStorageNetwork1, XenServerStorageNetwork2, XenServerPrivateNetwork};
+                GuestVlanBits, MaxNumberOfSecondaryIPsPerNIC, XenServerPublicNetwork, XenServerGuestNetwork, XenServerStorageNetwork1, XenServerStorageNetwork2, XenServerPrivateNetwork,
+                NetworkGuestCidrLimit};
     }
 
     public boolean isDefaultAcl(Long aclId) {

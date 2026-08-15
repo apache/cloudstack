@@ -35,7 +35,6 @@ import org.springframework.stereotype.Component;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.ExternalNetworkResourceUsageAnswer;
 import com.cloud.agent.api.ExternalNetworkResourceUsageCommand;
-import com.cloud.configuration.Config;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
@@ -157,7 +156,7 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _externalNetworkStatsInterval = NumbersUtil.parseInt(_configDao.getValue(Config.ExternalNetworkStatsInterval.key()), 300);
+        _externalNetworkStatsInterval = NumbersUtil.parseInt(_configDao.getValue(NetworkModel.ExternalNetworkStatsInterval.key()), 300);
         if (_externalNetworkStatsInterval > 0) {
             _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("ExternalNetworkMonitor"));
         }

@@ -48,7 +48,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.api.ApiDBUtils;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
@@ -2537,8 +2536,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _configs = _configDao.getConfiguration("Network", params);
-        _allowSubdomainNetworkAccess = Boolean.valueOf(_configs.get(Config.SubDomainNetworkAccess.key()));
-        _executeInSequenceNtwkElmtCmd = Boolean.valueOf(_configs.get(Config.ExecuteInSequenceNetworkElementCommands.key()));
+        _allowSubdomainNetworkAccess = Boolean.valueOf(_configs.get(SubDomainNetworkAccess.key()));
+        _executeInSequenceNtwkElmtCmd = Boolean.valueOf(_configs.get(ExecuteInSequenceNetworkElementCommands.key()));
 
         NetworkOfferingVO publicNetworkOffering = new NetworkOfferingVO(NetworkOffering.SystemPublicNetwork, TrafficType.Public, true);
         publicNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(publicNetworkOffering);
@@ -3009,7 +3008,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {MACIdentifier, AdminIsAllowedToDeployAnywhere, SecurityGroupDefaultAdding, CloudIdentifier};
+        return new ConfigKey<?>[] {MACIdentifier, AdminIsAllowedToDeployAnywhere, SecurityGroupDefaultAdding, CloudIdentifier,
+                SubDomainNetworkAccess, ExecuteInSequenceNetworkElementCommands, ExternalNetworkStatsInterval, NetworkIPv6SearchRetryMax};
     }
 
     @Override
