@@ -181,7 +181,6 @@ import com.cloud.capacity.CapacityState;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.cluster.ClusterManagerListener;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.cpu.CPU;
@@ -4542,7 +4541,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         } else if ((diskOffering != null) && (diskOffering.getBytesReadRate() != null) && (diskOffering.getBytesReadRate() > 0)) {
             return diskOffering.getBytesReadRate();
         } else {
-            Long bytesReadRate = Long.parseLong(_configDao.getValue(Config.VmDiskThrottlingBytesReadRate.key()));
+            Long bytesReadRate = Long.parseLong(_configDao.getValue(VmDiskThrottlingBytesReadRate.key()));
             if ((bytesReadRate > 0) && ((offering == null) || (!offering.isSystemUse()))) {
                 return bytesReadRate;
             }
@@ -4556,7 +4555,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if ((diskOffering != null) && (diskOffering.getBytesWriteRate() != null) && (diskOffering.getBytesWriteRate() > 0)) {
             return diskOffering.getBytesWriteRate();
         } else {
-            Long bytesWriteRate = Long.parseLong(_configDao.getValue(Config.VmDiskThrottlingBytesWriteRate.key()));
+            Long bytesWriteRate = Long.parseLong(_configDao.getValue(VmDiskThrottlingBytesWriteRate.key()));
             if ((bytesWriteRate > 0) && ((offering == null) || (!offering.isSystemUse()))) {
                 return bytesWriteRate;
             }
@@ -4570,7 +4569,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if ((diskOffering != null) && (diskOffering.getIopsReadRate() != null) && (diskOffering.getIopsReadRate() > 0)) {
             return diskOffering.getIopsReadRate();
         } else {
-            Long iopsReadRate = Long.parseLong(_configDao.getValue(Config.VmDiskThrottlingIopsReadRate.key()));
+            Long iopsReadRate = Long.parseLong(_configDao.getValue(VmDiskThrottlingIopsReadRate.key()));
             if ((iopsReadRate > 0) && ((offering == null) || (!offering.isSystemUse()))) {
                 return iopsReadRate;
             }
@@ -4584,7 +4583,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if ((diskOffering != null) && (diskOffering.getIopsWriteRate() != null) && (diskOffering.getIopsWriteRate() > 0)) {
             return diskOffering.getIopsWriteRate();
         } else {
-            Long iopsWriteRate = Long.parseLong(_configDao.getValue(Config.VmDiskThrottlingIopsWriteRate.key()));
+            Long iopsWriteRate = Long.parseLong(_configDao.getValue(VmDiskThrottlingIopsWriteRate.key()));
             if ((iopsWriteRate > 0) && ((offering == null) || (!offering.isSystemUse()))) {
                 return iopsWriteRate;
             }
@@ -4628,7 +4627,13 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 StoragePoolHostConnectWorkers,
                 ObjectStorageCapacityThreshold,
                 COPY_TEMPLATES_FROM_OTHER_SECONDARY_STORAGES,
-                AgentMaxDataMigrationWaitTime
+                AgentMaxDataMigrationWaitTime,
+                VmDiskThrottlingIopsReadRate,
+                VmDiskThrottlingIopsWriteRate,
+                VmDiskThrottlingBytesReadRate,
+                VmDiskThrottlingBytesWriteRate,
+                ExpungeWorkers,
+                HAStorageMigration
         };
     }
 
