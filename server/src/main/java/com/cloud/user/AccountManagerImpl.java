@@ -132,7 +132,6 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.auth.SetupUserTwoFactorAuthenticationCmd;
 import com.cloud.api.query.vo.ControlledViewEntity;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceOwnerType;
 import com.cloud.configuration.ResourceCountVO;
@@ -199,6 +198,7 @@ import com.cloud.projects.ProjectVO;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.region.ha.GlobalLoadBalancingRulesService;
+import com.cloud.server.ManagementServer;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
@@ -3507,7 +3507,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         if ((BaremetalUtils.BAREMETAL_SYSTEM_ACCOUNT_NAME.equals(user.getUsername()) || user.getId() == User.UID_SYSTEM)
-                && Boolean.parseBoolean(_configDao.getValue(Config.BaremetalProvisionDoneNotificationEnabled.key()))) {
+                && Boolean.parseBoolean(_configDao.getValue(ManagementServer.BaremetalProvisionDoneNotificationEnabled.key()))) {
             throw new PermissionDeniedException(String.format("User ID [%s] is a system account and the global setting " +
                     "baremetal.provision.done.notification is enabled. Therefore, it is not possible to delete API key pairs. If you wish to delete " +
                     "the baremetal user/account or their API Key, please disable the baremetal.provision.done.notification configuration.", user.getUuid()));
