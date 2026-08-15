@@ -503,15 +503,6 @@ public enum Config {
             "GPU",
             "Tag hosts at the time of host discovery based on the host properties/capabilities",
             null),
-    VpcCleanupInterval(
-            "Advanced",
-            ManagementServer.class,
-            Integer.class,
-            "vpc.cleanup.interval",
-            "3600",
-            "The interval (in seconds) between cleanup for Inactive VPCs",
-            null),
-    VpcMaxNetworks("Advanced", ManagementServer.class, Integer.class, "vpc.max.networks", "3", "Maximum number of networks per vpc", null),
     DetailBatchQuerySize("Advanced", ManagementServer.class, Integer.class, "detail.batch.query.size", "2000", "Default entity detail batch query size for listing", null),
 
     BaremetalInternalStorageServer(
