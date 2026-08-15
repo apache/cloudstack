@@ -190,6 +190,9 @@ public interface AccountManager extends AccountService, Configurable {
     ConfigKey<Boolean> UseSecretKeyInResponse = new ConfigKey<Boolean>("Advanced", Boolean.class, "use.secret.key.in.response", "false",
             "This parameter allows the users to enable or disable of showing secret key as a part of response for various APIs. By default it is set to false.", true);
 
+    ConfigKey<String> SSOKey = new ConfigKey<>("Secure", String.class, "security.singlesignon.key", null,
+            "A Single Sign-On key used for logging into the cloud", true);
+
     boolean moveUser(long id, Long domainId, Account newAccount);
 
     UserTwoFactorAuthenticator getUserTwoFactorAuthenticator(final Long domainId, final Long userAccountId);
