@@ -37,7 +37,6 @@ import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.baremetal.networkservice.BareMetalResourceBase;
-import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.exception.DiscoveryException;
@@ -51,6 +50,7 @@ import com.cloud.resource.DiscovererBase;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
+import com.cloud.server.ManagementServer;
 import com.cloud.utils.UuidUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
@@ -160,12 +160,12 @@ public class BareMetalDiscoverer extends DiscovererBase implements Discoverer, R
             params.put("vmDao", _vmDao);
             params.put("configDao", _configDao);
 
-            String resourceClassName = _configDao.getValue(Config.ExternalBaremetalResourceClassName.key());
+            String resourceClassName = _configDao.getValue(BaremetalManager.ExternalBaremetalResourceClassName.key());
             BareMetalResourceBase resource = null;
             if (resourceClassName != null) {
                 Class<?> clazz = Class.forName(resourceClassName);
                 resource = (BareMetalResourceBase) clazz.newInstance();
-                String externalUrl = _configDao.getValue(Config.ExternalBaremetalSystemUrl.key());
+                String externalUrl = _configDao.getValue(ManagementServer.ExternalBaremetalSystemUrl.key());
                 if (externalUrl == null) {
                     throw new IllegalArgumentException(String.format("You must specify ExternalBaremetalSystemUrl in global config page as ExternalBaremetalResourceClassName is not null"));
                 }
@@ -193,7 +193,7 @@ public class BareMetalDiscoverer extends DiscovererBase implements Discoverer, R
             if (vmIp != null) {
                 details.put(ApiConstants.IP_ADDRESS, vmIp);
             }
-            String isEchoScAgent = _configDao.getValue(Config.EnableBaremetalSecurityGroupAgentEcho.key());
+            String isEchoScAgent = _configDao.getValue(BaremetalManager.EnableBaremetalSecurityGroupAgentEcho.key());
             details.put(BaremetalManager.EchoSecurityGroupAgent, isEchoScAgent);
 
             resources.put(resource, details);
