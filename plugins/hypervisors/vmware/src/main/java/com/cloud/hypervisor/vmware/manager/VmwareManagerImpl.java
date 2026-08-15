@@ -168,6 +168,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.dao.UserVmCloneSettingDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.vmware.pbm.PbmProfile;
@@ -340,7 +341,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
         _fullCloneFlag = StorageManager.VmwareCreateCloneFull.value();
 
-        value = _configDao.getValue(Config.SetVmInternalNameUsingDisplayName.key());
+        value = _configDao.getValue(UserVmManager.SetVmInternalNameUsingDisplayName.key());
         if (value == null) {
             _instanceNameFlag = false;
         } else {
