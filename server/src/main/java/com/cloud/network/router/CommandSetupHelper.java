@@ -1338,7 +1338,7 @@ public class CommandSetupHelper {
         }
         cmd.addVmData("metadata", "public-keys", publicKey);
 
-        String cloudIdentifier = _configDao.getValue("cloud.identifier");
+        String cloudIdentifier = NetworkModel.CloudIdentifier.value();
         if (cloudIdentifier == null) {
             cloudIdentifier = "";
         } else {

@@ -484,7 +484,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             String expires = currentDateTime.plusMinutes(timeout).toString();
             response.setTimeout(expires);
 
-            String key = _configDao.getValue(Config.SSVMPSK.key());
+            String key = SSVMPSK.value();
             /*
              * encoded metadata using the post upload config ssh key
              */
@@ -2764,7 +2764,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 PublicTemplateSecStorageCopy,
                 PrivateTemplateSecStorageCopy,
                 VmIsoMaxCount,
-                CreatePrivateTemplateFromSnapshotWait};
+                CreatePrivateTemplateFromSnapshotWait,
+                SSVMPSK};
     }
 
     public List<TemplateAdapter> getTemplateAdapters() {

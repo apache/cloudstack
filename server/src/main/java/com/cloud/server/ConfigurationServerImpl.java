@@ -71,6 +71,7 @@ import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Network.State;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
@@ -92,6 +93,8 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
+import com.cloud.template.TemplateManager;
 import com.cloud.test.IPRangeConfig;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -217,7 +220,14 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                 }
             }
 
-            _configDao.update(Config.UseSecondaryStorageVm.key(), Config.UseSecondaryStorageVm.getCategory(), "true");
+            ConfigurationVO useSecondaryStorageVmConfig = _configDao.findByName(SecondaryStorageVmManager.UseSecondaryStorageVm.key());
+            if (useSecondaryStorageVmConfig == null) {
+                ConfigurationVO configVO = new ConfigurationVO(SecondaryStorageVmManager.class.getSimpleName(), SecondaryStorageVmManager.UseSecondaryStorageVm);
+                configVO.setValue("true");
+                _configDao.persist(configVO);
+            } else {
+                _configDao.update(SecondaryStorageVmManager.UseSecondaryStorageVm.key(), SecondaryStorageVmManager.UseSecondaryStorageVm.category(), "true");
+            }
             logger.debug("ConfigurationServer made secondary storage vm required.");
 
             _configDao.update(Config.SecStorageEncryptCopy.key(), Config.SecStorageEncryptCopy.getCategory(), "false");
@@ -533,10 +543,17 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
 
     protected void updateCloudIdentifier() {
         // Creates and saves a UUID as the cloud identifier
-        String currentCloudIdentifier = _configDao.getValue("cloud.identifier");
+        String currentCloudIdentifier = NetworkModel.CloudIdentifier.value();
         if (currentCloudIdentifier == null || currentCloudIdentifier.isEmpty()) {
             String uuid = UUID.randomUUID().toString();
-            _configDao.update(Config.CloudIdentifier.key(), Config.CloudIdentifier.getCategory(), uuid);
+            ConfigurationVO configInDB = _configDao.findByName(NetworkModel.CloudIdentifier.key());
+            if (configInDB == null) {
+                ConfigurationVO configVO = new ConfigurationVO(NetworkModel.class.getSimpleName(), NetworkModel.CloudIdentifier);
+                configVO.setValue(uuid);
+                _configDao.persist(configVO);
+            } else {
+                _configDao.update(NetworkModel.CloudIdentifier.key(), NetworkModel.CloudIdentifier.category(), uuid);
+            }
         }
     }
 
@@ -821,7 +838,15 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
 
     private void updateSSOKey() {
         try {
-            _configDepot.createOrUpdateConfigObject(AccountManager.class.getSimpleName(), AccountManager.SSOKey, getPrivateKey());
+            String key = getPrivateKey();
+            ConfigurationVO configInDB = _configDao.findByName(AccountManager.SSOKey.key());
+            if (configInDB == null) {
+                ConfigurationVO configVO = new ConfigurationVO(AccountManager.class.getSimpleName(), AccountManager.SSOKey);
+                configVO.setValue(key);
+                _configDao.persist(configVO);
+            } else {
+                _configDao.update(AccountManager.SSOKey.key(), AccountManager.SSOKey.category(), key);
+            }
         } catch (NoSuchAlgorithmException ex) {
             logger.error("error generating sso key", ex);
         }
@@ -832,15 +857,15 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
      */
     private void updateSecondaryStorageVMSharedKey() {
         try {
-            ConfigurationVO configInDB = _configDao.findByName(Config.SSVMPSK.key());
+            ConfigurationVO configInDB = _configDao.findByName(TemplateManager.SSVMPSK.key());
             if(configInDB == null) {
-                ConfigurationVO configVO = new ConfigurationVO(Config.SSVMPSK.getCategory(), "DEFAULT", Config.SSVMPSK.getComponent(), Config.SSVMPSK.key(), getPrivateKey(),
-                        Config.SSVMPSK.getDescription());
+                ConfigurationVO configVO = new ConfigurationVO(TemplateManager.class.getSimpleName(), TemplateManager.SSVMPSK);
+                configVO.setValue(getPrivateKey());
                 logger.info("generating a new SSVM PSK. This goes to SSVM on Start");
                 _configDao.persist(configVO);
             } else if (StringUtils.isEmpty(configInDB.getValue())) {
                 logger.info("updating the SSVM PSK with new value. This goes to SSVM on Start");
-                _configDao.update(Config.SSVMPSK.key(), Config.SSVMPSK.getCategory(), getPrivateKey());
+                _configDao.update(TemplateManager.SSVMPSK.key(), TemplateManager.SSVMPSK.category(), getPrivateKey());
             }
         } catch (NoSuchAlgorithmException ex) {
             logger.error("error generating ssvm psk", ex);
