@@ -73,7 +73,6 @@ import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.cluster.ClusterManager;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.configuration.ZoneConfig;
 import com.cloud.consoleproxy.ConsoleProxyManager;
@@ -115,6 +114,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
+import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.ImageStoreDetailsUtil;
@@ -1197,7 +1197,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                 buf.append(" gateway=").append(nic.getIPv4Gateway());
             }
             if (nic.getTrafficType() == TrafficType.Management) {
-                String mgmt_cidr = _configDao.getValue(Config.ManagementNetwork.key());
+                String mgmt_cidr = _configDao.getValue(ManagementServer.ManagementNetwork.key());
                 if (NetUtils.isValidCidrList(mgmt_cidr)) {
                     logger.debug("Management server cidr list is " + mgmt_cidr);
                     buf.append(" mgmtcidr=").append(mgmt_cidr);

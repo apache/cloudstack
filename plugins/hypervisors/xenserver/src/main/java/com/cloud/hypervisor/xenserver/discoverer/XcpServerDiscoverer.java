@@ -84,6 +84,7 @@ import com.cloud.resource.DiscovererBase;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
+import com.cloud.server.ManagementServer;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateVO;
@@ -351,7 +352,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 boolean securityGroupEnabled = zone.isSecurityGroupEnabled() || _networkMgr.isSecurityGroupSupportedForZone(zone.getId());
                 params.put("securitygroupenabled", Boolean.toString(securityGroupEnabled));
 
-                params.put("router.aggregation.command.each.timeout", _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
+                params.put("router.aggregation.command.each.timeout", _configDao.getValue(ManagementServer.RouterAggregationCommandEachTimeout.key()));
                 params.put("wait", Integer.toString(_wait));
                 details.put("wait", Integer.toString(_wait));
                 params.put("migratewait", _configDao.getValue(AgentManager.MigrateWait.toString()));

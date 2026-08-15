@@ -1965,7 +1965,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                     // always add management explicit route, for basic
                     // networking setup, DomR may have two interfaces while both
                     // are on the same subnet
-                    String _mgmtCidr = _configDao.getValue(Config.ManagementNetwork.key());
+                    String _mgmtCidr = _configDao.getValue(ManagementServer.ManagementNetwork.key());
                     if (NetUtils.isValidIp4Cidr(_mgmtCidr)) {
                         buf.append(" mgmtcidr=").append(_mgmtCidr);
                         buf.append(" localgw=").append(dest.getPod().getGateway());
