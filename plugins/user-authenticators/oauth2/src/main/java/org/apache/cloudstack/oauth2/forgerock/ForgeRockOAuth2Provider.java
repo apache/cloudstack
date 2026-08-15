@@ -16,21 +16,21 @@
 // specific language governing permissions and limitations
 // under the License.
 //
-package org.apache.cloudstack.oauth2.keycloak;
+package org.apache.cloudstack.oauth2.forgerock;
 
 import org.apache.cloudstack.oauth2.oidc.AbstractOIDCOAuth2Provider;
 
-public class KeycloakOAuth2Provider extends AbstractOIDCOAuth2Provider {
+public class ForgeRockOAuth2Provider extends AbstractOIDCOAuth2Provider {
 
-    public static final String KEYCLOAK_PROVIDER = "keycloak";
+    public static final String FORGEROCK_PROVIDER = "forgerock";
 
     @Override
     public String getName() {
-        return KEYCLOAK_PROVIDER;
+        return FORGEROCK_PROVIDER;
     }
 
     @Override
     public String getDescription() {
-        return "Keycloak OAuth2 Provider Plugin";
+        return "ForgeRock OAuth2 Provider Plugin";
     }
 }

@@ -38,6 +38,9 @@
     <bean id="KeycloakOAuth2Provider" class="org.apache.cloudstack.oauth2.keycloak.KeycloakOAuth2Provider">
         <property name="name" value="keycloak" />
     </bean>
+    <bean id="ForgeRockOAuth2Provider" class="org.apache.cloudstack.oauth2.forgerock.ForgeRockOAuth2Provider">
+        <property name="name" value="forgerock" />
+    </bean>
 
     <bean id="OAuth2AuthManager" class="org.apache.cloudstack.oauth2.OAuth2AuthManagerImpl">
         <property name="name" value="OAUTH2Auth" />
@@ -48,7 +51,7 @@
           class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
         <property name="orderConfigKey" value="user.oauth2.providers.order" />
         <property name="excludeKey" value="oauth2.plugins.exclude" />
-        <property name="orderConfigDefault" value="google,github,keycloak" />
+        <property name="orderConfigDefault" value="google,github,keycloak,forgerock" />
     </bean>
 
     <bean class="org.apache.cloudstack.spring.lifecycle.registry.RegistryLifecycle">
