@@ -84,7 +84,7 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
-import com.cloud.server.ManagementServerImpl;
+import com.cloud.server.ManagementServer;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ResizeVolumePayload;
 import com.cloud.storage.SnapshotVO;
@@ -443,7 +443,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             final ScaleIOGatewayClient client = getScaleIOClient(storagePool);
             final String scaleIOVolumeId = ScaleIOUtil.getVolumePath(volumeVO.getPath());
             String snapshotName = String.format("%s-%s-%s-%s", ScaleIOUtil.SNAPSHOT_PREFIX, snapshotInfo.getId(),
-                    storagePool.getUuid().split("-")[0].substring(4), ManagementServerImpl.customCsIdentifier.value());
+                    storagePool.getUuid().split("-")[0].substring(4), ManagementServer.customCsIdentifier.value());
 
             org.apache.cloudstack.storage.datastore.api.Volume scaleIOVolume = null;
             scaleIOVolume = client.takeSnapshot(scaleIOVolumeId, snapshotName);
@@ -518,7 +518,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             final Long sizeInBytes = volumeInfo.getSize();
             final long sizeInGb = (long) Math.ceil(sizeInBytes / (1024.0 * 1024.0 * 1024.0));
             final String scaleIOVolumeName = String.format("%s-%s-%s-%s", ScaleIOUtil.VOLUME_PREFIX, volumeInfo.getId(),
-                    storagePool.getUuid().split("-")[0].substring(4), ManagementServerImpl.customCsIdentifier.value());
+                    storagePool.getUuid().split("-")[0].substring(4), ManagementServer.customCsIdentifier.value());
 
             org.apache.cloudstack.storage.datastore.api.Volume scaleIOVolume = null;
             scaleIOVolume = client.createVolume(scaleIOVolumeName, scaleIOStoragePoolId, (int) sizeInGb, volumeInfo.getProvisioningType());
@@ -600,7 +600,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             final Long sizeInBytes = templateInfo.getSize();
             final long sizeInGb = (long) Math.ceil(sizeInBytes / (1024.0 * 1024.0 * 1024.0));
             final String scaleIOVolumeName = String.format("%s-%s-%s-%s", ScaleIOUtil.TEMPLATE_PREFIX, templateInfo.getId(),
-                    storagePool.getUuid().split("-")[0].substring(4), ManagementServerImpl.customCsIdentifier.value());
+                    storagePool.getUuid().split("-")[0].substring(4), ManagementServer.customCsIdentifier.value());
 
             org.apache.cloudstack.storage.datastore.api.Volume scaleIOVolume = null;
             scaleIOVolume = client.createVolume(scaleIOVolumeName, scaleIOStoragePoolId, (int) sizeInGb, Storage.ProvisioningType.THIN);
@@ -1016,7 +1016,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
                 String snapshotVolumeId = ScaleIOUtil.getVolumePath(snapshotStore.getInstallPath());
                 String newSnapshotName = String.format("%s-%s-%s-%s", ScaleIOUtil.SNAPSHOT_PREFIX, snapshot.getId(),
-                        destStoragePool.getUuid().split("-")[0].substring(4), ManagementServerImpl.customCsIdentifier.value());
+                        destStoragePool.getUuid().split("-")[0].substring(4), ManagementServer.customCsIdentifier.value());
                 boolean renamed = client.renameVolume(snapshotVolumeId, newSnapshotName);
 
                 snapshotStore.setDataStoreId(destPoolId);
@@ -1150,7 +1150,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             boolean migrateStatus = client.migrateVolume(srcVolumeId, destStoragePoolId, migrationTimeout);
             if (migrateStatus) {
                 String newVolumeName = String.format("%s-%s-%s-%s", ScaleIOUtil.VOLUME_PREFIX, destData.getId(),
-                        destStoragePool.getUuid().split("-")[0].substring(4), ManagementServerImpl.customCsIdentifier.value());
+                        destStoragePool.getUuid().split("-")[0].substring(4), ManagementServer.customCsIdentifier.value());
                 boolean renamed = client.renameVolume(srcVolumeId, newVolumeName);
 
                 if (srcData.getId() != destData.getId()) {
@@ -1191,7 +1191,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
                         String snapshotVolumeId = ScaleIOUtil.getVolumePath(snapshotStore.getInstallPath());
                         String newSnapshotName = String.format("%s-%s-%s-%s", ScaleIOUtil.SNAPSHOT_PREFIX, snapshot.getId(),
-                                destStoragePool.getUuid().split("-")[0].substring(4), ManagementServerImpl.customCsIdentifier.value());
+                                destStoragePool.getUuid().split("-")[0].substring(4), ManagementServer.customCsIdentifier.value());
                         renamed = client.renameVolume(snapshotVolumeId, newSnapshotName);
 
                         snapshotStore.setDataStoreId(destPoolId);
