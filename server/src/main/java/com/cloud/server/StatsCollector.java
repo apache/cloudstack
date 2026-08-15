@@ -278,6 +278,12 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             ConfigKey.Scope.Cluster);
     public static final ConfigKey<Long> StorageStatsInterval = new ConfigKey<>("Storage", Long.class, "storage.stats.interval", "60000",
             "The interval (in milliseconds) when storage stats (per host) are retrieved from agents.", true);
+    public static final ConfigKey<Integer> HostStatsInterval = new ConfigKey<>("Advanced", Integer.class, "host.stats.interval", "60000",
+            "The interval (in milliseconds) when host stats are retrieved from agents.", true);
+    public static final ConfigKey<Integer> VmStatsInterval = new ConfigKey<>("Advanced", Integer.class, "vm.stats.interval", "60000",
+            "The interval (in milliseconds) when vm stats are retrieved from agents.", true);
+    public static final ConfigKey<Integer> VolumeStatsInterval = new ConfigKey<>("Advanced", Integer.class, "volume.stats.interval", "60000",
+            "Interval (in milliseconds) to report volume statistics.", true);
     private static final ConfigKey<String> statsOutputUri = new ConfigKey<>("Advanced", String.class, "stats.output.uri", "",
             "URI to send StatsCollector statistics to. The collector is defined on the URI scheme. Example: graphite://graphite-hostaddress:port or influxdb://influxdb-hostaddress/dbname. Note that the port is optional, if not added the default port for the respective collector (graphite or influxdb) will be used. Additionally, the database name '/dbname' is  also optional; default db name is 'cloudstack'. You must create and configure the database if using influxdb.",
             true);
@@ -2211,7 +2217,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 MANAGEMENT_SERVER_STATUS_COLLECTION_INTERVAL,
                 DATABASE_SERVER_STATUS_COLLECTION_INTERVAL,
                 DATABASE_SERVER_LOAD_HISTORY_RETENTION_NUMBER,
-                StorageStatsInterval};
+                StorageStatsInterval, HostStatsInterval, VmStatsInterval, VolumeStatsInterval};
     }
 
     public double getImageStoreCapacityThreshold() {
