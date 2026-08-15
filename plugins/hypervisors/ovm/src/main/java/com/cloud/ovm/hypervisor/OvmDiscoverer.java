@@ -31,7 +31,6 @@ import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
-import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.DiscoveryException;
@@ -46,6 +45,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
+import com.cloud.server.ManagementServer;
 import com.cloud.utils.UuidUtils;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -65,9 +65,9 @@ public class OvmDiscoverer extends DiscovererBase implements Discoverer, Resourc
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
-        _publicNetworkDevice = _params.get(Config.OvmPublicNetwork.key());
-        _privateNetworkDevice = _params.get(Config.OvmPrivateNetwork.key());
-        _guestNetworkDevice = _params.get(Config.OvmGuestNetwork.key());
+        _publicNetworkDevice = ManagementServer.OvmPublicNetwork.value();
+        _privateNetworkDevice = ManagementServer.OvmPrivateNetwork.value();
+        _guestNetworkDevice = ManagementServer.OvmGuestNetwork.value();
         _resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
         return true;
     }

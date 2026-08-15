@@ -16,6 +16,10 @@
 // under the License.
 package com.cloud.server;
 
+import java.util.UUID;
+
+import org.apache.cloudstack.framework.config.ConfigKey;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
@@ -30,6 +34,52 @@ import com.cloud.vm.VirtualMachine;
 /**
  */
 public interface ManagementServer extends ManagementService, PluggableService {
+
+    ConfigKey<String> customCsIdentifier = new ConfigKey<>("Advanced", String.class, "custom.cs.identifier",
+            UUID.randomUUID().toString().split("-")[0].substring(4), "Custom identifier for the cloudstack installation", true, ConfigKey.Scope.Global);
+
+    ConfigKey<Boolean> exposeCloudStackVersionInApiXmlResponse = new ConfigKey<>("Advanced", Boolean.class, "expose.cloudstack.version.api.xml.response", "true",
+            "Indicates whether ACS version should appear in the root element of an API XML response.", true, ConfigKey.Scope.Global);
+
+    ConfigKey<String> OvmPublicNetwork = new ConfigKey<>("Hidden", String.class,
+            "ovm.public.network.device", null,
+            "Specify the public bridge on host for public network", true);
+
+    ConfigKey<String> OvmPrivateNetwork = new ConfigKey<>("Hidden", String.class,
+            "ovm.private.network.device", null,
+            "Specify the private bridge on host for private network", true);
+
+    ConfigKey<String> OvmGuestNetwork = new ConfigKey<>("Hidden", String.class,
+            "ovm.guest.network.device", null,
+            "Specify the private bridge on host for private network", true);
+
+    ConfigKey<String> Ovm3PublicNetwork = new ConfigKey<>("Hidden", String.class,
+            "ovm3.public.network.device", null,
+            "Specify the public bridge on host for public network", true);
+
+    ConfigKey<String> Ovm3PrivateNetwork = new ConfigKey<>("Hidden", String.class,
+            "ovm3.private.network.device", null,
+            "Specify the private bridge on host for private network", true);
+
+    ConfigKey<String> Ovm3GuestNetwork = new ConfigKey<>("Hidden", String.class,
+            "ovm3.guest.network.device", null,
+            "Specify the guest bridge on host for guest network", true);
+
+    ConfigKey<String> Ovm3StorageNetwork = new ConfigKey<>("Hidden", String.class,
+            "ovm3.storage.network.device", null,
+            "Specify the storage bridge on host for storage network", true);
+
+    ConfigKey<String> KvmPublicNetwork = new ConfigKey<>("Hidden", String.class,
+            "kvm.public.network.device", null,
+            "Specify the public bridge on host for public network", true);
+
+    ConfigKey<String> KvmPrivateNetwork = new ConfigKey<>("Hidden", String.class,
+            "kvm.private.network.device", null,
+            "Specify the private bridge on host for private network", true);
+
+    ConfigKey<String> KvmGuestNetwork = new ConfigKey<>("Hidden", String.class,
+            "kvm.guest.network.device", null,
+            "Specify the private bridge on host for private network", true);
 
     /**
      * returns the instance id of this management server.
