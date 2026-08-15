@@ -686,10 +686,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         settingNameUpdated.equals(IndirectAgentLBServiceImpl.IndirectAgentLBAlgorithm.key())) {
                     _indirectAgentLB.propagateMSListToAgents(false);
                 } else if (settingNameUpdated.equals(Config.RouterAggregationCommandEachTimeout.toString())
-                        ||  settingNameUpdated.equals(Config.MigrateWait.toString())) {
+                        ||  settingNameUpdated.equals(AgentManager.MigrateWait.toString())) {
                     Map<String, String> params = new HashMap<>();
                     params.put(Config.RouterAggregationCommandEachTimeout.toString(), _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
-                    params.put(Config.MigrateWait.toString(), _configDao.getValue(Config.MigrateWait.toString()));
+                    params.put(AgentManager.MigrateWait.toString(), _configDao.getValue(AgentManager.MigrateWait.toString()));
                     _agentManager.propagateChangeToAgents(params);
                 } else if (settingNameUpdated.equals(IndirectAgentLBServiceImpl.IndirectAgentLBCheckInterval.key())) {
                     ConfigKey.Scope scope = settingUpdated.second();
