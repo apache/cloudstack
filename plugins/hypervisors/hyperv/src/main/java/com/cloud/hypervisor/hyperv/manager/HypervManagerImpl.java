@@ -40,6 +40,7 @@ import com.cloud.agent.AgentManager;
 import com.cloud.configuration.Config;
 import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.StorageLayer;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.utils.FileUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GlobalLock;
@@ -314,7 +315,7 @@ public class HypervManagerImpl implements HypervManager {
     }
 
     private String getMountParent() {
-        String mountParent = _configDao.getValue(Config.MountParent.key());
+        String mountParent = _configDao.getValue(SecondaryStorageVmManager.MountParent.key());
         if (mountParent == null) {
             mountParent = File.separator + "mnt";
         }

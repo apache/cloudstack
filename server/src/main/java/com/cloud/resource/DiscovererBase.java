@@ -35,6 +35,7 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.NetworkModel;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.net.UrlUtil;
 
@@ -134,7 +135,7 @@ public abstract class DiscovererBase extends AdapterBase implements Discoverer {
 
         params.put("ipaddress", host.getPrivateIpAddress());
         params.put("secondary.storage.vm", "false");
-        params.put("max.template.iso.size", _configDao.getValue(Config.MaxTemplateAndIsoSize.toString()));
+        params.put("max.template.iso.size", _configDao.getValue(SecondaryStorageVmManager.MaxTemplateAndIsoSize.toString()));
         params.put("migratewait", _configDao.getValue(AgentManager.MigrateWait.toString()));
         params.put(AgentManager.XenServerMaxNics.toString().toLowerCase(), _configDao.getValue(AgentManager.XenServerMaxNics.toString()));
         params.put(Config.XenServerHeartBeatInterval.toString().toLowerCase(), _configDao.getValue(Config.XenServerHeartBeatInterval.toString()));
