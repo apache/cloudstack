@@ -23,6 +23,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
@@ -122,7 +123,7 @@ public class ScaleIOHostListener implements HypervisorHostListener {
         if (MapUtils.isEmpty(poolDetails)) {
             String msg = String.format("PowerFlex storage SDC details not found on the host: %s, (re)install SDC and restart agent", host);
             logger.warn(msg);
-            _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "SDC details not found on host: " + host, msg);
+            _alertMgr.sendAlert(AlertService.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "SDC details not found on host: " + host, msg);
             return null;
         }
 
@@ -137,16 +138,16 @@ public class ScaleIOHostListener implements HypervisorHostListener {
         if (StringUtils.isBlank(sdcId)) {
             String msg = String.format("Couldn't retrieve PowerFlex storage SDC details from the host: %s, add MDMs if On-demand connect disabled or try (re)install SDC & restart agent", host);
             logger.warn(msg);
-            _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "SDC details not found on host: " + host, msg);
+            _alertMgr.sendAlert(AlertService.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "SDC details not found on host: " + host, msg);
             return null;
         }
 
         if (details.containsKey(ScaleIOSDCManager.ConnectOnDemand.key())) {
             String connectOnDemand = details.get(ScaleIOSDCManager.ConnectOnDemand.key());
             if (connectOnDemand != null && !Boolean.parseBoolean(connectOnDemand) && !_sdcManager.isHostSdcConnected(sdcId, dataStore, 15)) {
-                logger.warn("SDC not connected on the host: " + host);
+                logger.warn("SDC not connected on the host: {}", host);
                 String msg = "SDC not connected on host: " + host + ", reconnect the SDC to MDM and restart agent";
-                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "SDC not connected on host: " + host, msg);
+                _alertMgr.sendAlert(AlertService.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "SDC not connected on host: " + host, msg);
                 return null;
             }
         }
@@ -212,7 +213,7 @@ public class ScaleIOHostListener implements HypervisorHostListener {
         ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(false, storagePool, storagePool.getPath(), details);
         ModifyStoragePoolAnswer answer  = sendModifyStoragePoolCommand(cmd, storagePool, host);
         if (!answer.getResult()) {
-            logger.error("Failed to disconnect storage pool: " + storagePool + " and host: " + host);
+            logger.error("Failed to disconnect storage pool: {} and host: {}", storagePool, host);
             return false;
         }
 
@@ -220,7 +221,7 @@ public class ScaleIOHostListener implements HypervisorHostListener {
         if (storagePoolHost != null) {
             _storagePoolHostDao.deleteStoragePoolHostDetails(hostId, poolId);
         }
-        logger.info("Connection removed between storage pool: " + storagePool + " and host: " + host);
+        logger.info("Connection removed between storage pool: {} and host: {}", storagePool, host);
         return true;
     }
 
