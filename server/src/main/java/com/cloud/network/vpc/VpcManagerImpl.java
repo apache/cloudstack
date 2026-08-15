@@ -89,7 +89,6 @@ import com.cloud.alert.AlertManager;
 import com.cloud.api.query.dao.VpcOfferingJoinDao;
 import com.cloud.api.query.vo.VpcOfferingJoinVO;
 import com.cloud.bgp.BGPService;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.configuration.Resource.ResourceType;
@@ -514,10 +513,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         });
 
         final Map<String, String> configs = _configDao.getConfiguration(params);
-        final String value = configs.get(Config.VpcCleanupInterval.key());
+        final String value = configs.get(VpcCleanupInterval.key());
         _cleanupInterval = NumbersUtil.parseInt(value, 60 * 60); // 1 hour
 
-        final String maxNtwks = configs.get(Config.VpcMaxNetworks.key());
+        final String maxNtwks = configs.get(VpcMaxNetworks.key());
         _maxNetworks = NumbersUtil.parseInt(maxNtwks, 3); // max=3 is default
 
         IpAddressSearch = _ipAddressDao.createSearchBuilder();
@@ -2581,7 +2580,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 try {
                     // check number of active networks in vpc
                     if (_ntwkDao.countVpcNetworks(vpc.getId()) >= _maxNetworks) {
-                        logger.warn(String.format("Failed to create a new VPC Guest Network because the number of networks per VPC has reached its maximum capacity of [%s]. Increase it by modifying global config [%s].", _maxNetworks, Config.VpcMaxNetworks));
+                        logger.warn(String.format("Failed to create a new VPC Guest Network because the number of networks per VPC has reached its maximum capacity of [%s]. Increase it by modifying global config [%s].", _maxNetworks, VpcMaxNetworks.key()));
                         throw new CloudRuntimeException(String.format("Number of networks per VPC cannot surpass [%s].", _maxNetworks));
                     }
 
@@ -3721,7 +3720,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[]{
                 VpcTierNamePrepend,
-                VpcTierNamePrependDelimiter
+                VpcTierNamePrependDelimiter,
+                VpcCleanupInterval,
+                VpcMaxNetworks
         };
     }
 
