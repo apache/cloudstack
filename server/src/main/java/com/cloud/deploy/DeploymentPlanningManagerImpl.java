@@ -1280,7 +1280,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             }
         });
 
-        _vmCapacityReleaseInterval = NumbersUtil.parseInt(_configDao.getValue(Config.CapacitySkipcountingHours.key()), 3600);
+        _vmCapacityReleaseInterval = NumbersUtil.parseInt(_configDao.getValue(UserVmManager.CapacitySkipcountingHours.key()), 3600);
 
         String hostReservationReleasePeriod = _configDao.getValue(Config.HostReservationReleasePeriod.key());
         if (hostReservationReleasePeriod != null) {
