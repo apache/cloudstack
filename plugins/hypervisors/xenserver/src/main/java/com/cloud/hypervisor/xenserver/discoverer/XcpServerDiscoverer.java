@@ -49,7 +49,6 @@ import com.cloud.agent.api.SetupCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.alert.AlertManager;
-import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -357,8 +356,8 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 details.put("wait", Integer.toString(_wait));
                 params.put("migratewait", _configDao.getValue(AgentManager.MigrateWait.toString()));
                 params.put(AgentManager.XenServerMaxNics.toString().toLowerCase(), _configDao.getValue(AgentManager.XenServerMaxNics.toString()));
-                params.put(Config.XenServerHeartBeatTimeout.toString().toLowerCase(), _configDao.getValue(Config.XenServerHeartBeatTimeout.toString()));
-                params.put(Config.XenServerHeartBeatInterval.toString().toLowerCase(), _configDao.getValue(Config.XenServerHeartBeatInterval.toString()));
+                params.put(ManagementServer.XenServerHeartBeatTimeout.key().toLowerCase(), _configDao.getValue(ManagementServer.XenServerHeartBeatTimeout.key()));
+                params.put(ManagementServer.XenServerHeartBeatInterval.key().toLowerCase(), _configDao.getValue(ManagementServer.XenServerHeartBeatInterval.key()));
                 params.put(AgentManager.InstanceName.toString().toLowerCase(), _instance);
                 details.put(AgentManager.InstanceName.toString().toLowerCase(), _instance);
                 try {
@@ -474,7 +473,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     }
 
     protected void serverConfig() {
-        String value = _params.get(Config.XenServerSetupMultipath.key());
+        String value = _params.get(ManagementServer.XenServerSetupMultipath.key());
         _setupMultipath = Boolean.parseBoolean(value);
     }
 

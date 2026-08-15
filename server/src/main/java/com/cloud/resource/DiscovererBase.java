@@ -28,7 +28,6 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -139,8 +138,8 @@ public abstract class DiscovererBase extends AdapterBase implements Discoverer {
         params.put("max.template.iso.size", _configDao.getValue(SecondaryStorageVmManager.MaxTemplateAndIsoSize.toString()));
         params.put("migratewait", _configDao.getValue(AgentManager.MigrateWait.toString()));
         params.put(AgentManager.XenServerMaxNics.toString().toLowerCase(), _configDao.getValue(AgentManager.XenServerMaxNics.toString()));
-        params.put(Config.XenServerHeartBeatInterval.toString().toLowerCase(), _configDao.getValue(Config.XenServerHeartBeatInterval.toString()));
-        params.put(Config.XenServerHeartBeatTimeout.toString().toLowerCase(), _configDao.getValue(Config.XenServerHeartBeatTimeout.toString()));
+        params.put(ManagementServer.XenServerHeartBeatInterval.key().toLowerCase(), _configDao.getValue(ManagementServer.XenServerHeartBeatInterval.key()));
+        params.put(ManagementServer.XenServerHeartBeatTimeout.key().toLowerCase(), _configDao.getValue(ManagementServer.XenServerHeartBeatTimeout.key()));
         params.put("router.aggregation.command.each.timeout", _configDao.getValue(ManagementServer.RouterAggregationCommandEachTimeout.key()));
 
         return params;
