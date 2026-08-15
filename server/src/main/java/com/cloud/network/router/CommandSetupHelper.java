@@ -75,7 +75,6 @@ import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.agent.manager.Commands;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.ASNumberVO;
 import com.cloud.dc.DataCenter;
@@ -136,6 +135,7 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
+import com.cloud.server.ManagementServer;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
@@ -1065,9 +1065,9 @@ public class CommandSetupHelper {
                 setIpAddressNetworkParams(ip, network, router);
                 if (router.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
                     Map<String, String> details = new HashMap<>();
-                    String defaultSystemVmNicAdapterType = _configDao.getValue(Config.VmwareSystemVmNicDeviceType.key());
+                    String defaultSystemVmNicAdapterType = _configDao.getValue(ManagementServer.VmwareSystemVmNicDeviceType.key());
                     if (defaultSystemVmNicAdapterType == null) {
-                        defaultSystemVmNicAdapterType = Config.VmwareSystemVmNicDeviceType.getDefaultValue();
+                        defaultSystemVmNicAdapterType = ManagementServer.VmwareSystemVmNicDeviceType.defaultValue();
                     }
                     details.put(VmDetailConstants.NIC_ADAPTER, defaultSystemVmNicAdapterType);
                     ip.setDetails(details);

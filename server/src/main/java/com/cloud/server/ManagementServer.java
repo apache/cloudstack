@@ -154,6 +154,20 @@ public interface ManagementServer extends ManagementService, PluggableService {
     ConfigKey<Integer> RouterAggregationCommandEachTimeout = new ConfigKey<>("Advanced", Integer.class, "router.aggregation.command.each.timeout", "600",
             "timeout in seconds for each Virtual Router command being aggregated. The final aggregation command timeout would be determined by this timeout * commands counts ", true);
 
+    ConfigKey<String> VmwareRootDiskControllerType = new ConfigKey<>("Advanced", String.class, "vmware.root.disk.controller", "ide",
+            "Specify the default disk controller for root volumes, valid values are scsi, ide, osdefault. Please check documentation for more details on each of these values.",
+            true, ConfigKey.Kind.Select, "scsi,ide,osdefault");
+
+    ConfigKey<String> VmwareSystemVmNicDeviceType = new ConfigKey<>("Advanced", String.class, "vmware.systemvm.nic.device.type", "E1000",
+            "Specify the default network device type for system VMs, valid values are E1000, PCNet32, Vmxnet2, Vmxnet3",
+            true, ConfigKey.Kind.Select, "E1000,PCNet32,Vmxnet2,Vmxnet3");
+
+    ConfigKey<Boolean> VmwareUseNexusVSwitch = new ConfigKey<>("Network", Boolean.class, "vmware.use.nexus.vswitch", "false",
+            "Enable/Disable Cisco Nexus 1000v vSwitch in VMware environment", true);
+
+    ConfigKey<Boolean> VmwareUseDVSwitch = new ConfigKey<>("Network", Boolean.class, "vmware.use.dvswitch", "false",
+            "Enable/Disable Nexus/Vmware dvSwitch in VMware environment", true);
+
     /**
      * returns the instance id of this management server.
      *

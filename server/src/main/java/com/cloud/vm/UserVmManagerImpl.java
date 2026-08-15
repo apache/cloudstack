@@ -215,7 +215,6 @@ import com.cloud.api.query.dao.ServiceOfferingJoinDao;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.configuration.Resource.ResourceType;
@@ -5263,8 +5262,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             // Don't override if VM already has root/data disk controller detail
             if (vm.getDetail(VmDetailConstants.ROOT_DISK_CONTROLLER) == null) {
-                String vmwareRootDiskControllerTypeFromSetting = StringUtils.defaultIfEmpty(_configDao.getValue(Config.VmwareRootDiskControllerType.key()),
-                        Config.VmwareRootDiskControllerType.getDefaultValue());
+                String vmwareRootDiskControllerTypeFromSetting = StringUtils.defaultIfEmpty(_configDao.getValue(ManagementServer.VmwareRootDiskControllerType.key()),
+                        ManagementServer.VmwareRootDiskControllerType.defaultValue());
                 vm.setDetail(VmDetailConstants.ROOT_DISK_CONTROLLER, vmwareRootDiskControllerTypeFromSetting);
             }
 
