@@ -126,34 +126,7 @@ public enum Config {
 
 
     // XenServer
-    XenServerSetupMultipath("Advanced", ManagementServer.class, String.class, "xenserver.setup.multipath", "false", "Setup the host to do multipath", null),
     XenServerBondStorageNic("Advanced", ManagementServer.class, String.class, "xenserver.bond.storage.nics", null, "Attempt to bond the two networks if found", null),
-    XenServerHeartBeatTimeout(
-            "Advanced",
-            ManagementServer.class,
-            Integer.class,
-            "xenserver.heartbeat.timeout",
-            "120",
-            "heartbeat timeout to use when implementing XenServer Self Fencing",
-            null),
-    XenServerHeartBeatInterval(
-            "Advanced",
-            ManagementServer.class,
-            Integer.class,
-            "xenserver.heartbeat.interval",
-            "60",
-            "heartbeat interval to use when checking before XenServer Self Fencing",
-            null),
-    XenServerPVdriverVersion(
-            "Advanced",
-            ManagementServer.class,
-            String.class,
-            "xenserver.pvdriver.version",
-            "xenserver61",
-            "default Xen PV driver version for registered template, valid value:xenserver56,xenserver61 ",
-            "xenserver56,xenserver61",
-            ConfigKey.Kind.Select,
-            "xenserver56,xenserver61"),
     XenServerHotFix("Advanced",
             ManagementServer.class,
             Boolean.class,

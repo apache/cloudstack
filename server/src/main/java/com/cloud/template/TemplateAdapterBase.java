@@ -56,7 +56,6 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.api.ApiDBUtils;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.cpu.CPU;
 import com.cloud.dc.DataCenterVO;
@@ -74,6 +73,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Grouping;
 import com.cloud.projects.ProjectManager;
 import com.cloud.server.ConfigurationServer;
+import com.cloud.server.ManagementServer;
 import com.cloud.server.StatsCollector;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.Storage.ImageFormat;
@@ -388,7 +388,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         if (hypervisorType.equals(Hypervisor.HypervisorType.XenServer)) {
             if (details == null || !details.containsKey("hypervisortoolsversion") || details.get("hypervisortoolsversion") == null ||
                 ((String)details.get("hypervisortoolsversion")).equalsIgnoreCase("none")) {
-                String hpvs = _configDao.getValue(Config.XenServerPVdriverVersion.key());
+                String hpvs = _configDao.getValue(ManagementServer.XenServerPVdriverVersion.key());
                 if (hpvs != null) {
                     if (details == null) {
                         details = new HashMap<String, String>();

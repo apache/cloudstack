@@ -394,12 +394,12 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
                 TransactionLegacy txn = TransactionLegacy.currentTxn();
-                String pvdriverversion = Config.XenServerPVdriverVersion.getDefaultValue();
+                String pvdriverversion = ManagementServer.XenServerPVdriverVersion.defaultValue();
                 PreparedStatement pstmt = null;
                 ResultSet rs1 = null;
                 ResultSet rs2 = null;
                 try {
-                    String oldValue = _configDao.getValue(Config.XenServerPVdriverVersion.key());
+                    String oldValue = _configDao.getValue(ManagementServer.XenServerPVdriverVersion.key());
                     if (oldValue == null) {
                         String sql = "select resource from host where hypervisor_type='XenServer' and removed is null and status not in ('Error', 'Removed') group by resource";
                         pstmt = txn.prepareAutoCloseStatement(sql);
@@ -417,8 +417,8 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                                 break;
                             }
                         }
-                        _configDao.getValueAndInitIfNotExist(Config.XenServerPVdriverVersion.key(), Config.XenServerPVdriverVersion.getCategory(), pvdriverversion,
-                                Config.XenServerPVdriverVersion.getDescription());
+                        _configDao.getValueAndInitIfNotExist(ManagementServer.XenServerPVdriverVersion.key(), ManagementServer.XenServerPVdriverVersion.category(), pvdriverversion,
+                                ManagementServer.XenServerPVdriverVersion.description());
                         sql = "select id from vm_template where hypervisor_type='XenServer'  and format!='ISO' and removed is null";
                         pstmt = txn.prepareAutoCloseStatement(sql);
                         rs2 = pstmt.executeQuery();
