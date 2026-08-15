@@ -102,6 +102,27 @@ public interface ResourceLimitService {
     static final ConfigKey<Long> DefaultMaxDomainSecondaryStorage = new ConfigKey<>("Domain Defaults", Long.class, "max.domain.secondary.storage", "800",
             "The default maximum secondary storage space (in GiB) that can be used for a domain", false);
 
+    static final ConfigKey<Long> DefaultMaxProjectUserVms = new ConfigKey<>("Project Defaults", Long.class, "max.project.user.vms", "20",
+            "The default maximum number of user VMs that can be deployed for a project", false);
+    static final ConfigKey<Long> DefaultMaxProjectPublicIPs = new ConfigKey<>("Project Defaults", Long.class, "max.project.public.ips", "20",
+            "The default maximum number of public IPs that can be consumed by a project", false);
+    static final ConfigKey<Long> DefaultMaxProjectTemplates = new ConfigKey<>("Project Defaults", Long.class, "max.project.templates", "20",
+            "The default maximum number of Templates that can be deployed for a project", false);
+    static final ConfigKey<Long> DefaultMaxProjectSnapshots = new ConfigKey<>("Project Defaults", Long.class, "max.project.snapshots", "20",
+            "The default maximum number of snapshots that can be created for a project", false);
+    static final ConfigKey<Long> DefaultMaxProjectVolumes = new ConfigKey<>("Project Defaults", Long.class, "max.project.volumes", "20",
+            "The default maximum number of volumes that can be created for a project", false);
+    static final ConfigKey<Long> DefaultMaxProjectNetworks = new ConfigKey<>("Project Defaults", Long.class, "max.project.networks", "20",
+            "The default maximum number of networks that can be created for a project", false);
+    static final ConfigKey<Long> DefaultMaxProjectVpcs = new ConfigKey<>("Project Defaults", Long.class, "max.project.vpcs", "20",
+            "The default maximum number of vpcs that can be created for a project", false);
+    static final ConfigKey<Long> DefaultMaxProjectCpus = new ConfigKey<>("Project Defaults", Long.class, "max.project.cpus", "40",
+            "The default maximum number of cpu cores that can be used for a project", false);
+    static final ConfigKey<Long> DefaultMaxProjectMemory = new ConfigKey<>("Project Defaults", Long.class, "max.project.memory", "40960",
+            "The default maximum memory (in MB) that can be used for a project", false);
+    static final ConfigKey<Long> DefaultMaxProjectPrimaryStorage = new ConfigKey<>("Project Defaults", Long.class, "max.project.primary.storage", "200",
+            "The default maximum primary storage space (in GiB) that can be used for a project", false);
+
     static final List<ResourceType> HostTagsSupportingTypes = List.of(ResourceType.user_vm, ResourceType.cpu, ResourceType.memory, ResourceType.gpu);
     static final List<ResourceType> StorageTagsSupportingTypes = List.of(ResourceType.volume, ResourceType.primary_storage);
 
