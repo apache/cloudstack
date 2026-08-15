@@ -1467,6 +1467,6 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {VMSnapshotExpireInterval, VMSnapshotMax};
+        return new ConfigKey<?>[] {VMSnapshotExpireInterval, VMSnapshotMax, VMSnapshotCreateWait};
     }
 }
