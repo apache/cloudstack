@@ -159,62 +159,6 @@ public enum Config {
 
     DefaultPageSize("Advanced", ManagementServer.class, Long.class, "default.page.size", "500", "Default page size for API list* commands", null),
 
-    BaremetalInternalStorageServer(
-            "Advanced",
-            ManagementServer.class,
-            String.class,
-            "baremetal.internal.storage.server.ip",
-            null,
-            "the ip address of server that stores kickstart file, kernel, initrd, ISO for advanced networking baremetal provisioning",
-            null),
-    BaremetalProvisionDoneNotificationEnabled(
-            "Advanced",
-            ManagementServer.class,
-            Boolean.class,
-            "baremetal.provision.done.notification.enabled",
-            "true",
-            "whether to enable baremetal provison done notification",
-            null),
-    BaremetalProvisionDoneNotificationTimeout(
-            "Advanced",
-            ManagementServer.class,
-            Integer.class,
-            "baremetal.provision.done.notification.timeout",
-            "1800",
-            "the max time to wait before treating a baremetal provision as failure if no provision done notification is not received, in secs",
-            null),
-    BaremetalProvisionDoneNotificationPort(
-            "Advanced",
-            ManagementServer.class,
-            Integer.class,
-            "baremetal.provision.done.notification.port",
-            "8080",
-            "the port that listens baremetal provision done notification. Should be the same to port management server listening on for now. Please change it to management server port if it's not default 8080",
-            null),
-    ExternalBaremetalSystemUrl(
-            "Advanced",
-            ManagementServer.class,
-            String.class,
-            "external.baremetal.system.url",
-            null,
-            "url of external baremetal system that CloudStack will talk to",
-            null),
-    ExternalBaremetalResourceClassName(
-            "Advanced",
-            ManagementServer.class,
-            String.class,
-            "external.baremetal.resource.classname",
-            null,
-            "class name for handling external baremetal resource",
-            null),
-    EnableBaremetalSecurityGroupAgentEcho(
-            "Advanced",
-            ManagementServer.class,
-            Boolean.class,
-            "enable.baremetal.securitygroup.agent.echo",
-            "false",
-            "After starting provision process, periodcially echo security agent installed in the template. Treat provisioning as success only if echo successfully",
-            null),
     IntervalToEchoBaremetalSecurityGroupAgent(
             "Advanced",
             ManagementServer.class,
@@ -232,22 +176,6 @@ public enum Config {
             "Timeout to echo baremetal security group agent, in seconds, the provisioning process will be treated as a failure",
             null),
 
-    BaremetalIpmiLanInterface(
-            "Advanced",
-            ManagementServer.class,
-            String.class,
-            "baremetal.ipmi.lan.interface",
-            "default",
-            "option specified in -I option of impitool. candidates are: open/bmc/lipmi/lan/lanplus/free/imb, see ipmitool man page for details. default value 'default' means using default option of ipmitool",
-            null),
-
-    BaremetalIpmiRetryTimes("Advanced",
-            ManagementServer.class,
-            String.class,
-            "baremetal.ipmi.fail.retry",
-            "5",
-            "ipmi interface will be temporary out of order after power operations(e.g. cycle, on), it leads following commands fail immediately. The value specifies retry times before accounting it as real failure",
-            null),
 
     ManagementServerVendor("Advanced", ManagementServer.class, String.class, "mgt.server.vendor", "ACS", "the vendor of management server", null),
     PublishAsynJobEvent("Advanced", ManagementServer.class, Boolean.class, "publish.async.job.events", "true", "enable or disable publishing of usage events on the event bus", null);
