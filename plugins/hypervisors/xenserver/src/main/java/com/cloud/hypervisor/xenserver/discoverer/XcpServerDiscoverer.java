@@ -354,12 +354,12 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 params.put("router.aggregation.command.each.timeout", _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
                 params.put("wait", Integer.toString(_wait));
                 details.put("wait", Integer.toString(_wait));
-                params.put("migratewait", _configDao.getValue(Config.MigrateWait.toString()));
-                params.put(Config.XenServerMaxNics.toString().toLowerCase(), _configDao.getValue(Config.XenServerMaxNics.toString()));
+                params.put("migratewait", _configDao.getValue(AgentManager.MigrateWait.toString()));
+                params.put(AgentManager.XenServerMaxNics.toString().toLowerCase(), _configDao.getValue(AgentManager.XenServerMaxNics.toString()));
                 params.put(Config.XenServerHeartBeatTimeout.toString().toLowerCase(), _configDao.getValue(Config.XenServerHeartBeatTimeout.toString()));
                 params.put(Config.XenServerHeartBeatInterval.toString().toLowerCase(), _configDao.getValue(Config.XenServerHeartBeatInterval.toString()));
-                params.put(Config.InstanceName.toString().toLowerCase(), _instance);
-                details.put(Config.InstanceName.toString().toLowerCase(), _instance);
+                params.put(AgentManager.InstanceName.toString().toLowerCase(), _instance);
+                details.put(AgentManager.InstanceName.toString().toLowerCase(), _instance);
                 try {
                     resource.configure("XenServer", params);
                 } catch (ConfigurationException e) {
@@ -482,10 +482,10 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         super.configure(name, params);
         serverConfig();
 
-        String value = _params.get(Config.XapiWait.toString());
-        _wait = NumbersUtil.parseInt(value, Integer.parseInt(Config.XapiWait.getDefaultValue()));
+        String value = _params.get(AgentManager.XapiWait.toString());
+        _wait = NumbersUtil.parseInt(value, Integer.parseInt(AgentManager.XapiWait.defaultValue()));
 
-        _instance = _params.get(Config.InstanceName.key());
+        _instance = _params.get(AgentManager.InstanceName.key());
 
         value = _params.get("xenserver.check.hvm");
         _checkHvm = Boolean.parseBoolean(value);
