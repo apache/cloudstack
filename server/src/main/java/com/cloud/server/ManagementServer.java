@@ -41,6 +41,12 @@ public interface ManagementServer extends ManagementService, PluggableService {
     ConfigKey<Boolean> exposeCloudStackVersionInApiXmlResponse = new ConfigKey<>("Advanced", Boolean.class, "expose.cloudstack.version.api.xml.response", "true",
             "Indicates whether ACS version should appear in the root element of an API XML response.", true, ConfigKey.Scope.Global);
 
+    ConfigKey<String> ElasticLoadBalancerEnabled = new ConfigKey<>("Advanced", String.class, "network.loadbalancer.basiczone.elb.enabled", "false",
+            "Whether the load balancing service is enabled for basic zones", true);
+
+    ConfigKey<String> ElasticLoadBalancerNetwork = new ConfigKey<>("Advanced", String.class, "network.loadbalancer.basiczone.elb.network", "guest",
+            "Whether the elastic load balancing service public ips are taken from the public or guest network", true);
+
     ConfigKey<String> OvmPublicNetwork = new ConfigKey<>("Hidden", String.class,
             "ovm.public.network.device", null,
             "Specify the public bridge on host for public network", true);
