@@ -134,14 +134,6 @@ public enum Config {
             "0",
             "Alerts older than specified number days will be purged. Set this value to 0 to never delete alerts",
             null),
-    HostReservationReleasePeriod(
-            "Advanced",
-            ManagementServer.class,
-            Integer.class,
-            "host.reservation.release.period",
-            "300000",
-            "The interval in milliseconds between host reservation release checks",
-            null),
     // LB HealthCheck Interval.
     LBHealthCheck(
             "Advanced",
@@ -184,41 +176,6 @@ public enum Config {
             "Changes the cidr for the control network traffic.  Defaults to using link local.  Must be unique within pods",
             null),
     ControlGateway("Advanced", ManagementServer.class, String.class, "control.gateway", "169.254.0.1", "gateway for the control network traffic", null),
-    HostCapacityTypeToOrderClusters(
-            "Advanced",
-            ManagementServer.class,
-            String.class,
-            "host.capacityType.to.order.clusters",
-            "CPU",
-            "The host capacity type (CPU, RAM, COMBINED) is used by deployment planner to order clusters during VM resource allocation",
-            "CPU,RAM,COMBINED"),
-
-    ApplyAllocationAlgorithmToPods(
-            "Advanced",
-            ManagementServer.class,
-            Boolean.class,
-            "apply.allocation.algorithm.to.pods",
-            "false",
-            "If true, deployment planner applies the allocation heuristics at pods first in the given datacenter during VM resource allocation",
-            "true,false"),
-    VmUserDispersionWeight(
-            "Advanced",
-            ManagementServer.class,
-            Float.class,
-            "vm.user.dispersion.weight",
-            "1",
-            "Weight for user dispersion heuristic (as a value between 0 and 1) applied to resource allocation during vm deployment. Weight for capacity heuristic will be (1 - weight of user dispersion)",
-            null),
-    VmDeploymentPlanner(
-            "Advanced",
-            ManagementServer.class,
-            String.class,
-            "vm.deployment.planner",
-            "FirstFitPlanner",
-            "'FirstFitPlanner', 'UserDispersingPlanner', 'UserConcentratedPodPlanner': DeploymentPlanner heuristic that will be used for VM deployment.",
-            null,
-            ConfigKey.Kind.Select,
-            "FirstFitPlanner,UserDispersingPlanner,UserConcentratedPodPlanner"),
     ElasticLoadBalancerEnabled(
             "Advanced",
             ManagementServer.class,
@@ -495,14 +452,6 @@ public enum Config {
             "Should be set to true, if there will be multiple NetScaler devices providing EIP service in a zone",
             null),
     HaTag("Advanced", ManagementServer.class, String.class, "ha.tag", null, "HA tag defining that the host marked with this tag can be used for HA purposes only", null),
-    ImplicitHostTags(
-            "Advanced",
-            ManagementServer.class,
-            String.class,
-            "implicit.host.tags",
-            "GPU",
-            "Tag hosts at the time of host discovery based on the host properties/capabilities",
-            null),
     DetailBatchQuerySize("Advanced", ManagementServer.class, Integer.class, "detail.batch.query.size", "2000", "Default entity detail batch query size for listing", null),
 
     BaremetalInternalStorageServer(
