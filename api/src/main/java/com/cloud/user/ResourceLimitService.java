@@ -58,6 +58,50 @@ public interface ResourceLimitService {
     static final ConfigKey<Long> DefaultMaxProjectGpus = new ConfigKey<>("Project Defaults",Long.class,"max.project.gpus","20",
             "The default maximum number of GPU devices that can be used for a project", false);
 
+    static final ConfigKey<Long> DefaultMaxAccountUserVms = new ConfigKey<>("Account Defaults", Long.class, "max.account.user.vms", "20",
+            "The default maximum number of user VMs that can be deployed for an account", false);
+    static final ConfigKey<Long> DefaultMaxAccountPublicIPs = new ConfigKey<>("Account Defaults", Long.class, "max.account.public.ips", "20",
+            "The default maximum number of public IPs that can be consumed by an account", false);
+    static final ConfigKey<Long> DefaultMaxAccountTemplates = new ConfigKey<>("Account Defaults", Long.class, "max.account.templates", "20",
+            "The default maximum number of Templates that can be deployed for an account", false);
+    static final ConfigKey<Long> DefaultMaxAccountSnapshots = new ConfigKey<>("Account Defaults", Long.class, "max.account.snapshots", "20",
+            "The default maximum number of snapshots that can be created for an account", false);
+    static final ConfigKey<Long> DefaultMaxAccountVolumes = new ConfigKey<>("Account Defaults", Long.class, "max.account.volumes", "20",
+            "The default maximum number of volumes that can be created for an account", false);
+    static final ConfigKey<Long> DefaultMaxAccountNetworks = new ConfigKey<>("Account Defaults", Long.class, "max.account.networks", "20",
+            "The default maximum number of networks that can be created for an account", false);
+    static final ConfigKey<Long> DefaultMaxAccountVpcs = new ConfigKey<>("Account Defaults", Long.class, "max.account.vpcs", "20",
+            "The default maximum number of vpcs that can be created for an account", false);
+    static final ConfigKey<Long> DefaultMaxAccountCpus = new ConfigKey<>("Account Defaults", Long.class, "max.account.cpus", "40",
+            "The default maximum number of cpu cores that can be used for an account", false);
+    static final ConfigKey<Long> DefaultMaxAccountMemory = new ConfigKey<>("Account Defaults", Long.class, "max.account.memory", "40960",
+            "The default maximum memory (in MB) that can be used for an account", false);
+    static final ConfigKey<Long> DefaultMaxAccountPrimaryStorage = new ConfigKey<>("Account Defaults", Long.class, "max.account.primary.storage", "200",
+            "The default maximum primary storage space (in GiB) that can be used for an account", false);
+
+    static final ConfigKey<Long> DefaultMaxDomainUserVms = new ConfigKey<>("Domain Defaults", Long.class, "max.domain.user.vms", "40",
+            "The default maximum number of user Instances that can be deployed for a domain", false);
+    static final ConfigKey<Long> DefaultMaxDomainPublicIPs = new ConfigKey<>("Domain Defaults", Long.class, "max.domain.public.ips", "40",
+            "The default maximum number of public IPs that can be consumed by a domain", false);
+    static final ConfigKey<Long> DefaultMaxDomainTemplates = new ConfigKey<>("Domain Defaults", Long.class, "max.domain.templates", "40",
+            "The default maximum number of Templates that can be deployed for a domain", false);
+    static final ConfigKey<Long> DefaultMaxDomainSnapshots = new ConfigKey<>("Domain Defaults", Long.class, "max.domain.snapshots", "40",
+            "The default maximum number of Snapshots that can be created for a domain", false);
+    static final ConfigKey<Long> DefaultMaxDomainVolumes = new ConfigKey<>("Domain Defaults", Long.class, "max.domain.volumes", "40",
+            "The default maximum number of Volumes that can be created for a domain", false);
+    static final ConfigKey<Long> DefaultMaxDomainNetworks = new ConfigKey<>("Domain Defaults", Long.class, "max.domain.networks", "40",
+            "The default maximum number of Networks that can be created for a domain", false);
+    static final ConfigKey<Long> DefaultMaxDomainVpcs = new ConfigKey<>("Domain Defaults", Long.class, "max.domain.vpcs", "40",
+            "The default maximum number of VPCs that can be created for a domain", false);
+    static final ConfigKey<Long> DefaultMaxDomainCpus = new ConfigKey<>("Domain Defaults", Long.class, "max.domain.cpus", "80",
+            "The default maximum number of CPU cores that can be used for a domain", false);
+    static final ConfigKey<Long> DefaultMaxDomainMemory = new ConfigKey<>("Domain Defaults", Long.class, "max.domain.memory", "81920",
+            "The default maximum memory (in MB) that can be used for a domain", false);
+    static final ConfigKey<Long> DefaultMaxDomainPrimaryStorage = new ConfigKey<>("Domain Defaults", Long.class, "max.domain.primary.storage", "400",
+            "The default maximum primary storage space (in GiB) that can be used for a domain", false);
+    static final ConfigKey<Long> DefaultMaxDomainSecondaryStorage = new ConfigKey<>("Domain Defaults", Long.class, "max.domain.secondary.storage", "800",
+            "The default maximum secondary storage space (in GiB) that can be used for a domain", false);
+
     static final List<ResourceType> HostTagsSupportingTypes = List.of(ResourceType.user_vm, ResourceType.cpu, ResourceType.memory, ResourceType.gpu);
     static final List<ResourceType> StorageTagsSupportingTypes = List.of(ResourceType.volume, ResourceType.primary_storage);
 
