@@ -94,6 +94,7 @@ import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.test.IPRangeConfig;
 import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
@@ -820,7 +821,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
 
     private void updateSSOKey() {
         try {
-            _configDao.update(Config.SSOKey.key(), Config.SSOKey.getCategory(), getPrivateKey());
+            _configDepot.createOrUpdateConfigObject(AccountManager.class.getSimpleName(), AccountManager.SSOKey, getPrivateKey());
         } catch (NoSuchAlgorithmException ex) {
             logger.error("error generating sso key", ex);
         }
