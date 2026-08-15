@@ -46,7 +46,6 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 
-import com.cloud.configuration.Config;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -87,6 +86,7 @@ import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
+import com.cloud.server.ManagementServer;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
@@ -175,7 +175,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _name = name;
-        String elbEnabledString = _configDao.getValue(Config.ElasticLoadBalancerEnabled.key());
+        String elbEnabledString = _configDao.getValue(ManagementServer.ElasticLoadBalancerEnabled.key());
         _elbEnabled = Boolean.parseBoolean(elbEnabledString);
         if (_ipAddrMgr.RulesContinueOnError.value() != null) {
             rulesContinueOnErrFlag = _ipAddrMgr.RulesContinueOnError.value();
