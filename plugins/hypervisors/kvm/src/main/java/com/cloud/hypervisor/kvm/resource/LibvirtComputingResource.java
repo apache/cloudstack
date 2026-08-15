@@ -173,7 +173,7 @@ import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import com.cloud.agent.resource.virtualnetwork.VRScripts;
 import com.cloud.agent.resource.virtualnetwork.VirtualRouterDeployer;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
-import com.cloud.configuration.Config;
+import com.cloud.agent.AgentManager;
 import com.cloud.dc.Vlan;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
@@ -1735,8 +1735,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             storage.persist(AgentProperties.ROUTER_AGGREGATION_COMMAND_EACH_TIMEOUT.getName(), String.valueOf(longValue));
         }
 
-        if (params.get(Config.MigrateWait.toString()) != null) {
-            String value = (String)params.get(Config.MigrateWait.toString());
+        if (params.get(AgentManager.MigrateWait.toString()) != null) {
+            String value = (String)params.get(AgentManager.MigrateWait.toString());
             Integer intValue = NumbersUtil.parseInt(value, -1);
             storage.persist("vm.migrate.wait", String.valueOf(intValue));
             migrateWait = intValue;

@@ -60,6 +60,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
+import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.MigrateVolumeAnswer;
 import com.cloud.agent.api.storage.MigrateVolumeCommand;
@@ -68,7 +69,6 @@ import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.configuration.Config;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.DataStoreRole;
@@ -624,8 +624,8 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     }
 
     protected Answer migrateVolumeToPool(DataObject srcData, DataObject destData) {
-        String value = configDao.getValue(Config.MigrateWait.key());
-        int waitInterval = NumbersUtil.parseInt(value, Integer.parseInt(Config.MigrateWait.getDefaultValue()));
+        String value = configDao.getValue(AgentManager.MigrateWait.key());
+        int waitInterval = NumbersUtil.parseInt(value, Integer.parseInt(AgentManager.MigrateWait.defaultValue()));
 
         VolumeInfo volume = (VolumeInfo)srcData;
         StoragePool srcPool = (StoragePool)dataStoreMgr.getDataStore(srcData.getDataStore().getId(), DataStoreRole.Primary);

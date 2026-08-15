@@ -68,6 +68,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
+import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.GetVolumeStatAnswer;
 import com.cloud.agent.api.GetVolumeStatCommand;
@@ -79,7 +80,6 @@ import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.alert.AlertManager;
-import com.cloud.configuration.Config;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -888,7 +888,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
             grantAccess(destData, host, destData.getDataStore());
 
-            int waitInterval = NumbersUtil.parseInt(configDao.getValue(Config.MigrateWait.key()), Integer.parseInt(Config.MigrateWait.getDefaultValue()));
+            int waitInterval = NumbersUtil.parseInt(configDao.getValue(AgentManager.MigrateWait.key()), Integer.parseInt(AgentManager.MigrateWait.defaultValue()));
             MigrateVolumeCommand migrateVolumeCommand = new MigrateVolumeCommand(srcData.getTO(), destVolTO,
                     srcDetails, destDetails, waitInterval);
             answer = ep.sendMessage(migrateVolumeCommand);
