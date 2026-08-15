@@ -82,7 +82,6 @@ import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.api.query.dao.TemplateJoinDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.dao.ManagementServerHostPeerDao;
-import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.ClusterVSMMapVO;
@@ -143,6 +142,7 @@ import com.cloud.org.Cluster;
 import com.cloud.org.Cluster.ClusterType;
 import com.cloud.secstorage.CommandExecLogDao;
 import com.cloud.server.ConfigurationServer;
+import com.cloud.server.ManagementServer;
 import com.cloud.storage.ImageStoreDetailsUtil;
 import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.StorageLayer;
@@ -303,7 +303,8 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {s_vmwareNicHotplugWaitTimeout, s_vmwareCleanOldWorderVMs, templateCleanupInterval, s_vmwareSearchExcludeFolder, s_vmwareOVAPackageTimeout, s_vmwareCleanupPortGroups, VMWARE_STATS_TIME_WINDOW, VmwareUserVmNicDeviceType};
+        return new ConfigKey<?>[] {s_vmwareNicHotplugWaitTimeout, s_vmwareCleanOldWorderVMs, templateCleanupInterval, s_vmwareSearchExcludeFolder, s_vmwareOVAPackageTimeout, s_vmwareCleanupPortGroups, VMWARE_STATS_TIME_WINDOW, VmwareUserVmNicDeviceType,
+                VmwareServiceConsole, VmwareManagementPortGroup, VmwareAdditionalVncPortRangeStart, VmwareAdditionalVncPortRangeSize, VmwareRecycleHungWorker, VmwareVcenterSessionTimeout};
     }
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -348,42 +349,42 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             _instanceNameFlag = Boolean.parseBoolean(value);
         }
 
-        _serviceConsoleName = _configDao.getValue(Config.VmwareServiceConsole.key());
+        _serviceConsoleName = _configDao.getValue(VmwareServiceConsole.key());
         if (_serviceConsoleName == null) {
             _serviceConsoleName = "Service Console";
         }
 
-        _managementPortGroupName = _configDao.getValue(Config.VmwareManagementPortGroup.key());
+        _managementPortGroupName = _configDao.getValue(VmwareManagementPortGroup.key());
         if (_managementPortGroupName == null) {
             _managementPortGroupName = "Management Network";
         }
 
-        _defaultSystemVmNicAdapterType = _configDao.getValue(Config.VmwareSystemVmNicDeviceType.key());
+        _defaultSystemVmNicAdapterType = _configDao.getValue(ManagementServer.VmwareSystemVmNicDeviceType.key());
         if (_defaultSystemVmNicAdapterType == null) {
             _defaultSystemVmNicAdapterType = VirtualEthernetCardType.E1000.toString();
         }
 
-        _additionalPortRangeStart = NumbersUtil.parseInt(_configDao.getValue(Config.VmwareAdditionalVncPortRangeStart.key()), 59000);
+        _additionalPortRangeStart = NumbersUtil.parseInt(_configDao.getValue(VmwareAdditionalVncPortRangeStart.key()), 59000);
         if (_additionalPortRangeStart > 65535) {
             logger.warn("Invalid port range start port (" + _additionalPortRangeStart + ") for additional VNC port allocation, reset it to default start port 59000");
             _additionalPortRangeStart = 59000;
         }
 
-        _additionalPortRangeSize = NumbersUtil.parseInt(_configDao.getValue(Config.VmwareAdditionalVncPortRangeSize.key()), 1000);
+        _additionalPortRangeSize = NumbersUtil.parseInt(_configDao.getValue(VmwareAdditionalVncPortRangeSize.key()), 1000);
         if (_additionalPortRangeSize < 0 || _additionalPortRangeStart + _additionalPortRangeSize > 65535) {
             logger.warn("Invalid port range size (" + _additionalPortRangeSize + " for range starts at " + _additionalPortRangeStart);
             _additionalPortRangeSize = Math.min(1000, 65535 - _additionalPortRangeStart);
         }
 
-        _vCenterSessionTimeout = NumbersUtil.parseInt(_configDao.getValue(Config.VmwareVcenterSessionTimeout.key()), 1200) * 1000;
+        _vCenterSessionTimeout = NumbersUtil.parseInt(_configDao.getValue(VmwareVcenterSessionTimeout.key()), 1200) * 1000;
         logger.info("VmwareManagerImpl config - vmware.vcenter.session.timeout: " + _vCenterSessionTimeout);
 
-        _recycleHungWorker = _configDao.getValue(Config.VmwareRecycleHungWorker.key());
+        _recycleHungWorker = _configDao.getValue(VmwareRecycleHungWorker.key());
         if (_recycleHungWorker == null || _recycleHungWorker.isEmpty()) {
             _recycleHungWorker = "false";
         }
 
-        _rootDiskController = _configDao.getValue(Config.VmwareRootDiskControllerType.key());
+        _rootDiskController = _configDao.getValue(ManagementServer.VmwareRootDiskControllerType.key());
         if (_rootDiskController == null || _rootDiskController.isEmpty()) {
             _rootDiskController = DiskControllerType.ide.toString();
         }

@@ -32,7 +32,6 @@ import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.alert.AlertManager;
-import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -695,9 +694,9 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
     private void _readGlobalConfigParameters() {
         String value;
         if (_configDao != null) {
-            value = _configDao.getValue(Config.VmwareUseDVSwitch.key());
+            value = _configDao.getValue(ManagementServer.VmwareUseDVSwitch.key());
             useDVS = Boolean.parseBoolean(value);
-            value = _configDao.getValue(Config.VmwareUseNexusVSwitch.key());
+            value = _configDao.getValue(ManagementServer.VmwareUseNexusVSwitch.key());
             nexusDVS = Boolean.parseBoolean(value);
         }
     }
