@@ -947,7 +947,7 @@ IpDeployer, StaticNatServiceProvider, GslbServiceProvider {
         response.setDeviceName(lbDeviceVO.getDeviceName());
         if (lbDeviceVO.getCapacity() == 0) {
             long defaultLbCapacity = NumbersUtil
-                    .parseLong(_configDao.getValue(DefaultExternalLoadBalancerCapacity.key()), 50);
+                    .parseLong(DefaultExternalLoadBalancerCapacity.value(), 50);
             response.setDeviceCapacity(defaultLbCapacity);
         } else {
             response.setDeviceCapacity(lbDeviceVO.getCapacity());
@@ -1160,8 +1160,7 @@ IpDeployer, StaticNatServiceProvider, GslbServiceProvider {
             return false;
         }
 
-        boolean multiNetScalerDeployment = Boolean
-                .valueOf(_configDao.getValue(EIPWithMultipleNetScalersEnabled.key()));
+        boolean multiNetScalerDeployment = EIPWithMultipleNetScalersEnabled.value();
 
         try {
             if (!multiNetScalerDeployment) {

@@ -1142,7 +1142,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
-        _defaultLbCapacity = NumbersUtil.parseLong(_configDao.getValue(DefaultExternalLoadBalancerCapacity.key()), 50);
+        _defaultLbCapacity = NumbersUtil.parseLong(DefaultExternalLoadBalancerCapacity.value(), 50);
         _resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
         return true;
     }
