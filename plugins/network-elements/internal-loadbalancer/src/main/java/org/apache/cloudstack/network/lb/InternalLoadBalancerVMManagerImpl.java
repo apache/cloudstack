@@ -397,7 +397,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
         }
 
         _mgmtHost = configs.get("host");
-        _mgmtCidr = _configDao.getValue(ManagementServer.ManagementNetwork.key());
+        _mgmtCidr = ManagementServer.ManagementNetwork.value();
 
         final String offUUID = configs.get(ManagementServer.InternalLbVmServiceOfferingId.key());
         if (offUUID != null && !offUUID.isEmpty()) {

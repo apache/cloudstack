@@ -359,7 +359,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             _managementPortGroupName = "Management Network";
         }
 
-        _defaultSystemVmNicAdapterType = _configDao.getValue(ManagementServer.VmwareSystemVmNicDeviceType.key());
+        _defaultSystemVmNicAdapterType = ManagementServer.VmwareSystemVmNicDeviceType.value();
         if (_defaultSystemVmNicAdapterType == null) {
             _defaultSystemVmNicAdapterType = VirtualEthernetCardType.E1000.toString();
         }
@@ -384,7 +384,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             _recycleHungWorker = "false";
         }
 
-        _rootDiskController = _configDao.getValue(ManagementServer.VmwareRootDiskControllerType.key());
+        _rootDiskController = ManagementServer.VmwareRootDiskControllerType.value();
         if (_rootDiskController == null || _rootDiskController.isEmpty()) {
             _rootDiskController = DiskControllerType.ide.toString();
         }

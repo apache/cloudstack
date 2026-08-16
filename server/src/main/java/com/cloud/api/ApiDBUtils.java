@@ -2300,7 +2300,7 @@ public class ApiDBUtils {
     }
 
     public static String getDnsNameConfiguredForGslb() {
-        String providerDnsName = s_configDao.getValue(ManagementServer.CloudDnsName.key());
+        String providerDnsName = ManagementServer.CloudDnsName.value();
         return providerDnsName;
     }
 

@@ -1197,7 +1197,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                 buf.append(" gateway=").append(nic.getIPv4Gateway());
             }
             if (nic.getTrafficType() == TrafficType.Management) {
-                String mgmt_cidr = _configDao.getValue(ManagementServer.ManagementNetwork.key());
+                String mgmt_cidr = ManagementServer.ManagementNetwork.value();
                 if (NetUtils.isValidCidrList(mgmt_cidr)) {
                     logger.debug("Management server cidr list is " + mgmt_cidr);
                     buf.append(" mgmtcidr=").append(mgmt_cidr);

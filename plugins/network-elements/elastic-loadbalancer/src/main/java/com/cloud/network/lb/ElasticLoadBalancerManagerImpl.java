@@ -294,7 +294,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
         if (_instance == null) {
             _instance = "VM";
         }
-        _mgmtCidr = _configDao.getValue(ManagementServer.ManagementNetwork.key());
+        _mgmtCidr = ManagementServer.ManagementNetwork.value();
 
         _elasticLbVmRamSize = NumbersUtil.parseInt(configs.get(ElasticLoadBalancerVmMemory.key()), DEFAULT_ELB_VM_RAMSIZE);
         _elasticLbvmCpuMHz = NumbersUtil.parseInt(configs.get(ElasticLoadBalancerVmCpuMhz.key()), DEFAULT_ELB_VM_CPU_MHZ);
@@ -309,11 +309,11 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
             throw new ConfigurationException(msg);
         }
 
-        String enabled = _configDao.getValue(ManagementServer.ElasticLoadBalancerEnabled.key());
+        String enabled = ManagementServer.ElasticLoadBalancerEnabled.value();
         _enabled = (enabled == null) ? false : Boolean.parseBoolean(enabled);
         logger.info("Elastic Load balancer enabled: " + _enabled);
         if (_enabled) {
-            String traffType = _configDao.getValue(ManagementServer.ElasticLoadBalancerNetwork.key());
+            String traffType = ManagementServer.ElasticLoadBalancerNetwork.value();
             if ("guest".equalsIgnoreCase(traffType)) {
                 _frontendTrafficType = TrafficType.Guest;
             } else if ("public".equalsIgnoreCase(traffType)) {
