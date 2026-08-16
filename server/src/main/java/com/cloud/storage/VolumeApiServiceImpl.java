@@ -530,7 +530,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                     GetUploadParamsResponse response = new GetUploadParamsResponse();
 
-                    String ssvmUrlDomain = _configDao.getValue(SecondaryStorageVmManager.SecStorageSecureCopyCert.key());
+                    String ssvmUrlDomain = SecondaryStorageVmManager.SecStorageSecureCopyCert.value();
                     String protocol = UseHttpsToUpload.value() ? "https" : "http";
 
                     String url = ImageStoreUtil.generatePostUploadUrl(ssvmUrlDomain, ep.getPublicAddr(), vol.getUuid(),  protocol);

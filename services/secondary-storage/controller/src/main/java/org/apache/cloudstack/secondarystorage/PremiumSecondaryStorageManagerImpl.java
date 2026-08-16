@@ -238,10 +238,6 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
     }
 
     private boolean reserveStandbyCapacity() {
-        String value = _configDao.getValue(SystemVMAutoReserveCapacity.key());
-        if (value != null && value.equalsIgnoreCase("true")) {
-            return true;
-        }
-        return false;
+        return SystemVMAutoReserveCapacity.value();
     }
 }

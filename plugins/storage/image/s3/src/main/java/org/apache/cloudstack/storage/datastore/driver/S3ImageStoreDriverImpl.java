@@ -38,7 +38,6 @@ import com.cloud.agent.api.to.S3TO;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.storage.S3.S3Utils;
 
 public class S3ImageStoreDriverImpl extends BaseImageStoreDriverImpl {
@@ -94,10 +93,8 @@ public class S3ImageStoreDriverImpl extends BaseImageStoreDriverImpl {
         long milliSeconds = expiration.getTime();
 
         // Get extract url expiration interval set in global configuration (in seconds)
-        String urlExpirationInterval = _configDao.getValue(SecondaryStorageVmManager.ExtractURLExpirationInterval.toString());
-
         // Expired after configured interval (in milliseconds), default 14400 seconds
-        milliSeconds += 1000 * NumbersUtil.parseInt(urlExpirationInterval, 14400);
+        milliSeconds += 1000 * SecondaryStorageVmManager.ExtractURLExpirationInterval.value();
         expiration.setTime(milliSeconds);
 
         URL s3url = S3Utils.generatePresignedUrl(s3, s3.getBucketName(), key, expiration);
