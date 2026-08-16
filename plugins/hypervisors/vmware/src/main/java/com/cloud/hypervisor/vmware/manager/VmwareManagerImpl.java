@@ -321,7 +321,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
         logger.info("VmwareManagerImpl config - instance.name: " + _instance);
 
-        _mountParent = _configDao.getValue(SecondaryStorageVmManager.MountParent.key());
+        _mountParent = SecondaryStorageVmManager.MountParent.value();
         if (_mountParent == null) {
             _mountParent = File.separator + "mnt";
         }
