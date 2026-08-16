@@ -34,7 +34,6 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.exception.AffinityConflictException;
 import com.cloud.utils.DateUtil;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -119,7 +118,7 @@ public class NonStrictHostAffinityProcessor extends AffinityProcessorBase implem
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
-        vmCapacityReleaseInterval = NumbersUtil.parseInt(configDao.getValue(UserVmManager.CapacitySkipcountingHours.key()), 3600);
+        vmCapacityReleaseInterval = UserVmManager.CapacitySkipcountingHours.value();
         return true;
     }
 
