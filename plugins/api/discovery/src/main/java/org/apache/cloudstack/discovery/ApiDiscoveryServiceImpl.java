@@ -238,12 +238,27 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
                 }
                 paramResponse.setRelated(parameterAnnotation.entityType()[0].getName());
 
+                Class<? extends Enum> allowedValueType = parameterAnnotation.allowedValueType();
+
+                if (allowedValueType != Enum.class) {
+                    Enum<?>[] enumConstants = allowedValueType.getEnumConstants();
+                    if (enumConstants != null) {
+                        List<String> allowedValues = Arrays.stream(enumConstants)
+                                .map(Enum::toString)
+                                .collect(Collectors.toList());
+
+                        paramResponse.setAllowedValues(
+                                Collections.unmodifiableList(allowedValues)
+                        );
+                    }
+                } else {
                     String[] allowedValues = parameterAnnotation.allowedValues();
                     if (allowedValues != null && allowedValues.length > 0) {
                         paramResponse.setAllowedValues(
                                 Collections.unmodifiableList(Arrays.asList(allowedValues))
                         );
                     }
+                }
 
                     if (parameterAnnotation.authorized() != null) {
                         paramResponse.setAuthorizedRoleTypes(Arrays.asList(parameterAnnotation.authorized()));

@@ -40,6 +40,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.user.Account;
 
@@ -86,14 +87,10 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     private String storageType = ServiceOffering.StorageType.shared.toString();
 
     @Parameter(
-        name = ApiConstants.PROVISIONINGTYPE,
-        type = CommandType.STRING,
-        description = "Provisioning type used to create volumes. Valid values are thin, sparse, fat.",
-        allowedValues = {
-                "thin",
-                "sparse",
-                "fat"
-        })
+            name = ApiConstants.PROVISIONINGTYPE,
+            type = CommandType.STRING,
+            description = "Provisioning type used to create volumes. Valid values are thin, sparse, fat.",
+            allowedValueType = Storage.ProvisioningType.class)
     private String provisioningType = ProvisioningType.THIN.toString();
 
     @Parameter(name = ApiConstants.DISPLAY_OFFERING,

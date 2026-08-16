@@ -49,12 +49,7 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name = ApiConstants.INTERVAL_TYPE,
         type = CommandType.STRING,
         description = "Valid values are HOURLY, DAILY, WEEKLY, and MONTHLY.",
-        allowedValues = {
-                "HOURLY",
-                "DAILY",
-                "WEEKLY",
-                "MONTHLY"
-        })
+        allowedValueType = DateUtil.IntervalType.class)
     private String intervalType;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "Lists Snapshot by Snapshot name")
@@ -63,10 +58,7 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name = ApiConstants.SNAPSHOT_TYPE,
         type = CommandType.STRING,
         description = "Valid values are MANUAL or RECURRING.",
-        allowedValues = {
-                "MANUAL",
-                "RECURRING"
-        })
+        allowedValueType = Snapshot.Type.class)
     private String snapshotType;
 
     @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.UUID, entityType = VolumeResponse.class, description = "The ID of the disk volume")

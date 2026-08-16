@@ -83,10 +83,7 @@ public class CreateIpv6FirewallRuleCmd extends BaseAsyncCreateCmd {
     name = ApiConstants.TRAFFIC_TYPE,
     type = CommandType.STRING,
     description = "The traffic type for the Ipv6 firewall rule, can be ingress or egress, defaulted to ingress if not specified",
-    allowedValues = {
-        "Ingress",
-        "Egress"
-    })
+    allowedValueType = FirewallRule.TrafficType.class)
     private String trafficType;
 
     @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "An optional field, whether to the display the rule to the end User or not", authorized = {RoleType.Admin})

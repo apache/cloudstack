@@ -70,15 +70,7 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd implements UserCmd {
                + "* executable : Templates that are owned by the calling User, or public Templates, that can be used to deploy an Instance. "
                + "* community : Templates that have been marked as public but not featured. "
                + "* all : all Templates (only usable by admins).",
-           allowedValues = {
-               "featured",
-               "self",
-               "selfexecutable",
-               "sharedexecutable",
-               "executable",
-               "community",
-               "all"
-           })
+           allowedValueType = TemplateFilter.class)
     private String isoFilter = TemplateFilter.selfexecutable.toString();
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "List all ISOs by name")
@@ -100,11 +92,7 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd implements UserCmd {
         type = CommandType.STRING,
         description = "the CPU arch of the ISO. Valid options are: x86_64, aarch64, s390x",
         since = "4.20",
-        allowedValues = {
-            "x86_64",
-            "aarch64",
-            "s390x"
-        })
+        allowedValueType = CPU.CPUArch.class)
     private String arch;
 
     @Parameter(name = ApiConstants.OS_CATEGORY_ID, type = CommandType.UUID, entityType= GuestOSCategoryResponse.class,

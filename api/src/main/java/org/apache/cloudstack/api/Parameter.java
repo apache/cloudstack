@@ -53,5 +53,8 @@ public @interface Parameter {
     ApiArgValidator[] validations() default {};
 
     String[] allowedValues() default {};
+
+    Class<? extends Enum> allowedValueType() default Enum.class;
+
     boolean acceptedOnAdminPort() default true;
 }

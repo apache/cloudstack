@@ -77,15 +77,7 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
                + "* executable : Templates that are owned by the calling user, or public Templates, that can be used to deploy an Instance. "
                + "* community : Templates that have been marked as public but not featured. "
                + "* all : all Templates (only usable by admins).",
-           allowedValues = {
-               "featured",
-               "self",
-               "selfexecutable",
-               "sharedexecutable",
-               "executable",
-               "community",
-               "all"
-           })
+           allowedValueType = TemplateFilter.class)
     private String templateFilter;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "List Templates by zoneId")
@@ -125,11 +117,7 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
            type = CommandType.STRING,
            description = "the CPU arch of the template. Valid options are: x86_64, aarch64, s390x",
            since = "4.20",
-           allowedValues = {
-               "x86_64",
-               "aarch64",
-               "s390x"
-           })
+           allowedValueType = CPU.CPUArch.class)
     private String arch;
 
     @Parameter(name = ApiConstants.OS_CATEGORY_ID, type = CommandType.UUID, entityType = GuestOSCategoryResponse.class,
