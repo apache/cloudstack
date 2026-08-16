@@ -2173,7 +2173,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             if (((StartupRoutingCommand)cmd).getHypervisorType() == HypervisorType.KVM || ((StartupRoutingCommand)cmd).getHypervisorType() == HypervisorType.LXC) {
                 Map<String, String> params = new HashMap<>();
                 params.put(ManagementServer.RouterAggregationCommandEachTimeout.key(), String.valueOf(ManagementServer.RouterAggregationCommandEachTimeout.value()));
-                params.put(MigrateWait.toString(), _configDao.getValue(MigrateWait.toString()));
+                params.put(MigrateWait.toString(), String.valueOf(MigrateWait.value()));
                 params.put(NetworkOrchestrationService.TUNGSTEN_ENABLED.key(), String.valueOf(NetworkOrchestrationService.TUNGSTEN_ENABLED.valueIn(host.getDataCenterId())));
                 params.put(ReconcileCommandService.ReconcileCommandsEnabled.key(), String.valueOf(_reconcileCommandsEnabled));
 
