@@ -76,7 +76,6 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.DateUtil;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
@@ -147,7 +146,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _vmCapacityReleaseInterval = NumbersUtil.parseInt(_configDao.getValue(UserVmManager.CapacitySkipcountingHours.key()), 3600);
+        _vmCapacityReleaseInterval = UserVmManager.CapacitySkipcountingHours.value();
 
         VirtualMachine.State.getStateMachine().registerListener(this);
         _agentManager.registerForHostEvents(new StorageCapacityListener(_capacityDao, _storageMgr), true, false, false);

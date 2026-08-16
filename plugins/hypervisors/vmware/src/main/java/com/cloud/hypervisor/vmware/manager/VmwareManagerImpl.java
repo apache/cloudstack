@@ -342,12 +342,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
         _fullCloneFlag = StorageManager.VmwareCreateCloneFull.value();
 
-        value = _configDao.getValue(UserVmManager.SetVmInternalNameUsingDisplayName.key());
-        if (value == null) {
-            _instanceNameFlag = false;
-        } else {
-            _instanceNameFlag = Boolean.parseBoolean(value);
-        }
+        _instanceNameFlag = UserVmManager.SetVmInternalNameUsingDisplayName.value();
 
         _serviceConsoleName = _configDao.getValue(VmwareServiceConsole.key());
         if (_serviceConsoleName == null) {
