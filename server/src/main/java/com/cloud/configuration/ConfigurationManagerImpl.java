@@ -689,7 +689,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         ||  settingNameUpdated.equals(AgentManager.MigrateWait.toString())) {
                     Map<String, String> params = new HashMap<>();
                     params.put(ManagementServer.RouterAggregationCommandEachTimeout.key(), String.valueOf(ManagementServer.RouterAggregationCommandEachTimeout.value()));
-                    params.put(AgentManager.MigrateWait.toString(), _configDao.getValue(AgentManager.MigrateWait.toString()));
+                    params.put(AgentManager.MigrateWait.toString(), String.valueOf(AgentManager.MigrateWait.value()));
                     _agentManager.propagateChangeToAgents(params);
                 } else if (settingNameUpdated.equals(IndirectAgentLBServiceImpl.IndirectAgentLBCheckInterval.key())) {
                     ConfigKey.Scope scope = settingUpdated.second();

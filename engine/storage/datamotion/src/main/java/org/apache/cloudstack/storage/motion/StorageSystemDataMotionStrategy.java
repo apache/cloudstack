@@ -138,7 +138,6 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
@@ -752,8 +751,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
         _volumeService.grantAccess(destVolumeInfo, hostVO, destVolumeInfo.getDataStore());
 
-        String value = _configDao.getValue(AgentManager.MigrateWait.key());
-        int waitInterval = NumbersUtil.parseInt(value, Integer.parseInt(AgentManager.MigrateWait.defaultValue()));
+        int waitInterval = AgentManager.MigrateWait.value();
 
         StoragePool destPool = (StoragePool)dataStoreMgr.getDataStore(destVolumeInfo.getDataStore().getId(), DataStoreRole.Primary);
 

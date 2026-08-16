@@ -320,7 +320,7 @@ public class HypervManagerImpl implements HypervManager {
             mountParent = File.separator + "mnt";
         }
 
-        String instance = _configDao.getValue(AgentManager.InstanceName.key());
+        String instance = AgentManager.InstanceName.value();
         if (instance == null) {
             instance = "DEFAULT";
         }
