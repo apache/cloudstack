@@ -165,7 +165,7 @@ public class BareMetalDiscoverer extends DiscovererBase implements Discoverer, R
             if (resourceClassName != null) {
                 Class<?> clazz = Class.forName(resourceClassName);
                 resource = (BareMetalResourceBase) clazz.newInstance();
-                String externalUrl = _configDao.getValue(ManagementServer.ExternalBaremetalSystemUrl.key());
+                String externalUrl = ManagementServer.ExternalBaremetalSystemUrl.value();
                 if (externalUrl == null) {
                     throw new IllegalArgumentException(String.format("You must specify ExternalBaremetalSystemUrl in global config page as ExternalBaremetalResourceClassName is not null"));
                 }

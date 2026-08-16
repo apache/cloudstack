@@ -58,7 +58,7 @@ public class GetApiLimitCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        boolean apiLimitEnabled = Boolean.parseBoolean(_configDao.getValue(ManagementServer.ApiLimitEnabled.key()));
+        boolean apiLimitEnabled = ManagementServer.ApiLimitEnabled.value();
         if (!apiLimitEnabled) {
             throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "This api is only available when api.throttling.enabled = true.");
         }

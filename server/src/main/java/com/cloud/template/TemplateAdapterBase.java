@@ -388,7 +388,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         if (hypervisorType.equals(Hypervisor.HypervisorType.XenServer)) {
             if (details == null || !details.containsKey("hypervisortoolsversion") || details.get("hypervisortoolsversion") == null ||
                 ((String)details.get("hypervisortoolsversion")).equalsIgnoreCase("none")) {
-                String hpvs = _configDao.getValue(ManagementServer.XenServerPVdriverVersion.key());
+                String hpvs = ManagementServer.XenServerPVdriverVersion.value();
                 if (hpvs != null) {
                     if (details == null) {
                         details = new HashMap<String, String>();

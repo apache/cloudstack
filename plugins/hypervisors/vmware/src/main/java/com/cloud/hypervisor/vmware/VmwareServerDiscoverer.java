@@ -381,7 +381,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
                 params.put("guestTrafficInfo", guestTrafficLabelObj);
                 params.put("publicTrafficInfo", publicTrafficLabelObj);
 
-                params.put("router.aggregation.command.each.timeout", _configDao.getValue(ManagementServer.RouterAggregationCommandEachTimeout.key()));
+                params.put("router.aggregation.command.each.timeout", String.valueOf(ManagementServer.RouterAggregationCommandEachTimeout.value()));
 
                 VmwareResource resource = new VmwareResource();
                 try {
@@ -692,12 +692,9 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
     }
 
     private void _readGlobalConfigParameters() {
-        String value;
         if (_configDao != null) {
-            value = _configDao.getValue(ManagementServer.VmwareUseDVSwitch.key());
-            useDVS = Boolean.parseBoolean(value);
-            value = _configDao.getValue(ManagementServer.VmwareUseNexusVSwitch.key());
-            nexusDVS = Boolean.parseBoolean(value);
+            useDVS = ManagementServer.VmwareUseDVSwitch.value();
+            nexusDVS = ManagementServer.VmwareUseNexusVSwitch.value();
         }
     }
 

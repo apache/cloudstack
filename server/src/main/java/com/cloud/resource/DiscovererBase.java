@@ -138,9 +138,9 @@ public abstract class DiscovererBase extends AdapterBase implements Discoverer {
         params.put("max.template.iso.size", _configDao.getValue(SecondaryStorageVmManager.MaxTemplateAndIsoSize.toString()));
         params.put("migratewait", _configDao.getValue(AgentManager.MigrateWait.toString()));
         params.put(AgentManager.XenServerMaxNics.toString().toLowerCase(), _configDao.getValue(AgentManager.XenServerMaxNics.toString()));
-        params.put(ManagementServer.XenServerHeartBeatInterval.key().toLowerCase(), _configDao.getValue(ManagementServer.XenServerHeartBeatInterval.key()));
-        params.put(ManagementServer.XenServerHeartBeatTimeout.key().toLowerCase(), _configDao.getValue(ManagementServer.XenServerHeartBeatTimeout.key()));
-        params.put("router.aggregation.command.each.timeout", _configDao.getValue(ManagementServer.RouterAggregationCommandEachTimeout.key()));
+        params.put(ManagementServer.XenServerHeartBeatInterval.key().toLowerCase(), String.valueOf(ManagementServer.XenServerHeartBeatInterval.value()));
+        params.put(ManagementServer.XenServerHeartBeatTimeout.key().toLowerCase(), String.valueOf(ManagementServer.XenServerHeartBeatTimeout.value()));
+        params.put("router.aggregation.command.each.timeout", String.valueOf(ManagementServer.RouterAggregationCommandEachTimeout.value()));
 
         return params;
 
