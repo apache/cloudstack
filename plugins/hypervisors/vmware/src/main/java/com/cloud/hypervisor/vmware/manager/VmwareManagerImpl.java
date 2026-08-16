@@ -344,28 +344,22 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
         _instanceNameFlag = UserVmManager.SetVmInternalNameUsingDisplayName.value();
 
-        _serviceConsoleName = _configDao.getValue(VmwareServiceConsole.key());
-        if (_serviceConsoleName == null) {
-            _serviceConsoleName = "Service Console";
-        }
+        _serviceConsoleName = VmwareServiceConsole.value();
 
-        _managementPortGroupName = _configDao.getValue(VmwareManagementPortGroup.key());
-        if (_managementPortGroupName == null) {
-            _managementPortGroupName = "Management Network";
-        }
+        _managementPortGroupName = VmwareManagementPortGroup.value();
 
         _defaultSystemVmNicAdapterType = ManagementServer.VmwareSystemVmNicDeviceType.value();
         if (_defaultSystemVmNicAdapterType == null) {
             _defaultSystemVmNicAdapterType = VirtualEthernetCardType.E1000.toString();
         }
 
-        _additionalPortRangeStart = NumbersUtil.parseInt(_configDao.getValue(VmwareAdditionalVncPortRangeStart.key()), 59000);
+        _additionalPortRangeStart = VmwareAdditionalVncPortRangeStart.value();
         if (_additionalPortRangeStart > 65535) {
             logger.warn("Invalid port range start port (" + _additionalPortRangeStart + ") for additional VNC port allocation, reset it to default start port 59000");
             _additionalPortRangeStart = 59000;
         }
 
-        _additionalPortRangeSize = NumbersUtil.parseInt(_configDao.getValue(VmwareAdditionalVncPortRangeSize.key()), 1000);
+        _additionalPortRangeSize = VmwareAdditionalVncPortRangeSize.value();
         if (_additionalPortRangeSize < 0 || _additionalPortRangeStart + _additionalPortRangeSize > 65535) {
             logger.warn("Invalid port range size (" + _additionalPortRangeSize + " for range starts at " + _additionalPortRangeStart);
             _additionalPortRangeSize = Math.min(1000, 65535 - _additionalPortRangeStart);
@@ -374,10 +368,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         _vCenterSessionTimeout = NumbersUtil.parseInt(_configDao.getValue(VmwareVcenterSessionTimeout.key()), 1200) * 1000;
         logger.info("VmwareManagerImpl config - vmware.vcenter.session.timeout: " + _vCenterSessionTimeout);
 
-        _recycleHungWorker = _configDao.getValue(VmwareRecycleHungWorker.key());
-        if (_recycleHungWorker == null || _recycleHungWorker.isEmpty()) {
-            _recycleHungWorker = "false";
-        }
+        _recycleHungWorker = String.valueOf(VmwareRecycleHungWorker.value());
 
         _rootDiskController = ManagementServer.VmwareRootDiskControllerType.value();
         if (_rootDiskController == null || _rootDiskController.isEmpty()) {
