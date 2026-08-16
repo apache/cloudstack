@@ -181,7 +181,6 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.UuidUtils;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
@@ -733,7 +732,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             if (entity.getAccountId() != -1 && domainId != -1 && !(entity instanceof VirtualMachineTemplate)
                     && !(entity instanceof Network && (accessType == AccessType.UseEntry || accessType == AccessType.OperateEntry))
                     && !(entity instanceof AffinityGroup) && !(entity instanceof VirtualRouter)) {
-                List<ControlledEntity> toBeChecked = domains.get(entity.getDomainId());
+                List<ControlledEntity> toBeChecked = domains.get(domainId);
                 // for templates, we don't have to do cross domains check
                 if (toBeChecked == null) {
                     toBeChecked = new ArrayList<>();

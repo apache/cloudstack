@@ -56,6 +56,7 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 import com.cloud.acl.DomainChecker;
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.auth.SetupUserTwoFactorAuthenticationCmd;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
@@ -405,6 +406,80 @@ public class AccountManagerImplTest extends AccountManagentImplTestBase {
         Mockito.lenient().when(securityChecker.checkAccess(Mockito.any(Account.class),
                 Mockito.nullable(ControlledEntity.class), Mockito.nullable(AccessType.class), Mockito.anyString())).thenReturn(true);
         accountManagerImpl.preventRootDomainAdminAccessToRootAdminKeys(user, entity);
+    }
+
+    @Test
+    public void checkAccessResolvesDomainIdFromAccountWhenEntityDomainIdMissing() {
+        Account caller = Mockito.mock(Account.class);
+        Mockito.when(caller.getId()).thenReturn(999L);
+        Mockito.doReturn(false).when(accountManagerImpl).isRootAdmin(Mockito.anyLong());
+
+        ControlledEntity entity = Mockito.mock(ControlledEntity.class);
+        Mockito.when(entity.getDomainId()).thenReturn(-1L);
+        Mockito.when(entity.getAccountId()).thenReturn(10L);
+
+        Account resolvedAccount = Mockito.mock(Account.class);
+        Mockito.when(resolvedAccount.getDomainId()).thenReturn(7L);
+
+        Domain domain = Mockito.mock(Domain.class);
+        Mockito.when(_domainMgr.getDomain(7L)).thenReturn(domain);
+
+        Mockito.when(securityChecker.checkAccess(caller, entity, AccessType.ListEntry, "someApi")).thenReturn(true);
+        Mockito.when(securityChecker.checkAccess(caller, domain)).thenReturn(true);
+
+        try (MockedStatic<ApiDBUtils> apiDBUtilsMocked = Mockito.mockStatic(ApiDBUtils.class)) {
+            apiDBUtilsMocked.when(() -> ApiDBUtils.findAccountById(10L)).thenReturn(resolvedAccount);
+
+            accountManagerImpl.checkAccess(caller, AccessType.ListEntry, false, "someApi", entity);
+        }
+
+        // domainId for the entity had to be resolved via its account (entity.getDomainId() == -1),
+        // so the domain-level check must have run against the account's domain, not against -1.
+        Mockito.verify(_domainMgr).getDomain(7L);
+        Mockito.verify(_domainMgr, Mockito.never()).getDomain(-1L);
+    }
+
+    @Test
+    public void checkAccessKeepsAllEntitiesGroupedUnderResolvedDomainId() {
+        Account caller = Mockito.mock(Account.class);
+        Mockito.when(caller.getId()).thenReturn(999L);
+        Mockito.doReturn(false).when(accountManagerImpl).isRootAdmin(Mockito.anyLong());
+
+        // Both entities are missing their own domainId and resolve, via different accounts, to the same domain.
+        ControlledEntity entity1 = Mockito.mock(ControlledEntity.class);
+        Mockito.when(entity1.getDomainId()).thenReturn(-1L);
+        Mockito.when(entity1.getAccountId()).thenReturn(10L);
+
+        ControlledEntity entity2 = Mockito.mock(ControlledEntity.class);
+        Mockito.when(entity2.getDomainId()).thenReturn(-1L);
+        Mockito.when(entity2.getAccountId()).thenReturn(20L);
+
+        Account resolvedAccount1 = Mockito.mock(Account.class);
+        Mockito.when(resolvedAccount1.getDomainId()).thenReturn(7L);
+        Account resolvedAccount2 = Mockito.mock(Account.class);
+        Mockito.when(resolvedAccount2.getDomainId()).thenReturn(7L);
+
+        Domain domain = Mockito.mock(Domain.class);
+        Mockito.when(_domainMgr.getDomain(7L)).thenReturn(domain);
+
+        Mockito.when(securityChecker.checkAccess(caller, entity1, AccessType.ListEntry, "someApi")).thenReturn(true);
+        Mockito.when(securityChecker.checkAccess(caller, entity2, AccessType.ListEntry, "someApi")).thenReturn(true);
+        Mockito.when(securityChecker.checkAccess(caller, domain))
+                .thenThrow(new PermissionDeniedException("denied", caller, Collections.emptyList()));
+
+        PermissionDeniedException thrown;
+        try (MockedStatic<ApiDBUtils> apiDBUtilsMocked = Mockito.mockStatic(ApiDBUtils.class)) {
+            apiDBUtilsMocked.when(() -> ApiDBUtils.findAccountById(10L)).thenReturn(resolvedAccount1);
+            apiDBUtilsMocked.when(() -> ApiDBUtils.findAccountById(20L)).thenReturn(resolvedAccount2);
+
+            thrown = Assert.assertThrows(PermissionDeniedException.class,
+                    () -> accountManagerImpl.checkAccess(caller, AccessType.ListEntry, false, "someApi", entity1, entity2));
+        }
+
+        // Both entities resolve to the same domain, so they must both be grouped under that single domain
+        // key and both show up as violations, instead of the second entity silently displacing the first.
+        Assert.assertEquals(2, thrown.getEntitiesInViolation().size());
+        Assert.assertTrue(thrown.getEntitiesInViolation().containsAll(Arrays.asList(entity1, entity2)));
     }
 
     @Test
