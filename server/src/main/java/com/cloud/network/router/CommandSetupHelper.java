@@ -1065,10 +1065,7 @@ public class CommandSetupHelper {
                 setIpAddressNetworkParams(ip, network, router);
                 if (router.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
                     Map<String, String> details = new HashMap<>();
-                    String defaultSystemVmNicAdapterType = _configDao.getValue(ManagementServer.VmwareSystemVmNicDeviceType.key());
-                    if (defaultSystemVmNicAdapterType == null) {
-                        defaultSystemVmNicAdapterType = ManagementServer.VmwareSystemVmNicDeviceType.defaultValue();
-                    }
+                    String defaultSystemVmNicAdapterType = ManagementServer.VmwareSystemVmNicDeviceType.value();
                     details.put(VmDetailConstants.NIC_ADAPTER, defaultSystemVmNicAdapterType);
                     ip.setDetails(details);
                 }
