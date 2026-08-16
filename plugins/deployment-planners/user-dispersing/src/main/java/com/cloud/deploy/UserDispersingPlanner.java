@@ -26,7 +26,6 @@ import java.util.TreeMap;
 import javax.naming.ConfigurationException;
 
 
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachineProfile;
 
@@ -187,8 +186,7 @@ public class UserDispersingPlanner extends FirstFitPlanner implements Deployment
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
 
-        String weight = configDao.getValue(VmUserDispersionWeight.key());
-        _userDispersionWeight = NumbersUtil.parseFloat(weight, 1.0f);
+        _userDispersionWeight = VmUserDispersionWeight.value();
 
         return true;
     }
