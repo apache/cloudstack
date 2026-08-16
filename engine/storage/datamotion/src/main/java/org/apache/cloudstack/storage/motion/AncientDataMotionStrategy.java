@@ -85,7 +85,6 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.template.TemplateManager;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachineManager;
@@ -624,8 +623,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     }
 
     protected Answer migrateVolumeToPool(DataObject srcData, DataObject destData) {
-        String value = configDao.getValue(AgentManager.MigrateWait.key());
-        int waitInterval = NumbersUtil.parseInt(value, Integer.parseInt(AgentManager.MigrateWait.defaultValue()));
+        int waitInterval = AgentManager.MigrateWait.value();
 
         VolumeInfo volume = (VolumeInfo)srcData;
         StoragePool srcPool = (StoragePool)dataStoreMgr.getDataStore(srcData.getDataStore().getId(), DataStoreRole.Primary);
