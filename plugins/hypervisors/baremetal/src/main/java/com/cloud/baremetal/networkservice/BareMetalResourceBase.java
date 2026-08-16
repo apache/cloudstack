@@ -184,7 +184,7 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
         }
 
         try {
-            provisionDoneNotificationOn = Boolean.valueOf(configDao.getValue(ManagementServer.BaremetalProvisionDoneNotificationEnabled.key()));
+            provisionDoneNotificationOn = ManagementServer.BaremetalProvisionDoneNotificationEnabled.value();
             isProvisionDoneNotificationTimeout = Integer.parseInt(configDao.getValue(BaremetalManager.BaremetalProvisionDoneNotificationTimeout.key()));
         } catch (Exception e) {
             logger.debug(e.getMessage(), e);

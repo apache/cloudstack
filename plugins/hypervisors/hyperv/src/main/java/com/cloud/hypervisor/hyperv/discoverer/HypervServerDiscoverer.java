@@ -285,7 +285,7 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
 
             params.putAll(details);
 
-            params.put("router.aggregation.command.each.timeout", _configDao.getValue(ManagementServer.RouterAggregationCommandEachTimeout.key()));
+            params.put("router.aggregation.command.each.timeout", String.valueOf(ManagementServer.RouterAggregationCommandEachTimeout.value()));
 
             HypervDirectConnectResource resource = new HypervDirectConnectResource();
             resource.configure(agentIp, params);

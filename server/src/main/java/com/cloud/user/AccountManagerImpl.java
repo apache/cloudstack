@@ -3507,7 +3507,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         if ((BaremetalUtils.BAREMETAL_SYSTEM_ACCOUNT_NAME.equals(user.getUsername()) || user.getId() == User.UID_SYSTEM)
-                && Boolean.parseBoolean(_configDao.getValue(ManagementServer.BaremetalProvisionDoneNotificationEnabled.key()))) {
+                && ManagementServer.BaremetalProvisionDoneNotificationEnabled.value()) {
             throw new PermissionDeniedException(String.format("User ID [%s] is a system account and the global setting " +
                     "baremetal.provision.done.notification is enabled. Therefore, it is not possible to delete API key pairs. If you wish to delete " +
                     "the baremetal user/account or their API Key, please disable the baremetal.provision.done.notification configuration.", user.getUuid()));

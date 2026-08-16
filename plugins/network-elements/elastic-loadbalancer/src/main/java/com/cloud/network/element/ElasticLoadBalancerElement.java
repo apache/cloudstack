@@ -166,10 +166,10 @@ public class ElasticLoadBalancerElement extends AdapterBase implements LoadBalan
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
 
         super.configure(name, params);
-        String enabled = _configDao.getValue(ManagementServer.ElasticLoadBalancerEnabled.key());
+        String enabled = ManagementServer.ElasticLoadBalancerEnabled.value();
         _enabled = (enabled == null) ? false : Boolean.parseBoolean(enabled);
         if (_enabled) {
-            String traffType = _configDao.getValue(ManagementServer.ElasticLoadBalancerNetwork.key());
+            String traffType = ManagementServer.ElasticLoadBalancerNetwork.value();
             if ("guest".equalsIgnoreCase(traffType)) {
                 _frontEndTrafficType = TrafficType.Guest;
             } else if ("public".equalsIgnoreCase(traffType)) {

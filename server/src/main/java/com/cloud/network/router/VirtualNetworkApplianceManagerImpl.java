@@ -1964,7 +1964,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                     // always add management explicit route, for basic
                     // networking setup, DomR may have two interfaces while both
                     // are on the same subnet
-                    String _mgmtCidr = _configDao.getValue(ManagementServer.ManagementNetwork.key());
+                    String _mgmtCidr = ManagementServer.ManagementNetwork.value();
                     if (NetUtils.isValidIp4Cidr(_mgmtCidr)) {
                         buf.append(" mgmtcidr=").append(_mgmtCidr);
                         buf.append(" localgw=").append(dest.getPod().getGateway());
@@ -2075,7 +2075,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             buf.append(" exposedns=true");
         }
 
-        if (Boolean.parseBoolean(_configDao.getValue(ManagementServer.BaremetalProvisionDoneNotificationEnabled.key()))) {
+        if (ManagementServer.BaremetalProvisionDoneNotificationEnabled.value()) {
             final QueryBuilder<UserVO> acntq = QueryBuilder.create(UserVO.class);
             acntq.and(acntq.entity().getUsername(), SearchCriteria.Op.EQ, "baremetal-system-account");
             final UserVO user = acntq.find();
@@ -2091,7 +2091,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 buf.append(String.format(" baremetalnotificationsecuritykey=%s", latestKeypair.getSecretKey()));
                 buf.append(String.format(" baremetalnotificationapikey=%s", latestKeypair.getApiKey()));
                 buf.append(" host=").append(ApiServiceConfiguration.ManagementServerAddresses.value());
-                buf.append(" port=").append(_configDao.getValue(ManagementServer.BaremetalProvisionDoneNotificationPort.key()));
+                buf.append(" port=").append(ManagementServer.BaremetalProvisionDoneNotificationPort.value());
             }
         }
 

@@ -351,13 +351,13 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 boolean securityGroupEnabled = zone.isSecurityGroupEnabled() || _networkMgr.isSecurityGroupSupportedForZone(zone.getId());
                 params.put("securitygroupenabled", Boolean.toString(securityGroupEnabled));
 
-                params.put("router.aggregation.command.each.timeout", _configDao.getValue(ManagementServer.RouterAggregationCommandEachTimeout.key()));
+                params.put("router.aggregation.command.each.timeout", String.valueOf(ManagementServer.RouterAggregationCommandEachTimeout.value()));
                 params.put("wait", Integer.toString(_wait));
                 details.put("wait", Integer.toString(_wait));
                 params.put("migratewait", _configDao.getValue(AgentManager.MigrateWait.toString()));
                 params.put(AgentManager.XenServerMaxNics.toString().toLowerCase(), _configDao.getValue(AgentManager.XenServerMaxNics.toString()));
-                params.put(ManagementServer.XenServerHeartBeatTimeout.key().toLowerCase(), _configDao.getValue(ManagementServer.XenServerHeartBeatTimeout.key()));
-                params.put(ManagementServer.XenServerHeartBeatInterval.key().toLowerCase(), _configDao.getValue(ManagementServer.XenServerHeartBeatInterval.key()));
+                params.put(ManagementServer.XenServerHeartBeatTimeout.key().toLowerCase(), String.valueOf(ManagementServer.XenServerHeartBeatTimeout.value()));
+                params.put(ManagementServer.XenServerHeartBeatInterval.key().toLowerCase(), String.valueOf(ManagementServer.XenServerHeartBeatInterval.value()));
                 params.put(AgentManager.InstanceName.toString().toLowerCase(), _instance);
                 details.put(AgentManager.InstanceName.toString().toLowerCase(), _instance);
                 try {

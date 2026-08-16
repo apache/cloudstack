@@ -688,7 +688,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 } else if (settingNameUpdated.equals(ManagementServer.RouterAggregationCommandEachTimeout.key())
                         ||  settingNameUpdated.equals(AgentManager.MigrateWait.toString())) {
                     Map<String, String> params = new HashMap<>();
-                    params.put(ManagementServer.RouterAggregationCommandEachTimeout.key(), _configDao.getValue(ManagementServer.RouterAggregationCommandEachTimeout.key()));
+                    params.put(ManagementServer.RouterAggregationCommandEachTimeout.key(), String.valueOf(ManagementServer.RouterAggregationCommandEachTimeout.value()));
                     params.put(AgentManager.MigrateWait.toString(), _configDao.getValue(AgentManager.MigrateWait.toString()));
                     _agentManager.propagateChangeToAgents(params);
                 } else if (settingNameUpdated.equals(IndirectAgentLBServiceImpl.IndirectAgentLBCheckInterval.key())) {
@@ -753,7 +753,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // As it is so common for people to forget about configuring
         // management.network.cidr,
-        final String mgtCidr = _configDao.getValue(ManagementServer.ManagementNetwork.key());
+        final String mgtCidr = ManagementServer.ManagementNetwork.value();
         if (mgtCidr == null || mgtCidr.trim().isEmpty()) {
             final String[] localCidrs = NetUtils.getLocalCidrs();
             if (localCidrs != null && localCidrs.length > 0) {

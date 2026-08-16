@@ -439,7 +439,7 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
     }
 
     protected void addConfiguredManagementIp(List<String> ipList) {
-        String msNetworkCidr = configDao.getValue(ManagementServer.ManagementNetwork.key());
+        String msNetworkCidr = ManagementServer.ManagementNetwork.value();
         try {
             logger.debug(String.format("Trying to find management IP in CIDR range [%s].", msNetworkCidr));
             Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();

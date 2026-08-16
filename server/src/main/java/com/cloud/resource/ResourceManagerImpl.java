@@ -1232,7 +1232,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                         // If this cluster is of type vmware, and if the nexus vswitch
                         // global parameter setting is turned
                         // on, remove the row in cluster_vsm_map for this cluster id.
-                        if (hypervisorType == HypervisorType.VMware && Boolean.parseBoolean(_configDao.getValue(ManagementServer.VmwareUseNexusVSwitch.key()))) {
+                        if (hypervisorType == HypervisorType.VMware && ManagementServer.VmwareUseNexusVSwitch.value()) {
                             _clusterVSMMapDao.removeByClusterId(cmd.getId());
                         }
                         // remove from dedicated resources

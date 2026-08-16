@@ -5272,8 +5272,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             // Don't override if VM already has root/data disk controller detail
             if (vm.getDetail(VmDetailConstants.ROOT_DISK_CONTROLLER) == null) {
-                String vmwareRootDiskControllerTypeFromSetting = StringUtils.defaultIfEmpty(_configDao.getValue(ManagementServer.VmwareRootDiskControllerType.key()),
-                        ManagementServer.VmwareRootDiskControllerType.defaultValue());
+                String vmwareRootDiskControllerTypeFromSetting = ManagementServer.VmwareRootDiskControllerType.value();
                 vm.setDetail(VmDetailConstants.ROOT_DISK_CONTROLLER, vmwareRootDiskControllerTypeFromSetting);
             }
 
@@ -5630,7 +5629,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
 
             if (nic.getTrafficType() == TrafficType.Management) {
-                String mgmt_cidr = _configDao.getValue(ManagementServer.ManagementNetwork.key());
+                String mgmt_cidr = ManagementServer.ManagementNetwork.value();
                 if (NetUtils.isValidIp4Cidr(mgmt_cidr)) {
                     buf.append(" mgmtcidr=").append(mgmt_cidr);
                 }

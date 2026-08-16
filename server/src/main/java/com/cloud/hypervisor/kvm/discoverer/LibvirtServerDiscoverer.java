@@ -311,7 +311,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             KvmDummyResourceBase kvmResource = new KvmDummyResourceBase();
             Map<String, Object> params = new HashMap<String, Object>();
 
-            params.put("router.aggregation.command.each.timeout", _configDao.getValue(ManagementServer.RouterAggregationCommandEachTimeout.key()));
+            params.put("router.aggregation.command.each.timeout", String.valueOf(ManagementServer.RouterAggregationCommandEachTimeout.value()));
 
             params.put("zone", Long.toString(dcId));
             params.put("pod", Long.toString(podId));

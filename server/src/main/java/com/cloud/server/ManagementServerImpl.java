@@ -1149,8 +1149,8 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         }
 
         //Alerts purge configurations
-        final int alertPurgeInterval = NumbersUtil.parseInt(_configDao.getValue(AlertPurgeInterval.key()), 60 * 60 * 24); // 1 day.
-        _alertPurgeDelay = NumbersUtil.parseInt(_configDao.getValue(AlertPurgeDelay.key()), 0);
+        final int alertPurgeInterval = AlertPurgeInterval.value();
+        _alertPurgeDelay = AlertPurgeDelay.value();
         if (_alertPurgeDelay != 0) {
             _alertExecutor.scheduleAtFixedRate(new AlertPurgeTask(), alertPurgeInterval, alertPurgeInterval, TimeUnit.SECONDS);
         }
@@ -4867,10 +4867,10 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         final List<NetworkVO> networks = networkDao.listSecurityGroupEnabledNetworks();
         if (networks != null && !networks.isEmpty()) {
             securityGroupsEnabled = true;
-            final String elbEnabled = _configDao.getValue(ElasticLoadBalancerEnabled.key());
+            final String elbEnabled = ElasticLoadBalancerEnabled.value();
             elasticLoadBalancerEnabled = elbEnabled == null ? false : Boolean.parseBoolean(elbEnabled);
             if (elasticLoadBalancerEnabled) {
-                final String networkType = _configDao.getValue(ElasticLoadBalancerNetwork.key());
+                final String networkType = ElasticLoadBalancerNetwork.value();
                 if (networkType != null) {
                     supportELB = networkType;
                 }
@@ -4885,9 +4885,9 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         final boolean userPublicTemplateEnabled = TemplateManager.AllowPublicUserTemplates.valueIn(caller.getId());
 
         // add some parameters UI needs to handle API throttling
-        final boolean apiLimitEnabled = Boolean.parseBoolean(_configDao.getValue(ApiLimitEnabled.key()));
-        final Integer apiLimitInterval = Integer.valueOf(_configDao.getValue(ApiLimitInterval.key()));
-        final Integer apiLimitMax = Integer.valueOf(_configDao.getValue(ApiLimitMax.key()));
+        final boolean apiLimitEnabled = ApiLimitEnabled.value();
+        final Integer apiLimitInterval = ApiLimitInterval.value();
+        final Integer apiLimitMax = ApiLimitMax.value();
 
         final boolean allowUserViewDestroyedVM = (QueryService.AllowUserViewDestroyedVM.valueIn(caller.getId()) | isCallerAdmin);
         final boolean allowUserExpungeRecoverVM = (UserVmManager.AllowUserExpungeRecoverVm.valueIn(caller.getId()) | isCallerAdmin);
@@ -5108,7 +5108,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
     @Override
     public List<String> getHypervisors(final Long zoneId) {
         final List<String> result = new ArrayList<>();
-        final String hypers = _configDao.getValue(HypervisorList.key());
+        final String hypers = HypervisorList.value();
         final String[] hypervisors = hypers.split(",");
 
         if (zoneId != null) {
