@@ -376,7 +376,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                 } else if (vm.getHypervisorType() == HypervisorType.External) {
                     plannerName = "ExternalServerPlanner";
                 } else {
-                    plannerName = _configDao.getValue(VmDeploymentPlanner.key());
+                    plannerName = VmDeploymentPlanner.value();
                 }
             }
             planner = getDeploymentPlannerByName(plannerName);

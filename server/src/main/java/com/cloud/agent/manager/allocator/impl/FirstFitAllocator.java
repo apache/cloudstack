@@ -287,7 +287,7 @@ public class FirstFitAllocator extends BaseAllocator {
         double cpuToMemoryWeight = ConfigurationManager.HostCapacityTypeCpuMemoryWeight.value();
         // Get capacity by which we should reorder
         short capacityType = FirstFitPlanner.getHostCapacityTypeToOrderCluster(
-                _configDao.getValue(DeploymentClusterPlanner.HostCapacityTypeToOrderClusters.key()), cpuToMemoryWeight);
+                DeploymentClusterPlanner.HostCapacityTypeToOrderClusters.value(), cpuToMemoryWeight);
         logger.debug("CapacityType: {} is used for Host ordering", FirstFitPlanner.getCapacityTypeName(capacityType));
         if (capacityType >= 0) { // for CPU or RAM
             return _capacityDao.orderHostsByFreeCapacity(zoneId, clusterId, capacityType);
