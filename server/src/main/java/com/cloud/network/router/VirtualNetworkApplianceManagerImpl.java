@@ -548,7 +548,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         int routerRamSize = RouterRamSize.value();
         int routerCpuMHz = NumbersUtil.parseInt(configs.get("router.cpu.mhz"), DEFAULT_ROUTER_CPU_MHZ);
 
-        _routerExtraPublicNics = NumbersUtil.parseInt(_configDao.getValue(RouterExtraPublicNics.key()), 2);
+        _routerExtraPublicNics = RouterExtraPublicNics.value();
 
         String value = configs.get("router.stats.interval");
         _routerStatsInterval = NumbersUtil.parseInt(value, 300);
@@ -578,7 +578,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
         _disableRpFilter = NetworkRouterRpFilter.value();
 
-        _dnsBasicZoneUpdates = String.valueOf(_configDao.getValue(DnsBasicZoneUpdates.key()));
+        _dnsBasicZoneUpdates = DnsBasicZoneUpdates.value();
 
         logger.info("Router configurations: " + "ramsize=" + routerRamSize);
 
@@ -2178,7 +2178,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             buf.append(" guestbrd=").append(brd);
             buf.append(" guestcidrsize=").append(NetUtils.getCidrSize(guestNic.getIPv4Netmask()));
 
-            final int advertInt = NumbersUtil.parseInt(_configDao.getValue(RedundantRouterVrrpInterval.key()), 1);
+            final int advertInt = RedundantRouterVrrpInterval.value();
             buf.append(" advert_int=").append(advertInt);
         }
 
@@ -2221,7 +2221,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         if (isRedundant) {
             buf.append(" redundant_router=1");
 
-            final int advertInt = NumbersUtil.parseInt(_configDao.getValue(RedundantRouterVrrpInterval.key()), 1);
+            final int advertInt = RedundantRouterVrrpInterval.value();
             buf.append(" advert_int=").append(advertInt);
 
             final Long vpcId = router.getVpcId();
