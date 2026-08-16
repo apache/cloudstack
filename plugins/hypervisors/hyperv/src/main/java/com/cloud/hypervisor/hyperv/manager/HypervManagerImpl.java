@@ -80,7 +80,7 @@ public class HypervManagerImpl implements HypervManager {
             _storage = new JavaStorageLayer();
             _storage.configure("StorageLayer", params);
         }
-        _routerExtraPublicNics = NumbersUtil.parseInt(_configDao.getValue(VirtualNetworkApplianceManager.RouterExtraPublicNics.key()), 2);
+        _routerExtraPublicNics = VirtualNetworkApplianceManager.RouterExtraPublicNics.value();
         return true;
     }
 
