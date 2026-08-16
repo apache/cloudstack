@@ -2599,7 +2599,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         String workers = configs.get("expunge.workers");
         int wrks = NumbersUtil.parseInt(workers, 10);
-        capacityReleaseInterval = NumbersUtil.parseInt(_configDao.getValue(CapacitySkipcountingHours.key()), 3600);
+        capacityReleaseInterval = CapacitySkipcountingHours.value();
 
         String time = configs.get("expunge.interval");
         _expungeInterval = NumbersUtil.parseInt(time, 86400);
@@ -2628,8 +2628,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         VirtualMachine.State.getStateMachine().registerListener(new UserVmStateListener(_usageEventDao, _networkDao, _nicDao, serviceOfferingDao, _vmDao, this, _configDao));
 
-        String value = _configDao.getValue(SetVmInternalNameUsingDisplayName.key());
-        _instanceNameFlag = (value == null) ? false : Boolean.parseBoolean(value);
+        _instanceNameFlag = SetVmInternalNameUsingDisplayName.value();
 
         _scaleRetry = NumbersUtil.parseInt(configs.get(ScaleRetry.key()), 2);
 
