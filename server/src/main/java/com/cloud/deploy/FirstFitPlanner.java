@@ -182,7 +182,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
         } else {
             logger.debug("Searching all possible resources under this Zone: {}", dcDao.findById(plan.getDataCenterId()));
 
-            boolean applyAllocationAtPods = Boolean.parseBoolean(configDao.getValue(ApplyAllocationAlgorithmToPods.key()));
+            boolean applyAllocationAtPods = ApplyAllocationAlgorithmToPods.value();
             if (applyAllocationAtPods) {
                 //start scan at all pods under this zone.
                 clusterList = scanPodsForDestination(vmProfile, plan, avoid);
@@ -521,7 +521,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
     private Pair<List<Long>, Map<Long, Double>> getOrderedPodsByCapacity(long zoneId) {
         double cpuToMemoryWeight = ConfigurationManager.HostCapacityTypeCpuMemoryWeight.value();
         short capacityType = getHostCapacityTypeToOrderCluster(
-                configDao.getValue(HostCapacityTypeToOrderClusters.key()), cpuToMemoryWeight);
+                HostCapacityTypeToOrderClusters.value(), cpuToMemoryWeight);
 
         logger.debug("CapacityType: {} is used for Pod ordering", getCapacityTypeName(capacityType));
         if (capacityType >= 0) { // for capacityType other than COMBINED
@@ -556,7 +556,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
     private Pair<List<Long>, Map<Long, Double>> getOrderedClustersByCapacity(long id, long vmId, boolean isZone) {
         double cpuToMemoryWeight = ConfigurationManager.HostCapacityTypeCpuMemoryWeight.value();
         short capacityType = getHostCapacityTypeToOrderCluster(
-                configDao.getValue(HostCapacityTypeToOrderClusters.key()), cpuToMemoryWeight);
+                HostCapacityTypeToOrderClusters.value(), cpuToMemoryWeight);
 
         logger.debug("CapacityType: {} is used for Cluster ordering", getCapacityTypeName(capacityType));
         if (capacityType >= 0) { // for capacityType other than COMBINED
@@ -667,7 +667,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
         allocationAlgorithm = VmAllocationAlgorithm.value();
-        globalDeploymentPlanner = configDao.getValue(DeploymentPlanningManager.VmDeploymentPlanner.key());
+        globalDeploymentPlanner = DeploymentPlanningManager.VmDeploymentPlanner.value();
         String configValue;
         if ((configValue = configDao.getValue(ImplicitHostTags.key())) != null) {
             implicitHostTags = configValue.trim().split("\\s*,\\s*");
