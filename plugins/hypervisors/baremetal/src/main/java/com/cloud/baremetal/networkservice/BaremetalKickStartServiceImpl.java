@@ -219,7 +219,7 @@ public class BaremetalKickStartServiceImpl extends BareMetalPxeServiceBase imple
             throw new CloudRuntimeException(String.format("Cannot find Management NIC on virtual router[id:%s]", vr.getId()));
         }
 
-        String internalServerIp = _configDao.getValue(BaremetalManager.BaremetalInternalStorageServer.key());
+        String internalServerIp = BaremetalManager.BaremetalInternalStorageServer.value();
         if (internalServerIp == null) {
             throw new CloudRuntimeException(String.format("please specify 'baremetal.internal.storage.server.ip', which is the http server/nfs server storing kickstart files and ISO files, in global setting"));
         }
