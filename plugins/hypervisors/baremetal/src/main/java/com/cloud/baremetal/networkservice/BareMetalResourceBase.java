@@ -172,20 +172,20 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
 
         String ipmiIface = "default";
         try {
-            ipmiIface = configDao.getValue(BaremetalManager.BaremetalIpmiLanInterface.key());
+            ipmiIface = BaremetalManager.BaremetalIpmiLanInterface.value();
         } catch (Exception e) {
             logger.debug(e.getMessage(), e);
         }
 
         try {
-            ipmiRetryTimes = Integer.parseInt(configDao.getValue(BaremetalManager.BaremetalIpmiRetryTimes.key()));
+            ipmiRetryTimes = Integer.parseInt(BaremetalManager.BaremetalIpmiRetryTimes.value());
         } catch (Exception e) {
             logger.debug(e.getMessage(), e);
         }
 
         try {
             provisionDoneNotificationOn = ManagementServer.BaremetalProvisionDoneNotificationEnabled.value();
-            isProvisionDoneNotificationTimeout = Integer.parseInt(configDao.getValue(BaremetalManager.BaremetalProvisionDoneNotificationTimeout.key()));
+            isProvisionDoneNotificationTimeout = BaremetalManager.BaremetalProvisionDoneNotificationTimeout.value();
         } catch (Exception e) {
             logger.debug(e.getMessage(), e);
         }
