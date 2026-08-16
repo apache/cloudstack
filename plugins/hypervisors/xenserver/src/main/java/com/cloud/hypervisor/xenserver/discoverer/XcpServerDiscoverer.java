@@ -354,8 +354,8 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 params.put("router.aggregation.command.each.timeout", String.valueOf(ManagementServer.RouterAggregationCommandEachTimeout.value()));
                 params.put("wait", Integer.toString(_wait));
                 details.put("wait", Integer.toString(_wait));
-                params.put("migratewait", _configDao.getValue(AgentManager.MigrateWait.toString()));
-                params.put(AgentManager.XenServerMaxNics.toString().toLowerCase(), _configDao.getValue(AgentManager.XenServerMaxNics.toString()));
+                params.put("migratewait", String.valueOf(AgentManager.MigrateWait.value()));
+                params.put(AgentManager.XenServerMaxNics.toString().toLowerCase(), String.valueOf(AgentManager.XenServerMaxNics.value()));
                 params.put(ManagementServer.XenServerHeartBeatTimeout.key().toLowerCase(), String.valueOf(ManagementServer.XenServerHeartBeatTimeout.value()));
                 params.put(ManagementServer.XenServerHeartBeatInterval.key().toLowerCase(), String.valueOf(ManagementServer.XenServerHeartBeatInterval.value()));
                 params.put(AgentManager.InstanceName.toString().toLowerCase(), _instance);

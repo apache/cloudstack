@@ -315,7 +315,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             throw new ConfigurationException("Vmware component can only run under premium distribution");
         }
 
-        _instance = _configDao.getValue(AgentManager.InstanceName.key());
+        _instance = AgentManager.InstanceName.value();
         if (_instance == null) {
             _instance = "DEFAULT";
         }
