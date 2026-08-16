@@ -65,14 +65,6 @@ public interface User extends OwnedBy, InternalIdentity {
 
     public void setState(Account.State state);
 
-    public String getApiKey();
-
-    public void setApiKey(String apiKey);
-
-    public String getSecretKey();
-
-    public void setSecretKey(String secretKey);
-
     public String getTimezone();
 
     public void setTimezone(String timezone);

@@ -274,6 +274,9 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
     @Column(name = "mtu")
     private Integer mtu;
 
+    @Column(name = "is_nic_enabled")
+    private boolean isNicEnabled;
+
     public DomainRouterJoinVO() {
     }
 
@@ -576,5 +579,9 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
 
     public Integer getMtu() {
         return mtu;
+    }
+
+    public boolean isNicEnabled() {
+        return isNicEnabled;
     }
 }

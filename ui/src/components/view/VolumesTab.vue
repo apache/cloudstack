@@ -44,6 +44,10 @@
         <router-link v-if="record.storageid" :to="{ path: '/storagepool/' + encodeURIComponent(record.storageid) }">{{ text }}</router-link>
         <span v-else>{{ text }}</span>
       </template>
+      <template v-if="column.key === 'kmskey'">
+        <router-link v-if="record.kmskeyid" :to="{ path: '/kmskey/' + encodeURIComponent(record.kmskeyid) }">{{ text }}</router-link>
+        <span v-else>{{ text }}</span>
+      </template>
     </template>
   </a-table>
 </template>
@@ -80,7 +84,7 @@ export default {
     return {
       vm: {},
       volumes: [],
-      defaultColumns: ['name', 'state', 'type', 'size'],
+      defaultColumns: ['name', 'state', 'type', 'size', 'kmskey'],
       allColumns: [
         {
           key: 'name',
@@ -100,6 +104,11 @@ export default {
           key: 'size',
           title: this.$t('label.size'),
           dataIndex: 'size'
+        },
+        {
+          key: 'kmskey',
+          title: this.$t('label.kms.key'),
+          dataIndex: 'kmskey'
         },
         {
           key: 'storage',

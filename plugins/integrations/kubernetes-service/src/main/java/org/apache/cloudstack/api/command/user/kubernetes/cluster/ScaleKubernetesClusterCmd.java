@@ -57,7 +57,7 @@ public class ScaleKubernetesClusterCmd extends BaseAsyncCmd {
     @Inject
     public KubernetesClusterService kubernetesClusterService;
     @Inject
-    protected KubernetesServiceHelper kubernetesClusterHelper;
+    protected KubernetesServiceHelper kubernetesServiceHelper;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -114,7 +114,7 @@ public class ScaleKubernetesClusterCmd extends BaseAsyncCmd {
     }
 
     public Map<String, Long> getServiceOfferingNodeTypeMap() {
-        return kubernetesClusterHelper.getServiceOfferingNodeTypeMap(this.serviceOfferingNodeTypeMap);
+        return kubernetesServiceHelper.getServiceOfferingNodeTypeMap(this.serviceOfferingNodeTypeMap);
     }
 
     public Long getClusterSize() {

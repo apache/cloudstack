@@ -38,6 +38,8 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
+import com.cloud.network.NetworkModel;
+import org.apache.cloudstack.acl.ApiKeyPairVO;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
@@ -71,6 +73,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.schedule.ResourceScheduleManager;
 import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -112,7 +115,6 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.IpAddresses;
-import com.cloud.network.NetworkModel;
 import com.cloud.network.as.AutoScaleCounter.AutoScaleCounterParam;
 import com.cloud.network.as.dao.AutoScalePolicyConditionMapDao;
 import com.cloud.network.as.dao.AutoScalePolicyDao;
@@ -284,6 +286,8 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     private VirtualMachineManager virtualMachineManager;
     @Inject
     GuestOSDao guestOSDao;
+    @Inject
+    private ResourceScheduleManager resourceScheduleManager;
 
     private static final String PARAM_ROOT_DISK_SIZE = "rootdisksize";
     private static final String PARAM_DISK_OFFERING_ID = "diskofferingid";
@@ -518,15 +522,10 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             throw new InvalidParameterValueException("AutoScale User id does not belong to the same account");
         }
 
-        String apiKey = user.getApiKey();
-        String secretKey = user.getSecretKey();
+        ApiKeyPairVO latestKeypair = ApiDBUtils.searchForLatestUserKeyPair(user.getId());
 
-        if (apiKey == null) {
-            throw new InvalidParameterValueException("apiKey for user: " + user.getUsername() + " is empty. Please generate it");
-        }
-
-        if (secretKey == null) {
-            throw new InvalidParameterValueException("secretKey for user: " + user.getUsername() + " is empty. Please generate it");
+        if (latestKeypair == null) {
+            throw new InvalidParameterValueException(String.format("No API keypair for user [%s]. Please generate it.", user.getUsername()));
         }
 
         ApiServiceConfiguration.validateEndpointUrl();
@@ -1102,7 +1101,11 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
 
         if (autoScaleVmGroupVO.getState().equals(AutoScaleVmGroup.State.NEW)) {
             /* This condition is for handling failures during creation command */
-            return autoScaleVmGroupDao.remove(id);
+            boolean removed = autoScaleVmGroupDao.remove(id);
+            if (removed) {
+                resourceScheduleManager.removeSchedulesForResource(ApiCommandResourceType.AutoScaleVmGroup, id);
+            }
+            return removed;
         }
 
         if (!autoScaleVmGroupVO.getState().equals(AutoScaleVmGroup.State.DISABLED) && !Boolean.TRUE.equals(cleanup)) {
@@ -1172,6 +1175,8 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                     return false;
                 }
 
+                resourceScheduleManager.removeSchedulesForResource(ApiCommandResourceType.AutoScaleVmGroup, id);
+
                 logger.info("Successfully deleted autoscale vm group: {}", autoScaleVmGroupVO);
                 return success; // Successfull
             }
@@ -1235,6 +1240,22 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         return searchWrapper.search();
     }
 
+    @Override
+    public void validateMinMaxMembers(int minMembers, int maxMembers) {
+        if (minMembers <= 0) {
+            throw new InvalidParameterValueException(ApiConstants.MIN_MEMBERS + " is an invalid value: " + minMembers);
+        }
+
+        if (maxMembers <= 0) {
+            throw new InvalidParameterValueException(ApiConstants.MAX_MEMBERS + " is an invalid value: " + maxMembers);
+        }
+
+        if (minMembers > maxMembers) {
+            throw new InvalidParameterValueException(ApiConstants.MIN_MEMBERS + " (" + minMembers +
+                    ") cannot be greater than " + ApiConstants.MAX_MEMBERS + " (" + maxMembers + ")");
+        }
+    }
+
     @DB
     protected AutoScaleVmGroupVO checkValidityAndPersist(final AutoScaleVmGroupVO vmGroup, final List<Long> passedScaleUpPolicyIds,
         final List<Long> passedScaleDownPolicyIds) {
@@ -1253,18 +1274,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             ApiDBUtils.getAutoScaleVmGroupPolicyIds(vmGroup.getId(), currentScaleUpPolicyIds, currentScaleDownPolicyIds);
         }
 
-        if (minMembers <= 0) {
-            throw new InvalidParameterValueException(ApiConstants.MIN_MEMBERS + " is an invalid value: " + minMembers);
-        }
-
-        if (maxMembers <= 0) {
-            throw new InvalidParameterValueException(ApiConstants.MAX_MEMBERS + " is an invalid value: " + maxMembers);
-        }
-
-        if (minMembers > maxMembers) {
-            throw new InvalidParameterValueException(ApiConstants.MIN_MEMBERS + " (" + minMembers + ")cannot be greater than " + ApiConstants.MAX_MEMBERS + " (" +
-                maxMembers + ")");
-        }
+        validateMinMaxMembers(minMembers, maxMembers);
 
         if (interval <= 0) {
             throw new InvalidParameterValueException("interval is an invalid value: " + interval);
@@ -1345,10 +1355,10 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         AutoScaleVmGroupVO vmGroupVO = getEntityInDatabase(CallContext.current().getCallingAccount(), "AutoScale Vm Group", vmGroupId, autoScaleVmGroupDao);
         int currentInterval = vmGroupVO.getInterval();
 
-        boolean physicalParametersUpdate = (minMembers != null || maxMembers != null || (interval != null && interval != currentInterval) || CollectionUtils.isNotEmpty(scaleUpPolicyIds) || CollectionUtils.isNotEmpty(scaleDownPolicyIds));
+        boolean physicalParametersUpdate = ((interval != null && interval != currentInterval) || CollectionUtils.isNotEmpty(scaleUpPolicyIds) || CollectionUtils.isNotEmpty(scaleDownPolicyIds));
 
         if (physicalParametersUpdate && !vmGroupVO.getState().equals(AutoScaleVmGroup.State.DISABLED)) {
-            throw new InvalidParameterValueException("An AutoScale Vm Group can be updated with minMembers/maxMembers/Interval only when it is in disabled state");
+            throw new InvalidParameterValueException("An AutoScale Vm Group can be updated with Interval/Policies only when it is in disabled state");
         }
 
         if (StringUtils.isNotBlank(name)) {
@@ -1472,7 +1482,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         }
 
         // Validate Provider
-        Network.Provider provider = Network.Provider.getProvider(cmd.getProvider());
+        Network.Provider provider = networkModel.resolveProvider(cmd.getProvider());
         if (provider == null) {
             throw new InvalidParameterValueException("The Provider " + cmd.getProvider() + " does not exist; Unable to create Counter");
         }
@@ -1541,7 +1551,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         }
         String providerStr = cmd.getProvider();
         if (providerStr != null) {
-            Network.Provider provider = Network.Provider.getProvider(providerStr);
+            Network.Provider provider = networkModel.resolveProvider(providerStr);
             if (provider == null) {
                 throw new InvalidParameterValueException("The Provider " + providerStr + " does not exist; Unable to list Counter");
             }
@@ -1837,7 +1847,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                         vmDisplayName, diskOfferingId, dataDiskSize, null, null,
                         hypervisorType, HTTPMethod.GET, userData, userDataId, userDataDetails, sshKeyPairs,
                         null, null, true, null, affinityGroupIdList, customParameters, null, null, null,
-                        null, true, overrideDiskOfferingId, null, null);
+                        null, true, overrideDiskOfferingId, null, null, null);
             } else {
                 if (networkModel.checkSecurityGroupSupportForNetwork(owner, zone, networkIds,
                         Collections.emptyList())) {
@@ -1845,13 +1855,13 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                             owner, vmHostName, vmDisplayName, diskOfferingId, dataDiskSize, null, null,
                             hypervisorType, HTTPMethod.GET, userData, userDataId, userDataDetails, sshKeyPairs,
                             null, null, true, null, affinityGroupIdList, customParameters, null, null, null,
-                            null, true, overrideDiskOfferingId, null, null, null);
+                            null, true, overrideDiskOfferingId, null, null, null, null);
                 } else {
                     vm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, networkIds, owner, vmHostName, vmDisplayName,
                             diskOfferingId, dataDiskSize, null, null,
                             hypervisorType, HTTPMethod.GET, userData, userDataId, userDataDetails, sshKeyPairs,
                             null, addrs, true, null, affinityGroupIdList, customParameters, null, null, null,
-                            null, true, null, overrideDiskOfferingId, null, null);
+                            null, true, null, overrideDiskOfferingId, null, null, null);
                 }
             }
 
@@ -2016,7 +2026,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     private UserVmVO startNewVM(long vmId) {
         try {
             CallContext.current().setEventDetails("Instance ID: " + vmId);
-            return userVmMgr.startVirtualMachine(vmId, null, new HashMap<>(), null).first();
+            return userVmMgr.startVirtualMachine(vmId, null, new HashMap<>(), null, false).first();
         } catch (final ResourceUnavailableException ex) {
             logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
@@ -2055,7 +2065,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         }
         lstVmId.add(new Long(vmId));
         try {
-            return loadBalancingRulesService.assignToLoadBalancer(lbId, lstVmId, new HashMap<>(), true);
+            return loadBalancingRulesService.assignToLoadBalancer(lbId, lstVmId, new HashMap<>(), null, true);
         } catch (CloudRuntimeException ex) {
             logger.warn("Caught exception: ", ex);
             return false;

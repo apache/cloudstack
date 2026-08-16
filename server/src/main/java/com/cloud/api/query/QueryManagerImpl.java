@@ -31,20 +31,28 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
-import com.cloud.dc.Pod;
+import com.cloud.network.PublicIpQuarantine;
+import com.cloud.network.dao.PublicIpQuarantineDao;
+import com.cloud.network.vo.PublicIpQuarantineVO;
+import com.cloud.user.UserVO;
+import org.apache.cloudstack.acl.RoleService;
+import org.apache.cloudstack.acl.RoleVO;
+import org.apache.cloudstack.acl.dao.RoleDao;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.Pod;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.org.Cluster;
 import com.cloud.server.ManagementService;
 import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
 import com.cloud.cluster.ManagementServerHostPeerJoinVO;
 
+import com.cloud.vm.UserVmManager;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker;
@@ -89,6 +97,7 @@ import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.address.ListQuarantinedIpsCmd;
 import org.apache.cloudstack.api.command.user.affinitygroup.ListAffinityGroupsCmd;
+import org.apache.cloudstack.api.command.user.backup.ListBackupServiceJobsCmd;
 import org.apache.cloudstack.api.command.user.bucket.ListBucketsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.api.command.user.iso.ListIsosCmd;
@@ -111,6 +120,7 @@ import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.command.user.zone.ListZonesCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
+import org.apache.cloudstack.api.response.BackupServiceJobResponse;
 import org.apache.cloudstack.api.response.BucketResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.DetailOptionsResponse;
@@ -148,7 +158,12 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VirtualMachineResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.backup.InternalBackupServiceJobType;
+import org.apache.cloudstack.backup.InternalBackupServiceJobVO;
 import org.apache.cloudstack.backup.BackupOfferingVO;
+import org.apache.cloudstack.backup.BackupVO;
+import org.apache.cloudstack.backup.dao.InternalBackupServiceJobDao;
+import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -178,6 +193,7 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.utils.baremetal.BaremetalUtils;
 import org.apache.cloudstack.vm.lease.VMLeaseManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -262,7 +278,6 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.PublicIpQuarantine;
 import com.cloud.network.RouterHealthCheckResult;
 import com.cloud.network.VNF;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
@@ -272,13 +287,11 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.dao.PublicIpQuarantineDao;
 import com.cloud.network.dao.RouterHealthCheckResultDao;
 import com.cloud.network.dao.RouterHealthCheckResultVO;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.security.SecurityGroupVMMapVO;
 import com.cloud.network.security.dao.SecurityGroupVMMapDao;
-import com.cloud.network.vo.PublicIpQuarantineVO;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Grouping;
@@ -369,13 +382,16 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
 
 @Component
-public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements QueryService, Configurable {
+public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements QueryService, Configurable, ResourceIdSupport {
 
 
     private static final String ID_FIELD = "id";
 
     @Inject
     AccountManager accountMgr;
+
+    @Inject
+    RoleService roleService;
 
     @Inject
     ProjectManager _projectMgr;
@@ -646,6 +662,15 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Inject
     ExtensionHelper extensionHelper;
 
+    @Inject
+    RoleDao roleDao;
+
+    @Inject
+    private InternalBackupServiceJobDao internalBackupServiceJobDao;
+
+    @Inject
+    private BackupDao backupDao;
+
     /*
      * (non-Javadoc)
      *
@@ -826,6 +851,37 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     }
 
     @Override
+    public List<Long> searchForAccessibleUsers() {
+        List<Long> permittedAccounts = new ArrayList<>();
+        Account callingAccount = CallContext.current().getCallingAccount();
+        Filter searchFilter = new Filter(UserAccountJoinVO.class, "id", true);
+        List<RoleVO> allowedRoles = roleDao.listAll();
+        roleService.removeRolesIfNeeded(allowedRoles);
+        List<Long> allowedRolesId = allowedRoles.stream().map(RoleVO::getId).collect(Collectors.toList());
+
+        Pair<List<UserAccountJoinVO>, Integer> usersPair = getUserListInternal(callingAccount, permittedAccounts,
+                true, null, null, null, null, null, null, null, callingAccount.getDomainId(), true, searchFilter, null);
+        return usersPair.first().stream().filter(userAccount -> {
+            if (BaremetalUtils.BAREMETAL_SYSTEM_ACCOUNT_NAME.equals(userAccount.getUsername()) && !accountMgr.isRootAdmin(callingAccount.getId())) {
+                return false;
+            }
+
+            AccountVO accountVO = _accountDao.findByIdIncludingRemoved(userAccount.getAccountId());
+            UserVO userVO = userDao.findByIdIncludingRemoved(userAccount.getId());
+            if (ObjectUtils.anyNull(accountVO, userVO)) {
+                return false;
+            }
+
+            try {
+                accountMgr.checkCallerRoleTypeAllowedForUserOrAccountOperations(accountVO, userVO);
+            } catch (PermissionDeniedException exception) {
+                return false;
+            }
+            return allowedRolesId.contains(userAccount.getAccountRoleId());
+        }).map(UserAccountJoinVO::getId).collect(Collectors.toList());
+    }
+
+    @Override
     public ListResponse<EventResponse> searchForEvents(ListEventsCmd cmd) {
         Pair<List<EventJoinVO>, Integer> result = searchForEventsInternal(cmd);
         ListResponse<EventResponse> response = new ListResponse<>();
@@ -868,25 +924,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Integer entryTime = cmd.getEntryTime();
         Integer duration = cmd.getDuration();
         Long startId = cmd.getStartId();
-        final String resourceUuid = cmd.getResourceId();
-        final String resourceTypeStr = cmd.getResourceType();
+        final String resourceUuid = getResourceUuid(cmd.getResourceId());
+        final ApiCommandResourceType resourceType = getResourceType(cmd.getResourceType());
         final String stateStr = cmd.getState();
-        ApiCommandResourceType resourceType = null;
         Long resourceId = null;
-        if (resourceTypeStr != null) {
-            resourceType = ApiCommandResourceType.fromString(resourceTypeStr);
-            if (resourceType == null) {
-                throw new InvalidParameterValueException(String.format("Invalid %s", ApiConstants.RESOURCE_TYPE));
-            }
-        }
         if (resourceUuid != null) {
-            if (resourceTypeStr == null) {
+            if (resourceType == null) {
                 throw new InvalidParameterValueException(String.format("%s parameter must be used with %s parameter", ApiConstants.RESOURCE_ID, ApiConstants.RESOURCE_TYPE));
-            }
-            try {
-                UUID.fromString(resourceUuid);
-            } catch (IllegalArgumentException ex) {
-                throw new InvalidParameterValueException(String.format("Invalid %s", ApiConstants.RESOURCE_ID));
             }
             Object object = entityManager.findByUuidIncludingRemoved(resourceType.getAssociatedClass(), resourceUuid);
             if (object instanceof InternalIdentity) {
@@ -2636,6 +2680,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Long clusterId = cmd.getClusterId();
         Long serviceOfferingId = cmd.getServiceOfferingId();
         Long diskOfferingId = cmd.getDiskOfferingId();
+        Long kmsKeyId = cmd.getKmsKeyId();
         Boolean display = cmd.getDisplay();
         String state = cmd.getState();
         boolean shouldListSystemVms = shouldListSystemVms(cmd, caller.getId());
@@ -2672,6 +2717,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         volumeSearchBuilder.and("uuid", volumeSearchBuilder.entity().getUuid(), SearchCriteria.Op.NNULL);
         volumeSearchBuilder.and("instanceId", volumeSearchBuilder.entity().getInstanceId(), SearchCriteria.Op.EQ);
         volumeSearchBuilder.and("dataCenterId", volumeSearchBuilder.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        volumeSearchBuilder.and("kmsKeyId", volumeSearchBuilder.entity().getKmsKeyId(), SearchCriteria.Op.EQ);
         if (cmd.isEncrypted() != null) {
             if (cmd.isEncrypted()) {
                 volumeSearchBuilder.and("encryptFormat", volumeSearchBuilder.entity().getEncryptFormat(), SearchCriteria.Op.NNULL);
@@ -2795,6 +2841,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
         if (vmInstanceId != null) {
             sc.setParameters("instanceId", vmInstanceId);
+        }
+        if (kmsKeyId != null) {
+            sc.setParameters("kmsKeyId", kmsKeyId);
         }
         if (zoneId != null) {
             sc.setParameters("dataCenterId", zoneId);
@@ -3231,6 +3280,18 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (cmd.getManagementServerId() != null) {
             ManagementServerHostVO msHost = msHostDao.findById(cmd.getManagementServerId());
             sc.setParameters("executingMsid", msHost.getMsid());
+        }
+
+        if (cmd.getResourceType() != null) {
+            ApiCommandResourceType resourceType = getResourceType(cmd.getResourceType());
+            sc.addAnd("instanceType", SearchCriteria.Op.EQ, resourceType.toString());
+
+            final String resourceId = getResourceUuid(cmd.getResourceId());
+            if (resourceId != null) {
+                sc.addAnd("instanceUuid", SearchCriteria.Op.EQ, resourceId);
+            }
+        } else if (cmd.getResourceId() != null) {
+            throw new InvalidParameterValueException(String.format("%s parameter must be used with %s parameter", ApiConstants.RESOURCE_ID, ApiConstants.RESOURCE_TYPE));
         }
 
         return _jobJoinDao.searchAndCount(sc, searchFilter);
@@ -4359,6 +4420,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         List<String> hostTags = new ArrayList<>();
         if (currentVmOffering != null) {
             hostTags.addAll(com.cloud.utils.StringUtils.csvTagsToList(currentVmOffering.getHostTag()));
+            if (UserVmManager.AllowDifferentHostTagsOfferingsForVmScale.value()) {
+                addVmCurrentClusterHostTags(vmInstance, hostTags);
+            }
         }
 
         if (!hostTags.isEmpty()) {
@@ -4370,7 +4434,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                     flag = false;
                     serviceOfferingSearch.op("hostTag" + tag, serviceOfferingSearch.entity().getHostTag(), Op.FIND_IN_SET);
                 } else {
-                    serviceOfferingSearch.and("hostTag" + tag, serviceOfferingSearch.entity().getHostTag(), Op.FIND_IN_SET);
+                    serviceOfferingSearch.or("hostTag" + tag, serviceOfferingSearch.entity().getHostTag(), Op.FIND_IN_SET);
                 }
             }
             serviceOfferingSearch.cp().cp();
@@ -4513,6 +4577,30 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Integer count = uniquePair.second();
         List<Long> offeringIds = uniquePair.first().stream().map(ServiceOfferingVO::getId).collect(Collectors.toList());
         return new Pair<>(offeringIds, count);
+    }
+
+    protected void addVmCurrentClusterHostTags(VMInstanceVO vmInstance, List<String> hostTags) {
+        if (vmInstance == null) {
+            return;
+        }
+        Long hostId = vmInstance.getHostId() == null ? vmInstance.getLastHostId() : vmInstance.getHostId();
+        if (hostId == null) {
+            return;
+        }
+        HostVO host = hostDao.findById(hostId);
+        if (host == null) {
+            logger.warn("Unable to find host with id " + hostId);
+            return;
+        }
+        List<String> clusterTags = _hostTagDao.listByClusterId(host.getClusterId());
+        if (CollectionUtils.isEmpty(clusterTags)) {
+            logger.debug("No host tags defined for hosts in the cluster " + host.getClusterId());
+            return;
+        }
+        Set<String> existingTagsSet = new HashSet<>(hostTags);
+        clusterTags.stream()
+                .filter(tag -> !existingTagsSet.contains(tag))
+                .forEach(hostTags::add);
     }
 
     @Override
@@ -4965,16 +5053,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 ex.addProxyObject(template.getUuid(), "templateId");
                 throw ex;
             }
+
             if (!template.isPublicTemplate() && caller.getType() == Account.Type.DOMAIN_ADMIN) {
                 Account template_acc = accountMgr.getAccount(template.getAccountId());
                 DomainVO domain = _domainDao.findById(template_acc.getDomainId());
                 accountMgr.checkAccess(caller, domain);
-            }
-
-            // if template is not public, perform permission check here
-            else if (!template.isPublicTemplate() && caller.getType() != Account.Type.ADMIN) {
-                accountMgr.checkAccess(caller, null, false, template);
-            } else if (template.isPublicTemplate()) {
+            } else if (template.isPublicTemplate() || caller.getType() != Account.Type.ADMIN) {
+                // if template is not public or non-admin caller, perform permission check here
                 accountMgr.checkAccess(caller, null, false, template);
             }
 
@@ -5429,6 +5514,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             options.put(VmDetailConstants.GUEST_CPU_MODEL, Collections.emptyList());
             options.put(VmDetailConstants.KVM_GUEST_OS_MACHINE_TYPE, Collections.emptyList());
             options.put(VmDetailConstants.KVM_SKIP_FORCE_DISK_CONTROLLER, Arrays.asList("true", "false"));
+            options.put(VmDetailConstants.VALIDATION_COMMAND, Collections.emptyList());
+            options.put(VmDetailConstants.VALIDATION_COMMAND_ARGUMENTS, Collections.emptyList());
+            options.put(VmDetailConstants.VALIDATION_COMMAND_EXPECTED_RESULT, Collections.emptyList());
+            options.put(VmDetailConstants.VALIDATION_COMMAND_TIMEOUT, Collections.emptyList());
+            options.put(VmDetailConstants.VALIDATION_BOOT_TIMEOUT, Collections.emptyList());
+            options.put(VmDetailConstants.VALIDATION_SCREENSHOT_WAIT, Collections.emptyList());
+
         }
 
         if (HypervisorType.VMware.equals(hypervisorType)) {
@@ -6284,6 +6376,34 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     }
 
     @Override
+    public ListResponse<BackupServiceJobResponse> listBackupServiceJobs(ListBackupServiceJobsCmd cmd) {
+        ListResponse<BackupServiceJobResponse> responses = new ListResponse<>();
+        Pair<List<InternalBackupServiceJobVO>, Integer> result = listBackupServiceJobsInternal(cmd);
+        List<BackupServiceJobResponse> compressionJobResponses = new ArrayList<>();
+
+        for (InternalBackupServiceJobVO jobVO : result.first()) {
+            BackupVO backup = backupDao.findByIdIncludingRemoved(jobVO.getBackupId());
+            DataCenterVO zone = dataCenterDao.findByIdIncludingRemoved(jobVO.getZoneId());
+
+            BackupServiceJobResponse response =  new BackupServiceJobResponse(jobVO.getId(), backup.getUuid(), zone.getUuid(), jobVO.getAttempts(),
+                    jobVO.getType().toString(), jobVO.getStartTime(), jobVO.getScheduledStartTime(), jobVO.getRemoved());
+
+            if (jobVO.getHostId() != null) {
+                response.setHostId(hostDao.findByIdIncludingRemoved(jobVO.getHostId()).getUuid());
+            }
+            compressionJobResponses.add(response);
+        }
+
+        responses.setResponses(compressionJobResponses, result.second());
+        return responses;
+    }
+
+    private Pair<List<InternalBackupServiceJobVO>, Integer> listBackupServiceJobsInternal(ListBackupServiceJobsCmd cmd) {
+        return internalBackupServiceJobDao.searchAndCountForListApi(cmd.getId(), cmd.getBackupId(), cmd.getHostId(), cmd.getZoneId(),
+                InternalBackupServiceJobType.valueOf(cmd.getType()), cmd.getExecuting(), cmd.getScheduled(), cmd.getStartIndex(), cmd.getPageSizeVal());
+    }
+
+    @Override
     public String getConfigComponentName() {
         return QueryService.class.getSimpleName();
     }
@@ -6292,5 +6412,15 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {AllowUserViewDestroyedVM, UserVMDeniedDetails, UserVMReadOnlyDetails, SortKeyAscending,
                 AllowUserViewAllDomainAccounts, AllowUserViewAllDataCenters, SharePublicTemplatesWithOtherDomains, ReturnVmStatsOnVmList};
+    }
+
+    @Override
+    public EntityManager getEntityManager() {
+        return entityManager;
+    }
+
+    @Override
+    public AccountManager getAccountManager() {
+        return accountMgr;
     }
 }

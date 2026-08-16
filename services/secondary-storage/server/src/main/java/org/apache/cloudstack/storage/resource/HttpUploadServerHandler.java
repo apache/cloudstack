@@ -130,6 +130,7 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
         if (decoder != null) {
             decoder.cleanFiles();
         }
+        storageResource.deregisterUploadChannel(uuid);
         requestProcessed = false;
     }
 
@@ -182,6 +183,7 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
                     requestProcessed = true;
                     return;
                 }
+                storageResource.registerUploadChannel(uuid, ctx.channel());
                 //set the base directory to download the file
                 DiskFileUpload.baseDirectory = uploadEntity.getInstallPathPrefix();
                 this.processTimeout = uploadEntity.getProcessTimeout();

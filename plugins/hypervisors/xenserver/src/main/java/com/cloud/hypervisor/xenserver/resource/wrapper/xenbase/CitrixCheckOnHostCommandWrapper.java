@@ -31,6 +31,6 @@ public final class CitrixCheckOnHostCommandWrapper extends CommandWrapper<CheckO
 
     @Override
     public Answer execute(final CheckOnHostCommand command, final CitrixResourceBase citrixResourceBase) {
-        return new CheckOnHostAnswer(command, "Not Implmeneted");
+        return new CheckOnHostAnswer(command, "Not Implemented");
     }
 }

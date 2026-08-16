@@ -47,6 +47,7 @@ import org.apache.cloudstack.affinity.AffinityGroupVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.admin.autoscale.CreateCounterCmd;
@@ -62,6 +63,7 @@ import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.schedule.ResourceScheduleManager;
 import org.apache.cloudstack.userdata.UserDataManager;
 import org.junit.After;
 import org.junit.Assert;
@@ -76,6 +78,9 @@ import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.cloud.api.ApiDBUtils;
+import org.apache.cloudstack.acl.ApiKeyPairVO;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.PerformanceMonitorAnswer;
 import com.cloud.agent.api.PerformanceMonitorCommand;
@@ -265,9 +270,16 @@ public class AutoScaleManagerImplTest {
     VirtualMachineManager virtualMachineManager;
     @Mock
     GuestOSDao guestOSDao;
+    @Mock
+    ResourceScheduleManager resourceScheduleManager;
+
+    @Mock
+    NetworkOrchestrationService networkOrchestrationService;
 
     AccountVO account;
     UserVO user;
+
+    MockedStatic<ApiDBUtils> mockedApiDBUtils;
 
     final static String INVALID = "invalid";
 
@@ -415,10 +427,17 @@ public class AutoScaleManagerImplTest {
         when(conditionDao.findById(any())).thenReturn(conditionMock);
         when(conditionDao.persist(any(ConditionVO.class))).thenReturn(conditionMock);
 
+        when(networkModel.resolveProvider(counterProvider)).thenReturn(Network.Provider.VirtualRouter);
+
         when(accountManager.finalizeOwner(nullable(Account.class), nullable(String.class), nullable(Long.class), nullable(Long.class))).thenReturn(account);
         Mockito.doNothing().when(accountManager).checkAccess(Mockito.any(Account.class), Mockito.isNull(), Mockito.anyBoolean(), Mockito.any());
 
         when(asPolicyDao.persist(any(AutoScalePolicyVO.class))).thenReturn(asScaleUpPolicyMock);
+        mockedApiDBUtils = Mockito.mockStatic(ApiDBUtils.class);
+        ApiKeyPairVO ret = new ApiKeyPairVO();
+        ret.setSecretKey("secretkey");
+        ret.setApiKey("apikey");
+        when(ApiDBUtils.searchForLatestUserKeyPair(Mockito.any())).thenReturn(ret);
 
         userDataDetails.put("0", new HashMap<>() {{ put("key1", "value1"); put("key2", "value2"); }});
         Mockito.doReturn(userDataFinal).when(userVmMgr).finalizeUserData(any(), any(), any());
@@ -432,6 +451,7 @@ public class AutoScaleManagerImplTest {
 
     @After
     public void tearDown() {
+        mockedApiDBUtils.close();
         CallContext.unregister();
     }
 
@@ -879,9 +899,6 @@ public class AutoScaleManagerImplTest {
     public void testCheckAutoScaleUserSucceed() throws NoSuchFieldException, IllegalAccessException {
         when(userDao.findById(any())).thenReturn(userMock);
         when(userMock.getAccountId()).thenReturn(accountId);
-        when(userMock.getApiKey()).thenReturn(autoScaleUserApiKey);
-        when(userMock.getSecretKey()).thenReturn(autoScaleUserSecretKey);
-
         final Field f = ConfigKey.class.getDeclaredField("_defaultValue");
         f.setAccessible(true);
         f.set(ApiServiceConfiguration.ApiServletPath, "http://10.10.10.10:8080/client/api");
@@ -892,43 +909,22 @@ public class AutoScaleManagerImplTest {
     @Test(expected = InvalidParameterValueException.class)
     public void testCheckAutoScaleUserFail1() {
         when(userDao.findById(any())).thenReturn(userMock);
-        when(userMock.getAccountId()).thenReturn(accountId);
-        when(userMock.getApiKey()).thenReturn(autoScaleUserApiKey);
-        when(userMock.getSecretKey()).thenReturn(null);
-
-        autoScaleManagerImplSpy.checkAutoScaleUser(autoScaleUserId, accountId);
-    }
-
-    @Test(expected = InvalidParameterValueException.class)
-    public void testCheckAutoScaleUserFail2() {
-        when(userDao.findById(any())).thenReturn(userMock);
-        when(userMock.getAccountId()).thenReturn(accountId);
-        when(userMock.getApiKey()).thenReturn(null);
-
-        autoScaleManagerImplSpy.checkAutoScaleUser(autoScaleUserId, accountId);
-    }
-
-    @Test(expected = InvalidParameterValueException.class)
-    public void testCheckAutoScaleUserFail3() {
-        when(userDao.findById(any())).thenReturn(userMock);
         when(userMock.getAccountId()).thenReturn(accountId + 1L);
 
         autoScaleManagerImplSpy.checkAutoScaleUser(autoScaleUserId, accountId);
     }
 
     @Test(expected = InvalidParameterValueException.class)
-    public void testCheckAutoScaleUserFail4() {
+    public void testCheckAutoScaleUserFail2() {
         when(userDao.findById(any())).thenReturn(null);
 
         autoScaleManagerImplSpy.checkAutoScaleUser(autoScaleUserId, accountId);
     }
 
     @Test(expected = InvalidParameterValueException.class)
-    public void testCheckAutoScaleUserFail5() throws NoSuchFieldException, IllegalAccessException {
+    public void testCheckAutoScaleUserFail3() throws NoSuchFieldException, IllegalAccessException {
         when(userDao.findById(any())).thenReturn(userMock);
         when(userMock.getAccountId()).thenReturn(accountId);
-        when(userMock.getApiKey()).thenReturn(autoScaleUserApiKey);
-        when(userMock.getSecretKey()).thenReturn(autoScaleUserSecretKey);
 
         final Field f = ConfigKey.class.getDeclaredField("_defaultValue");
         f.setAccessible(true);
@@ -1046,7 +1042,6 @@ public class AutoScaleManagerImplTest {
         when(asVmGroupMock.getInterval()).thenReturn(interval);
         when(asVmGroupMock.getMaxMembers()).thenReturn(maxMembers);
         when(asVmGroupMock.getMinMembers()).thenReturn(minMembers);
-        when(asVmGroupMock.getState()).thenReturn(AutoScaleVmGroup.State.DISABLED);
         when(asVmGroupMock.getProfileId()).thenReturn(vmProfileId);
         when(asVmGroupMock.getLoadBalancerId()).thenReturn(loadBalancerId);
 
@@ -1096,7 +1091,6 @@ public class AutoScaleManagerImplTest {
 
         when(autoScaleVmGroupDao.findById(vmGroupId)).thenReturn(asVmGroupMock);
         when(asVmGroupMock.getInterval()).thenReturn(interval);
-        when(asVmGroupMock.getState()).thenReturn(AutoScaleVmGroup.State.ENABLED);
 
         AutoScaleVmGroup vmGroup = autoScaleManagerImplSpy.updateAutoScaleVmGroup(cmd);
     }
@@ -1223,6 +1217,7 @@ public class AutoScaleManagerImplTest {
         Mockito.verify(autoScaleManagerImplSpy).configureAutoScaleVmGroup(vmGroupId, AutoScaleVmGroup.State.ENABLED);
         Mockito.verify(annotationDao).removeByEntityType(AnnotationService.EntityType.AUTOSCALE_VM_GROUP.name(), vmGroupUuid);
         Mockito.verify(autoScaleManagerImplSpy).cancelMonitorTask(vmGroupId);
+        Mockito.verify(resourceScheduleManager).removeSchedulesForResource(ApiCommandResourceType.AutoScaleVmGroup, vmGroupId);
     }
 
     @Test
@@ -1281,7 +1276,7 @@ public class AutoScaleManagerImplTest {
         when(zoneMock.getNetworkType()).thenReturn(DataCenter.NetworkType.Basic);
         when(userVmService.createBasicSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), any(), eq(userData), eq(userDataId), eq(userDataDetails.toString()), any(), any(), any(), eq(true), any(), any(), any(),
-                any(), any(), any(), any(), eq(true), any(), any(), any())).thenReturn(userVmMock);
+                any(), any(), any(), any(), eq(true), any(), any(), any(), any())).thenReturn(userVmMock);
 
         UserVm result = autoScaleManagerImplSpy.createNewVM(asVmGroupMock);
 
@@ -1292,7 +1287,7 @@ public class AutoScaleManagerImplTest {
         Mockito.verify(userVmService).createBasicSecurityGroupVirtualMachine(any(), any(), any(), any(), any(),
                 matches(vmHostNamePattern), matches(vmHostNamePattern),
                 any(), any(), any(), any(), any(), any(), eq(userData), eq(userDataId), eq(userDataDetails.toString()), any(), any(), any(), eq(true), any(), any(), any(),
-                any(), any(), any(), any(), eq(true), any(), any(), any());
+                any(), any(), any(), any(), eq(true), any(), any(), any(), any());
         Mockito.verify(asVmGroupMock).setNextVmSeq(nextVmSeq + 1);
     }
 
@@ -1328,7 +1323,7 @@ public class AutoScaleManagerImplTest {
         when(zoneMock.getNetworkType()).thenReturn(DataCenter.NetworkType.Advanced);
         when(userVmService.createAdvancedSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), any(), any(), eq(userData), eq(userDataId), eq(userDataDetails.toString()), any(), any(), any(), any(), any(), any(),
-                any(), any(), any(), any(), any(), eq(true), any(), any(), any(), any())).thenReturn(userVmMock);
+                any(), any(), any(), any(), any(), eq(true), any(), any(), any(), any(), any())).thenReturn(userVmMock);
         when(networkModel.checkSecurityGroupSupportForNetwork(account, zoneMock,
                 List.of(networkId), Collections.emptyList())).thenReturn(true);
 
@@ -1341,7 +1336,7 @@ public class AutoScaleManagerImplTest {
         Mockito.verify(userVmService).createAdvancedSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(),
                 matches(vmHostNamePattern), matches(vmHostNamePattern),
                 any(), any(), any(), any(), any(), any(), eq(userData), eq(userDataId), eq(userDataDetails.toString()), any(), any(), any(), any(), any(), any(),
-                any(), any(), any(), any(), any(), eq(true), any(), any(), any(), any());
+                any(), any(), any(), any(), any(), eq(true), any(), any(), any(), any(), any());
         Mockito.verify(asVmGroupMock).setNextVmSeq(nextVmSeq + 2);
     }
 
@@ -1377,7 +1372,7 @@ public class AutoScaleManagerImplTest {
         when(zoneMock.getNetworkType()).thenReturn(DataCenter.NetworkType.Advanced);
         when(userVmService.createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), any(), eq(userData), eq(userDataId), eq(userDataDetails.toString()), any(), any(), any(), eq(true), any(), any(), any(),
-                any(), any(), any(), any(), eq(true), any(), any(), any(), any())).thenReturn(userVmMock);
+                any(), any(), any(), any(), eq(true), any(), any(), any(), any(), any())).thenReturn(userVmMock);
         when(networkModel.checkSecurityGroupSupportForNetwork(account, zoneMock,
                 List.of(networkId), Collections.emptyList())).thenReturn(false);
 
@@ -1390,7 +1385,7 @@ public class AutoScaleManagerImplTest {
         Mockito.verify(userVmService).createAdvancedVirtualMachine(any(), any(), any(), any(), any(),
                 matches(vmHostNamePattern), matches(vmHostNamePattern),
                 any(), any(), any(), any(), any(), any(), eq(userData), eq(userDataId), eq(userDataDetails.toString()), any(), any(), any(), eq(true), any(), any(), any(),
-                any(), any(), any(), any(), eq(true), any(), any(), any(), any());
+                any(), any(), any(), any(), eq(true), any(), any(), any(), any(), any());
         Mockito.verify(asVmGroupMock).setNextVmSeq(nextVmSeq + 3);
     }
 
@@ -1520,14 +1515,15 @@ public class AutoScaleManagerImplTest {
             when(lbVmMapDao.listByLoadBalancerId(loadBalancerId)).thenReturn(Arrays.asList(loadBalancerVMMapMock));
             when(loadBalancerVMMapMock.getInstanceId()).thenReturn(virtualMachineId + 1);
 
-            when(loadBalancingRulesService.assignToLoadBalancer(anyLong(), any(), any(), eq(true))).thenReturn(true);
-            Mockito.doReturn(new Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>>(userVmMock, null)).when(userVmMgr).startVirtualMachine(virtualMachineId, null, new HashMap<>(), null);
+            when(loadBalancingRulesService.assignToLoadBalancer(anyLong(), any(), any(), any(), eq(true))).thenReturn(true);
+            Mockito.doReturn(new Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>>(userVmMock, null)).when(userVmMgr).startVirtualMachine(virtualMachineId, null,
+                    new HashMap<>(), null, false);
 
             autoScaleManagerImplSpy.doScaleUp(vmGroupId, 1);
 
             Mockito.verify(autoScaleManagerImplSpy).createNewVM(asVmGroupMock);
-            Mockito.verify(loadBalancingRulesService).assignToLoadBalancer(anyLong(), any(), any(), eq(true));
-            Mockito.verify(userVmMgr).startVirtualMachine(virtualMachineId, null, new HashMap<>(), null);
+            Mockito.verify(loadBalancingRulesService).assignToLoadBalancer(anyLong(), any(), any(), any(), eq(true));
+            Mockito.verify(userVmMgr).startVirtualMachine(virtualMachineId, null, new HashMap<>(), null, false);
         }
     }
 
@@ -2566,5 +2562,20 @@ public class AutoScaleManagerImplTest {
                 "-" + asVmGroupMock.getNextVmSeq() + "-[a-z]{6}";
         Assert.assertTrue(result.first().matches(vmHostNamePattern));
         Assert.assertEquals(result.first(), result.second());
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateMinMaxMembersInvalidMin() {
+        autoScaleManagerImplSpy.validateMinMaxMembers(-1, 5);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateMinMaxMembersInvalidMax() {
+        autoScaleManagerImplSpy.validateMinMaxMembers(1, -1);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateMinMaxMembersInvalidRange() {
+        autoScaleManagerImplSpy.validateMinMaxMembers(5, 1);
     }
 }

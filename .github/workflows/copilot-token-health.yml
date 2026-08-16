@@ -1,0 +1,64 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+# Manual health check for the pool of volunteer Copilot tokens (see .github/COPILOT_TOKENS.md).
+# Trigger it from the Actions tab to find dead tokens in GH_AW_COPILOT_TOKEN_NAMES so they can be
+# pruned. Only HTTP status codes are printed, never account logins. A 200 just means the token is
+# live; there is no endpoint to check whether its monthly Copilot requests are used up.
+name: Copilot token health
+
+on:
+  workflow_dispatch: {}
+
+permissions: {}
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    outputs:
+      names: ${{ steps.list.outputs.names }}
+    steps:
+      - id: list
+        env:
+          NAMES: ${{ vars.GH_AW_COPILOT_TOKEN_NAMES || '[]' }}
+        run: echo "names=$NAMES" >> "$GITHUB_OUTPUT"
+
+  check:
+    needs: resolve
+    if: ${{ needs.resolve.outputs.names != '[]' && needs.resolve.outputs.names != '' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        name: ${{ fromJson(needs.resolve.outputs.names) }}
+    steps:
+      - name: Check token liveness
+        env:
+          TOKEN: ${{ secrets[format('COPILOT_GITHUB_TOKEN_{0}', matrix.name)] }}
+        run: |
+          set -euo pipefail
+          if [ -z "${TOKEN:-}" ]; then
+            echo "::error::no secret COPILOT_GITHUB_TOKEN_${{ matrix.name }} found for registered alias '${{ matrix.name }}'"
+            exit 1
+          fi
+          code=$(curl -s -o /dev/null -w '%{http_code}' \
+            -H "Authorization: Bearer $TOKEN" https://api.github.com/user || echo 000)
+          echo "token '${{ matrix.name }}': HTTP $code"
+          if [ "$code" != "200" ]; then
+            echo "::error::token '${{ matrix.name }}' is not live (HTTP $code), consider removing it from GH_AW_COPILOT_TOKEN_NAMES"
+            exit 1
+          fi

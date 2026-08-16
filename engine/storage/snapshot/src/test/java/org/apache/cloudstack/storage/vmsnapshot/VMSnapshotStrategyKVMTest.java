@@ -44,6 +44,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.test.utils.SpringUtils;
@@ -155,7 +156,7 @@ public class VMSnapshotStrategyKVMTest extends TestCase{
     @Test
     public void testCreateDiskSnapshotBasedOnStrategy() throws Exception {
         VMSnapshotVO vmSnapshot = Mockito.mock(VMSnapshotVO.class);
-        List<SnapshotInfo> forRollback = new ArrayList<>();
+        List<SnapshotInfo> snapshotsForRollback = new ArrayList<>();
         VolumeInfo vol = Mockito.mock(VolumeInfo.class);
         SnapshotInfo snapshotInfo = Mockito.mock(SnapshotInfo.class);
         SnapshotStrategy strategy = Mockito.mock(SnapshotStrategy.class);
@@ -179,7 +180,7 @@ public class VMSnapshotStrategyKVMTest extends TestCase{
         VMSnapshotDetailsVO vmDetails = new VMSnapshotDetailsVO(vmSnapshot.getId(), volUuid, String.valueOf(snapshot.getId()), false);
         when(vmSnapshotDetailsDao.persist(any())).thenReturn(vmDetails);
 
-        info =  vmStrategy.createDiskSnapshot(vmSnapshot, forRollback, vol);
+        info =  vmStrategy.createDiskSnapshot(vmSnapshot, snapshotsForRollback, vol);
         assertNotNull(info);
     }
 
@@ -441,6 +442,11 @@ public class VMSnapshotStrategyKVMTest extends TestCase{
         @Bean
         public BackupManager backupManager() {
             return Mockito.mock(BackupManager.class);
+        }
+
+        @Bean
+        public SnapshotDataStoreDao snapshotDataStoreDao() {
+            return Mockito.mock(SnapshotDataStoreDao.class);
         }
     }
 }
