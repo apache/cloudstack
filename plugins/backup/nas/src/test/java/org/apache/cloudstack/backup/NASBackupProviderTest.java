@@ -69,6 +69,10 @@ import org.apache.cloudstack.backup.dao.BackupRepositoryDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import com.cloud.storage.DataStoreRole;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 
 @RunWith(MockitoJUnitRunner.class)
 public class NASBackupProviderTest {
@@ -117,6 +121,9 @@ public class NASBackupProviderTest {
 
     @Mock
     private ResourceLimitService resourceLimitMgr;
+
+    @Mock
+    private DataStoreManager dataStoreMgr;
 
     @Test
     public void testDeleteBackup() throws OperationTimedoutException, AgentUnavailableException {
@@ -594,11 +601,17 @@ public class NASBackupProviderTest {
         StoragePoolVO pool = mock(StoragePoolVO.class);
         Mockito.when(pool.getId()).thenReturn(11L);
         Mockito.when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+        Mockito.when(pool.getUuid()).thenReturn(dsUuid);
         Mockito.when(storagePoolDao.findByUuid(dsUuid)).thenReturn(pool);
 
         HostVO host = mock(HostVO.class);
         Mockito.when(host.getId()).thenReturn(8L);
         Mockito.when(hostDao.findByIp(hostIp)).thenReturn(host);
+
+        DataStore dataStore = mock(DataStore.class);
+        PrimaryDataStoreTO dataStoreTO = mock(PrimaryDataStoreTO.class);
+        Mockito.when(dataStore.getTO()).thenReturn(dataStoreTO);
+        Mockito.when(dataStoreMgr.getDataStore(11L, DataStoreRole.Primary)).thenReturn(dataStore);
 
         Backup.VolumeInfo backedUp = new Backup.VolumeInfo(volUuid, "i-2-99-VM/2026/data1.qcow2",
                 Volume.Type.DATADISK, 1024L, 1L, "disk-offering-uuid", null, null);
@@ -617,6 +630,7 @@ public class NASBackupProviderTest {
 
         BackupAnswer answer = mock(BackupAnswer.class);
         Mockito.when(answer.getResult()).thenReturn(true);
+        Mockito.when(answer.getDetails()).thenReturn("success");
         Mockito.when(agentManager.send(Mockito.anyLong(), Mockito.any(RestoreBackupCommand.class))).thenReturn(answer);
 
         VMInstanceVO targetVm = mock(VMInstanceVO.class);
