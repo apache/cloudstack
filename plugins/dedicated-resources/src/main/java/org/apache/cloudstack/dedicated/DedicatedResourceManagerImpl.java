@@ -71,7 +71,6 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
@@ -117,7 +116,7 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
     private int capacityReleaseInterval;
 
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
-        capacityReleaseInterval = NumbersUtil.parseInt(_configDao.getValue(UserVmManager.CapacitySkipcountingHours.key()), 3600);
+        capacityReleaseInterval = UserVmManager.CapacitySkipcountingHours.value();
         return true;
     }
 

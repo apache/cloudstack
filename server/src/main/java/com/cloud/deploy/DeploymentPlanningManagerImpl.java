@@ -128,7 +128,6 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.LogUtils;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
@@ -1279,7 +1278,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             }
         });
 
-        _vmCapacityReleaseInterval = NumbersUtil.parseInt(_configDao.getValue(UserVmManager.CapacitySkipcountingHours.key()), 3600);
+        _vmCapacityReleaseInterval = UserVmManager.CapacitySkipcountingHours.value();
 
         String hostReservationReleasePeriod = _configDao.getValue(HostReservationReleasePeriod.key());
         if (hostReservationReleasePeriod != null) {

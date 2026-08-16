@@ -35,7 +35,6 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.user.Account;
 import com.cloud.utils.DateUtil;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachineProfile;
@@ -55,7 +54,7 @@ public class ImplicitDedicationPlanner extends FirstFitPlanner implements Deploy
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
-        capacityReleaseInterval = NumbersUtil.parseInt(configDao.getValue(UserVmManager.CapacitySkipcountingHours.key()), 3600);
+        capacityReleaseInterval = UserVmManager.CapacitySkipcountingHours.value();
         return true;
     }
 
