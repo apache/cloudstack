@@ -1506,9 +1506,7 @@ public class ApiDBUtils {
     }
 
     public static boolean isExtractionDisabled() {
-        String disableExtractionString = s_configDao.getValue(SecondaryStorageVmManager.DisableExtraction.toString());
-        boolean disableExtraction  = (disableExtractionString == null) ? false : Boolean.parseBoolean(disableExtractionString);
-        return disableExtraction;
+        return SecondaryStorageVmManager.DisableExtraction.value();
     }
 
     public static SecurityGroup getSecurityGroup(String groupName, long ownerId) {

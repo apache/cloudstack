@@ -83,7 +83,7 @@ public class SwiftImageStoreDriverImpl extends BaseImageStoreDriverImpl {
         String containerName = SwiftUtil.getContainerName(dataObject.getType().toString(), dataObject.getId());
         String objectName = installPath.split("\\/")[1];
         // Get extract url expiration interval set in global configuration (in seconds)
-        int urlExpirationInterval = Integer.parseInt(_configDao.getValue(SecondaryStorageVmManager.ExtractURLExpirationInterval.toString()));
+        int urlExpirationInterval = SecondaryStorageVmManager.ExtractURLExpirationInterval.value();
 
         URL swiftUrl = SwiftUtil.generateTempUrl(swiftTO, containerName, objectName, tempKey, urlExpirationInterval);
         if (swiftUrl != null) {

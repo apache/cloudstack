@@ -315,7 +315,7 @@ public class HypervManagerImpl implements HypervManager {
     }
 
     private String getMountParent() {
-        String mountParent = _configDao.getValue(SecondaryStorageVmManager.MountParent.key());
+        String mountParent = SecondaryStorageVmManager.MountParent.value();
         if (mountParent == null) {
             mountParent = File.separator + "mnt";
         }

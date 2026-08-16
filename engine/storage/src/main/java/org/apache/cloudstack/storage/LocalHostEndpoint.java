@@ -51,7 +51,7 @@ public class LocalHostEndpoint implements EndPoint {
     private void configure() {
         // get mount parent folder configured in global setting, if set, this will overwrite _parent in NfsSecondaryStorageResource to work
         // around permission issue for default /mnt folder
-        String mountParent = configDao.getValue(SecondaryStorageVmManager.MountParent.key());
+        String mountParent = SecondaryStorageVmManager.MountParent.value();
 
         String path = mountParent + File.separator + "secStorage";
 

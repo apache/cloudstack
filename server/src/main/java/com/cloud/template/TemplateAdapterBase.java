@@ -239,7 +239,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                     template.getUniqueName(), template.getFormat().toString(), templateOnStore.getDataStore().getUri(),
                     templateOnStore.getDataStore().getRole().toString(), zoneId_is);
             //using the existing max template size configuration
-            payload.setMaxUploadSize(_configDao.getValue(SecondaryStorageVmManager.MaxTemplateAndIsoSize.key()));
+            payload.setMaxUploadSize(String.valueOf(SecondaryStorageVmManager.MaxTemplateAndIsoSize.value()));
 
             Long accountId = template.getAccountId();
             Account account = _accountDao.findById(accountId);
