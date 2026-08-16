@@ -135,7 +135,7 @@ public abstract class DiscovererBase extends AdapterBase implements Discoverer {
 
         params.put("ipaddress", host.getPrivateIpAddress());
         params.put("secondary.storage.vm", "false");
-        params.put("max.template.iso.size", _configDao.getValue(SecondaryStorageVmManager.MaxTemplateAndIsoSize.toString()));
+        params.put("max.template.iso.size", String.valueOf(SecondaryStorageVmManager.MaxTemplateAndIsoSize.value()));
         params.put("migratewait", String.valueOf(AgentManager.MigrateWait.value()));
         params.put(AgentManager.XenServerMaxNics.toString().toLowerCase(), String.valueOf(AgentManager.XenServerMaxNics.value()));
         params.put(ManagementServer.XenServerHeartBeatInterval.key().toLowerCase(), String.valueOf(ManagementServer.XenServerHeartBeatInterval.value()));
