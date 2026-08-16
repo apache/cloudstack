@@ -160,7 +160,7 @@ public class BareMetalDiscoverer extends DiscovererBase implements Discoverer, R
             params.put("vmDao", _vmDao);
             params.put("configDao", _configDao);
 
-            String resourceClassName = _configDao.getValue(BaremetalManager.ExternalBaremetalResourceClassName.key());
+            String resourceClassName = BaremetalManager.ExternalBaremetalResourceClassName.value();
             BareMetalResourceBase resource = null;
             if (resourceClassName != null) {
                 Class<?> clazz = Class.forName(resourceClassName);
@@ -193,7 +193,7 @@ public class BareMetalDiscoverer extends DiscovererBase implements Discoverer, R
             if (vmIp != null) {
                 details.put(ApiConstants.IP_ADDRESS, vmIp);
             }
-            String isEchoScAgent = _configDao.getValue(BaremetalManager.EnableBaremetalSecurityGroupAgentEcho.key());
+            String isEchoScAgent = String.valueOf(BaremetalManager.EnableBaremetalSecurityGroupAgentEcho.value());
             details.put(BaremetalManager.EchoSecurityGroupAgent, isEchoScAgent);
 
             resources.put(resource, details);
