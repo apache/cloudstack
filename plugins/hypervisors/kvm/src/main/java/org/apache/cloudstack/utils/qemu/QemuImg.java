@@ -1079,6 +1079,10 @@ public class QemuImg {
      * Sets the compression type option if qemu-img is at least in version 5.1. Otherwise, will not set it and qemu will use zlib.
      * */
     public void setCompressionTypeOptionIfAvailable(Map<String, String> options, Backup.CompressionLibrary compressionLib) {
+        if (compressionLib == null) {
+            logger.debug("No compression lib informed, using the default.");
+            return;
+        }
         if (getVersion() >= QemuImg.QEMU_5_1) {
             options.put(LibvirtCompressBackupCommandWrapper.COMPRESSION_TYPE, compressionLib.name());
             return;

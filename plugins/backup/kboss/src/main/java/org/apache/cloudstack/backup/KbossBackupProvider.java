@@ -484,7 +484,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         if (compressNow) {
             BackupOfferingDetailsVO detail = backupOfferingDetailsDao.findDetail(backupOfferingVO.getId(), ApiConstants.COMPRESSION_LIBRARY);
             command.setCompress(true);
-            command.setCompressionLib(detail == null ? null : Backup.CompressionLibrary.valueOf(detail.getValue()));
+            command.setCompressionLib(detail == null ? Backup.CompressionLibrary.zstd : Backup.CompressionLibrary.valueOf(detail.getValue()));
             command.setCoroutines(backupCompressionCoroutines.valueIn(hostVO.getClusterId()));
             command.setRateLimit(backupCompressionRateLimit.valueIn(hostVO.getClusterId()));
         }
@@ -800,7 +800,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         BackupOfferingDetailsVO detail = backupOfferingDetailsDao.findDetail(backupOfferingVO.getId(), ApiConstants.COMPRESSION_LIBRARY);
         List<InternalBackupJoinVO> backupChain = getBackupJoinParents(backupVO, true);
         List<String> chainImageStoreUrls = getChainImageStoreUrls(backupChain);
-        CompressBackupCommand cmd = new CompressBackupCommand(deltasToCompressAndParents, chainImageStoreUrls, minFreeStorage, detail == null ? null :
+        CompressBackupCommand cmd = new CompressBackupCommand(deltasToCompressAndParents, chainImageStoreUrls, minFreeStorage, detail == null ? Backup.CompressionLibrary.zstd :
                 Backup.CompressionLibrary.valueOf(detail.getValue()), backupCompressionCoroutines.valueIn(hostVO.getClusterId()),
                 backupCompressionRateLimit.valueIn(hostVO.getClusterId()));
         cmd.setWait(backupCompressionTimeout.valueIn(hostVO.getClusterId()));
