@@ -21,17 +21,26 @@ package org.apache.cloudstack.utils.rbd;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import org.apache.cloudstack.utils.cryptsetup.CryptSetup;
+import org.apache.cloudstack.utils.qemu.QemuImageOptions;
+import org.apache.cloudstack.utils.qemu.QemuImg;
+import org.apache.cloudstack.utils.qemu.QemuImgFile;
+import org.apache.cloudstack.utils.qemu.QemuObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
- * Unit tests for {@link RbdEncryption}. These assert the {@code rbd}/{@code qemu-img} argv that
- * would be handed to {@link Script}, so the command construction is verified without a live Ceph
- * cluster (the actual execution needs a real cluster and is covered by end-to-end testing).
+ * Unit tests for {@link RbdEncryption}. These assert the {@code rbd} argv that would be handed to
+ * {@link Script} and the image options handed to {@link QemuImg}, so the command construction is
+ * verified without a live Ceph cluster (the actual execution needs a real cluster and is covered
+ * by end-to-end testing).
  */
 @RunWith(MockitoJUnitRunner.class)
 public class RbdEncryptionTest {
@@ -78,24 +87,60 @@ public class RbdEncryptionTest {
     }
 
     @Test
-    public void buildConvertScriptFromRbdSource() {
-        Script q = rbdEncryption.buildConvertScript("srcpool", "srcimg", null, null,
-                "cloudstack", "dst", "/tmp/conf", "cloudstack", "/tmp/pass", CryptSetup.LuksType.LUKS2);
-        String cmd = q.toString();
-        Assert.assertTrue(cmd, cmd.contains("qemu-img convert -n"));
-        Assert.assertTrue(cmd, cmd.contains("--image-opts driver=rbd,pool=srcpool,image=srcimg,conf=/tmp/conf,user=cloudstack"));
-        Assert.assertTrue(cmd, cmd.contains("--object secret,id=luks0,file=/tmp/pass"));
-        Assert.assertTrue(cmd, cmd.contains("--target-image-opts driver=rbd,pool=cloudstack,image=dst,conf=/tmp/conf,user=cloudstack,encrypt.format=luks2,encrypt.key-secret=luks0"));
+    public void importTemplateFromRbdSourceConvertsThroughQemuImg() throws Exception {
+        RbdEncryption spy = Mockito.spy(new RbdEncryption());
+        QemuImg qemuImg = Mockito.mock(QemuImg.class);
+        Mockito.doReturn(qemuImg).when(spy).createQemuImg();
+
+        spy.importTemplate("srcpool", "srcimg", null, null, "1.2.3.4", 6789, "cloudstack", "secret",
+                "cloudstack", "dst", "passphrase".getBytes(StandardCharsets.UTF_8), CryptSetup.LuksType.LUKS2);
+
+        ArgumentCaptor<QemuImageOptions> srcOpts = ArgumentCaptor.forClass(QemuImageOptions.class);
+        ArgumentCaptor<QemuImageOptions> destOpts = ArgumentCaptor.forClass(QemuImageOptions.class);
+        ArgumentCaptor<List<QemuObject>> objects = ArgumentCaptor.forClass(List.class);
+        Mockito.verify(qemuImg).convertIntoExistingTarget(Mockito.any(QemuImgFile.class), Mockito.isNull(),
+                objects.capture(), srcOpts.capture(), destOpts.capture(), Mockito.eq(false));
+
+        String src = String.join(" ", srcOpts.getValue().toCommandFlag());
+        Assert.assertTrue(src, src.startsWith("--image-opts "));
+        Assert.assertTrue(src, src.contains("driver=rbd"));
+        Assert.assertTrue(src, src.contains("pool=srcpool"));
+        Assert.assertTrue(src, src.contains("image=srcimg"));
+        Assert.assertTrue(src, src.contains("user=cloudstack"));
+        Assert.assertTrue(src, src.contains("conf="));
+
+        String dest = String.join(" ", destOpts.getValue().toCommandFlag(QemuImg.TARGET_IMAGE_OPTS_FLAG));
+        Assert.assertTrue(dest, dest.startsWith(QemuImg.TARGET_IMAGE_OPTS_FLAG + " "));
+        Assert.assertTrue(dest, dest.contains("driver=rbd"));
+        Assert.assertTrue(dest, dest.contains("pool=cloudstack"));
+        Assert.assertTrue(dest, dest.contains("image=dst"));
+        Assert.assertTrue(dest, dest.contains("encrypt.format=luks2"));
+        Assert.assertTrue(dest, dest.contains("encrypt.key-secret=luks0"));
+
+        String secretObjects = objects.getValue().stream()
+                .map(o -> String.join(" ", o.toCommandFlag())).collect(Collectors.joining(" "));
+        Assert.assertTrue(secretObjects, secretObjects.contains("--object secret,"));
+        Assert.assertTrue(secretObjects, secretObjects.contains("id=luks0"));
+        Assert.assertTrue(secretObjects, secretObjects.contains("file="));
     }
 
     @Test
-    public void buildConvertScriptFromFileSource() {
-        Script q = rbdEncryption.buildConvertScript(null, null, "/tmp/tmpl.qcow2", "QCOW2",
-                "cloudstack", "dst", "/tmp/conf", "cloudstack", "/tmp/pass", CryptSetup.LuksType.LUKS2);
-        String cmd = q.toString();
-        Assert.assertTrue(cmd, cmd.contains("-f qcow2 /tmp/tmpl.qcow2"));
-        Assert.assertFalse(cmd, cmd.contains("--image-opts"));
-        Assert.assertTrue(cmd, cmd.contains("encrypt.format=luks2,encrypt.key-secret=luks0"));
+    public void importTemplateFromFileSourceForcesSourceFormat() throws Exception {
+        RbdEncryption spy = Mockito.spy(new RbdEncryption());
+        QemuImg qemuImg = Mockito.mock(QemuImg.class);
+        Mockito.doReturn(qemuImg).when(spy).createQemuImg();
+
+        spy.importTemplate(null, null, "/tmp/tmpl.qcow2", "QCOW2", "1.2.3.4", 6789, "cloudstack", "secret",
+                "cloudstack", "dst", "passphrase".getBytes(StandardCharsets.UTF_8), CryptSetup.LuksType.LUKS2);
+
+        ArgumentCaptor<QemuImgFile> srcFile = ArgumentCaptor.forClass(QemuImgFile.class);
+        ArgumentCaptor<QemuImageOptions> srcOpts = ArgumentCaptor.forClass(QemuImageOptions.class);
+        Mockito.verify(qemuImg).convertIntoExistingTarget(srcFile.capture(), Mockito.isNull(),
+                Mockito.anyList(), srcOpts.capture(), Mockito.any(QemuImageOptions.class), Mockito.eq(true));
+
+        Assert.assertEquals(QemuImg.PhysicalDiskFormat.QCOW2, srcFile.getValue().getFormat());
+        String src = String.join(" ", srcOpts.getValue().toCommandFlag());
+        Assert.assertTrue(src, src.contains("file.filename=/tmp/tmpl.qcow2"));
     }
 
     @Test

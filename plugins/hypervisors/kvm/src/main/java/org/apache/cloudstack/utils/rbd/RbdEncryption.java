@@ -20,8 +20,14 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import org.apache.cloudstack.utils.cryptsetup.CryptSetup;
 import org.apache.cloudstack.utils.cryptsetup.KeyFile;
+import org.apache.cloudstack.utils.qemu.QemuImageOptions;
+import org.apache.cloudstack.utils.qemu.QemuImg;
+import org.apache.cloudstack.utils.qemu.QemuImgException;
+import org.apache.cloudstack.utils.qemu.QemuImgFile;
+import org.apache.cloudstack.utils.qemu.QemuObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.libvirt.LibvirtException;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -29,6 +35,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Thin wrapper around the {@code rbd} CLI to apply native librbd LUKS encryption to an
@@ -46,7 +56,9 @@ public class RbdEncryption {
     protected Logger logger = LogManager.getLogger(getClass());
 
     protected String commandPath = "rbd";
-    protected String qemuImgPath = "qemu-img";
+
+    /** qemu secret id used to hand the LUKS passphrase to qemu-img during template import */
+    protected static final String LUKS_SECRET_ID = "luks0";
 
     public RbdEncryption() {}
 
@@ -178,7 +190,8 @@ public class RbdEncryption {
      *
      * Exactly one source must be given: an RBD image ({@code srcRbdPool}+{@code srcRbdImage}) or a
      * local file ({@code srcFilePath}[+{@code srcFileFormat}]). cephx auth is provided to qemu-img
-     * via a temporary ceph.conf + keyring (deleted on return).
+     * via a temporary ceph.conf + keyring (deleted on return). The conversion itself goes through
+     * {@link QemuImg#convertIntoExistingTarget}.
      */
     public void importTemplate(String srcRbdPool, String srcRbdImage,
                                String srcFilePath, String srcFileFormat,
@@ -198,14 +211,38 @@ public class RbdEncryption {
             conf = Files.createTempFile("cs-ceph-", ".conf", ownerOnly);
             Files.writeString(conf, "[global]\nmon_host = " + monSpec(monHost, monPort) + "\nkeyring = " + keyring + "\n");
 
-            final Script q = buildConvertScript(srcRbdPool, srcRbdImage, srcFilePath, srcFileFormat,
-                    cephPool, destImage, conf.toString(), authUser, passFile.toString(), luksType);
-            final String result = q.execute();
-            if (result != null) {
-                throw new CloudRuntimeException(String.format("Failed to import template into encrypted RBD image %s: %s", imageSpec, result));
+            QemuImgFile srcQemuFile;
+            QemuImageOptions srcImageOpts;
+            boolean forceSourceFormat = false;
+            if (srcRbdImage != null) {
+                srcQemuFile = new QemuImgFile(srcRbdPool + "/" + srcRbdImage, QemuImg.PhysicalDiskFormat.RAW);
+                srcImageOpts = new QemuImageOptions(rbdImageOptions(srcRbdPool, srcRbdImage, conf.toString(), authUser));
+                srcImageOpts.setImageOptsFlag(true);
+            } else {
+                QemuImg.PhysicalDiskFormat srcFormat = srcFileFormat != null ? QemuImg.PhysicalDiskFormat.valueOf(srcFileFormat.toUpperCase()) : null;
+                srcQemuFile = srcFormat != null ? new QemuImgFile(srcFilePath, srcFormat) : new QemuImgFile(srcFilePath);
+                srcImageOpts = new QemuImageOptions(srcFilePath);
+                if (srcFormat != null) {
+                    // emit the source as --image-opts driver=<format>,file.filename=<path> (the -f equivalent)
+                    srcImageOpts.setImageOptsFlag(true);
+                    forceSourceFormat = true;
+                }
             }
+
+            Map<String, String> destParams = rbdImageOptions(cephPool, destImage, conf.toString(), authUser);
+            destParams.put("encrypt.format", luksType.toString());
+            destParams.put("encrypt.key-secret", LUKS_SECRET_ID);
+            QemuImageOptions destImageOpts = new QemuImageOptions(destParams);
+
+            EnumMap<QemuObject.ObjectParameter, String> secretParams = new EnumMap<>(QemuObject.ObjectParameter.class);
+            secretParams.put(QemuObject.ObjectParameter.ID, LUKS_SECRET_ID);
+            secretParams.put(QemuObject.ObjectParameter.FILE, passFile.toString());
+            QemuObject luksSecret = new QemuObject(QemuObject.ObjectType.SECRET, secretParams);
+
+            QemuImg qemu = createQemuImg();
+            qemu.convertIntoExistingTarget(srcQemuFile, null, List.of(luksSecret), srcImageOpts, destImageOpts, forceSourceFormat);
             logger.debug("Imported template into encrypted RBD image {}", imageSpec);
-        } catch (IOException ex) {
+        } catch (IOException | QemuImgException | LibvirtException ex) {
             throw new CloudRuntimeException(String.format("Failed to import template into encrypted RBD image %s", imageSpec), ex);
         } finally {
             deleteQuietly(conf);
@@ -213,28 +250,24 @@ public class RbdEncryption {
         }
     }
 
-    protected Script buildConvertScript(String srcRbdPool, String srcRbdImage, String srcFilePath, String srcFileFormat,
-                                        String cephPool, String destImage, String confPath, String authUser,
-                                        String passFilePath, CryptSetup.LuksType luksType) {
-        final Script q = new Script(qemuImgPath);
-        q.add("convert");
-        q.add("-n"); // target already exists (pre-created + luks-formatted)
-        if (srcRbdImage != null) {
-            q.add("--image-opts");
-            q.add("driver=rbd,pool=" + srcRbdPool + ",image=" + srcRbdImage + ",conf=" + confPath + ",user=" + authUser);
-        } else {
-            if (srcFileFormat != null) {
-                q.add("-f");
-                q.add(srcFileFormat.toLowerCase());
-            }
-            q.add(srcFilePath);
+    /**
+     * Seam for unit tests; {@link QemuImg} probes the qemu version through libvirt on construction.
+     */
+    protected QemuImg createQemuImg() throws QemuImgException, LibvirtException {
+        return new QemuImg(0);
+    }
+
+    /** qemu image options addressing an RBD image (as used with --image-opts / --target-image-opts). */
+    private static Map<String, String> rbdImageOptions(String cephPool, String image, String confPath, String authUser) {
+        Map<String, String> opts = new HashMap<>();
+        opts.put("driver", "rbd");
+        opts.put("pool", cephPool);
+        opts.put("image", image);
+        opts.put("conf", confPath);
+        if (authUser != null) {
+            opts.put("user", authUser);
         }
-        q.add("--object");
-        q.add("secret,id=luks0,file=" + passFilePath);
-        q.add("--target-image-opts");
-        q.add("driver=rbd,pool=" + cephPool + ",image=" + destImage + ",conf=" + confPath + ",user=" + authUser
-                + ",encrypt.format=" + luksType + ",encrypt.key-secret=luks0");
-        return q;
+        return opts;
     }
 
     private static void deleteQuietly(Path p) {

@@ -52,6 +52,8 @@ public class QemuImg {
     public static final String ENCRYPT_FORMAT = "encrypt.format";
     public static final String ENCRYPT_KEY_SECRET = "encrypt.key-secret";
     public static final String TARGET_ZERO_FLAG = "--target-is-zero";
+    public static final String IMAGE_OPTS_FLAG = "--image-opts";
+    public static final String TARGET_IMAGE_OPTS_FLAG = "--target-image-opts";
     public static final String PREALLOCATION = "preallocation";
     public static final long QEMU_2_10 = 2010000;
     public static final long QEMU_5_10 = 5010000;
@@ -392,7 +394,22 @@ public class QemuImg {
      */
     public void convert(final QemuImgFile srcFile, final QemuImgFile destFile,
                         final Map<String, String> options, final List<QemuObject> qemuObjects, final QemuImageOptions srcImageOpts, final String snapshotName, final boolean forceSourceFormat) throws QemuImgException {
-        convert(srcFile, destFile, options, qemuObjects, srcImageOpts, snapshotName, forceSourceFormat, false);
+        convert(srcFile, destFile, options, qemuObjects, srcImageOpts, null, snapshotName, forceSourceFormat, false);
+    }
+
+    /**
+     * Converts an image into an existing destination that is described by explicit image options
+     * ({@code --target-image-opts}) instead of a plain filename - for example an RBD image written
+     * through librbd encryption ({@code driver=rbd,...,encrypt.format=...}). The destination is
+     * never created ({@code -n} is implied) and must already exist with the wanted size and format.
+     *
+     * @param destImageOpts
+     *            image options describing the existing destination; passed as --target-image-opts.
+     */
+    public void convertIntoExistingTarget(final QemuImgFile srcFile, final Map<String, String> options,
+                        final List<QemuObject> qemuObjects, final QemuImageOptions srcImageOpts, final QemuImageOptions destImageOpts,
+                        final boolean forceSourceFormat) throws QemuImgException {
+        convert(srcFile, null, options, qemuObjects, srcImageOpts, destImageOpts, null, forceSourceFormat, false);
     }
 
     protected Map<String, String> getResizeOptionsFromConvertOptions(final Map<String, String> options) {
@@ -433,6 +450,22 @@ public class QemuImg {
     public void convert(final QemuImgFile srcFile, final QemuImgFile destFile,
                         final Map<String, String> options, final List<QemuObject> qemuObjects, final QemuImageOptions srcImageOpts, final String snapshotName, final boolean forceSourceFormat,
                         boolean keepBitmaps) throws QemuImgException {
+        convert(srcFile, destFile, options, qemuObjects, srcImageOpts, null, snapshotName, forceSourceFormat, keepBitmaps);
+    }
+
+    /**
+     * Converts an image from source to destination, optionally into an existing destination
+     * described by explicit image options instead of a plain filename (see
+     * {@link #convert(QemuImgFile, QemuImgFile, Map, List, QemuImageOptions, QemuImageOptions, boolean)}).
+     */
+    public void convert(final QemuImgFile srcFile, final QemuImgFile destFile,
+                        final Map<String, String> options, final List<QemuObject> qemuObjects, final QemuImageOptions srcImageOpts, final QemuImageOptions destImageOpts,
+                        final String snapshotName, final boolean forceSourceFormat,
+                        boolean keepBitmaps) throws QemuImgException {
+        if (destImageOpts != null && this.version < QEMU_2_10) {
+            throw new QemuImgException(String.format("qemu >= 2.10 is required to convert into a destination described by %s", TARGET_IMAGE_OPTS_FLAG));
+        }
+
         Script script = new Script(_qemuImgPath, timeout);
         if (StringUtils.isNotBlank(snapshotName)) {
             String qemuPath = Script.runSimpleBashScript(getQemuImgPathScript);
@@ -441,7 +474,10 @@ public class QemuImg {
 
         script.add("convert");
 
-        if (skipZero && Files.exists(Paths.get(destFile.getFileName()))) {
+        if (destImageOpts != null) {
+            // a destination described by image options always exists already; qemu-img requires -n with --target-image-opts
+            script.add("-n");
+        } else if (skipZero && Files.exists(Paths.get(destFile.getFileName()))) {
             script.add("-n");
             script.add(TARGET_ZERO_FLAG);
             script.add("-W");
@@ -452,8 +488,10 @@ public class QemuImg {
             script.add("-n");
         }
 
-        script.add("-O");
-        script.add(destFile.getFormat().toString());
+        if (destImageOpts == null) {
+            script.add("-O");
+            script.add(destFile.getFormat().toString());
+        }
 
         addScriptOptionsFromMap(options, script);
         addSnapshotToConvertCommand(srcFile.getFormat().toString(), snapshotName, forceSourceFormat, script, version);
@@ -488,14 +526,19 @@ public class QemuImg {
             script.add("--bitmaps");
         }
 
-        script.add(destFile.getFileName());
+        if (destImageOpts != null) {
+            script.add(destImageOpts.toCommandFlag(TARGET_IMAGE_OPTS_FLAG));
+        } else {
+            script.add(destFile.getFileName());
+        }
 
         final String result = script.execute();
         if (result != null) {
             throw new QemuImgException(result);
         }
 
-        if (srcFile.getSize() < destFile.getSize()) {
+        // an image-options destination already exists with its final size; 'qemu-img resize' cannot address it by filename
+        if (destImageOpts == null && srcFile.getSize() < destFile.getSize()) {
             this.resize(destFile, destFile.getSize(), getResizeOptionsFromConvertOptions(options));
         }
     }
