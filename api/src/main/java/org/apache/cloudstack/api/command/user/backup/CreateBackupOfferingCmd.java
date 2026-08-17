@@ -34,7 +34,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.backup.BackupOffering;
-
+import org.apache.commons.lang3.BooleanUtils;
 
 import javax.inject.Inject;
 import java.util.List;
@@ -171,7 +171,7 @@ public class CreateBackupOfferingCmd extends BaseCmd {
     }
 
     public boolean isCompressAsync() {
-        return Boolean.TRUE.equals(this.compressAsync);
+        return BooleanUtils.toBooleanDefaultIfNull(this.compressAsync, true);
     }
 
     /////////////////////////////////////////////////////
