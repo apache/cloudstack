@@ -29,7 +29,6 @@ public abstract class BaseAsyncCmd extends BaseCmd {
     public static final String migrationSyncObject = "migration";
     public static final String snapshotHostSyncObject = "snapshothost";
     public static final String gslbSyncObject = "globalserverloadbalancer";
-    public static final String user = "user";
 
     private Object job;
 
