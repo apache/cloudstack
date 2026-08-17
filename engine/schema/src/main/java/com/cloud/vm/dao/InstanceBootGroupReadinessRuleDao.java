@@ -21,21 +21,24 @@ import java.util.List;
 
 import org.apache.cloudstack.vm.bootgroup.InstanceBootGroupMember;
 import org.apache.cloudstack.vm.bootgroup.InstanceBootGroupReadinessRuleVO;
+import org.apache.cloudstack.vm.bootgroup.readiness.InstanceBootGroupReadinessRule;
 
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 
 public interface InstanceBootGroupReadinessRuleDao extends GenericDao<InstanceBootGroupReadinessRuleVO, Long> {
 
-    List<InstanceBootGroupReadinessRuleVO> listByBootGroupId(long bootGroupId);
+    Pair<List<InstanceBootGroupReadinessRuleVO>, Integer> searchAndCountByBootGroupId(long bootGroupId,
+            Long id,
+            InstanceBootGroupMember.MemberType itemType,
+            Long itemId,
+            InstanceBootGroupReadinessRule.RuleType ruleType,
+            String keyword,
+            Long startIndex,
+            Long pageSize);
 
     List<InstanceBootGroupReadinessRuleVO> listEnabledByItem(long bootGroupId, InstanceBootGroupMember.MemberType itemType, long itemId);
 
     List<InstanceBootGroupReadinessRuleVO> listByItem(long bootGroupId, InstanceBootGroupMember.MemberType itemType, long itemId);
 
-    /**
-     * Cleanup for a member removed from its boot group, or a VM leaving its Instance Group — there's
-     * no FK path for this (item_id doesn't reference instance_boot_group_member/instance_group_vm_map),
-     * so it's enforced here in code instead of a DB cascade.
-     */
-    void deleteByItem(InstanceBootGroupMember.MemberType itemType, long itemId);
 }

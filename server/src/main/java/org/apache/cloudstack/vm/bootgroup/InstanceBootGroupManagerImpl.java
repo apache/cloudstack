@@ -242,13 +242,17 @@ public class InstanceBootGroupManagerImpl extends ManagerBase implements Instanc
         final long pollIntervalMs = effectivePollIntervalSeconds * 1000L;
         final boolean effectiveRebootOnRetry = effectiveRebootOnRetry(group);
         int concurrency = (int) Math.max(1, Math.min(progressByVmId.size(), effectiveReadinessCheckConcurrency()));
-        logger.debug("Waiting for tier {} of {} to become ready: {} VM(s) tracked, timeout={}s, pollInterval={}s, checkConcurrency={}",
-                tierOrder, group, progressByVmId.size(), effectiveTimeoutSeconds, effectivePollIntervalSeconds, concurrency);
+        // Bound the polling loop: initial delay + (maxRetries + 1) full timeout windows + inter-poll sleeps.
+        long maxWaitMs = (effectiveInitialDelaySeconds(group) + (effectiveMaxRetryAttempts + 1) * effectiveTimeoutSeconds
+                + effectiveMaxRetryAttempts * effectivePollIntervalSeconds) * 1000L;
+        long deadline = System.currentTimeMillis() + maxWaitMs;
+        logger.debug("Waiting for tier {} of {} to become ready: {} VM(s) tracked, timeout={}s, pollInterval={}s, checkConcurrency={}, maxWait={}ms",
+                tierOrder, group, progressByVmId.size(), effectiveTimeoutSeconds, effectivePollIntervalSeconds, concurrency, maxWaitMs);
 
         CallContext callerContext = CallContext.current();
         ExecutorService readinessExecutor = Executors.newFixedThreadPool(concurrency, new NamedThreadFactory("InstanceBootGroup-readiness-" + tierOrder));
         try {
-            while (true) {
+            while (System.currentTimeMillis() < deadline) {
                 List<Future<Void>> futures = new ArrayList<>();
                 for (VmProgress progress : progressByVmId.values()) {
                     if (progress.ready || progress.gaveUp) {
@@ -288,6 +292,10 @@ public class InstanceBootGroupManagerImpl extends ManagerBase implements Instanc
 
                 sleep(pollIntervalMs);
             }
+            String reason = String.format("Tier %d of boot group '%s' did not become ready within the maximum wait of %dms", tierOrder, group.getName(), maxWaitMs);
+            logger.error(reason);
+            halt(group, reason);
+            throw new CloudRuntimeException(reason);
         } finally {
             readinessExecutor.shutdown();
         }

@@ -2163,7 +2163,7 @@
 "label.reason": "Reason",
 "label.rebalance": "Rebalance",
 "label.readiness": "Readiness",
-"label.readiness.mode.member.dependent": "Depends on members",
+"label.readiness.mode.child.dependent": "Depends on children",
 "label.readiness.mode.no.readiness": "No Readiness",
 "label.readiness.mode.rule.based": "Rule-based",
 "label.readiness.rules": "Readiness Rules",

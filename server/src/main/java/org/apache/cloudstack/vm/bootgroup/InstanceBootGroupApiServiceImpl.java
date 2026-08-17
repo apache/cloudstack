@@ -71,6 +71,8 @@ import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
 import com.cloud.vm.InstanceGroupVMMapVO;
 import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.UserVmVO;
@@ -200,9 +202,11 @@ public class InstanceBootGroupApiServiceImpl implements InstanceBootGroupService
     @ActionEvent(eventType = EventTypes.EVENT_INSTANCE_BOOT_GROUP_DELETE, eventDescription = "deleting Instance Boot Group")
     public boolean deleteInstanceBootGroup(DeleteInstanceBootGroupCmd cmd) {
         InstanceBootGroupVO group = getGroupAndCheckAccess(cmd.getId());
-        instanceBootGroupMemberDao.deleteByBootGroupId(group.getId());
-        instanceBootGroupDao.remove(group.getId());
-        return true;
+        return Transaction.execute((TransactionCallback<Boolean>) status -> {
+            instanceBootGroupMemberDao.deleteByBootGroupId(group.getId());
+            instanceBootGroupDao.remove(group.getId());
+            return true;
+        });
     }
 
     @Override
@@ -301,29 +305,14 @@ public class InstanceBootGroupApiServiceImpl implements InstanceBootGroupService
         InstanceBootGroupMember.MemberType memberType;
         long memberId;
 
-        if (cmd.getVirtualMachineId() != null && cmd.getInstanceGroupId() != null) {
-            throw new InvalidParameterValueException("Only one of virtualmachineid or instancegroupid may be specified");
-        }
-        if (cmd.getVirtualMachineId() == null && cmd.getInstanceGroupId() == null) {
-            throw new InvalidParameterValueException("Either virtualmachineid or instancegroupid must be specified");
-        }
+        validateEitherVirtualMachineIdOrInstanceGroupIdParam(cmd.getVirtualMachineId(), cmd.getInstanceGroupId());
 
         if (cmd.getVirtualMachineId() != null) {
-            UserVm vm = userVmDao.findById(cmd.getVirtualMachineId());
-            if (vm == null) {
-                throw new InvalidParameterValueException("Unable to find virtual machine with ID: " + cmd.getVirtualMachineId());
-            }
-            validateMemberAccount(vm.getAccountId(), group.getAccountId());
-            instanceBootGroupMembershipGuard.validateVmEligibleForGroupMembership(vm.getId());
+            UserVm vm = getValidatedVmForAddMember(group, cmd.getVirtualMachineId());
             memberType = InstanceBootGroupMember.MemberType.VirtualMachine;
             memberId = vm.getId();
         } else {
-            InstanceGroupVO instanceGroup = instanceGroupDao.findById(cmd.getInstanceGroupId());
-            if (instanceGroup == null || instanceGroup.getRemoved() != null) {
-                throw new InvalidParameterValueException("Unable to find instance group with ID: " + cmd.getInstanceGroupId());
-            }
-            validateMemberAccount(instanceGroup.getAccountId(), group.getAccountId());
-            instanceBootGroupMembershipGuard.validateInstanceGroupEligibleForBootGroupMembership(instanceGroup.getId());
+            InstanceGroupVO instanceGroup = getValidatedInstanceGroupAddMember(group, cmd.getInstanceGroupId());
             memberType = InstanceBootGroupMember.MemberType.InstanceGroup;
             memberId = instanceGroup.getId();
         }
@@ -334,6 +323,37 @@ public class InstanceBootGroupApiServiceImpl implements InstanceBootGroupService
 
         InstanceBootGroupMemberVO member = new InstanceBootGroupMemberVO(group.getId(), memberType, memberId, cmd.getOrder());
         return instanceBootGroupMemberDao.persist(member);
+    }
+
+    @NotNull
+    private UserVm getValidatedVmForAddMember(InstanceBootGroupVO group, long virtualMachineId) {
+        UserVm vm = userVmDao.findById(virtualMachineId);
+        if (vm == null) {
+            throw new InvalidParameterValueException("Unable to find virtual machine with ID: " + virtualMachineId);
+        }
+        validateMemberAccount(vm.getAccountId(), group.getAccountId());
+        instanceBootGroupMembershipGuard.validateVmEligibleForGroupMembership(vm.getId());
+        return vm;
+    }
+
+    @NotNull
+    private InstanceGroupVO getValidatedInstanceGroupAddMember(InstanceBootGroupVO group, long instanceGroupId) {
+        InstanceGroupVO instanceGroup = instanceGroupDao.findById(instanceGroupId);
+        if (instanceGroup == null || instanceGroup.getRemoved() != null) {
+            throw new InvalidParameterValueException("Unable to find instance group with ID: " + instanceGroupId);
+        }
+        validateMemberAccount(instanceGroup.getAccountId(), group.getAccountId());
+        instanceBootGroupMembershipGuard.validateInstanceGroupEligibleForBootGroupMembership(instanceGroup.getId());
+        return instanceGroup;
+    }
+
+    protected static void validateEitherVirtualMachineIdOrInstanceGroupIdParam(Long virtualMachineId, Long instanceGroupId) {
+        if (virtualMachineId != null && instanceGroupId != null) {
+            throw new InvalidParameterValueException("Only one of virtualmachineid or instancegroupid may be specified");
+        }
+        if (virtualMachineId == null && instanceGroupId == null) {
+            throw new InvalidParameterValueException("Either virtualmachineid or instancegroupid must be specified");
+        }
     }
 
     @Override
@@ -458,7 +478,7 @@ public class InstanceBootGroupApiServiceImpl implements InstanceBootGroupService
         response.setOrder(member.getOrder());
         response.setCreated(member.getCreated());
 
-        List<Long> childVmIds = null;
+        List<Long> childVmIds = new ArrayList<>();
         if (member.getMemberType() == InstanceBootGroupMember.MemberType.VirtualMachine) {
             UserVmVO vm = userVmDao.findById(member.getMemberId());
             if (vm != null) {
@@ -659,12 +679,7 @@ public class InstanceBootGroupApiServiceImpl implements InstanceBootGroupService
      * on the resolved item (in addition to the boot group, already checked via getGroupAndCheckAccess).
      */
     private Pair<InstanceBootGroupMember.MemberType, Long> resolveAndCheckAccessToItem(Long virtualMachineId, Long instanceGroupId) {
-        if (virtualMachineId != null && instanceGroupId != null) {
-            throw new InvalidParameterValueException("Only one of virtualmachineid or instancegroupid may be specified");
-        }
-        if (virtualMachineId == null && instanceGroupId == null) {
-            throw new InvalidParameterValueException("Either virtualmachineid or instancegroupid must be specified");
-        }
+        validateEitherVirtualMachineIdOrInstanceGroupIdParam(virtualMachineId, instanceGroupId);
 
         Account caller = CallContext.current().getCallingAccount();
         if (virtualMachineId != null) {
@@ -730,44 +745,35 @@ public class InstanceBootGroupApiServiceImpl implements InstanceBootGroupService
     public ListResponse<InstanceBootGroupReadinessRuleResponse> listInstanceBootGroupReadinessRules(ListInstanceBootGroupReadinessRulesCmd cmd) {
         getGroupAndCheckAccess(cmd.getBootGroupId());
 
-        SearchBuilder<InstanceBootGroupReadinessRuleVO> sb = instanceBootGroupReadinessRuleDao.createSearchBuilder();
-        sb.and("bootGroupId", sb.entity().getBootGroupId(), SearchCriteria.Op.EQ);
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("itemType", sb.entity().getItemType(), SearchCriteria.Op.EQ);
-        sb.and("itemId", sb.entity().getItemId(), SearchCriteria.Op.EQ);
-        sb.and("ruleType", sb.entity().getRuleType(), SearchCriteria.Op.EQ);
-        sb.and("keyword", sb.entity().getName(), SearchCriteria.Op.LIKE);
-        sb.done();
-
-        SearchCriteria<InstanceBootGroupReadinessRuleVO> sc = sb.create();
-        sc.setParameters("bootGroupId", cmd.getBootGroupId());
-        if (cmd.getId() != null) {
-            sc.setParameters("id", cmd.getId());
-        }
         if (cmd.getVirtualMachineId() != null && cmd.getInstanceGroupId() != null) {
             throw new InvalidParameterValueException("Only one of virtualmachineid or instancegroupid may be specified");
         }
-        if (cmd.getVirtualMachineId() != null) {
-            sc.setParameters("itemType", InstanceBootGroupMember.MemberType.VirtualMachine);
-            sc.setParameters("itemId", cmd.getVirtualMachineId());
-        } else if (cmd.getInstanceGroupId() != null) {
-            sc.setParameters("itemType", InstanceBootGroupMember.MemberType.InstanceGroup);
-            sc.setParameters("itemId", cmd.getInstanceGroupId());
-        }
-        InstanceBootGroupReadinessRule.RuleType ruleTypeFilter = null;
+        InstanceBootGroupReadinessRule.RuleType ruleType = null;
         if (cmd.getRuleType() != null) {
-            ruleTypeFilter = EnumUtils.getEnumIgnoreCase(InstanceBootGroupReadinessRule.RuleType.class, cmd.getRuleType());
-            if (ruleTypeFilter == null) {
+            ruleType = EnumUtils.getEnumIgnoreCase(InstanceBootGroupReadinessRule.RuleType.class, cmd.getRuleType());
+            if (ruleType == null) {
                 throw new InvalidParameterValueException("Invalid rule type: " + cmd.getRuleType());
             }
-            sc.setParameters("ruleType", ruleTypeFilter);
-        }
-        if (cmd.getKeyword() != null) {
-            sc.setParameters("keyword", "%" + cmd.getKeyword() + "%");
         }
 
-        Filter searchFilter = new Filter(InstanceBootGroupReadinessRuleVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-        Pair<List<InstanceBootGroupReadinessRuleVO>, Integer> rulesAndCount = instanceBootGroupReadinessRuleDao.searchAndCount(sc, searchFilter);
+        InstanceBootGroupMember.MemberType memberType = null;
+        Long memberId = null;
+        if (cmd.getVirtualMachineId() != null) {
+            memberType = InstanceBootGroupMember.MemberType.VirtualMachine;
+            memberId = cmd.getVirtualMachineId();
+        } else if (cmd.getInstanceGroupId() != null) {
+            memberType = InstanceBootGroupMember.MemberType.InstanceGroup;
+            memberId = cmd.getInstanceGroupId();
+        }
+        Pair<List<InstanceBootGroupReadinessRuleVO>, Integer> rulesAndCount = instanceBootGroupReadinessRuleDao.searchAndCountByBootGroupId(
+                cmd.getBootGroupId(),
+                cmd.getId(),
+                memberType,
+                memberId,
+                ruleType,
+                cmd.getKeyword(),
+                cmd.getStartIndex(),
+                cmd.getPageSizeVal());
 
         List<InstanceBootGroupReadinessRuleResponse> responsesList = rulesAndCount.first().stream()
                 .map(rule -> createInstanceBootGroupReadinessRuleResponse(rule, false, 0))
@@ -776,7 +782,7 @@ public class InstanceBootGroupApiServiceImpl implements InstanceBootGroupService
 
         if (cmd.getId() == null && cmd.getVirtualMachineId() != null) {
             for (InstanceBootGroupReadinessRule rule : instanceBootGroupReadinessRuleService.findInheritedGroupRules(cmd.getBootGroupId(), cmd.getVirtualMachineId())) {
-                if (ruleTypeFilter != null && rule.getRuleType() != ruleTypeFilter) {
+                if (ruleType != null && rule.getRuleType() != ruleType) {
                     continue;
                 }
                 if (cmd.getKeyword() != null && (rule.getName() == null || !rule.getName().toLowerCase().contains(cmd.getKeyword().toLowerCase()))) {

@@ -273,7 +273,7 @@ export default {
     readinessModeLabel (mode) {
       switch (mode) {
         case 'None': return this.$t('label.readiness.mode.no.readiness')
-        case 'MemberDependent': return this.$t('label.readiness.mode.member.dependent')
+        case 'ChildDependent': return this.$t('label.readiness.mode.child.dependent')
         case 'RuleBased': return this.$t('label.readiness.mode.rule.based')
         default: return ''
       }

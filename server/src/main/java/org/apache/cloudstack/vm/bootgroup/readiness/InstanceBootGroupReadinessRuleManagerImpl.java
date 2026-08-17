@@ -40,6 +40,8 @@ import org.springframework.stereotype.Component;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
 import com.cloud.vm.InstanceGroupVMMapVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
@@ -197,10 +199,12 @@ public class InstanceBootGroupReadinessRuleManagerImpl extends ManagerBase imple
         if (rule == null) {
             throw new InvalidParameterValueException("Unable to find a readiness rule with ID: " + ruleId);
         }
-        instanceBootGroupReadinessRuleDetailsDao.removeDetails(rule.getId());
-        instanceBootGroupReadinessCheckResultDao.deleteByRuleId(rule.getId());
-        instanceBootGroupReadinessRuleDao.remove(rule.getId());
-        return true;
+        return Transaction.execute((TransactionCallback<Boolean>) status -> {
+            instanceBootGroupReadinessRuleDetailsDao.removeDetails(rule.getId());
+            instanceBootGroupReadinessCheckResultDao.deleteByRuleId(rule.getId());
+            instanceBootGroupReadinessRuleDao.remove(rule.getId());
+            return true;
+        });
     }
 
     @Override

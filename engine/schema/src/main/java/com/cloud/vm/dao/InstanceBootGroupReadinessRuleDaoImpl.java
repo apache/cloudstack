@@ -21,8 +21,11 @@ import java.util.List;
 
 import org.apache.cloudstack.vm.bootgroup.InstanceBootGroupMember;
 import org.apache.cloudstack.vm.bootgroup.InstanceBootGroupReadinessRuleVO;
+import org.apache.cloudstack.vm.bootgroup.readiness.InstanceBootGroupReadinessRule;
 import org.springframework.stereotype.Component;
 
+import com.cloud.utils.Pair;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -30,15 +33,11 @@ import com.cloud.utils.db.SearchCriteria;
 @Component
 public class InstanceBootGroupReadinessRuleDaoImpl extends GenericDaoBase<InstanceBootGroupReadinessRuleVO, Long> implements InstanceBootGroupReadinessRuleDao {
 
-    private final SearchBuilder<InstanceBootGroupReadinessRuleVO> bootGroupSearch;
     private final SearchBuilder<InstanceBootGroupReadinessRuleVO> itemSearch;
     private final SearchBuilder<InstanceBootGroupReadinessRuleVO> enabledByItemSearch;
     private final SearchBuilder<InstanceBootGroupReadinessRuleVO> byItemSearch;
 
     public InstanceBootGroupReadinessRuleDaoImpl() {
-        bootGroupSearch = createSearchBuilder();
-        bootGroupSearch.and("bootGroupId", bootGroupSearch.entity().getBootGroupId(), SearchCriteria.Op.EQ);
-        bootGroupSearch.done();
 
         itemSearch = createSearchBuilder();
         itemSearch.and("itemType", itemSearch.entity().getItemType(), SearchCriteria.Op.EQ);
@@ -60,10 +59,43 @@ public class InstanceBootGroupReadinessRuleDaoImpl extends GenericDaoBase<Instan
     }
 
     @Override
-    public List<InstanceBootGroupReadinessRuleVO> listByBootGroupId(long bootGroupId) {
-        SearchCriteria<InstanceBootGroupReadinessRuleVO> sc = bootGroupSearch.create();
+    public Pair<List<InstanceBootGroupReadinessRuleVO>, Integer> searchAndCountByBootGroupId(long bootGroupId,
+            Long id,
+            InstanceBootGroupMember.MemberType itemType,
+            Long itemId,
+            InstanceBootGroupReadinessRule.RuleType ruleType,
+            String keyword,
+            Long startIndex,
+            Long pageSize) {
+        SearchBuilder<InstanceBootGroupReadinessRuleVO> sb = createSearchBuilder();
+        sb.and("bootGroupId", sb.entity().getBootGroupId(), SearchCriteria.Op.EQ);
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("itemType", sb.entity().getItemType(), SearchCriteria.Op.EQ);
+        sb.and("itemId", sb.entity().getItemId(), SearchCriteria.Op.EQ);
+        sb.and("ruleType", sb.entity().getRuleType(), SearchCriteria.Op.EQ);
+        sb.and("keyword", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.done();
+
+        SearchCriteria<InstanceBootGroupReadinessRuleVO> sc = sb.create();
         sc.setParameters("bootGroupId", bootGroupId);
-        return listBy(sc);
+        if (id != null) {
+            sc.setParameters("id", id);
+        }
+        if (itemType != null) {
+            sc.setParameters("itemType", itemType);
+        }
+        if (itemId != null) {
+            sc.setParameters("itemId", itemId);
+        }
+        if (ruleType != null) {
+            sc.setParameters("ruleType", ruleType);
+        }
+        if (keyword != null) {
+            sc.setParameters("keyword", "%" + keyword + "%");
+        }
+
+        Filter searchFilter = new Filter(InstanceBootGroupReadinessRuleVO.class, "id", true, startIndex, pageSize);
+        return searchAndCount(sc, searchFilter);
     }
 
     @Override
@@ -83,13 +115,5 @@ public class InstanceBootGroupReadinessRuleDaoImpl extends GenericDaoBase<Instan
         sc.setParameters("itemType", itemType);
         sc.setParameters("itemId", itemId);
         return listBy(sc);
-    }
-
-    @Override
-    public void deleteByItem(InstanceBootGroupMember.MemberType itemType, long itemId) {
-        SearchCriteria<InstanceBootGroupReadinessRuleVO> sc = itemSearch.create();
-        sc.setParameters("itemType", itemType);
-        sc.setParameters("itemId", itemId);
-        expunge(sc);
     }
 }
