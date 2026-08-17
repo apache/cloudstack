@@ -448,8 +448,12 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
                     parentBackupDeltasOnPrimary, volumeUuidToDeltaPrimaryRef, volumeUuidToDeltaSecondaryRef, succeedingVmSnapshot, kbossTO);
         }
 
+        boolean supportsCompression = offeringSupportsCompression(newBackupJoin);
+
         TakeKbossBackupCommand command = new TakeKbossBackupCommand(quiesceVm, runningVm, newBackupJoin.getEndOfChain(), userVm.getInstanceName(), imageStore.getUri(),
                 chainImageStoreUrls, kbossTOs, isolated);
+
+        boolean compressNow = checkSyncCompressionAndConfigureCommand(backupOfferingVO, supportsCompression, command, hostVO);
 
         Answer answer = sendBackupCommand(hostId, command);
 
@@ -459,18 +463,32 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         }
 
         processBackupSuccess(runningVm, volumeTOs, volumeUuidToDeltaPrimaryRef, volumeUuidToDeltaSecondaryRef, (TakeKbossBackupAnswer)answer, parentBackupDeltasOnPrimary,
-                succeedingVmSnapshotList, backupVO, fullBackup, userVm, hostId, newBackupJoin.getEndOfChain(), isolated);
+                succeedingVmSnapshotList, backupVO, fullBackup, userVm, hostId, newBackupJoin.getEndOfChain(), isolated, compressNow);
 
         if (!isolated) {
             updateCurrentBackup(newBackupJoin);
         }
 
-        if (offeringSupportsCompression(newBackupJoin)) {
+        if (supportsCompression && !compressNow) {
             compressBackupAsync(newBackupJoin, backup.getZoneId(), userVm.getAccountId());
         } else {
             validateBackupAsyncIfHasOfferingSupport(newBackupJoin, backup.getZoneId(), userVm.getAccountId());
         }
         return new Pair<>(Boolean.TRUE, backupVO.getId());
+    }
+
+    protected boolean checkSyncCompressionAndConfigureCommand(BackupOfferingVO backupOfferingVO, boolean supportsCompression, TakeKbossBackupCommand command, HostVO hostVO) {
+        BackupOfferingDetailsVO compressAsync = backupOfferingDetailsDao.findDetail(backupOfferingVO.getId(), ApiConstants.COMPRESS_ASYNC);
+        boolean compressNow = compressAsync != null && !Boolean.parseBoolean(compressAsync.getValue()) && supportsCompression;
+
+        if (compressNow) {
+            BackupOfferingDetailsVO detail = backupOfferingDetailsDao.findDetail(backupOfferingVO.getId(), ApiConstants.COMPRESSION_LIBRARY);
+            command.setCompress(true);
+            command.setCompressionLib(detail == null ? null : Backup.CompressionLibrary.valueOf(detail.getValue()));
+            command.setCoroutines(backupCompressionCoroutines.valueIn(hostVO.getClusterId()));
+            command.setRateLimit(backupCompressionRateLimit.valueIn(hostVO.getClusterId()));
+        }
+        return compressNow;
     }
 
     @Override
@@ -2084,7 +2102,8 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
 
     protected void processBackupSuccess(boolean runningVm, List<VolumeObjectTO> volumeTOs, HashMap<String, InternalBackupStoragePoolVO> volumeUuidToDeltaPrimaryRef,
             HashMap<String, InternalBackupDataStoreVO> volumeUuidToDeltaSecondaryRef, TakeKbossBackupAnswer answer, List<InternalBackupStoragePoolVO> parentBackupDeltasOnPrimary,
-            List<VMSnapshotVO> succeedingVmSnapshots, BackupVO backupVO, boolean fullBackup, VirtualMachine userVm, Long hostId, boolean endChain, boolean isolated) {
+            List<VMSnapshotVO> succeedingVmSnapshots, BackupVO backupVO, boolean fullBackup, VirtualMachine userVm, Long hostId, boolean endChain, boolean isolated,
+            boolean compressNow) {
         long physicalBackupSize = 0;
         logger.debug("Processing backup [{}] success.", backupVO.getUuid());
         for (VolumeObjectTO volumeObjectTO : volumeTOs) {
@@ -2094,6 +2113,9 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
 
         expungeOldDeltasAndUpdateVmSnapshotIfNeeded(parentBackupDeltasOnPrimary, succeedingVmSnapshots.isEmpty() ? null : succeedingVmSnapshots.get(0));
 
+        if (compressNow) {
+            backupVO.setCompressionStatus(Backup.CompressionStatus.Compressed);
+        }
         backupVO.setSize(physicalBackupSize);
         backupVO.setStatus(Backup.Status.BackedUp);
         backupVO.setBackedUpVolumes(backupManager.createVolumeInfoFromVolumes(new ArrayList<>(volumeDao.findByInstance(userVm.getId()))));

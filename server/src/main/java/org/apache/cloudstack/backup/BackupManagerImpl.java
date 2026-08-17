@@ -406,6 +406,9 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (cmd.isAllowQuickRestore()) {
             detailsVOList.add(new BackupOfferingDetailsVO(savedOffering.getId(), ApiConstants.ALLOW_QUICK_RESTORE, "true", true));
         }
+        if (cmd.isCompressAsync()) {
+            detailsVOList.add(new BackupOfferingDetailsVO(savedOffering.getId(), ApiConstants.COMPRESS_ASYNC, "true", true));
+        }
         if (cmd.getBackupChainSize() != null) {
             detailsVOList.add(new BackupOfferingDetailsVO(savedOffering.getId(), ApiConstants.BACKUP_CHAIN_SIZE, cmd.getBackupChainSize().toString(), true));
         }

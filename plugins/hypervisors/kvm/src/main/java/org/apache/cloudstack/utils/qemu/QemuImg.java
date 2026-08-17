@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtCompressBackupCommandWrapper;
+import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.storage.formatinspector.Qcow2Inspector;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.NotImplementedException;
@@ -1072,5 +1074,18 @@ public class QemuImg {
     public long getVersion() {
         return this.version;
     }
+
+    /**
+     * Sets the compression type option if qemu-img is at least in version 5.1. Otherwise, will not set it and qemu will use zlib.
+     * */
+    public void setCompressionTypeOptionIfAvailable(Map<String, String> options, Backup.CompressionLibrary compressionLib) {
+        if (getVersion() >= QemuImg.QEMU_5_1) {
+            options.put(LibvirtCompressBackupCommandWrapper.COMPRESSION_TYPE, compressionLib.name());
+            return;
+        }
+        logger.warn("Qemu is at a lower version than 5.1, we will not be able to use zstd to compress backups. Only zlib is supported for this version. Current version is [{}].",
+                getVersion());
+    }
+
 
 }

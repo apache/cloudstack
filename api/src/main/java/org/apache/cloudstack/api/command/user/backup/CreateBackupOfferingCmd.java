@@ -92,6 +92,10 @@ public class CreateBackupOfferingCmd extends BaseCmd {
             description = "Restrict the backup offering to the Domains identified by these IDs.")
     private List<Long> domainIds;
 
+    @Parameter(name = ApiConstants.COMPRESS_ASYNC, type = CommandType.BOOLEAN, description = "Whether to compress synchronously during backup creation, or asynchronously later. " +
+            "Default true.")
+    private Boolean compressAsync;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -164,6 +168,10 @@ public class CreateBackupOfferingCmd extends BaseCmd {
 
     public Boolean getUserDrivenBackups() {
         return userDrivenBackups;
+    }
+
+    public boolean isCompressAsync() {
+        return Boolean.TRUE.equals(this.compressAsync);
     }
 
     /////////////////////////////////////////////////////
